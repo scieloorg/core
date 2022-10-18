@@ -1,0 +1,125 @@
+version: '3'
+
+services:
+  django: &django
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile
+    image: core_local_django
+    container_name: core_local_django
+    depends_on:
+      - redis
+      - postgres
+      - mailhog
+      - pgbouncer
+    links:
+      - pgbouncer
+    volumes:
+      - .:/app:z
+    env_file:
+      - ./.envs/.local/.django
+      - ./.envs/.local/.postgres
+    ports:
+      - "8000:8000"
+    command: /start
+
+  pgbouncer:
+    image: edoburu/pgbouncer:1.14.0
+    restart: always
+    container_name: core_local_pgbouncer
+    environment:
+      - DATABASE_URL=postgres://GVRFlLmcCNfGLhsFvSnCioYOPJPYpyfj:BQ4hSUL4rdj5WZLdR8ilDLRQMvCtzo0caMaXDO0olGsmycQjlcZlTVK9DepZR8kk@postgres/core
+      - MAX_CLIENT_CONN=100
+    ports:
+      - 6434:5432
+    depends_on:
+      - postgres
+    links:
+      - postgres
+
+  postgres:
+    build:
+      context: .
+      dockerfile: ./compose/production/postgres/Dockerfile
+    image: core_local_postgres
+    container_name: core_local_postgres
+    volumes:
+      - ../scms_data/template/data_dev:/var/lib/postgresql/data:Z
+      - ../scms_data/template/data_dev_backup:/backups:z
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./.envs/.local/.postgres
+
+  mongo:
+    image: mongo
+    container_name: core_local_mongo
+    restart: always
+    user: mongodb
+    hostname: mongo
+    volumes:
+      - ../scms_data/template/mongo:/data/db
+    ports:
+        - "27017:27017"
+
+  adminer:
+    image: adminer
+    container_name: core_local_adminer
+    ports:
+        - "8080:8080"
+
+  docs:
+    image: core_local_docs
+    container_name: core_local_docs
+    build:
+      context: .
+      dockerfile: ./compose/local/docs/Dockerfile
+    env_file:
+      - ./.envs/.local/.django
+    volumes:
+      - ./docs:/docs:z
+      - ./config:/app/config:z
+      - ./core:/app/core:z
+    ports:
+      - "9000:9000"
+    command: /start-docs
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.0
+    container_name: core_local_mailhog
+    ports:
+      - "8025:8025"
+
+  redis:
+    image: redis:6
+    container_name: core_local_redis
+
+  celeryworker:
+    <<: *django
+    image: core_local_celeryworker
+    container_name: core_local_celeryworker
+    depends_on:
+      - redis
+      - postgres
+      - mailhog
+    ports: []
+    command: /start-celeryworker
+
+  celerybeat:
+    <<: *django
+    image: core_local_celerybeat
+    container_name: core_local_celerybeat
+    depends_on:
+      - redis
+      - postgres
+      - mailhog
+    ports: []
+    command: /start-celerybeat
+
+  flower:
+    <<: *django
+    image: core_local_flower
+    container_name: core_local_flower
+    ports:
+      - "5555:5555"
+    command: /start-flower

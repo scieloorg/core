@@ -1,0 +1,29 @@
+{% extends "wagtailadmin/base.html" %}
+{% load static %}
+{% load wagtailadmin_tags wagtailcore_tags wagtailimages_tags i18n %}
+{% load wagtailsettings_tags %}
+
+{% get_settings use_default_site=True %}
+
+{% block branding_title %}
+
+    {% if settings.core_settings.CustomSettings.name %}
+
+        {{ settings.core_settings.CustomSettings.name }}
+
+    {% else %}
+
+        SciELO CMS
+
+    {% endif %}
+
+{% endblock %}
+
+{% block branding_logo %}
+    {% if settings.core_settings.CustomSettings.admin_logo %}
+        {% image settings.core_settings.CustomSettings.admin_logo max-100x100 as logo %}
+            <img src="{{ logo.url }}" alt="logo"/>
+    {% else %}
+            <img src="{% static 'images/logos/logo_negative100x100.png' %}" alt="SciELO logo"/>
+    {% endif %}
+{% endblock %}

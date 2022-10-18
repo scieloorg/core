@@ -1,0 +1,103 @@
+{% load static compress %}
+{% load wagtailadmin_tags wagtailcore_tags wagtailimages_tags i18n %}
+{% load wagtailsettings_tags %}
+
+{% get_settings use_default_site=True %}
+
+<!DOCTYPE html>
+{% get_current_language as LANGUAGE_CODE %}
+<html lang="{{ LANGUAGE_CODE }}">
+  <head>
+
+      <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+      <meta name="author" content="SemiColonWeb" />
+
+      {% block css %}
+
+        <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}" type="text/css" />
+        <link rel="stylesheet" href="{% static 'css/font-icons.css' %}" type="text/css" />
+
+        <!-- banner de cookie -->
+        <!-- <link rel="stylesheet" href="{% static 'css/cookiealert.css' %}"> -->
+
+        {% block extra_css %}
+        {% endblock %}
+
+        {% compress css %}
+          <link href="{% static 'css/style.css' %}" rel="stylesheet">
+          <link href="{% static 'css/custom.css' %}" rel="stylesheet">
+        {% endcompress %}
+
+      {% endblock %}
+
+      <link href="https://fonts.googleapis.com/css?family=Lato:300,400,400i,700|Poppins:300,400,500,600,700|PT+Serif:400,400i&display=swap" rel="stylesheet" type="text/css" />
+
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+      {% if settings.core_settings.CustomSettings.favicon %}
+        {% image settings.core_settings.CustomSettings.favicon original as favicon %}
+          <link href="{{ favicon.url }}" rel="shortcut icon" type="image/x-icon">
+          <link href="{{ favicon.url }}" rel="apple-touch-icon">
+      {% else %}
+          <link href="{% static 'images/favicons/favicon-16x16.png' %}" rel="shortcut icon" type="image/x-icon">
+          <link href="{% static 'images/favicons/apple-touch-icon.png' %}" rel="apple-touch-icon">
+      {% endif %}
+
+      <title>{% block title %}{{settings.core_settings.CustomSettings.name}}{% endblock title %}</title>
+
+      {% block extra_head %}{% endblock extra_head %}
+
+  </head>
+
+  <body class="{% block body_class %}stretched device-xl has-plugin-easing has-plugin-bootstrap has-plugin-swiper has-plugin-animations has-plugin-carousel has-plugin-form has-plugin-ajaxform has-plugin-subscribeform has-plugin-isotope has-plugin-html5video quick-contact-form-ready gototop-active{% endblock %}">
+
+    <div id="wrapper" class="clearfix">
+
+      {# {% include 'include/top_bar.html' %} #}
+
+      {% comment %} {% include 'include/header.html' %} {% endcomment %}
+
+      {% block content %}{% endblock content %}
+
+    </div>
+
+    {% block modal %}
+      {% comment %} {% include 'include/modal.html' %} {% endcomment %}
+    {% endblock modal %}
+
+    {#% include 'include/alert.html' %#}
+
+    {% comment %} {% include 'include/footer.html' %} {% endcomment %}
+
+    <div id="gotoTop" class="icon-angle-up"></div>
+
+    <!-- Le javascript
+    ================================================== -->
+    {% block javascript %}
+
+      <!-- JavaScripts -->
+      <script src="{% static 'js/jquery.js' %}"></script>
+      <script src="{% static 'js/plugins.min.js' %}"></script>
+
+      <!-- banner de cookie -->
+      <!-- <script src="{% static 'js/cookiealert.js' %}"></script> -->
+
+      <!-- Footer Scripts-->
+      <script src="{% static 'js/functions.js' %}"></script>
+
+      <!-- Your stuff: Third-party javascript libraries go here -->
+
+      <!-- place project specific Javascript in this file -->
+      {% compress js %}
+        <script src="{% static 'js/project.js' %}"></script>
+        <script src="{% static 'js/custom.js' %}"></script>
+      {% endcompress %}
+
+      {% block inline_javascript %}
+
+      {% endblock inline_javascript %}
+
+    {% endblock javascript %}
+  </body>
+</html>
+

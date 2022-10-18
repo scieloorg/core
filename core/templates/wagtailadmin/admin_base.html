@@ -1,0 +1,17 @@
+{% extends "wagtailadmin/admin_base.html" %}
+{% load static %}
+{% load wagtailcore_tags wagtailimages_tags %}
+{% load wagtailsettings_tags %}
+
+{% get_settings use_default_site=True %}
+
+{% block branding_favicon %}
+    {% if settings.core_settings.CustomSettings.favicon %}
+        {% image settings.core_settings.CustomSettings.favicon original as favicon %}
+            <link href="{{ favicon.url }}" rel="shortcut icon" type="image/x-icon">
+            <link href="{{ favicon.url }}" rel="apple-touch-icon">
+    {% else %}
+            <link href="{% static 'images/favicons/favicon-16x16.png' %}" rel="shortcut icon" type="image/x-icon">
+            <link href="{% static 'images/favicons/apple-touch-icon.png' %}" rel="apple-touch-icon">
+    {% endif %}
+{% endblock %}

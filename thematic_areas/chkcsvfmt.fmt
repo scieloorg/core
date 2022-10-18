@@ -1,0 +1,12 @@
+[ThematicAreaLevel0]
+data_required=False
+type=String
+
+[ThematicAreaLevel1]
+data_required=False
+type=String
+
+[ThematicAreaLevel2]
+data_required=False
+type=String
+
