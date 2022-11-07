@@ -5,8 +5,8 @@ services:
     build:
       context: .
       dockerfile: ./compose/local/django/Dockerfile
-    image: core_local_django
-    container_name: core_local_django
+    image: scielo_core_local_django
+    container_name: scielo_core_local_django
     depends_on:
       - redis
       - postgres
@@ -26,9 +26,9 @@ services:
   pgbouncer:
     image: edoburu/pgbouncer:1.14.0
     restart: always
-    container_name: core_local_pgbouncer
+    container_name: scielo_core_local_pgbouncer
     environment:
-      - DATABASE_URL=postgres://GVRFlLmcCNfGLhsFvSnCioYOPJPYpyfj:BQ4hSUL4rdj5WZLdR8ilDLRQMvCtzo0caMaXDO0olGsmycQjlcZlTVK9DepZR8kk@postgres/core
+      - DATABASE_URL=postgres://GVRFlLmcCNfGLhsFvSnCioYOPJPYpyfj:BQ4hSUL4rdj5WZLdR8ilDLRQMvCtzo0caMaXDO0olGsmycQjlcZlTVK9DepZR8kk@postgres/scielo_core
       - MAX_CLIENT_CONN=100
     ports:
       - 6434:5432
@@ -41,36 +41,25 @@ services:
     build:
       context: .
       dockerfile: ./compose/production/postgres/Dockerfile
-    image: core_local_postgres
-    container_name: core_local_postgres
+    image: scielo_core_local_postgres
+    container_name: scielo_core_local_postgres
     volumes:
-      - ../scms_data/template/data_dev:/var/lib/postgresql/data:Z
-      - ../scms_data/template/data_dev_backup:/backups:z
+      - ../scms_data/scielo_core/data_dev:/var/lib/postgresql/data:Z
+      - ../scms_data/scielo_core/data_dev_backup:/backups:z
     ports:
       - "5432:5432"
     env_file:
       - ./.envs/.local/.postgres
 
-  mongo:
-    image: mongo
-    container_name: core_local_mongo
-    restart: always
-    user: mongodb
-    hostname: mongo
-    volumes:
-      - ../scms_data/template/mongo:/data/db
-    ports:
-        - "27017:27017"
-
   adminer:
     image: adminer
-    container_name: core_local_adminer
+    container_name: scielo_core_local_adminer
     ports:
         - "8080:8080"
 
   docs:
-    image: core_local_docs
-    container_name: core_local_docs
+    image: scielo_core_local_docs
+    container_name: scielo_core_local_docs
     build:
       context: .
       dockerfile: ./compose/local/docs/Dockerfile
@@ -86,18 +75,18 @@ services:
 
   mailhog:
     image: mailhog/mailhog:v1.0.0
-    container_name: core_local_mailhog
+    container_name: scielo_core_local_mailhog
     ports:
       - "8025:8025"
 
   redis:
     image: redis:6
-    container_name: core_local_redis
+    container_name: scielo_core_local_redis
 
   celeryworker:
     <<: *django
-    image: core_local_celeryworker
-    container_name: core_local_celeryworker
+    image: scielo_core_local_celeryworker
+    container_name: scielo_core_local_celeryworker
     depends_on:
       - redis
       - postgres
@@ -107,8 +96,8 @@ services:
 
   celerybeat:
     <<: *django
-    image: core_local_celerybeat
-    container_name: core_local_celerybeat
+    image: scielo_core_local_celerybeat
+    container_name: scielo_core_local_celerybeat
     depends_on:
       - redis
       - postgres
@@ -118,8 +107,8 @@ services:
 
   flower:
     <<: *django
-    image: core_local_flower
-    container_name: core_local_flower
+    image: scielo_core_local_flower
+    container_name: scielo_core_local_flower
     ports:
       - "5555:5555"
     command: /start-flower
