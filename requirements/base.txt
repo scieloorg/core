@@ -37,3 +37,8 @@ wagtailmenus==3.0.2
 # Wagtail Localize
 # ------------------------------------------------------------------------------
 wagtail-localize==1.2.1
+
+# Django celery
+# ------------------------------------------------------------------------------
+django_celery_results==2.4.0
+django-celery-beat==2.2.1  # https://github.com/celery/django-celery-beat
