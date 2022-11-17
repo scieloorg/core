@@ -1,0 +1,7 @@
+{% extends "modeladmin/index.html" %}
+{% load wagtailadmin_tags wagtailcore_tags i18n %}
+
+{% block header_extra %}
+    {{ block.super }}
+    <a class="button" href="{% url 'thematic_areas:download_sample' %}">{% trans 'Download CSV Example' %}</a>
+{% endblock %}
