@@ -116,3 +116,12 @@ languages = (
     ('cs', _('Tcheco')),
     ('tr', _('Turco')),
 )
+
+levels = (
+    ('', ''),
+    ('UNDEFINED', _('UNDEFINED')),
+    ('0', _('Level 0')),
+    ('1', _('Level 1')),
+    ('2', _('Level 2')),
+    ('3', _('Level 3')),
+)
