@@ -17,7 +17,7 @@ class GenericThematicAreaHelper(ButtonHelper):
             "url": reverse("generic_thematic_areas:validate") + "?file_id=%s" % str(obj.id),
             "label": text,
             "classname": self.finalise_classname(self.validate_button_classnames),
-            "title": text,
+            "title": "validate_generic",
         }
 
     def import_button(self, obj):
@@ -27,7 +27,7 @@ class GenericThematicAreaHelper(ButtonHelper):
             "url": reverse("generic_thematic_areas:import_file") + "?file_id=%s" % str(obj.id),
             "label": text,
             "classname": self.finalise_classname(self.import_button_classnames),
-            "title": text,
+            "title": "import_generic",
         }
 
     def get_buttons_for_obj(
@@ -40,9 +40,9 @@ class GenericThematicAreaHelper(ButtonHelper):
         btns = super().get_buttons_for_obj(
             obj, exclude, classnames_add, classnames_exclude
         )
-        if "validate" not in (exclude or []):
+        if "validate_generic" not in (exclude or []):
             btns.append(self.validate_button(obj))
-        if "import" not in (exclude or []):
+        if "import_generic" not in (exclude or []):
             btns.append(self.import_button(obj))
         return btns
 
