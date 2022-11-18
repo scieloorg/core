@@ -1,4 +1,3 @@
-import csv
 import os
 
 from django.db import models
@@ -15,7 +14,7 @@ class GenericThematicArea(CommonControlField):
     lang = models.CharField(_("Language"), choices=choices.languages, max_length=10, null=True, blank=True)
     origin = models.CharField(_("Origin Data Base"), max_length=255, null=True, blank=True)
     level = models.CharField(_("Level"), choices=choices.levels, max_length=20, null=True, blank=True)
-    level_up = models.ForeignKey("GenericThematicArea", related_name="GenericThematic_Area_Level_Up",
+    level_up = models.ForeignKey("GenericThematicArea", related_name="Generic_Thematic_Area_Level_Up",
                                  null=True, blank=True, on_delete=models.SET_NULL)
 
     class Meta:
@@ -29,26 +28,17 @@ class GenericThematicArea(CommonControlField):
         return u'%s' % (self.text,)
 
     @classmethod
-    def select_levels(cls, text, level):
-        with open(os.path.dirname(os.path.realpath(__file__)) + f'/thematic_areas.csv', 'r') as data:
-            for row in data.readlines():
-                if row.split(';')[int(level)].rstrip('\n') == text and int(level) > 0:
-                    return row.split(';')[int(level) - 1].rstrip('\n')
-
-    @classmethod
-    def get_or_create(cls, text, lang, origin, level, user):
+    def get_or_create(cls, text, lang, origin, level, level_up, user):
         try:
-            return GenericThematicArea.objects.get(text=text, lang=lang, origin=origin, level=level)
+            return GenericThematicArea.objects.get(text=text, lang=lang, origin=origin,
+                                                   level=level, level_up=level_up)
         except GenericThematicArea.DoesNotExist:
             the_area = GenericThematicArea()
             the_area.text = text
             the_area.lang = lang
             the_area.origin = origin
             the_area.level = level
-            up = the_area.select_levels(text=text, level=level)
-            if up:
-                the_area.level_up = the_area.get_or_create(text=up, lang=lang,
-                                                           origin=origin, level=int(level) - 1, user=user)
+            the_area.level_up = level_up
             the_area.creator = user
             the_area.save()
 
