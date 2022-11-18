@@ -32,7 +32,7 @@ def generic_validate(request):
         try:
             upload_path = file_upload.attachment.file.path
             cols = chkcsv.read_format_specs(
-                os.path.dirname(os.path.abspath(__file__)) + "/chkcsvfmt.fmt", True, False)
+                os.path.dirname(os.path.abspath(__file__)) + "/generic_chkcsvfmt.fmt", True, False)
             errorlist = chkcsv.check_csv_file(upload_path, cols, True, True, True, False)
             if errorlist:
                 raise Exception(_("Validation error"))
@@ -55,8 +55,11 @@ def generic_import_file(request):
 
     Something like this:
 
-        Title,Institution,Link,Description,date
-        Politica de acesso aberto,Instituição X,http://www.ac.com.br,Diretório internacional de política de acesso aberto
+    text;lang;origin;level;level_up
+    Álgebra;pt;CAPES;3;Matemática
+    Matemática;pt;CAPES;2;Ciências Exatas e da Terra
+    Ciências Exatas e da Terra;pt;CAPES;1;Ciências Físicas, Tecnológicas e Multidisciplinares
+    Ciências Físicas, Tecnológicas e Multidisciplinares;pt;CAPES;0;
 
     TODO: This function must be a task.
     """
@@ -67,11 +70,11 @@ def generic_import_file(request):
 
     file_path = file_upload.attachment.file.path
 
-    try:
-        with open(file_path, 'r') as csvfile:
-            data = csv.DictReader(csvfile, delimiter=";")
+    with open(file_path, 'r') as csvfile:
+        data = csv.DictReader(csvfile, delimiter=";")
 
-            for line, row in enumerate(data):
+        for line, row in enumerate(data):
+            try:
                 the_area = GenericThematicArea()
                 the_area.text = row.get('text')
                 the_area.lang = row.get('lang')
@@ -79,11 +82,10 @@ def generic_import_file(request):
                 the_area.level = row.get('level')
                 the_area.creator = request.user
                 the_area.save()
-
-    except Exception as ex:
-        messages.error(request, _("Import error: %s, Line: %s") % (ex, str(line + 2)))
-    else:
-        messages.success(request, _("File imported successfully!"))
+            except Exception as ex:
+                messages.error(request, _("Import error: %s, Line: %s") % (ex, str(line + 2)))
+        else:
+            messages.success(request, _("File imported successfully!"))
 
     return redirect(request.META.get('HTTP_REFERER'))
 
