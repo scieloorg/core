@@ -4,12 +4,13 @@ from .views import import_file, validate, download_sample, \
     generic_import_file, generic_validate, generic_download_sample
 
 app_name = "thematic_areas"
+# urlpatterns = [
+#     path("validate", view=validate, name="validate"),
+#     path("import", view=import_file, name="import_file"),
+#     path("download", view=download_sample, name="download_sample"),
+# ]
+
 urlpatterns = [
-    path("validate", view=validate, name="validate"),
-    path("import", view=import_file, name="import_file"),
-    path("download", view=download_sample, name="download_sample"),
-]
-urlpatternsgeneric = [
     path("validate", view=generic_validate, name="validate"),
     path("import", view=generic_import_file, name="import_file"),
     path("download", view=generic_download_sample, name="download_sample"),
