@@ -1,4 +1,5 @@
 import os
+import csv
 
 from models import GenericThematicArea
 
@@ -13,21 +14,22 @@ SEPARATOR = ';'
 def load_thematic_area(user):
     lang, origin = 'pt', 'CAPES'
 
-    with open(os.path.dirname(os.path.realpath(__file__)) + "/../fixtures/thematic_areas.csv", 'r') as data:
-        for row in data.readlines():
+    with open(os.path.dirname(os.path.realpath(__file__)) + "/../fixtures/thematic_areas.csv", 'r') as csvfile:
+        data = csv.reader(csvfile, delimiter="SEPARATOR")
+        for row in data:
             for level in range(len(row)):
-                try:
+                if level > 0:
                     level_up = GenericThematicArea.objects.get(
-                        text=row.split(SEPARATOR)[level - 1].rstrip('\n'),
+                        text=row[level - 1].rstrip('\n'),
                         lang=lang,
                         origin=origin,
                         level=level - 1
                     )
-                except Exception:
+                else:
                     level_up = None
 
                 GenericThematicArea.get_or_create(
-                    text=row.split(SEPARATOR)[level].rstrip('\n'),
+                    text=row[level].rstrip('\n'),
                     lang=lang,
                     origin=origin,
                     level=level,
