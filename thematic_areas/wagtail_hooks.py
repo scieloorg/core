@@ -76,7 +76,7 @@ modeladmin_register(GenericThematicAreaAdminGroup)
 @hooks.register('register_admin_urls')
 def register_url():
     return [
-        path('generic_thematic_areas/GenericThematicAreafile/',
+        path('generic_thematic_areas/genericthematicareafile/',
              include('thematic_areas.urls', namespace='generic_thematic_areas'), ),
     ]
 
@@ -147,6 +147,6 @@ modeladmin_register(ThematicAreaAdminGroup)
 @hooks.register('register_admin_urls')
 def register_url():
     return [
-        path('thematic_areas/ThematicAreafile/',
+        path('thematic_areas/thematicareafile/',
              include('thematic_areas.urls', namespace='thematic_areas'), ),
     ]
