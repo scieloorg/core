@@ -1,13 +1,15 @@
+from django.utils.translation import gettext as _
+
 
 STATUS = [
-    ('certified', 'Certified'),
-    ('development', 'Development'),
-    ('diffusion', 'Diffusion'),
-    ('independent', 'Independent'),
+    ('certified', _('Certified')),
+    ('development', _('Development')),
+    ('diffusion', _('Diffusion')),
+    ('independent', _('Independent')),
 ]
 
 TYPE = [
-    ('journals', 'Journals'),
-    ('preprints', 'Preprints'),
-    ('repositories', 'Repositories'),
+    ('journals', _('Journals')),
+    ('preprints', _('Preprints')),
+    ('repositories', _('Repositories')),
 ]
