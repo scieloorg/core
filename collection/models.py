@@ -19,10 +19,10 @@ class CollectionName(TextWithLang):
         return d
 
     def __unicode__(self):
-        return self.text or None
+        return u'%s' % self.text or None
 
     def __str__(self):
-        return self.text or None
+        return u'%s' % self.text or None
 
 
 class Collection(CommonControlField):
@@ -40,8 +40,6 @@ class Collection(CommonControlField):
                               null=True, blank=True)
     is_active = models.BooleanField(_("Is active"), null=True, blank=True)
     foundation_date = models.DateField(_("Foundation data"), null=True, blank=True)
-    institution = models.ManyToManyField(Institution, verbose_name="Institution", max_length=255,
-                                         blank=True)
 
     panels = [
         FieldPanel('acron3'),
@@ -55,7 +53,6 @@ class Collection(CommonControlField):
         FieldPanel('type'),
         FieldPanel('is_active'),
         FieldPanel('foundation_date'),
-        AutocompletePanel('institution'),
     ]
 
     class Meta:
@@ -84,7 +81,6 @@ class Collection(CommonControlField):
             "collection__type": self.type,
             "collection__is_active": self.is_active,
             "collection__is_foundation_date": self.foundation_date,
-            "collection__institution": [inst.data for inst in self.institution.iterator()],
         }
 
         if self.name:
@@ -93,10 +89,10 @@ class Collection(CommonControlField):
         return d
 
     def __unicode__(self):
-        return self.main_name or None
+        return u'%s' % self.main_name or None
 
     def __str__(self):
-        return self.main_name or None
+        return u'%s' % self.main_name or None
 
 
 
