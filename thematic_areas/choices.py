@@ -456,7 +456,6 @@ thematic_level2 = (
     ('Tratamento e Prevenção Psicológica', _('Tratamento e Prevenção Psicológica')),
     ('Veículos e Equipamentos de Controle', _('Veículos e Equipamentos de Controle')),
     ('Zoologia Aplicada', _('Zoologia Aplicada')),
-
 )
 
 languages = (
