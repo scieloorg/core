@@ -32,7 +32,7 @@ class CommonControlField(models.Model):
         verbose_name=_("Creator"),
         related_name="%(class)s_creator",
         editable=False,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
     )
 
     # Last modifier user
@@ -43,7 +43,7 @@ class CommonControlField(models.Model):
         editable=False,
         null=True,
         blank=True,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
     )
 
     class Meta:
