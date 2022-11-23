@@ -25,7 +25,7 @@ class CollectionAdmin(ModelAdmin):
     list_display = ('main_name', 'type', 'institution', 'creator', 'updated', 'created', 'updated_by')
     search_fields = ('main_name', 'type', 'creator', 'updated', 'created', 'updated_by')
     list_export = ('acron3', 'acron2', 'code', 'domain', 'name', 'main_name', 'status', 'has_analytics',
-                   'type', 'is_active', 'foundation_date', 'institution', 'creator', 'updated',
+                   'type', 'is_active', 'foundation_date', 'creator', 'updated',
                    'created', 'updated_by')
     export_filename = 'collections'
 
