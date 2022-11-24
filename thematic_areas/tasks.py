@@ -16,6 +16,6 @@ def load_thematic_area(*args):
     Sync or Async function
     """
 
-    user = User.objects.get(id=args[0]) if args else 1
+    user = User.objects.get(id=args[0] if args else 1)
 
     controller.load_thematic_area(user)
