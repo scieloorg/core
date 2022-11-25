@@ -22,7 +22,7 @@ class CollectionAdmin(ModelAdmin):
     menu_order = 500
     add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
     exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
-    list_display = ('main_name', 'type', 'institution', 'creator', 'updated', 'created', 'updated_by')
+    list_display = ('main_name', 'type', 'creator', 'updated', 'created', 'updated_by')
     search_fields = ('main_name', 'type', 'creator', 'updated', 'created', 'updated_by')
     list_export = ('acron3', 'acron2', 'code', 'domain', 'name', 'main_name', 'status', 'has_analytics',
                    'type', 'is_active', 'foundation_date', 'creator', 'updated',
