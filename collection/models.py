@@ -87,11 +87,7 @@ class Collection(CommonControlField):
         return d
 
     def __unicode__(self):
-        return u'%s' % self.main_name or None
+        return u'%s' % self.main_name or ''
 
     def __str__(self):
-        return u'%s' % self.main_name or None
-
-
-
-
+        return u'%s' % self.main_name or ''
