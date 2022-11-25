@@ -114,8 +114,8 @@ LOCAL_APPS = [
     "core",
     "location",
     "institution",
-	  "journal",
-  	"thematic_areas",
+    "journal",
+    "thematic_areas",
     "collection",
     "wagtailautocomplete",
 ]
