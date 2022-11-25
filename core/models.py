@@ -33,6 +33,7 @@ class CommonControlField(models.Model):
         related_name="%(class)s_creator",
         editable=False,
         on_delete=models.SET_NULL,
+        null=True,
     )
 
     # Last modifier user
