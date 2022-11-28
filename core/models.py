@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
+from wagtail.admin.edit_handlers import FieldPanel
+
+from . import choices
 
 User = get_user_model()
 
@@ -45,6 +48,20 @@ class CommonControlField(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
     )
+
+    class Meta:
+        abstract = True
+
+
+class TextWithLang(models.Model):
+    text = models.CharField(_('Text'), max_length=255, null=False, blank=False)
+    language = models.CharField(_('Language'), max_length=2, choices=choices.LANGUAGE,
+                                null=False, blank=False)
+
+    panels = [
+        FieldPanel('text'),
+        FieldPanel('language')
+    ]
 
     class Meta:
         abstract = True

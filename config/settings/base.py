@@ -115,8 +115,10 @@ LOCAL_APPS = [
     "core",
     "location",
     "institution",
-	"journal",
-  	"thematic_areas",
+    "journal",
+    "thematic_areas",
+    "collection",
+    "wagtailautocomplete",
 ]
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
