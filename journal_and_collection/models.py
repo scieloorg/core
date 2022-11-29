@@ -7,8 +7,8 @@ from core.models import CommonControlField
 
 from .forms import JournalAndCollectionForm, EventForm
 
-from journal import Journal
-from collections import Collection
+from journal.models import Journal
+from collection.models import Collection
 from . import choices
 
 
