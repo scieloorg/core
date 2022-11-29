@@ -141,18 +141,18 @@ class Location(CommonControlField):
 
     city = models.ForeignKey(City,
                              verbose_name=_("City"),
-                             on_delete=models.CASCADE,
+                             on_delete=models.SET_NULL,
                              null=True,
                              blank=True,
                              )
     state = models.ForeignKey(State,
                               verbose_name=_("State"),
-                              on_delete=models.CASCADE,
+                              on_delete=models.SET_NULL,
                               null=True, blank=True,
                               )
     country = models.ForeignKey(Country,
                                 verbose_name=_("Country"),
-                                on_delete=models.CASCADE,
+                                on_delete=models.SET_NULL,
                                 null=True, blank=True,
                                 )
 

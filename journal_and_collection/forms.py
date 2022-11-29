@@ -1,8 +1,7 @@
 from wagtail.admin.forms import WagtailAdminModelForm
 
 
-class OfficialJournalForm(WagtailAdminModelForm):
-
+class JournalAndCollectionForm(WagtailAdminModelForm):
     def save_all(self, user):
         journal = super().save(commit=False)
 
@@ -16,16 +15,15 @@ class OfficialJournalForm(WagtailAdminModelForm):
         return journal
 
 
-class JournalForm(WagtailAdminModelForm):
-
+class EventForm(WagtailAdminModelForm):
     def save_all(self, user):
-        journal = super().save(commit=False)
+        event = super().save(commit=False)
 
         if self.instance.pk is not None:
-            journal.updated_by = user
+            event.updated_by = user
         else:
-            journal.creator = user
+            event.creator = user
 
         self.save()
 
-        return journal
+        return event
