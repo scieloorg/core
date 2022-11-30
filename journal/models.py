@@ -69,6 +69,20 @@ class FieldMission(Orderable, RichTextWithLang):
         return u'%s %s' % (self.text, self.language)
 
 
+class SocialNetwork(models.Model):
+    name = models.CharField(_('Name'), max_length=255, choices=choices.SOCIAL_NETWORK_NAMES,
+                            null=True, blank=True)
+    url = models.URLField(_('URL'), max_length=255, null=True, blank=True)
+
+    panels = [
+        FieldPanel('name'),
+        FieldPanel('url')
+    ]
+
+    class Meta:
+        abstract = True
+
+
     """
         A class used to represent a journal model designed in the SciELO context.
 
