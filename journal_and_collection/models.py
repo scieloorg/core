@@ -7,7 +7,7 @@ from core.models import CommonControlField
 
 from .forms import JournalAndCollectionForm, EventForm
 
-from journal.models import Journal
+from journal.models import ScieloJournal
 from collection.models import Collection
 from . import choices
 
@@ -54,7 +54,7 @@ class Event(CommonControlField):
 
 
 class JournalAndCollection(CommonControlField):
-    journal = models.ForeignKey(Journal, verbose_name=_('Journal'), null=True, blank=True,
+    journal = models.ForeignKey(ScieloJournal, verbose_name=_('Journal'), null=True, blank=True,
                                 on_delete=models.SET_NULL)
     events_collection = models.ManyToManyField(Event, verbose_name=_('Events'),  blank=True)
 
