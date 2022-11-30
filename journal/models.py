@@ -48,6 +48,27 @@ class OfficialJournal(CommonControlField):
 
 
 class Journal(CommonControlField):
+class JournalMission(ClusterableModel):
+    official_journal = models.ForeignKey('OfficialJournal', null=True, blank=True,
+                                         related_name='JournalMission_OfficialJournal',
+                                         on_delete=models.SET_NULL)
+
+    panels = [
+        FieldPanel('official_journal'),
+        InlinePanel('mission', label=_('Mission'), classname="collapsed")
+    ]
+
+
+class FieldMission(Orderable, RichTextWithLang):
+    page = ParentalKey(JournalMission, on_delete=models.CASCADE, related_name='mission')
+
+    def __unicode__(self):
+        return u'%s %s' % (self.text, self.language)
+
+    def __str__(self):
+        return u'%s %s' % (self.text, self.language)
+
+
     """
         A class used to represent a journal model designed in the SciELO context.
 
