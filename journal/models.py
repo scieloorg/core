@@ -47,7 +47,6 @@ class OfficialJournal(CommonControlField):
     base_form_class = OfficialJournalForm
 
 
-class Journal(CommonControlField):
 class JournalMission(ClusterableModel):
     official_journal = models.ForeignKey('OfficialJournal', null=True, blank=True,
                                          related_name='JournalMission_OfficialJournal',
@@ -83,6 +82,7 @@ class SocialNetwork(models.Model):
         abstract = True
 
 
+class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
     """
         A class used to represent a journal model designed in the SciELO context.
 
