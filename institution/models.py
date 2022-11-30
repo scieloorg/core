@@ -86,3 +86,15 @@ class Institution(CommonControlField, ClusterableModel):
         return institution
 
     base_form_class = InstitutionForm
+
+
+class InstitutionHistory(models.Model):
+    institution = models.ForeignKey('Institution', null=True, blank=True, related_name='+', on_delete=models.CASCADE)
+    initial_date = models.DateField(_('Initial Date'), null=True, blank=True)
+    final_date = models.DateField(_('Final Date'), null=True, blank=True)
+
+    panels = [
+        FieldPanel('institution', heading=_('Institution')),
+        FieldPanel('initial_date'),
+        FieldPanel('final_date')
+    ]
