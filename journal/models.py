@@ -22,10 +22,10 @@ class OfficialJournal(CommonControlField):
     """
 
     def __unicode__(self):
-        return u'%s' % self.title or ''
+        return u'%s - %s' % (self.ISSNL, self.title) or ''
 
     def __str__(self):
-        return u'%s' % self.title or ''
+        return u'%s - %s' % (self.ISSNL, self.title) or ''
 
     title = models.CharField(_('Official Title'), max_length=256, null=True, blank=True)
     foundation_year = models.CharField(_('Foundation Year'), max_length=4, null=True, blank=True)
