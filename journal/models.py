@@ -97,6 +97,9 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
     """
     official = models.ForeignKey(OfficialJournal, verbose_name=_('Official Journal'),
                                  null=True, blank=True, on_delete=models.SET_NULL)
+    short_title = models.CharField(_('Short Title'), max_length=100, null=True, blank=True)
+    logo = models.ForeignKey('wagtailimages.Image', null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
+    submission_online_url = models.URLField(_("Submission online URL"), max_length=255, null=True, blank=True)
 
     panels = [
         FieldPanel('official'),
