@@ -3,7 +3,7 @@ from django.utils.translation import gettext as _
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register, ModelAdminGroup
 from wagtail.contrib.modeladmin.views import CreateView
 
-from .models import OfficialJournal, Journal
+from .models import OfficialJournal, ScieloJournal
 
 
 class OfficialJournalCreateView(CreateView):
@@ -43,29 +43,29 @@ class OfficialJournalAdmin(ModelAdmin):
     )
 
 
-class JournalCreateView(CreateView):
+class ScieloJournalCreateView(CreateView):
 
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
 
 
-class JournalAdmin(ModelAdmin):
-    model = Journal
+class ScieloJournalAdmin(ModelAdmin):
+    model = ScieloJournal
     inspect_view_enabled = True
     menu_label = _('SciELO Journals')
-    create_view_class = JournalCreateView
+    create_view_class = ScieloJournalCreateView
     menu_icon = 'folder'
     menu_order = 200
     add_to_settings_menu = False
     exclude_from_explorer = False
 
     list_display = (
-        'official',
+        'official_journal',
     )
     # list_filter = ()
     search_fields = (
-        'official',
+        'official_journal',
     )
 
 
@@ -73,7 +73,7 @@ class JournalAdminGroup(ModelAdminGroup):
     menu_label = _('Journals')
     menu_icon = 'folder-open-inverse'  # change as required
     menu_order = 100  # will put in 3rd place (000 being 1st, 100 2nd)
-    items = (OfficialJournalAdmin, JournalAdmin)
+    items = (OfficialJournalAdmin, ScieloJournalAdmin)
 
 
 modeladmin_register(JournalAdminGroup)
