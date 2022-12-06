@@ -20,7 +20,6 @@ class Issue(CommonControlField):
     volume = models.CharField(_('Issue volume'), max_length=20, null=True, blank=True)
     year = models.IntegerField(_('Issue year'), null=True, blank=True)
     month = models.IntegerField(_('Issue month'), null=True, blank=True)
-    url = models.URLField(_('Issue URL'), null=True, blank=True)
 
     panels = [
         FieldPanel('journal'),
@@ -28,7 +27,6 @@ class Issue(CommonControlField):
         FieldPanel('volume'),
         FieldPanel('year'),
         FieldPanel('month'),
-        FieldPanel('url'),
     ]
 
     class Meta:
@@ -51,7 +49,6 @@ class Issue(CommonControlField):
             "issue__volume": self.volume,
             "issue__year": self.year,
             "issue__month": self.month,
-            "issue__url": self.url,
         })
         return d
 
