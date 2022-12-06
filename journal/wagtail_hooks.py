@@ -61,11 +61,11 @@ class ScieloJournalAdmin(ModelAdmin):
     exclude_from_explorer = False
 
     list_display = (
-        'official_journal',
+        'official',
     )
     # list_filter = ()
     search_fields = (
-        'official_journal',
+        'official',
     )
 
 
