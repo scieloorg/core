@@ -19,7 +19,7 @@ class InstitutionAdmin(ModelAdmin):
     create_view_class = InstitutionCreateView
     menu_label = _('Institution')
     menu_icon = 'folder'
-    menu_order = 300
+    menu_order = 800
     add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
     exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
     list_display = ('name', 'institution_type', 'creator', 'updated', 'created', 'updated_by')

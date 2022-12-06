@@ -66,7 +66,7 @@ class GenericThematicAreaFileAdmin(ModelAdmin):
 class GenericThematicAreaAdminGroup(ModelAdminGroup):
     menu_label = _('Generic Thematic Areas')
     menu_icon = 'folder-open-inverse'
-    menu_order = 200
+    menu_order = 600
     items = (GenericThematicAreaAdmin, GenericThematicAreaFileAdmin,)
 
 
@@ -137,7 +137,7 @@ class ThematicAreaFileAdmin(ModelAdmin):
 class ThematicAreaAdminGroup(ModelAdminGroup):
     menu_label = _('Thematic Areas')
     menu_icon = 'folder-open-inverse'
-    menu_order = 200
+    menu_order = 500
     items = (ThematicAreaAdmin, ThematicAreaFileAdmin,)
 
 

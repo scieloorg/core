@@ -18,7 +18,7 @@ class EventAdmin(ModelAdmin):
     create_view_class = EventCreateView
     menu_label = _('Event')
     menu_icon = 'folder'
-    menu_order = 100
+    menu_order = 400
     add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
     exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
 
