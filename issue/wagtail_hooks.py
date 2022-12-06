@@ -27,17 +27,20 @@ class IssueAdmin(ModelAdmin):
         'journal',
         'number',
         'volume',
-        'date',
+        'year',
+        'month',
         'url',
     )
     list_filter = (
-        'date',
+        'year',
+        'month',
     )
     search_fields = (
         'journal',
         'number',
         'volume',
-        'date',
+        'year',
+        'month',
     )
 
 
