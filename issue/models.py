@@ -18,14 +18,16 @@ class Issue(CommonControlField):
                                 on_delete=models.SET_NULL)
     number = models.CharField(_('Issue number'), max_length=20, null=True, blank=True)
     volume = models.CharField(_('Issue volume'), max_length=20, null=True, blank=True)
-    date = models.DateField(_('Issue date'), max_length=100, null=True, blank=True)
+    year = models.IntegerField(_('Issue year'), null=True, blank=True)
+    month = models.IntegerField(_('Issue month'), null=True, blank=True)
     url = models.URLField(_('Issue URL'), null=True, blank=True)
 
     panels = [
         FieldPanel('journal'),
         FieldPanel('number'),
         FieldPanel('volume'),
-        FieldPanel('date'),
+        FieldPanel('year'),
+        FieldPanel('month'),
         FieldPanel('url'),
     ]
 
@@ -35,7 +37,8 @@ class Issue(CommonControlField):
         indexes = [
             models.Index(fields=['number', ]),
             models.Index(fields=['volume', ]),
-            models.Index(fields=['date', ]),
+            models.Index(fields=['year', ]),
+            models.Index(fields=['month', ]),
         ]
 
     @property
@@ -46,7 +49,8 @@ class Issue(CommonControlField):
         d.update({
             "issue__number": self.number,
             "issue__volume": self.volume,
-            "issue__date": self.date,
+            "issue__year": self.year,
+            "issue__month": self.month,
             "issue__url": self.url,
         })
         return d
