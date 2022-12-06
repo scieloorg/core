@@ -65,7 +65,7 @@ class ScieloJournalAdmin(ModelAdmin):
     )
     # list_filter = ()
     search_fields = (
-        'official',
+        'official__ISSNL',
     )
 
 

@@ -35,7 +35,7 @@ class IssueAdmin(ModelAdmin):
         'month',
     )
     search_fields = (
-        'journal',
+        'journal__official__ISSNL',
         'number',
         'volume',
         'year',
