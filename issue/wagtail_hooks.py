@@ -29,7 +29,6 @@ class IssueAdmin(ModelAdmin):
         'volume',
         'year',
         'month',
-        'url',
     )
     list_filter = (
         'year',
