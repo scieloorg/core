@@ -92,6 +92,7 @@ DJANGO_APPS = [
     # "django.contrib.humanize", # Handy template tags
     "django.contrib.admin",
     "django.forms",
+    "django_celery_results",
 ]
 
 THIRD_PARTY_APPS = [
@@ -117,6 +118,7 @@ LOCAL_APPS = [
     "institution",
     "journal",
     "thematic_areas",
+    "altmetric",
     "collection",
     "wagtailautocomplete",
     "journal_and_collection",
