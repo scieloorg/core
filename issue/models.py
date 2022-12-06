@@ -5,7 +5,7 @@ from wagtail.admin.edit_handlers import FieldPanel
 from core.models import CommonControlField, RichTextWithLang
 
 from .forms import IssueForm
-
+from . import choices
 from journal.models import ScieloJournal
 
 
@@ -19,7 +19,7 @@ class Issue(CommonControlField):
     number = models.CharField(_('Issue number'), max_length=20, null=True, blank=True)
     volume = models.CharField(_('Issue volume'), max_length=20, null=True, blank=True)
     year = models.IntegerField(_('Issue year'), null=True, blank=True)
-    month = models.IntegerField(_('Issue month'), null=True, blank=True)
+    month = models.CharField(_('Issue month'), max_length=2, choices=choices.MONTHS, null=True, blank=True)
 
     panels = [
         FieldPanel('journal'),
