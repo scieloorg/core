@@ -122,6 +122,7 @@ LOCAL_APPS = [
     "collection",
     "wagtailautocomplete",
     "journal_and_collection",
+    "issue",
 ]
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
