@@ -13,4 +13,5 @@ TYPE = [
     ('preprints', _('Preprints')),
     ('repositories', _('Repositories')),
     ('books', _('Books')),
+    ('data', _('Data repository')),
 ]
