@@ -4,7 +4,7 @@ from wagtail.admin.edit_handlers import FieldPanel
 
 from core.models import CommonControlField, TextWithLang
 from . import choices
-from .forms import CollectionForm
+from core.forms import CoreAdminModelForm
 
 
 class CollectionName(TextWithLang):
@@ -92,4 +92,4 @@ class Collection(CommonControlField):
     def __str__(self):
         return u'%s' % self.main_name or ''
 
-    base_form_class = CollectionForm
+    base_form_class = CoreAdminModelForm

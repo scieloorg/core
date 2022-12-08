@@ -7,7 +7,7 @@ from core.models import CommonControlField
 from location.models import Location
 
 from . import choices
-from .forms import InstitutionForm
+from core.forms import CoreAdminModelForm
 
 
 class Institution(CommonControlField, ClusterableModel):
@@ -85,7 +85,7 @@ class Institution(CommonControlField, ClusterableModel):
             institution.save()
         return institution
 
-    base_form_class = InstitutionForm
+    base_form_class = CoreAdminModelForm
 
 
 class InstitutionHistory(models.Model):
