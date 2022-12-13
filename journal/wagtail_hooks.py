@@ -3,7 +3,7 @@ from django.utils.translation import gettext as _
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register, ModelAdminGroup
 from wagtail.contrib.modeladmin.views import CreateView
 
-from .models import OfficialJournal, ScieloJournal
+from .models import OfficialJournal, ScieloJournal, JournalLoadError
 
 
 class OfficialJournalCreateView(CreateView):
@@ -69,11 +69,33 @@ class ScieloJournalAdmin(ModelAdmin):
     )
 
 
+class JournalLoadErrorCreateView(CreateView):
+    def form_valid(self, form):
+        self.object = form.save_all(self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class JournalLoadErrorAdmin(ModelAdmin):
+    model = JournalLoadError
+    inspect_view_enabled = True
+    menu_label = _('Journal Load Error')
+    create_view_class = JournalLoadErrorCreateView
+    menu_icon = 'folder'
+    menu_order = 300
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+
+    list_display = (
+        'description',
+        'step',
+    )
+
+
 class JournalAdminGroup(ModelAdminGroup):
     menu_label = _('Journals')
     menu_icon = 'folder-open-inverse'  # change as required
     menu_order = 100  # will put in 3rd place (000 being 1st, 100 2nd)
-    items = (OfficialJournalAdmin, ScieloJournalAdmin)
+    items = (OfficialJournalAdmin, ScieloJournalAdmin, JournalLoadErrorAdmin)
 
 
 modeladmin_register(JournalAdminGroup)
