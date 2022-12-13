@@ -181,3 +181,8 @@ class Sponsor(Orderable, InstitutionHistory):
 
 class JournalSocialNetwork(Orderable, SocialNetwork):
     page = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name='journalsocialnetwork')
+
+
+class JournalLoadError(CommonControlField):
+    description = models.CharField(_('Error description'), max_length=510, null=True, blank=True)
+    step = models.CharField(_('Error occurrence step'), max_length=255, null=True, blank=True)
