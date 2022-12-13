@@ -10,7 +10,7 @@ from modelcluster.models import ClusterableModel
 
 from core.models import CommonControlField, RichTextWithLang
 
-from .forms import OfficialJournalForm, JournalForm
+from core.forms import CoreAdminModelForm
 from . import choices
 
 from institution.models import InstitutionHistory
@@ -44,7 +44,7 @@ class OfficialJournal(CommonControlField):
         }
         return d
 
-    base_form_class = OfficialJournalForm
+    base_form_class = CoreAdminModelForm
 
 
 class JournalMission(ClusterableModel):
@@ -172,7 +172,7 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
     def __str__(self):
         return u'%s' % self.official or ''
 
-    base_form_class = JournalForm
+    base_form_class = CoreAdminModelForm
 
 
 class ScieloJournalTitle(Orderable):

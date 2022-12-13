@@ -4,7 +4,7 @@ from wagtail.admin.edit_handlers import FieldPanel
 
 from core.models import CommonControlField, RichTextWithLang
 
-from .forms import IssueForm
+from core.forms import CoreAdminModelForm
 
 from journal.models import ScieloJournal
 
@@ -58,4 +58,4 @@ class Issue(CommonControlField):
     def __str__(self):
         return u'%s - %s' % (self.journal, self.number) or ''
 
-    base_form_class = IssueForm
+    base_form_class = CoreAdminModelForm

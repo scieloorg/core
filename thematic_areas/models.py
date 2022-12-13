@@ -5,7 +5,7 @@ from django.utils.translation import gettext as _
 from core.models import CommonControlField
 from wagtail.documents.edit_handlers import DocumentChooserPanel
 
-from .forms import ThematicAreaForm, ThematicAreaFileForm, GenericThematicAreaForm, GenericThematicAreaFileForm
+from core.forms import CoreAdminModelForm
 from . import choices
 
 
@@ -44,7 +44,7 @@ class GenericThematicArea(CommonControlField):
 
         return the_area
 
-    base_form_class = GenericThematicAreaForm
+    base_form_class = CoreAdminModelForm
 
 
 class GenericThematicAreaFile(CommonControlField):
@@ -69,7 +69,7 @@ class GenericThematicAreaFile(CommonControlField):
     panels = [
         DocumentChooserPanel('attachment')
     ]
-    base_form_class = GenericThematicAreaFileForm
+    base_form_class = CoreAdminModelForm
 
 
 class ThematicArea(CommonControlField):
@@ -121,7 +121,7 @@ class ThematicArea(CommonControlField):
 
         return the_area
 
-    base_form_class = ThematicAreaForm
+    base_form_class = CoreAdminModelForm
 
 
 class ThematicAreaFile(CommonControlField):
@@ -146,4 +146,4 @@ class ThematicAreaFile(CommonControlField):
     panels = [
         DocumentChooserPanel('attachment')
     ]
-    base_form_class = ThematicAreaFileForm
+    base_form_class = CoreAdminModelForm

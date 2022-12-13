@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext as _
 from core.models import CommonControlField
-from location.forms import (LocationForm, CityForm, CountryForm, StateForm)
+from core.forms import CoreAdminModelForm
 from . import choices
 
 
@@ -37,7 +37,7 @@ class City(CommonControlField):
                 city.save()
                 return city
 
-    base_form_class = CityForm
+    base_form_class = CoreAdminModelForm
 
 
 class State(CommonControlField):
@@ -87,7 +87,7 @@ class State(CommonControlField):
 
             return state
 
-    base_form_class = StateForm
+    base_form_class = CoreAdminModelForm
 
 
 class Country(CommonControlField):
@@ -134,7 +134,7 @@ class Country(CommonControlField):
             country.save()
             return country
 
-    base_form_class = CountryForm
+    base_form_class = CoreAdminModelForm
 
 
 class Location(CommonControlField):
@@ -186,4 +186,4 @@ class Location(CommonControlField):
 
         return location
 
-    base_form_class = LocationForm
+    base_form_class = CoreAdminModelForm

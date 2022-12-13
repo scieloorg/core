@@ -5,7 +5,7 @@ from wagtail.admin.edit_handlers import FieldPanel
 
 from core.models import CommonControlField
 
-from .forms import JournalAndCollectionForm, EventForm
+from core.forms import CoreAdminModelForm
 
 from journal.models import ScieloJournal
 from collection.models import Collection
@@ -50,7 +50,7 @@ class Event(CommonControlField):
     def __str__(self):
         return u'%s in the %s in %s' % (self.occurrence_type, self.collection, str(self.occurrence_date))
 
-    base_form_class = EventForm
+    base_form_class = CoreAdminModelForm
 
 
 class JournalAndCollection(CommonControlField):
@@ -84,4 +84,4 @@ class JournalAndCollection(CommonControlField):
     def __str__(self):
         return u'%s' % self.journal
 
-    base_form_class = JournalAndCollectionForm
+    base_form_class = CoreAdminModelForm

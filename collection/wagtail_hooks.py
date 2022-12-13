@@ -17,6 +17,7 @@ class CollectionCreateView(CreateView):
 class CollectionAdmin(ModelAdmin):
     model = Collection
     create_view_class = CollectionCreateView
+    inspect_view_enabled = True
     menu_label = _('Collection')
     menu_icon = 'folder'
     menu_order = 200
