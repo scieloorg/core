@@ -90,3 +90,64 @@ def get_official_journal(user, journal_xml):
         error.save()
 
 
+def get_scielo_journal(user, journal_xml):
+    try:
+        official_journal = get_official_journal(user, journal_xml)
+        scielo_journals = ScieloJournal.objects.filter(official=official_journal)
+        try:
+            scielo_journal = scielo_journals[0]
+        except IndexError:
+            scielo_journal = ScieloJournal()
+            scielo_journal.official = official_journal
+            scielo_journal.short_title = journal_xml['SERIAL']['TITLEGROUP']['SHORTTITLE']
+            scielo_journal.save()
+            journal_title = journal_xml['SERIAL']['TITLEGROUP']['TITLE']
+            scielo_journal_titles = ScieloJournalTitle.objects.filter(journal_title=journal_title)
+            try:
+                scielo_journal_title = scielo_journal_titles[0]
+            except IndexError:
+                scielo_journal_title = ScieloJournalTitle()
+                scielo_journal_title.journal_title = journal_title
+                scielo_journal_title.page = scielo_journal
+                scielo_journal_title.save()
+            scielo_journal.panels_title.append(scielo_journal_title)
+            mission_text = journal_xml['SERIAL']['MISSION']
+            scielo_missions = Mission.objects.filter(text=mission_text)
+            try:
+                scielo_mission = scielo_missions[0]
+            except IndexError:
+                scielo_mission = Mission()
+                scielo_mission.text = mission_text
+                scielo_mission.language = journal_xml['SERIAL']['CONTROLINFO']['LANGUAGE']
+                scielo_mission.page = scielo_journal
+                scielo_mission.save()
+            scielo_journal.panels_mission.append(scielo_mission)
+            institution_name = journal_xml['SERIAL']['PUBLISHERS']['PUBLISHER']['NAME']
+            institutions = Institution.objects.filter(name=institution_name)
+            try:
+                institution = institutions[0]
+            except IndexError:
+                institution = Institution()
+                institution.name = institution_name
+                institution.save()
+            history = InstitutionHistory()
+            history.institution = institution
+            history.page = scielo_journal
+            history.save()
+            scielo_journal.panels_publisher.append(history)
+            scielo_journal.creator = user
+            scielo_journal.save()
+        return scielo_journal
+
+    except Exception as e:
+        error = JournalLoadError()
+        error.step = "SciELO journal record creation error"
+        error.description = str(e)[:509]
+        error.save()
+
+
+def load(user):
+    for collection in get_collection():
+        for issn in get_issn(collection):
+            journal_xml = get_journal_xml(collection, issn)
+            get_scielo_journal(user, journal_xml)
