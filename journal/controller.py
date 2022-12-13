@@ -49,3 +49,44 @@ def get_journal_xml(collection, issn):
         error.save()
 
 
+def get_official_journal(user, journal_xml):
+    try:
+        issnl = journal_xml['SERIAL']['ISSN_AS_ID']
+        official_journals = OfficialJournal.objects.filter(ISSNL=issnl)
+        try:
+            official_journal = official_journals[0]
+        except IndexError:
+            official_journal = OfficialJournal()
+            official_journal.ISSNL = issnl
+            official_journal.title = journal_xml['SERIAL']['TITLEGROUP']['TITLE']
+            issns = journal_xml['SERIAL']['TITLE_ISSN']
+            if type(issns) is list:
+                for issn in issns:
+                    if issn['@TYPE'] == 'PRINT':
+                        official_journal.ISSN_print = issn['#text']
+                    if issn['@TYPE'] == 'ONLIN':
+                        official_journal.ISSN_electronic = issn['#text']
+            else:
+                if issns['@TYPE'] == 'PRINT':
+                    official_journal.ISSN_print = issns['#text']
+                if issns['@TYPE'] == 'ONLIN':
+                    official_journal.ISSN_electronic = issns['#text']
+            foundation_year = journal_xml['SERIAL']['journal-status-history']['periods']['date-status']
+            if type(foundation_year) is list:
+                for date in foundation_year:
+                    if date['@status'] == 'C':
+                        official_journal.foundation_year = date['@date'][:4]
+            else:
+                if foundation_year['@status'] == 'C':
+                    official_journal.foundation_year = foundation_year['@date'][:4]
+            official_journal.creator = user
+        official_journal.save()
+        return official_journal
+
+    except Exception as e:
+        error = JournalLoadError()
+        error.step = "Official journal record creation error"
+        error.description = str(e)[:509]
+        error.save()
+
+
