@@ -26,18 +26,18 @@ class OfficialJournalAdmin(ModelAdmin):
     list_display = (
         'title',
         'foundation_year',
-        'ISSN_print',
-        'ISSN_electronic',
-        'ISSNL',
+        'issn_print',
+        'issn_electronic',
+        'issnl',
     )
     list_filter = (
         'foundation_year',
     )
     search_fields = (
         'foundation_year',
-        'ISSN_print',
-        'ISSN_electronic',
-        'ISSNL',
+        'issn_print',
+        'issn_electronic',
+        'issnl',
         'creator',
         'updated_by',
     )
@@ -62,6 +62,7 @@ class ScieloJournalAdmin(ModelAdmin):
 
     list_display = (
         'official',
+        'issn_scielo',
     )
     # list_filter = ()
     search_fields = (
