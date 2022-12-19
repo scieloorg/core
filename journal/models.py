@@ -22,25 +22,25 @@ class OfficialJournal(CommonControlField):
     """
 
     def __unicode__(self):
-        return u'%s - %s' % (self.ISSNL, self.title) or ''
+        return u'%s - %s' % (self.issnl, self.title) or ''
 
     def __str__(self):
-        return u'%s - %s' % (self.ISSNL, self.title) or ''
+        return u'%s - %s' % (self.issnl, self.title) or ''
 
     title = models.CharField(_('Official Title'), max_length=256, null=True, blank=True)
     foundation_year = models.CharField(_('Foundation Year'), max_length=4, null=True, blank=True)
-    ISSN_print = models.CharField(_('ISSN Print'), max_length=9, null=True, blank=True)
-    ISSN_electronic = models.CharField(_('ISSN Eletronic'), max_length=9, null=True, blank=True)
-    ISSNL = models.CharField(_('ISSNL'), max_length=9, null=True, blank=True)
+    issn_print = models.CharField(_('ISSN Print'), max_length=9, null=True, blank=True)
+    issn_electronic = models.CharField(_('ISSN Eletronic'), max_length=9, null=True, blank=True)
+    issnl = models.CharField(_('ISSNL'), max_length=9, null=True, blank=True)
 
     @property
     def data(self):
         d = {
             "official_journal__title": self.title,
             "official_journal__foundation_year": self.foundation_year,
-            "official_journal__ISSN_print": self.ISSN_print,
-            "official_journal__ISSN_electronic": self.ISSN_electronic,
-            "official_journal__ISSNL": self.ISSNL,
+            "official_journal__issn_print": self.issn_print,
+            "official_journal__issn_electronic": self.issn_electronic,
+            "official_journal__issnl": self.issnl,
         }
         return d
 
