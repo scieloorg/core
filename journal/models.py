@@ -55,6 +55,23 @@ class OfficialJournal(CommonControlField):
         }
         return d
 
+    @classmethod
+    def get_or_create(cls, title, foundation_year, issn_print, issn_electronic, issnl, user):
+        official_journals = cls.objects.filter(issnl=issnl)
+        try:
+            official_journal = official_journals[0]
+        except IndexError:
+            official_journal = cls()
+            official_journal.issnl = issnl
+            official_journal.title = title
+            official_journal.issn_print = issn_print
+            official_journal.issn_electronic = issn_electronic
+            official_journal.foundation_year = foundation_year
+            official_journal.creator = user
+            official_journal.save()
+
+        return official_journal
+
     base_form_class = CoreAdminModelForm
 
 
@@ -199,6 +216,20 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
 
         return d
 
+    @classmethod
+    def get_or_create(cls, official_journal, issn_scielo, short_title, user):
+        scielo_journals = cls.objects.filter(official=official_journal)
+        try:
+            scielo_journal = scielo_journals[0]
+        except IndexError:
+            scielo_journal = cls()
+            scielo_journal.official = official_journal
+            scielo_journal.issn_scielo = issn_scielo
+            scielo_journal.short_title = short_title
+            scielo_journal.creator = user
+            scielo_journal.save()
+        return scielo_journal
+
     def __unicode__(self):
         return u'%s' % self.official or ''
 
@@ -219,6 +250,35 @@ class ScieloJournalTitle(Orderable):
 
 class Mission(Orderable, RichTextWithLang):
     page = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name='mission')
+    @classmethod
+    def get_or_create(cls, scielo_journal, journal_title, user):
+        scielo_journal_titles = cls.objects.filter(journal_title=journal_title)
+        try:
+            scielo_journal_title = scielo_journal_titles[0]
+        except IndexError:
+            scielo_journal_title = cls()
+            scielo_journal_title.journal_title = journal_title
+            scielo_journal_title.journal = scielo_journal
+            scielo_journal_title.creator = user
+            scielo_journal_title.save()
+
+        return scielo_journal_title
+
+
+    @classmethod
+    def get_or_create(cls, scielo_journal, scielo_issn, mission_text, language, user):
+        scielo_missions = cls.objects.filter(journal__official__issnl=scielo_issn, language=language)
+        try:
+            scielo_mission = scielo_missions[0]
+        except IndexError:
+            scielo_mission = cls()
+            scielo_mission.text = mission_text
+            scielo_mission.language = language
+            scielo_mission.journal = scielo_journal
+            scielo_mission.creator = user
+            scielo_mission.save()
+
+        return scielo_mission
 
 
 class Owner(Orderable, InstitutionHistory):
