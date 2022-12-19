@@ -122,3 +122,8 @@ def get_scielo_journal(user, journal_xml):
         error.save()
 
 
+def load(user):
+    for collection in get_collection():
+        for issn in get_issn(collection):
+            journal_xml = get_journal_xml(collection, issn)
+            get_scielo_journal(user, journal_xml)
