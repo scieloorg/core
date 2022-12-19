@@ -219,8 +219,8 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
     base_form_class = CoreAdminModelForm
 
 
-class ScieloJournalTitle(Orderable):
-    page = ParentalKey(ScieloJournal, related_name='title')
+class ScieloJournalTitle(Orderable, CommonControlField):
+    journal = ParentalKey(ScieloJournal, related_name='title', null=True)
     journal_title = models.CharField(_('SciELO Journal Title'), max_length=255, null=True, blank=True)
 
     class Meta:
@@ -228,8 +228,19 @@ class ScieloJournalTitle(Orderable):
             models.Index(fields=['journal_title', ]),
         ]
 
-class Mission(Orderable, RichTextWithLang):
-    page = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name='mission')
+    @property
+    def data(self):
+        d = {}
+
+        if self.journal:
+            d.update(self.journal.data)
+
+        d.update({
+                'scielo_journal_title__journal_title': self.journal_title,
+            })
+
+        return d
+
     @classmethod
     def get_or_create(cls, scielo_journal, journal_title, user):
         scielo_journal_titles = cls.objects.filter(journal_title=journal_title)
@@ -244,6 +255,18 @@ class Mission(Orderable, RichTextWithLang):
 
         return scielo_journal_title
 
+
+class Mission(Orderable, RichTextWithLang, CommonControlField):
+    journal = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name='mission')
+
+    @property
+    def data(self):
+        d = {}
+
+        if self.journal:
+            d.update(self.journal.data)
+
+        return d
 
     @classmethod
     def get_or_create(cls, scielo_journal, scielo_issn, mission_text, language, user):
