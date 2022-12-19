@@ -53,3 +53,33 @@ def get_journal_xml(collection, issn):
         error.save()
 
 
+def get_official_journal(user, journal_xml):
+    try:
+        issnl = journal_xml['SERIAL']['ISSN_AS_ID']
+        title = journal_xml['SERIAL']['TITLEGROUP']['TITLE']
+        # this value are not available in the XML file
+        foundation_year = ''
+        issns = journal_xml['SERIAL']['TITLE_ISSN']
+        issns_list = issns if type(issns) is list else [issns]
+        issn_print = ''
+        issn_electronic = ''
+
+        for issn in issns_list:
+            if issn['@TYPE'] == 'PRINT':
+                issn_print = issn['#text']
+            if issn['@TYPE'] == 'ONLIN':
+                issn_electronic = issn['#text']
+
+        official_journal = OfficialJournal().get_or_create(title, foundation_year, issn_print,
+                                                           issn_electronic, issnl, user)
+
+        return official_journal
+
+    except Exception as e:
+        error = ProcessingError()
+        error.step = "Official journal record creation error"
+        error.description = str(e)[:509]
+        error.type = str(type(e))
+        error.save()
+
+
