@@ -33,6 +33,17 @@ class OfficialJournal(CommonControlField):
     issn_electronic = models.CharField(_('ISSN Eletronic'), max_length=9, null=True, blank=True)
     issnl = models.CharField(_('ISSNL'), max_length=9, null=True, blank=True)
 
+    class Meta:
+        verbose_name = _('Official Journal')
+        verbose_name_plural = _('Official Journals')
+        indexes = [
+            models.Index(fields=['title', ]),
+            models.Index(fields=['foundation_year', ]),
+            models.Index(fields=['issn_print', ]),
+            models.Index(fields=['issn_electronic', ]),
+            models.Index(fields=['issnl', ]),
+        ]
+
     @property
     def data(self):
         d = {
@@ -79,7 +90,22 @@ class SocialNetwork(models.Model):
     ]
 
     class Meta:
+        verbose_name = _('Social Network')
+        verbose_name_plural = _('Social Networks')
+        indexes = [
+            models.Index(fields=['name', ]),
+            models.Index(fields=['url', ]),
+        ]
         abstract = True
+
+    @property
+    def data(self):
+        d = {
+            'social_network__name': self.name,
+            'social_network__url': self.url
+        }
+
+        return d
 
 
 class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
@@ -153,16 +179,23 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
         verbose_name = _('SciELO Journal')
         verbose_name_plural = _('SciELO Journals')
         indexes = [
-            models.Index(fields=['official', ]),
+            models.Index(fields=['issn_scielo', ]),
             models.Index(fields=['short_title', ]),
+            models.Index(fields=['submission_online_url', ]),
         ]
 
     @property
     def data(self):
-        d = {}  # this dictionary will come in handy when new attributes are added
+        d = {}
 
         if self.official:
             d.update(self.official.data)
+
+        d.update({
+                'scielo_journal__issn_scielo': self.issn_scielo,
+                'scielo_journal__short_title': self.short_title,
+                'scielo_journal__submission_online_url': self.submission_online_url
+            })
 
         return d
 
@@ -179,6 +212,10 @@ class ScieloJournalTitle(Orderable):
     page = ParentalKey(ScieloJournal, related_name='title')
     journal_title = models.CharField(_('SciELO Journal Title'), max_length=255, null=True, blank=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['journal_title', ]),
+        ]
 
 class Mission(Orderable, RichTextWithLang):
     page = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name='mission')
