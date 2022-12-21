@@ -120,17 +120,15 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
     official = models.ForeignKey(OfficialJournal, verbose_name=_('Official Journal'),
                                  null=True, blank=True, on_delete=models.SET_NULL)
     issn_scielo = models.CharField(_('ISSN SciELO'), max_length=9, null=True, blank=True)
+    title = models.CharField(_('SciELO Journal Title'), max_length=255, null=True, blank=True)
     short_title = models.CharField(_('Short Title'), max_length=100, null=True, blank=True)
     logo = models.ForeignKey('wagtailimages.Image', null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
     submission_online_url = models.URLField(_("Submission online URL"), max_length=255, null=True, blank=True)
 
     panels_identification = [
         FieldPanel('official'),
+        FieldPanel('title'),
         FieldPanel('short_title'),
-    ]
-
-    panels_title = [
-        InlinePanel('title', label=_('SciELO Journal Title'), classname='collapsed'),
     ]
 
     panels_mission = [
@@ -162,7 +160,6 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
     edit_handler = TabbedInterface(
         [
             ObjectList(panels_identification, heading=_('Identification')),
-            ObjectList(panels_title, heading=_('Title')),
             ObjectList(panels_mission, heading=_('Missions')),
             ObjectList(panels_owner, heading=_('Owners')),
             ObjectList(panels_editorial_manager, heading=_('Editorial Manager')),
@@ -177,6 +174,7 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
         verbose_name_plural = _('SciELO Journals')
         indexes = [
             models.Index(fields=['issn_scielo', ]),
+            models.Index(fields=['title', ]),
             models.Index(fields=['short_title', ]),
             models.Index(fields=['submission_online_url', ]),
         ]
@@ -190,6 +188,7 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
 
         d.update({
                 'scielo_journal__issn_scielo': self.issn_scielo,
+                'scielo_journal__title': self.title,
                 'scielo_journal__short_title': self.short_title,
                 'scielo_journal__submission_online_url': self.submission_online_url
             })
@@ -197,7 +196,7 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
         return d
 
     @classmethod
-    def get_or_create(cls, official_journal, issn_scielo, short_title, user):
+    def get_or_create(cls, official_journal, issn_scielo, title, short_title, user):
         scielo_journals = cls.objects.filter(official=official_journal)
         try:
             scielo_journal = scielo_journals[0]
@@ -205,6 +204,7 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
             scielo_journal = cls()
             scielo_journal.official = official_journal
             scielo_journal.issn_scielo = issn_scielo
+            scielo_journal.title = title
             scielo_journal.short_title = short_title
             scielo_journal.creator = user
             scielo_journal.save()
