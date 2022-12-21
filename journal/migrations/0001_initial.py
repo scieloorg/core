@@ -191,4 +191,40 @@ class Migration(migrations.Migration):
             model_name='officialjournal',
             index=models.Index(fields=['issnl'], name='journal_off_issnl_4304c5_idx'),
         ),
+        migrations.RemoveField(
+            model_name='scielojournaltitle',
+            name='creator',
+        ),
+        migrations.RemoveField(
+            model_name='scielojournaltitle',
+            name='journal',
+        ),
+        migrations.RemoveField(
+            model_name='scielojournaltitle',
+            name='updated_by',
+        ),
+        migrations.AddField(
+            model_name='scielojournal',
+            name='title',
+            field=models.CharField(blank=True, max_length=255, null=True, verbose_name='SciELO Journal Title'),
+        ),
+        migrations.AddIndex(
+            model_name='scielojournal',
+            index=models.Index(fields=['title'], name='journal_sci_title_2b7b30_idx'),
+        ),
+        migrations.DeleteModel(
+            name='ScieloJournalTitle',
+        ),
+        migrations.AlterModelOptions(
+            name='mission',
+            options={},
+        ),
+        migrations.AddIndex(
+            model_name='mission',
+            index=models.Index(fields=['journal'], name='journal_mis_journal_386d75_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='mission',
+            index=models.Index(fields=['language'], name='journal_mis_languag_bfebee_idx'),
+        ),
     ]
