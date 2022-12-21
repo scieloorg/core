@@ -66,11 +66,11 @@ def get_official_journal(user, journal_xml):
         issnl = journal_xml['SERIAL']['ISSN_AS_ID']
         title = journal_xml['SERIAL']['TITLEGROUP']['TITLE']
         # this value are not available in the XML file
-        foundation_year = ''
+        foundation_year = None
         issns = journal_xml['SERIAL']['TITLE_ISSN']
         issns_list = issns if type(issns) is list else [issns]
-        issn_print = ''
-        issn_electronic = ''
+        issn_print = None
+        issn_electronic = None
 
         for issn in issns_list:
             if issn['@TYPE'] == 'PRINT':
