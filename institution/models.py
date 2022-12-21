@@ -29,9 +29,6 @@ class Institution(CommonControlField, ClusterableModel):
 
     logo = models.ImageField(_("Logo"), blank=True, null=True)
 
-    history = models.ForeignKey("InstitutionHistory", verbose_name="Institution History",
-                                null=True, blank=True, on_delete=models.SET_NULL)
-
     panels = [
         FieldPanel('name'),
         FieldPanel('acronym'),
@@ -42,7 +39,6 @@ class Institution(CommonControlField, ClusterableModel):
         FieldPanel('level_3'),
         FieldPanel('url'),
         FieldPanel('logo'),
-        FieldPanel('history'),
     ]
 
     def __unicode__(self):
@@ -93,10 +89,12 @@ class Institution(CommonControlField, ClusterableModel):
 
 
 class InstitutionHistory(models.Model):
+    institution = models.ForeignKey('Institution', null=True, blank=True, related_name='+', on_delete=models.CASCADE)
     initial_date = models.DateField(_('Initial Date'), null=True, blank=True)
     final_date = models.DateField(_('Final Date'), null=True, blank=True)
 
     panels = [
+        FieldPanel('institution', heading=_('Institution')),
         FieldPanel('initial_date'),
         FieldPanel('final_date')
     ]
