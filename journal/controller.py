@@ -2,7 +2,7 @@ import requests
 import xmltodict
 import json
 
-from .models import OfficialJournal, ScieloJournal, ScieloJournalTitle, Mission
+from .models import OfficialJournal, ScieloJournal, Mission
 from institution.models import Institution, InstitutionHistory
 from processing_errors.models import ProcessingError
 
@@ -96,11 +96,9 @@ def get_scielo_journal(user, journal_xml):
     try:
         official_journal = get_official_journal(user, journal_xml)
         issn_scielo = official_journal.issnl
+        title = journal_xml['SERIAL']['TITLEGROUP']['TITLE']
         short_title = journal_xml['SERIAL']['TITLEGROUP']['SHORTTITLE']
-        scielo_journal = ScieloJournal.get_or_create(official_journal, issn_scielo, short_title, user)
-
-        journal_title = journal_xml['SERIAL']['TITLEGROUP']['TITLE']
-        scielo_journal.panels_title.append(ScieloJournalTitle.get_or_create(scielo_journal, journal_title, user))
+        scielo_journal = ScieloJournal.get_or_create(official_journal, issn_scielo, title, short_title, user)
 
         mission_text = journal_xml['SERIAL']['MISSION']
         language = journal_xml['SERIAL']['CONTROLINFO']['LANGUAGE']
