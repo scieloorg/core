@@ -23,6 +23,7 @@ class ProcessingErrorAdmin(ModelAdmin):
     exclude_from_explorer = False
 
     list_display = (
+        'item',
         'description',
         'type',
         'step',
