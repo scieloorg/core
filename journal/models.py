@@ -222,6 +222,12 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
 class Mission(Orderable, RichTextWithLang, CommonControlField):
     journal = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name='mission')
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['journal', ]),
+            models.Index(fields=['language', ]),
+        ]
+
     @property
     def data(self):
         d = {}
