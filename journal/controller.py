@@ -3,7 +3,7 @@ import xmltodict
 import json
 
 from .models import OfficialJournal, ScieloJournal, ScieloJournalTitle, Mission
-from institution.models import Institution
+from institution.models import Institution, InstitutionHistory
 from processing_errors.models import ProcessingError
 
 
@@ -109,8 +109,7 @@ def get_scielo_journal(user, journal_xml):
 
         institution_name = journal_xml['SERIAL']['PUBLISHERS']['PUBLISHER']['NAME']
         # the other parameters are not available in the XML file
-        scielo_journal.panels_publisher.append(
-            Institution.get_or_create(
+        institution = Institution.get_or_create(
                 inst_name=institution_name,
                 inst_acronym='',
                 level_1='',
@@ -118,7 +117,8 @@ def get_scielo_journal(user, journal_xml):
                 level_3='',
                 location=None
             )
-        )
+        history = InstitutionHistory.get_or_create(institution=institution, initial_date=None, final_date=None)
+        scielo_journal.panels_publisher.append(history)
         scielo_journal.creator = user
         scielo_journal.save()
         return scielo_journal
