@@ -63,6 +63,8 @@ class ScieloJournalAdmin(ModelAdmin):
     list_display = (
         'official',
         'issn_scielo',
+        'title',
+        'short_title',
     )
     # list_filter = ()
     search_fields = (
