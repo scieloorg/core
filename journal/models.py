@@ -219,43 +219,6 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
     base_form_class = CoreAdminModelForm
 
 
-class ScieloJournalTitle(Orderable, CommonControlField):
-    journal = ParentalKey(ScieloJournal, related_name='title', null=True)
-    journal_title = models.CharField(_('SciELO Journal Title'), max_length=255, null=True, blank=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=['journal_title', ]),
-        ]
-
-    @property
-    def data(self):
-        d = {}
-
-        if self.journal:
-            d.update(self.journal.data)
-
-        d.update({
-                'scielo_journal_title__journal_title': self.journal_title,
-            })
-
-        return d
-
-    @classmethod
-    def get_or_create(cls, scielo_journal, journal_title, user):
-        scielo_journal_titles = cls.objects.filter(journal_title=journal_title)
-        try:
-            scielo_journal_title = scielo_journal_titles[0]
-        except IndexError:
-            scielo_journal_title = cls()
-            scielo_journal_title.journal_title = journal_title
-            scielo_journal_title.journal = scielo_journal
-            scielo_journal_title.creator = user
-            scielo_journal_title.save()
-
-        return scielo_journal_title
-
-
 class Mission(Orderable, RichTextWithLang, CommonControlField):
     journal = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name='mission')
 
