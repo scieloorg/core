@@ -32,6 +32,7 @@ def get_issn(collection):
                 yield issn['TITLE']['@ISSN']
             except Exception as e:
                 error = ProcessingError()
+                error.item = f"ISSN's list of {collection} collection error"
                 error.step = "Get an ISSN from a collection error"
                 error.description = str(e)[:509]
                 error.type = str(type(e))
@@ -53,6 +54,7 @@ def get_journal_xml(collection, issn):
 
     except Exception as e:
         error = ProcessingError()
+        error.item = f"Error getting the ISSN {issn} of the {collection} collection"
         error.step = "Journal record search error"
         error.description = str(e)[:509]
         error.type = str(type(e))
@@ -83,6 +85,7 @@ def get_official_journal(user, journal_xml):
 
     except Exception as e:
         error = ProcessingError()
+        error.item = f"Error getting or creating official journal for {journal_xml['SERIAL']['ISSN_AS_ID']}"
         error.step = "Official journal record creation error"
         error.description = str(e)[:509]
         error.type = str(type(e))
@@ -122,6 +125,7 @@ def get_scielo_journal(user, journal_xml):
 
     except Exception as e:
         error = ProcessingError()
+        error.item = f"Error getting or creating SciELO journal for {journal_xml['SERIAL']['ISSN_AS_ID']}"
         error.step = "SciELO journal record creation error"
         error.description = str(e)[:509]
         error.type = str(type(e))
