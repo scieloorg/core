@@ -76,8 +76,8 @@ def get_official_journal(user, journal_xml):
             if issn['@TYPE'] == 'ONLIN':
                 issn_electronic = issn['#text']
 
-        official_journal = OfficialJournal().get_or_create(title, foundation_year, issn_print,
-                                                           issn_electronic, issnl, user)
+        official_journal = OfficialJournal.get_or_create(title, foundation_year, issn_print,
+                                                         issn_electronic, issnl, user)
 
         return official_journal
 
@@ -94,20 +94,20 @@ def get_scielo_journal(user, journal_xml):
         official_journal = get_official_journal(user, journal_xml)
         issn_scielo = official_journal.issnl
         short_title = journal_xml['SERIAL']['TITLEGROUP']['SHORTTITLE']
-        scielo_journal = ScieloJournal().get_or_create(official_journal, issn_scielo, short_title, user)
+        scielo_journal = ScieloJournal.get_or_create(official_journal, issn_scielo, short_title, user)
 
         journal_title = journal_xml['SERIAL']['TITLEGROUP']['TITLE']
-        scielo_journal.panels_title.append(ScieloJournalTitle().get_or_create(scielo_journal, journal_title, user))
+        scielo_journal.panels_title.append(ScieloJournalTitle.get_or_create(scielo_journal, journal_title, user))
 
         mission_text = journal_xml['SERIAL']['MISSION']
         language = journal_xml['SERIAL']['CONTROLINFO']['LANGUAGE']
-        scielo_journal.panels_mission.append(Mission().get_or_create(scielo_journal, issn_scielo, mission_text,
-                                                                     language, user))
+        scielo_journal.panels_mission.append(Mission.get_or_create(scielo_journal, issn_scielo, mission_text,
+                                                                   language, user))
 
         institution_name = journal_xml['SERIAL']['PUBLISHERS']['PUBLISHER']['NAME']
         # the other parameters are not available in the XML file
         scielo_journal.panels_publisher.append(
-            Institution().get_or_create(
+            Institution.get_or_create(
                 inst_name=institution_name,
                 inst_acronym='',
                 level_1='',
