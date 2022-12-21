@@ -49,8 +49,7 @@ def get_journal_xml(collection, issn):
     try:
         official_journal = requests.get(
             f"http://{collection}/scielo.php?script=sci_serial&pid={issn}&lng=es&nrm=iso&debug=xml", timeout=10)
-        journal_xml = xmltodict.parse(official_journal.text)
-        return journal_xml
+        return xmltodict.parse(official_journal.text)
 
     except Exception as e:
         error = ProcessingError()
