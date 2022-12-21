@@ -28,7 +28,14 @@ def get_issn(collection):
         data = xmltodict.parse(collections.text)
 
         for issn in data['SERIALLIST']['LIST']['SERIAL']:
-            yield issn['TITLE']['@ISSN']
+            try:
+                yield issn['TITLE']['@ISSN']
+            except Exception as e:
+                error = ProcessingError()
+                error.step = "Get an ISSN from a collection error"
+                error.description = str(e)[:509]
+                error.type = str(type(e))
+                error.save()
 
     except Exception as e:
         error = ProcessingError()
