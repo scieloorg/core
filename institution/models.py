@@ -81,7 +81,7 @@ class Institution(CommonControlField, ClusterableModel):
             institution.level_1 = level_1
             institution.level_2 = level_2
             institution.level_3 = level_3
-            institution.location = Location
+            institution.location = location
             institution.save()
         return institution
 
@@ -98,3 +98,16 @@ class InstitutionHistory(models.Model):
         FieldPanel('initial_date'),
         FieldPanel('final_date')
     ]
+
+    @classmethod
+    def get_or_create(cls, institution, initial_date, final_date):
+        histories = cls.objects.filter(institution=institution, initial_date=initial_date, final_date=final_date)
+        try:
+            history = histories[0]
+        except:
+            history = cls()
+            history.institution = institution
+            history.initial_date = initial_date
+            history.final_date = final_date
+            history.save()
+        return history

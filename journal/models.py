@@ -22,50 +22,57 @@ class OfficialJournal(CommonControlField):
     """
 
     def __unicode__(self):
-        return u'%s - %s' % (self.ISSNL, self.title) or ''
+        return u'%s - %s' % (self.issnl, self.title) or ''
 
     def __str__(self):
-        return u'%s - %s' % (self.ISSNL, self.title) or ''
+        return u'%s - %s' % (self.issnl, self.title) or ''
 
     title = models.CharField(_('Official Title'), max_length=256, null=True, blank=True)
     foundation_year = models.CharField(_('Foundation Year'), max_length=4, null=True, blank=True)
-    ISSN_print = models.CharField(_('ISSN Print'), max_length=9, null=True, blank=True)
-    ISSN_electronic = models.CharField(_('ISSN Eletronic'), max_length=9, null=True, blank=True)
-    ISSNL = models.CharField(_('ISSNL'), max_length=9, null=True, blank=True)
+    issn_print = models.CharField(_('ISSN Print'), max_length=9, null=True, blank=True)
+    issn_electronic = models.CharField(_('ISSN Eletronic'), max_length=9, null=True, blank=True)
+    issnl = models.CharField(_('ISSNL'), max_length=9, null=True, blank=True)
+
+    class Meta:
+        verbose_name = _('Official Journal')
+        verbose_name_plural = _('Official Journals')
+        indexes = [
+            models.Index(fields=['title', ]),
+            models.Index(fields=['foundation_year', ]),
+            models.Index(fields=['issn_print', ]),
+            models.Index(fields=['issn_electronic', ]),
+            models.Index(fields=['issnl', ]),
+        ]
 
     @property
     def data(self):
         d = {
             "official_journal__title": self.title,
             "official_journal__foundation_year": self.foundation_year,
-            "official_journal__ISSN_print": self.ISSN_print,
-            "official_journal__ISSN_electronic": self.ISSN_electronic,
-            "official_journal__ISSNL": self.ISSNL,
+            "official_journal__issn_print": self.issn_print,
+            "official_journal__issn_electronic": self.issn_electronic,
+            "official_journal__issnl": self.issnl,
         }
         return d
 
+    @classmethod
+    def get_or_create(cls, title, foundation_year, issn_print, issn_electronic, issnl, user):
+        official_journals = cls.objects.filter(issnl=issnl)
+        try:
+            official_journal = official_journals[0]
+        except IndexError:
+            official_journal = cls()
+            official_journal.issnl = issnl
+            official_journal.title = title
+            official_journal.issn_print = issn_print
+            official_journal.issn_electronic = issn_electronic
+            official_journal.foundation_year = foundation_year
+            official_journal.creator = user
+            official_journal.save()
+
+        return official_journal
+
     base_form_class = CoreAdminModelForm
-
-
-class JournalMission(ClusterableModel):
-    official_journal = models.ForeignKey('OfficialJournal', null=True, blank=True,
-                                         related_name='JournalMission_OfficialJournal',
-                                         on_delete=models.SET_NULL)
-
-    panels = [
-        FieldPanel('official_journal'),
-        InlinePanel('mission', label=_('Mission'), classname="collapsed")
-    ]
-
-
-class FieldMission(Orderable, RichTextWithLang):
-    page = ParentalKey(JournalMission, on_delete=models.CASCADE, related_name='mission')
-
-    def __unicode__(self):
-        return u'%s %s' % (self.text, self.language)
-
-    def __str__(self):
-        return u'%s %s' % (self.text, self.language)
 
 
 class SocialNetwork(models.Model):
@@ -79,7 +86,22 @@ class SocialNetwork(models.Model):
     ]
 
     class Meta:
+        verbose_name = _('Social Network')
+        verbose_name_plural = _('Social Networks')
+        indexes = [
+            models.Index(fields=['name', ]),
+            models.Index(fields=['url', ]),
+        ]
         abstract = True
+
+    @property
+    def data(self):
+        d = {
+            'social_network__name': self.name,
+            'social_network__url': self.url
+        }
+
+        return d
 
 
 class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
@@ -97,17 +119,16 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
     """
     official = models.ForeignKey(OfficialJournal, verbose_name=_('Official Journal'),
                                  null=True, blank=True, on_delete=models.SET_NULL)
+    issn_scielo = models.CharField(_('ISSN SciELO'), max_length=9, null=True, blank=True)
+    title = models.CharField(_('SciELO Journal Title'), max_length=255, null=True, blank=True)
     short_title = models.CharField(_('Short Title'), max_length=100, null=True, blank=True)
     logo = models.ForeignKey('wagtailimages.Image', null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
     submission_online_url = models.URLField(_("Submission online URL"), max_length=255, null=True, blank=True)
 
     panels_identification = [
         FieldPanel('official'),
+        FieldPanel('title'),
         FieldPanel('short_title'),
-    ]
-
-    panels_title = [
-        InlinePanel('title', label=_('SciELO Journal Title'), classname='collapsed'),
     ]
 
     panels_mission = [
@@ -139,7 +160,6 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
     edit_handler = TabbedInterface(
         [
             ObjectList(panels_identification, heading=_('Identification')),
-            ObjectList(panels_title, heading=_('Title')),
             ObjectList(panels_mission, heading=_('Missions')),
             ObjectList(panels_owner, heading=_('Owners')),
             ObjectList(panels_editorial_manager, heading=_('Editorial Manager')),
@@ -153,18 +173,42 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
         verbose_name = _('SciELO Journal')
         verbose_name_plural = _('SciELO Journals')
         indexes = [
-            models.Index(fields=['official', ]),
+            models.Index(fields=['issn_scielo', ]),
+            models.Index(fields=['title', ]),
             models.Index(fields=['short_title', ]),
+            models.Index(fields=['submission_online_url', ]),
         ]
 
     @property
     def data(self):
-        d = {}  # this dictionary will come in handy when new attributes are added
+        d = {}
 
         if self.official:
             d.update(self.official.data)
 
+        d.update({
+                'scielo_journal__issn_scielo': self.issn_scielo,
+                'scielo_journal__title': self.title,
+                'scielo_journal__short_title': self.short_title,
+                'scielo_journal__submission_online_url': self.submission_online_url
+            })
+
         return d
+
+    @classmethod
+    def get_or_create(cls, official_journal, issn_scielo, title, short_title, user):
+        scielo_journals = cls.objects.filter(official=official_journal)
+        try:
+            scielo_journal = scielo_journals[0]
+        except IndexError:
+            scielo_journal = cls()
+            scielo_journal.official = official_journal
+            scielo_journal.issn_scielo = issn_scielo
+            scielo_journal.title = title
+            scielo_journal.short_title = short_title
+            scielo_journal.creator = user
+            scielo_journal.save()
+        return scielo_journal
 
     def __unicode__(self):
         return u'%s' % self.official or ''
@@ -175,13 +219,38 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
     base_form_class = CoreAdminModelForm
 
 
-class ScieloJournalTitle(Orderable):
-    page = ParentalKey(ScieloJournal, related_name='title')
-    journal_title = models.CharField(_('SciELO Journal Title'), max_length=255, null=True, blank=True)
+class Mission(Orderable, RichTextWithLang, CommonControlField):
+    journal = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name='mission')
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['journal', ]),
+            models.Index(fields=['language', ]),
+        ]
 
-class Mission(Orderable, RichTextWithLang):
-    page = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name='mission')
+    @property
+    def data(self):
+        d = {}
+
+        if self.journal:
+            d.update(self.journal.data)
+
+        return d
+
+    @classmethod
+    def get_or_create(cls, scielo_journal, scielo_issn, mission_text, language, user):
+        scielo_missions = cls.objects.filter(journal__official__issnl=scielo_issn, language=language)
+        try:
+            scielo_mission = scielo_missions[0]
+        except IndexError:
+            scielo_mission = cls()
+            scielo_mission.text = mission_text
+            scielo_mission.language = language
+            scielo_mission.journal = scielo_journal
+            scielo_mission.creator = user
+            scielo_mission.save()
+
+        return scielo_mission
 
 
 class Owner(Orderable, InstitutionHistory):
