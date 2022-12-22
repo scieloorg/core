@@ -109,10 +109,10 @@ def get_scielo_journal(user, journal_xml):
         # the other parameters are not available in the XML file
         institution = Institution.get_or_create(
                 inst_name=institution_name,
-                inst_acronym='',
-                level_1='',
-                level_2='',
-                level_3='',
+                inst_acronym=None,
+                level_1=None,
+                level_2=None,
+                level_3=None,
                 location=None
             )
         history = InstitutionHistory.get_or_create(institution=institution, initial_date=None, final_date=None)
