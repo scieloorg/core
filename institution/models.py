@@ -109,4 +109,5 @@ class InstitutionHistory(models.Model):
             history.institution = institution
             history.initial_date = initial_date
             history.final_date = final_date
+            history.save()
         return history
