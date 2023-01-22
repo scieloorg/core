@@ -46,3 +46,20 @@ def get_issn(collection):
         error.save()
 
 
+def get_journal_xml(collection, issn):
+    try:
+        journal = requests.get(
+            f"http://{collection}/scielo.php?script=sci_issues&pid={issn}&lng=es&nrm=iso&debug=xml", timeout=10
+        )
+
+        return xmltodict.parse(journal.text)
+
+    except Exception as e:
+        error = ProcessingError()
+        error.item = f"Error getting the ISSN {issn} of the {collection} collection"
+        error.step = "Journal record search error"
+        error.description = str(e)[:509]
+        error.type = str(type(e))
+        error.save()
+
+
