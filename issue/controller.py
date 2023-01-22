@@ -63,3 +63,35 @@ def get_journal_xml(collection, issn):
         error.save()
 
 
+def get_issue(user, journal_xml):
+    issn_scielo = journal_xml['SERIAL']['ISSN_AS_ID']
+    try:
+        journal = ScieloJournal.objects.filter(issn_scielo=issn_scielo)[0]
+        for issue in journal_xml['SERIAL']['AVAILISSUES']['YEARISSUE']:
+                volume = issue['VOLISSUE']['@VOL']
+                for item in issue['VOLISSUE']['ISSUE']:
+                        number = item['@NUM']
+                        year = str(item['@PUBDATE'])[:4]
+                        month = str(item['@PUBDATE'])[4:6]
+                        Issue.get_or_create(
+                            journal=journal,
+                            number=number,
+                            volume=volume,
+                            year=year,
+                            month=month,
+                            user=user
+                        )
+    except Exception as e:
+        error = ProcessingError()
+        error.item = f"Error getting or creating SciELO journal for {journal_xml['SERIAL']['ISSN_AS_ID']}"
+        error.step = "SciELO journal record creation error"
+        error.description = str(e)[:509]
+        error.type = str(type(e))
+        error.save()
+
+
+def load(user):
+    for collection in get_collection():
+        for issn in get_issn(collection):
+            journal_xml = get_journal_xml(collection, issn)
+            get_issue(user, journal_xml)
