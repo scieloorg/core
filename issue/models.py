@@ -52,6 +52,29 @@ class Issue(CommonControlField):
         })
         return d
 
+    @classmethod
+    def get_or_create(cls, journal, number, volume, year, month, user):
+        issues = cls.objects.filter(
+            creator=user,
+            journal=journal,
+            number=number,
+            volume=volume,
+            year=year,
+            month=month
+        )
+        try:
+            issue = issues[0]
+        except IndexError:
+            issue = cls()
+            issue.journal = journal
+            issue.number = number
+            issue.volume = volume
+            issue.year = year
+            issue.month = month
+            issue.save()
+
+        return issue
+
     def __unicode__(self):
         return u'%s - %s' % (self.journal, self.number) or ''
 
