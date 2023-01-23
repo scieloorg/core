@@ -4,21 +4,8 @@ import json
 
 from .models import OfficialJournal, ScieloJournal, Mission
 from institution.models import Institution, InstitutionHistory
+from collection.models import Collection
 from processing_errors.models import ProcessingError
-
-
-def get_collection():
-    try:
-        collections_urls = requests.get("https://articlemeta.scielo.org/api/v1/collection/identifiers/", timeout=10)
-        for collection in json.loads(collections_urls.text):
-            yield collection.get('domain')
-
-    except Exception as e:
-        error = ProcessingError()
-        error.step = "Collection url search error"
-        error.description = str(e)[:509]
-        error.type = str(type(e))
-        error.save()
 
 
 def get_issn(collection):
@@ -92,13 +79,19 @@ def get_official_journal(user, journal_xml):
         error.save()
 
 
-def get_scielo_journal(user, journal_xml):
+def get_scielo_journal(user, journal_xml, collection):
     try:
         official_journal = get_official_journal(user, journal_xml)
         issn_scielo = official_journal.issnl
         title = journal_xml['SERIAL']['TITLEGROUP']['TITLE']
         short_title = journal_xml['SERIAL']['TITLEGROUP']['SHORTTITLE']
-        scielo_journal = ScieloJournal.get_or_create(official_journal, issn_scielo, title, short_title, user)
+        scielo_journal = ScieloJournal.get_or_create(
+            official_journal=official_journal,
+            issn_scielo=issn_scielo,
+            title=title,
+            short_title=short_title,
+            collection=collection,
+            user=user)
 
         mission_text = journal_xml['SERIAL']['MISSION']
         language = journal_xml['SERIAL']['CONTROLINFO']['LANGUAGE']
@@ -131,7 +124,10 @@ def get_scielo_journal(user, journal_xml):
 
 
 def load(user):
-    for collection in get_collection():
-        for issn in get_issn(collection):
-            journal_xml = get_journal_xml(collection, issn)
-            get_scielo_journal(user, journal_xml)
+    for collection in Collection.objects.all().iterator():
+        try:
+            for issn in get_issn(collection.domain):
+                journal_xml = get_journal_xml(collection.domain, issn)
+                get_scielo_journal(user, journal_xml, collection)
+        except:
+            pass
