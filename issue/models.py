@@ -20,6 +20,7 @@ class Issue(CommonControlField):
     volume = models.CharField(_('Issue volume'), max_length=20, null=True, blank=True)
     year = models.IntegerField(_('Issue year'), null=True, blank=True)
     month = models.IntegerField(_('Issue month'), null=True, blank=True)
+    supp = models.CharField(_('Supplement'), max_length=20, null=True, blank=True)
 
     panels = [
         FieldPanel('journal'),
@@ -27,6 +28,7 @@ class Issue(CommonControlField):
         FieldPanel('volume'),
         FieldPanel('year'),
         FieldPanel('month'),
+        FieldPanel('supp'),
     ]
 
     class Meta:
@@ -37,6 +39,7 @@ class Issue(CommonControlField):
             models.Index(fields=['volume', ]),
             models.Index(fields=['year', ]),
             models.Index(fields=['month', ]),
+            models.Index(fields=['supp', ]),
         ]
 
     @property
@@ -49,18 +52,20 @@ class Issue(CommonControlField):
             "issue__volume": self.volume,
             "issue__year": self.year,
             "issue__month": self.month,
+            "issue__supp": self.supp,
         })
         return d
 
     @classmethod
-    def get_or_create(cls, journal, number, volume, year, month, user):
+    def get_or_create(cls, journal, number, volume, year, month, supp, user):
         issues = cls.objects.filter(
             creator=user,
             journal=journal,
             number=number,
             volume=volume,
             year=year,
-            month=month
+            month=month,
+            supp=supp,
         )
         try:
             issue = issues[0]
@@ -71,6 +76,7 @@ class Issue(CommonControlField):
             issue.volume = volume
             issue.year = year
             issue.month = month
+            issue.supp = supp
             issue.save()
 
         return issue
