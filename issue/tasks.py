@@ -11,7 +11,7 @@ User = get_user_model()
 @celery_app.task()
 def load_issue(*args):
     """
-    Load journal record.
+    Load issue record.
 
     Sync or Async function
     """
