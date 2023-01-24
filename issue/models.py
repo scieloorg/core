@@ -20,7 +20,7 @@ class Issue(CommonControlField):
     volume = models.CharField(_('Issue volume'), max_length=20, null=True, blank=True)
     year = models.IntegerField(_('Issue year'), null=True, blank=True)
     month = models.IntegerField(_('Issue month'), null=True, blank=True)
-    supp = models.CharField(_('Supplement'), max_length=20, null=True, blank=True)
+    supplement = models.CharField(_('Supplement'), max_length=20, null=True, blank=True)
 
     panels = [
         FieldPanel('journal'),
@@ -28,7 +28,7 @@ class Issue(CommonControlField):
         FieldPanel('volume'),
         FieldPanel('year'),
         FieldPanel('month'),
-        FieldPanel('supp'),
+        FieldPanel('supplement'),
     ]
 
     class Meta:
@@ -39,7 +39,7 @@ class Issue(CommonControlField):
             models.Index(fields=['volume', ]),
             models.Index(fields=['year', ]),
             models.Index(fields=['month', ]),
-            models.Index(fields=['supp', ]),
+            models.Index(fields=['supplement', ]),
         ]
 
     @property
@@ -52,12 +52,12 @@ class Issue(CommonControlField):
             "issue__volume": self.volume,
             "issue__year": self.year,
             "issue__month": self.month,
-            "issue__supp": self.supp,
+            "issue__supplement": self.supp,
         })
         return d
 
     @classmethod
-    def get_or_create(cls, journal, number, volume, year, month, supp, user):
+    def get_or_create(cls, journal, number, volume, year, month, supplement, user):
         issues = cls.objects.filter(
             creator=user,
             journal=journal,
@@ -65,7 +65,7 @@ class Issue(CommonControlField):
             volume=volume,
             year=year,
             month=month,
-            supp=supp,
+            supplement=supplement,
         )
         try:
             issue = issues[0]
@@ -76,15 +76,15 @@ class Issue(CommonControlField):
             issue.volume = volume
             issue.year = year
             issue.month = month
-            issue.supp = supp
+            issue.supplement = supplement
             issue.save()
 
         return issue
 
     def __unicode__(self):
-        return u'%s - %s' % (self.journal, self.number) or ''
+        return u'%s - (%s %s %s %s)' % (self.journal, self.number, self.volume, self.year, self.supplement) or ''
 
     def __str__(self):
-        return u'%s - %s' % (self.journal, self.number) or ''
+        return u'%s - (%s %s %s %s)' % (self.journal, self.number, self.volume, self.year, self.supplement) or ''
 
     base_form_class = CoreAdminModelForm
