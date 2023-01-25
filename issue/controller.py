@@ -30,37 +30,38 @@ def get_issue(user, journal_xml):
         for issue in journal_xml['SERIAL']['AVAILISSUES']['YEARISSUE']:
             try:
                 volume = issue['VOLISSUE']['@VOL']
-                for item in issue['VOLISSUE']['ISSUE']:
-                    try:
-                        number = item['@NUM']
-                        year = str(item['@PUBDATE'])[:4]
-                        month = str(item['@PUBDATE'])[4:6]
-                        # value not available in XML file
-                        supplement = None
-                        Issue.get_or_create(
-                            journal=journal,
-                            number=number,
-                            volume=volume,
-                            year=year,
-                            month=month,
-                            user=user,
-                            supplement=supplement,
-                        )
-                    except Exception as e:
-                        error = ProcessingError()
-                        error.item = f"Error getting or creating issue for {journal_xml['SERIAL']['ISSN_AS_ID']}"
-                        error.step = "Issue record creating error"
-                        error.description = str(e)[:509]
-                        error.type = str(type(e))
-                        error.save()
-
-            except Exception as e:
-                error = ProcessingError()
-                error.item = f"Error getting volume for {journal_xml['SERIAL']['ISSN_AS_ID']}"
-                error.step = "Volume record creating error"
-                error.description = str(e)[:509]
-                error.type = str(type(e))
-                error.save()
+            except KeyError:
+                volume = None
+            for item in issue['VOLISSUE']['ISSUE']:
+                try:
+                    number = item['@NUM']
+                except KeyError:
+                    number = None
+                try:
+                    year = str(item['@PUBDATE'])[:4]
+                    month = str(item['@PUBDATE'])[4:6]
+                except KeyError:
+                    year = None
+                    month = None
+                # value not available in XML file
+                supplement = None
+                try:
+                    Issue.get_or_create(
+                        journal=journal,
+                        number=number,
+                        volume=volume,
+                        year=year,
+                        month=month,
+                        user=user,
+                        supplement=supplement,
+                    )
+                except Exception as e:
+                    error = ProcessingError()
+                    error.item = f"Error getting or creating issue for {journal_xml['SERIAL']['ISSN_AS_ID']}"
+                    error.step = "Issue record creating error"
+                    error.description = str(e)[:509]
+                    error.type = str(type(e))
+                    error.save()
 
     except Exception as e:
         error = ProcessingError()
