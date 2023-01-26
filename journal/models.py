@@ -14,6 +14,7 @@ from core.forms import CoreAdminModelForm
 from . import choices
 
 from institution.models import InstitutionHistory
+from collection.models import Collection
 
 
 class OfficialJournal(CommonControlField):
@@ -124,11 +125,14 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
     short_title = models.CharField(_('Short Title'), max_length=100, null=True, blank=True)
     logo = models.ForeignKey('wagtailimages.Image', null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
     submission_online_url = models.URLField(_("Submission online URL"), max_length=255, null=True, blank=True)
+    collection = models.ForeignKey(Collection, verbose_name=_('Collection'), null=True, blank=True,
+                                   on_delete=models.SET_NULL, related_name='+')
 
     panels_identification = [
         FieldPanel('official'),
         FieldPanel('title'),
         FieldPanel('short_title'),
+        FieldPanel('collection'),
     ]
 
     panels_mission = [
@@ -196,7 +200,7 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
         return d
 
     @classmethod
-    def get_or_create(cls, official_journal, issn_scielo, title, short_title, user):
+    def get_or_create(cls, official_journal, issn_scielo, title, short_title, collection, user):
         scielo_journals = cls.objects.filter(official=official_journal)
         try:
             scielo_journal = scielo_journals[0]
@@ -207,6 +211,7 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
             scielo_journal.title = title
             scielo_journal.short_title = short_title
             scielo_journal.creator = user
+            scielo_journal.collection = collection
             scielo_journal.save()
         return scielo_journal
 

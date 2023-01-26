@@ -20,6 +20,7 @@ class Issue(CommonControlField):
     volume = models.CharField(_('Issue volume'), max_length=20, null=True, blank=True)
     year = models.IntegerField(_('Issue year'), null=True, blank=True)
     month = models.IntegerField(_('Issue month'), null=True, blank=True)
+    supplement = models.CharField(_('Supplement'), max_length=20, null=True, blank=True)
 
     panels = [
         FieldPanel('journal'),
@@ -27,6 +28,7 @@ class Issue(CommonControlField):
         FieldPanel('volume'),
         FieldPanel('year'),
         FieldPanel('month'),
+        FieldPanel('supplement'),
     ]
 
     class Meta:
@@ -37,6 +39,7 @@ class Issue(CommonControlField):
             models.Index(fields=['volume', ]),
             models.Index(fields=['year', ]),
             models.Index(fields=['month', ]),
+            models.Index(fields=['supplement', ]),
         ]
 
     @property
@@ -49,13 +52,39 @@ class Issue(CommonControlField):
             "issue__volume": self.volume,
             "issue__year": self.year,
             "issue__month": self.month,
+            "issue__supplement": self.supp,
         })
         return d
 
+    @classmethod
+    def get_or_create(cls, journal, number, volume, year, month, supplement, user):
+        issues = cls.objects.filter(
+            creator=user,
+            journal=journal,
+            number=number,
+            volume=volume,
+            year=year,
+            month=month,
+            supplement=supplement,
+        )
+        try:
+            issue = issues[0]
+        except IndexError:
+            issue = cls()
+            issue.journal = journal
+            issue.number = number
+            issue.volume = volume
+            issue.year = year
+            issue.month = month
+            issue.supplement = supplement
+            issue.save()
+
+        return issue
+
     def __unicode__(self):
-        return u'%s - %s' % (self.journal, self.number) or ''
+        return u'%s - (%s %s %s %s)' % (self.journal, self.number, self.volume, self.year, self.supplement) or ''
 
     def __str__(self):
-        return u'%s - %s' % (self.journal, self.number) or ''
+        return u'%s - (%s %s %s %s)' % (self.journal, self.number, self.volume, self.year, self.supplement) or ''
 
     base_form_class = CoreAdminModelForm
