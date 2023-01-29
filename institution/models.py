@@ -149,3 +149,28 @@ class InstitutionHistory(models.Model):
         return history
 
 
+class Sponsor(Institution):
+    panels = Institution.panels
+
+    @classmethod
+    def get_or_create(cls, inst_name, inst_acronym, level_1, level_2, level_3,
+                      location, official, is_official):
+
+        sponsor = super().get_or_create(
+            inst_name=inst_name,
+            inst_acronym=inst_acronym,
+            level_1=level_1,
+            level_2=level_2,
+            level_3=level_3,
+            location=location,
+            official=official,
+            is_official=is_official
+        )
+
+        return sponsor
+
+    @property
+    def data(self):
+        return super().data
+
+    base_form_class = CoreAdminModelForm
