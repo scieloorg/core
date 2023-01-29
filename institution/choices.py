@@ -11,3 +11,9 @@ inst_type = (
     ('sociedade científica, associação pós-graduação, associação profissional', _('sociedade científica, associação pós-graduação, associação profissional')),
     ('outros', _('outros')),
 )
+
+is_official = [
+    ('yes', _('yes')),
+    ('no', _('no')),
+    ('unknow', _('unknow')),
+]
