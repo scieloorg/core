@@ -2,9 +2,9 @@ from django.http import HttpResponseRedirect
 from django.utils.translation import gettext as _
 
 from wagtail.contrib.modeladmin.views import CreateView
-from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
+from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register, ModelAdminGroup
 
-from .models import Institution
+from .models import Institution, Sponsor
 
 
 class InstitutionCreateView(CreateView):
@@ -28,4 +28,35 @@ class InstitutionAdmin(ModelAdmin):
     export_filename = 'institutions'
 
 
-modeladmin_register(InstitutionAdmin)
+class SponsorCreateView(CreateView):
+
+    def form_valid(self, form):
+        self.object = form.save_all(self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class SponsorAdmin(ModelAdmin):
+    model = Sponsor
+    create_view_class = SponsorCreateView
+    menu_label = _('Sponsor')
+    menu_icon = 'folder'
+    menu_order = 900
+    add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
+    exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
+    list_display = ('inst_name', 'inst_acronym', 'level_1', 'level_2', 'level_3',
+                    'location', 'official', 'is_official')
+    search_fields = ('inst_name', 'inst_acronym', 'level_1', 'level_2', 'level_3',
+                    'location', 'official', 'is_official')
+    list_export = ('inst_name', 'inst_acronym', 'level_1', 'level_2', 'level_3',
+                    'location', 'official', 'is_official')
+    export_filename = 'sponsor'
+
+
+class InstitutionsAdminGroup(ModelAdminGroup):
+    menu_label = _('Institutions')
+    menu_icon = 'folder-open-inverse'  # change as required
+    menu_order = 100  # will put in 3rd place (000 being 1st, 100 2nd)
+    items = (InstitutionAdmin, SponsorAdmin)
+
+
+modeladmin_register(InstitutionsAdminGroup)
