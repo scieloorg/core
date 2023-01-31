@@ -81,3 +81,23 @@ class RichTextWithLang(models.Model):
 
     class Meta:
         abstract = True
+
+
+class Date(models.Model):
+    year = models.IntegerField(_('Year'), null=True, blank=True)
+    month = models.IntegerField(_('Month'), null=True, blank=True)
+    day = models.IntegerField(_('Day'), null=True, blank=True)
+
+    def __unicode__(self):
+        return u'%s/%s/%s' % (self.year, self.month, self.day)
+
+    def __str__(self):
+        return u'%s/%s/%s' % (self.year, self.month, self.day)
+
+    @property
+    def data(self):
+        return dict(
+            date__year=self.year,
+            date__month=self.month,
+            date__day=self.day,
+        )
