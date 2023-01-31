@@ -2,11 +2,13 @@ from django.db import models
 from django.utils.translation import gettext as _
 
 from wagtail.admin.edit_handlers import FieldPanel
+from wagtail.core.fields import RichTextField
 
-from core.models import CommonControlField
-from institution.models import Sponsor
-
+from core.models import CommonControlField, RichTextWithLang, Date
 from core.forms import CoreAdminModelForm
+from core.choices import LANGUAGE
+
+from institution.models import Sponsor
 
 
 class Article(CommonControlField):
@@ -96,3 +98,9 @@ class ArticleFunding(CommonControlField):
             return article_funding
 
     base_form_class = CoreAdminModelForm
+
+
+class TocSection(RichTextWithLang, CommonControlField):
+    text = RichTextField(null=True, blank=True, max_length=100)
+
+
