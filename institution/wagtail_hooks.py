@@ -43,12 +43,9 @@ class SponsorAdmin(ModelAdmin):
     menu_order = 900
     add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
     exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
-    list_display = ('inst_name', 'inst_acronym', 'level_1', 'level_2', 'level_3',
-                    'location', 'official', 'is_official')
-    search_fields = ('inst_name', 'inst_acronym', 'level_1', 'level_2', 'level_3',
-                    'location', 'official', 'is_official')
-    list_export = ('inst_name', 'inst_acronym', 'level_1', 'level_2', 'level_3',
-                    'location', 'official', 'is_official')
+    list_display = ('name', 'acronym', 'level_1', 'level_2', 'level_3', 'location', 'official', 'is_official')
+    search_fields = ('name', 'acronym', 'level_1', 'level_2', 'level_3', 'location', 'official', 'is_official')
+    list_export = ('name', 'acronym', 'level_1', 'level_2', 'level_3', 'location', 'official', 'is_official')
     export_filename = 'sponsor'
 
 
