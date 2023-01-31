@@ -123,6 +123,7 @@ LOCAL_APPS = [
     "journal_and_collection",
     "issue",
     "processing_errors",
+    "article",
 ]
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps

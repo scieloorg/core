@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.translation import gettext as _
 from modelcluster.models import ClusterableModel
 from wagtail.admin.edit_handlers import FieldPanel, InlinePanel
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.models import CommonControlField
 from location.models import Location
@@ -29,6 +30,14 @@ class Institution(CommonControlField, ClusterableModel):
 
     logo = models.ImageField(_("Logo"), blank=True, null=True)
 
+    official = models.ForeignKey(_("Institution"), null=True, blank=True, on_delete=models.SET_NULL)
+    is_official = models.CharField(_("Is official"), null=True, blank=True, choices=choices.is_official, max_length=6)
+
+    autocomplete_search_field = 'name'
+
+    def autocomplete_label(self):
+        return self.name
+
     panels = [
         FieldPanel('name'),
         FieldPanel('acronym'),
@@ -39,6 +48,8 @@ class Institution(CommonControlField, ClusterableModel):
         FieldPanel('level_3'),
         FieldPanel('url'),
         FieldPanel('logo'),
+        AutocompletePanel('official'),
+        FieldPanel('is_official'),
     ]
 
     def __unicode__(self):
@@ -53,8 +64,27 @@ class Institution(CommonControlField, ClusterableModel):
             (self.name, self.acronym, self.level_1,
              self.level_2, self.level_3, self.location))
 
+    @property
+    def data(self):
+        _data = {
+            'institution__name': self.name,
+            'institution__acronym': self.acronym,
+            'institution__level_1': self.level_1,
+            'institution__level_2': self.level_2,
+            'institution__level_3': self.level_3,
+            'institution__url': self.url,
+        }
+        if self.official:
+            _data.update(self.official.data)
+        _data.update({
+            'institution__is_official': self.is_official,
+        })
+
+        return _data
+
     @classmethod
-    def get_or_create(cls, inst_name, inst_acronym, level_1, level_2, level_3, location):
+    def get_or_create(cls, inst_name, inst_acronym, level_1, level_2, level_3,
+                      location, official, is_official):
 
         # Institution
         # check if exists the institution
@@ -82,6 +112,8 @@ class Institution(CommonControlField, ClusterableModel):
             institution.level_2 = level_2
             institution.level_3 = level_3
             institution.location = location
+            institution.official = official
+            institution.is_official = is_official
             institution.save()
         return institution
 
@@ -111,3 +143,9 @@ class InstitutionHistory(models.Model):
             history.final_date = final_date
             history.save()
         return history
+
+
+class Sponsor(Institution):
+    panels = Institution.panels
+
+    base_form_class = CoreAdminModelForm
