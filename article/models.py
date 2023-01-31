@@ -112,3 +112,34 @@ class Abstract(RichTextWithLang, CommonControlField):
     text = RichTextField(null=True, blank=True, max_length=1500)
 
 
+class ArticleEventType(CommonControlField):
+    code = models.CharField(_("Code"), blank=True, null=True, max_length=20)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['code', ]),
+        ]
+
+    def __unicode__(self):
+        return u'%s' % self.code
+
+    def __str__(self):
+        return u'%s' % self.code
+
+    @property
+    def data(self):
+        return dict(article_event_type__code=self.code)
+
+    @classmethod
+    def get_or_create(cls, code, user):
+        try:
+            return cls.objects.get(code=code)
+        except cls.DoesNotExist:
+            article_event_type = cls()
+            article_event_type.code = code
+            article_event_type.creator = user
+            article_event_type.save()
+
+            return article_event_type
+
+
