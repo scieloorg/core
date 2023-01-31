@@ -108,3 +108,7 @@ class DocumentTitle(RichTextWithLang, CommonControlField):
     text = RichTextField(null=True, blank=True, max_length=300)
 
 
+class Abstract(RichTextWithLang, CommonControlField):
+    text = RichTextField(null=True, blank=True, max_length=1500)
+
+
