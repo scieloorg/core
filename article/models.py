@@ -104,3 +104,7 @@ class TocSection(RichTextWithLang, CommonControlField):
     text = RichTextField(null=True, blank=True, max_length=100)
 
 
+class DocumentTitle(RichTextWithLang, CommonControlField):
+    text = RichTextField(null=True, blank=True, max_length=300)
+
+
