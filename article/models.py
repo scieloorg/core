@@ -143,3 +143,27 @@ class ArticleEventType(CommonControlField):
             return article_event_type
 
 
+class ArticleHistory(CommonControlField):
+    event_type = models.ForeignKey(ArticleEventType, null=True, blank=True, on_delete=models.SET_NULL)
+    date = models.ForeignKey(Date, null=True, blank=True, on_delete=models.SET_NULL)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['event_type', ]),
+            models.Index(fields=['date', ]),
+        ]
+
+    def __unicode__(self):
+        return u'%s (%s)' % (self.code, self.date)
+
+    def __str__(self):
+        return u'%s (%s)' % (self.code, self.date)
+
+    @property
+    def data(self):
+        return dict(
+            article_history__event_type=self.event_type,
+            article_history__date=self.date.data,
+        )
+
+
