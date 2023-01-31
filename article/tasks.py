@@ -9,7 +9,7 @@ User = get_user_model()
 
 
 @celery_app.task()
-def load_financial_data(*args):
-    user = User.objects.get(id=args[0] if args else 1)
+def load_funding_data(user, file_path):
+    user = User.objects.get(pk=user)
 
-    controller.read_file(user)
+    controller.read_file(user, file_path)
