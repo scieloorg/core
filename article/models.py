@@ -11,7 +11,7 @@ from core.forms import CoreAdminModelForm
 
 class Article(CommonControlField):
     pid_v2 = models.CharField(_("PID V2"), blank=True, null=True, max_length=23)
-    funding = models.ManyToManyField("ArticleFunding", verbose_name=_("Funding"), blank=True)
+    fundings = models.ManyToManyField("ArticleFunding", verbose_name=_("Fundings"), blank=True)
 
     class Meta:
         indexes = [
@@ -28,19 +28,22 @@ class Article(CommonControlField):
     def data(self):
         _data = {
             'article__pid_v2': self.pid_v2,
-            'article__funding': [f.data for f in self.funding.iterator()],
+            'article__fundings': [f.data for f in self.fundings.iterator()],
         }
 
         return _data
 
     @classmethod
-    def get_or_create(cls, pid_v2, funding):
+    def get_or_create(cls, pid_v2, fundings, user):
         try:
-            return cls.objects.filter(pid_v2=pid_v2, funding=funding)
-        except:
+            return cls.objects.get(pid_v2=pid_v2)
+        except cls.DoesNotExist:
             article = cls()
             article.pid_v2 = pid_v2
-            article.funding = funding
+            article.creator = user
+            article.save()
+            for funding in fundings:
+                article.fundings.add(funding)
             article.save()
 
             return article
@@ -55,6 +58,7 @@ class ArticleFunding(CommonControlField):
     class Meta:
         indexes = [
             models.Index(fields=['award_id', ]),
+            models.Index(fields=['funding_source', ]),
         ]
 
     panels = [
@@ -79,13 +83,14 @@ class ArticleFunding(CommonControlField):
         return _data
 
     @classmethod
-    def get_or_create(cls, award_id, funding_source):
+    def get_or_create(cls, award_id, funding_source, user):
         try:
-            return cls.objects.filter(award_id=award_id, funding_source=funding_source)
-        except:
+            return cls.objects.get(award_id=award_id, funding_source=funding_source)
+        except cls.DoesNotExist:
             article_funding = cls()
             article_funding.award_id = award_id
             article_funding.funding_source = funding_source
+            article_funding.creator = user
             article_funding.save()
 
             return article_funding
