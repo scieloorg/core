@@ -198,3 +198,27 @@ class ArticleCountType(CommonControlField):
             return article_count_type
 
 
+class ArticleCount(CommonControlField):
+    count_type = models.ForeignKey(ArticleCountType, null=True, blank=True, on_delete=models.SET_NULL)
+    count = models.IntegerField(_('Count'), null=True, blank=True)
+    language = models.CharField(_('Language'), max_length=2, choices=LANGUAGE, null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['count_type', ]),
+            models.Index(fields=['language', ]),
+        ]
+
+    def __unicode__(self):
+        return u'%s | %s | %s' % (self.count_type, self.count, self.language)
+
+    def __str__(self):
+        return u'%s | %s | %s' % (self.count_type, self.count, self.language)
+
+    @property
+    def data(self):
+        return dict(
+            article_count__count_type=self.count_type,
+            article_count__count=self.count,
+            article_count__language=self.language,
+        )
