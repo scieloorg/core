@@ -21,8 +21,12 @@ class ArticleAdmin(ModelAdmin):
     menu_order = 100
     add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
     exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
-    list_display = ('pid_v2', 'funding')
-    search_fields = ('pid_v2', 'funding')
+
+    def all_fundings(self, obj):
+        return " | ".join([str(c) for c in obj.fundings.all()])
+
+    list_display = ('pid_v2', 'all_fundings')
+    search_fields = ('pid_v2',)
 
 
 class ArticleFundingCreateView(CreateView):
@@ -40,6 +44,7 @@ class ArticleFundingAdmin(ModelAdmin):
     menu_order = 200
     add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
     exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
+
     list_display = ('award_id', 'funding_source')
     search_fields = ('award_id', 'funding_source')
 
