@@ -40,3 +40,35 @@ class DOI(CommonControlField):
     base_form_class = CoreAdminModelForm
 
 
+class DOIRegistration(CommonControlField):
+    doi = models.ManyToManyField(DOI, verbose_name="DOI", blank=True)
+    submission_date = models.DateField(_("Submission Date"), max_length=20, null=True, blank=True)
+    status = models.CharField(_("Status"), choices=STATUS, max_length=15, null=True, blank=True)
+
+    panels = [
+        FieldPanel('doi'),
+        FieldPanel('submission_date'),
+        FieldPanel('status'),
+    ]
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['submission_date', ]),
+            models.Index(fields=['status', ]),
+        ]
+
+    @property
+    def data(self):
+        return {
+            'doi_registration__doi': self.doi,
+            'doi_registration__submission_date': self.submission_date,
+            'doi_registration__status': self.status,
+        }
+
+    def __unicode__(self):
+        return u'%s - %s - %s' % (self.doi, self.submission_date, self.status) or ''
+
+    def __str__(self):
+        return u'%s - %s - %s' % (self.doi, self.submission_date, self.status) or ''
+
+    base_form_class = CoreAdminModelForm
