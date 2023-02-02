@@ -4,7 +4,7 @@ from django.utils.translation import gettext as _
 from wagtail.admin.edit_handlers import FieldPanel
 from wagtail.core.fields import RichTextField
 
-from core.models import CommonControlField, RichTextWithLang, Date
+from core.models import CommonControlField, RichTextWithLang, FlexibleDate
 from core.forms import CoreAdminModelForm
 from core.choices import LANGUAGE
 
@@ -145,7 +145,7 @@ class ArticleEventType(CommonControlField):
 
 class ArticleHistory(CommonControlField):
     event_type = models.ForeignKey(ArticleEventType, null=True, blank=True, on_delete=models.SET_NULL)
-    date = models.ForeignKey(Date, null=True, blank=True, on_delete=models.SET_NULL)
+    date = models.ForeignKey(FlexibleDate, null=True, blank=True, on_delete=models.SET_NULL)
 
     class Meta:
         indexes = [
