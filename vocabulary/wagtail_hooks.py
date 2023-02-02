@@ -63,7 +63,7 @@ class KeywordAdmin(ModelAdmin):
     )
     search_fields = (
         'language',
-        'vocabulary',
+        'vocabulary__name',
     )
 
 
