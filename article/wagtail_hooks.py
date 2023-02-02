@@ -46,7 +46,7 @@ class ArticleFundingAdmin(ModelAdmin):
     exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
 
     list_display = ('award_id', 'funding_source')
-    search_fields = ('award_id', 'funding_source')
+    search_fields = ('award_id', 'funding_source__name', 'funding_source__institution_type')
 
 
 class ArticleAdminGroup(ModelAdminGroup):
