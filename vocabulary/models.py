@@ -39,7 +39,12 @@ class Vocabulary(CommonControlField):
     @classmethod
     def get_or_create(cls, name, acronym, user):
         try:
-            return cls.objects.get(name=name)
+            if name and acronym:
+                return cls.objects.get(name=name, acronym=acronym)
+            if name:
+                return cls.objects.get(name=name)
+            if acronym:
+                return cls.objects.get(acronym=acronym)
         except cls.DoesNotExist:
             vocabulary = cls()
             vocabulary.name = name
@@ -90,5 +95,7 @@ class Keyword(CommonControlField, TextWithLang):
             keyword.text = text
             keyword.language = language
             keyword.vocabulary = vocabulary
+            keyword.creator = user
+            keyword.save()
 
     base_form_class = CoreAdminModelForm
