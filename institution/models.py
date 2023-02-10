@@ -30,7 +30,8 @@ class Institution(CommonControlField, ClusterableModel):
 
     logo = models.ImageField(_("Logo"), blank=True, null=True)
 
-    official = models.ForeignKey(_("Institution"), null=True, blank=True, on_delete=models.SET_NULL)
+    official = models.ForeignKey("Institution", verbose_name=_("Institution"), null=True, blank=True,
+                                 on_delete=models.SET_NULL)
     is_official = models.CharField(_("Is official"), null=True, blank=True, choices=choices.is_official, max_length=6)
 
     autocomplete_search_field = 'name'

@@ -83,7 +83,7 @@ class RichTextWithLang(models.Model):
         abstract = True
 
 
-class Date(models.Model):
+class FlexibleDate(models.Model):
     year = models.IntegerField(_('Year'), null=True, blank=True)
     month = models.IntegerField(_('Month'), null=True, blank=True)
     day = models.IntegerField(_('Day'), null=True, blank=True)
