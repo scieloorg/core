@@ -12,12 +12,12 @@ xmltodict==0.13.0  # https://github.com/martinblech/xmltodict.git
 
 # Django
 # ------------------------------------------------------------------------------
-django==3.2.12  # pyup: < 4.0  # https://www.djangoproject.com/
+django==4.1.6  # pyup: < 4.0  # https://www.djangoproject.com/
 django-environ==0.8.1  # https://github.com/joke2k/django-environ
-django-model-utils==4.2.0  # https://github.com/jazzband/django-model-utils
-django-allauth==0.48.0  # https://github.com/pennersr/django-allauth
+django-model-utils==4.3.1  # https://github.com/jazzband/django-model-utils
+django-allauth==0.52.0  # https://github.com/pennersr/django-allauth
 django-crispy-forms==1.14.0  # https://github.com/django-crispy-forms/django-crispy-forms
-crispy-bootstrap5==0.6  # https://github.com/django-crispy-forms/crispy-bootstrap5
+crispy-bootstrap5==0.7  # https://github.com/django-crispy-forms/crispy-bootstrap5
 django-compressor==3.1  # https://github.com/django-compressor/django-compressor
 django-redis==5.2.0  # https://github.com/jazzband/django-redis
 
@@ -28,7 +28,7 @@ wagtail==4.2  # https://github.com/wagtail/wagtail
 
 # Wagtail Recaptcha
 # ------------------------------------------------------------------------------
-django-recaptcha==2.0.6
+django-recaptcha==3.0.0
 wagtail-django-recaptcha==1.0
 
 # Wagtail Menu
@@ -42,7 +42,7 @@ wagtail-localize==1.4
 # Django celery
 # ------------------------------------------------------------------------------
 django_celery_results==2.4.0
-django-celery-beat==2.2.1  # https://github.com/celery/django-celery-beat
+django-celery-beat==2.4.0  # https://github.com/celery/django-celery-beat
 
 # Wagtail-Autocomplete
 # https://github.com/wagtail/wagtail-autocomplete
