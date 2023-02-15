@@ -113,18 +113,19 @@ LOCAL_APPS = [
     "core_settings",
     # Your stuff: custom apps go here
     "core",
-    "location",
-    "institution",
-    "journal",
-    "thematic_areas",
     "altmetric",
-    "collection",
-    "wagtailautocomplete",
-    "journal_and_collection",
-    "issue",
-    "processing_errors",
     "article",
+    "collection",
+    "dataset",
+    "institution",
+    "issue",
+    "journal",
+    "journal_and_collection",
+    "location",
+    "processing_errors",
+    "thematic_areas",
     "vocabulary",
+    "wagtailautocomplete",
 ]
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -370,7 +371,7 @@ LANGUAGES = [
 
 WAGTAIL_I18N_ENABLED = True
 
-WAGTAIL_CONTENT_LANGUAGES =  [
+WAGTAIL_CONTENT_LANGUAGES = [
     ('en', "English"),
     ('es', "Spanish"),
     ('pt-BR', "Portuguese"),
