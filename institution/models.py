@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext as _
 from modelcluster.models import ClusterableModel
-from wagtail.admin.edit_handlers import FieldPanel, InlinePanel
+from wagtail.admin.panels import FieldPanel, InlinePanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.models import CommonControlField
