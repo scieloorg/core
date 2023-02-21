@@ -125,6 +125,7 @@ LOCAL_APPS = [
     "processing_errors",
     "article",
     "vocabulary",
+    "book",
 ]
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
