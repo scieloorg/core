@@ -48,3 +48,7 @@ django-celery-beat==2.4.0  # https://github.com/celery/django-celery-beat
 # https://github.com/wagtail/wagtail-autocomplete
 # ------------------------------------------------------------------------------
 wagtail-autocomplete==0.9.0
+
+
+# Minio
+minio==7.1.13
