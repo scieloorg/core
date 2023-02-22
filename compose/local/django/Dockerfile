@@ -12,11 +12,15 @@ ARG BUILD_ENVIRONMENT=local
 RUN apt-get update && apt-get install --no-install-recommends -y \
   # dependencies for building Python packages
   build-essential \
+  git \
   # psycopg2 dependencies
   libpq-dev
 
 # Requirements are installed here to ensure they will be cached.
 COPY ./requirements .
+
+# Update pip
+RUN python -m pip install --upgrade pip
 
 # Create Python Dependency and Sub-Dependency Wheels.
 RUN pip wheel --wheel-dir /usr/src/app/wheels  \
