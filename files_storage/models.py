@@ -21,6 +21,7 @@ class MinioConfiguration(CommonControlField):
         _('Bucket app subdir'), null=True, blank=True)
     access_key = models.TextField(_('Access key'), null=True, blank=True)
     secret_key = models.TextField(_('Secret key'), null=True, blank=True)
+    # indicar como False para uso no desenvolvimento
     secure = models.BooleanField(_('Secure'), default=True)
 
     class Meta:
