@@ -1,14 +1,20 @@
 from django.db import models
-from wagtail.models import Orderable
-from modelcluster.models import ClusterableModel
-from location.models import Location
-from core.choices import LANGUAGE
 from django.utils.translation import gettext as _
-
-from core.models import CommonControlField
-from institution.models import Institution
+from modelcluster.fields import ParentalKey
+from modelcluster.models import ClusterableModel
+from wagtail.admin.edit_handlers import (
+    FieldPanel,
+    InlinePanel,
+    ObjectList,
+    TabbedInterface,
+)
+from wagtail.models import Orderable
 
 from book.forms import BookModelForm, ChapterModelForm
+from core.choices import LANGUAGE
+from core.models import CommonControlField
+from institution.models import Institution
+from location.models import Location
 
 
 class Book(CommonControlField, ClusterableModel):
@@ -38,17 +44,16 @@ class Book(CommonControlField, ClusterableModel):
         TODO
     """
 
+    title = models.CharField(_("Title"), max_length=256, null=True, blank=True)
+    synopsis = models.TextField(_("Synopsis"), null=True, blank=True)
+    isbn = models.CharField("ISBN", max_length=13, null=True, blank=True)
+    eisbn = models.CharField(_("Electronic ISBN"), max_length=13, null=True, blank=True)
+    doi = models.CharField("DOI", max_length=256, null=True, blank=True)
+    year = models.IntegerField(_("Year"), null=True, blank=True)
+    language = models.CharField(_("Language"), max_length=256, choices=LANGUAGE, null=True, blank=True)
     location = models.ForeignKey(Location, verbose_name=_("Localization"), null=True, blank=True, on_delete=models.SET_NULL)
     institution = models.ForeignKey(Institution, verbose_name=_("Publisher"), null=True, blank=True, on_delete=models.SET_NULL)
 
-    isbn = models.CharField("ISBN", max_length=13, null=True, blank=True)
-    eisbn = models.CharField(_("Electronic ISBN"), max_length=13, null=True, blank=True)
-    language = models.CharField(_("Language"), max_length=256, choices=LANGUAGE, null=True, blank=True)
-    synopsis = models.TextField(_("Synopsis"), null=True, blank=True)
-    title = models.CharField(_("Title"), max_length=256, null=True, blank=True)
-    year = models.IntegerField(_("Year"), null=True, blank=True)
-    doi = models.CharField("DOI", max_length=20, null=True, blank=True)
-    
     class Meta:
         verbose_name = _('SciELO Book')
         verbose_name_plural = _('SciELO Books')
@@ -58,6 +63,29 @@ class Book(CommonControlField, ClusterableModel):
             models.Index(fields=['synopsis', ]),
             models.Index(fields=['doi', ]),
         ]
+
+    panels_identification = [
+        FieldPanel('title'),
+        FieldPanel('synopsis'),
+        FieldPanel('isbn'),
+        FieldPanel('eisbn'),
+        FieldPanel('doi'),
+        FieldPanel('year'),
+        FieldPanel('language'),
+        FieldPanel('location'),
+        FieldPanel('institution'),
+    ]
+
+    panels_chapter = [
+        InlinePanel('chapter', label=_('Chapter'), classname="collapsed"),
+    ]
+
+    edit_handler = TabbedInterface(
+        [
+            ObjectList(panels_identification, heading=_('Identification')),
+            ObjectList(panels_chapter, heading=_('Chapters')), 
+        ]
+    )
 
     def __unicode__(self):
         return u'%s' % self.title or ''
@@ -83,6 +111,8 @@ class Chapter(Orderable, CommonControlField):
         -------
         TODO
     """  
+    book = ParentalKey(Book, on_delete=models.CASCADE, related_name='chapter')
+
     title = models.CharField(_("Title"), max_length=256, null=True, blank=True)
     language = models.CharField(_("Language"), max_length=256, choices=LANGUAGE, null=True, blank=True)
     publication_date = models.CharField(_("Data de publicação"), max_length=10, null=True, blank=True)
