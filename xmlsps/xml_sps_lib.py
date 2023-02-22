@@ -59,23 +59,31 @@ def get_xml_items(xml_sps_file_path, filenames=None):
 
     Return
     ------
-    dict
+    dict iterator which keys are filename and xml_with_pre
+
+    Raises
+    ------
+    GetXMLItemsError
     """
-    name, ext = os.path.splitext(xml_sps_file_path)
-    if ext == ".zip":
-        return get_xml_items_from_zip_file(xml_sps_file_path, filenames)
-    if ext == ".xml":
-        try:
+    try:
+        name, ext = os.path.splitext(xml_sps_file_path)
+        if ext == ".zip":
+            return get_xml_items_from_zip_file(xml_sps_file_path, filenames)
+        if ext == ".xml":
             with open(xml_sps_file_path) as fp:
                 xml = get_xml_with_pre(fp.read())
                 item = os.path.basename(xml_sps_file_path)
-                return {"filename": item, "xml": xml}
-        except Exception as e:
-            LOGGER.exception(e)
-            raise GetXMLItemsError(
-                _("Unable to get xml items from {}: {} {}").format(
-                    xml_sps_file_path, type(e), e)
-            )
+            return [{"filename": item, "xml_with_pre": xml}]
+        raise ValueError(
+            _("{} must be xml file or zip file containing xml").format(
+                xml_sps_file_path
+                ))
+    except Exception as e:
+        LOGGER.exception(e)
+        raise GetXMLItemsError(
+            _("Unable to get xml items from {}: {} {}").format(
+                xml_sps_file_path, type(e), e)
+        )
 
 
 def get_xml_items_from_zip_file(xml_sps_file_path, filenames=None):
@@ -85,7 +93,7 @@ def get_xml_items_from_zip_file(xml_sps_file_path, filenames=None):
     Arguments
     ---------
         xml_sps_file_path: str
-        content: bytes
+        filenames: str list
 
     Return
     ------
@@ -96,18 +104,11 @@ def get_xml_items_from_zip_file(xml_sps_file_path, filenames=None):
             filenames = filenames or zf.namelist() or []
             for item in filenames:
                 if item.endswith(".xml"):
-                    try:
-                        yield {
-                            "filename": item,
-                            "xml_with_pre": get_xml_with_pre(
-                                zf.read(item).decode("utf-8")),
-                        }
-                    except GetXmlWithPreError as e:
-                        LOGGER.exception(e)
-                        raise GetXMLItemsFromZipFileError(
-                            _("Unable to get xml {} from zip file {}: {} {}").format(
-                                item, xml_sps_file_path, type(e), e)
-                        )
+                    yield {
+                        "filename": item,
+                        "xml_with_pre": get_xml_with_pre(
+                            zf.read(item).decode("utf-8")),
+                    }
     except Exception as e:
         LOGGER.exception(e)
         raise GetXMLItemsFromZipFileError(
@@ -150,7 +151,11 @@ def create_xml_zip_file(xml_sps_file_path, content):
 
     Return
     ------
-    str
+    bool
+
+    Raises
+    ------
+    IOError
     """
     dirname = os.path.dirname(xml_sps_file_path)
     if dirname and not os.path.isdir(dirname):
@@ -193,12 +198,35 @@ def get_xml_with_pre(xml_content):
 def split_processing_instruction_doctype_declaration_and_xml(xml_content):
     xml_content = xml_content.strip()
 
-    p = xml_content.rfind("</")
-    endtag = xml_content[p:]
-    starttag = endtag.replace("/", "").replace(">", "").strip()
+    if not xml_content.startswith("<?") and not xml_content.startswith("<!"):
+        return "", xml_content
 
-    p = xml_content.find(starttag)
-    return xml_content[:p], xml_content[p:].strip()
+    if xml_content.endswith("/>"):
+        # <article/>
+        p = xml_content.rfind("<")
+        if p >= 0:
+            pre = xml_content[:p].strip()
+            if pre.endswith(">"):
+                return xml_content[:p], xml_content[p:]
+            else:
+                return "", xml_content
+
+    p = xml_content.rfind("</")
+    if p:
+        # </article>
+        endtag = xml_content[p:]
+        starttag1 = endtag.replace("/", "").replace(">", " ")
+        starttag2 = endtag.replace("/", "")
+        for starttag in (starttag1, starttag2):
+            p = xml_content.find(starttag)
+            if p >= 0:
+                pre = xml_content[:p].strip()
+                if pre.endswith(">"):
+                    return xml_content[:p], xml_content[p:]
+                else:
+                    return "", xml_content
+
+    return "", xml_content
 
 
 class XMLWithPre:
@@ -449,7 +477,7 @@ class XMLWithPre:
         # há casos em que os assets do artigo VoR está na pasta ahead
         if not hasattr(self, '_remote_xml') or not self._remote_xml:
             xml_with_pre = deepcopy(self)
-            if v2:
+            if v2 and not xml_with_pre.v2:
                 xml_with_pre.v2 = v2
             if v3:
                 xml_with_pre.v3 = v3
