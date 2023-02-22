@@ -23,7 +23,8 @@ class MinioConfigurationAdmin(ModelAdmin):
     create_view_class = MinioConfigurationCreateView
     menu_icon = 'folder'
     menu_order = get_menu_order('files_storage')
-    add_to_settings_menu = False
+    # no menu, ficará disponível como sub-menu em "Settings"
+    add_to_settings_menu = True
     exclude_from_explorer = False
     inspect_view_enabled = True
 

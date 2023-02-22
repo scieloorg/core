@@ -1,4 +1,5 @@
 WAGTAIL_MENU_APPS_ORDER = {
+    'files_storage': 100,
     'collection': 400,
     'journal': 500,
     'issue': 510,
