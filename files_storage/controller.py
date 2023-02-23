@@ -36,23 +36,23 @@ class FilesStorageManager:
         self.config = MinioConfiguration.get_or_create(name=files_storage_name)
         self.files_storage = get_files_storage(self.config)
 
-    def push_file(self, source_filename, subdirs, preserve_name):
+    def push_file(self, source_filepath, subdirs, preserve_name):
         try:
-            basename = os.path.basename(source_filename)
+            basename = os.path.basename(source_filepath)
             subdirs = os.path.join(self.config.bucket_app_subdir, subdirs)
-            logging.info("Register {} {}".format(source_filename, subdirs))
+            logging.info("Register {} {}".format(source_filepath, subdirs))
 
             response = self.files_storage.register(
-                source_filename,
+                source_filepath,
                 subdirs=subdirs,
                 preserve_name=preserve_name,
             )
-            logging.info("Response %s %s" % (source_filename, response))
+            logging.info("Response %s %s" % (source_filepath, response))
             return {"uri": response['uri'], "basename": basename}
         except Exception as e:
             raise exceptions.PushFileError(
                 _("Unable to push file {} {} {} {}").format(
-                    source_filename, subdirs, type(e), e
+                    source_filepath, subdirs, type(e), e
                 )
             )
 
