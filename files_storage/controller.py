@@ -36,34 +36,6 @@ class FilesStorageManager:
         self.config = MinioConfiguration.get_or_create(name=files_storage_name)
         self.files_storage = get_files_storage(self.config)
 
-    def push_pid_provider_xml(self, versions, filename, content, creator):
-        try:
-            finger_print = generate_finger_print(content)
-            if versions.latest_version and finger_print == versions.latest_version.finger_print:
-                return
-
-            name, extension = os.path.splitext(filename)
-            if extension == '.xml':
-                mimetype = "text/xml"
-
-            object_name = f"{name}/{finger_print}/{name}{extension}"
-            uri = self.files_storage.fput_content(
-                content,
-                mimetype=mimetype,
-                object_name=f"{self.config.bucket_app_subdir}/{object_name}",
-            )
-            logging.info(uri)
-            versions.add_version(
-                uri=uri, creator=creator, basename=f"{name}{extension}",
-                finger_print=finger_print,
-            )
-        except Exception as e:
-            raise exceptions.PushPidProviderXMLError(
-                _("Unable to register pid provider XML {} {} {}").format(
-                    filename, type(e), e
-                )
-            )
-
     def push_file(self, source_filename, subdirs, preserve_name):
         try:
             basename = os.path.basename(source_filename)
