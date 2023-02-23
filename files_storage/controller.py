@@ -56,23 +56,24 @@ class FilesStorageManager:
                 )
             )
 
-    def push_xml_content(self, filename, subdirs, content):
+    def push_xml_content(self, filename, subdirs, content, finger_print):
         try:
-            finger_print = generate_finger_print(content)
-            name, extension = os.path.splitext(filename)
-            if extension == '.xml':
-                mimetype = "text/xml"
+            mimetype = "text/xml"
+            name, ext = os.path.splitext(filename)
 
-            object_name = f"{subdirs}/{name}/{finger_print}/{name}{extension}"
+            object_name = f"{name}/{finger_print}/{filename}"
+            if subdirs:
+                object_name = f"{subdirs}/{object_name}"
+
             uri = self.files_storage.fput_content(
-                content.decode("utf-8"),
+                content,
                 mimetype=mimetype,
                 object_name=f"{self.config.bucket_app_subdir}/{object_name}",
             )
-            return {"uri": uri, "basename": filename}
+            return {"uri": uri}
         except Exception as e:
             raise exceptions.PutXMLContentError(
-                _("Unable to push file {} {} {} {}").format(
+                _("Unable to push xml content {} {} {} {}").format(
                     filename, subdirs, type(e), e
                 )
             )
