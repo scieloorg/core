@@ -57,21 +57,21 @@ services:
     ports:
         - "8080:8080"
 
-  docs:
-    image: scielo_core_local_docs
-    container_name: scielo_core_local_docs
-    build:
-      context: .
-      dockerfile: ./compose/local/docs/Dockerfile
-    env_file:
-      - ./.envs/.local/.django
-    volumes:
-      - ./docs:/docs:z
-      - ./config:/app/config:z
-      - ./core:/app/core:z
-    ports:
-      - "9000:9000"
-    command: /start-docs
+  # docs:
+  #   image: scielo_core_local_docs
+  #   container_name: scielo_core_local_docs
+  #   build:
+  #     context: .
+  #     dockerfile: ./compose/local/docs/Dockerfile
+  #   env_file:
+  #     - ./.envs/.local/.django
+  #   volumes:
+  #     - ./docs:/docs:z
+  #     - ./config:/app/config:z
+  #     - ./core:/app/core:z
+  #   ports:
+  #     - "9000:9000"
+  #   command: /start-docs
 
   mailhog:
     image: mailhog/mailhog:v1.0.0
