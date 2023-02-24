@@ -112,6 +112,7 @@ LOCAL_APPS = [
     "core.users",
     "core_settings",
     # Your stuff: custom apps go here
+    "files_storage",
     "core",
     "location",
     "institution",
