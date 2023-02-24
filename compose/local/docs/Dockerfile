@@ -14,12 +14,16 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
   build-essential \
   # psycopg2 dependencies
   libpq-dev \
+  git \
   # cleaning up unused files
   && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
   && rm -rf /var/lib/apt/lists/*
 
 # Requirements are installed here to ensure they will be cached.
 COPY ./requirements /requirements
+
+# Update pip
+RUN python -m pip install --upgrade pip
 
 # create python dependency wheels
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/app/wheels  \
