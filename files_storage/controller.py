@@ -36,71 +36,45 @@ class FilesStorageManager:
         self.config = MinioConfiguration.get_or_create(name=files_storage_name)
         self.files_storage = get_files_storage(self.config)
 
-    def push_pid_provider_xml(self, versions, filename, content, creator):
+    def push_file(self, source_filepath, subdirs, preserve_name):
         try:
-            finger_print = generate_finger_print(content)
-            if versions.latest_version and finger_print == versions.latest_version.finger_print:
-                return
+            basename = os.path.basename(source_filepath)
+            subdirs = os.path.join(self.config.bucket_app_subdir, subdirs)
+            logging.info("Register {} {}".format(source_filepath, subdirs))
 
-            name, extension = os.path.splitext(filename)
-            if extension == '.xml':
-                mimetype = "text/xml"
+            response = self.files_storage.register(
+                source_filepath,
+                subdirs=subdirs,
+                preserve_name=preserve_name,
+            )
+            logging.info("Response %s %s" % (source_filepath, response))
+            return {"uri": response['uri'], "basename": basename}
+        except Exception as e:
+            raise exceptions.PushFileError(
+                _("Unable to push file {} {} {} {}").format(
+                    source_filepath, subdirs, type(e), e
+                )
+            )
 
-            object_name = f"{name}/{finger_print}/{name}{extension}"
+    def push_xml_content(self, filename, subdirs, content, finger_print):
+        try:
+            mimetype = "text/xml"
+            name, ext = os.path.splitext(filename)
+
+            object_name = f"{name}/{finger_print}/{filename}"
+            if subdirs:
+                object_name = f"{subdirs}/{object_name}"
+
             uri = self.files_storage.fput_content(
                 content,
                 mimetype=mimetype,
                 object_name=f"{self.config.bucket_app_subdir}/{object_name}",
             )
-            logging.info(uri)
-            versions.add_version(
-                uri=uri, creator=creator, basename=f"{name}{extension}",
-                finger_print=finger_print,
-            )
-        except Exception as e:
-            raise exceptions.PushPidProviderXMLError(
-                _("Unable to register pid provider XML {} {} {}").format(
-                    filename, type(e), e
-                )
-            )
-
-    def push_file(self, source_filename, subdirs, preserve_name):
-        try:
-            basename = os.path.basename(source_filename)
-            subdirs = os.path.join(self.config.bucket_app_subdir, subdirs)
-            logging.info("Register {} {}".format(source_filename, subdirs))
-
-            response = self.files_storage.register(
-                source_filename,
-                subdirs=subdirs,
-                preserve_name=preserve_name,
-            )
-            logging.info("Response %s %s" % (source_filename, response))
-            return {"uri": response['uri'], "basename": basename}
-        except Exception as e:
-            raise exceptions.PushFileError(
-                _("Unable to push file {} {} {} {}").format(
-                    source_filename, subdirs, type(e), e
-                )
-            )
-
-    def push_xml_content(self, filename, subdirs, content):
-        try:
-            finger_print = generate_finger_print(content)
-            name, extension = os.path.splitext(filename)
-            if extension == '.xml':
-                mimetype = "text/xml"
-
-            object_name = f"{subdirs}/{name}/{finger_print}/{name}{extension}"
-            uri = self.files_storage.fput_content(
-                content.decode("utf-8"),
-                mimetype=mimetype,
-                object_name=f"{self.config.bucket_app_subdir}/{object_name}",
-            )
-            return {"uri": uri, "basename": filename}
+            return {"uri": uri}
         except Exception as e:
             raise exceptions.PutXMLContentError(
-                _("Unable to push file {} {} {} {}").format(
+                _("Unable to push xml content {} {} {} {}").format(
                     filename, subdirs, type(e), e
                 )
             )
+
