@@ -12,7 +12,7 @@ from wagtail.contrib.modeladmin.options import (
     ModelAdminGroup,
     modeladmin_register,
 )
-from wagtail.core import hooks
+from wagtail import hooks
 
 from django_celery_beat.models import (
     ClockedSchedule,
