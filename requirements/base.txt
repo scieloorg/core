@@ -7,7 +7,7 @@ whitenoise==6.0.0  # https://github.com/evansd/whitenoise
 redis==4.1.4  # https://github.com/redis/redis-py
 hiredis==2.0.0  # https://github.com/redis/hiredis-py
 celery==5.2.3  # pyup: < 6.0  # https://github.com/celery/celery
-flower==1.0.0  # https://github.com/mher/flower
+flower==1.2.0  # https://github.com/mher/flower
 xmltodict==0.13.0  # https://github.com/martinblech/xmltodict.git
 
 # Django
