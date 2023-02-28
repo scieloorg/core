@@ -1,9 +1,8 @@
 from django.db import models
 from django.utils.translation import gettext as _
 
-from wagtail.core.fields import RichTextField
-from wagtail.admin.edit_handlers import FieldPanel, TabbedInterface, ObjectList
-from wagtail.images.edit_handlers import ImageChooserPanel
+from wagtail.fields import RichTextField
+from wagtail.admin.panels import FieldPanel, TabbedInterface, ObjectList
 from wagtail.contrib.settings.models import BaseSetting, register_setting
 
 
@@ -54,12 +53,12 @@ class CustomSettings(BaseSetting):
         FieldPanel('email'),
         FieldPanel('phone'),
         FieldPanel('footer_text', classname="full"),
-        ImageChooserPanel('favicon'),
-        ImageChooserPanel('site_logo'),
+        FieldPanel('favicon'),
+        FieldPanel('site_logo'),
     ]
 
     admin_panels = [
-        ImageChooserPanel('admin_logo'),
+        FieldPanel('admin_logo'),
     ]
 
     edit_handler = TabbedInterface([
