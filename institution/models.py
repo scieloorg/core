@@ -12,26 +12,32 @@ from core.forms import CoreAdminModelForm
 
 
 class Institution(CommonControlField, ClusterableModel):
-    name = models.CharField(_("Name"), max_length=255, null=True, blank=True)
-    institution_type = models.CharField(_("Institution Type"), choices=choices.inst_type,
-                                        max_length=255, null=True, blank=True)
+    name = models.TextField(_("Name"), null=True, blank=True)
+    institution_type = models.TextField(
+        _("Institution Type"),
+        choices=choices.inst_type,
+
+        null=True,
+        blank=True
+    )
 
     location = models.ForeignKey(Location, null=True, blank=True, on_delete=models.SET_NULL)
 
-    acronym = models.CharField(_("Institution Acronym"), blank=True, null=True, max_length=255)
-
-    level_1 = models.CharField(_("Organization Level 1"), blank=True, null=True, max_length=255)
-
-    level_2 = models.CharField(_("Organization Level 2"), blank=True, null=True, max_length=255)
-
-    level_3 = models.CharField(_("Organization Level 3"), blank=True, null=True, max_length=255)
-
+    acronym = models.TextField(_("Institution Acronym"), null=True, blank=True)
+    level_1 = models.TextField(_("Organization Level 1"), null=True, blank=True)
+    level_2 = models.TextField(_("Organization Level 2"), null=True, blank=True)
+    level_3 = models.TextField(_("Organization Level 3"), null=True, blank=True)
     url = models.URLField("url", blank=True, null=True)
 
     logo = models.ImageField(_("Logo"), blank=True, null=True)
 
-    official = models.ForeignKey("Institution", verbose_name=_("Institution"), null=True, blank=True,
-                                 on_delete=models.SET_NULL)
+    official = models.ForeignKey(
+        "Institution",
+        verbose_name=_("Institution"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
     is_official = models.CharField(_("Is official"), null=True, blank=True, choices=choices.is_official, max_length=6)
 
     autocomplete_search_field = 'name'
