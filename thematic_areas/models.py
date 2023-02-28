@@ -2,7 +2,7 @@ import os
 
 from django.db import models
 from django.utils.translation import gettext as _
-from core.models import CommonControlField
+from core.models import CommonControlField, Language
 from wagtail.admin.panels import FieldPanel
 
 from core.forms import CoreAdminModelForm
@@ -11,7 +11,13 @@ from . import choices
 
 class GenericThematicArea(CommonControlField):
     text = models.CharField(_("Thematic Area"), max_length=255, null=True, blank=True)
-    lang = models.CharField(_("Language"), choices=choices.languages, max_length=10, null=True, blank=True)
+    language = models.ForeignKey(
+        Language,
+        on_delete=models.SET_NULL,
+        verbose_name=_('Language'),
+        null=True,
+        blank=True
+    )
     origin = models.CharField(_("Origin Data Base"), max_length=255, null=True, blank=True)
     level = models.CharField(_("Level"), choices=choices.levels, max_length=20, null=True, blank=True)
     level_up = models.ForeignKey("GenericThematicArea", related_name="Generic_Thematic_Area_Level_Up",
@@ -28,14 +34,19 @@ class GenericThematicArea(CommonControlField):
         return u'%s' % (self.text,)
 
     @classmethod
-    def get_or_create(cls, text, lang, origin, level, level_up, user):
+    def get_or_create(cls, text, language, origin, level, level_up, user):
         try:
-            return GenericThematicArea.objects.get(text=text, lang=lang, origin=origin,
-                                                   level=level, level_up=level_up)
+            return GenericThematicArea.objects.get(
+                text=text,
+                language=language,
+                origin=origin,
+                level=level,
+                level_up=level_up
+            )
         except GenericThematicArea.DoesNotExist:
             the_area = GenericThematicArea()
             the_area.text = text
-            the_area.lang = lang
+            the_area.language = language
             the_area.origin = origin
             the_area.level = level
             the_area.level_up = level_up
