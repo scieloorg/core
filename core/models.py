@@ -57,7 +57,7 @@ class CommonControlField(models.Model):
 
 
 class TextWithLang(models.Model):
-    text = models.CharField(_('Text'), max_length=255, null=True, blank=True)
+    text = models.TextField(_('Text'), null=True, blank=True)
     language = models.CharField(_('Language'), max_length=2, choices=choices.LANGUAGE,
                                 null=True, blank=True)
 
