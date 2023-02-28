@@ -38,8 +38,12 @@ class Collection(CommonControlField):
         blank=True
     )
     has_analytics = models.BooleanField(_("Has analytics"), null=True, blank=True)
-    type = models.CharField(_("Type"), max_length=255, choices=choices.TYPE,
-                            null=True, blank=True)
+    type_field = models.TextField(
+        _("Type"),
+        choices=choices.TYPE,
+        null=True,
+        blank=True
+    )
     is_active = models.BooleanField(_("Is active"), null=True, blank=True)
     foundation_date = models.DateField(_("Foundation data"), null=True, blank=True)
 
