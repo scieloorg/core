@@ -56,7 +56,7 @@ class Collection(CommonControlField):
         FieldPanel('main_name'),
         FieldPanel('status'),
         FieldPanel('has_analytics'),
-        FieldPanel('type'),
+        FieldPanel('type_field'),
         FieldPanel('is_active'),
         FieldPanel('foundation_date'),
     ]
@@ -71,7 +71,7 @@ class Collection(CommonControlField):
             models.Index(fields=['domain', ]),
             models.Index(fields=['main_name', ]),
             models.Index(fields=['status', ]),
-            models.Index(fields=['type', ]),
+            models.Index(fields=['type_field', ]),
         ]
 
     @property
@@ -84,7 +84,7 @@ class Collection(CommonControlField):
             "collection__main_name": self.main_name,
             "collection__status": self.status,
             "collection__has_analytics": self.has_analytics,
-            "collection__type": self.type,
+            "collection__type_field": self.type_field,
             "collection__is_active": self.is_active,
             "collection__is_foundation_date": self.foundation_date,
         }
