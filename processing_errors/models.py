@@ -7,9 +7,9 @@ from .forms import ProcessingErrorsForm
 
 
 class ProcessingError(CommonControlField):
-    item = models.CharField(_('Error item'), max_length=510, null=True, blank=True)
-    description = models.CharField(_('Error description'), max_length=510, null=True, blank=True)
-    type = models.CharField(_('Error type'), max_length=255, null=True, blank=True)
-    step = models.CharField(_('Error occurrence step'), max_length=255, null=True, blank=True)
+    item = models.TextField(_('Error item'), null=True, blank=True)
+    description = models.TextField(_('Error description'), null=True, blank=True)
+    type_field = models.TextField(_('Error type'), null=True, blank=True)
+    step = models.TextField(_('Error occurrence step'), null=True, blank=True)
 
     base_form_class = ProcessingErrorsForm
