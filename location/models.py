@@ -13,7 +13,7 @@ class City(CommonControlField):
         name
     """
 
-    name = models.CharField(_("Name of the city"), blank=True, null=True, max_length=255)
+    name = models.TextField(_("Name of the city"), unique=True)
 
     class Meta:
         verbose_name = _("City")
