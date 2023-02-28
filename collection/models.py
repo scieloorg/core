@@ -29,10 +29,14 @@ class Collection(CommonControlField):
     acron2 = models.CharField(_("Acronym with 2 chars"), max_length=10, null=True, blank=True)
     code = models.CharField(_("Code"), max_length=10, null=True, blank=True)
     domain = models.URLField(_("Domain"), null=True, blank=True)
-    name = models.ManyToManyField(CollectionName, verbose_name="Collection Name", max_length=255, blank=True)
-    main_name = models.CharField(_("Main name"), max_length=255, null=True, blank=True)
-    status = models.CharField(_("Status"), max_length=255, choices=choices.STATUS,
-                              null=True, blank=True)
+    name = models.ManyToManyField(CollectionName, verbose_name="Collection Name", blank=True)
+    main_name = models.TextField(_("Main name"), null=True, blank=True)
+    status = models.TextField(
+        _("Status"),
+        choices=choices.STATUS,
+        null=True,
+        blank=True
+    )
     has_analytics = models.BooleanField(_("Has analytics"), null=True, blank=True)
     type = models.CharField(_("Type"), max_length=255, choices=choices.TYPE,
                             null=True, blank=True)
