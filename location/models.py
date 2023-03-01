@@ -49,7 +49,7 @@ class State(CommonControlField):
         acronym
     """
 
-    name = models.CharField(_("State name"), max_length=19, unique=True)
+    name = models.TextField(_("State name"))
     acronym = models.CharField(_("State Acronym"), max_length=2, null=True, blank=True)
     region = models.CharField(_("Region"), choices=choices.regions, max_length=12, null=True, blank=True)
 
