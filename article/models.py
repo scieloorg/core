@@ -4,9 +4,8 @@ from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
 from wagtail.fields import RichTextField
 
-from core.models import CommonControlField, RichTextWithLang, FlexibleDate
+from core.models import CommonControlField, RichTextWithLang, FlexibleDate, Language
 from core.forms import CoreAdminModelForm
-from core.choices import LANGUAGE
 
 from institution.models import Sponsor
 
@@ -201,7 +200,13 @@ class ArticleCountType(CommonControlField):
 class ArticleCount(CommonControlField):
     count_type = models.ForeignKey(ArticleCountType, null=True, blank=True, on_delete=models.SET_NULL)
     count = models.IntegerField(_('Count'), null=True, blank=True)
-    language = models.CharField(_('Language'), max_length=2, choices=LANGUAGE, null=True, blank=True)
+    language = models.ForeignKey(
+        Language,
+        on_delete=models.SET_NULL,
+        verbose_name=_('Language'),
+        null=True,
+        blank=True
+    )
 
     class Meta:
         indexes = [
