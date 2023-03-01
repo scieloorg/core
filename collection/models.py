@@ -29,13 +29,22 @@ class Collection(CommonControlField):
     acron2 = models.CharField(_("Acronym with 2 chars"), max_length=10, null=True, blank=True)
     code = models.CharField(_("Code"), max_length=10, null=True, blank=True)
     domain = models.URLField(_("Domain"), null=True, blank=True)
-    name = models.ManyToManyField(CollectionName, verbose_name="Collection Name", max_length=255, blank=True)
-    main_name = models.CharField(_("Main name"), max_length=255, null=True, blank=True)
-    status = models.CharField(_("Status"), max_length=255, choices=choices.STATUS,
-                              null=True, blank=True)
+    name = models.ManyToManyField(CollectionName, verbose_name="Collection Name", blank=True)
+    main_name = models.TextField(_("Main name"), null=True, blank=True)
+    status = models.TextField(
+        _("Status"),
+        choices=choices.STATUS,
+        null=True,
+        blank=True
+    )
     has_analytics = models.BooleanField(_("Has analytics"), null=True, blank=True)
-    type = models.CharField(_("Type"), max_length=255, choices=choices.TYPE,
-                            null=True, blank=True)
+    # Antes era type
+    collection_type = models.TextField(
+        _("Collection Type"),
+        choices=choices.TYPE,
+        null=True,
+        blank=True
+    )
     is_active = models.BooleanField(_("Is active"), null=True, blank=True)
     foundation_date = models.DateField(_("Foundation data"), null=True, blank=True)
 
@@ -48,7 +57,7 @@ class Collection(CommonControlField):
         FieldPanel('main_name'),
         FieldPanel('status'),
         FieldPanel('has_analytics'),
-        FieldPanel('type'),
+        FieldPanel('collection_type'),
         FieldPanel('is_active'),
         FieldPanel('foundation_date'),
     ]
@@ -63,7 +72,7 @@ class Collection(CommonControlField):
             models.Index(fields=['domain', ]),
             models.Index(fields=['main_name', ]),
             models.Index(fields=['status', ]),
-            models.Index(fields=['type', ]),
+            models.Index(fields=['collection_type', ]),
         ]
 
     @property
@@ -76,7 +85,7 @@ class Collection(CommonControlField):
             "collection__main_name": self.main_name,
             "collection__status": self.status,
             "collection__has_analytics": self.has_analytics,
-            "collection__type": self.type,
+            "collection__collection_type": self.collection_type,
             "collection__is_active": self.is_active,
             "collection__is_foundation_date": self.foundation_date,
         }

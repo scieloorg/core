@@ -21,13 +21,7 @@ class OfficialJournal(CommonControlField):
     Class that represent the Official Journal
     """
 
-    def __unicode__(self):
-        return u'%s - %s' % (self.issnl, self.title) or ''
-
-    def __str__(self):
-        return u'%s - %s' % (self.issnl, self.title) or ''
-
-    title = models.CharField(_('Official Title'), max_length=256, null=True, blank=True)
+    title = models.TextField(_('Official Title'), null=True, blank=True)
     foundation_year = models.CharField(_('Foundation Year'), max_length=4, null=True, blank=True)
     issn_print = models.CharField(_('ISSN Print'), max_length=9, null=True, blank=True)
     issn_electronic = models.CharField(_('ISSN Eletronic'), max_length=9, null=True, blank=True)
@@ -43,6 +37,12 @@ class OfficialJournal(CommonControlField):
             models.Index(fields=['issn_electronic', ]),
             models.Index(fields=['issnl', ]),
         ]
+
+    def __unicode__(self):
+        return u'%s - %s' % (self.issnl, self.title) or ''
+
+    def __str__(self):
+        return u'%s - %s' % (self.issnl, self.title) or ''
 
     @property
     def data(self):
@@ -76,9 +76,13 @@ class OfficialJournal(CommonControlField):
 
 
 class SocialNetwork(models.Model):
-    name = models.CharField(_('Name'), max_length=255, choices=choices.SOCIAL_NETWORK_NAMES,
-                            null=True, blank=True)
-    url = models.URLField(_('URL'), max_length=255, null=True, blank=True)
+    name = models.TextField(
+        _('Name'),
+        choices=choices.SOCIAL_NETWORK_NAMES,
+        null=True,
+        blank=True
+    )
+    url = models.URLField(_('URL'), null=True, blank=True)
 
     panels = [
         FieldPanel('name'),
@@ -120,12 +124,26 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
     official = models.ForeignKey(OfficialJournal, verbose_name=_('Official Journal'),
                                  null=True, blank=True, on_delete=models.SET_NULL)
     issn_scielo = models.CharField(_('ISSN SciELO'), max_length=9, null=True, blank=True)
-    title = models.CharField(_('SciELO Journal Title'), max_length=255, null=True, blank=True)
-    short_title = models.CharField(_('Short Title'), max_length=100, null=True, blank=True)
-    logo = models.ForeignKey('wagtailimages.Image', null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
-    submission_online_url = models.URLField(_("Submission online URL"), max_length=255, null=True, blank=True)
-    collection = models.ForeignKey(Collection, verbose_name=_('Collection'), null=True, blank=True,
-                                   on_delete=models.SET_NULL, related_name='+')
+    title = models.TextField(_('SciELO Journal Title'), null=True, blank=True)
+    short_title = models.TextField(_('Short Title'), null=True, blank=True)
+
+    logo = models.ForeignKey(
+        'wagtailimages.Image',
+        on_delete=models.SET_NULL,
+        related_name='+',
+        null=True,
+        blank=True,
+    )
+    submission_online_url = models.URLField(_("Submission online URL"), null=True, blank=True)
+
+    collection = models.ForeignKey(
+        Collection,
+        verbose_name=_('Collection'),
+        on_delete=models.SET_NULL,
+        related_name='+',
+        null=True,
+        blank=True,
+    )
 
     panels_identification = [
         FieldPanel('official'),
@@ -190,11 +208,11 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
             d.update(self.official.data)
 
         d.update({
-                'scielo_journal__issn_scielo': self.issn_scielo,
-                'scielo_journal__title': self.title,
-                'scielo_journal__short_title': self.short_title,
-                'scielo_journal__submission_online_url': self.submission_online_url
-            })
+            'scielo_journal__issn_scielo': self.issn_scielo,
+            'scielo_journal__title': self.title,
+            'scielo_journal__short_title': self.short_title,
+            'scielo_journal__submission_online_url': self.submission_online_url
+        })
 
         return d
 

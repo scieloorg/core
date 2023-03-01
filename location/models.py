@@ -13,7 +13,7 @@ class City(CommonControlField):
         name
     """
 
-    name = models.CharField(_("Name of the city"), blank=True, null=True, max_length=255)
+    name = models.TextField(_("Name of the city"), unique=True)
 
     class Meta:
         verbose_name = _("City")
@@ -49,9 +49,9 @@ class State(CommonControlField):
         acronym
     """
 
-    name = models.CharField(_("State name"), blank=True, null=True, max_length=255)
-    acronym = models.CharField(_("State Acronym"), blank=True, null=True, max_length=255)
-    region = models.CharField(_("Region"), choices=choices.regions, max_length=255, null=True, blank=True)
+    name = models.TextField(_("State name"))
+    acronym = models.CharField(_("State Acronym"), max_length=2, null=True, blank=True)
+    region = models.CharField(_("Region"), choices=choices.regions, max_length=12, null=True, blank=True)
 
     class Meta:
         verbose_name = _("State")
@@ -138,23 +138,25 @@ class Country(CommonControlField):
 
 
 class Location(CommonControlField):
-
-    city = models.ForeignKey(City,
-                             verbose_name=_("City"),
-                             on_delete=models.SET_NULL,
-                             null=True,
-                             blank=True,
-                             )
-    state = models.ForeignKey(State,
-                              verbose_name=_("State"),
-                              on_delete=models.SET_NULL,
-                              null=True, blank=True,
-                              )
-    country = models.ForeignKey(Country,
-                                verbose_name=_("Country"),
-                                on_delete=models.SET_NULL,
-                                null=True, blank=True,
-                                )
+    city = models.ForeignKey(
+        City,
+        verbose_name=_("City"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    state = models.ForeignKey(
+        State,
+        verbose_name=_("State"),
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+    )
+    country = models.ForeignKey(
+        Country,
+        verbose_name=_("Country"),
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+    )
 
     class Meta:
         verbose_name = _("Location")

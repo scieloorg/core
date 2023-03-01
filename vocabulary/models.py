@@ -8,7 +8,7 @@ from core.forms import CoreAdminModelForm
 
 
 class Vocabulary(CommonControlField):
-    name = models.CharField(_('Vocabulary name'), max_length=100, null=True, blank=True)
+    name = models.TextField(_('Vocabulary name'), unique=True)
     acronym = models.CharField(_('Vocabulary acronym'), max_length=10, null=True, blank=True)
 
     def __unicode__(self):
@@ -56,7 +56,13 @@ class Vocabulary(CommonControlField):
 
 
 class Keyword(CommonControlField, TextWithLang):
-    vocabulary = models.ForeignKey(Vocabulary, verbose_name=_('Vocabulary'), null=True, blank=True, on_delete=models.SET_NULL)
+    vocabulary = models.ForeignKey(
+        Vocabulary,
+        verbose_name=_('Vocabulary'),
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
 
     def __unicode__(self):
         return u'%s - %s' % (self.text, self.language) or ''

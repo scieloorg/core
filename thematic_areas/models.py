@@ -10,7 +10,7 @@ from . import choices
 
 
 class GenericThematicArea(CommonControlField):
-    text = models.CharField(_("Thematic Area"), max_length=255, null=True, blank=True)
+    text = models.TextField(_("Thematic Area"), null=True, blank=True)
     language = models.ForeignKey(
         Language,
         on_delete=models.SET_NULL,
@@ -18,10 +18,15 @@ class GenericThematicArea(CommonControlField):
         null=True,
         blank=True
     )
-    origin = models.CharField(_("Origin Data Base"), max_length=255, null=True, blank=True)
+    origin = models.TextField(_("Origin Data Base"), null=True, blank=True)
     level = models.CharField(_("Level"), choices=choices.levels, max_length=20, null=True, blank=True)
-    level_up = models.ForeignKey("GenericThematicArea", related_name="Generic_Thematic_Area_Level_Up",
-                                 null=True, blank=True, on_delete=models.SET_NULL)
+    level_up = models.ForeignKey(
+        "GenericThematicArea",
+        related_name="generic_thematic_area_level_up",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         verbose_name = _("Generic Thematic Area")
@@ -59,20 +64,29 @@ class GenericThematicArea(CommonControlField):
 
 
 class GenericThematicAreaFile(CommonControlField):
-    class Meta:
-        verbose_name_plural = _('Generic Thematic Areas Upload')
-
     attachment = models.ForeignKey(
         'wagtaildocs.Document',
         verbose_name=_("Attachment"),
-        null=True, blank=False,
         on_delete=models.SET_NULL,
-        related_name='+'
+        null=True,
+        blank=False,
+        related_name='+',
     )
-    is_valid = models.BooleanField(_("Is valid?"), default=False, blank=True,
-                                   null=True)
-    line_count = models.IntegerField(_("Number of lines"), default=0,
-                                     blank=True, null=True)
+    is_valid = models.BooleanField(
+        _("Is valid?"),
+        default=False,
+        blank=True,
+        null=True,
+    )
+    line_count = models.IntegerField(
+        _("Number of lines"),
+        default=0,
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name_plural = _('Generic Thematic Areas Upload')
 
     def filename(self):
         return os.path.basename(self.attachment.name)
@@ -93,20 +107,29 @@ class ThematicArea(CommonControlField):
         level 2
     """
 
-    level0 = models.CharField(_("Level 0"), choices=choices.thematic_level0,
-                              max_length=255, null=True, blank=True,
-                              help_text=_(
-                                  "Here the thematic colleges of CAPES must be registered, more about these areas access: https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/avaliacao/sobre-a-avaliacao/areas-avaliacao/sobre-as-areas-de-avaliacao/sobre-as-areas-de-avaliacao"))
+    level0 = models.TextField(
+        _("Level 0"),
+        choices=choices.thematic_level0,
+        blank=True,
+        null=True,
+        help_text=_(
+            "Here the thematic colleges of CAPES must be registered, more about these areas access: https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/avaliacao/sobre-a-avaliacao/areas-avaliacao/sobre-as-areas-de-avaliacao/sobre-as-areas-de-avaliacao"))
 
-    level1 = models.CharField(_("Level 1"), choices=choices.thematic_level1,
-                              max_length=255, null=True, blank=True,
-                              help_text=_(
-                                  "Here the thematic colleges of CAPES must be registered, more about these areas access: https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/avaliacao/sobre-a-avaliacao/areas-avaliacao/sobre-as-areas-de-avaliacao/sobre-as-areas-de-avaliacao"))
+    level1 = models.TextField(
+        _("Level 1"),
+        choices=choices.thematic_level1,
+        blank=True,
+        null=True,
+        help_text=_(
+            "Here the thematic colleges of CAPES must be registered, more about these areas access: https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/avaliacao/sobre-a-avaliacao/areas-avaliacao/sobre-as-areas-de-avaliacao/sobre-as-areas-de-avaliacao"))
 
-    level2 = models.CharField(_("Level 2"), choices=choices.thematic_level2,
-                              max_length=255, null=True, blank=True,
-                              help_text=_(
-                                  "Here the thematic colleges of CAPES must be registered, more about these areas access: https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/avaliacao/sobre-a-avaliacao/areas-avaliacao/sobre-as-areas-de-avaliacao/sobre-as-areas-de-avaliacao"))
+    level2 = models.TextField(
+        _("Level 2"),
+        choices=choices.thematic_level2,
+        blank=True,
+        null=True,
+        help_text=_(
+            "Here the thematic colleges of CAPES must be registered, more about these areas access: https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/avaliacao/sobre-a-avaliacao/areas-avaliacao/sobre-as-areas-de-avaliacao/sobre-as-areas-de-avaliacao"))
 
     class Meta:
         verbose_name = _("Thematic Area")
@@ -136,9 +159,6 @@ class ThematicArea(CommonControlField):
 
 
 class ThematicAreaFile(CommonControlField):
-    class Meta:
-        verbose_name_plural = _('Thematic Areas Upload')
-
     attachment = models.ForeignKey(
         'wagtaildocs.Document',
         verbose_name=_("Attachment"),
@@ -146,10 +166,21 @@ class ThematicAreaFile(CommonControlField):
         on_delete=models.SET_NULL,
         related_name='+'
     )
-    is_valid = models.BooleanField(_("Is valid?"), default=False, blank=True,
-                                   null=True)
-    line_count = models.IntegerField(_("Number of lines"), default=0,
-                                     blank=True, null=True)
+    is_valid = models.BooleanField(
+        _("Is valid?"),
+        default=False,
+        blank=True,
+        null=True
+    )
+    line_count = models.IntegerField(
+        _("Number of lines"),
+        default=0,
+        blank=True,
+        null=True
+    )
+
+    class Meta:
+        verbose_name_plural = _('Thematic Areas Upload')
 
     def filename(self):
         return os.path.basename(self.attachment.name)
