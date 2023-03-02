@@ -1,10 +1,9 @@
 from django.db import models
 from django.utils.translation import gettext as _
-
 from wagtail.admin.panels import FieldPanel
 
-from core.models import CommonControlField, TextWithLang
 from core.forms import CoreAdminModelForm
+from core.models import CommonControlField, TextWithLang
 
 
 class Vocabulary(CommonControlField):

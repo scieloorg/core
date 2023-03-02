@@ -1,19 +1,19 @@
-import os
 import csv
+import os
 from datetime import datetime
-from django.shortcuts import get_object_or_404, redirect
-from django.http import HttpResponse, Http404
-from django.utils.translation import gettext as _
 
+from django.http import Http404, HttpResponse
+from django.shortcuts import get_object_or_404, redirect
+from django.utils.translation import gettext as _
 from wagtail.admin import messages
 
 from core.libs import chkcsv
 
 from .models import (
-    ThematicAreaFile,
-    ThematicArea,
-    GenericThematicAreaFile,
     GenericThematicArea,
+    GenericThematicAreaFile,
+    ThematicArea,
+    ThematicAreaFile,
 )
 
 

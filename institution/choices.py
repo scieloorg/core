@@ -1,6 +1,5 @@
 from django.utils.translation import gettext as _
 
-
 inst_type = (
     ("", ""),
     ("agência de apoio à pesquisa", _("agência de apoio à pesquisa")),

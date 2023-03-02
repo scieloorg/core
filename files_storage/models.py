@@ -1,14 +1,12 @@
-import os
 import logging
+import os
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import (
-    FieldPanel,
-)
+from wagtail.admin.panels import FieldPanel
 
-from core.models import CommonControlField, Language
 from core.forms import CoreAdminModelForm
+from core.models import CommonControlField, Language
 from files_storage import exceptions
 
 

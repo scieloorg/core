@@ -6,12 +6,12 @@ from django.template.defaultfilters import pluralize
 from django.urls import include, path
 from django.utils.translation import gettext_lazy as _
 from kombu.utils.json import loads
+from wagtail import hooks
 from wagtail.contrib.modeladmin.options import (
     ModelAdmin,
     ModelAdminGroup,
     modeladmin_register,
 )
-from wagtail import hooks
 
 from django_celery_beat.models import (
     ClockedSchedule,

@@ -1,11 +1,10 @@
 import csv
 import os
 
-from institution import models
-from location.models import Location, Country, State
-
 from django.contrib.auth import get_user_model
 
+from institution import models
+from location.models import Country, Location, State
 
 User = get_user_model()
 

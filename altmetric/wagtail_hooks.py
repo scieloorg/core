@@ -1,9 +1,8 @@
 from django.utils.translation import gettext as _
-
 from wagtail.contrib.modeladmin.options import (
     ModelAdmin,
-    modeladmin_register,
     ModelAdminGroup,
+    modeladmin_register,
 )
 
 from .models import RawAltmetric

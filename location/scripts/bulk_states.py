@@ -1,6 +1,8 @@
 import os
-from location import models
+
 from django.contrib.auth import get_user_model
+
+from location import models
 
 User = get_user_model()
 

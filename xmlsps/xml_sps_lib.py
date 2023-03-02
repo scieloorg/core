@@ -2,32 +2,26 @@ import hashlib
 import logging
 import os
 from copy import deepcopy
-from datetime import datetime, date
-from zipfile import ZipFile, BadZipFile
+from datetime import date, datetime
 from shutil import copyfile
+from zipfile import BadZipFile, ZipFile
 
-from django.utils.translation import gettext as _
 import requests
+from django.utils.translation import gettext as _
 from lxml import etree
-from packtools.sps.models.article_ids import ArticleIds
-from packtools.sps.models.article_doi_with_lang import DoiWithLang
-from packtools.sps.models.front_journal_meta import ISSN
-from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
+from packtools.sps.models.article_assets import ArticleAssets, SupplementaryMaterials
 from packtools.sps.models.article_authors import Authors
+from packtools.sps.models.article_doi_with_lang import DoiWithLang
+from packtools.sps.models.article_ids import ArticleIds
+from packtools.sps.models.article_renditions import ArticleRenditions
 from packtools.sps.models.article_titles import ArticleTitles
 from packtools.sps.models.body import Body
 from packtools.sps.models.dates import ArticleDates
+from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
+from packtools.sps.models.front_journal_meta import ISSN
 from packtools.sps.models.related_articles import RelatedItems
-from packtools.sps.models.article_assets import (
-    ArticleAssets,
-    SupplementaryMaterials,
-)
-from packtools.sps.models.article_renditions import (
-    ArticleRenditions,
-)
 
 from files_storage.utils import generate_finger_print
-
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"

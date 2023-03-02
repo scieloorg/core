@@ -4,11 +4,11 @@ from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
+from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from location.models import Location
 
 from . import choices
-from core.forms import CoreAdminModelForm
 
 
 class Institution(CommonControlField, ClusterableModel):

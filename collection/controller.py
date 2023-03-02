@@ -1,7 +1,8 @@
-from .models import Collection, CollectionName
-
 import json
+
 import requests
+
+from .models import Collection, CollectionName
 
 
 def load(user):

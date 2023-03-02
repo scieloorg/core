@@ -55,13 +55,14 @@ try:
 except:
     # Py3
     from configparser import ConfigParser
+
 import codecs
-import os.path
 import csv
-import re
 import datetime
-import types
+import os.path
+import re
 import traceback
+import types
 
 FORMATSPECS = """Format specification options:
     column_required=1|Yes|True|On|0|No|False|Off

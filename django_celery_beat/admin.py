@@ -1,23 +1,22 @@
 """Periodic Task Admin interface."""
+from celery import current_app
+from celery.utils import cached_property
 from django import forms
 from django.conf import settings
 from django.contrib import admin, messages
-from django.db.models import When, Value, Case
+from django.db.models import Case, Value, When
 from django.forms.widgets import Select
 from django.template.defaultfilters import pluralize
 from django.utils.translation import gettext_lazy as _
-
-from celery import current_app
-from celery.utils import cached_property
 from kombu.utils.json import loads
 
 from .models import (
+    ClockedSchedule,
+    CrontabSchedule,
+    IntervalSchedule,
     PeriodicTask,
     PeriodicTasks,
-    IntervalSchedule,
-    CrontabSchedule,
     SolarSchedule,
-    ClockedSchedule,
 )
 from .utils import is_database_scheduler
 

@@ -1,8 +1,9 @@
 import csv
 import logging
 
-from .models import Article, ArticleFunding
 from institution.models import Sponsor
+
+from .models import Article, ArticleFunding
 
 
 def load_financial_data(row, user):

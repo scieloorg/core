@@ -1,14 +1,12 @@
 from django.db import models
 from django.utils.translation import gettext as _
-
 from wagtail.admin.panels import FieldPanel
 
-from core.models import CommonControlField
-
-from core.forms import CoreAdminModelForm
-
-from journal.models import ScieloJournal
 from collection.models import Collection
+from core.forms import CoreAdminModelForm
+from core.models import CommonControlField
+from journal.models import ScieloJournal
+
 from . import choices
 
 

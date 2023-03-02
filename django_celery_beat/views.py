@@ -1,4 +1,5 @@
 import json
+
 from celery import current_app
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.translation import gettext as _

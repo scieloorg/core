@@ -2,10 +2,11 @@ import os
 
 from django.db import models
 from django.utils.translation import gettext as _
-from core.models import CommonControlField, Language
 from wagtail.admin.panels import FieldPanel
 
 from core.forms import CoreAdminModelForm
+from core.models import CommonControlField, Language
+
 from . import choices
 
 

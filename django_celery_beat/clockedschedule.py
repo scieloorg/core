@@ -2,6 +2,7 @@
 
 from celery import schedules
 from celery.utils.time import maybe_make_aware
+
 from .utils import NEVER_CHECK_TIMEOUT
 
 

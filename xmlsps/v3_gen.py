@@ -11,7 +11,6 @@ except ImportError as e:
 
 from uuid import uuid4
 
-
 digit_chars = "bcdfghjkmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ3456789"
 chars_map = {dig: idx for idx, dig in enumerate(digit_chars)}
 

@@ -4,7 +4,6 @@ from config import celery_app
 
 from . import controller
 
-
 User = get_user_model()
 
 
