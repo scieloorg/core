@@ -5,9 +5,11 @@ from django.urls import reverse
 
 
 class PeriodicTaskHelper(ButtonHelper):
-
     # Define classes for our button, here we can set an icon for example
-    run_button_classnames = ["button-small", "icon", ]
+    run_button_classnames = [
+        "button-small",
+        "icon",
+    ]
 
     def run_button(self, obj):
         # Define a label for our button
@@ -18,7 +20,6 @@ class PeriodicTaskHelper(ButtonHelper):
             "classname": self.finalise_classname(self.run_button_classnames),
             "title": text,
         }
-
 
     def get_buttons_for_obj(
         self, obj, exclude=None, classnames_add=None, classnames_exclude=None

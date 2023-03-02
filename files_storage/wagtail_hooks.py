@@ -11,7 +11,6 @@ from config.menu import get_menu_order
 
 
 class MinioConfigurationCreateView(CreateView):
-
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
@@ -19,10 +18,10 @@ class MinioConfigurationCreateView(CreateView):
 
 class MinioConfigurationAdmin(ModelAdmin):
     model = MinioConfiguration
-    menu_label = _('Minio Configuration')
+    menu_label = _("Minio Configuration")
     create_view_class = MinioConfigurationCreateView
-    menu_icon = 'folder'
-    menu_order = get_menu_order('files_storage')
+    menu_icon = "folder"
+    menu_order = get_menu_order("files_storage")
     # no menu, ficará disponível como sub-menu em "Settings"
     add_to_settings_menu = True
     exclude_from_explorer = False
@@ -30,16 +29,16 @@ class MinioConfigurationAdmin(ModelAdmin):
 
     list_per_page = 10
     list_display = (
-        'name',
-        'host',
-        'bucket_root',
-        'bucket_app_subdir',
+        "name",
+        "host",
+        "bucket_root",
+        "bucket_app_subdir",
     )
     search_fields = (
-        'name',
-        'host',
-        'bucket_root',
-        'bucket_app_subdir',
+        "name",
+        "host",
+        "bucket_root",
+        "bucket_app_subdir",
     )
 
 

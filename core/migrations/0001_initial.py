@@ -4,20 +4,32 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='FlexibleDate',
+            name="FlexibleDate",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('year', models.IntegerField(blank=True, null=True, verbose_name='Year')),
-                ('month', models.IntegerField(blank=True, null=True, verbose_name='Month')),
-                ('day', models.IntegerField(blank=True, null=True, verbose_name='Day')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "year",
+                    models.IntegerField(blank=True, null=True, verbose_name="Year"),
+                ),
+                (
+                    "month",
+                    models.IntegerField(blank=True, null=True, verbose_name="Month"),
+                ),
+                ("day", models.IntegerField(blank=True, null=True, verbose_name="Day")),
             ],
         ),
     ]

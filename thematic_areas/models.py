@@ -14,12 +14,14 @@ class GenericThematicArea(CommonControlField):
     language = models.ForeignKey(
         Language,
         on_delete=models.SET_NULL,
-        verbose_name=_('Language'),
+        verbose_name=_("Language"),
         null=True,
-        blank=True
+        blank=True,
     )
     origin = models.TextField(_("Origin Data Base"), null=True, blank=True)
-    level = models.CharField(_("Level"), choices=choices.levels, max_length=20, null=True, blank=True)
+    level = models.CharField(
+        _("Level"), choices=choices.levels, max_length=20, null=True, blank=True
+    )
     level_up = models.ForeignKey(
         "GenericThematicArea",
         related_name="generic_thematic_area_level_up",
@@ -33,10 +35,10 @@ class GenericThematicArea(CommonControlField):
         verbose_name_plural = _("Generic Thematic Areas")
 
     def __unicode__(self):
-        return u'%s' % (self.text,)
+        return "%s" % (self.text,)
 
     def __str__(self):
-        return u'%s' % (self.text,)
+        return "%s" % (self.text,)
 
     @classmethod
     def get_or_create(cls, text, language, origin, level, level_up, user):
@@ -46,7 +48,7 @@ class GenericThematicArea(CommonControlField):
                 language=language,
                 origin=origin,
                 level=level,
-                level_up=level_up
+                level_up=level_up,
             )
         except GenericThematicArea.DoesNotExist:
             the_area = GenericThematicArea()
@@ -65,12 +67,12 @@ class GenericThematicArea(CommonControlField):
 
 class GenericThematicAreaFile(CommonControlField):
     attachment = models.ForeignKey(
-        'wagtaildocs.Document',
+        "wagtaildocs.Document",
         verbose_name=_("Attachment"),
         on_delete=models.SET_NULL,
         null=True,
         blank=False,
-        related_name='+',
+        related_name="+",
     )
     is_valid = models.BooleanField(
         _("Is valid?"),
@@ -86,14 +88,12 @@ class GenericThematicAreaFile(CommonControlField):
     )
 
     class Meta:
-        verbose_name_plural = _('Generic Thematic Areas Upload')
+        verbose_name_plural = _("Generic Thematic Areas Upload")
 
     def filename(self):
         return os.path.basename(self.attachment.name)
 
-    panels = [
-        FieldPanel('attachment')
-    ]
+    panels = [FieldPanel("attachment")]
     base_form_class = CoreAdminModelForm
 
 
@@ -113,7 +113,9 @@ class ThematicArea(CommonControlField):
         blank=True,
         null=True,
         help_text=_(
-            "Here the thematic colleges of CAPES must be registered, more about these areas access: https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/avaliacao/sobre-a-avaliacao/areas-avaliacao/sobre-as-areas-de-avaliacao/sobre-as-areas-de-avaliacao"))
+            "Here the thematic colleges of CAPES must be registered, more about these areas access: https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/avaliacao/sobre-a-avaliacao/areas-avaliacao/sobre-as-areas-de-avaliacao/sobre-as-areas-de-avaliacao"
+        ),
+    )
 
     level1 = models.TextField(
         _("Level 1"),
@@ -121,7 +123,9 @@ class ThematicArea(CommonControlField):
         blank=True,
         null=True,
         help_text=_(
-            "Here the thematic colleges of CAPES must be registered, more about these areas access: https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/avaliacao/sobre-a-avaliacao/areas-avaliacao/sobre-as-areas-de-avaliacao/sobre-as-areas-de-avaliacao"))
+            "Here the thematic colleges of CAPES must be registered, more about these areas access: https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/avaliacao/sobre-a-avaliacao/areas-avaliacao/sobre-as-areas-de-avaliacao/sobre-as-areas-de-avaliacao"
+        ),
+    )
 
     level2 = models.TextField(
         _("Level 2"),
@@ -129,17 +133,27 @@ class ThematicArea(CommonControlField):
         blank=True,
         null=True,
         help_text=_(
-            "Here the thematic colleges of CAPES must be registered, more about these areas access: https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/avaliacao/sobre-a-avaliacao/areas-avaliacao/sobre-as-areas-de-avaliacao/sobre-as-areas-de-avaliacao"))
+            "Here the thematic colleges of CAPES must be registered, more about these areas access: https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/avaliacao/sobre-a-avaliacao/areas-avaliacao/sobre-as-areas-de-avaliacao/sobre-as-areas-de-avaliacao"
+        ),
+    )
 
     class Meta:
         verbose_name = _("Thematic Area")
         verbose_name_plural = _("Thematic Areas")
 
     def __unicode__(self):
-        return u'%s | %s | %s' % (self.level0, self.level1, self.level2,)
+        return "%s | %s | %s" % (
+            self.level0,
+            self.level1,
+            self.level2,
+        )
 
     def __str__(self):
-        return u'%s | %s | %s' % (self.level0, self.level1, self.level2,)
+        return "%s | %s | %s" % (
+            self.level0,
+            self.level1,
+            self.level2,
+        )
 
     @classmethod
     def get_or_create(cls, level0, level1, level2, user):
@@ -160,32 +174,23 @@ class ThematicArea(CommonControlField):
 
 class ThematicAreaFile(CommonControlField):
     attachment = models.ForeignKey(
-        'wagtaildocs.Document',
+        "wagtaildocs.Document",
         verbose_name=_("Attachment"),
-        null=True, blank=False,
+        null=True,
+        blank=False,
         on_delete=models.SET_NULL,
-        related_name='+'
+        related_name="+",
     )
-    is_valid = models.BooleanField(
-        _("Is valid?"),
-        default=False,
-        blank=True,
-        null=True
-    )
+    is_valid = models.BooleanField(_("Is valid?"), default=False, blank=True, null=True)
     line_count = models.IntegerField(
-        _("Number of lines"),
-        default=0,
-        blank=True,
-        null=True
+        _("Number of lines"), default=0, blank=True, null=True
     )
 
     class Meta:
-        verbose_name_plural = _('Thematic Areas Upload')
+        verbose_name_plural = _("Thematic Areas Upload")
 
     def filename(self):
         return os.path.basename(self.attachment.name)
 
-    panels = [
-        FieldPanel('attachment')
-    ]
+    panels = [FieldPanel("attachment")]
     base_form_class = CoreAdminModelForm

@@ -1,4 +1,5 @@
 from math import ceil
+
 try:
     from math import log2
 except ImportError as e:

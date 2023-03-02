@@ -71,11 +71,15 @@ def sha1(path):
 
 class MinioStorage:
     def __init__(
-        self, minio_host, minio_access_key, minio_secret_key,
-        bucket_root, bucket_subdir,
-        minio_secure=True, minio_http_client=None,
+        self,
+        minio_host,
+        minio_access_key,
+        minio_secret_key,
+        bucket_root,
+        bucket_subdir,
+        minio_secure=True,
+        minio_http_client=None,
     ):
-
         self.bucket_root = bucket_root
         self.POLICY_READ_ONLY = {
             "Version": "2012-10-17",
@@ -114,7 +118,7 @@ class MinioStorage:
                 access_key=self.minio_access_key,
                 secret_key=self.minio_secret_key,
                 secure=self.minio_secure,
-                http_client=self.http_client
+                http_client=self.http_client,
             )
             logger.debug(
                 "new Minio client created: <%s at %s>",
@@ -132,14 +136,11 @@ class MinioStorage:
     def _create_bucket(self):
         try:
             # Make a bucket with the make_bucket API call.
-            self._client.make_bucket(
-                self.bucket_root, location=self.bucket_subdir
-            )
+            self._client.make_bucket(self.bucket_root, location=self.bucket_subdir)
             self._set_public_bucket()
         except Exception as e:
             raise MinioStorageCreateBucketError(
-                "Unable to create bucket %s %s %s" %
-                (self.bucket_root, type(e), e)
+                "Unable to create bucket %s %s %s" % (self.bucket_root, type(e), e)
             )
 
     def _set_public_bucket(self):
@@ -149,8 +150,7 @@ class MinioStorage:
             )
         except Exception as e:
             raise MinioStorageSetPublicBucketError(
-                "Unable to set public bucket %s %s %s" %
-                (self.bucket_root, type(e), e)
+                "Unable to set public bucket %s %s %s" % (self.bucket_root, type(e), e)
             )
 
     def build_object_name(self, file_path, subdirs, preserve_name):
@@ -170,16 +170,17 @@ class MinioStorage:
 
     def get_urls(self, media_path: str) -> str:
         try:
-            url = self._client.presigned_get_object(
-                self.bucket_root, media_path)
+            url = self._client.presigned_get_object(self.bucket_root, media_path)
             return url.split("?")[0]
         except Exception as e:
             raise MinioStorageGetUrlsError(
-                "Unable to get urls %s %s %s %s" %
-                (self.bucket_root, media_path, type(e), e)
+                "Unable to get urls %s %s %s %s"
+                % (self.bucket_root, media_path, type(e), e)
             )
 
-    def register(self, file_path, subdirs="", original_uri=None, preserve_name=False) -> str:
+    def register(
+        self, file_path, subdirs="", original_uri=None, preserve_name=False
+    ) -> str:
         try:
             object_name = self.build_object_name(file_path, subdirs, preserve_name)
             metadata = {"origin_name": os.path.basename(file_path)}
@@ -187,18 +188,18 @@ class MinioStorage:
                 metadata.update({"origin_uri": original_uri})
 
             logger.debug(
-                "Registering %s in %s with metadata %s", file_path, object_name, metadata
+                "Registering %s in %s with metadata %s",
+                file_path,
+                object_name,
+                metadata,
             )
             uri = self.fput(file_path, object_name)
 
-            metadata.update(
-                {"object_name": object_name, "uri": uri}
-            )
+            metadata.update({"object_name": object_name, "uri": uri})
             return metadata
         except Exception as e:
             raise MinioStorageRegisterError(
-                "Unable to register %s %s %s %s" %
-                (file_path, subdirs, type(e), e)
+                "Unable to register %s %s %s %s" % (file_path, subdirs, type(e), e)
             )
 
     def fput(self, file_path, object_name, mimetype=None) -> str:
@@ -206,7 +207,9 @@ class MinioStorage:
             metadata = {"origin_name": os.path.basename(file_path)}
             logger.debug(
                 "Registering %s in %s with metadata %s",
-                file_path, object_name, metadata
+                file_path,
+                object_name,
+                metadata,
             )
             try:
                 self._client.fput_object(
@@ -224,8 +227,8 @@ class MinioStorage:
             return self.get_urls(object_name)
         except Exception as e:
             raise MinioStorageFPutError(
-                "Unable to execute fput for %s %s %s %s" %
-                (file_path, object_name, type(e), e)
+                "Unable to execute fput for %s %s %s %s"
+                % (file_path, object_name, type(e), e)
             )
 
     def fput_content(self, content, mimetype, object_name) -> str:
@@ -236,8 +239,7 @@ class MinioStorage:
             return self.fput(tf.name, object_name, mimetype)
         except Exception as e:
             raise MinioStorageFPutContentError(
-                "Unable to create temporary file %s %s %s" %
-                (object_name, type(e), e)
+                "Unable to create temporary file %s %s %s" % (object_name, type(e), e)
             )
 
     def remove(self, object_name: str) -> None:
@@ -255,13 +257,13 @@ class MinioStorage:
                 downloaded_file_path = tf.name
 
             self._client.fget_object(
-                self.bucket_root, object_name, downloaded_file_path)
+                self.bucket_root, object_name, downloaded_file_path
+            )
 
             return downloaded_file_path
         except Exception as err:
             raise MinioStorageFgetError(
-                "Unable to fget %s %s %s" %
-                (object_name, type(e), e)
+                "Unable to fget %s %s %s" % (object_name, type(e), e)
             )
 
     def get_zip_file_items(self, object_name, downloaded_folder_path=None):
@@ -296,6 +298,5 @@ class MinioStorage:
             return files
         except Exception as e:
             raise MinioStorageGetZipFileItemsError(
-                "Unable to get items from %s %s %s" %
-                (source, type(e), e)
+                "Unable to get items from %s %s %s" % (source, type(e), e)
             )

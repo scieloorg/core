@@ -6,7 +6,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -15,20 +14,85 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='ProcessingError',
+            name="ProcessingError",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', models.DateTimeField(auto_now_add=True, verbose_name='Creation date')),
-                ('updated', models.DateTimeField(auto_now=True, verbose_name='Last update date')),
-                ('item', models.CharField(blank=True, max_length=510, null=True, verbose_name='Error item')),
-                ('description', models.CharField(blank=True, max_length=510, null=True, verbose_name='Error description')),
-                ('type', models.CharField(blank=True, max_length=255, null=True, verbose_name='Error type')),
-                ('step', models.CharField(blank=True, max_length=255, null=True, verbose_name='Error occurrence step')),
-                ('creator', models.ForeignKey(editable=False, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='processingerror_creator', to=settings.AUTH_USER_MODEL, verbose_name='Creator')),
-                ('updated_by', models.ForeignKey(blank=True, editable=False, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='processingerror_last_mod_user', to=settings.AUTH_USER_MODEL, verbose_name='Updater')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "created",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Creation date"
+                    ),
+                ),
+                (
+                    "updated",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Last update date"
+                    ),
+                ),
+                (
+                    "item",
+                    models.CharField(
+                        blank=True, max_length=510, null=True, verbose_name="Error item"
+                    ),
+                ),
+                (
+                    "description",
+                    models.CharField(
+                        blank=True,
+                        max_length=510,
+                        null=True,
+                        verbose_name="Error description",
+                    ),
+                ),
+                (
+                    "type",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, verbose_name="Error type"
+                    ),
+                ),
+                (
+                    "step",
+                    models.CharField(
+                        blank=True,
+                        max_length=255,
+                        null=True,
+                        verbose_name="Error occurrence step",
+                    ),
+                ),
+                (
+                    "creator",
+                    models.ForeignKey(
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="processingerror_creator",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Creator",
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        blank=True,
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="processingerror_last_mod_user",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Updater",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
     ]

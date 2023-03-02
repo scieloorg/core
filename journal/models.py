@@ -21,28 +21,52 @@ class OfficialJournal(CommonControlField):
     Class that represent the Official Journal
     """
 
-    title = models.TextField(_('Official Title'), null=True, blank=True)
-    foundation_year = models.CharField(_('Foundation Year'), max_length=4, null=True, blank=True)
-    issn_print = models.CharField(_('ISSN Print'), max_length=9, null=True, blank=True)
-    issn_electronic = models.CharField(_('ISSN Eletronic'), max_length=9, null=True, blank=True)
-    issnl = models.CharField(_('ISSNL'), max_length=9, null=True, blank=True)
+    title = models.TextField(_("Official Title"), null=True, blank=True)
+    foundation_year = models.CharField(
+        _("Foundation Year"), max_length=4, null=True, blank=True
+    )
+    issn_print = models.CharField(_("ISSN Print"), max_length=9, null=True, blank=True)
+    issn_electronic = models.CharField(
+        _("ISSN Eletronic"), max_length=9, null=True, blank=True
+    )
+    issnl = models.CharField(_("ISSNL"), max_length=9, null=True, blank=True)
 
     class Meta:
-        verbose_name = _('Official Journal')
-        verbose_name_plural = _('Official Journals')
+        verbose_name = _("Official Journal")
+        verbose_name_plural = _("Official Journals")
         indexes = [
-            models.Index(fields=['title', ]),
-            models.Index(fields=['foundation_year', ]),
-            models.Index(fields=['issn_print', ]),
-            models.Index(fields=['issn_electronic', ]),
-            models.Index(fields=['issnl', ]),
+            models.Index(
+                fields=[
+                    "title",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "foundation_year",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "issn_print",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "issn_electronic",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "issnl",
+                ]
+            ),
         ]
 
     def __unicode__(self):
-        return u'%s - %s' % (self.issnl, self.title) or ''
+        return "%s - %s" % (self.issnl, self.title) or ""
 
     def __str__(self):
-        return u'%s - %s' % (self.issnl, self.title) or ''
+        return "%s - %s" % (self.issnl, self.title) or ""
 
     @property
     def data(self):
@@ -56,7 +80,9 @@ class OfficialJournal(CommonControlField):
         return d
 
     @classmethod
-    def get_or_create(cls, title, foundation_year, issn_print, issn_electronic, issnl, user):
+    def get_or_create(
+        cls, title, foundation_year, issn_print, issn_electronic, issnl, user
+    ):
         official_journals = cls.objects.filter(issnl=issnl)
         try:
             official_journal = official_journals[0]
@@ -77,127 +103,154 @@ class OfficialJournal(CommonControlField):
 
 class SocialNetwork(models.Model):
     name = models.TextField(
-        _('Name'),
-        choices=choices.SOCIAL_NETWORK_NAMES,
-        null=True,
-        blank=True
+        _("Name"), choices=choices.SOCIAL_NETWORK_NAMES, null=True, blank=True
     )
-    url = models.URLField(_('URL'), null=True, blank=True)
+    url = models.URLField(_("URL"), null=True, blank=True)
 
-    panels = [
-        FieldPanel('name'),
-        FieldPanel('url')
-    ]
+    panels = [FieldPanel("name"), FieldPanel("url")]
 
     class Meta:
-        verbose_name = _('Social Network')
-        verbose_name_plural = _('Social Networks')
+        verbose_name = _("Social Network")
+        verbose_name_plural = _("Social Networks")
         indexes = [
-            models.Index(fields=['name', ]),
-            models.Index(fields=['url', ]),
+            models.Index(
+                fields=[
+                    "name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "url",
+                ]
+            ),
         ]
         abstract = True
 
     @property
     def data(self):
-        d = {
-            'social_network__name': self.name,
-            'social_network__url': self.url
-        }
+        d = {"social_network__name": self.name, "social_network__url": self.url}
 
         return d
 
 
 class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
     """
-        A class used to represent a journal model designed in the SciELO context.
+    A class used to represent a journal model designed in the SciELO context.
 
-        Attributes
-        ----------
-        official : official journal class object
-            journal model that contains only official data registered in the ISSN.
+    Attributes
+    ----------
+    official : official journal class object
+        journal model that contains only official data registered in the ISSN.
 
-        Methods
-        -------
-        TODO
+    Methods
+    -------
+    TODO
     """
-    official = models.ForeignKey(OfficialJournal, verbose_name=_('Official Journal'),
-                                 null=True, blank=True, on_delete=models.SET_NULL)
-    issn_scielo = models.CharField(_('ISSN SciELO'), max_length=9, null=True, blank=True)
-    title = models.TextField(_('SciELO Journal Title'), null=True, blank=True)
-    short_title = models.TextField(_('Short Title'), null=True, blank=True)
+
+    official = models.ForeignKey(
+        OfficialJournal,
+        verbose_name=_("Official Journal"),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    issn_scielo = models.CharField(
+        _("ISSN SciELO"), max_length=9, null=True, blank=True
+    )
+    title = models.TextField(_("SciELO Journal Title"), null=True, blank=True)
+    short_title = models.TextField(_("Short Title"), null=True, blank=True)
 
     logo = models.ForeignKey(
-        'wagtailimages.Image',
+        "wagtailimages.Image",
         on_delete=models.SET_NULL,
-        related_name='+',
+        related_name="+",
         null=True,
         blank=True,
     )
-    submission_online_url = models.URLField(_("Submission online URL"), null=True, blank=True)
+    submission_online_url = models.URLField(
+        _("Submission online URL"), null=True, blank=True
+    )
 
     collection = models.ForeignKey(
         Collection,
-        verbose_name=_('Collection'),
+        verbose_name=_("Collection"),
         on_delete=models.SET_NULL,
-        related_name='+',
+        related_name="+",
         null=True,
         blank=True,
     )
 
     panels_identification = [
-        FieldPanel('official'),
-        FieldPanel('title'),
-        FieldPanel('short_title'),
-        FieldPanel('collection'),
+        FieldPanel("official"),
+        FieldPanel("title"),
+        FieldPanel("short_title"),
+        FieldPanel("collection"),
     ]
 
     panels_mission = [
-        InlinePanel('mission', label=_('Mission'), classname="collapsed"),
+        InlinePanel("mission", label=_("Mission"), classname="collapsed"),
     ]
 
     panels_owner = [
-        InlinePanel('owner', label=_('Owner'), classname="collapsed"),
+        InlinePanel("owner", label=_("Owner"), classname="collapsed"),
     ]
 
     panels_editorial_manager = [
-        InlinePanel('editorialmanager', label=_('Editorial Manager'), classname="collapsed"),
+        InlinePanel(
+            "editorialmanager", label=_("Editorial Manager"), classname="collapsed"
+        ),
     ]
 
     panels_publisher = [
-        InlinePanel('publisher', label=_('Publisher'), classname="collapsed"),
+        InlinePanel("publisher", label=_("Publisher"), classname="collapsed"),
     ]
 
     panels_sponsor = [
-        InlinePanel('sponsor', label=_('Sponsor'), classname="collapsed"),
+        InlinePanel("sponsor", label=_("Sponsor"), classname="collapsed"),
     ]
 
     panels_website = [
-        FieldPanel('logo', heading=_('Logo')),
-        FieldPanel('submission_online_url'),
-        InlinePanel('journalsocialnetwork', label=_('Social Network'))
+        FieldPanel("logo", heading=_("Logo")),
+        FieldPanel("submission_online_url"),
+        InlinePanel("journalsocialnetwork", label=_("Social Network")),
     ]
 
     edit_handler = TabbedInterface(
         [
-            ObjectList(panels_identification, heading=_('Identification')),
-            ObjectList(panels_mission, heading=_('Missions')),
-            ObjectList(panels_owner, heading=_('Owners')),
-            ObjectList(panels_editorial_manager, heading=_('Editorial Manager')),
-            ObjectList(panels_publisher, heading=_('Publisher')),
-            ObjectList(panels_sponsor, heading=_('Sponsor')),
-            ObjectList(panels_website, heading=_('Website')),
+            ObjectList(panels_identification, heading=_("Identification")),
+            ObjectList(panels_mission, heading=_("Missions")),
+            ObjectList(panels_owner, heading=_("Owners")),
+            ObjectList(panels_editorial_manager, heading=_("Editorial Manager")),
+            ObjectList(panels_publisher, heading=_("Publisher")),
+            ObjectList(panels_sponsor, heading=_("Sponsor")),
+            ObjectList(panels_website, heading=_("Website")),
         ]
     )
 
     class Meta:
-        verbose_name = _('SciELO Journal')
-        verbose_name_plural = _('SciELO Journals')
+        verbose_name = _("SciELO Journal")
+        verbose_name_plural = _("SciELO Journals")
         indexes = [
-            models.Index(fields=['issn_scielo', ]),
-            models.Index(fields=['title', ]),
-            models.Index(fields=['short_title', ]),
-            models.Index(fields=['submission_online_url', ]),
+            models.Index(
+                fields=[
+                    "issn_scielo",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "title",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "short_title",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "submission_online_url",
+                ]
+            ),
         ]
 
     @property
@@ -207,17 +260,21 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
         if self.official:
             d.update(self.official.data)
 
-        d.update({
-            'scielo_journal__issn_scielo': self.issn_scielo,
-            'scielo_journal__title': self.title,
-            'scielo_journal__short_title': self.short_title,
-            'scielo_journal__submission_online_url': self.submission_online_url
-        })
+        d.update(
+            {
+                "scielo_journal__issn_scielo": self.issn_scielo,
+                "scielo_journal__title": self.title,
+                "scielo_journal__short_title": self.short_title,
+                "scielo_journal__submission_online_url": self.submission_online_url,
+            }
+        )
 
         return d
 
     @classmethod
-    def get_or_create(cls, official_journal, issn_scielo, title, short_title, collection, user):
+    def get_or_create(
+        cls, official_journal, issn_scielo, title, short_title, collection, user
+    ):
         scielo_journals = cls.objects.filter(official=official_journal)
         try:
             scielo_journal = scielo_journals[0]
@@ -233,21 +290,31 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
         return scielo_journal
 
     def __unicode__(self):
-        return u'%s' % self.official or ''
+        return "%s" % self.official or ""
 
     def __str__(self):
-        return u'%s' % self.official or ''
+        return "%s" % self.official or ""
 
     base_form_class = CoreAdminModelForm
 
 
 class Mission(Orderable, RichTextWithLang, CommonControlField):
-    journal = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name='mission')
+    journal = ParentalKey(
+        ScieloJournal, on_delete=models.CASCADE, related_name="mission"
+    )
 
     class Meta:
         indexes = [
-            models.Index(fields=['journal', ]),
-            models.Index(fields=['language', ]),
+            models.Index(
+                fields=[
+                    "journal",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "language",
+                ]
+            ),
         ]
 
     @property
@@ -261,7 +328,9 @@ class Mission(Orderable, RichTextWithLang, CommonControlField):
 
     @classmethod
     def get_or_create(cls, scielo_journal, scielo_issn, mission_text, language, user):
-        scielo_missions = cls.objects.filter(journal__official__issnl=scielo_issn, language=language)
+        scielo_missions = cls.objects.filter(
+            journal__official__issnl=scielo_issn, language=language
+        )
         try:
             scielo_mission = scielo_missions[0]
         except IndexError:
@@ -276,20 +345,26 @@ class Mission(Orderable, RichTextWithLang, CommonControlField):
 
 
 class Owner(Orderable, InstitutionHistory):
-    page = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name='owner')
+    page = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name="owner")
 
 
 class EditorialManager(Orderable, InstitutionHistory):
-    page = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name='editorialmanager')
+    page = ParentalKey(
+        ScieloJournal, on_delete=models.CASCADE, related_name="editorialmanager"
+    )
 
 
 class Publisher(Orderable, InstitutionHistory):
-    page = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name='publisher')
+    page = ParentalKey(
+        ScieloJournal, on_delete=models.CASCADE, related_name="publisher"
+    )
 
 
 class Sponsor(Orderable, InstitutionHistory):
-    page = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name='sponsor')
+    page = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name="sponsor")
 
 
 class JournalSocialNetwork(Orderable, SocialNetwork):
-    page = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name='journalsocialnetwork')
+    page = ParentalKey(
+        ScieloJournal, on_delete=models.CASCADE, related_name="journalsocialnetwork"
+    )

@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('django_celery_beat', '0013_auto_20200609_0727'),
+        ("django_celery_beat", "0013_auto_20200609_0727"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='clockedschedule',
-            name='enabled',
+            model_name="clockedschedule",
+            name="enabled",
         ),
     ]
