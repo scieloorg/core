@@ -15,18 +15,18 @@ class ProcessingErrorCreateView(CreateView):
 class ProcessingErrorAdmin(ModelAdmin):
     model = ProcessingError
     inspect_view_enabled = True
-    menu_label = _('Processing Error')
+    menu_label = _("Processing Error")
     create_view_class = ProcessingErrorCreateView
-    menu_icon = 'folder'
+    menu_icon = "folder"
     menu_order = 900
     add_to_settings_menu = False
     exclude_from_explorer = False
 
     list_display = (
-        'item',
-        'description',
-        'type',
-        'step',
+        "item",
+        "description",
+        "type",
+        "step",
     )
 
 

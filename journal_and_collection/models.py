@@ -13,30 +13,44 @@ from . import choices
 
 
 class Event(CommonControlField):
-    collection = models.ForeignKey(Collection, verbose_name=_('Collection'), null=True, blank=True,
-                                   on_delete=models.SET_NULL)
-    occurrence_date = models.DateField(_('Occurrence date'), null=True, blank=True)
-    occurrence_type = models.CharField(_('Occurrence type'), choices=choices.events,
-                                       max_length=20, null=True, blank=True)
+    collection = models.ForeignKey(
+        Collection,
+        verbose_name=_("Collection"),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    occurrence_date = models.DateField(_("Occurrence date"), null=True, blank=True)
+    occurrence_type = models.CharField(
+        _("Occurrence type"),
+        choices=choices.events,
+        max_length=20,
+        null=True,
+        blank=True,
+    )
 
     panels = [
-        FieldPanel('collection'),
-        FieldPanel('occurrence_date'),
-        FieldPanel('occurrence_type'),
+        FieldPanel("collection"),
+        FieldPanel("occurrence_date"),
+        FieldPanel("occurrence_type"),
     ]
 
     class Meta:
-        verbose_name = _('Event')
-        verbose_name_plural = _('Events')
+        verbose_name = _("Event")
+        verbose_name_plural = _("Events")
         indexes = [
-            models.Index(fields=['occurrence_type', ]),
+            models.Index(
+                fields=[
+                    "occurrence_type",
+                ]
+            ),
         ]
 
     @property
     def data(self):
         d = {
-            'event__occurrence_date': self.occurrence_date,
-            'event__occurrence_type': self.occurrence_type,
+            "event__occurrence_date": self.occurrence_date,
+            "event__occurrence_type": self.occurrence_type,
         }
 
         if self.collection:
@@ -45,27 +59,42 @@ class Event(CommonControlField):
         return d
 
     def __unicode__(self):
-        return u'%s in the %s in %s' % (self.occurrence_type, self.collection, str(self.occurrence_date))
+        return "%s in the %s in %s" % (
+            self.occurrence_type,
+            self.collection,
+            str(self.occurrence_date),
+        )
 
     def __str__(self):
-        return u'%s in the %s in %s' % (self.occurrence_type, self.collection, str(self.occurrence_date))
+        return "%s in the %s in %s" % (
+            self.occurrence_type,
+            self.collection,
+            str(self.occurrence_date),
+        )
 
     base_form_class = CoreAdminModelForm
 
 
 class JournalAndCollection(CommonControlField):
-    journal = models.ForeignKey(ScieloJournal, verbose_name=_('Journal'), null=True, blank=True,
-                                on_delete=models.SET_NULL)
-    events_collection = models.ManyToManyField(Event, verbose_name=_('Events'),  blank=True)
+    journal = models.ForeignKey(
+        ScieloJournal,
+        verbose_name=_("Journal"),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    events_collection = models.ManyToManyField(
+        Event, verbose_name=_("Events"), blank=True
+    )
 
     panels = [
-        FieldPanel('journal'),
-        FieldPanel('events_collection'),
+        FieldPanel("journal"),
+        FieldPanel("events_collection"),
     ]
 
     class Meta:
-        verbose_name = _('Journal and Collection')
-        verbose_name_plural = _('Journals and Collections')
+        verbose_name = _("Journal and Collection")
+        verbose_name_plural = _("Journals and Collections")
 
     @property
     def data(self):
@@ -79,9 +108,9 @@ class JournalAndCollection(CommonControlField):
         return d
 
     def __unicode__(self):
-        return u'%s' % self.journal
+        return "%s" % self.journal
 
     def __str__(self):
-        return u'%s' % self.journal
+        return "%s" % self.journal
 
     base_form_class = CoreAdminModelForm

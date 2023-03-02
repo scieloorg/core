@@ -6,7 +6,9 @@ def run(*args):
     if args:
         logging.info(args)
         try:
-            load_altmetric.apply_async(kwargs={"user_id": args[0], "file_path": args[1]})
+            load_altmetric.apply_async(
+                kwargs={"user_id": args[0], "file_path": args[1]}
+            )
         except Exception as e:
             logging.info(e)
             logging.info("The 'User ID' and the 'path' to Altmetric files is required.")

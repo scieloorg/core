@@ -26,12 +26,12 @@ def get_files_storage(files_storage_config):
     except Exception as e:
         raise exceptions.GetFilesStorageError(
             _("Unable to get MinioStorage {} {} {}").format(
-                files_storage_config, type(e), e)
+                files_storage_config, type(e), e
+            )
         )
 
 
 class FilesStorageManager:
-
     def __init__(self, files_storage_name):
         self.config = MinioConfiguration.get_or_create(name=files_storage_name)
         self.files_storage = get_files_storage(self.config)
@@ -48,7 +48,7 @@ class FilesStorageManager:
                 preserve_name=preserve_name,
             )
             logging.info("Response %s %s" % (source_filepath, response))
-            return {"uri": response['uri'], "basename": basename}
+            return {"uri": response["uri"], "basename": basename}
         except Exception as e:
             raise exceptions.PushFileError(
                 _("Unable to push file {} {} {} {}").format(
@@ -77,4 +77,3 @@ class FilesStorageManager:
                     filename, subdirs, type(e), e
                 )
             )
-

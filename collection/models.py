@@ -18,61 +18,89 @@ class CollectionName(TextWithLang):
         return d
 
     def __unicode__(self):
-        return u'%s (%s)' % (self.text, self.language)
+        return "%s (%s)" % (self.text, self.language)
 
     def __str__(self):
-        return u'%s (%s)' % (self.text, self.language)
+        return "%s (%s)" % (self.text, self.language)
 
 
 class Collection(CommonControlField):
-    acron3 = models.CharField(_("Acronym with 3 chars"), max_length=10, null=True, blank=True)
-    acron2 = models.CharField(_("Acronym with 2 chars"), max_length=10, null=True, blank=True)
+    acron3 = models.CharField(
+        _("Acronym with 3 chars"), max_length=10, null=True, blank=True
+    )
+    acron2 = models.CharField(
+        _("Acronym with 2 chars"), max_length=10, null=True, blank=True
+    )
     code = models.CharField(_("Code"), max_length=10, null=True, blank=True)
     domain = models.URLField(_("Domain"), null=True, blank=True)
-    name = models.ManyToManyField(CollectionName, verbose_name="Collection Name", blank=True)
+    name = models.ManyToManyField(
+        CollectionName, verbose_name="Collection Name", blank=True
+    )
     main_name = models.TextField(_("Main name"), null=True, blank=True)
     status = models.TextField(
-        _("Status"),
-        choices=choices.STATUS,
-        null=True,
-        blank=True
+        _("Status"), choices=choices.STATUS, null=True, blank=True
     )
     has_analytics = models.BooleanField(_("Has analytics"), null=True, blank=True)
     # Antes era type
     collection_type = models.TextField(
-        _("Collection Type"),
-        choices=choices.TYPE,
-        null=True,
-        blank=True
+        _("Collection Type"), choices=choices.TYPE, null=True, blank=True
     )
     is_active = models.BooleanField(_("Is active"), null=True, blank=True)
     foundation_date = models.DateField(_("Foundation data"), null=True, blank=True)
 
     panels = [
-        FieldPanel('acron3'),
-        FieldPanel('acron2'),
-        FieldPanel('code'),
-        FieldPanel('domain'),
-        FieldPanel('name'),
-        FieldPanel('main_name'),
-        FieldPanel('status'),
-        FieldPanel('has_analytics'),
-        FieldPanel('collection_type'),
-        FieldPanel('is_active'),
-        FieldPanel('foundation_date'),
+        FieldPanel("acron3"),
+        FieldPanel("acron2"),
+        FieldPanel("code"),
+        FieldPanel("domain"),
+        FieldPanel("name"),
+        FieldPanel("main_name"),
+        FieldPanel("status"),
+        FieldPanel("has_analytics"),
+        FieldPanel("collection_type"),
+        FieldPanel("is_active"),
+        FieldPanel("foundation_date"),
     ]
 
     class Meta:
         verbose_name = _("Collection")
         verbose_name_plural = _("Collections")
         indexes = [
-            models.Index(fields=['acron3', ]),
-            models.Index(fields=['acron2', ]),
-            models.Index(fields=['code', ]),
-            models.Index(fields=['domain', ]),
-            models.Index(fields=['main_name', ]),
-            models.Index(fields=['status', ]),
-            models.Index(fields=['collection_type', ]),
+            models.Index(
+                fields=[
+                    "acron3",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "acron2",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "code",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "domain",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "main_name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "status",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "collection_type",
+                ]
+            ),
         ]
 
     @property
@@ -96,9 +124,9 @@ class Collection(CommonControlField):
         return d
 
     def __unicode__(self):
-        return u'%s' % self.main_name or ''
+        return "%s" % self.main_name or ""
 
     def __str__(self):
-        return u'%s' % self.main_name or ''
+        return "%s" % self.main_name or ""
 
     base_form_class = CoreAdminModelForm

@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('altmetric', '0002_alter_rawaltmetric_extraction_date'),
+        ("altmetric", "0002_alter_rawaltmetric_extraction_date"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='rawaltmetric',
-            name='resource_type',
-            field=models.CharField(choices=[('a', 'Article'), ('j', 'Journal')], max_length=10, verbose_name='Resource Type'),
+            model_name="rawaltmetric",
+            name="resource_type",
+            field=models.CharField(
+                choices=[("a", "Article"), ("j", "Journal")],
+                max_length=10,
+                verbose_name="Resource Type",
+            ),
         ),
     ]

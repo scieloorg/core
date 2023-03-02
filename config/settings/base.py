@@ -332,8 +332,8 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 # Celery Results
 # ------------------------------------------------------------------------------
 # https: // django-celery-results.readthedocs.io/en/latest/getting_started.html
-CELERY_RESULT_BACKEND = 'django-db'
-CELERY_CACHE_BACKEND = 'django-cache'
+CELERY_RESULT_BACKEND = "django-db"
+CELERY_CACHE_BACKEND = "django-cache"
 CELERY_RESULT_EXTENDED = True
 
 # django-allauth
@@ -364,20 +364,20 @@ WAGTAIL_SITE_NAME = "core"
 BASE_URL = "https://core"
 
 LANGUAGES = [
-    ('en', "English"),
-    ('es', "Spanish"),
-    ('pt-BR', "Portuguese"),
+    ("en", "English"),
+    ("es", "Spanish"),
+    ("pt-BR", "Portuguese"),
 ]
 
 WAGTAIL_I18N_ENABLED = True
 
-WAGTAIL_CONTENT_LANGUAGES =  [
-    ('en', "English"),
-    ('es', "Spanish"),
-    ('pt-BR', "Portuguese"),
+WAGTAIL_CONTENT_LANGUAGES = [
+    ("en", "English"),
+    ("es", "Spanish"),
+    ("pt-BR", "Portuguese"),
 ]
 
 NOCAPTCHA = True
 
-RECAPTCHA_PUBLIC_KEY = env.str("RECAPTCHA_PUBLIC_KEY", default='')
-RECAPTCHA_PRIVATE_KEY = env.str("RECAPTCHA_PRIVATE_KEY", default='')
+RECAPTCHA_PUBLIC_KEY = env.str("RECAPTCHA_PUBLIC_KEY", default="")
+RECAPTCHA_PRIVATE_KEY = env.str("RECAPTCHA_PRIVATE_KEY", default="")

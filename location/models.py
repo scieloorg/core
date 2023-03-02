@@ -20,10 +20,10 @@ class City(CommonControlField):
         verbose_name_plural = _("Cities")
 
     def __unicode__(self):
-        return u'%s' % self.name
+        return "%s" % self.name
 
     def __str__(self):
-        return u'%s' % self.name
+        return "%s" % self.name
 
     @classmethod
     def get_or_create(cls, user, name):
@@ -51,21 +51,22 @@ class State(CommonControlField):
 
     name = models.TextField(_("State name"))
     acronym = models.CharField(_("State Acronym"), max_length=2, null=True, blank=True)
-    region = models.CharField(_("Region"), choices=choices.regions, max_length=12, null=True, blank=True)
+    region = models.CharField(
+        _("Region"), choices=choices.regions, max_length=12, null=True, blank=True
+    )
 
     class Meta:
         verbose_name = _("State")
         verbose_name_plural = _("States")
 
     def __unicode__(self):
-        return u'%s' % self.name
+        return "%s" % self.name
 
     def __str__(self):
-        return u'%s' % self.name
+        return "%s" % self.name
 
     @classmethod
     def get_or_create(cls, user, name=None, acronym=None):
-
         if name:
             try:
                 return cls.objects.get(name__icontains=name)
@@ -98,22 +99,24 @@ class Country(CommonControlField):
         name
         acronym
     """
+
     name = models.CharField(_("Country Name"), blank=True, null=True, max_length=255)
-    acronym = models.CharField(_("Country Acronym"), blank=True, null=True, max_length=255)
+    acronym = models.CharField(
+        _("Country Acronym"), blank=True, null=True, max_length=255
+    )
 
     class Meta:
         verbose_name = _("Country")
         verbose_name_plural = _("Countries")
 
     def __unicode__(self):
-        return u'%s' % self.name
+        return "%s" % self.name
 
     def __str__(self):
-        return u'%s' % self.name
+        return "%s" % self.name
 
     @classmethod
     def get_or_create(cls, user, name=None, acronym=None):
-
         if name:
             try:
                 return cls.objects.get(name__icontains=name)
@@ -149,13 +152,15 @@ class Location(CommonControlField):
         State,
         verbose_name=_("State"),
         on_delete=models.SET_NULL,
-        null=True, blank=True,
+        null=True,
+        blank=True,
     )
     country = models.ForeignKey(
         Country,
         verbose_name=_("Country"),
         on_delete=models.SET_NULL,
-        null=True, blank=True,
+        null=True,
+        blank=True,
     )
 
     class Meta:
@@ -163,21 +168,18 @@ class Location(CommonControlField):
         verbose_name_plural = _("Locations")
 
     def __unicode__(self):
-        return u'%s | %s | %s' % (self.country, self.state, self.city)
+        return "%s | %s | %s" % (self.country, self.state, self.city)
 
     def __str__(self):
-        return u'%s | %s | %s' % (self.country, self.state, self.city)
+        return "%s | %s | %s" % (self.country, self.state, self.city)
 
     @classmethod
-    def get_or_create(cls, user, location_country, location_state,
-                      location_city):
-
+    def get_or_create(cls, user, location_country, location_state, location_city):
         # check if exists the location
         try:
             return cls.objects.get(
-                country=location_country,
-                state=location_state,
-                city=location_city)
+                country=location_country, state=location_state, city=location_city
+            )
         except:
             location = Location()
             location.country = location_country

@@ -9,12 +9,12 @@ is_aware = timezone.is_aware
 NEVER_CHECK_TIMEOUT = 100000000
 
 # see Issue #222
-now_localtime = getattr(timezone, 'template_localtime', timezone.localtime)
+now_localtime = getattr(timezone, "template_localtime", timezone.localtime)
 
 
 def make_aware(value):
     """Force datatime to have timezone information."""
-    if getattr(settings, 'USE_TZ', False):
+    if getattr(settings, "USE_TZ", False):
         # naive datetimes are assumed to be in UTC.
         if timezone.is_naive(value):
             value = timezone.make_aware(value, timezone.utc)
@@ -30,7 +30,7 @@ def make_aware(value):
 
 def now():
     """Return the current date and time."""
-    if getattr(settings, 'USE_TZ', False):
+    if getattr(settings, "USE_TZ", False):
         return now_localtime(timezone.now())
     else:
         return timezone.now()
@@ -42,7 +42,7 @@ def is_database_scheduler(scheduler):
         return False
     from kombu.utils import symbol_by_name
     from .schedulers import DatabaseScheduler
-    return (
-        scheduler == 'django'
-        or issubclass(symbol_by_name(scheduler), DatabaseScheduler)
+
+    return scheduler == "django" or issubclass(
+        symbol_by_name(scheduler), DatabaseScheduler
     )

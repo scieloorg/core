@@ -13,32 +13,30 @@ from files_storage import exceptions
 
 
 class MinioConfiguration(CommonControlField):
-
-    name = models.TextField(_('Name'), null=True, blank=False)
-    host = models.TextField(_('Host'), null=True, blank=True)
-    bucket_root = models.TextField(_('Bucket root'), null=True, blank=True)
-    bucket_app_subdir = models.TextField(
-        _('Bucket app subdir'), null=True, blank=True)
-    access_key = models.TextField(_('Access key'), null=True, blank=True)
-    secret_key = models.TextField(_('Secret key'), null=True, blank=True)
+    name = models.TextField(_("Name"), null=True, blank=False)
+    host = models.TextField(_("Host"), null=True, blank=True)
+    bucket_root = models.TextField(_("Bucket root"), null=True, blank=True)
+    bucket_app_subdir = models.TextField(_("Bucket app subdir"), null=True, blank=True)
+    access_key = models.TextField(_("Access key"), null=True, blank=True)
+    secret_key = models.TextField(_("Secret key"), null=True, blank=True)
     # indicar como False para uso no desenvolvimento
-    secure = models.BooleanField(_('Secure'), default=True)
+    secure = models.BooleanField(_("Secure"), default=True)
 
     class Meta:
         indexes = [
-            models.Index(fields=['name']),
-            models.Index(fields=['host']),
-            models.Index(fields=['bucket_root']),
+            models.Index(fields=["name"]),
+            models.Index(fields=["host"]),
+            models.Index(fields=["bucket_root"]),
         ]
 
     panels = [
-        FieldPanel('name'),
-        FieldPanel('host'),
-        FieldPanel('bucket_root'),
-        FieldPanel('bucket_app_subdir'),
-        FieldPanel('access_key'),
-        FieldPanel('secret_key'),
-        FieldPanel('secure'),
+        FieldPanel("name"),
+        FieldPanel("host"),
+        FieldPanel("bucket_root"),
+        FieldPanel("bucket_app_subdir"),
+        FieldPanel("access_key"),
+        FieldPanel("secret_key"),
+        FieldPanel("secure"),
     ]
 
     base_form_class = CoreAdminModelForm
@@ -51,12 +49,16 @@ class MinioConfiguration(CommonControlField):
 
     @classmethod
     def get_or_create(
-            cls,
-            name, host=None,
-            access_key=None, secret_key=None, secure=None,
-            bucket_root=None, bucket_app_subdir=None,
-            user=None,
-            ):
+        cls,
+        name,
+        host=None,
+        access_key=None,
+        secret_key=None,
+        secure=None,
+        bucket_root=None,
+        bucket_app_subdir=None,
+        user=None,
+    ):
         try:
             return cls.objects.get(name=name)
         except cls.DoesNotExist:
@@ -74,13 +76,12 @@ class MinioConfiguration(CommonControlField):
 
 
 class MinioFile(CommonControlField):
-    basename = models.TextField(_('Basename'), null=True, blank=True)
-    uri = models.URLField(_('URI'), null=True, blank=True)
+    basename = models.TextField(_("Basename"), null=True, blank=True)
+    uri = models.URLField(_("URI"), null=True, blank=True)
 
     class Meta:
-
         indexes = [
-            models.Index(fields=['basename']),
+            models.Index(fields=["basename"]),
         ]
 
     def __unicode__(self):
@@ -102,6 +103,5 @@ class MinioFile(CommonControlField):
             return obj
         except Exception as e:
             raise exceptions.MinioFileGetOrCreateError(
-                "Unable to create file: %s %s %s" %
-                (type(e), e, obj)
+                "Unable to create file: %s %s %s" % (type(e), e, obj)
             )

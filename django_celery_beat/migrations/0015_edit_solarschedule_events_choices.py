@@ -4,15 +4,29 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('django_celery_beat', '0014_remove_clockedschedule_enabled'),
+        ("django_celery_beat", "0014_remove_clockedschedule_enabled"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='solarschedule',
-            name='event',
-            field=models.CharField(choices=[('dawn_astronomical', 'Astronomical dawn'), ('dawn_civil', 'Civil dawn'), ('dawn_nautical', 'Nautical dawn'), ('dusk_astronomical', 'Astronomical dusk'), ('dusk_civil', 'Civil dusk'), ('dusk_nautical', 'Nautical dusk'), ('solar_noon', 'Solar noon'), ('sunrise', 'Sunrise'), ('sunset', 'Sunset')], help_text='The type of solar event when the job should run', max_length=24, verbose_name='Solar Event'),
+            model_name="solarschedule",
+            name="event",
+            field=models.CharField(
+                choices=[
+                    ("dawn_astronomical", "Astronomical dawn"),
+                    ("dawn_civil", "Civil dawn"),
+                    ("dawn_nautical", "Nautical dawn"),
+                    ("dusk_astronomical", "Astronomical dusk"),
+                    ("dusk_civil", "Civil dusk"),
+                    ("dusk_nautical", "Nautical dusk"),
+                    ("solar_noon", "Solar noon"),
+                    ("sunrise", "Sunrise"),
+                    ("sunset", "Sunset"),
+                ],
+                help_text="The type of solar event when the job should run",
+                max_length=24,
+                verbose_name="Solar Event",
+            ),
         ),
     ]

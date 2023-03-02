@@ -15,7 +15,9 @@ def run(*args):
     # Delete all cities
     models.City.objects.all().delete()
 
-    with open(os.path.dirname(os.path.realpath(__file__)) + "/../fixtures/cities.csv", 'r') as fp:
+    with open(
+        os.path.dirname(os.path.realpath(__file__)) + "/../fixtures/cities.csv", "r"
+    ) as fp:
         for line in fp.readlines():
             name = line.strip()
 
@@ -24,6 +26,5 @@ def run(*args):
                 user_id = args[0]
 
             creator = User.objects.get(id=user_id)
-
 
             models.City(name=name, creator=creator).save()

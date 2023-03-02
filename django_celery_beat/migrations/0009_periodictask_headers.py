@@ -3,20 +3,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('django_celery_beat', '0006_periodictask_priority'),
+        ("django_celery_beat", "0006_periodictask_priority"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='periodictask',
-            name='headers',
+            model_name="periodictask",
+            name="headers",
             field=models.TextField(
                 blank=True,
-                default='{}',
-                help_text='JSON encoded message headers',
-                verbose_name='Message headers'
+                default="{}",
+                help_text="JSON encoded message headers",
+                verbose_name="Message headers",
             ),
         ),
     ]
