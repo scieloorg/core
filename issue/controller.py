@@ -1,9 +1,11 @@
-import requests
-import xmltodict
 import json
 
-from .models import ScieloJournal, Issue
+import requests
+import xmltodict
+
 from processing_errors.models import ProcessingError
+
+from .models import Issue, ScieloJournal
 
 
 def get_journal_xml(collection, issn):

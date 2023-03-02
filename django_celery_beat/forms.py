@@ -1,6 +1,5 @@
 from celery import current_app
 from celery.utils import cached_property
-
 from django import forms
 from django.forms.widgets import Select
 from django.utils.translation import gettext_lazy as _

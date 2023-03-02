@@ -1,6 +1,5 @@
 from django.utils.translation import gettext as _
 
-
 STATUS = [
     ("certified", _("Certified")),
     ("development", _("Development")),

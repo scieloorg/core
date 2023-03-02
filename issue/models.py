@@ -2,10 +2,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel
 
-from core.models import CommonControlField, RichTextWithLang
-
 from core.forms import CoreAdminModelForm
-
+from core.models import CommonControlField, RichTextWithLang
 from journal.models import ScieloJournal
 
 

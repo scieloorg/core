@@ -1,4 +1,5 @@
 import logging
+
 from altmetric.tasks import load_altmetric
 
 

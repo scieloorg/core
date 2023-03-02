@@ -1,11 +1,13 @@
-import requests
-import xmltodict
 import json
 
-from .models import OfficialJournal, ScieloJournal, Mission
-from institution.models import Institution, InstitutionHistory
+import requests
+import xmltodict
+
 from collection.models import Collection
+from institution.models import Institution, InstitutionHistory
 from processing_errors.models import ProcessingError
+
+from .models import Mission, OfficialJournal, ScieloJournal
 
 
 def get_issn(collection):

@@ -1,19 +1,16 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
-from wagtail.models import Orderable
-from wagtail.admin.panels import FieldPanel, InlinePanel, TabbedInterface, ObjectList
-
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
+from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
+from wagtail.models import Orderable
 
-from core.models import CommonControlField, RichTextWithLang
-
-from core.forms import CoreAdminModelForm
-from . import choices
-
-from institution.models import InstitutionHistory
 from collection.models import Collection
+from core.forms import CoreAdminModelForm
+from core.models import CommonControlField, RichTextWithLang
+from institution.models import InstitutionHistory
+
+from . import choices
 
 
 class OfficialJournal(CommonControlField):

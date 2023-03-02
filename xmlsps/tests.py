@@ -1,10 +1,10 @@
-from unittest.mock import patch, MagicMock
 import os
 from tempfile import TemporaryDirectory
+from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
-from requests import HTTPError
 from lxml import etree
+from requests import HTTPError
 
 from xmlsps import xml_sps_lib
 

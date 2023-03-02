@@ -2,32 +2,28 @@
 import datetime
 import logging
 import math
-
 from multiprocessing.util import Finalize
 
-from celery import current_app
-from celery import schedules
-from celery.beat import Scheduler, ScheduleEntry
-
+from celery import current_app, schedules
+from celery.beat import ScheduleEntry, Scheduler
 from celery.utils.log import get_logger
 from celery.utils.time import maybe_make_aware
-from kombu.utils.encoding import safe_str, safe_repr
+from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import close_old_connections, transaction
+from django.db.utils import DatabaseError, InterfaceError
+from kombu.utils.encoding import safe_repr, safe_str
 from kombu.utils.json import dumps, loads
 
-from django.conf import settings
-from django.db import transaction, close_old_connections
-from django.db.utils import DatabaseError, InterfaceError
-from django.core.exceptions import ObjectDoesNotExist
-
+from .clockedschedule import clocked
 from .models import (
-    PeriodicTask,
-    PeriodicTasks,
+    ClockedSchedule,
     CrontabSchedule,
     IntervalSchedule,
+    PeriodicTask,
+    PeriodicTasks,
     SolarSchedule,
-    ClockedSchedule,
 )
-from .clockedschedule import clocked
 from .utils import NEVER_CHECK_TIMEOUT
 
 # This scheduler must wake up more frequently than the

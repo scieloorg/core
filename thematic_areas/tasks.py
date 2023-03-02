@@ -1,9 +1,7 @@
 from django.contrib.auth import get_user_model
 
 from config import celery_app
-
 from thematic_areas import controller
-
 
 User = get_user_model()
 

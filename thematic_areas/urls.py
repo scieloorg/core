@@ -1,12 +1,12 @@
 from django.urls import path
 
 from .views import (
-    import_file,
-    validate,
     download_sample,
+    generic_download_sample,
     generic_import_file,
     generic_validate,
-    generic_download_sample,
+    import_file,
+    validate,
 )
 
 app_name = "thematic_areas"

@@ -1,8 +1,7 @@
-import os
 import csv
+import os
 
 from thematic_areas.models import GenericThematicArea
-
 
 # This script add bulk of thematic areas
 # This presuppose a fixtures/thematic_areas.csv file exists.

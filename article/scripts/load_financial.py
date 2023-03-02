@@ -1,4 +1,4 @@
-from article import tasks, controller
+from article import controller, tasks
 
 
 def run(user, file_path):

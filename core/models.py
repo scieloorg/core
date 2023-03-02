@@ -1,7 +1,6 @@
-from django.db import models
 from django.contrib.auth import get_user_model
+from django.db import models
 from django.utils.translation import gettext as _
-
 from wagtail.admin.panels import FieldPanel
 from wagtail.fields import RichTextField
 

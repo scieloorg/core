@@ -1,6 +1,5 @@
 from django.utils.translation import gettext as _
 
-
 thematic_level0 = (
     ("", ""),
     ("ALL", _("ALL")),

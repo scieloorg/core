@@ -5,7 +5,7 @@ import logging
 import os
 import tempfile
 from mimetypes import types_map
-from zipfile import ZipFile, BadZipFile
+from zipfile import BadZipFile, ZipFile
 
 from minio import Minio
 from minio.error import S3Error

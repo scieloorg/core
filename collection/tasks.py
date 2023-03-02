@@ -1,10 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 
-from config import celery_app
-
 from collection import controller
-
+from config import celery_app
 
 User = get_user_model()
 

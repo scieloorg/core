@@ -3,13 +3,10 @@ import os
 
 from django.utils.translation import gettext_lazy as _
 
-from files_storage.utils import generate_finger_print
-from files_storage.models import (
-    MinioConfiguration,
-    MinioFile,
-)
-from files_storage.minio import MinioStorage
 from files_storage import exceptions
+from files_storage.minio import MinioStorage
+from files_storage.models import MinioConfiguration, MinioFile
+from files_storage.utils import generate_finger_print
 
 
 def get_files_storage(files_storage_config):

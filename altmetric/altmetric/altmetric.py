@@ -2,8 +2,9 @@ import json
 import logging
 import os
 
-from altmetric import models
 from django.db.utils import DataError
+
+from altmetric import models
 
 
 def load(file_path, file, user):
