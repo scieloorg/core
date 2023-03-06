@@ -4,8 +4,6 @@ from django.utils.translation import gettext as _
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 
-from . import choices
-
 
 class City(CommonControlField):
     """
@@ -43,7 +41,8 @@ class City(CommonControlField):
 
 
 class Region(CommonControlField):
-    name = models.TextField(_("Name of the region"), unique=True)
+    name = models.TextField(_("Name of the region"), null=True, blank=True)
+    acronym = models.CharField(_("Region Acronym"), max_length=10, null=True, blank=True)
 
     class Meta:
         verbose_name = _("Region")
@@ -56,16 +55,27 @@ class Region(CommonControlField):
         return "%s" % self.name
 
     @classmethod
-    def get_or_create(cls, user, name):
+    def get_or_create(cls, user, name=None, acronym=None):
         if name:
             try:
-                return cls.objects.get(name=name)
+                return cls.objects.get(name__icontains=name)
             except:
-                city = City()
-                city.name = name
-                city.creator = user
-                city.save()
-                return city
+                pass
+
+        if acronym:
+            try:
+                return cls.objects.get(acronym__icontains=acronym)
+            except:
+                pass
+
+        if name or acronym:
+            region = Region()
+            region.name = name
+            region.acronym = acronym
+            region.creator = user
+            region.save()
+
+            return region
 
     base_form_class = CoreAdminModelForm
 
