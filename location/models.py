@@ -4,8 +4,6 @@ from django.utils.translation import gettext as _
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 
-from . import choices
-
 
 class City(CommonControlField):
     """
@@ -42,6 +40,46 @@ class City(CommonControlField):
     base_form_class = CoreAdminModelForm
 
 
+class Region(CommonControlField):
+    name = models.TextField(_("Name of the region"), null=True, blank=True)
+    acronym = models.CharField(_("Region Acronym"), max_length=10, null=True, blank=True)
+
+    class Meta:
+        verbose_name = _("Region")
+        verbose_name_plural = _("Regions")
+
+    def __unicode__(self):
+        return "%s" % self.name
+
+    def __str__(self):
+        return "%s" % self.name
+
+    @classmethod
+    def get_or_create(cls, user, name=None, acronym=None):
+        if name:
+            try:
+                return cls.objects.get(name__icontains=name)
+            except:
+                pass
+
+        if acronym:
+            try:
+                return cls.objects.get(acronym__icontains=acronym)
+            except:
+                pass
+
+        if name or acronym:
+            region = Region()
+            region.name = name
+            region.acronym = acronym
+            region.creator = user
+            region.save()
+
+            return region
+
+    base_form_class = CoreAdminModelForm
+
+
 class State(CommonControlField):
     """
     Represent the list of states
@@ -53,8 +91,11 @@ class State(CommonControlField):
 
     name = models.TextField(_("State name"))
     acronym = models.CharField(_("State Acronym"), max_length=2, null=True, blank=True)
-    region = models.CharField(
-        _("Region"), choices=choices.regions, max_length=12, null=True, blank=True
+    region = models.ForeignKey(
+        Region,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
     )
 
     class Meta:
@@ -143,6 +184,12 @@ class Country(CommonControlField):
 
 
 class Location(CommonControlField):
+    region = models.ForeignKey(
+        Region,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
     city = models.ForeignKey(
         City,
         verbose_name=_("City"),
@@ -176,14 +223,18 @@ class Location(CommonControlField):
         return "%s | %s | %s" % (self.country, self.state, self.city)
 
     @classmethod
-    def get_or_create(cls, user, location_country, location_state, location_city):
+    def get_or_create(cls, user, location_region, location_country, location_state, location_city):
         # check if exists the location
         try:
             return cls.objects.get(
-                country=location_country, state=location_state, city=location_city
+                region=location_region,
+                country=location_country,
+                state=location_state,
+                city=location_city
             )
         except:
             location = Location()
+            location.region = location_region
             location.country = location_country
             location.state = location_state
             location.city = location_city
