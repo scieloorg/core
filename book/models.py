@@ -9,12 +9,14 @@ from wagtail.admin.edit_handlers import (
     TabbedInterface,
 )
 from wagtail.models import Orderable
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from book.forms import BookModelForm, ChapterModelForm
 from core.choices import LANGUAGE
-from core.models import CommonControlField
+from core.models import CommonControlField, Language
 from institution.models import Institution
 from location.models import Location
+from researcher.models import Researcher
 
 
 class Book(CommonControlField, ClusterableModel):
@@ -32,6 +34,7 @@ class Book(CommonControlField, ClusterableModel):
         title = the title of the book
         year = the year with max_length = 4
         doi = the Digital Object Identifier of the book
+        researcher = the authors 
 
         CommonControlField:
             created = date of creation the data in this database
@@ -50,7 +53,9 @@ class Book(CommonControlField, ClusterableModel):
     eisbn = models.CharField(_("Electronic ISBN"), max_length=13, null=True, blank=True)
     doi = models.CharField("DOI", max_length=256, null=True, blank=True)
     year = models.IntegerField(_("Year"), null=True, blank=True)
-    language = models.CharField(_("Language"), max_length=256, choices=LANGUAGE, null=True, blank=True)
+
+    researchers = models.ManyToManyField(Researcher, verbose_name=_("Authors"), blank=True)
+    language = models.ForeignKey(Language, verbose_name=_("Language"), null=True, blank=True, on_delete=models.SET_NULL)
     location = models.ForeignKey(Location, verbose_name=_("Localization"), null=True, blank=True, on_delete=models.SET_NULL)
     institution = models.ForeignKey(Institution, verbose_name=_("Publisher"), null=True, blank=True, on_delete=models.SET_NULL)
 
@@ -66,6 +71,7 @@ class Book(CommonControlField, ClusterableModel):
 
     panels_identification = [
         FieldPanel('title'),
+        AutocompletePanel('researchers'),
         FieldPanel('synopsis'),
         FieldPanel('isbn'),
         FieldPanel('eisbn'),
@@ -114,8 +120,8 @@ class Chapter(Orderable, CommonControlField):
     book = ParentalKey(Book, on_delete=models.CASCADE, related_name='chapter')
 
     title = models.CharField(_("Title"), max_length=256, null=True, blank=True)
-    language = models.CharField(_("Language"), max_length=256, choices=LANGUAGE, null=True, blank=True)
     publication_date = models.CharField(_("Data de publicação"), max_length=10, null=True, blank=True)
+    language = models.ForeignKey(Language, verbose_name=_("Language"), null=True, blank=True, on_delete=models.SET_NULL)
 
     class Meta:
         verbose_name = _('Chapter')

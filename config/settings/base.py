@@ -127,6 +127,7 @@ LOCAL_APPS = [
     "article",
     "vocabulary",
     "book",
+    "researcher",
 ]
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
