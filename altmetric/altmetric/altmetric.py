@@ -2,8 +2,9 @@ import json
 import logging
 import os
 
-from altmetric import models
 from django.db.utils import DataError
+
+from altmetric import models
 
 
 def load(file_path, file, user):
@@ -24,7 +25,7 @@ def load(file_path, file, user):
     """
     try:
         logging.info("json_read: %s/%s" % (file_path, file))
-        json_read = open(os.path.join(file_path, file), 'r').read()
+        json_read = open(os.path.join(file_path, file), "r").read()
     except Exception as e:
         logging.info(e)
 
@@ -35,20 +36,21 @@ def load(file_path, file, user):
 
             logging.info("issn_scielo %s in process", issn_scielo)
             if issn_scielo:
-                rawaltmetric = models.RawAltmetric.objects.filter(issn_scielo=issn_scielo)
+                rawaltmetric = models.RawAltmetric.objects.filter(
+                    issn_scielo=issn_scielo
+                )
                 if len(rawaltmetric) == 0:
                     rawaltmetric = models.RawAltmetric()
                     rawaltmetric.issn_scielo = issn_scielo
                     rawaltmetric.extraction_date = jdata.get("extraction_date")
-                    rawaltmetric.resource_type = 'journal'
+                    rawaltmetric.resource_type = "journal"
                 else:
                     logging.info("json_data %s will be updated", file)
                     rawaltmetric = rawaltmetric[0]
                     rawaltmetric.extraction_date = jdata.get("extraction_date")
 
-
                 rawaltmetric.json = jdata
-                
+
                 try:
                     logging.info("json_data %s will be saved", file)
                     rawaltmetric.save()
@@ -57,4 +59,3 @@ def load(file_path, file, user):
 
         except Exception as e:
             logging.info(e)
-    

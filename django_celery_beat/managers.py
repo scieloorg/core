@@ -13,8 +13,10 @@ class ExtendedQuerySet(QuerySet):
         return obj
 
     def _update_model_with_dict(self, obj, fields):
-        [setattr(obj, attr_name, attr_value)
-            for attr_name, attr_value in fields.items()]
+        [
+            setattr(obj, attr_name, attr_value)
+            for attr_name, attr_value in fields.items()
+        ]
         obj.save()
         return obj
 

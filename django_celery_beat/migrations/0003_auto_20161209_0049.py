@@ -3,21 +3,21 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('django_celery_beat', '0002_auto_20161118_0346'),
+        ("django_celery_beat", "0002_auto_20161118_0346"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='solarschedule',
+            name="solarschedule",
             options={
-                'ordering': ('event', 'latitude', 'longitude'),
-                'verbose_name': 'solar event',
-                'verbose_name_plural': 'solar events'},
+                "ordering": ("event", "latitude", "longitude"),
+                "verbose_name": "solar event",
+                "verbose_name_plural": "solar events",
+            },
         ),
         migrations.AlterUniqueTogether(
-            name='solarschedule',
-            unique_together=set([('event', 'latitude', 'longitude')]),
+            name="solarschedule",
+            unique_together=set([("event", "latitude", "longitude")]),
         ),
     ]

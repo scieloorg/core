@@ -1,4 +1,5 @@
 import json
+
 from celery import current_app
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.translation import gettext as _
@@ -20,11 +21,13 @@ def task_run(request):
 
     task = current_app.tasks.get(p_task.task)
 
-    task.apply_async(args=json.loads(p_task.args),
-                     kwargs=json.loads(p_task.kwargs),
-                     queue=p_task.queue,
-                     periodic_task_name=p_task.name)
+    task.apply_async(
+        args=json.loads(p_task.args),
+        kwargs=json.loads(p_task.kwargs),
+        queue=p_task.queue,
+        periodic_task_name=p_task.name,
+    )
 
     messages.success(request, _("Task {0} was successfully run").format(p_task.name))
 
-    return redirect(request.META.get('HTTP_REFERER'))
+    return redirect(request.META.get("HTTP_REFERER"))

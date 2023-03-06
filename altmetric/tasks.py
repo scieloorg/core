@@ -3,10 +3,8 @@ import os
 
 from django.contrib.auth import get_user_model
 
+from altmetric.altmetric import altmetric
 from config import celery_app
-from altmetric.altmetric import (
-    altmetric,
-    )
 
 User = get_user_model()
 

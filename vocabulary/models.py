@@ -1,31 +1,40 @@
 from django.db import models
 from django.utils.translation import gettext as _
+from wagtail.admin.panels import FieldPanel
 
-from wagtail.admin.edit_handlers import FieldPanel
-
-from core.models import CommonControlField, TextWithLang
 from core.forms import CoreAdminModelForm
+from core.models import CommonControlField, TextWithLang
 
 
 class Vocabulary(CommonControlField):
-    name = models.CharField(_('Vocabulary name'), max_length=100, null=True, blank=True)
-    acronym = models.CharField(_('Vocabulary acronym'), max_length=10, null=True, blank=True)
+    name = models.TextField(_("Vocabulary name"), unique=True)
+    acronym = models.CharField(
+        _("Vocabulary acronym"), max_length=10, null=True, blank=True
+    )
 
     def __unicode__(self):
-        return u'%s - %s' % (self.name, self.acronym) or ''
+        return "%s - %s" % (self.name, self.acronym) or ""
 
     def __str__(self):
-        return u'%s - %s' % (self.name, self.acronym) or ''
+        return "%s - %s" % (self.name, self.acronym) or ""
 
     class Meta:
         indexes = [
-            models.Index(fields=['name', ]),
-            models.Index(fields=['acronym', ]),
+            models.Index(
+                fields=[
+                    "name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "acronym",
+                ]
+            ),
         ]
 
     panels = [
-        FieldPanel('name'),
-        FieldPanel('acronym'),
+        FieldPanel("name"),
+        FieldPanel("acronym"),
     ]
 
     @property
@@ -56,25 +65,43 @@ class Vocabulary(CommonControlField):
 
 
 class Keyword(CommonControlField, TextWithLang):
-    vocabulary = models.ForeignKey(Vocabulary, verbose_name=_('Vocabulary'), null=True, blank=True, on_delete=models.SET_NULL)
+    vocabulary = models.ForeignKey(
+        Vocabulary,
+        verbose_name=_("Vocabulary"),
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
 
     def __unicode__(self):
-        return u'%s - %s' % (self.text, self.language) or ''
+        return "%s - %s" % (self.text, self.language) or ""
 
     def __str__(self):
-        return u'%s - %s' % (self.text, self.language) or ''
+        return "%s - %s" % (self.text, self.language) or ""
 
     class Meta:
         indexes = [
-            models.Index(fields=['text', ]),
-            models.Index(fields=['language', ]),
-            models.Index(fields=['vocabulary', ]),
+            models.Index(
+                fields=[
+                    "text",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "language",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "vocabulary",
+                ]
+            ),
         ]
 
     panels = [
-        FieldPanel('text'),
-        FieldPanel('language'),
-        FieldPanel('vocabulary'),
+        FieldPanel("text"),
+        FieldPanel("language"),
+        FieldPanel("vocabulary"),
     ]
 
     @property

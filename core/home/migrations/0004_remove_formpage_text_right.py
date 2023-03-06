@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('home', '0003_formfield_formpage'),
+        ("home", "0003_formfield_formpage"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='formpage',
-            name='text_right',
+            model_name="formpage",
+            name="text_right",
         ),
     ]
