@@ -5,10 +5,9 @@ from modelcluster.models import ClusterableModel
 from wagtail.admin.edit_handlers import FieldPanel, InlinePanel
 from wagtail.core.models import Orderable
 
-from core.models import CommonControlField
+from core.models import CommonControlField, Gender, GenderIdentificationStatus
 from institution.models import Institution, InstitutionHistory
 
-from . import choices
 from .forms import ResearcherForm
 
 
@@ -25,14 +24,9 @@ class Researcher(ClusterableModel, CommonControlField):
     suffix = models.CharField(_("Suffix"), max_length=128, blank=True, null=True)
     orcid = models.TextField(_("ORCID"), blank=True, null=True)
     lattes = models.TextField(_("Lattes"), blank=True, null=True)
-    gender = models.CharField(_("Gender"), max_length=1, choices=choices.GENDER)
-    gender_identification_status = models.CharField(
-        _("Gender identification status"),
-        max_length=255,
-        choices=choices.GENDER_IDENTIFICATION_STATUS,
-        null=False,
-        blank=False,
-    )
+    gender = models.ForeignKey(Gender, blank=True, null=True, on_delete=models.SET_NULL)
+    gender_identification_status = models.ForeignKey(
+        GenderIdentificationStatus, blank=True, null=True, on_delete=models.SET_NULL)
 
     def autocomplete_label(self):
         return str(self)
