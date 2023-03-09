@@ -8,6 +8,7 @@ from django.views.generic import TemplateView
 from wagtail import urls as wagtail_urls
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.documents import urls as wagtaildocs_urls
+from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_urls
 
 from core.api import api_router
 
@@ -35,6 +36,7 @@ urlpatterns = [
 urlpatterns += i18n_patterns(
     re_path(r"^search/$", search_views.search, name="search"),
     # User management
+    path("admin/autocomplete/", include(autocomplete_admin_urls)),
     path("api/v2/", api_router.urls),
     path("users/", include("core.users.urls", namespace="users")),
     path("i18n/", include("django.conf.urls.i18n")),

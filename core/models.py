@@ -3,10 +3,61 @@ from django.db import models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
 from wagtail.fields import RichTextField
+from wagtail.search import index
+from wagtail.snippets.models import register_snippet
 
 from . import choices
 
 User = get_user_model()
+
+
+@register_snippet
+class Gender(index.Indexed, models.Model):
+    """
+    Class of gender
+
+    Fields:
+        sex: physical state of being either male, female, or intersex
+    """
+    gender = models.CharField(_('Sex'), max_length=50)
+
+    panels = [
+        FieldPanel('gender'),
+    ]
+
+    search_fields = [
+        index.SearchField('gender', partial_match=True),
+    ]
+
+    def __unicode__(self):
+        return self.gender
+
+    def __str__(self):
+        return self.gender
+
+@register_snippet
+class GenderIdentificationStatus(index.Indexed, models.Model):
+    """
+    Class of gender
+
+    Fields:
+        sex: physical state of being either male, female, or intersex
+    """
+    identification_status = models.CharField(_('identification_status'), max_length=256)
+
+    panels = [
+        FieldPanel('identification_status'),
+    ]
+
+    search_fields = [
+        index.SearchField('identification_status', partial_match=True),
+    ]
+
+    def __unicode__(self):
+        return self.identification_status
+
+    def __str__(self):
+        return self.identification_status
 
 
 class CommonControlField(models.Model):
