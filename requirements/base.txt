@@ -42,7 +42,7 @@ wagtail-localize==1.5
 # Django celery
 # ------------------------------------------------------------------------------
 django_celery_results==2.4.0
-django-celery-beat==2.4.0  # https://github.com/celery/django-celery-beat
+django-celery-beat==2.5.0  # https://github.com/celery/django-celery-beat
 
 # Wagtail-Autocomplete
 # https://github.com/wagtail/wagtail-autocomplete
