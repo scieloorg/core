@@ -23,7 +23,7 @@ django-redis==5.2.0  # https://github.com/jazzband/django-redis
 
 # Wagtail
 # ------------------------------------------------------------------------------
-wagtail==4.2  # https://github.com/wagtail/wagtail
+wagtail==4.2.1  # https://github.com/wagtail/wagtail
 
 
 # Wagtail Recaptcha
@@ -41,8 +41,8 @@ wagtail-localize==1.5
 
 # Django celery
 # ------------------------------------------------------------------------------
-django_celery_results==2.4.0
 django-celery-beat==2.5.0  # https://github.com/celery/django-celery-beat
+django_celery_results==2.5.0
 
 # Wagtail-Autocomplete
 # https://github.com/wagtail/wagtail-autocomplete
