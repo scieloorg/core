@@ -15,7 +15,7 @@ xmltodict==0.13.0  # https://github.com/martinblech/xmltodict.git
 django==4.1.7  # pyup: < 4.0  # https://www.djangoproject.com/
 django-environ==0.10.0  # https://github.com/joke2k/django-environ
 django-model-utils==4.3.1  # https://github.com/jazzband/django-model-utils
-django-allauth==0.52.0  # https://github.com/pennersr/django-allauth
+django-allauth==0.53.1  # https://github.com/pennersr/django-allauth
 django-crispy-forms==2.0  # https://github.com/django-crispy-forms/django-crispy-forms
 crispy-bootstrap5==0.7  # https://github.com/django-crispy-forms/crispy-bootstrap5
 django-compressor==4.3.1  # https://github.com/django-compressor/django-compressor
