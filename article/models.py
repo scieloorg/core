@@ -31,6 +31,7 @@ class Article(CommonControlField):
         blank=True
     )
     article_ids = models.ManyToManyField("ArticleId", blank=True)
+    categories = models.ManyToManyField("Category", blank=True)
 
     class Meta:
         indexes = [
