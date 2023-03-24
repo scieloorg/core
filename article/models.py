@@ -24,6 +24,12 @@ class Article(CommonControlField):
         null=True,
         blank=True
     )
+    abstract_field = models.ForeignKey(
+        "AbstractModel",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
 
     class Meta:
         indexes = [
