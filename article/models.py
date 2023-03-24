@@ -36,6 +36,7 @@ class Article(CommonControlField):
     volume = models.PositiveIntegerField(null=True, blank=True)
     issue = models.PositiveIntegerField(null=True, blank=True)
     first_page = models.CharField(max_length=5, null=True, blank=True)
+    last_page = models.CharField(max_length=5, null=True, blank=True)
 
     class Meta:
         indexes = [
