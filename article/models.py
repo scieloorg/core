@@ -326,3 +326,27 @@ class Category(models.Model):
 
     def __str__(self):
         return f"{self.subject}"
+
+
+class SubArticle(models.Model):
+    title = models.ManyToManyField("Title", blank=True)
+    # lang = models.CharField(max_length=2, null=True, blank=True)
+    article = models.ForeignKey(
+        Article,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    article_type = models.ForeignKey(
+        "ArticleType",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        verbose_name = _("SubArticle")
+        verbose_name_plural = _("SubArticles")
+
+    def __str__(self):
+        return f"{self.title}"
