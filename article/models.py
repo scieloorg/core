@@ -35,6 +35,7 @@ class Article(CommonControlField):
     license = models.ManyToManyField("License", blank=True)
     volume = models.PositiveIntegerField(null=True, blank=True)
     issue = models.PositiveIntegerField(null=True, blank=True)
+    first_page = models.CharField(max_length=5, null=True, blank=True)
 
     class Meta:
         indexes = [
