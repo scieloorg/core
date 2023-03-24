@@ -11,8 +11,11 @@ from institution.models import Sponsor
 class Article(CommonControlField):
     pid_v2 = models.CharField(_("PID V2"), blank=True, null=True, max_length=23)
     fundings = models.ManyToManyField(
-        "ArticleFunding", verbose_name=_("Fundings"), blank=True
+        "ArticleFunding",
+        verbose_name=_("Fundings"),
+        blank=True
     )
+    languages = models.ManyToManyField("Language", blank=True)
 
     class Meta:
         indexes = [

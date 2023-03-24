@@ -35,6 +35,7 @@ class Gender(index.Indexed, models.Model):
     def __str__(self):
         return self.gender
 
+
 @register_snippet
 class GenderIdentificationStatus(index.Indexed, models.Model):
     """
