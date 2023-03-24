@@ -307,7 +307,22 @@ class ArticleId(models.Model):
         verbose_name_plural = _("ArticleIds")
 
     def __unicode__(self):
-        return "%s | %s | %s" % (self.count_type, self.count, self.language)
+        return f"{self.article_id}"
 
     def __str__(self):
-        return "%s | %s | %s" % (self.count_type, self.count, self.language)
+        return f"{self.article_id}"
+
+
+class Category(models.Model):
+    subject = models.CharField(max_length=50, null=True, blank=True)
+    type_category = models.CharField(max_length=50, null=True, blank=True)
+
+    class Meta:
+        verbose_name = _("Category")
+        verbose_name_plural = _("Categorys")
+
+    def __unicode__(self):
+        return f"{self.subject}"
+
+    def __str__(self):
+        return f"{self.subject}"
