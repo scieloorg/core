@@ -190,3 +190,24 @@ class Language(CommonControlField):
             obj.creator = creator
             obj.save()
             return obj
+
+
+class License(models.Model):
+    license = models.CharField(max_length=255, null=True, blank=True)
+    license_type = models.CharField(max_length=255, null=True, blank=True)
+    language = models.ForeignKey(
+        "Language",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        verbose_name = _("Licence")
+        verbose_name_plural = _("Licences")
+
+    def __unicode__(self):
+        return self.license or ""
+
+    def __str__(self):
+        return self.license or ""
