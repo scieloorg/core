@@ -16,6 +16,7 @@ class Article(CommonControlField):
         blank=True
     )
     languages = models.ManyToManyField("Language", blank=True)
+    titles = models.ManyToManyField("Title", blank=True)
 
     class Meta:
         indexes = [
