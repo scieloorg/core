@@ -18,6 +18,12 @@ class Article(CommonControlField):
     languages = models.ManyToManyField("Language", blank=True)
     titles = models.ManyToManyField("Title", blank=True)
     researchers = models.ManyToManyField("Researcher", blank=True)
+    article_type = models.ForeignKey(
+        "ArticleType",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
 
     class Meta:
         indexes = [
