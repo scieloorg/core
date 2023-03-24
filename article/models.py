@@ -295,3 +295,19 @@ class ArticleCount(CommonControlField):
             article_count__count=self.count,
             article_count__language=self.language,
         )
+
+
+class ArticleId(models.Model):
+    article_id = models.CharField(max_length=255, null=True, blank=True)
+    pub_id_type = models.CharField(max_length=50, null=True, blank=True)
+    specific_use = models.CharField(max_length=50, null=True, blank=True)
+
+    class Meta:
+        verbose_name = _("ArticleId")
+        verbose_name_plural = _("ArticleIds")
+
+    def __unicode__(self):
+        return "%s | %s | %s" % (self.count_type, self.count, self.language)
+
+    def __str__(self):
+        return "%s | %s | %s" % (self.count_type, self.count, self.language)
