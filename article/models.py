@@ -141,6 +141,12 @@ class TocSection(RichTextWithLang, CommonControlField):
     text = RichTextField(null=True, blank=True, max_length=100)
 
 
+class Title(models.Model):
+    title = models.TextField(_("Title"), null=True, blank=True)
+    title_html = models.TextField(_("Title HTML"), null=True, blank=True)
+    language = models.CharField(_("Language"), max_length=64, null=True, blank=True)
+
+
 class DocumentTitle(RichTextWithLang, CommonControlField):
     text = RichTextField(null=True, blank=True, max_length=300)
 
