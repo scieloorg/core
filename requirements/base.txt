@@ -47,7 +47,7 @@ django_celery_results==2.5.0
 # Wagtail-Autocomplete
 # https://github.com/wagtail/wagtail-autocomplete
 # ------------------------------------------------------------------------------
-wagtail-autocomplete==0.9.0
+wagtail-autocomplete==0.10.0
 
 
 # Minio
