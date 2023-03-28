@@ -5,6 +5,7 @@ from wagtail.fields import RichTextField
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField, FlexibleDate, Language, RichTextWithLang
+from vocabulary.models import Keyword
 from institution.models import Sponsor
 
 
@@ -149,6 +150,13 @@ class Title(models.Model):
 
 class DocumentTitle(RichTextWithLang, CommonControlField):
     text = RichTextField(null=True, blank=True, max_length=300)
+
+
+class AbstractModel(models.Model):
+    text = models.TextField(_("Text"), null=True, blank=True)
+    keywords = models.ManyToManyField(
+        Keyword,
+    )
 
 
 class Abstract(RichTextWithLang, CommonControlField):
