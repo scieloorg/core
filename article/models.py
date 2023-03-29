@@ -4,9 +4,16 @@ from wagtail.admin.panels import FieldPanel
 from wagtail.fields import RichTextField
 
 from core.forms import CoreAdminModelForm
-from core.models import CommonControlField, FlexibleDate, Language, RichTextWithLang
-from vocabulary.models import Keyword
+from core.models import (
+    CommonControlField,
+    FlexibleDate,
+    Language,
+    License,
+    RichTextWithLang,
+)
 from institution.models import Sponsor
+from researcher.models import Researcher
+from vocabulary.models import Keyword
 
 
 class Article(CommonControlField):
@@ -14,9 +21,9 @@ class Article(CommonControlField):
     fundings = models.ManyToManyField(
         "ArticleFunding", verbose_name=_("Fundings"), blank=True
     )
-    languages = models.ManyToManyField("Language", blank=True)
+    languages = models.ManyToManyField(Language, blank=True)
     titles = models.ManyToManyField("Title", blank=True)
-    researchers = models.ManyToManyField("Researcher", blank=True)
+    researchers = models.ManyToManyField(Researcher, blank=True)
     article_type = models.ForeignKey(
         "ArticleType", on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -25,7 +32,7 @@ class Article(CommonControlField):
     )
     article_ids = models.ManyToManyField("ArticleId", blank=True)
     categories = models.ManyToManyField("Category", blank=True)
-    license = models.ManyToManyField("License", blank=True)
+    license = models.ManyToManyField(License, blank=True)
     volume = models.PositiveIntegerField(null=True, blank=True)
     issue = models.PositiveIntegerField(null=True, blank=True)
     first_page = models.CharField(max_length=5, null=True, blank=True)
@@ -149,6 +156,10 @@ class AbstractModel(models.Model):
     keywords = models.ManyToManyField(
         Keyword,
     )
+
+
+class ArticleType(models.Model):
+    text = models.TextField(_("Text"), null=True, blank=True)
 
 
 class Abstract(RichTextWithLang, CommonControlField):
