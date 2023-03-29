@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Change this value to the local ethernet.
-ethernet=enp12s0
+ethernet=wlp0s20f3
 
 # Linux IP.
 export IP=$(/sbin/ip -o -4 addr list $ethernet | awk '{print $4}' | cut -d/ -f1)
@@ -17,9 +17,9 @@ export REDIS_URL=redis://$IP:6379/0
 export CELERY_FLOWER_USER=PhFRdLexbrsBvrrbSXxjcMMOcVOavCrZ
 export CELERY_FLOWER_PASSWORD=QgScyefPrYhHgO6onW61u0nazc5xdBuP4sM7jMRrBBFuA2RjsFhZLp7xbVYZbrwR
 export EMAIL_HOST=$IP
-# export SOLR_URL=http://$IP:8983/solr/asite/
+export SOLR_URL=http://$IP:8983/solr/asite/
 
 
 docker stop core_local_django
-workon scms
+# workon scms
 python manage.py runserver_plus 0.0.0.0:8000

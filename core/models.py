@@ -19,14 +19,15 @@ class Gender(index.Indexed, models.Model):
     Fields:
         sex: physical state of being either male, female, or intersex
     """
-    gender = models.CharField(_('Sex'), max_length=50)
+
+    gender = models.CharField(_("Sex"), max_length=50)
 
     panels = [
-        FieldPanel('gender'),
+        FieldPanel("gender"),
     ]
 
     search_fields = [
-        index.SearchField('gender', partial_match=True),
+        index.SearchField("gender", partial_match=True),
     ]
 
     def __unicode__(self):
@@ -44,14 +45,15 @@ class GenderIdentificationStatus(index.Indexed, models.Model):
     Fields:
         sex: physical state of being either male, female, or intersex
     """
-    identification_status = models.CharField(_('identification_status'), max_length=256)
+
+    identification_status = models.CharField(_("identification_status"), max_length=256)
 
     panels = [
-        FieldPanel('identification_status'),
+        FieldPanel("identification_status"),
     ]
 
     search_fields = [
-        index.SearchField('identification_status', partial_match=True),
+        index.SearchField("identification_status", partial_match=True),
     ]
 
     def __unicode__(self):
@@ -196,10 +198,7 @@ class License(models.Model):
     license = models.CharField(max_length=255, null=True, blank=True)
     license_type = models.CharField(max_length=255, null=True, blank=True)
     language = models.ForeignKey(
-        "Language",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
+        "Language", on_delete=models.SET_NULL, null=True, blank=True
     )
 
     class Meta:

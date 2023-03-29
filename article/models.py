@@ -12,24 +12,16 @@ from institution.models import Sponsor
 class Article(CommonControlField):
     pid_v2 = models.CharField(_("PID V2"), blank=True, null=True, max_length=23)
     fundings = models.ManyToManyField(
-        "ArticleFunding",
-        verbose_name=_("Fundings"),
-        blank=True
+        "ArticleFunding", verbose_name=_("Fundings"), blank=True
     )
     languages = models.ManyToManyField("Language", blank=True)
     titles = models.ManyToManyField("Title", blank=True)
     researchers = models.ManyToManyField("Researcher", blank=True)
     article_type = models.ForeignKey(
-        "ArticleType",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
+        "ArticleType", on_delete=models.SET_NULL, null=True, blank=True
     )
     abstract_field = models.ForeignKey(
-        "AbstractModel",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
+        "AbstractModel", on_delete=models.SET_NULL, null=True, blank=True
     )
     article_ids = models.ManyToManyField("ArticleId", blank=True)
     categories = models.ManyToManyField("Category", blank=True)
@@ -328,7 +320,13 @@ class ArticleId(models.Model):
 
 
 class Category(models.Model):
-    subject = models.CharField(max_length=50, null=True, blank=True)
+    name = models.CharField(
+        _("Name"),
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text="For JATs is subject.",
+    )
     type_category = models.CharField(max_length=50, null=True, blank=True)
 
     class Meta:
@@ -346,16 +344,10 @@ class SubArticle(models.Model):
     title = models.ManyToManyField("Title", blank=True)
     # lang = models.CharField(max_length=2, null=True, blank=True)
     article = models.ForeignKey(
-        Article,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
+        Article, on_delete=models.SET_NULL, null=True, blank=True
     )
     article_type = models.ForeignKey(
-        "ArticleType",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
+        "ArticleType", on_delete=models.SET_NULL, null=True, blank=True
     )
 
     class Meta:
