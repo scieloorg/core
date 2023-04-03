@@ -28,7 +28,7 @@ class Article(CommonControlField):
         "ArticleType", on_delete=models.SET_NULL, null=True, blank=True
     )
     abstract_field = models.ForeignKey(
-        "AbstractModel", on_delete=models.SET_NULL, null=True, blank=True
+        "Abstract", on_delete=models.SET_NULL, null=True, blank=True
     )
     article_ids = models.ManyToManyField("ArticleId", blank=True)
     categories = models.ManyToManyField("Category", blank=True)
@@ -37,6 +37,7 @@ class Article(CommonControlField):
     issue = models.PositiveIntegerField(null=True, blank=True)
     first_page = models.CharField(max_length=5, null=True, blank=True)
     last_page = models.CharField(max_length=5, null=True, blank=True)
+    keywords = models.ManyToManyField(Keyword, blank=True)
 
     class Meta:
         indexes = [
@@ -149,13 +150,6 @@ class Title(models.Model):
 
 class DocumentTitle(RichTextWithLang, CommonControlField):
     text = RichTextField(null=True, blank=True, max_length=300)
-
-
-class AbstractModel(models.Model):
-    text = models.TextField(_("Text"), null=True, blank=True)
-    keywords = models.ManyToManyField(
-        Keyword,
-    )
 
 
 class ArticleType(models.Model):
