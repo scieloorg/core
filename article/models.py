@@ -27,8 +27,10 @@ class Article(CommonControlField):
     article_type = models.ForeignKey(
         "ArticleType", on_delete=models.SET_NULL, null=True, blank=True
     )
-    abstract_field = models.ForeignKey(
-        "Abstract", on_delete=models.SET_NULL, null=True, blank=True
+    abstracts = models.ManyToManyField(
+        "DocumentAbstract",
+        on_delete=models.SET_NULL,
+        blank=True
     )
     article_ids = models.ManyToManyField("ArticleId", blank=True)
     categories = models.ManyToManyField("Category", blank=True)
@@ -156,7 +158,7 @@ class ArticleType(models.Model):
     text = models.TextField(_("Text"), null=True, blank=True)
 
 
-class Abstract(RichTextWithLang, CommonControlField):
+class DocumentAbstract(RichTextWithLang, CommonControlField):
     text = RichTextField(null=True, blank=True, max_length=1500)
 
 
