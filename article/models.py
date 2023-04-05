@@ -17,7 +17,8 @@ from vocabulary.models import Keyword
 
 
 class Article(CommonControlField):
-    pid_v2 = models.CharField(_("PID V2"), blank=True, null=True, max_length=23)
+    pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
+    pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True)
     fundings = models.ManyToManyField(
         "ArticleFunding", verbose_name=_("Fundings"), blank=True
     )
@@ -32,7 +33,6 @@ class Article(CommonControlField):
         on_delete=models.SET_NULL,
         blank=True
     )
-    article_ids = models.ManyToManyField("ArticleId", blank=True)
     categories = models.ManyToManyField("Category", blank=True)
     license = models.ManyToManyField(License, blank=True)
     volume = models.PositiveIntegerField(null=True, blank=True)
@@ -308,22 +308,6 @@ class ArticleCount(CommonControlField):
             article_count__count=self.count,
             article_count__language=self.language,
         )
-
-
-class ArticleId(models.Model):
-    article_id = models.CharField(max_length=255, null=True, blank=True)
-    pub_id_type = models.CharField(max_length=50, null=True, blank=True)
-    specific_use = models.CharField(max_length=50, null=True, blank=True)
-
-    class Meta:
-        verbose_name = _("ArticleId")
-        verbose_name_plural = _("ArticleIds")
-
-    def __unicode__(self):
-        return f"{self.article_id}"
-
-    def __str__(self):
-        return f"{self.article_id}"
 
 
 class Category(models.Model):
