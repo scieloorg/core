@@ -39,6 +39,7 @@ class Article(CommonControlField):
     issue = models.CharField(max_length=64, null=True, blank=True)
     first_page = models.CharField(max_length=5, null=True, blank=True)
     last_page = models.CharField(max_length=5, null=True, blank=True)
+    elocation_id = models.CharField(max_length=20, null=True, blank=True)
     keywords = models.ManyToManyField(Keyword, blank=True)
 
     class Meta:
