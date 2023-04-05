@@ -23,7 +23,7 @@ class Article(CommonControlField):
         "ArticleFunding", verbose_name=_("Fundings"), blank=True
     )
     languages = models.ManyToManyField(Language, blank=True)
-    titles = models.ManyToManyField("Title", blank=True)
+    titles = models.ManyToManyField("DocumentTitle", blank=True)
     researchers = models.ManyToManyField(Researcher, blank=True)
     article_type = models.ForeignKey(
         "ArticleType", on_delete=models.SET_NULL, null=True, blank=True
@@ -140,14 +140,16 @@ class ArticleFunding(CommonControlField):
     base_form_class = CoreAdminModelForm
 
 
-class Title(models.Model):
-    title = models.TextField(_("Title"), null=True, blank=True)
-    title_html = models.TextField(_("Title HTML"), null=True, blank=True)
-    language = models.CharField(_("Language"), max_length=64, null=True, blank=True)
-
-
 class DocumentTitle(RichTextWithLang, CommonControlField):
-    text = RichTextField(null=True, blank=True, max_length=300)
+    text = models.TextField(_("Text"), null=True, blank=True)
+    text_html = RichTextField(_("Text HTML"), null=True, blank=True)
+    language = models.ForeignKey(
+        Language,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Language"),
+        null=True,
+        blank=True,
+    )
 
 
 class ArticleType(models.Model):
@@ -333,7 +335,7 @@ class TocSection(RichTextWithLang, CommonControlField):
 
 
 class SubArticle(models.Model):
-    title = models.ManyToManyField("Title", blank=True)
+    titles = models.ManyToManyField("DocumentTitle", blank=True)
     # lang = models.CharField(max_length=2, null=True, blank=True)
     article = models.ForeignKey(
         Article, on_delete=models.SET_NULL, null=True, blank=True
