@@ -194,19 +194,23 @@ class Language(CommonControlField):
             return obj
 
 
-class License(models.Model):
-    license = models.CharField(max_length=255, null=True, blank=True)
+class License(CommonControlField):
+    url = models.CharField(max_length=255, null=True, blank=True)
+    license_p = RichTextField(null=True, blank=True)
     license_type = models.CharField(max_length=255, null=True, blank=True)
     language = models.ForeignKey(
-        "Language", on_delete=models.SET_NULL, null=True, blank=True
+        "Language",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
     )
 
     class Meta:
-        verbose_name = _("Licence")
-        verbose_name_plural = _("Licences")
+        verbose_name = _("License")
+        verbose_name_plural = _("Licenses")
 
     def __unicode__(self):
-        return self.license or ""
+        return self.url or ""
 
     def __str__(self):
-        return self.license or ""
+        return self.url or ""
