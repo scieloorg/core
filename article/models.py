@@ -33,7 +33,7 @@ class Article(CommonControlField):
         on_delete=models.SET_NULL,
         blank=True
     )
-    categories = models.ManyToManyField("Category", blank=True)
+    toc_sections = models.ManyToManyField("TocSection", blank=True)
     license = models.ManyToManyField(License, blank=True)
     volume = models.PositiveIntegerField(null=True, blank=True)
     issue = models.PositiveIntegerField(null=True, blank=True)
@@ -138,10 +138,6 @@ class ArticleFunding(CommonControlField):
             return article_funding
 
     base_form_class = CoreAdminModelForm
-
-
-class TocSection(RichTextWithLang, CommonControlField):
-    text = RichTextField(null=True, blank=True, max_length=100)
 
 
 class Title(models.Model):
@@ -310,25 +306,30 @@ class ArticleCount(CommonControlField):
         )
 
 
-class Category(models.Model):
-    name = models.CharField(
-        _("Name"),
-        max_length=50,
-        null=True,
+class TocSection(RichTextWithLang, CommonControlField):
+    """
+    <article-categories>
+        <subj-group subj-group-type="heading">
+          <subject>NOMINATA</subject>
+        </subj-group>
+      </article-categories>
+    """
+    text = RichTextField(
+        max_length=100,
         blank=True,
-        help_text="For JATs is subject.",
+        null=True,
+        help_text="For JATs is subject."
     )
-    type_category = models.CharField(max_length=50, null=True, blank=True)
 
     class Meta:
-        verbose_name = _("Category")
-        verbose_name_plural = _("Categorys")
+        verbose_name = _("TocSection")
+        verbose_name_plural = _("TocSections")
 
     def __unicode__(self):
-        return f"{self.subject}"
+        return f"{self.text}"
 
     def __str__(self):
-        return f"{self.subject}"
+        return f"{self.text}"
 
 
 class SubArticle(models.Model):
