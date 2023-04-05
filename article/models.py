@@ -141,16 +141,8 @@ class ArticleFunding(CommonControlField):
     base_form_class = CoreAdminModelForm
 
 
-class DocumentTitle(CommonControlField):
-    text = models.TextField(_("Text"), null=True, blank=True)
-    text_html = RichTextField(_("Text HTML"), null=True, blank=True)
-    language = models.ForeignKey(
-        Language,
-        on_delete=models.SET_NULL,
-        verbose_name=_("Language"),
-        null=True,
-        blank=True,
-    )
+class DocumentTitle(RichTextWithLang, CommonControlField):
+    ...
 
 
 class ArticleType(models.Model):
