@@ -118,9 +118,14 @@ class TextWithLang(models.Model):
 
 
 class RichTextWithLang(models.Model):
-    text = RichTextField(null=True, blank=True)
-    language = models.CharField(
-        _("Language"), max_length=2, choices=choices.LANGUAGE, null=True, blank=True
+    rich_text = RichTextField(_("Rich Text"), null=True, blank=True)
+    plain_text = models.TextField(_("Plain Text"), null=True, blank=True)
+    language = models.ForeignKey(
+        "Language",
+        on_delete=models.SET_NULL,
+        verbose_name=_("Language"),
+        null=True,
+        blank=True,
     )
 
     panels = [FieldPanel("text"), FieldPanel("language")]
