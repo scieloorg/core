@@ -9,7 +9,7 @@ export IP=$(/sbin/ip -o -4 addr list $ethernet | awk '{print $4}' | cut -d/ -f1)
 # Mac OS IP.
 #export IP=$(ifconfig $ethernet | grep inet | grep -v inet6 | awk '{print $2}')
 
-export DATABASE_URL=postgres://GVRFlLmcCNfGLhsFvSnCioYOPJPYpyfj:BQ4hSUL4rdj5WZLdR8ilDLRQMvCtzo0caMaXDO0olGsmycQjlcZlTVK9DepZR8kk@$IP:5432/core
+export DATABASE_URL=postgres://GVRFlLmcCNfGLhsFvSnCioYOPJPYpyfj:BQ4hSUL4rdj5WZLdR8ilDLRQMvCtzo0caMaXDO0olGsmycQjlcZlTVK9DepZR8kk@$IP:5432/scielo_core
 export CELERY_BROKER_URL=redis://$IP:6379/0
 export USE_DOCKER=no
 export IPYTHONDIR=/app/.ipython
