@@ -150,7 +150,7 @@ class ArticleType(models.Model):
 
 
 class DocumentAbstract(RichTextWithLang, CommonControlField):
-    text = RichTextField(null=True, blank=True, max_length=1500)
+    ...
 
 
 class ArticleEventType(CommonControlField):
