@@ -20,12 +20,14 @@ class Article(CommonControlField):
     pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
     pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True)
     pub_date_pub = models.CharField(_("pub date"), max_length=10, null=True, blank=True)
+    pub_date_pub_year = models.CharField(max_length=4, null=True, blank=True)
     pub_date_collection = models.CharField(
         _("collection pub date"),
         max_length=10,
         null=True,
         blank=True
     )
+    pub_date_collection_year = models.CharField(max_length=4, null=True, blank=True)
     fundings = models.ManyToManyField(
         "ArticleFunding", verbose_name=_("Fundings"), blank=True
     )
