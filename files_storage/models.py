@@ -11,6 +11,7 @@ from files_storage import exceptions
 
 
 class MinioConfiguration(CommonControlField):
+
     name = models.TextField(_("Name"), null=True, blank=False)
     host = models.TextField(_("Host"), null=True, blank=True)
     bucket_root = models.TextField(_("Bucket root"), null=True, blank=True)
@@ -78,6 +79,7 @@ class MinioFile(CommonControlField):
     uri = models.URLField(_("URI"), null=True, blank=True)
 
     class Meta:
+
         indexes = [
             models.Index(fields=["basename"]),
         ]
