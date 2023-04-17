@@ -19,10 +19,11 @@ class FilesStorageManager:
 
     @property
     def config(self):
-        if not hasattr(self, '_config') or not self._config:
+        if not hasattr(self, "_config") or not self._config:
             try:
                 self._config = MinioConfiguration.get_or_create(
-                    name=self.files_storage_name)
+                    name=self.files_storage_name
+                )
             except Exception as e:
                 raise exceptions.GetFilesStorageError(
                     _("Unable to get MinioStorage {} {} {}").format(
@@ -33,7 +34,7 @@ class FilesStorageManager:
 
     @property
     def files_storage(self):
-        if not hasattr(self, '_files_storage') or not self._files_storage:
+        if not hasattr(self, "_files_storage") or not self._files_storage:
             try:
                 self._files_storage = MinioStorage(
                     minio_host=self.config.host,
@@ -58,7 +59,7 @@ class FilesStorageManager:
 
     def _push_file(self, source_filepath, subdirs, preserve_name):
         """
-        Isola a chamada para armazenar o arquivo
+        Isola a interação com o MinioStorage
         """
         response = self.files_storage.register(
             source_filepath,
@@ -66,7 +67,7 @@ class FilesStorageManager:
             preserve_name=preserve_name,
         )
         logging.info("Response %s %s" % (source_filepath, response))
-        return response['uri']
+        return response["uri"]
 
     def push_file(self, source_filepath, subdirs, preserve_name):
         basename = os.path.basename(source_filepath)
@@ -85,7 +86,7 @@ class FilesStorageManager:
 
     def _push_xml_content(self, content, mimetype, object_name):
         """
-        Isola a chamada para armazenar o conteúdo do arquivo
+        Isola a interação com o MinioStorage
         """
         return self.files_storage.fput_content(
             content,
