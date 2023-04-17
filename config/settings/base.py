@@ -103,6 +103,7 @@ THIRD_PARTY_APPS = [
     "allauth.socialaccount",
     "django_celery_beat",
     "captcha",
+    "wagtailautocomplete",
     "wagtailcaptcha",
     "wagtailmenus",
     "rest_framework",
@@ -127,7 +128,6 @@ LOCAL_APPS = [
     "researcher",
     "thematic_areas",
     "vocabulary",
-    "wagtailautocomplete",
 ]
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
