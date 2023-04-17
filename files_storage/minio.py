@@ -30,7 +30,7 @@ class MinioStorageFPutError(Exception):
     ...
 
 
-class MinioStorageGetUrlsError(Exception):
+class MinioStorageGetUriError(Exception):
     ...
 
 
@@ -50,7 +50,11 @@ class MinioStorageCreateBucketError(Exception):
     ...
 
 
-class MinioStorageSetPublicBucketError(Exception):
+class MinioStorageSetBucketPolicyError(Exception):
+    ...
+
+
+class MinioStorageNoSuchBucketError(Exception):
     ...
 
 
@@ -80,6 +84,7 @@ class MinioStorage:
         minio_secure=True,
         minio_http_client=None,
     ):
+
         self.bucket_root = bucket_root
         self.POLICY_READ_ONLY = {
             "Version": "2012-10-17",
@@ -108,11 +113,8 @@ class MinioStorage:
 
     @property
     def _client(self):
-        """Posterga a instanciação de `pymongo.MongoClient` até o seu primeiro
-        uso.
-        """
         if not self._client_instance:
-            # Initialize minioClient with an endpoint and access/secret keys.
+            # Initialize minioClient with an endpoint and access/secret keys
             self._client_instance = Minio(
                 self.minio_host,
                 access_key=self.minio_access_key,
@@ -120,183 +122,294 @@ class MinioStorage:
                 secure=self.minio_secure,
                 http_client=self.http_client,
             )
-            logger.debug(
-                "new Minio client created: <%s at %s>",
-                repr(self._client_instance),
-                id(self._client_instance),
-            )
-
-        logger.debug(
-            "using Minio client: <%s at %s>",
-            repr(self._client_instance),
-            id(self._client_instance),
-        )
         return self._client_instance
 
     def _create_bucket(self):
         try:
             # Make a bucket with the make_bucket API call.
             self._client.make_bucket(self.bucket_root, location=self.bucket_subdir)
-            self._set_public_bucket()
         except Exception as e:
             raise MinioStorageCreateBucketError(
                 "Unable to create bucket %s %s %s" % (self.bucket_root, type(e), e)
             )
 
-    def _set_public_bucket(self):
+    def _set_bucket_policy(self):
         try:
             self._client.set_bucket_policy(
                 self.bucket_root, json.dumps(self.POLICY_READ_ONLY)
             )
         except Exception as e:
-            raise MinioStorageSetPublicBucketError(
-                "Unable to set public bucket %s %s %s" % (self.bucket_root, type(e), e)
+            raise MinioStorageSetBucketPolicyError(
+                "Unable to set bucket policy %s %s %s" % (self.bucket_root, type(e), e)
             )
 
     def build_object_name(self, file_path, subdirs, preserve_name):
         """
-        2 niveis de Pastas onde :
-            * o primeiro representando o periódico por meio do ISSN+Acrônimo
-            * o segundo o scielo-id do documento no seu idioma original.
-            Var: Prefix
-        O nome do arquivo sera alterado para soma SHA-1, para evitar duplicatas e conflitos em nomes.
+        Cria object_name que é a rota do arquivo no minio
+
+        Parameters
+        ----------
+        file_path : str
+            source file location
+        subdirs : str
+            destination location
+        preserve_name : boolean
+            True to keep basename and False to generate name
+
+        Returns
+        -------
+        str
         """
-        original_name, file_extension = os.path.splitext(os.path.basename(file_path))
-        if preserve_name:
-            n_filename = original_name
-        else:
+        n_filename, file_extension = os.path.splitext(os.path.basename(file_path))
+        if not preserve_name:
+            # O nome do arquivo sera alterado para soma SHA-1,
+            # para evitar duplicatas e conflitos em nomes
             n_filename = sha1(file_path)
         return os.path.join(subdirs, f"{n_filename}{file_extension}")
 
-    def get_urls(self, media_path: str) -> str:
+    def get_uri(self, object_name: str) -> str:
+        """
+        Obtém o URI do arquivo
+
+        Parameters
+        ----------
+        object_name : str
+            rota do arquivo, formada por subdirs e nome do arquivo
+
+        Returns
+        -------
+        str
+        """
         try:
-            url = self._client.presigned_get_object(self.bucket_root, media_path)
+            url = self._client.presigned_get_object(self.bucket_root, object_name)
             return url.split("?")[0]
         except Exception as e:
-            raise MinioStorageGetUrlsError(
-                "Unable to get urls %s %s %s %s"
-                % (self.bucket_root, media_path, type(e), e)
+            raise MinioStorageGetUriError(
+                "Unable to get uri %s %s %s %s"
+                % (self.bucket_root, object_name, type(e), e)
             )
 
-    def register(
-        self, file_path, subdirs="", original_uri=None, preserve_name=False
-    ) -> str:
+    def register(self, file_path, subdirs="", preserve_name=False) -> str:
+        """
+        Registra o arquivo, indicando as sub-pastas e se o nome do arquivo é
+        preservado
+
+        Parameters
+        ----------
+        file_path : str
+            rota do arquivo fonte
+        subdirs : str
+            rota das sub-pastas a serem criadas / atualizadas no Minio
+        preserve_name : bool
+            indica se o nome do arquivo será mantido ou será criado um novo
+
+        Returns
+        -------
+        dict (origin_name, object_name, uri)
+
+        Raises
+        ------
+        MinioStorageRegisterError
+        """
         try:
             object_name = self.build_object_name(file_path, subdirs, preserve_name)
-            metadata = {"origin_name": os.path.basename(file_path)}
-            if original_uri is not None:
-                metadata.update({"origin_uri": original_uri})
-
+            metadata = {
+                "origin_name": os.path.basename(file_path),
+                "object_name": object_name,
+            }
             logger.debug(
                 "Registering %s in %s with metadata %s",
                 file_path,
                 object_name,
                 metadata,
             )
-            uri = self.fput(file_path, object_name)
-
-            metadata.update({"object_name": object_name, "uri": uri})
+            metadata["uri"] = self.fput(file_path, object_name)
             return metadata
         except Exception as e:
             raise MinioStorageRegisterError(
                 "Unable to register %s %s %s %s" % (file_path, subdirs, type(e), e)
             )
 
-    def fput(self, file_path, object_name, mimetype=None) -> str:
-        try:
-            metadata = {"origin_name": os.path.basename(file_path)}
-            logger.debug(
-                "Registering %s in %s with metadata %s",
-                file_path,
-                object_name,
-                metadata,
-            )
-            try:
-                self._client.fput_object(
-                    self.bucket_root,
-                    object_name=object_name,
-                    file_path=file_path,
-                    content_type=mimetype or get_mimetype(file_path),
-                )
+    def _no_such_bucket_error(self, err):
+        """
+        Identifica se o código de erro está relacionado a ausência de bucket
 
-            except S3Error as err:
-                logger.error(err)
-                if err.code == "NoSuchBucket":
-                    self._create_bucket()
-                    return self.fput(file_path, object_name, mimetype)
-            return self.get_urls(object_name)
-        except Exception as e:
+        Parameters
+        ----------
+        err : Exception
+
+        Returns
+        -------
+        boolean
+        """
+        return err.code == "NoSuchBucket"
+
+    def _fput_object(self, file_path, object_name, mimetype) -> str:
+        """
+        Registra o arquivo no Minio e retorna o URI
+
+        Parameters
+        ----------
+        file_path : str
+            rota do arquivo fonte
+        object_name : str
+            rota das sub-pastas a serem criadas / atualizadas no Minio
+        mimetype : str
+            indica se o nome do arquivo será mantido ou será criado um novo
+
+        Returns
+        -------
+        str
+
+        Raises
+        ------
+        MinioStorageNoSuchBucketError
+        """
+        try:
+            self._client.fput_object(
+                self.bucket_root,
+                object_name=object_name,
+                file_path=file_path,
+                content_type=mimetype,
+            )
+            return self.get_uri(object_name)
+        except S3Error as e:
+            logger.error(e)
+            if self._no_such_bucket_error(e):
+                raise MinioStorageNoSuchBucketError(
+                    "No such bucket error %s %s %s %s"
+                    % (file_path, object_name, type(e), e)
+                )
+            raise e
+
+    def fput(self, file_path, object_name, mimetype=None) -> str:
+        """
+        Registra o arquivo no Minio e retorna o URI.
+        No entanto, se houver a exceção de que o bucket não existe,
+        o cria e tenta novamente o registro
+
+        Parameters
+        ----------
+        file_path : str
+            rota do arquivo fonte
+        object_name : str
+            rota das sub-pastas a serem criadas / atualizadas no Minio
+        mimetype : str
+            indica se o nome do arquivo será mantido ou será criado um novo
+
+        Returns
+        -------
+        str
+
+        Raises
+        ------
+        MinioStorageFPutError
+        """
+        try:
+            mimetype = mimetype or get_mimetype(file_path)
+            return self._fput_object(
+                file_path=file_path,
+                object_name=object_name,
+                mimetype=mimetype,
+            )
+        except MinioStorageNoSuchBucketError:
+            self._create_bucket()
+            self._set_bucket_policy()
+            return self.fput(file_path, object_name, mimetype)
+        except S3Error as err:
             raise MinioStorageFPutError(
-                "Unable to execute fput for %s %s %s %s"
-                % (file_path, object_name, type(e), e)
+                "Unable to fput for %s %s %s %s" % (file_path, object_name, type(e), e)
             )
 
     def fput_content(self, content, mimetype, object_name) -> str:
+        """
+        Cria um arquivo com o conteúdo fornecido,
+        registra-o no Minio e retorna o URI.
+
+        Parameters
+        ----------
+        content : str
+            conteúdo do arquivo
+        mimetype : str
+            indica se o nome do arquivo será mantido ou será criado um novo
+        object_name : str
+            rota das sub-pastas a serem criadas / atualizadas no Minio
+
+        Returns
+        -------
+        str
+
+        Raises
+        ------
+        MinioStorageFPutContentError
+        """
         try:
-            tf = tempfile.NamedTemporaryFile(delete=False)
-            with open(tf.name, "w") as fp:
-                fp.write(content)
-            return self.fput(tf.name, object_name, mimetype)
+            file_path = self._create_tmp_file(content)
+            return self.fput(file_path, object_name, mimetype)
         except Exception as e:
             raise MinioStorageFPutContentError(
-                "Unable to create temporary file %s %s %s" % (object_name, type(e), e)
+                "Unable to fput content %s %s %s" % (object_name, type(e), e)
             )
 
+    def _create_tmp_file(self, content=None):
+        """
+        Cria um arquivo temporário e se fornecido adiciona o conteúdo.
+        Retorna a rota do arquivo criado
+
+        Parameters
+        ----------
+        content : str
+            conteúdo do arquivo
+
+        Returns
+        -------
+        str
+        """
+        tf = tempfile.NamedTemporaryFile(delete=False)
+        if content:
+            with open(tf.name, "w") as fp:
+                fp.write(content)
+        return tf.name
+
     def remove(self, object_name: str) -> None:
-        # Remove an object.
+        """
+        Remove an object
+
+        Parameters
+        ----------
+        object_name : str
+            rota do arquivo no Minio
+
+        """
         # https://docs.min.io/docs/python-client-api-reference.html#remove_object
         return self._client.remove_object(self.bucket_root, object_name)
 
     def fget(self, object_name, downloaded_file_path=None):
         """
-        https://docs.min.io/docs/python-client-api-reference.html#fget_object
+        Obtém o arquivo, dado object_name
+
+        Parameters
+        ----------
+        object_name : str
+            rota do arquivo no Minio
+        downloaded_file_path : str
+            rota do destino do arquivo, que é criado se não foi fornecido
+
+        Raises
+        ------
+        MinioStorageFgetError
         """
         try:
             if not downloaded_file_path:
-                tf = tempfile.NamedTemporaryFile(delete=False)
-                downloaded_file_path = tf.name
+                downloaded_file_path = self._create_tmp_file()
 
+            # https://docs.min.io/docs/python-client-api-reference.html#fget_object
             self._client.fget_object(
                 self.bucket_root, object_name, downloaded_file_path
             )
 
             return downloaded_file_path
-        except Exception as err:
+        except Exception as e:
             raise MinioStorageFgetError(
                 "Unable to fget %s %s %s" % (object_name, type(e), e)
-            )
-
-    def get_zip_file_items(self, object_name, downloaded_folder_path=None):
-        """
-        Download a zipfile and returns its content as dict
-
-        Returns
-        -------
-        dict
-            {
-                "item1": "/tmp/zip_file_item_1",
-                "item2": "/tmp/zip_file_item_2",
-            }
-        """
-        try:
-            source = object_name
-
-            zip_path = self.fget(object_name)
-            source = zip_path
-
-            with ZipFile(zip_path) as zf:
-                if not downloaded_folder_path:
-                    downloaded_folder_path = tempfile.TemporaryDirectory()
-
-                files = {}
-                for filename in zf.namelist():
-                    file_path = os.path.join(downloaded_folder_path, filename)
-                    with zf.open(filename, "rb") as fp:
-                        with open(file_path, "wb") as wfp:
-                            wfp.write(fp.read())
-                    files[filename] = file_path
-            return files
-        except Exception as e:
-            raise MinioStorageGetZipFileItemsError(
-                "Unable to get items from %s %s %s" % (source, type(e), e)
             )
