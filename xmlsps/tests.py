@@ -1,4 +1,5 @@
 import os
+from datetime import date
 from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
 
@@ -156,7 +157,7 @@ class SplitProcessingInstructionDoctypeDeclarationAndXmlTest(TestCase):
         self.assertEqual("<?proc<article></article>", result[1])
 
 
-class XMLWithPreTest(TestCase):
+class XMLWithPreIdsTest(TestCase):
     def _get_xml_with_pre(self, v2=None, v3=None, aop_pid=None):
         xml_v2 = v2 and f'<article-id specific-use="scielo-v2">{v2}</article-id>' or ""
         xml_v3 = v3 and f'<article-id specific-use="scielo-v3">{v3}</article-id>' or ""
@@ -208,3 +209,115 @@ class XMLWithPreTest(TestCase):
         xml_with_pre = self._get_xml_with_pre(aop_pid="current")
         xml_with_pre.update_ids(v3="v3", v2="v2", aop_pid="novo")
         self.assertEqual("novo", xml_with_pre.aop_pid)
+
+    def test_is_aop(self):
+        xml_with_pre = self._get_xml_with_pre()
+        self.assertTrue(xml_with_pre.is_aop)
+
+
+class XMLWithPrePublicationDateTest(TestCase):
+    def _get_xml_with_pre(self, date_type=None, year=None, month=None, day=None):
+        xml_year = year and f"<year>{year}</year>" or ""
+        xml_month = month and f"<month>{month}</month>" or ""
+        xml_day = day and f"<day>{day}</day>" or ""
+        xml_pub_date = ""
+        xml_pub_date_close = ""
+        if date_type:
+            xml_pub_date = (
+                f'<pub-date publication-format="electronic" date-type="{date_type}">'
+            )
+            xml_pub_date_close = "</pub-date>"
+        xml = f"""
+        <article>
+        <front>
+        <article-meta>
+        {xml_pub_date}
+        {xml_year}
+        {xml_month}
+        {xml_day}
+        {xml_pub_date_close}
+        </article-meta>
+        </front>
+        </article>
+        """
+        return xml_sps_lib.XMLWithPre("", etree.fromstring(xml))
+
+    def test_article_publication_date_is_none(self):
+        xml_with_pre = self._get_xml_with_pre()
+        self.assertIsNone(xml_with_pre.article_publication_date)
+
+    def test_article_publication_date_is_invalid(self):
+        xml_with_pre = self._get_xml_with_pre("pub")
+        with self.assertRaises(xml_sps_lib.XMLWithPreArticlePublicationDateError) as e:
+            ign = xml_with_pre.article_publication_date
+
+    def test_article_publication_date_is_invalid_missing_month(self):
+        xml_with_pre = self._get_xml_with_pre("pub", "2023")
+        with self.assertRaises(xml_sps_lib.XMLWithPreArticlePublicationDateError) as e:
+            ign = xml_with_pre.article_publication_date
+
+    def test_article_publication_date_is_invalid_missing_day(self):
+        xml_with_pre = self._get_xml_with_pre("pub", "2023", "01")
+        with self.assertRaises(xml_sps_lib.XMLWithPreArticlePublicationDateError) as e:
+            ign = xml_with_pre.article_publication_date
+
+    def test_article_publication_date_is_complete_but_invalid(self):
+        xml_with_pre = self._get_xml_with_pre("pub", "2023", "02", "30")
+        with self.assertRaises(xml_sps_lib.XMLWithPreArticlePublicationDateError) as e:
+            ign = xml_with_pre.article_publication_date
+
+    def test_article_publication_date_is_valid(self):
+        xml_with_pre = self._get_xml_with_pre("pub", "2023", "1", "9")
+        self.assertEqual("2023-01-09", xml_with_pre.article_publication_date)
+
+
+class XMLWithPreISSNTest(TestCase):
+    def _get_xml_with_pre(self, eissn=None, pissn=None):
+        xml_eissn = eissn and f'<issn pub-type="epub">{eissn}</issn>' or ""
+        xml_pissn = pissn and f'<issn pub-type="ppub">{pissn}</issn>' or ""
+        xml = f"""
+        <article>
+        <front>
+        <journal-meta>
+        {xml_eissn}
+        {xml_pissn}
+        </journal-meta>
+        </front>
+        </article>
+        """
+        return xml_sps_lib.XMLWithPre("", etree.fromstring(xml))
+
+    def test_journal_issn_print(self):
+        xml_with_pre = self._get_xml_with_pre(pissn="1234-0987")
+        self.assertEqual(xml_with_pre.journal_issn_print, "1234-0987")
+
+    def test_journal_issn_electronic(self):
+        xml_with_pre = self._get_xml_with_pre(eissn="1234-0987")
+        self.assertEqual(xml_with_pre.journal_issn_electronic, "1234-0987")
+
+
+class XMLWithPreBodyTest(TestCase):
+    def _get_xml_with_pre(self, body):
+        xml = f"""
+            <article xmlns:xlink="http://www.w3.org/1999/xlink">
+            <body>{body}</body>
+            </article>
+            """
+        return xml_sps_lib.XMLWithPre("", etree.fromstring(xml))
+
+    def test_body(self):
+        body = """
+        <p>No artigo <bold>Educação Bilíngue para alunos surdos: notas sobre a construção da linguagem argumentativa no aprendizado de Ciências</bold>, com número de DOI: http://dx.doi.org/10.1590/1678-460X202257175, publicado no periódico D.E.L.T.A., 38-1, 2022:202257175, deve-se considerar a adição da informação:</p>
+        <p>Artigo em Libras: <ext-link ext-link-type="uri" xlink:href="https://youtu.be/frfspa_XnoE">https://youtu.be/frfspa_XnoE</ext-link> </p>
+        <p>A adição da informação se faz necessária por mais de um motivo: (1) trata-se de um número temático sobre educação inclusiva e não seria realmente inclusiva se não incluíssemos ao menos um texto acessível aos surdos; e (2) temos autores surdos no grupo que atuou na escrita do número temático e esse texto é especificamente de um dos grupos de estudos surdos.</p>
+
+        """
+        xml_with_pre = self._get_xml_with_pre(body)
+        self.assertEqual(
+            "No artigo Educação Bilíngue para alunos surdos: notas sobre a construção da linguagem argumentativa no aprendizado de Ciências , com número de DOI: http://dx.doi.org/10.1590/1678-460X202257175, publicado no periódico D.E.L.T.A., 38-1, 2022:202257175, deve-se considerar a adição da informação: ",
+            xml_with_pre.partial_body,
+        )
+
+    def test_body(self):
+        xml_with_pre = self._get_xml_with_pre("")
+        self.assertIsNone(xml_with_pre.partial_body)
