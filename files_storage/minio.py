@@ -179,6 +179,10 @@ class MinioStorage:
         Returns
         -------
         str
+
+        Raises
+        ------
+        MinioStorageGetUriError
         """
         try:
             url = self._client.presigned_get_object(self.bucket_root, object_name)
