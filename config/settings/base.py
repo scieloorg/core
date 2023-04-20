@@ -124,6 +124,7 @@ LOCAL_APPS = [
     "journal",
     "journal_and_collection",
     "location",
+    "pid_provider",
     "processing_errors",
     "researcher",
     "thematic_areas",
