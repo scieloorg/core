@@ -21,7 +21,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from pid_provider import controller, models
-from pid_provider.serializer import PidProviderXMLSerializer
+from pid_provider.api.serializers import PidProviderXMLSerializer
 
 
 class PidProviderViewSet(
@@ -40,6 +40,7 @@ class PidProviderViewSet(
         TokenAuthentication,
     ]
     permission_classes = [IsAuthenticated]
+    queryset = models.PidProviderXML.objects.all()
 
     @property
     def pid_provider(self):
