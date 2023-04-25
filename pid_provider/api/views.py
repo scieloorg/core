@@ -33,12 +33,6 @@ class PidProviderViewSet(
 
     parser_classes = (FileUploadParser,)
     http_method_names = ["post", "get", "head"]
-
-    authentication_classes = [
-        SessionAuthentication,
-        BasicAuthentication,
-        TokenAuthentication,
-    ]
     permission_classes = [IsAuthenticated]
     queryset = models.PidProviderXML.objects.all()
 
@@ -47,22 +41,6 @@ class PidProviderViewSet(
         if not hasattr(self, "_pid_provider") or not self._pid_provider:
             self._pid_provider = controller.PidProvider("pid-provider")
         return self._pid_provider
-
-    def _authenticate(self, request):
-        logging.info("_authenticate %s" % request.data)
-        try:
-            username = request.data["username"]
-            password = request.data["password"]
-        except:
-            pass
-        try:
-            logging.info(request.headers)
-        except:
-            pass
-
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
 
     def list(self, request, pk=None):
         """
