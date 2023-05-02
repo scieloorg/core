@@ -473,7 +473,7 @@ class PidProviderXML(CommonControlField):
             registered = cls._query_document(xml_adapter)
 
             # analisa se aceita ou rejeita registro
-            evaluate_registration(xml_adapter, registered)
+            cls.evaluate_registration(xml_adapter, registered)
 
             # verfica os PIDs encontrados no XML / atualiza-os se necessário
             xml_changed = cls._complete_pids(xml_adapter, registered)
