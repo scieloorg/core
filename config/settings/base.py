@@ -125,6 +125,8 @@ LOCAL_APPS = [
     "journal_and_collection",
     "location",
     "processing_errors",
+    "article",
+    "doi",
     "researcher",
     "thematic_areas",
     "vocabulary",
