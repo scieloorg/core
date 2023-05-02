@@ -7,7 +7,14 @@ from wagtail.contrib.modeladmin.options import (
 )
 from wagtail.contrib.modeladmin.views import CreateView
 
-from article.models import Article, ArticleFunding
+from article.models import (
+    AbstractModel,
+    Article,
+    ArticleFunding,
+    Category,
+    SubArticle,
+    Title,
+)
 
 
 class ArticleCreateView(CreateView):
@@ -22,6 +29,23 @@ class ArticleAdmin(ModelAdmin):
     menu_label = _("Article")
     menu_icon = "folder"
     menu_order = 100
+    add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
+    exclude_from_explorer = (
+        False  # or True to exclude pages of this type from Wagtail's explorer view
+    )
+
+    def all_fundings(self, obj):
+        return " | ".join([str(c) for c in obj.fundings.all()])
+
+    list_display = ("pid_v2", "all_fundings")
+    search_fields = ("pid_v2",)
+
+
+class SubArticleAdmin(ModelAdmin):
+    model = SubArticle
+    menu_label = _("SubArticle")
+    menu_icon = "folder"
+    menu_order = 101
     add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
     exclude_from_explorer = (
         False  # or True to exclude pages of this type from Wagtail's explorer view
@@ -67,3 +91,39 @@ class ArticleAdminGroup(ModelAdminGroup):
 
 
 modeladmin_register(ArticleAdminGroup)
+
+
+class TitleAdmin(ModelAdmin):
+    model = Title
+    menu_label = _("Title")
+    menu_icon = "folder"
+    menu_order = 300
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+
+    list_display = ("title",)
+    search_fields = ("title",)
+
+
+class AbstractModelAdmin(ModelAdmin):
+    model = AbstractModel
+    menu_label = _("Abstract")
+    menu_icon = "folder"
+    menu_order = 400
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+
+    list_display = ("text",)
+    search_fields = ("text",)
+
+
+class CategoryAdmin(ModelAdmin):
+    model = Category
+    menu_label = _("Category")
+    menu_icon = "folder"
+    menu_order = 500
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+
+    list_display = ("name",)
+    search_fields = ("name",)

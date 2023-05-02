@@ -17,7 +17,7 @@ export REDIS_URL=redis://$IP:6379/0
 export CELERY_FLOWER_USER=PhFRdLexbrsBvrrbSXxjcMMOcVOavCrZ
 export CELERY_FLOWER_PASSWORD=QgScyefPrYhHgO6onW61u0nazc5xdBuP4sM7jMRrBBFuA2RjsFhZLp7xbVYZbrwR
 export EMAIL_HOST=$IP
-# export SOLR_URL=http://$IP:8983/solr/asite/
+export SOLR_URL=http://$IP:8983/solr/asite/
 
 
 docker stop core_local_django

@@ -2,7 +2,6 @@ from wagtail.admin.forms import WagtailAdminModelForm
 
 
 class BookModelForm(WagtailAdminModelForm):
-
     def save_all(self, user):
         model_with_creator = super().save(commit=False)
 
@@ -14,9 +13,9 @@ class BookModelForm(WagtailAdminModelForm):
         self.save()
 
         return model_with_creator
+
 
 class ChapterModelForm(WagtailAdminModelForm):
-
     def save_all(self, user):
         model_with_creator = super().save(commit=False)
 
@@ -28,5 +27,3 @@ class ChapterModelForm(WagtailAdminModelForm):
         self.save()
 
         return model_with_creator
-
-
