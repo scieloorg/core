@@ -1,20 +1,25 @@
+from django.urls import reverse
 from django.utils.translation import gettext as _
 from wagtail.contrib.modeladmin.helpers import ButtonHelper
 
-from django.urls import reverse
-
 
 class GenericThematicAreaHelper(ButtonHelper):
-
     # Define classes for our button, here we can set an icon for example
-    validate_button_classnames = ["button-small", "icon",]
-    import_button_classnames = ["button-small", "icon",]
+    validate_button_classnames = [
+        "button-small",
+        "icon",
+    ]
+    import_button_classnames = [
+        "button-small",
+        "icon",
+    ]
 
     def validate_button(self, obj):
         # Define a label for our button
         text = _("Validate")
         return {
-            "url": reverse("generic_thematic_areas:validate") + "?file_id=%s" % str(obj.id),
+            "url": reverse("generic_thematic_areas:validate")
+            + "?file_id=%s" % str(obj.id),
             "label": text,
             "classname": self.finalise_classname(self.validate_button_classnames),
             "title": "validate_generic",
@@ -24,7 +29,8 @@ class GenericThematicAreaHelper(ButtonHelper):
         # Define a label for our button
         text = _("Import")
         return {
-            "url": reverse("generic_thematic_areas:import_file") + "?file_id=%s" % str(obj.id),
+            "url": reverse("generic_thematic_areas:import_file")
+            + "?file_id=%s" % str(obj.id),
             "label": text,
             "classname": self.finalise_classname(self.import_button_classnames),
             "title": "import_generic",
@@ -48,10 +54,15 @@ class GenericThematicAreaHelper(ButtonHelper):
 
 
 class ThematicAreaHelper(ButtonHelper):
-
     # Define classes for our button, here we can set an icon for example
-    validate_button_classnames = ["button-small", "icon",]
-    import_button_classnames = ["button-small", "icon",]
+    validate_button_classnames = [
+        "button-small",
+        "icon",
+    ]
+    import_button_classnames = [
+        "button-small",
+        "icon",
+    ]
 
     def validate_button(self, obj):
         # Define a label for our button

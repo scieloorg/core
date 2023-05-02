@@ -2,7 +2,6 @@ from wagtail.admin.forms import WagtailAdminModelForm
 
 
 class ProcessingErrorsForm(WagtailAdminModelForm):
-
     def save_all(self, user):
         erro = super().save(commit=False)
 

@@ -38,8 +38,8 @@ class _CronRange(crontab.CronRange):
 
     # rewrite whole method to raise error on bad range
     def parse(self, value):
-        if value.count('/') == 1:
-            value, seq = value.split('/')
+        if value.count("/") == 1:
+            value, seq = value.split("/")
             try:
                 self.seq = self.slice.parse_value(seq)
             except crontab.SundayError:
@@ -47,8 +47,8 @@ class _CronRange(crontab.CronRange):
                 value = "0-0"
             if self.seq < 1 or self.seq > self.slice.max:
                 raise ValueError("Sequence can not be divided by zero or max")
-        if value.count('-') == 1:
-            vfrom, vto = value.split('-')
+        if value.count("-") == 1:
+            vfrom, vto = value.split("-")
             self.vfrom = self.slice.parse_value(vfrom, sunday=0)
             try:
                 self.vto = self.slice.parse_value(vto)
@@ -60,7 +60,7 @@ class _CronRange(crontab.CronRange):
                 self.vto = self.slice.parse_value(vto, sunday=6)
             if self.vto < self.vfrom:
                 raise ValueError("Bad range '{0.vfrom}-{0.vto}'".format(self))
-        elif value == '*':
+        elif value == "*":
             self.all()
         else:
             raise ValueError('Unknown cron range value "%s"' % value)
@@ -100,7 +100,7 @@ def day_of_week_validator(value):
 
 
 def _validate_crontab(value, index):
-    tab = ['*'] * 5
+    tab = ["*"] * 5
     tab[index] = value
-    tab = ' '.join(tab)
+    tab = " ".join(tab)
     crontab_validator(tab)

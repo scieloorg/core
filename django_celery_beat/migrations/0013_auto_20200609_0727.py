@@ -6,15 +6,18 @@ import timezone_field.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('django_celery_beat', '0012_periodictask_expire_seconds'),
+        ("django_celery_beat", "0012_periodictask_expire_seconds"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='crontabschedule',
-            name='timezone',
-            field=timezone_field.fields.TimeZoneField(default=django_celery_beat.models.crontab_schedule_celery_timezone, help_text='Timezone to Run the Cron Schedule on. Default is UTC.', verbose_name='Cron Timezone'),
+            model_name="crontabschedule",
+            name="timezone",
+            field=timezone_field.fields.TimeZoneField(
+                default=django_celery_beat.models.crontab_schedule_celery_timezone,
+                help_text="Timezone to Run the Cron Schedule on. Default is UTC.",
+                verbose_name="Cron Timezone",
+            ),
         ),
     ]

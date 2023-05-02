@@ -1,22 +1,26 @@
-import requests
-import xmltodict
 import json
 
-from .models import OfficialJournal, ScieloJournal, Mission
-from institution.models import Institution, InstitutionHistory
+import requests
+import xmltodict
+
 from collection.models import Collection
+from institution.models import Institution, InstitutionHistory
 from processing_errors.models import ProcessingError
+
+from .models import Mission, OfficialJournal, ScieloJournal
 
 
 def get_issn(collection):
     try:
-        collections = requests.get(f"http://{collection}/scielo.php?script=sci_alphabetic&lng=es&nrm=iso&debug=xml",
-                                   timeout=10)
+        collections = requests.get(
+            f"http://{collection}/scielo.php?script=sci_alphabetic&lng=es&nrm=iso&debug=xml",
+            timeout=10,
+        )
         data = xmltodict.parse(collections.text)
 
-        for issn in data['SERIALLIST']['LIST']['SERIAL']:
+        for issn in data["SERIALLIST"]["LIST"]["SERIAL"]:
             try:
-                yield issn['TITLE']['@ISSN']
+                yield issn["TITLE"]["@ISSN"]
             except Exception as e:
                 error = ProcessingError()
                 error.item = f"ISSN's list of {collection} collection error"
@@ -36,7 +40,9 @@ def get_issn(collection):
 def get_journal_xml(collection, issn):
     try:
         official_journal = requests.get(
-            f"http://{collection}/scielo.php?script=sci_serial&pid={issn}&lng=es&nrm=iso&debug=xml", timeout=10)
+            f"http://{collection}/scielo.php?script=sci_serial&pid={issn}&lng=es&nrm=iso&debug=xml",
+            timeout=10,
+        )
         return xmltodict.parse(official_journal.text)
 
     except Exception as e:
@@ -50,23 +56,24 @@ def get_journal_xml(collection, issn):
 
 def get_official_journal(user, journal_xml):
     try:
-        issnl = journal_xml['SERIAL']['ISSN_AS_ID']
-        title = journal_xml['SERIAL']['TITLEGROUP']['TITLE']
+        issnl = journal_xml["SERIAL"]["ISSN_AS_ID"]
+        title = journal_xml["SERIAL"]["TITLEGROUP"]["TITLE"]
         # this value are not available in the XML file
         foundation_year = None
-        issns = journal_xml['SERIAL']['TITLE_ISSN']
+        issns = journal_xml["SERIAL"]["TITLE_ISSN"]
         issns_list = issns if type(issns) is list else [issns]
         issn_print = None
         issn_electronic = None
 
         for issn in issns_list:
-            if issn['@TYPE'] == 'PRINT':
-                issn_print = issn['#text']
-            if issn['@TYPE'] == 'ONLIN':
-                issn_electronic = issn['#text']
+            if issn["@TYPE"] == "PRINT":
+                issn_print = issn["#text"]
+            if issn["@TYPE"] == "ONLIN":
+                issn_electronic = issn["#text"]
 
-        official_journal = OfficialJournal.get_or_create(title, foundation_year, issn_print,
-                                                         issn_electronic, issnl, user)
+        official_journal = OfficialJournal.get_or_create(
+            title, foundation_year, issn_print, issn_electronic, issnl, user
+        )
 
         return official_journal
 
@@ -83,32 +90,38 @@ def get_scielo_journal(user, journal_xml, collection):
     try:
         official_journal = get_official_journal(user, journal_xml)
         issn_scielo = official_journal.issnl
-        title = journal_xml['SERIAL']['TITLEGROUP']['TITLE']
-        short_title = journal_xml['SERIAL']['TITLEGROUP']['SHORTTITLE']
+        title = journal_xml["SERIAL"]["TITLEGROUP"]["TITLE"]
+        short_title = journal_xml["SERIAL"]["TITLEGROUP"]["SHORTTITLE"]
         scielo_journal = ScieloJournal.get_or_create(
             official_journal=official_journal,
             issn_scielo=issn_scielo,
             title=title,
             short_title=short_title,
             collection=collection,
-            user=user)
+            user=user,
+        )
 
-        mission_text = journal_xml['SERIAL']['MISSION']
-        language = journal_xml['SERIAL']['CONTROLINFO']['LANGUAGE']
-        scielo_journal.panels_mission.append(Mission.get_or_create(scielo_journal, issn_scielo, mission_text,
-                                                                   language, user))
+        mission_text = journal_xml["SERIAL"]["MISSION"]
+        language = journal_xml["SERIAL"]["CONTROLINFO"]["LANGUAGE"]
+        scielo_journal.panels_mission.append(
+            Mission.get_or_create(
+                scielo_journal, issn_scielo, mission_text, language, user
+            )
+        )
 
-        institution_name = journal_xml['SERIAL']['PUBLISHERS']['PUBLISHER']['NAME']
+        institution_name = journal_xml["SERIAL"]["PUBLISHERS"]["PUBLISHER"]["NAME"]
         # the other parameters are not available in the XML file
         institution = Institution.get_or_create(
-                inst_name=institution_name,
-                inst_acronym=None,
-                level_1=None,
-                level_2=None,
-                level_3=None,
-                location=None
-            )
-        history = InstitutionHistory.get_or_create(institution=institution, initial_date=None, final_date=None)
+            inst_name=institution_name,
+            inst_acronym=None,
+            level_1=None,
+            level_2=None,
+            level_3=None,
+            location=None,
+        )
+        history = InstitutionHistory.get_or_create(
+            institution=institution, initial_date=None, final_date=None
+        )
         scielo_journal.panels_publisher.append(history)
         scielo_journal.creator = user
         scielo_journal.save()

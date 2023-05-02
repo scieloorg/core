@@ -1,36 +1,39 @@
 from django.db import models
 from django.utils.translation import gettext as _
+from wagtail.admin.panels import FieldPanel
+from wagtail.fields import RichTextField
 
-from wagtail.admin.edit_handlers import FieldPanel
-from wagtail.core.fields import RichTextField
-
-from core.models import CommonControlField, RichTextWithLang, Date
 from core.forms import CoreAdminModelForm
-from core.choices import LANGUAGE
-
+from core.models import CommonControlField, FlexibleDate, Language, RichTextWithLang
 from institution.models import Sponsor
 
 
 class Article(CommonControlField):
     pid_v2 = models.CharField(_("PID V2"), blank=True, null=True, max_length=23)
-    fundings = models.ManyToManyField("ArticleFunding", verbose_name=_("Fundings"), blank=True)
+    fundings = models.ManyToManyField(
+        "ArticleFunding", verbose_name=_("Fundings"), blank=True
+    )
 
     class Meta:
         indexes = [
-            models.Index(fields=['pid_v2', ]),
+            models.Index(
+                fields=[
+                    "pid_v2",
+                ]
+            ),
         ]
 
     def __unicode__(self):
-        return u'%s' % self.pid_v2
+        return "%s" % self.pid_v2
 
     def __str__(self):
-        return u'%s' % self.pid_v2
+        return "%s" % self.pid_v2
 
     @property
     def data(self):
         _data = {
-            'article__pid_v2': self.pid_v2,
-            'article__fundings': [f.data for f in self.fundings.iterator()],
+            "article__pid_v2": self.pid_v2,
+            "article__fundings": [f.data for f in self.fundings.iterator()],
         }
 
         return _data
@@ -55,29 +58,39 @@ class Article(CommonControlField):
 
 class ArticleFunding(CommonControlField):
     award_id = models.CharField(_("Award ID"), blank=True, null=True, max_length=50)
-    funding_source = models.ForeignKey(Sponsor, null=True, blank=True, on_delete=models.SET_NULL)
+    funding_source = models.ForeignKey(
+        Sponsor, null=True, blank=True, on_delete=models.SET_NULL
+    )
 
     class Meta:
         indexes = [
-            models.Index(fields=['award_id', ]),
-            models.Index(fields=['funding_source', ]),
+            models.Index(
+                fields=[
+                    "award_id",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "funding_source",
+                ]
+            ),
         ]
 
     panels = [
-        FieldPanel('award_id'),
-        FieldPanel('funding_source'),
+        FieldPanel("award_id"),
+        FieldPanel("funding_source"),
     ]
 
     def __unicode__(self):
-        return u'%s | %s' % (self.award_id, self.funding_source)
+        return "%s | %s" % (self.award_id, self.funding_source)
 
     def __str__(self):
-        return u'%s | %s' % (self.award_id, self.funding_source)
+        return "%s | %s" % (self.award_id, self.funding_source)
 
     @property
     def data(self):
         _data = {
-            'article_funding__award_id': self.award_id,
+            "article_funding__award_id": self.award_id,
         }
         if self.funding_source:
             _data.update(self.funding_source.data)
@@ -117,14 +130,18 @@ class ArticleEventType(CommonControlField):
 
     class Meta:
         indexes = [
-            models.Index(fields=['code', ]),
+            models.Index(
+                fields=[
+                    "code",
+                ]
+            ),
         ]
 
     def __unicode__(self):
-        return u'%s' % self.code
+        return "%s" % self.code
 
     def __str__(self):
-        return u'%s' % self.code
+        return "%s" % self.code
 
     @property
     def data(self):
@@ -144,20 +161,32 @@ class ArticleEventType(CommonControlField):
 
 
 class ArticleHistory(CommonControlField):
-    event_type = models.ForeignKey(ArticleEventType, null=True, blank=True, on_delete=models.SET_NULL)
-    date = models.ForeignKey(Date, null=True, blank=True, on_delete=models.SET_NULL)
+    event_type = models.ForeignKey(
+        ArticleEventType, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    date = models.ForeignKey(
+        FlexibleDate, null=True, blank=True, on_delete=models.SET_NULL
+    )
 
     class Meta:
         indexes = [
-            models.Index(fields=['event_type', ]),
-            models.Index(fields=['date', ]),
+            models.Index(
+                fields=[
+                    "event_type",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "date",
+                ]
+            ),
         ]
 
     def __unicode__(self):
-        return u'%s (%s)' % (self.code, self.date)
+        return "%s (%s)" % (self.code, self.date)
 
     def __str__(self):
-        return u'%s (%s)' % (self.code, self.date)
+        return "%s (%s)" % (self.code, self.date)
 
     @property
     def data(self):
@@ -172,14 +201,18 @@ class ArticleCountType(CommonControlField):
 
     class Meta:
         indexes = [
-            models.Index(fields=['code', ]),
+            models.Index(
+                fields=[
+                    "code",
+                ]
+            ),
         ]
 
     def __unicode__(self):
-        return u'%s' % self.code
+        return "%s" % self.code
 
     def __str__(self):
-        return u'%s' % self.code
+        return "%s" % self.code
 
     @property
     def data(self):
@@ -199,21 +232,37 @@ class ArticleCountType(CommonControlField):
 
 
 class ArticleCount(CommonControlField):
-    count_type = models.ForeignKey(ArticleCountType, null=True, blank=True, on_delete=models.SET_NULL)
-    count = models.IntegerField(_('Count'), null=True, blank=True)
-    language = models.CharField(_('Language'), max_length=2, choices=LANGUAGE, null=True, blank=True)
+    count_type = models.ForeignKey(
+        ArticleCountType, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    count = models.IntegerField(_("Count"), null=True, blank=True)
+    language = models.ForeignKey(
+        Language,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Language"),
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         indexes = [
-            models.Index(fields=['count_type', ]),
-            models.Index(fields=['language', ]),
+            models.Index(
+                fields=[
+                    "count_type",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "language",
+                ]
+            ),
         ]
 
     def __unicode__(self):
-        return u'%s | %s | %s' % (self.count_type, self.count, self.language)
+        return "%s | %s | %s" % (self.count_type, self.count, self.language)
 
     def __str__(self):
-        return u'%s | %s | %s' % (self.count_type, self.count, self.language)
+        return "%s | %s | %s" % (self.count_type, self.count, self.language)
 
     @property
     def data(self):

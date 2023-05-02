@@ -1,15 +1,20 @@
-import os
 import csv
+import os
 from datetime import datetime
-from django.shortcuts import get_object_or_404, redirect
-from django.http import HttpResponse, Http404
-from django.utils.translation import gettext as _
 
+from django.http import Http404, HttpResponse
+from django.shortcuts import get_object_or_404, redirect
+from django.utils.translation import gettext as _
 from wagtail.admin import messages
 
 from core.libs import chkcsv
 
-from .models import ThematicAreaFile, ThematicArea, GenericThematicAreaFile, GenericThematicArea
+from .models import (
+    GenericThematicArea,
+    GenericThematicAreaFile,
+    ThematicArea,
+    ThematicAreaFile,
+)
 
 
 def generic_validate(request):
@@ -28,12 +33,17 @@ def generic_validate(request):
     if file_id:
         file_upload = get_object_or_404(GenericThematicAreaFile, pk=file_id)
 
-    if request.method == 'GET':
+    if request.method == "GET":
         try:
             upload_path = file_upload.attachment.file.path
             cols = chkcsv.read_format_specs(
-                os.path.dirname(os.path.abspath(__file__)) + "/generic_chkcsvfmt.fmt", True, False)
-            errorlist = chkcsv.check_csv_file(upload_path, cols, True, True, True, False)
+                os.path.dirname(os.path.abspath(__file__)) + "/generic_chkcsvfmt.fmt",
+                True,
+                False,
+            )
+            errorlist = chkcsv.check_csv_file(
+                upload_path, cols, True, True, True, False
+            )
             if errorlist:
                 raise Exception(_("Validation error"))
             else:
@@ -46,7 +56,7 @@ def generic_validate(request):
         else:
             messages.success(request, _("File successfully validated!"))
 
-    return redirect(request.META.get('HTTP_REFERER'))
+    return redirect(request.META.get("HTTP_REFERER"))
 
 
 def generic_import_file(request):
@@ -70,35 +80,41 @@ def generic_import_file(request):
 
     file_path = file_upload.attachment.file.path
 
-    with open(file_path, 'r') as csvfile:
+    with open(file_path, "r") as csvfile:
         data = csv.DictReader(csvfile, delimiter=";")
 
         for line, row in enumerate(data):
             try:
                 the_area = GenericThematicArea()
-                the_area.text = row.get('text')
-                the_area.lang = row.get('lang')
-                the_area.origin = row.get('origin')
-                the_area.level = row.get('level')
+                the_area.text = row.get("text")
+                the_area.lang = row.get("lang")
+                the_area.origin = row.get("origin")
+                the_area.level = row.get("level")
                 the_area.creator = request.user
                 the_area.save()
             except Exception as ex:
-                messages.error(request, _("Import error: %s, Line: %s") % (ex, str(line + 2)))
+                messages.error(
+                    request, _("Import error: %s, Line: %s") % (ex, str(line + 2))
+                )
         else:
             messages.success(request, _("File imported successfully!"))
 
-    return redirect(request.META.get('HTTP_REFERER'))
+    return redirect(request.META.get("HTTP_REFERER"))
 
 
 def generic_download_sample(request):
     """
     This view function a CSV sample for model ThematicAreaFile.
     """
-    file_path = os.path.dirname(os.path.abspath(__file__)) + "/fixtures_thematic_areas.csv"
+    file_path = (
+        os.path.dirname(os.path.abspath(__file__)) + "/fixtures_thematic_areas.csv"
+    )
     if os.path.exists(file_path):
-        with open(file_path, 'rb') as fh:
+        with open(file_path, "rb") as fh:
             response = HttpResponse(fh.read(), content_type="text/csv")
-            response['Content-Disposition'] = 'inline; filename=' + os.path.basename(file_path)
+            response["Content-Disposition"] = "inline; filename=" + os.path.basename(
+                file_path
+            )
             return response
     raise Http404
 
@@ -119,12 +135,17 @@ def validate(request):
     if file_id:
         file_upload = get_object_or_404(ThematicAreaFile, pk=file_id)
 
-    if request.method == 'GET':
+    if request.method == "GET":
         try:
             upload_path = file_upload.attachment.file.path
             cols = chkcsv.read_format_specs(
-                os.path.dirname(os.path.abspath(__file__)) + "/chkcsvfmt.fmt", True, False)
-            errorlist = chkcsv.check_csv_file(upload_path, cols, True, True, True, False)
+                os.path.dirname(os.path.abspath(__file__)) + "/chkcsvfmt.fmt",
+                True,
+                False,
+            )
+            errorlist = chkcsv.check_csv_file(
+                upload_path, cols, True, True, True, False
+            )
             if errorlist:
                 raise Exception(_("Validation error"))
             else:
@@ -137,7 +158,7 @@ def validate(request):
         else:
             messages.success(request, _("File successfully validated!"))
 
-    return redirect(request.META.get('HTTP_REFERER'))
+    return redirect(request.META.get("HTTP_REFERER"))
 
 
 def import_file(request):
@@ -159,33 +180,37 @@ def import_file(request):
     file_path = file_upload.attachment.file.path
 
     try:
-        with open(file_path, 'r') as csvfile:
+        with open(file_path, "r") as csvfile:
             data = csv.DictReader(csvfile, delimiter=";")
 
             for line, row in enumerate(data):
                 ta = ThematicArea()
-                ta.level0 = row['ThematicAreaLevel0']
-                ta.level0 = row['ThematicAreaLevel1']
-                ta.level0 = row['ThematicAreaLevel2']
+                ta.level0 = row["ThematicAreaLevel0"]
+                ta.level0 = row["ThematicAreaLevel1"]
+                ta.level0 = row["ThematicAreaLevel2"]
                 ta.creator = request.user
                 ta.save()
 
     except Exception as ex:
         messages.error(request, _("Import error: %s, Line: %s") % (ex, str(line + 2)))
     else:
-       messages.success(request, _("File imported successfully!"))
+        messages.success(request, _("File imported successfully!"))
 
-    return redirect(request.META.get('HTTP_REFERER'))
+    return redirect(request.META.get("HTTP_REFERER"))
 
 
 def download_sample(request):
     """
     This view function a CSV sample for model ThematicAreaFile.
     """
-    file_path = os.path.dirname(os.path.abspath(__file__)) + "/fixtures_thematic_areas.csv"
+    file_path = (
+        os.path.dirname(os.path.abspath(__file__)) + "/fixtures_thematic_areas.csv"
+    )
     if os.path.exists(file_path):
-        with open(file_path, 'rb') as fh:
+        with open(file_path, "rb") as fh:
             response = HttpResponse(fh.read(), content_type="text/csv")
-            response['Content-Disposition'] = 'inline; filename=' + os.path.basename(file_path)
+            response["Content-Disposition"] = "inline; filename=" + os.path.basename(
+                file_path
+            )
             return response
     raise Http404
