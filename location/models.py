@@ -42,7 +42,9 @@ class City(CommonControlField):
 
 class Region(CommonControlField):
     name = models.TextField(_("Name of the region"), null=True, blank=True)
-    acronym = models.CharField(_("Region Acronym"), max_length=10, null=True, blank=True)
+    acronym = models.CharField(
+        _("Region Acronym"), max_length=10, null=True, blank=True
+    )
 
     class Meta:
         verbose_name = _("Region")
@@ -91,12 +93,7 @@ class State(CommonControlField):
 
     name = models.TextField(_("State name"))
     acronym = models.CharField(_("State Acronym"), max_length=2, null=True, blank=True)
-    region = models.ForeignKey(
-        Region,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
+    region = models.ForeignKey(Region, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         verbose_name = _("State")
@@ -184,12 +181,7 @@ class Country(CommonControlField):
 
 
 class Location(CommonControlField):
-    region = models.ForeignKey(
-        Region,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
+    region = models.ForeignKey(Region, on_delete=models.SET_NULL, null=True, blank=True)
     city = models.ForeignKey(
         City,
         verbose_name=_("City"),
@@ -223,14 +215,16 @@ class Location(CommonControlField):
         return "%s | %s | %s" % (self.country, self.state, self.city)
 
     @classmethod
-    def get_or_create(cls, user, location_region, location_country, location_state, location_city):
+    def get_or_create(
+        cls, user, location_region, location_country, location_state, location_city
+    ):
         # check if exists the location
         try:
             return cls.objects.get(
                 region=location_region,
                 country=location_country,
                 state=location_state,
-                city=location_city
+                city=location_city,
             )
         except:
             location = Location()
