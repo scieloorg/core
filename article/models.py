@@ -14,11 +14,21 @@ from core.models import (
 from institution.models import Sponsor
 from researcher.models import Researcher
 from vocabulary.models import Keyword
+from journal.models import ScieloJournal
+from doi.models import DOI, DOIRegistration
 
 
 class Article(CommonControlField):
     pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
     pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True)
+    journal = models.ForeignKey(
+        ScieloJournal,
+        verbose_name=_("Journal"),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )        
+    doi = models.ManyToManyField(DOI, blank=True)
     pub_date_pub = models.CharField(
         _("pub date"),
         max_length=10,
@@ -64,7 +74,6 @@ class Article(CommonControlField):
     )
     abstracts = models.ManyToManyField(
         "DocumentAbstract",
-        on_delete=models.SET_NULL,
         blank=True
     )
     toc_sections = models.ManyToManyField("TocSection", blank=True)

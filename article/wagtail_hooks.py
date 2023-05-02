@@ -8,12 +8,12 @@ from wagtail.contrib.modeladmin.options import (
 from wagtail.contrib.modeladmin.views import CreateView
 
 from article.models import (
-    AbstractModel,
+    # AbstractModel,
     Article,
     ArticleFunding,
-    Category,
+    # Category,
     SubArticle,
-    Title,
+    # Title,
 )
 
 
@@ -93,37 +93,37 @@ class ArticleAdminGroup(ModelAdminGroup):
 modeladmin_register(ArticleAdminGroup)
 
 
-class TitleAdmin(ModelAdmin):
-    model = Title
-    menu_label = _("Title")
-    menu_icon = "folder"
-    menu_order = 300
-    add_to_settings_menu = False
-    exclude_from_explorer = False
+# class TitleAdmin(ModelAdmin):
+#     model = Title
+#     menu_label = _("Title")
+#     menu_icon = "folder"
+#     menu_order = 300
+#     add_to_settings_menu = False
+#     exclude_from_explorer = False
 
-    list_display = ("title",)
-    search_fields = ("title",)
-
-
-class AbstractModelAdmin(ModelAdmin):
-    model = AbstractModel
-    menu_label = _("Abstract")
-    menu_icon = "folder"
-    menu_order = 400
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-
-    list_display = ("text",)
-    search_fields = ("text",)
+#     list_display = ("title",)
+#     search_fields = ("title",)
 
 
-class CategoryAdmin(ModelAdmin):
-    model = Category
-    menu_label = _("Category")
-    menu_icon = "folder"
-    menu_order = 500
-    add_to_settings_menu = False
-    exclude_from_explorer = False
+# class AbstractModelAdmin(ModelAdmin):
+#     model = AbstractModel
+#     menu_label = _("Abstract")
+#     menu_icon = "folder"
+#     menu_order = 400
+#     add_to_settings_menu = False
+#     exclude_from_explorer = False
 
-    list_display = ("name",)
-    search_fields = ("name",)
+#     list_display = ("text",)
+#     search_fields = ("text",)
+
+
+# class CategoryAdmin(ModelAdmin):
+#     model = Category
+#     menu_label = _("Category")
+#     menu_icon = "folder"
+#     menu_order = 500
+#     add_to_settings_menu = False
+#     exclude_from_explorer = False
+
+#     list_display = ("name",)
+#     search_fields = ("name",)

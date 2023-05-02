@@ -105,55 +105,6 @@ class CommonControlField(models.Model):
         abstract = True
 
 
-class TextWithLang(models.Model):
-    text = models.TextField(_("Text"), null=True, blank=True)
-    language = models.CharField(
-        _("Language"), max_length=2, choices=choices.LANGUAGE, null=True, blank=True
-    )
-
-    panels = [FieldPanel("text"), FieldPanel("language")]
-
-    class Meta:
-        abstract = True
-
-
-class RichTextWithLang(models.Model):
-    rich_text = RichTextField(_("Rich Text"), null=True, blank=True)
-    plain_text = models.TextField(_("Plain Text"), null=True, blank=True)
-    language = models.ForeignKey(
-        "Language",
-        on_delete=models.SET_NULL,
-        verbose_name=_("Language"),
-        null=True,
-        blank=True,
-    )
-
-    panels = [FieldPanel("text"), FieldPanel("language")]
-
-    class Meta:
-        abstract = True
-
-
-class FlexibleDate(models.Model):
-    year = models.IntegerField(_("Year"), null=True, blank=True)
-    month = models.IntegerField(_("Month"), null=True, blank=True)
-    day = models.IntegerField(_("Day"), null=True, blank=True)
-
-    def __unicode__(self):
-        return "%s/%s/%s" % (self.year, self.month, self.day)
-
-    def __str__(self):
-        return "%s/%s/%s" % (self.year, self.month, self.day)
-
-    @property
-    def data(self):
-        return dict(
-            date__year=self.year,
-            date__month=self.month,
-            date__day=self.day,
-        )
-
-
 class Language(CommonControlField):
     """
     Represent the list of states
@@ -199,12 +150,62 @@ class Language(CommonControlField):
             return obj
 
 
+class TextWithLang(models.Model):
+    text = models.TextField(_("Text"), null=True, blank=True)
+    language = models.CharField(
+        _("Language"), max_length=2, choices=choices.LANGUAGE, null=True, blank=True
+    )
+
+    panels = [FieldPanel("text"), FieldPanel("language")]
+
+    class Meta:
+        abstract = True
+
+
+class RichTextWithLang(models.Model):
+    rich_text = RichTextField(_("Rich Text"), null=True, blank=True)
+    plain_text = models.TextField(_("Plain Text"), null=True, blank=True)
+    language = models.ForeignKey(
+        Language,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Language"),
+        null=True,
+        blank=True,
+    )
+
+    panels = [FieldPanel("text"), FieldPanel("language")]
+
+    class Meta:
+        abstract = True
+
+
+class FlexibleDate(models.Model):
+    year = models.IntegerField(_("Year"), null=True, blank=True)
+    month = models.IntegerField(_("Month"), null=True, blank=True)
+    day = models.IntegerField(_("Day"), null=True, blank=True)
+
+    def __unicode__(self):
+        return "%s/%s/%s" % (self.year, self.month, self.day)
+
+    def __str__(self):
+        return "%s/%s/%s" % (self.year, self.month, self.day)
+
+    @property
+    def data(self):
+        return dict(
+            date__year=self.year,
+            date__month=self.month,
+            date__day=self.day,
+        )
+
+
+
 class License(CommonControlField):
     url = models.CharField(max_length=255, null=True, blank=True)
     license_p = RichTextField(null=True, blank=True)
     license_type = models.CharField(max_length=255, null=True, blank=True)
     language = models.ForeignKey(
-        "Language",
+        Language,
         on_delete=models.SET_NULL,
         null=True,
         blank=True
