@@ -15,6 +15,7 @@ class Researcher(ClusterableModel, CommonControlField):
     """
     Class that represent the Researcher
     """
+
     given_names = models.CharField(
         _("Given names"), max_length=128, blank=False, null=False
     )
@@ -26,12 +27,13 @@ class Researcher(ClusterableModel, CommonControlField):
     lattes = models.TextField(_("Lattes"), blank=True, null=True)
     gender = models.ForeignKey(Gender, blank=True, null=True, on_delete=models.SET_NULL)
     gender_identification_status = models.ForeignKey(
-        GenderIdentificationStatus, blank=True, null=True, on_delete=models.SET_NULL)
+        GenderIdentificationStatus, blank=True, null=True, on_delete=models.SET_NULL
+    )
 
     def autocomplete_label(self):
         return str(self)
 
-    autocomplete_search_field = 'given_names'
+    autocomplete_search_field = "given_names"
 
     def __unicode__(self):
         return "%s%s, %s (%s)" % (

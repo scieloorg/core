@@ -21,8 +21,6 @@ from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
 from packtools.sps.models.front_journal_meta import ISSN
 from packtools.sps.models.related_articles import RelatedItems
 
-from files_storage.utils import generate_finger_print
-
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 
@@ -40,6 +38,10 @@ class GetXMLItemsError(Exception):
 
 
 class GetXMLItemsFromZipFileError(Exception):
+    ...
+
+
+class XMLWithPreArticlePublicationDateError(Exception):
     ...
 
 
@@ -234,17 +236,32 @@ class XMLWithPre:
         self.xmlpre = xmlpre or ""
         self.xmltree = xmltree
 
+    @property
+    def article_id_parent(self):
+        """
+        Retorna o nó pai dos elementos article-id (v2, v3, aop_pid)
+        """
+        try:
+            return self.xmltree.xpath(".//article-meta")[0]
+        except IndexError:
+            node = self.xmltree.find(".")
+            front = node.find("front")
+            if front is None:
+                front = etree.Element("front")
+                node.append(front)
+            parent = etree.Element("article-meta")
+            front.append(parent)
+            return parent
+
     def tostring(self):
         return self.xmlpre + etree.tostring(self.xmltree, encoding="utf-8").decode(
             "utf-8"
         )
 
-    @property
-    def finger_print(self):
-        return generate_finger_print(etree.tostring(self.xmltree, encoding="utf-8"))
-
     def update_ids(self, v3, v2, aop_pid):
-        # update IDs
+        """
+        Atualiza todos os elementos article-id (v2, v3, aop_pid)
+        """
         self.article_ids.v3 = v3
         self.article_ids.v2 = v2
         if aop_pid:
@@ -252,19 +269,15 @@ class XMLWithPre:
 
     @property
     def related_items(self):
-        if not hasattr(self, "_related_items") or not self._related_items:
-            # list of dict which keys are
-            # href, ext-link-type, related-article-type
-            items = RelatedItems(self.xmltree)
-            self._related_items = list(items.related_articles)
-        return self._related_items
+        return RelatedItems(self.xmltree).related_articles
+
+    @property
+    def links(self):
+        return [item["href"] for item in self.related_items]
 
     @property
     def article_ids(self):
-        if not hasattr(self, "_article_ids") or not self._article_ids:
-            # [{"lang": "en", "value": "DOI"}]
-            self._article_ids = ArticleIds(self.xmltree)
-        return self._article_ids
+        return ArticleIds(self.xmltree)
 
     @property
     def v3(self):
@@ -278,17 +291,76 @@ class XMLWithPre:
     def aop_pid(self):
         return self.article_ids.aop_pid
 
-    @v3.setter
-    def v3(self, value):
-        self.article_ids.v3 = value
-
     @v2.setter
     def v2(self, value):
-        self.article_ids.v2 = value
+        if not value or len(value) != 23:
+            raise ValueError(
+                "can't set attribute XMLWithPre.v2. "
+                "Expected value must have 23 characters. Got: %s" % value
+            )
+        try:
+            node = self.xmltree.xpath('.//article-id[@specific-use="scielo-v2"]')[0]
+        except IndexError:
+            node = None
+        if node is None:
+            node = etree.Element("article-id")
+            node.set("pub-id-type", "publisher-id")
+            node.set("specific-use", "scielo-v2")
+            parent = self.article_id_parent
+            parent.insert(1, node)
+            print(etree.tostring(parent))
+        node.text = value
+
+    @v3.setter
+    def v3(self, value):
+        if not value or len(value) != 23:
+            raise ValueError(
+                "can't set attribute XMLWithPre.v3. "
+                "Expected value must have 23 characters. Got: %s" % value
+            )
+        try:
+            node = self.xmltree.xpath('.//article-id[@specific-use="scielo-v3"]')[0]
+        except IndexError:
+            node = None
+
+        if node is None:
+            node = etree.Element("article-id")
+            node.set("pub-id-type", "publisher-id")
+            node.set("specific-use", "scielo-v3")
+            parent = self.article_id_parent
+            parent.insert(1, node)
+        if node is not None:
+            node.text = value
 
     @aop_pid.setter
     def aop_pid(self, value):
-        self.article_ids.aop_pid = value
+        if not value or len(value) != 23:
+            raise ValueError(
+                "can't set attribute XMLWithPre.aop_pid. "
+                "Expected value must have 23 characters. Got: %s" % value
+            )
+        try:
+            node = self.xmltree.xpath(
+                './/article-id[@specific-use="previous-pid" and '
+                '@pub-id-type="publisher-id"]'
+            )[0]
+        except IndexError:
+            node = None
+
+        if node is None:
+            node = etree.Element("article-id")
+            node.set("pub-id-type", "publisher-id")
+            node.set("specific-use", "previous-pid")
+            parent = self.article_id_parent
+            parent.insert(1, node)
+        if node is not None:
+            node.text = value
+
+    @property
+    def v2_prefix(self):
+        return (
+            f"S{self.journal_issn_electronic or self.journal_issn_print}{self.pub_year}"
+        )
 
     @property
     def article_doi_with_lang(self):
@@ -331,42 +403,86 @@ class XMLWithPre:
         if not hasattr(self, "_issns") or not self._issns:
             # [{"type": "epub", "value": "1234-9876"}]
             issns = ISSN(self.xmltree)
-            self._issns = issns.data
+            self._issns = {item["type"]: item["value"] for item in issns.data}
         return self._issns
 
     @property
     def is_aop(self):
         if not hasattr(self, "_is_aop") or not self._is_aop:
             items = (
-                self.article_in_issue["volume"],
-                self.article_in_issue["number"],
-                self.article_in_issue["suppl"],
+                self.article_meta_issue.volume,
+                self.article_meta_issue.number,
+                self.article_meta_issue.suppl,
             )
             self._is_aop = not any(items)
         return self._is_aop
 
     @property
-    def article_in_issue(self):
-        if not hasattr(self, "_article_in_issue") or not self._article_in_issue:
-            _data = {
-                "volume": None,
-                "number": None,
-                "suppl": None,
-                "fpage": None,
-                "fpage_seq": None,
-                "lpage": None,
-                "pub_year": None,
-            }
-            article_in_issue = ArticleMetaIssue(self.xmltree)
-            _data.update(article_in_issue.data)
-            if not _data.get("pub_year"):
-                _data["pub_year"] = ArticleDates(self.xmltree).article_date["year"]
+    def xml_dates(self):
+        if not hasattr(self, "_xml_dates") or not self._xml_dates:
+            # ("year", "month", "season", "day")
+            self._xml_dates = ArticleDates(self.xmltree)
+        return self._xml_dates
 
-            if _data.get("pub_year"):
-                _data["pub_year"] = int(_data["pub_year"])
+    @property
+    def article_meta_issue(self):
+        # artigos podem ser publicados sem estarem associados a um fascículo
+        # Neste caso, não há volume, número, suppl, fpage, fpage_seq, lpage
+        # Mas deve ter ano de publicação em qualquer caso
+        if not hasattr(self, "_article_meta_issue") or not self._article_meta_issue:
+            self._article_meta_issue = ArticleMetaIssue(self.xmltree)
+        return self._article_meta_issue
 
-            self._article_in_issue = _data
-        return self._article_in_issue
+    @property
+    def volume(self):
+        if not hasattr(self, "_volume") or not self._volume:
+            self._volume = self.article_meta_issue.volume
+        return self._volume
+
+    @property
+    def number(self):
+        if not hasattr(self, "_number") or not self._number:
+            self._number = self.article_meta_issue.number
+        return self._number
+
+    @property
+    def suppl(self):
+        if not hasattr(self, "_suppl") or not self._suppl:
+            self._suppl = self.article_meta_issue.suppl
+        return self._suppl
+
+    @property
+    def fpage(self):
+        if not hasattr(self, "_fpage") or not self._fpage:
+            self._fpage = self.article_meta_issue.fpage
+        return self._fpage
+
+    @property
+    def fpage_seq(self):
+        if not hasattr(self, "_fpage_seq") or not self._fpage_seq:
+            self._fpage_seq = self.article_meta_issue.fpage_seq
+        return self._fpage_seq
+
+    @property
+    def lpage(self):
+        if not hasattr(self, "_lpage") or not self._lpage:
+            self._lpage = self.article_meta_issue.lpage
+        return self._lpage
+
+    @property
+    def elocation_id(self):
+        if not hasattr(self, "_elocation_id") or not self._elocation_id:
+            self._elocation_id = self.article_meta_issue.elocation_id
+        return self._elocation_id
+
+    @property
+    def pub_year(self):
+        if not hasattr(self, "_pub_year") or not self._pub_year:
+            try:
+                self._pub_year = self.article_meta_issue.collection_date.get("year")
+            except AttributeError:
+                return None
+        return self._pub_year
 
     @property
     def authors(self):
@@ -389,6 +505,7 @@ class XMLWithPre:
     @property
     def partial_body(self):
         if not hasattr(self, "_partial_body") or not self._partial_body:
+            self._partial_body = None
             try:
                 body = Body(self.xmltree)
                 for text in body.main_body_texts:
@@ -406,12 +523,23 @@ class XMLWithPre:
         return self._collab
 
     @property
-    def journal(self):
-        if not hasattr(self, "_journal") or not self._journal:
-            # [{"type": "epub", "value": "1234-9876"}]
-            journal = ISSN(self.xmltree)
-            self._journal = {item["type"]: item["value"] for item in self.issns}
-        return self._journal
+    def journal_issn_print(self):
+        if not hasattr(self, "_journal_issn_print") or not self._journal_issn_print:
+            # list of dict which keys are
+            # href, ext-link-type, related-article-type
+            self._journal_issn_print = self.issns.get("ppub")
+        return self._journal_issn_print
+
+    @property
+    def journal_issn_electronic(self):
+        if (
+            not hasattr(self, "_journal_issn_electronic")
+            or not self._journal_issn_electronic
+        ):
+            # list of dict which keys are
+            # href, ext-link-type, related-article-type
+            self._journal_issn_electronic = self.issns.get("epub")
+        return self._journal_issn_electronic
 
     @property
     def article_publication_date(self):
@@ -420,90 +548,39 @@ class XMLWithPre:
             or not self._article_publication_date
         ):
             # ("year", "month", "season", "day")
-            _date = ArticleDates(self.xmltree).article_date
-            self._article_publication_date = date(
-                int(_date["year"]),
-                int(_date["month"]),
-                int(_date["day"]),
-            )
+            self._article_publication_date = None
+            _date = self.xml_dates.article_date
+            if _date:
+                try:
+                    d = date(
+                        int(_date["year"]),
+                        int(_date["month"]),
+                        int(_date["day"]),
+                    )
+                except (ValueError, TypeError, KeyError) as e:
+                    raise XMLWithPreArticlePublicationDateError(
+                        _(
+                            "Unable to get XMLWithPre.article_publication_date {} {} {}"
+                        ).format(_date, type(e), e)
+                    )
+                else:
+                    self._article_publication_date = f"{_date['year']}-{_date['month'].zfill(2)}-{_date['day'].zfill(2)}"
         return self._article_publication_date
 
     @property
-    def related_articles(self):
-        if not hasattr(self, "_related_articles") or not self._related_articles:
-            self._related_articles = self.xml_with_pre.related_items
-        return self._related_articles
+    def article_pub_year(self):
+        if not hasattr(self, "_article_pub_year") or not self._article_pub_year:
+            # ("year", "month", "season", "day")
+            try:
+                self._article_pub_year = self.xml_dates.article_date["year"]
+            except (ValueError, TypeError, KeyError) as e:
+                return None
+        return self._article_pub_year
 
     @property
-    def supplementary_materials(self):
-        if (
-            not hasattr(self, "_supplementary_materials")
-            or not self._supplementary_materials
-        ):
-            supplmats = SupplementaryMaterials(self.xml_with_pre.xmltree)
-            self._supplementary_materials = []
-            names = [item.name for item in suppl_mats.items]
-            for asset_file in self.assets_files:
-                if asset_file.name in names:
-                    asset_file.is_supplementary_material = True
-                    asset_file.save()
-                if asset_file.is_supplementary_material:
-                    self._supplementary_materials.append(
-                        {
-                            "uri": asset_file.uri,
-                            "lang": self.lang,
-                            "ref_id": None,
-                            "filename": asset_file.name,
-                        }
-                    )
-        return self._supplementary_materials
-
-    def get_assets(self, issue_assets_dict):
-        """
-        Atribui asset_files
-        """
-        if not hasattr(self, "_assets") or not self._assets:
-            self._assets = []
-            # obtém os assets do XML
-            article_assets = ArticleAssets(self.xml_with_pre.xmltree)
-            for asset_in_xml in article_assets.article_assets:
-                asset = issue_assets_dict.get(asset_in_xml.name)
-                if asset:
-                    # FIXME tratar asset_file nao encontrado
-                    self._assets.append(asset)
-        return self._assets
-
-    def get_xml_with_pre_with_remote_assets(
-        self, v3=None, v2=None, aop_pid=None, assets_uris=None
-    ):
-        # FIXME assets de artigo pode estar em qq outra pasta do periódico
-        # há casos em que os assets do artigo VoR está na pasta ahead
-        if not hasattr(self, "_remote_xml") or not self._remote_xml:
-            xml_with_pre = deepcopy(self)
-            if v2 and not xml_with_pre.v2:
-                xml_with_pre.v2 = v2
-            if v3:
-                xml_with_pre.v3 = v3
-            if aop_pid:
-                xml_with_pre.aop_pid = aop_pid
-            if assets_uris:
-                logging.info(f"REMOTE {assets_uris}")
-                article_assets = ArticleAssets(xml_with_pre.xmltree)
-                for item in article_assets.article_assets:
-                    logging.info(item.name)
-                not_found = article_assets.replace_names(assets_uris)
-                for item in article_assets.article_assets:
-                    logging.info(item.name)
-                logging.info(not_found)
-            self._remote_xml = xml_with_pre
-        return self._remote_xml
-
-    @property
-    def langs(self):
-        if not hasattr(self, "_langs") or not self._langs:
-            article = ArticleRenditions(self.xml_with_pre.xmltree)
-            renditions = article.article_renditions
-            self._langs = []
-            for rendition in renditions:
-                self._langs.append(rendition.language)
-        return self._langs
+    def article_titles_texts(self):
+        if not hasattr(self, "_article_titles_texts") or not self._article_titles_texts:
+            self._article_titles_texts = [
+                item["text"] for item in self.article_titles if item["text"]
+            ]
+        return self._article_titles_texts
