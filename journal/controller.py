@@ -101,11 +101,11 @@ def get_scielo_journal(user, journal_xml, collection):
             user=user,
         )
 
-        mission_text = journal_xml["SERIAL"]["MISSION"]
+        mission_rich_text = journal_xml["SERIAL"]["MISSION"]
         language = journal_xml["SERIAL"]["CONTROLINFO"]["LANGUAGE"]
         scielo_journal.panels_mission.append(
             Mission.get_or_create(
-                scielo_journal, issn_scielo, mission_text, language, user
+                scielo_journal, issn_scielo, mission_rich_text, language, user
             )
         )
 

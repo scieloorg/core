@@ -331,7 +331,7 @@ class Mission(Orderable, RichTextWithLang, CommonControlField):
         return d
 
     @classmethod
-    def get_or_create(cls, scielo_journal, scielo_issn, mission_text, language, user):
+    def get_or_create(cls, scielo_journal, scielo_issn, mission_rich_text, language, user):
         scielo_missions = cls.objects.filter(
             journal__official__issnl=scielo_issn, language=language
         )
@@ -339,7 +339,7 @@ class Mission(Orderable, RichTextWithLang, CommonControlField):
             scielo_mission = scielo_missions[0]
         except IndexError:
             scielo_mission = cls()
-            scielo_mission.text = mission_text
+            scielo_mission.rich_text = mission_rich_text
             scielo_mission.language = language
             scielo_mission.journal = scielo_journal
             scielo_mission.creator = user
@@ -375,7 +375,7 @@ class JournalSocialNetwork(Orderable, SocialNetwork):
 
 
 class OpenData(Orderable, RichTextWithLang, CommonControlField):
-    text = RichTextField(null=True, blank=True, 
+    rich_text = RichTextField(null=True, blank=True, 
             help_text=mark_safe(_("""Refers to sharing data, codes, methods and other materials used and 
             resulting from research that are usually the basis of the texts of articles published by journals. 
             Guide: <a target='_blank' href='https://wp.scielo.org/wp-content/uploads/Guia_TOP_pt.pdf'>https://wp.scielo.org/wp-content/uploads/Guia_TOP_pt.pdf</a>""")))
@@ -385,7 +385,7 @@ class OpenData(Orderable, RichTextWithLang, CommonControlField):
 
 
 class Preprint(Orderable, RichTextWithLang, CommonControlField):
-    text = RichTextField(null=True, blank=True, 
+    rich_text = RichTextField(null=True, blank=True, 
             help_text=_("""A preprint is defined as a manuscript ready for submission to a journal that is deposited 
             with trusted preprint servers before or in parallel with submission to a journal. 
             This practice joins that of continuous publication as mechanisms to speed up research communication. 
@@ -400,7 +400,7 @@ class Preprint(Orderable, RichTextWithLang, CommonControlField):
 
     
 class History(Orderable, RichTextWithLang, CommonControlField):
-    text = RichTextField(null=True, blank=True, 
+    rich_text = RichTextField(null=True, blank=True, 
             help_text=_("Insert here a brief history with events and milestones in the trajectory of the journal"))
     journal = ParentalKey(
         ScieloJournal, on_delete=models.CASCADE, related_name="history"
@@ -408,7 +408,7 @@ class History(Orderable, RichTextWithLang, CommonControlField):
 
 
 class Focus(Orderable, RichTextWithLang, CommonControlField):
-    text = RichTextField(null=True, blank=True,
+    rich_text = RichTextField(null=True, blank=True,
             help_text=_("Insert here the focus and scope of the journal"))
     journal = ParentalKey(
         ScieloJournal, on_delete=models.CASCADE, related_name="focus"
@@ -416,7 +416,7 @@ class Focus(Orderable, RichTextWithLang, CommonControlField):
 
 
 class Review(Orderable, RichTextWithLang, CommonControlField):
-    text = RichTextField(null=True, blank=True,
+    rich_text = RichTextField(null=True, blank=True,
             help_text=_("Brief description of the review flow"))
     journal = ParentalKey(
         ScieloJournal, on_delete=models.CASCADE, related_name="review"
@@ -424,7 +424,7 @@ class Review(Orderable, RichTextWithLang, CommonControlField):
 
 
 class Ecommittee(Orderable, RichTextWithLang, CommonControlField):
-    text = RichTextField(null=True, blank=True,
+    rich_text = RichTextField(null=True, blank=True,
             help_text=_("""Authors must attach a statement of approval from the ethics committee of 
             the institution responsible for approving the research"""))
     journal = ParentalKey(
@@ -433,7 +433,7 @@ class Ecommittee(Orderable, RichTextWithLang, CommonControlField):
 
 
 class Copyright(Orderable, RichTextWithLang, CommonControlField):
-    text = RichTextField(null=True, blank=True,
+    rich_text = RichTextField(null=True, blank=True,
             help_text=_("""Describe the policy used by the journal on copyright issues. 
             We recommend that this section be in accordance with the recommendations of the SciELO criteria, 
             item 5.2.10.1.2. - Copyright"""))
@@ -443,7 +443,7 @@ class Copyright(Orderable, RichTextWithLang, CommonControlField):
 
 
 class WebsiteResponsibility(Orderable, RichTextWithLang, CommonControlField):
-    text = RichTextField(null=True, blank=True,
+    rich_text = RichTextField(null=True, blank=True,
             help_text=_("""EX. DOAJ: Copyright terms applied to posted content must be clearly stated and separate 
             from copyright terms applied to the website"""))
     journal = ParentalKey(
@@ -452,7 +452,7 @@ class WebsiteResponsibility(Orderable, RichTextWithLang, CommonControlField):
 
 
 class AuthorResponsibility(Orderable, RichTextWithLang, CommonControlField):
-    text = RichTextField(null=True, blank=True, 
+    rich_text = RichTextField(null=True, blank=True, 
             help_text=_("""The author's declaration of responsibility for the content published in 
             the journal that owns the copyright Ex. DOAJ: The terms of copyright must not contradict 
             the terms of the license or the terms of the open access policy. "All rights reserved" is 
@@ -463,7 +463,7 @@ class AuthorResponsibility(Orderable, RichTextWithLang, CommonControlField):
 
 
 class Policies(Orderable, RichTextWithLang, CommonControlField):
-    text = RichTextField(null=True, blank=True,
+    rich_text = RichTextField(null=True, blank=True,
             help_text=mark_safe(_("""Describe here how the journal will deal with ethical issues and/or 
             issues that may damage the journal's reputation. What is the journal's position regarding 
             the retraction policy that the journal will adopt in cases of misconduct. 
