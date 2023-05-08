@@ -173,7 +173,11 @@ class RichTextWithLang(models.Model):
         blank=True,
     )
 
-    panels = [FieldPanel("text"), FieldPanel("language")]
+    panels = [
+        FieldPanel("language"),
+        FieldPanel("rich_text"),
+        FieldPanel("plain_text"),
+    ]
 
     class Meta:
         abstract = True
