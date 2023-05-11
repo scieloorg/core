@@ -55,4 +55,4 @@ minio==7.1.14
 
 # packtools
 lxml==4.9.2 # https://github.com/lxml/lxml
--e git+https://github.com/scieloorg/packtools@3.0.1#egg=packtools
+-e git+https://github.com/scieloorg/packtools#egg=packtools

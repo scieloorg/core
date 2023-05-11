@@ -50,6 +50,43 @@ class Researcher(ClusterableModel, CommonControlField):
             self.given_names,
             self.orcid,
         )
+    
+    @classmethod
+    def get_or_create(
+        cls, 
+        given_names, 
+        last_name, 
+        suffix, 
+        orcid, 
+        lattes, 
+        gender=None, 
+        gender_identification_status=None
+    ):
+        try:
+            return cls.objects.get(
+                given_names=given_names, 
+                last_name=last_name, 
+                suffix=suffix, 
+                orcid=orcid, 
+                lattes=lattes, 
+                gender=gender, 
+                gender_identification_status=gender_identification_status
+            )
+        except cls.DoesNotExist:
+            researcher = cls()
+            researcher.given_names = given_names
+            researcher.last_name = last_name
+            researcher.suffix = suffix
+            researcher.orcid = orcid
+            researcher.lattes = lattes
+            ## TODO
+            ## Criar get_or_create para model gender e GenderIdentificationStatus
+            if gender:
+                researcher.gender = gender
+            if gender_identification_status:
+                researcher.gender_identification_status = gender_identification_status
+            researcher.save()
+            return researcher
 
     panels = [
         FieldPanel("given_names"),

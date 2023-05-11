@@ -211,6 +211,25 @@ class License(CommonControlField):
         blank=True
     )
 
+    @classmethod
+    def get_or_create(cls, url, license_p, license_type, language, creator):
+        try:
+            return cls.objects.get(
+                url=url, 
+                license_p=license_p, 
+                license_type=license_type, 
+                language=language
+            )
+        except cls.DoesNotExist:
+            license = cls()
+            license.url = url
+            license.license_p = license_p
+            license.license_type = license_type
+            license.language = language
+            license.creator = creator
+            license.save()
+            return license
+
     class Meta:
         verbose_name = _("License")
         verbose_name_plural = _("Licenses")

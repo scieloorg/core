@@ -11,7 +11,7 @@ class Issue(CommonControlField):
     """
     Class that represent an Issue
     """
-
+    
     journal = models.ForeignKey(
         ScieloJournal,
         verbose_name=_("Journal"),
@@ -21,8 +21,9 @@ class Issue(CommonControlField):
     )
     number = models.CharField(_("Issue number"), max_length=20, null=True, blank=True)
     volume = models.CharField(_("Issue volume"), max_length=20, null=True, blank=True)
-    year = models.IntegerField(_("Issue year"), null=True, blank=True)
-    month = models.IntegerField(_("Issue month"), null=True, blank=True)
+    season = models.CharField(_("Issue season"), max_length=20, null=True, blank=True, help_text="Ex: Jan-Abr.")
+    year = models.CharField(_("Issue year"), max_length=20, null=True, blank=True)
+    month = models.CharField(_("Issue month"), max_length=20, null=True, blank=True)
     supplement = models.CharField(_("Supplement"), max_length=20, null=True, blank=True)
 
     panels = [
@@ -74,6 +75,7 @@ class Issue(CommonControlField):
             {
                 "issue__number": self.number,
                 "issue__volume": self.volume,
+                "issue__season": self.season,
                 "issue__year": self.year,
                 "issue__month": self.month,
                 "issue__supplement": self.supp,
@@ -82,12 +84,13 @@ class Issue(CommonControlField):
         return d
 
     @classmethod
-    def get_or_create(cls, journal, number, volume, year, month, supplement, user):
+    def get_or_create(cls, journal, number, volume, season, year, month, supplement, user):
         issues = cls.objects.filter(
             creator=user,
             journal=journal,
             number=number,
             volume=volume,
+            season=season,
             year=year,
             month=month,
             supplement=supplement,
@@ -99,6 +102,7 @@ class Issue(CommonControlField):
             issue.journal = journal
             issue.number = number
             issue.volume = volume
+            issue.season = season
             issue.year = year
             issue.month = month
             issue.supplement = supplement

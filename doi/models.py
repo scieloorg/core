@@ -11,6 +11,8 @@ from .choices import STATUS
 
 class DOI(CommonControlField):
     value = models.CharField(_('Value'), max_length=100, null=True, blank=True)
+    ## TODO
+    ## Substituir Choices pelo modelo Language
     lang = models.CharField(_('Language'), max_length=2, choices=LANGUAGE, null=True, blank=True)
 
     panels = [
@@ -36,6 +38,18 @@ class DOI(CommonControlField):
 
     def __str__(self):
         return u'%s - %s' % (self.value, self.lang) or ''
+
+    @classmethod
+    def get_or_create(cls, value, lang, creator):
+        try:
+            return cls.objects.get(value=value, lang=lang, creator=creator)
+        except cls.DoesNotExist:
+            doi = cls()
+            doi.value = value
+            doi.lang = lang
+            doi.creator = creator
+            doi.save()
+            return doi
 
     base_form_class = CoreAdminModelForm
 

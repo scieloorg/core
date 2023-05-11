@@ -114,15 +114,16 @@ class Keyword(CommonControlField, TextWithLang):
         return d
 
     @classmethod
-    def get_or_create(cls, text, language, vocabulary, user):
+    def get_or_create(cls, text, language, user):
         try:
-            return cls.objects.get(text=text, language=language, vocabulary=vocabulary)
+            return cls.objects.get(text=text, language=language)
         except cls.DoesNotExist:
             keyword = cls()
             keyword.text = text
             keyword.language = language
-            keyword.vocabulary = vocabulary
+            # keyword.vocabulary = vocabulary
             keyword.creator = user
             keyword.save()
+            return keyword
 
     base_form_class = CoreAdminModelForm
