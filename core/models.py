@@ -199,26 +199,22 @@ class FlexibleDate(models.Model):
         )
 
 
-
 class License(CommonControlField):
     url = models.CharField(max_length=255, null=True, blank=True)
     license_p = RichTextField(null=True, blank=True)
     license_type = models.CharField(max_length=255, null=True, blank=True)
     language = models.ForeignKey(
-        Language,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
+        Language, on_delete=models.SET_NULL, null=True, blank=True
     )
 
     @classmethod
     def get_or_create(cls, url, license_p, license_type, language, creator):
         try:
             return cls.objects.get(
-                url=url, 
-                license_p=license_p, 
-                license_type=license_type, 
-                language=language
+                url=url,
+                license_p=license_p,
+                license_type=license_type,
+                language=language,
             )
         except cls.DoesNotExist:
             license = cls()

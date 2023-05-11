@@ -18,18 +18,15 @@ class ArticleSaveError(Exception):
     ...
 
 
-
 def get_or_create_doi(xmltree, user):
     doi_with_lang = DoiWithLang(xmltree=xmltree).data
     data = []
     for doi in doi_with_lang:
         obj = models.DOI.get_or_create(
-            value=doi.get('value'),
-            lang=doi.get('lang'),
-            creator=user
+            value=doi.get("value"), lang=doi.get("lang"), creator=user
         )
         data.append(obj)
-    return data 
+    return data
 
 
 def get_journal(xmltree):
@@ -50,22 +47,22 @@ def get_or_create_fundings(xmltree, user):
     data = []
 
     for funding_source in fundings_group or []:
-        for funding in funding_source.get('funding-source') or []:
-            for id in funding_source.get('award-id') or []:
+        for funding in funding_source.get("funding-source") or []:
+            for id in funding_source.get("award-id") or []:
                 obj = models.ArticleFunding.get_or_create(
                     award_id=id,
                     funding_source=get_or_create_sponso(funding_name=funding),
                     user=user,
                 )
                 data.append(obj)
-    return data 
+    return data
 
 
 def get_or_create_toc_sections(xmltree, user):
     toc_sections = ArticleTocSections(xmltree=xmltree).all_section_dict
     data = []
     for key, value in toc_sections.items():
-        ## TODO 
+        ## TODO
         ## Criar classmethodod get_or_create??
         obj, create = models.TocSection.objects.get_or_create(
             plain_text=value,
@@ -81,30 +78,30 @@ def get_or_create_licenses(xmltree, user):
     data = []
     for license in licenses:
         obj = models.License.get_or_create(
-            url=license.get('link'),
-            language=get_or_create_language(license.get('lang')),
-            license_p=license.get('license_p'),
+            url=license.get("link"),
+            language=get_or_create_language(license.get("lang")),
+            license_p=license.get("license_p"),
             ## TODO
-            #Faltando license_type (Alterar no packtools)
+            # Faltando license_type (Alterar no packtools)
             license_type=None,
-            creator=user
-            )
+            creator=user,
+        )
         data.append(obj)
     return data
 
 
 def get_or_create_keywords(xmltree, user):
     kwd_group = KwdGroup(xmltree=xmltree).extract_kwd_data_with_lang_text(subtag=False)
-    
+
     data = []
     for kwd in kwd_group:
         obj = models.Keyword.get_or_create(
-            text=kwd.get('text'),
-            language=kwd.get('lang'),
-            ## TODO 
+            text=kwd.get("text"),
+            language=kwd.get("lang"),
+            ## TODO
             ## Verificar relacao keyword com vocabulary
             # vocabulary=None,
-            user=user
+            user=user,
         )
         data.append(obj)
     return data
@@ -122,11 +119,11 @@ def get_or_create_researchers(xmltree, user):
     data = []
     for author in authors:
         obj, created = models.Researcher.objects.get_or_create(
-            given_names=author.get('given_names'), 
-            last_name=author.get('surname'),
-            orcid=author.get('orcid'),
-            suffix=author.get('suffix'),
-            lattes=author.get('lattes'),
+            given_names=author.get("given_names"),
+            last_name=author.get("surname"),
+            orcid=author.get("orcid"),
+            suffix=author.get("suffix"),
+            lattes=author.get("lattes"),
         )
         data.append(obj)
     return data
@@ -134,12 +131,12 @@ def get_or_create_researchers(xmltree, user):
 
 def set_pids(xmltree, article):
     pids = ArticleIds(xmltree=xmltree).data
-    if pids.get('v2') or pids.get('v3'):
+    if pids.get("v2") or pids.get("v3"):
         article.set_pids(pids)
 
 
 def set_date_pub(xmltree, article):
-    dates = ArticleDates(xmltree=xmltree).article_date    
+    dates = ArticleDates(xmltree=xmltree).article_date
     article.set_date_pub(dates)
 
 
@@ -156,13 +153,13 @@ def get_or_create_titles(xmltree, user):
     titles = ArticleTitles(xmltree=xmltree).article_title_list
     data = []
     for title in titles:
-        format_title = " ".join(title.get('text', '').split())
+        format_title = " ".join(title.get("text", "").split())
         obj, created = models.DocumentTitle.objects.get_or_create(
             plain_text=format_title,
-            rich_text=title.get('text'),
-            language=get_or_create_language(lang=title.get('lang')),
-            creator=user
-            )
+            rich_text=title.get("text"),
+            language=get_or_create_language(lang=title.get("lang")),
+            creator=user,
+        )
         data.append(obj)
     return data
 
@@ -178,12 +175,12 @@ def get_or_create_issues(xmltree, user):
     collection_date = ArticleDates(xmltree=xmltree).collection_date
     obj = models.Issue.get_or_create(
         journal=get_journal(xmltree=xmltree),
-        number=issue_data.get('number'),
-        volume=issue_data.get('volume'),
-        season=collection_date.get('season'),
-        year=collection_date.get('year'),
-        month=collection_date.get('month'),
-        supplement=collection_date.get('suppl'),
+        number=issue_data.get("number"),
+        volume=issue_data.get("volume"),
+        season=collection_date.get("season"),
+        year=collection_date.get("year"),
+        month=collection_date.get("month"),
+        supplement=collection_date.get("suppl"),
         user=user,
     )
     return obj
@@ -195,13 +192,14 @@ def get_or_create_language(lang):
 
 
 def get_or_create_sponso(funding_name):
-    obj = models.Sponsor.get_or_create(inst_name=funding_name,
+    obj = models.Sponsor.get_or_create(
+        inst_name=funding_name,
         inst_acronym=None,
         level_1=None,
         level_2=None,
         level_3=None,
         location=None,
         official=None,
-        is_official=None
+        is_official=None,
     )
     return obj

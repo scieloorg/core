@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("core", "0003_gender"),
         ("researcher", "0004_alter_researcher_creator_alter_researcher_updated_by"),

@@ -1,5 +1,16 @@
-from article.models import Article, DOI, Language, Researcher, Issue, TocSection, License, Keyword
+from article.models import (
+    Article,
+    DOI,
+    Language,
+    Researcher,
+    Issue,
+    TocSection,
+    License,
+    Keyword,
+)
 from vocabulary.models import Vocabulary
+
+
 def run():
     Article.objects.all().delete()
     DOI.objects.all().delete()

@@ -28,32 +28,27 @@ class Article(CommonControlField):
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-    )        
+    )
     doi = models.ManyToManyField(DOI, blank=True)
     pub_date_day = models.CharField(
         _("pub date day"),
         max_length=10,
         null=True,
         blank=True,
-        help_text="Dia de publicação no site."
+        help_text="Dia de publicação no site.",
     )
     pub_date_month = models.CharField(
         _("pub date month"),
         max_length=10,
         null=True,
         blank=True,
-        help_text="Mês de publicação no site."
+        help_text="Mês de publicação no site.",
     )
     pub_date_year = models.CharField(
-        max_length=4,
-        null=True,
-        blank=True,
-        help_text="Ano de publicação no site."
+        max_length=4, null=True, blank=True, help_text="Ano de publicação no site."
     )
     fundings = models.ManyToManyField(
-        "ArticleFunding",
-        verbose_name=_("Fundings"),
-        blank=True
+        "ArticleFunding", verbose_name=_("Fundings"), blank=True
     )
     languages = models.ManyToManyField(Language, blank=True)
     titles = models.ManyToManyField("DocumentTitle", blank=True)
@@ -61,15 +56,10 @@ class Article(CommonControlField):
     article_type = models.ForeignKey(
         "ArticleType", on_delete=models.SET_NULL, null=True, blank=True
     )
-    abstracts = models.ManyToManyField(
-        "DocumentAbstract",
-        blank=True
-    )
+    abstracts = models.ManyToManyField("DocumentAbstract", blank=True)
     toc_sections = models.ManyToManyField("TocSection", blank=True)
     license = models.ManyToManyField(License, blank=True)
-    issue = models.ForeignKey(
-        Issue, on_delete=models.SET_NULL, null=True, blank=True
-    )
+    issue = models.ForeignKey(Issue, on_delete=models.SET_NULL, null=True, blank=True)
     first_page = models.CharField(max_length=5, null=True, blank=True)
     last_page = models.CharField(max_length=5, null=True, blank=True)
     elocation_id = models.CharField(max_length=20, null=True, blank=True)
@@ -117,13 +107,13 @@ class Article(CommonControlField):
 
     def set_date_pub(self, dates):
         if dates:
-            self.pub_date_day  = dates.get('day')
-            self.pub_date_month = dates.get('month')
-            self.pub_date_year = dates.get('year')
+            self.pub_date_day = dates.get("day")
+            self.pub_date_month = dates.get("month")
+            self.pub_date_year = dates.get("year")
 
     def set_pids(self, pids):
-        self.pid_v2 = pids.get('v2')
-        self.pid_v3  = pids.get('v3')
+        self.pid_v2 = pids.get("v2")
+        self.pid_v3 = pids.get("v3")
 
     base_form_class = CoreAdminModelForm
 
@@ -178,14 +168,14 @@ class ArticleFunding(CommonControlField):
             article_funding.award_id = award_id
             if funding_source:
                 article_funding.funding_source = Sponsor.get_or_create(
-                    inst_name=funding_source, 
-                    inst_acronym=None, 
+                    inst_name=funding_source,
+                    inst_acronym=None,
                     level_1=None,
-                    level_2=None, 
-                    level_3=None, 
-                    location=None, 
-                    official=None, 
-                    is_official=None
+                    level_2=None,
+                    level_3=None,
+                    location=None,
+                    official=None,
+                    is_official=None,
                 )
             article_funding.creator = user
             article_funding.save()
@@ -201,11 +191,13 @@ class DocumentTitle(RichTextWithLang, CommonControlField):
     def __str__(self):
         return f"{self.plain_text} - {self.language}"
 
+
 class ArticleType(models.Model):
     text = models.TextField(_("Text"), null=True, blank=True)
-    
+
     def __str__(self):
         return self.text
+
 
 class DocumentAbstract(RichTextWithLang, CommonControlField):
     ...
@@ -367,11 +359,9 @@ class TocSection(RichTextWithLang, CommonControlField):
         </subj-group>
       </article-categories>
     """
+
     text = RichTextField(
-        max_length=100,
-        blank=True,
-        null=True,
-        help_text="For JATs is subject."
+        max_length=100, blank=True, null=True, help_text="For JATs is subject."
     )
 
     class Meta:
