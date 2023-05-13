@@ -179,6 +179,21 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
         blank=True,
     )
 
+    open_science = models.CharField(
+        _("Open Science"), 
+        max_length=10, 
+        choices=choices.OA_STATUS, 
+        null=True, 
+        blank=True,
+    )
+    
+    url_oa = models.URLField(
+        _("Open Science accordance form"), 
+        null=True, 
+        blank=True,
+        help_text=mark_safe(_("""Suggested form: <a target='_blank' href='https://wp.scielo.org/wp-content/uploads/Formulario-de-Conformidade-Ciencia-Aberta.docx'>https://wp.scielo.org/wp-content/uploads/Formulario-de-Conformidade-Ciencia-Aberta.docx</a>""")),
+    )
+
     panels_identification = [
         FieldPanel("official"),
         FieldPanel("title"),
@@ -208,6 +223,11 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
         InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
     ]
 
+    panels_open_science = [
+        FieldPanel("open_science"),
+        FieldPanel("url_oa"),
+    ]
+
     panels_policy = [
         InlinePanel("open_data", label=_("Open data"), classname="collapsed"),
         InlinePanel("preprint", label=_("Preprint"), classname="collapsed"),
@@ -227,6 +247,7 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
             ObjectList(panels_institutions, heading=_("Related Institutions")),
             ObjectList(panels_website, heading=_("Website")),
             ObjectList(panels_about, heading=_("About Journal")),
+            ObjectList(panels_open_science, heading=_("Open Science")),
             ObjectList(panels_policy, heading=_("Journal Policy")),
         ]
     )
