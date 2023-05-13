@@ -179,8 +179,8 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
         blank=True,
     )
 
-    open_science = models.CharField(
-        _("Open Science"), 
+    open_access = models.CharField(
+        _("Open Access status"), 
         max_length=10, 
         choices=choices.OA_STATUS, 
         null=True, 
@@ -224,7 +224,7 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
     ]
 
     panels_open_science = [
-        FieldPanel("open_science"),
+        FieldPanel("open_access"),
         FieldPanel("url_oa"),
     ]
 
