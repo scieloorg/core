@@ -13,6 +13,7 @@ from packtools.sps.models.funding_group import FundingGroup
 from packtools.sps.models.journal_meta import Title as Journal
 from packtools.sps.models.kwd_group import KwdGroup
 
+
 class ArticleSaveError(Exception):
     ...
 
