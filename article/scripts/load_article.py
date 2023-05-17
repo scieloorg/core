@@ -5,12 +5,8 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-
-def run(user=None):
+def run(user_id=None, file_path=None):
     # Xml usado para testes.
-    xmltree = xml_utils.get_xml_tree("article/fixtures/0034-8910-rsp-48-2-0249.xml")
-    user = user or User.objects.first()
-    # kombu.exceptions.EncodeError: Object of type is not JSON serializable
-    # load_articles.apply_async(args=(user, xmltree))
+    file_path = file_path or "article/fixtures/0034-7094-rba-69-03-0227.xml"
 
-    load_articles(user=user, xmltree=xmltree)
+    load_articles.apply_async(args=(user_id, file_path))

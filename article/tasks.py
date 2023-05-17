@@ -3,6 +3,7 @@ from config import celery_app
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.db.utils import DataError
+from django.core.exceptions import ObjectDoesNotExist
 
 from packtools.sps.models.article_ids import ArticleIds
 from packtools.sps.utils import xml_utils
@@ -22,10 +23,18 @@ def load_funding_data(user, file_path):
 
 
 @celery_app.task()
-def load_articles(user, xmltree):
+def load_articles(user_id, file_path):
+    try:
+        user = User.objects.get(id=user_id)
+    except ObjectDoesNotExist:
+        user = User.objects.first()
+
+    xmltree = xml_utils.get_xml_tree(file_path)
+    
     pids = ArticleIds(xmltree=xmltree).data
     pid_v2 = pids.get("v2")
     pid_v3 = pids.get("v3")
+    
     try:
         article = models.Article.objects.get(Q(pid_v2=pid_v2) | Q(pid_v3=pid_v3))
     except models.Article.DoesNotExist:
