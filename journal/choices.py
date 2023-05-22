@@ -5,3 +5,13 @@ SOCIAL_NETWORK_NAMES = [
     ("twitter", "Twitter"),
     ("journal", _("Journal URL")),
 ]
+
+OA_STATUS = [
+    ("", ""),
+    ("diamond", "Diamond"),
+    ("gold", "Gold"),
+    ("hybrid", "Hybrid"),
+    ("bronze", "Bronze"),
+    ("green", "Green"),
+    ("closed", "Closed")
+]
