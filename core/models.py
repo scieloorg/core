@@ -152,8 +152,12 @@ class Language(CommonControlField):
 
 class TextWithLang(models.Model):
     text = models.TextField(_("Text"), null=True, blank=True)
-    language = models.CharField(
-        _("Language"), max_length=2, choices=choices.LANGUAGE, null=True, blank=True
+    language = models.ForeignKey(
+        Language,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Language"),
+        null=True,
+        blank=True,
     )
 
     panels = [FieldPanel("text"), FieldPanel("language")]
@@ -234,4 +238,4 @@ class License(CommonControlField):
         return self.url or ""
 
     def __str__(self):
-        return self.url or ""
+        return self.url or self.license_p or ""

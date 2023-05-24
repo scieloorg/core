@@ -37,7 +37,10 @@ class ArticleAdmin(ModelAdmin):
     def all_fundings(self, obj):
         return " | ".join([str(c) for c in obj.fundings.all()])
 
-    list_display = ("pid_v2", "all_fundings")
+    def all_doi(self, obj):
+        return " | ".join([str(c.value) for c in obj.doi.all()])
+
+    list_display = ("all_doi", "pid_v2", "all_fundings")
     search_fields = ("pid_v2",)
 
 
