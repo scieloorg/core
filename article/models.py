@@ -111,8 +111,6 @@ class Article(CommonControlField):
             if fundings:
                 for funding in fundings:
                     article.fundings.add(funding)
-            article.save()
-
             return article
 
     def set_date_pub(self, dates):
