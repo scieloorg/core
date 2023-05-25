@@ -152,8 +152,12 @@ class Language(CommonControlField):
 
 class TextWithLang(models.Model):
     text = models.TextField(_("Text"), null=True, blank=True)
-    language = models.CharField(
-        _("Language"), max_length=2, choices=choices.LANGUAGE, null=True, blank=True
+    language = models.ForeignKey(
+        Language,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Language"),
+        null=True,
+        blank=True,
     )
 
     panels = [FieldPanel("text"), FieldPanel("language")]
@@ -203,17 +207,32 @@ class FlexibleDate(models.Model):
         )
 
 
-
 class License(CommonControlField):
     url = models.CharField(max_length=255, null=True, blank=True)
     license_p = RichTextField(null=True, blank=True)
     license_type = models.CharField(max_length=255, null=True, blank=True)
     language = models.ForeignKey(
-        Language,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
+        Language, on_delete=models.SET_NULL, null=True, blank=True
     )
+
+    @classmethod
+    def get_or_create(cls, url, license_p, license_type, language, creator):
+        try:
+            return cls.objects.get(
+                url=url,
+                license_p=license_p,
+                license_type=license_type,
+                language=language,
+            )
+        except cls.DoesNotExist:
+            license = cls()
+            license.url = url
+            license.license_p = license_p
+            license.license_type = license_type
+            license.language = language
+            license.creator = creator
+            license.save()
+            return license
 
     class Meta:
         verbose_name = _("License")
@@ -223,4 +242,4 @@ class License(CommonControlField):
         return self.url or ""
 
     def __str__(self):
-        return self.url or ""
+        return self.url or self.license_p or ""

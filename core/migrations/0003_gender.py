@@ -5,7 +5,6 @@ import wagtail.search.index
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("core", "0002_language"),
     ]

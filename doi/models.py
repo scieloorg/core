@@ -2,7 +2,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import FieldPanel
 
-from core.models import CommonControlField, RichTextWithLang
+from core.models import CommonControlField, RichTextWithLang, Language
 from core.forms import CoreAdminModelForm
 from core.choices import LANGUAGE
 
@@ -10,65 +10,103 @@ from .choices import STATUS
 
 
 class DOI(CommonControlField):
-    value = models.CharField(_('Value'), max_length=100, null=True, blank=True)
-    lang = models.CharField(_('Language'), max_length=2, choices=LANGUAGE, null=True, blank=True)
+    value = models.CharField(_("Value"), max_length=100, null=True, blank=True)
+    language = models.ForeignKey(
+        Language,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Language"),
+        null=True,
+        blank=True,
+    )
 
     panels = [
-        FieldPanel('value'),
-        FieldPanel('lang'),
+        FieldPanel("value"),
+        FieldPanel("language"),
     ]
 
     class Meta:
         indexes = [
-            models.Index(fields=['value', ]),
-            models.Index(fields=['lang', ]),
+            models.Index(
+                fields=[
+                    "value",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "language",
+                ]
+            ),
         ]
 
     @property
     def data(self):
         return {
-            'doi__value': self.value,
-            'doi__lang': self.lang,
+            "doi__value": self.value,
+            "doi__language": self.language,
         }
 
     def __unicode__(self):
-        return u'%s - %s' % (self.value, self.lang) or ''
+        return "%s - %s" % (self.value, self.language) or ""
 
     def __str__(self):
-        return u'%s - %s' % (self.value, self.lang) or ''
+        return "%s - %s" % (self.value, self.language) or ""
+
+    @classmethod
+    def get_or_create(cls, value, language, creator):
+        try:
+            return cls.objects.get(value=value, language=language, creator=creator)
+        except cls.DoesNotExist:
+            doi = cls()
+            doi.value = value
+            doi.lang = language
+            doi.creator = creator
+            doi.save()
+            return doi
 
     base_form_class = CoreAdminModelForm
 
 
 class DOIRegistration(CommonControlField):
     doi = models.ManyToManyField(DOI, verbose_name="DOI", blank=True)
-    submission_date = models.DateField(_("Submission Date"), max_length=20, null=True, blank=True)
-    status = models.CharField(_("Status"), choices=STATUS, max_length=15, null=True, blank=True)
+    submission_date = models.DateField(
+        _("Submission Date"), max_length=20, null=True, blank=True
+    )
+    status = models.CharField(
+        _("Status"), choices=STATUS, max_length=15, null=True, blank=True
+    )
 
     panels = [
-        FieldPanel('doi'),
-        FieldPanel('submission_date'),
-        FieldPanel('status'),
+        FieldPanel("doi"),
+        FieldPanel("submission_date"),
+        FieldPanel("status"),
     ]
 
     class Meta:
         indexes = [
-            models.Index(fields=['submission_date', ]),
-            models.Index(fields=['status', ]),
+            models.Index(
+                fields=[
+                    "submission_date",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "status",
+                ]
+            ),
         ]
 
     @property
     def data(self):
         return {
-            'doi_registration__doi': self.doi,
-            'doi_registration__submission_date': self.submission_date,
-            'doi_registration__status': self.status,
+            "doi_registration__doi": self.doi,
+            "doi_registration__submission_date": self.submission_date,
+            "doi_registration__status": self.status,
         }
 
     def __unicode__(self):
-        return u'%s - %s - %s' % (self.doi, self.submission_date, self.status) or ''
+        return "%s - %s - %s" % (self.doi, self.submission_date, self.status) or ""
 
     def __str__(self):
-        return u'%s - %s - %s' % (self.doi, self.submission_date, self.status) or ''
+        return "%s - %s - %s" % (self.doi, self.submission_date, self.status) or ""
 
     base_form_class = CoreAdminModelForm

@@ -84,7 +84,6 @@ class MinioStorage:
         minio_secure=True,
         minio_http_client=None,
     ):
-
         self.bucket_root = bucket_root
         self.POLICY_READ_ONLY = {
             "Version": "2012-10-17",

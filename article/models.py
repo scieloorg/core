@@ -15,7 +15,9 @@ from institution.models import Sponsor
 from researcher.models import Researcher
 from vocabulary.models import Keyword
 from journal.models import ScieloJournal
-from doi.models import DOI, DOIRegistration
+from doi.models import DOI
+from issue.models import Issue
+from institution.models import Institution
 
 
 class Article(CommonControlField):
@@ -27,44 +29,27 @@ class Article(CommonControlField):
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-    )        
+    )
     doi = models.ManyToManyField(DOI, blank=True)
-    pub_date_pub = models.CharField(
-        _("pub date"),
+    pub_date_day = models.CharField(
+        _("pub date day"),
         max_length=10,
         null=True,
         blank=True,
-        help_text="Data de publicação no site."
+        help_text="Dia de publicação no site.",
     )
-    pub_date_pub_year = models.CharField(
-        max_length=4,
-        null=True,
-        blank=True,
-        help_text="Ano de publicação no site."
-    )
-    pub_date_collection = models.CharField(
-        _("collection pub date"),
+    pub_date_month = models.CharField(
+        _("pub date month"),
         max_length=10,
         null=True,
         blank=True,
-        help_text="Data do fascículo."
+        help_text="Mês de publicação no site.",
     )
-    pub_date_collection_year = models.CharField(
-        max_length=4,
-        null=True,
-        blank=True,
-        help_text="Ano do fascículo"
-    )
-    pub_date_collection_season = models.CharField(
-        max_length=10,
-        null=True,
-        blank=True,
-        help_text="Ex: Jan-Abr"
+    pub_date_year = models.CharField(
+        max_length=4, null=True, blank=True, help_text="Ano de publicação no site."
     )
     fundings = models.ManyToManyField(
-        "ArticleFunding",
-        verbose_name=_("Fundings"),
-        blank=True
+        "ArticleFunding", verbose_name=_("Fundings"), blank=True
     )
     languages = models.ManyToManyField(Language, blank=True)
     titles = models.ManyToManyField("DocumentTitle", blank=True)
@@ -72,18 +57,21 @@ class Article(CommonControlField):
     article_type = models.ForeignKey(
         "ArticleType", on_delete=models.SET_NULL, null=True, blank=True
     )
-    abstracts = models.ManyToManyField(
-        "DocumentAbstract",
-        blank=True
-    )
+    abstracts = models.ManyToManyField("DocumentAbstract", blank=True)
     toc_sections = models.ManyToManyField("TocSection", blank=True)
     license = models.ManyToManyField(License, blank=True)
-    volume = models.CharField(max_length=64, null=True, blank=True)
-    issue = models.CharField(max_length=64, null=True, blank=True)
+    issue = models.ForeignKey(Issue, on_delete=models.SET_NULL, null=True, blank=True)
     first_page = models.CharField(max_length=5, null=True, blank=True)
     last_page = models.CharField(max_length=5, null=True, blank=True)
     elocation_id = models.CharField(max_length=20, null=True, blank=True)
     keywords = models.ManyToManyField(Keyword, blank=True)
+    publisher = models.ForeignKey(
+        Institution,
+        verbose_name=_("Publisher"),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
 
     class Meta:
         indexes = [
@@ -104,25 +92,38 @@ class Article(CommonControlField):
     def data(self):
         _data = {
             "article__pid_v2": self.pid_v2,
+            "article__pid_v3": self.pid_v3,
             "article__fundings": [f.data for f in self.fundings.iterator()],
         }
 
         return _data
 
     @classmethod
-    def get_or_create(cls, pid_v2, fundings, user):
+    def get_or_create(cls, doi, pid_v2, fundings, user):
         try:
-            return cls.objects.get(pid_v2=pid_v2)
+            return cls.objects.get(doi__in=doi, pid_v2=pid_v2)
         except cls.DoesNotExist:
             article = cls()
             article.pid_v2 = pid_v2
             article.creator = user
             article.save()
-            for funding in fundings:
-                article.fundings.add(funding)
-            article.save()
-
+            article.doi.set(doi)
+            if fundings:
+                for funding in fundings:
+                    article.fundings.add(funding)
             return article
+
+    def set_date_pub(self, dates):
+        if dates:
+            self.pub_date_day = dates.get("day")
+            self.pub_date_month = dates.get("month")
+            self.pub_date_year = dates.get("year")
+            self.save()
+
+    def set_pids(self, pids):
+        self.pid_v2 = pids.get("v2")
+        self.pid_v3 = pids.get("v3")
+        self.save()
 
     base_form_class = CoreAdminModelForm
 
@@ -175,7 +176,17 @@ class ArticleFunding(CommonControlField):
         except cls.DoesNotExist:
             article_funding = cls()
             article_funding.award_id = award_id
-            article_funding.funding_source = funding_source
+            if funding_source:
+                article_funding.funding_source = Sponsor.get_or_create(
+                    inst_name=funding_source,
+                    inst_acronym=None,
+                    level_1=None,
+                    level_2=None,
+                    level_3=None,
+                    location=None,
+                    official=None,
+                    is_official=None,
+                )
             article_funding.creator = user
             article_funding.save()
 
@@ -187,9 +198,15 @@ class ArticleFunding(CommonControlField):
 class DocumentTitle(RichTextWithLang, CommonControlField):
     ...
 
+    def __str__(self):
+        return f"{self.plain_text} - {self.language}"
+
 
 class ArticleType(models.Model):
     text = models.TextField(_("Text"), null=True, blank=True)
+
+    def __str__(self):
+        return self.text
 
 
 class DocumentAbstract(RichTextWithLang, CommonControlField):
@@ -352,11 +369,9 @@ class TocSection(RichTextWithLang, CommonControlField):
         </subj-group>
       </article-categories>
     """
+
     text = RichTextField(
-        max_length=100,
-        blank=True,
-        null=True,
-        help_text="For JATs is subject."
+        max_length=100, blank=True, null=True, help_text="For JATs is subject."
     )
 
     class Meta:
@@ -364,10 +379,10 @@ class TocSection(RichTextWithLang, CommonControlField):
         verbose_name_plural = _("TocSections")
 
     def __unicode__(self):
-        return f"{self.text}"
+        return f"{self.text} - {self.language}"
 
     def __str__(self):
-        return f"{self.text}"
+        return f"{self.plain_text}"
 
 
 class SubArticle(models.Model):
