@@ -66,7 +66,7 @@ def get_or_create_toc_sections(xmltree, user):
         ## Criar classmethodod get_or_create??
         obj, create = models.TocSection.objects.get_or_create(
             plain_text=value,
-            language=get_or_create_language(lang=key),
+            language=get_or_create_language(xmltre=xmltree, user=user),
             creator=user,
         )
         data.append(obj)
@@ -79,7 +79,7 @@ def get_or_create_licenses(xmltree, user):
     for license in licenses:
         obj = models.License.get_or_create(
             url=license.get("link"),
-            language=get_or_create_language(license.get("lang")),
+            language=get_or_create_language(xmltre=xmltree, user=user),
             license_p=license.get("license_p"),
             ## TODO
             # Faltando license_type (Alterar no packtools)
@@ -154,10 +154,14 @@ def get_or_create_titles(xmltree, user):
     data = []
     for title in titles:
         format_title = " ".join(title.get("text", "").split())
+        ## TODO
+        ## Criar get_or_create para DocumentTitle
         obj, created = models.DocumentTitle.objects.get_or_create(
             plain_text=format_title,
             rich_text=title.get("text"),
-            language=get_or_create_language(lang=title.get("lang")),
+            language=get_or_create_language(xmltre=xmltree, user=user)
+            if xmltree
+            else None,
             creator=user,
         )
         data.append(obj)
@@ -186,8 +190,9 @@ def get_or_create_issues(xmltree, user):
     return obj
 
 
-def get_or_create_language(lang):
-    obj, create = models.Language.objects.get_or_create(code2=lang)
+def get_or_create_language(xmltre, user):
+    lang = ArticleAndSubArticles(xmltree=xmltre).main_lang
+    obj = models.Language.get_or_create(code2=lang, creator=user)
     return obj
 
 

@@ -2,7 +2,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import FieldPanel
 
-from core.models import CommonControlField, RichTextWithLang
+from core.models import CommonControlField, RichTextWithLang, Language
 from core.forms import CoreAdminModelForm
 from core.choices import LANGUAGE
 
@@ -11,15 +11,17 @@ from .choices import STATUS
 
 class DOI(CommonControlField):
     value = models.CharField(_("Value"), max_length=100, null=True, blank=True)
-    ## TODO
-    ## Substituir Choices pelo modelo Language
-    lang = models.CharField(
-        _("Language"), max_length=2, choices=LANGUAGE, null=True, blank=True
+    language = models.ForeignKey(
+        Language,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Language"),
+        null=True,
+        blank=True,
     )
 
     panels = [
         FieldPanel("value"),
-        FieldPanel("lang"),
+        FieldPanel("language"),
     ]
 
     class Meta:
@@ -31,7 +33,7 @@ class DOI(CommonControlField):
             ),
             models.Index(
                 fields=[
-                    "lang",
+                    "language",
                 ]
             ),
         ]
@@ -40,23 +42,23 @@ class DOI(CommonControlField):
     def data(self):
         return {
             "doi__value": self.value,
-            "doi__lang": self.lang,
+            "doi__language": self.language,
         }
 
     def __unicode__(self):
-        return "%s - %s" % (self.value, self.lang) or ""
+        return "%s - %s" % (self.value, self.language) or ""
 
     def __str__(self):
-        return "%s - %s" % (self.value, self.lang) or ""
+        return "%s - %s" % (self.value, self.language) or ""
 
     @classmethod
-    def get_or_create(cls, value, lang, creator):
+    def get_or_create(cls, value, language, creator):
         try:
-            return cls.objects.get(value=value, lang=lang, creator=creator)
+            return cls.objects.get(value=value, language=language, creator=creator)
         except cls.DoesNotExist:
             doi = cls()
             doi.value = value
-            doi.lang = lang
+            doi.lang = language
             doi.creator = creator
             doi.save()
             return doi

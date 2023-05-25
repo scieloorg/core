@@ -15,8 +15,9 @@ from institution.models import Sponsor
 from researcher.models import Researcher
 from vocabulary.models import Keyword
 from journal.models import ScieloJournal
-from doi.models import DOI, DOIRegistration
+from doi.models import DOI
 from issue.models import Issue
+from institution.models import Institution
 
 
 class Article(CommonControlField):
@@ -64,6 +65,13 @@ class Article(CommonControlField):
     last_page = models.CharField(max_length=5, null=True, blank=True)
     elocation_id = models.CharField(max_length=20, null=True, blank=True)
     keywords = models.ManyToManyField(Keyword, blank=True)
+    publisher = models.ForeignKey(
+        Institution,
+        verbose_name=_("Publisher"),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
 
     class Meta:
         indexes = [
@@ -91,18 +99,18 @@ class Article(CommonControlField):
         return _data
 
     @classmethod
-    def get_or_create(cls, pid_v2, fundings, user):
+    def get_or_create(cls, doi, pid_v2, fundings, user):
         try:
-            return cls.objects.get(pid_v2=pid_v2)
+            return cls.objects.get(doi__in=doi, pid_v2=pid_v2)
         except cls.DoesNotExist:
             article = cls()
             article.pid_v2 = pid_v2
             article.creator = user
             article.save()
-            for funding in fundings:
-                article.fundings.add(funding)
-            article.save()
-
+            article.doi.set(doi)
+            if fundings:
+                for funding in fundings:
+                    article.fundings.add(funding)
             return article
 
     def set_date_pub(self, dates):
@@ -110,10 +118,12 @@ class Article(CommonControlField):
             self.pub_date_day = dates.get("day")
             self.pub_date_month = dates.get("month")
             self.pub_date_year = dates.get("year")
+            self.save()
 
     def set_pids(self, pids):
         self.pid_v2 = pids.get("v2")
         self.pid_v3 = pids.get("v3")
+        self.save()
 
     base_form_class = CoreAdminModelForm
 
