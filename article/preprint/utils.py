@@ -119,7 +119,7 @@ def get_or_create_license(rights, user):
             "http",
             "https",
         ]:
-            url = license.get("link")
+            url = license.get("text")
             license_p = None
         else:
             url = None
@@ -171,3 +171,8 @@ def get_publisher(publisher):
 
 def set_dates(article, date):
     article.set_date_pub(date)
+
+
+## TODO
+## GET_OR_CREATE RESEARCHE
+## article_info['authors']

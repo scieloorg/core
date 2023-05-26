@@ -242,4 +242,4 @@ class License(CommonControlField):
         return self.url or ""
 
     def __str__(self):
-        return self.url or self.license_p or ""
+        return self.url or ""
