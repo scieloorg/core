@@ -4,6 +4,7 @@ from article import models
 
 from .serializers import ArticleSerializer
 
+
 class ArticleViewSet(viewsets.ModelViewSet):
     serializer_class = ArticleSerializer
     http_method_names = ["get"]

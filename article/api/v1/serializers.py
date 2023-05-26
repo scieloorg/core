@@ -7,14 +7,15 @@ from institution.api.v1.serializers import SponsorSerializer
 from core.api.v1.serializers import (
     LanguageSerializer,
     LicenseSerializer,
-    )
+)
 from researcher.api.v1.serializers import ResearcherSerializer
 from issue.api.v1.serializers import IssueSerializer
 from vocabulary.api.v1.serializers import KeywordSerializer
 
+
 class FundingsSerializer(serializers.ModelSerializer):
     funding_source = SponsorSerializer(many=False, read_only=True)
-    
+
     class Meta:
         model = models.ArticleFunding
         fields = [
@@ -25,13 +26,10 @@ class FundingsSerializer(serializers.ModelSerializer):
 
 class TitleSerializer(serializers.ModelSerializer):
     language = LanguageSerializer(many=False, read_only=True)
-    
+
     class Meta:
         model = models.DocumentTitle
-        fields = [
-            "plain_text", ## MUDAR NOME ??
-            "language"
-        ]
+        fields = ["plain_text", "language"]  ## MUDAR NOME ??
 
 
 class ArticleTypeSerializer(serializers.ModelSerializer):
@@ -44,7 +42,7 @@ class ArticleTypeSerializer(serializers.ModelSerializer):
 
 class DocumentAbstractSerializer(serializers.ModelSerializer):
     language = LanguageSerializer(many=False, read_only=True)
-    
+
     class Meta:
         model = models.DocumentAbstract
         fields = [
@@ -76,8 +74,6 @@ class ArticleSerializer(serializers.ModelSerializer):
     license = LicenseSerializer(many=True, read_only=True)
     issue = IssueSerializer(many=False, read_only=True)
     keywords = KeywordSerializer(many=True, read_only=True)
-    
-
 
     class Meta:
         model = models.Article
@@ -103,8 +99,5 @@ class ArticleSerializer(serializers.ModelSerializer):
             "last_page",
             "elocation_id",
             "keywords",
-            
         ]
         datatables_always_serialize = ("id",)
-
-
