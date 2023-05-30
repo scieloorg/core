@@ -1,13 +1,21 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import FieldPanel
+from wagtail.admin.panels import FieldPanel, InlinePanel, TabbedInterface, ObjectList
+from modelcluster.fields import ParentalKey
+from modelcluster.models import ClusterableModel
+from wagtail.models import Orderable
 
 from core.forms import CoreAdminModelForm
-from core.models import CommonControlField, RichTextWithLang
+from core.models import (
+    CommonControlField, 
+    RichTextWithLang, 
+    License,
+    )
+from location.models import City
 from journal.models import ScieloJournal
 
 
-class Issue(CommonControlField):
+class Issue(CommonControlField, ClusterableModel):
     """
     Class that represent an Issue
     """
@@ -19,6 +27,9 @@ class Issue(CommonControlField):
         blank=True,
         on_delete=models.SET_NULL,
     )
+    sections = models.ManyToManyField("article.TocSection", blank=True)
+    license = models.ManyToManyField(License, blank=True)
+    city = models.ForeignKey(City, on_delete=models.SET_NULL, blank=True, null=True)
     number = models.CharField(_("Issue number"), max_length=20, null=True, blank=True)
     volume = models.CharField(_("Issue volume"), max_length=20, null=True, blank=True)
     season = models.CharField(
@@ -32,14 +43,37 @@ class Issue(CommonControlField):
     month = models.CharField(_("Issue month"), max_length=20, null=True, blank=True)
     supplement = models.CharField(_("Supplement"), max_length=20, null=True, blank=True)
 
-    panels = [
+    panels_issue = [
         FieldPanel("journal"),
-        FieldPanel("number"),
         FieldPanel("volume"),
-        FieldPanel("year"),
-        FieldPanel("month"),
         FieldPanel("supplement"),
+        FieldPanel("number"),
+        FieldPanel("city"),
+        FieldPanel("year"),
+        FieldPanel("season"),
+        FieldPanel("month"),
     ]
+
+    panels_title = [
+        InlinePanel("issue_title", label=_("Issue title")),
+    ]
+
+    panels_summary = [
+        FieldPanel("sections"),
+    ]
+
+    panels_license = [
+        FieldPanel("license"),
+    ]
+
+    edit_handler = TabbedInterface(
+        [
+            ObjectList(panels_issue, heading=_("Issue")),
+            ObjectList(panels_title, heading=_("Titles")),
+            ObjectList(panels_summary, heading=_("Summary")),
+            ObjectList(panels_license, heading=_("License")),
+        ]
+    )
 
     class Meta:
         verbose_name = _("Issue")
@@ -84,10 +118,40 @@ class Issue(CommonControlField):
                 "issue__season": self.season,
                 "issue__year": self.year,
                 "issue__month": self.month,
-                "issue__supplement": self.supp,
+                "issue__supplement": self.supplement,
             }
         )
         return d
+
+    @property
+    def bibliography(self):
+        data = Issue.objects.filter(
+            journal=self.journal,
+            volume=self.volume,
+            supplement=self.supplement,
+            number=self.number,
+            city=self.city,
+            season=self.season,
+            year=self.year
+            ).values("journal__short_title",
+                "volume",
+                "supplement",
+                "city",
+                "number",
+                "season",
+                "year",
+            )
+        return [
+                {
+                "abbreviated_title": obj.get("journal__short_title"),
+                "volume": obj.get("volume"),
+                "supplement": obj.get("supplement"),
+                "number": obj.get("number"),
+                "season": obj.get("season"),
+                "year": obj.get("year"),                
+            }
+            for obj in data
+        ]
 
     @classmethod
     def get_or_create(
@@ -133,3 +197,12 @@ class Issue(CommonControlField):
         )
 
     base_form_class = CoreAdminModelForm
+
+
+class IssueTitle(Orderable, CommonControlField):
+    issue = ParentalKey(Issue, on_delete=models.CASCADE, null=True, blank=True, related_name="issue_title")
+    title = models.CharField(_("Issue Title"), max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return self.title
+    
