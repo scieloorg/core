@@ -146,6 +146,7 @@ class Issue(CommonControlField, ClusterableModel):
                 "abbreviated_title": obj.get("journal__short_title"),
                 "volume": obj.get("volume"),
                 "supplement": obj.get("supplement"),
+                "city": obj.get("ciy"),
                 "number": obj.get("number"),
                 "season": obj.get("season"),
                 "year": obj.get("year"),                
