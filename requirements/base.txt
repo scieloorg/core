@@ -12,7 +12,7 @@ xmltodict==0.13.0  # https://github.com/martinblech/xmltodict.git
 
 # Django
 # ------------------------------------------------------------------------------
-django==4.1.8  # pyup: < 4.0  # https://www.djangoproject.com/
+django==4.2.1  # pyup: < 4.0  # https://www.djangoproject.com/
 django-environ==0.10.0  # https://github.com/joke2k/django-environ
 django-model-utils==4.3.1  # https://github.com/jazzband/django-model-utils
 django-allauth==0.54.0  # https://github.com/pennersr/django-allauth
@@ -33,7 +33,7 @@ wagtail-django-recaptcha==1.0
 
 # Wagtail Menu
 # ------------------------------------------------------------------------------
-wagtailmenus==3.1.5
+wagtailmenus==3.1.8
 
 # Wagtail Localize
 # ------------------------------------------------------------------------------
@@ -54,6 +54,12 @@ wagtail-autocomplete==0.10.0
 minio==7.1.14
 
 # packtools
+# ------------------------------------------------------------------------------
 lxml==4.9.2 # https://github.com/lxml/lxml
--e git+https://github.com/scieloorg/packtools@3.0.1#egg=packtools
 tornado>=6.3.2 # not directly required, pinned by Snyk to avoid a vulnerability
+-e git+https://github.com/scieloorg/packtools#egg=packtools
+
+# Sickle
+# ------------------------------------------------------------------------------
+Sickle==0.7.0
+

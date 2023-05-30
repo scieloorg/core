@@ -30,7 +30,6 @@ class PidProviderViewSet(
     RetrieveModelMixin,  # handles GETs for 1 Company
     ListModelMixin,
 ):  # handles GETs for many Companies
-
     parser_classes = (FileUploadParser,)
     http_method_names = ["post", "get", "head"]
 
