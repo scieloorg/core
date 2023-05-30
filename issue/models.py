@@ -8,8 +8,8 @@ from wagtail.models import Orderable
 from core.forms import CoreAdminModelForm
 from core.models import (
     CommonControlField, 
-    RichTextWithLang, 
     License,
+    Language,
     )
 from location.models import City
 from journal.models import ScieloJournal
@@ -58,6 +58,10 @@ class Issue(CommonControlField, ClusterableModel):
         InlinePanel("issue_title", label=_("Issue title")),
     ]
 
+    panels_subtitle = [
+        InlinePanel("bibliographic_strip"),
+    ]
+
     panels_summary = [
         FieldPanel("sections"),
     ]
@@ -70,6 +74,7 @@ class Issue(CommonControlField, ClusterableModel):
         [
             ObjectList(panels_issue, heading=_("Issue")),
             ObjectList(panels_title, heading=_("Titles")),
+            ObjectList(panels_subtitle, heading=_("Subtitle")),
             ObjectList(panels_summary, heading=_("Summary")),
             ObjectList(panels_license, heading=_("License")),
         ]
@@ -124,32 +129,14 @@ class Issue(CommonControlField, ClusterableModel):
         return d
 
     @property
-    def bibliography(self):
-        data = Issue.objects.filter(
-            journal=self.journal,
-            volume=self.volume,
-            supplement=self.supplement,
-            number=self.number,
-            city=self.city,
-            season=self.season,
-            year=self.year
-            ).values("journal__short_title",
-                "volume",
-                "supplement",
-                "city",
-                "number",
-                "season",
-                "year",
-            )
+    def bibliographic(self):
+        data = self.bibliographic_strip.all().values(
+            'subtitle', 'language__code2',
+        )
         return [
                 {
-                "abbreviated_title": obj.get("journal__short_title"),
-                "volume": obj.get("volume"),
-                "supplement": obj.get("supplement"),
-                "city": obj.get("ciy"),
-                "number": obj.get("number"),
-                "season": obj.get("season"),
-                "year": obj.get("year"),                
+                'subtitle': obj.get('subtitle'),
+                'language': obj.get('language__code2'),
             }
             for obj in data
         ]
@@ -203,7 +190,16 @@ class Issue(CommonControlField, ClusterableModel):
 class IssueTitle(Orderable, CommonControlField):
     issue = ParentalKey(Issue, on_delete=models.CASCADE, null=True, blank=True, related_name="issue_title")
     title = models.CharField(_("Issue Title"), max_length=100, blank=True, null=True)
+    language = models.ForeignKey(Language, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
         return self.title
     
+
+class BibliographicStrip(Orderable, CommonControlField):
+    issue = ParentalKey(Issue, on_delete=models.CASCADE, null=True, blank=True, related_name="bibliographic_strip")
+    subtitle = models.TextField(_("Subtitle"), null=True, blank=True)
+    language = models.ForeignKey(Language, on_delete=models.CASCADE, blank=True, null=True)
+
+    def __str__(self):
+        return self.subtitle
