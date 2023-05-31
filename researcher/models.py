@@ -81,10 +81,8 @@ class Researcher(ClusterableModel, CommonControlField):
             researcher.lattes = lattes
             ## TODO
             ## Criar get_or_create para model gender e GenderIdentificationStatus
-            if gender:
-                researcher.gender = gender
-            if gender_identification_status:
-                researcher.gender_identification_status = gender_identification_status
+            researcher.gender = gender
+            researcher.gender_identification_status = gender_identification_status
             researcher.save()
             return researcher
 
