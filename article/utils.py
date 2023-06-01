@@ -1,4 +1,5 @@
 from article import models
+from issue.models import TocSection
 
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_authors import Authors
@@ -66,7 +67,7 @@ def get_or_create_toc_sections(xmltree, user):
     for key, value in toc_sections.items():
         ## TODO
         ## Criar classmethodod get_or_create??
-        obj, create = models.TocSection.objects.get_or_create(
+        obj, create = TocSection.objects.get_or_create(
             plain_text=value,
             language=get_or_create_language(xmltre=xmltree, user=user),
             creator=user,

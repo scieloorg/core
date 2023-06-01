@@ -11,6 +11,7 @@ from core.api.v1.serializers import (
 from researcher.api.v1.serializers import ResearcherSerializer
 from issue.api.v1.serializers import IssueSerializer
 from vocabulary.api.v1.serializers import KeywordSerializer
+from issue.api.v1.serializers import TocSectionsSerializer
 
 
 class FundingsSerializer(serializers.ModelSerializer):
@@ -56,7 +57,9 @@ class TocSectionsSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.TocSection
         fields = [
-            "text",
+            # "text",
+            "plain_text",
+            # "rich_text",
         ]
 
 
