@@ -12,10 +12,8 @@ services:
       - postgres
       - mailhog
       - pgbouncer
-      - solr
     links:
       - pgbouncer
-      - solr
     volumes:
       - .:/app:z
     env_file:
@@ -38,17 +36,6 @@ services:
       - postgres
     links:
       - postgres
-  
-  solr:
-    image: solr:7.7.1
-    restart: always
-    ports:
-        - "8983:8983"
-    volumes:
-        - ./index/core:/opt/solr/server/solr/core
-    environment:
-        - SOLR_JAVA_MEM=-Xms512m -Xmx512m
-        - SOLR_HEAP=512m
 
   postgres:
     build:
