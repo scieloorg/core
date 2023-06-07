@@ -107,6 +107,7 @@ THIRD_PARTY_APPS = [
     "wagtailcaptcha",
     "wagtailmenus",
     "rest_framework",
+    "haystack",
 ]
 
 LOCAL_APPS = [
@@ -385,3 +386,15 @@ NOCAPTCHA = True
 
 RECAPTCHA_PUBLIC_KEY = env.str("RECAPTCHA_PUBLIC_KEY", default="")
 RECAPTCHA_PRIVATE_KEY = env.str("RECAPTCHA_PRIVATE_KEY", default="")
+
+
+HAYSTACK_CONNECTIONS = {
+    "default": {
+        "ENGINE": "haystack.backends.solr_backend.SolrEngine",
+        "URL": env("SOLR_URL", default="http://0.0.0.0:8983/solr/core"),
+        "SILENTLY_FAIL": False,
+        "SOLR_TIMEOUT": 10
+    }
+}
+
+HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.RealtimeSignalProcessor"
