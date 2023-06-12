@@ -1,0 +1,16 @@
+{{object.pid_v2}}
+{{object.pub_date_day}}
+{{object.article_type.text}}
+{% for lang in object.languages.all %}
+{{lang.code2}}
+{% endfor %}
+{% for research in object.researchers.all %}
+{{research.last_name}}, {{research.given_names}}
+{%endfor%}
+{{object.journal.title}}
+{% for kwd in object.keywords.all %}
+{{kwd.text}}
+{% endfor %}
+{%for toc in object.toc_sections.all %}
+{{toc.plain_text}}
+{%endfor%}

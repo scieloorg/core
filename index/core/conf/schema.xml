@@ -56,29 +56,23 @@
    <!-- haystack -->
    <field name="django_ct" type="string" indexed="true" stored="true" multiValued="false"/>
    <field name="django_id" type="string" indexed="true" stored="true" multiValued="false"/>
+   
+   <!-- Model Article -->
+    
+    <!-- multiValued true -->
+    <field name="doi" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="titles" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="languages" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="researchers" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="keywords" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="toc_sections" type="string" indexed="true" stored="true" multiValued="true"/>
 
-   <field name="record_type" type="string" indexed="true" stored="true" multiValued="false"/>
-   <field name="directory_type" type="string" indexed="true" stored="true" multiValued="false"/>
-   <field name="practice" type="string" indexed="true" stored="true" multiValued="false"/>
-   <field name="action" type="string" indexed="true" stored="true" multiValued="false"/>
-   <field name="category" type="string" indexed="true" stored="true" multiValued="false"/>
-   <!-- traduzir geo_scope como "âmbito" somente, por enquanto -->
-   <field name="geo_scope" type="string" indexed="true" stored="true" multiValued="false"/>
-   <field name="thematic_scope" type="string" indexed="true" stored="true" multiValued="false"/>
-   <!-- ajudará a ordenar (para indicadores, será gerado baseado no tamanho do raw_data) -->
-   <field name="priority" type="string" indexed="true" stored="true" multiValued="false"/>
-   <field name="geo_priority" type="string" indexed="true" stored="true" multiValued="false"/>
-   <field name="thematic_priority" type="string" indexed="true" stored="true" multiValued="false"/>
-
-   <!-- multivalued fields -->
-   <field name="keywords" type="string" indexed="true" stored="true" multiValued="true"/>
-   <field name="institutions" type="string" indexed="true" stored="true" multiValued="true"/>
-   <field name="organization" type="string" indexed="true" stored="true" multiValued="true"/>
-   <field name="countries" type="string" indexed="true" stored="true" multiValued="true"/>
-   <field name="cities" type="string" indexed="true" stored="true" multiValued="true"/>
-   <field name="states" type="string" indexed="true" stored="true" multiValued="true"/>
-   <field name="regions" type="string" indexed="true" stored="true" multiValued="true"/>
-   <field name="thematic_areas" type="string" indexed="true" stored="true" multiValued="true"/>
+    <!-- multiValued false -->
+    <field name="journal" type="string" indexed="true" stored="true" multiValued="false"/>
+    <field name="pid_v2" type="string" indexed="true" stored="true" multiValued="false"/>
+    <field name="pid_v3" type="string" indexed="true" stored="true" multiValued="false"/>
+    <field name="pub_date_year" type="string" indexed="true" stored="true" multiValued="false"/>
+    <field name="article_type" type="string" indexed="true" stored="true" multiValued="false"/>
 
    <!-- Dynamic field definitions -->
    <dynamicField name="*"  type="text" indexed="true" stored="true"  multiValued="false"/>

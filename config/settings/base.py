@@ -391,7 +391,9 @@ RECAPTCHA_PRIVATE_KEY = env.str("RECAPTCHA_PRIVATE_KEY", default="")
 HAYSTACK_CONNECTIONS = {
     "default": {
         "ENGINE": "haystack.backends.solr_backend.SolrEngine",
-        "URL": env("SOLR_URL", default="http://0.0.0.0:8983/solr/core"),
+        "URL": env("SOLR_URL", default="http://solr:8983/solr/core"),
+        'ADMIN_URL': 'http://solr:8983/solr/admin/cores',
+        'INCLUDE_SPELLING': True,
         "SILENTLY_FAIL": False,
         "SOLR_TIMEOUT": 10
     }

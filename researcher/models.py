@@ -35,6 +35,10 @@ class Researcher(ClusterableModel, CommonControlField):
 
     autocomplete_search_field = "given_names"
 
+    @property
+    def get_full_name(self):
+        return f"{self.last_name}, {self.given_names}"
+
     def __unicode__(self):
         return "%s%s, %s (%s)" % (
             self.last_name,
