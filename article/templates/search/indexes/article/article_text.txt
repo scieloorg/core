@@ -1,6 +1,9 @@
 {{object.pid_v2}}
 {{object.pub_date_day}}
 {{object.article_type.text}}
+{% for title in object.titles.all %}
+{{title.plain_text}}
+{% endfor%}
 {% for lang in object.languages.all %}
 {{lang.code2}}
 {% endfor %}
