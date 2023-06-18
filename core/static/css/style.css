@@ -7609,7 +7609,11 @@ body:not(.device-touch) .portfolio {
 	margin-right: 5px;
 }
 
-.entry-meta a:not(:hover) { color: #999; }
+.entry-meta a:not(:hover) { color: #034E8E; }
+
+.entry-meta a:hover {
+	color: #12254d !important;
+}
 
 .entry-meta ins {
 	font-weight: 700;
@@ -13317,12 +13321,11 @@ fieldset[disabled] .sm-form-control {
 
 label {
 	display: inline-block;
-	font-size: 13px;
-	font-weight: 700;
+	font-size: 12px;
+	font-weight: 600;
 	font-family: 'Poppins', sans-serif;
-	text-transform: uppercase;
 	letter-spacing: 1px;
-	color: #555;
+	color: #666;
 	margin-bottom: 10px;
 	cursor: pointer;
 }
@@ -14527,7 +14530,7 @@ button.toast-close-button {
 	font-size: 15px;
 	font-weight: 600;
 	letter-spacing: 2px;
-	text-transform: uppercase;
+	/* text-transform: uppercase; */
 }
 
 .sidebar-widgets-wrap .widget > h4 { letter-spacing: 1px; }
@@ -16884,4 +16887,3 @@ label.checkbox { padding-left: 20px; }
 	-webkit-animation-name: fadeOutUpSmall;
 	animation-name: fadeOutUpSmall;
 }
-

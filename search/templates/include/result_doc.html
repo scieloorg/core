@@ -1,0 +1,61 @@
+{% load i18n %}
+{% load static %}
+{% load l10n %}
+{% load humanize %}
+
+<div class="col-12 col-sm-6 col-lg-12 m-2">
+  <div class="grid-inner row no-gutters">
+
+    <div class="col-md-12 pe-md-12">
+
+      <div class="entry-title title-sm">
+        <h2><a href="#" target="_blank">{{ item.titles.0 }}</a> <a href="#" target="_blank"><i class="icon-line-external-link"></i></a></h2>
+      </div>
+      <div class="entry-meta">
+        <ul>
+          <!-- {% if item.titles %}<li><span>{{ item.titles|join:", " }}</span></li>{% endif %} -->
+          {% if item.researchers %}<li><span>{{ item.researchers|join:"; " }}</span></li>{% endif %}
+          {% if item.pub_date_year %}<li><span>{{ item.pub_date_year }}</span></li>{% endif %}
+          {% if item.journal %}<li><span>{{ item.journal }}</span></li>{% endif %}
+          {% if item.doi %}
+              {% for doi in item.doi %}
+                  <li><span><a href="https://doi.org/{{doi}}">https://doi.org/{{doi}}</a></span></li>
+              {% endfor %}
+          {% endif %}
+        </ul>
+      </div>
+      {% comment %}
+        <div class="entry-content">
+            <p>{{ item.description }}</p>
+            <ul class="iconlist d-none d-xl-block mt-md-3">
+            {% if item.countries %}
+            <li><i class="icon-caret-right"></i> {% trans "Country" %}: {{ item.countries|join:", " }}</li>
+            {% endif %}
+            {% if item.regions %}
+            <li><i class="icon-caret-right"></i> {% trans "Region" %}: {{ item.regions|join:", " }}</li>
+            {% endif %}
+            {% if item.states %}
+            <li><i class="icon-caret-right"></i> {% trans "State" %}: {{ item.states|join:", " }}</li>
+            {% endif %}
+            {% if item.cities %}
+            <li><i class="icon-caret-right"></i> {% trans "City" %}: {{ item.cities|join:", " }}</li>
+            {% endif %}
+            </ul>
+        </div>
+      {% endcomment %}
+      {% comment %}
+      {% if item.practice or item.action %}
+      <div class="card">
+        <div class="card-body">
+          {% if item.practice %}<span><b> {% trans "Practice" %}: </b>{{ item.practice }} </span>{% endif %}</br>
+          {% if item.action %}<span><b>{% trans "Action" %}: </b>{{ item.action }}</span>{% endif %}</br>
+          {% if item.thematic_areas %}<span><b>{% trans "Thematic Areas" %}:  </b>{{ item.thematic_areas|join:", " }}</span>{% endif %}
+          </div>
+        </div>
+      {% endif%}
+      {% endcomment %}
+
+    </div>
+
+  </div>
+</div>

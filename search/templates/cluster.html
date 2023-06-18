@@ -1,0 +1,54 @@
+{% load static %}
+{% load i18n %}
+{% load partition %}
+{% load translate %}
+
+<div class="sidebar col-lg-3 mt-n5 mb-1 card d-none d-sm-block">
+
+  <h3 class="border-bottom mb-0 mt-1">
+    {% trans "Filtros" %}
+  </h3>
+
+  <div class="sidebar-widgets-wrap">
+
+    <div class="widget widget-filter-links">
+        
+        <!-- each cluster -->
+        {% for facet, value in facets.items %}
+
+        {% if value %}
+
+        <h4>
+            {{ facet|translate_data }}
+        </h4>
+
+            {% for item in value|partition:2 %}
+
+            <div data-name="{{ item.0 }}" data-number="{{ item.1 }}"
+                class="input-embed w-embed filters ml-1 mt-1">
+                <span id="{{ facet }}"></span>
+
+                <div class="filter-collection-{{ facet }}">
+
+                <!-- Nome do cluster: cluster:value -->
+                <input type="checkbox" id="{{ facet }}:{{ item.0 }}" name="{{ item.0 }}"
+                    data-cluster-name="{{facet}}" data-item-name="{{item.0}}"
+                    value="{{ facet }}:{{ item.0 }}" class="ml-3">
+                <label for="{{ facet }}:{{ item.0 }}" id="{{ facet }}:{{ item.0 }}" class="filter-name fw-600 fs-xl ml-1">{{ item.0 }}(<b>{{ item.1 }}</b>)</label>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+    {% comment %} <b class="mb-3">
+        <div class="filter-showall" data-ix="{{ facet }}">Ver mais</div>
+    </b> {% endcomment %}
+
+    {% endif %}
+
+    {% endfor %}
+      <!-- each cluster -->
+    </div>
+  </div>
+</div>

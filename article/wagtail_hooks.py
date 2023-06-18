@@ -41,7 +41,7 @@ class ArticleAdmin(ModelAdmin):
         return " | ".join([str(c.value) for c in obj.doi.all()])
 
     list_display = ("all_doi", "pid_v2", "all_fundings")
-    search_fields = ("pid_v2",)
+    search_fields = ("pid_v2", "doi__value")
 
 
 class SubArticleAdmin(ModelAdmin):

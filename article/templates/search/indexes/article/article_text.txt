@@ -7,11 +7,14 @@
 {% endfor%}
 {% for research in object.researchers.all %}
 {{research.last_name}}, {{research.given_names}}
-{%endfor%}
+{% endfor %}
+{% for research in object.researchers.all %}
+{{research.given_names}} {{research.last_name}}
+{% endfor %}
 {{object.journal.title}}
 {% for kwd in object.keywords.all %}
-{{kwd.text}}
+{{ kwd.text }}
 {% endfor %}
-{%for toc in object.toc_sections.all %}
-{{toc.plain_text}}
-{%endfor%}
+{% for toc in object.toc_sections.all %}
+{{ toc.plain_text }}
+{% endfor %}

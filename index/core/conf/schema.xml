@@ -83,27 +83,27 @@
     
     <field name="text" type="text_en" indexed="true" stored="true" multiValued="false" />
     
-    <field name="doi" type="text_en" indexed="true" stored="true" multiValued="true" />
+    <field name="doi" type="string" indexed="true" stored="true" multiValued="true" />
     
-    <field name="titles" type="text_en" indexed="true" stored="true" multiValued="true" />
+    <field name="titles" type="string" indexed="true" stored="true" multiValued="true" />
     
-    <field name="languages" type="text_en" indexed="true" stored="true" multiValued="true" />
+    <!-- <field name="languages" type="string" indexed="true" stored="true" multiValued="true" /> -->
     
-    <field name="researchers" type="text_en" indexed="true" stored="true" multiValued="true" />
+    <field name="researchers" type="string" indexed="true" stored="true" multiValued="true" />
     
-    <field name="keywords" type="text_en" indexed="true" stored="true" multiValued="true" />
+    <field name="keywords" type="string" indexed="true" stored="true" multiValued="true" />
     
-    <field name="toc_sections" type="text_en" indexed="true" stored="true" multiValued="true" />
+    <field name="toc_sections" type="string" indexed="true" stored="true" multiValued="true" />
     
-    <field name="journal" type="text_en" indexed="true" stored="true" multiValued="false" />
+    <field name="journal" type="string" indexed="true" stored="true" multiValued="false" />
     
-    <field name="article_type" type="text_en" indexed="true" stored="true" multiValued="false" />
+    <field name="article_type" type="string" indexed="true" stored="true" multiValued="false" />
     
-    <field name="pid_v2" type="text_en" indexed="true" stored="true" multiValued="false" />
+    <field name="pid_v2" type="string" indexed="true" stored="true" multiValued="false" />
     
-    <field name="pid_v3" type="text_en" indexed="true" stored="true" multiValued="false" />
+    <field name="pid_v3" type="string" indexed="true" stored="true" multiValued="false" />
     
-    <field name="pub_date_year" type="text_en" indexed="true" stored="true" multiValued="false" />
+    <field name="pub_date_year" type="string" indexed="true" stored="true" multiValued="false" />
     
     <uniqueKey>id</uniqueKey>
 

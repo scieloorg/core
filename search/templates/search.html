@@ -1,0 +1,682 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% load static %}
+{% load i18n %}
+{% load wagtailsettings_tags %}
+
+{% get_settings use_default_site=True %}
+
+{% block content %}
+
+<!-- content -->
+<section id="content">
+  <div class="content-wrap pt-0">
+    <div class="container clearfix">
+      <div class="section m-1 p-1 mt-4">
+
+        <form action="." method="GET" class="form busca m-1 mt-2" id="search">
+          <div class="container">
+
+            <!-- row 1 -->
+            <div class="row">
+
+              {% comment %} <div class="col-sm-3 col-md-4 col-lg-2">
+                <div class="form-group m-0">
+                  <select class="form-control" id="keys">
+                    <option>{% trans "Procurar por" %} </option>
+                    <option>{% trans "Instituição" %}</option>
+                  </select>
+                </div>
+              </div> {% endcomment %}
+
+              <!-- col 6 -->
+              <div class="col-sm-8 col-md-8 col-lg-8">
+                <input class="form-control" id="q" name="q" value="{{ search_query }}"
+                  placeholder="{% trans 'Digite sua pesquisa...' %}">
+              </div>
+
+              <!-- col 2 -->
+              <div class="col-sm-2 col-md-2 col-lg-2">
+                <button class="btn btn-primary" id="search-button" for="search" type="submit">{% trans "Buscar" %}</button>
+                <!-- <a href="#" class="ml-3">
+                    {% trans "Help" %}
+                    <i class="icon-line-help-circle"></i>
+                  </a> -->
+              </div>
+
+              <!-- col 2 -->
+              <div class="col-sm-2 col-md-2 col-lg-2 pl-0 text-right">
+
+              </div>
+
+            </div>
+            <!-- row 1 -->
+
+            <!-- row 2 -->
+            <div class="row">
+              <div class="col-sm-12 col-md-12 col-lg-12 pb-2 pt-1 text-sm-center text-md-left text-lg-left">
+                {% if search_results %}
+                <div class="counter">
+                  <b><span data-from="100" data-to="{{ search_results.hits }}" data-refresh-interval="100"
+                      data-comma="true" data-sep="." data-speed="2000"></span></b>
+                  {% trans "registros encontrados para o termo" %}: {{ search_query }} {% if search_query %} {% else %}
+                  ' ' {% endif %}
+                </div>
+                <small class="mb-3">
+                  {% trans "Tempo da pesquisa" %} ({{ search_results.qtime }} {% trans "milisegundos" %})
+                </small>
+                {% else %}
+                {% trans "0 registros encontrados para o termo" %}: <b>{{ search_query }}</b>
+                {% endif %}
+                <div class="row">
+                  <div id="filter_label" class="col-sm-1 col-md-1 col-lg-1" style="display:none;">Filtros:</div>
+
+                  <div id="filter_items" class="col-sm-7 col-md-7 col-lg-7" style="display:none;">
+                    <!-- filters items -->
+                  </div>
+                    <div id="filter_clean" class="col-sm-2 col-md-2 col-lg-2" style="display:none;">
+                    <a href="#" id="clean-button" class="ml-0 mr-0" style="color: #555; line-height: inherit; text-decoration: none;"><i class="icon-remove" style="vertical-align: -2px;"></i> Limpar filtros </a>
+                    </div>
+                </div>
+
+              </div>
+            </div>
+            <!-- row 2 -->
+
+          </div>
+        </form>
+
+      </div>
+
+      <div class="section pb-0 pt-2 mb-2 mt-3 bg-transparent">
+        <div class="container">
+
+          <div class="row flex-row justify-content-end p-1">
+
+            <div class="col-xl-2 col-sm-2 col-md-2">
+              {% trans "Ordenar por" %}:
+              <select id="selectSortKey" class="selector ordem form-control form-control-sm">
+                <option value="pub_date_year desc">{% trans "Publicação - Mais novos primeiros" %} </option>
+                <option value="pub_date_year asc">{% trans "Publicação - Mais antigos primeiros" %} </option>
+                <!-- <option value="created desc">{% trans "Ordem descrecente de criação" %} </option> -->
+                <!-- <option value="score asc">{% trans "Relevância" %} </option> -->
+              </select>
+            </div>
+
+            <div class="col-xl-2 col-sm-2 col-md-2">
+              {% trans "Visualizar" %}
+              <select id="wt" name="wt" class="selector ordem form-control form-control-sm">
+                <option value="HTML">HTML</option>
+                <option value="csv">CSV</option>
+              </select>
+            </div>
+
+            <div class="col-xl-2 col-sm-2 col-md-2">
+              {% trans "Itens por página" %}:
+              <select id="itensPage" name="itensPage" class="selector ordem form-control form-control-sm">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="30">30</option>
+                <option value="40">40</option>
+                <option value="50">50</option>
+                <option value="60">60</option>
+                <option value="70">70</option>
+                <option value="80">80</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+                <option value="300">300</option>
+                <option value="400">400</option>
+                <option value="500">500</option>
+                <option value="1000">1000</option>
+              </select>
+            </div>
+
+            <div class="col-xl-3 col-sm-3 col-md-3">
+                
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="row gutter-40 col-mb-80">
+        <!-- cluster ============================================= -->
+        {% include 'cluster.html' %}
+        <!-- cluster ============================================= -->
+
+        <!-- Catalog content -->
+        <div class="postcontent col-lg-9">
+
+          <div class="divider mt-3 mb-3"></div>
+          {% if search_results %}
+            {% include 'results.html' %}
+          {% endif %}
+          <div class="divider mt-3 mb-3"></div>
+
+          <div class="row">
+            <div class="container">
+              <div class="col-12">
+              </div>
+            </div>
+          </div>
+
+        </div><!-- End Catalog content -->
+      </div>
+
+
+    </div>
+  </div>
+</section>
+<!-- content -->
+
+{% endblock %}
+
+{% block inline_javascript %}
+
+<script type="text/javascript" src="{% get_static_prefix %}js/stopwords.js"></script>
+<script type="text/javascript" src="{% get_static_prefix %}js/jquery.marker.js"></script>
+<script type="text/javascript" src="{% get_static_prefix %}js/markerjs.js"></script>
+<script type="text/javascript" src="{% get_static_prefix %}js/JSONStorage.js"></script>
+
+<script>
+
+  $(document).ready(function () {
+
+    var store;
+    var sessionStore = sessionStorage.getItem('context');
+    var totalPages = Number("{{total_pages}}");
+    var page = $('#page');
+    var facet_more_name = "{{ request.GET.more_facet_name }}";
+
+    if (facet_more_name) {
+      $('html, body').animate({
+        scrollTop: $("#{{ request.GET.more_facet_name }}").offset().top
+      }, 1000);
+    }
+
+    if (!sessionStore) {
+      store = new JSONStorage('context', {
+        'itensPage': $('#itensPage').val(),
+        'selectSortKey': $('#selectSortKey').val(),
+        'filters': "",
+        'select_items': "",
+        'wt': $('#wt').val(),
+      }
+      );
+    } else {
+      store = new JSONStorage('context', JSON.parse(sessionStore));
+    }
+
+    if ("{{itensPage}}" != store.getItem("itensPage")) {
+      store.setItem("itensPage", "{{itensPage}}");
+    }
+
+    if ("{{wt}}" != store.getItem("wt")) {
+      store.setItem("wt", "HTML");
+    }
+
+    if ("{{selectSortKey}}" != store.getItem("selectSortKey")) {
+      store.setItem("selectSortKey", "{{selectSortKey}}");
+    }
+
+    if ("{{fqfilters}}" != store.getItem("filters")) {
+      store.setItem("filters", "{{fqfilters}}");
+    }
+
+    if (store.getItem("filters") != "") {
+    }
+
+    $('#clean-button').click(function () {
+      store.setItem("filters", "");
+      $("#search").submit();
+    });
+
+    $('#selectSortKey').val(store.getItem("selectSortKey"));
+
+    $('#itensPage').val(store.getItem("itensPage"));
+
+    $('#wt').val(store.getItem("wt"));
+
+    page.val("{{page}}");
+
+    // Próximo item
+    $('.w-icon-slider-left').each(function (e) {
+      $(this).click(function (e) {
+
+        page.val(Number(page.val()) - 1);
+
+        if (page.val() <= 0) {
+          page.val(1);
+        }
+
+        addHidden($("#search"), 'page', page.val());
+
+        $("#search").submit();
+      });
+
+    });
+
+    // Item anterior
+    $('.w-icon-slider-right').each(function (e) {
+      $(this).click(function (e) {
+
+        page.val(Number(page.val()) + 1);
+
+        if (page.val() > totalPages) {
+          page.val(totalPages);
+        }
+
+        addHidden($("#search"), 'page', page.val());
+
+        $("#search").submit();
+      });
+
+    });
+
+    $(".page").keypress(function (e) {
+      if (e.which == 13) {
+
+        if ($(this).val() > totalPages) {
+          alert('{% trans "O valor do campo página não pode ser maior que a quantidade atual de páginas." %}');
+          return false;
+        }
+
+        if ($(this).val() >= 1) {
+          addHidden($("#search"), 'page', $(this).val());
+          $("#search").submit();
+        } else {
+          alert('{% trans "O valor do campo página deve ser maior que 0." %}');
+        }
+
+      }
+
+    });
+
+    // Selected itens
+    var select_items = store.getItem("select_items");
+    var select_items_array = [];
+
+    if (select_items) {
+
+      select_items_array = select_items.split(',');
+
+      $('.select_items_count').html(select_items_array.length);
+      $('.selected-ids').show();
+
+    } else {
+      $('.selected-ids').hide();
+    }
+    
+    $(".checkBoxClass").each(function () {
+
+      if (select_items_array.includes($(this).data('id'))) {
+        $(this).prop('checked', true);
+      }
+
+      $(this).click(function () {
+
+        selected = $(this).data('id');
+
+        if ($(this).is(':checked')) { // checked
+
+          if (!select_items_array.includes(selected)) {
+            select_items_array.push(selected);
+          }
+
+        } else { // unchecked
+          index = select_items_array.indexOf(selected);
+          select_items_array.splice(index, 1);  // Remove
+        }
+
+        $('.select_items_count').html(select_items_array.length);
+        store.setItem("select_items", select_items_array.join(","));
+
+        if (select_items_array.length == 0) {
+          $('.selected-ids').hide();
+        } else {
+          $('.selected-ids').show();
+        }
+      });
+
+    });
+
+    $(".ckbCheckAll").click(function () {
+
+      self = $(this);
+
+      $(".checkBoxClass").each(function () {
+
+        selected = $(this).data('id');
+
+        if (self.is(':checked')) { // checked
+
+          if (!select_items_array.includes(selected)) {
+            select_items_array.push(selected);
+          }
+
+        } else { // unchecked
+          index = select_items_array.indexOf(selected);
+          select_items_array.splice(index, 1);  // Remove
+        }
+
+        if (select_items_array.includes($(this).data('id'))) {
+          $(this).prop('checked', true);
+        } else {
+          $(this).prop('checked', false);
+        }
+
+        $('.select_items_count').html(select_items_array.length);
+        store.setItem("select_items", select_items_array.join(","));
+
+        if (select_items_array.length == 0) {
+          $('.selected-ids').hide();
+        } else {
+          $('.selected-ids').show();
+        }
+
+      });
+
+    });
+
+    $('.clean-selected').click(function () {
+
+      select_items_array = [];
+
+      $('.select_items_count').html(select_items_array.length);
+
+      store.setItem("select_items", select_items_array.join(","));
+
+      $(".checkBoxClass").each(function () {
+        $(this).prop('checked', false);
+      })
+
+      $('.selected-ids').hide();
+
+    });
+
+    // Print
+    $(".actions-send-print-link").click(function () {
+      window.print();
+    });
+
+    // Sort
+    $('#selectSortKey').change(function (e) {
+
+      store.setItem("selectSortKey", $(this).val());
+
+      $("#search").submit();
+
+    });
+
+    // Change page
+    $('#itensPage').change(function (e) {
+
+      store.setItem("itensPage", $(this).val());
+
+      $("#search").submit();
+
+    });
+
+    // wt
+    $('#wt').change(function (e) {
+
+      store.setItem("wt", $(this).val());
+
+      $("#search").submit();
+
+      store.setItem("wt", "HTML");
+
+      $('#wt').val(store.getItem("wt"));
+
+    });
+
+    // Search
+    $("#search").submit(function (e) {
+
+      for (var key in store.iterate(store.get())) {
+        val = store.iterate(store.get())[key];
+
+        addHidden(this, key, val);
+      }
+
+    });
+
+    // Search side bar
+    $("#search-sidebar").submit(function (e) {
+
+      for (var key in store.iterate(store.get())) {
+        val = store.iterate(store.get())[key];
+
+        addHidden(this, key, val);
+      }
+
+    });
+
+    // Search button side bar
+    $("#search-button-sidebar").click(function (e) {
+      e.preventDefault();
+      $("#search-sidebar").submit();
+    });
+
+    // Search button
+    $("#search-button").click(function (e) {
+      e.preventDefault();
+
+      // Remover caso queira manter o contexto.
+      store.setItem("filters", "");
+
+      let q = $("#search #q");
+
+      var term = "";
+
+      let expressions = [];
+
+      let firstExpression = {
+        "q": q.val(),
+        "index": $("#search #index").val()
+      };
+
+      if (q.val) {
+        expressions.push(firstExpression);
+      }
+
+      $(".repetir").each(function () {
+
+        let otherExpression = {
+          "operator": $(this).find("#operatorSearchOther").val(),
+          "q": $(this).find("#qSearchOther").val(),
+          "index": $(this).find("#indexSearchOther").val()
+        };
+
+        expressions.push(otherExpression);
+
+      });
+
+      for (let i in expressions) {
+        let q = expressions[i].q;
+        let operator = expressions[i].operator;
+        let index = expressions[i].index;
+
+        if (q && index && operator) {
+          term += operator + "(" + index + ":" + q + ")";
+        } else if (q && operator) {
+          term += operator + "(" + q + ")";
+        } else if (q && index) {
+          term += "(" + index + ":" + q + ")";
+        } else {
+          term += q;
+        }
+      }
+
+      term = term.trim();
+
+      search = term.replace(/^AND|AND$|^OR|OR$/g, "");
+
+      q.val(search);
+
+      $("#search").submit();
+
+    });
+
+    // Issue Change
+    $(".issue").each(function () {
+      $(this).change(function () {
+        // Remover caso queira manter o contexto.
+        store.setItem("filters", "");
+        $("#q").val($.trim('issue:"' + $(this).val() + '"'));
+        $("#search").submit();
+      });
+    });
+
+
+    // Filter (clusters)
+    var selected_items = {};
+
+    $('.filters').each(function () {
+
+      var checks = $(this).find("input:checkbox");
+
+      // Verifica se está no store
+      checks.each(function () {
+
+        filters = store.getItem("filters");
+
+        if (filters) {
+
+          var filters_array = filters.split('|');
+
+          for (filter in filters_array) {
+
+            if ($(this).val() == filters_array[filter]) {
+              $(this).prop('checked', true);
+
+              cluster_name = $(this).attr('data-cluster-name');
+              item_name = $(this).attr('data-item-name');
+              key = $(this).attr('id');
+
+              if (cluster_name in selected_items) {
+                selected_items[cluster_name]["name"].push(item_name);
+                selected_items[cluster_name]["key"].push(key);
+              } else {
+                selected_items[cluster_name] = {"name": [item_name], "key": [key]};
+              }
+
+            }
+          }
+        }
+
+      });
+
+      // Filter click
+      checks.click(function () {
+        filters = store.getItem("filters");
+        filter = $(this).val();
+
+        if (filters) {
+
+          var filters_array = filters.split('|');
+
+          if ($(this).is(':checked')) { // checked
+
+            if (!filters_array.includes(filter)) {
+              filters_array.push(filter);
+            }
+
+          } else { // unchecked
+            index = filters_array.indexOf(filter);
+            filters_array.splice(index, 1);
+          }
+
+          store.setItem("filters", filters_array.join("|"));
+
+        } else {
+          store.setItem("filters", filter);
+        }
+
+        $("#search").submit();
+
+      });
+
+    });
+    
+    // Check select filters (clusters)
+    if (!$.isEmptyObject(selected_items)) {
+      //str = JSON.stringify(selected_items)
+
+      $('#filter_label').show();
+      $('#filter_items').show();
+      $('#filter_clean').show();
+
+      for (var item in selected_items) {
+        // Get the id of selected item.
+        id = selected_items[item]["key"];
+
+        for (var i in id){
+            name = selected_items[item]["name"][i]
+            key = selected_items[item]["key"][i]
+            $("#filter_items").append(
+              `<a href="#" data-id="${key}" class="selected_filters ml-2">
+                <i class="icon-remove" style="vertical-align: -2px;"></i> ${name} 
+              </a>`   
+            ); 
+        }
+      }
+    } 
+
+    $('.selected_filters').each(function () {
+      $(this).click(function (){
+        filters = store.getItem("filters");
+        filter = $(this).data('id');
+
+        if (filters) {
+          var filters_array = filters.split('|');
+
+          index = filters_array.indexOf(filter);
+          filters_array.splice(index, 1);
+        
+          store.setItem("filters", filters_array.join("|"));
+
+        } else {
+          store.setItem("filters", filter);
+        }
+
+        $("#search").submit();
+
+    });
+
+    });
+
+    // See more cluster
+    $('.filter-showall').each(function () {
+      more = parseInt("{{ settings.SEARCH_FACET_ITEMS_PER_MORE }}")
+      facet_name = $(this).data('ix');
+      facet_count = $('.filter-collection-' + facet_name + ' > input').length;
+
+      if (facet_count < more) {
+        $(this).css('display', 'none')
+      }
+
+      $(this).click(function () {
+
+        search_form = $('#search');
+
+        addHidden(search_form, 'more_facet_name', facet_name);
+        addHidden(search_form, 'more_facet_count', facet_count + more);
+
+        search_form.submit();
+
+      });
+
+    });
+
+    highlight("{{search_query}}", ".result-doc"); 
+
+  });
+
+</script>
+
+{% endblock %}
