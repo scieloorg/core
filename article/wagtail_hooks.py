@@ -33,6 +33,7 @@ class ArticleAdmin(ModelAdmin):
     exclude_from_explorer = (
         False  # or True to exclude pages of this type from Wagtail's explorer view
     )
+    search_fields = ("title", "doi")
 
     def all_fundings(self, obj):
         return " | ".join([str(c) for c in obj.fundings.all()])

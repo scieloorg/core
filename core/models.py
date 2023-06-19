@@ -131,13 +131,13 @@ class Language(CommonControlField):
     def get_or_create(cls, name=None, code2=None, creator=None):
         if code2:
             try:
-                return cls.objects.get(code2__icontains=code2)
+                return cls.objects.get(code2=code2)
             except cls.DoesNotExist:
                 pass
 
         if name:
             try:
-                return cls.objects.get(name__icontains=name)
+                return cls.objects.get(name=name)
             except cls.DoesNotExist:
                 pass
 
@@ -242,4 +242,4 @@ class License(CommonControlField):
         return self.url or ""
 
     def __str__(self):
-        return self.url or self.license_p or ""
+        return self.url or ""

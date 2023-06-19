@@ -10,7 +10,7 @@ from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.documents import urls as wagtaildocs_urls
 from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_urls
 
-from core.api import api_router
+from core.api.wagtail.api import api_router
 
 from core.search_site import views as search_views  # noqa isort:skip
 
@@ -21,7 +21,9 @@ urlpatterns = [
     # Wagtail Admin
     path(settings.WAGTAIL_ADMIN_URL, include(wagtailadmin_urls)),
     re_path(r"^documents/", include(wagtaildocs_urls)),
-    path("search/", include("search.urls")),
+    # API V1 endpoint to custom models
+    path("api/v1/", include("config.api_router")),
+
     # Your stuff: custom urls includes go here
     # For anything not caught by a more specific rule above, hand over to
     # Wagtail’s page serving mechanism. This should be the last pattern in
