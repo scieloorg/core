@@ -30,7 +30,7 @@ def search(request):
         ##TODO
         ## query especificado pelo campo
         ## Ex: researchers:"nome_researcher"
-        query = "text:" + search_query
+        query = f'text:"{search_query}"'
 
     if search_field:
         search_query = search_field

@@ -409,5 +409,5 @@ SEARCH_FACET_ITEMS_PER_MORE = 5
 SEARCH_FACET_LIST = [
     "journal",
     "pub_date_year",
-    "toc_sections",
+    "article_type",
 ]
