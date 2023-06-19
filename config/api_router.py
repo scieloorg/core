@@ -13,6 +13,5 @@ else:
 router.register("article", ArticleViewSet, basename="Article")
 router.register("issue", IssueViewSet, basename="Issue")
 
-
 app_name = "api"
 urlpatterns = router.urls
