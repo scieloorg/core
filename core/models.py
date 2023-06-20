@@ -7,6 +7,7 @@ from wagtail.search import index
 from wagtail.snippets.models import register_snippet
 
 from . import choices
+from .utils.utils import language_iso
 
 User = get_user_model()
 
@@ -129,6 +130,7 @@ class Language(CommonControlField):
 
     @classmethod
     def get_or_create(cls, name=None, code2=None, creator=None):
+        code2 = language_iso(code2)
         if code2:
             try:
                 return cls.objects.get(code2=code2)
