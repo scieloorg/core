@@ -37,7 +37,10 @@ urlpatterns = [
 # Translatable URLs
 # These will be available under a language code prefix. For example /en/search/
 urlpatterns += i18n_patterns(
-    re_path(r"^search/$", search_views.search, name="search"),
+    #Site search
+    re_path(r"^search_site/$", search_views.search, name="search_site"),
+    # Index search
+    re_path(r"^search/", include("search.urls")),
     # User management
     path("admin/autocomplete/", include(autocomplete_admin_urls)),
     path("api/v2/", api_router.urls),

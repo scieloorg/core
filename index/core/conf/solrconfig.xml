@@ -188,6 +188,7 @@
          <str name="facet">true</str>
          <str name="facet.field">journal</str>
          <str name="facet.field">pub_date_year</str>
+         <str name="facet.field">languages</str>
          <str name="facet.field">article_type</str>
          
          <str name="facet.limit">30</str>

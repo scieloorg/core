@@ -5,7 +5,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
     doi = indexes.MultiValueField(null=True)
     titles = indexes.MultiValueField(null=True)
-    # languages = indexes.MultiValueField(null=True)
+    languages = indexes.MultiValueField(null=True)
     researchers = indexes.MultiValueField(null=True)
     keywords = indexes.MultiValueField(null=True)
     toc_sections = indexes.MultiValueField(null=True)
@@ -24,14 +24,14 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_doi(self, obj):
         if obj.doi:
             return [doi.value for doi in obj.doi.all()] 
-        
+                
+    def prepare_languages(self, obj):
+        if obj.languages:
+            return [language.code2 for language in obj.languages.all()]
+
     def prepare_titles(self, obj):
         if obj.titles:
             return [title.plain_text for title in obj.titles.all()]
-        
-    # def prepare_languages(self, obj):
-    #     if obj.languages:
-    #         return [language.code2 for language in obj.languages.all()]
 
     def prepare_researchers(self, obj):
         if obj.researchers:

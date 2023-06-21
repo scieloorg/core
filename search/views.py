@@ -18,7 +18,7 @@ def search(request):
     fqs = []
     filters = {}
     search_query = request.GET.get("q")
-    search_field = request.GET.get("search-field") #?????
+    search_field = request.GET.get("search-field")
     fqfilters = request.GET.get("filters")
     facet_name = request.GET.get("more_facet_name")
     facet_count = request.GET.get("more_facet_count")
@@ -30,7 +30,7 @@ def search(request):
         ##TODO
         ## query especificado pelo campo
         ## Ex: researchers:"nome_researcher"
-        query = f'text:"{search_query}"'
+        query = f"text:{search_query}"
 
     if search_field:
         search_query = search_field
