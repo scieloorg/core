@@ -20,47 +20,25 @@ class Gender(index.Indexed, models.Model):
         sex: physical state of being either male, female, or intersex
     """
 
-    gender = models.CharField(_("Sex"), max_length=50)
+    code = models.CharField(_('Code'), max_length=5, null=True, blank=True)
+
+    gender = models.CharField(_('Sex'), max_length=50, null=True, blank=True)
 
     panels = [
+        FieldPanel("code"),
         FieldPanel("gender"),
     ]
 
     search_fields = [
+        index.SearchField("code", partial_match=True),
         index.SearchField("gender", partial_match=True),
     ]
 
     def __unicode__(self):
-        return self.gender
+        return self.gender or self.code
 
     def __str__(self):
-        return self.gender
-
-
-@register_snippet
-class GenderIdentificationStatus(index.Indexed, models.Model):
-    """
-    Class of gender
-
-    Fields:
-        sex: physical state of being either male, female, or intersex
-    """
-
-    identification_status = models.CharField(_("identification_status"), max_length=256)
-
-    panels = [
-        FieldPanel("identification_status"),
-    ]
-
-    search_fields = [
-        index.SearchField("identification_status", partial_match=True),
-    ]
-
-    def __unicode__(self):
-        return self.identification_status
-
-    def __str__(self):
-        return self.identification_status
+        return self.gender or self.code
 
 
 class CommonControlField(models.Model):
