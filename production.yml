@@ -10,6 +10,7 @@ services:
     depends_on:
       - postgres
       - redis
+      - solr
     env_file:
       - ./.envs/.production/.django
       - ./.envs/.production/.postgres
@@ -38,7 +39,17 @@ services:
       - ../scms_data/template/data_prod_backup:/backups:z
     env_file:
       - ./.envs/.production/.postgres
-
+  
+  solr:
+      image: solr:7.7.1
+      restart: always
+      ports:
+         - "8983:8983"
+      volumes:
+         - ./index/ocabr:/opt/solr/server/solr/ocabr
+      environment:
+          - SOLR_JAVA_MEM=-Xms512m -Xmx512m
+          - SOLR_HEAP=512m
   traefik:
     build:
       context: .

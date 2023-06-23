@@ -58,7 +58,7 @@ class DOI(CommonControlField):
         except cls.DoesNotExist:
             doi = cls()
             doi.value = value
-            doi.lang = language
+            doi.language = language
             doi.creator = creator
             doi.save()
             return doi

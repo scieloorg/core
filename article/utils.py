@@ -1,4 +1,5 @@
 from article import models
+from issue.models import TocSection
 
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_authors import Authors
@@ -23,7 +24,9 @@ def get_or_create_doi(xmltree, user):
     data = []
     for doi in doi_with_lang:
         obj = models.DOI.get_or_create(
-            value=doi.get("value"), lang=doi.get("lang"), creator=user
+            value=doi.get("value"), 
+            language=get_or_create_language(xmltre=xmltree, user=user), 
+            creator=user
         )
         data.append(obj)
     return data
@@ -64,7 +67,7 @@ def get_or_create_toc_sections(xmltree, user):
     for key, value in toc_sections.items():
         ## TODO
         ## Criar classmethodod get_or_create??
-        obj, create = models.TocSection.objects.get_or_create(
+        obj, create = TocSection.objects.get_or_create(
             plain_text=value,
             language=get_or_create_language(xmltre=xmltree, user=user),
             creator=user,
@@ -97,7 +100,7 @@ def get_or_create_keywords(xmltree, user):
     for kwd in kwd_group:
         obj = models.Keyword.get_or_create(
             text=kwd.get("text"),
-            language=kwd.get("lang"),
+            language=get_or_create_language(xmltre=xmltree, user=user),
             ## TODO
             ## Verificar relacao keyword com vocabulary
             # vocabulary=None,
