@@ -133,7 +133,7 @@
             </div>
 
             <div class="col-xl-3 col-sm-3 col-md-3">
-                
+              {% include 'include/search_pagination.html' %}
             </div>
 
           </div>
@@ -160,6 +160,7 @@
           <div class="row">
             <div class="container">
               <div class="col-12">
+                {% include 'include/search_pagination.html' %}
               </div>
             </div>
           </div>
@@ -190,6 +191,7 @@
     var sessionStore = sessionStorage.getItem('context');
     var totalPages = Number("{{total_pages}}");
     var page = $('#page');
+    console.log(totalPages, page)
     var facet_more_name = "{{ request.GET.more_facet_name }}";
 
     if (facet_more_name) {

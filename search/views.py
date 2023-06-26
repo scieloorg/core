@@ -77,6 +77,7 @@ def search(request):
             "search_query": "" if query == "*:*" else search_query,
             "search_results": search_results,
             "facets": ordered_facets,
+            "page": page,
             "fqfilters": fqfilters if fqfilters else "",
             "start_offset": start_offset,
             "itensPage": rows,

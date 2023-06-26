@@ -1,0 +1,15 @@
+{% load humanize %}
+{% load i18n %}
+
+<ul class="pagination pagination-circle mb-0 float-right mt-3">
+    <li class="page-item mr-1"><a class="page-link w-icon-slider-left" href="#">
+        <i class="icon-angle-left"></i></a>
+    </li>
+    <li class="pt-1 pr-1">{% trans "Página" %}:</li>
+    <li>
+        <input type="number" id="page" name="page" class="form-control page" style="width: 60px" value="{{ page }}">
+    </li>
+    <li class="pt-1 pr-1 pl-1">de {{ total_pages|intcomma }}</li>
+    <li class="page-item"><a class="page-link w-icon-slider-right" href="#"><i class="icon-angle-right"></i></a>
+    </li>
+</ul>
