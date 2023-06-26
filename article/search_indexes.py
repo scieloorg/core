@@ -15,8 +15,8 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     pid_v2 = indexes.CharField(model_attr="pid_v2", null=True)
     pid_v3 = indexes.CharField(model_attr="pid_v3", null=True)
     pub_date_year = indexes.CharField(model_attr="pub_date_year", null=True)
-    
-    
+    orcid = indexes.CharField(null=True)
+
     def prepare_journal(self, obj):
         if obj.journal:
             return obj.journal.title 
@@ -33,10 +33,14 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
         if obj.titles:
             return [title.plain_text for title in obj.titles.all()]
 
+    def prepare_orcid(self, obj):
+        if obj.researchers:
+            return [f"{research.orcid}" for research in obj.researchers.all()]
+        
     def prepare_researchers(self, obj):
         if obj.researchers:
             return [research.get_full_name for research in obj.researchers.all()]
-        
+
     def prepare_keywords(self, obj):
         if obj.keywords:
             return [keyword.text for keyword in obj.keywords.all()]

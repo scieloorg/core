@@ -2,6 +2,7 @@
 {% load static %}
 {% load l10n %}
 {% load humanize %}
+{% load zip_list %}
 
 <div class="col-12 col-sm-6 col-lg-12 m-2">
   <div class="grid-inner row no-gutters">
@@ -13,8 +14,16 @@
       </div>
       <div class="entry-meta">
         <ul>
-          <!-- {% if item.titles %}<li><span>{{ item.titles|join:", " }}</span></li>{% endif %} -->
-          {% if item.researchers %}<li><span>{{ item.researchers|join:"; " }}</span></li>{% endif %}
+          {% if item.researchers %}
+            {% for research, orcid in item.researchers|zip_lists:item.orcid %}
+              <li>
+                <span>{{research}}</span>
+                {% if orcid != "None" %}
+                  <a href="https://orcid.org/{{orcid}}" target="_blank"><img src="{% static 'images/icons/authorIcon-orcid.png' %}" alt="ORCID"></a>
+                {% endif %}
+              </li>
+            {% endfor %}
+          {% endif %}
           {% if item.pub_date_year %}<li><span>{{ item.pub_date_year }}</span></li>{% endif %}
           {% if item.journal %}<li><span>{{ item.journal }}</span></li>{% endif %}
           {% if item.doi %}
