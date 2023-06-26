@@ -165,7 +165,7 @@ class EditorialBoardMember(models.Model):
         journal_get = ScieloJournal.get_or_create(official_journal=None, issn_scielo=None, title=journal, short_title=None, collection=None, user=user)
 
         try:
-            EditorialBoardMember.objects.get(journal = journal_get, member = researcher_get)
+            return EditorialBoardMember.objects.get(journal = journal_get, member = researcher_get)
         except EditorialBoardMember.DoesNotExist:
             editorial_board_member = EditorialBoardMember()
             editorial_board_member.member = researcher_get
@@ -174,8 +174,7 @@ class EditorialBoardMember(models.Model):
             editorial_board_member.initial_year = initial_year
             editorial_board_member.creator = user
             editorial_board_member.save()
-
-        return editorial_board_member
+            return editorial_board_member
 
     def __str__(self):
         return "%s (%s)" % (
