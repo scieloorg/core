@@ -11,6 +11,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     toc_sections = indexes.MultiValueField(null=True)
 
     journal = indexes.CharField(null=True)
+    collection = indexes.CharField(null=True)
     article_type = indexes.CharField(model_attr="article_type", null=True)
     pid_v2 = indexes.CharField(model_attr="pid_v2", null=True)
     pid_v3 = indexes.CharField(model_attr="pid_v3", null=True)
@@ -20,6 +21,13 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_journal(self, obj):
         if obj.journal:
             return obj.journal.title 
+
+    def prepare_collection(self, obj):
+        if obj.journal:
+            try:
+                return obj.journal.collection.main_name
+            except AttributeError:
+                pass
 
     def prepare_doi(self, obj):
         if obj.doi:

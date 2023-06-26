@@ -408,6 +408,7 @@ SEARCH_FACET_ITEMS_PER_MORE = 5
 
 SEARCH_FACET_LIST = [
     "journal",
+    "collection",
     "pub_date_year",
     "languages",
     "article_type",

@@ -187,6 +187,7 @@
      <lst name="invariants">
          <str name="facet">true</str>
          <str name="facet.field">journal</str>
+         <str name="facet.field">collection</str>
          <str name="facet.field">pub_date_year</str>
          <str name="facet.field">languages</str>
          <str name="facet.field">article_type</str>

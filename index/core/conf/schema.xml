@@ -71,6 +71,8 @@
     <field name="orcid" type="string" indexed="true" stored="true" multiValued="true" />
 
     <field name="journal" type="string" indexed="true" stored="true" multiValued="false" />
+
+    <field name="collection" type="string" indexed="true" stored="true" multiValued="false" />
     
     <field name="article_type" type="string" indexed="true" stored="true" multiValued="false" />
     
