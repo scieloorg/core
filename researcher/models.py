@@ -2,13 +2,17 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from wagtail.admin.edit_handlers import FieldPanel, InlinePanel
+from wagtail.admin.edit_handlers import FieldPanel, InlinePanel, MultiFieldPanel
 from wagtail.core.models import Orderable
+from wagtailautocomplete.edit_handlers import AutocompletePanel
+from wagtail.documents.edit_handlers import DocumentChooserPanel
 
-from core.models import CommonControlField, Gender, GenderIdentificationStatus
+from core.models import CommonControlField, Gender
 from institution.models import Institution, InstitutionHistory
+from journal.models import ScieloJournal
 
 from .forms import ResearcherForm
+from . import choices
 
 
 class Researcher(ClusterableModel, CommonControlField):
@@ -26,9 +30,8 @@ class Researcher(ClusterableModel, CommonControlField):
     orcid = models.TextField(_("ORCID"), blank=True, null=True)
     lattes = models.TextField(_("Lattes"), blank=True, null=True)
     gender = models.ForeignKey(Gender, blank=True, null=True, on_delete=models.SET_NULL)
-    gender_identification_status = models.ForeignKey(
-        GenderIdentificationStatus, blank=True, null=True, on_delete=models.SET_NULL
-    )
+    gender_identification_status = models.CharField(_('Gender identification status'), max_length=255, choices=choices.GENDER_IDENTIFICATION_STATUS, null=True, blank=True)
+
 
     def autocomplete_label(self):
         return str(self)
@@ -59,8 +62,11 @@ class Researcher(ClusterableModel, CommonControlField):
         suffix,
         orcid,
         lattes,
+        email,
+        institution_name,
         gender=None,
         gender_identification_status=None,
+        user=None,
     ):
         try:
             return cls.objects.get(
@@ -73,6 +79,12 @@ class Researcher(ClusterableModel, CommonControlField):
                 gender_identification_status=gender_identification_status,
             )
         except cls.DoesNotExist:
+            institution = None
+            if institution_name:
+                try:
+                    institution = Institution.objects.get(name = institution_name)
+                except Institution.DoesNotExist:
+                    pass
             researcher = cls()
             researcher.given_names = given_names
             researcher.last_name = last_name
@@ -83,7 +95,12 @@ class Researcher(ClusterableModel, CommonControlField):
             ## Criar get_or_create para model gender e GenderIdentificationStatus
             researcher.gender = gender
             researcher.gender_identification_status = gender_identification_status
+            researcher.creator = user
             researcher.save()
+            if email:
+                FieldEmail.objects.create(page=researcher, email=email)
+            if institution:
+                FieldAffiliation.objects.create(page=researcher, institution=institution)
             return researcher
 
     panels = [
@@ -108,3 +125,78 @@ class FieldEmail(Orderable):
 
 class FieldAffiliation(Orderable, InstitutionHistory):
     page = ParentalKey(Researcher, on_delete=models.CASCADE, related_name="affiliation")
+
+
+class EditorialBoardMember(models.Model):
+    journal = models.ForeignKey(ScieloJournal, null=True, blank=True, related_name='+', on_delete=models.CASCADE)
+    member = models.ForeignKey(Researcher, null=True, blank=True, related_name='+', on_delete=models.CASCADE)
+    role = models.CharField(_('Role'), max_length=255, choices=choices.ROLE, null=False, blank=False)
+    initial_year =  models.IntegerField(blank=True, null=True)
+    initial_month = models.IntegerField(blank=True, null=True, choices=choices.MONTHS)
+    final_year = models.IntegerField(blank=True, null=True)
+    final_month = models.IntegerField(blank=True, null=True, choices=choices.MONTHS)
+
+    panels = [
+        AutocompletePanel('journal'),
+        AutocompletePanel('member'),
+        FieldPanel('role'),
+        FieldPanel('initial_year'),
+        FieldPanel('initial_month'),
+        FieldPanel('final_year'),
+        FieldPanel('final_month')
+    ]
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['journal', ]),
+            models.Index(fields=['member', ]),
+            models.Index(fields=['role', ]),
+        ]
+
+    @classmethod
+    def get_or_create(self, journal, role, initial_year, email, institution_name, given_names, last_name, suffix, orcid, lattes, gender, gender_identification_status, user):
+        try:
+            gender = Gender.objects.get(code=gender)
+        except Gender.DoesNotExist:
+            gender = None
+
+        researcher_get = Researcher.get_or_create(given_names, last_name, suffix, orcid, lattes, email, institution_name, gender, gender_identification_status, user)
+
+        journal_get = ScieloJournal.get_or_create(official_journal=None, issn_scielo=None, title=journal, short_title=None, collection=None, user=user)
+
+        try:
+            return EditorialBoardMember.objects.get(journal = journal_get, member = researcher_get)
+        except EditorialBoardMember.DoesNotExist:
+            editorial_board_member = EditorialBoardMember()
+            editorial_board_member.member = researcher_get
+            editorial_board_member.journal = journal_get
+            editorial_board_member.role = role
+            editorial_board_member.initial_year = initial_year
+            editorial_board_member.creator = user
+            editorial_board_member.save()
+            return editorial_board_member
+
+    def __str__(self):
+        return "%s (%s)" % (
+            self.member or "",
+            self.role or "",
+        )
+
+
+class EditorialBoardMemberFile(models.Model):
+
+    attachment = models.ForeignKey(
+        'wagtaildocs.Document',
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+'
+    )
+    is_valid = models.BooleanField(_("Is valid?"), default=False, blank=True, null=True)
+    line_count = models.IntegerField(_("Number of lines"), default=0, blank=True, null=True)
+
+    def filename(self):
+        return os.path.basename(self.attachment.name)
+
+    panels = [
+        DocumentChooserPanel('attachment')
+    ]
