@@ -82,6 +82,10 @@
     
     <field name="pub_date_year" type="string" indexed="true" stored="true" multiValued="false" />
 
+    <field name="volume" type="string" indexed="true" stored="true" multiValued="false" />
+
+    <field name="elocation_id" type="string" indexed="true" stored="true" multiValued="false" />
+
    <!-- Dynamic field definitions -->
    <dynamicField name="*"  type="text" indexed="true" stored="true"  multiValued="false"/>
    <!-- <dynamicField name="*" type="ignored" /> -->

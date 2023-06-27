@@ -17,6 +17,8 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     pid_v3 = indexes.CharField(model_attr="pid_v3", null=True)
     pub_date_year = indexes.CharField(model_attr="pub_date_year", null=True)
     orcid = indexes.CharField(null=True)
+    volume = indexes.CharField(null=True)
+    elocation_id = indexes.CharField(null=True)
 
     def prepare_journal(self, obj):
         if obj.journal:
@@ -56,7 +58,14 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_toc_sections(self, obj):
         if obj.toc_sections:
             return [toc_section.plain_text for toc_section in obj.toc_sections.all()]
-        
+    
+    def prepare_volume(self, obj):
+        if obj.issue:
+            try:
+                return obj.issue.volume
+            except AttributeError:
+                pass
+
     def get_model(self):
         return Article
     

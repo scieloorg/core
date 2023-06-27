@@ -25,6 +25,8 @@
             {% endfor %}
           {% endif %}
           {% if item.pub_date_year %}<li><span>{{ item.pub_date_year }}</span></li>{% endif %}
+          {% if item.volume %}<li><span>Volume {{ item.volume }}</span></li>{% endif %}
+          {% if item.elocation_id %}<li><span>elocation {{ item.elocation_id }}</span></li>{% endif %}
           {% if item.journal %}<li><span>{{ item.journal }}</span></li>{% endif %}
           {% if item.doi %}
               {% for doi in item.doi %}
