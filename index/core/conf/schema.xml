@@ -61,12 +61,16 @@
     <field name="titles" type="string" indexed="true" stored="true" multiValued="true" />
     
     <field name="languages" type="string" indexed="true" stored="true" multiValued="true" />
-    
+
     <field name="researchers" type="string" indexed="true" stored="true" multiValued="true" />
     
     <field name="keywords" type="string" indexed="true" stored="true" multiValued="true" />
     
     <field name="toc_sections" type="string" indexed="true" stored="true" multiValued="true" />
+    
+    <field name="abstracts" type="string" indexed="true" stored="true" multiValued="true" />
+    
+    <field name="languages_abstract" type="lowercase" indexed="true" stored="true" multiValued="true" />
     
     <field name="orcid" type="string" indexed="true" stored="true" multiValued="true" />
 
@@ -85,6 +89,8 @@
     <field name="volume" type="string" indexed="true" stored="true" multiValued="false" />
 
     <field name="elocation_id" type="string" indexed="true" stored="true" multiValued="false" />
+
+    <field name="domain" type="string" indexed="true" stored="true" multiValued="false" />
 
    <!-- Dynamic field definitions -->
    <dynamicField name="*"  type="text" indexed="true" stored="true"  multiValued="false"/>

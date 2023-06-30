@@ -1,6 +1,7 @@
 from haystack import indexes
 from .models import Article
 
+
 class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
     doi = indexes.MultiValueField(null=True)
@@ -9,6 +10,8 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     researchers = indexes.MultiValueField(null=True)
     keywords = indexes.MultiValueField(null=True)
     toc_sections = indexes.MultiValueField(null=True)
+    abstracts = indexes.MultiValueField(null=True)
+    languages_abstract = indexes.MultiValueField(null=True)
 
     journal = indexes.CharField(null=True)
     collection = indexes.CharField(null=True)
@@ -17,8 +20,10 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     pid_v3 = indexes.CharField(model_attr="pid_v3", null=True)
     pub_date_year = indexes.CharField(model_attr="pub_date_year", null=True)
     orcid = indexes.CharField(null=True)
+    domain = indexes.CharField(null=True)
     volume = indexes.CharField(null=True)
     elocation_id = indexes.CharField(null=True)
+    
 
     def prepare_journal(self, obj):
         if obj.journal:
@@ -63,6 +68,21 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
         if obj.issue:
             try:
                 return obj.issue.volume
+            except AttributeError:
+                pass
+
+    def prepare_abstracts(self, obj):
+        if obj.abstracts:
+            return [abstract.plain_text for abstract in obj.abstracts.all()]
+
+    def prepare_languages_abstract(self, obj):
+        if obj.abstracts:
+            return [abstract.language for abstract in obj.abstracts.all()]
+
+    def prepare_domain(self, obj):
+        if obj.journal:
+            try:
+                return obj.journal.collection.domain
             except AttributeError:
                 pass
 

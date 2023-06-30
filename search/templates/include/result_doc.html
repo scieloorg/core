@@ -4,6 +4,26 @@
 {% load humanize %}
 {% load zip_list %}
 
+
+<style>
+  .hidden {
+    display: none;
+  }
+  .arrow {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  border: solid #034E8E;
+  border-width: 0 2px 2px 0;
+  transform: rotate(-45deg);
+  transition: transform 0.3s ease;
+}
+.arrow.rotate {
+  transform: rotate(45deg);
+}
+</style>
+
+
 <div class="col-12 col-sm-6 col-lg-12 m-2">
   <div class="grid-inner row no-gutters">
 
@@ -13,27 +33,32 @@
         <h2><a href="#" target="_blank">{{ item.titles.0 }}</a> <a href="#" target="_blank"><i class="icon-line-external-link"></i></a></h2>
       </div>
       <div class="entry-meta">
-        <ul>
-          {% if item.researchers %}
-            {% for research, orcid in item.researchers|zip_lists:item.orcid %}
-              <li>
-                <span>{{research}}</span>
-                {% if orcid != "None" %}
-                  <a href="https://orcid.org/{{orcid}}" target="_blank"><img src="{% static 'images/icons/authorIcon-orcid.png' %}" alt="ORCID"></a>
-                {% endif %}
-              </li>
-            {% endfor %}
-          {% endif %}
-          {% if item.pub_date_year %}<li><span>{{ item.pub_date_year }}</span></li>{% endif %}
-          {% if item.volume %}<li><span>Volume {{ item.volume }}</span></li>{% endif %}
-          {% if item.elocation_id %}<li><span>elocation {{ item.elocation_id }}</span></li>{% endif %}
-          {% if item.journal %}<li><span>{{ item.journal }}</span></li>{% endif %}
-          {% if item.doi %}
-              {% for doi in item.doi %}
-                  <li><span><a href="https://doi.org/{{doi}}">https://doi.org/{{doi}}</a></span></li>
+          <ul>
+            {% if item.researchers %}
+              {% for research, orcid in item.researchers|zip_lists:item.orcid %}
+                <li>
+                  <span>{{research}}</span>
+                  {% if orcid != "None" %}
+                    <a href="https://orcid.org/{{orcid}}" target="_blank"><img src="{% static 'images/icons/authorIcon-orcid.png' %}" alt="ORCID"></a>
+                  {% endif %}
+                </li>
               {% endfor %}
-          {% endif %}
-        </ul>
+            {% endif %}
+
+            {% if item.pub_date_year %}<li><span>{{ item.pub_date_year }}</span></li>{% endif %}
+            {% if item.volume %}<li><span>Volume {{ item.volume }}</span></li>{% endif %}
+            {% if item.elocation_id %}<li><span>elocation {{ item.elocation_id }}</span></li>{% endif %}
+            {% if item.journal %}<li><span>{{ item.journal }}</span></li>{% endif %}
+          </ul>
+        
+        {% include 'include/result_doc_actions.html' %}
+        
+        {% if item.doi %}
+          {% for doi in item.doi %}
+            <a href="https://doi.org/{{doi}}">https://doi.org/{{doi}}</a>
+          {% endfor %}
+        {% endif %}
+
       </div>
       {% comment %}
         <div class="entry-content">

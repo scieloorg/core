@@ -1,0 +1,25 @@
+{% load zip_list %}
+
+
+<div style="background-color: #f8f8f6; width: 100%;">
+    {% if item.abstracts %}
+    Resumo:
+      {% for lang in item.languages_abstract%}
+        <a href="#" class="toggleLink" style="text-transform: uppercase;"><i class="arrow"></i>{{lang}} </a> 
+      {% endfor %}
+    {% endif %}
+    {% if item.pid_v2 %}
+    | Texto:
+      <!-- TODO variavel de ambiente 
+        Inserir dominio (collections.domain)
+    -->
+      {% for lang in item.languages %}
+        <a href="{{item.domain}}/scielo.php?script=sci_arttext&pid={{item.pid_v2}}&lng={{item.languages.0}}&tlng={{lang}}">{{lang}}</a>
+      {% endfor%}
+    {% endif %}
+    | PDF: 
+</div>
+
+{% for abstract in item.abstracts %}
+    <div class="hiddenText hidden">{{abstract}}</div>
+{% endfor%}

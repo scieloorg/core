@@ -679,6 +679,20 @@
 
   });
 
+  // Configura os manipuladores de evento para mostrar/ocultar 
+  // os resumos dos artigos ao clicar nos links relacionado ao idioma
+  var toggleLinks = document.getElementsByClassName('toggleLink')
+  var hiddenTexts = document.getElementsByClassName('hiddenText');
+
+  Array.from(toggleLinks).forEach(elem => {
+  elem.addEventListener('click', function(event) {
+    event.preventDefault();
+    var textIndex = Array.prototype.indexOf.call(toggleLinks, elem);
+    hiddenTexts[textIndex].classList.toggle('hidden');
+    elem.querySelector('i').classList.toggle('rotate');
+  });
+});
+
 </script>
 
 {% endblock %}
