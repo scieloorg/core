@@ -1,18 +1,18 @@
-{{object.pid_v2}}
+{{object.pid}}
 {{object.pid_v3}}
-{{object.pub_date_day}}
-{{object.article_type.text}}
+{{object.publication_year}}
+{{object.type.text}}
 {% for title in object.titles.all %}
 {{title.plain_text}}
 {% endfor%}
-{% for research in object.researchers.all %}
+{% for research in object.au.all %}
 {{research.last_name}}, {{research.given_names}}
 {% endfor %}
-{% for research in object.researchers.all %}
+{% for research in object.au.all %}
 {{research.given_names}} {{research.last_name}}
 {% endfor %}
-{{object.journal.title}}
-{% for kwd in object.keywords.all %}
+{{object.journal_title.title}}
+{% for kwd in object.kw.all %}
 {{ kwd.text }}
 {% endfor %}
 {% for toc in object.toc_sections.all %}

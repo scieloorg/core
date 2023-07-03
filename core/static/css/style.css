@@ -10544,6 +10544,25 @@ body:not(.device-touch) .social-icon {
 	margin-bottom: 0px;
 }
 
+/* ----------------------------------------------------------------
+	Actions Search Results
+-----------------------------------------------------------------*/
+
+.hidden {
+    display: none;
+  }
+.arrow {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  border: solid #034E8E;
+  border-width: 0 2px 2px 0;
+  transform: rotate(-45deg);
+  transition: transform 0.3s ease;
+}
+.arrow.rotate {
+  transform: rotate(45deg);
+}
 
 /* Social Icons - Rounded
 -----------------------------------------------------------------*/

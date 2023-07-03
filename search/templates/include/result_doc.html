@@ -5,25 +5,6 @@
 {% load zip_list %}
 
 
-<style>
-  .hidden {
-    display: none;
-  }
-  .arrow {
-  display: inline-block;
-  width: 0.5em;
-  height: 0.5em;
-  border: solid #034E8E;
-  border-width: 0 2px 2px 0;
-  transform: rotate(-45deg);
-  transition: transform 0.3s ease;
-}
-.arrow.rotate {
-  transform: rotate(45deg);
-}
-</style>
-
-
 <div class="col-12 col-sm-6 col-lg-12 m-2">
   <div class="grid-inner row no-gutters">
 
@@ -34,10 +15,10 @@
       </div>
       <div class="entry-meta">
           <ul>
-            {% if item.researchers %}
-              {% for research, orcid in item.researchers|zip_lists:item.orcid %}
+            {% if item.au %}
+              {% for au, orcid in item.au|zip_lists:item.au_orcid %}
                 <li>
-                  <span>{{research}}</span>
+                  <span>{{au}}</span>
                   {% if orcid != "None" %}
                     <a href="https://orcid.org/{{orcid}}" target="_blank"><img src="{% static 'images/icons/authorIcon-orcid.png' %}" alt="ORCID"></a>
                   {% endif %}
@@ -45,10 +26,10 @@
               {% endfor %}
             {% endif %}
 
-            {% if item.pub_date_year %}<li><span>{{ item.pub_date_year }}</span></li>{% endif %}
+            {% if item.publication_year %}<li><span>{{ item.pub_date_year }}</span></li>{% endif %}
             {% if item.volume %}<li><span>Volume {{ item.volume }}</span></li>{% endif %}
-            {% if item.elocation_id %}<li><span>elocation {{ item.elocation_id }}</span></li>{% endif %}
-            {% if item.journal %}<li><span>{{ item.journal }}</span></li>{% endif %}
+            {% if item.elocation %}<li><span>elocation {{ item.elocation }}</span></li>{% endif %}
+            {% if item.journal_title %}<li><span>{{ item.journal_title }}</span></li>{% endif %}
           </ul>
         
         {% include 'include/result_doc_actions.html' %}

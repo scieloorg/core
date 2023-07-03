@@ -407,9 +407,9 @@ SEARCH_PAGINATION_ITEMS_PER_PAGE = 10
 SEARCH_FACET_ITEMS_PER_MORE = 5
 
 SEARCH_FACET_LIST = [
-    "journal",
+    "journal_title",
     "collection",
-    "pub_date_year",
-    "languages",
-    "article_type",
+    "publication_year",
+    "la",
+    "type",
 ]
