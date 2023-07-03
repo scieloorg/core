@@ -24,9 +24,9 @@ def get_or_create_doi(xmltree, user):
     data = []
     for doi in doi_with_lang:
         obj = models.DOI.get_or_create(
-            value=doi.get("value"), 
-            language=get_or_create_language(doi.get("lang"), user=user), 
-            creator=user
+            value=doi.get("value"),
+            language=get_or_create_language(doi.get("lang"), user=user),
+            creator=user,
         )
         data.append(obj)
     return data
@@ -201,7 +201,7 @@ def get_or_create_language(lang, user):
 def get_or_create_main_language(xmltree, user):
     lang = ArticleAndSubArticles(xmltree=xmltree).main_lang
     obj = get_or_create_language(lang, user)
-    return obj    
+    return obj
 
 
 def get_or_create_sponso(funding_name):

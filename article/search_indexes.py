@@ -15,7 +15,6 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     orcid = indexes.MultiValueField(null=True)
     au_orcid = indexes.MultiValueField(null=True)
 
-
     journal_title = indexes.CharField(null=True)
     collection = indexes.CharField(null=True)
     type = indexes.CharField(model_attr="article_type", null=True)
@@ -31,7 +30,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
 
     def prepare_journal_title(self, obj):
         if obj.journal:
-            return obj.journal.title 
+            return obj.journal.title
 
     def prepare_collection(self, obj):
         if obj.journal:
@@ -42,8 +41,8 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
 
     def prepare_doi(self, obj):
         if obj.doi:
-            return [doi.value for doi in obj.doi.all()] 
-                
+            return [doi.value for doi in obj.doi.all()]
+
     def prepare_la(self, obj):
         if obj.languages:
             return [language.code2 for language in obj.languages.all()]
@@ -55,11 +54,11 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_orcid(self, obj):
         if obj.researchers:
             return [research.orcid for research in obj.researchers.all()]
-        
+
     def prepare_au_orcid(self, obj):
         if obj.researchers:
             return [f"{research.orcid}" for research in obj.researchers.all()]
-        
+
     def prepare_au(self, obj):
         if obj.researchers:
             return [research.get_full_name for research in obj.researchers.all()]
@@ -67,11 +66,11 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_kw(self, obj):
         if obj.keywords:
             return [keyword.text for keyword in obj.keywords.all()]
-        
+
     def prepare_toc_sections(self, obj):
         if obj.toc_sections:
             return [toc_section.plain_text for toc_section in obj.toc_sections.all()]
-    
+
     def prepare_issue(self, obj):
         if obj.issue:
             try:
@@ -103,6 +102,6 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
 
     def get_model(self):
         return Article
-    
+
     def index_queryset(self, using=None):
         return self.get_model().objects.all()
