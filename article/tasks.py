@@ -59,7 +59,9 @@ def load_articles(user_id, file_path):
         article.researchers.set(
             utils.get_or_create_researchers(xmltree=xmltree, user=user)
         )
-        article.languages.add(utils.get_or_create_language(xmltre=xmltree, user=user))
+        article.languages.add(
+            utils.get_or_create_main_language(xmltree=xmltree, user=user)
+        )
         article.keywords.set(utils.get_or_create_keywords(xmltree=xmltree, user=user))
         article.toc_sections.set(
             utils.get_or_create_toc_sections(xmltree=xmltree, user=user)
@@ -100,8 +102,9 @@ def load_preprint(user_id):
                     titles=article_info.get("title"), user=user
                 )
             )
-            article.researchers.set(preprint.get_or_create_researches(
-                authors=article_info.get('authors'),
+            article.researchers.set(
+                preprint.get_or_create_researches(
+                    authors=article_info.get("authors"),
                 )
             )
             article.keywords.set(

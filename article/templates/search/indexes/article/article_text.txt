@@ -1,0 +1,20 @@
+{{object.pid}}
+{{object.pid_v3}}
+{{object.publication_year}}
+{{object.type.text}}
+{% for title in object.titles.all %}
+{{title.plain_text}}
+{% endfor%}
+{% for research in object.au.all %}
+{{research.last_name}}, {{research.given_names}}
+{% endfor %}
+{% for research in object.au.all %}
+{{research.given_names}} {{research.last_name}}
+{% endfor %}
+{{object.journal_title.title}}
+{% for kwd in object.kw.all %}
+{{ kwd.text }}
+{% endfor %}
+{% for toc in object.toc_sections.all %}
+{{ toc.plain_text }}
+{% endfor %}

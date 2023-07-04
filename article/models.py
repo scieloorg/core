@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
-from wagtail.fields import RichTextField
+from django.db.models import Case, When
 
 from core.forms import CoreAdminModelForm
 from core.models import (
@@ -124,6 +124,16 @@ class Article(CommonControlField):
         self.pid_v2 = pids.get("v2")
         self.pid_v3 = pids.get("v3")
         self.save()
+
+    # @property
+    # def get_abstracts_order_by_lang_pt(self):
+    #     return self.abstracts.all().order_by(
+    #             Case(
+    #                 When(language__code2='pt', then=0),
+    #                 default=1,
+    #                 output_field=models.IntegerField()
+    #             )
+    #         )
 
     base_form_class = CoreAdminModelForm
 

@@ -24,6 +24,7 @@ class ResearcherAdmin(ModelAdmin):
     menu_order = 1000
     add_to_settings_menu = False
     exclude_from_explorer = False
+    search_fields = ("given_names", "last_name")
 
 
 class EditorialBoardMemberAdmin(ModelAdmin):

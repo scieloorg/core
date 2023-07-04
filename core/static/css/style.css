@@ -7609,7 +7609,11 @@ body:not(.device-touch) .portfolio {
 	margin-right: 5px;
 }
 
-.entry-meta a:not(:hover) { color: #999; }
+.entry-meta a:not(:hover) { color: #034E8E; }
+
+.entry-meta a:hover {
+	color: #12254d !important;
+}
 
 .entry-meta ins {
 	font-weight: 700;
@@ -10540,6 +10544,25 @@ body:not(.device-touch) .social-icon {
 	margin-bottom: 0px;
 }
 
+/* ----------------------------------------------------------------
+	Actions Search Results
+-----------------------------------------------------------------*/
+
+.hidden {
+    display: none;
+  }
+.arrow {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  border: solid #034E8E;
+  border-width: 0 2px 2px 0;
+  transform: rotate(-45deg);
+  transition: transform 0.3s ease;
+}
+.arrow.rotate {
+  transform: rotate(45deg);
+}
 
 /* Social Icons - Rounded
 -----------------------------------------------------------------*/
@@ -13317,12 +13340,11 @@ fieldset[disabled] .sm-form-control {
 
 label {
 	display: inline-block;
-	font-size: 13px;
-	font-weight: 700;
+	font-size: 12px;
+	font-weight: 600;
 	font-family: 'Poppins', sans-serif;
-	text-transform: uppercase;
 	letter-spacing: 1px;
-	color: #555;
+	color: #666;
 	margin-bottom: 10px;
 	cursor: pointer;
 }
@@ -14527,7 +14549,7 @@ button.toast-close-button {
 	font-size: 15px;
 	font-weight: 600;
 	letter-spacing: 2px;
-	text-transform: uppercase;
+	/* text-transform: uppercase; */
 }
 
 .sidebar-widgets-wrap .widget > h4 { letter-spacing: 1px; }
@@ -16884,4 +16906,3 @@ label.checkbox { padding-left: 20px; }
 	-webkit-animation-name: fadeOutUpSmall;
 	animation-name: fadeOutUpSmall;
 }
-

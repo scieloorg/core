@@ -13,6 +13,7 @@ namespaces = {
     "dc": "http://purl.org/dc/elements/1.1/",
 }
 
+
 def get_info_article(rec):
     article_dict = {}
     root = etree.fromstring(str(rec))
@@ -56,7 +57,7 @@ def get_info_article(rec):
         for author in root.xpath(".//dc:creator", namespaces=namespaces):
             name_author = [name.strip() for name in author.text.split(",")][::1]
             author_dict = {}
-            for i, name in enumerate(("given_names", "surname")[:len(name_author)]):
+            for i, name in enumerate(("given_names", "surname")[: len(name_author)]):
                 try:
                     author_dict.update({f"{name}": name_author[i]})
                 except IndexError as e:
@@ -177,11 +178,11 @@ def get_or_create_researches(authors):
     data = []
     for author in authors:
         obj = models.Researcher.get_or_create(
-            given_names=author.get('given_names'),
-            last_name=author.get('surname'),
+            given_names=author.get("given_names"),
+            last_name=author.get("surname"),
             suffix=None,
             orcid=None,
-            lattes=None        
+            lattes=None,
         )
         data.append(obj)
     return data
