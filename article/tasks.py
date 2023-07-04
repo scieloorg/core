@@ -9,8 +9,8 @@ from article.preprint import utils as preprint
 
 from packtools.sps.models.article_ids import ArticleIds
 from packtools.sps.utils import xml_utils
-from . import utils
-from .utils import ArticleSaveError
+from .utils import article_utils
+from .utils.article_utils import ArticleSaveError
 from sickle import Sickle
 
 from . import controller
@@ -44,28 +44,28 @@ def load_articles(user_id, file_path):
     except models.Article.DoesNotExist:
         article = models.Article()
     try:
-        utils.set_pids(xmltree=xmltree, article=article)
-        article.journal = utils.get_journal(xmltree=xmltree)
-        utils.set_date_pub(xmltree=xmltree, article=article)
-        article.article_type = utils.get_or_create_article_type(
+        article_utils.set_pids(xmltree=xmltree, article=article)
+        article.journal = article_utils.get_journal(xmltree=xmltree)
+        article_utils.set_date_pub(xmltree=xmltree, article=article)
+        article.article_type = article_utils.get_or_create_article_type(
             xmltree=xmltree, user=user
         )
-        article.issue = utils.get_or_create_issues(xmltree=xmltree, user=user)
-        utils.set_first_last_page(xmltree=xmltree, article=article)
-        utils.set_elocation_id(xmltree=xmltree, article=article)
+        article.issue = article_utils.get_or_create_issues(xmltree=xmltree, user=user)
+        article_utils.set_first_last_page(xmltree=xmltree, article=article)
+        article_utils.set_elocation_id(xmltree=xmltree, article=article)
         article.save()
-        article.doi.set(utils.get_or_create_doi(xmltree=xmltree, user=user))
-        article.license.set(utils.get_or_create_licenses(xmltree=xmltree, user=user))
+        article.doi.set(article_utils.get_or_create_doi(xmltree=xmltree, user=user))
+        article.license.set(article_utils.get_or_create_licenses(xmltree=xmltree, user=user))
         article.researchers.set(
-            utils.get_or_create_researchers(xmltree=xmltree, user=user)
+            article_utils.get_or_create_researchers(xmltree=xmltree, user=user)
         )
-        article.languages.add(utils.get_or_create_language(xmltre=xmltree, user=user))
-        article.keywords.set(utils.get_or_create_keywords(xmltree=xmltree, user=user))
+        article.languages.add(article_utils.get_or_create_language(xmltre=xmltree, user=user))
+        article.keywords.set(article_utils.get_or_create_keywords(xmltree=xmltree, user=user))
         article.toc_sections.set(
-            utils.get_or_create_toc_sections(xmltree=xmltree, user=user)
+            article_utils.get_or_create_toc_sections(xmltree=xmltree, user=user)
         )
-        article.fundings.set(utils.get_or_create_fundings(xmltree=xmltree, user=user))
-        article.titles.set(utils.get_or_create_titles(xmltree=xmltree, user=user))
+        article.fundings.set(article_utils.get_or_create_fundings(xmltree=xmltree, user=user))
+        article.titles.set(article_utils.get_or_create_titles(xmltree=xmltree, user=user))
     except (DataError, TypeError) as e:
         raise ArticleSaveError(e)
 
