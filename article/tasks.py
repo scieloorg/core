@@ -59,7 +59,9 @@ def load_articles(user_id, file_path):
         article.researchers.set(
             article_utils.get_or_create_researchers(xmltree=xmltree, user=user)
         )
-        article.languages.add(article_utils.get_or_create_language(xmltre=xmltree, user=user))
+        article.languages.add(
+            article_utils.get_or_create_main_language(xmltree=xmltree, user=user)
+        )
         article.keywords.set(article_utils.get_or_create_keywords(xmltree=xmltree, user=user))
         article.toc_sections.set(
             article_utils.get_or_create_toc_sections(xmltree=xmltree, user=user)

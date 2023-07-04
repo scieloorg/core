@@ -1,4 +1,5 @@
 from article import models
+from issue.models import TocSection
 
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_authors import Authors
@@ -23,7 +24,9 @@ def get_or_create_doi(xmltree, user):
     data = []
     for doi in doi_with_lang:
         obj = models.DOI.get_or_create(
-            value=doi.get("value"), lang=doi.get("lang"), creator=user
+            value=doi.get("value"),
+            language=get_or_create_language(doi.get("lang"), user=user),
+            creator=user,
         )
         data.append(obj)
     return data
@@ -64,9 +67,9 @@ def get_or_create_toc_sections(xmltree, user):
     for key, value in toc_sections.items():
         ## TODO
         ## Criar classmethodod get_or_create??
-        obj, create = models.TocSection.objects.get_or_create(
+        obj, create = TocSection.objects.get_or_create(
             plain_text=value,
-            language=get_or_create_language(xmltre=xmltree, user=user),
+            language=get_or_create_language(key, user=user),
             creator=user,
         )
         data.append(obj)
@@ -79,7 +82,7 @@ def get_or_create_licenses(xmltree, user):
     for license in licenses:
         obj = models.License.get_or_create(
             url=license.get("link"),
-            language=get_or_create_language(xmltre=xmltree, user=user),
+            language=get_or_create_language(license.get("lang"), user=user),
             license_p=license.get("license_p"),
             ## TODO
             # Faltando license_type (Alterar no packtools)
@@ -97,7 +100,7 @@ def get_or_create_keywords(xmltree, user):
     for kwd in kwd_group:
         obj = models.Keyword.get_or_create(
             text=kwd.get("text"),
-            language=kwd.get("lang"),
+            language=get_or_create_language(kwd.get("lang"), user=user),
             ## TODO
             ## Verificar relacao keyword com vocabulary
             # vocabulary=None,
@@ -159,7 +162,7 @@ def get_or_create_titles(xmltree, user):
         obj, created = models.DocumentTitle.objects.get_or_create(
             plain_text=format_title,
             rich_text=title.get("text"),
-            language=get_or_create_language(xmltre=xmltree, user=user)
+            language=get_or_create_language(title.get("lang"), user=user)
             if xmltree
             else None,
             creator=user,
@@ -190,9 +193,14 @@ def get_or_create_issues(xmltree, user):
     return obj
 
 
-def get_or_create_language(xmltre, user):
-    lang = ArticleAndSubArticles(xmltree=xmltre).main_lang
+def get_or_create_language(lang, user):
     obj = models.Language.get_or_create(code2=lang, creator=user)
+    return obj
+
+
+def get_or_create_main_language(xmltree, user):
+    lang = ArticleAndSubArticles(xmltree=xmltree).main_lang
+    obj = get_or_create_language(lang, user)
     return obj
 
 
