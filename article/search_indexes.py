@@ -24,7 +24,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     domain = indexes.CharField(null=True)
     issue = indexes.CharField(null=True)
     volume = indexes.CharField(null=True)
-    elocation = indexes.CharField(null=True)
+    elocation = indexes.CharField(model_attr="elocation_id", null=True)
     start_page = indexes.CharField(model_attr="first_page", null=True)
     end_page = indexes.CharField(model_attr="last_page", null=True)
 
@@ -72,18 +72,16 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
             return [toc_section.plain_text for toc_section in obj.toc_sections.all()]
 
     def prepare_issue(self, obj):
-        if obj.issue:
-            try:
-                return obj.issue.number
-            except AttributeError:
-                pass
+        try:
+            return obj.issue.number
+        except AttributeError:
+            pass
 
     def prepare_volume(self, obj):
-        if obj.issue:
-            try:
-                return obj.issue.volume
-            except AttributeError:
-                pass
+        try:
+            return obj.issue.volume
+        except AttributeError:
+            pass
 
     def prepare_ab(self, obj):
         if obj.abstracts:
@@ -94,11 +92,10 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
             return [abstract.language for abstract in obj.abstracts.all()]
 
     def prepare_domain(self, obj):
-        if obj.journal:
-            try:
-                return obj.journal.collection.domain
-            except AttributeError:
-                pass
+        try:
+            return obj.journal.collection.domain
+        except AttributeError:
+            pass
 
     def get_model(self):
         return Article

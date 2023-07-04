@@ -388,7 +388,15 @@ NOCAPTCHA = True
 RECAPTCHA_PUBLIC_KEY = env.str("RECAPTCHA_PUBLIC_KEY", default="")
 RECAPTCHA_PRIVATE_KEY = env.str("RECAPTCHA_PRIVATE_KEY", default="")
 
+# django rest-framework
+# ------------------------------------------------------------------------------
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': env.int("DRF_PAGE_SIZE", default=10)
+}
 
+# django haystack
+# ------------------------------------------------------------------------------
 HAYSTACK_CONNECTIONS = {
     "default": {
         "ENGINE": "haystack.backends.solr_backend.SolrEngine",
@@ -407,8 +415,8 @@ SEARCH_PAGINATION_ITEMS_PER_PAGE = 10
 SEARCH_FACET_ITEMS_PER_MORE = 5
 
 SEARCH_FACET_LIST = [
-    "journal_title",
     "collection",
+    "journal_title",
     "publication_year",
     "la",
     "type",

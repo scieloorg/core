@@ -14,23 +14,23 @@
         <h2><a href="#" target="_blank">{{ item.titles.0 }}</a> <a href="#" target="_blank"><i class="icon-line-external-link"></i></a></h2>
       </div>
       <div class="entry-meta">
-          <ul>
-            {% if item.au %}
-              {% for au, orcid in item.au|zip_lists:item.au_orcid %}
-                <li>
-                  <span>{{au}}</span>
-                  {% if orcid != "None" %}
-                    <a href="https://orcid.org/{{orcid}}" target="_blank"><img src="{% static 'images/icons/authorIcon-orcid.png' %}" alt="ORCID"></a>
-                  {% endif %}
-                </li>
-              {% endfor %}
-            {% endif %}
+        <ul>
+          {% if item.au %}
+            {% for au, orcid in item.au|zip_lists:item.au_orcid %}
+              <li>
+                <span>{{au}}</span>
+                {% if orcid != "None" %}
+                  <a href="https://orcid.org/{{orcid}}" target="_blank"><img src="{% static 'images/icons/authorIcon-orcid.png' %}" alt="ORCID"></a>
+                {% endif %}
+              </li>
+            {% endfor %}
+          {% endif %}
 
-            {% if item.publication_year %}<li><span>{{ item.pub_date_year }}</span></li>{% endif %}
-            {% if item.volume %}<li><span>Volume {{ item.volume }}</span></li>{% endif %}
-            {% if item.elocation %}<li><span>elocation {{ item.elocation }}</span></li>{% endif %}
-            {% if item.journal_title %}<li><span>{{ item.journal_title }}</span></li>{% endif %}
-          </ul>
+          {% if item.publication_year %}<li><span>{{ item.publication_year }}</span></li>{% endif %}
+          {% if item.volume %}<li><span>{% trans "Volume" %} {{ item.volume }}</span></li>{% endif %}
+          {% if item.elocation %}<li><span>elocation {{ item.elocation }}</span></li>{% endif %}
+          {% if item.journal_title %}<li><span>{{ item.journal_title }}</span></li>{% endif %}
+        </ul>
         
         {% include 'include/result_doc_actions.html' %}
         
@@ -41,37 +41,6 @@
         {% endif %}
 
       </div>
-      {% comment %}
-        <div class="entry-content">
-            <p>{{ item.description }}</p>
-            <ul class="iconlist d-none d-xl-block mt-md-3">
-            {% if item.countries %}
-            <li><i class="icon-caret-right"></i> {% trans "Country" %}: {{ item.countries|join:", " }}</li>
-            {% endif %}
-            {% if item.regions %}
-            <li><i class="icon-caret-right"></i> {% trans "Region" %}: {{ item.regions|join:", " }}</li>
-            {% endif %}
-            {% if item.states %}
-            <li><i class="icon-caret-right"></i> {% trans "State" %}: {{ item.states|join:", " }}</li>
-            {% endif %}
-            {% if item.cities %}
-            <li><i class="icon-caret-right"></i> {% trans "City" %}: {{ item.cities|join:", " }}</li>
-            {% endif %}
-            </ul>
-        </div>
-      {% endcomment %}
-      {% comment %}
-      {% if item.practice or item.action %}
-      <div class="card">
-        <div class="card-body">
-          {% if item.practice %}<span><b> {% trans "Practice" %}: </b>{{ item.practice }} </span>{% endif %}</br>
-          {% if item.action %}<span><b>{% trans "Action" %}: </b>{{ item.action }}</span>{% endif %}</br>
-          {% if item.thematic_areas %}<span><b>{% trans "Thematic Areas" %}:  </b>{{ item.thematic_areas|join:", " }}</span>{% endif %}
-          </div>
-        </div>
-      {% endif%}
-      {% endcomment %}
-
     </div>
 
   </div>
