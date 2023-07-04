@@ -46,10 +46,11 @@ services:
       ports:
          - "8983:8983"
       volumes:
-         - ./index/ocabr:/opt/solr/server/solr/ocabr
+         - ./index/core:/opt/solr/server/solr/core
       environment:
           - SOLR_JAVA_MEM=-Xms512m -Xmx512m
           - SOLR_HEAP=512m
+  
   traefik:
     build:
       context: .

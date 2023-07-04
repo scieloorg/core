@@ -100,6 +100,11 @@ def load_preprint(user_id):
                     titles=article_info.get("title"), user=user
                 )
             )
+            article.researchers.set(
+                preprint.get_or_create_researches(
+                    authors=article_info.get("authors"),
+                )
+            )
             article.keywords.set(
                 preprint.get_or_create_keyword(
                     keywords=article_info.get("subject"), user=user

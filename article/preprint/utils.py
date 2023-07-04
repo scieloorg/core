@@ -53,17 +53,18 @@ def get_info_article(rec):
         except IndexError as e:
             logging.exception(f"Not found date in {rec.header.identifier}. Error: {e}")
 
+        author_data = []
         for author in root.xpath(".//dc:creator", namespaces=namespaces):
             name_author = [name.strip() for name in author.text.split(",")][::1]
-            author_data = {}
+            author_dict = {}
             for i, name in enumerate(("given_names", "surname")[: len(name_author)]):
                 try:
-                    author_data.update({f"{name}": name_author[i]})
+                    author_dict.update({f"{name}": name_author[i]})
                 except IndexError as e:
                     logging.exception(
                         f"Error in authors: {e}.  Artigo: {rec.header.identifier}"
                     )
-
+            author_data.append(author_dict)
         article_dict["authors"] = author_data
     return article_dict
 
@@ -119,7 +120,7 @@ def get_or_create_license(rights, user):
             "http",
             "https",
         ]:
-            url = license.get("link")
+            url = license.get("text")
             license_p = None
         else:
             url = None
@@ -171,3 +172,17 @@ def get_publisher(publisher):
 
 def set_dates(article, date):
     article.set_date_pub(date)
+
+
+def get_or_create_researches(authors):
+    data = []
+    for author in authors:
+        obj = models.Researcher.get_or_create(
+            given_names=author.get("given_names"),
+            last_name=author.get("surname"),
+            suffix=None,
+            orcid=None,
+            lattes=None,
+        )
+        data.append(obj)
+    return data

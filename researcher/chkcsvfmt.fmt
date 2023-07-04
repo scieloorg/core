@@ -1,0 +1,47 @@
+[Periódico]
+data_required=False
+type=String
+
+[Data]
+data_required=False
+type=integer
+
+[Suffix]
+data_required=False
+type=String
+
+[Nome do membro]
+data_required=False
+type=String
+
+[Sobrenome]
+data_required=False
+type=String
+
+[Cargo / instância do membro]
+data_required=False
+type=(Editor-Chefe|Editor(es) Executivo|Editor(es) Associados ou de Seção|Equipe Técnica)
+
+[Institution]
+data_required=False
+type=String
+
+[CV Lattes]
+data_required=False
+type=String
+
+[ORCID iD]
+data_required=False
+type=String
+
+[Email]
+data_required=False
+type=String
+
+[Gender]
+data_required=False
+type=String
+
+[Gender status]
+data_required=False
+type=String

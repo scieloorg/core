@@ -44,41 +44,80 @@
 
  <fields>
 
-   <field name="_version_" type="long" indexed="true" stored="true"/>
+    <field name="_version_" type="long" indexed="true" stored="true"/>
 
-   <!-- id unique field -->
-   <field name="id" type="string" indexed="true" stored="true" multiValued="false"/>
+    <!-- id unique field -->
+    <field name="id" type="string" indexed="true" stored="true" multiValued="false"/>
 
-   <!-- default search -->
-   <field name="text" type="text" indexed="true" stored="true"/>
-   <field name="tw" type="text" indexed="true" stored="false" multiValued="true"/>
+    <!-- default search -->
+    <field name="text" type="text" indexed="true" stored="true"/>
+    <field name="tw" type="text" indexed="true" stored="false" multiValued="true"/>
 
-   <!-- haystack -->
-   <field name="django_ct" type="string" indexed="true" stored="true" multiValued="false"/>
-   <field name="django_id" type="string" indexed="true" stored="true" multiValued="false"/>
+    <field name="django_ct" type="string" indexed="true" stored="true" multiValued="false"/>
+    <field name="django_id" type="string" indexed="true" stored="true" multiValued="false"/>
+    
+    <!-- Digital Object Identifier DOI -->
+    <field name="doi" type="string" indexed="true" stored="true" multiValued="true" />
+    
+    <!-- Titles ** list of titles -->
+    <field name="titles" type="string" indexed="true" stored="true" multiValued="true" />
+    
+    <!-- Language **from:la to:languages** list of languages -->
+    <field name="la" type="string" indexed="true" stored="true" multiValued="true" />
+    
+    <!-- Author **from:au to:researchers** -->
+    <field name="au" type="string" indexed="true" stored="true" multiValued="true" />
+    
+    <!-- Allow search for keywords in different languages -->
+    <field name="kw" type="string" indexed="true" stored="true" multiValued="true" />
+    
+    <field name="toc_sections" type="string" indexed="true" stored="true" multiValued="true" />
+    
+    <!-- Abstract **from:ab to:abstract** -->
+    <field name="ab" type="string" indexed="true" stored="true" multiValued="true" />
+    
+    <!-- Abstract **from:ab to:abstract_language** -->
+    <field name="la_abstract" type="lowercase" indexed="true" stored="true" multiValued="true" />
+    
+    <!-- Digital Object Identifier DOI -->
+    <field name="orcid" type="string" indexed="true" stored="true" multiValued="true" />
 
-   <field name="record_type" type="string" indexed="true" stored="true" multiValued="false"/>
-   <field name="directory_type" type="string" indexed="true" stored="true" multiValued="false"/>
-   <field name="practice" type="string" indexed="true" stored="true" multiValued="false"/>
-   <field name="action" type="string" indexed="true" stored="true" multiValued="false"/>
-   <field name="category" type="string" indexed="true" stored="true" multiValued="false"/>
-   <!-- traduzir geo_scope como "âmbito" somente, por enquanto -->
-   <field name="geo_scope" type="string" indexed="true" stored="true" multiValued="false"/>
-   <field name="thematic_scope" type="string" indexed="true" stored="true" multiValued="false"/>
-   <!-- ajudará a ordenar (para indicadores, será gerado baseado no tamanho do raw_data) -->
-   <field name="priority" type="string" indexed="true" stored="true" multiValued="false"/>
-   <field name="geo_priority" type="string" indexed="true" stored="true" multiValued="false"/>
-   <field name="thematic_priority" type="string" indexed="true" stored="true" multiValued="false"/>
+    <!-- Auxiliar Digital Object Identifier DOI -->
+    <field name="au_orcid" type="string" indexed="true" stored="true" multiValued="true" />
 
-   <!-- multivalued fields -->
-   <field name="keywords" type="string" indexed="true" stored="true" multiValued="true"/>
-   <field name="institutions" type="string" indexed="true" stored="true" multiValued="true"/>
-   <field name="organization" type="string" indexed="true" stored="true" multiValued="true"/>
-   <field name="countries" type="string" indexed="true" stored="true" multiValued="true"/>
-   <field name="cities" type="string" indexed="true" stored="true" multiValued="true"/>
-   <field name="states" type="string" indexed="true" stored="true" multiValued="true"/>
-   <field name="regions" type="string" indexed="true" stored="true" multiValued="true"/>
-   <field name="thematic_areas" type="string" indexed="true" stored="true" multiValued="true"/>
+    <!-- Journal title of this research article -->
+    <field name="journal_title" type="string" indexed="true" stored="true" multiValued="false" />
+
+    <field name="collection" type="string" indexed="true" stored="true" multiValued="false" />
+    
+    <!-- Document Type **from:type to:article_type** -->
+    <field name="type" type="string" indexed="true" stored="true" multiValued="false" />
+    
+    <!-- Publisher ID = consist of 'S' + ISSN + numbers + '-' + and the abbreviation of collection, in the future it can be anything -->
+    <field name="pid" type="string" indexed="true" stored="true" multiValued="false" />
+    
+    <!-- <field name="pid_v3" type="string" indexed="true" stored="true" multiValued="false" /> -->
+    
+    <!-- Publication year ex.: 2004 -->
+    <field name="publication_year" type="string" indexed="true" stored="true" multiValued="false" />
+
+    <!-- Issue -->
+    <field name="issue" type="string" indexed="true" stored="true" multiValued="false"/>
+
+    <!-- Volume -->
+    <field name="volume" type="string" indexed="true" stored="true" multiValued="false" />
+
+    <!-- Elocation -->
+    <field name="elocation" type="string" indexed="true" stored="true" multiValued="false" />
+
+    <!-- Start Page -->
+    <field name="start_page" type="string" indexed="true" stored="true" multiValued="false"/>
+
+    <!-- End Page -->
+    <field name="end_page" type="string" indexed="true" stored="true" multiValued="false"/>
+    
+    <!-- Colllection domain to:domain from:domain  -->
+    <field name="domain" type="string" indexed="true" stored="true" multiValued="false" />
 
    <!-- Dynamic field definitions -->
    <dynamicField name="*"  type="text" indexed="true" stored="true"  multiValued="false"/>

@@ -33,6 +33,7 @@ class ArticleAdmin(ModelAdmin):
     exclude_from_explorer = (
         False  # or True to exclude pages of this type from Wagtail's explorer view
     )
+    search_fields = ("title", "doi")
 
     def all_fundings(self, obj):
         return " | ".join([str(c) for c in obj.fundings.all()])
@@ -41,7 +42,7 @@ class ArticleAdmin(ModelAdmin):
         return " | ".join([str(c.value) for c in obj.doi.all()])
 
     list_display = ("all_doi", "pid_v2", "all_fundings")
-    search_fields = ("pid_v2",)
+    search_fields = ("pid_v2", "doi__value")
 
 
 class SubArticleAdmin(ModelAdmin):

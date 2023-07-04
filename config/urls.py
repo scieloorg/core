@@ -10,9 +10,9 @@ from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.documents import urls as wagtaildocs_urls
 from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_urls
 
-from core.api import api_router
+from core.api.wagtail.api import api_router
 
-from core.search import views as search_views  # noqa isort:skip
+from core.search_site import views as search_views  # noqa isort:skip
 
 urlpatterns = [
     path("", TemplateView.as_view(template_name="home/home_page.html"), name="home"),
@@ -21,6 +21,9 @@ urlpatterns = [
     # Wagtail Admin
     path(settings.WAGTAIL_ADMIN_URL, include(wagtailadmin_urls)),
     re_path(r"^documents/", include(wagtaildocs_urls)),
+    # API V1 endpoint to custom models
+    path("api/v1/", include("config.api_router")),
+
     # Your stuff: custom urls includes go here
     # For anything not caught by a more specific rule above, hand over to
     # Wagtail’s page serving mechanism. This should be the last pattern in
@@ -34,7 +37,10 @@ urlpatterns = [
 # Translatable URLs
 # These will be available under a language code prefix. For example /en/search/
 urlpatterns += i18n_patterns(
-    re_path(r"^search/$", search_views.search, name="search"),
+    #Site search
+    re_path(r"^search_site/$", search_views.search, name="search_site"),
+    # Index search
+    re_path(r"^search/", include("search.urls")),
     # User management
     path("admin/autocomplete/", include(autocomplete_admin_urls)),
     path("api/v2/", api_router.urls),

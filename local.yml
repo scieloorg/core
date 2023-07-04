@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 services:
   django: &django
@@ -38,17 +38,17 @@ services:
       - postgres
     links:
       - postgres
-  
+
   solr:
     image: solr:7.7.1
     restart: always
     ports:
-        - "8983:8983"
+      - "8983:8983"
     volumes:
-        - ./index/core:/opt/solr/server/solr/core
+      - ./index/core:/opt/solr/server/solr/core
     environment:
-        - SOLR_JAVA_MEM=-Xms512m -Xmx512m
-        - SOLR_HEAP=512m
+      - SOLR_JAVA_MEM=-Xms512m -Xmx512m
+      - SOLR_HEAP=512m
 
   postgres:
     build:
@@ -68,7 +68,7 @@ services:
     image: adminer
     container_name: scielo_core_local_adminer
     ports:
-        - "8080:8080"
+      - "8080:8080"
 
   docs:
     image: scielo_core_local_docs
