@@ -1,37 +1,29 @@
-correspondencia = {
+correspondencia_journal = {
     "v5": "type_of_literature",
     "v6": "treatment_level",
     "v10": "center_code",
     "v20": "national_code",
     "v30": "identification_number",
-    "v33": "issues_title",
-    "v34": "part",
+    "v35": "issn_type",
     "v37": "secs_code",
-    "v42": "status",
-    "v48": "header_of_table_of_contents",
-    "v49": "sections_data",
     "v50": "publication_status",
-    "v51": "journals_status_history_in_this_collection",
-    "v51abcd": "journal_history",
-    "v62": "issue_editor",
+    "v51": "journal_status_history_in_this_collection",
+    "v62": "copyright_holder",
     "v63": "address",
     "v64": "electronic_address",
-    "v65": "date_iso",
     "v66": "ftp",
     "v67": "user_subscription",
     "v68": "acronym",
     "v69": "url_of_the_journal",
-    "v85": "controlled_vocabulary",
-    "v97": "cover",
+    "v85": "controled_vocabulary",
+    "v90": "notes",
     "v100": "publication_title",
     "v110": "subtitle",
     "v117": "standard",
-    "v122": "number_of_documents",
     "v130": "section",
     "v140": "sponsor",
     "v150": "short_title",
     "v151": "iso_short_title",
-    "v200": "markup_done",
     "v230": "parallel_titles",
     "v240": "other_titles",
     "v301": "initial_date",
@@ -40,8 +32,8 @@ correspondencia = {
     "v304": "terminate_date",
     "v305": "final_volume",
     "v306": "final_number",
-    "v310": "publishers_country",
-    "v320": "publishers_state",
+    "v310": "publisher_country",
+    "v320": "publisher_state",
     "v330": "level_of_publication",
     "v340": "alphabet",
     "v350": "text_idiom",
@@ -56,13 +48,14 @@ correspondencia = {
     "v441": "study_area",
     "v450": "indexing_coverage",
     "v480": "publisher",
-    "v490": "publishers_city",
-    "v540tl": "text_provided_by_creative_commons_site_according_to_the_license_choice",
+    "v490": "publisher_city",
+    "v540": "identifying_regular_issues",
     "v550": "has_supplement",
+    "v541": "license_of_use",
     "v560": "is_supplement",
     "v610": "old_title",
-    "v691": "scielo_net",
     "v690": "url_of_the_main_collection",
+    "v691": "scielo_net",
     "v692": "url_of_submission_online",
     "v699": "publishing_model",
     "v710": "new_title",
@@ -72,14 +65,39 @@ correspondencia = {
     "v854": "subject_categories",
     "v900": "notes",
     "v901": "mission",
-    "v930": "acronym_lowercase_uppercase_letters)",
+    "v930": "acronym_lowercase_and_or_uppercase_letters",
+    "v935": "current_issn",
     "v940": "creation_date",
     "v941": "update_date",
     "v950": "documentalist_creation",
-    "v951": "documentalist_update"
+    "v951": "documentalist_update",
 }
 
-def rename_dictionary_keys(dictionary, corresp=None):
+correspondencia_issue = {
+    "v31": "volume",
+    "v32": "number",
+    'v33': 'issue_title',
+    'v34': 'part',
+    'v35': 'scielo_issn',
+    'v42': 'status',
+    "v43": "bibliographic_strip",
+    'v48': 'header_of_table_of_contents',
+    'v49': 'sections_data',
+    'v62': 'issue_editor',
+    'v65': 'date_iso',
+    'v85': 'controlled_vocabulary',
+    'v97': 'cover',
+    'v117': 'standard',
+    'v122': 'number_of_documents',
+    "v131": "supllement",
+    "v132": "supllement",
+    'v140': 'sponsor',
+    'v200': 'markup_done',
+    'v435': 'issn',
+    'v540': 'identifying_regular_issues'
+}
+
+def rename_dictionary_keys(dictionary, corresp):
     """
     Renomeia as chaves de um dicionário com base em um dicionário de correspondência.
 
@@ -93,6 +111,5 @@ def rename_dictionary_keys(dictionary, corresp=None):
     Returns:
         dict: Um novo dicionário com as chaves atualizadas de acordo com o dicionário de correspondência.
     """
-    corresp = corresp or correspondencia
 
     return {corresp[key] if key in corresp else key: dictionary[key] for key in dictionary}
