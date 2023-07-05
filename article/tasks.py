@@ -10,7 +10,7 @@ from article.preprint import utils as preprint
 from packtools.sps.models.article_ids import ArticleIds
 from packtools.sps.utils import xml_utils
 from .utils import article_utils
-from .utils.article_utils import ArticleSaveError
+from .exceptions.article_exceptions import ArticleSaveError
 from sickle import Sickle
 
 from . import controller
