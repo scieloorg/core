@@ -59,9 +59,9 @@ correspondencia_journal = {
     "v692": "url_of_submission_online",
     "v699": "publishing_model",
     "v710": "new_title",
-    "v851": "web_of_knowledge_databases",
-    "v852": "web_of_knowledge_databases",
-    "v853": "web_of_knowledge_databases",
+    "v851": "science_citation_index_expanded",
+    "v852": "social_sciences_citation_index",
+    "v853": "arts_humanities_citation_index",
     "v854": "subject_categories",
     "v900": "notes",
     "v901": "mission",
@@ -72,44 +72,3 @@ correspondencia_journal = {
     "v950": "documentalist_creation",
     "v951": "documentalist_update",
 }
-
-correspondencia_issue = {
-    "v31": "volume",
-    "v32": "number",
-    'v33': 'issue_title',
-    'v34': 'part',
-    'v35': 'scielo_issn',
-    'v42': 'status',
-    "v43": "bibliographic_strip",
-    'v48': 'header_of_table_of_contents',
-    'v49': 'sections_data',
-    'v62': 'issue_editor',
-    'v65': 'date_iso',
-    'v85': 'controlled_vocabulary',
-    'v97': 'cover',
-    'v117': 'standard',
-    'v122': 'number_of_documents',
-    "v131": "supllement",
-    "v132": "supllement",
-    'v140': 'sponsor',
-    'v200': 'markup_done',
-    'v435': 'issn',
-    'v540': 'identifying_regular_issues'
-}
-
-def rename_dictionary_keys(dictionary, corresp):
-    """
-    Renomeia as chaves de um dicionário com base em um dicionário de correspondência.
-
-    O dicionário de correspondência contém os valores das chaves obtidos em:
-    - https://scielo.readthedocs.io/projects/scielo-pc-programs/en/latest/titlemanager_title.html
-    - https://scielo.readthedocs.io/projects/scielo-pc-programs/en/latest/titlemanager_issue.html
-
-    Args:
-        dictionary (dict): Dicionário.
-
-    Returns:
-        dict: Um novo dicionário com as chaves atualizadas de acordo com o dicionário de correspondência.
-    """
-
-    return {corresp[key] if key in corresp else key: dictionary[key] for key in dictionary}

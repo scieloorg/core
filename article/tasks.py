@@ -10,13 +10,16 @@ from article.preprint import utils as preprint
 from packtools.sps.models.article_ids import ArticleIds
 from packtools.sps.utils import xml_utils
 from .utils import article_utils
-from .exceptions.article_exceptions import ArticleSaveError
 from sickle import Sickle
 
 from . import controller
 
 
 User = get_user_model()
+
+class ArticleSaveError(Exception):
+    ...
+
 
 
 @celery_app.task()
