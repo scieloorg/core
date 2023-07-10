@@ -1,9 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
 from django.db.utils import DataError
-from packtools.sps.models.article_ids import ArticleIds
-from packtools.sps.utils import xml_utils
 from sickle import Sickle
 
 from article import models
@@ -11,7 +8,7 @@ from article.preprint import utils as preprint
 from config import celery_app
 
 from . import controller
-from .utils import article_utils
+from article.sources import xmlsps
 
 User = get_user_model()
 
@@ -34,51 +31,7 @@ def load_articles(user_id, file_path):
     except ObjectDoesNotExist:
         user = User.objects.first()
 
-    xmltree = xml_utils.get_xml_tree(file_path)
-
-    pids = ArticleIds(xmltree=xmltree).data
-    pid_v2 = pids.get("v2")
-    pid_v3 = pids.get("v3")
-
-    try:
-        article = models.Article.objects.get(Q(pid_v2=pid_v2) | Q(pid_v3=pid_v3))
-    except models.Article.DoesNotExist:
-        article = models.Article()
-    try:
-        article_utils.set_pids(xmltree=xmltree, article=article)
-        article.journal = article_utils.get_journal(xmltree=xmltree)
-        article_utils.set_date_pub(xmltree=xmltree, article=article)
-        article.article_type = article_utils.get_or_create_article_type(
-            xmltree=xmltree, user=user
-        )
-        article.issue = article_utils.get_or_create_issues(xmltree=xmltree, user=user)
-        article_utils.set_first_last_page(xmltree=xmltree, article=article)
-        article_utils.set_elocation_id(xmltree=xmltree, article=article)
-        article.save()
-        article.doi.set(article_utils.get_or_create_doi(xmltree=xmltree, user=user))
-        article.license.set(
-            article_utils.get_or_create_licenses(xmltree=xmltree, user=user)
-        )
-        article.researchers.set(
-            article_utils.get_or_create_researchers(xmltree=xmltree, user=user)
-        )
-        article.languages.add(
-            article_utils.get_or_create_main_language(xmltree=xmltree, user=user)
-        )
-        article.keywords.set(
-            article_utils.get_or_create_keywords(xmltree=xmltree, user=user)
-        )
-        article.toc_sections.set(
-            article_utils.get_or_create_toc_sections(xmltree=xmltree, user=user)
-        )
-        article.fundings.set(
-            article_utils.get_or_create_fundings(xmltree=xmltree, user=user)
-        )
-        article.titles.set(
-            article_utils.get_or_create_titles(xmltree=xmltree, user=user)
-        )
-    except (DataError, TypeError) as e:
-        raise ArticleSaveError(e)
+    xmlsps.load_article(file_path, user)
 
 
 @celery_app.task()
