@@ -16,6 +16,17 @@ from . import controller
 
 User = get_user_model()
 
+
+def _get_user(request, username=None, user_id=None):
+    try:
+        return User.objects.get(pk=request.user.id)
+    except AttributeError:
+        if user_id:
+            return User.objects.get(pk=user_id)
+        if username:
+            return User.objects.get(username=username)
+
+
 class ArticleSaveError(Exception):
     ...
 
@@ -74,12 +85,8 @@ def load_articles(user_id, file_path):
         raise ArticleSaveError(e)
 
 
-@celery_app.task()
-def load_preprint(user_id, oai_pmh_preprint_uri):
-    try:
-        user = User.objects.get(id=user_id)
-    except ObjectDoesNotExist:
-        user = User.objects.first()
-    ## TODO
+@celery_app.task(bind=True, name=_("load_preprints"))
+def load_preprint(self, user_id, oai_pmh_preprint_uri):
+    user = _get_user(self.request, user_id=user_id)
     ## fazer filtro para não coletar tudo sempre
     harvest_preprints(oai_pmh_preprint_uri, user)
