@@ -70,6 +70,9 @@ def harvest_preprints(URL, user):
             )
             article.save()
         except (DataError, TypeError) as e:
+            # TODO cria um registro das falhas de modo que fiquem
+            # acessíveis na área administrativa
+            # para que o usuário fique sabendo quais itens falharam
             raise PreprintArticleSaveError(e)
 
 
