@@ -1,17 +1,13 @@
 from rest_framework import serializers
-from article import models
 
+from article import models
+from core.api.v1.serializers import LanguageSerializer, LicenseSerializer
 from doi.api.v1.serializers import DoiSerializer
-from journal.api.v1.serializers import JournalSerialiazer
 from institution.api.v1.serializers import SponsorSerializer
-from core.api.v1.serializers import (
-    LanguageSerializer,
-    LicenseSerializer,
-)
+from issue.api.v1.serializers import IssueSerializer, TocSectionsSerializer
+from journal.api.v1.serializers import JournalSerialiazer
 from researcher.api.v1.serializers import ResearcherSerializer
-from issue.api.v1.serializers import IssueSerializer
 from vocabulary.api.v1.serializers import KeywordSerializer
-from issue.api.v1.serializers import TocSectionsSerializer
 
 
 class FundingsSerializer(serializers.ModelSerializer):

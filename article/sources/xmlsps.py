@@ -1,6 +1,3 @@
-from article import models
-from issue.models import TocSection
-
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_authors import Authors
 from packtools.sps.models.article_doi_with_lang import DoiWithLang
@@ -13,6 +10,9 @@ from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
 from packtools.sps.models.funding_group import FundingGroup
 from packtools.sps.models.journal_meta import Title as Journal
 from packtools.sps.models.kwd_group import KwdGroup
+
+from article import models
+from issue.models import TocSection
 
 
 def get_or_create_doi(xmltree, user):

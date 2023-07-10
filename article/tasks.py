@@ -1,19 +1,17 @@
-from article import models
-from config import celery_app
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from django.db.utils import DataError
-from django.core.exceptions import ObjectDoesNotExist
-from article.preprint import utils as preprint
-
-
 from packtools.sps.models.article_ids import ArticleIds
 from packtools.sps.utils import xml_utils
-from .utils import article_utils
 from sickle import Sickle
 
-from . import controller
+from article import models
+from article.preprint import utils as preprint
+from config import celery_app
 
+from . import controller
+from .utils import article_utils
 
 User = get_user_model()
 

@@ -1,7 +1,7 @@
-from article.tasks import load_articles
+from django.contrib.auth import get_user_model
 from packtools.sps.utils import xml_utils
 
-from django.contrib.auth import get_user_model
+from article.tasks import load_articles
 
 User = get_user_model()
 

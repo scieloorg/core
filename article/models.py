@@ -1,7 +1,7 @@
 from django.db import models
+from django.db.models import Case, When
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
-from django.db.models import Case, When
 
 from core.forms import CoreAdminModelForm
 from core.models import (
@@ -11,13 +11,12 @@ from core.models import (
     License,
     RichTextWithLang,
 )
-from institution.models import Sponsor
+from doi.models import DOI
+from institution.models import Institution, Sponsor
+from issue.models import Issue, TocSection
+from journal.models import ScieloJournal
 from researcher.models import Researcher
 from vocabulary.models import Keyword
-from journal.models import ScieloJournal
-from doi.models import DOI
-from issue.models import Issue, TocSection
-from institution.models import Institution
 
 
 class Article(CommonControlField):
