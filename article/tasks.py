@@ -17,9 +17,9 @@ from . import controller
 
 User = get_user_model()
 
+
 class ArticleSaveError(Exception):
     ...
-
 
 
 @celery_app.task()
@@ -58,19 +58,27 @@ def load_articles(user_id, file_path):
         article_utils.set_elocation_id(xmltree=xmltree, article=article)
         article.save()
         article.doi.set(article_utils.get_or_create_doi(xmltree=xmltree, user=user))
-        article.license.set(article_utils.get_or_create_licenses(xmltree=xmltree, user=user))
+        article.license.set(
+            article_utils.get_or_create_licenses(xmltree=xmltree, user=user)
+        )
         article.researchers.set(
             article_utils.get_or_create_researchers(xmltree=xmltree, user=user)
         )
         article.languages.add(
             article_utils.get_or_create_main_language(xmltree=xmltree, user=user)
         )
-        article.keywords.set(article_utils.get_or_create_keywords(xmltree=xmltree, user=user))
+        article.keywords.set(
+            article_utils.get_or_create_keywords(xmltree=xmltree, user=user)
+        )
         article.toc_sections.set(
             article_utils.get_or_create_toc_sections(xmltree=xmltree, user=user)
         )
-        article.fundings.set(article_utils.get_or_create_fundings(xmltree=xmltree, user=user))
-        article.titles.set(article_utils.get_or_create_titles(xmltree=xmltree, user=user))
+        article.fundings.set(
+            article_utils.get_or_create_fundings(xmltree=xmltree, user=user)
+        )
+        article.titles.set(
+            article_utils.get_or_create_titles(xmltree=xmltree, user=user)
+        )
     except (DataError, TypeError) as e:
         raise ArticleSaveError(e)
 
