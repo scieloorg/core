@@ -12,7 +12,6 @@ from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
 from packtools.sps.models.funding_group import FundingGroup
 from packtools.sps.models.journal_meta import Title as Journal
 from packtools.sps.models.kwd_group import KwdGroup
-from packtools.sps.models.article_ids import ArticleIds
 from packtools.sps.utils import xml_utils
 
 from article import models
@@ -68,6 +67,8 @@ def load_article(file_path, user):
             get_or_create_titles(xmltree=xmltree, user=user)
         )
     except (DataError, TypeError) as e:
+        # TODO criar registros das falhas e deixar acessível pela área adm
+        # para que os usuários saibam 
         raise XMLSPSArticleSaveError(e)
 
 
