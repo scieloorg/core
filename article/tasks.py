@@ -13,8 +13,14 @@ from article.sources import xmlsps
 User = get_user_model()
 
 
-class ArticleSaveError(Exception):
-    ...
+def _get_user(request, username=None, user_id=None):
+    try:
+        return User.objects.get(pk=request.user.id)
+    except AttributeError:
+        if user_id:
+            return User.objects.get(pk=user_id)
+        if username:
+            return User.objects.get(username=username)
 
 
 @celery_app.task()
@@ -24,13 +30,9 @@ def load_funding_data(user, file_path):
     controller.read_file(user, file_path)
 
 
-@celery_app.task()
-def load_articles(user_id, file_path):
-    try:
-        user = User.objects.get(id=user_id)
-    except ObjectDoesNotExist:
-        user = User.objects.first()
-
+@celery_app.task(bind=True, name=_("load_articles"))
+def load_articles(self, user_id, file_path):
+    user = _get_user(self.request, user_id=user_id)
     xmlsps.load_article(file_path, user)
 
 
