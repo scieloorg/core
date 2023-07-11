@@ -253,8 +253,8 @@ class XMLWithPre:
         if uri:
             return get_xml_with_pre_from_uri(uri, timeout=30)
 
-    def get_compressed_content(self, filename):
-        compressed_content = None
+    def get_zip_content(self, filename):
+        zip_content = None
         with TemporaryDirectory() as tmpdirname:
             logging.info("TemporaryDirectory %s" % tmpdirname)
             temp_zip_file_path = os.path.join(
@@ -264,8 +264,8 @@ class XMLWithPre:
                 zf.writestr(f"{filename}.xml", self.tostring())
 
             with open(temp_zip_file_path, "rb") as fp:
-                compressed_content = fp.read()
-        return compressed_content
+                zip_content = fp.read()
+        return zip_content
 
     @property
     def article_id_parent(self):

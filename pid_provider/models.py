@@ -427,7 +427,7 @@ class PidProviderXML(CommonControlField):
                 pid_provider_xml=self,
                 pkg_name=pkg_name,
                 finger_print=finger_print,
-                zip_xml_content=xml_adapter.xml_with_pre.get_compressed_content(pkg_name+".xml"),
+                zip_xml_content=xml_adapter.xml_with_pre.get_zip_content(pkg_name+".xml"),
             )
 
     @classmethod
