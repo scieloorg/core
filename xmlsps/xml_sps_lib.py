@@ -5,6 +5,7 @@ from copy import deepcopy
 from datetime import date, datetime
 from shutil import copyfile
 from zipfile import BadZipFile, ZipFile
+from tempfile import TemporaryDirectory
 
 import requests
 from django.utils.translation import gettext as _
@@ -18,7 +19,7 @@ from packtools.sps.models.article_titles import ArticleTitles
 from packtools.sps.models.body import Body
 from packtools.sps.models.dates import ArticleDates
 from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
-from packtools.sps.models.front_journal_meta import ISSN
+from packtools.sps.models.journal_meta import ISSN
 from packtools.sps.models.related_articles import RelatedItems
 
 LOGGER = logging.getLogger(__name__)
@@ -235,6 +236,31 @@ class XMLWithPre:
     def __init__(self, xmlpre, xmltree):
         self.xmlpre = xmlpre or ""
         self.xmltree = xmltree
+
+    @classmethod
+    def create(cls, zip_xml_path=None, uri=None):
+        """
+        Returns instance of XMLWithPre
+        """
+        if zip_xml_path:
+            for item in get_xml_items(zip_xml_path):
+                return item["xml_with_pre"]
+        if uri:
+            return get_xml_with_pre_from_uri(uri, timeout=30)
+
+    def get_compressed_content(self, filename):
+        compressed_content = None
+        with TemporaryDirectory() as tmpdirname:
+            logging.info("TemporaryDirectory %s" % tmpdirname)
+            temp_zip_file_path = os.path.join(
+                tmpdirname, f"{filename}.zip"
+            )
+            with ZipFile(temp_zip_file_path, "w") as zf:
+                zf.writestr(f"{filename}.xml", self.tostring())
+
+            with open(temp_zip_file_path, "rb") as fp:
+                compressed_content = fp.read()
+        return compressed_content
 
     @property
     def article_id_parent(self):
