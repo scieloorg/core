@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from unittest import mock
-from unittest.mock import Mock, call, patch
+from unittest.mock import ANY, MagicMock, Mock, call, patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -338,7 +338,6 @@ class PidProviderXMLQueryDocumentTest(TestCase):
             result = models.PidProviderXML._query_document(xml_adapter)
 
 
-@patch("pid_provider.models.PidProviderXML.xml_uri", new_callable=mock.PropertyMock)
 @patch("pid_provider.models.PidProviderXML._query_document")
 class PidProviderXMLGetRegisteredTest(TestCase):
     def setUp(self):
@@ -347,35 +346,33 @@ class PidProviderXMLGetRegisteredTest(TestCase):
     def test_get_registered_returns_dict_with_registered_data(
         self,
         mock_query_document,
-        mock_xml_uri,
     ):
-        xml_doc_pid = models.PidProviderXML()
-        xml_doc_pid.v2 = "registered_v2"
-        xml_doc_pid.v3 = "registered_v3"
-        xml_doc_pid.aop_pid = "registered_aop_pid"
-        xml_doc_pid.created = datetime(2023, 2, 20)
-        xml_doc_pid.updated = datetime(2023, 2, 20)
+        pid_req_xml = models.PidProviderXML()
+        pid_req_xml.pkg_name = "registered_pkg_name"
+        pid_req_xml.v2 = "registered_v2"
+        pid_req_xml.v3 = "registered_v3"
+        pid_req_xml.aop_pid = "registered_aop_pid"
+        pid_req_xml.created = datetime(2023, 2, 20)
+        pid_req_xml.updated = datetime(2023, 2, 20)
 
-        mock_xml_uri.return_value = "registered_xml_uri"
-
-        mock_query_document.return_value = xml_doc_pid
+        mock_query_document.return_value = pid_req_xml
 
         result = models.PidProviderXML.get_registered(self.xml_with_pre)
         expected = {
             "v3": "registered_v3",
             "v2": "registered_v2",
             "aop_pid": "registered_aop_pid",
-            "xml_uri": "registered_xml_uri",
-            "article": None,
+            "pkg_name": "registered_pkg_name",
             "created": "2023-02-20T00:00:00",
             "updated": "2023-02-20T00:00:00",
+            "record_status": "updated",
+            "synchronized": False,
         }
         self.assertDictEqual(expected, result)
 
     def test_get_registered_returns_none(
         self,
         mock_query_document,
-        mock_xml_uri,
     ):
         mock_query_document.return_value = None
 
@@ -385,26 +382,26 @@ class PidProviderXMLGetRegisteredTest(TestCase):
     def test_get_registered_returns_error_multiple_return(
         self,
         mock_query_document,
-        mock_xml_uri,
     ):
         mock_query_document.side_effect = (
             exceptions.QueryDocumentMultipleObjectsReturnedError
         )
 
         result = models.PidProviderXML.get_registered(self.xml_with_pre)
-        self.assertTrue("error" in result.keys() and len(result) == 1)
+        self.assertIn("error_type", result.keys())
+        self.assertIn("error_msg", result.keys())
 
     def test_get_registered_returns_error_not_enough_params(
         self,
         mock_query_document,
-        mock_xml_uri,
     ):
         mock_query_document.side_effect = (
             exceptions.NotEnoughParametersToGetDocumentRecordError
         )
 
         result = models.PidProviderXML.get_registered(self.xml_with_pre)
-        self.assertTrue("error" in result.keys() and len(result) == 1)
+        self.assertIn("error_type", result.keys())
+        self.assertIn("error_msg", result.keys())
 
 
 class PidProviderXMLEvaluateRegistrationTest(TestCase):
@@ -664,7 +661,8 @@ class PidProviderXMLAddPidV3Test(TestCase):
 
 
 @patch(
-    "pid_provider.models.PidProviderXML.current_version", new_callable=mock.PropertyMock
+    "pid_provider.models.PidProviderXML.current_version",
+    new_callable=mock.PropertyMock,
 )
 class PidProviderXMLIsEqualToTest(TestCase):
     def test_is_equal_to_returns_false(self, mock_last_version):
@@ -690,59 +688,59 @@ class PidProviderXMLIsEqualToTest(TestCase):
         self.assertTrue(result)
 
 
-def mock_push(
-    filename,
-    subdirs,
-    content,
-    finger_print,
-):
-    return {"uri": "URI"}
-
-
-@patch("pid_provider.models.PidProviderXML.add_version")
+@patch("pid_provider.models.PidProviderXML.save")
+@patch("pid_provider.models.PidProviderXML.set_current_version")
 class PidProviderXMLPushXMLContentTest(TestCase):
     def test_push_xml_content_results_ok(
         self,
-        mock_version_add,
+        mock_set_current_version,
+        mock_save,
     ):
-        user = Mock(name="user")
-        push_xml_content = mock_push
+        xml_adapter = _get_xml_adapter()
+        user = User.objects.first()
         finger_print = (
             "3300d3ff5406efdf74bbba5d46a8b156f99c455df7d70dedd3370433a0105ca9"
         )
 
-        xml_adapter = _get_xml_adapter()
         registered = models.PidProviderXML()
-        filename = "filename.xml"
-        result = registered.push_xml_content(
-            xml_adapter, user, push_xml_content, filename
-        )
-        mock_version_add.assert_called_with(
-            uri="URI",
-            creator=user,
-            basename=filename,
+        models.PidProviderXML._save(
+            registered,
+            xml_adapter=xml_adapter,
+            user=user,
+            pkg_name="filename",
+            xml_content=None,
             finger_print=finger_print,
+            error_type=None,
+            error_msg=None,
+            traceback=None,
+        )
+
+        mock_set_current_version.assert_called_with(
+            creator=user,
+            pkg_name="filename",
+            finger_print=finger_print,
+            xml_content=None,
         )
 
 
 @patch(
-    "pid_provider.xml_sps_adapter.PidProviderXMLAdapter.article_titles_texts",
+    "pid_provider.xml_sps_adapter.PidProviderXMLAdapter.z_article_titles_texts",
     new_callable=mock.PropertyMock(return_value="data-z_article_titles_texts"),
 )
 @patch(
-    "pid_provider.xml_sps_adapter.PidProviderXMLAdapter.surnames",
+    "pid_provider.xml_sps_adapter.PidProviderXMLAdapter.z_surnames",
     new_callable=mock.PropertyMock(return_value="data-z_surnames"),
 )
 @patch(
-    "pid_provider.xml_sps_adapter.PidProviderXMLAdapter.collab",
+    "pid_provider.xml_sps_adapter.PidProviderXMLAdapter.z_collab",
     new_callable=mock.PropertyMock(return_value="data-z_collab"),
 )
 @patch(
-    "pid_provider.xml_sps_adapter.PidProviderXMLAdapter.partial_body",
+    "pid_provider.xml_sps_adapter.PidProviderXMLAdapter.z_partial_body",
     new_callable=mock.PropertyMock(return_value="data-z_partial_body"),
 )
 @patch(
-    "pid_provider.xml_sps_adapter.PidProviderXMLAdapter.links",
+    "pid_provider.xml_sps_adapter.PidProviderXMLAdapter.z_links",
     new_callable=mock.PropertyMock(return_value="data-z_links"),
 )
 @patch(
@@ -751,8 +749,8 @@ class PidProviderXMLPushXMLContentTest(TestCase):
         return_value=[{"href": "data-related-doi-1"}, {"href": "data-related-doi-2"}]
     ),
 )
-@patch("pid_provider.models.utcnow", return_value="2020-02-02")
-@patch("pid_provider.models.PidProviderXML.add_version")
+@patch("pid_provider.models.utcnow", return_value=datetime(2020, 2, 2, 0, 0))
+@patch("pid_provider.models.PidProviderXML.set_current_version")
 @patch("pid_provider.models.PidProviderXML._add_related_item")
 @patch("pid_provider.models.XMLVersion.save")
 @patch("pid_provider.models.PidProviderXML.save")
@@ -765,7 +763,7 @@ class PidProviderXMLAddDataTest(TestCase):
         mock_journal_save,
         mock_issue_save,
         mock_related_save,
-        mock_xmldocpid_save,
+        mock_pid_provider_xml_save,
         mock_version_save,
         mock_add_related_item,
         mock_add_xml_version,
@@ -820,7 +818,7 @@ class PidProviderXMLAddDataTest(TestCase):
         mock_journal_save,
         mock_issue_save,
         mock_related_save,
-        mock_xmldocpid_save,
+        mock_pid_provider_xml_save,
         mock_version_save,
         mock_add_related_item,
         mock_add_xml_version,
@@ -874,101 +872,149 @@ class PidProviderXMLAddDataTest(TestCase):
         )
 
 
-@patch("pid_provider.models.utcnow", side_effect=["2020-02-02", "2020-02-03"])
-@patch("pid_provider.models.PidProviderXML.add_version")
+@patch(
+    "pid_provider.models.utcnow",
+    side_effect=[datetime(2020, 2, 2, 0, 0), datetime(2020, 2, 3, 0, 0)],
+)
+@patch("pid_provider.models.PidProviderXML.set_current_version")
 @patch("pid_provider.models.PidProviderXML._add_data")
 @patch("pid_provider.models.PidProviderXML.save")
 class PidProviderXMLCreateTest(TestCase):
-    def test_create(
+    def test_save_registered_remote_file(
         self,
-        mock_xmldocpid_save,
+        mock_pid_provider_xml_save,
         mock_add_data,
-        mock_add_version,
+        mock_set_current_version,
         mock_now,
     ):
         user = User()
         xml_adapter = _get_xml_adapter()
         pkg_name = "filename"
-        registered = models.PidProviderXML._create(
+        registered = None
+
+        finger_print = (
+            "3300d3ff5406efdf74bbba5d46a8b156f99c455df7d70dedd3370433a0105ca9"
+        )
+        registered = models.PidProviderXML._save(
+            registered,
             xml_adapter=xml_adapter,
             user=user,
-            push_xml_content=mock_push,
-            filename="filename.xml",
             pkg_name=pkg_name,
+            xml_content=None,
+            finger_print=finger_print,
+            error_type=None,
+            error_msg=None,
+            traceback=None,
         )
-        self.assertEqual("2020-02-02", registered.created)
+        self.assertEqual(datetime(2020, 2, 2, 0, 0), registered.created)
         self.assertIs(user, registered.creator)
-        self.assertEqual("2020-02-03", registered.updated)
-        self.assertIs(user, registered.updated_by)
+        self.assertIsNone(registered.updated)
+        self.assertIsNone(registered.updated_by)
         mock_add_data.assert_called_once_with(xml_adapter, user, "filename")
-        mock_add_version.assert_called_once_with(
-            uri="URI",
+        mock_set_current_version.assert_called_once_with(
             creator=user,
-            basename="filename.xml",
-            finger_print=(
-                "3300d3ff5406efdf74bbba5d46a8b156f99c455df7d70dedd3370433a0105ca9"
-            ),
+            pkg_name="filename",
+            finger_print=finger_print,
+            xml_content=None,
+        )
+
+    def test_save_registered_local_file(
+        self,
+        mock_pid_provider_xml_save,
+        mock_add_data,
+        mock_set_current_version,
+        mock_now,
+    ):
+        user = User()
+        xml_adapter = _get_xml_adapter()
+        pkg_name = "filename"
+        registered = None
+
+        registered = models.PidProviderXML._save(
+            registered,
+            xml_adapter=xml_adapter,
+            user=user,
+            pkg_name=pkg_name,
+            xml_content="<root/>",
+            finger_print="fingerprint",
+        )
+        self.assertEqual(datetime(2020, 2, 2, 0, 0), registered.created)
+        self.assertIs(user, registered.creator)
+        self.assertIsNone(registered.updated)
+        self.assertIsNone(registered.updated_by)
+        mock_add_data.assert_called_once_with(xml_adapter, user, "filename")
+        mock_set_current_version.assert_called_once_with(
+            creator=user,
+            pkg_name="filename",
+            finger_print="fingerprint",
+            xml_content="<root/>",
         )
 
 
-@patch("pid_provider.models.utcnow", return_value="2020-02-03")
-@patch("pid_provider.models.PidProviderXML.add_version")
+@patch("pid_provider.models.utcnow", return_value=datetime(2020, 2, 3, 0, 0))
+@patch("pid_provider.models.PidProviderXML.set_current_version")
 @patch("pid_provider.models.PidProviderXML._add_data")
 @patch("pid_provider.models.PidProviderXML.save")
 class PidProviderXMLUpdateTest(TestCase):
-    def test_create(
+    def test_save_registered_remote_file(
         self,
-        mock_xmldocpid_save,
+        mock_pid_provider_xml_save,
         mock_add_data,
-        mock_add_version,
+        mock_set_current_version,
         mock_now,
     ):
         user = User()
         xml_adapter = _get_xml_adapter()
         pkg_name = "filename"
         registered = models.PidProviderXML()
-        registered.created = "2020-02-02"
+        registered.created = datetime(2020, 2, 2, 0, 0)
         registered.creator = user
 
-        registered._update(
+        registered = models.PidProviderXML._save(
+            registered,
             xml_adapter=xml_adapter,
             user=user,
-            push_xml_content=mock_push,
-            filename="filename.xml",
             pkg_name=pkg_name,
+            xml_content=None,
+            finger_print=None,
+            error_type=None,
+            error_msg=None,
+            traceback=None,
         )
-        self.assertEqual("2020-02-02", registered.created)
+
+        self.assertEqual(datetime(2020, 2, 2, 0, 0), registered.created)
         self.assertIs(user, registered.creator)
-        self.assertEqual("2020-02-03", registered.updated)
+        self.assertEqual(datetime(2020, 2, 3, 0, 0), registered.updated)
         self.assertIs(user, registered.updated_by)
         mock_add_data.assert_called_once_with(xml_adapter, user, "filename")
-        mock_add_version.assert_called_once_with(
-            uri="URI",
+        mock_set_current_version.assert_called_once_with(
             creator=user,
-            basename="filename.xml",
-            finger_print=(
-                "3300d3ff5406efdf74bbba5d46a8b156f99c455df7d70dedd3370433a0105ca9"
-            ),
+            pkg_name="filename",
+            finger_print=None,
+            xml_content=None,
         )
 
 
-@patch("pid_provider.models.utcnow", side_effect=["2020-02-02", "2020-02-03"])
-@patch("pid_provider.models.PidProviderXML.add_version")
+@patch(
+    "pid_provider.models.utcnow",
+    side_effect=[datetime(2020, 2, 2, 0, 0), datetime(2020, 2, 3, 0, 0)],
+)
+@patch("pid_provider.models.PidProviderXML.set_current_version")
 @patch("pid_provider.models.PidProviderXML._add_data")
 @patch("pid_provider.models.PidProviderBadRequest.save")
 class PidProviderXMLRegisterTest(TestCase):
     def test_register_register_bad_request_and_returns_error(
         self,
-        mock_xmldocpid_save,
+        mock_pid_provider_xml_save,
         mock_add_data,
-        mock_add_version,
+        mock_set_current_version,
         mock_now,
     ):
         expected = {
             "error_type": "<class 'pid_provider.exceptions.NotEnoughParametersToGetDocumentRecordError'>",
             "error_message": "No attribute enough for disambiguations {'z_surnames': None, 'z_collab': None, 'main_doi': None, 'z_links': None, 'z_partial_body': None, 'pkg_name': None, 'elocation_id': None, 'journal__issn_print': None, 'journal__issn_electronic': None, 'article_pub_year': None, 'z_article_titles_texts': None}",
             "id": "3300d3ff5406efdf74bbba5d46a8b156f99c455df7d70dedd3370433a0105ca9",
-            "basename": "filename.xml",
+            "filename": "filename.xml",
         }
 
         user = User()
@@ -977,11 +1023,9 @@ class PidProviderXMLRegisterTest(TestCase):
             xml_with_pre=xml_with_pre,
             filename="filename.xml",
             user=user,
-            push_xml_content=mock_push,
-            synchronized=None,
         )
         self.assertEqual(len(result), 4)
         self.assertEqual(expected["error_type"], result["error_type"])
         self.assertEqual(expected["error_message"], result["error_message"])
         self.assertEqual(expected["id"], result["id"])
-        self.assertEqual(expected["basename"], result["basename"])
+        self.assertEqual(expected["filename"], result["filename"])
