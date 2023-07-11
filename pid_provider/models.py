@@ -15,7 +15,7 @@ from wagtail.admin.panels import FieldPanel
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from pid_provider import exceptions, v3_gen, xml_sps_adapter
-from xmlsps.xml_sps_lib import get_xml_items_from_zip_file
+from xmlsps.xml_sps_lib import XMLWithPre
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -285,8 +285,8 @@ class XMLVersion(CommonControlField):
     @property
     def xml_with_pre(self):
         try:
-            for item in get_xml_items_from_zip_file(self.file.path):
-                return item["xml_with_pre"]
+            for item in XMLWithPre.create(path=self.file.path):
+                yield item
         except Exception as e:
             raise exceptions.PidProviderXMLWithPreError(
                 _("Unable to get xml with pre (PidProviderXML) {}: {} {}").format(

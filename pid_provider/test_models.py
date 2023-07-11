@@ -9,14 +9,14 @@ from lxml import etree
 
 from pid_provider import exceptions, models
 from pid_provider.xml_sps_adapter import PidProviderXMLAdapter
-from xmlsps.xml_sps_lib import XMLWithPre, get_xml_items
+from xmlsps.xml_sps_lib import XMLWithPre
 
 User = get_user_model()
 
 
 def _get_xml_adapter_from_file(path):
-    for item in get_xml_items(path):
-        obj = PidProviderXMLAdapter(item["xml_with_pre"])
+    for xml_with_pre in XMLWithPre.create(path=path):
+        obj = PidProviderXMLAdapter(xml_with_pre)
         return obj
 
 

@@ -11,7 +11,7 @@ from requests.auth import HTTPBasicAuth
 
 from pid_provider import exceptions
 from pid_provider.models import PidProviderConfig, PidProviderXML
-from xmlsps import xml_sps_lib
+from xmlsps.xml_sps_lib import XMLWithPre
 
 User = get_user_model()
 
@@ -36,18 +36,20 @@ class PidProvider:
             list of dict
         """
         try:
-            for item in xml_sps_lib.get_xml_items(zip_xml_file_path):
-                xml_with_pre = item.pop("xml_with_pre")
+            for xml_with_pre in XMLWithPre.create(path=zip_xml_file_path):
+                logging.info("provide_pid_for_xml_zip:")
                 registered = self.provide_pid_for_xml_with_pre(
                     xml_with_pre,
-                    item["filename"],
+                    xml_with_pre.filename,
                     user,
                 )
-                item.update(registered or {})
-                yield item
+                registered["filename"] = xml_with_pre.filename
+                logging.info(registered)
+                yield registered
         except Exception as e:
+            logging.exception(e)
             yield {
-                "error_msg": f"Unable to request pid for {zip_xml_file_path} {e}",
+                "error_msg": f"Unable to provide pid for {zip_xml_file_path} {e}",
                 "error_type": str(type(e)),
             }
 
@@ -60,10 +62,11 @@ class PidProvider:
             dict
         """
         try:
-            xml_with_pre = xml_sps_lib.get_xml_with_pre_from_uri(xml_uri)
+            xml_with_pre = XMLWithPre.create(uri=xml_uri)
         except Exception as e:
+            logging.exception(e)
             return {
-                "error_msg": f"Unable to request pid for {xml_uri} {e}",
+                "error_msg": f"Unable to provide pid for {xml_uri} {e}",
                 "error_type": str(type(e)),
             }
         else:
@@ -78,8 +81,9 @@ class PidProvider:
             name,
             user,
         )
-        logging.info(f"provide_pid_for_xml_with_pre result: {registered}")
+        logging.info("")
         registered["xml_with_pre"] = xml_with_pre
+        logging.info(f"provide_pid_for_xml_with_pre result: {registered}")
         return registered
 
     @classmethod
@@ -116,7 +120,7 @@ class PidProvider:
                 "updated": self.updated.isoformat(),
             }
         """
-        xml_with_pre = xml_sps_lib.get_xml_with_pre_from_uri(xml_uri)
+        xml_with_pre = XMLWithPre.create(uri=xml_uri)
         return cls.is_registered_xml_with_pre(xml_with_pre)
 
     @classmethod
@@ -136,11 +140,10 @@ class PidProvider:
                 "updated": self.updated.isoformat(),
                 }
         """
-        for item in xml_sps_lib.get_xml_items(zip_xml_file_path):
-            # {"filename": item: "xml": xml}
-            registered = cls.is_registered_xml_with_pre(item["xml_with_pre"])
-            item.update(registered or {})
-            yield item
+        for xml_with_pre in XMLWithPre.create(path=zip_xml_file_path):
+            registered = cls.is_registered_xml_with_pre(xml_with_pre)
+            registered["filename"] = xml_with_pre.filename
+            yield registered
 
     @classmethod
     def get_xml_uri(cls, v3):

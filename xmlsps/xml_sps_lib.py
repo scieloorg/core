@@ -253,7 +253,7 @@ class XMLWithPre:
                 item["xml_with_pre"].filename = item["filename"]
                 yield item["xml_with_pre"]
         if uri:
-            return get_xml_with_pre_from_uri(uri, timeout=30)
+            yield get_xml_with_pre_from_uri(uri, timeout=30)
 
     def get_zip_content(self, filename):
         zip_content = None
@@ -341,7 +341,6 @@ class XMLWithPre:
             node.set("specific-use", "scielo-v2")
             parent = self.article_id_parent
             parent.insert(1, node)
-            print(etree.tostring(parent))
         node.text = value
 
     @v3.setter

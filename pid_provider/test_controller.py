@@ -10,7 +10,7 @@ from pid_provider.models import (
     SyncFailure,
     XMLVersion,
 )
-from xmlsps.xml_sps_lib import get_xml_items
+from xmlsps.xml_sps_lib import XMLWithPre
 
 User = get_user_model()
 
@@ -27,7 +27,7 @@ User = get_user_model()
 
 
 class PidProviderTest(TestCase):
-    @patch("pid_provider.controller.xml_sps_lib.get_xml_with_pre_from_uri")
+    @patch("pid_provider.controller.xml_sps_lib.XMLWithPre.create")
     @patch("pid_provider.controller.requests.post")
     @patch("pid_provider.models.XMLVersion.save")
     @patch("pid_provider.models.PidProviderXML.save")
@@ -63,10 +63,10 @@ class PidProviderTest(TestCase):
         # dubla a configuração de pid provider
         mock_pid_provider_config.return_value = MagicMock(PidProviderConfig)
         # dubla a função que retorna a árvore de XML a partir de um URI
-        xml_items = get_xml_items(
-            "./pid_provider/fixtures/sub-article/2236-8906-hoehnea-49-e1082020.xml"
+        xml_items = XMLWithPre.create(
+            path="./pid_provider/fixtures/sub-article/2236-8906-hoehnea-49-e1082020.xml"
         )
-        mock_get_xml_with_pre_from_uri.return_value = xml_items[0]["xml_with_pre"]
+        mock_get_xml_with_pre_from_uri.return_value = list(xml_items)[0]
 
         # dubla resposta da requisição do token
         mock_get_token_response = Mock()
