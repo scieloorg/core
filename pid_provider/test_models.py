@@ -366,7 +366,6 @@ class PidProviderXMLGetRegisteredTest(TestCase):
             "created": "2023-02-20T00:00:00",
             "updated": "2023-02-20T00:00:00",
             "record_status": "updated",
-            "synchronized": False,
         }
         self.assertDictEqual(expected, result)
 
@@ -708,18 +707,12 @@ class PidProviderXMLPushXMLContentTest(TestCase):
             xml_adapter=xml_adapter,
             user=user,
             pkg_name="filename",
-            xml_content=None,
-            finger_print=finger_print,
-            error_type=None,
-            error_msg=None,
-            traceback=None,
         )
 
         mock_set_current_version.assert_called_with(
             creator=user,
             pkg_name="filename",
-            finger_print=finger_print,
-            xml_content=None,
+            xml_adapter=ANY,
         )
 
 
@@ -900,11 +893,6 @@ class PidProviderXMLCreateTest(TestCase):
             xml_adapter=xml_adapter,
             user=user,
             pkg_name=pkg_name,
-            xml_content=None,
-            finger_print=finger_print,
-            error_type=None,
-            error_msg=None,
-            traceback=None,
         )
         self.assertEqual(datetime(2020, 2, 2, 0, 0), registered.created)
         self.assertIs(user, registered.creator)
@@ -914,8 +902,7 @@ class PidProviderXMLCreateTest(TestCase):
         mock_set_current_version.assert_called_once_with(
             creator=user,
             pkg_name="filename",
-            finger_print=finger_print,
-            xml_content=None,
+            xml_adapter=ANY,
         )
 
     def test_save_registered_local_file(
@@ -935,8 +922,6 @@ class PidProviderXMLCreateTest(TestCase):
             xml_adapter=xml_adapter,
             user=user,
             pkg_name=pkg_name,
-            xml_content="<root/>",
-            finger_print="fingerprint",
         )
         self.assertEqual(datetime(2020, 2, 2, 0, 0), registered.created)
         self.assertIs(user, registered.creator)
@@ -946,8 +931,7 @@ class PidProviderXMLCreateTest(TestCase):
         mock_set_current_version.assert_called_once_with(
             creator=user,
             pkg_name="filename",
-            finger_print="fingerprint",
-            xml_content="<root/>",
+            xml_adapter=ANY,
         )
 
 
@@ -975,11 +959,6 @@ class PidProviderXMLUpdateTest(TestCase):
             xml_adapter=xml_adapter,
             user=user,
             pkg_name=pkg_name,
-            xml_content=None,
-            finger_print=None,
-            error_type=None,
-            error_msg=None,
-            traceback=None,
         )
 
         self.assertEqual(datetime(2020, 2, 2, 0, 0), registered.created)
@@ -990,8 +969,7 @@ class PidProviderXMLUpdateTest(TestCase):
         mock_set_current_version.assert_called_once_with(
             creator=user,
             pkg_name="filename",
-            finger_print=None,
-            xml_content=None,
+            xml_adapter=ANY,
         )
 
 

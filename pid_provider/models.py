@@ -436,9 +436,6 @@ class PidProviderXML(CommonControlField):
         xml_with_pre,
         filename,
         user,
-        error_msg=None,
-        error_type=None,
-        traceback=None,
     ):
         """
         Evaluate the XML data and returns corresponding PID v3, v2, aop_pid
@@ -481,6 +478,10 @@ class PidProviderXML(CommonControlField):
             # consulta se documento já está registrado
             registered = cls._query_document(xml_adapter)
 
+            if registered and registered.is_equal_to(xml_adapter):
+                # retorna item registrado
+                return registered.data
+
             # analisa se aceita ou rejeita registro
             cls.evaluate_registration(xml_adapter, registered)
 
@@ -492,9 +493,6 @@ class PidProviderXML(CommonControlField):
                 xml_adapter,
                 user,
                 pkg_name,
-                error_type,
-                error_msg,
-                traceback,
             )
             data = registered.data.copy()
             data["xml_changed"] = xml_changed
@@ -520,9 +518,6 @@ class PidProviderXML(CommonControlField):
         xml_adapter,
         user,
         pkg_name,
-        error_type=None,
-        error_msg=None,
-        traceback=None,
     ):
         if registered:
             registered.updated_by = user
