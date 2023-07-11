@@ -238,12 +238,17 @@ class XMLWithPre:
         self.xmltree = xmltree
 
     @classmethod
-    def create(cls, zip_xml_path=None, uri=None):
+    def create(cls, path=None, uri=None):
         """
         Returns instance of XMLWithPre
+
+        path : str
+            zip or XML file
+        uri : str
+            XML file URI
         """
-        if zip_xml_path:
-            for item in get_xml_items(zip_xml_path):
+        if path:
+            for item in get_xml_items(path):
                 return item["xml_with_pre"]
         if uri:
             return get_xml_with_pre_from_uri(uri, timeout=30)
