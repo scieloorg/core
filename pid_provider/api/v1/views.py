@@ -21,7 +21,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from pid_provider import controller, models
-from pid_provider.serializer import PidProviderXMLSerializer
+from pid_provider.api.v1.serializers import PidProviderXMLSerializer
 
 
 class PidProviderViewSet(
@@ -32,35 +32,14 @@ class PidProviderViewSet(
 ):  # handles GETs for many Companies
     parser_classes = (FileUploadParser,)
     http_method_names = ["post", "get", "head"]
-
-    authentication_classes = [
-        SessionAuthentication,
-        BasicAuthentication,
-        TokenAuthentication,
-    ]
     permission_classes = [IsAuthenticated]
+    queryset = models.PidProviderXML.objects.all()
 
     @property
     def pid_provider(self):
         if not hasattr(self, "_pid_provider") or not self._pid_provider:
-            self._pid_provider = controller.PidProvider("pid-provider")
+            self._pid_provider = controller.PidProvider()
         return self._pid_provider
-
-    def _authenticate(self, request):
-        logging.info("_authenticate %s" % request.data)
-        try:
-            username = request.data["username"]
-            password = request.data["password"]
-        except:
-            pass
-        try:
-            logging.info(request.headers)
-        except:
-            pass
-
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
 
     def list(self, request, pk=None):
         """
@@ -134,6 +113,7 @@ class PidProviderViewSet(
         )
         results = list(results)
         for item in results:
+            item.pop("xml_with_pre")
             if item.get("record_status") == "created":
                 return Response(results, status=status.HTTP_201_CREATED)
             if item.get("error_type"):
