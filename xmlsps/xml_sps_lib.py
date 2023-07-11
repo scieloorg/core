@@ -236,6 +236,7 @@ class XMLWithPre:
     def __init__(self, xmlpre, xmltree):
         self.xmlpre = xmlpre or ""
         self.xmltree = xmltree
+        self.filename = None
 
     @classmethod
     def create(cls, path=None, uri=None):
@@ -249,7 +250,8 @@ class XMLWithPre:
         """
         if path:
             for item in get_xml_items(path):
-                return item["xml_with_pre"]
+                item["xml_with_pre"].filename = item["filename"]
+                yield item["xml_with_pre"]
         if uri:
             return get_xml_with_pre_from_uri(uri, timeout=30)
 
