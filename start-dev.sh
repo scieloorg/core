@@ -20,6 +20,6 @@ export EMAIL_HOST=$IP
 export SOLR_URL=http://$IP:8983/solr/asite/
 
 
-docker stop core_local_django
+docker stop scielo_core_local_django
 # workon scms
 python manage.py runserver_plus 0.0.0.0:8000
