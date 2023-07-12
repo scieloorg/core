@@ -33,7 +33,6 @@ class PidProviderXMLSerializer(serializers.ModelSerializer):
     class Meta:
         model = PidProviderXML
         fields = (
-            "xml_uri",
             "v2",
             "aop_pid",
             "v3",
@@ -41,5 +40,4 @@ class PidProviderXMLSerializer(serializers.ModelSerializer):
             "updated",
             "journal",
             "issue",
-            "article",
         )
