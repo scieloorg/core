@@ -1,39 +1,28 @@
 import logging
 
-from django.contrib.auth import authenticate, login
 from django.core.files.storage import FileSystemStorage
 from rest_framework import status
-from rest_framework.authentication import (
-    BasicAuthentication,
-    SessionAuthentication,
-    TokenAuthentication,
-)
-from rest_framework.exceptions import ParseError
+
 from rest_framework.mixins import (
     CreateModelMixin,
-    ListModelMixin,
-    RetrieveModelMixin,
-    UpdateModelMixin,
 )
 from rest_framework.parsers import FileUploadParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from pid_provider import controller, models
-from pid_provider.api.v1.serializers import PidProviderXMLSerializer
+from pid_provider import controller
 
 
 class PidProviderViewSet(
     GenericViewSet,  # generic view functionality
     CreateModelMixin,  # handles POSTs
-    RetrieveModelMixin,  # handles GETs for 1 Company
-    ListModelMixin,
-):  # handles GETs for many Companies
+):
     parser_classes = (FileUploadParser,)
-    http_method_names = ["post", "get", "head"]
+    http_method_names = [
+        "post",
+    ]
     permission_classes = [IsAuthenticated]
-    queryset = models.PidProviderXML.objects.all()
 
     @property
     def pid_provider(self):
@@ -41,59 +30,42 @@ class PidProviderViewSet(
             self._pid_provider = controller.PidProvider()
         return self._pid_provider
 
-    def list(self, request, pk=None):
-        """
-        List items filtered by from_date, issn, pub_year
-
-        Return
-        ------
-            list of dict
-        """
-        from_ingress_date = request.query_params.get("from_ingress_date")
-        include_has_article = request.query_params.get("include_has_article")
-        issn = request.query_params.get("issn")
-        pub_year = request.query_params.get("pub_year")
-        queryset = models.PidProviderXML.xml_feed(
-            from_ingress_date,
-            issn,
-            pub_year,
-            include_has_article,
-        )
-        serializer = PidProviderXMLSerializer(queryset, many=True)
-        return Response(serializer.data)
-
     def create(self, request, format="zip"):
         """
         Receive a zip file which contains XML file(s)
         Register / Update XML data and files
 
+        # solicita token
+        curl -X POST http://localhost:8000/api/v2/auth/token/ --data 'username=adm&password=x'
+
+        # resposta
+        ```
+        {"refresh":"eyJhbGx...","access":"eyJhbGc..."}
+        ```
+        # solicita pid v3
         curl -X POST -S \
             -H "Content-Disposition: attachment;filename=pacote_xml.zip" \
-            -F "file=@pacote_xml.zip;type=application/zip" \
-            --user "adm:adm" \
-            127.0.0.1:8000/pid_provider/ --output output.txt
+            -F "file=@path/pacote_xml.zip;type=application/zip" \
+            -H 'Authorization: Bearer eyJhbGc...' \
+            http://localhost:8000/api/v2/pid/pid_provider/
 
         Return
         ------
-            list of dict
-                {
-                    "v3": self.v3,
-                    "v2": self.v2,
-                    "aop_pid": self.aop_pid,
-                    "xml_uri": self.xml_uri,
-                    "article": self.article,
-                    "created": self.created.isoformat(),
-                    "updated": self.updated.isoformat(),
-                    "xml_changed": boolean,
-                    "record_status": created | updated | retrieved
-                }
-                or
-                {
-                    "error_type": self.error_type,
-                    "error_message": self.error_message,
-                    "id": self.finger_print,
-                    "basename": self.basename,
-                }        """
+        list of dict
+            [{"v3":"67CrZnsyZLpV7dyR7dgp6Vt",
+            "v2":"S2236-89062022071116149",
+            "aop_pid":null,
+            "pkg_name":"2236-8906-hoehnea-49-e1082020",
+            "created":"2023-07-11T22:55:49.970261+00:00",
+            "updated":"2023-07-12T13:11:57.395041+00:00",
+            "record_status":"updated",
+            "xml_changed":true,
+            "xml": "<article .../>",
+            "filename":"2236-8906-hoehnea-49-e1082020.xml"}]
+            or
+            [{"error_msg":"Unable to provide pid for /app/core/media/teste_bPFMzbo.zip Unable to get xml items from zip file /app/core/media/teste_bPFMzbo.zip: <class 'TypeError'> /app/core/media/teste_bPFMzbo.zip has no XML. Found files: ['tr.txt']",
+            "error_type":"<class 'xmlsps.xml_sps_lib.GetXMLItemsFromZipFileError'>"}]
+       """
 
         # self._authenticate(request)
         logging.info("Receiving files %s" % request.FILES)
@@ -107,15 +79,29 @@ class PidProviderViewSet(
         downloaded_file_path = fs.path(downloaded_file)
 
         logging.info("Receiving temp %s" % downloaded_file_path)
-        results = self.pid_provider.provide_pid_for_xml_zip(
-            zip_xml_file_path=downloaded_file_path,
-            user=request.user,
-        )
-        results = list(results)
-        for item in results:
-            item.pop("xml_with_pre")
-            if item.get("record_status") == "created":
-                return Response(results, status=status.HTTP_201_CREATED)
-            if item.get("error_type"):
-                return Response(results, status=status.HTTP_400_BAD_REQUEST)
-            return Response(results, status=status.HTTP_200_OK)
+        try:
+            results = self.pid_provider.provide_pid_for_xml_zip(
+                zip_xml_file_path=downloaded_file_path,
+                user=request.user,
+            )
+            results = list(results)
+            resp_status = None
+            for item in results:
+                try:
+                    xml_with_pre = item.pop("xml_with_pre")
+                    if item["xml_changed"]:
+                        item["xml"] = xml_with_pre.tostring()
+                except KeyError:
+                    resp_status = status.HTTP_400_BAD_REQUEST
+                else:
+                    if item.get("record_status") == "created":
+                        resp_status = resp_status or status.HTTP_201_CREATED
+                    else:
+                        resp_status = resp_status or status.HTTP_200_OK
+            return Response(results, status=resp_status)
+        except Exception as e:
+            logging.exception(e)
+            return Response(
+                [{"error_type": str(type(e)), "error_message": str(e)}],
+                status=status.HTTP_400_BAD_REQUEST
+            )
