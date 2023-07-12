@@ -245,7 +245,6 @@ class XMLVersion(CommonControlField):
     )
     file = models.FileField(upload_to=xml_directory_path, null=True, blank=True)
     finger_print = models.CharField(max_length=64, null=True, blank=True)
-    pkg_name = models.TextField(_("Name"), null=True, blank=True)
 
     class Meta:
         indexes = [
