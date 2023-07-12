@@ -38,14 +38,21 @@ class PidProvider:
         try:
             for xml_with_pre in XMLWithPre.create(path=zip_xml_file_path):
                 logging.info("provide_pid_for_xml_zip:")
-                registered = self.provide_pid_for_xml_with_pre(
-                    xml_with_pre,
-                    xml_with_pre.filename,
-                    user,
-                )
-                registered["filename"] = xml_with_pre.filename
-                logging.info(registered)
-                yield registered
+                try:
+                    registered = self.provide_pid_for_xml_with_pre(
+                        xml_with_pre,
+                        xml_with_pre.filename,
+                        user,
+                    )
+                    registered["filename"] = xml_with_pre.filename
+                    logging.info(registered)
+                    yield registered
+                except Exception as e:
+                    logging.exception(e)
+                    yield {
+                        "error_msg": f"Unable to provide pid for {zip_xml_file_path} {e}",
+                        "error_type": str(type(e)),
+                    }
         except Exception as e:
             logging.exception(e)
             yield {
