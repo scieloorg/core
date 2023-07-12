@@ -1,5 +1,6 @@
-from ..models import OfficialJournal, ScieloJournal, Collection
 from django.core.exceptions import ObjectDoesNotExist
+
+from ..models import Collection, OfficialJournal, ScieloJournal
 
 
 def get_or_create_scielo_journal(

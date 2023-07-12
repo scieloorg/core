@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 
-
 from config import celery_app
 from journal import controller
 from journal.sources.article_meta import journal_article_meta
