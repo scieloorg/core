@@ -71,7 +71,7 @@ def get_xml_items(xml_sps_file_path, filenames=None):
                 xml = get_xml_with_pre(fp.read())
                 item = os.path.basename(xml_sps_file_path)
             return [{"filename": item, "xml_with_pre": xml}]
-        raise ValueError(
+        raise TypeError(
             _("{} must be xml file or zip file containing xml").format(
                 xml_sps_file_path
             )
@@ -99,14 +99,18 @@ def get_xml_items_from_zip_file(xml_sps_file_path, filenames=None):
     str
     """
     try:
+        found = False
         with ZipFile(xml_sps_file_path) as zf:
             filenames = filenames or zf.namelist() or []
             for item in filenames:
                 if item.endswith(".xml"):
+                    found = True
                     yield {
                         "filename": item,
                         "xml_with_pre": get_xml_with_pre(zf.read(item).decode("utf-8")),
                     }
+            if not found:
+                raise TypeError(f"{xml_sps_file_path} has no XML. Files found: {str(zf.namelist())}")
     except Exception as e:
         LOGGER.exception(e)
         raise GetXMLItemsFromZipFileError(
@@ -188,10 +192,14 @@ def get_xml_with_pre(xml_content):
         return XMLWithPre(pref, etree.fromstring(xml))
 
     except Exception as e:
+        if xml_content.strip():
+            raise GetXmlWithPreError(
+                "Unable to get xml with pre %s: %s ... %s"
+                % (e, xml_content[:100], xml_content[-200:])
+            )
         raise GetXmlWithPreError(
-            "Unable to get xml with pre %s ... %s"
-            % (xml_content[:100], xml_content[-200:])
-        )
+                "Unable to get xml with pre %s" % e
+            )
 
 
 def split_processing_instruction_doctype_declaration_and_xml(xml_content):
