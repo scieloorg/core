@@ -16,6 +16,8 @@ from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from pid_provider import exceptions, v3_gen, xml_sps_adapter
 from xmlsps.xml_sps_lib import XMLWithPre
+from xmlsps.models import XMLIssue, XMLJournal, XMLSPS
+
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -143,93 +145,6 @@ class PidProviderBadRequest(CommonControlField):
     base_form_class = CoreAdminModelForm
 
 
-class XMLJournal(models.Model):
-    """
-    Tem função de guardar os dados de Journal encontrados no XML
-    Tem objetivo de identificar o Documento (Artigo)
-    """
-
-    issn_electronic = models.CharField(
-        _("issn_epub"), max_length=9, null=True, blank=True
-    )
-    issn_print = models.CharField(_("issn_ppub"), max_length=9, null=True, blank=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["issn_electronic"]),
-            models.Index(fields=["issn_print"]),
-        ]
-
-    def __str__(self):
-        return f"{self.issn_electronic} {self.issn_print}"
-
-    @classmethod
-    def get_or_create(cls, issn_electronic, issn_print):
-        try:
-            return cls.objects.get(
-                issn_electronic=issn_electronic,
-                issn_print=issn_print,
-            )
-        except cls.DoesNotExist:
-            journal = cls()
-            journal.issn_electronic = issn_electronic
-            journal.issn_print = issn_print
-            journal.save()
-            return journal
-
-
-class XMLIssue(models.Model):
-    """
-    Tem função de guardar os dados de Issue encontrados no XML
-    Tem objetivo de identificar o Documento (Artigo)
-    """
-
-    journal = models.ForeignKey(
-        XMLJournal, on_delete=models.SET_NULL, null=True, blank=True
-    )
-    pub_year = models.CharField(_("pub_year"), max_length=4, null=True, blank=True)
-    volume = models.CharField(_("volume"), max_length=10, null=True, blank=True)
-    number = models.CharField(_("number"), max_length=10, null=True, blank=True)
-    suppl = models.CharField(_("suppl"), max_length=10, null=True, blank=True)
-
-    class Meta:
-        unique_together = [
-            ["journal", "pub_year", "volume", "number", "suppl"],
-        ]
-        indexes = [
-            models.Index(fields=["journal"]),
-            models.Index(fields=["volume"]),
-            models.Index(fields=["number"]),
-            models.Index(fields=["suppl"]),
-            models.Index(fields=["pub_year"]),
-        ]
-
-    def __str__(self):
-        return (
-            f'{self.journal} {self.volume or ""} {self.number or ""} {self.suppl or ""}'
-        )
-
-    @classmethod
-    def get_or_create(cls, journal, volume, number, suppl, pub_year):
-        try:
-            return cls.objects.get(
-                journal=journal,
-                volume=volume,
-                number=number,
-                suppl=suppl,
-                pub_year=pub_year,
-            )
-        except cls.DoesNotExist:
-            issue = cls()
-            issue.journal = journal
-            issue.volume = volume
-            issue.number = number
-            issue.suppl = suppl
-            issue.pub_year = pub_year
-            issue.save()
-            return issue
-
-
 def xml_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
     return f"xml_pid_provider/{instance.finger_print[-1]}/{instance.finger_print[-2]}/{instance.finger_print}/{filename}"
@@ -339,6 +254,9 @@ class PidProviderXML(CommonControlField):
     current_version = models.ForeignKey(
         XMLVersion, on_delete=models.SET_NULL, null=True, blank=True
     )
+    current_xml = models.ForeignKey(
+        XMLSPS, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     pkg_name = models.TextField(_("Package name"), null=True, blank=True)
     v3 = models.CharField(_("v3"), max_length=23, null=True, blank=True)
@@ -415,11 +333,12 @@ class PidProviderXML(CommonControlField):
     def is_aop(self):
         return self.issue is None
 
-    def set_current_version(self, creator, pkg_name, xml_adapter):
+    def set_current_version(self, creator, pkg_name, xml_adapter, user):
         finger_print = xml_adapter.finger_print
         if (
             not self.current_version
             or self.current_version.finger_print != finger_print
+            or not self.current_xml
         ):
             self.current_version = XMLVersion.create(
                 creator=creator,
@@ -427,6 +346,15 @@ class PidProviderXML(CommonControlField):
                 pkg_name=pkg_name,
                 finger_print=finger_print,
                 zip_xml_content=xml_adapter.xml_with_pre.get_zip_content(pkg_name+".xml"),
+            )
+            self.current_xml = XMLSPS.create_or_update(
+                pid_v3=self.v3,
+                pid_v2=self.v2,
+                aop_pid=self.aop_pid,
+                xml=xml_adapter.tostring(),
+                xml_journal=self.journal,
+                xml_issue=self.issue,
+                user=user,
             )
 
     @classmethod
@@ -533,6 +461,7 @@ class PidProviderXML(CommonControlField):
             creator=user,
             pkg_name=pkg_name,
             xml_adapter=xml_adapter,
+            user=user,
         )
         registered.save()
         return registered
