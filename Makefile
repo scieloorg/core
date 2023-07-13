@@ -99,10 +99,10 @@ django_load_auth: ## Run manage.py dumpdata auth --indent=2 $(compose)
 	@docker-compose -f $(compose) run --rm django python manage.py loaddata --database=default fixtures/auth.json
 
 dump_data: ## Dump database into .sql $(compose)
-	docker exec -t scms_local_postgres pg_dumpall -c -U debug > dump_`date +%d-%m-%Y"_"%H_%M_%S`.sql
+	docker exec -t scielo_core_local_postgres pg_dumpall -c -U debug > dump_`date +%d-%m-%Y"_"%H_%M_%S`.sql
 
 restore_data: ## Restore database into from latest.sql file $(compose)
-	cat backup/latest.sql | docker exec -i scms_local_postgres psql -U debug
+	cat backup/latest.sql | docker exec -i scielo_core_local_postgres psql -U debug
 
 ############################################
 ## Atalhos Úteis                          ##
@@ -118,7 +118,7 @@ clean_dangling_volumes:  ## Remove all dangling volumes
 	@docker volume rm $$(docker volume ls -f dangling=true -q)
 
 clean_project_images:  ## Remove all images with "core" on name
-	@docker rmi -f $$(docker images --filter=reference='*core*' -q)
+	@docker rmi -f $$(docker images --filter=reference='*scielo_core*' -q)
 
 volume_down:  ## Remove all volume
 	@docker-compose -f $(compose) down -v

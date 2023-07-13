@@ -4,7 +4,6 @@ from django.utils.translation import gettext as _
 from article.sources import xmlsps
 from article.sources.preprint import harvest_preprints
 from config import celery_app
-
 from . import controller
 
 User = get_user_model()

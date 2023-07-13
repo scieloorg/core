@@ -32,16 +32,16 @@ class PidProviderXMLAdapterAbsentDataTest(TestCase):
         self.assertTrue(self.xml_adapter.is_aop)
 
     def test_absent_links(self):
-        self.assertIsNone(self.xml_adapter.links)
+        self.assertIsNone(self.xml_adapter.z_links)
 
     def test_absent_collab(self):
-        self.assertIsNone(self.xml_adapter.collab)
+        self.assertIsNone(self.xml_adapter.z_collab)
 
     def test_absent_surnames(self):
-        self.assertIsNone(self.xml_adapter.surnames)
+        self.assertIsNone(self.xml_adapter.z_surnames)
 
     def test_absent_article_titles_texts(self):
-        self.assertIsNone(self.xml_adapter.article_titles_texts)
+        self.assertIsNone(self.xml_adapter.z_article_titles_texts)
 
 
 class PidProviderXMLAdapterIssnsTest(TestCase):
@@ -100,7 +100,7 @@ class PidProviderXMLAdapterLinksTest(TestCase):
     def test_links(self):
         self.assertEqual(
             "6b72bd4b527ccb19f6ccf9152c4e81abde3682d2d18e3cc15be939d16698f753",
-            self.xml_adapter.links,
+            self.xml_adapter.z_links,
         )
 
 
@@ -124,7 +124,7 @@ class PidProviderXMLAdapterCollabTest(TestCase):
     def test_collab(self):
         self.assertEqual(
             "1a6702665c1f2788424bf3859403b5faab1c5639497b231d5a04f24263dc1619",
-            self.xml_adapter.collab,
+            self.xml_adapter.z_collab,
         )
 
 
@@ -170,7 +170,7 @@ class PidProviderXMLAdapterContribGroupTest(TestCase):
 
     def test_surnames(self):
         self.assertEqual(
-            _str_with_64_char("Torquato|Santis|Zanetti"), self.xml_adapter.surnames
+            _str_with_64_char("Torquato|Santis|Zanetti"), self.xml_adapter.z_surnames
         )
 
 
@@ -212,14 +212,14 @@ class PidProviderXMLAdapterArticleTitlesTest(TestCase):
         xml_adapter = self._get_xml_adapter(main_title=True)
         self.assertEqual(
             _str_with_64_char("Article title in English"),
-            xml_adapter.article_titles_texts,
+            xml_adapter.z_article_titles_texts,
         )
 
     def test_article_titles_texts_en_pt(self):
         xml_adapter = self._get_xml_adapter(main_title=True, trans_titles=True)
         self.assertEqual(
             _str_with_64_char("Article title in English|Título em português"),
-            xml_adapter.article_titles_texts,
+            xml_adapter.z_article_titles_texts,
         )
 
     def test_article_titles_texts_en_pt_es(self):
@@ -230,14 +230,14 @@ class PidProviderXMLAdapterArticleTitlesTest(TestCase):
             _str_with_64_char(
                 "Article title in English|Título em português|título en español"
             ),
-            xml_adapter.article_titles_texts,
+            xml_adapter.z_article_titles_texts,
         )
 
     def test_article_titles_texts_en_es(self):
         xml_adapter = self._get_xml_adapter(main_title=True, sub_article_titles=True)
         self.assertEqual(
             _str_with_64_char("Article title in English|título en español"),
-            xml_adapter.article_titles_texts,
+            xml_adapter.z_article_titles_texts,
         )
 
 
@@ -466,9 +466,12 @@ class PidProviderXMLAdapterQueryParamsTest(BasePidProviderXMLAdapterQueryParamsT
         self.assertIsNone(result["z_collab"])
 
     def test_query_params_z_article_titles_texts_is_set(self):
-        self.xml_adapter._article_titles_texts = "TITLES"
+        self.xml_adapter.xml_with_pre._article_titles_texts = ["TITLES"]
         result = self.xml_adapter.query_params()
-        self.assertEqual("TITLES", result["z_article_titles_texts"])
+        self.assertEqual(
+            "c1f32c10725c3a77d2a876a39637ae1639693227731720a86c1cc105ad54b5cf",
+            result["z_article_titles_texts"],
+        )
 
     def test_query_params_z_article_titles_texts_is_none(self):
         result = self.xml_adapter.query_params()
