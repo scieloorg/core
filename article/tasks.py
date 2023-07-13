@@ -26,8 +26,8 @@ def load_funding_data(user, file_path):
     controller.read_file(user, file_path)
 
 
-@celery_app.task(bind=True, name=_("load_articles"))
-def load_articles(self, user_id, file_path):
+@celery_app.task(bind=True, name=_("load_article"))
+def load_article(self, user_id, file_path):
     user = _get_user(self.request, user_id=user_id)
     xmlsps.load_article(file_path, user)
 
