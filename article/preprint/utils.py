@@ -1,12 +1,11 @@
-import re
 import logging
-
-from lxml import etree
+import re
 from datetime import datetime
 from urllib.parse import urlparse
 
-from article import models
+from lxml import etree
 
+from article import models
 
 namespaces = {
     "oai_dc": "http://www.openarchives.org/OAI/2.0/oai_dc/",
