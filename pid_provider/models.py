@@ -15,9 +15,8 @@ from wagtail.admin.panels import FieldPanel
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from pid_provider import exceptions, v3_gen, xml_sps_adapter
+from xmlsps.models import XMLSPS, XMLIssue, XMLJournal
 from xmlsps.xml_sps_lib import XMLWithPre
-from xmlsps.models import XMLIssue, XMLJournal, XMLSPS
-
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -242,7 +241,9 @@ class PidChange(CommonControlField):
     pid_type = models.CharField(_("PID type"), max_length=23, null=True, blank=True)
     old = models.CharField(_("PID old"), max_length=23, null=True, blank=True)
     new = models.CharField(_("PID new"), max_length=23, null=True, blank=True)
-    version = models.ForeignKey(XMLVersion, null=True, blank=True, on_delete=models.SET_NULL)
+    version = models.ForeignKey(
+        XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
+    )
 
     class Meta:
         indexes = [
@@ -259,7 +260,10 @@ class PidChange(CommonControlField):
     def get_or_create(cls, pid_type, old, new, version, user):
         try:
             return cls.objects.get(
-                pid_type=pid_type, old=old, new=new, version=version,
+                pid_type=pid_type,
+                old=old,
+                new=new,
+                version=version,
             )
         except cls.DoesNotExist:
             obj = cls()
@@ -379,7 +383,9 @@ class PidProviderXML(CommonControlField):
                 pid_provider_xml=self,
                 pkg_name=pkg_name,
                 finger_print=finger_print,
-                zip_xml_content=xml_adapter.xml_with_pre.get_zip_content(pkg_name+".xml"),
+                zip_xml_content=xml_adapter.xml_with_pre.get_zip_content(
+                    pkg_name + ".xml"
+                ),
             )
             self.current_xml = XMLSPS.create_or_update(
                 pid_v3=self.v3,
@@ -457,7 +463,6 @@ class PidProviderXML(CommonControlField):
                 changed_pids,
             )
 
-
             data = registered.data.copy()
             data["xml_changed"] = bool(changed_pids)
             return data
@@ -479,7 +484,9 @@ class PidProviderXML(CommonControlField):
         # requires registered.current_version is set
 
         if not self.current_version:
-            raise ValueError("PidProviderXML._register_pid_changes requires current_version is set")
+            raise ValueError(
+                "PidProviderXML._register_pid_changes requires current_version is set"
+            )
         for change_args in changed_pids:
             if change_args["old"]:
                 # somente registra as mudanças de um old não vazio
@@ -749,11 +756,13 @@ class PidProviderXML(CommonControlField):
         changes = []
         for k, v in before.items():
             if v != after[k]:
-                changes.append(dict(
-                    pid_type=k,
-                    old=v,
-                    new=after[k],
-                ))
+                changes.append(
+                    dict(
+                        pid_type=k,
+                        old=v,
+                        new=after[k],
+                    )
+                )
         return changes
 
     @classmethod

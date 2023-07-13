@@ -2,10 +2,9 @@ import logging
 
 from django.db import models
 from django.utils.translation import gettext as _
-
-from core.models import CommonControlField
 from lxml import etree
 
+from core.models import CommonControlField
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -103,8 +102,12 @@ class XMLSPS(CommonControlField):
     pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True)
     pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
     aop_pid = models.CharField(_("AOP PID"), max_length=23, null=True, blank=True)
-    xml_journal = models.ForeignKey(XMLJournal, null=True, blank=True, on_delete=models.SET_NULL)
-    xml_issue = models.ForeignKey(XMLIssue, null=True, blank=True, on_delete=models.SET_NULL)
+    xml_journal = models.ForeignKey(
+        XMLJournal, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    xml_issue = models.ForeignKey(
+        XMLIssue, null=True, blank=True, on_delete=models.SET_NULL
+    )
 
     class Meta:
         indexes = [
@@ -124,7 +127,9 @@ class XMLSPS(CommonControlField):
         return cls.objects.get(pid_v3=pid_v3)
 
     @classmethod
-    def create_or_update(cls, pid_v3, pid_v2, aop_pid, xml, xml_journal, xml_issue, user):
+    def create_or_update(
+        cls, pid_v3, pid_v2, aop_pid, xml, xml_journal, xml_issue, user
+    ):
         try:
             obj = cls.get(pid_v3=pid_v3)
             obj.updated_by = user

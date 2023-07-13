@@ -4,8 +4,8 @@ import os
 from copy import deepcopy
 from datetime import date, datetime
 from shutil import copyfile
-from zipfile import BadZipFile, ZipFile
 from tempfile import TemporaryDirectory
+from zipfile import BadZipFile, ZipFile
 
 import requests
 from django.utils.translation import gettext as _
@@ -110,7 +110,9 @@ def get_xml_items_from_zip_file(xml_sps_file_path, filenames=None):
                         "xml_with_pre": get_xml_with_pre(zf.read(item).decode("utf-8")),
                     }
             if not found:
-                raise TypeError(f"{xml_sps_file_path} has no XML. Files found: {str(zf.namelist())}")
+                raise TypeError(
+                    f"{xml_sps_file_path} has no XML. Files found: {str(zf.namelist())}"
+                )
     except Exception as e:
         LOGGER.exception(e)
         raise GetXMLItemsFromZipFileError(
@@ -197,9 +199,7 @@ def get_xml_with_pre(xml_content):
                 "Unable to get xml with pre %s: %s ... %s"
                 % (e, xml_content[:100], xml_content[-200:])
             )
-        raise GetXmlWithPreError(
-                "Unable to get xml with pre %s" % e
-            )
+        raise GetXmlWithPreError("Unable to get xml with pre %s" % e)
 
 
 def split_processing_instruction_doctype_declaration_and_xml(xml_content):
@@ -267,9 +267,7 @@ class XMLWithPre:
         zip_content = None
         with TemporaryDirectory() as tmpdirname:
             logging.info("TemporaryDirectory %s" % tmpdirname)
-            temp_zip_file_path = os.path.join(
-                tmpdirname, f"{filename}.zip"
-            )
+            temp_zip_file_path = os.path.join(tmpdirname, f"{filename}.zip")
             with ZipFile(temp_zip_file_path, "w") as zf:
                 zf.writestr(f"{filename}.xml", self.tostring())
 

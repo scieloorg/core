@@ -23,8 +23,22 @@ class CollectionAdmin(ModelAdmin):
     exclude_from_explorer = (
         False  # or True to exclude pages of this type from Wagtail's explorer view
     )
-    list_display = ("main_name", "collection_type", "creator", "updated", "created", "updated_by")
-    search_fields = ("main_name", "collection_type", "creator", "updated", "created", "updated_by")
+    list_display = (
+        "main_name",
+        "collection_type",
+        "creator",
+        "updated",
+        "created",
+        "updated_by",
+    )
+    search_fields = (
+        "main_name",
+        "collection_type",
+        "creator",
+        "updated",
+        "created",
+        "updated_by",
+    )
     list_export = (
         "acron3",
         "acron2",

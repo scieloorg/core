@@ -2,10 +2,7 @@ import logging
 
 from django.core.files.storage import FileSystemStorage
 from rest_framework import status
-
-from rest_framework.mixins import (
-    CreateModelMixin,
-)
+from rest_framework.mixins import CreateModelMixin
 from rest_framework.parsers import FileUploadParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -103,5 +100,5 @@ class PidProviderViewSet(
             logging.exception(e)
             return Response(
                 [{"error_type": str(type(e)), "error_message": str(e)}],
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
