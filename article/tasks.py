@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.utils import DataError
+from django.utils.translation import gettext as _
 from sickle import Sickle
 
 from article import models
