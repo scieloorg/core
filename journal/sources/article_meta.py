@@ -22,7 +22,7 @@ def journal_article_meta(collection, limit, user):
 
             get_or_create_scielo_journal(
                 title=journal_dict.get("publication_title"),
-                issn_scielo=journal_dict.get("issn_scielo"),
+                issn_scielo=journal_dict.get("issn_id"),
                 short_title=journal_dict.get("short_title"),
                 submission_online_url=journal_dict.get("url_of_submission_online"),
                 open_access=journal_dict.get("license_of_use"),
