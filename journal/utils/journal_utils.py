@@ -27,7 +27,6 @@ def get_or_create_scielo_journal(
         collection=get_collection(collection),
         user=user,
     )
-    print(obj)
 
 
 def get_or_create_official_journal(
