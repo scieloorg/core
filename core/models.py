@@ -219,7 +219,7 @@ class License(CommonControlField):
         verbose_name_plural = _("Licenses")
 
     def __unicode__(self):
-        return self.url or ""
+        return self.url or self.license_p or ""
 
     def __str__(self):
-        return self.url or ""
+        return self.url or self.license_p or ""
