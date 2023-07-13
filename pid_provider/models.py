@@ -238,6 +238,40 @@ class XMLRelatedItem(CommonControlField):
             return obj
 
 
+class PidChange(CommonControlField):
+    pid_type = models.CharField(_("PID type"), max_length=23, null=True, blank=True)
+    old = models.CharField(_("PID old"), max_length=23, null=True, blank=True)
+    new = models.CharField(_("PID new"), max_length=23, null=True, blank=True)
+    version = models.ForeignKey(XMLVersion, null=True, blank=True, on_delete=models.SET_NULL)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["old"]),
+            models.Index(fields=["new"]),
+            models.Index(fields=["pid_type"]),
+            models.Index(fields=["version"]),
+        ]
+
+    def __str__(self):
+        return str((self.pid_v3, self.pid_v2, self.aop_pid))
+
+    @classmethod
+    def get_or_create(cls, pid_type, old, new, version, user):
+        try:
+            return cls.objects.get(
+                pid_type=pid_type, old=old, new=new, version=version,
+            )
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.creator = user
+            obj.pid_type = pid_type
+            obj.old = old
+            obj.new = new
+            obj.version = version
+            obj.save()
+            return obj
+
+
 class PidProviderXML(CommonControlField):
     """
     Tem responsabilidade de garantir a atribuição do PID da versão 3,
@@ -413,16 +447,19 @@ class PidProviderXML(CommonControlField):
             cls.evaluate_registration(xml_adapter, registered)
 
             # verfica os PIDs encontrados no XML / atualiza-os se necessário
-            xml_changed = cls._complete_pids(xml_adapter, registered)
+            changed_pids = cls._complete_pids(xml_adapter, registered)
 
             registered = cls._save(
                 registered,
                 xml_adapter,
                 user,
                 pkg_name,
+                changed_pids,
             )
+
+
             data = registered.data.copy()
-            data["xml_changed"] = xml_changed
+            data["xml_changed"] = bool(changed_pids)
             return data
 
         except (
@@ -438,6 +475,18 @@ class PidProviderXML(CommonControlField):
             )
             return bad_request.data
 
+    def _register_pid_changes(self, changed_pids, user):
+        # requires registered.current_version is set
+
+        if not self.current_version:
+            raise ValueError("PidProviderXML._register_pid_changes requires current_version is set")
+        for change_args in changed_pids:
+            if change_args["old"]:
+                # somente registra as mudanças de um old não vazio
+                change_args["user"] = user
+                change_args["version"] = self.current_version
+                change = PidChange.get_or_create(**change_args)
+
     @classmethod
     def _save(
         cls,
@@ -445,6 +494,7 @@ class PidProviderXML(CommonControlField):
         xml_adapter,
         user,
         pkg_name,
+        changed_pids,
     ):
         if registered:
             registered.updated_by = user
@@ -464,6 +514,9 @@ class PidProviderXML(CommonControlField):
             user=user,
         )
         registered.save()
+
+        registered._register_pid_changes(changed_pids, user)
+
         return registered
 
     @classmethod
@@ -674,17 +727,34 @@ class PidProviderXML(CommonControlField):
         bool
 
         """
-        before = (xml_adapter.v2, xml_adapter.v3, xml_adapter.aop_pid)
+        before = dict(
+            pid_v3=xml_adapter.v3,
+            pid_v2=xml_adapter.v2,
+            aop_pid=xml_adapter.aop_pid,
+        )
 
         # adiciona os pids faltantes aos dados de entrada
         cls._add_pid_v3(xml_adapter, registered)
         cls._add_pid_v2(xml_adapter, registered)
         cls._add_aop_pid(xml_adapter, registered)
 
-        after = (xml_adapter.v2, xml_adapter.v3, xml_adapter.aop_pid)
+        after = dict(
+            pid_v3=xml_adapter.v3,
+            pid_v2=xml_adapter.v2,
+            aop_pid=xml_adapter.aop_pid,
+        )
 
         LOGGER.info("%s %s" % (before, after))
-        return before != after
+
+        changes = []
+        for k, v in before.items():
+            if v != after[k]:
+                changes.append(dict(
+                    pid_type=k,
+                    old=v,
+                    new=after[k],
+                ))
+        return changes
 
     @classmethod
     def _is_valid_pid(cls, value):
