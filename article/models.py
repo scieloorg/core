@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db import models
 from django.db.models import Case, When
 from django.utils.translation import gettext as _
@@ -86,6 +88,16 @@ class Article(CommonControlField):
 
     def __str__(self):
         return "%s" % self.pid_v2
+
+    @classmethod
+    def last_created_date(cls):
+        try:
+            last_created = cls.objects.filter(
+                pid_v3__isnull=False,
+            ).latest('created')
+            return last_created.created
+        except AttributeError:
+            return datetime(1, 1, 1)
 
     @property
     def data(self):
