@@ -1,6 +1,8 @@
 import logging
 
 from django.db import models
+from django.db.models import Q
+
 from django.utils.translation import gettext as _
 from lxml import etree
 
@@ -117,6 +119,12 @@ class XMLSPS(CommonControlField):
             models.Index(fields=["xml_journal"]),
             models.Index(fields=["xml_issue"]),
         ]
+
+    @classmethod
+    def list(cls, from_date):
+        return XMLSPS.objects.filter(
+            Q(created__gte=from_date) | Q(updated__gte=from_date),
+        ).iterator()
 
     @property
     def xmltree(self):
