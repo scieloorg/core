@@ -1,8 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ObjectDoesNotExist
-from django.db.utils import DataError
 from django.utils.translation import gettext as _
-from sickle import Sickle
 
 from article.sources import xmlsps
 from article.sources.preprint import harvest_preprints
@@ -12,19 +9,6 @@ from . import controller
 
 User = get_user_model()
 
-
-def _get_user(request, username=None, user_id=None):
-    try:
-        return User.objects.get(pk=request.user.id)
-    except AttributeError:
-        if user_id:
-            return User.objects.get(pk=user_id)
-        if username:
-            return User.objects.get(username=username)
-
-
-class ArticleSaveError(Exception):
-    ...
 
 def _get_user(request, username=None, user_id=None):
     try:
