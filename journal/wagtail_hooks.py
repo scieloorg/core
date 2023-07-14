@@ -67,7 +67,7 @@ class ScieloJournalAdmin(ModelAdmin):
         "short_title",
     )
     # list_filter = ()
-    search_fields = ("official",)
+    search_fields = ("title", "issn_scielo")
 
 
 class JournalAdminGroup(ModelAdminGroup):
