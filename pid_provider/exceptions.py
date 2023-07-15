@@ -28,3 +28,7 @@ class PidProviderXMLUpdateError(Exception):
 
 class PidProviderXMLWithPreError(Exception):
     ...
+
+
+class InvalidPidError(Exception):
+	...
