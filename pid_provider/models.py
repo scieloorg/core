@@ -37,7 +37,9 @@ class KernelXMLMigration(CommonControlField):
     year = models.CharField(_("Year"), max_length=4, null=True, blank=True)
     error_type = models.TextField(_("Error type"), null=True, blank=True)
     error_msg = models.TextField(_("Error message"), null=True, blank=True)
-    xml_version = models.ForeignKey(XMLVersion, null=True, blank=True, on_delete=models.SET_NULL)
+    xml_version = models.ForeignKey(
+        XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
+    )
 
     def __unicode__(self):
         return f"{self.pid_v3}"
