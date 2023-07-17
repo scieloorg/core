@@ -1,5 +1,5 @@
-from article import models
-from issue.models import TocSection
+from django.db.models import Q
+from django.db.utils import DataError
 
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_authors import Authors
@@ -13,6 +13,64 @@ from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
 from packtools.sps.models.funding_group import FundingGroup
 from packtools.sps.models.journal_meta import Title as Journal
 from packtools.sps.models.kwd_group import KwdGroup
+from packtools.sps.utils import xml_utils
+
+from article import models
+from issue.models import TocSection
+
+
+class XMLSPSArticleSaveError(Exception):
+    ...
+
+
+def load_article(file_path, user):
+    xmltree = xml_utils.get_xml_tree(file_path)
+
+    pids = ArticleIds(xmltree=xmltree).data
+    pid_v2 = pids.get("v2")
+    pid_v3 = pids.get("v3")
+
+    try:
+        article = models.Article.objects.get(Q(pid_v2=pid_v2) | Q(pid_v3=pid_v3))
+    except models.Article.DoesNotExist:
+        article = models.Article()
+    try:
+        set_pids(xmltree=xmltree, article=article)
+        article.journal = get_journal(xmltree=xmltree)
+        set_date_pub(xmltree=xmltree, article=article)
+        article.article_type = get_or_create_article_type(
+            xmltree=xmltree, user=user
+        )
+        article.issue = get_or_create_issues(xmltree=xmltree, user=user)
+        set_first_last_page(xmltree=xmltree, article=article)
+        set_elocation_id(xmltree=xmltree, article=article)
+        article.save()
+        article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
+        article.license.set(
+            get_or_create_licenses(xmltree=xmltree, user=user)
+        )
+        article.researchers.set(
+            get_or_create_researchers(xmltree=xmltree, user=user)
+        )
+        article.languages.add(
+            get_or_create_main_language(xmltree=xmltree, user=user)
+        )
+        article.keywords.set(
+            get_or_create_keywords(xmltree=xmltree, user=user)
+        )
+        article.toc_sections.set(
+            get_or_create_toc_sections(xmltree=xmltree, user=user)
+        )
+        article.fundings.set(
+            get_or_create_fundings(xmltree=xmltree, user=user)
+        )
+        article.titles.set(
+            get_or_create_titles(xmltree=xmltree, user=user)
+        )
+    except (DataError, TypeError) as e:
+        # TODO criar registros das falhas e deixar acessível pela área adm
+        # para que os usuários saibam 
+        raise XMLSPSArticleSaveError(e)
 
 
 def get_or_create_doi(xmltree, user):

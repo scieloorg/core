@@ -4,10 +4,10 @@ Pillow==9.5.0  # https://github.com/python-pillow/Pillow
 rcssmin==1.1.1  # https://github.com/ndparker/rcssmin
 argon2-cffi==21.3.0  # https://github.com/hynek/argon2_cffi
 whitenoise==6.4.0  # https://github.com/evansd/whitenoise
-redis==4.5.4  # https://github.com/redis/redis-py
+redis==4.6.0  # https://github.com/redis/redis-py
 hiredis==2.2.2  # https://github.com/redis/hiredis-py
 celery==5.2.7  # pyup: < 6.0  # https://github.com/celery/celery
-flower==1.2.0  # https://github.com/mher/flower
+flower==2.0.0  # https://github.com/mher/flower
 xmltodict==0.13.0  # https://github.com/martinblech/xmltodict.git
 
 # Django
@@ -20,6 +20,10 @@ django-crispy-forms==2.0  # https://github.com/django-crispy-forms/django-crispy
 crispy-bootstrap5==0.7  # https://github.com/django-crispy-forms/crispy-bootstrap5
 django-compressor==4.3.1  # https://github.com/django-compressor/django-compressor
 django-redis==5.2.0  # https://github.com/jazzband/django-redis
+
+# Django REST
+djangorestframework==3.14.0
+djangorestframework-simplejwt==5.2.2  # https://django-rest-framework-simplejwt.readthedocs.io/en/latest/
 
 # Wagtail
 # ------------------------------------------------------------------------------
@@ -42,7 +46,7 @@ wagtail-localize==1.5
 # Django celery
 # ------------------------------------------------------------------------------
 django-celery-beat==2.5.0  # https://github.com/celery/django-celery-beat
-django_celery_results==2.5.0
+django_celery_results==2.5.1
 
 # Wagtail-Autocomplete
 # https://github.com/wagtail/wagtail-autocomplete
@@ -51,7 +55,7 @@ wagtail-autocomplete==0.10.0
 
 
 # Minio
-minio==7.1.14
+minio==7.1.15
 
 # packtools
 # ------------------------------------------------------------------------------

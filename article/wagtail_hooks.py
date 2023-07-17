@@ -7,13 +7,10 @@ from wagtail.contrib.modeladmin.options import (
 )
 from wagtail.contrib.modeladmin.views import CreateView
 
-from article.models import (
-    # AbstractModel,
+from article.models import (  # AbstractModel,; Category,; Title,
     Article,
     ArticleFunding,
-    # Category,
     SubArticle,
-    # Title,
 )
 
 

@@ -4,6 +4,7 @@ import os
 from copy import deepcopy
 from datetime import date, datetime
 from shutil import copyfile
+from tempfile import TemporaryDirectory
 from zipfile import BadZipFile, ZipFile
 
 import requests
@@ -18,7 +19,7 @@ from packtools.sps.models.article_titles import ArticleTitles
 from packtools.sps.models.body import Body
 from packtools.sps.models.dates import ArticleDates
 from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
-from packtools.sps.models.front_journal_meta import ISSN
+from packtools.sps.models.journal_meta import ISSN
 from packtools.sps.models.related_articles import RelatedItems
 
 LOGGER = logging.getLogger(__name__)
@@ -70,7 +71,7 @@ def get_xml_items(xml_sps_file_path, filenames=None):
                 xml = get_xml_with_pre(fp.read())
                 item = os.path.basename(xml_sps_file_path)
             return [{"filename": item, "xml_with_pre": xml}]
-        raise ValueError(
+        raise TypeError(
             _("{} must be xml file or zip file containing xml").format(
                 xml_sps_file_path
             )
@@ -98,14 +99,20 @@ def get_xml_items_from_zip_file(xml_sps_file_path, filenames=None):
     str
     """
     try:
+        found = False
         with ZipFile(xml_sps_file_path) as zf:
             filenames = filenames or zf.namelist() or []
             for item in filenames:
                 if item.endswith(".xml"):
+                    found = True
                     yield {
                         "filename": item,
                         "xml_with_pre": get_xml_with_pre(zf.read(item).decode("utf-8")),
                     }
+            if not found:
+                raise TypeError(
+                    f"{xml_sps_file_path} has no XML. Files found: {str(zf.namelist())}"
+                )
     except Exception as e:
         LOGGER.exception(e)
         raise GetXMLItemsFromZipFileError(
@@ -187,10 +194,12 @@ def get_xml_with_pre(xml_content):
         return XMLWithPre(pref, etree.fromstring(xml))
 
     except Exception as e:
-        raise GetXmlWithPreError(
-            "Unable to get xml with pre %s ... %s"
-            % (xml_content[:100], xml_content[-200:])
-        )
+        if xml_content.strip():
+            raise GetXmlWithPreError(
+                "Unable to get xml with pre %s: %s ... %s"
+                % (e, xml_content[:100], xml_content[-200:])
+            )
+        raise GetXmlWithPreError("Unable to get xml with pre %s" % e)
 
 
 def split_processing_instruction_doctype_declaration_and_xml(xml_content):
@@ -235,6 +244,36 @@ class XMLWithPre:
     def __init__(self, xmlpre, xmltree):
         self.xmlpre = xmlpre or ""
         self.xmltree = xmltree
+        self.filename = None
+
+    @classmethod
+    def create(cls, path=None, uri=None):
+        """
+        Returns instance of XMLWithPre
+
+        path : str
+            zip or XML file
+        uri : str
+            XML file URI
+        """
+        if path:
+            for item in get_xml_items(path):
+                item["xml_with_pre"].filename = item["filename"]
+                yield item["xml_with_pre"]
+        if uri:
+            yield get_xml_with_pre_from_uri(uri, timeout=30)
+
+    def get_zip_content(self, filename):
+        zip_content = None
+        with TemporaryDirectory() as tmpdirname:
+            logging.info("TemporaryDirectory %s" % tmpdirname)
+            temp_zip_file_path = os.path.join(tmpdirname, f"{filename}.zip")
+            with ZipFile(temp_zip_file_path, "w") as zf:
+                zf.writestr(f"{filename}.xml", self.tostring())
+
+            with open(temp_zip_file_path, "rb") as fp:
+                zip_content = fp.read()
+        return zip_content
 
     @property
     def article_id_parent(self):
@@ -308,7 +347,6 @@ class XMLWithPre:
             node.set("specific-use", "scielo-v2")
             parent = self.article_id_parent
             parent.insert(1, node)
-            print(etree.tostring(parent))
         node.text = value
 
     @v3.setter

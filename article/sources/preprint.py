@@ -1,17 +1,78 @@
-import re
 import logging
-
-from lxml import etree
+import re
 from datetime import datetime
 from urllib.parse import urlparse
+from sickle import Sickle
+
+from lxml import etree
 
 from article import models
-
 
 namespaces = {
     "oai_dc": "http://www.openarchives.org/OAI/2.0/oai_dc/",
     "dc": "http://purl.org/dc/elements/1.1/",
 }
+
+
+class PreprintArticleSaveError(Exception):
+    ...
+
+
+def harvest_preprints(URL, user):
+    sickle = Sickle(URL)
+    recs = sickle.ListRecords(metadataPrefix="oai_dc")
+    for rec in recs:
+        article_info = get_info_article(rec)
+        identifier = get_doi(article_info["identifier"])
+        doi = get_or_create_doi(doi=identifier, user=user)
+
+        article = models.Article.get_or_create(
+            doi=doi,
+            pid_v2=None,
+            user=user,
+            fundings=None,
+        )
+        try:
+            set_dates(article=article, date=article_info.get("date"))
+            article.titles.set(
+                get_or_create_titles(
+                    titles=article_info.get("title"), user=user
+                )
+            )
+            article.researchers.set(
+                get_or_create_researches(
+                    authors=article_info.get("authors"),
+                )
+            )
+            article.keywords.set(
+                get_or_create_keyword(
+                    keywords=article_info.get("subject"), user=user
+                )
+            )
+            article.license.set(
+                get_or_create_license(
+                    rights=article_info.get("rights"), user=user
+                )
+            )
+            article.abstracts.set(
+                get_or_create_abstracts(
+                    description=article_info.get("description"), user=user
+                )
+            )
+            article.languages.add(
+                get_or_create_language(
+                    lang=article_info.get("language"), user=user
+                )
+            )
+            article.publisher = get_publisher(
+                publisher=article_info.get("publisher")
+            )
+            article.save()
+        except Exception as e:
+            # TODO cria um registro das falhas de modo que fiquem
+            # acessíveis na área administrativa
+            # para que o usuário fique sabendo quais itens falharam
+            raise PreprintArticleSaveError(e)
 
 
 def get_info_article(rec):
@@ -180,6 +241,8 @@ def get_or_create_researches(authors):
         obj = models.Researcher.get_or_create(
             given_names=author.get("given_names"),
             last_name=author.get("surname"),
+            email=None,
+            institution_name=None,
             suffix=None,
             orcid=None,
             lattes=None,

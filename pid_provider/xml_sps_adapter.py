@@ -4,8 +4,8 @@ import logging
 from django.utils.translation import gettext as _
 from lxml import etree
 
-from files_storage.utils import generate_finger_print
 from pid_provider import exceptions
+from pid_provider.utils.finger_print import generate_finger_print
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -55,19 +55,19 @@ class PidProviderXMLAdapter:
         self.xml_with_pre.aop_pid = value
 
     @property
-    def links(self):
+    def z_links(self):
         if not hasattr(self, "_links") or not self._links:
             self._links = _str_with_64_char("|".join(self.xml_with_pre.links))
         return self._links
 
     @property
-    def collab(self):
+    def z_collab(self):
         if not hasattr(self, "_collab") or not self._collab:
             self._collab = _str_with_64_char(self.xml_with_pre.collab)
         return self._collab
 
     @property
-    def surnames(self):
+    def z_surnames(self):
         if not hasattr(self, "_surnames") or not self._surnames:
             self._surnames = _str_with_64_char(
                 "|".join(
@@ -80,17 +80,13 @@ class PidProviderXMLAdapter:
         return self._surnames
 
     @property
-    def article_titles_texts(self):
-        if not hasattr(self, "_article_titles_texts") or not self._article_titles_texts:
-            self._article_titles_texts = None
-            if self.xml_with_pre.article_titles_texts:
-                self._article_titles_texts = _str_with_64_char(
-                    "|".join(sorted(self.xml_with_pre.article_titles_texts))
-                )
-        return self._article_titles_texts
+    def z_article_titles_texts(self):
+        return _str_with_64_char(
+            "|".join(sorted(self.xml_with_pre.article_titles_texts or []))
+        )
 
     @property
-    def partial_body(self):
+    def z_partial_body(self):
         if not hasattr(self, "_partial_body") or not self._partial_body:
             self._partial_body = _str_with_64_char(self.xml_with_pre.partial_body)
         return self._partial_body
@@ -109,17 +105,17 @@ class PidProviderXMLAdapter:
         dict
         """
         _params = dict(
-            z_surnames=self.surnames or None,
-            z_collab=self.collab or None,
+            z_surnames=self.z_surnames or None,
+            z_collab=self.z_collab or None,
         )
         if not any(_params.values()):
             _params["main_doi"] = self.main_doi
 
         if not any(_params.values()):
-            _params["z_links"] = self.links
+            _params["z_links"] = self.z_links
 
         if not any(_params.values()):
-            _params["z_partial_body"] = self.partial_body
+            _params["z_partial_body"] = self.z_partial_body
 
         if not any(_params.values()):
             _params["pkg_name"] = self.pkg_name
@@ -140,7 +136,7 @@ class PidProviderXMLAdapter:
         _params["journal__issn_print"] = self.journal_issn_print
         _params["journal__issn_electronic"] = self.journal_issn_electronic
         _params["article_pub_year"] = self.article_pub_year
-        _params["z_article_titles_texts"] = self.article_titles_texts
+        _params["z_article_titles_texts"] = self.z_article_titles_texts
 
         LOGGER.info(_params)
         return _params
