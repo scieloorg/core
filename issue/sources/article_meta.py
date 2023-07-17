@@ -4,11 +4,9 @@ from core.utils.rename_dictionary_keys import rename_dictionary_keys
 from issue.utils.issue_utils import get_or_create_issue
 
 
-def process_issue_article_meta(user):
+def process_issue_article_meta(collection, limit, user):
     offset = 0
-    collection = "scl"
-    issue_dict = {}
-    data = request_issue_article_meta(collection=collection, limit=100)
+    data = request_issue_article_meta(collection=collection, limit=limit)
     total_limit = data["meta"]["total"]
     while offset < total_limit :
         for issue in data["objects"]:
@@ -31,7 +29,7 @@ def process_issue_article_meta(user):
                 user=user,
             )
         offset+=100
-        data = request_issue_article_meta(collection=collection, limit=100, offset=offset)
+        data = request_issue_article_meta(collection=collection, limit=limit, offset=offset)
 
 
 

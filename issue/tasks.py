@@ -23,5 +23,7 @@ def load_issue(*args):
 
 @celery_app.task()
 def load_issue_from_article_meta(**kwargs):
-    user = User.objects.get(id=kwargs["user_id"] if kwargs else 1)
-    process_issue_article_meta(user=user)
+    user = User.objects.get(id=kwargs["user_id"] if kwargs["user_id"] else 1)
+    process_issue_article_meta(
+        collection=kwargs["collection"], limit=kwargs["limit"], user=user
+    )
