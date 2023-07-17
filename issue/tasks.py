@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model
 
 from config import celery_app
 from issue import controller
+from issue.sources.article_meta import process_issue_article_meta
+
 
 User = get_user_model()
 
@@ -17,3 +19,9 @@ def load_issue(*args):
     user = User.objects.get(id=args[0] if args else 1)
 
     controller.load(user)
+
+
+@celery_app.task()
+def load_issue_from_article_meta(**kwargs):
+    user = User.objects.get(id=kwargs["user_id"] if kwargs else 1)
+    process_issue_article_meta(user=user)
