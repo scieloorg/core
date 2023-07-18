@@ -1,11 +1,11 @@
 from core.utils import utils
 from journal.utils.correspondencia import correspondencia_journal
 from journal.utils.journal_utils import get_or_create_scielo_journal
-from journal.utils.rename_dictionary_keys import rename_dictionary_keys
+from core.utils.rename_dictionary_keys import rename_dictionary_keys
 from journal.utils.request_api_article_meta import request_journal_article_meta
 
 
-def journal_article_meta(collection, limit, user):
+def process_journal_article_meta(collection, limit, user):
     offset = 0
     data = request_journal_article_meta(collection=collection, limit=limit)
     total_limit = data["meta"]["total"]

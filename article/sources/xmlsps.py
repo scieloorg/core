@@ -216,9 +216,7 @@ def get_or_create_titles(xmltree, user):
         obj, created = models.DocumentTitle.objects.get_or_create(
             plain_text=format_title,
             rich_text=title.get("text"),
-            language=get_or_create_language(title.get("lang"), user=user)
-            if xmltree
-            else None,
+            language=get_or_create_language(title.get("lang"), user=user),
             creator=user,
         )
         data.append(obj)

@@ -146,7 +146,7 @@ class Issue(CommonControlField, ClusterableModel):
 
     @classmethod
     def get_or_create(
-        cls, journal, number, volume, season, year, month, supplement, user
+        cls, journal, number, volume, season, year, month, supplement, user, sections=None
     ):
         issues = cls.objects.filter(
             creator=user,
@@ -169,7 +169,10 @@ class Issue(CommonControlField, ClusterableModel):
             issue.year = year
             issue.month = month
             issue.supplement = supplement
+            issue.creator = user
             issue.save()
+            if sections:
+                issue.sections.set(sections)
 
         return issue
 
