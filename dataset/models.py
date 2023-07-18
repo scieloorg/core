@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from core.forms import CoreAdminModelForm
 
 from core.models import CommonControlField
 from institution.models import Institution
@@ -23,6 +24,8 @@ class CommonDataField(models.Model):
 
     class Meta:
         abstract = True
+
+    base_form_class = CoreAdminModelForm
 
 
 class Dataverse(CommonControlField, CommonDataField):
@@ -63,6 +66,8 @@ class Dataverse(CommonControlField, CommonDataField):
         obj.description = description or obj.description
         obj.save()
         return obj
+
+    base_form_class = CoreAdminModelForm
 
 
 class Dataset(CommonControlField, CommonDataField):
@@ -123,6 +128,8 @@ class Dataset(CommonControlField, CommonDataField):
         ## Lidar com os campos de ManyToMany e FK
         obj.save()
 
+    base_form_class = CoreAdminModelForm
+
 
 class File(CommonControlField, CommonDataField):
     file_type = models.CharField(max_length=30, blank=True, null=True)
@@ -135,7 +142,6 @@ class File(CommonControlField, CommonDataField):
 
     def __str__(self):
         return f"{self.name} - {self.type}"
-
 
     @classmethod
     def create_or_update(
@@ -164,6 +170,8 @@ class File(CommonControlField, CommonDataField):
         ## TODO
         ## Lidar com os campos de ManyToMany e FK
         obj.save()
+
+    base_form_class = CoreAdminModelForm
 
 
 class Affliation(CommonControlField):
