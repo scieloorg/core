@@ -19,9 +19,12 @@ TYPE_CHOICES = [
 
 class CommonDataField(models.Model):
     name = models.TextField(blank=True, null=True)  # relationship  with journal?
-    tpye = models.CharField(max_length=9, choices=TYPE_CHOICES, blank=True, null=True)
+    type = models.CharField(max_length=9, choices=TYPE_CHOICES, blank=True, null=True)
     url = models.URLField(_("URL"), blank=True, null=True)
     published_at = models.CharField(max_length=25, blank=True, null=True)
+
+    class Meta:
+        abstract = True
 
 
 class Dataverse(CommonControlField, CommonDataField):
