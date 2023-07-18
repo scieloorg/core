@@ -1,13 +1,83 @@
 import logging
+from datetime import datetime
 
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext as _
+from django.core.files.base import ContentFile
 from lxml import etree
 
 from core.models import CommonControlField
+from xmlsps.xml_sps_lib import XMLWithPre
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+
+
+class XMLVersionXmlWithPreError(Exception):
+    ...
+
+
+def xml_directory_path(instance, filename):
+    # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
+    return f"xml_pid_provider/{instance.finger_print[-1]}/{instance.finger_print[-2]}/{instance.finger_print}/{filename}"
+
+
+class XMLVersion(CommonControlField):
+    """
+    Tem função de guardar a versão do XML
+    """
+
+    pid_v3 = models.CharField(_("PID v3"), max_length=23, null=True, blank=True)
+    file = models.FileField(upload_to=xml_directory_path, null=True, blank=True)
+    finger_print = models.CharField(max_length=64, null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["finger_print"]),
+            models.Index(fields=["pid_v3"]),
+        ]
+
+    def __str__(self):
+        return self.finger_print
+
+    @classmethod
+    def create(
+        cls,
+        creator,
+        pid_v3,
+        pkg_name=None,
+        finger_print=None,
+        zip_xml_content=None,
+    ):
+        logging.info(f"XMLVersion.create({pkg_name})")
+        obj = cls()
+        obj.finger_print = finger_print
+        obj.pkg_name = pkg_name
+        obj.save_file(pkg_name + ".zip", zip_xml_content)
+        obj.creator = creator
+        obj.created = datetime.utcnow()
+        obj.save()
+
+        # salvar pid_v3 e salvar self para evitar exceção
+        obj.pid_v3 = pid_v3
+        obj.save()
+        return obj
+
+    def save_file(self, name, content):
+        self.file.save(name, ContentFile(content))
+
+    @property
+    def xml_with_pre(self):
+        try:
+            for item in XMLWithPre.create(path=self.file.path):
+                return item
+        except Exception as e:
+            raise XMLVersionXmlWithPreError(
+                _("Unable to get xml with pre (XMLVersion) {}: {} {}").format(
+                    self.pkg_name, type(e), e
+                )
+            )
 
 
 class XMLJournal(models.Model):
@@ -98,10 +168,10 @@ class XMLIssue(models.Model):
 
 
 class XMLSPS(CommonControlField):
-    xml = models.TextField(_("XML"), null=True, blank=True)
     pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True)
     pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
     aop_pid = models.CharField(_("AOP PID"), max_length=23, null=True, blank=True)
+    xml_version = models.ForeignKey(XMLVersion, null=True, blank=True, on_delete=models.SET_NULL)
     xml_journal = models.ForeignKey(
         XMLJournal, null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -118,9 +188,23 @@ class XMLSPS(CommonControlField):
             models.Index(fields=["xml_issue"]),
         ]
 
+    @classmethod
+    def list(cls, from_date):
+        return XMLSPS.objects.filter(
+            Q(created__gte=from_date) | Q(updated__gte=from_date),
+        ).iterator()
+
+    @property
+    def xml(self):
+        return self.xml_version.xml_with_pre.tostring()
+
+    @property
+    def xml_with_pre(self):
+        return self.xml_version.xml_with_pre
+
     @property
     def xmltree(self):
-        return etree.fromstring(self.xml)
+        return self.xml_version.xml_with_pre.xmltree
 
     @classmethod
     def get(cls, pid_v3):
@@ -128,7 +212,7 @@ class XMLSPS(CommonControlField):
 
     @classmethod
     def create_or_update(
-        cls, pid_v3, pid_v2, aop_pid, xml, xml_journal, xml_issue, user
+        cls, pid_v3, pid_v2, aop_pid, xml_version, xml_journal, xml_issue, user
     ):
         try:
             obj = cls.get(pid_v3=pid_v3)
@@ -137,9 +221,9 @@ class XMLSPS(CommonControlField):
             obj = cls()
             obj.pid_v3 = pid_v3
             obj.creator = user
-        obj.xml = xml
         obj.pid_v2 = pid_v2
         obj.aop_pid = aop_pid
+        obj.xml_version = xml_version
         obj.xml_issue = xml_issue
         obj.xml_journal = xml_journal
         obj.save()

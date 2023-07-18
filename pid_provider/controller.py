@@ -69,7 +69,7 @@ class PidProvider:
             dict
         """
         try:
-            xml_with_pre = XMLWithPre.create(uri=xml_uri)
+            xml_with_pre = list(XMLWithPre.create(uri=xml_uri))[0]
         except Exception as e:
             logging.exception(e)
             return {
