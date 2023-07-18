@@ -73,7 +73,7 @@ class Dataverse(CommonControlField, CommonDataField):
 class Dataset(CommonControlField, CommonDataField):
     global_id = models.CharField(max_length=100, null=True, blank=True)
     description = models.TextField(blank=True, null=True)  # Abstract
-    publisher = models.ForeignKey(Institution, blank=True, null=True)
+    publisher = models.ForeignKey(Institution, on_delete=models.SET_NULL, blank=True, null=True)
     citation_html = models.TextField(blank=True, null=True)
     citation = models.TextField(blank=True, null=True)
     dataverse = models.ForeignKey(
@@ -83,7 +83,7 @@ class Dataset(CommonControlField, CommonDataField):
     toc_sections = models.ManyToManyField(TocSection, blank=True)
     authors = models.ManyToManyField(Researcher, blank=True)
     contacts = models.ManyToManyField("Affliation", blank=True)
-    publications = models.ForeignKey("Publications", blank=True, null=True)
+    publications = models.ForeignKey("Publications", on_delete=models.SET_NULL, blank=True, null=True)
 
     def __unicode__(self):
         return f"{self.name}"
@@ -134,8 +134,8 @@ class Dataset(CommonControlField, CommonDataField):
 class File(CommonControlField, CommonDataField):
     file_type = models.CharField(max_length=30, blank=True, null=True)
     file_content_type = models.CharField(max_length=100, blank=True, null=True)
-    file_persistent_id = models.CharField()
-    dataset = models.ForeignKey(Dataset, blank=True, null=True)
+    file_persistent_id = models.TextField(blank=True, null=True)
+    dataset = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
 
     def __unicode__(self):
         return f"{self.name}"
@@ -176,7 +176,7 @@ class File(CommonControlField, CommonDataField):
 
 class Affliation(CommonControlField):
     name = models.TextField(blank=True, null=True)
-    author = models.ForeignKey(Researcher, blank=True, null=True)
+    author = models.ForeignKey(Researcher, on_delete=models.SET_NULL, blank=True, null=True)
 
 
 class Publications(CommonControlField):
