@@ -81,8 +81,11 @@ class OfficialJournal(CommonControlField):
     @classmethod
     def get_or_create(
         cls, title, foundation_year, issn_print, issn_electronic, issnl, user
-    ):
-        official_journals = cls.objects.filter(issnl=issnl)
+    ):  
+        if issnl:
+            official_journals = cls.objects.filter(issnl=issnl)
+        else:
+            official_journals = cls.objects.filter(title=title)
         try:
             official_journal = official_journals[0]
         except IndexError:
@@ -298,7 +301,15 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
 
     @classmethod
     def get_or_create(
-        cls, official_journal, issn_scielo, title, short_title, collection, user
+        cls, 
+        official_journal, 
+        issn_scielo, 
+        title, 
+        short_title, 
+        submission_online_url, 
+        open_access,
+        collection, 
+        user
     ):
         scielo_journals = cls.objects.filter(official=official_journal)
         try:
@@ -310,6 +321,8 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
             scielo_journal.title = title
             scielo_journal.short_title = short_title
             scielo_journal.creator = user
+            scielo_journal.submission_online_url = submission_online_url
+            scielo_journal.open_access = open_access
             scielo_journal.collection = collection
             scielo_journal.save()
         return scielo_journal

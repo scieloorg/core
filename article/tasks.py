@@ -3,8 +3,9 @@ from django.utils.translation import gettext as _
 
 from article.sources import xmlsps
 from article.sources.preprint import harvest_preprints
+from xmlsps.models import XMLSPS
+from article.models import Article
 from config import celery_app
-
 from . import controller
 
 User = get_user_model()
@@ -27,10 +28,20 @@ def load_funding_data(user, file_path):
     controller.read_file(user, file_path)
 
 
-@celery_app.task(bind=True, name=_("load_articles"))
-def load_articles(self, user_id, file_path):
+@celery_app.task(bind=True, name=_("load_article"))
+def load_article(self, user_id, file_path=None, xml=None):
     user = _get_user(self.request, user_id=user_id)
-    xmlsps.load_article(file_path, user)
+    xmlsps.load_article(user, file_path=file_path, xml=xml)
+
+
+@celery_app.task(bind=True, name=_("load_articles"))
+def load_articles(self, user_id=None):
+
+    user_id = user_id or self.request.user.id
+    from_date = Article.last_created_date()
+
+    for item in XMLSPS.list(from_date):
+        load_article.apply_async(args=(user_id, ), kwargs={"xml": item.xml})
 
 
 @celery_app.task(bind=True, name=_("load_preprints"))

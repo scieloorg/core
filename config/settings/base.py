@@ -1,6 +1,7 @@
 """
 Base settings to build other settings files upon.
 """
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -125,6 +126,7 @@ LOCAL_APPS = [
     "journal",
     "journal_and_collection",
     "location",
+    "pid_provider",
     "processing_errors",
     "doi",
     "researcher",
@@ -393,7 +395,18 @@ RECAPTCHA_PRIVATE_KEY = env.str("RECAPTCHA_PRIVATE_KEY", default="")
 # ------------------------------------------------------------------------------
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': env.int("DRF_PAGE_SIZE", default=10)
+    'PAGE_SIZE': env.int("DRF_PAGE_SIZE", default=10),
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+
+}
+# JWT
+SIMPLE_JWT = {
+    "AUTH_HEADER_TYPES": ("Bearer",),  # na doc está JWT mas pode mudar pra Bearer.
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    # "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
 }
 
 # django haystack

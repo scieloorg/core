@@ -1,10 +1,14 @@
+"""    
+O dicionário de correspondência contém os valores das chaves obtidos em:
+    - https://scielo.readthedocs.io/projects/scielo-pc-programs/en/latest/titlemanager_title.html
+"""
+
 correspondencia_journal = {
     "v5": "type_of_literature",
     "v6": "treatment_level",
     "v10": "center_code",
     "v20": "national_code",
     "v30": "identification_number",
-    "v35": "issn_type",
     "v37": "secs_code",
     "v50": "publication_status",
     "v51": "journal_status_history_in_this_collection",
@@ -43,7 +47,7 @@ correspondencia_journal = {
     "v420": "medline_code",
     "v421": "medline_short_title",
     "v430": "classification",
-    "v435": "issn",
+    "v435": "issn_print_or_electronic", # print or eletronic
     "v440": "subject_descriptors",
     "v441": "study_area",
     "v450": "indexing_coverage",

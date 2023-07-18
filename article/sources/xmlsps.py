@@ -1,5 +1,7 @@
 from django.db.models import Q
 from django.db.utils import DataError
+
+from lxml import etree
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_authors import Authors
 from packtools.sps.models.article_doi_with_lang import DoiWithLang
@@ -12,18 +14,25 @@ from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
 from packtools.sps.models.funding_group import FundingGroup
 from packtools.sps.models.journal_meta import Title as Journal
 from packtools.sps.models.kwd_group import KwdGroup
-from packtools.sps.utils import xml_utils
 
 from article import models
 from issue.models import TocSection
+from xmlsps.xml_sps_lib import XMLWithPre
 
 
 class XMLSPSArticleSaveError(Exception):
     ...
 
 
-def load_article(file_path, user):
-    xmltree = xml_utils.get_xml_tree(file_path)
+def load_article(user, xml=None, file_path=None):
+    if xml:
+        xmltree = etree.fromstring(xml)
+    elif file_path:
+        for xml_with_pre in XMLWithPre.create(file_path):
+            xmltree = xml_with_pre.xmltree
+    else:
+        raise ValueError(
+            "article.sources.xmlsps.load_article requires xml or file_path")
 
     pids = ArticleIds(xmltree=xmltree).data
     pid_v2 = pids.get("v2")
@@ -215,9 +224,7 @@ def get_or_create_titles(xmltree, user):
         obj, created = models.DocumentTitle.objects.get_or_create(
             plain_text=format_title,
             rich_text=title.get("text"),
-            language=get_or_create_language(title.get("lang"), user=user)
-            if xmltree
-            else None,
+            language=get_or_create_language(title.get("lang"), user=user),
             creator=user,
         )
         data.append(obj)
