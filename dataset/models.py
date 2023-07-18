@@ -7,8 +7,6 @@ from issue.models import TocSection
 from researcher.models import Researcher
 from vocabulary.models import Keyword
 
-# Create your models here.
-
 
 TYPE_CHOICES = [
     ("dataverse", "dataverse"),
@@ -31,21 +29,99 @@ class Dataverse(CommonControlField, CommonDataField):
     identifier = models.CharField(max_length=30, blank=True, null=True)  # source
     description = models.TextField(blank=True, null=True)
 
+    def __unicode__(self):
+        return f"{self.name}"
+
+    def __str__(self):
+        return f"{self.name} - {self.type}"
+
+    @classmethod
+    def create_or_update(
+        cls,
+        name,
+        identifier,
+        user=None,
+        type=None,
+        url=None,
+        published_at=None,
+        description=None,
+    ):
+        try:
+            obj = cls.objects.get(identifier=identifier)
+            obj.updated_by = user
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.name = name
+            obj.identifier = identifier
+            obj.creator = user
+
+        obj.name = name or obj.name
+        obj.identifier = identifier or obj.identifier
+        obj.type = type or obj.type
+        obj.url = url or obj.url
+        obj.published_at = published_at or obj.published_at
+        obj.description = description or obj.description
+        obj.save()
+        return obj
+
 
 class Dataset(CommonControlField, CommonDataField):
     global_id = models.CharField(max_length=100, null=True, blank=True)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)  # Abstract
     publisher = models.ForeignKey(Institution, blank=True, null=True)
-    citationHtml = models.TextField(blank=True, null=True)
+    citation_html = models.TextField(blank=True, null=True)
     citation = models.TextField(blank=True, null=True)
     dataverse = models.ForeignKey(
         Dataverse, on_delete=models.SET_NULL, null=True, blank=True
     )
-    keywords = models.ManyToManyField(Keyword, blank=True, null=True)
-    toc_sections = models.ManyToManyField(TocSection, blank=True, null=True)
-    authores = models.ManyToManyField(Researcher, blank=True, null=True)
-    contacts = models.ManyToManyField("Affliation", null=True, blank=True)
+    keywords = models.ManyToManyField(Keyword, blank=True)
+    toc_sections = models.ManyToManyField(TocSection, blank=True)
+    authors = models.ManyToManyField(Researcher, blank=True)
+    contacts = models.ManyToManyField("Affliation", blank=True)
     publications = models.ForeignKey("Publications", blank=True, null=True)
+
+    def __unicode__(self):
+        return f"{self.name}"
+
+    def __str__(self):
+        return f"{self.name} - {self.type}"
+
+    @classmethod
+    def create_or_update(
+        cls,
+        global_id,
+        name=None,
+        type=None,
+        url=None,
+        published_at=None,
+        description=None,
+        publisher=None,
+        citation_html=None,
+        citation=None,
+        dataverse=None,
+        authors=None,
+        keywords=None,
+        toc_sections=None,
+        contacts=None,
+        publications=None,
+    ):
+        try:
+            obj = cls.objects.get(global_id=global_id)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.global_id = global_id
+
+        obj.name = name or obj.name
+        obj.description = description or obj.description
+        obj.publisher = publisher or obj.publisher
+        obj.citation_html = citation_html or obj.citation_html
+        obj.citation = citation or obj.citation
+        obj.type = type or obj.type
+        obj.url = url or obj.url
+        obj.published_at = published_at or obj.published_at
+        ## TODO
+        ## Lidar com os campos de ManyToMany e FK
+        obj.save()
 
 
 class File(CommonControlField, CommonDataField):
@@ -54,6 +130,41 @@ class File(CommonControlField, CommonDataField):
     file_persistent_id = models.CharField()
     dataset = models.ForeignKey(Dataset, blank=True, null=True)
 
+    def __unicode__(self):
+        return f"{self.name}"
+
+    def __str__(self):
+        return f"{self.name} - {self.type}"
+
+
+    @classmethod
+    def create_or_update(
+        cls,
+        name,
+        type=None,
+        url=None,
+        published_at=None,
+        file_type=None,
+        file_persistent_type=None,
+        file_persistent_id=None,
+        dataset=None,
+    ):
+        try:
+            obj = cls.objects.get(file_persistent_id=file_persistent_id)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.file_persistent_id = file_persistent_id
+
+        obj.name = name or obj.name
+        obj.type = type or obj.type
+        obj.url = url or obj.url
+        obj.published_at = published_at or obj.published_at
+        obj.file_type = file_type or obj.file_type
+        obj.file_persistent_type = file_persistent_id or obj.file_persistent_id
+        ## TODO
+        ## Lidar com os campos de ManyToMany e FK
+        obj.save()
+
 
 class Affliation(CommonControlField):
     name = models.TextField(blank=True, null=True)
@@ -61,4 +172,5 @@ class Affliation(CommonControlField):
 
 
 class Publications(CommonControlField):
+    citation = models.TextField(blank=True, null=True)
     url = models.URLField(blank=True, null=True)
