@@ -1,5 +1,3 @@
-from django.core.exceptions import ObjectDoesNotExist
-
 from ..models import Collection, OfficialJournal, ScieloJournal
 
 
@@ -53,7 +51,7 @@ def get_or_create_official_journal(
 def get_collection(collection):
     try:
         return Collection.objects.get(code=collection)
-    except ObjectDoesNotExist:
+    except Collection.DoesNotExist:
         return None
 
 
