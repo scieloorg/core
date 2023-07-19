@@ -82,8 +82,8 @@ class Dataset(CommonControlField, CommonDataField):
     keywords = models.ManyToManyField(Keyword, blank=True)
     thematic_area = models.ManyToManyField(ThematicArea, blank=True) 
     authors = models.ManyToManyField(Researcher, blank=True)
-    contacts = models.ManyToManyField("Affliation", blank=True)
-    publications = models.ForeignKey("Publications", on_delete=models.SET_NULL, blank=True, null=True)
+    contacts = models.ManyToManyField("Affiliation", blank=True)
+    publications = models.ForeignKey("Publication", on_delete=models.SET_NULL, blank=True, null=True)
 
     def __unicode__(self):
         return f"{self.name}"
@@ -176,7 +176,7 @@ class File(CommonControlField, CommonDataField):
 
 class Affiliation(CommonControlField):
     name = models.TextField(blank=True, null=True)
-    author = models.ForeignKey(Researcher, on_delete=models.SET_NULL, blank=True, null=True)
+    author = models.ForeignKey(Researcher, on_delete=models.SET_NULL, blank=True, null=True, related_name="affiliation_dataset")
 
 
 class Publication(CommonControlField):
