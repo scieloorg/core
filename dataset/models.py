@@ -4,7 +4,7 @@ from core.forms import CoreAdminModelForm
 
 from core.models import CommonControlField
 from institution.models import Institution
-from issue.models import TocSection
+from thematic_areas.models import ThematicArea
 from researcher.models import Researcher
 from vocabulary.models import Keyword
 
@@ -17,7 +17,7 @@ TYPE_CHOICES = [
 
 
 class CommonDataField(models.Model):
-    name = models.TextField(blank=True, null=True)  # relationship  with journal?
+    name = models.TextField(blank=True, null=True)
     type = models.CharField(max_length=9, choices=TYPE_CHOICES, blank=True, null=True)
     url = models.URLField(_("URL"), blank=True, null=True)
     published_at = models.CharField(max_length=25, blank=True, null=True)
@@ -29,7 +29,7 @@ class CommonDataField(models.Model):
 
 
 class Dataverse(CommonControlField, CommonDataField):
-    identifier = models.CharField(max_length=30, blank=True, null=True)  # source
+    identifier = models.CharField(max_length=30, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
     def __unicode__(self):
@@ -80,7 +80,7 @@ class Dataset(CommonControlField, CommonDataField):
         Dataverse, on_delete=models.SET_NULL, null=True, blank=True
     )
     keywords = models.ManyToManyField(Keyword, blank=True)
-    toc_sections = models.ManyToManyField(TocSection, blank=True)
+    thematic_area = models.ManyToManyField(ThematicArea, blank=True) 
     authors = models.ManyToManyField(Researcher, blank=True)
     contacts = models.ManyToManyField("Affliation", blank=True)
     publications = models.ForeignKey("Publications", on_delete=models.SET_NULL, blank=True, null=True)
@@ -106,7 +106,7 @@ class Dataset(CommonControlField, CommonDataField):
         dataverse=None,
         authors=None,
         keywords=None,
-        toc_sections=None,
+        thematic_area=None,
         contacts=None,
         publications=None,
     ):
@@ -174,11 +174,11 @@ class File(CommonControlField, CommonDataField):
     base_form_class = CoreAdminModelForm
 
 
-class Affliation(CommonControlField):
+class Affiliation(CommonControlField):
     name = models.TextField(blank=True, null=True)
     author = models.ForeignKey(Researcher, on_delete=models.SET_NULL, blank=True, null=True)
 
 
-class Publications(CommonControlField):
+class Publication(CommonControlField):
     citation = models.TextField(blank=True, null=True)
     url = models.URLField(blank=True, null=True)
