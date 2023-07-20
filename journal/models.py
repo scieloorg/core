@@ -380,6 +380,9 @@ class Mission(Orderable, RichTextWithLang, CommonControlField):
             scielo_mission.save()
 
         return scielo_mission
+    
+    def __str__(self):
+        return f"{self.rich_text} - {self.language}"
 
 
 class Owner(Orderable, InstitutionHistory):

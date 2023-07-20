@@ -28,6 +28,7 @@ def process_journal_article_meta(collection, limit, user):
                 open_access=journal_dict.get("license_of_use"),
                 issn_print_or_electronic=journal_dict.get("issn_print_or_electronic"),
                 collection=journal_dict.get("collection"),
+                mission=journal_dict.get("mission"),
                 user=user,
             )
         offset += 10

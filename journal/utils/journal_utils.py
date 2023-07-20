@@ -1,4 +1,6 @@
 from ..models import Collection, OfficialJournal, ScieloJournal
+from ..models import Mission
+from core.models import Language
 
 
 def get_or_create_scielo_journal(
@@ -9,6 +11,7 @@ def get_or_create_scielo_journal(
     open_access,
     issn_print_or_electronic,
     collection,
+    mission,
     user,
 ):
     obj = ScieloJournal.get_or_create(
@@ -25,6 +28,7 @@ def get_or_create_scielo_journal(
         collection=get_collection(collection),
         user=user,
     )
+    get_or_create_mission(mission=mission, journal=obj)
 
 
 def get_or_create_official_journal(
@@ -71,3 +75,35 @@ def extract_issn_print_electronic(issn_print_or_electronic):
 def extract_value(value):
     if value and isinstance(value, list):
         return [x.get("_") for x in value][0]
+
+
+def extract_value_mission(mission):
+    """
+    [
+        {
+            "l": "es",
+            "_": "La RAE-eletr\u00f4nica tiene como misi\u00f3n fomentar la producci\u00f3n y la diseminaci\u00f3n del conocimiento en Administraci\u00f3n de Empresas."
+        },
+        {
+            "l": "pt",
+            "_": "A RAE-eletr\u00f4nica tem como miss\u00e3o fomentar a produ\u00e7\u00e3o e a dissemina\u00e7\u00e3o de conhecimento em Administra\u00e7\u00e3o de Empresas."
+        },
+        {
+            "l": "en",
+            "_": "RAE-eletr\u00f4nica's mission is to encourage the production and dissemination of Business Administration knowledge."
+        }
+    ]
+    """
+
+    return [{"lang": x.get("l"), "mission": x.get("_")} for x in mission]
+
+
+def get_or_create_mission(mission, journal):
+    if mission and isinstance(mission, list):
+        missions = extract_value_mission(mission=mission)
+        for m in missions:
+            obj, created = Mission.objects.get_or_create(
+                journal=journal,
+                rich_text=m.get("mission"),
+                language=Language.get_or_create(code2=m.get("lang")),
+            )
