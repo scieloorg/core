@@ -1,6 +1,7 @@
-from ..models import Collection, OfficialJournal, ScieloJournal
-from ..models import Mission
 from core.models import Language
+from institution.models import Institution
+
+from ..models import Collection, Mission, OfficialJournal, ScieloJournal, Sponsor
 
 
 def get_or_create_scielo_journal(
@@ -12,23 +13,25 @@ def get_or_create_scielo_journal(
     issn_print_or_electronic,
     collection,
     mission,
+    sponsor,
     user,
 ):
     obj = ScieloJournal.get_or_create(
         official_journal=get_or_create_official_journal(
-            title=extract_value(title),
+            title=extract_value(title)[0],
             issn_print_or_electronic=issn_print_or_electronic,
             user=user,
         ),
-        title=extract_value(title),
-        issn_scielo=extract_value(issn_scielo),
-        short_title=extract_value(short_title),
-        submission_online_url=extract_value(submission_online_url),
-        open_access=extract_value(open_access),
+        title=extract_value(title)[0],
+        issn_scielo=extract_value(issn_scielo)[0],
+        short_title=extract_value(short_title)[0],
+        submission_online_url=extract_value(submission_online_url)[0],
+        open_access=extract_value(open_access)[0],
         collection=get_collection(collection),
         user=user,
     )
     get_or_create_mission(mission=mission, journal=obj)
+    get_or_create_sponso(sponsor=sponsor, journal=obj)    
 
 
 def get_or_create_official_journal(
@@ -74,7 +77,8 @@ def extract_issn_print_electronic(issn_print_or_electronic):
 
 def extract_value(value):
     if value and isinstance(value, list):
-        return [x.get("_") for x in value][0]
+        return [x.get("_") for x in value]
+    return [None]
 
 
 def extract_value_mission(mission):
@@ -106,4 +110,30 @@ def get_or_create_mission(mission, journal):
                 journal=journal,
                 rich_text=m.get("mission"),
                 language=Language.get_or_create(code2=m.get("lang")),
+            )
+
+
+def get_or_create_sponso(sponsor, journal):
+    if sponsor and isinstance(sponsor, list):
+        sponsors = extract_value(sponsor)
+        for s in sponsors:
+            ## FIXME
+            ## Sponso de diferentes formas (insta_name e insta_acronym)
+            ## Ex: 
+            ## CNPq
+            ## Instituto Nacional de Estudos e Pesquisas Educacionais Anísio Teixeira
+            ## Fundação Getulio Vargas/ Escola de Administração de Empresas de São Paulo
+            ## CNPq - Conselho Nacional de Desenvolvimento Científico e Tecnológico (PIEB) 
+            obj, created = Sponsor.objects.get_or_create(
+                page=journal,
+                institution=Institution.get_or_create(
+                    inst_name=s,
+                    inst_acronym=None,
+                    level_1=None,
+                    level_2=None,
+                    level_3=None,
+                    location=None,
+                    official=None,
+                    is_official=None,
+                )
             )
