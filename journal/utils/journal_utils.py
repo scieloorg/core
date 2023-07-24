@@ -1,6 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
 
-from ..models import Collection, OfficialJournal, Journal
+from ..models import Collection, OfficialJournal, Journal, SciELOJournal
 
 
 def get_or_create_scielo_journal(
@@ -12,20 +12,25 @@ def get_or_create_scielo_journal(
     issn_print_or_electronic,
     collection,
     user,
+    journal_acron=None,
 ):
-    obj = Journal.get_or_create(
+    journal = Journal.create_or_update(
+        user=user,
         official_journal=get_or_create_official_journal(
             title=extract_value(title),
             issn_print_or_electronic=issn_print_or_electronic,
-            user=user,
         ),
         title=extract_value(title),
-        issn_scielo=extract_value(issn_scielo),
         short_title=extract_value(short_title),
         submission_online_url=extract_value(submission_online_url),
         open_access=extract_value(open_access),
-        collection=get_collection(collection),
+    )
+    scielo_journal = SciELOJournal.create_or_update(
         user=user,
+        collection=collection,
+        issn_scielo=issn_scielo,
+        journal_acron=journal_acron,
+        journal=journal,
     )
 
 
