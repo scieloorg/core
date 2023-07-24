@@ -15,7 +15,7 @@ from core.models import (
     TextWithLang
     )
 from location.models import City
-from journal.models import ScieloJournal
+from journal.models import Journal
 
 
 class Issue(CommonControlField, ClusterableModel):
@@ -24,7 +24,7 @@ class Issue(CommonControlField, ClusterableModel):
     """
 
     journal = models.ForeignKey(
-        ScieloJournal,
+        Journal,
         verbose_name=_("Journal"),
         null=True,
         blank=True,

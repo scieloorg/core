@@ -97,8 +97,8 @@ def get_or_create_doi(xmltree, user):
 def get_journal(xmltree):
     journal_title = Journal(xmltree=xmltree).journal_title
     try:
-        return models.ScieloJournal.objects.get(title=journal_title)
-    except models.ScieloJournal.DoesNotExist:
+        return models.Journal.objects.get(title=journal_title)
+    except models.Journal.DoesNotExist:
         return None
 
 

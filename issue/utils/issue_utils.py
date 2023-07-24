@@ -1,7 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 
 from ..models import Issue, TocSection
-from journal.models import ScieloJournal
+from journal.models import Journal
 from core.models import Language
 
 def get_or_create_issue(
@@ -27,7 +27,7 @@ def get_or_create_issue(
 def get_scielo_journal(issn_scielo):
     try:
         issn_scielo = extract_value(issn_scielo)
-        return ScieloJournal.objects.get(issn_scielo=issn_scielo)
+        return Journal.objects.get(issn_scielo=issn_scielo)
     except ObjectDoesNotExist:
         return None
 

@@ -9,7 +9,7 @@ from wagtail.documents.edit_handlers import DocumentChooserPanel
 
 from core.models import CommonControlField, Gender
 from institution.models import Institution, InstitutionHistory
-from journal.models import ScieloJournal
+from journal.models import Journal
 
 from .forms import ResearcherForm
 from . import choices
@@ -132,7 +132,7 @@ class FieldAffiliation(Orderable, InstitutionHistory):
 
 
 class EditorialBoardMember(models.Model):
-    journal = models.ForeignKey(ScieloJournal, null=True, blank=True, related_name='+', on_delete=models.CASCADE)
+    journal = models.ForeignKey(Journal, null=True, blank=True, related_name='+', on_delete=models.CASCADE)
     member = models.ForeignKey(Researcher, null=True, blank=True, related_name='+', on_delete=models.CASCADE)
     role = models.CharField(_('Role'), max_length=255, choices=choices.ROLE, null=False, blank=False)
     initial_year =  models.IntegerField(blank=True, null=True)
@@ -166,7 +166,7 @@ class EditorialBoardMember(models.Model):
 
         researcher_get = Researcher.get_or_create(given_names, last_name, suffix, orcid, lattes, email, institution_name, gender, gender_identification_status, user)
 
-        journal_get = ScieloJournal.get_or_create(official_journal=None, issn_scielo=None, title=journal, short_title=None, collection=None, user=user)
+        journal_get = Journal.get_or_create(official_journal=None, issn_scielo=None, title=journal, short_title=None, collection=None, user=user)
 
         try:
             return EditorialBoardMember.objects.get(journal = journal_get, member = researcher_get)
