@@ -17,6 +17,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     au_orcid = indexes.MultiValueField(null=True)
 
     journal_title = indexes.CharField(null=True)
+    # FIXME 1 artigo pode estar em mais de 1 coleção
     collection = indexes.CharField(null=True)
     type = indexes.CharField(model_attr="article_type", null=True)
     pid = indexes.CharField(model_attr="pid_v2", null=True)
@@ -36,6 +37,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_collection(self, obj):
         if obj.journal:
             try:
+            	# FIXME 1 artigo / journal pode estar em mais de 1 coleção
                 return obj.journal.collection.main_name
             except AttributeError:
                 pass
