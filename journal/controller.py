@@ -56,7 +56,6 @@ def get_journal_xml(collection, issn):
 
 def get_official_journal(user, journal_xml):
     try:
-        issnl = journal_xml["SERIAL"]["ISSN_AS_ID"]
         title = journal_xml["SERIAL"]["TITLEGROUP"]["TITLE"]
         # this value are not available in the XML file
         foundation_year = None
@@ -75,7 +74,6 @@ def get_official_journal(user, journal_xml):
             user=user,
             issn_print=issn_print,
             issn_electronic=issn_electronic,
-            issnl=issnl,
             title=title,
             foundation_year=foundation_year,
         )
@@ -94,16 +92,14 @@ def get_official_journal(user, journal_xml):
 def create_journal(user, journal_xml, collection):
     try:
         official_journal = get_official_journal(user, journal_xml)
-        issn_scielo = official_journal.issnl
+        issn_scielo = journal_xml["SERIAL"]["ISSN_AS_ID"]
         title = journal_xml["SERIAL"]["TITLEGROUP"]["TITLE"]
         short_title = journal_xml["SERIAL"]["TITLEGROUP"]["SHORTTITLE"]
-        journal = Journal.get_or_create(
+        journal = Journal.create_or_update(
+            user=user,
             official_journal=official_journal,
-            issn_scielo=issn_scielo,
             title=title,
             short_title=short_title,
-            collection=collection,
-            user=user,
         )
 
         scielo_journal = SciELOJournal.create_or_update(
@@ -117,8 +113,8 @@ def create_journal(user, journal_xml, collection):
         mission_rich_text = journal_xml["SERIAL"]["MISSION"]
         language = journal_xml["SERIAL"]["CONTROLINFO"]["LANGUAGE"]
         journal.panels_mission.append(
-            Mission.get_or_create(
-                journal, issn_scielo, mission_rich_text, language, user
+            Mission.create_or_update(
+                user, journal, language, mission_rich_text,
             )
         )
 
