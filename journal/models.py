@@ -347,6 +347,9 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
         obj.short_title = short_title or obj.short_title
         obj.submission_online_url = submission_online_url or obj.submission_online_url
         obj.open_access = open_access or obj.open_access
+
+        for scielo_j in SciELOJournal.objects.filter(journal=self):
+            obj.collection.add(scielo_j.collection)
         obj.save()
         return obj
 
