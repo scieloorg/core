@@ -5,7 +5,7 @@ import xmltodict
 
 from processing_errors.models import ProcessingError
 
-from .models import Issue, ScieloJournal
+from .models import Issue, SciELOJournal
 
 
 def get_journal_xml(collection, issn):
@@ -26,10 +26,10 @@ def get_journal_xml(collection, issn):
         error.save()
 
 
-def get_issue(user, journal_xml):
+def get_issue(user, journal_xml, collection):
     issn_scielo = journal_xml["SERIAL"]["ISSN_AS_ID"]
     try:
-        journal = ScieloJournal.objects.filter(issn_scielo=issn_scielo)[0]
+        scielo_journal = SciELOJournal.get(collection=collection, issn_scielo=issn_scielo)
         for issue in journal_xml["SERIAL"]["AVAILISSUES"]["YEARISSUE"]:
             try:
                 volume = issue["VOLISSUE"]["@VOL"]
@@ -50,7 +50,7 @@ def get_issue(user, journal_xml):
                 supplement = None
                 try:
                     Issue.get_or_create(
-                        journal=journal,
+                        journal=scielo_journal.journal,
                         number=number,
                         volume=volume,
                         year=year,
@@ -78,12 +78,12 @@ def get_issue(user, journal_xml):
 
 
 def load(user):
-    for journal in ScieloJournal.objects.all().iterator():
+    for journal in SciELOJournal.objects.all().iterator():
         try:
             journal_xml = get_journal_xml(
                 journal.collection.domain, journal.issn_scielo
             )
-            get_issue(user, journal_xml)
+            get_issue(user, journal_xml, journal.collection)
         except Exception as e:
             error = ProcessingError()
             error.item = f"Error getting record XML"

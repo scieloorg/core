@@ -5,7 +5,7 @@ from wagtail.admin.panels import FieldPanel
 from collection.models import Collection
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
-from journal.models import ScieloJournal
+from journal.models import SciELOJournal
 
 from . import choices
 
@@ -75,7 +75,7 @@ class Event(CommonControlField):
 
 class JournalAndCollection(CommonControlField):
     journal = models.ForeignKey(
-        ScieloJournal,
+        SciELOJournal,
         verbose_name=_("Journal"),
         null=True,
         blank=True,

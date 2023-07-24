@@ -7,7 +7,7 @@ from collection.models import Collection
 from institution.models import Institution, InstitutionHistory
 from processing_errors.models import ProcessingError
 
-from .models import Mission, OfficialJournal, ScieloJournal
+from .models import Mission, OfficialJournal, SciELOJournal, Journal
 
 
 def get_issn(collection):
@@ -86,13 +86,13 @@ def get_official_journal(user, journal_xml):
         error.save()
 
 
-def get_scielo_journal(user, journal_xml, collection):
+def create_journal(user, journal_xml, collection):
     try:
         official_journal = get_official_journal(user, journal_xml)
         issn_scielo = official_journal.issnl
         title = journal_xml["SERIAL"]["TITLEGROUP"]["TITLE"]
         short_title = journal_xml["SERIAL"]["TITLEGROUP"]["SHORTTITLE"]
-        scielo_journal = ScieloJournal.get_or_create(
+        journal = Journal.get_or_create(
             official_journal=official_journal,
             issn_scielo=issn_scielo,
             title=title,
@@ -101,11 +101,19 @@ def get_scielo_journal(user, journal_xml, collection):
             user=user,
         )
 
+		scielo_journal = SciELOJournal.create_or_update(
+            user=user,
+            collection=collection,
+            journal_acron=journal_acron,
+            issn_scielo=issn_scielo,
+            journal=journal,
+        )
+
         mission_rich_text = journal_xml["SERIAL"]["MISSION"]
         language = journal_xml["SERIAL"]["CONTROLINFO"]["LANGUAGE"]
-        scielo_journal.panels_mission.append(
+        journal.panels_mission.append(
             Mission.get_or_create(
-                scielo_journal, issn_scielo, mission_rich_text, language, user
+                journal, issn_scielo, mission_rich_text, language, user
             )
         )
 
@@ -122,10 +130,10 @@ def get_scielo_journal(user, journal_xml, collection):
         history = InstitutionHistory.get_or_create(
             institution=institution, initial_date=None, final_date=None
         )
-        scielo_journal.panels_publisher.append(history)
-        scielo_journal.creator = user
-        scielo_journal.save()
-        return scielo_journal
+        journal.panels_publisher.append(history)
+        journal.creator = user
+        journal.save()
+        return journal
 
     except Exception as e:
         error = ProcessingError()
@@ -141,6 +149,6 @@ def load(user):
         try:
             for issn in get_issn(collection.domain):
                 journal_xml = get_journal_xml(collection.domain, issn)
-                get_scielo_journal(user, journal_xml, collection)
+                create_journal(user, journal_xml, collection)
         except:
             pass
