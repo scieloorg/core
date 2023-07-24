@@ -1,4 +1,5 @@
 import os
+import logging
 
 from pid_provider.controller import PidProvider
 from pid_provider.models import KernelXMLMigration, PidProviderXML
@@ -41,11 +42,25 @@ def load_xml(user, uri, name, acron, year):
             migration.save()
 
     except Exception as e:
-        migration = KernelXMLMigration.create_or_update(
+        register_failure(
+            e=e,
             user=user,
             pid_v3=pid_v3,
             acron=acron,
             year=year,
-            error_type=str(type(e)),
-            error_msg=str(e),
         )
+
+
+def register_failure(e, user=None, pid_v3=None, acron=None, year=None, detail=None):
+    logging.exception(e)
+    msg = str(e)
+    if detail:
+        msg = f"{msg} {detail}"
+    migration = KernelXMLMigration.create_or_update(
+        user=user,
+        pid_v3=pid_v3,
+        acron=acron,
+        year=year,
+        error_type=str(type(e)),
+        error_msg=msg,
+    )

@@ -37,7 +37,9 @@ class KernelXMLMigration(CommonControlField):
     year = models.CharField(_("Year"), max_length=4, null=True, blank=True)
     error_type = models.TextField(_("Error type"), null=True, blank=True)
     error_msg = models.TextField(_("Error message"), null=True, blank=True)
-    xml_version = models.ForeignKey(XMLVersion, null=True, blank=True, on_delete=models.SET_NULL)
+    xml_version = models.ForeignKey(
+        XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
+    )
 
     def __unicode__(self):
         return f"{self.pid_v3}"
@@ -453,6 +455,15 @@ class PidProviderXML(CommonControlField):
 
             # verfica os PIDs encontrados no XML / atualiza-os se necessário
             changed_pids = cls._complete_pids(xml_adapter, registered)
+            if not xml_adapter.v3:
+                raise exceptions.InvalidPidError(
+                    f"Unable to register {filename}, because v3 is invalid"
+                )
+
+            if not xml_adapter.v2:
+                raise exceptions.InvalidPidError(
+                    f"Unable to register {filename}, because v2 is invalid"
+                )
 
             registered = cls._save(
                 registered,
@@ -470,7 +481,9 @@ class PidProviderXML(CommonControlField):
             exceptions.ForbiddenPidProviderXMLRegistrationError,
             exceptions.NotEnoughParametersToGetDocumentRecordError,
             exceptions.QueryDocumentMultipleObjectsReturnedError,
+            exceptions.InvalidPidError,
         ) as e:
+            logging.exception(e)
             bad_request = PidProviderBadRequest.get_or_create(
                 user,
                 filename,

@@ -74,6 +74,9 @@ def crontab_schedule_celery_timezone():
         CELERY_TIMEZONE = getattr(settings, "%s_TIMEZONE" % current_app.namespace)
     except AttributeError:
         return "UTC"
+
+    # evita `AttributeError: type object 'TimeZoneField' has no attribute 'default_choices'`
+    return "UTC"
     return (
         CELERY_TIMEZONE
         if CELERY_TIMEZONE
