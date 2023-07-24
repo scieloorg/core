@@ -36,7 +36,7 @@ class Dataverse(CommonControlField, CommonDataField):
         return f"{self.name}"
 
     def __str__(self):
-        return f"{self.name} - {self.type}"
+        return f"{self.name}"
 
     @classmethod
     def create_or_update(
@@ -73,23 +73,28 @@ class Dataverse(CommonControlField, CommonDataField):
 class Dataset(CommonControlField, CommonDataField):
     global_id = models.CharField(max_length=100, null=True, blank=True)
     description = models.TextField(blank=True, null=True)  # Abstract
-    publisher = models.ForeignKey(Institution, on_delete=models.SET_NULL, blank=True, null=True)
+    publisher = models.ForeignKey(
+        "Publisher", on_delete=models.SET_NULL, blank=True, null=True
+    )
     citation_html = models.TextField(blank=True, null=True)
     citation = models.TextField(blank=True, null=True)
     dataverse = models.ForeignKey(
         Dataverse, on_delete=models.SET_NULL, null=True, blank=True
     )
     keywords = models.ManyToManyField(Keyword, blank=True)
-    thematic_area = models.ManyToManyField(ThematicArea, blank=True) 
-    authors = models.ManyToManyField(Researcher, blank=True)
+    thematic_area = models.ManyToManyField(ThematicArea, blank=True)
+    authors = models.ManyToManyField("Author", blank=True)
     contacts = models.ManyToManyField("Affiliation", blank=True)
-    publications = models.ForeignKey("Publication", on_delete=models.SET_NULL, blank=True, null=True)
+    publications = models.ManyToManyField(
+        "Publication",
+        blank=True,
+    )
 
     def __unicode__(self):
         return f"{self.name}"
 
     def __str__(self):
-        return f"{self.name} - {self.type}"
+        return f"{self.name}"
 
     @classmethod
     def create_or_update(
@@ -109,12 +114,15 @@ class Dataset(CommonControlField, CommonDataField):
         thematic_area=None,
         contacts=None,
         publications=None,
+        user=None,
     ):
         try:
             obj = cls.objects.get(global_id=global_id)
+            obj.updated_by = user
         except cls.DoesNotExist:
             obj = cls()
             obj.global_id = global_id
+            obj.creator = user
 
         obj.name = name or obj.name
         obj.description = description or obj.description
@@ -124,51 +132,65 @@ class Dataset(CommonControlField, CommonDataField):
         obj.type = type or obj.type
         obj.url = url or obj.url
         obj.published_at = published_at or obj.published_at
-        ## TODO
-        ## Lidar com os campos de ManyToMany e FK
+        obj.dataverse = dataverse or obj.dataverse
+        obj.publisher = publisher or obj.publisher
         obj.save()
+        if authors:
+            obj.authors.set(authors)
+        if keywords:
+            obj.keywords.set(keywords)
+        if thematic_area:
+            obj.thematic_area.set(thematic_area)
+        if contacts:
+            obj.contacts.set(contacts)
+        if publications:
+            obj.publications.set(publications)
 
     base_form_class = CoreAdminModelForm
 
 
 class File(CommonControlField, CommonDataField):
-    file_type = models.CharField(max_length=30, blank=True, null=True)
+    file_type = models.CharField(max_length=100, blank=True, null=True)
     file_content_type = models.CharField(max_length=100, blank=True, null=True)
     file_persistent_id = models.TextField(blank=True, null=True)
-    dataset = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
+    dataset = models.ForeignKey(
+        Dataset, on_delete=models.SET_NULL, blank=True, null=True
+    )
 
     def __unicode__(self):
         return f"{self.name}"
 
     def __str__(self):
-        return f"{self.name} - {self.type}"
+        return f"{self.name}"
 
     @classmethod
     def create_or_update(
         cls,
-        name,
+        file_persistent_id,
+        user,
+        name=None,
         type=None,
         url=None,
         published_at=None,
         file_type=None,
-        file_persistent_type=None,
-        file_persistent_id=None,
+        file_content_type=None,
         dataset=None,
     ):
         try:
             obj = cls.objects.get(file_persistent_id=file_persistent_id)
+            obj.updated_by = user
         except cls.DoesNotExist:
             obj = cls()
             obj.file_persistent_id = file_persistent_id
+            obj.creator = user
 
         obj.name = name or obj.name
         obj.type = type or obj.type
         obj.url = url or obj.url
         obj.published_at = published_at or obj.published_at
         obj.file_type = file_type or obj.file_type
-        obj.file_persistent_type = file_persistent_id or obj.file_persistent_id
-        ## TODO
-        ## Lidar com os campos de ManyToMany e FK
+        obj.file_content_type = file_content_type or obj.file_content_type
+        obj.dataset = dataset or obj.dataset
         obj.save()
 
     base_form_class = CoreAdminModelForm
@@ -176,9 +198,34 @@ class File(CommonControlField, CommonDataField):
 
 class Affiliation(CommonControlField):
     name = models.TextField(blank=True, null=True)
-    author = models.ForeignKey(Researcher, on_delete=models.SET_NULL, blank=True, null=True, related_name="affiliation_dataset")
+    author = models.ForeignKey(
+        "Author",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
+
+    def __str__(self):
+        return f"{self.name} - {self.author}"
 
 
 class Publication(CommonControlField):
     citation = models.TextField(blank=True, null=True)
     url = models.URLField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.citation} - {self.url}"
+    
+
+class Author(CommonControlField):
+    name = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Publisher(CommonControlField):
+    name = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
