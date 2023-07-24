@@ -513,3 +513,98 @@ class ConflictPolicy(Orderable, RichTextWithLang, CommonControlField):
     journal = ParentalKey(
         Journal, on_delete=models.CASCADE, related_name="conflict_policy"
     )
+
+
+class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
+    """
+    A class used to represent a journal model designed in the SciELO context.
+
+    Attributes
+    ----------
+    official : official journal class object
+        journal model that contains only official data registered in the ISSN.
+
+    Methods
+    -------
+    TODO
+    """
+
+    collection = models.ForeignKey(
+        Collection,
+        verbose_name=_("Collection"),
+        on_delete=models.SET_NULL,
+        related_name="+",
+        null=True,
+        blank=True,
+    )
+    journal = models.ForeignKey(
+        Journal,
+        verbose_name=_("Journal"),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    journal_acron = models.TextField(_("Journal Acronym"), null=True, blank=True)
+    issn_scielo = models.CharField(
+        _("ISSN SciELO"), max_length=9, null=True, blank=True
+    )
+    # TODO adicionar eventos de entrada e saída de coleção / refatorar journal_and_collection
+
+    class Meta:
+        verbose_name = _("SciELO Journal")
+        verbose_name_plural = _("SciELO Journals")
+        index_together = [
+            ["collection", "journal_acron"],
+            ["collection", "issn_scielo"],
+        ]
+
+    def __unicode__(self):
+        return f"{self.collection} {self.journal_acron or self.issn_scielo}"
+
+    def __str__(self):
+        return f"{self.collection} {self.journal_acron or self.issn_scielo}"
+
+    base_form_class = CoreAdminModelForm
+
+    panels = [
+        FieldPanel("journal"),
+        FieldPanel("journal_acron"),
+        FieldPanel("issn_scielo"),
+        FieldPanel("collection"),
+    ]
+
+    @classmethod
+    def get(
+        cls,
+        collection,
+        issn_scielo=None,
+        journal_acron=None,
+    ):
+        if not collection:
+            raise ValueError("SciELOJournal.get requires collection parameter")
+        if issn_scielo:
+            return cls.objects.get(collection=collection, issn_scielo=issn_scielo)
+        if journal_acron:
+            return cls.objects.get(collection=collection, journal_acron=journal_acron)
+        raise ValueError("SciELOJournal.get requires issn_scielo or journal_acron parameter")
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        collection,
+        issn_scielo=None,
+        journal_acron=None,
+        journal=None,
+    ):
+        try:
+            obj = cls.get(collection, issn_scielo=issn_scielo, journal_acron=journal_acron)
+            obj.updated_by = user
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.creator = user
+        obj.issn_scielo = issn_scielo or obj.issn_scielo
+        obj.journal_acron = journal_acron or obj.journal_acron
+        obj.journal = journal or obj.journal
+        obj.save()
+        return obj
