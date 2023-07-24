@@ -174,10 +174,7 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
         blank=True,
         on_delete=models.SET_NULL,
     )
-    issn_scielo = models.CharField(
-        _("ISSN SciELO"), max_length=9, null=True, blank=True
-    )
-    title = models.TextField(_("SciELO Journal Title"), null=True, blank=True)
+    title = models.TextField(_("Journal Title"), null=True, blank=True)
     short_title = models.TextField(_("Short Title"), null=True, blank=True)
 
     logo = models.ForeignKey(
@@ -191,13 +188,9 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
         _("Submission online URL"), null=True, blank=True
     )
 
-    collection = models.ForeignKey(
+    collection = models.ManyToManyField(
         Collection,
         verbose_name=_("Collection"),
-        on_delete=models.SET_NULL,
-        related_name="+",
-        null=True,
-        blank=True,
     )
 
     open_access = models.CharField(
@@ -223,7 +216,7 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
         FieldPanel("official"),
         FieldPanel("title"),
         FieldPanel("short_title"),
-        FieldPanel("collection"),
+        InlinePanel("collection"),
     ]
 
     panels_mission = [
@@ -296,27 +289,12 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
     )
 
     class Meta:
-        verbose_name = _("SciELO Journal")
-        verbose_name_plural = _("SciELO Journals")
+        verbose_name = _("Journal")
+        verbose_name_plural = _("Journals")
         indexes = [
             models.Index(
                 fields=[
-                    "issn_scielo",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "title",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "short_title",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "submission_online_url",
+                    "official",
                 ]
             ),
         ]
@@ -330,42 +308,47 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
 
         d.update(
             {
-                "scielo_journal__issn_scielo": self.issn_scielo,
-                "scielo_journal__title": self.title,
-                "scielo_journal__short_title": self.short_title,
-                "scielo_journal__submission_online_url": self.submission_online_url,
+                "journal__title": self.title,
+                "journal__short_title": self.short_title,
+                "journal__submission_online_url": self.submission_online_url,
             }
         )
 
         return d
 
     @classmethod
-    def get_or_create(
+    def get(
         cls,
         official_journal,
-        issn_scielo,
-        title,
-        short_title,
-        submission_online_url,
-        open_access,
-        collection,
-        user,
     ):
-        scielo_journals = cls.objects.filter(official=official_journal)
+        if official_journal:
+            return cls.objects.get(official=official_journal)
+        raise ValueError("Journal.get requires offical_journal parameter")
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        official_journal,
+        title=None,
+        short_title=None,
+        submission_online_url=None,
+        open_access=None,
+    ):
         try:
-            scielo_journal = scielo_journals[0]
+            obj = cls.get(official_journal)
+            obj.updated_by = user
         except IndexError:
-            scielo_journal = cls()
-            scielo_journal.official = official_journal
-            scielo_journal.issn_scielo = issn_scielo
-            scielo_journal.title = title
-            scielo_journal.short_title = short_title
-            scielo_journal.creator = user
-            scielo_journal.submission_online_url = submission_online_url
-            scielo_journal.open_access = open_access
-            scielo_journal.collection = collection
-            scielo_journal.save()
-        return scielo_journal
+            obj = cls()
+            obj.creator = user
+
+        obj.official = official_journal or obj.official
+        obj.title = title or obj.title
+        obj.short_title = short_title or obj.short_title
+        obj.submission_online_url = submission_online_url or obj.submission_online_url
+        obj.open_access = open_access or obj.open_access
+        obj.save()
+        return obj
 
     def __unicode__(self):
         return "%s" % self.official or ""
@@ -403,23 +386,32 @@ class Mission(Orderable, RichTextWithLang, CommonControlField):
         return d
 
     @classmethod
-    def get_or_create(
-        cls, scielo_journal, scielo_issn, mission_rich_text, language, user
+    def get(
+        cls, journal, language,
     ):
-        scielo_missions = cls.objects.filter(
-            journal__official__issnl=scielo_issn, language=language
-        )
-        try:
-            scielo_mission = scielo_missions[0]
-        except IndexError:
-            scielo_mission = cls()
-            scielo_mission.rich_text = mission_rich_text
-            scielo_mission.language = language
-            scielo_mission.journal = scielo_journal
-            scielo_mission.creator = user
-            scielo_mission.save()
+        if journal and language:
+            return cls.objects.filter(
+                journal=journal, language=language
+            )
+        raise ValueError("Mission.get requires journal and language parameters")
 
-        return scielo_mission
+    @classmethod
+    def create_or_update(
+        cls, user, journal, language, mission_rich_text,
+    ):
+        if not mission_rich_text:
+            raise ValueError("Mission.create_or_update requires mission_rich_text parameter")
+        try:
+            obj = cls.get(journal, language)
+            obj.updated_by = user
+        except IndexError:
+            obj = cls()
+            obj.creator = user
+        obj.rich_text = mission_rich_text or obj.rich_text
+        obj.language = language or obj.language
+        obj.journal = journal or obj.journal
+        obj.save()
+        return obj
 
 
 class Owner(Orderable, InstitutionHistory):
