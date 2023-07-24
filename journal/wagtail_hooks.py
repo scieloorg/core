@@ -7,7 +7,7 @@ from wagtail.contrib.modeladmin.options import (
 )
 from wagtail.contrib.modeladmin.views import CreateView
 
-from .models import OfficialJournal, Journal
+from .models import OfficialJournal, Journal, SciELOJournal
 
 
 class OfficialJournalCreateView(CreateView):
@@ -62,12 +62,11 @@ class JournalAdmin(ModelAdmin):
 
     list_display = (
         "official",
-        "issn_scielo",
         "title",
         "short_title",
     )
     # list_filter = ()
-    search_fields = ("title", "issn_scielo")
+    search_fields = ("title", )
 
 
 class SciELOJournalCreateView(CreateView):
