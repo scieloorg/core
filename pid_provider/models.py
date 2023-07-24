@@ -15,8 +15,7 @@ from wagtail.admin.panels import FieldPanel
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from pid_provider import exceptions, v3_gen, xml_sps_adapter
-from xmlsps.models import XMLSPS, XMLIssue, XMLJournal
-from xmlsps.xml_sps_lib import XMLWithPre
+from xmlsps.models import XMLSPS, XMLIssue, XMLJournal, XMLVersion
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -25,6 +24,70 @@ LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 def utcnow():
     return datetime.utcnow()
     # return datetime.utcnow().isoformat().replace("T", " ") + "Z"
+
+
+def xml_directory_path(instance, filename):
+    # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
+    return f"xml_pid_provider/{instance.finger_print[-1]}/{instance.finger_print[-2]}/{instance.finger_print}/{filename}"
+
+
+class KernelXMLMigration(CommonControlField):
+    pid_v3 = models.CharField(_("PID v3"), max_length=23, null=True, blank=True)
+    acron = models.CharField(_("Acron"), max_length=23, null=True, blank=True)
+    year = models.CharField(_("Year"), max_length=4, null=True, blank=True)
+    error_type = models.TextField(_("Error type"), null=True, blank=True)
+    error_msg = models.TextField(_("Error message"), null=True, blank=True)
+    xml_version = models.ForeignKey(XMLVersion, null=True, blank=True, on_delete=models.SET_NULL)
+
+    def __unicode__(self):
+        return f"{self.pid_v3}"
+
+    def __str__(self):
+        return f"{self.pid_v3}"
+
+    @classmethod
+    def get(
+        cls,
+        pid_v3=None,
+    ):
+        return cls.objects.get(pid_v3=pid_v3)
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user=None,
+        pid_v3=None,
+        acron=None,
+        year=None,
+        error_type=None,
+        error_msg=None,
+        xml_version=None,
+    ):
+        try:
+            obj = cls.get(pid_v3=pid_v3)
+            obj.updated_by = user
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.pid_v3 = pid_v3
+            obj.creator = user
+
+        obj.acron = acron or obj.acron
+        obj.year = year or obj.year
+        obj.error_type = error_type or obj.error_type
+        obj.error_msg = error_msg or obj.error_msg
+        obj.xml_version = xml_version or obj.xml_version
+        obj.save()
+        return obj
+
+    panels = [
+        FieldPanel("pid_v3"),
+        FieldPanel("acron"),
+        FieldPanel("year"),
+        FieldPanel("error_type"),
+        FieldPanel("error_msg"),
+    ]
+
+    base_form_class = CoreAdminModelForm
 
 
 class PidProviderConfig(CommonControlField):
@@ -142,70 +205,6 @@ class PidProviderBadRequest(CommonControlField):
     ]
 
     base_form_class = CoreAdminModelForm
-
-
-def xml_directory_path(instance, filename):
-    # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
-    return f"xml_pid_provider/{instance.finger_print[-1]}/{instance.finger_print[-2]}/{instance.finger_print}/{filename}"
-
-
-class XMLVersion(CommonControlField):
-    """
-    Tem função de guardar a versão do XML
-    """
-
-    pid_provider_xml = models.ForeignKey(
-        "PidProviderXML", on_delete=models.SET_NULL, null=True, blank=True
-    )
-    file = models.FileField(upload_to=xml_directory_path, null=True, blank=True)
-    finger_print = models.CharField(max_length=64, null=True, blank=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["finger_print"]),
-            models.Index(fields=["pid_provider_xml"]),
-        ]
-
-    def __str__(self):
-        return self.finger_print
-
-    @classmethod
-    def create(
-        cls,
-        creator,
-        pid_provider_xml,
-        pkg_name=None,
-        finger_print=None,
-        zip_xml_content=None,
-    ):
-        logging.info(f"XMLVersion.create({pkg_name})")
-        obj = cls()
-        obj.finger_print = finger_print
-        obj.pkg_name = pkg_name
-        obj.save_file(pkg_name + ".zip", zip_xml_content)
-        obj.creator = creator
-        obj.created = utcnow()
-        obj.save()
-
-        # salvar pid_provider_xml e salvar self para evitar exceção
-        obj.pid_provider_xml = pid_provider_xml
-        obj.save()
-        return obj
-
-    def save_file(self, name, content):
-        self.file.save(name, ContentFile(content))
-
-    @property
-    def xml_with_pre(self):
-        try:
-            for item in XMLWithPre.create(path=self.file.path):
-                yield item
-        except Exception as e:
-            raise exceptions.PidProviderXMLWithPreError(
-                _("Unable to get xml with pre (PidProviderXML) {}: {} {}").format(
-                    self.pkg_name, type(e), e
-                )
-            )
 
 
 class XMLRelatedItem(CommonControlField):
@@ -380,7 +379,7 @@ class PidProviderXML(CommonControlField):
         ):
             self.current_version = XMLVersion.create(
                 creator=creator,
-                pid_provider_xml=self,
+                pid_v3=self.v3,
                 pkg_name=pkg_name,
                 finger_print=finger_print,
                 zip_xml_content=xml_adapter.xml_with_pre.get_zip_content(
@@ -391,9 +390,9 @@ class PidProviderXML(CommonControlField):
                 pid_v3=self.v3,
                 pid_v2=self.v2,
                 aop_pid=self.aop_pid,
-                xml=xml_adapter.tostring(),
                 xml_journal=self.journal,
                 xml_issue=self.issue,
+                xml_version=self.current_version,
                 user=user,
             )
 
