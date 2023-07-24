@@ -79,26 +79,36 @@ class OfficialJournal(CommonControlField):
         return d
 
     @classmethod
-    def get_or_create(
-        cls, title, foundation_year, issn_print, issn_electronic, issnl, user
-    ):  
+    def get(cls, issn_print=None, issn_electronic=None, issnl=None):
+        if issn_electronic:
+            return cls.objects.get(issn_electronic=issn_electronic)
+        if issn_print:
+            return cls.objects.get(issn_print=issn_print)
         if issnl:
-            official_journals = cls.objects.filter(issnl=issnl)
-        else:
-            official_journals = cls.objects.filter(title=title)
-        try:
-            official_journal = official_journals[0]
-        except IndexError:
-            official_journal = cls()
-            official_journal.issnl = issnl
-            official_journal.title = title
-            official_journal.issn_print = issn_print
-            official_journal.issn_electronic = issn_electronic
-            official_journal.foundation_year = foundation_year
-            official_journal.creator = user
-            official_journal.save()
+            return cls.objects.get(issnl=issnl)
+        raise ValueError("OfficialJournal.get requires issn_print or issn_electronic or issnl")
 
-        return official_journal
+    @classmethod
+    def create_or_update(
+        cls, user,
+        issn_print=None, issn_electronic=None, issnl=None,
+        title=None, foundation_year=None,
+    ):
+        try:
+            obj = cls.get(issn_print=issn_print, issn_electronic=issn_electronic, issnl=issnl)
+            obj.updated_by = user
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.creator = user
+
+        obj.issnl = issnl or obj.issnl
+        obj.issn_electronic = issn_electronic or obj.issn_electronic
+        obj.issn_print = issn_print or obj.issn_print
+        obj.foundation_year = foundation_year or obj.foundation_year
+        obj.title = title or obj.title
+        obj.save()
+
+        return obj
 
     base_form_class = CoreAdminModelForm
 

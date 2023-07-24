@@ -71,8 +71,13 @@ def get_official_journal(user, journal_xml):
             if issn["@TYPE"] == "ONLIN":
                 issn_electronic = issn["#text"]
 
-        official_journal = OfficialJournal.get_or_create(
-            title, foundation_year, issn_print, issn_electronic, issnl, user
+        official_journal = OfficialJournal.create_or_update(
+            user=user,
+            issn_print=issn_print,
+            issn_electronic=issn_electronic,
+            issnl=issnl,
+            title=title,
+            foundation_year=foundation_year,
         )
 
         return official_journal
@@ -101,7 +106,7 @@ def create_journal(user, journal_xml, collection):
             user=user,
         )
 
-		scielo_journal = SciELOJournal.create_or_update(
+        scielo_journal = SciELOJournal.create_or_update(
             user=user,
             collection=collection,
             journal_acron=journal_acron,

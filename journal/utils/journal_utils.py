@@ -39,13 +39,13 @@ def get_or_create_official_journal(
     issn_print, issn_electronic = extract_issn_print_electronic(
         issn_print_or_electronic
     )
-    obj = OfficialJournal.get_or_create(
-        title=title,
+    obj = OfficialJournal.create_or_update(
+        user=user,
         issn_print=issn_print,
         issn_electronic=issn_electronic,
-        user=user,
-        foundation_year=foundation_year,
         issnl=issnl,
+        title=title,
+        foundation_year=foundation_year,
     )
     return obj
 
