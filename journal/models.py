@@ -135,7 +135,7 @@ class SocialNetwork(models.Model):
         return d
 
 
-class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
+class Journal(CommonControlField, ClusterableModel, SocialNetwork):
     """
     A class used to represent a journal model designed in the SciELO context.
 
@@ -338,7 +338,7 @@ class ScieloJournal(CommonControlField, ClusterableModel, SocialNetwork):
 
 class Mission(Orderable, RichTextWithLang, CommonControlField):
     journal = ParentalKey(
-        ScieloJournal, on_delete=models.CASCADE, related_name="mission"
+        Journal, on_delete=models.CASCADE, related_name="mission"
     )
 
     class Meta:
@@ -383,28 +383,28 @@ class Mission(Orderable, RichTextWithLang, CommonControlField):
 
 
 class Owner(Orderable, InstitutionHistory):
-    page = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name="owner")
+    page = ParentalKey(Journal, on_delete=models.CASCADE, related_name="owner")
 
 
 class EditorialManager(Orderable, InstitutionHistory):
     page = ParentalKey(
-        ScieloJournal, on_delete=models.CASCADE, related_name="editorialmanager"
+        Journal, on_delete=models.CASCADE, related_name="editorialmanager"
     )
 
 
 class Publisher(Orderable, InstitutionHistory):
     page = ParentalKey(
-        ScieloJournal, on_delete=models.CASCADE, related_name="publisher"
+        Journal, on_delete=models.CASCADE, related_name="publisher"
     )
 
 
 class Sponsor(Orderable, InstitutionHistory):
-    page = ParentalKey(ScieloJournal, on_delete=models.CASCADE, related_name="sponsor")
+    page = ParentalKey(Journal, on_delete=models.CASCADE, related_name="sponsor")
 
 
 class JournalSocialNetwork(Orderable, SocialNetwork):
     page = ParentalKey(
-        ScieloJournal, on_delete=models.CASCADE, related_name="journalsocialnetwork"
+        Journal, on_delete=models.CASCADE, related_name="journalsocialnetwork"
     )
 
 
@@ -414,7 +414,7 @@ class OpenData(Orderable, RichTextWithLang, CommonControlField):
             resulting from research that are usually the basis of the texts of articles published by journals. 
             Guide: <a target='_blank' href='https://wp.scielo.org/wp-content/uploads/Guia_TOP_pt.pdf'>https://wp.scielo.org/wp-content/uploads/Guia_TOP_pt.pdf</a>""")))
     journal = ParentalKey(
-        ScieloJournal, on_delete=models.CASCADE, related_name="open_data"
+        Journal, on_delete=models.CASCADE, related_name="open_data"
     )
 
 
@@ -429,7 +429,7 @@ class Preprint(Orderable, RichTextWithLang, CommonControlField):
             their policies to accept the submission of manuscripts previously deposited in a preprints server 
             recognized by the journal."""))
     journal = ParentalKey(
-        ScieloJournal, on_delete=models.CASCADE, related_name="preprint"
+        Journal, on_delete=models.CASCADE, related_name="preprint"
     )
 
     
@@ -437,7 +437,7 @@ class History(Orderable, RichTextWithLang, CommonControlField):
     rich_text = RichTextField(null=True, blank=True, 
             help_text=_("Insert here a brief history with events and milestones in the trajectory of the journal"))
     journal = ParentalKey(
-        ScieloJournal, on_delete=models.CASCADE, related_name="history"
+        Journal, on_delete=models.CASCADE, related_name="history"
     )
 
 
@@ -445,7 +445,7 @@ class Focus(Orderable, RichTextWithLang, CommonControlField):
     rich_text = RichTextField(null=True, blank=True,
             help_text=_("Insert here the focus and scope of the journal"))
     journal = ParentalKey(
-        ScieloJournal, on_delete=models.CASCADE, related_name="focus"
+        Journal, on_delete=models.CASCADE, related_name="focus"
     )
 
 
@@ -453,7 +453,7 @@ class Review(Orderable, RichTextWithLang, CommonControlField):
     rich_text = RichTextField(null=True, blank=True,
             help_text=_("Brief description of the review flow"))
     journal = ParentalKey(
-        ScieloJournal, on_delete=models.CASCADE, related_name="review"
+        Journal, on_delete=models.CASCADE, related_name="review"
     )
 
 
@@ -462,7 +462,7 @@ class Ecommittee(Orderable, RichTextWithLang, CommonControlField):
             help_text=_("""Authors must attach a statement of approval from the ethics committee of 
             the institution responsible for approving the research"""))
     journal = ParentalKey(
-        ScieloJournal, on_delete=models.CASCADE, related_name="ecommittee"
+        Journal, on_delete=models.CASCADE, related_name="ecommittee"
     )
 
 
@@ -472,7 +472,7 @@ class Copyright(Orderable, RichTextWithLang, CommonControlField):
             We recommend that this section be in accordance with the recommendations of the SciELO criteria, 
             item 5.2.10.1.2. - Copyright"""))
     journal = ParentalKey(
-        ScieloJournal, on_delete=models.CASCADE, related_name="copyright"
+        Journal, on_delete=models.CASCADE, related_name="copyright"
     )
 
 
@@ -481,7 +481,7 @@ class WebsiteResponsibility(Orderable, RichTextWithLang, CommonControlField):
             help_text=_("""EX. DOAJ: Copyright terms applied to posted content must be clearly stated and separate 
             from copyright terms applied to the website"""))
     journal = ParentalKey(
-        ScieloJournal, on_delete=models.CASCADE, related_name="website_responsibility"
+        Journal, on_delete=models.CASCADE, related_name="website_responsibility"
     )
 
 
@@ -492,7 +492,7 @@ class AuthorResponsibility(Orderable, RichTextWithLang, CommonControlField):
             the terms of the license or the terms of the open access policy. "All rights reserved" is 
             never appropriate for open access content"""))
     journal = ParentalKey(
-        ScieloJournal, on_delete=models.CASCADE, related_name="author_responsibility"
+        Journal, on_delete=models.CASCADE, related_name="author_responsibility"
     )
 
 
@@ -505,11 +505,11 @@ class Policies(Orderable, RichTextWithLang, CommonControlField):
             href='https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-Praticas-para-o-Fortalecimento-da-Etica-na-Publicacao-Cientifica.pdf'>
             https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-Praticas-para-o-Fortalecimento-da-Etica-na-Publicacao-Cientifica.pdf</a>""")))
     journal = ParentalKey(
-        ScieloJournal, on_delete=models.CASCADE, related_name="policies"
+        Journal, on_delete=models.CASCADE, related_name="policies"
     )
 
 
 class ConflictPolicy(Orderable, RichTextWithLang, CommonControlField):
     journal = ParentalKey(
-        ScieloJournal, on_delete=models.CASCADE, related_name="conflict_policy"
+        Journal, on_delete=models.CASCADE, related_name="conflict_policy"
     )
