@@ -1,18 +1,18 @@
 from django.core.exceptions import ObjectDoesNotExist
 
 from ..models import Issue, TocSection
-from journal.models import Journal
+from journal.models import SciELOJournal
 from core.models import Language
 
 def get_or_create_issue(
     issn_scielo, volume, number, data_iso, supplement_volume, supplement_number, sections_data, user
 ):
-    journal = get_scielo_journal(issn_scielo)
+    scielo_journal = get_scielo_journal(issn_scielo)
     supplement = extract_value(supplement_number) or extract_value(supplement_volume)
     data = extract_value(data_iso)
         
     obj = Issue.get_or_create(
-        journal=journal,
+        journal=scielo_journal.journal,
         volume=extract_value(volume),
         number=extract_value(number),
         supplement=supplement,
@@ -27,7 +27,7 @@ def get_or_create_issue(
 def get_scielo_journal(issn_scielo):
     try:
         issn_scielo = extract_value(issn_scielo)
-        return Journal.objects.get(issn_scielo=issn_scielo)
+        return SciELOJournal.objects.get(issn_scielo=issn_scielo)
     except ObjectDoesNotExist:
         return None
 
