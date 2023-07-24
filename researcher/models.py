@@ -166,10 +166,12 @@ class EditorialBoardMember(models.Model):
 
         researcher_get = Researcher.get_or_create(given_names, last_name, suffix, orcid, lattes, email, institution_name, gender, gender_identification_status, user)
 
-        journal_get = Journal.get_or_create(official_journal=None, issn_scielo=None, title=journal, short_title=None, collection=None, user=user)
-
         try:
+            journal_get = Journal.objects.get(title=journal)
             return EditorialBoardMember.objects.get(journal = journal_get, member = researcher_get)
+        except Journal.DoesNotExist as e:
+            # TODO fazer tratamento apropriado para periódico não registrado
+            raise e
         except EditorialBoardMember.DoesNotExist:
             editorial_board_member = EditorialBoardMember()
             editorial_board_member.member = researcher_get
