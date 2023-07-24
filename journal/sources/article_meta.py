@@ -29,6 +29,7 @@ def process_journal_article_meta(collection, limit, user):
                 issn_print_or_electronic=journal_dict.get("issn_print_or_electronic"),
                 collection=journal_dict.get("collection"),
                 user=user,
+                journal_acron=journal_dict.get("acronym").lower(),
             )
         offset += 10
         data = request_journal_article_meta(
