@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 import requests
 
-from pid_provider.sources import kernel
+from pid_provider.sources import kernel, am
 
 # from core.utils.utils import fetch_data
 from config import celery_app
@@ -140,3 +140,15 @@ def load_xml_lists_from_opac(
             page += 1
             if page > pages:
                 break
+
+
+@celery_app.task(bind=True, name=_("provide_pid_for_am_xml"))
+def provide_pid_for_am_xml(
+    self, username=None, collection_acron=None, pid_v2=None,
+):
+    user = _get_user(self.request, username=username)
+    uri = (
+        f"https://articlemeta.scielo.org/api/v1/article/?"
+        f"collection={collection_acron}&code={pid_v2}&format=xmlrsps"
+    )
+    am.request_pid_v3(user, uri, collection_acron, pid_v2)
