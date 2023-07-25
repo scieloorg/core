@@ -22,6 +22,7 @@ from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
 from packtools.sps.models.journal_meta import ISSN
 from packtools.sps.models.related_articles import RelatedItems
 
+
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 
@@ -612,13 +613,13 @@ class XMLWithPre:
             try:
                 self._article_pub_year = self.xml_dates.article_date["year"]
             except (ValueError, TypeError, KeyError) as e:
-                return None
+                self._article_pub_year = self.xml_dates.collection_date["year"]
         return self._article_pub_year
 
     @property
     def article_titles_texts(self):
         if not hasattr(self, "_article_titles_texts") or not self._article_titles_texts:
             self._article_titles_texts = [
-                item["text"] for item in self.article_titles if item["text"]
+                item["plain_text"] for item in self.article_titles if item["plain_text"]
             ]
         return self._article_titles_texts

@@ -109,7 +109,7 @@ class PidProviderXMLAdapter:
             z_collab=self.z_collab or None,
         )
         if not any(_params.values()):
-            _params["main_doi"] = self.main_doi
+            _params["main_doi__iexact"] = self.main_doi
 
         if not any(_params.values()):
             _params["z_links"] = self.z_links
