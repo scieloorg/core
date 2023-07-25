@@ -979,7 +979,7 @@ class PidProviderXMLUpdateTest(TestCase):
 )
 @patch("pid_provider.models.PidProviderXML.set_current_version")
 @patch("pid_provider.models.PidProviderXML._add_data")
-@patch("pid_provider.models.PidProviderBadRequest.save")
+@patch("pid_provider.models.PidRequest.save")
 class PidProviderXMLRegisterTest(TestCase):
     def test_register_register_bad_request_and_returns_error(
         self,

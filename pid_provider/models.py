@@ -159,6 +159,7 @@ class PidRequest(CommonControlField):
     xml_version = models.ForeignKey(
         XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
     )
+    detail = models.JSONField(_("Detail"), null=True, blank=True)
 
     def __unicode__(self):
         return f"{self.pid_v3 or self.pid_v2 or self.pkg_name} ({self.collection_acron} {self.journal_acron})"
@@ -168,12 +169,16 @@ class PidRequest(CommonControlField):
 
     @classmethod
     def get(
-        cls, pid_v3=None, pid_v2=None, pkg_name=None, collection_acron=None,
+        cls, pid_v3=None, pid_v2=None, pkg_name=None, collection_acron=None, origin=None,
     ):
         if pid_v2 and collection_acron:
             return cls.objects.get(pid_v2=pid_v2, collection_acron=collection_acron)
         if pkg_name and collection_acron:
             return cls.objects.get(pkg_name=pkg_name, collection_acron=collection_acron)
+        if pkg_name:
+            return cls.objects.get(pkg_name=pkg_name)
+        if origin:
+            return cls.objects.get(origin=origin)
         if pid_v3:
             # busca por pid_v3 deve ter menor prioridade
             return cls.objects.get(pid_v3=pid_v3)
@@ -193,9 +198,16 @@ class PidRequest(CommonControlField):
         result_type=None,
         result_msg=None,
         xml_version=None,
+        detail=None,
     ):
         try:
-            obj = cls.get(pid_v3=pid_v3, pid_v2=pid_v2, pkg_name=pkg_name, collection_acron=collection_acron)
+            obj = cls.get(
+                pid_v3=pid_v3,
+                pid_v2=pid_v2,
+                pkg_name=pkg_name,
+                collection_acron=collection_acron,
+                origin=origin,
+            )
             obj.updated_by = user
         except cls.DoesNotExist:
             obj = cls()
@@ -211,6 +223,7 @@ class PidRequest(CommonControlField):
         obj.result_type = result_type or obj.result_type
         obj.result_msg = result_msg or obj.result_msg
         obj.xml_version = xml_version or obj.xml_version
+        obj.detail = detail or obj.detail
         obj.save()
         return obj
 
@@ -233,6 +246,7 @@ class PidRequest(CommonControlField):
     panels = [
         FieldPanel("collection_acron"),
         FieldPanel("journal_acron"),
+        FieldPanel("origin"),
         FieldPanel("year"),
         FieldPanel("pid_v3"),
         FieldPanel("pid_v2"),
@@ -240,69 +254,7 @@ class PidRequest(CommonControlField):
         FieldPanel("xml_version"),
         FieldPanel("result_type"),
         FieldPanel("result_msg"),
-    ]
-
-    base_form_class = CoreAdminModelForm
-
-
-class PidProviderBadRequest(CommonControlField):
-    """
-    Tem função de guardar XML que falhou no registro
-    """
-
-    basename = models.TextField(_("Basename"), null=True, blank=True)
-    finger_print = models.CharField(max_length=65, null=True, blank=True)
-    error_type = models.TextField(null=True, blank=True)
-    error_message = models.TextField(null=True, blank=True)
-    xml = models.FileField(upload_to="bad_request")
-
-    class Meta:
-
-        indexes = [
-            models.Index(fields=["basename"]),
-            models.Index(fields=["finger_print"]),
-            models.Index(fields=["error_type"]),
-            models.Index(fields=["error_message"]),
-        ]
-
-    def __unicode__(self):
-        return f"{self.basename} {self.error_type}"
-
-    def __str__(self):
-        return f"{self.basename} {self.error_type}"
-
-    @property
-    def data(self):
-        return {
-            "error_type": self.error_type,
-            "error_message": self.error_message,
-            "id": self.finger_print,
-            "filename": self.basename,
-        }
-
-    @classmethod
-    def get_or_create(cls, creator, basename, exception, xml_adapter):
-        finger_print = xml_adapter.finger_print
-
-        try:
-            obj = cls.objects.get(finger_print=finger_print)
-        except cls.DoesNotExist:
-            obj = cls()
-            obj.finger_print = finger_print
-
-        obj.xml = ContentFile(xml_adapter.tostring(), name=finger_print + ".xml")
-        obj.basename = basename
-        obj.error_type = str(type(exception))
-        obj.error_message = str(exception)
-        obj.creator = creator
-        obj.save()
-        return obj
-
-    panels = [
-        FieldPanel("basename"),
-        FieldPanel("xml"),
-        FieldPanel("error_type"),
-        FieldPanel("error_message"),
+        FieldPanel("detail"),
     ]
 
     base_form_class = CoreAdminModelForm
@@ -583,11 +535,19 @@ class PidProviderXML(CommonControlField):
             exceptions.InvalidPidError,
         ) as e:
             logging.exception(e)
-            bad_request = PidProviderBadRequest.get_or_create(
-                user,
-                filename,
-                e,
-                xml_adapter,
+            PidRequest.create_or_update(
+                user=user,
+                pid_v3=None,
+                pid_v2=None,
+                pkg_name=None,
+                journal_acron=None,
+                collection_acron=None,
+                year=None,
+                origin=filename,
+                result_type=str(type(e)),
+                result_msg=str(e),
+                xml_version=None,
+                detail={"detail": xml_adapter.tostring()}
             )
             return bad_request.data
 
