@@ -1,6 +1,5 @@
 from core.utils.utils import fetch_data
 from dataset.models import Affiliation, Dataset, Dataverse, File, Publication, Author, Publisher
-from dataset.utils.parse_name_author import parse_author_name
 from thematic_areas.models import ThematicArea
 from vocabulary.models import Keyword
 
