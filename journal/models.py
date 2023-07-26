@@ -11,7 +11,16 @@ from collection.models import Collection
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField, RichTextWithLang
 from institution.models import InstitutionHistory
-
+from journal.exceptions import (
+    MissionCreateOrUpdateError,
+    MissionGetError,
+    JournalCreateOrUpdateError,
+    JournalGetError,
+    OfficialJournalCreateOrUpdateError,
+    OfficialJournalGetError,
+    SciELOJournalCreateOrUpdateError,
+    SciELOJournalGetError,
+)
 from . import choices
 
 
@@ -86,7 +95,7 @@ class OfficialJournal(CommonControlField):
             return cls.objects.get(issn_print=issn_print)
         if issnl:
             return cls.objects.get(issnl=issnl)
-        raise ValueError(
+        raise OfficialJournalGetError(
             "OfficialJournal.get requires issn_print or issn_electronic or issnl"
         )
 
@@ -108,6 +117,10 @@ class OfficialJournal(CommonControlField):
         except cls.DoesNotExist:
             obj = cls()
             obj.creator = user
+        except (OfficialJournalGetError, cls.MultipleObjectsReturned) as e:
+            raise OfficialJournalCreateOrUpdateError(
+                _("Unable to create or update official journal {}").format(e)
+            )
 
         obj.issnl = issnl or obj.issnl
         obj.issn_electronic = issn_electronic or obj.issn_electronic
@@ -323,7 +336,7 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
     ):
         if official_journal:
             return cls.objects.get(official=official_journal)
-        raise ValueError("Journal.get requires offical_journal parameter")
+        raise JournalGetError("Journal.get requires offical_journal parameter")
 
     @classmethod
     def create_or_update(
@@ -338,9 +351,13 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
         try:
             obj = cls.get(official_journal)
             obj.updated_by = user
-        except IndexError:
+        except cls.DoesNotExist:
             obj = cls()
             obj.creator = user
+        except (JournalGetError, cls.MultipleObjectsReturned) as e:
+            raise JournalCreateOrUpdateError(
+                _("Unable to create or update journal {}").format(e)
+            )
 
         obj.official = official_journal or obj.official
         obj.title = title or obj.title
@@ -396,20 +413,24 @@ class Mission(Orderable, RichTextWithLang, CommonControlField):
             return cls.objects.filter(
                 journal=journal, language=language
             )
-        raise ValueError("Mission.get requires journal and language parameters")
+        raise MissionGetError("Mission.get requires journal and language parameters")
 
     @classmethod
     def create_or_update(
         cls, user, journal, language, mission_rich_text,
     ):
         if not mission_rich_text:
-            raise ValueError("Mission.create_or_update requires mission_rich_text parameter")
+            raise MissionCreateOrUpdateError("Mission.create_or_update requires mission_rich_text parameter")
         try:
             obj = cls.get(journal, language)
             obj.updated_by = user
         except IndexError:
             obj = cls()
             obj.creator = user
+        except (MissionGetError, cls.MultipleObjectsReturned) as e:
+            raise MissionCreateOrUpdateError(
+                _("Unable to create or update journal {}").format(e)
+            )
         obj.rich_text = mission_rich_text or obj.rich_text
         obj.language = language or obj.language
         obj.journal = journal or obj.journal
@@ -646,12 +667,12 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         journal_acron=None,
     ):
         if not collection:
-            raise ValueError("SciELOJournal.get requires collection parameter")
+            raise SciELOJournalGetError("SciELOJournal.get requires collection parameter")
         if issn_scielo:
             return cls.objects.get(collection=collection, issn_scielo=issn_scielo)
         if journal_acron:
             return cls.objects.get(collection=collection, journal_acron=journal_acron)
-        raise ValueError(
+        raise SciELOJournalGetError(
             "SciELOJournal.get requires issn_scielo or journal_acron parameter"
         )
 
@@ -672,6 +693,10 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         except cls.DoesNotExist:
             obj = cls()
             obj.creator = user
+        except (SciELOJournalGetError, cls.MultipleObjectsReturned) as e:
+            raise SciELOJournalCreateOrUpdateError(
+                _("Unable to create or update SciELO journal {}").format(e)
+            )
         obj.issn_scielo = issn_scielo or obj.issn_scielo
         obj.journal_acron = journal_acron or obj.journal_acron
         obj.journal = journal or obj.journal
