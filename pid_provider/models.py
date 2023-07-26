@@ -161,6 +161,21 @@ class PidRequest(CommonControlField):
     )
     detail = models.JSONField(_("Detail"), null=True, blank=True)
 
+    @property
+    def data(self):
+        _data = {
+            "pid_v3": self.pid_v3,
+            "pid_v2": self.pid_v2,
+            "pkg_name": self.pkg_name,
+            "origin": self.origin,
+            "collection_acron": self.collection_acron,
+            "journal_acron": self.journal_acron,
+            "result_type": self.result_type,
+            "result_msg": self.result_msg,
+            "created": self.created and self.created.isoformat(),
+            "updated": self.updated and self.updated.isoformat(),
+        }
+        return _data
     def __unicode__(self):
         return f"{self.pid_v3 or self.pid_v2 or self.pkg_name} ({self.collection_acron} {self.journal_acron})"
 
@@ -535,7 +550,7 @@ class PidProviderXML(CommonControlField):
             exceptions.InvalidPidError,
         ) as e:
             logging.exception(e)
-            PidRequest.create_or_update(
+            pid_request = PidRequest.create_or_update(
                 user=user,
                 pid_v3=None,
                 pid_v2=None,
@@ -549,7 +564,7 @@ class PidProviderXML(CommonControlField):
                 xml_version=None,
                 detail={"detail": xml_adapter.tostring()}
             )
-            return bad_request.data
+            return pid_request.data
 
     def _register_pid_changes(self, changed_pids, user):
         # requires registered.current_version is set
