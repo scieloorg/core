@@ -32,9 +32,15 @@ def request_pid_v3(user, uri, collection_acron, pid_v2):
     else:
         try:
             pid_v3 = response["v3"]
-            xml_version = PidProviderXML.objects.get(v3=pid_v3).current_version
         except KeyError:
             pid_v3 = None
+            xml_version = None
+
+        if pid_v3:
+            xml_version = PidProviderXML.objects.get(v3=pid_v3).current_version
+
+        result_type = response.get("error_type") or response.get("result_type")
+        result_msg = response.get("error_msg") or response.get("result_msg")
 
         pid_request = PidRequest.create_or_update(
             user=user,
@@ -45,7 +51,7 @@ def request_pid_v3(user, uri, collection_acron, pid_v2):
             collection_acron=collection_acron,
             year=year,
             origin=uri,
-            result_type=response.get("result_type") or "success",
-            result_msg=response.get("result_msg") or response.get("result_message") or "ok",
+            result_type=result_type or "success",
+            result_msg=result_msg or "ok",
             xml_version=xml_version,
         )
