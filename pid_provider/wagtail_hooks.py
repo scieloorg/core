@@ -27,7 +27,7 @@ class PidRequestAdmin(ModelAdmin):
 
     list_display = (
         "collection_acron",
-        "journal_acron",
+        "origin",
         "pid_v3",
         "pid_v2",
         "pkg_name",
@@ -37,12 +37,12 @@ class PidRequestAdmin(ModelAdmin):
     )
     list_filter = (
         "collection_acron",
-        "journal_acron",
+        "origin",
         "result_type",
     )
     search_fields = (
         "collection_acron",
-        "journal_acron",
+        "origin",
         "pid_v3",
         "pid_v2",
         "pkg_name",
