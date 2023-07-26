@@ -152,3 +152,23 @@ def provide_pid_for_am_xml(
         f"collection={collection_acron}&code={pid_v2}&format=xmlrsps"
     )
     am.request_pid_v3(user, uri, collection_acron, pid_v2)
+
+
+@celery_app.task(bind=True, name=_("provide_pid_for_am_xmls"))
+def provide_pid_for_am_xmls(
+    self, username=None, collection_acron=None, pids=None,
+):
+    if not collection_acron:
+        raise ValueError("provide_pid_for_am_xmls requires collection_acron")
+
+    if not pids:
+        raise ValueError("provide_pid_for_am_xmls requires pids")
+
+    for pid_v2 in pids:
+        provide_pid_for_am_xml.apply_async(
+            kwargs={
+                "username": username,
+                "collection_acron": collection_acron,
+                "pid_v2": pid_v2,
+            }
+        )
