@@ -28,4 +28,3 @@ class SciELOJournalCreateOrUpdateError(Exception):
 
 class SciELOJournalGetError(Exception):
     ...
-

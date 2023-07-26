@@ -407,20 +407,26 @@ class Mission(Orderable, RichTextWithLang, CommonControlField):
 
     @classmethod
     def get(
-        cls, journal, language,
+        cls,
+        journal,
+        language,
     ):
         if journal and language:
-            return cls.objects.filter(
-                journal=journal, language=language
-            )
+            return cls.objects.filter(journal=journal, language=language)
         raise MissionGetError("Mission.get requires journal and language parameters")
 
     @classmethod
     def create_or_update(
-        cls, user, journal, language, mission_rich_text,
+        cls,
+        user,
+        journal,
+        language,
+        mission_rich_text,
     ):
         if not mission_rich_text:
-            raise MissionCreateOrUpdateError("Mission.create_or_update requires mission_rich_text parameter")
+            raise MissionCreateOrUpdateError(
+                "Mission.create_or_update requires mission_rich_text parameter"
+            )
         try:
             obj = cls.get(journal, language)
             obj.updated_by = user
@@ -667,7 +673,9 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         journal_acron=None,
     ):
         if not collection:
-            raise SciELOJournalGetError("SciELOJournal.get requires collection parameter")
+            raise SciELOJournalGetError(
+                "SciELOJournal.get requires collection parameter"
+            )
         if issn_scielo:
             return cls.objects.get(collection=collection, issn_scielo=issn_scielo)
         if journal_acron:

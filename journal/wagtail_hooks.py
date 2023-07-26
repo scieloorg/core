@@ -66,7 +66,7 @@ class JournalAdmin(ModelAdmin):
         "short_title",
     )
     # list_filter = ()
-    search_fields = ("title", )
+    search_fields = ("title",)
 
 
 class SciELOJournalCreateView(CreateView):

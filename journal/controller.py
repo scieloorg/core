@@ -114,7 +114,10 @@ def create_journal(user, journal_xml, collection):
         language = journal_xml["SERIAL"]["CONTROLINFO"]["LANGUAGE"]
         journal.panels_mission.append(
             Mission.create_or_update(
-                user, journal, language, mission_rich_text,
+                user,
+                journal,
+                language,
+                mission_rich_text,
             )
         )
 
