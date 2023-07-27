@@ -9,11 +9,13 @@ from wagtail.models import Orderable
 from core.forms import CoreAdminModelForm
 from core.models import (
     CommonControlField,
+    License,
     Language,
     License,
     RichTextWithLang,
     TextWithLang,
 )
+from location.models import City
 from journal.models import Journal
 from location.models import City
 
