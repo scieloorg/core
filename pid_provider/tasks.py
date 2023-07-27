@@ -1,16 +1,15 @@
 import json
-import os
 import logging
+import os
 from datetime import datetime, timedelta
 
+import requests
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
-import requests
 
-from pid_provider.sources import kernel, am
-
-from core.utils.utils import fetch_data
 from config import celery_app
+from core.utils.utils import fetch_data
+from pid_provider.sources import am, kernel
 
 User = get_user_model()
 

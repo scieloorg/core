@@ -1,11 +1,12 @@
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 
+from article.models import Article
 from article.sources import xmlsps
 from article.sources.preprint import harvest_preprints
-from xmlsps.models import XMLSPS
-from article.models import Article
 from config import celery_app
+from xmlsps.models import XMLSPS
+
 from . import controller
 
 User = get_user_model()

@@ -7,7 +7,7 @@ from collection.models import Collection
 from institution.models import Institution, InstitutionHistory
 from processing_errors.models import ProcessingError
 
-from .models import Mission, OfficialJournal, SciELOJournal, Journal
+from .models import Journal, Mission, OfficialJournal, SciELOJournal
 
 
 def get_issn(collection):

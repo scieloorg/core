@@ -6,7 +6,6 @@ from django.utils.translation import gettext_lazy as _
 
 from django_celery_beat.models import CrontabSchedule, PeriodicTask
 
-
 User = get_user_model()
 
 

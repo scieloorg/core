@@ -2,9 +2,9 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import FieldPanel
 
-from core.models import CommonControlField, RichTextWithLang, Language
-from core.forms import CoreAdminModelForm
 from core.choices import LANGUAGE
+from core.forms import CoreAdminModelForm
+from core.models import CommonControlField, Language, RichTextWithLang
 
 from .choices import STATUS
 

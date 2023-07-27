@@ -1,21 +1,21 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import FieldPanel, InlinePanel, TabbedInterface, ObjectList
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from wagtail.models import Orderable
+from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 from wagtail.fields import RichTextField
+from wagtail.models import Orderable
 
 from core.forms import CoreAdminModelForm
 from core.models import (
     CommonControlField,
-    License,
     Language,
+    License,
     RichTextWithLang,
     TextWithLang,
 )
-from location.models import City
 from journal.models import Journal
+from location.models import City
 
 
 class Issue(CommonControlField, ClusterableModel):

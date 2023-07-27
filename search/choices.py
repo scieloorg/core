@@ -1,6 +1,5 @@
 from django.utils.translation import gettext as _
 
-
 translates = {
     "journal_title": _("Periódico"),
     "publication_year": _("Ano de publicação"),

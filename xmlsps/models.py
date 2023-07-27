@@ -1,10 +1,10 @@
 import logging
 from datetime import datetime
 
+from django.core.files.base import ContentFile
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext as _
-from django.core.files.base import ContentFile
 from lxml import etree
 
 from core.models import CommonControlField

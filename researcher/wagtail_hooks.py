@@ -1,17 +1,17 @@
 from django.http import HttpResponseRedirect
-from django.utils.translation import gettext as _
 from django.urls import path
+from django.utils.translation import gettext as _
 from wagtail.contrib.modeladmin.options import (
     ModelAdmin,
-    modeladmin_register,
     ModelAdminGroup,
+    modeladmin_register,
 )
 from wagtail.contrib.modeladmin.views import CreateView
 from wagtail.core import hooks
 
-from .models import Researcher, EditorialBoardMember, EditorialBoardMemberFile
 from .button_helper import EditorialBoardMemberHelper
-from .views import validate_ebm, import_file_ebm
+from .models import EditorialBoardMember, EditorialBoardMemberFile, Researcher
+from .views import import_file_ebm, validate_ebm
 
 
 class ResearcherCreateView(CreateView):

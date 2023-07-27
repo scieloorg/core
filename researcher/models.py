@@ -4,15 +4,15 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.edit_handlers import FieldPanel, InlinePanel, MultiFieldPanel
 from wagtail.core.models import Orderable
-from wagtailautocomplete.edit_handlers import AutocompletePanel
 from wagtail.documents.edit_handlers import DocumentChooserPanel
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.models import CommonControlField, Gender
 from institution.models import Institution, InstitutionHistory
 from journal.models import Journal
 
-from .forms import ResearcherForm
 from . import choices
+from .forms import ResearcherForm
 
 
 class Researcher(ClusterableModel, CommonControlField):

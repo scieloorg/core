@@ -1,6 +1,5 @@
 from django.db.models import Q
 from django.db.utils import DataError
-
 from lxml import etree
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_authors import Authors

@@ -1,8 +1,9 @@
 from django.core.exceptions import ObjectDoesNotExist
 
-from ..models import Issue, TocSection
-from journal.models import SciELOJournal
 from core.models import Language
+from journal.models import SciELOJournal
+
+from ..models import Issue, TocSection
 
 
 def get_or_create_issue(

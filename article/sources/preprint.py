@@ -2,9 +2,9 @@ import logging
 import re
 from datetime import datetime
 from urllib.parse import urlparse
-from sickle import Sickle
 
 from lxml import etree
+from sickle import Sickle
 
 from article import models
 

@@ -1,6 +1,6 @@
 from core.utils import utils
-from issue.utils.correspondencia import correspondencia_issue
 from core.utils.rename_dictionary_keys import rename_dictionary_keys
+from issue.utils.correspondencia import correspondencia_issue
 from issue.utils.issue_utils import get_or_create_issue
 
 
