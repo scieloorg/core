@@ -13,5 +13,5 @@ OA_STATUS = [
     ("hybrid", "Hybrid"),
     ("bronze", "Bronze"),
     ("green", "Green"),
-    ("closed", "Closed")
+    ("closed", "Closed"),
 ]

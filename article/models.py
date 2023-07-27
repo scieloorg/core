@@ -16,7 +16,7 @@ from core.models import (
 from doi.models import DOI
 from institution.models import Institution, Sponsor
 from issue.models import Issue, TocSection
-from journal.models import ScieloJournal
+from journal.models import Journal
 from researcher.models import Researcher
 from vocabulary.models import Keyword
 
@@ -25,7 +25,7 @@ class Article(CommonControlField):
     pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
     pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True)
     journal = models.ForeignKey(
-        ScieloJournal,
+        Journal,
         verbose_name=_("Journal"),
         null=True,
         blank=True,
