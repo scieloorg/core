@@ -19,8 +19,9 @@ from packtools.sps.models.article_titles import ArticleTitles
 from packtools.sps.models.body import Body
 from packtools.sps.models.dates import ArticleDates
 from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
-from packtools.sps.models.journal_meta import ISSN
+from packtools.sps.models.journal_meta import ISSN, Acronym
 from packtools.sps.models.related_articles import RelatedItems
+
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -274,6 +275,43 @@ class XMLWithPre:
             with open(temp_zip_file_path, "rb") as fp:
                 zip_content = fp.read()
         return zip_content
+
+    @property
+    def sps_pkg_name_suffix(self):
+        if self.is_aop and self.main_doi:
+            doi = self.main_doi
+            if "/" in doi:
+                doi = doi[doi.find("/") + 1 :]
+            return doi.replace(".", "-")
+        if self.elocation_id:
+            return self.elocation_id
+        if self.fpage:
+            try:
+                fpage = int(self.fpage)
+            except TypeError:
+                pass
+            if fpage != 0:
+                return self.fpage + (self.fpage_seq or "")
+
+    @property
+    def sps_pkg_name(self):
+        try:
+            suppl = self.suppl
+            if suppl and int(suppl) == 0:
+                suppl = "suppl"
+        except TypeError:
+            pass
+
+        xml_acron = Acronym(self.xmltree)
+        parts = [
+            self.journal_issn_electronic or self.journal_issn_print,
+            xml_acron.text,
+            self.volume,
+            self.number and self.number.zfill(2),
+            suppl,
+            self.sps_pkg_name_suffix or self.filename or self.v2[-5:],
+        ]
+        return "-".join([part for part in parts if part])
 
     @property
     def article_id_parent(self):
@@ -612,13 +650,13 @@ class XMLWithPre:
             try:
                 self._article_pub_year = self.xml_dates.article_date["year"]
             except (ValueError, TypeError, KeyError) as e:
-                return None
+                self._article_pub_year = self.xml_dates.collection_date["year"]
         return self._article_pub_year
 
     @property
     def article_titles_texts(self):
         if not hasattr(self, "_article_titles_texts") or not self._article_titles_texts:
             self._article_titles_texts = [
-                item["text"] for item in self.article_titles if item["text"]
+                item["plain_text"] for item in self.article_titles if item["plain_text"]
             ]
         return self._article_titles_texts

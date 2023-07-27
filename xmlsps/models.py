@@ -113,7 +113,13 @@ class XMLJournal(models.Model):
             journal.issn_print = issn_print
             journal.save()
             return journal
-
+        except cls.MultipleObjectsReturned:
+            # talvez tenha duplicado devido ao registro simultaneo
+            # nao é um problema duplicar
+            return cls.objects.filter(
+                issn_electronic=issn_electronic,
+                issn_print=issn_print,
+            ).first()
 
 class XMLIssue(models.Model):
     """
@@ -149,13 +155,14 @@ class XMLIssue(models.Model):
     @classmethod
     def get_or_create(cls, journal, volume, number, suppl, pub_year):
         try:
-            return cls.objects.get(
+            obj = cls.objects.get(
                 journal=journal,
                 volume=volume,
                 number=number,
                 suppl=suppl,
                 pub_year=pub_year,
             )
+            return obj
         except cls.DoesNotExist:
             issue = cls()
             issue.journal = journal
@@ -165,6 +172,16 @@ class XMLIssue(models.Model):
             issue.pub_year = pub_year
             issue.save()
             return issue
+        except cls.MultipleObjectsReturned:
+            # talvez tenha duplicado devido ao registro simultaneo
+            # nao é um problema duplicar
+            return cls.objects.filter(
+                journal=journal,
+                volume=volume,
+                number=number,
+                suppl=suppl,
+                pub_year=pub_year,
+            ).first()
 
 
 class XMLSPS(CommonControlField):

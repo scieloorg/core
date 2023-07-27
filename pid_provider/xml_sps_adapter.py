@@ -115,10 +115,10 @@ class PidProviderXMLAdapter:
             _params["z_links"] = self.z_links
 
         if not any(_params.values()):
-            _params["z_partial_body"] = self.z_partial_body
+            _params["pkg_name"] = self.sps_pkg_name
 
         if not any(_params.values()):
-            _params["pkg_name"] = self.pkg_name
+            _params["z_partial_body"] = self.z_partial_body
 
         _params["elocation_id"] = self.elocation_id
         if aop_version:
@@ -140,6 +140,23 @@ class PidProviderXMLAdapter:
 
         LOGGER.info(_params)
         return _params
+
+    def adapt_query_params(self, params):
+        """
+        Adapt query parameters
+
+        Parameters
+        ----------
+        params : dict
+
+        Returns
+        -------
+        dict
+        """
+        try:
+            params["main_doi__iexact"] = params["main_doi"]
+        except KeyError:
+            pass
 
     @property
     def query_list(self):

@@ -6,7 +6,7 @@ from core.utils import scheduler
 def run(username, begin_date, end_date, limit, pages):
     # deixa a task agendada
     scheduler.schedule_task(
-        task="load_xml_lists_from_opac",
+        task="provide_pid_for_opac_xmls",
         name=_("Registra XML do site www.scielo.br no pid provider"),
         kwargs={
             "username": username,
