@@ -452,19 +452,10 @@ class PidProviderXML(CommonControlField):
             exceptions.QueryDocumentMultipleObjectsReturnedError,
             exceptions.InvalidPidError,
         ) as e:
-            logging.exception(e)
-            pid_request = PidRequest.create_or_update(
+            pid_request = PidRequest.register_failure(
+                e,
                 user=user,
-                pid_v3=None,
-                pid_v2=None,
-                pkg_name=None,
-                journal_acron=None,
-                collection_acron=None,
-                year=None,
                 origin=filename,
-                result_type=str(type(e)),
-                result_msg=str(e),
-                xml_version=None,
                 detail={"detail": xml_adapter.tostring()},
             )
             return pid_request.data
