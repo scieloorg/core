@@ -47,13 +47,13 @@ class Book(CommonControlField, ClusterableModel):
     TODO
     """
 
-    title = models.CharField(_("Title"), max_length=256, null=True, blank=True)
+    title = models.TextField(_("Title"), null=True, blank=True)
     synopsis = models.TextField(_("Synopsis"), null=True, blank=True)
     isbn = models.CharField("ISBN", max_length=13, null=True, blank=True)
     eisbn = models.CharField(_("Electronic ISBN"), max_length=13, null=True, blank=True)
-    doi = models.CharField("DOI", max_length=256, null=True, blank=True)
+    doi = models.CharField("DOI", max_length=256, null=True, blank=True) # FK DOI
     year = models.IntegerField(_("Year"), null=True, blank=True)
-
+    identifier = models.URLField(max_length=200, null=True, blank=True)
     researchers = models.ManyToManyField(
         Researcher, verbose_name=_("Authors"), blank=True
     )
@@ -112,10 +112,12 @@ class Book(CommonControlField, ClusterableModel):
         FieldPanel("isbn"),
         FieldPanel("eisbn"),
         FieldPanel("doi"),
+        FieldPanel("identifier"),
         FieldPanel("year"),
         FieldPanel("language"),
         FieldPanel("location"),
         FieldPanel("institution"),
+        InlinePanel("rec_raws", label="Rec Raws")
     ]
 
     panels_chapter = [
@@ -134,6 +136,57 @@ class Book(CommonControlField, ClusterableModel):
 
     def __str__(self):
         return "%s" % self.title or ""
+
+    @classmethod
+    def get(cls, identifier=None, doi=None, isbn=None, eisbn=None):
+        if doi:
+            return cls.objects.get(doi=doi)
+        if isbn:
+            return cls.objects.get(isbn=isbn)
+        if eisbn:
+            return cls.objects.get(eisbn=eisbn)
+        if identifier:
+            return cls.objects.get(identifier=identifier)
+        raise ValueError("Books.get requires doi, isbn or eisbn")
+
+
+    @classmethod
+    def create_or_update(cls,
+        user,
+        doi,
+        isbn,
+        eisbn,
+        identifier, 
+        title,
+        synopsis,
+        year,
+        researchers,
+        language,
+        location,
+        institution,
+        ):
+        try:
+            obj = cls.get(
+                doi=doi, isbn=isbn, eisbn=eisbn, identifier=identifier
+            )
+            obj.updated_by = user
+        except (cls.DoesNotExist, ValueError):
+            obj = cls(creator=user)
+
+        obj.doi = doi or obj.doi
+        obj.isbn = isbn or obj.isbn
+        obj.eisbn = eisbn or obj.eisbn
+        obj.title = title or obj.title
+        obj.identifier = identifier or obj.identifier
+        obj.synopsis = synopsis or obj.synopsis
+        obj.year = year or obj.year
+        obj.language = language or obj.language
+        obj.location = location or obj.location
+        obj.institution = institution or obj.institution
+        obj.save()
+        if researchers:
+            obj.researchers.set(researchers)
+        return obj
 
     base_form_class = BookModelForm
 
@@ -200,3 +253,29 @@ class Chapter(Orderable, CommonControlField):
         return "%s" % self.title or ""
 
     base_form_class = ChapterModelForm
+
+
+class RecRaw(Orderable, CommonControlField):
+    """
+    A class to represent a raw record element in XML format, designed within the context of SciELO.
+
+    Attributes
+    ----------
+    book : Book
+        The related Book object to which this raw record belongs (can be blank or null).
+    rec : str
+        The XML representation of the record element from OAI-PMH.
+
+    Methods
+    -------
+    TODO
+    """
+    book = ParentalKey(Book, on_delete=models.SET_NULL, blank=True, null=True, related_name="rec_raws")
+    rec = models.TextField(blank=True, null=True)
+    
+    panels = [
+        FieldPanel("rec")
+    ]
+
+    def __str__(self):
+        return f"{self.rec} - {self.book}"
