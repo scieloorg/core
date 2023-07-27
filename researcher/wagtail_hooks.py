@@ -1,9 +1,10 @@
 from django.http import HttpResponseRedirect
 from django.urls import path
+from django.utils.translation import gettext as _
 from wagtail.contrib.modeladmin.options import (
     ModelAdmin,
-    modeladmin_register,
     ModelAdminGroup,
+    modeladmin_register,
 )
 from wagtail.contrib.modeladmin.views import CreateView
 from wagtail.core import hooks

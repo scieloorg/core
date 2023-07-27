@@ -6,7 +6,6 @@ from journal.models import SciELOJournal
 from ..models import Issue, TocSection
 
 
-
 def get_or_create_issue(
     issn_scielo,
     volume,
