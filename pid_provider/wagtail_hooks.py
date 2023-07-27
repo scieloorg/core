@@ -16,6 +16,7 @@ class PidRequestCreateView(CreateView):
 
 
 class PidRequestAdmin(ModelAdmin):
+    list_per_page = 100
     model = PidRequest
     inspect_view_enabled = True
     menu_label = _("PidRequests")
@@ -26,26 +27,16 @@ class PidRequestAdmin(ModelAdmin):
     exclude_from_explorer = False
 
     list_display = (
-        "collection_acron",
         "origin",
-        "pid_v3",
-        "pid_v2",
-        "pkg_name",
         "result_type",
         "result_msg",
         "created",
     )
     list_filter = (
-        "collection_acron",
-        "origin",
         "result_type",
     )
     search_fields = (
-        "collection_acron",
         "origin",
-        "pid_v3",
-        "pid_v2",
-        "pkg_name",
         "result_msg",
     )
 

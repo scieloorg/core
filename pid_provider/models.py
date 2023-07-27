@@ -147,12 +147,6 @@ class PidProviderConfig(CommonControlField):
 
 
 class PidRequest(CommonControlField):
-    pid_v2 = models.CharField(_("PID v2"), max_length=23, null=True, blank=True)
-    pid_v3 = models.CharField(_("PID v3"), max_length=23, null=True, blank=True)
-    pkg_name = models.CharField(_("Package name"), max_length=23, null=True, blank=True)
-    collection_acron = models.CharField(_("Collection Acron"), max_length=23, null=True, blank=True)
-    journal_acron = models.CharField(_("Journal Acron"), max_length=23, null=True, blank=True)
-    year = models.CharField(_("Year"), max_length=4, null=True, blank=True)
     origin = models.CharField(_("Request origin"), max_length=124, null=True, blank=True)
     result_type = models.TextField(_("Result type"), null=True, blank=True)
     result_msg = models.TextField(_("Result message"), null=True, blank=True)
@@ -160,115 +154,80 @@ class PidRequest(CommonControlField):
         XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
     )
     detail = models.JSONField(_("Detail"), null=True, blank=True)
+    origin_date = models.CharField(_("Origin date"), max_length=10, null=True, blank=True)
 
     @property
     def data(self):
         _data = {
-            "pid_v3": self.pid_v3,
-            "pid_v2": self.pid_v2,
-            "pkg_name": self.pkg_name,
             "origin": self.origin,
-            "collection_acron": self.collection_acron,
-            "journal_acron": self.journal_acron,
+            "origin_date": self.origin_date,
             "result_type": self.result_type,
             "result_msg": self.result_msg,
             "created": self.created and self.created.isoformat(),
             "updated": self.updated and self.updated.isoformat(),
         }
         return _data
+
     def __unicode__(self):
-        return f"{self.pid_v3 or self.pid_v2 or self.pkg_name} ({self.collection_acron} {self.journal_acron})"
+        return f"{self.origin}"
 
     def __str__(self):
-        return f"{self.pid_v3 or self.pid_v2 or self.pkg_name} ({self.collection_acron} {self.journal_acron})"
+        return f"{self.origin}"
 
     @classmethod
     def get(
-        cls, pid_v3=None, pid_v2=None, pkg_name=None, collection_acron=None, origin=None,
+        cls, origin=None,
     ):
-        if pid_v2 and collection_acron:
-            return cls.objects.get(pid_v2=pid_v2, collection_acron=collection_acron)
-        if pkg_name and collection_acron:
-            return cls.objects.get(pkg_name=pkg_name, collection_acron=collection_acron)
-        if pkg_name:
-            return cls.objects.get(pkg_name=pkg_name)
         if origin:
             return cls.objects.get(origin=origin)
-        if pid_v3:
-            # busca por pid_v3 deve ter menor prioridade
-            return cls.objects.get(pid_v3=pid_v3)
         raise ValueError("PidRequest.get requires parameters")
 
     @classmethod
     def create_or_update(
         cls,
         user=None,
-        pid_v3=None,
-        pid_v2=None,
-        pkg_name=None,
-        journal_acron=None,
-        collection_acron=None,
-        year=None,
         origin=None,
         result_type=None,
         result_msg=None,
         xml_version=None,
         detail=None,
+        origin_date=None,
     ):
         try:
-            obj = cls.get(
-                pid_v3=pid_v3,
-                pid_v2=pid_v2,
-                pkg_name=pkg_name,
-                collection_acron=collection_acron,
-                origin=origin,
-            )
+            obj = cls.get(origin=origin)
             obj.updated_by = user
         except cls.DoesNotExist:
             obj = cls()
             obj.creator = user
 
-        obj.pkg_name = pkg_name or obj.pkg_name
-        obj.pid_v3 = pid_v3 or obj.pid_v3
-        obj.pid_v2 = pid_v2 or obj.pid_v2
-        obj.journal_acron = journal_acron or obj.journal_acron
-        obj.collection_acron = collection_acron or obj.collection_acron
-        obj.year = year or obj.year
-        obj.origin = origin or obj.origin
         obj.result_type = result_type or obj.result_type
         obj.result_msg = result_msg or obj.result_msg
         obj.xml_version = xml_version or obj.xml_version
         obj.detail = detail or obj.detail
+        obj.origin_date = origin_date or obj.origin_date
         obj.save()
         return obj
 
     @classmethod
-    def register_failure(cls, e, user=None, collection_acron=None, origin=None, pid_v2=None, pid_v3=None, detail=None):
+    def register_failure(cls, e, user=None, origin=None, message=None, detail=None):
         logging.exception(e)
         msg = str(e)
-        if detail:
-            msg = f"{msg} {detail}"
+        if message:
+            msg = f"{msg} {message}"
         pid_request = PidRequest.create_or_update(
             user=user,
-            pid_v3=pid_v3,
-            pid_v2=pid_v2,
-            collection_acron=collection_acron,
             origin=origin,
             result_type=str(type(e)),
             result_msg=msg,
+            detail=detail,
         )
 
     panels = [
-        FieldPanel("collection_acron"),
-        FieldPanel("journal_acron"),
         FieldPanel("origin"),
-        FieldPanel("year"),
-        FieldPanel("pid_v3"),
-        FieldPanel("pid_v2"),
-        FieldPanel("pkg_name"),
-        FieldPanel("xml_version"),
+        FieldPanel("origin_date"),
         FieldPanel("result_type"),
         FieldPanel("result_msg"),
+        FieldPanel("xml_version"),
         FieldPanel("detail"),
     ]
 
@@ -695,6 +654,7 @@ class PidProviderXML(CommonControlField):
         items = xml_adapter.query_list
         for params in items:
             cls.validate_query_params(params)
+            xml_adapter.adapt_query_params(params)
 
             try:
                 return cls.objects.get(**params)
@@ -710,7 +670,7 @@ class PidProviderXML(CommonControlField):
 
     def _add_data(self, xml_adapter, user, pkg_name):
         logging.info(f"PidProviderXML._add_data {pkg_name}")
-        self.pkg_name = pkg_name
+        self.pkg_name = xml_adapter.sps_pkg_name
         self.article_pub_year = xml_adapter.article_pub_year
         self.v3 = xml_adapter.v3
         self.v2 = xml_adapter.v2
