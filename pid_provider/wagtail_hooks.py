@@ -32,9 +32,7 @@ class PidRequestAdmin(ModelAdmin):
         "result_msg",
         "created",
     )
-    list_filter = (
-        "result_type",
-    )
+    list_filter = ("result_type",)
     search_fields = (
         "origin",
         "result_msg",

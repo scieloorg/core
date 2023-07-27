@@ -92,6 +92,8 @@ def load_xml_lists(self, username=None, jsonl_files_path=None):
 """
 {"begin_date":"2023-06-01 00-00-00","collection":"scl","dictionary_date":"Sat, 01 Jul 2023 00:00:00 GMT","documents":{"JFhVphtq6czR6PHMvC4w38N":{"aop_pid":"","create":"Sat, 28 Nov 2020 23:42:43 GMT","default_language":"en","journal_acronym":"aabc","pid":"S0001-37652012000100017","pid_v1":"S0001-3765(12)08400117","pid_v2":"S0001-37652012000100017","pid_v3":"JFhVphtq6czR6PHMvC4w38N","publication_date":"2012-05-22","update":"Fri, 30 Jun 2023 20:57:30 GMT"},"ZZYxjr9xbVHWmckYgDwBfTc":{"aop_pid":"","create":"Sat, 28 Nov 2020 23:42:37 GMT","default_language":"en","journal_acronym":"aabc","pid":"S0001-37652012000100014","pid_v1":"S0001-3765(12)08400114","pid_v2":"S0001-37652012000100014","pid_v3":"ZZYxjr9xbVHWmckYgDwBfTc","publication_date":"2012-02-24","update":"Fri, 30 Jun 2023 20:56:59 GMT"},"pxXcvQXT8jQc8mzWz8JKTcq":{"aop_pid":"","create":"Sat, 28 Nov 2020 23:42:35 GMT","default_language":"en","journal_acronym":"aabc","pid":"S0001-37652012000100006","pid_v1":"S0001-3765(12)08400106","pid_v2":"S0001-37652012000100006","pid_v3":"pxXcvQXT8jQc8mzWz8JKTcq","publication_date":"2012-05-22","update":"Fri, 30 Jun 2023 20:56:50 GMT"},"ttD5sS3n4YcP8LVN7w6nJ4z":{"aop_pid":"","create":"Sat, 28 Nov 2020 23:42:33 GMT","default_language":"en","journal_acronym":"aabc","pid":"S0001-37652012000100008","pid_v1":"S0001-3765(12)08400108","pid_v2":"S0001-37652012000100008","pid_v3":"ttD5sS3n4YcP8LVN7w6nJ4z","publication_date":"2012-02-02","update":"Fri, 30 Jun 2023 20:56:37 GMT"},"wxcRCTCY3VnM4H8WSGF7TyK":{"aop_pid":"","create":"Sun, 29 Nov 2020 08:38:58 GMT","default_language":"en","journal_acronym":"aabc","pid":"S0001-37652012000200001","pid_v1":"S0001-3765(12)08400201","pid_v2":"S0001-37652012000200001","pid_v3":"wxcRCTCY3VnM4H8WSGF7TyK","publication_date":"2012-05-25","update":"Fri, 30 Jun 2023 20:56:41 GMT"}},"end_date":"2023-07-01 00-00-00","limit":5,"page":1,"pages":410,"total":2050}
 """
+
+
 @celery_app.task(bind=True, name="provide_pid_for_opac_xml")
 def provide_pid_for_opac_xml(self, username=None, documents=None):
     user = _get_user(self.request, username=username)
@@ -133,7 +135,9 @@ def provide_pid_for_opac_xmls(
             logging.info(uri)
             response = fetch_data(uri, json=True, timeout=30, verify=True)
             pages = pages or response["pages"]
-            provide_pid_for_opac_xml.apply_async(args=(user.username, response["documents"]))
+            provide_pid_for_opac_xml.apply_async(
+                args=(user.username, response["documents"])
+            )
         except Exception as e:
             kernel.register_failure(e, user=user, detail={"uri": uri})
         finally:
@@ -144,7 +148,11 @@ def provide_pid_for_opac_xmls(
 
 @celery_app.task(bind=True, name="provide_pid_for_am_xml")
 def provide_pid_for_am_xml(
-    self, username, collection_acron, pid_v2, processing_date=None,
+    self,
+    username,
+    collection_acron,
+    pid_v2,
+    processing_date=None,
 ):
     user = _get_user(self.request, username=username)
     uri = (
@@ -156,7 +164,9 @@ def provide_pid_for_am_xml(
 
 @celery_app.task(bind=True, name="provide_pid_for_am_xmls")
 def provide_pid_for_am_xmls(
-    self, username=None, items=None,
+    self,
+    username=None,
+    items=None,
 ):
     if not items:
         raise ValueError("provide_pid_for_am_xmls requires pids")
@@ -168,10 +178,16 @@ def provide_pid_for_am_xmls(
 
 @celery_app.task(bind=True, name="harvest_pids")
 def harvest_pids(
-    self, username=None, collection_acron=None, from_date=None, limit=None, stop=None,
+    self,
+    username=None,
+    collection_acron=None,
+    from_date=None,
+    limit=None,
+    stop=None,
 ):
     harvester = am.AMHarvesting(
-        collection_acron=collection_acron, from_date=from_date, limit=limit, stop=stop)
+        collection_acron=collection_acron, from_date=from_date, limit=limit, stop=stop
+    )
 
     for uri in harvester.uris():
         try:

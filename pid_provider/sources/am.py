@@ -35,6 +35,7 @@ class AMHarvesting:
         }
     }
     """
+
     def __init__(self, collection_acron=None, from_date=None, limit=None, stop=None):
         """
         Configura a coleta
@@ -110,7 +111,7 @@ def request_pid_v3(user, uri, collection_acron, pid_v2, processing_date):
     pp = PidProvider()
 
     try:
-        response = pp.provide_pid_for_xml_uri(uri, pid_v2+".xml", user)
+        response = pp.provide_pid_for_xml_uri(uri, pid_v2 + ".xml", user)
     except Exception as e:
         return PidRequest.register_failure(
             e=e,

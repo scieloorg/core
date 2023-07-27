@@ -86,14 +86,18 @@ class PidProviderConfig(CommonControlField):
 
 
 class PidRequest(CommonControlField):
-    origin = models.CharField(_("Request origin"), max_length=124, null=True, blank=True)
+    origin = models.CharField(
+        _("Request origin"), max_length=124, null=True, blank=True
+    )
     result_type = models.TextField(_("Result type"), null=True, blank=True)
     result_msg = models.TextField(_("Result message"), null=True, blank=True)
     xml_version = models.ForeignKey(
         XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
     )
     detail = models.JSONField(_("Detail"), null=True, blank=True)
-    origin_date = models.CharField(_("Origin date"), max_length=10, null=True, blank=True)
+    origin_date = models.CharField(
+        _("Origin date"), max_length=10, null=True, blank=True
+    )
 
     @property
     def data(self):
@@ -115,7 +119,8 @@ class PidRequest(CommonControlField):
 
     @classmethod
     def get(
-        cls, origin=None,
+        cls,
+        origin=None,
     ):
         if origin:
             return cls.objects.get(origin=origin)
@@ -460,7 +465,7 @@ class PidProviderXML(CommonControlField):
                 result_type=str(type(e)),
                 result_msg=str(e),
                 xml_version=None,
-                detail={"detail": xml_adapter.tostring()}
+                detail={"detail": xml_adapter.tostring()},
             )
             return pid_request.data
 
