@@ -9,19 +9,19 @@ import requests
 
 from pid_provider.sources import kernel, am
 
-# from core.utils.utils import fetch_data
+from core.utils.utils import fetch_data
 from config import celery_app
 
 User = get_user_model()
 
 
-def fetch_data(uri, json=True, timeout=30, verify=True):
-    try:
-        data = requests.get(uri, timeout=timeout)
-    except Exception as e:
-        return {}
-    else:
-        return data.json()
+# def fetch_data(uri, json=True, timeout=30, verify=True):
+#     try:
+#         data = core_fetch_data(uri, json=json, timeout=timeout, verify=verify)
+#     except Exception as e:
+#         return {}
+#     else:
+#         return data.json()
 
 
 def _get_user(request, username=None, user_id=None):
@@ -144,31 +144,51 @@ def load_xml_lists_from_opac(
 
 @celery_app.task(bind=True, name=_("provide_pid_for_am_xml"))
 def provide_pid_for_am_xml(
-    self, username=None, collection_acron=None, pid_v2=None,
+    self, username, collection_acron, pid_v2, processing_date=None,
 ):
     user = _get_user(self.request, username=username)
     uri = (
         f"https://articlemeta.scielo.org/api/v1/article/?"
         f"collection={collection_acron}&code={pid_v2}&format=xmlrsps"
     )
-    am.request_pid_v3(user, uri, collection_acron, pid_v2)
+    am.request_pid_v3(user, uri, collection_acron, pid_v2, processing_date)
 
 
 @celery_app.task(bind=True, name=_("provide_pid_for_am_xmls"))
 def provide_pid_for_am_xmls(
-    self, username=None, collection_acron=None, pids=None,
+    self, username=None, items=None,
 ):
-    if not collection_acron:
-        raise ValueError("provide_pid_for_am_xmls requires collection_acron")
-
-    if not pids:
+    if not items:
         raise ValueError("provide_pid_for_am_xmls requires pids")
 
-    for pid_v2 in pids:
-        provide_pid_for_am_xml.apply_async(
-            kwargs={
-                "username": username,
-                "collection_acron": collection_acron,
-                "pid_v2": pid_v2,
-            }
-        )
+    for item in items:
+        item.update({"username": username})
+        provide_pid_for_am_xml.apply_async(kwargs=item)
+
+
+@celery_app.task(bind=True, name=_("harvest_pids"))
+def harvest_pids(
+    self, username=None, collection_acron=None, from_date=None, limit=None, stop=None,
+):
+    harvester = am.AMHarvesting(
+        collection_acron=collection_acron, from_date=from_date, limit=limit, stop=stop)
+
+    for uri in harvester.uris():
+        try:
+            # consulta AM para trazer identificadores
+            response = fetch_data(uri, json=True, timeout=30, verify=True)
+
+            # get_items retorna gerador, list() é para tornar "serializável"
+            items = list(harvester.get_items(response))
+
+            provide_pid_for_am_xmls.apply_async(
+                kwargs={
+                    "username": username,
+                    "items": items,
+                }
+            )
+
+        except Exception as e:
+            # por enquanto, o tratamento é para evitar interrupção do laço
+            # TODO registrar o problema em um modelo de resultado de execução de tasks
+            logging.exception("Error: processing {} {}".format(uri, e))
