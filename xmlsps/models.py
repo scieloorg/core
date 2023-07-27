@@ -121,6 +121,7 @@ class XMLJournal(models.Model):
                 issn_print=issn_print,
             ).first()
 
+
 class XMLIssue(models.Model):
     """
     Tem função de guardar os dados de Issue encontrados no XML
@@ -188,7 +189,9 @@ class XMLSPS(CommonControlField):
     pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True)
     pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
     aop_pid = models.CharField(_("AOP PID"), max_length=23, null=True, blank=True)
-    xml_version = models.ForeignKey(XMLVersion, null=True, blank=True, on_delete=models.SET_NULL)
+    xml_version = models.ForeignKey(
+        XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
+    )
     xml_journal = models.ForeignKey(
         XMLJournal, null=True, blank=True, on_delete=models.SET_NULL
     )

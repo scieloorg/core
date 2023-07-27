@@ -29,7 +29,9 @@ def get_journal_xml(collection, issn):
 def get_issue(user, journal_xml, collection):
     issn_scielo = journal_xml["SERIAL"]["ISSN_AS_ID"]
     try:
-        scielo_journal = SciELOJournal.get(collection=collection, issn_scielo=issn_scielo)
+        scielo_journal = SciELOJournal.get(
+            collection=collection, issn_scielo=issn_scielo
+        )
         for issue in journal_xml["SERIAL"]["AVAILISSUES"]["YEARISSUE"]:
             try:
                 volume = issue["VOLISSUE"]["@VOL"]

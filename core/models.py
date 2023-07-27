@@ -21,9 +21,9 @@ class Gender(index.Indexed, models.Model):
         sex: physical state of being either male, female, or intersex
     """
 
-    code = models.CharField(_('Code'), max_length=5, null=True, blank=True)
+    code = models.CharField(_("Code"), max_length=5, null=True, blank=True)
 
-    gender = models.CharField(_('Sex'), max_length=50, null=True, blank=True)
+    gender = models.CharField(_("Sex"), max_length=50, null=True, blank=True)
 
     panels = [
         FieldPanel("code"),

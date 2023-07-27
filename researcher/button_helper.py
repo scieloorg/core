@@ -3,17 +3,26 @@ from wagtail.contrib.modeladmin.helpers import ButtonHelper
 
 from django.urls import reverse
 
+
 class EditorialBoardMemberHelper(ButtonHelper):
 
     # Define classes for our button, here we can set an icon for example
-    validate_button_classnames = ["button-small", "icon",]
-    import_button_classnames = ["button-small", "icon",]
+    validate_button_classnames = [
+        "button-small",
+        "icon",
+    ]
+    import_button_classnames = [
+        "button-small",
+        "icon",
+    ]
 
     def validate_button(self, obj):
         # Define a label for our button
         text = _("Validate")
         return {
-            "url": reverse("validate_ebm") + "?file_id=" + str(obj.id),  # decide where the button links to
+            "url": reverse("validate_ebm")
+            + "?file_id="
+            + str(obj.id),  # decide where the button links to
             "label": text,
             "classname": self.finalise_classname(self.validate_button_classnames),
             "title": text,
@@ -23,7 +32,9 @@ class EditorialBoardMemberHelper(ButtonHelper):
         # Define a label for our button
         text = _("Import")
         return {
-            "url": reverse("import_file_ebm") + "?file_id=" + str(obj.id),  # decide where the button links to
+            "url": reverse("import_file_ebm")
+            + "?file_id="
+            + str(obj.id),  # decide where the button links to
             "label": text,
             "classname": self.finalise_classname(self.import_button_classnames),
             "title": text,

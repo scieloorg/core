@@ -32,7 +32,8 @@ def load_article(user, xml=None, file_path=None):
             xmltree = xml_with_pre.xmltree
     else:
         raise ValueError(
-            "article.sources.xmlsps.load_article requires xml or file_path")
+            "article.sources.xmlsps.load_article requires xml or file_path"
+        )
 
     pids = ArticleIds(xmltree=xmltree).data
     pid_v2 = pids.get("v2")
@@ -46,38 +47,22 @@ def load_article(user, xml=None, file_path=None):
         set_pids(xmltree=xmltree, article=article)
         article.journal = get_journal(xmltree=xmltree)
         set_date_pub(xmltree=xmltree, article=article)
-        article.article_type = get_or_create_article_type(
-            xmltree=xmltree, user=user
-        )
+        article.article_type = get_or_create_article_type(xmltree=xmltree, user=user)
         article.issue = get_or_create_issues(xmltree=xmltree, user=user)
         set_first_last_page(xmltree=xmltree, article=article)
         set_elocation_id(xmltree=xmltree, article=article)
         article.save()
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
-        article.license.set(
-            get_or_create_licenses(xmltree=xmltree, user=user)
-        )
-        article.researchers.set(
-            get_or_create_researchers(xmltree=xmltree, user=user)
-        )
-        article.languages.add(
-            get_or_create_main_language(xmltree=xmltree, user=user)
-        )
-        article.keywords.set(
-            get_or_create_keywords(xmltree=xmltree, user=user)
-        )
-        article.toc_sections.set(
-            get_or_create_toc_sections(xmltree=xmltree, user=user)
-        )
-        article.fundings.set(
-            get_or_create_fundings(xmltree=xmltree, user=user)
-        )
-        article.titles.set(
-            get_or_create_titles(xmltree=xmltree, user=user)
-        )
+        article.license.set(get_or_create_licenses(xmltree=xmltree, user=user))
+        article.researchers.set(get_or_create_researchers(xmltree=xmltree, user=user))
+        article.languages.add(get_or_create_main_language(xmltree=xmltree, user=user))
+        article.keywords.set(get_or_create_keywords(xmltree=xmltree, user=user))
+        article.toc_sections.set(get_or_create_toc_sections(xmltree=xmltree, user=user))
+        article.fundings.set(get_or_create_fundings(xmltree=xmltree, user=user))
+        article.titles.set(get_or_create_titles(xmltree=xmltree, user=user))
     except (DataError, TypeError) as e:
         # TODO criar registros das falhas e deixar acessível pela área adm
-        # para que os usuários saibam 
+        # para que os usuários saibam
         raise XMLSPSArticleSaveError(e)
 
 
