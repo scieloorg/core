@@ -1,7 +1,7 @@
 import logging
 
 from pid_provider.controller import PidProvider
-from pid_provider.models import PidRequest, PidProviderXML
+from pid_provider.models import PidRequest
 
 
 class AMHarvesting:

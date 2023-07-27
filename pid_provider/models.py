@@ -31,67 +31,6 @@ def xml_directory_path(instance, filename):
     return f"xml_pid_provider/{instance.finger_print[-1]}/{instance.finger_print[-2]}/{instance.finger_print}/{filename}"
 
 
-class KernelXMLMigration(CommonControlField):
-    pid_v3 = models.CharField(_("PID v3"), max_length=23, null=True, blank=True)
-    acron = models.CharField(_("Acron"), max_length=23, null=True, blank=True)
-    year = models.CharField(_("Year"), max_length=4, null=True, blank=True)
-    error_type = models.TextField(_("Error type"), null=True, blank=True)
-    error_msg = models.TextField(_("Error message"), null=True, blank=True)
-    xml_version = models.ForeignKey(
-        XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
-    )
-
-    def __unicode__(self):
-        return f"{self.pid_v3}"
-
-    def __str__(self):
-        return f"{self.pid_v3}"
-
-    @classmethod
-    def get(
-        cls,
-        pid_v3=None,
-    ):
-        return cls.objects.get(pid_v3=pid_v3)
-
-    @classmethod
-    def create_or_update(
-        cls,
-        user=None,
-        pid_v3=None,
-        acron=None,
-        year=None,
-        error_type=None,
-        error_msg=None,
-        xml_version=None,
-    ):
-        try:
-            obj = cls.get(pid_v3=pid_v3)
-            obj.updated_by = user
-        except cls.DoesNotExist:
-            obj = cls()
-            obj.pid_v3 = pid_v3
-            obj.creator = user
-
-        obj.acron = acron or obj.acron
-        obj.year = year or obj.year
-        obj.error_type = error_type or obj.error_type
-        obj.error_msg = error_msg or obj.error_msg
-        obj.xml_version = xml_version or obj.xml_version
-        obj.save()
-        return obj
-
-    panels = [
-        FieldPanel("pid_v3"),
-        FieldPanel("acron"),
-        FieldPanel("year"),
-        FieldPanel("error_type"),
-        FieldPanel("error_msg"),
-    ]
-
-    base_form_class = CoreAdminModelForm
-
-
 class PidProviderConfig(CommonControlField):
     """
     Tem função de guardar XML que falhou no registro
