@@ -51,7 +51,7 @@ class Book(CommonControlField, ClusterableModel):
     synopsis = models.TextField(_("Synopsis"), null=True, blank=True)
     isbn = models.CharField("ISBN", max_length=13, null=True, blank=True)
     eisbn = models.CharField(_("Electronic ISBN"), max_length=13, null=True, blank=True)
-    doi = models.CharField("DOI", max_length=256, null=True, blank=True) # FK DOI
+    doi = models.CharField("DOI", max_length=256, null=True, blank=True)  # FK DOI
     year = models.IntegerField(_("Year"), null=True, blank=True)
     identifier = models.URLField(max_length=200, null=True, blank=True)
     researchers = models.ManyToManyField(
@@ -117,7 +117,7 @@ class Book(CommonControlField, ClusterableModel):
         FieldPanel("language"),
         FieldPanel("location"),
         FieldPanel("institution"),
-        InlinePanel("rec_raws", label="Rec Raws")
+        InlinePanel("rec_raws", label="Rec Raws"),
     ]
 
     panels_chapter = [
@@ -149,14 +149,14 @@ class Book(CommonControlField, ClusterableModel):
             return cls.objects.get(identifier=identifier)
         raise ValueError("Books.get requires doi, isbn or eisbn")
 
-
     @classmethod
-    def create_or_update(cls,
+    def create_or_update(
+        cls,
         user,
         doi,
         isbn,
         eisbn,
-        identifier, 
+        identifier,
         title,
         synopsis,
         year,
@@ -164,11 +164,9 @@ class Book(CommonControlField, ClusterableModel):
         language,
         location,
         institution,
-        ):
+    ):
         try:
-            obj = cls.get(
-                doi=doi, isbn=isbn, eisbn=eisbn, identifier=identifier
-            )
+            obj = cls.get(doi=doi, isbn=isbn, eisbn=eisbn, identifier=identifier)
             obj.updated_by = user
         except (cls.DoesNotExist, ValueError):
             obj = cls(creator=user)
@@ -270,12 +268,13 @@ class RecRaw(Orderable, CommonControlField):
     -------
     TODO
     """
-    book = ParentalKey(Book, on_delete=models.SET_NULL, blank=True, null=True, related_name="rec_raws")
+
+    book = ParentalKey(
+        Book, on_delete=models.SET_NULL, blank=True, null=True, related_name="rec_raws"
+    )
     rec = models.TextField(blank=True, null=True)
-    
-    panels = [
-        FieldPanel("rec")
-    ]
+
+    panels = [FieldPanel("rec")]
 
     def __str__(self):
         return f"{self.rec} - {self.book}"

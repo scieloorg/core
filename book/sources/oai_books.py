@@ -106,7 +106,7 @@ def create_or_update_book(book, user=None):
         # acessíveis na área administrativa
         # para que o usuário fique sabendo quais itens falharam
         raise BooksOaiPmhSaveError(e)
-    
+
     RecRaw.objects.get_or_create(
         rec=book.get("rec"),
         book=obj,
