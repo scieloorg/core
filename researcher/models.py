@@ -21,10 +21,13 @@ class Researcher(ClusterableModel, CommonControlField):
     """
 
     given_names = models.CharField(
-        _("Given names"), max_length=128, blank=False, null=False
+        _("Given names"), max_length=128, blank=True, null=True
     )
     last_name = models.CharField(
-        _("Last name"), max_length=128, blank=False, null=False
+        _("Last name"), max_length=128, blank=True, null=True
+    )
+    declared_name = models.CharField(
+        _("Declared Name"), max_length=255, blank=True, null=True
     )
     suffix = models.CharField(_("Suffix"), max_length=128, blank=True, null=True)
     orcid = models.TextField(_("ORCID"), blank=True, null=True)
@@ -68,6 +71,7 @@ class Researcher(ClusterableModel, CommonControlField):
         cls,
         given_names,
         last_name,
+        declared_name,
         suffix,
         orcid,
         lattes,
@@ -97,6 +101,7 @@ class Researcher(ClusterableModel, CommonControlField):
             researcher = cls()
             researcher.given_names = given_names
             researcher.last_name = last_name
+            researcher.declared_name = declared_name
             researcher.suffix = suffix
             researcher.orcid = orcid
             researcher.lattes = lattes

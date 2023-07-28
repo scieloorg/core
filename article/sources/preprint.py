@@ -7,6 +7,7 @@ from lxml import etree
 from sickle import Sickle
 
 from article import models
+from article.utils.parse_name_author import parse_author_name
 
 namespaces = {
     "oai_dc": "http://www.openarchives.org/OAI/2.0/oai_dc/",
@@ -106,15 +107,8 @@ def get_info_article(rec):
 
         author_data = []
         for author in root.xpath(".//dc:creator", namespaces=namespaces):
-            name_author = [name.strip() for name in author.text.split(",")][::1]
-            author_dict = {}
-            for i, name in enumerate(("given_names", "surname")[: len(name_author)]):
-                try:
-                    author_dict.update({f"{name}": name_author[i]})
-                except IndexError as e:
-                    logging.exception(
-                        f"Error in authors: {e}.  Artigo: {rec.header.identifier}"
-                    )
+            name_author = author.text.strip()
+            author_dict = parse_author_name(name_author)
             author_data.append(author_dict)
         article_dict["authors"] = author_data
     return article_dict
@@ -231,6 +225,7 @@ def get_or_create_researches(authors):
         obj = models.Researcher.get_or_create(
             given_names=author.get("given_names"),
             last_name=author.get("surname"),
+            declared_name=author.get("declared_name"),
             email=None,
             institution_name=None,
             suffix=None,
