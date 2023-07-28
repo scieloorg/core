@@ -26,9 +26,9 @@ def utcnow():
     # return datetime.utcnow().isoformat().replace("T", " ") + "Z"
 
 
-def xml_directory_path(instance, filename):
+def xml_directory_path(instance, subdir):
     # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
-    return f"xml_pid_provider/{instance.finger_print[-1]}/{instance.finger_print[-2]}/{instance.finger_print}/{filename}"
+    return f"xml_pid_provider/{subdir}/{instance.pid_v3[0]}/{instance.pid_v3[-1]}/{instance.pid_v3}/{instance.finger_print}"
 
 
 class PidProviderConfig(CommonControlField):
@@ -262,9 +262,6 @@ class PidProviderXML(CommonControlField):
     current_version = models.ForeignKey(
         XMLVersion, on_delete=models.SET_NULL, null=True, blank=True
     )
-    current_xml = models.ForeignKey(
-        XMLSPS, on_delete=models.SET_NULL, null=True, blank=True
-    )
 
     pkg_name = models.TextField(_("Package name"), null=True, blank=True)
     v3 = models.CharField(_("v3"), max_length=23, null=True, blank=True)
@@ -341,38 +338,13 @@ class PidProviderXML(CommonControlField):
     def is_aop(self):
         return self.issue is None
 
-    def set_current_version(self, creator, pkg_name, xml_adapter, user):
-        finger_print = xml_adapter.finger_print
-        if (
-            not self.current_version
-            or self.current_version.finger_print != finger_print
-            or not self.current_xml
-        ):
-            self.current_version = XMLVersion.create(
-                creator=creator,
-                pid_v3=self.v3,
-                pkg_name=pkg_name,
-                finger_print=finger_print,
-                zip_xml_content=xml_adapter.xml_with_pre.get_zip_content(
-                    pkg_name + ".xml"
-                ),
-            )
-            self.current_xml = XMLSPS.create_or_update(
-                pid_v3=self.v3,
-                pid_v2=self.v2,
-                aop_pid=self.aop_pid,
-                xml_journal=self.journal,
-                xml_issue=self.issue,
-                xml_version=self.current_version,
-                user=user,
-            )
-
     @classmethod
     def register(
         cls,
         xml_with_pre,
         filename,
         user,
+        is_published=False,
     ):
         """
         Evaluate the XML data and returns corresponding PID v3, v2, aop_pid
@@ -442,6 +414,17 @@ class PidProviderXML(CommonControlField):
                 changed_pids,
             )
 
+            # cria ou atualiza XMLSPS
+            XMLSPS.create_or_update(
+                pid_v3=registered.v3,
+                pid_v2=registered.v2,
+                aop_pid=registered.aop_pid,
+                xml_journal=registered.journal,
+                xml_issue=registered.issue,
+                xml_version=registered.current_version,
+                user=user,
+                is_published=is_published,
+            )
             data = registered.data.copy()
             data["xml_changed"] = bool(changed_pids)
             return data
@@ -495,17 +478,33 @@ class PidProviderXML(CommonControlField):
 
         registered._add_data(xml_adapter, user, pkg_name)
 
-        registered.set_current_version(
-            creator=user,
-            pkg_name=pkg_name,
-            xml_adapter=xml_adapter,
-            user=user,
-        )
+        registered.journal = registered.get_journal(xml_adapter)
+        registered.issue = registered.get_issue(xml_adapter, registered.journal)
+
+        registered.current_version = XMLVersion.get_or_create(
+            user, xml_adapter.xml_with_pre)
+
         registered.save()
 
         registered._register_pid_changes(changed_pids, user)
 
         return registered
+
+    def get_journal(self, xml_adapter):
+        return XMLJournal.get_or_create(
+            xml_adapter.journal_issn_electronic,
+            xml_adapter.journal_issn_print,
+        )
+
+    def get_issue(self, xml_adapter, journal):
+        if xml_adapter.volume or xml_adapter.number or xml_adapter.suppl:
+            return XMLIssue.get_or_create(
+                journal,
+                xml_adapter.volume,
+                xml_adapter.number,
+                xml_adapter.suppl,
+                xml_adapter.pub_year,
+            )
 
     @classmethod
     def evaluate_registration(cls, xml_adapter, registered):
@@ -625,20 +624,6 @@ class PidProviderXML(CommonControlField):
         self.z_collab = xml_adapter.z_collab
         self.z_links = xml_adapter.z_links
         self.z_partial_body = xml_adapter.z_partial_body
-
-        self.journal = XMLJournal.get_or_create(
-            xml_adapter.journal_issn_electronic,
-            xml_adapter.journal_issn_print,
-        )
-        self.issue = None
-        if xml_adapter.volume or xml_adapter.number or xml_adapter.suppl:
-            self.issue = XMLIssue.get_or_create(
-                self.journal,
-                xml_adapter.volume,
-                xml_adapter.number,
-                xml_adapter.suppl,
-                xml_adapter.pub_year,
-            )
 
         for related in xml_adapter.related_items:
             self._add_related_item(related["href"], user)
