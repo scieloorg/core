@@ -229,7 +229,7 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
         FieldPanel("official"),
         FieldPanel("title"),
         FieldPanel("short_title"),
-        InlinePanel("collection"),
+        FieldPanel("collection"),
     ]
 
     panels_mission = [
@@ -365,9 +365,10 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
         obj.submission_online_url = submission_online_url or obj.submission_online_url
         obj.open_access = open_access or obj.open_access
 
-        for scielo_j in SciELOJournal.objects.filter(journal=self):
-            obj.collection.add(scielo_j.collection)
         obj.save()
+        for scielo_j in SciELOJournal.objects.filter(journal=obj):
+            obj.collection.add(scielo_j.collection)
+            
         return obj
 
     def __unicode__(self):
@@ -707,6 +708,7 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
             )
         obj.issn_scielo = issn_scielo or obj.issn_scielo
         obj.journal_acron = journal_acron or obj.journal_acron
+        obj.collection = collection or obj.collection
         obj.journal = journal or obj.journal
         obj.save()
         return obj
