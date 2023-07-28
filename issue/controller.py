@@ -5,7 +5,8 @@ import xmltodict
 
 from processing_errors.models import ProcessingError
 
-from .models import Issue, SciELOJournal
+from .models import Issue
+from journal.models import SciELOJournal
 
 
 def get_journal_xml(collection, issn):
