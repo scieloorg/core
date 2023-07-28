@@ -1,9 +1,9 @@
+from rest_framework import serializers
+
+from core.api.v1.serializers import LicenseSerializer
 from issue import models
 from journal.api.v1.serializers import JournalSerialiazer
-from core.api.v1.serializers import LicenseSerializer
 from location.api.v1.serializers import CitySerializer
-
-from rest_framework import serializers
 
 
 class TocSectionsSerializer(serializers.ModelSerializer):

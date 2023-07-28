@@ -4,15 +4,15 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.edit_handlers import FieldPanel, InlinePanel, MultiFieldPanel
 from wagtail.core.models import Orderable
-from wagtailautocomplete.edit_handlers import AutocompletePanel
 from wagtail.documents.edit_handlers import DocumentChooserPanel
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.models import CommonControlField, Gender
 from institution.models import Institution, InstitutionHistory
 from journal.models import Journal
 
-from .forms import ResearcherForm
 from . import choices
+from .forms import ResearcherForm
 
 
 class Researcher(ClusterableModel, CommonControlField):
@@ -30,8 +30,13 @@ class Researcher(ClusterableModel, CommonControlField):
     orcid = models.TextField(_("ORCID"), blank=True, null=True)
     lattes = models.TextField(_("Lattes"), blank=True, null=True)
     gender = models.ForeignKey(Gender, blank=True, null=True, on_delete=models.SET_NULL)
-    gender_identification_status = models.CharField(_('Gender identification status'), max_length=255, choices=choices.GENDER_IDENTIFICATION_STATUS, null=True, blank=True)
-
+    gender_identification_status = models.CharField(
+        _("Gender identification status"),
+        max_length=255,
+        choices=choices.GENDER_IDENTIFICATION_STATUS,
+        null=True,
+        blank=True,
+    )
 
     def autocomplete_label(self):
         return str(self)
@@ -86,7 +91,7 @@ class Researcher(ClusterableModel, CommonControlField):
             institution = None
             if institution_name:
                 try:
-                    institution = Institution.objects.get(name = institution_name)
+                    institution = Institution.objects.get(name=institution_name)
                 except Institution.DoesNotExist:
                     pass
             researcher = cls()
@@ -104,7 +109,9 @@ class Researcher(ClusterableModel, CommonControlField):
             if email:
                 FieldEmail.objects.create(page=researcher, email=email)
             if institution:
-                FieldAffiliation.objects.create(page=researcher, institution=institution)
+                FieldAffiliation.objects.create(
+                    page=researcher, institution=institution
+                )
             return researcher
 
     panels = [
@@ -132,43 +139,89 @@ class FieldAffiliation(Orderable, InstitutionHistory):
 
 
 class EditorialBoardMember(models.Model):
-    journal = models.ForeignKey(Journal, null=True, blank=True, related_name='+', on_delete=models.CASCADE)
-    member = models.ForeignKey(Researcher, null=True, blank=True, related_name='+', on_delete=models.CASCADE)
-    role = models.CharField(_('Role'), max_length=255, choices=choices.ROLE, null=False, blank=False)
-    initial_year =  models.IntegerField(blank=True, null=True)
+    journal = models.ForeignKey(
+        Journal, null=True, blank=True, related_name="+", on_delete=models.CASCADE
+    )
+    member = models.ForeignKey(
+        Researcher, null=True, blank=True, related_name="+", on_delete=models.CASCADE
+    )
+    role = models.CharField(
+        _("Role"), max_length=255, choices=choices.ROLE, null=False, blank=False
+    )
+    initial_year = models.IntegerField(blank=True, null=True)
     initial_month = models.IntegerField(blank=True, null=True, choices=choices.MONTHS)
     final_year = models.IntegerField(blank=True, null=True)
     final_month = models.IntegerField(blank=True, null=True, choices=choices.MONTHS)
 
     panels = [
-        AutocompletePanel('journal'),
-        AutocompletePanel('member'),
-        FieldPanel('role'),
-        FieldPanel('initial_year'),
-        FieldPanel('initial_month'),
-        FieldPanel('final_year'),
-        FieldPanel('final_month')
+        AutocompletePanel("journal"),
+        AutocompletePanel("member"),
+        FieldPanel("role"),
+        FieldPanel("initial_year"),
+        FieldPanel("initial_month"),
+        FieldPanel("final_year"),
+        FieldPanel("final_month"),
     ]
 
     class Meta:
         indexes = [
-            models.Index(fields=['journal', ]),
-            models.Index(fields=['member', ]),
-            models.Index(fields=['role', ]),
+            models.Index(
+                fields=[
+                    "journal",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "member",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "role",
+                ]
+            ),
         ]
 
     @classmethod
-    def get_or_create(self, journal, role, initial_year, email, institution_name, given_names, last_name, suffix, orcid, lattes, gender, gender_identification_status, user):
+    def get_or_create(
+        self,
+        journal,
+        role,
+        initial_year,
+        email,
+        institution_name,
+        given_names,
+        last_name,
+        suffix,
+        orcid,
+        lattes,
+        gender,
+        gender_identification_status,
+        user,
+    ):
         try:
             gender = Gender.objects.get(code=gender)
         except Gender.DoesNotExist:
             gender = None
 
-        researcher_get = Researcher.get_or_create(given_names, last_name, suffix, orcid, lattes, email, institution_name, gender, gender_identification_status, user)
+        researcher_get = Researcher.get_or_create(
+            given_names,
+            last_name,
+            suffix,
+            orcid,
+            lattes,
+            email,
+            institution_name,
+            gender,
+            gender_identification_status,
+            user,
+        )
 
         try:
             journal_get = Journal.objects.get(title=journal)
-            return EditorialBoardMember.objects.get(journal = journal_get, member = researcher_get)
+            return EditorialBoardMember.objects.get(
+                journal=journal_get, member=researcher_get
+            )
         except Journal.DoesNotExist as e:
             # TODO fazer tratamento apropriado para periódico não registrado
             raise e
@@ -192,17 +245,18 @@ class EditorialBoardMember(models.Model):
 class EditorialBoardMemberFile(models.Model):
 
     attachment = models.ForeignKey(
-        'wagtaildocs.Document',
-        null=True, blank=True,
+        "wagtaildocs.Document",
+        null=True,
+        blank=True,
         on_delete=models.SET_NULL,
-        related_name='+'
+        related_name="+",
     )
     is_valid = models.BooleanField(_("Is valid?"), default=False, blank=True, null=True)
-    line_count = models.IntegerField(_("Number of lines"), default=0, blank=True, null=True)
+    line_count = models.IntegerField(
+        _("Number of lines"), default=0, blank=True, null=True
+    )
 
     def filename(self):
         return os.path.basename(self.attachment.name)
 
-    panels = [
-        DocumentChooserPanel('attachment')
-    ]
+    panels = [DocumentChooserPanel("attachment")]

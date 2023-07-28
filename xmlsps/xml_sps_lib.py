@@ -22,7 +22,6 @@ from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
 from packtools.sps.models.journal_meta import ISSN, Acronym
 from packtools.sps.models.related_articles import RelatedItems
 
-
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 

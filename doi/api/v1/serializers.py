@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from core.api.v1.serializers import LanguageSerializer
-
 from doi.models import DOI
 
 

@@ -1,17 +1,15 @@
-import re
-import requests
 import logging
+import re
 
+import requests
+from langcodes import standardize_tag, tag_is_valid
 from tenacity import (
     retry,
+    retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    retry_if_exception_type,
 )
-from langcodes import tag_is_valid, standardize_tag
-
 from urllib3.util import Retry
-
 
 logger = logging.getLogger(__name__)
 

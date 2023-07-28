@@ -6,7 +6,6 @@ from django.conf import settings
 from django.http import Http404, JsonResponse
 from django.shortcuts import render
 
-
 solr = pysolr.Solr(
     settings.HAYSTACK_CONNECTIONS["default"]["URL"],
     timeout=settings.HAYSTACK_CONNECTIONS["default"]["SOLR_TIMEOUT"],

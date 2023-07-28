@@ -37,7 +37,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_collection(self, obj):
         if obj.journal:
             try:
-            	# FIXME 1 artigo / journal pode estar em mais de 1 coleção
+                # FIXME 1 artigo / journal pode estar em mais de 1 coleção
                 return obj.journal.collection.main_name
             except AttributeError:
                 pass

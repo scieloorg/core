@@ -28,12 +28,17 @@ def validate_ebm(request):
     if file_id:
         file_upload = get_object_or_404(EditorialBoardMemberFile, pk=file_id)
 
-    if request.method == 'GET':
+    if request.method == "GET":
         try:
             upload_path = file_upload.attachment.file.path
             cols = chkcsv.read_format_specs(
-                os.path.dirname(os.path.abspath(__file__)) + "/chkcsvfmt.fmt", True, False)
-            errorlist = chkcsv.check_csv_file(upload_path, cols, True, True, True, False)
+                os.path.dirname(os.path.abspath(__file__)) + "/chkcsvfmt.fmt",
+                True,
+                False,
+            )
+            errorlist = chkcsv.check_csv_file(
+                upload_path, cols, True, True, True, False
+            )
             if errorlist:
                 raise Exception(_("Validation error"))
             else:
@@ -46,7 +51,7 @@ def validate_ebm(request):
         else:
             messages.success(request, _("File successfully validated!"))
 
-    return redirect(request.META.get('HTTP_REFERER'))
+    return redirect(request.META.get("HTTP_REFERER"))
 
 
 def import_file_ebm(request):
@@ -63,31 +68,31 @@ def import_file_ebm(request):
     file_path = file_upload.attachment.file.path
 
     try:
-        with open(file_path, 'r') as csvfile:
+        with open(file_path, "r") as csvfile:
             data = csv.DictReader(csvfile, delimiter=";")
             for line, row in enumerate(data):
-                given_names = row['Nome do membro']
-                last_name = row['Sobrenome']
+                given_names = row["Nome do membro"]
+                last_name = row["Sobrenome"]
                 ed = EditorialBoardMember()
                 ed.get_or_create(
-                    row['Periódico'],
-                    row['Cargo / instância do membro'],
-                    row['Data'],
-                    row['Email'],
-                    row['Institution'],
+                    row["Periódico"],
+                    row["Cargo / instância do membro"],
+                    row["Data"],
+                    row["Email"],
+                    row["Institution"],
                     given_names,
                     last_name,
-                    row['Suffix'],
-                    row['ORCID iD'],
-                    row['CV Lattes'],
-                    row['Gender'],
-                    row['Gender status'],
-                    request.user
+                    row["Suffix"],
+                    row["ORCID iD"],
+                    row["CV Lattes"],
+                    row["Gender"],
+                    row["Gender status"],
+                    request.user,
                 )
-                    #,User)
+                # ,User)
     except Exception as ex:
         messages.error(request, _("Import error: %s, Line: %s") % (ex, str(line + 2)))
     else:
-       messages.success(request, _("File imported successfully!"))
+        messages.success(request, _("File imported successfully!"))
 
-    return redirect(request.META.get('HTTP_REFERER'))
+    return redirect(request.META.get("HTTP_REFERER"))
