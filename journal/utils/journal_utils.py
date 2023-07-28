@@ -3,47 +3,72 @@ from django.core.exceptions import ObjectDoesNotExist
 from ..models import Collection, OfficialJournal, Journal, SciELOJournal
 
 
-def get_or_create_scielo_journal(
+def create_or_update_scielo_journal(
     title,
     issn_scielo,
     short_title,
     submission_online_url,
     open_access,
     issn_print_or_electronic,
+    type_issn,
+    current_issn,
     collection,
     user,
     journal_acron=None,
 ):
+    title = extract_value(title)
+    issnl = extract_value(issn_scielo)
+
     journal = Journal.create_or_update(
         user=user,
-        official_journal=get_or_create_official_journal(
-            title=extract_value(title),
+        official_journal=create_or_update_official_journal(
+            user=user,
+            title=title,
             issn_print_or_electronic=issn_print_or_electronic,
+            type_issn=type_issn,
+            issnl=issnl,
+            current_issn=current_issn,
         ),
-        title=extract_value(title),
+        title=title,
         short_title=extract_value(short_title),
         submission_online_url=extract_value(submission_online_url),
         open_access=extract_value(open_access),
     )
     scielo_journal = SciELOJournal.create_or_update(
         user=user,
-        collection=collection,
-        issn_scielo=issn_scielo,
-        journal_acron=journal_acron,
+        collection=get_collection(collection),
+        issn_scielo=issnl,
+        journal_acron=extract_value(journal_acron),
         journal=journal,
     )
 
 
-def get_or_create_official_journal(
+def create_or_update_official_journal(
     title,
     issn_print_or_electronic,
+    type_issn,
+    current_issn,
     user,
     issnl=None,
     foundation_year=None,
 ):
+    """
+    Ex type_issn:
+         [{"_": "ONLIN"}]
+    Ex current_issn:
+        [{"_": "1676-5648"}]
+    """
+
+    if type_issn and current_issn:
+        for item in type_issn:
+            item["t"] = item.pop("_")
+        type_issn[0].update(current_issn[0])
+
+    issn = issn_print_or_electronic or type_issn
     issn_print, issn_electronic = extract_issn_print_electronic(
-        issn_print_or_electronic
+        issn_print_or_electronic=issn
     )
+
     obj = OfficialJournal.create_or_update(
         user=user,
         issn_print=issn_print,
