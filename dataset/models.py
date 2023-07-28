@@ -35,6 +35,9 @@ class Dataverse(CommonControlField, CommonDataField):
     identifier = models.CharField(max_length=30, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
+    #TODO
+    #Criar metodo get
+
     @classmethod
     def create_or_update(
         cls,
@@ -49,7 +52,7 @@ class Dataverse(CommonControlField, CommonDataField):
         try:
             obj = cls.objects.get(identifier=identifier)
             obj.updated_by = user
-        except cls.DoesNotExist:
+        except (cls.DoesNotExist, cls.MultipleObjectsReturned):
             obj = cls()
             obj.name = name
             obj.identifier = identifier
@@ -96,6 +99,9 @@ class Dataset(CommonControlField, CommonDataField):
             ),
         ]
 
+    #TODO
+    #Criar metodo get
+
     @classmethod
     def create_or_update(
         cls,
@@ -119,7 +125,7 @@ class Dataset(CommonControlField, CommonDataField):
         try:
             obj = cls.objects.get(global_id=global_id)
             obj.updated_by = user
-        except cls.DoesNotExist:
+        except (cls.DoesNotExist, cls.MultipleObjectsReturned):
             obj = cls()
             obj.global_id = global_id
             obj.creator = user
@@ -157,6 +163,9 @@ class File(CommonControlField, CommonDataField):
         Dataset, on_delete=models.SET_NULL, blank=True, null=True
     )
 
+    #TODO
+    #Criar metodo get
+
     @classmethod
     def create_or_update(
         cls,
@@ -173,7 +182,7 @@ class File(CommonControlField, CommonDataField):
         try:
             obj = cls.objects.get(file_persistent_id=file_persistent_id)
             obj.updated_by = user
-        except cls.DoesNotExist:
+        except (cls.DoesNotExist, cls.MultipleObjectsReturned):
             obj = cls()
             obj.file_persistent_id = file_persistent_id
             obj.creator = user
