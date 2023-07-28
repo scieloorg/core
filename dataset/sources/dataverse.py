@@ -1,5 +1,14 @@
 from core.utils.utils import fetch_data
-from dataset.models import Affiliation, Dataset, Dataverse, File, Publication, Author, Publisher
+from dataset.models import (
+    Affiliation,
+    Author,
+    Dataset,
+    Dataverse,
+    File,
+    InstitutionDataSet,
+    Publication,
+    Publisher,
+)
 from thematic_areas.models import ThematicArea
 from vocabulary.models import Keyword
 
@@ -126,8 +135,11 @@ def get_or_create_contacts(contacts, user):
     if contacts:
         for ct in contacts:
             researcher = get_or_create_authors(authors=[ct.get("name")], user=user)
-            obj, created = Affiliation.objects.get_or_create(
-                name=ct.get("affiliation"),
+            inst, _ = InstitutionDataSet.objects.get_or_create(
+                name=ct.get("affiliation")
+            )
+            obj, _ = Affiliation.objects.get_or_create(
+                institution=inst,
                 author=researcher[0],
                 creator=user,
             )
@@ -136,7 +148,7 @@ def get_or_create_contacts(contacts, user):
 
 
 def get_or_create_publisher(publisher, user):
-    obj, created = Publisher.objects.get_or_create(
+    obj, _ = Publisher.objects.get_or_create(
         name=publisher,
         creator=user,
     )
@@ -154,7 +166,7 @@ def get_or_create_publications(publications, user):
     if publications:
         for publication in publications:
             if publication:
-                obj, created = Publication.objects.get_or_create(
+                obj, _ = Publication.objects.get_or_create(
                     citation=publication.get("citation"),
                     url=publication.get("url"),
                     creator=user,

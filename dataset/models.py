@@ -1,13 +1,10 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
 from core.forms import CoreAdminModelForm
-
 from core.models import CommonControlField
-from institution.models import Institution
 from thematic_areas.models import ThematicArea
-from researcher.models import Researcher
 from vocabulary.models import Keyword
-
 
 TYPE_CHOICES = [
     ("dataverse", "dataverse"),
@@ -197,7 +194,7 @@ class File(CommonControlField, CommonDataField):
 
 
 class Affiliation(CommonControlField):
-    name = models.TextField(blank=True, null=True)
+    institution = models.ForeignKey("InstitutionDataSet", on_delete=models.SET_NULL, blank=True, null=True)
     author = models.ForeignKey(
         "Author",
         on_delete=models.SET_NULL,
@@ -206,7 +203,7 @@ class Affiliation(CommonControlField):
     )
 
     def __str__(self):
-        return f"{self.name} - {self.author}"
+        return f"{self.institution} - {self.author}"
 
 
 class Publication(CommonControlField):
@@ -225,6 +222,13 @@ class Author(CommonControlField):
 
 
 class Publisher(CommonControlField):
+    name = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+    
+
+class InstitutionDataSet(CommonControlField):
     name = models.TextField(blank=True, null=True)
 
     def __str__(self):
