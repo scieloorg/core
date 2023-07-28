@@ -263,13 +263,13 @@ class XMLWithPre:
         if uri:
             yield get_xml_with_pre_from_uri(uri, timeout=30)
 
-    def get_zip_content(self, filename):
+    def get_zip_content(self, xml_filename):
         zip_content = None
         with TemporaryDirectory() as tmpdirname:
             logging.info("TemporaryDirectory %s" % tmpdirname)
-            temp_zip_file_path = os.path.join(tmpdirname, f"{filename}.zip")
+            temp_zip_file_path = os.path.join(tmpdirname, f"{xml_filename}.zip")
             with ZipFile(temp_zip_file_path, "w") as zf:
-                zf.writestr(f"{filename}.xml", self.tostring())
+                zf.writestr(xml_filename, self.tostring())
 
             with open(temp_zip_file_path, "rb") as fp:
                 zip_content = fp.read()
@@ -666,3 +666,16 @@ class XMLWithPre:
                 item["plain_text"] for item in self.article_titles if item["plain_text"]
             ]
         return self._article_titles_texts
+
+    @property
+    def finger_print(self):
+        return generate_finger_print(self.tostring())
+
+
+def generate_finger_print(content):
+    if not content:
+        return None
+    if isinstance(content, str):
+        content = content.upper()
+        content = content.encode("utf-8")
+    return hashlib.sha256(content).hexdigest()
