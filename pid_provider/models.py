@@ -158,7 +158,7 @@ class PidRequest(CommonControlField):
         msg = str(e)
         if message:
             msg = f"{msg} {message}"
-        pid_request = PidRequest.create_or_update(
+        return PidRequest.create_or_update(
             user=user,
             origin=origin,
             result_type=str(type(e)),
@@ -462,7 +462,8 @@ class PidProviderXML(CommonControlField):
 
     def _register_pid_changes(self, changed_pids, user):
         # requires registered.current_version is set
-
+        if not changed_pids:
+            return
         if not self.current_version:
             raise ValueError(
                 "PidProviderXML._register_pid_changes requires current_version is set"

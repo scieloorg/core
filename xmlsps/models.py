@@ -241,10 +241,10 @@ class XMLSPS(CommonControlField):
             obj = cls()
             obj.pid_v3 = pid_v3
             obj.creator = user
-        obj.pid_v2 = pid_v2
-        obj.aop_pid = aop_pid
-        obj.xml_version = xml_version
-        obj.xml_issue = xml_issue
-        obj.xml_journal = xml_journal
+        obj.pid_v2 = pid_v2 or obj.pid_v2
+        obj.aop_pid = aop_pid or obj.aop_pid
+        obj.xml_version = xml_version or obj.xml_version
+        obj.xml_issue = xml_issue or obj.xml_issue
+        obj.xml_journal = xml_journal or obj.xml_journal
         obj.save()
         return obj

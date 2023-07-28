@@ -288,9 +288,16 @@ class XMLWithPre:
             try:
                 fpage = int(self.fpage)
             except TypeError:
-                pass
+                return self.fpage
             if fpage != 0:
                 return self.fpage + (self.fpage_seq or "")
+
+    @property
+    def alternative_sps_pkg_name_suffix(self):
+        try:
+            return self.v2[-5:]
+        except TypeError:
+            return self.filename
 
     @property
     def sps_pkg_name(self):
@@ -308,7 +315,7 @@ class XMLWithPre:
             self.volume,
             self.number and self.number.zfill(2),
             suppl,
-            self.sps_pkg_name_suffix or self.filename or self.v2[-5:],
+            self.sps_pkg_name_suffix or self.alternative_sps_pkg_name_suffix,
         ]
         return "-".join([part for part in parts if part])
 
@@ -649,7 +656,7 @@ class XMLWithPre:
             try:
                 self._article_pub_year = self.xml_dates.article_date["year"]
             except (ValueError, TypeError, KeyError) as e:
-                self._article_pub_year = self.xml_dates.collection_date["year"]
+                self._article_pub_year = self.pub_year
         return self._article_pub_year
 
     @property
