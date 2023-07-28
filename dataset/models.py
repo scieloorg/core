@@ -89,7 +89,11 @@ class Dataset(CommonControlField, CommonDataField):
 
     class Meta:
         indexes = [
-            models.Index(fields=["global_id",]),
+            models.Index(
+                fields=[
+                    "global_id",
+                ]
+            ),
         ]
 
     @classmethod
@@ -153,7 +157,6 @@ class File(CommonControlField, CommonDataField):
         Dataset, on_delete=models.SET_NULL, blank=True, null=True
     )
 
-
     @classmethod
     def create_or_update(
         cls,
@@ -188,7 +191,9 @@ class File(CommonControlField, CommonDataField):
 
 
 class Affiliation(CommonControlField):
-    institution = models.ForeignKey("InstitutionDataSet", on_delete=models.SET_NULL, blank=True, null=True)
+    institution = models.ForeignKey(
+        "InstitutionDataSet", on_delete=models.SET_NULL, blank=True, null=True
+    )
     author = models.ForeignKey(
         "Author",
         on_delete=models.SET_NULL,
@@ -209,10 +214,10 @@ class Publication(CommonControlField):
 
     def __unicode__(self):
         return f"{self.citation} - {self.url}"
-    
+
     def __str__(self):
         return f"{self.citation} - {self.url}"
-    
+
 
 class Author(CommonControlField):
     name = models.CharField(max_length=100, blank=True, null=True)
@@ -232,7 +237,7 @@ class Publisher(CommonControlField):
 
     def __str__(self):
         return self.name
-    
+
 
 class InstitutionDataSet(CommonControlField):
     name = models.TextField(blank=True, null=True)
