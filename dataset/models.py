@@ -19,6 +19,12 @@ class CommonDataField(models.Model):
     url = models.URLField(_("URL"), blank=True, null=True)
     published_at = models.CharField(max_length=25, blank=True, null=True)
 
+    def __unicode__(self):
+        return f"{self.name}"
+
+    def __str__(self):
+        return f"{self.name}"
+
     class Meta:
         abstract = True
 
@@ -28,12 +34,6 @@ class CommonDataField(models.Model):
 class Dataverse(CommonControlField, CommonDataField):
     identifier = models.CharField(max_length=30, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
-
-    def __unicode__(self):
-        return f"{self.name}"
-
-    def __str__(self):
-        return f"{self.name}"
 
     @classmethod
     def create_or_update(
@@ -87,11 +87,10 @@ class Dataset(CommonControlField, CommonDataField):
         blank=True,
     )
 
-    def __unicode__(self):
-        return f"{self.name}"
-
-    def __str__(self):
-        return f"{self.name}"
+    class Meta:
+        indexes = [
+            models.Index(fields=["global_id",]),
+        ]
 
     @classmethod
     def create_or_update(
@@ -154,11 +153,6 @@ class File(CommonControlField, CommonDataField):
         Dataset, on_delete=models.SET_NULL, blank=True, null=True
     )
 
-    def __unicode__(self):
-        return f"{self.name}"
-
-    def __str__(self):
-        return f"{self.name}"
 
     @classmethod
     def create_or_update(
@@ -202,6 +196,9 @@ class Affiliation(CommonControlField):
         null=True,
     )
 
+    def __unicode__(self):
+        return f"{self.institution} - {self.author}"
+
     def __str__(self):
         return f"{self.institution} - {self.author}"
 
@@ -210,12 +207,18 @@ class Publication(CommonControlField):
     citation = models.TextField(blank=True, null=True)
     url = models.URLField(blank=True, null=True)
 
+    def __unicode__(self):
+        return f"{self.citation} - {self.url}"
+    
     def __str__(self):
         return f"{self.citation} - {self.url}"
     
 
 class Author(CommonControlField):
     name = models.CharField(max_length=100, blank=True, null=True)
+
+    def __unicode__(self):
+        return self.name
 
     def __str__(self):
         return self.name
@@ -224,12 +227,18 @@ class Author(CommonControlField):
 class Publisher(CommonControlField):
     name = models.TextField(blank=True, null=True)
 
+    def __unicode__(self):
+        return self.name
+
     def __str__(self):
         return self.name
     
 
 class InstitutionDataSet(CommonControlField):
     name = models.TextField(blank=True, null=True)
+
+    def __unicode__(self):
+        return self.name
 
     def __str__(self):
         return self.name
