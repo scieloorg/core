@@ -106,8 +106,7 @@ class PidRequest(CommonControlField):
             "origin_date": self.origin_date,
             "result_type": self.result_type,
             "result_msg": self.result_msg,
-            "created": self.created and self.created.isoformat(),
-            "updated": self.updated and self.updated.isoformat(),
+            "detail": self.detail,
         }
         return _data
 
@@ -143,11 +142,13 @@ class PidRequest(CommonControlField):
         except cls.DoesNotExist:
             obj = cls()
             obj.creator = user
+            obj.origin = origin
 
         obj.result_type = result_type or obj.result_type
         obj.result_msg = result_msg or obj.result_msg
         obj.xml_version = xml_version or obj.xml_version
         obj.detail = detail or obj.detail
+        obj.origin = origin or obj.origin
         obj.origin_date = origin_date or obj.origin_date
         obj.save()
         return obj
@@ -379,7 +380,6 @@ class PidProviderXML(CommonControlField):
         """
         try:
             logging.info(f"PidProviderXML.register ....  {filename}")
-            pkg_name, ext = os.path.splitext(os.path.basename(filename))
 
             # adaptador do xml with pre
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
@@ -406,25 +406,13 @@ class PidProviderXML(CommonControlField):
                     f"Unable to register {filename}, because v2 is invalid"
                 )
 
-            registered = cls._save(
-                registered,
-                xml_adapter,
-                user,
-                pkg_name,
-                changed_pids,
-            )
+            # cria ou atualiza registro
+            registered = cls._save(registered, xml_adapter, user, changed_pids)
 
             # cria ou atualiza XMLSPS
-            XMLSPS.create_or_update(
-                pid_v3=registered.v3,
-                pid_v2=registered.v2,
-                aop_pid=registered.aop_pid,
-                xml_journal=registered.journal,
-                xml_issue=registered.issue,
-                xml_version=registered.current_version,
-                user=user,
-                is_published=is_published,
-            )
+            registered._create_or_update_xmlsps(user, is_published)
+
+            # data to return
             data = registered.data.copy()
             data["xml_changed"] = bool(changed_pids)
             return data
@@ -439,24 +427,21 @@ class PidProviderXML(CommonControlField):
                 e,
                 user=user,
                 origin=filename,
-                detail={"detail": xml_adapter.tostring()},
+                detail={"xml": xml_adapter.tostring()},
             )
             return pid_request.data
 
-    def _register_pid_changes(self, changed_pids, user):
-        # requires registered.current_version is set
-        if not changed_pids:
-            return
-        if not self.current_version:
-            raise ValueError(
-                "PidProviderXML._register_pid_changes requires current_version is set"
-            )
-        for change_args in changed_pids:
-            if change_args["old"]:
-                # somente registra as mudanças de um old não vazio
-                change_args["user"] = user
-                change_args["version"] = self.current_version
-                change = PidChange.get_or_create(**change_args)
+    def _create_or_update_xmlsps(self, user, is_published):
+        XMLSPS.create_or_update(
+            pid_v3=self.v3,
+            pid_v2=self.v2,
+            aop_pid=self.aop_pid,
+            xml_journal=self.journal,
+            xml_issue=self.issue,
+            xml_version=self.current_version,
+            user=user,
+            is_published=is_published,
+        )
 
     @classmethod
     def _save(
@@ -464,7 +449,6 @@ class PidProviderXML(CommonControlField):
         registered,
         xml_adapter,
         user,
-        pkg_name,
         changed_pids,
     ):
         if registered:
@@ -474,37 +458,18 @@ class PidProviderXML(CommonControlField):
             registered = cls()
             registered.creator = user
             registered.created = utcnow()
-            registered.save()
 
-        registered._add_data(xml_adapter, user, pkg_name)
-
-        registered.journal = registered.get_journal(xml_adapter)
-        registered.issue = registered.get_issue(xml_adapter, registered.journal)
-
-        registered.current_version = XMLVersion.get_or_create(
-            user, xml_adapter.xml_with_pre)
+        registered._add_data(xml_adapter, user)
+        registered._add_journal(xml_adapter)
+        registered._add_issue(xml_adapter, registered.journal)
+        registered._add_current_version(xml_adapter, user)
 
         registered.save()
 
-        registered._register_pid_changes(changed_pids, user)
+        registered._add_pid_changes(changed_pids, user)
+        registered._add_related_items(xml_adapter, user)
 
         return registered
-
-    def get_journal(self, xml_adapter):
-        return XMLJournal.get_or_create(
-            xml_adapter.journal_issn_electronic,
-            xml_adapter.journal_issn_print,
-        )
-
-    def get_issue(self, xml_adapter, journal):
-        if xml_adapter.volume or xml_adapter.number or xml_adapter.suppl:
-            return XMLIssue.get_or_create(
-                journal,
-                xml_adapter.volume,
-                xml_adapter.number,
-                xml_adapter.suppl,
-                xml_adapter.pub_year,
-            )
 
     @classmethod
     def evaluate_registration(cls, xml_adapter, registered):
@@ -603,8 +568,7 @@ class PidProviderXML(CommonControlField):
                     _("Found more than one document matching to {}").format(params)
                 )
 
-    def _add_data(self, xml_adapter, user, pkg_name):
-        logging.info(f"PidProviderXML._add_data {pkg_name}")
+    def _add_data(self, xml_adapter, user):
         self.pkg_name = xml_adapter.sps_pkg_name
         self.article_pub_year = xml_adapter.article_pub_year
         self.v3 = xml_adapter.v3
@@ -625,11 +589,47 @@ class PidProviderXML(CommonControlField):
         self.z_links = xml_adapter.z_links
         self.z_partial_body = xml_adapter.z_partial_body
 
-        for related in xml_adapter.related_items:
-            self._add_related_item(related["href"], user)
+    def _add_journal(self, xml_adapter):
+        self.journal = XMLJournal.get_or_create(
+            xml_adapter.journal_issn_electronic,
+            xml_adapter.journal_issn_print,
+        )
 
-    def _add_related_item(self, main_doi, creator):
-        self.related_items.add(XMLRelatedItem.get_or_create(main_doi, creator))
+    def _add_issue(self, xml_adapter, journal):
+        if xml_adapter.volume or xml_adapter.number or xml_adapter.suppl:
+            self.issue = XMLIssue.get_or_create(
+                journal,
+                xml_adapter.volume,
+                xml_adapter.number,
+                xml_adapter.suppl,
+                xml_adapter.pub_year,
+            )
+
+    def _add_current_version(self, xml_adapter, user):
+        self.current_version = XMLVersion.get_or_create(user, xml_adapter.xml_with_pre)
+
+    def _add_related_items(self, xml_adapter, creator):
+        if xml_adapter.related_items:
+            self.save()
+        for related in xml_adapter.related_items:
+            self.related_items.add(
+                XMLRelatedItem.get_or_create(related["href"], creator)
+            )
+
+    def _add_pid_changes(self, changed_pids, user):
+        # requires registered.current_version is set
+        if not changed_pids:
+            return
+        if not self.current_version:
+            raise ValueError(
+                "PidProviderXML._add_pid_changes requires current_version is set"
+            )
+        for change_args in changed_pids:
+            if change_args["old"]:
+                # somente registra as mudanças de um old não vazio
+                change_args["user"] = user
+                change_args["version"] = self.current_version
+                change = PidChange.get_or_create(**change_args)
 
     @classmethod
     def _get_unique_v3(cls):
