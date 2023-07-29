@@ -4,7 +4,6 @@ from wagtail.contrib.modeladmin.helpers import ButtonHelper
 
 
 class EditorialBoardMemberHelper(ButtonHelper):
-
     # Define classes for our button, here we can set an icon for example
     validate_button_classnames = [
         "button-small",

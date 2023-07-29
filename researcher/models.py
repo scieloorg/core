@@ -248,7 +248,6 @@ class EditorialBoardMember(models.Model):
 
 
 class EditorialBoardMemberFile(models.Model):
-
     attachment = models.ForeignKey(
         "wagtaildocs.Document",
         null=True,

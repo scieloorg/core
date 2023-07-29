@@ -37,7 +37,6 @@ def load_article(self, user_id, file_path=None, xml=None):
 
 @celery_app.task(bind=True, name=_("load_articles"))
 def load_articles(self, user_id=None):
-
     user_id = user_id or self.request.user.id
     from_date = Article.last_created_date()
 

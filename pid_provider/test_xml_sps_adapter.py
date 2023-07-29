@@ -478,13 +478,16 @@ class PidProviderXMLAdapterQueryParamsTest(BasePidProviderXMLAdapterQueryParamsT
         self.assertIsNone(result["z_article_titles_texts"])
 
     def test_query_params_pkg_name_is_set(self):
-        self.xml_adapter.pkg_name = "pkgName"
+        self.xml_adapter.sps_pkg_name = "pkgName"
         result = self.xml_adapter.query_params()
         self.assertEqual("pkgName", result["pkg_name"])
 
     def test_query_params_pkg_name_is_none(self):
+        """
+        Resultado de xml_adapter.sps_pkg_name é '',
+        """
         result = self.xml_adapter.query_params()
-        self.assertIsNone(result["pkg_name"])
+        self.assertEqual("", result["pkg_name"])
 
     def test_query_params_main_doi_is_set(self):
         self.xml_adapter.main_doi = "DOI"

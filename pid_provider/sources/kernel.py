@@ -5,7 +5,6 @@ from pid_provider.models import PidRequest
 
 
 def load_xml(user, uri, name, acron, year):
-
     pp = PidProvider()
 
     try:

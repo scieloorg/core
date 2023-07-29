@@ -263,13 +263,13 @@ class XMLWithPre:
         if uri:
             yield get_xml_with_pre_from_uri(uri, timeout=30)
 
-    def get_zip_content(self, filename):
+    def get_zip_content(self, xml_filename):
         zip_content = None
         with TemporaryDirectory() as tmpdirname:
             logging.info("TemporaryDirectory %s" % tmpdirname)
-            temp_zip_file_path = os.path.join(tmpdirname, f"{filename}.zip")
+            temp_zip_file_path = os.path.join(tmpdirname, f"{xml_filename}.zip")
             with ZipFile(temp_zip_file_path, "w") as zf:
-                zf.writestr(f"{filename}.xml", self.tostring())
+                zf.writestr(xml_filename, self.tostring())
 
             with open(temp_zip_file_path, "rb") as fp:
                 zip_content = fp.read()
@@ -288,9 +288,16 @@ class XMLWithPre:
             try:
                 fpage = int(self.fpage)
             except TypeError:
-                pass
+                return self.fpage
             if fpage != 0:
                 return self.fpage + (self.fpage_seq or "")
+
+    @property
+    def alternative_sps_pkg_name_suffix(self):
+        try:
+            return self.v2[-5:]
+        except TypeError:
+            return self.filename
 
     @property
     def sps_pkg_name(self):
@@ -308,7 +315,7 @@ class XMLWithPre:
             self.volume,
             self.number and self.number.zfill(2),
             suppl,
-            self.sps_pkg_name_suffix or self.filename or self.v2[-5:],
+            self.sps_pkg_name_suffix or self.alternative_sps_pkg_name_suffix,
         ]
         return "-".join([part for part in parts if part])
 
@@ -649,7 +656,7 @@ class XMLWithPre:
             try:
                 self._article_pub_year = self.xml_dates.article_date["year"]
             except (ValueError, TypeError, KeyError) as e:
-                self._article_pub_year = self.xml_dates.collection_date["year"]
+                self._article_pub_year = self.pub_year
         return self._article_pub_year
 
     @property
@@ -659,3 +666,16 @@ class XMLWithPre:
                 item["plain_text"] for item in self.article_titles if item["plain_text"]
             ]
         return self._article_titles_texts
+
+    @property
+    def finger_print(self):
+        return generate_finger_print(self.tostring())
+
+
+def generate_finger_print(content):
+    if not content:
+        return None
+    if isinstance(content, str):
+        content = content.upper()
+        content = content.encode("utf-8")
+    return hashlib.sha256(content).hexdigest()
