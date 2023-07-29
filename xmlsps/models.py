@@ -17,8 +17,10 @@ LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 class XMLVersionXmlWithPreError(Exception):
     ...
 
+
 class XMLVersionLatestError(Exception):
     ...
+
 
 class XMLVersionGetError(Exception):
     ...
@@ -86,13 +88,19 @@ class XMLVersion(CommonControlField):
     def latest(cls, pid_v3):
         if pid_v3:
             return cls.objects.filter(pid_v3=pid_v3).latest("created")
-        raise XMLVersionLatestError("XMLVersion.get requires pid_v3 and xml_with_pre parameters")
+        raise XMLVersionLatestError(
+            "XMLVersion.get requires pid_v3 and xml_with_pre parameters"
+        )
 
     @classmethod
     def get(cls, pid_v3, xml_with_pre):
         if pid_v3 and xml_with_pre:
-            return cls.objects.get(pid_v3=pid_v3, finger_print=xml_with_pre.finger_print)
-        raise XMLVersionGetError("XMLVersion.get requires pid_v3 and xml_with_pre parameters")
+            return cls.objects.get(
+                pid_v3=pid_v3, finger_print=xml_with_pre.finger_print
+            )
+        raise XMLVersionGetError(
+            "XMLVersion.get requires pid_v3 and xml_with_pre parameters"
+        )
 
     @classmethod
     def get_or_create(cls, user, xml_with_pre):
@@ -263,7 +271,14 @@ class XMLSPS(CommonControlField):
 
     @classmethod
     def create_or_update(
-        cls, pid_v3, pid_v2, aop_pid, xml_version, xml_journal, xml_issue, user,
+        cls,
+        pid_v3,
+        pid_v2,
+        aop_pid,
+        xml_version,
+        xml_journal,
+        xml_issue,
+        user,
         is_published,
     ):
         try:
