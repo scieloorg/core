@@ -187,6 +187,7 @@ def get_xml_with_pre_from_uri(uri, timeout=30):
 
 def get_xml_with_pre(xml_content):
     try:
+        xml_content = xml_content.strip()
         # return etree.fromstring(xml_content)
         pref, xml = split_processing_instruction_doctype_declaration_and_xml(
             xml_content
@@ -194,7 +195,7 @@ def get_xml_with_pre(xml_content):
         return XMLWithPre(pref, etree.fromstring(xml))
 
     except Exception as e:
-        if xml_content.strip():
+        if xml_content:
             raise GetXmlWithPreError(
                 "Unable to get xml with pre %s: %s ... %s"
                 % (e, xml_content[:100], xml_content[-200:])
