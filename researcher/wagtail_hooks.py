@@ -7,7 +7,7 @@ from wagtail.contrib.modeladmin.options import (
     modeladmin_register,
 )
 from wagtail.contrib.modeladmin.views import CreateView
-from wagtail.core import hooks
+from wagtail import hooks
 
 from .button_helper import EditorialBoardMemberHelper
 from .models import EditorialBoardMember, EditorialBoardMemberFile, Researcher

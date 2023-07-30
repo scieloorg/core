@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
-from wagtail.core.models import Orderable
+from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.models import CommonControlField, Gender
