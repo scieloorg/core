@@ -1,0 +1,1664 @@
+<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.1 20151215//EN" "http://jats.nlm.nih.gov/publishing/1.1/JATS-journalpublishing1.dtd">
+<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" article-type="research-article" dtd-version="1.1" specific-use="sps-1.9" xml:lang="pt">
+  <front>
+    <journal-meta>
+      <journal-id journal-id-type="publisher-id">esa</journal-id>
+      <journal-title-group>
+        <journal-title>Engenharia Sanitaria e Ambiental</journal-title>
+        <abbrev-journal-title abbrev-type="publisher">Eng. Sanit. Ambient.</abbrev-journal-title>
+      </journal-title-group>
+      <issn pub-type="ppub">1413-4152</issn>
+      <issn pub-type="epub">1809-4457</issn>
+      <publisher>
+        <publisher-name>Associação Brasileira de Engenharia Sanitária e Ambiental - ABES</publisher-name>
+      </publisher>
+    </journal-meta>
+    <article-meta>
+      <article-id specific-use="scielo-v3" pub-id-type="publisher-id">yH6CLqxFJsQKrHj7zXkwL36</article-id>
+      <article-id specific-use="scielo-v2" pub-id-type="publisher-id">S1413-41522020000400628</article-id>
+      <article-id pub-id-type="doi">10.1590/S1413-4152202020180029</article-id>
+      <article-categories>
+        <subj-group subj-group-type="heading">
+          <subject>Artigo Técnico</subject>
+        </subj-group>
+      </article-categories>
+      <title-group>
+        <article-title>Aproveitamento energético dos resíduos de cascas de coco verde para produção de briquetes</article-title>
+        <trans-title-group xml:lang="en">
+          <trans-title>Energetic improvement of waste of green coconut shells to briquettes production</trans-title>
+        </trans-title-group>
+      </title-group>
+      <contrib-group>
+        <contrib contrib-type="author">
+          <contrib-id contrib-id-type="orcid">0000-0003-3365-4708</contrib-id>
+          <name>
+            <surname>Miola</surname>
+            <given-names>Brígida</given-names>
+          </name>
+          <xref ref-type="aff" rid="aff1">
+            <sup>1</sup>
+          </xref>
+          <xref ref-type="corresp" rid="c1">*</xref>
+        </contrib>
+        <contrib contrib-type="author">
+          <contrib-id contrib-id-type="orcid">0000-0002-5599-4335</contrib-id>
+          <name>
+            <surname>Frota</surname>
+            <given-names>Maria Myrian Melo</given-names>
+          </name>
+          <xref ref-type="aff" rid="aff1">
+            <sup>1</sup>
+          </xref>
+        </contrib>
+        <contrib contrib-type="author">
+          <contrib-id contrib-id-type="orcid">0000-0001-9222-9862</contrib-id>
+          <name>
+            <surname>Oliveira</surname>
+            <given-names>André Gadelha de</given-names>
+          </name>
+          <xref ref-type="aff" rid="aff1">
+            <sup>1</sup>
+          </xref>
+        </contrib>
+        <contrib contrib-type="author">
+          <contrib-id contrib-id-type="orcid">0000-0002-0477-755X</contrib-id>
+          <name>
+            <surname>Uchôa</surname>
+            <given-names>Kênio Monteles</given-names>
+          </name>
+          <xref ref-type="aff" rid="aff1">
+            <sup>1</sup>
+          </xref>
+        </contrib>
+        <contrib contrib-type="author">
+          <contrib-id contrib-id-type="orcid">0000-0001-9691-295X</contrib-id>
+          <name>
+            <surname>Leandro</surname>
+            <given-names>Francisco de Assis</given-names>
+            <suffix>Filho</suffix>
+          </name>
+          <xref ref-type="aff" rid="aff2">
+            <sup>2</sup>
+          </xref>
+        </contrib>
+      </contrib-group>
+      <aff id="aff1">
+        <label>1</label>
+        <institution content-type="original">Centro de Ciências Tecnológicas, Universidade de Fortaleza - Fortaleza (CE), Brasil.</institution>
+        <institution content-type="orgdiv1">Centro de Ciências Tecnológicas</institution>
+        <institution content-type="orgname">Universidade de Fortaleza</institution>
+        <addr-line>
+          <city>Fortaleza</city>
+          <state>CE</state>
+        </addr-line>
+        <country country="BR">Brazil</country>
+      </aff>
+      <aff id="aff2">
+        <label>2</label>
+        <institution content-type="original">Instituto Federal de Educação do Ceará - Fortaleza (CE), Brasil.</institution>
+        <institution content-type="orgname">Instituto Federal de Educação do Ceará</institution>
+        <addr-line>
+          <city>Fortaleza</city>
+          <state>CE</state>
+        </addr-line>
+        <country country="BR">Brazil</country>
+      </aff>
+      <author-notes>
+        <corresp id="c1">
+          <label>*</label>
+          <bold>Autora correspondente:</bold>
+          <email>bmiola@gmail.com</email>
+        </corresp>
+      </author-notes>
+      <pub-date date-type="pub" publication-format="electronic">
+        <day>03</day>
+        <month>08</month>
+        <year>2020</year>
+      </pub-date>
+      <pub-date date-type="collection" publication-format="electronic">
+        <season>Jul-Aug</season>
+        <year>2020</year>
+      </pub-date>
+      <volume>25</volume>
+      <issue>04</issue>
+      <fpage>627</fpage>
+      <lpage>634</lpage>
+      <history>
+        <date date-type="received">
+          <day>24</day>
+          <month>06</month>
+          <year>2018</year>
+        </date>
+        <date date-type="accepted">
+          <day>16</day>
+          <month>04</month>
+          <year>2019</year>
+        </date>
+      </history>
+      <permissions>
+        <license license-type="open-access" xlink:href="https://creativecommons.org/licenses/by/4.0/" xml:lang="pt">
+          <license-p>Este é um artigo publicado em acesso aberto sob uma licença Creative Commons</license-p>
+        </license>
+      </permissions>
+      <abstract>
+        <title>RESUMO</title>
+        <p>A casca de coco verde é considerada um resíduo de complexa degradação, podendo ser também foco de proliferação de doenças. Com base nessa premissa e com a necessidade de se estudarem novas fontes renováveis de energia, a utilização de resíduos de casca de coco verde como fonte energética apresenta aspectos benéficos, desde que seja viável econômica e tecnicamente. Assim, este artigo visa avaliar o potencial energético da casca do coco verde por meio da produção de briquetes. Foram realizadas análises das características físico-químicas dos briquetes e da biomassa <italic>in natura</italic>. Como resultados, foram encontrados poder calorífico de 13,6 MJ/kg para biomassa <italic>in natura</italic>; já para os briquetes, com aglutinantes água e amido, os valores foram de 15,6 e 11,7 MJ/kg, respectivamente. O poder calorífico da biomassa <italic>in natura</italic> não resultou valores inferiores quando comparados com a literatura de referência, porém sua umidade e teor de cinzas se apresentaram bastante elevados. Para os briquetes produzidos, esses valores se reduzem e o poder calorífico é considerado alto e eficiente para fins de geração de calor. Dessa forma, verifica-se o potencial de utilização dos resíduos da casca como alternativa energética, além das vantagens socioeconômicas e ambientais.</p>
+      </abstract>
+      <trans-abstract xml:lang="en">
+        <title>ABSTRACT</title>
+        <p>A green coconut shell is considered a residue of complex degradation, and can also be a focus of proliferation of diseases. Based on this premise, it is necessary to study new renewable sources of energy, the use of residues of green coconut shell as an energy source has beneficial aspects, since economically and technically viable. Thus, this article aims to evaluate the energy potential of the green coconut shell through the briquettes production. Analyzes of the physic-chemical characteristics of the briquettes and of the <italic>in natura</italic> biomass were carried out. As a result, a calorific value of 13.6 MJ/kg was found for <italic>in natura</italic> biomass, for the briquettes, with binder water and starch, presented calorific value of 15.6 and 11.7 MJ/kg, respectively. The calorific value in the <italic>in natura</italic> biomass did not result in much lower values compared to the reference literature; however, its humidity and ash content were quite high. For the briquettes produced, these values are reduced and the calorific value is considered high and efficient if it is treated for purposes of heat generation. Thus, the potential for using bark residues as an alternative energy is verified, in addition to the socioeconomic and environmental advantages.</p>
+      </trans-abstract>
+      <kwd-group xml:lang="pt">
+        <title>Palavras-chave:</title>
+        <kwd>briquetes</kwd>
+        <kwd>biomassa</kwd>
+        <kwd>casca de coco verde</kwd>
+        <kwd>potencial energético</kwd>
+      </kwd-group>
+      <kwd-group xml:lang="en">
+        <title>Keywords:</title>
+        <kwd>briquettes</kwd>
+        <kwd>biomass</kwd>
+        <kwd>green coconut shell</kwd>
+        <kwd>energy potential</kwd>
+      </kwd-group>
+      <counts>
+        <fig-count count="4"/>
+        <table-count count="3"/>
+        <equation-count count="11"/>
+        <ref-count count="19"/>
+      </counts>
+    </article-meta>
+  </front>
+  <body>
+    <sec sec-type="intro">
+      <title>INTRODUÇÃO</title>
+      <p>Atualmente, com o padrão de consumo da população, os produtos tendem a ser descartados antes do fim de seu ciclo de vida, sendo destinados aos lixões e aterros. Uma vez que a falta de reaproveitamento desses resíduos afeta a vida útil dos aterros, os estudos para reutilização de resíduos sólidos urbanos (RSU) estão cada vez mais frequentes, buscando soluções inteligentes para um futuro sustentável.</p>
+      <p>Os pesquisadores da Empresa Brasileira de Pesquisa Agropecuária (EMBRAPA) <xref ref-type="bibr" rid="B15">Martins e Jesus-Júnior (2011</xref>) acreditam que sejam descartados no Brasil cerca de sete milhões de toneladas de cascas de coco por ano. A casca do coco verde é considerada um resíduo de complexa degradação, podendo ser também foco de proliferação de doenças, causar mau cheiro, degradar a paisagem e colocar em risco o meio ambiente. Com isso, as cascas do coco verde, enquanto matérias-primas não utilizadas, apresentam custos e impactos para a sociedade e o meio ambiente, ao passo que o seu aproveitamento agrega valor ao resíduo e pode trazer benefícios para o meio como um todo.</p>
+      <p>Hoje em dia, esse resíduo já é usado para algumas finalidades, como a produção de fibras vegetais, de substrato orgânico, de mantas para uso em aplicações arquitetônicas e de engenharia etc. Muitas empresas usam a casca de coco verde como cobertura morta de solo nos coqueirais.</p>
+      <p>A casca do coco é composta de fibras muito rígidas, difíceis de decompor, por isso para a sua reutilização é preciso usar técnicas e equipamentos específicos. No estado do Ceará, pesquisadores da Embrapa Agroindústria Tropical desenvolveram um conjunto de equipamentos composto de um triturador, prensa e um classificador, conectados de forma contínua, para beneficiamento da casca de coco verde e obtenção de fibra e pó.</p>
+      <p>Segundo <xref ref-type="bibr" rid="B11">Grapiúna (2012</xref>), 65% do coco corresponde à noz e seu conteúdo (albúmen sólido e água), enquanto os 35% restantes correspondem à parte fibrosa (casca). As fibras são compostas de hemicelulose, lignina e celulose. Esta última forma longas cadeias de alto grau de polimerização, que apresentam grande resistência mecânica. Assim, para seu aproveitamento, as opções incluem produção de objetos artesanais, confecção de lembranças, utilização da fibra em filtros naturais, produção de energia renovável, confecção de briquetes, entre outras. Essas medidas são necessárias, visto que o consumo de coco tende a crescer cada vez mais, influenciado pelas características climáticas e turísticas do país.</p>
+      <p>O fruto do coco imaturo (verde) apresenta alto teor de umidade. Para sua reutilização é necessário um processo de secagem, o que dificulta o seu aproveitamento. Estudos já apontam a grande capacidade do coco <italic>in natura</italic> como substrato agrícola, por meio do pó obtido da sua trituração. Existem estudos da Embrapa que apontam, também, sua utilização na incorporação de elastômeros, aumentando a resistência mecânica. Elastômeros são polímeros utilizados em materiais borrachudos, como pneus.</p>
+      <p>O processo de briquetagem consiste na aplicação de pressão em uma massa de partículas dispersas, com o objetivo de torná-las um sólido geométrico compacto de alta densidade. <xref ref-type="bibr" rid="B16">Quirino (1991</xref>) relata que a briquetagem é uma forma bastante eficiente de concentrar a energia disponível da biomassa; cerca de 1 m<sup>3</sup> de briquetes contém pelo menos cinco vezes mais energia que 1 m<sup>3</sup> de resíduos. A briquetagem acontece em altas temperaturas e pressões, com ou sem o uso de aglutinantes ou tratamento térmico, e com partículas cujo tamanho esteja entre 5 e 10 mm (<xref ref-type="bibr" rid="B17">SILVEIRA, 2008</xref>; <xref ref-type="bibr" rid="B13">LUCENA <italic>et al</italic>., 2008</xref>).</p>
+      <p>Existem muitas formas de permitir a ligação entre as partículas de biomassa compactada, todas as quais, na maioria das vezes, influenciam na resistência e na coesão final do briquete. A necessidade ou não da adição de ligantes ao processo de briquetagem pode ser determinada de acordo com as características da matéria-prima utilizada no processo de fabricação, assim como o tipo do agente aglomerante (<xref ref-type="bibr" rid="B9">GENTIL, 2008</xref>; <xref ref-type="bibr" rid="B12">LIPPEL, 2016</xref>).</p>
+      <p>Com relação ao uso dos aglutinantes, um fator que deve ser levado em consideração é sua composição química, que deve ser isenta de compostos que durante a combustão possam favorecer a produção de gases tóxicos (<xref ref-type="bibr" rid="B3">BENÍCIO, 2011</xref>). Ainda segundo o autor, as principais características dos aglutinantes utilizados na produção dos briquetes devem ser: alta taxa aglutinante; inexistência de material inerte em sua composição; preço baixo e abundância; simplicidade de uso; alta resistência mecânica; resistência à umidade; e boas condições de operacionalidade.</p>
+      <p> Além disso, o aglutinante usado não deve prejudicar as características energéticas do briquete, diminuindo o rendimento calorífico e aumentando o teor de voláteis e cinzas, e seu custo não poderá inviabilizá-lo economicamente (<xref ref-type="bibr" rid="B8">FONTES; QUIRINO; OKINO, 1989</xref>).</p>
+      <p>Segundo <xref ref-type="bibr" rid="B2">Barros (2013</xref>), os aglutinantes podem ser classificados de acordo com sua função e/ou mistura em três tipos:</p>
+      <p>
+        <list list-type="bullet">
+          <list-item>
+            <p>tipo matriz ou aglomerantes “betuminosos”: formam uma matriz contínua e influenciam diretamente nas propriedades dos briquetes, a exemplo do alcatrão e do piche;</p>
+          </list-item>
+          <list-item>
+            <p>tipo filme ou aglomerantes orgânicos: apresentam função similar à das colas adesivas, dependendo principalmente da evaporação da água para que ocorra maior resistência mecânica. São exemplos o silicato de sódio, o amido e o melaço;</p>
+          </list-item>
+          <list-item>
+            <p>tipo químico: aglomerantes cuja aderência depende das reações químicas dos compostos dos aglomerantes. Podem ser usados tanto como matriz quanto como filme. Como exemplo, tem-se o silicato de sódio + CO<sub>2</sub> e epóxis.</p>
+          </list-item>
+        </list>
+      </p>
+      <p>O amido industrial de milho é o aglutinante mais utilizado no Brasil, sofrendo tratamento de ativação para não perder suas propriedades físico-químicas (<xref ref-type="bibr" rid="B8">FONTES; QUIRINO; OKINO, 1989</xref>). A adição de amido no briquete é de normalmente entre 5 e 12% em massa. Por outro lado, a bentonita é uma argila composta predominantemente pelo argilomineral montmorilonita (55-70%), do grupo das esmectitas.</p>
+      <p>A principal utilidade do briquete nos dias de hoje é substituir a lenha. O briquete pode ser substituído pela madeira nas usinas de geração de calor ou vapor, a exemplo das termelétricas, passando a representar uma opção real para a produção de energia no Brasil.</p>
+      <p>Neste trabalho pretende-se avaliar o potencial de aproveitamento das cascas de coco verde para a geração de energia, por meio da fabricação de briquetes.</p>
+    </sec>
+    <sec sec-type="methods">
+      <title>METODOLOGIA</title>
+      <sec>
+        <title>Coleta e preparação da amostra</title>
+        <p>Inicialmente foi realizada a coleta da casca do coco verde para posterior tratamento e, em seguida, a caracterização físico-química da biomassa. O resíduo foi cortado com o auxílio de uma faca, para que houvesse o fatiamento da casca do coco, e em seguida procedeu-se ao processo de trituração, com o auxílio de uma forrageira (<xref ref-type="fig" rid="f1">Figura 1</xref>).</p>
+        <p>
+          <fig id="f1">
+            <label>Figura 1 -</label>
+            <caption>
+              <title>Coco processado.</title>
+            </caption>
+            <alternatives>
+              <graphic xlink:href="https://minio.scielo.br/documentstore/1809-4457/yH6CLqxFJsQKrHj7zXkwL3G/313fa6602ba721d6c3d9f32607bb3bba0a8c46e5.png"/>
+              <graphic xlink:href="https://minio.scielo.br/documentstore/1809-4457/yH6CLqxFJsQKrHj7zXkwL3G/278174467bfc84695cd5129e05fe10cc050c27b6.jpg" specific-use="scielo-web" content-type="scielo-267x140"/>
+            </alternatives>
+          </fig>
+        </p>
+        <p>Após esse processo, foram realizadas as devidas análises físico-químicas na biomassa <italic>in natura</italic> da casca do coco verde. Seguiu-se o processo de fabricação dos briquetes, que também passaram pelas mesmas análises físico-químicas.</p>
+      </sec>
+      <sec>
+        <title>Produção dos briquetes</title>
+        <p>Para a fabricação dos briquetes foi utilizado um protótipo de prensa hidráulica com o emprego dois tipos de aglutinantes, água e amido. A água foi utilizada na forma de vapor, na medida em que se verificou maior aderência da biomassa. Já para o amido de milho, também na produção dos briquetes, foi adotada a relação de 1/4, sendo 50 g de amido em 200 mL de água destilada. Essa solução foi aquecida à temperatura de 70ºC e misturada constantemente até alcançar a consistência desejada, sendo utilizada no mesmo dia de sua produção. Esse material foi misturado durante 5 min, até o aglutinante ser incorporado uniformemente nos resíduos e, assim, levado para ser prensado.</p>
+        <p>A casca de coco foi colocada a 60ºC em estufa, durante 2 h, para se retirar a umidade da biomassa. Após a secagem, a casca de coco verde foi triturada em uma forrageira, com o objetivo de manter a biomassa em pequenos tamanhos e uniforme (<xref ref-type="fig" rid="f2">Figura 2</xref>).</p>
+        <p>
+          <fig id="f2">
+            <label>Figura 2 -</label>
+            <caption>
+              <title>Casca de coco processado seco.</title>
+            </caption>
+            <alternatives>
+              <graphic xlink:href="https://minio.scielo.br/documentstore/1809-4457/yH6CLqxFJsQKrHj7zXkwL3G/233d42cf1d42897746862bab5485a24fd17a02c6.png"/>
+              <graphic xlink:href="https://minio.scielo.br/documentstore/1809-4457/yH6CLqxFJsQKrHj7zXkwL3G/8a712da56b324b3b6c1a97969f49247fc26cd91c.jpg" specific-use="scielo-web" content-type="scielo-267x140"/>
+            </alternatives>
+          </fig>
+        </p>
+        <p>A prensa utilizada para a fabricação dos briquetes (<xref ref-type="fig" rid="f3">Figura 3</xref>) foi desenvolvida com os seguintes materiais e objetivos (<xref ref-type="bibr" rid="B19">UCHÔA; MIOLA; BRITO, 2018</xref>):</p>
+        <p>
+          <list list-type="bullet">
+            <list-item>
+              <p>Pedaços de madeira de 30 e 40 cm: estrutura na qual ficam presos o molde de cimento maciço e o macaco hidráulico;</p>
+            </list-item>
+            <list-item>
+              <p>Macaco hidráulico de 4 t: tem como função transmitir força e torque aplicados à sua alavanca ao molde do briquete, ao encontro do molde maciço de cimento;</p>
+            </list-item>
+            <list-item>
+              <p>Cano de policloreto de vinila (PVC) de 100 mm: molde para a confecção de um cilindro maciço de cimento e um molde oco para acomodação da biomassa a ser compactada;</p>
+            </list-item>
+            <list-item>
+              <p>Parafusos: para fixação dos pedaços de madeira;</p>
+            </list-item>
+            <list-item>
+              <p>Cola quente: para fixação do macaco hidráulico no suporte de madeira;</p>
+            </list-item>
+            <list-item>
+              <p>Molde de ferro do briquete: acomoda a casca de coco verde triturada e posteriormente comprimida.</p>
+            </list-item>
+          </list>
+        </p>
+        <p>
+          <fig id="f3">
+            <label>Figura 3 -</label>
+            <caption>
+              <title>Etapas de construção da prensa utilizada.</title>
+            </caption>
+            <attrib>Fonte: <xref ref-type="bibr" rid="B19">Uchôa, Miola e Brito (2018</xref>).</attrib>
+            <alternatives>
+              <graphic xlink:href="https://minio.scielo.br/documentstore/1809-4457/yH6CLqxFJsQKrHj7zXkwL3G/4e6660596ca731a33dbd45a1e4cc980656176ddc.png"/>
+              <graphic xlink:href="https://minio.scielo.br/documentstore/1809-4457/yH6CLqxFJsQKrHj7zXkwL3G/0ea0443ac92cced27a7f977564d92b8eb322c84d.jpg" specific-use="scielo-web" content-type="scielo-267x140"/>
+            </alternatives>
+          </fig>
+        </p>
+      </sec>
+      <sec>
+        <title>Análises físico-químicas</title>
+        <p>A investigação foi realizada no laboratório de Química Tecnológica da Universidade de Fortaleza, no período de fevereiro a junho de 2018. As análises físico-químicas relacionadas a seguir foram conduzidas tanto na biomassa <italic>in natura</italic> (casca do coco verde) quanto nos briquetes produzidos. A metodologia das análises seguiu a Norma Brasileira (NBR) 8112/86.</p>
+        <sec>
+          <title>
+            <italic>Determinação do teor de umidade e secagem</italic>
+          </title>
+          <p>Para a determinação do teor de umidade da matéria-prima, seguiram-se os seguintes procedimentos: inicialmente, tarou-se um cadinho em uma balança de precisão, depois cerca de 1 g de amostra foi pesada e colocada em uma estufa pré-aquecida a 60ºC, até massa constante com a metade restante dos briquetes, e, por fim, a amostra foi colocada em um dessecador para esfriar e pesada novamente.</p>
+          <p>O teor de umidade foi determinado segundo a <xref ref-type="disp-formula" rid="e1">Equação 1</xref>:</p>
+          <p>
+            <disp-formula id="e1">
+              <mml:math>
+                <mml:mi>T</mml:mi>
+                <mml:mi>U</mml:mi>
+                <mml:mo>=</mml:mo>
+                <mml:mfenced separators="|">
+                  <mml:mrow>
+                    <mml:mfrac>
+                      <mml:mrow>
+                        <mml:msub>
+                          <mml:mrow>
+                            <mml:mi>m</mml:mi>
+                          </mml:mrow>
+                          <mml:mrow>
+                            <mml:mn>0</mml:mn>
+                          </mml:mrow>
+                        </mml:msub>
+                        <mml:mo>-</mml:mo>
+                        <mml:msub>
+                          <mml:mrow>
+                            <mml:mi>m</mml:mi>
+                          </mml:mrow>
+                          <mml:mrow>
+                            <mml:mn>1</mml:mn>
+                          </mml:mrow>
+                        </mml:msub>
+                      </mml:mrow>
+                      <mml:mrow>
+                        <mml:msub>
+                          <mml:mrow>
+                            <mml:mi>m</mml:mi>
+                          </mml:mrow>
+                          <mml:mrow>
+                            <mml:mn>0</mml:mn>
+                          </mml:mrow>
+                        </mml:msub>
+                      </mml:mrow>
+                    </mml:mfrac>
+                  </mml:mrow>
+                </mml:mfenced>
+                <mml:mi>*</mml:mi>
+                <mml:mn>100</mml:mn>
+              </mml:math>
+              <label>(1) (NBR 8112/86)</label>
+            </disp-formula>
+          </p>
+          <p>Em que:</p>
+          <def-list id="d1">
+            <def-item>
+              <term>TU =</term>
+              <def>
+                <p> teor de umidade, em %;</p>
+              </def>
+            </def-item>
+            <def-item>
+              <term>M<sub>0</sub> =</term>
+              <def>
+                <p> massa inicial da amostra, em g;</p>
+              </def>
+            </def-item>
+            <def-item>
+              <term>M<sub>1</sub> =</term>
+              <def>
+                <p> massa final da amostra, em g.</p>
+              </def>
+            </def-item>
+          </def-list>
+        </sec>
+        <sec>
+          <title>
+            <italic>Teor de materiais voláteis</italic>
+          </title>
+          <p>Para a análise do teor de materiais voláteis, pesou-se aproximadamente 1 g de amostra, já retirada parte de sua umidade. Posteriormente, os cadinhos com a amostra foram colocados em mufla da marca Quimis, inicialmente sobre a porta, previamente aquecida por 3 min. Após esse tempo, os cadinhos foram colocados no interior da mufla por 7 min, com a porta fechada. Em seguida, foram retirados da mufla, colocados em um dessecador para esfriarem e pesados para determinação da massa final. O teor de materiais voláteis foi determinado segundo a <xref ref-type="disp-formula" rid="e2">Equação 2</xref>:</p>
+          <p>
+            <disp-formula id="e2">
+              <mml:math>
+                <mml:mi>M</mml:mi>
+                <mml:mi>V</mml:mi>
+                <mml:mo>=</mml:mo>
+                <mml:mfenced separators="|">
+                  <mml:mrow>
+                    <mml:mfrac>
+                      <mml:mrow>
+                        <mml:msub>
+                          <mml:mrow>
+                            <mml:mi>m</mml:mi>
+                          </mml:mrow>
+                          <mml:mrow>
+                            <mml:mn>2</mml:mn>
+                          </mml:mrow>
+                        </mml:msub>
+                        <mml:mo>-</mml:mo>
+                        <mml:msub>
+                          <mml:mrow>
+                            <mml:mi>m</mml:mi>
+                          </mml:mrow>
+                          <mml:mrow>
+                            <mml:mn>3</mml:mn>
+                          </mml:mrow>
+                        </mml:msub>
+                      </mml:mrow>
+                      <mml:mrow>
+                        <mml:mi>m</mml:mi>
+                      </mml:mrow>
+                    </mml:mfrac>
+                  </mml:mrow>
+                </mml:mfenced>
+                <mml:mi>*</mml:mi>
+                <mml:mn>100</mml:mn>
+              </mml:math>
+              <label>(2) (NBR 8112/86)</label>
+            </disp-formula>
+          </p>
+          <p>Em que:</p>
+          <def-list id="d2">
+            <def-item>
+              <term>MV =</term>
+              <def>
+                <p> teor de material volátil em porcentagem;</p>
+              </def>
+            </def-item>
+            <def-item>
+              <term>m<sub>2</sub> =</term>
+              <def>
+                <p> massa inicial do cadinho com a amostra (g);</p>
+              </def>
+            </def-item>
+            <def-item>
+              <term>m<sub>3</sub> =</term>
+              <def>
+                <p> massa final do cadinho com a amostra (g);</p>
+              </def>
+            </def-item>
+            <def-item>
+              <term>m =</term>
+              <def>
+                <p> massa da amostra seca (g).</p>
+              </def>
+            </def-item>
+          </def-list>
+        </sec>
+        <sec>
+          <title>
+            <italic>Teor de cinzas</italic>
+          </title>
+          <p>Na análise do teor de cinzas, foi pesada 1 g de biomassa, já isenta de umidade e de granulometria inferior a 0,210 mm, em um cadinho sem tampa, previamente seco e tarado. Em seguida, o cadinho foi colocado com a amostra na mufla previamente aquecida a 700 ± 10ºC, onde permaneceu por 3 h, até que o carvão queimasse completamente. A amostra foi então retirada e colocada em dessecador para resfriamento, e a massa final foi determinada.</p>
+          <p>A porcentagem de cinzas em relação ao pó que foi submetido ao processo de secagem foi calculada segundo a <xref ref-type="disp-formula" rid="e3">Equação 3</xref>:</p>
+          <p>
+            <disp-formula id="e3">
+              <mml:math>
+                <mml:mi>C</mml:mi>
+                <mml:mi>Z</mml:mi>
+                <mml:mo>=</mml:mo>
+                <mml:mfenced separators="|">
+                  <mml:mrow>
+                    <mml:mfrac>
+                      <mml:mrow>
+                        <mml:msub>
+                          <mml:mrow>
+                            <mml:mi>m</mml:mi>
+                          </mml:mrow>
+                          <mml:mrow>
+                            <mml:mn>1</mml:mn>
+                          </mml:mrow>
+                        </mml:msub>
+                        <mml:mo>-</mml:mo>
+                        <mml:msub>
+                          <mml:mrow>
+                            <mml:mi>m</mml:mi>
+                          </mml:mrow>
+                          <mml:mrow>
+                            <mml:mn>0</mml:mn>
+                          </mml:mrow>
+                        </mml:msub>
+                      </mml:mrow>
+                      <mml:mrow>
+                        <mml:mi>m</mml:mi>
+                      </mml:mrow>
+                    </mml:mfrac>
+                  </mml:mrow>
+                </mml:mfenced>
+                <mml:mi>*</mml:mi>
+                <mml:mn>100</mml:mn>
+              </mml:math>
+              <label>(3) (NBR 8112/86)</label>
+            </disp-formula>
+          </p>
+          <p>Em que:</p>
+          <def-list id="d3">
+            <def-item>
+              <term>CZ =</term>
+              <def>
+                <p> teor de cinza, em %;</p>
+              </def>
+            </def-item>
+            <def-item>
+              <term>m<sub>0</sub> =</term>
+              <def>
+                <p> massa do cadinho, em g;</p>
+              </def>
+            </def-item>
+            <def-item>
+              <term>m<sub>1</sub> =</term>
+              <def>
+                <p> massa do cadinho + amostra do resíduo, em g;</p>
+              </def>
+            </def-item>
+            <def-item>
+              <term>m =</term>
+              <def>
+                <p> massa da amostra do resíduo, em g.</p>
+              </def>
+            </def-item>
+          </def-list>
+        </sec>
+        <sec>
+          <title>
+            <italic>Carbono fixo</italic>
+          </title>
+          <p>Carbono fixo é o nome dado ao conjunto de substâncias combustíveis que não se desprendem quando a biomassa é aquecida, e que é obtido pela diferença entre a massa total e o teor de umidade, material volátil e cinzas (<xref ref-type="bibr" rid="B18">SOZIM <italic>et al</italic>., 2011</xref>). Foi utilizada a <xref ref-type="disp-formula" rid="e4">Equação 4</xref> para a determinação do teor de carbono fixo:</p>
+          <p>
+            <disp-formula id="e4">
+              <mml:math>
+                <mml:mi>C</mml:mi>
+                <mml:mi>F</mml:mi>
+                <mml:mi> </mml:mi>
+                <mml:mo>=</mml:mo>
+                <mml:mi> </mml:mi>
+                <mml:mn>100</mml:mn>
+                <mml:mi> </mml:mi>
+                <mml:mo>-</mml:mo>
+                <mml:mi> </mml:mi>
+                <mml:mo>(</mml:mo>
+                <mml:mi>C</mml:mi>
+                <mml:mi>Z</mml:mi>
+                <mml:mi> </mml:mi>
+                <mml:mo>+</mml:mo>
+                <mml:mi> </mml:mi>
+                <mml:mi>M</mml:mi>
+                <mml:mi>V</mml:mi>
+                <mml:mo>)</mml:mo>
+              </mml:math>
+              <label>(4) (NBR 8112/86)</label>
+            </disp-formula>
+          </p>
+          <p>Em que:</p>
+          <def-list id="d4">
+            <def-item>
+              <term>CF =</term>
+              <def>
+                <p> teor de carbono fixo (%);</p>
+              </def>
+            </def-item>
+            <def-item>
+              <term>CZ =</term>
+              <def>
+                <p> teor de cinzas (%);</p>
+              </def>
+            </def-item>
+            <def-item>
+              <term>MV =</term>
+              <def>
+                <p> teor de materiais voláteis (%).</p>
+              </def>
+            </def-item>
+          </def-list>
+        </sec>
+        <sec>
+          <title>
+            <italic>Poder calorífico superior</italic>
+          </title>
+          <p>A Organização das Nações Unidas para a Alimentação e a Agricultura propõe que o poder calorífico da madeira, em MJ/kg, e da maior parte dos resíduos agroflorestais seja calculado usando a <xref ref-type="disp-formula" rid="e5">Equação 5</xref> (<xref ref-type="bibr" rid="B5">EMBRAPA, 2012</xref>):</p>
+          <p>
+            <disp-formula id="e5">
+              <mml:math>
+                <mml:mi>P</mml:mi>
+                <mml:mi>C</mml:mi>
+                <mml:mi>S</mml:mi>
+                <mml:mi> </mml:mi>
+                <mml:mo>=</mml:mo>
+                <mml:mi> </mml:mi>
+                <mml:mn>20</mml:mn>
+                <mml:mi>*</mml:mi>
+                <mml:mo>(</mml:mo>
+                <mml:mn>1</mml:mn>
+                <mml:mo>-</mml:mo>
+                <mml:mi> </mml:mi>
+                <mml:mi>T</mml:mi>
+                <mml:mi>e</mml:mi>
+                <mml:mi>o</mml:mi>
+                <mml:mi>r</mml:mi>
+                <mml:mi> </mml:mi>
+                <mml:mi>d</mml:mi>
+                <mml:mi>e</mml:mi>
+                <mml:mi> </mml:mi>
+                <mml:mi>C</mml:mi>
+                <mml:mi>i</mml:mi>
+                <mml:mi>n</mml:mi>
+                <mml:mi>z</mml:mi>
+                <mml:mi>a</mml:mi>
+                <mml:mi>s</mml:mi>
+                <mml:mi> </mml:mi>
+                <mml:mo>-</mml:mo>
+                <mml:mi> </mml:mi>
+                <mml:mi>U</mml:mi>
+                <mml:mi>m</mml:mi>
+                <mml:mi>i</mml:mi>
+                <mml:mi>d</mml:mi>
+                <mml:mi>a</mml:mi>
+                <mml:mi>d</mml:mi>
+                <mml:mi>e</mml:mi>
+                <mml:mo>)</mml:mo>
+              </mml:math>
+              <label>(5)</label>
+            </disp-formula>
+          </p>
+        </sec>
+        <sec>
+          <title>
+            <italic>Densidade</italic>
+          </title>
+          <p>A densidade aparente foi calculada pelo método estequiométrico, assim, densidade é a massa por unidade de volume. Os briquetes foram confeccionados em formato cilíndrico, de modo que o volume se deu pela <xref ref-type="disp-formula" rid="e6">Equação 6</xref>:</p>
+          <p>
+            <disp-formula id="e6">
+              <mml:math>
+                <mml:mi>V</mml:mi>
+                <mml:mo>=</mml:mo>
+                <mml:mfrac>
+                  <mml:mrow>
+                    <mml:mfenced separators="|">
+                      <mml:mrow>
+                        <mml:mi>π</mml:mi>
+                        <mml:mo>.</mml:mo>
+                        <mml:mi>α</mml:mi>
+                        <mml:mo>.</mml:mo>
+                        <mml:msup>
+                          <mml:mrow>
+                            <mml:mi>r</mml:mi>
+                          </mml:mrow>
+                          <mml:mrow>
+                            <mml:mn>2</mml:mn>
+                          </mml:mrow>
+                        </mml:msup>
+                      </mml:mrow>
+                    </mml:mfenced>
+                  </mml:mrow>
+                  <mml:mrow>
+                    <mml:mn>3</mml:mn>
+                  </mml:mrow>
+                </mml:mfrac>
+              </mml:math>
+              <label>(6)</label>
+            </disp-formula>
+          </p>
+          <p>Em que:</p>
+          <def-list id="d6">
+            <def-item>
+              <term>densidade (cm<sup>3</sup>.g<sup>-1</sup>) =</term>
+              <def>
+                <p>massa/volume</p>
+              </def>
+            </def-item>
+          </def-list>
+        </sec>
+      </sec>
+    </sec>
+    <sec sec-type="results|discussion">
+      <title>RESULTADOS E DISCUSSÃO</title>
+      <sec>
+        <title>
+          <bold>Biomassa <italic>in natura</italic> </bold>
+        </title>
+        <p>A <xref ref-type="table" rid="t1">Tabela 1</xref> apresenta os resultados das características físico-químicas para a biomassa <italic>in natura</italic>.</p>
+        <p>
+          <table-wrap id="t1">
+            <label>Tabela 1 -</label>
+            <caption>
+              <title>Características físico-químicas da biomassa <italic>in natura</italic> <bold>.</bold></title>
+            </caption>
+            <table>
+              <colgroup>
+                <col/>
+                <col/>
+                <col/>
+                <col/>
+                <col/>
+                <col/>
+                <col/>
+              </colgroup>
+              <thead>
+                <tr>
+                  <th align="left"> </th>
+                  <th align="center">
+                    <p>
+                      <list list-type="simple">
+                        <list-item>
+                          <p>Teor de umidade</p>
+                        </list-item>
+                        <list-item>
+                          <p>%</p>
+                        </list-item>
+                      </list>
+                    </p>
+                  </th>
+                  <th align="center">
+                    <p>
+                      <list list-type="simple">
+                        <list-item>
+                          <p>Materiais voláteis</p>
+                        </list-item>
+                        <list-item>
+                          <p>%</p>
+                        </list-item>
+                      </list>
+                    </p>
+                  </th>
+                  <th align="center">
+                    <p>
+                      <list list-type="simple">
+                        <list-item>
+                          <p>Teor de cinzas</p>
+                        </list-item>
+                        <list-item>
+                          <p>%</p>
+                        </list-item>
+                      </list>
+                    </p>
+                  </th>
+                  <th align="center">
+                    <p>
+                      <list list-type="simple">
+                        <list-item>
+                          <p>Carbono fixo</p>
+                        </list-item>
+                        <list-item>
+                          <p>%</p>
+                        </list-item>
+                      </list>
+                    </p>
+                  </th>
+                  <th align="center">
+                    <p>
+                      <list list-type="simple">
+                        <list-item>
+                          <p>Poder calorífico superior (PCS)</p>
+                        </list-item>
+                        <list-item>
+                          <p>MJ/kg</p>
+                        </list-item>
+                      </list>
+                    </p>
+                  </th>
+                  <th align="center">
+                    <p>
+                      <list list-type="simple">
+                        <list-item>
+                          <p>Densidade</p>
+                        </list-item>
+                        <list-item>
+                          <p>g/cm<sup>3</sup></p>
+                        </list-item>
+                      </list>
+                    </p>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td align="left">Casca de coco</td>
+                  <td align="center">90,20</td>
+                  <td align="center">92,05</td>
+                  <td align="center">23,4</td>
+                  <td align="center">15,45</td>
+                  <td align="center">13, 6</td>
+                  <td align="center">0,203</td>
+                </tr>
+                <tr>
+                  <td align="left">Desvio padrão</td>
+                  <td align="center">0,97</td>
+                  <td align="center">5,5</td>
+                  <td align="center">4,9</td>
+                  <td align="center">0,5</td>
+                  <td align="center">0,9</td>
+                  <td align="center">---</td>
+                </tr>
+              </tbody>
+            </table>
+          </table-wrap>
+        </p>
+        <p>A presença de umidade de um resíduo é de grande relevância, pois refere-se à quantidade de água acumulada. O teor de umidade da casca do coco verde <italic>in natura</italic> foi de 90,20%. O alto valor de umidade para a biomassa era esperado, uma vez que a umidade na casca de coco verde é em torno de 85% (<xref ref-type="bibr" rid="B17">SILVEIRA, 2008</xref>; <xref ref-type="bibr" rid="B5">EMBRAPA, 2012</xref>).</p>
+        <p>O teor de materiais voláteis implica a facilidade de queima do resíduo. Quanto maior o teor de voláteis, menor o carbono fixo, o que ocasiona a produção e a liberação de gases poluentes durante a combustão, bem como uma combustão mais lenta. Quanto menor o carbono fixo, ainda, menor o poder calorífico. O valor encontrado para a casca de coco verde foi de 92,05%. <xref ref-type="bibr" rid="B7">Esteves, Abud e Barcellos (2015</xref>) encontraram o valor de 79,73 ± 2,75 para a biomassa da casca de coco verde.</p>
+        <p>O teor de cinzas representa a fração inerte da amostra desidratada, a qual é incombustível. Para a biomassa aqui estudada, esse parâmetro apresentou resultado de 23,4%. <xref ref-type="bibr" rid="B7">Esteves, Abud e Barcellos (2015</xref>) obtiveram valores menores com relação ao teor de cinzas, de 8,25 ± 0,52 e 8,23 ± 0,52, respectivamente, para o pó da casca do coco verde e para a fibra. Quando o teor de cinzas se apresenta elevado, reduz-se o poder calorífico superior (PCS), que possui relação direta com a composição química da matéria-prima queimada. No caso da casca do coco, o poder calorífico é baixo por causa do teor de cinzas. Isso já indica um resultado ruim para a geração de calor, já que a análise resultou 23,4% de partes não geradoras de calor. O elevado teor de cinzas para a biomassa de casca do coco verde não apresentou similaridade com valores vistos na literatura. Neste estudo, associou-se o elevado teor de cinzas encontrado a possíveis erros durante os procedimentos analíticos para esse parâmetro.</p>
+        <p>O carbono fixo é um importante quesito quando a finalidade é a geração de calor, pois quanto maior o carbono fixo, maior o calor gerado. Para a casca de coco verde, o teor de carbono fixo encontrado foi de 15,45%. <xref ref-type="bibr" rid="B7">Esteves, Abud e Barcellos (2015</xref>) apresentam valores aproximados a 12,05% para carbono fixo. Quando se obtêm resultados muito elevados, isso afeta diretamente a combustão, com a queima mais lenta e, consequentemente, provável aumento dos custos.</p>
+        <p>Combustíveis com alto índice de carbono fixo apresentam queima mais lenta, implicando maior tempo de residência nos aparelhos de queima em comparação com outros que tenham menor teor de carbono fixo (<xref ref-type="bibr" rid="B4">BRITO; BARRICHELLO, 1982</xref>).</p>
+        <p>O alto poder calorífico do briquete é a quantidade de calor que desprende 1 kg de combustível quando de sua combustão completa. Uma quantidade de poder calorífico considerada suficiente para a combustão compreende entre 4.300 e 5.000 kcal/kg, segundo <xref ref-type="bibr" rid="B17">Silveira (2008</xref>). No presente estudo, o valor encontrado para a biomassa <italic>in natura</italic> foi de 13,6 MJ/kg, ou 3.248 kcal/kg, abaixo do recomendável. <xref ref-type="bibr" rid="B7">Esteves, Abud e Barcellos (2015</xref>) apresentam valores similares para a biomassa em dois estados, pó e fibra, de 18,7 MJ/kg ou 4.466 kcal/kg.</p>
+        <p>Esses elementos são dependentes entre si, já que o poder calorífico está diretamente ligado à quantidade de carbono fixo e materiais voláteis, e é inversamente proporcional ao teor de cinzas e à presença de umidade.</p>
+      </sec>
+      <sec>
+        <title>Briquetes da casca de coco verde</title>
+        <p>Para a análise do briquete foram feitos dois experimentos, um usando água como aglutinante e outro com amido dissolvido em água (<xref ref-type="fig" rid="f4">Figura 4</xref>) para prensagem.</p>
+        <p>
+          <fig id="f4">
+            <label>Figura 4 -</label>
+            <caption>
+              <title>Briquete feito (A) com água e (B) e com amido.</title>
+            </caption>
+            <alternatives>
+              <graphic xlink:href="https://minio.scielo.br/documentstore/1809-4457/yH6CLqxFJsQKrHj7zXkwL3G/4d49905330ac7e75dd4d69f7eef59dd82be4c6c6.png"/>
+              <graphic xlink:href="https://minio.scielo.br/documentstore/1809-4457/yH6CLqxFJsQKrHj7zXkwL3G/3e22873cb6d755d3bf68ee10d82db8bd0b0dbbe0.jpg" specific-use="scielo-web" content-type="scielo-267x140"/>
+            </alternatives>
+          </fig>
+        </p>
+        <p>A <xref ref-type="table" rid="t2">Tabela 2</xref> apresenta os resultados das características físico-químicas para os briquetes produzidos.</p>
+        <p>
+          <table-wrap id="t2">
+            <label>Tabela 2 -</label>
+            <caption>
+              <title>Características físico-químicas dos briquetes produzidos.</title>
+            </caption>
+            <table>
+              <colgroup>
+                <col/>
+                <col/>
+                <col/>
+                <col/>
+                <col/>
+                <col/>
+                <col/>
+              </colgroup>
+              <thead>
+                <tr>
+                  <th align="left"> </th>
+                  <th align="center">
+                    <p>
+                      <list list-type="simple">
+                        <list-item>
+                          <p>Teor de umidade</p>
+                        </list-item>
+                        <list-item>
+                          <p>%</p>
+                        </list-item>
+                      </list>
+                    </p>
+                  </th>
+                  <th align="center">
+                    <p>
+                      <list list-type="simple">
+                        <list-item>
+                          <p>Teor de materiais voláteis</p>
+                        </list-item>
+                        <list-item>
+                          <p>%</p>
+                        </list-item>
+                      </list>
+                    </p>
+                  </th>
+                  <th align="center">
+                    <p>
+                      <list list-type="simple">
+                        <list-item>
+                          <p>Teor de cinzas</p>
+                        </list-item>
+                        <list-item>
+                          <p>%</p>
+                        </list-item>
+                      </list>
+                    </p>
+                  </th>
+                  <th align="center">
+                    <p>
+                      <list list-type="simple">
+                        <list-item>
+                          <p>Carbono fixo</p>
+                        </list-item>
+                        <list-item>
+                          <p>%</p>
+                        </list-item>
+                      </list>
+                    </p>
+                  </th>
+                  <th align="center">
+                    <p>
+                      <list list-type="simple">
+                        <list-item>
+                          <p>Poder calorífico superior (PCS)</p>
+                        </list-item>
+                        <list-item>
+                          <p>MJ/kg</p>
+                        </list-item>
+                      </list>
+                    </p>
+                  </th>
+                  <th align="center">
+                    <p>
+                      <list list-type="simple">
+                        <list-item>
+                          <p>Densidade</p>
+                        </list-item>
+                        <list-item>
+                          <p>g/cm<sup>3</sup></p>
+                        </list-item>
+                      </list>
+                    </p>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td align="left">
+                    <p>
+                      <list list-type="simple">
+                        <list-item>
+                          <p>BRIQUETE</p>
+                        </list-item>
+                        <list-item>
+                          <p>+</p>
+                        </list-item>
+                        <list-item>
+                          <p>(Aglutinante- Água)</p>
+                        </list-item>
+                      </list>
+                    </p>
+                  </td>
+                  <td align="center">19,0</td>
+                  <td align="center">77,1</td>
+                  <td align="center">5,5</td>
+                  <td align="center">17,4</td>
+                  <td align="center">15,6</td>
+                  <td align="center">0,207</td>
+                </tr>
+                <tr>
+                  <td align="left">
+                    <p>
+                      <list list-type="simple">
+                        <list-item>
+                          <p>BRIQUETE</p>
+                        </list-item>
+                        <list-item>
+                          <p>+</p>
+                        </list-item>
+                        <list-item>
+                          <p>(Aglutinante- Amido)</p>
+                        </list-item>
+                      </list>
+                    </p>
+                  </td>
+                  <td align="center">35,8</td>
+                  <td align="center">90,4</td>
+                  <td align="center">3,0</td>
+                  <td align="center">6,6</td>
+                  <td align="center">11,7</td>
+                  <td align="center">0,431</td>
+                </tr>
+              </tbody>
+            </table>
+          </table-wrap>
+        </p>
+        <p>O teor de umidade em um briquete que tende a ser muito menor do que na biomassa <italic>in natura</italic>, em razão dos processos de secagem e prensagem a que os briquetes são submetidos. Os resultados de umidade obtidos foram de 19 e 35,8% para os briquetes com água e com amido, respectivamente.</p>
+        <p><xref ref-type="bibr" rid="B17">Silveira (2008</xref>) encontrou valores para umidade em briquetes de coco verde entre 12 e 15%. <xref ref-type="bibr" rid="B7">Esteves, Abud e Barcellos (2015</xref>) também encontraram valor similar para briquetes feitos com fibra e pó da casca do coco, de 12%.</p>
+        <p><xref ref-type="bibr" rid="B10">Gonçalves <italic>et al</italic>. (2009</xref>) afirmam que a umidade pode ser entre 15 e 20%, já que valores muito baixos podem levar à quebra do material ou perda total durante a combustão. Para o briquete produzido com água, o teor de umidade está de acordo com o encontrado na literatura, enquanto, para o briquete com amido, o alto teor de umidade observado pode ter sido ocasionado pela elevada quantidade de aglutinante empregada, que poderia prejudicar assim os resultados energéticos do briquete.</p>
+        <p>O teor de voláteis determina a facilidade com que o combustível inicia a queima. Os valores encontrados nos briquetes de coco verde foram de 77,1% (briquete com água) e 90,4% (briquete com amido). São índices bem próximos aos encontrados para briquetes de biomassas lignocelulósicas, porém um pouco mais elevados que os teores de voláteis contidos no bagaço de cana, por exemplo, de 75,64%, e na lenha, de 75%, e próximos aos da madeira, de 85% (<xref ref-type="bibr" rid="B7">ESTEVES; ABUD; BARCELLOS, 2015</xref>).</p>
+        <p>Os teores de cinzas nos briquetes de coco verde foram de 5,5% (briquete com água) e 3% (briquete com amido). <xref ref-type="bibr" rid="B1">Alakangas (2005</xref>) sugere como baixos teores de cinzas de 3 a 4% e altos teores de 5 a 10%. Altos índices para essa característica implicam possível danificação de equipamentos, como corrosão do queimador.</p>
+        <p>Como já comentado, o carbono fixo tem elevado índice de correlação direta com o poder calorífico. Os teores de carbono fixo encontrados foram de 17,4% (briquete com água) e 6,6% (briquete com amido). Para <xref ref-type="bibr" rid="B7">Esteves, Abud e Barcellos (2015</xref>), os valores observados para carbono fixo em briquetes de casca de coco verde variam entre 10 e 12%.</p>
+        <p>Segundo <xref ref-type="bibr" rid="B4">Brito e Barrichello (1982</xref>), o teor de carbono fixo presente em madeiras deve ser de 14 a 25%. <xref ref-type="bibr" rid="B14">Marozzi (2012</xref>) realizou estudo com várias biomassas, como casca de arroz, bagaço de cana e sabugo de milho, e identificou variação de 17 a 21% de carbono fixo.</p>
+        <p>Os valores encontrados para a densidade na biomassa <italic>in natura</italic>, de 0,203 g/cm<sup>3</sup> (<xref ref-type="table" rid="t1">Tabela 1</xref>), e no briquete com água, de 0,207 g/cm<sup>3</sup>, foram aproximados e são, por sua vez, próximos aos valores encontrados por <xref ref-type="bibr" rid="B19">Uchôa <italic>et al</italic>. (2019</xref>), de 0,32 e 0,22 g/cm<sup>3</sup> para briquetes de serragem de madeira e vagem de feijão, respectivamente. Já para o briquete com aglutinante de amido o valor foi de 0,431 g/cm<sup>3</sup>, podendo ser considerado também eficiente. Os valores de densidade de <xref ref-type="bibr" rid="B7">Esteves, Abud e Barcellos (2015</xref>) para os briquetes do pó de coco e de fibra de coco apresentaram valores aproximados a 0,5/cm<sup>3</sup>. Quanto maior a densidade, melhor, pois isso se reflete em maior peso de material para combustão em um mesmo volume, o que facilita a logística de transporte.</p>
+        <p>Os valores de poder calorífico foram de 15,6 MJ/kg para os briquetes com aglutinante água e de 11,7 MJ/kg para o briquete com amido, ou 3.725 e 2.794 kcal/kg, respectivamente. Em comparação com outros estudos, esses resultados apresentaram-se semelhantes. O briquete com amido pode ter apresentado menor valor em decorrência da quantidade do aglutinante utilizado. No estudo de <xref ref-type="bibr" rid="B14">Marozzi (2012</xref>), a biomassa que apresentou o maior poder calorífico foi o sabugo de milho, com 4.615 cal/kg.</p>
+        <p><xref ref-type="bibr" rid="B16">Quirino (1991</xref>), em seu trabalho, compara essa mesma característica da madeira e do briquete de pó de madeira, que apresentaram poder calorífico de 1.450 e 4.553 kcal/kg, respectivamente. Reafirmando o grande potencial energético do briquete, pode-se verificar ainda um comparativo de briquetes feitos com diferentes biomassas e seu poder calorífico (<xref ref-type="table" rid="t3">Tabela 3</xref>).</p>
+        <p>
+          <table-wrap id="t3">
+            <label>Tabela 3 -</label>
+            <caption>
+              <title>Comparativo de biomassas e poder calorífico.</title>
+            </caption>
+            <table>
+              <colgroup>
+                <col/>
+                <col/>
+                <col/>
+                <col/>
+                <col/>
+                <col/>
+                <col/>
+              </colgroup>
+              <thead>
+                <tr>
+                  <th align="left">Matéria-prima</th>
+                  <th align="center">Casca de arroz</th>
+                  <th align="center">Algodão (resíduo)</th>
+                  <th align="center">Maravalha e pó de serra de Pinus</th>
+                  <th align="center">Maravalha e pó de serra de Madeira de Lei</th>
+                  <th align="center">Maravalha e pó de serra de Eucalipto</th>
+                  <th align="center">Lenha comercial</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td align="left">
+                    <p>
+                      <list list-type="simple">
+                        <list-item>
+                          <p>Poder calorífico superior (PCS)</p>
+                        </list-item>
+                        <list-item>
+                          <p>(kcal/kg)</p>
+                        </list-item>
+                      </list>
+                    </p>
+                  </td>
+                  <td align="center">3.800</td>
+                  <td align="center">4.300</td>
+                  <td align="center">4.400</td>
+                  <td align="center">4.800</td>
+                  <td align="center">4.500</td>
+                  <td align="center">1.700-2.500</td>
+                </tr>
+              </tbody>
+            </table>
+            <table-wrap-foot>
+              <fn id="TFN1">
+                <p>Fonte: <xref ref-type="bibr" rid="B16">Quirino (1991</xref>).</p>
+              </fn>
+            </table-wrap-foot>
+          </table-wrap>
+        </p>
+      </sec>
+      <sec>
+        <title>Avaliação energética</title>
+        <p>Durante o processo de produção do briquete foram pesados a biomassa e, por fim, o briquete produzido. Com esses dados é possível quantificar a energia teórica gerada pela combustão de briquetes.</p>
+        <p>As pesagens resultaram para fibra e pó, briquete com água e briquete com amido, respectivamente, 55,015, 52,582 e 109,572 g.</p>
+        <p>Primeiramente, calculou-se a quantidade de briquete que poderia ser produzida de acordo com o total de resíduos de coco gerado. Os dados de resíduos, de acordo com a <xref ref-type="bibr" rid="B5">Embrapa (2012</xref>), foram de 481.000.000 kg/ano. Aplicou-se a <xref ref-type="disp-formula" rid="e7">Equação 7</xref>:</p>
+        <p>
+          <disp-formula id="e7">
+            <mml:math>
+              <mml:mi>N</mml:mi>
+              <mml:mo>°</mml:mo>
+              <mml:mi> </mml:mi>
+              <mml:mi>d</mml:mi>
+              <mml:mi>e</mml:mi>
+              <mml:mi> </mml:mi>
+              <mml:mi>B</mml:mi>
+              <mml:mi>r</mml:mi>
+              <mml:mi>i</mml:mi>
+              <mml:mi>q</mml:mi>
+              <mml:mi>u</mml:mi>
+              <mml:mi>e</mml:mi>
+              <mml:mi>t</mml:mi>
+              <mml:mi>e</mml:mi>
+              <mml:mi>s</mml:mi>
+              <mml:mo>=</mml:mo>
+              <mml:mi> </mml:mi>
+              <mml:mfrac>
+                <mml:mrow>
+                  <mml:mi>Q</mml:mi>
+                  <mml:mi>u</mml:mi>
+                  <mml:mi>a</mml:mi>
+                  <mml:mi>n</mml:mi>
+                  <mml:mi>t</mml:mi>
+                  <mml:mi>i</mml:mi>
+                  <mml:mi>d</mml:mi>
+                  <mml:mi>a</mml:mi>
+                  <mml:mi>d</mml:mi>
+                  <mml:mi>e</mml:mi>
+                  <mml:mi> </mml:mi>
+                  <mml:mi>t</mml:mi>
+                  <mml:mi>o</mml:mi>
+                  <mml:mi>t</mml:mi>
+                  <mml:mi>a</mml:mi>
+                  <mml:mi>l</mml:mi>
+                  <mml:mi> </mml:mi>
+                  <mml:mi>d</mml:mi>
+                  <mml:mi>e</mml:mi>
+                  <mml:mi> </mml:mi>
+                  <mml:mi>r</mml:mi>
+                  <mml:mi>e</mml:mi>
+                  <mml:mi>s</mml:mi>
+                  <mml:mi>í</mml:mi>
+                  <mml:mi>d</mml:mi>
+                  <mml:mi>u</mml:mi>
+                  <mml:mi>o</mml:mi>
+                  <mml:mi>s</mml:mi>
+                  <mml:mi> </mml:mi>
+                  <mml:mo>(</mml:mo>
+                  <mml:mi>k</mml:mi>
+                  <mml:mi>g</mml:mi>
+                  <mml:mo>)</mml:mo>
+                </mml:mrow>
+                <mml:mrow>
+                  <mml:mi>P</mml:mi>
+                  <mml:mi>e</mml:mi>
+                  <mml:mi>s</mml:mi>
+                  <mml:mi>o</mml:mi>
+                  <mml:mi> </mml:mi>
+                  <mml:mi>u</mml:mi>
+                  <mml:mi>n</mml:mi>
+                  <mml:mi>i</mml:mi>
+                  <mml:mi>t</mml:mi>
+                  <mml:mi>á</mml:mi>
+                  <mml:mi>r</mml:mi>
+                  <mml:mi>i</mml:mi>
+                  <mml:mi>o</mml:mi>
+                  <mml:mi>s</mml:mi>
+                  <mml:mi> </mml:mi>
+                  <mml:mi>d</mml:mi>
+                  <mml:mi>o</mml:mi>
+                  <mml:mi>s</mml:mi>
+                  <mml:mi> </mml:mi>
+                  <mml:mi>b</mml:mi>
+                  <mml:mi>r</mml:mi>
+                  <mml:mi>i</mml:mi>
+                  <mml:mi>q</mml:mi>
+                  <mml:mi>u</mml:mi>
+                  <mml:mi>e</mml:mi>
+                  <mml:mi>t</mml:mi>
+                  <mml:mi>e</mml:mi>
+                  <mml:mi>s</mml:mi>
+                  <mml:mi> </mml:mi>
+                  <mml:mo>(</mml:mo>
+                  <mml:mi>k</mml:mi>
+                  <mml:mi>g</mml:mi>
+                  <mml:mo>)</mml:mo>
+                </mml:mrow>
+              </mml:mfrac>
+              <mml:mo>=</mml:mo>
+              <mml:mfrac>
+                <mml:mrow>
+                  <mml:mn>481000000</mml:mn>
+                </mml:mrow>
+                <mml:mrow>
+                  <mml:mn>0,052582</mml:mn>
+                </mml:mrow>
+              </mml:mfrac>
+              <mml:mo>=</mml:mo>
+              <mml:mn>9.147.617.055</mml:mn>
+              <mml:mi> </mml:mi>
+              <mml:mi>u</mml:mi>
+              <mml:mi>n</mml:mi>
+              <mml:mi>i</mml:mi>
+              <mml:mi>d</mml:mi>
+              <mml:mi>a</mml:mi>
+              <mml:mi>d</mml:mi>
+              <mml:mi>e</mml:mi>
+              <mml:mi>s</mml:mi>
+            </mml:math>
+            <label>(7)</label>
+          </disp-formula>
+        </p>
+        <p>Feito isso, foi possível calcular a quantidade energética teórica pela <xref ref-type="disp-formula" rid="e8">Equação 8</xref>:</p>
+        <p>
+          <disp-formula id="e8">
+            <mml:math>
+              <mml:mi>E</mml:mi>
+              <mml:mo>=</mml:mo>
+              <mml:mi>P</mml:mi>
+              <mml:mi>C</mml:mi>
+              <mml:mi>I</mml:mi>
+              <mml:mi> </mml:mi>
+              <mml:mi>m</mml:mi>
+              <mml:mi>é</mml:mi>
+              <mml:mi>d</mml:mi>
+              <mml:mi>i</mml:mi>
+              <mml:mi>o</mml:mi>
+              <mml:mfenced separators="|">
+                <mml:mrow>
+                  <mml:mfrac>
+                    <mml:mrow>
+                      <mml:mi>k</mml:mi>
+                      <mml:mi>c</mml:mi>
+                      <mml:mi>a</mml:mi>
+                      <mml:mi>l</mml:mi>
+                    </mml:mrow>
+                    <mml:mrow>
+                      <mml:mi>k</mml:mi>
+                      <mml:mi>g</mml:mi>
+                    </mml:mrow>
+                  </mml:mfrac>
+                </mml:mrow>
+              </mml:mfenced>
+              <mml:mo>×</mml:mo>
+              <mml:mi>Q</mml:mi>
+              <mml:mi>u</mml:mi>
+              <mml:mi>a</mml:mi>
+              <mml:mi>n</mml:mi>
+              <mml:mi>t</mml:mi>
+              <mml:mi>i</mml:mi>
+              <mml:mi>d</mml:mi>
+              <mml:mi>a</mml:mi>
+              <mml:mi>d</mml:mi>
+              <mml:mi>e</mml:mi>
+              <mml:mi> </mml:mi>
+              <mml:mi>t</mml:mi>
+              <mml:mi>o</mml:mi>
+              <mml:mi>t</mml:mi>
+              <mml:mi>a</mml:mi>
+              <mml:mi>l</mml:mi>
+              <mml:mi> </mml:mi>
+              <mml:mi>d</mml:mi>
+              <mml:mi>e</mml:mi>
+              <mml:mi> </mml:mi>
+              <mml:mi>r</mml:mi>
+              <mml:mi>e</mml:mi>
+              <mml:mi>s</mml:mi>
+              <mml:mi>í</mml:mi>
+              <mml:mi>d</mml:mi>
+              <mml:mi>u</mml:mi>
+              <mml:mi>o</mml:mi>
+              <mml:mi>s</mml:mi>
+              <mml:mi> </mml:mi>
+              <mml:mfenced separators="|">
+                <mml:mrow>
+                  <mml:mi>k</mml:mi>
+                  <mml:mi>g</mml:mi>
+                </mml:mrow>
+              </mml:mfenced>
+            </mml:math>
+            <label>(8)</label>
+          </disp-formula>
+        </p>
+        <p>
+          <disp-formula id="e9">
+            <mml:math>
+              <mml:mi>E</mml:mi>
+              <mml:mo>=</mml:mo>
+              <mml:mn>3.725</mml:mn>
+              <mml:mo>×</mml:mo>
+              <mml:mn>481.000.000</mml:mn>
+              <mml:mo>=</mml:mo>
+              <mml:mn>1.791.725.000.000</mml:mn>
+              <mml:mi> </mml:mi>
+              <mml:mi>k</mml:mi>
+              <mml:mi>c</mml:mi>
+              <mml:mi>a</mml:mi>
+              <mml:mi>l</mml:mi>
+            </mml:math>
+          </disp-formula>
+        </p>
+        <p>Transformando o valor em kWh, utilizou-se 1 kcal = 0,00116222 kWh:</p>
+        <p>
+          <disp-formula id="e10">
+            <mml:math>
+              <mml:mn>1.791.725.000.000</mml:mn>
+              <mml:mi> </mml:mi>
+              <mml:mi>x</mml:mi>
+              <mml:mi> </mml:mi>
+              <mml:mn>0,00116222</mml:mn>
+              <mml:mi> </mml:mi>
+              <mml:mo>=</mml:mo>
+              <mml:mi> </mml:mi>
+              <mml:mn>2.082.378.630</mml:mn>
+              <mml:mi> </mml:mi>
+              <mml:mi>k</mml:mi>
+              <mml:mi>W</mml:mi>
+              <mml:mi>h</mml:mi>
+              <mml:mi> </mml:mi>
+              <mml:mo>=</mml:mo>
+              <mml:mi> </mml:mi>
+              <mml:mn>2.082.378,63</mml:mn>
+              <mml:mi> </mml:mi>
+              <mml:mi>M</mml:mi>
+              <mml:mi>W</mml:mi>
+              <mml:mi>h</mml:mi>
+            </mml:math>
+          </disp-formula>
+        </p>
+        <p>O consumo de energia elétrica total no Ceará, no ano de 2010, foi de 71.196.945 MWh (<xref ref-type="bibr" rid="B6">EPE, 2014</xref>). Dessa forma, tem-se:</p>
+        <p>
+          <disp-formula id="e11">
+            <mml:math>
+              <mml:mfrac>
+                <mml:mrow>
+                  <mml:mn>2.082.378,63</mml:mn>
+                </mml:mrow>
+                <mml:mrow>
+                  <mml:mn>71196945</mml:mn>
+                </mml:mrow>
+              </mml:mfrac>
+              <mml:mo>=</mml:mo>
+              <mml:mn>0,029</mml:mn>
+            </mml:math>
+          </disp-formula>
+        </p>
+        <p>Assim, esse resultado implicou que a utilização dessa alternativa energética foi 2,9% mais eficiente que a de energia tradicional.</p>
+      </sec>
+    </sec>
+    <sec sec-type="conclusions">
+      <title>CONCLUSÃO</title>
+      <p>Buscou-se apontar alternativas para o uso do coco após o consumo, já que ele geralmente é considerado lixo e ocupa grandes áreas em aterros e lixões. Foram analisadas as características físico-químicas do coco e de briquetes produzidos com a casca do coco, podendo-se assim identificar sua capacidade energética<bold>.</bold></p>
+      <p>Após a análise dos parâmetros, os resultados obtidos de poder calorífico foram semelhantes para os três experimentos, estando nos limites encontrados na literatura. Esses resultados mostram-se muito eficientes, visto que a prensa utilizada é um protótipo e não uma briquetadeira profissional, o que ainda assim confirma o potencial energético desse resíduo e do seu briquete produzido.</p>
+      <p>O parâmetro de importância que impede a viabilidade da combustão direta da biomassa <italic>in natura</italic> é o teor de umidade, que, neste estudo, foi de 90,2%, demandando mais energia, tempo e instalações industriais e encarecendo o processo, entretanto os briquetes produzidos obtiveram resultados positivos comparados à biomassa <italic>in natura</italic> em relação à umidade e densidade.</p>
+      <p>Como resultados, encontrou-se poder calorífico de 13,6 MJ/kg para a biomassa <italic>in natura</italic> e de 15,6 e 11,7 MJ/kg para o briquete com os dois tipos de aglutinante, água e amido, calorífico, respectivamente. O poder calorífico da biomassa <italic>in natura</italic> não foi considerado baixo, porém sua umidade e teor de cinzas apresentaram-se bastante elevados. Para os briquetes produzidos, esses valores reduzem-se e o poder calorífico é considerado alto e eficiente para fins de geração de calor. Dessa forma, verifica-se o potencial de utilização dos resíduos da casca como alternativa energética, além das vantagens socioeconômicas e ambientais derivadas do seu aproveitamento.</p>
+      <p>O estudo mostra que um resíduo considerado de difícil manuseio por suas características químicas, com uma tecnologia simples e de fácil acesso, pode ser valorado energeticamente. Essa valoração para o resíduo da casca de coco verde, além de aumentar a vida útil dos aterros sanitários e diminuir a emissão de metano ao ambiente, pode auxiliar na melhoria da saúde pública, diminuindo a proliferação de vetores causada pela disposição inadequada desse resíduo.</p>
+      <p>No segmento de energia alternativa, o briquete de casca de coco verde se mostra viável, uma vez que o mercado local apresenta carência de combustíveis alternativos para queima em fornos industriais.</p>
+    </sec>
+  </body>
+  <back>
+    <ref-list>
+      <title>REFERÊNCIAS</title>
+      <ref id="B1">
+        <mixed-citation>ALAKANGAS, E. (2005) Bionergy in Finland. <italic>In</italic>: EUBIONET. <italic>International Training Programme:</italic> wood fuel production for small scale and district heating plants. Joensuu.</mixed-citation>
+        <element-citation publication-type="book">
+          <person-group person-group-type="author">
+            <name>
+              <surname>ALAKANGAS</surname>
+              <given-names>E.</given-names>
+            </name>
+          </person-group>
+          <year>2005</year>
+          <chapter-title>Bionergy in Finland</chapter-title>
+          <person-group person-group-type="author">
+            <collab>EUBIONET</collab>
+          </person-group>
+          <source><italic>International Training Programme:</italic> wood fuel production for small scale and district heating plants</source>
+          <publisher-loc>Joensuu</publisher-loc>
+        </element-citation>
+      </ref>
+      <ref id="B2">
+        <mixed-citation>BARROS, L.O. (2013) Densidade energética de briquetes produzidos a partir de resíduos agrícolas. Trabalho de Conclusão de Curso (Graduação) - Universidade de Brasília, Brasília.</mixed-citation>
+        <element-citation publication-type="thesis">
+          <person-group person-group-type="author">
+            <name>
+              <surname>BARROS</surname>
+              <given-names>L.O.</given-names>
+            </name>
+          </person-group>
+          <year>2013</year>
+          <source>Densidade energética de briquetes produzidos a partir de resíduos agrícolas</source>
+          <comment content-type="degree">Trabalho de Conclusão de Curso (Graduação)</comment>
+          <publisher-name>Universidade de Brasília</publisher-name>
+          <publisher-loc>Brasília</publisher-loc>
+        </element-citation>
+      </ref>
+      <ref id="B3">
+        <mixed-citation>BENÍCIO, E.L. (2011) <italic>Utilização de resíduo celulósico na composição de briquetes de finos de carvão vegetal</italic>. Universidade Federal Rural do Rio de Janeiro, Rio de Janeiro.</mixed-citation>
+        <element-citation publication-type="book">
+          <person-group person-group-type="author">
+            <name>
+              <surname>BENÍCIO</surname>
+              <given-names>E.L.</given-names>
+            </name>
+          </person-group>
+          <year>2011</year>
+          <source>Utilização de resíduo celulósico na composição de briquetes de finos de carvão vegetal</source>
+          <publisher-name>Universidade Federal Rural do Rio de Janeiro</publisher-name>
+          <publisher-loc>Rio de Janeiro</publisher-loc>
+        </element-citation>
+      </ref>
+      <ref id="B4">
+        <mixed-citation>BRITO, J.O.; BARRICHELO, L.E.G. (1982) Carvão vegetal de madeira de desbaste de Pinus. <italic>Ipef, Circular Técnica</italic>, Piracicaba, v. 146, p. 1-12.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>BRITO</surname>
+              <given-names>J.O.</given-names>
+            </name>
+            <name>
+              <surname>BARRICHELO</surname>
+              <given-names>L.E.G.</given-names>
+            </name>
+          </person-group>
+          <year>1982</year>
+          <article-title>Carvão vegetal de madeira de desbaste de Pinus</article-title>
+          <source>Ipef, Circular Técnica</source>
+          <publisher-loc>Piracicaba</publisher-loc>
+          <volume>146</volume>
+          <fpage>1</fpage>
+          <lpage>12</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B5">
+        <mixed-citation>EMPRESA BRASILEIRA DE PESQUISA AGROPECUÁRIA (EMBRAPA). (2012) <italic>Produção de briquetes e péletes a partir de resíduos agrícolas, agroindustriais e florestais</italic>. Brasília: Embrapa Agroenergia. 130 p. (Documentos / Embrapa Agroenergia.)</mixed-citation>
+        <element-citation publication-type="book">
+          <person-group person-group-type="author">
+            <collab>EMPRESA BRASILEIRA DE PESQUISA AGROPECUÁRIA (EMBRAPA)</collab>
+          </person-group>
+          <year>2012</year>
+          <source>Produção de briquetes e péletes a partir de resíduos agrícolas, agroindustriais e florestais</source>
+          <publisher-loc>Brasília</publisher-loc>
+          <publisher-name>Embrapa Agroenergia</publisher-name>
+          <size units="pages">130 p</size>
+          <comment>Documentos / Embrapa Agroenergia.</comment>
+        </element-citation>
+      </ref>
+      <ref id="B6">
+        <mixed-citation>EMPRESA DE PESQUISA ENERGÉTICA (EPE). (2014) <italic>Anuário Estatístico de Energia Elétrica 2014</italic> - ano base 2013. Rio de Janeiro: Ministério de Minas e Energia. 212 p.</mixed-citation>
+        <element-citation publication-type="book">
+          <person-group person-group-type="author">
+            <collab>EMPRESA DE PESQUISA ENERGÉTICA (EPE)</collab>
+          </person-group>
+          <year>2014</year>
+          <source><italic>Anuário Estatístico de Energia Elétrica 2014</italic> - ano base 2013</source>
+          <publisher-loc>Rio de Janeiro</publisher-loc>
+          <publisher-name>Ministério de Minas e Energia</publisher-name>
+          <size units="pages">212 p</size>
+        </element-citation>
+      </ref>
+      <ref id="B7">
+        <mixed-citation>ESTEVES, M.R.L.; ABUD, A.K.S.; BARCELLOS, K.M. (2015) Avaliação do potencial energético das cascas de coco verde para aproveitamento na produção de briquetes. <italic>Scientia Plena</italic>, v. 11, n. 3, p. 1-8.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>ESTEVES</surname>
+              <given-names>M.R.L.</given-names>
+            </name>
+            <name>
+              <surname>ABUD</surname>
+              <given-names>A.K.S.</given-names>
+            </name>
+            <name>
+              <surname>BARCELLOS</surname>
+              <given-names>K.M.</given-names>
+            </name>
+          </person-group>
+          <year>2015</year>
+          <article-title>Avaliação do potencial energético das cascas de coco verde para aproveitamento na produção de briquetes</article-title>
+          <source>Scientia Plena</source>
+          <volume>11</volume>
+          <issue>3</issue>
+          <fpage>1</fpage>
+          <lpage>8</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B8">
+        <mixed-citation>FONTES, P.J.; QUIRINO, W.F.; OKINO, E.Y. (1989) <italic>Aspectos técnicos da briquetagem de carvão vegetal no Brasil</italic>. Brasília: Laboratório de Produtos Florestais, Departamento de Pesquisas, Instituto Brasileiro de Desenvolvimento Florestal.</mixed-citation>
+        <element-citation publication-type="book">
+          <person-group person-group-type="author">
+            <name>
+              <surname>FONTES</surname>
+              <given-names>P.J.</given-names>
+            </name>
+            <name>
+              <surname>QUIRINO</surname>
+              <given-names>W.F.</given-names>
+            </name>
+            <name>
+              <surname>OKINO</surname>
+              <given-names>E.Y.</given-names>
+            </name>
+          </person-group>
+          <year>1989</year>
+          <source>Aspectos técnicos da briquetagem de carvão vegetal no Brasil</source>
+          <publisher-loc>Brasília</publisher-loc>
+          <publisher-name>Laboratório de Produtos Florestais, Departamento de Pesquisas, Instituto Brasileiro de Desenvolvimento Florestal</publisher-name>
+        </element-citation>
+      </ref>
+      <ref id="B9">
+        <mixed-citation>GENTIL, L.V.B. (2008) <italic>Tecnologia e Economia do Briquete de Madeira</italic>. 195f. Tese (Doutorado em Engenharia Florestal) - Universidade de Brasília, Brasília.</mixed-citation>
+        <element-citation publication-type="thesis">
+          <person-group person-group-type="author">
+            <name>
+              <surname>GENTIL</surname>
+              <given-names>L.V.B.</given-names>
+            </name>
+          </person-group>
+          <year>2008</year>
+          <source>Tecnologia e Economia do Briquete de Madeira</source>
+          <size units="pages">195f</size>
+          <comment content-type="degree">Tese (Doutorado em Engenharia Florestal)</comment>
+          <publisher-name>Universidade de Brasília</publisher-name>
+          <publisher-loc>Brasília</publisher-loc>
+        </element-citation>
+      </ref>
+      <ref id="B10">
+        <mixed-citation>GONÇALVES, J.E.; SARTORI, M.M. P.; LEÃO, A.L. (2009) Energia de briquetes produzidos com rejeitos de resíduos sólidos urbanos e madeira de Eucalyptus grandis. <italic>Revista Brasileira de Engenharia Agrícola e Ambiental</italic>, v. 13, p. 657-661.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>GONÇALVES</surname>
+              <given-names>J.E.</given-names>
+            </name>
+            <name>
+              <surname>SARTORI</surname>
+              <given-names>M.M. P.</given-names>
+            </name>
+            <name>
+              <surname>LEÃO</surname>
+              <given-names>A.L.</given-names>
+            </name>
+          </person-group>
+          <year>2009</year>
+          <article-title>Energia de briquetes produzidos com rejeitos de resíduos sólidos urbanos e madeira de Eucalyptus grandis</article-title>
+          <source>Revista Brasileira de Engenharia Agrícola e Ambiental</source>
+          <volume>13</volume>
+          <fpage>657</fpage>
+          <lpage>661</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B11">
+        <mixed-citation>GRAPIÚNA, A. (2012) <italic>Flagrantes da Biologia apresenta imagens espetaculares:</italic> Vídeos, sites, informações, curiosidades e fotos produzidas pelas lentes. Disponível em: &lt;<comment>Disponível em: <ext-link ext-link-type="uri" xlink:href="http://wwwbiodersongrapiuna.blogspot.com/2012/12/blog-post.html">http://wwwbiodersongrapiuna.blogspot.com/2012/12/blog-post.html</ext-link> </comment>&gt;. Acesso em: 22 jan. 2018.</mixed-citation>
+        <element-citation publication-type="book">
+          <person-group person-group-type="author">
+            <name>
+              <surname>GRAPIÚNA</surname>
+              <given-names>A.</given-names>
+            </name>
+          </person-group>
+          <year>2012</year>
+          <source><italic>Flagrantes da Biologia apresenta imagens espetaculares:</italic> Vídeos, sites, informações, curiosidades e fotos produzidas pelas lentes</source>
+          <comment>Disponível em: <ext-link ext-link-type="uri" xlink:href="http://wwwbiodersongrapiuna.blogspot.com/2012/12/blog-post.html">http://wwwbiodersongrapiuna.blogspot.com/2012/12/blog-post.html</ext-link> </comment>
+          <date-in-citation content-type="access-date" iso-8601-date="2018-01-22">22 jan. 2018</date-in-citation>
+        </element-citation>
+      </ref>
+      <ref id="B12">
+        <mixed-citation>LIPPEL. (2016) <italic>Briquetagem e Peletização de Biomassa</italic>. Lippel. Disponível em: &lt;<comment>Disponível em: <ext-link ext-link-type="uri" xlink:href="https://www.lippel.com.br/artigos-academicos/briquetagem-e-peletizacao/?lng=pt">https://www.lippel.com.br/artigos-academicos/briquetagem-e-peletizacao/?lng=pt</ext-link> </comment>&gt;. Acesso em: 18 nov. 2018.</mixed-citation>
+        <element-citation publication-type="book">
+          <person-group person-group-type="author">
+            <collab>LIPPEL</collab>
+          </person-group>
+          <year>2016</year>
+          <source>Briquetagem e Peletização de Biomassa</source>
+          <publisher-name>Lippel</publisher-name>
+          <comment>Disponível em: <ext-link ext-link-type="uri" xlink:href="https://www.lippel.com.br/artigos-academicos/briquetagem-e-peletizacao/?lng=pt">https://www.lippel.com.br/artigos-academicos/briquetagem-e-peletizacao/?lng=pt</ext-link> </comment>
+          <date-in-citation content-type="access-date" iso-8601-date="2018-11-18">18 nov. 2018</date-in-citation>
+        </element-citation>
+      </ref>
+      <ref id="B13">
+        <mixed-citation>LUCENA, D.A.; MEDEIROS, R.D.; FONSECA, U.T.; ASSIS, P.S. (2008) Aglomeração de moinha de carvão vegetal e sua possível aplicação em alto-forno e geração de energia. <italic>Tecnologia em Metalurgia e Materiais</italic>, São Paulo, v. 4, n. 4, p. 1-6.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>LUCENA</surname>
+              <given-names>D.A.</given-names>
+            </name>
+            <name>
+              <surname>MEDEIROS</surname>
+              <given-names>R.D.</given-names>
+            </name>
+            <name>
+              <surname>FONSECA</surname>
+              <given-names>U.T.</given-names>
+            </name>
+            <name>
+              <surname>ASSIS</surname>
+              <given-names>P.S.</given-names>
+            </name>
+          </person-group>
+          <year>2008</year>
+          <article-title>Aglomeração de moinha de carvão vegetal e sua possível aplicação em alto-forno e geração de energia</article-title>
+          <source>Tecnologia em Metalurgia e Materiais</source>
+          <publisher-loc>São Paulo</publisher-loc>
+          <volume>4</volume>
+          <issue>4</issue>
+          <fpage>1</fpage>
+          <lpage>6</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B14">
+        <mixed-citation>MAROZZI, C.R.B. (2012) <italic>Caracterização de resíduos agroindustriais e florestais visando a briquetagem</italic>. 37f. Monografia (Especialização) - Centro de Ciências Agrárias, Universidade Federal do Espírito Santo, Jerônimo Monteiro.</mixed-citation>
+        <element-citation publication-type="thesis">
+          <person-group person-group-type="author">
+            <name>
+              <surname>MAROZZI</surname>
+              <given-names>C.R.B.</given-names>
+            </name>
+          </person-group>
+          <year>2012</year>
+          <source>Caracterização de resíduos agroindustriais e florestais visando a briquetagem</source>
+          <size units="pages">37f</size>
+          <comment content-type="degree">Monografia (Especialização)</comment>
+          <publisher-name>Centro de Ciências Agrárias, Universidade Federal do Espírito Santo</publisher-name>
+          <publisher-loc>Jerônimo Monteiro</publisher-loc>
+        </element-citation>
+      </ref>
+      <ref id="B15">
+        <mixed-citation>MARTINS, C.R.; JESUS-JÚNIOR, L.A. (2011) Evolução da produção de coco no Brasil e o comércio internacional: Panorama 2010. <italic>Documentos</italic>, v. 164. 32p. (Embrapa Tabuleiros Costeiros.) Disponível em: &lt;<comment>Disponível em: <ext-link ext-link-type="uri" xlink:href="http://www.cpatc.embrapa.br/publicacoes_2011/doc_164.pdf">http://www.cpatc.embrapa.br/publicacoes_2011/doc_164.pdf</ext-link> </comment>&gt;. Acesso em: 27 set. 2017.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>MARTINS</surname>
+              <given-names>C.R.</given-names>
+            </name>
+            <name>
+              <surname>JESUS-JÚNIOR</surname>
+              <given-names>L.A.</given-names>
+            </name>
+          </person-group>
+          <year>2011</year>
+          <article-title>Evolução da produção de coco no Brasil e o comércio internacional: Panorama 2010</article-title>
+          <source>Documentos</source>
+          <volume>164</volume>
+          <size units="pages">32p</size>
+          <comment>Embrapa Tabuleiros Costeiros.</comment>
+          <comment>Disponível em: <ext-link ext-link-type="uri" xlink:href="http://www.cpatc.embrapa.br/publicacoes_2011/doc_164.pdf">http://www.cpatc.embrapa.br/publicacoes_2011/doc_164.pdf</ext-link> </comment>
+          <date-in-citation content-type="access-date" iso-8601-date="2017-09-27">27 set. 2017</date-in-citation>
+        </element-citation>
+      </ref>
+      <ref id="B16">
+        <mixed-citation>QUIRINO, W.F. (1991) <italic>Características de briquetes de carvão vegetal a seu comportamento na combustão</italic>. 80f. Dissertação (Mestrado) - Escola Superior de Agricultura “Luiz de Queiroz”, Universidade de São Paulo, Piracicaba.</mixed-citation>
+        <element-citation publication-type="thesis">
+          <person-group person-group-type="author">
+            <name>
+              <surname>QUIRINO</surname>
+              <given-names>W.F.</given-names>
+            </name>
+          </person-group>
+          <year>1991</year>
+          <source>Características de briquetes de carvão vegetal a seu comportamento na combustão</source>
+          <size units="pages">80f</size>
+          <comment content-type="degree">Dissertação (Mestrado)</comment>
+          <publisher-name>Escola Superior de Agricultura “Luiz de Queiroz”, Universidade de São Paulo</publisher-name>
+          <publisher-loc>Piracicaba</publisher-loc>
+        </element-citation>
+      </ref>
+      <ref id="B17">
+        <mixed-citation>SILVEIRA, M.S. (2008) <italic>Aproveitamento das cascas de coco verde para produção de briquete em Salvador - BA</italic>. Dissertação (Mestrado) - Universidade Federal da Bahia, Salvador.</mixed-citation>
+        <element-citation publication-type="thesis">
+          <person-group person-group-type="author">
+            <name>
+              <surname>SILVEIRA</surname>
+              <given-names>M.S.</given-names>
+            </name>
+          </person-group>
+          <year>2008</year>
+          <source>Aproveitamento das cascas de coco verde para produção de briquete em Salvador - BA</source>
+          <comment content-type="degree">Dissertação (Mestrado)</comment>
+          <publisher-name>Universidade Federal da Bahia</publisher-name>
+          <publisher-loc>Salvador</publisher-loc>
+        </element-citation>
+      </ref>
+      <ref id="B18">
+        <mixed-citation>SOZIM, R.; LOMBARDI, K.C.; GUIOTOKU, M.; MAIA, C.M.B.F. (2011) Caracterização e pirólise de resíduo chá-mate tostado para obtenção de biocarvão. <italic>In</italic>: ENCONTRO BRASILEIRO DE SUBSTÂNCIAS HÚMICAS, Aracaju. <italic>Anais</italic>...</mixed-citation>
+        <element-citation publication-type="confproc">
+          <person-group person-group-type="author">
+            <name>
+              <surname>SOZIM</surname>
+              <given-names>R.</given-names>
+            </name>
+            <name>
+              <surname>LOMBARDI</surname>
+              <given-names>K.C.</given-names>
+            </name>
+            <name>
+              <surname>GUIOTOKU</surname>
+              <given-names>M.</given-names>
+            </name>
+            <name>
+              <surname>MAIA</surname>
+              <given-names>C.M.B.F.</given-names>
+            </name>
+          </person-group>
+          <year>2011</year>
+          <source>Caracterização e pirólise de resíduo chá-mate tostado para obtenção de biocarvão</source>
+          <conf-name>ENCONTRO BRASILEIRO DE SUBSTÂNCIAS HÚMICAS</conf-name>
+          <conf-loc>Aracaju</conf-loc>
+          <comment>Anais...</comment>
+        </element-citation>
+      </ref>
+      <ref id="B19">
+        <mixed-citation>UCHÔA, K.M.; MIOLA, B.R.; BRITO, C.R.F. (2019) Avaliação energética da vagem de feijão para produção de briquetes. <italic>In</italic>: SEMANA DE ENGENHARIA DE ENERGIAS, 2., 2019. <italic>Anais</italic>... Unilab.</mixed-citation>
+        <element-citation publication-type="confproc">
+          <person-group person-group-type="author">
+            <name>
+              <surname>UCHÔA</surname>
+              <given-names>K.M.</given-names>
+            </name>
+            <name>
+              <surname>MIOLA</surname>
+              <given-names>B.R.</given-names>
+            </name>
+            <name>
+              <surname>BRITO</surname>
+              <given-names>C.R.F.</given-names>
+            </name>
+          </person-group>
+          <year>2019</year>
+          <source>Avaliação energética da vagem de feijão para produção de briquetes</source>
+          <conf-name>SEMANA DE ENGENHARIA DE ENERGIAS, 2</conf-name>
+          <conf-date>2019</conf-date>
+          <comment>Anais...</comment>
+          <publisher-name>Unilab</publisher-name>
+        </element-citation>
+      </ref>
+    </ref-list>
+    <fn-group>
+      <fn fn-type="other" id="fn1">
+        <label>1</label>
+        <p><bold>Reg. ABES:</bold> 20180029</p>
+      </fn>
+    </fn-group>
+  </back>
+</article>
