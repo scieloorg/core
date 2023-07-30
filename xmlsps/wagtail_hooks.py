@@ -29,7 +29,6 @@ class XMLSPSAdmin(ModelAdmin):
     )
     list_filter = (
         "is_published",
-        "xml_journal",
     )
     search_fields = (
         "pid_v3",
