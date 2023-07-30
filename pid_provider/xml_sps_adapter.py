@@ -152,6 +152,10 @@ class PidProviderXMLAdapter:
             params["main_doi__iexact"] = params["main_doi"]
         except KeyError:
             pass
+        try:
+            params["pkg_name__iexact"] = params["pkg_name"]
+        except KeyError:
+            pass
 
     @property
     def query_list(self):

@@ -5,6 +5,7 @@ from django.core.files.base import ContentFile
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext as _
+from django.db.utils import IntegrityError
 from lxml import etree
 from wagtail.admin.panels import FieldPanel
 
@@ -14,6 +15,10 @@ from xmlsps.xml_sps_lib import XMLWithPre
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+
+
+class XMLIssueGetOrCreateError(Exception):
+    ...
 
 
 class XMLVersionXmlWithPreError(Exception):
@@ -164,15 +169,14 @@ class XMLJournal(models.Model):
             journal = cls()
             journal.issn_electronic = issn_electronic
             journal.issn_print = issn_print
-            journal.save()
-            return journal
-        except cls.MultipleObjectsReturned:
-            # talvez tenha duplicado devido ao registro simultaneo
-            # nao é um problema duplicar
-            return cls.objects.filter(
-                issn_electronic=issn_electronic,
-                issn_print=issn_print,
-            ).first()
+            try:
+                journal.save()
+                return journal
+            except IntegrityError:
+                return cls.objects.get(
+                    issn_electronic=issn_electronic,
+                    issn_print=issn_print,
+                )
 
 
 class XMLIssue(models.Model):
@@ -208,15 +212,20 @@ class XMLIssue(models.Model):
 
     @classmethod
     def get_or_create(cls, journal, volume, number, suppl, pub_year):
+        if journal is None:
+            raise XMLIssueGetOrCreateError(
+                f"XMLIssue.get_or_create requires journal")
+        if pub_year is None:
+            raise XMLIssueGetOrCreateError(
+                f"XMLIssue.get_or_create requires pub_year")
         try:
-            obj = cls.objects.get(
+            return cls.objects.get(
                 journal=journal,
                 volume=volume,
                 number=number,
                 suppl=suppl,
                 pub_year=pub_year,
             )
-            return obj
         except cls.DoesNotExist:
             issue = cls()
             issue.journal = journal
@@ -224,18 +233,17 @@ class XMLIssue(models.Model):
             issue.number = number
             issue.suppl = suppl
             issue.pub_year = pub_year
-            issue.save()
-            return issue
-        except cls.MultipleObjectsReturned:
-            # talvez tenha duplicado devido ao registro simultaneo
-            # nao é um problema duplicar
-            return cls.objects.filter(
-                journal=journal,
-                volume=volume,
-                number=number,
-                suppl=suppl,
-                pub_year=pub_year,
-            ).first()
+            try:
+                issue.save()
+                return issue
+            except IntegrityError:
+                return cls.get(
+                    journal=journal,
+                    volume=volume,
+                    number=number,
+                    suppl=suppl,
+                    pub_year=pub_year,
+                )
 
 
 class XMLSPS(CommonControlField):
