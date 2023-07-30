@@ -225,7 +225,7 @@ class PidChange(CommonControlField):
         ]
 
     def __str__(self):
-        return str((self.pid_v3, self.pid_v2, self.aop_pid))
+        return f"{self.pid_type} {self.old} -> {self.new}"
 
     @classmethod
     def get_or_create(cls, pid_type, old, new, version, user):
@@ -289,6 +289,31 @@ class PidProviderXML(CommonControlField):
         _("partial_body"), max_length=64, null=True, blank=True
     )
 
+    base_form_class = CoreAdminModelForm
+
+    panels = [
+        FieldPanel("journal"),
+        FieldPanel("issue"),
+        FieldPanel("pkg_name"),
+        FieldPanel("v3"),
+        FieldPanel("v2"),
+        FieldPanel("aop_pid"),
+        FieldPanel("main_doi"),
+        FieldPanel("elocation_id"),
+        FieldPanel("fpage"),
+        FieldPanel("fpage_seq"),
+        FieldPanel("lpage"),
+        FieldPanel("article_pub_year"),
+        FieldPanel("main_toc_section"),
+        FieldPanel("z_article_titles_texts"),
+        FieldPanel("z_surnames"),
+        FieldPanel("z_collab"),
+        FieldPanel("z_links"),
+        FieldPanel("z_partial_body"),
+        FieldPanel("current_version"),
+        FieldPanel("related_items"),
+    ]
+
     class Meta:
         indexes = [
             models.Index(fields=["pkg_name"]),
@@ -309,7 +334,7 @@ class PidProviderXML(CommonControlField):
         ]
 
     def __str__(self):
-        return self.pkg_name or self.v3 or "PidProviderXML sem ID"
+        return f"{self.pkg_name} {self.v3}"
 
     @property
     def data(self):

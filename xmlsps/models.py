@@ -6,7 +6,9 @@ from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext as _
 from lxml import etree
+from wagtail.admin.panels import FieldPanel
 
+from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from xmlsps.xml_sps_lib import XMLWithPre
 
@@ -47,7 +49,13 @@ class XMLVersion(CommonControlField):
         ]
 
     def __str__(self):
-        return f"{self.pid_v3} {self.created.isoformat()}"
+        return str(
+            dict(
+                pid_v3=self.pid_v3,
+                created=self.created.isoformat(),
+                xml=self.xml_with_pre.tostring(),
+            )
+        )
 
     @classmethod
     def create(
@@ -80,9 +88,16 @@ class XMLVersion(CommonControlField):
         except Exception as e:
             raise XMLVersionXmlWithPreError(
                 _("Unable to get xml with pre (XMLVersion) {}: {} {}").format(
-                    self.pkg_name, type(e), e
+                    self.pid_v3, type(e), e
                 )
             )
+
+    @property
+    def xml(self):
+        try:
+            return self.xml_with_pre.tostring()
+        except XMLVersionXmlWithPreError as e:
+            return str(e)
 
     @classmethod
     def latest(cls, pid_v3):
@@ -238,14 +253,27 @@ class XMLSPS(CommonControlField):
         XMLIssue, null=True, blank=True, on_delete=models.SET_NULL
     )
 
+    base_form_class = CoreAdminModelForm
+
+    panels = [
+        FieldPanel("is_published"),
+        FieldPanel("pid_v3"),
+        FieldPanel("pid_v2"),
+        FieldPanel("aop_pid"),
+        FieldPanel("xml_journal"),
+        FieldPanel("xml_issue"),
+        FieldPanel("xml_version"),
+    ]
+
     class Meta:
         indexes = [
             models.Index(fields=["pid_v2"]),
             models.Index(fields=["pid_v3"]),
             models.Index(fields=["aop_pid"]),
-            models.Index(fields=["xml_journal"]),
-            models.Index(fields=["xml_issue"]),
         ]
+
+    def __str__(self):
+        return f"{self.pid_v3} {self.pid_v2} {self.aop_pid}"
 
     @classmethod
     def list(cls, from_date):
@@ -255,15 +283,11 @@ class XMLSPS(CommonControlField):
 
     @property
     def xml(self):
-        return self.xml_version.xml_with_pre.tostring()
+        return self.xml_version.xml
 
     @property
     def xml_with_pre(self):
         return self.xml_version.xml_with_pre
-
-    @property
-    def xmltree(self):
-        return self.xml_version.xml_with_pre.xmltree
 
     @classmethod
     def get(cls, pid_v3):
