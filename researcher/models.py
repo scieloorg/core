@@ -2,9 +2,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from wagtail.admin.edit_handlers import FieldPanel, InlinePanel, MultiFieldPanel
-from wagtail.core.models import Orderable
-from wagtail.documents.edit_handlers import DocumentChooserPanel
+from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
+from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.models import CommonControlField, Gender
@@ -23,9 +22,7 @@ class Researcher(ClusterableModel, CommonControlField):
     given_names = models.CharField(
         _("Given names"), max_length=128, blank=True, null=True
     )
-    last_name = models.CharField(
-        _("Last name"), max_length=128, blank=True, null=True
-    )
+    last_name = models.CharField(_("Last name"), max_length=128, blank=True, null=True)
     declared_name = models.CharField(
         _("Declared Name"), max_length=255, blank=True, null=True
     )
@@ -263,4 +260,4 @@ class EditorialBoardMemberFile(models.Model):
     def filename(self):
         return os.path.basename(self.attachment.name)
 
-    panels = [DocumentChooserPanel("attachment")]
+    panels = [FieldPanel("attachment")]

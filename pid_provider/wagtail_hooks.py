@@ -64,9 +64,7 @@ class PidProviderXMLAdmin(ModelAdmin):
         "aop_pid",
         "main_doi",
     )
-    list_filter = (
-        "article_pub_year",
-    )
+    list_filter = ("article_pub_year",)
     search_fields = (
         "journal__title",
         "pkg_name",
@@ -100,9 +98,7 @@ class PidChangeAdmin(ModelAdmin):
         "new",
         "pid_type",
     )
-    list_filter = (
-        "pid_type",
-    )
+    list_filter = ("pid_type",)
     search_fields = (
         "old",
         "new",
@@ -113,11 +109,7 @@ class PidProviderAdminGroup(ModelAdminGroup):
     menu_label = _("Pid Provider")
     menu_icon = "folder-open-inverse"  # change as required
     menu_order = 100  # will put in 3rd place (000 being 1st, 100 2nd)
-    items = (
-        PidProviderXMLAdmin,
-        PidRequestAdmin,
-        PidChangeAdmin
-    )
+    items = (PidProviderXMLAdmin, PidRequestAdmin, PidChangeAdmin)
 
 
 modeladmin_register(PidProviderAdminGroup)

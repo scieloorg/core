@@ -27,9 +27,7 @@ class XMLSPSAdmin(ModelAdmin):
         "is_published",
         "pid_v3",
     )
-    list_filter = (
-        "is_published",
-    )
+    list_filter = ("is_published",)
     search_fields = (
         "pid_v3",
         "pid_v2",
