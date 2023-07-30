@@ -23,9 +23,7 @@ class Researcher(ClusterableModel, CommonControlField):
     given_names = models.CharField(
         _("Given names"), max_length=128, blank=True, null=True
     )
-    last_name = models.CharField(
-        _("Last name"), max_length=128, blank=True, null=True
-    )
+    last_name = models.CharField(_("Last name"), max_length=128, blank=True, null=True)
     declared_name = models.CharField(
         _("Declared Name"), max_length=255, blank=True, null=True
     )

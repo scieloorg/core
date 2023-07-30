@@ -213,11 +213,9 @@ class XMLIssue(models.Model):
     @classmethod
     def get_or_create(cls, journal, volume, number, suppl, pub_year):
         if journal is None:
-            raise XMLIssueGetOrCreateError(
-                f"XMLIssue.get_or_create requires journal")
+            raise XMLIssueGetOrCreateError(f"XMLIssue.get_or_create requires journal")
         if pub_year is None:
-            raise XMLIssueGetOrCreateError(
-                f"XMLIssue.get_or_create requires pub_year")
+            raise XMLIssueGetOrCreateError(f"XMLIssue.get_or_create requires pub_year")
         try:
             return cls.objects.get(
                 journal=journal,

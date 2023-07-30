@@ -1,4 +1,4 @@
-import re 
+import re
 
 
 def parse_author_name(name):
