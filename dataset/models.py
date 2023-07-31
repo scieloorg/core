@@ -5,6 +5,15 @@ from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from thematic_areas.models import ThematicArea
 from vocabulary.models import Keyword
+from .exceptions import (
+    DataverseGetError,
+    DataverseCreateOrUpdateError,
+    DatasetGetError,
+    DatasetCreateOrUpdateError,
+    FileGetError,
+    FileCreateOrUpdateError,
+)
+
 
 TYPE_CHOICES = [
     ("dataverse", "dataverse"),
@@ -35,28 +44,39 @@ class Dataverse(CommonControlField, CommonDataField):
     identifier = models.CharField(max_length=30, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
-    #TODO
-    #Criar metodo get
+    @classmethod
+    def get(
+        cls,
+        name,
+        identifier,
+    ):
+        if identifier:
+            return cls.objects.get(identifier=identifier)
+        if name:
+            return cls.objects.get(name=name)
+        raise DataverseGetError()
 
     @classmethod
     def create_or_update(
         cls,
-        name,
-        identifier,
         user=None,
+        name=None,
+        identifier=None,
         type=None,
         url=None,
         published_at=None,
         description=None,
     ):
         try:
-            obj = cls.objects.get(identifier=identifier)
+            obj = cls.get(identifier=identifier, name=name)
             obj.updated_by = user
-        except (cls.DoesNotExist, cls.MultipleObjectsReturned):
+        except cls.DoesNotExist:
             obj = cls()
             obj.name = name
             obj.identifier = identifier
             obj.creator = user
+        except (cls.MultipleObjectsReturned, DataverseCreateOrUpdateError) as e:
+            raise DataverseCreateOrUpdateError(e) 
 
         obj.name = name or obj.name
         obj.identifier = identifier or obj.identifier
@@ -78,7 +98,7 @@ class Dataset(CommonControlField, CommonDataField):
     )
     citation_html = models.TextField(blank=True, null=True)
     citation = models.TextField(blank=True, null=True)
-    dataverse = models.ForeignKey(
+    identifier_of_dataverse = models.ForeignKey(
         Dataverse, on_delete=models.SET_NULL, null=True, blank=True
     )
     keywords = models.ManyToManyField(Keyword, blank=True)
@@ -99,13 +119,17 @@ class Dataset(CommonControlField, CommonDataField):
             ),
         ]
 
-    #TODO
-    #Criar metodo get
+    @classmethod
+    def get(cls, global_id):
+        if global_id:
+                return cls.objects.get(global_id=global_id)
+        raise DatasetGetError()
 
     @classmethod
     def create_or_update(
         cls,
-        global_id,
+        user,
+        global_id=None,
         name=None,
         type=None,
         url=None,
@@ -114,21 +138,22 @@ class Dataset(CommonControlField, CommonDataField):
         publisher=None,
         citation_html=None,
         citation=None,
-        dataverse=None,
+        identifier_of_dataverse=None,
         authors=None,
         keywords=None,
         thematic_area=None,
         contacts=None,
         publications=None,
-        user=None,
     ):
         try:
-            obj = cls.objects.get(global_id=global_id)
+            obj = cls.get(global_id=global_id)
             obj.updated_by = user
-        except (cls.DoesNotExist, cls.MultipleObjectsReturned):
+        except cls.DoesNotExist:
             obj = cls()
             obj.global_id = global_id
             obj.creator = user
+        except (DatasetCreateOrUpdateError, cls.MultipleObjectsReturned) as e:
+            raise DatasetCreateOrUpdateError(e)
 
         obj.name = name or obj.name
         obj.description = description or obj.description
@@ -138,7 +163,7 @@ class Dataset(CommonControlField, CommonDataField):
         obj.type = type or obj.type
         obj.url = url or obj.url
         obj.published_at = published_at or obj.published_at
-        obj.dataverse = dataverse or obj.dataverse
+        obj.identifier_of_dataverse = identifier_of_dataverse or obj.identifier_of_dataverse
         obj.publisher = publisher or obj.publisher
         obj.save()
         if authors:
@@ -159,33 +184,41 @@ class File(CommonControlField, CommonDataField):
     file_type = models.CharField(max_length=100, blank=True, null=True)
     file_content_type = models.CharField(max_length=100, blank=True, null=True)
     file_persistent_id = models.TextField(blank=True, null=True)
-    dataset = models.ForeignKey(
+    dataset_persistent_id = models.ForeignKey(
         Dataset, on_delete=models.SET_NULL, blank=True, null=True
     )
 
-    #TODO
-    #Criar metodo get
+    @classmethod
+    def get(
+        cls,
+        file_persistent_id,
+    ):
+        if file_persistent_id:
+            return cls.objects.get(file_persistent_id=file_persistent_id)
+        raise FileGetError()
 
     @classmethod
     def create_or_update(
         cls,
-        file_persistent_id,
         user,
+        file_persistent_id=None,
         name=None,
         type=None,
         url=None,
         published_at=None,
         file_type=None,
         file_content_type=None,
-        dataset=None,
+        dataset_persistent_id=None,
     ):
         try:
             obj = cls.objects.get(file_persistent_id=file_persistent_id)
             obj.updated_by = user
-        except (cls.DoesNotExist, cls.MultipleObjectsReturned):
+        except cls.DoesNotExist:
             obj = cls()
             obj.file_persistent_id = file_persistent_id
             obj.creator = user
+        except (FileCreateOrUpdateError, cls.MultipleObjectsReturned) as e:
+            raise FileCreateOrUpdateError(e)
 
         obj.name = name or obj.name
         obj.type = type or obj.type
@@ -193,7 +226,7 @@ class File(CommonControlField, CommonDataField):
         obj.published_at = published_at or obj.published_at
         obj.file_type = file_type or obj.file_type
         obj.file_content_type = file_content_type or obj.file_content_type
-        obj.dataset = dataset or obj.dataset
+        obj.dataset_persistent_id = dataset_persistent_id or obj.dataset_persistent_id
         obj.save()
 
     base_form_class = CoreAdminModelForm
