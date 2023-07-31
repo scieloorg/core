@@ -1,9 +1,7 @@
 from rest_framework import serializers
 
-from vocabulary.models import (
-    Keyword,
-)
 from core.api.v1.serializers import LanguageSerializer
+from vocabulary.models import Keyword
 
 
 class KeywordSerializer(serializers.ModelSerializer):

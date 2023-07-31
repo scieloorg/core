@@ -1,11 +1,11 @@
-from article import models
-from .serializers import IssueSerializer
+from rest_framework import serializers, viewsets
 
-from rest_framework import viewsets, serializers
+from article import models
+
+from .serializers import IssueSerializer
 
 
 class IssueViewSet(viewsets.ModelViewSet):
     serializer_class = IssueSerializer
-    http_method_names= ["get"]
+    http_method_names = ["get"]
     queryset = models.Issue.objects.all()
-

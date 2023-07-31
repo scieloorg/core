@@ -114,6 +114,7 @@ class Institution(CommonControlField, ClusterableModel):
         location,
         official,
         is_official,
+        user,
     ):
         # Institution
         # check if exists the institution
@@ -143,6 +144,7 @@ class Institution(CommonControlField, ClusterableModel):
             institution.location = location
             institution.official = official
             institution.is_official = is_official
+            institution.creator = user
             institution.save()
         return institution
 

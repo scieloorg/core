@@ -26,70 +26,9 @@ def utcnow():
     # return datetime.utcnow().isoformat().replace("T", " ") + "Z"
 
 
-def xml_directory_path(instance, filename):
+def xml_directory_path(instance, subdir):
     # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
-    return f"xml_pid_provider/{instance.finger_print[-1]}/{instance.finger_print[-2]}/{instance.finger_print}/{filename}"
-
-
-class KernelXMLMigration(CommonControlField):
-    pid_v3 = models.CharField(_("PID v3"), max_length=23, null=True, blank=True)
-    acron = models.CharField(_("Acron"), max_length=23, null=True, blank=True)
-    year = models.CharField(_("Year"), max_length=4, null=True, blank=True)
-    error_type = models.TextField(_("Error type"), null=True, blank=True)
-    error_msg = models.TextField(_("Error message"), null=True, blank=True)
-    xml_version = models.ForeignKey(
-        XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
-    )
-
-    def __unicode__(self):
-        return f"{self.pid_v3}"
-
-    def __str__(self):
-        return f"{self.pid_v3}"
-
-    @classmethod
-    def get(
-        cls,
-        pid_v3=None,
-    ):
-        return cls.objects.get(pid_v3=pid_v3)
-
-    @classmethod
-    def create_or_update(
-        cls,
-        user=None,
-        pid_v3=None,
-        acron=None,
-        year=None,
-        error_type=None,
-        error_msg=None,
-        xml_version=None,
-    ):
-        try:
-            obj = cls.get(pid_v3=pid_v3)
-            obj.updated_by = user
-        except cls.DoesNotExist:
-            obj = cls()
-            obj.pid_v3 = pid_v3
-            obj.creator = user
-
-        obj.acron = acron or obj.acron
-        obj.year = year or obj.year
-        obj.error_type = error_type or obj.error_type
-        obj.error_msg = error_msg or obj.error_msg
-        obj.xml_version = xml_version or obj.xml_version
-        obj.save()
-        return obj
-
-    panels = [
-        FieldPanel("pid_v3"),
-        FieldPanel("acron"),
-        FieldPanel("year"),
-        FieldPanel("error_type"),
-        FieldPanel("error_msg"),
-    ]
-
-    base_form_class = CoreAdminModelForm
+    return f"xml_pid_provider/{subdir}/{instance.pid_v3[0]}/{instance.pid_v3[-1]}/{instance.pid_v3}/{instance.finger_print}"
 
 
 class PidProviderConfig(CommonControlField):
@@ -146,64 +85,95 @@ class PidProviderConfig(CommonControlField):
     base_form_class = CoreAdminModelForm
 
 
-class PidProviderBadRequest(CommonControlField):
-    """
-    Tem função de guardar XML que falhou no registro
-    """
-
-    basename = models.TextField(_("Basename"), null=True, blank=True)
-    finger_print = models.CharField(max_length=65, null=True, blank=True)
-    error_type = models.TextField(null=True, blank=True)
-    error_message = models.TextField(null=True, blank=True)
-    xml = models.FileField(upload_to="bad_request")
-
-    class Meta:
-
-        indexes = [
-            models.Index(fields=["basename"]),
-            models.Index(fields=["finger_print"]),
-            models.Index(fields=["error_type"]),
-            models.Index(fields=["error_message"]),
-        ]
-
-    def __unicode__(self):
-        return f"{self.basename} {self.error_type}"
-
-    def __str__(self):
-        return f"{self.basename} {self.error_type}"
+class PidRequest(CommonControlField):
+    origin = models.CharField(
+        _("Request origin"), max_length=124, null=True, blank=True
+    )
+    result_type = models.TextField(_("Result type"), null=True, blank=True)
+    result_msg = models.TextField(_("Result message"), null=True, blank=True)
+    xml_version = models.ForeignKey(
+        XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    detail = models.JSONField(_("Detail"), null=True, blank=True)
+    origin_date = models.CharField(
+        _("Origin date"), max_length=10, null=True, blank=True
+    )
 
     @property
     def data(self):
-        return {
-            "error_type": self.error_type,
-            "error_message": self.error_message,
-            "id": self.finger_print,
-            "filename": self.basename,
+        _data = {
+            "origin": self.origin,
+            "origin_date": self.origin_date,
+            "result_type": self.result_type,
+            "result_msg": self.result_msg,
+            "detail": self.detail,
         }
+        return _data
+
+    def __unicode__(self):
+        return f"{self.origin}"
+
+    def __str__(self):
+        return f"{self.origin}"
 
     @classmethod
-    def get_or_create(cls, creator, basename, exception, xml_adapter):
-        finger_print = xml_adapter.finger_print
+    def get(
+        cls,
+        origin=None,
+    ):
+        if origin:
+            return cls.objects.get(origin=origin)
+        raise ValueError("PidRequest.get requires parameters")
 
+    @classmethod
+    def create_or_update(
+        cls,
+        user=None,
+        origin=None,
+        result_type=None,
+        result_msg=None,
+        xml_version=None,
+        detail=None,
+        origin_date=None,
+    ):
         try:
-            obj = cls.objects.get(finger_print=finger_print)
+            obj = cls.get(origin=origin)
+            obj.updated_by = user
         except cls.DoesNotExist:
             obj = cls()
-            obj.finger_print = finger_print
+            obj.creator = user
+            obj.origin = origin
 
-        obj.xml = ContentFile(xml_adapter.tostring(), name=finger_print + ".xml")
-        obj.basename = basename
-        obj.error_type = str(type(exception))
-        obj.error_message = str(exception)
-        obj.creator = creator
+        obj.result_type = result_type or obj.result_type
+        obj.result_msg = result_msg or obj.result_msg
+        obj.xml_version = xml_version or obj.xml_version
+        obj.detail = detail or obj.detail
+        obj.origin = origin or obj.origin
+        obj.origin_date = origin_date or obj.origin_date
         obj.save()
         return obj
 
+    @classmethod
+    def register_failure(cls, e, user=None, origin=None, message=None, detail=None):
+        logging.exception(e)
+        msg = str(e)
+        if message:
+            msg = f"{msg} {message}"
+        return PidRequest.create_or_update(
+            user=user,
+            origin=origin,
+            result_type=str(type(e)),
+            result_msg=msg,
+            detail=detail,
+        )
+
     panels = [
-        FieldPanel("basename"),
-        FieldPanel("xml"),
-        FieldPanel("error_type"),
-        FieldPanel("error_message"),
+        FieldPanel("origin"),
+        FieldPanel("origin_date"),
+        FieldPanel("result_type"),
+        FieldPanel("result_msg"),
+        FieldPanel("xml_version"),
+        FieldPanel("detail"),
     ]
 
     base_form_class = CoreAdminModelForm
@@ -255,7 +225,7 @@ class PidChange(CommonControlField):
         ]
 
     def __str__(self):
-        return str((self.pid_v3, self.pid_v2, self.aop_pid))
+        return f"{self.pid_type} {self.old} -> {self.new}"
 
     @classmethod
     def get_or_create(cls, pid_type, old, new, version, user):
@@ -293,9 +263,6 @@ class PidProviderXML(CommonControlField):
     current_version = models.ForeignKey(
         XMLVersion, on_delete=models.SET_NULL, null=True, blank=True
     )
-    current_xml = models.ForeignKey(
-        XMLSPS, on_delete=models.SET_NULL, null=True, blank=True
-    )
 
     pkg_name = models.TextField(_("Package name"), null=True, blank=True)
     v3 = models.CharField(_("v3"), max_length=23, null=True, blank=True)
@@ -322,6 +289,31 @@ class PidProviderXML(CommonControlField):
         _("partial_body"), max_length=64, null=True, blank=True
     )
 
+    base_form_class = CoreAdminModelForm
+
+    panels = [
+        FieldPanel("journal"),
+        FieldPanel("issue"),
+        FieldPanel("pkg_name"),
+        FieldPanel("v3"),
+        FieldPanel("v2"),
+        FieldPanel("aop_pid"),
+        FieldPanel("main_doi"),
+        FieldPanel("elocation_id"),
+        FieldPanel("fpage"),
+        FieldPanel("fpage_seq"),
+        FieldPanel("lpage"),
+        FieldPanel("article_pub_year"),
+        FieldPanel("main_toc_section"),
+        FieldPanel("z_article_titles_texts"),
+        FieldPanel("z_surnames"),
+        FieldPanel("z_collab"),
+        FieldPanel("z_links"),
+        FieldPanel("z_partial_body"),
+        FieldPanel("current_version"),
+        FieldPanel("related_items"),
+    ]
+
     class Meta:
         indexes = [
             models.Index(fields=["pkg_name"]),
@@ -342,7 +334,7 @@ class PidProviderXML(CommonControlField):
         ]
 
     def __str__(self):
-        return self.pkg_name or self.v3 or "PidProviderXML sem ID"
+        return f"{self.pkg_name} {self.v3}"
 
     @property
     def data(self):
@@ -372,38 +364,13 @@ class PidProviderXML(CommonControlField):
     def is_aop(self):
         return self.issue is None
 
-    def set_current_version(self, creator, pkg_name, xml_adapter, user):
-        finger_print = xml_adapter.finger_print
-        if (
-            not self.current_version
-            or self.current_version.finger_print != finger_print
-            or not self.current_xml
-        ):
-            self.current_version = XMLVersion.create(
-                creator=creator,
-                pid_v3=self.v3,
-                pkg_name=pkg_name,
-                finger_print=finger_print,
-                zip_xml_content=xml_adapter.xml_with_pre.get_zip_content(
-                    pkg_name + ".xml"
-                ),
-            )
-            self.current_xml = XMLSPS.create_or_update(
-                pid_v3=self.v3,
-                pid_v2=self.v2,
-                aop_pid=self.aop_pid,
-                xml_journal=self.journal,
-                xml_issue=self.issue,
-                xml_version=self.current_version,
-                user=user,
-            )
-
     @classmethod
     def register(
         cls,
         xml_with_pre,
         filename,
         user,
+        is_published=False,
     ):
         """
         Evaluate the XML data and returns corresponding PID v3, v2, aop_pid
@@ -438,7 +405,6 @@ class PidProviderXML(CommonControlField):
         """
         try:
             logging.info(f"PidProviderXML.register ....  {filename}")
-            pkg_name, ext = os.path.splitext(os.path.basename(filename))
 
             # adaptador do xml with pre
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
@@ -465,14 +431,13 @@ class PidProviderXML(CommonControlField):
                     f"Unable to register {filename}, because v2 is invalid"
                 )
 
-            registered = cls._save(
-                registered,
-                xml_adapter,
-                user,
-                pkg_name,
-                changed_pids,
-            )
+            # cria ou atualiza registro
+            registered = cls._save(registered, xml_adapter, user, changed_pids)
 
+            # cria ou atualiza XMLSPS
+            registered._create_or_update_xmlsps(user, is_published)
+
+            # data to return
             data = registered.data.copy()
             data["xml_changed"] = bool(changed_pids)
             return data
@@ -483,28 +448,25 @@ class PidProviderXML(CommonControlField):
             exceptions.QueryDocumentMultipleObjectsReturnedError,
             exceptions.InvalidPidError,
         ) as e:
-            logging.exception(e)
-            bad_request = PidProviderBadRequest.get_or_create(
-                user,
-                filename,
+            pid_request = PidRequest.register_failure(
                 e,
-                xml_adapter,
+                user=user,
+                origin=filename,
+                detail={"xml": xml_adapter.tostring()},
             )
-            return bad_request.data
+            return pid_request.data
 
-    def _register_pid_changes(self, changed_pids, user):
-        # requires registered.current_version is set
-
-        if not self.current_version:
-            raise ValueError(
-                "PidProviderXML._register_pid_changes requires current_version is set"
-            )
-        for change_args in changed_pids:
-            if change_args["old"]:
-                # somente registra as mudanças de um old não vazio
-                change_args["user"] = user
-                change_args["version"] = self.current_version
-                change = PidChange.get_or_create(**change_args)
+    def _create_or_update_xmlsps(self, user, is_published):
+        XMLSPS.create_or_update(
+            pid_v3=self.v3,
+            pid_v2=self.v2,
+            aop_pid=self.aop_pid,
+            xml_journal=self.journal,
+            xml_issue=self.issue,
+            xml_version=self.current_version,
+            user=user,
+            is_published=is_published,
+        )
 
     @classmethod
     def _save(
@@ -512,7 +474,6 @@ class PidProviderXML(CommonControlField):
         registered,
         xml_adapter,
         user,
-        pkg_name,
         changed_pids,
     ):
         if registered:
@@ -522,19 +483,16 @@ class PidProviderXML(CommonControlField):
             registered = cls()
             registered.creator = user
             registered.created = utcnow()
-            registered.save()
 
-        registered._add_data(xml_adapter, user, pkg_name)
+        registered._add_data(xml_adapter, user)
+        registered._add_journal(xml_adapter)
+        registered._add_issue(xml_adapter, registered.journal)
+        registered._add_current_version(xml_adapter, user)
 
-        registered.set_current_version(
-            creator=user,
-            pkg_name=pkg_name,
-            xml_adapter=xml_adapter,
-            user=user,
-        )
         registered.save()
 
-        registered._register_pid_changes(changed_pids, user)
+        registered._add_pid_changes(changed_pids, user)
+        registered._add_related_items(xml_adapter, user)
 
         return registered
 
@@ -621,6 +579,7 @@ class PidProviderXML(CommonControlField):
         items = xml_adapter.query_list
         for params in items:
             cls.validate_query_params(params)
+            xml_adapter.adapt_query_params(params)
 
             try:
                 return cls.objects.get(**params)
@@ -634,9 +593,8 @@ class PidProviderXML(CommonControlField):
                     _("Found more than one document matching to {}").format(params)
                 )
 
-    def _add_data(self, xml_adapter, user, pkg_name):
-        logging.info(f"PidProviderXML._add_data {pkg_name}")
-        self.pkg_name = pkg_name
+    def _add_data(self, xml_adapter, user):
+        self.pkg_name = xml_adapter.sps_pkg_name
         self.article_pub_year = xml_adapter.article_pub_year
         self.v3 = xml_adapter.v3
         self.v2 = xml_adapter.v2
@@ -656,25 +614,47 @@ class PidProviderXML(CommonControlField):
         self.z_links = xml_adapter.z_links
         self.z_partial_body = xml_adapter.z_partial_body
 
+    def _add_journal(self, xml_adapter):
         self.journal = XMLJournal.get_or_create(
             xml_adapter.journal_issn_electronic,
             xml_adapter.journal_issn_print,
         )
-        self.issue = None
+
+    def _add_issue(self, xml_adapter, journal):
         if xml_adapter.volume or xml_adapter.number or xml_adapter.suppl:
             self.issue = XMLIssue.get_or_create(
-                self.journal,
+                journal,
                 xml_adapter.volume,
                 xml_adapter.number,
                 xml_adapter.suppl,
                 xml_adapter.pub_year,
             )
 
-        for related in xml_adapter.related_items:
-            self._add_related_item(related["href"], user)
+    def _add_current_version(self, xml_adapter, user):
+        self.current_version = XMLVersion.get_or_create(user, xml_adapter.xml_with_pre)
 
-    def _add_related_item(self, main_doi, creator):
-        self.related_items.add(XMLRelatedItem.get_or_create(main_doi, creator))
+    def _add_related_items(self, xml_adapter, creator):
+        if xml_adapter.related_items:
+            self.save()
+        for related in xml_adapter.related_items:
+            self.related_items.add(
+                XMLRelatedItem.get_or_create(related["href"], creator)
+            )
+
+    def _add_pid_changes(self, changed_pids, user):
+        # requires registered.current_version is set
+        if not changed_pids:
+            return
+        if not self.current_version:
+            raise ValueError(
+                "PidProviderXML._add_pid_changes requires current_version is set"
+            )
+        for change_args in changed_pids:
+            if change_args["old"]:
+                # somente registra as mudanças de um old não vazio
+                change_args["user"] = user
+                change_args["version"] = self.current_version
+                change = PidChange.get_or_create(**change_args)
 
     @classmethod
     def _get_unique_v3(cls):

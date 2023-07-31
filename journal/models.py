@@ -1,26 +1,27 @@
 from django.db import models
-from django.utils.translation import gettext_lazy as _
 from django.utils.safestring import mark_safe
+from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
-from wagtail.models import Orderable
 from wagtail.fields import RichTextField
+from wagtail.models import Orderable
 
 from collection.models import Collection
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField, RichTextWithLang
 from institution.models import InstitutionHistory
 from journal.exceptions import (
-    MissionCreateOrUpdateError,
-    MissionGetError,
     JournalCreateOrUpdateError,
     JournalGetError,
+    MissionCreateOrUpdateError,
+    MissionGetError,
     OfficialJournalCreateOrUpdateError,
     OfficialJournalGetError,
     SciELOJournalCreateOrUpdateError,
     SciELOJournalGetError,
 )
+
 from . import choices
 
 

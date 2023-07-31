@@ -94,7 +94,7 @@ class Article(CommonControlField):
         try:
             last_created = cls.objects.filter(
                 pid_v3__isnull=False,
-            ).latest('created')
+            ).latest("created")
             return last_created.created
         except (AttributeError, cls.DoesNotExist):
             return datetime(1, 1, 1)

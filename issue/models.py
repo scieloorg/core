@@ -1,21 +1,21 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import FieldPanel, InlinePanel, TabbedInterface, ObjectList
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from wagtail.models import Orderable
+from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 from wagtail.fields import RichTextField
+from wagtail.models import Orderable
 
 from core.forms import CoreAdminModelForm
 from core.models import (
-    CommonControlField, 
-    License,
+    CommonControlField,
     Language,
+    License,
     RichTextWithLang,
-    TextWithLang
-    )
-from location.models import City
+    TextWithLang,
+)
 from journal.models import Journal
+from location.models import City
 
 
 class Issue(CommonControlField, ClusterableModel):
@@ -134,19 +134,29 @@ class Issue(CommonControlField, ClusterableModel):
     @property
     def bibliographic(self):
         data = self.bibliographic_strip.all().values(
-            'text', 'language__code2',
+            "text",
+            "language__code2",
         )
         return [
-                {
-                'text': obj.get('text'),
-                'language': obj.get('language__code2'),
+            {
+                "text": obj.get("text"),
+                "language": obj.get("language__code2"),
             }
             for obj in data
         ]
 
     @classmethod
     def get_or_create(
-        cls, journal, number, volume, season, year, month, supplement, user, sections=None
+        cls,
+        journal,
+        number,
+        volume,
+        season,
+        year,
+        month,
+        supplement,
+        user,
+        sections=None,
     ):
         issues = cls.objects.filter(
             creator=user,
@@ -194,20 +204,34 @@ class Issue(CommonControlField, ClusterableModel):
 
 
 class IssueTitle(Orderable, CommonControlField):
-    issue = ParentalKey(Issue, on_delete=models.CASCADE, null=True, blank=True, related_name="issue_title")
+    issue = ParentalKey(
+        Issue,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="issue_title",
+    )
     title = models.CharField(_("Issue Title"), max_length=100, blank=True, null=True)
-    language = models.ForeignKey(Language, on_delete=models.CASCADE, blank=True, null=True)
+    language = models.ForeignKey(
+        Language, on_delete=models.CASCADE, blank=True, null=True
+    )
 
     def __str__(self):
         return self.title
-    
+
 
 class BibliographicStrip(Orderable, TextWithLang, CommonControlField):
-    issue = ParentalKey(Issue, on_delete=models.CASCADE, null=True, blank=True, related_name="bibliographic_strip")
+    issue = ParentalKey(
+        Issue,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="bibliographic_strip",
+    )
 
     def __str__(self):
         return self.subtitle
-    
+
 
 class TocSection(RichTextWithLang, CommonControlField):
     """
