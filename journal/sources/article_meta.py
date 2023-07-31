@@ -41,6 +41,8 @@ def process_journal_article_meta(collection, limit, user):
                     collection=journal_dict.get("collection"),
                     user=user,
                     journal_acron=journal_dict.get("acronym"),
+                    mission=journal_dict.get("mission"),
+                    sponsor=journal_dict.get("sponsor"),
                     )
             except SciELOJournalArticleMetaCreateUpdateError as e:
                 raise SciELOJournalArticleMetaCreateUpdateError(e)
