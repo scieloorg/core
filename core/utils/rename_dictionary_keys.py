@@ -9,4 +9,6 @@ def rename_dictionary_keys(dictionary, corresp):
         dict: Um novo dicionário com as chaves atualizadas de acordo com o dicionário de correspondência.
     """
 
-    return {corresp[key] if key in corresp else key: dictionary[key] for key in dictionary}
+    return {
+        corresp[key] if key in corresp else key: dictionary[key] for key in dictionary
+    }

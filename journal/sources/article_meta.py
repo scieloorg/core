@@ -1,7 +1,7 @@
 from core.utils import utils
+from core.utils.rename_dictionary_keys import rename_dictionary_keys
 from journal.utils.correspondencia import correspondencia_journal
 from journal.utils.journal_utils import get_or_create_scielo_journal
-from core.utils.rename_dictionary_keys import rename_dictionary_keys
 from journal.utils.request_api_article_meta import request_journal_article_meta
 
 
@@ -29,6 +29,7 @@ def process_journal_article_meta(collection, limit, user):
                 issn_print_or_electronic=journal_dict.get("issn_print_or_electronic"),
                 collection=journal_dict.get("collection"),
                 user=user,
+                journal_acron=journal_dict.get("acronym").lower(),
             )
         offset += 10
         data = request_journal_article_meta(

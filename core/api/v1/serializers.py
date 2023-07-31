@@ -1,9 +1,6 @@
 from rest_framework import serializers
 
-from core.models import (
-    Language,
-    License,
-)
+from core.models import Language, License
 
 
 class LanguageSerializer(serializers.ModelSerializer):

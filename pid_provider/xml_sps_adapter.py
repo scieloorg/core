@@ -5,7 +5,6 @@ from django.utils.translation import gettext as _
 from lxml import etree
 
 from pid_provider import exceptions
-from pid_provider.utils.finger_print import generate_finger_print
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -25,10 +24,6 @@ class PidProviderXMLAdapter:
             raise AttributeError(
                 f"Unable to get PidProviderXMLAdapter.{name} {type(e)} {e}"
             )
-
-    @property
-    def finger_print(self):
-        return generate_finger_print(etree.tostring(self.xmltree, encoding="utf-8"))
 
     @property
     def v2(self):
@@ -115,10 +110,10 @@ class PidProviderXMLAdapter:
             _params["z_links"] = self.z_links
 
         if not any(_params.values()):
-            _params["z_partial_body"] = self.z_partial_body
+            _params["pkg_name"] = self.sps_pkg_name
 
         if not any(_params.values()):
-            _params["pkg_name"] = self.pkg_name
+            _params["z_partial_body"] = self.z_partial_body
 
         _params["elocation_id"] = self.elocation_id
         if aop_version:
@@ -140,6 +135,27 @@ class PidProviderXMLAdapter:
 
         LOGGER.info(_params)
         return _params
+
+    def adapt_query_params(self, params):
+        """
+        Adapt query parameters
+
+        Parameters
+        ----------
+        params : dict
+
+        Returns
+        -------
+        dict
+        """
+        try:
+            params["main_doi__iexact"] = params["main_doi"]
+        except KeyError:
+            pass
+        try:
+            params["pkg_name__iexact"] = params["pkg_name"]
+        except KeyError:
+            pass
 
     @property
     def query_list(self):

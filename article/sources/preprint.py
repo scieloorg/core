@@ -2,11 +2,12 @@ import logging
 import re
 from datetime import datetime
 from urllib.parse import urlparse
-from sickle import Sickle
 
 from lxml import etree
+from sickle import Sickle
 
 from article import models
+from article.utils.parse_name_author import parse_author_name
 
 namespaces = {
     "oai_dc": "http://www.openarchives.org/OAI/2.0/oai_dc/",
@@ -35,9 +36,7 @@ def harvest_preprints(URL, user):
         try:
             set_dates(article=article, date=article_info.get("date"))
             article.titles.set(
-                get_or_create_titles(
-                    titles=article_info.get("title"), user=user
-                )
+                get_or_create_titles(titles=article_info.get("title"), user=user)
             )
             article.researchers.set(
                 get_or_create_researches(
@@ -45,14 +44,10 @@ def harvest_preprints(URL, user):
                 )
             )
             article.keywords.set(
-                get_or_create_keyword(
-                    keywords=article_info.get("subject"), user=user
-                )
+                get_or_create_keyword(keywords=article_info.get("subject"), user=user)
             )
             article.license.set(
-                get_or_create_license(
-                    rights=article_info.get("rights"), user=user
-                )
+                get_or_create_license(rights=article_info.get("rights"), user=user)
             )
             article.abstracts.set(
                 get_or_create_abstracts(
@@ -60,13 +55,9 @@ def harvest_preprints(URL, user):
                 )
             )
             article.languages.add(
-                get_or_create_language(
-                    lang=article_info.get("language"), user=user
-                )
+                get_or_create_language(lang=article_info.get("language"), user=user)
             )
-            article.publisher = get_publisher(
-                publisher=article_info.get("publisher")
-            )
+            article.publisher = get_publisher(publisher=article_info.get("publisher"))
             article.save()
         except Exception as e:
             # TODO cria um registro das falhas de modo que fiquem
@@ -116,15 +107,8 @@ def get_info_article(rec):
 
         author_data = []
         for author in root.xpath(".//dc:creator", namespaces=namespaces):
-            name_author = [name.strip() for name in author.text.split(",")][::1]
-            author_dict = {}
-            for i, name in enumerate(("given_names", "surname")[: len(name_author)]):
-                try:
-                    author_dict.update({f"{name}": name_author[i]})
-                except IndexError as e:
-                    logging.exception(
-                        f"Error in authors: {e}.  Artigo: {rec.header.identifier}"
-                    )
+            name_author = author.text.strip()
+            author_dict = parse_author_name(name_author)
             author_data.append(author_dict)
         article_dict["authors"] = author_data
     return article_dict
@@ -241,6 +225,7 @@ def get_or_create_researches(authors):
         obj = models.Researcher.get_or_create(
             given_names=author.get("given_names"),
             last_name=author.get("surname"),
+            declared_name=author.get("declared_name"),
             email=None,
             institution_name=None,
             suffix=None,

@@ -114,7 +114,7 @@ class Institution(CommonControlField, ClusterableModel):
         location,
         official,
         is_official,
-        user
+        user,
     ):
         # Institution
         # check if exists the institution

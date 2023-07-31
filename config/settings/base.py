@@ -90,7 +90,7 @@ DJANGO_APPS = [
     "django.contrib.sites",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django.contrib.humanize", # Handy template tags
+    "django.contrib.humanize",  # Handy template tags
     "django.contrib.admin",
     "django.forms",
     "django_celery_results",
@@ -394,12 +394,11 @@ RECAPTCHA_PRIVATE_KEY = env.str("RECAPTCHA_PRIVATE_KEY", default="")
 # django rest-framework
 # ------------------------------------------------------------------------------
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': env.int("DRF_PAGE_SIZE", default=10),
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": env.int("DRF_PAGE_SIZE", default=10),
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-
 }
 # JWT
 SIMPLE_JWT = {
@@ -415,10 +414,10 @@ HAYSTACK_CONNECTIONS = {
     "default": {
         "ENGINE": "haystack.backends.solr_backend.SolrEngine",
         "URL": env("SOLR_URL", default="http://solr:8983/solr/core"),
-        'ADMIN_URL': 'http://solr:8983/solr/admin/cores',
-        'INCLUDE_SPELLING': True,
+        "ADMIN_URL": "http://solr:8983/solr/admin/cores",
+        "INCLUDE_SPELLING": True,
         "SILENTLY_FAIL": False,
-        "SOLR_TIMEOUT": 10
+        "SOLR_TIMEOUT": 10,
     }
 }
 

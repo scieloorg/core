@@ -47,7 +47,7 @@ correspondencia_journal = {
     "v420": "medline_code",
     "v421": "medline_short_title",
     "v430": "classification",
-    "v435": "issn_print_or_electronic", # print or eletronic
+    "v435": "issn_print_or_electronic",  # print or eletronic
     "v440": "subject_descriptors",
     "v441": "study_area",
     "v450": "indexing_coverage",

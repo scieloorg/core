@@ -1,12 +1,15 @@
 import logging
 from datetime import datetime
 
+from django.core.files.base import ContentFile
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext as _
-from django.core.files.base import ContentFile
+from django.db.utils import IntegrityError
 from lxml import etree
+from wagtail.admin.panels import FieldPanel
 
+from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from xmlsps.xml_sps_lib import XMLWithPre
 
@@ -14,13 +17,25 @@ LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 
 
+class XMLIssueGetOrCreateError(Exception):
+    ...
+
+
 class XMLVersionXmlWithPreError(Exception):
     ...
 
 
-def xml_directory_path(instance, filename):
+class XMLVersionLatestError(Exception):
+    ...
+
+
+class XMLVersionGetError(Exception):
+    ...
+
+
+def xml_directory_path(instance, subdir):
     # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
-    return f"xml_pid_provider/{instance.finger_print[-1]}/{instance.finger_print[-2]}/{instance.finger_print}/{filename}"
+    return f"xml_pid_provider/{subdir}/{instance.pid_v3[0]}/{instance.pid_v3[-1]}/{instance.pid_v3}/{instance.finger_print}.zip"
 
 
 class XMLVersion(CommonControlField):
@@ -39,33 +54,36 @@ class XMLVersion(CommonControlField):
         ]
 
     def __str__(self):
-        return self.finger_print
+        return str(
+            dict(
+                pid_v3=self.pid_v3,
+                created=self.created.isoformat(),
+                xml=self.xml_with_pre.tostring(),
+            )
+        )
 
     @classmethod
     def create(
         cls,
         creator,
-        pid_v3,
-        pkg_name=None,
-        finger_print=None,
-        zip_xml_content=None,
+        xml_with_pre,
     ):
-        logging.info(f"XMLVersion.create({pkg_name})")
+        pid_v3 = xml_with_pre.v3
+        sps_pkg_name = xml_with_pre.sps_pkg_name
+        logging.info(f"XMLVersion.create({sps_pkg_name})")
+        subdir = sps_pkg_name[:9]
+
         obj = cls()
-        obj.finger_print = finger_print
-        obj.pkg_name = pkg_name
-        obj.save_file(pkg_name + ".zip", zip_xml_content)
+        obj.pid_v3 = pid_v3
+        obj.finger_print = xml_with_pre.finger_print
+        obj.save_file(subdir, xml_with_pre.get_zip_content(f"{sps_pkg_name}.xml"))
         obj.creator = creator
         obj.created = datetime.utcnow()
         obj.save()
-
-        # salvar pid_v3 e salvar self para evitar exceção
-        obj.pid_v3 = pid_v3
-        obj.save()
         return obj
 
-    def save_file(self, name, content):
-        self.file.save(name, ContentFile(content))
+    def save_file(self, subdir, content):
+        self.file.save(subdir, ContentFile(content))
 
     @property
     def xml_with_pre(self):
@@ -75,8 +93,48 @@ class XMLVersion(CommonControlField):
         except Exception as e:
             raise XMLVersionXmlWithPreError(
                 _("Unable to get xml with pre (XMLVersion) {}: {} {}").format(
-                    self.pkg_name, type(e), e
+                    self.pid_v3, type(e), e
                 )
+            )
+
+    @property
+    def xml(self):
+        try:
+            return self.xml_with_pre.tostring()
+        except XMLVersionXmlWithPreError as e:
+            return str(e)
+
+    @classmethod
+    def latest(cls, pid_v3):
+        if pid_v3:
+            return cls.objects.filter(pid_v3=pid_v3).latest("created")
+        raise XMLVersionLatestError(
+            "XMLVersion.get requires pid_v3 and xml_with_pre parameters"
+        )
+
+    @classmethod
+    def get(cls, pid_v3, xml_with_pre):
+        if pid_v3 and xml_with_pre:
+            return cls.objects.get(
+                pid_v3=pid_v3, finger_print=xml_with_pre.finger_print
+            )
+        raise XMLVersionGetError(
+            "XMLVersion.get requires pid_v3 and xml_with_pre parameters"
+        )
+
+    @classmethod
+    def get_or_create(cls, user, xml_with_pre):
+        try:
+            pid_v3 = xml_with_pre.v3
+            obj = cls.get(pid_v3, xml_with_pre)
+            latest = cls.latest(pid_v3)
+            if obj is latest:
+                return obj
+            raise cls.DoesNotExist
+        except cls.DoesNotExist:
+            return cls.create(
+                creator=user,
+                xml_with_pre=xml_with_pre,
             )
 
 
@@ -111,8 +169,14 @@ class XMLJournal(models.Model):
             journal = cls()
             journal.issn_electronic = issn_electronic
             journal.issn_print = issn_print
-            journal.save()
-            return journal
+            try:
+                journal.save()
+                return journal
+            except IntegrityError:
+                return cls.objects.get(
+                    issn_electronic=issn_electronic,
+                    issn_print=issn_print,
+                )
 
 
 class XMLIssue(models.Model):
@@ -148,6 +212,10 @@ class XMLIssue(models.Model):
 
     @classmethod
     def get_or_create(cls, journal, volume, number, suppl, pub_year):
+        if journal is None:
+            raise XMLIssueGetOrCreateError(f"XMLIssue.get_or_create requires journal")
+        if pub_year is None:
+            raise XMLIssueGetOrCreateError(f"XMLIssue.get_or_create requires pub_year")
         try:
             return cls.objects.get(
                 journal=journal,
@@ -163,15 +231,27 @@ class XMLIssue(models.Model):
             issue.number = number
             issue.suppl = suppl
             issue.pub_year = pub_year
-            issue.save()
-            return issue
+            try:
+                issue.save()
+                return issue
+            except IntegrityError:
+                return cls.get(
+                    journal=journal,
+                    volume=volume,
+                    number=number,
+                    suppl=suppl,
+                    pub_year=pub_year,
+                )
 
 
 class XMLSPS(CommonControlField):
+    is_published = models.BooleanField(_("Is published"), null=True, blank=True)
     pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True)
     pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
     aop_pid = models.CharField(_("AOP PID"), max_length=23, null=True, blank=True)
-    xml_version = models.ForeignKey(XMLVersion, null=True, blank=True, on_delete=models.SET_NULL)
+    xml_version = models.ForeignKey(
+        XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
+    )
     xml_journal = models.ForeignKey(
         XMLJournal, null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -179,14 +259,27 @@ class XMLSPS(CommonControlField):
         XMLIssue, null=True, blank=True, on_delete=models.SET_NULL
     )
 
+    base_form_class = CoreAdminModelForm
+
+    panels = [
+        FieldPanel("is_published"),
+        FieldPanel("pid_v3"),
+        FieldPanel("pid_v2"),
+        FieldPanel("aop_pid"),
+        FieldPanel("xml_journal"),
+        FieldPanel("xml_issue"),
+        FieldPanel("xml_version"),
+    ]
+
     class Meta:
         indexes = [
             models.Index(fields=["pid_v2"]),
             models.Index(fields=["pid_v3"]),
             models.Index(fields=["aop_pid"]),
-            models.Index(fields=["xml_journal"]),
-            models.Index(fields=["xml_issue"]),
         ]
+
+    def __str__(self):
+        return f"{self.pid_v3} {self.pid_v2} {self.aop_pid}"
 
     @classmethod
     def list(cls, from_date):
@@ -196,15 +289,11 @@ class XMLSPS(CommonControlField):
 
     @property
     def xml(self):
-        return self.xml_version.xml_with_pre.tostring()
+        return self.xml_version.xml
 
     @property
     def xml_with_pre(self):
         return self.xml_version.xml_with_pre
-
-    @property
-    def xmltree(self):
-        return self.xml_version.xml_with_pre.xmltree
 
     @classmethod
     def get(cls, pid_v3):
@@ -212,7 +301,15 @@ class XMLSPS(CommonControlField):
 
     @classmethod
     def create_or_update(
-        cls, pid_v3, pid_v2, aop_pid, xml_version, xml_journal, xml_issue, user
+        cls,
+        pid_v3,
+        pid_v2,
+        aop_pid,
+        xml_version,
+        xml_journal,
+        xml_issue,
+        user,
+        is_published,
     ):
         try:
             obj = cls.get(pid_v3=pid_v3)
@@ -221,10 +318,11 @@ class XMLSPS(CommonControlField):
             obj = cls()
             obj.pid_v3 = pid_v3
             obj.creator = user
-        obj.pid_v2 = pid_v2
-        obj.aop_pid = aop_pid
-        obj.xml_version = xml_version
-        obj.xml_issue = xml_issue
-        obj.xml_journal = xml_journal
+        obj.pid_v2 = pid_v2 or obj.pid_v2
+        obj.aop_pid = aop_pid or obj.aop_pid
+        obj.xml_version = xml_version or obj.xml_version
+        obj.xml_issue = xml_issue or obj.xml_issue
+        obj.xml_journal = xml_journal or obj.xml_journal
+        obj.is_published = is_published
         obj.save()
         return obj
