@@ -76,7 +76,7 @@ class Dataverse(CommonControlField, CommonDataField):
             obj.identifier = identifier
             obj.creator = user
         except (cls.MultipleObjectsReturned, DataverseCreateOrUpdateError) as e:
-            raise DataverseCreateOrUpdateError(e) 
+            raise DataverseCreateOrUpdateError(e)
 
         obj.name = name or obj.name
         obj.identifier = identifier or obj.identifier
@@ -122,7 +122,7 @@ class Dataset(CommonControlField, CommonDataField):
     @classmethod
     def get(cls, global_id):
         if global_id:
-                return cls.objects.get(global_id=global_id)
+            return cls.objects.get(global_id=global_id)
         raise DatasetGetError()
 
     @classmethod
@@ -163,7 +163,9 @@ class Dataset(CommonControlField, CommonDataField):
         obj.type = type or obj.type
         obj.url = url or obj.url
         obj.published_at = published_at or obj.published_at
-        obj.identifier_of_dataverse = identifier_of_dataverse or obj.identifier_of_dataverse
+        obj.identifier_of_dataverse = (
+            identifier_of_dataverse or obj.identifier_of_dataverse
+        )
         obj.publisher = publisher or obj.publisher
         obj.save()
         if authors:
