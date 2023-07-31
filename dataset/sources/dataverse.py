@@ -12,6 +12,8 @@ from dataset.models import (
 from thematic_areas.models import ThematicArea
 from vocabulary.models import Keyword
 
+from dataset.utils.fields_data import fields_dataset, fields_file, fields_dataverse
+
 
 def load_from_data_scielo(user):
     rows = 10
@@ -30,27 +32,23 @@ def load_from_data_scielo(user):
         for data in data["data"]["items"]:
             func = dict_func.get(data["type"])
             if func:
-                func(user, data)
+                fields_name = "fields_" + data["type"]
+                fields = globals().get(fields_name)
+                relevant_data = {k: data[k] for k in fields if k in data}
+                func(user, **relevant_data)
 
         start += rows
         condition = start < total
 
 
-def process_dataverses(user, kwargs):
+def process_dataverses(user, **kwargs):
+    obj = Dataverse.create_or_update(**kwargs, user=user)
+    return obj
+
+
+def process_datasets(user, **kwargs):
     obj = Dataverse.create_or_update(
-        name=kwargs.get("name"),
-        identifier=kwargs.get("identifier"),
-        type=kwargs.get("type"),
-        url=kwargs.get("url"),
-        published_at=kwargs.get("published_at"),
-        description=kwargs.get("description"),
-        user=user,
-    )
-
-
-def process_datasets(user, kwargs):
-    obj, created = Dataverse.objects.get_or_create(
-        identifier=kwargs.get("identifier_of_dataverse"),
+        identifier=kwargs.get("identifier_of_dataverse"), user=user
     )
     authors = get_or_create_authors(authors=kwargs.get("authors"), user=user)
     keywords = get_or_create_keywords(keywords=kwargs.get("keywords"), user=user)
@@ -62,40 +60,27 @@ def process_datasets(user, kwargs):
     publication = get_or_create_publications(
         publications=kwargs.get("publications"), user=user
     )
-    obj = Dataset.create_or_update(
-        global_id=kwargs.get("global_id"),
-        name=kwargs.get("name"),
-        type=kwargs.get("type"),
-        url=kwargs.get("url"),
-        published_at=kwargs.get("published_at"),
-        description=kwargs.get("description"),
-        citation_html=kwargs.get("citationHtml"),
-        citation=kwargs.get("citation"),
-        publisher=publisher,
-        dataverse=obj,
-        authors=authors,
-        keywords=keywords,
-        thematic_area=thematic_area,
-        contacts=contacts,
-        publications=publication,
+    kwargs.update(
+        {
+            "identifier_of_dataverse": obj,
+            "authors": authors,
+            "keywords": keywords,
+            "thematic_area": thematic_area,
+            "contacts": contacts,
+            "publisher": publisher,
+            "publications": publication,
+        }
     )
+    obj = Dataset.create_or_update(**kwargs, user=user)
 
 
-def process_files(user, kwargs):
-    dataset, created = Dataset.objects.get_or_create(
+def process_files(user, **kwargs):
+    dataset = Dataset.create_or_update(
         global_id=kwargs.get("dataset_persistent_id"),
-    )
-    obj = File.create_or_update(
-        file_persistent_id=kwargs.get("file_persistent_id"),
-        name=kwargs.get("name"),
-        type=kwargs.get("type"),
-        url=kwargs.get("url"),
-        published_at=kwargs.get("published_at"),
-        file_type=kwargs.get("file_type"),
-        file_content_type=kwargs.get("file_content_type"),
-        dataset=dataset,
         user=user,
     )
+    kwargs.update({"dataset_persistent_id": dataset})
+    obj = File.create_or_update(**kwargs, user=user)
 
 
 def get_or_create_authors(authors, user):
