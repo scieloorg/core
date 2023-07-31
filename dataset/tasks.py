@@ -17,5 +17,7 @@ def _get_user(request, username=None, user_id=None):
 
 @celery_app.task(bind=True)
 def load_dataset(self, user_id=None):
-    user = _get_user(self.request, user_id=user_id)
+    # TODO
+    # Pgar usuario da sessao
+    user = User.objects.first()
     load_from_data_scielo(user)
