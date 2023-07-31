@@ -229,7 +229,7 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
         FieldPanel("official"),
         FieldPanel("title"),
         FieldPanel("short_title"),
-        FieldPanel("collection"),
+        InlinePanel("collection"),
     ]
 
     panels_mission = [
