@@ -1,4 +1,5 @@
 from core.utils import utils
+from core.utils.rename_dictionary_keys import rename_dictionary_keys
 from journal.utils.correspondencia import correspondencia_journal
 from journal.utils.journal_utils import create_or_update_scielo_journal
 from core.utils.rename_dictionary_keys import rename_dictionary_keys

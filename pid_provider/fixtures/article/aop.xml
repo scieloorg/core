@@ -1,0 +1,165 @@
+<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.1 20151215//EN" "http://jats.nlm.nih.gov/publishing/1.1/JATS-journalpublishing1.dtd">
+<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" article-type="research-article" dtd-version="1.1" specific-use="sps-1.9" xml:lang="pt">
+  <front>
+    <journal-meta>
+      <journal-id journal-id-type="publisher-id">esa</journal-id>
+      <journal-title-group>
+        <journal-title>Engenharia Sanitaria e Ambiental</journal-title>
+        <abbrev-journal-title abbrev-type="publisher">Eng. Sanit. Ambient.</abbrev-journal-title>
+      </journal-title-group>
+      <issn pub-type="ppub">1413-4152</issn>
+      <issn pub-type="epub">1809-4457</issn>
+      <publisher>
+        <publisher-name>Associação Brasileira de Engenharia Sanitária e Ambiental - ABES</publisher-name>
+      </publisher>
+    </journal-meta>
+    <article-meta>
+      <article-id specific-use="scielo-v3" pub-id-type="publisher-id">yH6CLqxFJsQKrHj7zXkwL36</article-id>
+      <article-id specific-use="scielo-v2" pub-id-type="publisher-id">S1413-41522020000400628</article-id>
+      <article-id pub-id-type="doi">10.1590/S1413-4152202020180029</article-id>
+      <article-categories>
+        <subj-group subj-group-type="heading">
+          <subject>Artigo Técnico</subject>
+        </subj-group>
+      </article-categories>
+      <title-group>
+        <article-title>Aproveitamento energético dos resíduos de cascas de coco verde para produção de briquetes</article-title>
+        <trans-title-group xml:lang="en">
+          <trans-title>Energetic improvement of waste of green coconut shells to briquettes production</trans-title>
+        </trans-title-group>
+      </title-group>
+      <contrib-group>
+        <contrib contrib-type="author">
+          <contrib-id contrib-id-type="orcid">0000-0003-3365-4708</contrib-id>
+          <name>
+            <surname>Miola</surname>
+            <given-names>Brígida</given-names>
+          </name>
+          <xref ref-type="aff" rid="aff1">
+            <sup>1</sup>
+          </xref>
+          <xref ref-type="corresp" rid="c1">*</xref>
+        </contrib>
+        <contrib contrib-type="author">
+          <contrib-id contrib-id-type="orcid">0000-0002-5599-4335</contrib-id>
+          <name>
+            <surname>Frota</surname>
+            <given-names>Maria Myrian Melo</given-names>
+          </name>
+          <xref ref-type="aff" rid="aff1">
+            <sup>1</sup>
+          </xref>
+        </contrib>
+        <contrib contrib-type="author">
+          <contrib-id contrib-id-type="orcid">0000-0001-9222-9862</contrib-id>
+          <name>
+            <surname>Oliveira</surname>
+            <given-names>André Gadelha de</given-names>
+          </name>
+          <xref ref-type="aff" rid="aff1">
+            <sup>1</sup>
+          </xref>
+        </contrib>
+        <contrib contrib-type="author">
+          <contrib-id contrib-id-type="orcid">0000-0002-0477-755X</contrib-id>
+          <name>
+            <surname>Uchôa</surname>
+            <given-names>Kênio Monteles</given-names>
+          </name>
+          <xref ref-type="aff" rid="aff1">
+            <sup>1</sup>
+          </xref>
+        </contrib>
+        <contrib contrib-type="author">
+          <contrib-id contrib-id-type="orcid">0000-0001-9691-295X</contrib-id>
+          <name>
+            <surname>Leandro</surname>
+            <given-names>Francisco de Assis</given-names>
+            <suffix>Filho</suffix>
+          </name>
+          <xref ref-type="aff" rid="aff2">
+            <sup>2</sup>
+          </xref>
+        </contrib>
+      </contrib-group>
+      <aff id="aff1">
+        <label>1</label>
+        <institution content-type="original">Centro de Ciências Tecnológicas, Universidade de Fortaleza - Fortaleza (CE), Brasil.</institution>
+        <institution content-type="orgdiv1">Centro de Ciências Tecnológicas</institution>
+        <institution content-type="orgname">Universidade de Fortaleza</institution>
+        <addr-line>
+          <city>Fortaleza</city>
+          <state>CE</state>
+        </addr-line>
+        <country country="BR">Brazil</country>
+      </aff>
+      <aff id="aff2">
+        <label>2</label>
+        <institution content-type="original">Instituto Federal de Educação do Ceará - Fortaleza (CE), Brasil.</institution>
+        <institution content-type="orgname">Instituto Federal de Educação do Ceará</institution>
+        <addr-line>
+          <city>Fortaleza</city>
+          <state>CE</state>
+        </addr-line>
+        <country country="BR">Brazil</country>
+      </aff>
+      <author-notes>
+        <corresp id="c1">
+          <label>*</label>
+          <bold>Autora correspondente:</bold>
+          <email>bmiola@gmail.com</email>
+        </corresp>
+      </author-notes>
+      <pub-date date-type="pub" publication-format="electronic">
+        <day>03</day>
+        <month>08</month>
+        <year>2020</year>
+      </pub-date>
+      <history>
+        <date date-type="received">
+          <day>24</day>
+          <month>06</month>
+          <year>2018</year>
+        </date>
+        <date date-type="accepted">
+          <day>16</day>
+          <month>04</month>
+          <year>2019</year>
+        </date>
+      </history>
+      <permissions>
+        <license license-type="open-access" xlink:href="https://creativecommons.org/licenses/by/4.0/" xml:lang="pt">
+          <license-p>Este é um artigo publicado em acesso aberto sob uma licença Creative Commons</license-p>
+        </license>
+      </permissions>
+      <abstract>
+        <title>RESUMO</title>
+        <p>A casca de coco verde é considerada um resíduo de complexa degradação, podendo ser também foco de proliferação de doenças. Com base nessa premissa e com a necessidade de se estudarem novas fontes renováveis de energia, a utilização de resíduos de casca de coco verde como fonte energética apresenta aspectos benéficos, desde que seja viável econômica e tecnicamente. Assim, este artigo visa avaliar o potencial energético da casca do coco verde por meio da produção de briquetes. Foram realizadas análises das características físico-químicas dos briquetes e da biomassa <italic>in natura</italic>. Como resultados, foram encontrados poder calorífico de 13,6 MJ/kg para biomassa <italic>in natura</italic>; já para os briquetes, com aglutinantes água e amido, os valores foram de 15,6 e 11,7 MJ/kg, respectivamente. O poder calorífico da biomassa <italic>in natura</italic> não resultou valores inferiores quando comparados com a literatura de referência, porém sua umidade e teor de cinzas se apresentaram bastante elevados. Para os briquetes produzidos, esses valores se reduzem e o poder calorífico é considerado alto e eficiente para fins de geração de calor. Dessa forma, verifica-se o potencial de utilização dos resíduos da casca como alternativa energética, além das vantagens socioeconômicas e ambientais.</p>
+      </abstract>
+      <trans-abstract xml:lang="en">
+        <title>ABSTRACT</title>
+        <p>A green coconut shell is considered a residue of complex degradation, and can also be a focus of proliferation of diseases. Based on this premise, it is necessary to study new renewable sources of energy, the use of residues of green coconut shell as an energy source has beneficial aspects, since economically and technically viable. Thus, this article aims to evaluate the energy potential of the green coconut shell through the briquettes production. Analyzes of the physic-chemical characteristics of the briquettes and of the <italic>in natura</italic> biomass were carried out. As a result, a calorific value of 13.6 MJ/kg was found for <italic>in natura</italic> biomass, for the briquettes, with binder water and starch, presented calorific value of 15.6 and 11.7 MJ/kg, respectively. The calorific value in the <italic>in natura</italic> biomass did not result in much lower values compared to the reference literature; however, its humidity and ash content were quite high. For the briquettes produced, these values are reduced and the calorific value is considered high and efficient if it is treated for purposes of heat generation. Thus, the potential for using bark residues as an alternative energy is verified, in addition to the socioeconomic and environmental advantages.</p>
+      </trans-abstract>
+      <kwd-group xml:lang="pt">
+        <title>Palavras-chave:</title>
+        <kwd>briquetes</kwd>
+        <kwd>biomassa</kwd>
+        <kwd>casca de coco verde</kwd>
+        <kwd>potencial energético</kwd>
+      </kwd-group>
+      <kwd-group xml:lang="en">
+        <title>Keywords:</title>
+        <kwd>briquettes</kwd>
+        <kwd>biomass</kwd>
+        <kwd>green coconut shell</kwd>
+        <kwd>energy potential</kwd>
+      </kwd-group>
+      <counts>
+        <fig-count count="4"/>
+        <table-count count="3"/>
+        <equation-count count="11"/>
+        <ref-count count="19"/>
+      </counts>
+    </article-meta>
+  </front>
+</article>

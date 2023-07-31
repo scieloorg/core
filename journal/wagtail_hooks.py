@@ -7,7 +7,7 @@ from wagtail.contrib.modeladmin.options import (
 )
 from wagtail.contrib.modeladmin.views import CreateView
 
-from .models import OfficialJournal, Journal, SciELOJournal
+from .models import Journal, OfficialJournal, SciELOJournal
 
 
 class OfficialJournalCreateView(CreateView):

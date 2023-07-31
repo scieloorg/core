@@ -1,4 +1,5 @@
 from django import template
+
 from search.choices import translates
 
 register = template.Library()

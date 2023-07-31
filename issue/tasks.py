@@ -4,7 +4,6 @@ from config import celery_app
 from issue import controller
 from issue.sources.article_meta import process_issue_article_meta
 
-
 User = get_user_model()
 
 

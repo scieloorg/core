@@ -1,0 +1,1017 @@
+<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.0 20120330//EN" "JATS-journalpublishing1.dtd">
+<article xmlns:xlink="http://www.w3.org/1999/xlink" specific-use="sps-1.4" dtd-version="1.0" xml:lang="en" article-type="research-article">
+    <front>
+    <journal-meta>
+    <journal-id journal-id-type="publisher-id">abb</journal-id>
+<journal-title-group>
+    <journal-title>Acta Botanica Brasilica</journal-title>
+<abbrev-journal-title abbrev-type="publisher">Acta Bot. Bras.</abbrev-journal-title>
+</journal-title-group>
+<issn pub-type="ppub">0102-3306</issn>
+<issn pub-type="epub">1677-941X</issn>
+<publisher>
+    <publisher-name>Sociedade Botânica do Brasil</publisher-name>
+<publisher-loc>Alta Floresta, MT, Brazil</publisher-loc>
+</publisher>
+</journal-meta>
+<article-meta>
+    <article-id pub-id-type="publisher-id" specific-use="scielo-v2">S0102-33062023000100103</article-id>
+<article-id pub-id-type="publisher-id" specific-use="scielo-v1">S0102-3306(23)03700000103</article-id>
+<article-id pub-id-type="doi">10.1590/1677-941x-abb-2022-0203</article-id>
+<article-categories>
+    <subj-group subj-group-type="heading">
+    <subject>Original Article</subject>
+</subj-group>
+</article-categories>
+<title-group>
+    <article-title>Duguetia leucotricha (Annonaceae), a new species from the Atlantic Coastal Forest of Brazil</article-title>
+</title-group>
+<contrib-group>
+    <contrib contrib-type="author">
+    <name>
+    <surname>Bazante</surname>
+<given-names>Márcio L.</given-names>
+</name>
+<xref ref-type="aff" rid="aff1"/>
+</contrib>
+<contrib contrib-type="author">
+    <name>
+    <surname>Maas</surname>
+<given-names>Paul J. M.</given-names>
+</name>
+<xref ref-type="aff" rid="aff2"/>
+</contrib>
+<contrib contrib-type="author">
+    <name>
+    <surname>Barbosa</surname>
+<given-names>Maria Regina de V.</given-names>
+</name>
+<xref ref-type="aff" rid="aff3"/>
+</contrib>
+</contrib-group>
+<aff id="aff2">
+    <addr-line>
+    <named-content content-type="city">Leiden</named-content>
+</addr-line>
+<institution content-type="orgname">Naturalis Biodiversity Center</institution>
+<institution content-type="orgdiv1">section Botany </institution>
+<country country="">The Netherlands</country>
+</aff>
+<aff id="aff1">
+    <addr-line>
+    <named-content content-type="city">Recife</named-content>
+<named-content content-type="state">Pernambuco</named-content>
+</addr-line>
+<institution content-type="orgname">Universidade Federal de Pernambuco</institution>
+<institution content-type="orgdiv1">Programa de Pós-Graduação em Biologia Vegetal </institution>
+<country country="BR">Brazil</country>
+</aff>
+<aff id="aff3">
+    <addr-line>
+    <named-content content-type="city">João Pessoa</named-content>
+<named-content content-type="state">
+</named-content>
+</addr-line>
+<institution content-type="orgname">Universidade Federal da Paraíba</institution>
+<institution content-type="orgdiv1">Departamento de Sistemática e Ecologia </institution>
+<country country="BR">Brazil</country>
+</aff>
+<pub-date pub-type="epub-ppub">
+    <year>2023</year>
+</pub-date>
+<volume>37</volume>
+<elocation-id>e20220203</elocation-id>
+<history>
+    <date date-type="received">
+    <day>08</day>
+<month>08</month>
+<year>2022</year>
+</date>
+<date date-type="accepted">
+    <day>08</day>
+<month>12</month>
+<year>2022</year>
+</date>
+</history>
+<permissions>
+    <license license-type="open-access" xlink:href="http://creativecommons.org/licenses/by/4.0/" xml:lang="en">
+    <license-p>This work is licensed under a Creative Commons Attribution 4.0 International License.</license-p>
+</license>
+</permissions>
+<abstract>
+    <p>Abstract A new species of Annonaceae, Duguetia leucotricha M.L.Bazante &amp; Maas, from lowland to submontane forests of southern Bahia, Brazil, is described. It differs from other species of the genus mainly by the dense greyish white stellate hairs on vegetative and reproductive structures, rather widely-spaced flowers, the large bract in the upper part of the well-developed pedicel, sepals and petals almost equal in length, and the few-carpellate fruits with rounded apex of the areoles. Commentaries concerning its morphological aspects and relationships of affinity, geographic distribution, conservation status and photos are provided, as well as a key to all Atlantic Coastal Forest species of Duguetia.</p>
+</abstract>
+<kwd-group xml:lang="en" kwd-group-type="author-generated">
+    <kwd>Annonoideae</kwd>
+<kwd>Bahia</kwd>
+<kwd>Duguetieae</kwd>
+<kwd>Northeast Region</kwd>
+<kwd>Neotropics</kwd>
+<kwd>taxonomy</kwd>
+</kwd-group>
+<counts>
+    <fig-count count="0"/>
+<table-count count="0"/>
+<equation-count count="0"/>
+<ref-count count="43"/>
+<page-count count="0"/>
+</counts>
+</article-meta>
+</front>
+<back>
+    <ref-list>
+    <ref id="B1">
+    <element-citation publication-type="journal">
+    <article-title>The Atlantic Coastal Forests of Northeastern Brazil</article-title>
+<source>Memoirs of the New York Botanical Garden</source>
+<date>
+    <year>2008</year>
+</date>
+<fpage>67</fpage>
+<lpage>146</lpage>
+<volume>100</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Amorim</surname>
+<given-names>AM</given-names>
+</name>
+<name>
+    <surname>Thomas</surname>
+<given-names>WW</given-names>
+</name>
+<name>
+    <surname>Carvalho</surname>
+<given-names>AMV</given-names>
+</name>
+<name>
+    <surname>Jardim</surname>
+<given-names>JG</given-names>
+</name>
+<name>
+    <surname>Thomas</surname>
+<given-names>WW</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B2">
+    <element-citation publication-type="journal">
+    <article-title>Supporting red list threat assessments with GeoCAT: Geospatial conservation assessment tool</article-title>
+<source>ZooKeys</source>
+<date>
+    <year>2011</year>
+</date>
+<fpage>117</fpage>
+<lpage>126</lpage>
+<volume>150</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Bachman</surname>
+<given-names>S</given-names>
+</name>
+<name>
+    <surname>Moat</surname>
+<given-names>J</given-names>
+</name>
+<name>
+    <surname>Hill</surname>
+<given-names>AW</given-names>
+</name>
+<name>
+    <surname>Torre</surname>
+<given-names>JL</given-names>
+</name>
+<name>
+    <surname>Scott</surname>
+<given-names>B</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B3">
+    <element-citation publication-type="journal">
+    <article-title>A new species of Duguetia (Annonaceae) from the Atlantic Forest of northeastern Brazil</article-title>
+<source>Phytotaxa</source>
+<date>
+    <year>2017</year>
+</date>
+<fpage>266</fpage>
+<lpage>272</lpage>
+<volume>314</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Bazante</surname>
+<given-names>M</given-names>
+</name>
+<name>
+    <surname>Alves</surname>
+<given-names>M</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B4">
+    <element-citation publication-type="journal">
+    <article-title>New records of Annonaceae in the Northeast Brazil</article-title>
+<source>Acta Brasiliensis</source>
+<date>
+    <year>2021</year>
+</date>
+<fpage>25</fpage>
+<lpage>34</lpage>
+<volume>5</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Bazante</surname>
+<given-names>ML</given-names>
+</name>
+<name>
+    <surname>Alves</surname>
+<given-names>M</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B5">
+    <element-citation publication-type="book">
+    <source>Decreto Nº 8.650. Altera a poligonal e a denominação da Área de Proteção Ambiental APA da Lagoa Encantada</source>
+<date>
+    <year>2003</year>
+</date>
+<comment>http://www.legislabahia.ba.gov.br/documentos/decreto-no-8650-de-22-de-setembro-de-2003#</comment>
+</element-citation>
+</ref>
+<ref id="B6">
+    <element-citation publication-type="book">
+    <source>Decreto Nº 8.702. Redefine a poligonal do Parque Estadual da Serra do Conduru</source>
+<date>
+    <year>2003</year>
+</date>
+<comment>http://www.legislabahia.ba.gov.br/documentos/decreto-no-8702-de-04-de-novembro-de-2003#</comment>
+</element-citation>
+</ref>
+<ref id="B7">
+    <element-citation publication-type="book">
+    <source>Decreto s/n</source>
+<date>
+    <year>2007</year>
+</date>
+<comment>https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2007/dnn/dnn11456.htm</comment>
+</element-citation>
+</ref>
+<ref id="B8">
+    <element-citation publication-type="book">
+    <source>Parecer técnico Nº 05/2015</source>
+<date>
+    <year>2015</year>
+</date>
+<comment>http://www.ceama.mp.ba.gov.br/biblioteca-virtual-ceama/doc_view/3826-rappam-parecer-apa-lagoa-encantada-versao-final-12-11-2015.html</comment>
+</element-citation>
+</ref>
+<ref id="B9">
+    <element-citation publication-type="journal">
+    <article-title>Studies in Annonaceae XXXVI. The Duguetia alliance: where the ways part</article-title>
+<source>Annals of the Missouri Botanical Garden</source>
+<date>
+    <year>2000</year>
+</date>
+<fpage>234</fpage>
+<lpage>245</lpage>
+<volume>87</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Chatrou</surname>
+<given-names>LW</given-names>
+</name>
+<name>
+    <surname>Koek-Noorman</surname>
+<given-names>J</given-names>
+</name>
+<name>
+    <surname>Maas</surname>
+<given-names>PJM</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B10">
+    <element-citation publication-type="journal">
+    <article-title>A new subfamilial and tribal classification of the pantropical flowering plant family Annonaceae informed by molecular phylogenetics</article-title>
+<source>Botanical Journal of the Linnean Society</source>
+<date>
+    <year>2012</year>
+</date>
+<fpage>5</fpage>
+<lpage>40</lpage>
+<volume>169</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Chatrou</surname>
+<given-names>LW</given-names>
+</name>
+<name>
+    <surname>Pirie</surname>
+<given-names>MD</given-names>
+</name>
+<name>
+    <surname>Erkens</surname>
+<given-names>RHJ</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B11">
+    <element-citation publication-type="journal">
+    <article-title>Revision der Arten einiger Anonaceen-Gattungen III</article-title>
+<source>Acta Horti Bergiani</source>
+<date>
+    <year>1934</year>
+</date>
+<fpage>28</fpage>
+<lpage>106</lpage>
+<volume>12</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Fries</surname>
+<given-names>RE</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B12">
+    <element-citation publication-type="journal">
+    <article-title>Contributions to the Flora of Tropical America XLVII: Annonaceae new to British Guiana</article-title>
+<source>Kew Bulletin</source>
+<date>
+    <year>1948</year>
+</date>
+<fpage>229</fpage>
+<lpage>235</lpage>
+<volume>1948</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Fries</surname>
+<given-names>RE</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B13">
+    <element-citation publication-type="journal">
+    <article-title>The botany of the Guayana Highlands, Part II</article-title>
+<source>Memoirs of the New York Botanical Garden</source>
+<date>
+    <year>1957</year>
+</date>
+<fpage>325</fpage>
+<lpage>331</lpage>
+<volume>9</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Fries</surname>
+<given-names>RE</given-names>
+</name>
+<name>
+    <surname>Maguire</surname>
+<given-names>B</given-names>
+</name>
+<name>
+    <surname>Wurdack</surname>
+<given-names>JJ</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B14">
+    <element-citation publication-type="journal">
+    <article-title>A mega-phylogeny of the Annonaceae: Taxonomic placement of five enigmatic genera and recognition of a new tribe, Phoenicantheae</article-title>
+<source>Scientific Reports</source>
+<date>
+    <year>2017</year>
+</date>
+<volume>7</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Guo</surname>
+<given-names>X</given-names>
+</name>
+<name>
+    <surname>Tang</surname>
+<given-names>CC</given-names>
+</name>
+<name>
+    <surname>Thomas</surname>
+<given-names>DC</given-names>
+</name>
+<name>
+    <surname>Couvreur</surname>
+<given-names>TLP</given-names>
+</name>
+<name>
+    <surname>Saunders</surname>
+<given-names>RMK</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B15">
+    <element-citation publication-type="book">
+    <source>Portal de Mapas</source>
+<date>
+    <year>2022</year>
+</date>
+<comment>https://portaldemapas.ibge.gov.br/portal.php#homepage</comment>
+</element-citation>
+</ref>
+<ref id="B16">
+    <element-citation publication-type="book">
+    <source>Guidelines for using the IUCN Red List categories and criteria. Version 14</source>
+<date>
+    <year>2019</year>
+</date>
+</element-citation>
+</ref>
+<ref id="B17">
+    <element-citation publication-type="book">
+    <source>Corredor de Biodiversidade da Mata Atlântica do sul da Bahia. Ilhéus, Instituto de Estudos Sócio-Ambientais do Sul da Bahia e Conservation International do Brasil</source>
+<date>
+    <year>2003</year>
+</date>
+<fpage>1</fpage>
+<lpage>200</lpage>
+<person-group person-group-type="author">
+    <name>
+    <surname>Jardim</surname>
+<given-names>JG</given-names>
+</name>
+<name>
+    <surname>Prado</surname>
+<given-names>PI</given-names>
+</name>
+<name>
+    <surname>Landau</surname>
+<given-names>EC</given-names>
+</name>
+<name>
+    <surname>Moura</surname>
+<given-names>RT</given-names>
+</name>
+<name>
+    <surname>Pinto</surname>
+<given-names>LPS</given-names>
+</name>
+<name>
+    <surname>Fonseca</surname>
+<given-names>GAB</given-names>
+</name>
+<name>
+    <surname>Alger</surname>
+<given-names>K</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B18">
+    <element-citation publication-type="book">
+    <source>Flora do Brasil 2020</source>
+<date>
+    <year>2020</year>
+</date>
+<person-group person-group-type="author">
+    <name>
+    <surname>Lobão</surname>
+<given-names>AQ</given-names>
+</name>
+<name>
+    <surname>Bazante</surname>
+<given-names>ML</given-names>
+</name>
+</person-group>
+<comment>http://reflora.jbrj.gov.br/reflora/</comment>
+</element-citation>
+</ref>
+<ref id="B19">
+    <element-citation publication-type="journal">
+    <article-title>Annonaceae da Reserva Natural Vale, Linhares, Espírito Santo</article-title>
+<source>Rodriguésia</source>
+<date>
+    <year>2014</year>
+</date>
+<fpage>599</fpage>
+<lpage>635</lpage>
+<volume>65</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Lopes</surname>
+<given-names>JC</given-names>
+</name>
+<name>
+    <surname>Mello-Silva</surname>
+<given-names>R</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B20">
+    <element-citation publication-type="journal">
+    <article-title>Studies in Annonaceae XVIII. New species from the Neotropics and miscellaneous notes</article-title>
+<source>Botanische Jahrbücher für Systematik, Pflanzengeschichte und Pflanzengeographie</source>
+<date>
+    <year>1993</year>
+</date>
+<fpage>77</fpage>
+<lpage>95</lpage>
+<volume>115</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Maas</surname>
+<given-names>PJM</given-names>
+</name>
+<name>
+    <surname>Koek-Noorman</surname>
+<given-names>J</given-names>
+</name>
+<name>
+    <surname>Westra</surname>
+<given-names>LYT</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B21">
+    <element-citation publication-type="journal">
+    <article-title>Annonaceae from Central-eastern Brazil</article-title>
+<source>Rodriguésia</source>
+<date>
+    <year>2002</year>
+</date>
+<fpage>61</fpage>
+<lpage>94</lpage>
+<volume>52</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Maas</surname>
+<given-names>PJM</given-names>
+</name>
+<name>
+    <surname>Maas-van de Kamer</surname>
+<given-names>H</given-names>
+</name>
+<name>
+    <surname>Junikka</surname>
+<given-names>L</given-names>
+</name>
+<name>
+    <surname>Mello-Silva</surname>
+<given-names>R</given-names>
+</name>
+<name>
+    <surname>Rainer</surname>
+<given-names>H</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B22">
+    <element-citation publication-type="journal">
+    <article-title>Duguetia</article-title>
+<source>Flora Neotropica Monograph</source>
+<date>
+    <year>2003</year>
+</date>
+<fpage>1</fpage>
+<lpage>274</lpage>
+<volume>88</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Maas</surname>
+<given-names>PJM</given-names>
+</name>
+<name>
+    <surname>Westra</surname>
+<given-names>LYT</given-names>
+</name>
+<name>
+    <surname>Chatrou</surname>
+<given-names>LW</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B23">
+    <element-citation publication-type="journal">
+    <article-title>Studies in Annonaceae XV. A taxonomic revision of Duguetia A. F. C. P. de Saint-Hilaire Sect. Geanthemum (R. E. Fries) R. E. Fries (Annonaceae)</article-title>
+<source>Boletim do Museu Paraense Emilio Goeldi, Série Botânica</source>
+<date>
+    <year>1994</year>
+</date>
+<fpage>31</fpage>
+<lpage>58</lpage>
+<volume>9</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Maas</surname>
+<given-names>PJM</given-names>
+</name>
+<name>
+    <surname>Westra</surname>
+<given-names>LYT</given-names>
+</name>
+<name>
+    <surname>Meijdam</surname>
+<given-names>NAJ</given-names>
+</name>
+<name>
+    <surname>Tol</surname>
+<given-names>IAV van</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B24">
+    <element-citation publication-type="journal">
+    <article-title>New species of Annonaceae from the Neotropics and miscellaneous notes</article-title>
+<source>Blumea</source>
+<date>
+    <year>2010</year>
+</date>
+<fpage>259</fpage>
+<lpage>275</lpage>
+<volume>55</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Maas</surname>
+<given-names>PJM</given-names>
+</name>
+<name>
+    <surname>Westra</surname>
+<given-names>LYT</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B25">
+    <element-citation publication-type="journal">
+    <article-title>Studies in Annonaceae XXX. Monograph of Duguetia: preliminary notes</article-title>
+<source>Botanische Jahrbücher für Systematik, Pflanzengeschichte und Pflanzengeographie</source>
+<date>
+    <year>1996</year>
+</date>
+<fpage>187</fpage>
+<lpage>227</lpage>
+<volume>118</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Maas</surname>
+<given-names>PJM</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B26">
+    <element-citation publication-type="journal">
+    <article-title>Studies in Annonaceae XXXVII. Monograph of Duguetia: preliminary notes II</article-title>
+<source>Botanische Jahrbücher für Systematik, Pflanzengeschichte und Pflanzengeographie</source>
+<date>
+    <year>1999</year>
+</date>
+<fpage>465</fpage>
+<lpage>489</lpage>
+<volume>121</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Maas</surname>
+<given-names>PJM</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B27">
+    <element-citation publication-type="journal">
+    <article-title>A hot-point within a hot-spot: a high diversity site in Brazil’s Atlantic Forest</article-title>
+<source>Biodiversity and Conservation</source>
+<date>
+    <year>2007</year>
+</date>
+<fpage>3111</fpage>
+<lpage>3128</lpage>
+<volume>16</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Martini</surname>
+<given-names>AMZ</given-names>
+</name>
+<name>
+    <surname>Fiaschi</surname>
+<given-names>P</given-names>
+</name>
+<name>
+    <surname>Amorim</surname>
+<given-names>AM</given-names>
+</name>
+<name>
+    <surname>Paixão</surname>
+<given-names>JL</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B28">
+    <element-citation publication-type="book">
+    <source>Flora Brasiliensis</source>
+<date>
+    <year>1841</year>
+</date>
+<volume>XIII</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Martius</surname>
+<given-names>CFP von</given-names>
+</name>
+<name>
+    <surname>Martius</surname>
+<given-names>CFP von</given-names>
+</name>
+<name>
+    <surname>Eichler</surname>
+<given-names>AG</given-names>
+</name>
+<name>
+    <surname>Urban</surname>
+<given-names>I</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B29">
+    <element-citation publication-type="book">
+    <source>Wissenschaftliche Ergebnisse der zweiten deutschen Zentral-Afrika-Expedition, 1910-1911, unter Fuhrung Adolf Friedrichs, Herzogs zu Mecklenburg</source>
+<date>
+    <year>1922</year>
+</date>
+<person-group person-group-type="author">
+    <name>
+    <surname>Mildbraed</surname>
+<given-names>J</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B30">
+    <element-citation publication-type="book">
+    <source>Portaria MMA 148/2022</source>
+<date>
+    <year>2022</year>
+</date>
+<comment>https://www.icmbio.gov.br/cepsul/images/stories/legislacao/portaria/2020/p_mma_148_2022_altera_anexos_p_mma_443_444_445_2014_atualiza_especies_ameacadas_extincao.pdf</comment>
+</element-citation>
+</ref>
+<ref id="B31">
+    <element-citation publication-type="book">
+    <source>Plano Municipal de Conservação e Recuperação da Mata Atlântica de Ilhéus, Bahia</source>
+<date>
+    <year>2012</year>
+</date>
+<person-group person-group-type="author">
+    <name>
+    <surname>Orlando</surname>
+<given-names>A</given-names>
+</name>
+<name>
+    <surname>Cunha</surname>
+<given-names>R</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B32">
+    <element-citation publication-type="journal">
+    <article-title>Plantae letestuanae novae ou Plantes nouvelles récoltées par M. Le Testu de 1907 à 1919 dans la Mayombe congolais</article-title>
+<source>Bulletin du Muséum d’Histoire Naturelle</source>
+<date>
+    <year>1920</year>
+</date>
+<fpage>654</fpage>
+<lpage>659</lpage>
+<volume>26</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Pellegrin</surname>
+<given-names>F</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B33">
+    <element-citation publication-type="book">
+    <source>Plant species-level systematics: new perspectives on pattern and process</source>
+<date>
+    <year>2005</year>
+</date>
+<fpage>149</fpage>
+<lpage>174</lpage>
+<person-group person-group-type="author">
+    <name>
+    <surname>Pirie</surname>
+<given-names>MD</given-names>
+</name>
+<name>
+    <surname>Chatrou</surname>
+<given-names>LW</given-names>
+</name>
+<name>
+    <surname>Erkens</surname>
+<given-names>RHJ</given-names>
+</name>
+<name>
+    <surname>Bakker</surname>
+<given-names>FT</given-names>
+</name>
+<name>
+    <surname>Chatrou</surname>
+<given-names>LW</given-names>
+</name>
+<name>
+    <surname>Gravendeel</surname>
+<given-names>B</given-names>
+</name>
+<name>
+    <surname>Pelser</surname>
+<given-names>PB</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B34">
+    <element-citation publication-type="book">
+    <source>QGIS Geographic Information System</source>
+<date>
+    <year>2022</year>
+</date>
+<comment>http://qgis.osgeo.org</comment>
+</element-citation>
+</ref>
+<ref id="B35">
+    <element-citation publication-type="book">
+    <source>Description of three hundred new species of South American plants</source>
+<date>
+    <year>1920</year>
+</date>
+<person-group person-group-type="author">
+    <name>
+    <surname>Rusby</surname>
+<given-names>HH</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B36">
+    <element-citation publication-type="journal">
+    <article-title>Classification of the genus Annona with descriptions of new and imperfectly known species</article-title>
+<source>Contributions from the United States National Herbarium</source>
+<date>
+    <year>1914</year>
+</date>
+<fpage>1</fpage>
+<lpage>68</lpage>
+<volume>18</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Safford</surname>
+<given-names>WE</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B37">
+    <element-citation publication-type="book">
+    <source>Flora Brasiliae meridionalis</source>
+<date>
+    <year>1825</year>
+</date>
+<volume>1</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Saint-Hilaire</surname>
+<given-names>AFCP de</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B38">
+    <element-citation publication-type="journal">
+    <article-title>Anti-inflammatory and antinociceptive activities of a phenylpropanoid-enriched fraction of Duguetia furfuracea</article-title>
+<source>Inflammopharmacology</source>
+<date>
+    <year>2021</year>
+</date>
+<fpage>409</fpage>
+<lpage>422</lpage>
+<volume>29</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Saldanha</surname>
+<given-names>AA</given-names>
+</name>
+<name>
+    <surname>Vieira</surname>
+<given-names>L</given-names>
+</name>
+<name>
+    <surname>Maia</surname>
+<given-names>DSDS</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B39">
+    <element-citation publication-type="journal">
+    <article-title>Contributions to the flora of tropical America III. Annonaceae collected by the Oxford University Expedition to British Guiana, 1929</article-title>
+<source>Bulletin of Miscellaneous Information</source>
+<date>
+    <year>1930</year>
+</date>
+<fpage>466</fpage>
+<lpage>480</lpage>
+<volume>1930</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Sandwith</surname>
+<given-names>NY</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B40">
+    <element-citation publication-type="book">
+    <source>Atlas dos Remanescentes Florestais de Floresta Atlântica. Período: 2020/2021</source>
+<date>
+    <year>2022</year>
+</date>
+</element-citation>
+</ref>
+<ref id="B41">
+    <element-citation publication-type="journal">
+    <article-title>Index Herbariorum: a global directory of public herbaria and associated staff</article-title>
+<source>New York Botanical Garden’s Virtual Herbarium</source>
+<date>
+    <year>2020</year>
+</date>
+<person-group person-group-type="author">
+    <name>
+    <surname>Thiers</surname>
+<given-names>B</given-names>
+</name>
+</person-group>
+<comment>http://sweetgum.nybg.org/science/ih/</comment>
+</element-citation>
+</ref>
+<ref id="B42">
+    <element-citation publication-type="journal">
+    <article-title>Accelerated diversification correlated with functional traits shapes extant diversity of the early divergent angiosperm family Annonaceae</article-title>
+<source>Molecular Phylogenetics and Evolution</source>
+<date>
+    <year>2020</year>
+</date>
+<volume>142</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Xue</surname>
+<given-names>B</given-names>
+</name>
+<name>
+    <surname>Guo</surname>
+<given-names>X</given-names>
+</name>
+<name>
+    <surname>Landis</surname>
+<given-names>JB</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+<ref id="B43">
+    <element-citation publication-type="journal">
+    <article-title>Studies in Annonaceae XXII. A taxonomic revision of Duguetia A. St.-Hil., sections Alcmene and Xylopipetalum</article-title>
+<source>Botanische Jahrbücher für Systematik, Pflanzengeschichte und Pflanzengeographie</source>
+<date>
+    <year>1994</year>
+</date>
+<fpage>221</fpage>
+<lpage>242</lpage>
+<volume>116</volume>
+<person-group person-group-type="author">
+    <name>
+    <surname>Zuilen</surname>
+<given-names>CM van</given-names>
+</name>
+<name>
+    <surname>Maas</surname>
+<given-names>PJM</given-names>
+</name>
+</person-group>
+</element-citation>
+</ref>
+</ref-list>
+</back>
+</article>

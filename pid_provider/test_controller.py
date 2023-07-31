@@ -21,7 +21,10 @@ User = get_user_model()
 
 
 class PidProviderTest(TestCase):
+    @patch("pid_provider.models.XMLSPS.save")
     @patch("pid_provider.models.XMLVersion.save")
+    @patch("pid_provider.models.XMLIssue.save")
+    @patch("pid_provider.models.XMLJournal.save")
     @patch("pid_provider.models.PidProviderXML.save")
     @patch(
         "pid_provider.models.PidProviderXML._get_unique_v3",
@@ -38,16 +41,17 @@ class PidProviderTest(TestCase):
         mock_get_unique_v2,
         mock_get_unique_v3,
         mock_pid_provider_xml_save,
-        mock_xml_version_create,
+        mock_xml_journal_save,
+        mock_xml_issue_save,
+        mock_xml_version_save,
+        mock_xmlsps_save,
     ):
-
         pid_provider = PidProvider()
         result = pid_provider.provide_pid_for_xml_zip(
             zip_xml_file_path="./pid_provider/fixtures/sub-article/2236-8906-hoehnea-49-e1082020.xml.zip",
             user=User.objects.first(),
         )
         result = list(result)
-
         self.assertEqual("SJLD63mRxz9nTXtyMj7SLwk", result[0]["v3"])
         self.assertEqual("S2236-89062022061645340", result[0]["v2"])
         self.assertIsNone(result[0]["aop_pid"])
