@@ -17,6 +17,14 @@ LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 
 
+class XMLJournalGetError(Exception):
+    ...
+
+
+class XMLJournalCreateError(Exception):
+    ...
+
+
 class XMLIssueGetError(Exception):
     ...
 
@@ -163,24 +171,41 @@ class XMLJournal(models.Model):
         return f"{self.issn_electronic} {self.issn_print}"
 
     @classmethod
-    def get_or_create(cls, issn_electronic, issn_print):
+    def get_or_create(cls, issn_electronic=None, issn_print=None):
         try:
-            return cls.objects.get(
+            return cls.get(
                 issn_electronic=issn_electronic,
                 issn_print=issn_print,
             )
         except cls.DoesNotExist:
-            journal = cls()
-            journal.issn_electronic = issn_electronic
-            journal.issn_print = issn_print
-            try:
-                journal.save()
-                return journal
-            except IntegrityError:
-                return cls.objects.get(
-                    issn_electronic=issn_electronic,
-                    issn_print=issn_print,
-                )
+            return cls.create(
+                issn_electronic=issn_electronic,
+                issn_print=issn_print,
+            )
+
+    @classmethod
+    def get(cls, issn_electronic=None, issn_print=None):
+        if issn_electronic:
+            return cls.objects.get(issn_electronic=issn_electronic)
+        if issn_print:
+            return cls.objects.get(issn_print=issn_print)
+        raise XMLJournalGetError(
+            "XMLJournal.get requires issn_electronic or issn_print"
+        )
+
+    @classmethod
+    def create(cls, issn_electronic=None, issn_print=None):
+        if not issn_electronic and not issn_print:
+            raise XMLJournalCreateError(
+                "XMLJournal.create requires issn_electronic or issn_print"
+            )
+
+        try:
+            obj = cls(issn_electronic=issn_electronic, issn_print=issn_print)
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(issn_electronic, issn_print)
 
 
 class XMLIssue(models.Model):
@@ -256,7 +281,6 @@ class XMLIssue(models.Model):
                 suppl=suppl,
                 pub_year=pub_year,
             )
-
 
     @classmethod
     def get_or_create(cls, journal, volume, number, suppl, pub_year):
