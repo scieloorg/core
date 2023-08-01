@@ -66,7 +66,6 @@ class PidProviderXMLAdmin(ModelAdmin):
     )
     list_filter = ("article_pub_year",)
     search_fields = (
-        "journal__title",
         "pkg_name",
         "v3",
         "v2",
