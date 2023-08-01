@@ -17,7 +17,11 @@ LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 
 
-class XMLIssueGetOrCreateError(Exception):
+class XMLIssueGetError(Exception):
+    ...
+
+
+class XMLIssueCreateError(Exception):
     ...
 
 
@@ -211,13 +215,53 @@ class XMLIssue(models.Model):
         )
 
     @classmethod
-    def get_or_create(cls, journal, volume, number, suppl, pub_year):
+    def get(cls, journal, volume, number, suppl, pub_year):
         if journal is None:
-            raise XMLIssueGetOrCreateError(f"XMLIssue.get_or_create requires journal")
+            raise XMLIssueGetError(f"XMLIssue.get requires journal")
         if pub_year is None:
-            raise XMLIssueGetOrCreateError(f"XMLIssue.get_or_create requires pub_year")
+            raise XMLIssueGetError(f"XMLIssue.get requires pub_year")
         try:
-            return cls.objects.get(
+            # mesmo com tratamento de exceção DoesNotExist, o registro duplica
+            return cls.objects.filter(
+                journal=journal,
+                volume=volume,
+                number=number,
+                suppl=suppl,
+                pub_year=pub_year,
+            )[0]
+        except IndexError:
+            raise cls.DoesNotExist()
+
+    @classmethod
+    def create(cls, journal, volume, number, suppl, pub_year):
+        if journal is None:
+            raise XMLIssueCreateError(f"XMLIssue.create requires journal")
+        if pub_year is None:
+            raise XMLIssueCreateError(f"XMLIssue.create requires pub_year")
+        try:
+            issue = cls(
+                journal=journal,
+                volume=volume,
+                number=number,
+                suppl=suppl,
+                pub_year=pub_year,
+            )
+            issue.save()
+            return issue
+        except IntegrityError:
+            return cls.get(
+                journal=journal,
+                volume=volume,
+                number=number,
+                suppl=suppl,
+                pub_year=pub_year,
+            )
+
+
+    @classmethod
+    def get_or_create(cls, journal, volume, number, suppl, pub_year):
+        try:
+            return cls.get(
                 journal=journal,
                 volume=volume,
                 number=number,
@@ -225,23 +269,13 @@ class XMLIssue(models.Model):
                 pub_year=pub_year,
             )
         except cls.DoesNotExist:
-            issue = cls()
-            issue.journal = journal
-            issue.volume = volume
-            issue.number = number
-            issue.suppl = suppl
-            issue.pub_year = pub_year
-            try:
-                issue.save()
-                return issue
-            except IntegrityError:
-                return cls.get(
-                    journal=journal,
-                    volume=volume,
-                    number=number,
-                    suppl=suppl,
-                    pub_year=pub_year,
-                )
+            return cls.create(
+                journal=journal,
+                volume=volume,
+                number=number,
+                suppl=suppl,
+                pub_year=pub_year,
+            )
 
 
 class XMLSPS(CommonControlField):
