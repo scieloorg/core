@@ -111,12 +111,12 @@ def request_pid_v3(user, uri, collection_acron, pid_v2, processing_date, force_u
     if not force_update:
         # skip update
         try:
-            logging.info(f"Skip update {uri}")
             return PidProviderXML.objects.get(v2=pid_v2).data
         except PidProviderXML.DoesNotExist:
             pass
 
     try:
+        logging.info(f"Request pid for {uri}")
         pp = PidProvider()
         response = pp.provide_pid_for_xml_uri(
             uri,

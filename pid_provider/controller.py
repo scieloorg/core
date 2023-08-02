@@ -7,11 +7,11 @@ from tempfile import TemporaryDirectory
 import requests
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
+from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 from requests.auth import HTTPBasicAuth
 
 from pid_provider import exceptions
 from pid_provider.models import PidProviderConfig, PidProviderXML
-from xmlsps.xml_sps_lib import XMLWithPre
 
 User = get_user_model()
 

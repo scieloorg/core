@@ -11,12 +11,12 @@ def load_xml(user, uri, name, acron, year, origin_date=None, force_update=None):
     if not force_update:
         # skip update
         try:
-            logging.info(f"Skip update {uri}")
             return PidProviderXML.objects.get(v3=pid_v3).data
         except PidProviderXML.DoesNotExist:
             pass
 
     try:
+        logging.info(f"Request pid for {uri}")
         pp = PidProvider()
         response = pp.provide_pid_for_xml_uri(
             uri,

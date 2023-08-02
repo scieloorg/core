@@ -11,10 +11,11 @@ from django.core.files.base import ContentFile
 from django.db import models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
+from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
-from pid_provider import exceptions, v3_gen, xml_sps_adapter
+from pid_provider import exceptions
 from xmlsps.models import XMLSPS, XMLIssue, XMLJournal, XMLVersion
 
 LOGGER = logging.getLogger(__name__)

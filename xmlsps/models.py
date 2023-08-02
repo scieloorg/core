@@ -7,11 +7,11 @@ from django.db.models import Q
 from django.utils.translation import gettext as _
 from django.db.utils import IntegrityError
 from lxml import etree
+from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 from wagtail.admin.panels import FieldPanel
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
-from xmlsps.xml_sps_lib import XMLWithPre
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
