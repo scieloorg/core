@@ -27,7 +27,15 @@ class PidProvider:
     def __init__(self):
         pass
 
-    def provide_pid_for_xml_zip(self, zip_xml_file_path, user):
+    def provide_pid_for_xml_zip(
+        self,
+        zip_xml_file_path,
+        user,
+        filename=None,
+        origin_date=None,
+        force_update=None,
+        is_published=None,
+    ):
         """
         Fornece / Valida PID para o XML em um arquivo compactado
 
@@ -43,6 +51,9 @@ class PidProvider:
                         xml_with_pre,
                         xml_with_pre.filename,
                         user,
+                        origin_date=origin_date,
+                        force_update=force_update,
+                        is_published=is_published,
                     )
                     registered["filename"] = xml_with_pre.filename
                     logging.info(registered)
@@ -60,7 +71,15 @@ class PidProvider:
                 "error_type": str(type(e)),
             }
 
-    def provide_pid_for_xml_uri(self, xml_uri, name, user):
+    def provide_pid_for_xml_uri(
+        self,
+        xml_uri,
+        name,
+        user,
+        origin_date=None,
+        force_update=None,
+        is_published=None,
+    ):
         """
         Fornece / Valida PID de um XML disponível por um URI
 
@@ -77,9 +96,24 @@ class PidProvider:
                 "error_type": str(type(e)),
             }
         else:
-            return self.provide_pid_for_xml_with_pre(xml_with_pre, name, user)
+            return self.provide_pid_for_xml_with_pre(
+                xml_with_pre,
+                name,
+                user,
+                origin_date=origin_date,
+                force_update=force_update,
+                is_published=is_published,
+            )
 
-    def provide_pid_for_xml_with_pre(self, xml_with_pre, name, user):
+    def provide_pid_for_xml_with_pre(
+        self,
+        xml_with_pre,
+        name,
+        user,
+        origin_date=None,
+        force_update=None,
+        is_published=None,
+    ):
         """
         Fornece / Valida PID para o XML no formato de objeto de XMLWithPre
         """
@@ -87,6 +121,9 @@ class PidProvider:
             xml_with_pre,
             name,
             user,
+            origin_date=origin_date,
+            force_update=force_update,
+            is_published=is_published,
         )
         logging.info("")
         registered["xml_with_pre"] = xml_with_pre
