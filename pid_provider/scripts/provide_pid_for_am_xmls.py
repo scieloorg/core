@@ -1,40 +1,16 @@
 from pid_provider import tasks
 
 
-def run(username, collection_acron=None, pids=None):
-    if not collection_acron and not pids:
-        return tasks.harvest_pids.apply_async(
-            kwargs={
-                "username": username,
-                "stop": 100,
-            }
-        )
-
-    if not pids:
-        return tasks.harvest_pids.apply_async(
-            kwargs={
-                "username": username,
-                "collection_acron": collection_acron,
-                "stop": 100,
-            }
-        )
-
-    if "," in pids:
-        items = [
-            {"collection_acron": collection_acron, "pid_v2": pid_v2}
-            for pid_v2 in pids.split(",")
-        ]
-        return tasks.provide_pid_for_am_xmls.apply_async(
-            kwargs={
-                "username": username,
-                "items": items,
-            }
-        )
-
-    return tasks.provide_pid_for_am_xml.apply_async(
+def run(
+    username, collection_acron, from_date=None, limit=None, stop=None, force_update=None
+):
+    return tasks.harvest_pids.apply_async(
         kwargs={
             "username": username,
             "collection_acron": collection_acron,
-            "pid_v2": pids,
+            "from_date": from_date or "1900-01-01",
+            "limit": int(limit or 1000),
+            "force_update": force_update or False,
+            "stop": int(stop or 1000),
         }
     )

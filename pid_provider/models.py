@@ -11,10 +11,11 @@ from django.core.files.base import ContentFile
 from django.db import models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
+from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
-from pid_provider import exceptions, v3_gen, xml_sps_adapter
+from pid_provider import exceptions
 from xmlsps.models import XMLSPS, XMLIssue, XMLJournal, XMLVersion
 
 LOGGER = logging.getLogger(__name__)
@@ -288,6 +289,9 @@ class PidProviderXML(CommonControlField):
     z_partial_body = models.CharField(
         _("partial_body"), max_length=64, null=True, blank=True
     )
+    origin_date = models.CharField(
+        _("Origin date"), max_length=10, null=True, blank=True
+    )
 
     base_form_class = CoreAdminModelForm
 
@@ -370,6 +374,8 @@ class PidProviderXML(CommonControlField):
         xml_with_pre,
         filename,
         user,
+        origin_date=None,
+        force_update=None,
         is_published=False,
     ):
         """
@@ -412,12 +418,12 @@ class PidProviderXML(CommonControlField):
             # consulta se documento já está registrado
             registered = cls._query_document(xml_adapter)
 
-            if registered and registered.is_equal_to(xml_adapter):
-                # retorna item registrado
-                return registered.data
-
             # analisa se aceita ou rejeita registro
-            cls.evaluate_registration(xml_adapter, registered)
+            updated_data = cls.skip_registration(
+                xml_adapter, registered, force_update, origin_date
+            )
+            if updated_data:
+                return updated_data
 
             # verfica os PIDs encontrados no XML / atualiza-os se necessário
             changed_pids = cls._complete_pids(xml_adapter, registered)
@@ -432,7 +438,9 @@ class PidProviderXML(CommonControlField):
                 )
 
             # cria ou atualiza registro
-            registered = cls._save(registered, xml_adapter, user, changed_pids)
+            registered = cls._save(
+                registered, xml_adapter, user, changed_pids, origin_date
+            )
 
             # cria ou atualiza XMLSPS
             registered._create_or_update_xmlsps(user, is_published)
@@ -475,6 +483,7 @@ class PidProviderXML(CommonControlField):
         xml_adapter,
         user,
         changed_pids,
+        origin_date=None,
     ):
         if registered:
             registered.updated_by = user
@@ -484,6 +493,7 @@ class PidProviderXML(CommonControlField):
             registered.creator = user
             registered.created = utcnow()
 
+        registered.origin_date = origin_date
         registered._add_data(xml_adapter, user)
         registered._add_journal(xml_adapter)
         registered._add_issue(xml_adapter, registered.journal)
@@ -497,22 +507,44 @@ class PidProviderXML(CommonControlField):
         return registered
 
     @classmethod
-    def evaluate_registration(cls, xml_adapter, registered):
+    def skip_registration(cls, xml_adapter, registered, force_update, origin_date):
         """
         XML é versão AOP, mas
         documento está registrado com versão VoR (fascículo),
         então, recusar o registro,
         pois está tentando registrar uma versão desatualizada
         """
-        logging.info("PidProviderXML.evaluate_registration")
+        logging.info("PidProviderXML.skip_registration")
+
+        if force_update:
+            return
+
+        if not registered:
+            return
+
+        # verifica se é necessário atualizar
+        if registered.is_equal_to(xml_adapter):
+            # XML fornecido é igual ao registrado, não precisa continuar
+            logging.info(f"Skip update: equal")
+            return registered.data
+
         if xml_adapter.is_aop and registered and not registered.is_aop:
+            logging.info(f"Skip update: forbidden")
             raise exceptions.ForbiddenPidProviderXMLRegistrationError(
                 _(
                     "The XML content is an ahead of print version "
                     "but the document {} is already published in an issue"
                 ).format(registered)
             )
-        return True
+
+        if (
+            origin_date
+            and registered.origin_date
+            and registered.origin_date > origin_date
+        ):
+            # retorna item registrado que está mais atualizado
+            logging.info(f"Skip update: is already up-to-date")
+            return registered.data
 
     def is_equal_to(self, xml_adapter):
         return bool(
