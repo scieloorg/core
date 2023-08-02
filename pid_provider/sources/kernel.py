@@ -1,15 +1,31 @@
+import logging
 import os
 
 from pid_provider.controller import PidProvider
-from pid_provider.models import PidRequest
+from pid_provider.models import PidRequest, PidProviderXML
 
 
-def load_xml(user, uri, name, acron, year):
-    pp = PidProvider()
+def load_xml(user, uri, name, acron, year, origin_date=None, force_update=None):
+    pid_v3, ext = os.path.splitext(name)
+
+    if not force_update:
+        # skip update
+        try:
+            logging.info(f"Skip update {uri}")
+            return PidProviderXML.objects.get(v3=pid_v3).data
+        except PidProviderXML.DoesNotExist:
+            pass
 
     try:
-        pid_v3, ext = os.path.splitext(name)
-        response = pp.provide_pid_for_xml_uri(uri, name, user)
+        pp = PidProvider()
+        response = pp.provide_pid_for_xml_uri(
+            uri,
+            name,
+            user,
+            origin_date=origin_date,
+            force_update=force_update,
+            is_published=True,
+        )
     except Exception as e:
         return PidRequest.register_failure(
             e=e,
@@ -33,3 +49,5 @@ def load_xml(user, uri, name, acron, year):
             result_type=result_type,
             result_msg=result_msg,
         )
+        return pid_request.data
+    return response
