@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+ <schema name="congre" version="1.5">
+
+<types>
+
+    <fieldType name="string" class="solr.StrField" sortMissingLast="true" />
+    <fieldType name="boolean" class="solr.BoolField" sortMissingLast="true"/>
+    <fieldType name="int" class="solr.TrieIntField" precisionStep="0" positionIncrementGap="0"/>
+    <fieldType name="float" class="solr.TrieFloatField" precisionStep="0" positionIncrementGap="0"/>
+    <fieldType name="long" class="solr.TrieLongField" precisionStep="0" positionIncrementGap="0"/>
+    <fieldType name="double" class="solr.TrieDoubleField" precisionStep="0" positionIncrementGap="0"/>
+    <fieldType name="tint" class="solr.TrieIntField" precisionStep="8" positionIncrementGap="0"/>
+    <fieldType name="tfloat" class="solr.TrieFloatField" precisionStep="8" positionIncrementGap="0"/>
+    <fieldType name="tlong" class="solr.TrieLongField" precisionStep="8" positionIncrementGap="0"/>
+    <fieldType name="tdouble" class="solr.TrieDoubleField" precisionStep="8" positionIncrementGap="0"/>
+    <fieldType name="date" class="solr.TrieDateField" precisionStep="0" positionIncrementGap="0"/>
+
+    <fieldtype name="text" class="solr.TextField" positionIncrementGap="100">
+      <analyzer type="index">
+        <tokenizer class="solr.WhitespaceTokenizerFactory"/>
+        <filter class="solr.ASCIIFoldingFilterFactory"/>
+        <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="1" catenateNumbers="1" catenateAll="0"/>
+        <filter class="solr.LowerCaseFilterFactory"/>
+      </analyzer>
+      <analyzer type="query">
+        <tokenizer class="solr.WhitespaceTokenizerFactory"/>
+        <filter class="solr.ASCIIFoldingFilterFactory"/>
+        <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0"/>
+        <filter class="solr.LowerCaseFilterFactory"/>
+      </analyzer>
+    </fieldtype>
+
+    <!-- lowercases the entire field value, keeping it as a single token.  -->
+    <fieldType name="lowercase" class="solr.TextField" positionIncrementGap="100">
+      <analyzer>
+        <tokenizer class="solr.KeywordTokenizerFactory"/>
+        <filter class="solr.LowerCaseFilterFactory" />
+      </analyzer>
+    </fieldType>
+
+    <fieldtype name="ignored" stored="false" indexed="false" multiValued="true" class="solr.StrField" />
+
+ </types>
+
+ <fields>
+
+    <field name="_version_" type="long" indexed="true" stored="true"/>
+
+    <!-- id unique field -->
+    <field name="id" type="string" indexed="true" stored="true" multiValued="false"/>
+
+    <!-- default search -->
+    <field name="text" type="text" indexed="true" stored="true"/>
+    <field name="tw" type="text" indexed="true" stored="false" multiValued="true"/>
+
+    <field name="django_ct" type="string" indexed="true" stored="true" multiValued="false"/>
+    <field name="django_id" type="string" indexed="true" stored="true" multiValued="false"/>
+    
+    <!-- Digital Object Identifier DOI -->
+    <field name="doi" type="string" indexed="true" stored="true" multiValued="true" />
+    
+    <!-- Titles ** list of titles -->
+    <field name="titles" type="string" indexed="true" stored="true" multiValued="true" />
+    
+    <!-- Language **from:la to:languages** list of languages -->
+    <field name="la" type="string" indexed="true" stored="true" multiValued="true" />
+    
+    <!-- Author **from:au to:researchers** -->
+    <field name="au" type="string" indexed="true" stored="true" multiValued="true" />
+    
+    <!-- Allow search for keywords in different languages -->
+    <field name="kw" type="string" indexed="true" stored="true" multiValued="true" />
+    
+    <field name="toc_sections" type="string" indexed="true" stored="true" multiValued="true" />
+    
+    <!-- Abstract **from:ab to:abstract** -->
+    <field name="ab" type="string" indexed="true" stored="true" multiValued="true" />
+    
+    <!-- Abstract **from:ab to:abstract_language** -->
+    <field name="la_abstract" type="lowercase" indexed="true" stored="true" multiValued="true" />
+    
+    <!-- Digital Object Identifier DOI -->
+    <field name="orcid" type="string" indexed="true" stored="true" multiValued="true" />
+
+    <!-- Auxiliar Digital Object Identifier DOI -->
+    <field name="au_orcid" type="string" indexed="true" stored="true" multiValued="true" />
+
+    <!-- Journal title of this research article -->
+    <field name="journal_title" type="string" indexed="true" stored="true" multiValued="false" />
+
+    <field name="collection" type="string" indexed="true" stored="true" multiValued="false" />
+    
+    <!-- Document Type **from:type to:article_type** -->
+    <field name="type" type="string" indexed="true" stored="true" multiValued="false" />
+    
+    <!-- Publisher ID = consist of 'S' + ISSN + numbers + '-' + and the abbreviation of collection, in the future it can be anything -->
+    <field name="pid" type="string" indexed="true" stored="true" multiValued="false" />
+    
+    <!-- <field name="pid_v3" type="string" indexed="true" stored="true" multiValued="false" /> -->
+    
+    <!-- Publication year ex.: 2004 -->
+    <field name="publication_year" type="string" indexed="true" stored="true" multiValued="false" />
+
+    <!-- Issue -->
+    <field name="issue" type="string" indexed="true" stored="true" multiValued="false"/>
+
+    <!-- Volume -->
+    <field name="volume" type="string" indexed="true" stored="true" multiValued="false" />
+
+    <!-- Elocation -->
+    <field name="elocation" type="string" indexed="true" stored="true" multiValued="false" />
+
+    <!-- Start Page -->
+    <field name="start_page" type="string" indexed="true" stored="true" multiValued="false"/>
+
+    <!-- End Page -->
+    <field name="end_page" type="string" indexed="true" stored="true" multiValued="false"/>
+    
+    <!-- Colllection domain to:domain from:domain  -->
+    <field name="domain" type="string" indexed="true" stored="true" multiValued="false" />
+
+   <!-- Dynamic field definitions -->
+   <dynamicField name="*"  type="text" indexed="true" stored="true"  multiValued="false"/>
+   <!-- <dynamicField name="*" type="ignored" /> -->
+
+ </fields>
+
+ <!-- Field to use to determine and enforce document uniqueness.
+      Unless this field is marked with required="false", it will be a required field
+   -->
+ <!-- defaultSearchField>tw</defaultSearchField-->
+ <uniqueKey>id</uniqueKey>
+
+ <copyField source="text" dest="tw"/>
+ <copyField source="*" dest="tw"/>
+
+</schema>

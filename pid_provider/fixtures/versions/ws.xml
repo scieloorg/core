@@ -1,0 +1,1218 @@
+<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.1 20151215//EN" "https://jats.nlm.nih.gov/publishing/1.1/JATS-journalpublishing1.dtd">
+<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" article-type="research-article" dtd-version="1.1" specific-use="sps-1.9" xml:lang="en">
+  <front>
+    <journal-meta>
+      <journal-id journal-id-type="publisher-id">abb</journal-id>
+      <journal-title-group>
+        <journal-title>Acta Botanica Brasilica</journal-title>
+        <abbrev-journal-title abbrev-type="publisher">Acta Bot. Bras.</abbrev-journal-title>
+      </journal-title-group>
+      <issn pub-type="ppub">0102-3306</issn>
+      <issn pub-type="epub">1677-941X</issn>
+      <publisher>
+        <publisher-name>Sociedade Botânica do Brasil</publisher-name>
+      </publisher>
+    </journal-meta>
+    <article-meta>
+      <article-id specific-use="scielo-v3" pub-id-type="publisher-id">3y6cXZRbwjqP8gsnXkZZ7Db</article-id>
+      <article-id specific-use="scielo-v2" pub-id-type="publisher-id">S0102-33062023000100103</article-id>
+      <article-id pub-id-type="other">00103</article-id>
+      <article-id pub-id-type="doi">10.1590/1677-941X-ABB-2022-0203</article-id>
+      <article-categories>
+        <subj-group subj-group-type="heading">
+          <subject>Original Article</subject>
+        </subj-group>
+      </article-categories>
+      <title-group>
+        <article-title><italic>Duguetia leucotricha</italic> (Annonaceae), a new species from the Atlantic Coastal Forest of Brazil</article-title>
+      </title-group>
+      <contrib-group>
+        <contrib contrib-type="author">
+          <contrib-id contrib-id-type="orcid">0000-0003-4485-1926</contrib-id>
+          <name>
+            <surname>Bazante</surname>
+            <given-names>Márcio L.</given-names>
+          </name>
+          <xref ref-type="aff" rid="aff1">
+            <sup>1</sup>
+          </xref>
+          <xref ref-type="corresp" rid="c1">*</xref>
+        </contrib>
+        <contrib contrib-type="author">
+          <name>
+            <surname>Maas</surname>
+            <given-names>Paul J. M.</given-names>
+          </name>
+          <xref ref-type="aff" rid="aff2">
+            <sup>2</sup>
+          </xref>
+        </contrib>
+        <contrib contrib-type="author">
+          <contrib-id contrib-id-type="orcid">0000-0001-6166-3922</contrib-id>
+          <name>
+            <surname>Barbosa</surname>
+            <given-names>Maria Regina de V.</given-names>
+          </name>
+          <xref ref-type="aff" rid="aff3">
+            <sup>3</sup>
+          </xref>
+        </contrib>
+      </contrib-group>
+      <aff id="aff1">
+        <label>1 </label>
+        <institution content-type="original">Universidade Federal de Pernambuco, Programa de Pós-Graduação em Biologia Vegetal, 50670-901, Recife, PE, Brazil</institution>
+        <institution content-type="orgname">Universidade Federal de Pernambuco</institution>
+        <institution content-type="orgdiv1">Programa de Pós-Graduação em Biologia Vegetal</institution>
+        <addr-line>
+          <postal-code>50670-901</postal-code>
+          <city>Recife</city>
+          <state>PE</state>
+        </addr-line>
+        <country country="BR">Brazil</country>
+      </aff>
+      <aff id="aff2">
+        <label>2 </label>
+        <institution content-type="original">Naturalis Biodiversity Center, section Botany, P.O. Box 9517, 2300 RA Leiden, The Netherlands</institution>
+        <institution content-type="orgname">Naturalis Biodiversity Center</institution>
+        <institution content-type="orgdiv1">section Botany</institution>
+        <addr-line>
+          <postal-code>9517</postal-code>
+          <city>Leiden</city>
+        </addr-line>
+        <country country="NL">The Netherlands</country>
+      </aff>
+      <aff id="aff3">
+        <label>3 </label>
+        <institution content-type="original">Universidade Federal da Paraíba, Departamento de Sistemática e Ecologia, 58051-970, João Pessoa, PB, Brazil</institution>
+        <institution content-type="orgname">Universidade Federal da Paraíba</institution>
+        <institution content-type="orgdiv1">Departamento de Sistemática e Ecologia</institution>
+        <addr-line>
+          <postal-code>58051-970</postal-code>
+          <city>João Pessoa</city>
+          <state>PB</state>
+        </addr-line>
+        <country country="BR">Brazil</country>
+      </aff>
+      <author-notes>
+        <corresp id="c1"><label>*</label> Corresponding author: <email>mlbazante@gmail.com</email> </corresp>
+      </author-notes>
+      <pub-date date-type="pub" publication-format="electronic">
+        <day>16</day>
+        <month>01</month>
+        <year>2023</year>
+      </pub-date>
+      <pub-date date-type="collection" publication-format="electronic">
+        <year>2023</year>
+      </pub-date>
+      <volume>37</volume>
+      <elocation-id>e20220203</elocation-id>
+      <history>
+        <date date-type="received">
+          <day>08</day>
+          <month>08</month>
+          <year>2022</year>
+        </date>
+        <date date-type="accepted">
+          <day>08</day>
+          <month>12</month>
+          <year>2022</year>
+        </date>
+      </history>
+      <permissions>
+        <license license-type="open-access" xlink:href="https://creativecommons.org/licenses/by/4.0/" xml:lang="en">
+          <license-p>This is an open-access article distributed under the terms of the Creative Commons Attribution License</license-p>
+        </license>
+      </permissions>
+      <abstract>
+        <title>Abstract</title>
+        <p>A new species of Annonaceae, <italic>Duguetia leucotricha</italic> M.L.Bazante &amp; Maas, from lowland to submontane forests of southern Bahia, Brazil, is described. It differs from other species of the genus mainly by the dense greyish white stellate hairs on vegetative and reproductive structures, rather widely-spaced flowers, the large bract in the upper part of the well-developed pedicel, sepals and petals almost equal in length, and the few-carpellate fruits with rounded apex of the areoles. Commentaries concerning its morphological aspects and relationships of affinity, geographic distribution, conservation status and photos are provided, as well as a key to all Atlantic Coastal Forest species of <italic>Duguetia</italic>. </p>
+      </abstract>
+      <kwd-group xml:lang="en">
+        <title>Keywords:</title>
+        <kwd>Annonoideae</kwd>
+        <kwd>Bahia</kwd>
+        <kwd>Duguetieae</kwd>
+        <kwd>Northeast Region</kwd>
+        <kwd>Neotropics</kwd>
+        <kwd>taxonomy</kwd>
+      </kwd-group>
+      <funding-group>
+        <award-group award-type="contract">
+          <funding-source>CNPq</funding-source>
+          <award-id>141056/2021-5</award-id>
+        </award-group>
+      </funding-group>
+      <counts>
+        <fig-count count="3"/>
+        <table-count count="0"/>
+        <equation-count count="0"/>
+        <ref-count count="43"/>
+      </counts>
+    </article-meta>
+  </front>
+  <body>
+    <sec sec-type="intro">
+      <title>Introduction</title>
+      <p>The genus <italic>Duguetia</italic> <xref ref-type="bibr" rid="B37">A.St.-Hil. (1825</xref>: 35) is an important ecological component in lowland tropical forests of the Neotropics (<xref ref-type="bibr" rid="B22">Maas <italic>et al.</italic> 2003</xref>). Several species have economic value because of their wood, bark fibers, fruits, and medicinal properties (<xref ref-type="bibr" rid="B22">Maas <italic>et al.</italic> 2003</xref>; <xref ref-type="bibr" rid="B38">Saldanha <italic>et al.</italic> 2021</xref>). <italic>Duguetia</italic> comprises ca. 94 species of trees or shrubs, the majority of which distributed in the Neotropics, from Nicaragua to Brazil, and only four species in Africa (<xref ref-type="bibr" rid="B22">Maas <italic>et al.</italic> 2003</xref>; <xref ref-type="bibr" rid="B24">Maas &amp; Westra 2010</xref>; <xref ref-type="bibr" rid="B3">Bazante &amp; Alves 2017</xref>). <italic>Duguetia</italic> belongs to the subfamily Annonoideae, tribe Duguetieae, which also includes four other genera: the African <italic>Letestudoxa</italic> <xref ref-type="bibr" rid="B32">Pellegr. (1920</xref>: 654) and <italic>Pseudartabotrys</italic> <xref ref-type="bibr" rid="B32">Pellegr. (1920</xref>: 656), the Amazonian genus <italic>Duckeanthus</italic> R.E.Fr. (<xref ref-type="bibr" rid="B11">1934</xref>: 106), and <italic>Fusaea</italic> (Baill.) <xref ref-type="bibr" rid="B36">Saff. (1914</xref>: 64) (<xref ref-type="bibr" rid="B10">Chatrou <italic>et al.</italic> 2012</xref>).</p>
+      <p>Phylogenetic studies support the monophyly of <italic>Duguetia</italic> and indicate <italic>Duckeanthus</italic> and <italic>Fusaea</italic> as its sister genera (<xref ref-type="bibr" rid="B33">Pirie <italic>et al.</italic> 2005</xref>; <xref ref-type="bibr" rid="B14">Guo <italic>et al.</italic> 2017</xref>; <xref ref-type="bibr" rid="B42">Xue <italic>et al.</italic> 2020</xref>). These three genera share the aggregate fruit formed by lateral fusion of carpel walls, or by free, strongly coherent and sessile carpels, with their basal parts immersed in the fruiting receptacle. Another similarity among them is the common presence of a ring-shaped structure at the fruit base, called collar. However, the collar in <italic>Duguetia</italic> is derived from few, sterile and connate carpels, while in the two other genera it represents the floral receptacle that remains visible. Moreover, <italic>Duguetia</italic> can be easily recognized by its indument of stellate and scaly hairs, whereas <italic>Duckeanthus</italic> and <italic>Fusaea</italic> have simple hairs (<xref ref-type="bibr" rid="B9">Chatrou <italic>et al.</italic> 2000</xref>; <xref ref-type="bibr" rid="B22">Maas <italic>et al.</italic> 2003</xref>).</p>
+      <p>More than half of the Neotropical species of <italic>Duguetia</italic> occur in Brazil (67 species), of which ca. 30 are endemic and about 20 classified as threatened (<xref ref-type="bibr" rid="B18">Lobão &amp; Bazante 2020</xref>; <xref ref-type="bibr" rid="B30">MMA 2022</xref>). Although the majority of the species inhabit the Amazon basin, ca. 50 species, the Atlantic Coastal Forest is also an important center of diversity of the genus, with 14 of its 18 species being endemic to this domain (<xref ref-type="bibr" rid="B18">Lobão &amp; Bazante 2020</xref>; <xref ref-type="bibr" rid="B4">Bazante &amp; Alves 2021</xref>). </p>
+      <p>The Atlantic Coastal Forest in southern Bahia stands out for its high floristic biodiversity and local endemism, with eight species of <italic>Duguetia</italic>, four of them locally restricted (<xref ref-type="bibr" rid="B27">Martini <italic>et al.</italic> 2007</xref>; <xref ref-type="bibr" rid="B18">Lobão &amp; Bazante 2020</xref>). However, Bahia is nowadays the second Brazilian State in the deforestation ranking, with an increase of 54% between 2020 and 2021 (<xref ref-type="bibr" rid="B40">SOS Mata Atlântica &amp; INPE 2022</xref>), adding pressure on its forest remnants. As part of an effort to recognize the taxonomic diversity in the Atlantic Coastal Forest of northeastern Brazil, highlighting this region as a priority for conservation and biological research, a new species of <italic>Duguetia</italic>, found in southern Bahia, is being described here.</p>
+    </sec>
+    <sec sec-type="materials|methods">
+      <title>Materials and methods</title>
+      <p>Specimens of the new species were collected, in addition to others found in CEPEC, JPB, NY and U (herbarium acronyms following <xref ref-type="bibr" rid="B41">Thiers 2020</xref>, continually updated). Those in CEPEC and JPB were analyzed <italic>in loco</italic>. Those in NY and U were studied by their images online in web-based resources such as Reflora - Virtual Herbarium (<ext-link ext-link-type="uri" xlink:href="https://floradobrasil.jbrj.gov.br/reflora">https://floradobrasil.jbrj.gov.br/reflora</ext-link>) and SpeciesLink system (<ext-link ext-link-type="uri" xlink:href="https://specieslink.net/">https://specieslink.net/</ext-link>). Specimens analyzed are indicated here with an exclamation mark (!). The barcode numbers of the examined specimens are cited within square brackets [bc]. Comparative analyzes with known species of <italic>Duguetia</italic> and the identification key were based on types and other herbarium specimens, protologues, relevant literature (<xref ref-type="bibr" rid="B25">Maas 1996</xref>; <xref ref-type="bibr" rid="B26">1999</xref>; <xref ref-type="bibr" rid="B20">Maas <italic>et al.</italic> 1993</xref>; <xref ref-type="bibr" rid="B23">1994</xref>; <xref ref-type="bibr" rid="B22">2003</xref>) and recent fieldwork.</p>
+      <p>The morphological and indument descriptions were analyzed with a stereomicroscope Leica M125. The terminology adopted was based on <xref ref-type="bibr" rid="B22">Maas <italic>et al.</italic> (2003</xref>). The types of cauliflory followed <xref ref-type="bibr" rid="B29">Mildbraed (1922)</xref>, where ramiflory refers to flowers borne on the leafless portions of branches and trunciflory to those that borne along the main trunk. In the fruits, the exposed apical part of the carpels is referred to as areoles, and the basal ring-shaped structure composed of sterile connate carpels as the collar (<xref ref-type="bibr" rid="B22">Maas <italic>et al.</italic> 2003</xref>).</p>
+      <p>Information on habitat, phenology, and color of vegetative and reproductive structures were taken from herbarium labels and field observations. The distribution map was generated in the Quantum GIS 3.16.10 software (<xref ref-type="bibr" rid="B34">QGIS 2022</xref>) using layers available at <xref ref-type="bibr" rid="B15">IBGE (2022)</xref>. The preliminary conservation status follows the <xref ref-type="bibr" rid="B16">IUCN Red List Categories and Criteria (2019)</xref>. The GeoCAT tool (<xref ref-type="bibr" rid="B2">Bachman <italic>et al.</italic> 2011</xref>) was used to estimate the extent of occurrence (EOO) and the area of occupancy (AOO).</p>
+    </sec>
+    <sec sec-type="results|discussion">
+      <title>Result and discussion</title>
+      <p>
+        <italic>Taxonomic treatment</italic>
+      </p>
+      <p><italic>Duguetia leucotricha</italic> M.L.Bazante &amp; Maas, sp. nov. (<xref ref-type="fig" rid="f1">Figs. 1</xref>, <xref ref-type="fig" rid="f2">2</xref>, <xref ref-type="fig" rid="f3">3</xref>)</p>
+      <p>
+        <fig id="f1">
+          <label>Figure 1 </label>
+          <caption>
+            <title>Details of <italic>Duguetia leucotricha</italic> structures <italic>in sicco</italic>. <bold>A.</bold> Fruiting branch. <bold>B-C.</bold> Detail of the indument on the lower leaf surface. <bold>D.</bold> Flower bud, side view. <bold>E.</bold> Flower at anthesis, side view. <bold>F-G.</bold> Stamens, side view. <bold>H.</bold> Carpel, side view. <bold>I.</bold> Fruit. <bold>J.</bold> Fertile carpel. <bold>K.</bold> Seed. (<bold>A-C</bold> and <bold>I-K</bold> from <italic>D. Piotto et al. 2808</italic> [CEPEC]; <bold>D-H</bold> from <italic>W.W. Thomas et al. 16425</italic> [JPB]).</title>
+          </caption>
+          <alternatives>
+            <graphic xlink:href="https://minio.scielo.br/documentstore/1677-941X/3y6cXZRbwjqP8gsnXkZZ7Db/587db9fbb862a7f8a02fc2d95a9eadda19571173.jpg"/>
+            <graphic xlink:href="https://minio.scielo.br/documentstore/1677-941X/3y6cXZRbwjqP8gsnXkZZ7Db/83b83bec4c8a1075d4460e869ba2ea4974479032.jpg" specific-use="scielo-web" content-type="scielo-267x140"/>
+          </alternatives>
+        </fig>
+      </p>
+      <p>
+        <fig id="f2">
+          <label>Figure 2 </label>
+          <caption>
+            <title>Details of <italic>Duguetia leucotricha</italic> structures <italic>in vivo</italic>. <bold>A.</bold> Tree canopy. <bold>B.</bold> Trunk. <bold>C.</bold> Leaves, upper side view. <bold>D.</bold> Leaves, lower side view. <bold>E.</bold> Inflorescence trunciflorous ca. 14 cm above the ground, note the two elongated rhipidia. <bold>F.</bold> Inflorescence among leaves, supra-axillary. <bold>G.</bold> Inflorescence ramiflorous. <bold>H.</bold> Flower at anthesis, side view. <bold>I.</bold> Flower at anthesis, top view, showing stamens and carpels. <bold>J.</bold> Flower at anthesis, back view, showing sepals. <bold>K.</bold> Inner side of perianth structures, 1: sepal, 2: outer petal, 3: inner petal. <bold>L.</bold> Fruit, note the persistent sepals. <bold>M.</bold> Fruit, note the weakly developed basal collar. Photographs by Márcio L. Bazante (<bold>A-K</bold> from <italic>M.L. Bazante et al. 1513</italic> [JPB]; <bold>L-M</bold> from <italic>M.L. Bazante &amp; L. Daneu 1519</italic> [JPB]).</title>
+          </caption>
+          <alternatives>
+            <graphic xlink:href="https://minio.scielo.br/documentstore/1677-941X/3y6cXZRbwjqP8gsnXkZZ7Db/7209f315448ce8edc8cb4cb41316ad052dbfc137.jpg"/>
+            <graphic xlink:href="https://minio.scielo.br/documentstore/1677-941X/3y6cXZRbwjqP8gsnXkZZ7Db/3fd12764bb9dd0b33ef1854576d38e9153c03453.jpg" specific-use="scielo-web" content-type="scielo-267x140"/>
+          </alternatives>
+        </fig>
+      </p>
+      <p>
+        <fig id="f3">
+          <label>Figure 3 </label>
+          <caption>
+            <title><italic>Duguetia leucotricha</italic>, geographic distribution and habitat. <bold>A.</bold> Distribution map of the species in protected areas in the state of Bahia, Brazil. APA: Área de Proteção Ambiental (Environmental Protection Area); PES: Parque Estadual (State Park); REBIO: Reserva Biológica (Biological Reserve). <bold>B.</bold> Habitat of the species in the Serra do Conduru State Park, Bahia, Brazil (arrow indicates the collection site). Photograph by Márcio L. Bazante.</title>
+          </caption>
+          <alternatives>
+            <graphic xlink:href="https://minio.scielo.br/documentstore/1677-941X/3y6cXZRbwjqP8gsnXkZZ7Db/5585153ba8a6fb00a7ba453ea1be34bf7fd638bb.jpg"/>
+            <graphic xlink:href="https://minio.scielo.br/documentstore/1677-941X/3y6cXZRbwjqP8gsnXkZZ7Db/9c9aaa61f484c4f778a87ccc21cb8f49423c59fc.jpg" specific-use="scielo-web" content-type="scielo-267x140"/>
+          </alternatives>
+        </fig>
+      </p>
+      <p>Type: BRAZIL. Bahia: Una, Fazenda Piedade, Rodovia São José/Una, a 9 km do “entroncamento” com a BR-101, 10 December 1987 (fl), <italic>E.B. dos Santos &amp; M.C. Alves 209</italic> (Holotype: CEPEC! [bc] CEPEC00043699; Isotype: U! [bc] U.1072227).</p>
+      <p><italic>Duguetia</italic> sp. nov. 2, Maas <italic>et al.</italic>, Flora Neotropica Monograph 88: 226. 2003</p>
+      <p><italic>Duguetia leucotricha</italic> is distinct from congeneric species by the combination of the greyish white indument of stellate hairs on flowers, fruits, and the lower side of the leaves, the elongated sympodial rachis with rather widely-spaced flowers, the large bract in the upper part of a well-developed pedicel, the flower buds acute and distinctly keeled, the sepals (sub)equaling the petals, and the paucicarpellate fruits of which the apex of the areoles is rounded and apiculate.</p>
+      <p><italic>Treelet</italic> or <italic>tree</italic>, 4-15 m tall, 3.5-10 cm in diam. Young twigs and petioles totally covered with stellate hairs 0.1-0.4 mm in diam., becoming sparsely hairy with age. Petioles 3-8 mm long, 1.5-3 mm in diam. <italic>Leaves</italic> narrowly elliptic, narrowly oblong-elliptic, narrowly obovate or lanceolate, 6-32 cm long, 2-10.5 cm wide, leaf index 2.7-5.1, chartaceous, smooth, dull to slightly shiny on both surfaces, dark green to greenish brown above, pale green to pale brown below, glabrous above, rather densely covered with 8-13(-16)-rayed stellate hairs 0.1-0.4 mm in diam. below, base acute, apex acuminate (acumen 1-3 cm long), sometimes acute, primary vein impressed above, secondary veins curved, 12-27 on either side of primary vein, slightly raised above, angles with primary vein 50-75°, loop-forming at almost right angles, loops distinct, smallest distance between loops and margin 1-5 mm, tertiary veins slightly raised on both sides. <italic>Inflorescences</italic> among leaves, supra-axillary to pseudo-axillary or leaf-opposed, sometimes ramiflorous or trunciflorous, originating along the main trunk from ca. 14 cm above the ground to higher up; a single rhipidium or composed of 2-several rhipidia in trunciflory. Rhipidia 1-2-flowered, to ca. 8 flowers in succession; Indument: peduncles, pedicels, outer side of bracts, sepals and petals, and ovary totally covered with greyish white stellate hairs 0.1-0.4 mm in diam., inner side of sepals and petals sparsely to densely covered with erect, furcate to stellate hairs, glabrous towards the base. Peduncle 4-10(-35) mm long, 1.5-2(-3.5) mm in diam. Sympodial rachis to 12 mm long, or more (ca. 25 mm) in trunciflory, internodes 3-6 mm long. Pedicels 7-30 mm long, 1-5 mm in diam., not elongating when fruiting. Upper bract at ca. 3/4 from the base of the pedicel, broadly to shallowly ovate, 6-15 mm long, 10-13 mm wide, amplexicaul, persistent in fruit. Flower buds triangular-ovoid, distinctly 3-ridged by recurved edges of the sepals, apex acute. <italic>Flowers</italic> creamy yellow, inner base of petals pinkish <italic>in vivo</italic>. Sepals free, ovate-triangular to narrowly so, 13-21 mm long, 7-12 mm wide, acute, persistent in fruit. Petals subequal, narrowly elliptic to narrowly oblong-elliptic, 16-30 mm long, 7-12 mm wide, acute, inner base of inner petals callose, grooved. Stamens numerous, 1-1.5 mm long, red, apex of connective depressed ovoid to deltoid, 0.2-0.5 × 0.5-0.8 mm, papillate. Carpels 15-30, 3-5 mm long, ovary and stigma densely to totally covered with stellate hairs. <italic>Fruit</italic> green at apex, creamy yellow at base <italic>in vivo</italic>, broadly ellipsoid, 2.5-3 × 2-2.6 cm, basal collar composed of ca. 7 connate, almost totally reduced sterile carpels, 6-8 mm in diam., not protruding below the fruit, fertile carpels 15-30, broadly obovoid, 8-15 mm long, 6-11 mm in diam., free, areoles depressed ovoid, 4-9 mm high, slightly verrucose, apex rounded, apiculate (apicule curved, 1-3.5 mm long), basal and apical part of areoles totally covered with greyish white or yellowish stellate hairs, middle part sparsely so. <italic>Seeds</italic> obovoid, 8-11 mm long, 5-8 mm in diam., apex rounded, with an eccentric apicule &lt; 0.5 mm long, yellowish to dark brown, shiny.</p>
+      <p>Distribution and habitat: <italic>Duguetia leucotricha</italic> is endemic to southern Bahia, Brazil, where it is known from a few specimens and four populations, which are present in three Conservation Units (UCs): Lagoa Encantada e Rio Almada Environmental Protection Area, Serra do Conduru State Park, and Una Biological Reserve (<xref ref-type="fig" rid="f3">Fig. 3</xref>). According to <xref ref-type="bibr" rid="B17">Jardim (2003</xref>) and <xref ref-type="bibr" rid="B1">Amorim <italic>et al.</italic> (2008</xref>), the predominant vegetation in these UCs is the lowland to submontane tropical moist forest, including mature and disturbed vegetations. The latter is mainly caused by cocoa plantations (called cabruca), regenerating pastures and logging. The mature forests are characterized by a canopy around 25 m height, dense understory and abundance of epiphytes and lianas. Records of the new species were collected at elevations of 100-300 meters.</p>
+      <p>Additional specimens examined (Paratypes) - BRAZIL. Bahia: Uruçuca, Parque Estadual Serra do Conduru, 2 June 2010 (fl, fr), <italic>D. Piotto, L. Romero &amp; V. da Silva 2808</italic> (CEPEC! [bc] CEPEC00128533); <italic>ibidem</italic>, 120-300 m, 10 June 2010 (st), <italic>D. Piotto, L. Romero &amp; V. da Silva 2288</italic> (NY! [bc] NY02674918); <italic>ibidem</italic>, 223 m, 23 September 2022 (fl), <italic>M.L. Bazante, D. Piotto &amp; L. Daneu 1513</italic> (JPB!); <italic>ibidem</italic>, 05 December 2022 (fl, fr), <italic>M.L. Bazante &amp; L. Daneu 1519</italic> (JPB!); <italic>ibidem</italic>, Sede do Parque, Estrada Serra Grande/Uruçuca, 10 February 2004 (fr), <italic>A.M. Amorim, A. Martini, R. Passos, A. Argolo &amp; S. Sant’Ana 3911</italic> (CEPEC! [bc] CEPEC00123046); <italic>ibidem</italic>, trail from headquarters of Conduru State Park, ca. 10 km W of Serra Grande on road to Uruçuca, 158 m, 27 October 2014 (fl), <italic>W.W. Thomas, M.R. Barbosa, D. Piotto &amp; J.G. Jardim 16425</italic> (JPB!, NY!).</p>
+      <p>Conservation status: <italic>Duguetia leucotricha</italic> individuals are found within UCs, with its few collections resulting in an extension of occurrence (EOO) estimated to be 894.1 km² and in an area of occupancy (AOO) estimated to be 16 km². These data indicate a species with a very restricted distribution and small population sizes. Moreover, the implementation of the UCs in which it is located has been deficient and only achieves partial results of environmental protection. Among the reasons is the lack of infrastructure, human and financial resources to inspect, monitor and recover these areas (<xref ref-type="bibr" rid="B31">Orlando &amp; Cunha 2012</xref>).</p>
+      <p>The APA (environmental protection area) Lagoa Encantada e Rio Almada, one of the UCs with occurrence of the species, had its area expanded and currently presents 157.745 ha (<xref ref-type="bibr" rid="B5">Brasil 2003a</xref>). Since then, few studies have been carried out to minimize the environmental impacts on the APA which has been suffering from deforestation, mineral extraction and pollution, for example (<xref ref-type="bibr" rid="B8">Brasil 2015</xref>). In the Serra do Conduru State Park, which covers 9.725 ha (<xref ref-type="bibr" rid="B6">Brasil 2003b</xref>), the main environmental conflicts involve sporadic inspection, disorderly visits, and cutting and removal of native vegetation. In the Una Biological Reserve, in turn, with an area of 18.500 ha (<xref ref-type="bibr" rid="B7">Brasil 2007</xref>), the greatest environmental pressures are hunting, deforestation, real estate speculation and illegal sand extraction (<xref ref-type="bibr" rid="B31">Orlando &amp; Cunha 2012</xref>). For these reasons, <italic>D. leucotricha</italic> is assigned a preliminary status of endangered (EN), considering the criteria of EOO less than 5,000 km², AOO less than 500 km², with distribution in no more than five locations, and continuing decline in habitat area and quality (B1ab(i,ii,iii) + B2ab(i,ii,iii)).</p>
+      <p>Etymology: The specific epithet derives from the Greek “leucos” for ‘white’, and “trichos” for ‘hairs’. It refers to the white colour of the hairs present on several structures of the plant.</p>
+      <p>Phenology: Collected with flowers from June to December, and with fruits from December to June.</p>
+      <p>Taxonomic notes: <xref ref-type="bibr" rid="B21">Maas <italic>et al.</italic> (2002</xref>) mentioned two specimens as a possible new species, both with immature flowers (<italic>Santos &amp; Alves 209</italic>, CEPEC!, U!). These same specimens were the only ones used by <xref ref-type="bibr" rid="B22">Maas <italic>et al.</italic> (2003)</xref> for the description of <italic>Duguetia sp. nov. 2</italic> in the monograph of the genus. These specimens also represent the first collected material of <italic>Duguetia leucotricha</italic>, dated from 1987, in the municipality of Una. Only after 17 years another specimen was recorded. The former description could be completed with the analysis of additional specimens collected during a botanical trip to the Serra do Conduru State Park in September 2022, in addition to others found deposited in CEPEC, JPB, NY and U.</p>
+      <p>Specimens of <italic>Duguetia leucotricha</italic> were initially identified as <italic>D. scottmorii</italic><xref ref-type="bibr" rid="B25">Maas (1996</xref>: 221), a species which is also restricted to the Atlantic Coastal Forest of southern Bahia. These two sympatric species share ellipsoid fruits, but the new species differs markedly from the latter by its greyish white indument of stellate hairs on several vegetative structures (vs. pale brown indument of stellate scales), leaves 8-32 cm long (vs. 5-8 cm long), fruiting carpels 15-30 (vs. ca. 150), free (vs. fused for 35-40%), with rounded, slightly verrucose, apiculate areoles (vs. pyramidal, wrinkled, sharp-pointed), and basal collar not protruding below the fruit (vs. protruding). Among other Atlantic Forest species, <italic>D. leucotricha</italic> also resembles <italic>D. magnolioidea</italic> Maas (1996: 198) by the dense indument of white hairs covering vegetative and reproductive parts, free sepals, ellipsoid fruits with free carpels and minutely apiculate seeds. Nevertheless, <italic>D. leucotricha</italic> can be recognized by its chartaceous, smooth leaves when dry (vs. coriaceous, verrucose leaves when dry), stamens 1-1.5 mm long (vs. ca. 5 mm long), and a fruit composed of 15-30 carpels (vs. 150-200).</p>
+      <p>The inflorescence in <italic>Duguetia leucotricha</italic> can be either supra-axillary, pseudo-axillary, leaf-opposed to ramiflorous with one rhipidium and inflorescence branch up to 22 mm long, or trunciflorous with two or more rhipidia and inflorescence branches up to ca. 60 mm long. These two types of flower presentation, among leaves and cauliflory, have been found in the same individual (<italic>e.g. Bazante et al. 1513</italic>). Cauliflory is known in a few species of <italic>Duguetia</italic>, many of them restricted to the Amazon basin (<xref ref-type="bibr" rid="B22">Maas <italic>et al.</italic> 2003</xref>). In the Atlantic Coastal Forest, four species of the genus can also present flowers along the trunk: <italic>Duguetia bahiensis</italic> <xref ref-type="bibr" rid="B20">Maas (1993</xref>: 83), <italic>D. sessilis</italic> (Vell.) <xref ref-type="bibr" rid="B23">Maas (1994</xref>: 38), <italic>D. sooretamae</italic> <xref ref-type="bibr" rid="B26">Maas (1999</xref>: 486) (<xref ref-type="bibr" rid="B22">Maas <italic>et al.</italic> 2003</xref>; <xref ref-type="bibr" rid="B19">Lopes &amp; Mello-Silva 2014</xref>), and <italic>D. moricandiana</italic> <xref ref-type="bibr" rid="B28">Mart. (1841</xref>: 22) (M.L. Bazante, personal observation). <italic>D. leucotricha</italic> is easily distinguished from these species by its young twigs and lower leaf side with greyish white indument of stellate hairs (vs. yellowish or pale brown indument of entire and/or stellate scales), sepals free (vs. connate for 10-35% of their length) and fruit with areoles depressed ovoid, green when young (vs. areoles pyramidal to broadly obovoid or, if depressed ovoid, pinkish-white to vinaceous when young).</p>
+      <p>When using the key of the Monograph of <italic>Duguetia</italic> for Flora Neotropica (<xref ref-type="bibr" rid="B22">Maas <italic>et al.</italic> 2003</xref>), <italic>Duguetia leucotricha</italic> comes closest to <italic>D. granvilleana</italic><xref ref-type="bibr" rid="B26">Maas (1999</xref>: 476), due to its indument of stellate hairs on young twigs, leaf shape, free sepals persistent in fruit, and low number of fruiting carpels. On the other hand, <italic>D. granvilleana</italic> shows great resemblance with <italic>D. arenicola</italic><xref ref-type="bibr" rid="B26">Maas (1999</xref>: 466) and <italic>D. pauciflora</italic><xref ref-type="bibr" rid="B35">Rusby (1920</xref>: 18), which already have been considered a single species (<xref ref-type="bibr" rid="B26">Maas 1999</xref>; <xref ref-type="bibr" rid="B22">Mass <italic>et al</italic>. 2003</xref>). <italic>D. leucotricha</italic> differs from these three species, however, by its peduncle 6 mm long or more (vs<italic>.</italic> 0.5-4 mm long), upper bract 6-15 mm long (vs<italic>.</italic> 1-4.5 mm long), distinctly 3-ridged flower buds (vs. not ridged) and ellipsoid fruit (vs. globose to subglobose). Still according to Maas <italic>et al.</italic>’ key, the new species is also related to <italic>D. rionegrensis</italic><xref ref-type="bibr" rid="B43">Zuilen &amp; Maas (1994</xref>: 233) based on the same previous similarities, but it is distinct mainly by the glabrous upper leaf side (vs. covered with simple and stellate hairs densely concentrated on the primary and secondary veins) and upper bract at 3/4 of the base of the pedicel (vs. at 1/3). Furthermore, <italic>D. pauciflora</italic> is restricted to Guyana and Venezuela, while <italic>D. arenicola</italic>, <italic>D. granvilleana</italic> and <italic>D. rionegrensis</italic> occur only in the Amazon basin of Brazil, Colombia, French Guiana, and Venezuela (<xref ref-type="bibr" rid="B22">Maas <italic>et al.</italic> 2003</xref>).</p>
+      <p><italic>Duguetia leucotricha</italic> also resembles <italic>D. pycnastera</italic><xref ref-type="bibr" rid="B39">Sandwith (1930</xref>: 471) by the rhipidum with elongate sympodial rachis, rather widely-spaced flowers, indument of stellate hairs, sepals (sub)equaling the petals, and rounded apex of fruiting areoles. According to <xref ref-type="bibr" rid="B22">Maas <italic>et al.</italic> (2003</xref>), <italic>D. pycnastera</italic> is morphologically related to <italic>D. neglecta</italic><xref ref-type="bibr" rid="B39">Sandwith (1930</xref>: 470), <italic>D. tenuis</italic> R.E.Fr. (<xref ref-type="bibr" rid="B13">1957</xref>: 327) and <italic>D. tobagensis</italic> (Urb.) R.E.Fr. (<xref ref-type="bibr" rid="B11">1934</xref>: 93) because of leaf and floral features. <italic>D. leucotricha</italic> can be distinguished from these four species by the glabrous upper leaf side (vs. an upper leaf side of which the primary vein is densely covered with stellate hairs), equal-sided leaf base (vs. unequal to slightly so) and persistent upper bract and sepals (vs. soon falling). Furthermore, <italic>D. tobagensis</italic> is endemic to Trinidad and Tobago, <italic>D. neglecta</italic> is restricted to Guyana and Suriname, and <italic>D. pycnastera</italic> and <italic>D. tenuis</italic> are distributed only in the Amazon basin of Brazil, the Guianas and Venezuela (<xref ref-type="bibr" rid="B22">Maas <italic>et al.</italic> 2003</xref>). </p>
+      <p>The rounded apex of the areoles in fruiting carpels is relatively rare among species of <italic>Duguetia</italic>, occurring besides in the already mentioned <italic>D. granvilleana</italic>, <italic>D. pycnastera</italic>, <italic>D. rionegrensis,</italic> and <italic>D. tenuis</italic>, in four closely related species, <italic>D. asterotricha</italic> (Diels) R.E.Fr. (<xref ref-type="bibr" rid="B11">1934</xref>: 87), <italic>D. guianensis</italic> R.E.Fr. (<xref ref-type="bibr" rid="B12">1948</xref>: 234), <italic>D. macrocalyx</italic> R.E.Fr. (<xref ref-type="bibr" rid="B11">1934</xref>: 88), and <italic>D. schulzii</italic> Jans.-Jac. (1970: 341), and also in <italic>D. oligocarpa</italic><xref ref-type="bibr" rid="B25">Maas &amp; Dam (1996</xref>: 207) and <italic>D. ruboides</italic> Maas &amp; He (1999: 484). The Amazonian species <italic>D. asterotricha</italic>, <italic>D. guianensis</italic>, <italic>D. macrocalyx</italic> and <italic>D. schulzii</italic> resemble the new species in the sepals (sub)equalling the petals and persistent through fructification. Their sepals, however, are connate for 20-60% of their length while they are free in <italic>D. leucotricha</italic>. The endemic species of French Guiana <italic>D. oligocarpa</italic> has an obtuse, rounded to subcordate leaf base (vs. acute), and much smaller pedicels (7-30 vs. 2-4 mm long) and upper bract (6-15 vs. ca. 1 mm long) than those of <italic>D. leucotricha</italic>. The lower leaf side of <italic>D. ruboides</italic>, species recorded for the Amazon and Atlantic Forests of Brazil (<xref ref-type="bibr" rid="B4">Bazante &amp; Alves 2021</xref>), is sparsely covered with stellate scales (vs. rather densely covered with stellate hairs), and it has broadly ovate sepals with an obtuse apex (vs. ovate-triangular sepals with an acute apex) that can distinguish it from the new species. </p>
+      <p>
+        <bold>Key to Brazilian Atlantic Coastal Forest species of <italic>Duguetia</italic> </bold>
+      </p>
+      <p>1. Young twigs and lower side of leaves covered with stellate hairs, sometimes also with simple and furcate hairs ……………………………………………………………… 2</p>
+      <p>1’. Young twigs and lower side of leaves covered with entire scales, sometimes also with stellate scales ………………………………………………………………………… 6</p>
+      <p>2. Upper side of leaves, when dry, slightly to densely covered with minute wartlike outgrowths (verrucose); fruiting carpels ≥ 150 ………………………………………… 3</p>
+      <p>2’. Upper side of leaves smooth when dry; fruiting carpels ≤ 75 ……………………… 4</p>
+      <p>3. Leaves ≤ 25 cm long, coriaceous, secondary veins slightly raised on the upper side; fruiting carpels ≤ 11 mm long (Bahia) ………………………………… <italic>D. magnolioidea</italic></p>
+      <p>3’. Leaves ≥ 37 cm long, chartaceous, secondary veins impressed on the upper side; fruiting carpels ≥ 16 mm long (Bahia) ……………………………………… <italic>D. restingae</italic></p>
+      <p>4. Sympodial rachis with internodes ≥ 3 mm long; sepals free; fruiting carpels ≤ 30, areoles covered with greyish white or yellowish hairs, apex rounded (Bahia) …………… …………………………………………………………………………… <italic>D. leucotricha</italic></p>
+      <p>4’. Sympodial rachis with internodes ≤ 1 mm long; sepals connate for 10-20% of their length; fruiting carpels ≥ 40, areoles covered with brown or golden-brown hairs, apex angled ………………………………………………………………………………… 5</p>
+      <p>5. Leaves equal-sided; upper bract about halfway the pedicel; petals cream to yellow; fruiting areoles ridged, apicule ≥ 2 mm long (Bahia, Espírito Santo, Minas Gerais) …………………………………………………………………………… <italic>D. chrysocarpa</italic></p>
+      <p>5’. Leaves with slightly unequal sides; upper bract at 3/4 of the base of the pedicel; petals red; fruiting areoles not ridged, apicule &lt; 1 mm long (Rio de Janeiro) …….… <italic>D. pohliana</italic></p>
+      <p>6. Upper side of leaves sparsely to densely hairy (Paraguay, Bolivia, and Brazil [Bahia, Ceará, Distrito Federal, Goiás, Mato Grosso, Mato Grosso do Sul, Minas Gerais, Paraná, Pernambuco, Rio de Janeiro, Rondônia, São Paulo]) ……………………… <italic>D. furfuracea</italic></p>
+      <p>6’. Upper side of leaves glabrous ……………………………………………………… 7</p>
+      <p>7. Leaves with primary vein flat on the upper side; inflorescence flagelliflorous, i.e., inflorescence branches 8-300 cm long, arising at the base of the trunk and creeping over or partly under the soil; apex of connective of stamens reduced to absent (Espírito Santo, Rio de Janeiro) ………………………………………………………………… <italic>D. sessilis</italic></p>
+      <p>7’. Leaves with primary vein impressed on the upper side (rarely flat in <italic>D. moricandiana</italic>); inflorescence among leaves or cauliflorous, except flagelliflorous; apex of connective of stamens developed …………………………………………………………………… 8</p>
+      <p>8. Fruiting carpels ≤ 100 ……………………………………………………………… 9</p>
+      <p>8’. Fruiting carpels ≥ 150 ……………………………………………………………… 16</p>
+      <p>9. Upper bract just below the sepals; petals red; fruiting areoles smooth, glabrous (Minas Gerais, Paraná, Rio de Janeiro, Rio Grande do Sul, Santa Catarina, São Paulo) ………… …………………………………………………………………………… <italic>D. lanceolata</italic></p>
+      <p>9’. Upper bract at or below the midpoint of the pedicel; petals cream, white or yellow; fruiting areoles verrucose or velutinous, sparsely to totally hairy …………………… 10</p>
+      <p>10. Leaf index 1.5-2.2; flower buds apiculate, distinctly 3-ridged by recurved edges of the sepals (ridges 2-4 mm long); apex of connective of stamens shallowly pyramidal (Alagoas, Bahia, Paraíba, Pernambuco, Rio Grande do Norte, Sergipe) ………………… ………………………………………………………………………… <italic>D. moricandiana</italic></p>
+      <p>10’. Leaf index 2.4-6; flower buds obtuse to acute, not 3-ridged by recurved edges of the sepals or, if yes, ridges ≤ 1 mm long; apex of connective of stamens discoid or deltoid … ………………………………………………………………………………………… 11</p>
+      <p>11. Leaf index 4.5-6; fruiting carpels connate for 75-80% of their length, areoles hardly elevated, transversely narrowly-oblong, sparsely hairy (Rio de Janeiro) … <italic>D. microphylla</italic></p>
+      <p>11’. Leaf index 2.4-4; fruiting carpels free or connate for up to 15% of their length, areoles distinctly elevated, depressed-ovoid, pyramidal or broadly obovoid, densely to totally hairy …………………………………………………………………………… 12</p>
+      <p>12. Sepals free; inner base of inner petals not callose; apex of connective of stamens 0.3-0.4 mm long; fruiting areoles depressed-ovoid, apex rounded (Alagoas, Maranhão, Pará, Piauí) ………………………………………………………………………… <italic>D. ruboides</italic></p>
+      <p>12’. Sepals connate for 10-35% of their length; inner base of inner petals callose; apex of connective of stamens 0.5-0.8 mm long; fruiting areoles pyramidal, obovoid or trulloid, apex angled ………………………………………………………………… 13</p>
+      <p>13. Upper bract generally distinctly foliaceous; apex of connective of stamens deltoid, densely hairy; basal collar of fruit absent (Bahia) ………………………… <italic>D. bahiensis</italic></p>
+      <p>13’. Upper bract not foliaceous; apex of connective of stamens discoid, glabrous to papillate; basal collar of fruit present ………………………………………………… 14</p>
+      <p>14. Petioles ≥ 6 mm long; upper bract ca. 4 mm long; fruiting carpels ≤ 20, areoles globose-pyramidal (Alagoas, Pernambuco) ………………………………… <italic>D. sulcosa</italic></p>
+      <p>14’. Petioles ≤ 5 mm long; upper bract 1-2 mm long; fruiting carpels ≥ 60; areoles pyramidal, shallowly-pyramidal to trulloid …………………………………………… 15</p>
+      <p>15. Petals ovate-triangular, 14-22 mm long; fruiting carpels red or yellowish-brown, covered with erect, furcate to stellate hairs; apex of seeds obtuse, minutely apiculate (Rio de Janeiro) ………………………………………………………………… <italic>D. riedeliana</italic></p>
+      <p>15’. Petals rhombic-obovate, 9-11 mm long; fruiting carpels brown, covered with appressed, stellate scales; apex of seeds rounded, not apiculate (São Paulo) …………… ……………………………………………………………………………… <italic>D. salicifolia</italic></p>
+      <p>16. Leaves with tertiary veins distinctly raised on both sides, but strongly so above; fruiting areoles covered with brown indument of erect, furcate to stellate hairs 0.4-0.6 mm long (Bahia) …………………………………………………………… <italic>D. reticulata</italic></p>
+      <p>16’. Leaves with tertiary veins slightly raised on both sides; fruiting areoles covered with greyish, white or pale brown indument of appressed, stellate scales 0.1-0.3 mm long …… ………………………………………………………………………………………… 17</p>
+      <p>17. Leaves narrowly ovate, densely to totally hairy on the lower side; fruiting carpels narrowly pyramidal, with basal part orange <italic>in vivo</italic>, apex of areoles curved (Espírito Santo, Paraíba) …………………………………………………………… <italic>D. sooretamae</italic></p>
+      <p>17’. Leaves elliptic, narrowly elliptic or obovate, sparsely to rather densely hairy on the lower side; fruiting carpels obovoid-obtrulloid to obtrulloid, with basal part green, brown, white or pinkish <italic>in vivo</italic>, apex of areoles straight ……………………………………… 18</p>
+      <p>18. Upper side of leaves shiny <italic>in sicco</italic>, loops between secondary veins and margin distinct; fruit globose to subglobose, basal collar not protruding below the fruit, 8-10 mm diam., carpels free, areoles slightly verrucose (Alagoas, Paraíba, Pernambuco, Rio Grande do Norte, Sergipe) ……………………………………………… <italic>D. gardneriana</italic></p>
+      <p>18’. Upper side of leaves dull <italic>in sicco</italic>, loops between secondary veins and margin indistinct; fruit ellipsoid, basal collar protruding below the fruit, 20-25 mm diam., carpels connate for 35-40% of their length, areoles wrinkled (Bahia) …………… <italic>D. scottmorii</italic></p>
+    </sec>
+  </body>
+  <back>
+    <ack>
+      <title>Acknowledgements</title>
+      <p>We thank all curators and staff of the mentioned herbaria, Wayt Thomas for providing photographs of herbarium specimens deposited in NY, Lukas Daneu and Daniel Piotto for their invaluable help with the fieldwork, and the reviewers and editors of the manuscript. This work was supported through a research grant from the Conselho Nacional de Desenvolvimento Científico e Tecnológico - CNPq (141056/2021-5).</p>
+    </ack>
+    <ref-list>
+      <title>References</title>
+      <ref id="B1">
+        <mixed-citation>Amorim AM, Thomas WW, Carvalho AMV, Jardim JG. 2008. Floristic of the Una Biological Reserve, Bahia, Brazil. In: Thomas WW. (ed.) The Atlantic Coastal Forests of Northeastern Brazil. Memoirs of the New York Botanical Garden 100: 67-146. </mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Amorim</surname>
+              <given-names>AM</given-names>
+            </name>
+            <name>
+              <surname>Thomas</surname>
+              <given-names>WW</given-names>
+            </name>
+            <name>
+              <surname>Carvalho</surname>
+              <given-names>AMV</given-names>
+            </name>
+            <name>
+              <surname>Jardim</surname>
+              <given-names>JG</given-names>
+            </name>
+          </person-group>
+          <year>2008</year>
+          <person-group person-group-type="editor">
+            <name>
+              <surname>Thomas</surname>
+              <given-names>WW</given-names>
+            </name>
+          </person-group>
+          <article-title>The Atlantic Coastal Forests of Northeastern Brazil</article-title>
+          <source>Memoirs of the New York Botanical Garden</source>
+          <volume>100</volume>
+          <fpage>67</fpage>
+          <lpage>146</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B2">
+        <mixed-citation>Bachman S, Moat J, Hill AW, Torre JL, Scott B. 2011. Supporting red list threat assessments with GeoCAT: Geospatial conservation assessment tool. ZooKeys 150: 117-126.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Bachman</surname>
+              <given-names>S</given-names>
+            </name>
+            <name>
+              <surname>Moat</surname>
+              <given-names>J</given-names>
+            </name>
+            <name>
+              <surname>Hill</surname>
+              <given-names>AW</given-names>
+            </name>
+            <name>
+              <surname>Torre</surname>
+              <given-names>JL</given-names>
+            </name>
+            <name>
+              <surname>Scott</surname>
+              <given-names>B</given-names>
+            </name>
+          </person-group>
+          <year>2011</year>
+          <article-title>Supporting red list threat assessments with GeoCAT: Geospatial conservation assessment tool</article-title>
+          <source>ZooKeys</source>
+          <volume>150</volume>
+          <fpage>117</fpage>
+          <lpage>126</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B3">
+        <mixed-citation>Bazante M, Alves M. 2017. A new species of <italic>Duguetia</italic> (Annonaceae) from the Atlantic Forest of northeastern Brazil. Phytotaxa 314: 266-272.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Bazante</surname>
+              <given-names>M</given-names>
+            </name>
+            <name>
+              <surname>Alves</surname>
+              <given-names>M</given-names>
+            </name>
+          </person-group>
+          <year>2017</year>
+          <article-title>A new species of Duguetia (Annonaceae) from the Atlantic Forest of northeastern Brazil</article-title>
+          <source>Phytotaxa</source>
+          <volume>314</volume>
+          <fpage>266</fpage>
+          <lpage>272</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B4">
+        <mixed-citation>Bazante ML, Alves M. 2021. New records of Annonaceae in the Northeast Brazil. Acta Brasiliensis 5: 25-34.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Bazante</surname>
+              <given-names>ML</given-names>
+            </name>
+            <name>
+              <surname>Alves</surname>
+              <given-names>M</given-names>
+            </name>
+          </person-group>
+          <year>2021</year>
+          <article-title>New records of Annonaceae in the Northeast Brazil</article-title>
+          <source>Acta Brasiliensis</source>
+          <volume>5</volume>
+          <fpage>25</fpage>
+          <lpage>34</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B5">
+        <mixed-citation>Brasil - Estado da Bahia. 2003a. Decreto Nº 8.650. Altera a poligonal e a denominação da Área de Proteção Ambiental APA da Lagoa Encantada. <comment><ext-link ext-link-type="uri" xlink:href="http://www.legislabahia.ba.gov.br/documentos/decreto-no-8650-de-22-de-setembro-de-2003#">http://www.legislabahia.ba.gov.br/documentos/decreto-no-8650-de-22-de-setembro-de-2003#</ext-link></comment>. 13 Oct. 2022.</mixed-citation>
+        <element-citation publication-type="legal-doc">
+          <person-group person-group-type="author">
+            <collab>Brasil - Estado da Bahia</collab>
+          </person-group>
+          <year>2003</year>
+          <source>Decreto Nº 8.650. Altera a poligonal e a denominação da Área de Proteção Ambiental APA da Lagoa Encantada</source>
+          <comment>
+            <ext-link ext-link-type="uri" xlink:href="http://www.legislabahia.ba.gov.br/documentos/decreto-no-8650-de-22-de-setembro-de-2003#">http://www.legislabahia.ba.gov.br/documentos/decreto-no-8650-de-22-de-setembro-de-2003#</ext-link>
+          </comment>
+          <date-in-citation content-type="access-date" iso-8601-date="2022-10-13">13 Oct. 2022</date-in-citation>
+        </element-citation>
+      </ref>
+      <ref id="B6">
+        <mixed-citation>Brasil - Estado da Bahia. 2003b. Decreto Nº 8.702. Redefine a poligonal do Parque Estadual da Serra do Conduru. <comment><ext-link ext-link-type="uri" xlink:href="http://www.legislabahia.ba.gov.br/documentos/decreto-no-8702-de-04-de-novembro-de-2003#">http://www.legislabahia.ba.gov.br/documentos/decreto-no-8702-de-04-de-novembro-de-2003#</ext-link></comment>. 13 Oct. 2022.</mixed-citation>
+        <element-citation publication-type="legal-doc">
+          <person-group person-group-type="author">
+            <collab>Brasil - Estado da Bahia</collab>
+          </person-group>
+          <year>2003</year>
+          <source>Decreto Nº 8.702. Redefine a poligonal do Parque Estadual da Serra do Conduru</source>
+          <comment>
+            <ext-link ext-link-type="uri" xlink:href="http://www.legislabahia.ba.gov.br/documentos/decreto-no-8702-de-04-de-novembro-de-2003#">http://www.legislabahia.ba.gov.br/documentos/decreto-no-8702-de-04-de-novembro-de-2003#</ext-link>
+          </comment>
+          <date-in-citation content-type="access-date" iso-8601-date="2022-10-13">13 Oct. 2022</date-in-citation>
+        </element-citation>
+      </ref>
+      <ref id="B7">
+        <mixed-citation>Brasil. Decreto s/n. 2007. Alteração de limites da Reserva Biológica de Una. <comment><ext-link ext-link-type="uri" xlink:href="https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2007/dnn/dnn11456.htm">https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2007/dnn/dnn11456.htm</ext-link></comment>. 13 Oct. 2022.</mixed-citation>
+        <element-citation publication-type="legal-doc">
+          <person-group person-group-type="author">
+            <collab>Brasil</collab>
+          </person-group>
+          <source>Decreto s/n</source>
+          <year>2007</year>
+          <comment>Alteração de limites da Reserva Biológica de Una</comment>
+          <comment>
+            <ext-link ext-link-type="uri" xlink:href="https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2007/dnn/dnn11456.htm">https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2007/dnn/dnn11456.htm</ext-link>
+          </comment>
+          <date-in-citation content-type="access-date" iso-8601-date="2022-10-13">13 Oct. 2022</date-in-citation>
+        </element-citation>
+      </ref>
+      <ref id="B8">
+        <mixed-citation>Brasil. Ministério Público do Estado da Bahia. 2015. Parecer técnico Nº 05/2015. <comment><ext-link ext-link-type="uri" xlink:href="http://www.ceama.mp.ba.gov.br/biblioteca-virtual-ceama/doc_view/3826-rappam-parecer-apa-lagoa-encantada-versao-final-12-11-2015.html">http://www.ceama.mp.ba.gov.br/biblioteca-virtual-ceama/doc_view/3826-rappam-parecer-apa-lagoa-encantada-versao-final-12-11-2015.html</ext-link></comment>. 13 Oct. 2022.</mixed-citation>
+        <element-citation publication-type="legal-doc">
+          <person-group person-group-type="author">
+            <collab>Brasil</collab>
+          </person-group>
+          <publisher-name>Ministério Público do Estado da Bahia</publisher-name>
+          <year>2015</year>
+          <source>Parecer técnico Nº 05/2015</source>
+          <comment>
+            <ext-link ext-link-type="uri" xlink:href="http://www.ceama.mp.ba.gov.br/biblioteca-virtual-ceama/doc_view/3826-rappam-parecer-apa-lagoa-encantada-versao-final-12-11-2015.html">http://www.ceama.mp.ba.gov.br/biblioteca-virtual-ceama/doc_view/3826-rappam-parecer-apa-lagoa-encantada-versao-final-12-11-2015.html</ext-link>
+          </comment>
+          <date-in-citation content-type="access-date" iso-8601-date="2022-10-13">13 Oct. 2022</date-in-citation>
+        </element-citation>
+      </ref>
+      <ref id="B9">
+        <mixed-citation>Chatrou LW, Koek-Noorman J, Maas PJM. 2000. Studies in Annonaceae XXXVI. The <italic>Duguetia</italic> alliance: where the ways part. Annals of the Missouri Botanical Garden 87: 234-245.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Chatrou</surname>
+              <given-names>LW</given-names>
+            </name>
+            <name>
+              <surname>Koek-Noorman</surname>
+              <given-names>J</given-names>
+            </name>
+            <name>
+              <surname>Maas</surname>
+              <given-names>PJM</given-names>
+            </name>
+          </person-group>
+          <year>2000</year>
+          <article-title>Studies in Annonaceae XXXVI. The Duguetia alliance: where the ways part</article-title>
+          <source>Annals of the Missouri Botanical Garden</source>
+          <volume>87</volume>
+          <fpage>234</fpage>
+          <lpage>245</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B10">
+        <mixed-citation>Chatrou LW, Pirie MD, Erkens RHJ, <italic>et al</italic>. 2012. A new subfamilial and tribal classification of the pantropical flowering plant family Annonaceae informed by molecular phylogenetics. Botanical Journal of the Linnean Society 169: 5-40.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Chatrou</surname>
+              <given-names>LW</given-names>
+            </name>
+            <name>
+              <surname>Pirie</surname>
+              <given-names>MD</given-names>
+            </name>
+            <name>
+              <surname>Erkens</surname>
+              <given-names>RHJ</given-names>
+            </name>
+            <etal/>
+          </person-group>
+          <year>2012</year>
+          <article-title>A new subfamilial and tribal classification of the pantropical flowering plant family Annonaceae informed by molecular phylogenetics</article-title>
+          <source>Botanical Journal of the Linnean Society</source>
+          <volume>169</volume>
+          <fpage>5</fpage>
+          <lpage>40</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B11">
+        <mixed-citation>Fries RE. 1934. Revision der Arten einiger Anonaceen-Gattungen III. Acta Horti Bergiani 12: 28-106.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Fries</surname>
+              <given-names>RE</given-names>
+            </name>
+          </person-group>
+          <year>1934</year>
+          <article-title>Revision der Arten einiger Anonaceen-Gattungen III</article-title>
+          <source>Acta Horti Bergiani</source>
+          <volume>12</volume>
+          <fpage>28</fpage>
+          <lpage>106</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B12">
+        <mixed-citation>Fries RE. 1948. Contributions to the Flora of Tropical America XLVII: Annonaceae new to British Guiana. Kew Bulletin 1948: 229-235.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Fries</surname>
+              <given-names>RE</given-names>
+            </name>
+          </person-group>
+          <year>1948</year>
+          <article-title>Contributions to the Flora of Tropical America XLVII: Annonaceae new to British Guiana</article-title>
+          <source>Kew Bulletin</source>
+          <volume>1948</volume>
+          <fpage>229</fpage>
+          <lpage>235</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B13">
+        <mixed-citation>Fries RE. 1957. Annonaceae. In: Maguire B, Wurdack JJ (eds.) The botany of the Guayana Highlands, Part II. Memoirs of the New York Botanical Garden 9: 325-331.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Fries</surname>
+              <given-names>RE</given-names>
+            </name>
+          </person-group>
+          <year>1957</year>
+          <person-group person-group-type="editor">
+            <name>
+              <surname>Maguire</surname>
+              <given-names>B</given-names>
+            </name>
+            <name>
+              <surname>Wurdack</surname>
+              <given-names>JJ</given-names>
+            </name>
+          </person-group>
+          <article-title>The botany of the Guayana Highlands, Part II</article-title>
+          <source>Memoirs of the New York Botanical Garden</source>
+          <volume>9</volume>
+          <fpage>325</fpage>
+          <lpage>331</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B14">
+        <mixed-citation>Guo X, Tang CC, Thomas DC, Couvreur TLP, Saunders RMK. 2017. A mega-phylogeny of the Annonaceae: Taxonomic placement of five enigmatic genera and recognition of a new tribe, Phoenicantheae. Scientific Reports 7: 7323.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Guo</surname>
+              <given-names>X</given-names>
+            </name>
+            <name>
+              <surname>Tang</surname>
+              <given-names>CC</given-names>
+            </name>
+            <name>
+              <surname>Thomas</surname>
+              <given-names>DC</given-names>
+            </name>
+            <name>
+              <surname>Couvreur</surname>
+              <given-names>TLP</given-names>
+            </name>
+            <name>
+              <surname>Saunders</surname>
+              <given-names>RMK</given-names>
+            </name>
+          </person-group>
+          <year>2017</year>
+          <article-title>A mega-phylogeny of the Annonaceae: Taxonomic placement of five enigmatic genera and recognition of a new tribe, Phoenicantheae</article-title>
+          <source>Scientific Reports</source>
+          <volume>7</volume>
+          <elocation-id>7323</elocation-id>
+        </element-citation>
+      </ref>
+      <ref id="B15">
+        <mixed-citation>IBGE - Instituto Brasileiro de Geografia e Estatística. 2022. Portal de Mapas. <comment><ext-link ext-link-type="uri" xlink:href="https://portaldemapas.ibge.gov.br/portal.php#homepage">https://portaldemapas.ibge.gov.br/portal.php#homepage</ext-link></comment>. 20 Jun. 2022.</mixed-citation>
+        <element-citation publication-type="webpage">
+          <person-group person-group-type="author">
+            <collab>IBGE - Instituto Brasileiro de Geografia e Estatística</collab>
+          </person-group>
+          <year>2022</year>
+          <source>Portal de Mapas</source>
+          <comment>
+            <ext-link ext-link-type="uri" xlink:href="https://portaldemapas.ibge.gov.br/portal.php#homepage">https://portaldemapas.ibge.gov.br/portal.php#homepage</ext-link>
+          </comment>
+          <date-in-citation content-type="access-date" iso-8601-date="2022-06-20">20 Jun. 2022</date-in-citation>
+        </element-citation>
+      </ref>
+      <ref id="B16">
+        <mixed-citation>IUCN - Species Survival Commission. 2019. Guidelines for using the IUCN Red List categories and criteria. Version 14. <ext-link ext-link-type="uri" xlink:href="https://portals.iucn.org/library/efiles/documents/rl-2001-001-2nd.pdf">https://portals.iucn.org/library/efiles/documents/rl-2001-001-2nd.pdf</ext-link> </mixed-citation>
+        <element-citation publication-type="webpage">
+          <person-group person-group-type="author">
+            <collab>IUCN - Species Survival Commission</collab>
+          </person-group>
+          <year>2019</year>
+          <source>Guidelines for using the IUCN Red List categories and criteria. Version 14</source>
+          <ext-link ext-link-type="uri" xlink:href="https://portals.iucn.org/library/efiles/documents/rl-2001-001-2nd.pdf">https://portals.iucn.org/library/efiles/documents/rl-2001-001-2nd.pdf</ext-link>
+        </element-citation>
+      </ref>
+      <ref id="B17">
+        <mixed-citation>Jardim JG. 2003. Uma caracterização parcial da vegetação da região sul da Bahia, Brasil. In: Prado PI, Landau EC, Moura RT, Pinto LPS, Fonseca GAB, Alger K. (eds.) Corredor de Biodiversidade da Mata Atlântica do sul da Bahia. Ilhéus, Instituto de Estudos Sócio-Ambientais do Sul da Bahia e Conservation International do Brasil. <ext-link ext-link-type="uri" xlink:href="http://www.rbma.org.br/anuario/pdf/mata_09_vegetacao.pdf">http://www.rbma.org.br/anuario/pdf/mata_09_vegetacao.pdf</ext-link>. p. 1-200</mixed-citation>
+        <element-citation publication-type="book">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Jardim</surname>
+              <given-names>JG</given-names>
+            </name>
+          </person-group>
+          <year>2003</year>
+          <chapter-title>Uma caracterização parcial da vegetação da região sul da Bahia, Brasil</chapter-title>
+          <person-group person-group-type="editor">
+            <name>
+              <surname>Prado</surname>
+              <given-names>PI</given-names>
+            </name>
+            <name>
+              <surname>Landau</surname>
+              <given-names>EC</given-names>
+            </name>
+            <name>
+              <surname>Moura</surname>
+              <given-names>RT</given-names>
+            </name>
+            <name>
+              <surname>Pinto</surname>
+              <given-names>LPS</given-names>
+            </name>
+            <name>
+              <surname>Fonseca</surname>
+              <given-names>GAB</given-names>
+            </name>
+            <name>
+              <surname>Alger</surname>
+              <given-names>K</given-names>
+            </name>
+          </person-group>
+          <source>Corredor de Biodiversidade da Mata Atlântica do sul da Bahia. Ilhéus, Instituto de Estudos Sócio-Ambientais do Sul da Bahia e Conservation International do Brasil</source>
+          <ext-link ext-link-type="uri" xlink:href="http://www.rbma.org.br/anuario/pdf/mata_09_vegetacao.pdf">http://www.rbma.org.br/anuario/pdf/mata_09_vegetacao.pdf</ext-link>
+          <fpage>1</fpage>
+          <lpage>200</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B18">
+        <mixed-citation>Lobão AQ, Bazante ML. 2020. <italic>Duguetia</italic>. In: Flora do Brasil 2020. Rio de Janeiro, Jardim Botânico do Rio de Janeiro. <comment><ext-link ext-link-type="uri" xlink:href="http://reflora.jbrj.gov.br/reflora/">http://reflora.jbrj.gov.br/reflora/</ext-link></comment>. 07 Oct. 2022.</mixed-citation>
+        <element-citation publication-type="webpage">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Lobão</surname>
+              <given-names>AQ</given-names>
+            </name>
+            <name>
+              <surname>Bazante</surname>
+              <given-names>ML</given-names>
+            </name>
+          </person-group>
+          <year>2020</year>
+          <chapter-title>Duguetia</chapter-title>
+          <source>Flora do Brasil 2020</source>
+          <publisher-name>Rio de Janeiro, Jardim Botânico do Rio de Janeiro</publisher-name>
+          <comment>
+            <ext-link ext-link-type="uri" xlink:href="http://reflora.jbrj.gov.br/reflora/">http://reflora.jbrj.gov.br/reflora/</ext-link>
+          </comment>
+          <date-in-citation content-type="access-date" iso-8601-date="2022-10-07">07 Oct. 2022</date-in-citation>
+        </element-citation>
+      </ref>
+      <ref id="B19">
+        <mixed-citation>Lopes JC, Mello-Silva R. 2014. Annonaceae da Reserva Natural Vale, Linhares, Espírito Santo. Rodriguésia 65: 599-635.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Lopes</surname>
+              <given-names>JC</given-names>
+            </name>
+            <name>
+              <surname>Mello-Silva</surname>
+              <given-names>R</given-names>
+            </name>
+          </person-group>
+          <year>2014</year>
+          <article-title>Annonaceae da Reserva Natural Vale, Linhares, Espírito Santo</article-title>
+          <source>Rodriguésia</source>
+          <volume>65</volume>
+          <fpage>599</fpage>
+          <lpage>635</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B20">
+        <mixed-citation>Maas PJM, Koek-Noorman J, Westra LYT. 1993. Studies in Annonaceae XVIII. New species from the Neotropics and miscellaneous notes. Botanische Jahrbücher für Systematik, Pflanzengeschichte und Pflanzengeographie 115: 77-95.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Maas</surname>
+              <given-names>PJM</given-names>
+            </name>
+            <name>
+              <surname>Koek-Noorman</surname>
+              <given-names>J</given-names>
+            </name>
+            <name>
+              <surname>Westra</surname>
+              <given-names>LYT</given-names>
+            </name>
+          </person-group>
+          <year>1993</year>
+          <article-title>Studies in Annonaceae XVIII. New species from the Neotropics and miscellaneous notes</article-title>
+          <source>Botanische Jahrbücher für Systematik, Pflanzengeschichte und Pflanzengeographie</source>
+          <volume>115</volume>
+          <fpage>77</fpage>
+          <lpage>95</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B21">
+        <mixed-citation>Maas PJM, Maas-van de Kamer H, Junikka L, Mello-Silva R, Rainer H. 2002. Annonaceae from Central-eastern Brazil. Rodriguésia 52: 61-94.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Maas</surname>
+              <given-names>PJM</given-names>
+            </name>
+            <name>
+              <surname>Maas-van de Kamer</surname>
+              <given-names>H</given-names>
+            </name>
+            <name>
+              <surname>Junikka</surname>
+              <given-names>L</given-names>
+            </name>
+            <name>
+              <surname>Mello-Silva</surname>
+              <given-names>R</given-names>
+            </name>
+            <name>
+              <surname>Rainer</surname>
+              <given-names>H</given-names>
+            </name>
+          </person-group>
+          <year>2002</year>
+          <article-title>Annonaceae from Central-eastern Brazil</article-title>
+          <source>Rodriguésia</source>
+          <volume>52</volume>
+          <fpage>61</fpage>
+          <lpage>94</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B22">
+        <mixed-citation>Maas PJM, Westra LYT, Chatrou LW. 2003. <italic>Duguetia</italic>. Flora Neotropica Monograph 88: 1-274.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Maas</surname>
+              <given-names>PJM</given-names>
+            </name>
+            <name>
+              <surname>Westra</surname>
+              <given-names>LYT</given-names>
+            </name>
+            <name>
+              <surname>Chatrou</surname>
+              <given-names>LW</given-names>
+            </name>
+          </person-group>
+          <year>2003</year>
+          <article-title>Duguetia</article-title>
+          <source>Flora Neotropica Monograph</source>
+          <volume>88</volume>
+          <fpage>1</fpage>
+          <lpage>274</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B23">
+        <mixed-citation>Maas PJM, Westra LYT, Meijdam NAJ, Tol IAV van. 1994. Studies in Annonaceae XV. A taxonomic revision of <italic>Duguetia</italic> A. F. C. P. de Saint-Hilaire Sect. <italic>Geanthemum</italic> (R. E. Fries) R. E. Fries (Annonaceae). Boletim do Museu Paraense Emilio Goeldi, Série Botânica 9: 31-58.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Maas</surname>
+              <given-names>PJM</given-names>
+            </name>
+            <name>
+              <surname>Westra</surname>
+              <given-names>LYT</given-names>
+            </name>
+            <name>
+              <surname>Meijdam</surname>
+              <given-names>NAJ</given-names>
+            </name>
+            <name>
+              <surname>Tol</surname>
+              <given-names>IAV van</given-names>
+            </name>
+          </person-group>
+          <year>1994</year>
+          <article-title>Studies in Annonaceae XV. A taxonomic revision of Duguetia A. F. C. P. de Saint-Hilaire Sect. Geanthemum (R. E. Fries) R. E. Fries (Annonaceae)</article-title>
+          <source>Boletim do Museu Paraense Emilio Goeldi, Série Botânica</source>
+          <volume>9</volume>
+          <fpage>31</fpage>
+          <lpage>58</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B24">
+        <mixed-citation>Maas PJM, Westra LYT. 2010. New species of Annonaceae from the Neotropics and miscellaneous notes. Blumea 55: 259-275.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Maas</surname>
+              <given-names>PJM</given-names>
+            </name>
+            <name>
+              <surname>Westra</surname>
+              <given-names>LYT</given-names>
+            </name>
+          </person-group>
+          <year>2010</year>
+          <article-title>New species of Annonaceae from the Neotropics and miscellaneous notes</article-title>
+          <source>Blumea</source>
+          <volume>55</volume>
+          <fpage>259</fpage>
+          <lpage>275</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B25">
+        <mixed-citation>Maas PJM. 1996. Studies in Annonaceae XXX. Monograph of <italic>Duguetia</italic>: preliminary notes. Botanische Jahrbücher für Systematik, Pflanzengeschichte und Pflanzengeographie 118: 187-227.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Maas</surname>
+              <given-names>PJM</given-names>
+            </name>
+          </person-group>
+          <year>1996</year>
+          <article-title>Studies in Annonaceae XXX. Monograph of Duguetia: preliminary notes</article-title>
+          <source>Botanische Jahrbücher für Systematik, Pflanzengeschichte und Pflanzengeographie</source>
+          <volume>118</volume>
+          <fpage>187</fpage>
+          <lpage>227</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B26">
+        <mixed-citation>Maas PJM. 1999. Studies in Annonaceae XXXVII. Monograph of <italic>Duguetia</italic>: preliminary notes II. Botanische Jahrbücher für Systematik, Pflanzengeschichte und Pflanzengeographie 121: 465-489.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Maas</surname>
+              <given-names>PJM</given-names>
+            </name>
+          </person-group>
+          <year>1999</year>
+          <article-title>Studies in Annonaceae XXXVII. Monograph of Duguetia: preliminary notes II</article-title>
+          <source>Botanische Jahrbücher für Systematik, Pflanzengeschichte und Pflanzengeographie</source>
+          <volume>121</volume>
+          <fpage>465</fpage>
+          <lpage>489</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B27">
+        <mixed-citation>Martini AMZ, Fiaschi P, Amorim AM, Paixão JL. 2007. A hot-point within a hot-spot: a high diversity site in Brazil’s Atlantic Forest. Biodiversity and Conservation 16: 3111-3128.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Martini</surname>
+              <given-names>AMZ</given-names>
+            </name>
+            <name>
+              <surname>Fiaschi</surname>
+              <given-names>P</given-names>
+            </name>
+            <name>
+              <surname>Amorim</surname>
+              <given-names>AM</given-names>
+            </name>
+            <name>
+              <surname>Paixão</surname>
+              <given-names>JL</given-names>
+            </name>
+          </person-group>
+          <year>2007</year>
+          <article-title>A hot-point within a hot-spot: a high diversity site in Brazil’s Atlantic Forest</article-title>
+          <source>Biodiversity and Conservation</source>
+          <volume>16</volume>
+          <fpage>3111</fpage>
+          <lpage>3128</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B28">
+        <mixed-citation>Martius CFP von. 1841. Annonaceae. In: Martius CFP von, Eichler AG, Urban I. (eds.). Flora Brasiliensis. Vol. XIII, Part I, Fasc. 2. <ext-link ext-link-type="uri" xlink:href="http://florabrasiliensis.cria.org.br/search?taxon_id=523">http://florabrasiliensis.cria.org.br/search?taxon_id=523</ext-link> </mixed-citation>
+        <element-citation publication-type="book">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Martius</surname>
+              <given-names>CFP von</given-names>
+            </name>
+          </person-group>
+          <year>1841</year>
+          <chapter-title>Annonaceae</chapter-title>
+          <person-group person-group-type="editor">
+            <name>
+              <surname>Martius</surname>
+              <given-names>CFP von</given-names>
+            </name>
+            <name>
+              <surname>Eichler</surname>
+              <given-names>AG</given-names>
+            </name>
+            <name>
+              <surname>Urban</surname>
+              <given-names>I</given-names>
+            </name>
+          </person-group>
+          <source>Flora Brasiliensis</source>
+          <volume>XIII</volume>
+          <issue-part>I</issue-part>
+          <issue>2</issue>
+          <ext-link ext-link-type="uri" xlink:href="http://florabrasiliensis.cria.org.br/search?taxon_id=523">http://florabrasiliensis.cria.org.br/search?taxon_id=523</ext-link>
+        </element-citation>
+      </ref>
+      <ref id="B29">
+        <mixed-citation>Mildbraed J. 1922. Wissenschaftliche Ergebnisse der zweiten deutschen Zentral-Afrika-Expedition, 1910-1911, unter Fuhrung Adolf Friedrichs, Herzogs zu Mecklenburg. Leipzig, Verlag von Klinkhardt &amp; Biermann.</mixed-citation>
+        <element-citation publication-type="book">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Mildbraed</surname>
+              <given-names>J</given-names>
+            </name>
+          </person-group>
+          <year>1922</year>
+          <source>Wissenschaftliche Ergebnisse der zweiten deutschen Zentral-Afrika-Expedition, 1910-1911, unter Fuhrung Adolf Friedrichs, Herzogs zu Mecklenburg</source>
+          <publisher-loc>Leipzig</publisher-loc>
+          <publisher-name>Verlag von Klinkhardt &amp; Biermann</publisher-name>
+        </element-citation>
+      </ref>
+      <ref id="B30">
+        <mixed-citation>MMA - Ministério do Meio Ambiente. 2022. Portaria MMA 148/2022. <comment><ext-link ext-link-type="uri" xlink:href="https://www.icmbio.gov.br/cepsul/images/stories/legislacao/portaria/2020/p_mma_148_2022_altera_anexos_p_mma_443_444_445_2014_atualiza_especies_ameacadas_extincao.pdf">https://www.icmbio.gov.br/cepsul/images/stories/legislacao/portaria/2020/p_mma_148_2022_altera_anexos_p_mma_443_444_445_2014_atualiza_especies_ameacadas_extincao.pdf</ext-link></comment>. 08 Jun. 2022.</mixed-citation>
+        <element-citation publication-type="webpage">
+          <person-group person-group-type="author">
+            <collab>MMA - Ministério do Meio Ambiente</collab>
+          </person-group>
+          <year>2022</year>
+          <source>Portaria MMA 148/2022</source>
+          <comment>
+            <ext-link ext-link-type="uri" xlink:href="https://www.icmbio.gov.br/cepsul/images/stories/legislacao/portaria/2020/p_mma_148_2022_altera_anexos_p_mma_443_444_445_2014_atualiza_especies_ameacadas_extincao.pdf">https://www.icmbio.gov.br/cepsul/images/stories/legislacao/portaria/2020/p_mma_148_2022_altera_anexos_p_mma_443_444_445_2014_atualiza_especies_ameacadas_extincao.pdf</ext-link>
+          </comment>
+          <date-in-citation content-type="access-date" iso-8601-date="2022-06-08">08 Jun. 2022</date-in-citation>
+        </element-citation>
+      </ref>
+      <ref id="B31">
+        <mixed-citation>Orlando A, Cunha R. 2012. Plano Municipal de Conservação e Recuperação da Mata Atlântica de Ilhéus, Bahia. Salvador, Grupo Ambientalista da Bahia.</mixed-citation>
+        <element-citation publication-type="book">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Orlando</surname>
+              <given-names>A</given-names>
+            </name>
+            <name>
+              <surname>Cunha</surname>
+              <given-names>R</given-names>
+            </name>
+          </person-group>
+          <year>2012</year>
+          <source>Plano Municipal de Conservação e Recuperação da Mata Atlântica de Ilhéus, Bahia</source>
+          <publisher-loc>Salvador</publisher-loc>
+          <publisher-name>Grupo Ambientalista da Bahia</publisher-name>
+        </element-citation>
+      </ref>
+      <ref id="B32">
+        <mixed-citation>Pellegrin F. 1920. Plantae letestuanae novae ou Plantes nouvelles récoltées par M. Le Testu de 1907 à 1919 dans la Mayombe congolais. Bulletin du Muséum d’Histoire Naturelle 26: 654-659.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Pellegrin</surname>
+              <given-names>F</given-names>
+            </name>
+          </person-group>
+          <year>1920</year>
+          <article-title>Plantae letestuanae novae ou Plantes nouvelles récoltées par M. Le Testu de 1907 à 1919 dans la Mayombe congolais</article-title>
+          <source>Bulletin du Muséum d’Histoire Naturelle</source>
+          <volume>26</volume>
+          <fpage>654</fpage>
+          <lpage>659</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B33">
+        <mixed-citation>Pirie MD, Chatrou LW, Erkens RHJ, <italic>et al</italic>. 2005. Phylogeny reconstruction and molecular dating in four Neotropical genera of Annonaceae: the effect of taxon sampling in age estimation. In: Bakker FT, Chatrou LW, Gravendeel B, Pelser PB. (eds.) Plant species-level systematics: new perspectives on pattern and process. Liechenstein, A.R.G. Gantner Verlag. p. 149-174.</mixed-citation>
+        <element-citation publication-type="book">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Pirie</surname>
+              <given-names>MD</given-names>
+            </name>
+            <name>
+              <surname>Chatrou</surname>
+              <given-names>LW</given-names>
+            </name>
+            <name>
+              <surname>Erkens</surname>
+              <given-names>RHJ</given-names>
+            </name>
+            <etal/>
+          </person-group>
+          <year>2005</year>
+          <chapter-title>Phylogeny reconstruction and molecular dating in four Neotropical genera of Annonaceae: the effect of taxon sampling in age estimation</chapter-title>
+          <person-group person-group-type="editor">
+            <name>
+              <surname>Bakker</surname>
+              <given-names>FT</given-names>
+            </name>
+            <name>
+              <surname>Chatrou</surname>
+              <given-names>LW</given-names>
+            </name>
+            <name>
+              <surname>Gravendeel</surname>
+              <given-names>B</given-names>
+            </name>
+            <name>
+              <surname>Pelser</surname>
+              <given-names>PB</given-names>
+            </name>
+          </person-group>
+          <source>Plant species-level systematics: new perspectives on pattern and process</source>
+          <publisher-loc>Liechenstein</publisher-loc>
+          <publisher-name>A.R.G. Gantner Verlag</publisher-name>
+          <fpage>149</fpage>
+          <lpage>174</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B34">
+        <mixed-citation>QGIS Development Team. 2022. QGIS Geographic Information System. <comment><ext-link ext-link-type="uri" xlink:href="http://qgis.osgeo.org">http://qgis.osgeo.org</ext-link></comment>. 10 Jun. 2022.</mixed-citation>
+        <element-citation publication-type="webpage">
+          <person-group person-group-type="author">
+            <collab>QGIS Development Team</collab>
+          </person-group>
+          <year>2022</year>
+          <source>QGIS Geographic Information System</source>
+          <comment>
+            <ext-link ext-link-type="uri" xlink:href="http://qgis.osgeo.org">http://qgis.osgeo.org</ext-link>
+          </comment>
+          <date-in-citation content-type="access-date" iso-8601-date="2022-06-10">10 Jun. 2022</date-in-citation>
+        </element-citation>
+      </ref>
+      <ref id="B35">
+        <mixed-citation>Rusby HH. 1920. Description of three hundred new species of South American plants. New York, Published by the author.</mixed-citation>
+        <element-citation publication-type="book">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Rusby</surname>
+              <given-names>HH</given-names>
+            </name>
+          </person-group>
+          <year>1920</year>
+          <source>Description of three hundred new species of South American plants</source>
+          <publisher-loc>New York</publisher-loc>
+          <publisher-name>Published by the author</publisher-name>
+        </element-citation>
+      </ref>
+      <ref id="B36">
+        <mixed-citation>Safford WE. 1914. Classification of the genus <italic>Annona</italic> with descriptions of new and imperfectly known species. Contributions from the United States National Herbarium 18: 1-68.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Safford</surname>
+              <given-names>WE</given-names>
+            </name>
+          </person-group>
+          <year>1914</year>
+          <article-title>Classification of the genus Annona with descriptions of new and imperfectly known species</article-title>
+          <source>Contributions from the United States National Herbarium</source>
+          <volume>18</volume>
+          <fpage>1</fpage>
+          <lpage>68</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B37">
+        <mixed-citation>Saint-Hilaire AFCP de. 1825. Flora Brasiliae meridionalis. Vol 1. Paris, A. Belin.</mixed-citation>
+        <element-citation publication-type="book">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Saint-Hilaire</surname>
+              <given-names>AFCP de</given-names>
+            </name>
+          </person-group>
+          <year>1825</year>
+          <source>Flora Brasiliae meridionalis</source>
+          <volume>1</volume>
+          <publisher-loc>Paris</publisher-loc>
+          <publisher-name>A. Belin</publisher-name>
+        </element-citation>
+      </ref>
+      <ref id="B38">
+        <mixed-citation>Saldanha AA, Vieira L, Maia DSDS, <italic>et al</italic>. 2021. Anti-inflammatory and antinociceptive activities of a phenylpropanoid-enriched fraction of <italic>Duguetia furfuracea</italic>. Inflammopharmacology 29: 409-422.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Saldanha</surname>
+              <given-names>AA</given-names>
+            </name>
+            <name>
+              <surname>Vieira</surname>
+              <given-names>L</given-names>
+            </name>
+            <name>
+              <surname>Maia</surname>
+              <given-names>DSDS</given-names>
+            </name>
+            <etal/>
+          </person-group>
+          <year>2021</year>
+          <article-title>Anti-inflammatory and antinociceptive activities of a phenylpropanoid-enriched fraction of Duguetia furfuracea</article-title>
+          <source>Inflammopharmacology</source>
+          <volume>29</volume>
+          <fpage>409</fpage>
+          <lpage>422</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B39">
+        <mixed-citation>Sandwith NY. 1930. Contributions to the flora of tropical America III. Annonaceae collected by the Oxford University Expedition to British Guiana, 1929. Bulletin of Miscellaneous Information 1930: 466-480.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Sandwith</surname>
+              <given-names>NY</given-names>
+            </name>
+          </person-group>
+          <year>1930</year>
+          <article-title>Contributions to the flora of tropical America III. Annonaceae collected by the Oxford University Expedition to British Guiana, 1929</article-title>
+          <source>Bulletin of Miscellaneous Information</source>
+          <volume>1930</volume>
+          <fpage>466</fpage>
+          <lpage>480</lpage>
+        </element-citation>
+      </ref>
+      <ref id="B40">
+        <mixed-citation>SOS Mata Atlântica &amp; Instituto Nacional de Pesquisas Espaciais. 2022. Atlas dos Remanescentes Florestais de Floresta Atlântica. Período: 2020/2021. São Paulo, Fundação SOS Floresta Atlântica.</mixed-citation>
+        <element-citation publication-type="book">
+          <person-group person-group-type="author">
+            <collab>SOS Mata Atlântica &amp; Instituto Nacional de Pesquisas Espaciais</collab>
+          </person-group>
+          <year>2022</year>
+          <source>Atlas dos Remanescentes Florestais de Floresta Atlântica. Período: 2020/2021</source>
+          <publisher-loc>São Paulo</publisher-loc>
+          <publisher-name>Fundação SOS Floresta Atlântica</publisher-name>
+        </element-citation>
+      </ref>
+      <ref id="B41">
+        <mixed-citation>Thiers B. 2020. Index Herbariorum: a global directory of public herbaria and associated staff. New York Botanical Garden’s Virtual Herbarium. <comment><ext-link ext-link-type="uri" xlink:href="http://sweetgum.nybg.org/science/ih/">http://sweetgum.nybg.org/science/ih/</ext-link></comment>. 20 Jun. 2022.</mixed-citation>
+        <element-citation publication-type="webpage">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Thiers</surname>
+              <given-names>B</given-names>
+            </name>
+          </person-group>
+          <year>2020</year>
+          <article-title>Index Herbariorum: a global directory of public herbaria and associated staff</article-title>
+          <source>New York Botanical Garden’s Virtual Herbarium</source>
+          <comment>
+            <ext-link ext-link-type="uri" xlink:href="http://sweetgum.nybg.org/science/ih/">http://sweetgum.nybg.org/science/ih/</ext-link>
+          </comment>
+          <date-in-citation content-type="access-date" iso-8601-date="2022-06-20">20 Jun. 2022</date-in-citation>
+        </element-citation>
+      </ref>
+      <ref id="B42">
+        <mixed-citation>Xue B, Guo X, Landis JB, <italic>et al</italic>. 2020. Accelerated diversification correlated with functional traits shapes extant diversity of the early divergent angiosperm family Annonaceae. Molecular Phylogenetics and Evolution 142: 106659</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Xue</surname>
+              <given-names>B</given-names>
+            </name>
+            <name>
+              <surname>Guo</surname>
+              <given-names>X</given-names>
+            </name>
+            <name>
+              <surname>Landis</surname>
+              <given-names>JB</given-names>
+            </name>
+            <etal/>
+          </person-group>
+          <year>2020</year>
+          <article-title>Accelerated diversification correlated with functional traits shapes extant diversity of the early divergent angiosperm family Annonaceae</article-title>
+          <source>Molecular Phylogenetics and Evolution</source>
+          <volume>142</volume>
+          <elocation-id>106659</elocation-id>
+        </element-citation>
+      </ref>
+      <ref id="B43">
+        <mixed-citation>Zuilen CM van, Maas PJM. 1994. Studies in Annonaceae XXII. A taxonomic revision of <italic>Duguetia</italic> A. St.-Hil., sections <italic>Alcmene</italic> and <italic>Xylopipetalum</italic>. Botanische Jahrbücher für Systematik, Pflanzengeschichte und Pflanzengeographie 116: 221-242.</mixed-citation>
+        <element-citation publication-type="journal">
+          <person-group person-group-type="author">
+            <name>
+              <surname>Zuilen</surname>
+              <given-names>CM van</given-names>
+            </name>
+            <name>
+              <surname>Maas</surname>
+              <given-names>PJM</given-names>
+            </name>
+          </person-group>
+          <year>1994</year>
+          <article-title>Studies in Annonaceae XXII. A taxonomic revision of Duguetia A. St.-Hil., sections Alcmene and Xylopipetalum</article-title>
+          <source>Botanische Jahrbücher für Systematik, Pflanzengeschichte und Pflanzengeographie</source>
+          <volume>116</volume>
+          <fpage>221</fpage>
+          <lpage>242</lpage>
+        </element-citation>
+      </ref>
+    </ref-list>
+  </back>
+</article>

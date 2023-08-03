@@ -1,0 +1,13 @@
+{% load l10n %}
+{% load humanize %}
+
+<!-- Catalog item -->
+<div id="shop" class="shop row grid-container gutter-30 has-init-isotope" data-layout="fitRows">
+
+  {% for item in search_results %}
+
+    {% include 'include/result_doc.html' %}
+
+  {% endfor %}
+
+</div>

@@ -1,6 +1,7 @@
 """
 Base settings to build other settings files upon.
 """
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -58,7 +59,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 # wagtail apps
 WAGTAIL = [
     "core.home",
-    "core.search",
+    "core.search_site",
     "wagtail.contrib.forms",
     "wagtail.contrib.redirects",
     "wagtail.contrib.modeladmin",
@@ -89,7 +90,7 @@ DJANGO_APPS = [
     "django.contrib.sites",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # "django.contrib.humanize", # Handy template tags
+    "django.contrib.humanize",  # Handy template tags
     "django.contrib.admin",
     "django.forms",
     "django_celery_results",
@@ -107,6 +108,7 @@ THIRD_PARTY_APPS = [
     "wagtailcaptcha",
     "wagtailmenus",
     "rest_framework",
+    "haystack",
 ]
 
 LOCAL_APPS = [
@@ -124,12 +126,14 @@ LOCAL_APPS = [
     "journal",
     "journal_and_collection",
     "location",
+    "pid_provider",
     "processing_errors",
     "doi",
     "researcher",
     "thematic_areas",
     "vocabulary",
     "xmlsps",
+    "search",
 ]
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -385,3 +389,47 @@ NOCAPTCHA = True
 
 RECAPTCHA_PUBLIC_KEY = env.str("RECAPTCHA_PUBLIC_KEY", default="")
 RECAPTCHA_PRIVATE_KEY = env.str("RECAPTCHA_PRIVATE_KEY", default="")
+
+# django rest-framework
+# ------------------------------------------------------------------------------
+REST_FRAMEWORK = {
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": env.int("DRF_PAGE_SIZE", default=10),
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+}
+# JWT
+SIMPLE_JWT = {
+    "AUTH_HEADER_TYPES": ("Bearer",),  # na doc está JWT mas pode mudar pra Bearer.
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    # "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+}
+
+# django haystack
+# ------------------------------------------------------------------------------
+HAYSTACK_CONNECTIONS = {
+    "default": {
+        "ENGINE": "haystack.backends.solr_backend.SolrEngine",
+        "URL": env("SOLR_URL", default="http://solr:8983/solr/core"),
+        "ADMIN_URL": "http://solr:8983/solr/admin/cores",
+        "INCLUDE_SPELLING": True,
+        "SILENTLY_FAIL": False,
+        "SOLR_TIMEOUT": 10,
+    }
+}
+
+HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.RealtimeSignalProcessor"
+
+SEARCH_PAGINATION_ITEMS_PER_PAGE = 10
+
+SEARCH_FACET_ITEMS_PER_MORE = 5
+
+SEARCH_FACET_LIST = [
+    "collection",
+    "journal_title",
+    "publication_year",
+    "la",
+    "type",
+]

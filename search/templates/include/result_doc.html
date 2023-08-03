@@ -1,0 +1,47 @@
+{% load i18n %}
+{% load static %}
+{% load l10n %}
+{% load humanize %}
+{% load zip_list %}
+
+
+<div class="col-12 col-sm-6 col-lg-12 m-2">
+  <div class="grid-inner row no-gutters">
+
+    <div class="col-md-12 pe-md-12">
+
+      <div class="entry-title title-sm">
+        <h2><a href="#" target="_blank">{{ item.titles.0 }}</a> <a href="#" target="_blank"><i class="icon-line-external-link"></i></a></h2>
+      </div>
+      <div class="entry-meta">
+        <ul>
+          {% if item.au %}
+            {% for au, orcid in item.au|zip_lists:item.au_orcid %}
+              <li>
+                <span>{{au}}</span>
+                {% if orcid != "None" %}
+                  <a href="https://orcid.org/{{orcid}}" target="_blank"><img src="{% static 'images/icons/authorIcon-orcid.png' %}" alt="ORCID"></a>
+                {% endif %}
+              </li>
+            {% endfor %}
+          {% endif %}
+
+          {% if item.publication_year %}<li><span>{{ item.publication_year }}</span></li>{% endif %}
+          {% if item.volume %}<li><span>{% trans "Volume" %} {{ item.volume }}</span></li>{% endif %}
+          {% if item.elocation %}<li><span>elocation {{ item.elocation }}</span></li>{% endif %}
+          {% if item.journal_title %}<li><span>{{ item.journal_title }}</span></li>{% endif %}
+        </ul>
+        
+        {% include 'include/result_doc_actions.html' %}
+        
+        {% if item.doi %}
+          {% for doi in item.doi %}
+            <a href="https://doi.org/{{doi}}">https://doi.org/{{doi}}</a>
+          {% endfor %}
+        {% endif %}
+
+      </div>
+    </div>
+
+  </div>
+</div>

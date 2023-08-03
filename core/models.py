@@ -7,6 +7,7 @@ from wagtail.search import index
 from wagtail.snippets.models import register_snippet
 
 from . import choices
+from .utils.utils import language_iso
 
 User = get_user_model()
 
@@ -20,47 +21,25 @@ class Gender(index.Indexed, models.Model):
         sex: physical state of being either male, female, or intersex
     """
 
-    gender = models.CharField(_("Sex"), max_length=50)
+    code = models.CharField(_("Code"), max_length=5, null=True, blank=True)
+
+    gender = models.CharField(_("Sex"), max_length=50, null=True, blank=True)
 
     panels = [
+        FieldPanel("code"),
         FieldPanel("gender"),
     ]
 
     search_fields = [
+        index.SearchField("code", partial_match=True),
         index.SearchField("gender", partial_match=True),
     ]
 
     def __unicode__(self):
-        return self.gender
+        return self.gender or self.code
 
     def __str__(self):
-        return self.gender
-
-
-@register_snippet
-class GenderIdentificationStatus(index.Indexed, models.Model):
-    """
-    Class of gender
-
-    Fields:
-        sex: physical state of being either male, female, or intersex
-    """
-
-    identification_status = models.CharField(_("identification_status"), max_length=256)
-
-    panels = [
-        FieldPanel("identification_status"),
-    ]
-
-    search_fields = [
-        index.SearchField("identification_status", partial_match=True),
-    ]
-
-    def __unicode__(self):
-        return self.identification_status
-
-    def __str__(self):
-        return self.identification_status
+        return self.gender or self.code
 
 
 class CommonControlField(models.Model):
@@ -129,15 +108,16 @@ class Language(CommonControlField):
 
     @classmethod
     def get_or_create(cls, name=None, code2=None, creator=None):
+        code2 = language_iso(code2)
         if code2:
             try:
-                return cls.objects.get(code2__icontains=code2)
+                return cls.objects.get(code2=code2)
             except cls.DoesNotExist:
                 pass
 
         if name:
             try:
-                return cls.objects.get(name__icontains=name)
+                return cls.objects.get(name=name)
             except cls.DoesNotExist:
                 pass
 
@@ -239,7 +219,7 @@ class License(CommonControlField):
         verbose_name_plural = _("Licenses")
 
     def __unicode__(self):
-        return self.url or ""
+        return self.url or self.license_p or ""
 
     def __str__(self):
         return self.url or self.license_p or ""

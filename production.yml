@@ -35,8 +35,8 @@ services:
       dockerfile: ./compose/production/postgres/Dockerfile
     image: core_production_postgres
     volumes:
-      - ../scms_data/template/data_prod:/var/lib/postgresql/data:Z
-      - ../scms_data/template/data_prod_backup:/backups:z
+      - ../scms_data/scielo_core/data_prod:/var/lib/postgresql/data:Z
+      - ../scms_data/scielo_core/data_prod_backup:/backups:z
     env_file:
       - ./.envs/.production/.postgres
   
@@ -46,10 +46,11 @@ services:
       ports:
          - "8983:8983"
       volumes:
-         - ./index/ocabr:/opt/solr/server/solr/ocabr
+         - ./index/core:/opt/solr/server/solr/core
       environment:
           - SOLR_JAVA_MEM=-Xms512m -Xmx512m
           - SOLR_HEAP=512m
+  
   traefik:
     build:
       context: .
@@ -58,7 +59,7 @@ services:
     depends_on:
       - django
     volumes:
-      - ../scms_data/template/traefik:/etc/traefik/acme:z
+      - ../scms_data/scielo_core/traefik:/etc/traefik/acme:z
     ports:
       - "0.0.0.0:80:80"
       - "0.0.0.0:443:443"

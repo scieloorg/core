@@ -1,18 +1,21 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import FieldPanel, InlinePanel, TabbedInterface, ObjectList
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
+from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
+from wagtail.fields import RichTextField
 from wagtail.models import Orderable
 
 from core.forms import CoreAdminModelForm
 from core.models import (
-    CommonControlField, 
-    License,
+    CommonControlField,
     Language,
-    )
+    License,
+    RichTextWithLang,
+    TextWithLang,
+)
+from journal.models import Journal
 from location.models import City
-from journal.models import ScieloJournal
 
 
 class Issue(CommonControlField, ClusterableModel):
@@ -21,13 +24,13 @@ class Issue(CommonControlField, ClusterableModel):
     """
 
     journal = models.ForeignKey(
-        ScieloJournal,
+        Journal,
         verbose_name=_("Journal"),
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
     )
-    sections = models.ManyToManyField("article.TocSection", blank=True)
+    sections = models.ManyToManyField("TocSection", blank=True)
     license = models.ManyToManyField(License, blank=True)
     city = models.ForeignKey(City, on_delete=models.SET_NULL, blank=True, null=True)
     number = models.CharField(_("Issue number"), max_length=20, null=True, blank=True)
@@ -131,19 +134,29 @@ class Issue(CommonControlField, ClusterableModel):
     @property
     def bibliographic(self):
         data = self.bibliographic_strip.all().values(
-            'subtitle', 'language__code2',
+            "text",
+            "language__code2",
         )
         return [
-                {
-                'subtitle': obj.get('subtitle'),
-                'language': obj.get('language__code2'),
+            {
+                "text": obj.get("text"),
+                "language": obj.get("language__code2"),
             }
             for obj in data
         ]
 
     @classmethod
     def get_or_create(
-        cls, journal, number, volume, season, year, month, supplement, user
+        cls,
+        journal,
+        number,
+        volume,
+        season,
+        year,
+        month,
+        supplement,
+        user,
+        sections=None,
     ):
         issues = cls.objects.filter(
             creator=user,
@@ -166,7 +179,10 @@ class Issue(CommonControlField, ClusterableModel):
             issue.year = year
             issue.month = month
             issue.supplement = supplement
+            issue.creator = user
             issue.save()
+            if sections:
+                issue.sections.set(sections)
 
         return issue
 
@@ -188,18 +204,54 @@ class Issue(CommonControlField, ClusterableModel):
 
 
 class IssueTitle(Orderable, CommonControlField):
-    issue = ParentalKey(Issue, on_delete=models.CASCADE, null=True, blank=True, related_name="issue_title")
+    issue = ParentalKey(
+        Issue,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="issue_title",
+    )
     title = models.CharField(_("Issue Title"), max_length=100, blank=True, null=True)
-    language = models.ForeignKey(Language, on_delete=models.CASCADE, blank=True, null=True)
+    language = models.ForeignKey(
+        Language, on_delete=models.CASCADE, blank=True, null=True
+    )
 
     def __str__(self):
         return self.title
-    
 
-class BibliographicStrip(Orderable, CommonControlField):
-    issue = ParentalKey(Issue, on_delete=models.CASCADE, null=True, blank=True, related_name="bibliographic_strip")
-    subtitle = models.TextField(_("Subtitle"), null=True, blank=True)
-    language = models.ForeignKey(Language, on_delete=models.CASCADE, blank=True, null=True)
+
+class BibliographicStrip(Orderable, TextWithLang, CommonControlField):
+    issue = ParentalKey(
+        Issue,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="bibliographic_strip",
+    )
 
     def __str__(self):
         return self.subtitle
+
+
+class TocSection(RichTextWithLang, CommonControlField):
+    """
+    <article-categories>
+        <subj-group subj-group-type="heading">
+          <subject>NOMINATA</subject>
+        </subj-group>
+      </article-categories>
+    """
+
+    text = RichTextField(
+        max_length=100, blank=True, null=True, help_text="For JATs is subject."
+    )
+
+    class Meta:
+        verbose_name = _("TocSection")
+        verbose_name_plural = _("TocSections")
+
+    def __unicode__(self):
+        return f"{self.text} - {self.language}"
+
+    def __str__(self):
+        return f"{self.plain_text}"

@@ -2,6 +2,8 @@ import json
 
 import requests
 
+from core.models import Language
+
 from .models import Collection, CollectionName
 
 
@@ -29,14 +31,17 @@ def load(user):
         names = collection_data.get("name")
         for language in names:
             collection_name = CollectionName.objects.filter(
-                language=language, text=names.get(language)
+                language=Language.get_or_create(code2=language, creator=user),
+                text=names.get(language),
             )
             try:
                 collection_name = collection_name[0]
             except IndexError:
                 collection_name = CollectionName()
                 collection_name.text = names.get(language)
-                collection_name.language = language
+                collection_name.language = Language.get_or_create(
+                    code2=language, creator=user
+                )
             collection_name.save()
             collection_object.name.add(collection_name)
         collection_object.status = collection_data.get("status")

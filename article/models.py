@@ -1,7 +1,9 @@
+from datetime import datetime
+
 from django.db import models
+from django.db.models import Case, When
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
-from wagtail.fields import RichTextField
 
 from core.forms import CoreAdminModelForm
 from core.models import (
@@ -11,20 +13,19 @@ from core.models import (
     License,
     RichTextWithLang,
 )
-from institution.models import Sponsor
+from doi.models import DOI
+from institution.models import Institution, Sponsor
+from issue.models import Issue, TocSection
+from journal.models import Journal
 from researcher.models import Researcher
 from vocabulary.models import Keyword
-from journal.models import ScieloJournal
-from doi.models import DOI
-from issue.models import Issue
-from institution.models import Institution
 
 
 class Article(CommonControlField):
     pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
     pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True)
     journal = models.ForeignKey(
-        ScieloJournal,
+        Journal,
         verbose_name=_("Journal"),
         null=True,
         blank=True,
@@ -58,7 +59,7 @@ class Article(CommonControlField):
         "ArticleType", on_delete=models.SET_NULL, null=True, blank=True
     )
     abstracts = models.ManyToManyField("DocumentAbstract", blank=True)
-    toc_sections = models.ManyToManyField("TocSection", blank=True)
+    toc_sections = models.ManyToManyField(TocSection, blank=True)
     license = models.ManyToManyField(License, blank=True)
     issue = models.ForeignKey(Issue, on_delete=models.SET_NULL, null=True, blank=True)
     first_page = models.CharField(max_length=5, null=True, blank=True)
@@ -87,6 +88,16 @@ class Article(CommonControlField):
 
     def __str__(self):
         return "%s" % self.pid_v2
+
+    @classmethod
+    def last_created_date(cls):
+        try:
+            last_created = cls.objects.filter(
+                pid_v3__isnull=False,
+            ).latest("created")
+            return last_created.created
+        except (AttributeError, cls.DoesNotExist):
+            return datetime(1, 1, 1)
 
     @property
     def data(self):
@@ -124,6 +135,16 @@ class Article(CommonControlField):
         self.pid_v2 = pids.get("v2")
         self.pid_v3 = pids.get("v3")
         self.save()
+
+    # @property
+    # def get_abstracts_order_by_lang_pt(self):
+    #     return self.abstracts.all().order_by(
+    #             Case(
+    #                 When(language__code2='pt', then=0),
+    #                 default=1,
+    #                 output_field=models.IntegerField()
+    #             )
+    #         )
 
     base_form_class = CoreAdminModelForm
 
@@ -359,30 +380,6 @@ class ArticleCount(CommonControlField):
             article_count__count=self.count,
             article_count__language=self.language,
         )
-
-
-class TocSection(RichTextWithLang, CommonControlField):
-    """
-    <article-categories>
-        <subj-group subj-group-type="heading">
-          <subject>NOMINATA</subject>
-        </subj-group>
-      </article-categories>
-    """
-
-    text = RichTextField(
-        max_length=100, blank=True, null=True, help_text="For JATs is subject."
-    )
-
-    class Meta:
-        verbose_name = _("TocSection")
-        verbose_name_plural = _("TocSections")
-
-    def __unicode__(self):
-        return f"{self.text} - {self.language}"
-
-    def __str__(self):
-        return f"{self.plain_text}"
 
 
 class SubArticle(models.Model):
