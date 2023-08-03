@@ -177,7 +177,7 @@ class XMLJournal(models.Model):
                 issn_electronic=issn_electronic,
                 issn_print=issn_print,
             )
-        except cls.DoesNotExist:
+        except (cls.DoesNotExist, IndexError):
             return cls.create(
                 issn_electronic=issn_electronic,
                 issn_print=issn_print,
@@ -185,10 +185,14 @@ class XMLJournal(models.Model):
 
     @classmethod
     def get(cls, issn_electronic=None, issn_print=None):
+        if issn_electronic and issn_print:
+            return cls.objects.filter(
+                issn_electronic=issn_electronic, issn_print=issn_print
+            )[0]
         if issn_electronic:
-            return cls.objects.get(issn_electronic=issn_electronic)
+            return cls.objects.filter(issn_electronic=issn_electronic)[0]
         if issn_print:
-            return cls.objects.get(issn_print=issn_print)
+            return cls.objects.filter(issn_print=issn_print)[0]
         raise XMLJournalGetError(
             "XMLJournal.get requires issn_electronic or issn_print"
         )
