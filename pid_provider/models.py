@@ -611,18 +611,18 @@ class PidProviderXML(CommonControlField):
         items = xml_adapter.query_list
         for params in items:
             cls.validate_query_params(params)
-            xml_adapter.adapt_query_params(params)
+            adapted_params = xml_adapter.adapt_query_params(params)
 
             try:
-                return cls.objects.get(**params)
+                return cls.objects.get(**adapted_params)
             except cls.DoesNotExist:
                 continue
             except cls.MultipleObjectsReturned as e:
                 # seria inesperado já que os dados informados devem encontrar
                 # ocorrência única ou None
-                logging.info(f"params={params} | e={e}")
+                logging.info(f"params={adapted_params} | e={e}")
                 raise exceptions.QueryDocumentMultipleObjectsReturnedError(
-                    _("Found more than one document matching to {}").format(params)
+                    _("Found more than one document matching to {}").format(adapted_params)
                 )
 
     def _add_data(self, xml_adapter, user):
