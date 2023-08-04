@@ -32,7 +32,6 @@ class XMLSPSAdmin(ModelAdmin):
         "pid_v3",
         "pid_v2",
         "aop_pid",
-        "xml_journal__title",
         "xml_issue__pub_year",
     )
 

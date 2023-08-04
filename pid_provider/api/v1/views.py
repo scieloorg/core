@@ -84,9 +84,10 @@ class PidProviderViewSet(
             results = list(results)
             resp_status = None
             for item in results:
+                logging.info(item)
                 try:
                     xml_with_pre = item.pop("xml_with_pre")
-                    if item["xml_changed"]:
+                    if item.get("xml_changed"):
                         item["xml"] = xml_with_pre.tostring()
                 except KeyError:
                     resp_status = status.HTTP_400_BAD_REQUEST
