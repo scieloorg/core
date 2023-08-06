@@ -88,9 +88,10 @@ class XMLVersion(CommonControlField):
         obj = cls()
         obj.pid_v3 = pid_v3
         obj.finger_print = xml_with_pre.finger_print
-        obj.save_file(subdir, xml_with_pre.get_zip_content(f"{sps_pkg_name}.xml"))
         obj.creator = creator
         obj.created = datetime.utcnow()
+        obj.save()
+        obj.save_file(subdir, xml_with_pre.get_zip_content(f"{sps_pkg_name}.xml"))
         obj.save()
         return obj
 
@@ -125,24 +126,24 @@ class XMLVersion(CommonControlField):
         )
 
     @classmethod
-    def get(cls, pid_v3, xml_with_pre):
-        if pid_v3 and xml_with_pre:
-            return cls.objects.get(
-                pid_v3=pid_v3, finger_print=xml_with_pre.finger_print
+    def get(cls, pid_v3, finger_print):
+        """
+        Retorna última versão se finger_print corresponde
+        """
+        if not pid_v3 and not finger_print:
+            raise XMLVersionGetError(
+                "XMLVersion.get requires pid_v3 and xml_with_pre parameters"
             )
-        raise XMLVersionGetError(
-            "XMLVersion.get requires pid_v3 and xml_with_pre parameters"
-        )
+
+        latest = cls.latest(pid_v3)
+        if latest.finger_print == finger_print:
+            return latest
+        raise cls.DoesNotExist(f"{pid_v3} {finger_print}")
 
     @classmethod
     def get_or_create(cls, user, xml_with_pre):
         try:
-            pid_v3 = xml_with_pre.v3
-            obj = cls.get(pid_v3, xml_with_pre)
-            latest = cls.latest(pid_v3)
-            if obj is latest:
-                return obj
-            raise cls.DoesNotExist
+            return cls.get(xml_with_pre.v3, xml_with_pre.finger_print)
         except cls.DoesNotExist:
             return cls.create(
                 creator=user,
