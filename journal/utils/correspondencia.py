@@ -4,11 +4,13 @@ O dicionário de correspondência contém os valores das chaves obtidos em:
 """
 
 correspondencia_journal = {
+    "collection": "collection",
     "v5": "type_of_literature",
     "v6": "treatment_level",
     "v10": "center_code",
     "v20": "national_code",
     "v30": "identification_number",
+    "v35": "type_issn",
     "v37": "secs_code",
     "v50": "publication_status",
     "v51": "journal_status_history_in_this_collection",
