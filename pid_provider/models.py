@@ -764,6 +764,14 @@ class PidProviderXML(CommonControlField):
             aop_pid=xml_adapter.aop_pid,
         )
 
+        # garante que não há espaços extras
+        if xml_adapter.v3:
+            xml_adapter.v3 = xml_adapter.v3.strip()
+        if xml_adapter.v2:
+            xml_adapter.v2 = xml_adapter.v2.strip()
+        if xml_adapter.aop_pid:
+            xml_adapter.aop_pid = xml_adapter.aop_pid.strip()
+
         # adiciona os pids faltantes aos dados de entrada
         cls._add_pid_v3(xml_adapter, registered)
         cls._add_pid_v2(xml_adapter, registered)
