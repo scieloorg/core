@@ -787,7 +787,7 @@ class PidProviderXML(CommonControlField):
 
         changes = []
         for k, v in before.items():
-            if v != after[k]:
+            if v and v != after[k]:
                 changes.append(
                     dict(
                         pid_type=k,
