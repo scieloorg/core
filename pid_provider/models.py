@@ -745,8 +745,16 @@ class PidProviderXML(CommonControlField):
     @classmethod
     def _complete_pids(cls, xml_adapter, registered):
         """
-        Update `xml_adapter` pids with `registered` pids or
-        create `xml_adapter` pids
+        No XML pode conter ou não os PIDS v2, v3 e aop_pid.
+        Na base de dados o documento do XML pode ou não estar registrado.
+
+        O resultado deste procedimento é que seja garantido que os
+        valores dos PIDs no XML sejam inéditos ou recuperados da base de dados.
+
+        Se no XML existir os PIDs, os valores são verificados na base de dados,
+        se são inéditos, não haverá mudança no XML, mas se os PIDs do XML
+        conflitarem com os PIDs registrados ou seus valores forem inválidos,
+        haverá mudança nos PIDs.
 
         Parameters
         ----------
@@ -772,7 +780,7 @@ class PidProviderXML(CommonControlField):
         if xml_adapter.aop_pid:
             xml_adapter.aop_pid = xml_adapter.aop_pid.strip()
 
-        # adiciona os pids faltantes aos dados de entrada
+        # adiciona os pids faltantes ao XML fornecido
         cls._add_pid_v3(xml_adapter, registered)
         cls._add_pid_v2(xml_adapter, registered)
         cls._add_aop_pid(xml_adapter, registered)
@@ -785,6 +793,7 @@ class PidProviderXML(CommonControlField):
 
         LOGGER.info("%s %s" % (before, after))
 
+        # verifica se houve mudança nos PIDs do XML
         changes = []
         for k, v in before.items():
             if v and v != after[k]:
