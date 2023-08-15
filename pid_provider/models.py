@@ -210,39 +210,41 @@ class XMLRelatedItem(CommonControlField):
 
 
 class PidChange(CommonControlField):
+    pkg_name = models.TextField(_("Package name"), null=True, blank=True)
     pid_type = models.CharField(_("PID type"), max_length=23, null=True, blank=True)
-    old = models.CharField(_("PID old"), max_length=23, null=True, blank=True)
-    new = models.CharField(_("PID new"), max_length=23, null=True, blank=True)
+    pid_in_xml = models.CharField(_("PID pid_in_xml"), max_length=23, null=True, blank=True)
+    pid_assigned = models.CharField(_("PID assigned"), max_length=23, null=True, blank=True)
     version = models.ForeignKey(
         XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
     )
 
     class Meta:
         indexes = [
-            models.Index(fields=["old"]),
-            models.Index(fields=["new"]),
+            models.Index(fields=["pid_in_xml"]),
+            models.Index(fields=["pid_assigned"]),
             models.Index(fields=["pid_type"]),
             models.Index(fields=["version"]),
         ]
 
     def __str__(self):
-        return f"{self.pid_type} {self.old} -> {self.new}"
+        return f"{self.pid_type} {self.pid_in_xml} -> {self.pid_assigned}"
 
     @classmethod
-    def get_or_create(cls, pid_type, old, new, version, user):
+    def get_or_create(cls, pid_type, pid_in_xml, pid_assigned, version, user, pkg_name):
         try:
             return cls.objects.get(
                 pid_type=pid_type,
-                old=old,
-                new=new,
+                pid_in_xml=pid_in_xml,
+                pid_assigned=pid_assigned,
                 version=version,
             )
         except cls.DoesNotExist:
             obj = cls()
             obj.creator = user
+            obj.pkg_name = pkg_name
             obj.pid_type = pid_type
-            obj.old = old
-            obj.new = new
+            obj.pid_in_xml = pid_in_xml
+            obj.pid_assigned = pid_assigned
             obj.version = version
             obj.save()
             return obj
@@ -682,11 +684,12 @@ class PidProviderXML(CommonControlField):
                 "PidProviderXML._add_pid_changes requires current_version is set"
             )
         for change_args in changed_pids:
-            if change_args["old"]:
-                # somente registra as mudanças de um old não vazio
+            if change_args["pid_in_xml"]:
+                # somente registra as mudanças de um pid_in_xml não vazio
                 change_args["user"] = user
                 change_args["version"] = self.current_version
-                change = PidChange.get_or_create(**change_args)
+                change_args["pkg_name"] = self.pkg_name
+                PidChange.get_or_create(**change_args)
 
     @classmethod
     def _get_unique_v3(cls):
@@ -800,8 +803,8 @@ class PidProviderXML(CommonControlField):
                 changes.append(
                     dict(
                         pid_type=k,
-                        old=v,
-                        new=after[k],
+                        pid_in_xml=v,
+                        pid_assigned=after[k],
                     )
                 )
         return changes
