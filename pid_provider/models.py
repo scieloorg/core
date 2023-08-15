@@ -422,9 +422,21 @@ class PidProviderXML(CommonControlField):
             return data
 
         except (
+            exceptions.QueryDocumentMultipleObjectsReturnedError,
+        ) as e:
+            data = json.loads(str(e))
+            pid_request = PidRequest.create_or_update(
+                user=user,
+                origin=filename,
+                result_type=str(type(e)),
+                result_msg=_("Found {} records for {}").format(
+                    len(data["items"]), data["params"]),
+                detail=data,
+            )
+            return pid_request.data
+        except (
             exceptions.ForbiddenPidProviderXMLRegistrationError,
             exceptions.NotEnoughParametersToGetDocumentRecordError,
-            exceptions.QueryDocumentMultipleObjectsReturnedError,
             exceptions.InvalidPidError,
         ) as e:
             pid_request = PidRequest.register_failure(
@@ -590,9 +602,18 @@ class PidProviderXML(CommonControlField):
             except cls.MultipleObjectsReturned as e:
                 # seria inesperado já que os dados informados devem encontrar
                 # ocorrência única ou None
-                logging.info(f"params={adapted_params} | e={e}")
+                items = []
+                for item in cls.objects.filter(**adapted_params).iterator():
+                    items.append(item.data)
+                try:
+                    cls.objects.filter(**adapted_params).delete()
+                    deleted = True
+                except Exception as e:
+                    logging.exception(e)
+                    deleted = str(e)
+
                 raise exceptions.QueryDocumentMultipleObjectsReturnedError(
-                    _("Found more than one document matching to {}").format(adapted_params)
+                    str({"params": adapted_params, "items": items, "deleted": deleted})
                 )
 
     def _add_data(self, xml_adapter, user):
