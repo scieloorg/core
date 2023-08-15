@@ -4,6 +4,17 @@
 	Add all your Custom Styled CSS here for New Styles or
 	Overwriting Default Theme Styles for Better Handling Updates
 -----------------------------------------------------------------*/
+/* your custom css go here */
+
+:root {
+    --w-color-primary: #6D071A;
+    // --w-color-secondary: #6495ED;
+
+}
+
+.login-logo {
+    visibility: hidden;
+}
 
 .lang-select {
 	margin-top: 28px;

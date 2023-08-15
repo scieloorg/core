@@ -13,10 +13,10 @@ from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
 from packtools.sps.models.funding_group import FundingGroup
 from packtools.sps.models.journal_meta import Title as Journal
 from packtools.sps.models.kwd_group import KwdGroup
+from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article import models
 from issue.models import TocSection
-from xmlsps.xml_sps_lib import XMLWithPre
 
 
 class XMLSPSArticleSaveError(Exception):

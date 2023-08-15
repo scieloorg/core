@@ -66,7 +66,6 @@ class PidProviderXMLAdmin(ModelAdmin):
     )
     list_filter = ("article_pub_year",)
     search_fields = (
-        "journal__title",
         "pkg_name",
         "v3",
         "v2",
@@ -94,14 +93,15 @@ class PidChangeAdmin(ModelAdmin):
     exclude_from_explorer = False
 
     list_display = (
-        "old",
-        "new",
+        "pkg_name",
+        "pid_in_xml",
+        "pid_assigned",
         "pid_type",
     )
     list_filter = ("pid_type",)
     search_fields = (
-        "old",
-        "new",
+        "pid_in_xml",
+        "pid_assigned",
     )
 
 

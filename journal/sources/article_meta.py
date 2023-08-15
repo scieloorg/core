@@ -9,7 +9,7 @@ from journal.exceptions import (
     SciELOJournalCreateOrUpdateError,
 )
 
-class SciELOJournalArticleMetaCreateUpdateEror(Exception):
+class SciELOJournalArticleMetaCreateUpdateError(Exception):
     def __init__(self, message):
         super().__init__(f"Failed to save SciELO Journal from article meta: {message}")
 
@@ -42,9 +42,11 @@ def process_journal_article_meta(collection, limit, user):
                     collection=journal_dict.get("collection"),
                     user=user,
                     journal_acron=journal_dict.get("acronym"),
+                    mission=journal_dict.get("mission"),
+                    sponsor=journal_dict.get("sponsor"),
                     )
-            except SciELOJournalArticleMetaCreateUpdateEror as e:
-                raise SciELOJournalArticleMetaCreateUpdateEror(e)
+            except SciELOJournalArticleMetaCreateUpdateError as e:
+                raise SciELOJournalArticleMetaCreateUpdateError(e)
 
         offset += 10
         data = request_journal_article_meta(

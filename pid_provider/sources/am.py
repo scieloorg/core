@@ -1,7 +1,7 @@
 import logging
 
 from pid_provider.controller import PidProvider
-from pid_provider.models import PidRequest
+from pid_provider.models import PidRequest, PidProviderXML
 
 
 class AMHarvesting:
@@ -48,7 +48,7 @@ class AMHarvesting:
             atribuir valor para forçar a interrompção das requisições antes de coletar tudo
         """
         self._collection_acron = collection_acron
-        self._limit = limit or 10
+        self._limit = limit or 1000
         self._offset = 0
         self._total = None
         self._stop = stop
@@ -107,11 +107,25 @@ class AMHarvesting:
                 break
 
 
-def request_pid_v3(user, uri, collection_acron, pid_v2, processing_date):
-    pp = PidProvider()
+def request_pid_v3(user, uri, collection_acron, pid_v2, processing_date, force_update):
+    if not force_update:
+        # skip update
+        try:
+            return PidProviderXML.objects.get(v2=pid_v2).data
+        except PidProviderXML.DoesNotExist:
+            pass
 
     try:
-        response = pp.provide_pid_for_xml_uri(uri, pid_v2 + ".xml", user)
+        logging.info(f"Request pid for {uri}")
+        pp = PidProvider()
+        response = pp.provide_pid_for_xml_uri(
+            uri,
+            pid_v2 + ".xml",
+            user,
+            force_update=force_update,
+            origin_date=processing_date,
+            is_published=True,
+        )
     except Exception as e:
         return PidRequest.register_failure(
             e=e,
