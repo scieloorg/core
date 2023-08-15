@@ -180,35 +180,6 @@ class PidRequest(CommonControlField):
     base_form_class = CoreAdminModelForm
 
 
-class XMLRelatedItem(CommonControlField):
-    """
-    Tem função de guardar os relacionamentos entre outro Documento (Artigo)
-    Tem objetivo de identificar o Documento (Artigo)
-    """
-
-    main_doi = models.TextField(_("DOI"), null=True, blank=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["main_doi"]),
-        ]
-
-    def __str__(self):
-        return self.main_doi
-
-    @classmethod
-    def get_or_create(cls, main_doi, creator=None):
-        try:
-            return cls.objects.get(main_doi=main_doi)
-        except cls.DoesNotExist:
-            obj = cls()
-            obj.main_doi = main_doi
-            obj.creator = creator
-            obj.created = utcnow()
-            obj.save()
-            return obj
-
-
 class PidChange(CommonControlField):
     pkg_name = models.TextField(_("Package name"), null=True, blank=True)
     pid_type = models.CharField(_("PID type"), max_length=23, null=True, blank=True)
@@ -262,7 +233,6 @@ class PidProviderXML(CommonControlField):
     issue = models.ForeignKey(
         XMLIssue, on_delete=models.SET_NULL, null=True, blank=True
     )
-    related_items = models.ManyToManyField(XMLRelatedItem)
     current_version = models.ForeignKey(
         XMLVersion, on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -317,7 +287,6 @@ class PidProviderXML(CommonControlField):
         FieldPanel("z_links"),
         FieldPanel("z_partial_body"),
         FieldPanel("current_version"),
-        FieldPanel("related_items"),
     ]
 
     class Meta:
@@ -504,7 +473,6 @@ class PidProviderXML(CommonControlField):
         registered.save()
 
         registered._add_pid_changes(changed_pids, user)
-        registered._add_related_items(xml_adapter, user)
 
         return registered
 
@@ -666,14 +634,6 @@ class PidProviderXML(CommonControlField):
 
     def _add_current_version(self, xml_adapter, user):
         self.current_version = XMLVersion.get_or_create(user, xml_adapter.xml_with_pre)
-
-    def _add_related_items(self, xml_adapter, creator):
-        if xml_adapter.related_items:
-            self.save()
-        for related in xml_adapter.related_items:
-            self.related_items.add(
-                XMLRelatedItem.get_or_create(related["href"], creator)
-            )
 
     def _add_pid_changes(self, changed_pids, user):
         # requires registered.current_version is set
