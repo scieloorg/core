@@ -46,6 +46,13 @@ class Issue(CommonControlField, ClusterableModel):
     month = models.CharField(_("Issue month"), max_length=20, null=True, blank=True)
     supplement = models.CharField(_("Supplement"), max_length=20, null=True, blank=True)
 
+    #FIXME
+    #Melhorar a definicao do campo autocomplete
+    autocomplete_search_field = "number"
+
+    def autocomplete_label(self):
+        return f"{self.number}, {self.volume}"
+
     panels_issue = [
         FieldPanel("journal"),
         FieldPanel("volume"),
@@ -245,7 +252,11 @@ class TocSection(RichTextWithLang, CommonControlField):
     text = RichTextField(
         max_length=100, blank=True, null=True, help_text="For JATs is subject."
     )
+    autocomplete_search_field = "plain_text"
 
+    def autocomplete_label(self):
+        return str(self.plain_text)
+    
     class Meta:
         verbose_name = _("TocSection")
         verbose_name_plural = _("TocSections")
