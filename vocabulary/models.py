@@ -73,6 +73,11 @@ class Keyword(CommonControlField, TextWithLang):
         null=True,
     )
 
+    autocomplete_search_field = "text"
+
+    def autocomplete_label(self):
+        return str(self.text)
+
     def __unicode__(self):
         return "%s - %s" % (self.text, self.language) or ""
 
