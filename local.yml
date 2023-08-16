@@ -95,6 +95,9 @@ services:
   redis:
     image: redis:6
     container_name: scielo_core_local_redis
+    ports:
+      - "6379:6379"
+
 
   celeryworker:
     <<: *django
