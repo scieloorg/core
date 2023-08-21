@@ -55,6 +55,11 @@ class Collection(CommonControlField):
     is_active = models.BooleanField(_("Is active"), null=True, blank=True)
     foundation_date = models.DateField(_("Foundation data"), null=True, blank=True)
 
+    autocomplete_search_field = "main_name"
+
+    def autocomplete_label(self):
+        return str(self)
+
     panels = [
         FieldPanel("acron3"),
         FieldPanel("acron2"),
