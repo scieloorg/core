@@ -63,6 +63,45 @@ class Institution(CommonControlField, ClusterableModel):
         FieldPanel("is_official"),
     ]
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    "name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "institution_type",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "acronym",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "level_1",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "level_2",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "level_3",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "url",
+                ]
+            ),
+        ]
+
     def __unicode__(self):
         return "%s | %s | %s | %s | %s | %s" % (
             self.name,
