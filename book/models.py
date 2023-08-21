@@ -114,9 +114,9 @@ class Book(CommonControlField, ClusterableModel):
         FieldPanel("doi"),
         FieldPanel("identifier"),
         FieldPanel("year"),
-        FieldPanel("language"),
-        FieldPanel("location"),
-        FieldPanel("institution"),
+        AutocompletePanel("language"),
+        AutocompletePanel("location"),
+        AutocompletePanel("institution"),
         InlinePanel("rec_raws", label="Rec Raws"),
     ]
 
@@ -217,6 +217,12 @@ class Chapter(Orderable, CommonControlField):
         blank=True,
         on_delete=models.SET_NULL,
     )
+
+    panels = [
+        FieldPanel("title"),
+        FieldPanel("publication_date"),
+        AutocompletePanel("language"),
+    ]
 
     class Meta:
         verbose_name = _("Chapter")
