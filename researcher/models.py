@@ -43,6 +43,40 @@ class Researcher(ClusterableModel, CommonControlField):
 
     autocomplete_search_field = "given_names"
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    "given_names",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "last_name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "declared_name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "suffix",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "orcid",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "lattes",
+                ]
+            ),
+        ]
+
     @property
     def get_full_name(self):
         return f"{self.last_name}, {self.given_names}"
