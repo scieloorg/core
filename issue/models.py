@@ -112,6 +112,11 @@ class Issue(CommonControlField, ClusterableModel):
                     "supplement",
                 ]
             ),
+            models.Index(
+                fields=[
+                    "season",
+                ]
+            ),            
         ]
 
     @property
