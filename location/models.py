@@ -18,6 +18,13 @@ class City(CommonControlField):
     class Meta:
         verbose_name = _("City")
         verbose_name_plural = _("Cities")
+        indexes = [
+            models.Index(
+                fields=[
+                    "name"
+                ]
+            ),                        
+        ]
 
     def __unicode__(self):
         return "%s" % self.name
@@ -49,6 +56,18 @@ class Region(CommonControlField):
     class Meta:
         verbose_name = _("Region")
         verbose_name_plural = _("Regions")
+        indexes = [
+            models.Index(
+                fields=[
+                    "name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "acronym",
+                ]
+            ),                        
+        ]
 
     def __unicode__(self):
         return "%s" % self.name
@@ -98,6 +117,18 @@ class State(CommonControlField):
     class Meta:
         verbose_name = _("State")
         verbose_name_plural = _("States")
+        indexes = [
+            models.Index(
+                fields=[
+                    "name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "acronym",
+                ]
+            ),                  
+        ]
 
     def __unicode__(self):
         return "%s" % self.name
@@ -148,6 +179,18 @@ class Country(CommonControlField):
     class Meta:
         verbose_name = _("Country")
         verbose_name_plural = _("Countries")
+        indexes = [
+            models.Index(
+                fields=[
+                    "name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "acronym",
+                ]
+            ),                  
+        ]        
 
     def __unicode__(self):
         return "%s" % self.name
