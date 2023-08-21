@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext as _
+from wagtail.admin.panels import FieldPanel
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
@@ -14,6 +16,15 @@ class City(CommonControlField):
     """
 
     name = models.TextField(_("Name of the city"), unique=True)
+
+    autocomplete_search_field = "name"
+
+    def autocomplete_label(self):
+        return str(self)
+    
+    panels = [
+        FieldPanel("name")
+    ]
 
     class Meta:
         verbose_name = _("City")
@@ -45,6 +56,15 @@ class Region(CommonControlField):
     acronym = models.CharField(
         _("Region Acronym"), max_length=10, null=True, blank=True
     )
+
+    autocomplete_search_field = "name"
+
+    def autocomplete_label(self):
+        return str(self)
+
+    panels = [
+        FieldPanel("name")
+    ]
 
     class Meta:
         verbose_name = _("Region")
@@ -94,6 +114,17 @@ class State(CommonControlField):
     name = models.TextField(_("State name"))
     acronym = models.CharField(_("State Acronym"), max_length=2, null=True, blank=True)
     region = models.ForeignKey(Region, on_delete=models.SET_NULL, null=True, blank=True)
+
+    autocomplete_search_field = "name"
+
+    def autocomplete_label(self):
+        return str(self)
+
+    panels = [
+        FieldPanel("name"),
+        FieldPanel("acronym"),
+        AutocompletePanel("region")
+    ]
 
     class Meta:
         verbose_name = _("State")
@@ -145,6 +176,16 @@ class Country(CommonControlField):
         _("Country Acronym"), blank=True, null=True, max_length=255
     )
 
+    autocomplete_search_field = "name"
+
+    def autocomplete_label(self):
+        return str(self)
+    
+    panels = [
+        FieldPanel("name"),
+        FieldPanel("acronym"),
+    ]
+    
     class Meta:
         verbose_name = _("Country")
         verbose_name_plural = _("Countries")
@@ -203,6 +244,18 @@ class Location(CommonControlField):
         null=True,
         blank=True,
     )
+
+    autocomplete_search_field = "country"
+
+    def autocomplete_label(self):
+        return str(self)
+
+    panels = [
+        AutocompletePanel("region"),
+        AutocompletePanel("city"),
+        AutocompletePanel("state"),
+        AutocompletePanel("country"),
+    ]
 
     class Meta:
         verbose_name = _("Location")
