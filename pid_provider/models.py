@@ -100,6 +100,30 @@ class PidRequest(CommonControlField):
         _("Origin date"), max_length=10, null=True, blank=True
     )
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    "origin",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "result_type",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "result_msg",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "origin_date",
+                ]
+            ),
+        ]
+
     @property
     def data(self):
         _data = {
@@ -183,8 +207,12 @@ class PidRequest(CommonControlField):
 class PidChange(CommonControlField):
     pkg_name = models.TextField(_("Package name"), null=True, blank=True)
     pid_type = models.CharField(_("PID type"), max_length=23, null=True, blank=True)
-    pid_in_xml = models.CharField(_("PID pid_in_xml"), max_length=23, null=True, blank=True)
-    pid_assigned = models.CharField(_("PID assigned"), max_length=23, null=True, blank=True)
+    pid_in_xml = models.CharField(
+        _("PID pid_in_xml"), max_length=23, null=True, blank=True
+    )
+    pid_assigned = models.CharField(
+        _("PID assigned"), max_length=23, null=True, blank=True
+    )
     version = models.ForeignKey(
         XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -421,16 +449,15 @@ class PidProviderXML(CommonControlField):
             data["xml_changed"] = bool(changed_pids)
             return data
 
-        except (
-            exceptions.QueryDocumentMultipleObjectsReturnedError,
-        ) as e:
+        except (exceptions.QueryDocumentMultipleObjectsReturnedError,) as e:
             data = json.loads(str(e))
             pid_request = PidRequest.create_or_update(
                 user=user,
                 origin=filename,
                 result_type=str(type(e)),
                 result_msg=_("Found {} records for {}").format(
-                    len(data["items"]), data["params"]),
+                    len(data["items"]), data["params"]
+                ),
                 detail=data,
             )
             return pid_request.data
