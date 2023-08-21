@@ -103,6 +103,21 @@ class Book(CommonControlField, ClusterableModel):
                     "doi",
                 ]
             ),
+            models.Index(
+                fields=[
+                    "eisbn",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "year",
+                    ]
+            ),
+            models.Index(
+                fields=[
+                    "identifier",
+                ]
+            ),
         ]
 
     panels_identification = [
