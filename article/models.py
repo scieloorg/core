@@ -81,6 +81,26 @@ class Article(CommonControlField):
                     "pid_v2",
                 ]
             ),
+            models.Index(
+                fields=[
+                    "pid_v3",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "pub_date_day",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "pub_date_month",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "pub_date_year",
+                ]
+            ),
         ]
 
     def __unicode__(self):
