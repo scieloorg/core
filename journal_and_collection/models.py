@@ -28,7 +28,7 @@ class Event(CommonControlField):
         blank=True,
     )
 
-    autocomplete_search_filter = "main_name"
+    autocomplete_search_field = "collection__main_name"
 
     def autocomplete_label(self):
         return str(self)
