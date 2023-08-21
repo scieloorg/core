@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models import Case, When
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
 from core.models import (
@@ -73,6 +74,31 @@ class Article(CommonControlField):
         blank=True,
         on_delete=models.SET_NULL,
     )
+
+
+    panels = [
+        FieldPanel("pid_v2"),
+        FieldPanel("pid_v3"),
+        AutocompletePanel("journal"),
+        AutocompletePanel("doi"),
+        FieldPanel("pub_date_day"),
+        FieldPanel("pub_date_month"),
+        FieldPanel("pub_date_year"),
+        AutocompletePanel("fundings"),
+        AutocompletePanel("languages"),
+        AutocompletePanel("titles"),
+        AutocompletePanel("researchers"),
+        FieldPanel("article_type"),
+        AutocompletePanel("abstracts"),
+        AutocompletePanel("toc_sections"),
+        AutocompletePanel("license"),
+        AutocompletePanel("issue"),
+        FieldPanel("first_page"),
+        FieldPanel("last_page"),
+        FieldPanel("elocation_id"),
+        AutocompletePanel("keywords"),
+        AutocompletePanel("publisher"),
+    ]
 
     class Meta:
         indexes = [
@@ -154,7 +180,12 @@ class ArticleFunding(CommonControlField):
     funding_source = models.ForeignKey(
         Sponsor, null=True, blank=True, on_delete=models.SET_NULL
     )
-
+    
+    autocomplete_search_field = "award_id"
+    
+    def autocomplete_label(self):
+        return str(self)
+        
     class Meta:
         indexes = [
             models.Index(
@@ -218,7 +249,12 @@ class ArticleFunding(CommonControlField):
 
 class DocumentTitle(RichTextWithLang, CommonControlField):
     ...
+    
+    autocomplete_search_field = "plain_text"
 
+    def autocomplete_label(self):
+        return str(self)
+    
     def __str__(self):
         return f"{self.plain_text} - {self.language}"
 
@@ -233,6 +269,10 @@ class ArticleType(models.Model):
 class DocumentAbstract(RichTextWithLang, CommonControlField):
     ...
 
+    autocomplete_search_field = "plain_text"
+
+    def autocomplete_label(self):
+        return str(self)
 
 class ArticleEventType(CommonControlField):
     code = models.CharField(_("Code"), blank=True, null=True, max_length=20)

@@ -95,7 +95,11 @@ class Language(CommonControlField):
 
     name = models.TextField(_("Language Name"), blank=True, null=True)
     code2 = models.TextField(_("Language code 2"), blank=True, null=True)
-
+    
+    autocomplete_search_field = "code2"
+    def autocomplete_label(self):
+        return str(self)
+    
     class Meta:
         verbose_name = _("Language")
         verbose_name_plural = _("Languages")
@@ -194,7 +198,11 @@ class License(CommonControlField):
     language = models.ForeignKey(
         Language, on_delete=models.SET_NULL, null=True, blank=True
     )
+    autocomplete_search_field = "license_p"
 
+    def autocomplete_label(self):
+        return str(self.license_p)
+    
     @classmethod
     def get_or_create(cls, url, license_p, license_type, language, creator):
         try:
