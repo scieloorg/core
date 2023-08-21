@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from collection.models import Collection
 from core.forms import CoreAdminModelForm
@@ -27,8 +28,13 @@ class Event(CommonControlField):
         blank=True,
     )
 
+    autocomplete_search_filter = "main_name"
+
+    def autocomplete_label(self):
+        return str(self)
+
     panels = [
-        FieldPanel("collection"),
+        AutocompletePanel("collection"),
         FieldPanel("occurrence_date"),
         FieldPanel("occurrence_type"),
     ]
@@ -86,8 +92,8 @@ class JournalAndCollection(CommonControlField):
     )
 
     panels = [
-        FieldPanel("journal"),
-        FieldPanel("events_collection"),
+        AutocompletePanel("journal"),
+        AutocompletePanel("events_collection"),
     ]
 
     class Meta:
