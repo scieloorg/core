@@ -245,7 +245,7 @@ class Location(CommonControlField):
         blank=True,
     )
 
-    autocomplete_search_field = "country"
+    autocomplete_search_field = "country__name"
 
     def autocomplete_label(self):
         return str(self)
