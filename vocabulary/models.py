@@ -12,6 +12,11 @@ class Vocabulary(CommonControlField):
         _("Vocabulary acronym"), max_length=10, null=True, blank=True
     )
 
+    autocomplete_search_field = "name"
+
+    def autocomplete_label(self):
+        return str(self)
+
     def __unicode__(self):
         return "%s - %s" % (self.name, self.acronym) or ""
 
