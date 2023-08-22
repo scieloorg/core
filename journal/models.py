@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 from wagtail.fields import RichTextField
 from wagtail.models import Orderable
 
@@ -227,7 +228,7 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
     )
 
     panels_identification = [
-        FieldPanel("official"),
+        AutocompletePanel("official"),
         FieldPanel("title"),
         FieldPanel("short_title"),
         FieldPanel("collection"),
@@ -661,7 +662,7 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
     base_form_class = CoreAdminModelForm
 
     panels = [
-        FieldPanel("journal"),
+        AutocompletePanel("journal"),
         FieldPanel("journal_acron"),
         FieldPanel("issn_scielo"),
         FieldPanel("collection"),
