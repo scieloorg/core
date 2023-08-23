@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
+from django import forms
+from django.contrib.postgres.fields import ArrayField
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
@@ -24,6 +26,7 @@ from journal.exceptions import (
 )
 
 from . import choices
+#from thematic_areas.models import WOSArea
 
 
 class OfficialJournal(CommonControlField):
@@ -168,6 +171,17 @@ class SocialNetwork(models.Model):
         return d
 
 
+class ModifiedArrayField(ArrayField):
+    def formfield(self, **kwargs):
+        defaults = {
+            "form_class": forms.MultipleChoiceField,
+            "choices": self.base_field.choices,
+            "widget": forms.CheckboxSelectMultiple,
+            **kwargs
+        }
+        return super(ArrayField, self).formfield(**defaults)
+
+
 class Journal(CommonControlField, ClusterableModel, SocialNetwork):
     """
     A class used to represent a journal model designed in the SciELO context.
@@ -227,6 +241,47 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
         ),
     )
 
+
+    subject_areas = ModifiedArrayField(
+        models.CharField(
+            _("Thematic Areas"),
+            choices=choices.SUBJECT_AREAS,
+            max_length=100,
+            blank=True,
+            null=True
+        ),
+        blank=True,
+        null=True
+    )
+
+    #subject_areas2 = models.ManyToManyField(WOSArea, blank=True, null=True)
+
+    wos_db= ModifiedArrayField(
+        models.CharField(
+            _("Web of Knowledge Databases"),
+            choices=choices.WOS_DB,
+            max_length=100,
+            blank=True,
+            null=True
+        ),
+        blank=True,
+        null=True
+    )
+
+
+    wos_areas= ModifiedArrayField(
+        models.CharField(
+            _("WOS Thematic Areas"),
+            choices=choices.WOS_AREAS,
+            max_length=100,
+            blank=True,
+            null=True
+        ),
+        blank=True,
+        null=True
+    )
+
+
     panels_identification = [
         AutocompletePanel("official"),
         FieldPanel("title"),
@@ -234,8 +289,15 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
         FieldPanel("collection"),
     ]
 
-    panels_mission = [
+    panels_scope = [
         InlinePanel("mission", label=_("Mission"), classname="collapsed"),
+        FieldPanel('subject_areas'),
+        FieldPanel('wos_db'),
+        FieldPanel('wos_areas'),
+        #FieldPanel(
+        #    'subject_areas2', 
+        #    widget=forms.CheckboxSelectMultiple
+        #)
     ]
 
     panels_institutions = [
@@ -294,7 +356,7 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
     edit_handler = TabbedInterface(
         [
             ObjectList(panels_identification, heading=_("Identification")),
-            ObjectList(panels_mission, heading=_("Missions")),
+            ObjectList(panels_scope, heading=_("Scope")),
             ObjectList(panels_institutions, heading=_("Related Institutions")),
             ObjectList(panels_website, heading=_("Website")),
             ObjectList(panels_about, heading=_("About Journal")),
