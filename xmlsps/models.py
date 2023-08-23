@@ -9,6 +9,7 @@ from django.db.utils import IntegrityError
 from lxml import etree
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 from wagtail.admin.panels import FieldPanel
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
@@ -59,6 +60,11 @@ class XMLVersion(CommonControlField):
     file = models.FileField(upload_to=xml_directory_path, null=True, blank=True)
     finger_print = models.CharField(max_length=64, null=True, blank=True)
 
+    autocomplete_search_field = "pid_v3"
+
+    def autocomplete_label(self):
+        return self.pid_v3
+
     class Meta:
         indexes = [
             models.Index(fields=["finger_print"]),
@@ -70,7 +76,6 @@ class XMLVersion(CommonControlField):
             dict(
                 pid_v3=self.pid_v3,
                 created=self.created.isoformat(),
-                xml=self.xml_with_pre.tostring(),
             )
         )
 
@@ -162,6 +167,11 @@ class XMLJournal(models.Model):
     )
     issn_print = models.CharField(_("issn_ppub"), max_length=9, null=True, blank=True)
 
+    autocomplete_search_field = "issn_electronic"
+
+    def autocomplete_label(self):
+        return f"{self.issn_electronic} {self.issn_print}"
+
     class Meta:
         indexes = [
             models.Index(fields=["issn_electronic"]),
@@ -226,6 +236,19 @@ class XMLIssue(models.Model):
     volume = models.CharField(_("volume"), max_length=10, null=True, blank=True)
     number = models.CharField(_("number"), max_length=10, null=True, blank=True)
     suppl = models.CharField(_("suppl"), max_length=10, null=True, blank=True)
+
+    autocomplete_search_field = "pub_year"
+
+    def autocomplete_label(self):
+        return str(self)
+
+    panels = [
+        AutocompletePanel("journal"),
+        FieldPanel("pub_year"),
+        FieldPanel("volume"),
+        FieldPanel("number"),
+        FieldPanel("suppl"),
+    ]
 
     class Meta:
         unique_together = [
@@ -329,9 +352,9 @@ class XMLSPS(CommonControlField):
         FieldPanel("pid_v3"),
         FieldPanel("pid_v2"),
         FieldPanel("aop_pid"),
-        FieldPanel("xml_journal"),
-        FieldPanel("xml_issue"),
-        FieldPanel("xml_version"),
+        AutocompletePanel("xml_journal"),
+        AutocompletePanel("xml_issue"),
+        AutocompletePanel("xml_version"),
     ]
 
     class Meta:

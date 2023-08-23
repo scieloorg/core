@@ -53,7 +53,7 @@ class Institution(CommonControlField, ClusterableModel):
         FieldPanel("name"),
         FieldPanel("acronym"),
         FieldPanel("institution_type"),
-        FieldPanel("location"),
+        AutocompletePanel("location"),
         FieldPanel("level_1"),
         FieldPanel("level_2"),
         FieldPanel("level_3"),
@@ -159,7 +159,7 @@ class InstitutionHistory(models.Model):
     final_date = models.DateField(_("Final Date"), null=True, blank=True)
 
     panels = [
-        FieldPanel("institution", heading=_("Institution")),
+        AutocompletePanel("institution", heading=_("Institution")),
         FieldPanel("initial_date"),
         FieldPanel("final_date"),
     ]

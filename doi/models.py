@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.choices import LANGUAGE
 from core.forms import CoreAdminModelForm
@@ -19,9 +20,10 @@ class DOI(CommonControlField):
         blank=True,
     )
     autocomplete_search_field = "value"
+    
     panels = [
         FieldPanel("value"),
-        FieldPanel("language"),
+        AutocompletePanel("language"),
     ]
 
     class Meta:
@@ -79,7 +81,7 @@ class DOIRegistration(CommonControlField):
     )
 
     panels = [
-        FieldPanel("doi"),
+        AutocompletePanel("doi"),
         FieldPanel("submission_date"),
         FieldPanel("status"),
     ]

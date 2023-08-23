@@ -29,4 +29,4 @@ def run(*args):
 
             creator = User.objects.get(id=user_id)
 
-            models.City(name=name, creator=creator).save()
+            models.City.get_or_create(name=name, user=creator)
