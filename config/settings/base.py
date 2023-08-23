@@ -414,13 +414,25 @@ SIMPLE_JWT = {
 HAYSTACK_CONNECTIONS = {
     "default": {
         "ENGINE": "haystack.backends.solr_backend.SolrEngine",
-        "URL": env("SOLR_URL", default="http://solr:8983/solr/core"),
+        "URL": "%s%s" % (env("SOLR_URL", default="http://solr:8983/solr/"), "core"),
         "ADMIN_URL": "http://solr:8983/solr/admin/cores",
         "INCLUDE_SPELLING": True,
         "SILENTLY_FAIL": False,
         "SOLR_TIMEOUT": 10,
+        "EXCLUDED_INDEXES": ['article.search_indexes.ArticleOAIIndex']
+    },
+    "oai": {
+        "ENGINE": "haystack.backends.solr_backend.SolrEngine",
+        "URL": "%s%s" % (env("SOLR_URL", default="http://solr:8983/solr/"), "oai"),
+        "ADMIN_URL": "http://solr:8983/solr/admin/cores",
+        "INCLUDE_SPELLING": True,
+        "SILENTLY_FAIL": False,
+        "SOLR_TIMEOUT": 10,
+        "EXCLUDED_INDEXES": ['article.search_indexes.ArticleIndex']
     }
 }
+
+HAYSTACK_ROUTERS = ['core.routers.UpdateEverythingRouter', ]
 
 HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.RealtimeSignalProcessor"
 
