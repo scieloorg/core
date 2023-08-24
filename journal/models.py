@@ -46,10 +46,10 @@ class OfficialJournal(CommonControlField):
         _("Initial Number"), max_length=1, null=True, blank=True
     )
     terminate_year = models.CharField(
-        _("Terminate year"), max_length=8, null=True, blank=True
+        _("Terminate year"), max_length=4, null=True, blank=True
     )
     terminate_month = models.CharField(
-        _("Terminate month"), max_length=8, null=True, blank=True
+        _("Terminate month"), max_length=2, null=True, blank=True
     )
     final_volume = models.CharField(
         _("Final Volume"), max_length=2, null=True, blank=True
