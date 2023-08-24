@@ -32,9 +32,9 @@ class OfficialJournal(CommonControlField):
     """
 
     title = models.TextField(_("Official Title"), null=True, blank=True)
-    iso_short_title = models.TextField(_("ISO Short Title", null=True, blank=True))
+    iso_short_title = models.TextField(_("ISO Short Title"), null=True, blank=True)
     parallel_titles = models.ManyToManyField(
-        "JournalParallelTitles", _("Parallel Titles"), null=True, blank=True
+        "JournalParallelTitles", null=True, blank=True
     )
     foundation_year = models.CharField(
         _("Foundation Year"), max_length=4, null=True, blank=True
