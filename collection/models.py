@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField, TextWithLang
@@ -9,6 +10,11 @@ from . import choices
 
 
 class CollectionName(TextWithLang):
+    autocomplete_search_filter = "text"
+
+    def autocomplete_label(self):
+        return str(self)
+
     @property
     def data(self):
         d = {
@@ -49,12 +55,17 @@ class Collection(CommonControlField):
     is_active = models.BooleanField(_("Is active"), null=True, blank=True)
     foundation_date = models.DateField(_("Foundation data"), null=True, blank=True)
 
+    autocomplete_search_field = "main_name"
+
+    def autocomplete_label(self):
+        return str(self)
+
     panels = [
         FieldPanel("acron3"),
         FieldPanel("acron2"),
         FieldPanel("code"),
         FieldPanel("domain"),
-        FieldPanel("name"),
+        AutocompletePanel("name"),
         FieldPanel("main_name"),
         FieldPanel("status"),
         FieldPanel("has_analytics"),
