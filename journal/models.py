@@ -10,7 +10,7 @@ from wagtail.models import Orderable
 
 from collection.models import Collection
 from core.forms import CoreAdminModelForm
-from core.models import CommonControlField, RichTextWithLang
+from core.models import CommonControlField, RichTextWithLang, TextWithLang
 from institution.models import InstitutionHistory
 from journal.exceptions import (
     JournalCreateOrUpdateError,
@@ -32,14 +32,66 @@ class OfficialJournal(CommonControlField):
     """
 
     title = models.TextField(_("Official Title"), null=True, blank=True)
+    iso_short_title = models.TextField(_("ISO Short Title", null=True, blank=True))
+    parallel_titles = models.ManyToManyField(
+        "JournalParallelTitles", _("Parallel Titles"), null=True, blank=True
+    )
     foundation_year = models.CharField(
         _("Foundation Year"), max_length=4, null=True, blank=True
+    )
+    initial_volume = models.CharField(
+        _("Initial Volume"), max_length=1, null=True, blank=True
+    )
+    initial_number = models.CharField(
+        _("Initial Number"), max_length=1, null=True, blank=True
+    )
+    terminate_year = models.CharField(
+        _("Terminate year"), max_length=8, null=True, blank=True
+    )
+    terminate_month = models.CharField(
+        _("Terminate month"), max_length=8, null=True, blank=True
+    )
+    final_volume = models.CharField(
+        _("Final Volume"), max_length=2, null=True, blank=True
+    )
+    final_number = models.CharField(
+        _("Final Number"), max_length=2, null=True, blank=True
     )
     issn_print = models.CharField(_("ISSN Print"), max_length=9, null=True, blank=True)
     issn_electronic = models.CharField(
         _("ISSN Eletronic"), max_length=9, null=True, blank=True
     )
     issnl = models.CharField(_("ISSNL"), max_length=9, null=True, blank=True)
+
+    panels_titles = [
+        FieldPanel("title"), 
+        FieldPanel("iso_short_title"),
+        AutocompletePanel("parallel_titles"),
+    ]
+
+    panels_dates = [
+        FieldPanel("foundation_year"),
+        FieldPanel("initial_volume"),
+        FieldPanel("initial_number"),
+        FieldPanel("terminate_year"),
+        FieldPanel("terminate_month"),        
+        FieldPanel("final_volume"),
+        FieldPanel("final_number"),
+    ]
+
+    panels_issns = [
+        FieldPanel("issn_print"),
+        FieldPanel("issn_electronic"),
+        FieldPanel("issnl"),
+    ]
+
+    edit_handler = TabbedInterface(
+        [
+            ObjectList(panels_titles, heading=_("Titles")),
+            ObjectList(panels_dates, heading=_("Dates")),
+            ObjectList(panels_issns, heading=_("Issns")),
+        ]
+    )
 
     class Meta:
         verbose_name = _("Official Journal")
@@ -370,7 +422,7 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
         obj.save()
         for scielo_j in SciELOJournal.objects.filter(journal=obj):
             obj.collection.add(scielo_j.collection)
-            
+
         return obj
 
     def __unicode__(self):
@@ -714,3 +766,12 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         obj.journal = journal or obj.journal
         obj.save()
         return obj
+
+
+class JournalParallelTitles(TextWithLang):
+
+    def __unicode__(self):
+        return "%s (%s)" % (self.text, self.language)
+
+    def __str__(self):
+        return "%s (%s)" % (self.text, self.language)
