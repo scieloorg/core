@@ -286,7 +286,7 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
         AutocompletePanel("official"),
         FieldPanel("title"),
         FieldPanel("short_title"),
-        FieldPanel("collection"),
+        AutocompletePanel("collection"),
     ]
 
     panels_scope = [
@@ -707,6 +707,11 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
     )
     # TODO adicionar eventos de entrada e saída de coleção / refatorar journal_and_collection
 
+    autocomplete_search_field = "journal_acron"
+
+    def autocomplete_label(self):
+        return str(self)
+
     class Meta:
         verbose_name = _("SciELO Journal")
         verbose_name_plural = _("SciELO Journals")
@@ -727,7 +732,7 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         AutocompletePanel("journal"),
         FieldPanel("journal_acron"),
         FieldPanel("issn_scielo"),
-        FieldPanel("collection"),
+        AutocompletePanel("collection"),
     ]
 
     @classmethod

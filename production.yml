@@ -47,6 +47,7 @@ services:
          - "8983:8983"
       volumes:
          - ./index/core:/opt/solr/server/solr/core
+         - ./index/oai:/opt/solr/server/solr/oai
       environment:
           - SOLR_JAVA_MEM=-Xms512m -Xmx512m
           - SOLR_HEAP=512m
