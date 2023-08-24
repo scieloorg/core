@@ -105,3 +105,129 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
 
     def index_queryset(self, using=None):
         return self.get_model().objects.all()
+
+
+class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
+    """
+    The format of the data:
+
+        "item.id":1,
+        "item.handle":"oai:redi.anii.org.uy:20.500.12381/2671",
+        "item.lastmodified":"2022-12-20T15:18:22Z",
+        "item.submitter":"submitter",
+        "item.deleted":false,
+        "item.public":true,
+        "item.collections":["TEST"],
+        "item.communities":["com_INST01"],
+        "metadata.dc.title":["Descripción de estados fenológicos de pecán."],
+        "metadata.dc.creator":["PROGRAMA NACIONAL PRODUCCIÓN FRUTÍCOLA"],
+        "metadata.dc.subject":["NUEZ",
+          "FRUTALES",
+          "PECAN",
+          "FENOLOGIA"],
+        "metadata.dc.description":[""],
+        "metadata.dc.date":["2022-12-16T20:50:16Z",
+          "2022-12-16T20:50:16Z",
+          "2016",
+          "2022-12-16T20:50:16Z"],
+        "metadata.dc.type":["info:eu-repo/semantics/publishedVersion",
+          "info:eu-repo/semantics/report"],
+        "metadata.dc.identifier":["http://www.ainfo.inia.uy/consulta/busca?b=pc&id=56088&biblioteca=vazio&busca=56088&qFacets=56088"],
+        "metadata.dc.language":["es",
+          "spa"],
+        "metadata.dc.rights":["info:eu-repo/semantics/openAccess",
+          "Acceso abierto"],
+        "metadata.dc.source":["reponame:Ainfo",
+          "instname:Instituto Nacional de Investigación Agropecuaria",
+          "instacron:Instituto Nacional de Investigación Agropecuaria"],
+        "item.compile":"<metadata xmlns=\"http://www.lyncode.com/xoai\"\n"
+    
+    """
+
+    text = indexes.CharField(document=True, use_template=True)
+    id = indexes.CharField(model_attr="id", index_fieldname="item.handle", null=True)
+    item_id = indexes.CharField(model_attr="id", index_fieldname="item.id", null=True)
+    updated = indexes.CharField(index_fieldname="item.lastmodified", null=True)
+    submitter = indexes.CharField(model_attr="creator", index_fieldname="item.submitter", null=True)
+    deleted = indexes.CharField(index_fieldname="item.deleted", null=True)
+    public = indexes.CharField(index_fieldname="item.public", null=True)
+    collections = indexes.MultiValueField(index_fieldname="item.collections", null=True)
+    publishers = indexes.MultiValueField(index_fieldname="item.communities", null=True)
+    titles = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.title")
+    creator = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.creator")
+    kw = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.subject")
+    description = indexes.MultiValueField(index_fieldname="metadata.dc.description")
+    dates = indexes.MultiValueField(index_fieldname="metadata.dc.date")
+    type = indexes.CharField(model_attr="article_type", index_fieldname="metadata.dc.type", null=True)
+    identifier = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.identifier")
+    la = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.language")
+    license = indexes.MultiValueField(index_fieldname="metadata.dc.rights")
+    sources = indexes.MultiValueField(index_fieldname="metadata.dc.source")
+    compile = indexes.CharField(null=True, index_fieldname="item.compile")
+
+    def prepare_doi(self, obj):
+        if obj.doi:
+            return "".join([doi.value for doi in obj.doi.all()])
+
+    def prepare_updated(self, obj):
+        """
+        2022-12-20T15:18:22Z
+        """
+        return obj.updated.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+    def prepare_deleted(self, obj):
+        return False
+    
+    def prepare_public(self, obj):
+        return True
+    
+    def prepare_collections(self, obj):
+        return ["TEST",]
+    
+    def prepare_publishers(self, obj):
+        if not obj.publisher: 
+            return [" ",]
+        return [obj.publisher]
+    
+    def prepare_titles(self, obj):
+        if obj.titles:
+            return [title.plain_text for title in obj.titles.all()]
+        
+    def prepare_creator(self, obj):
+        return ["Scientific Electronic Library Online"]
+    
+    def prepare_kw(self, obj):
+        if obj.keywords:
+            return [keyword.text for keyword in obj.keywords.all()]
+        
+    def prepare_description(self, obj):
+        return [" ",]
+        
+    def prepare_dates(self, obj):
+        return [" ",]
+        
+    def prepare_la(self, obj):
+        if obj.languages:
+            return [language.code2 for language in obj.languages.all()]
+        
+    def prepare_identifier(self, obj):
+        if obj.doi:
+            dois = [doi.value for doi in obj.doi.all()]
+        return dois + [obj.pid_v2, obj.pid_v3] 
+        
+    def prepare_license(self, obj):
+        if obj.license:
+           return [license.license_type for license in obj.license.all()]
+        
+    def prepare_sources(self, obj):
+        return [" ",]
+        
+    def prepare_compile(self, obj):
+        # The xml of the article.
+        return '<?xml version="1.0" encoding="UTF-8"?> <note> <to>Tove</to> <from>Jani</from> <heading>Reminder</heading> <body>Dont forget me this weekend!</body> </note>'
+
+    def get_model(self):
+        return Article
+
+    def index_queryset(self, using=None):
+        return self.get_model().objects.all()

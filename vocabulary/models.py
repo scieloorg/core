@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
-
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField, TextWithLang
 
@@ -11,6 +11,11 @@ class Vocabulary(CommonControlField):
     acronym = models.CharField(
         _("Vocabulary acronym"), max_length=10, null=True, blank=True
     )
+
+    autocomplete_search_field = "name"
+
+    def autocomplete_label(self):
+        return str(self)
 
     def __unicode__(self):
         return "%s - %s" % (self.name, self.acronym) or ""
@@ -106,7 +111,7 @@ class Keyword(CommonControlField, TextWithLang):
     panels = [
         FieldPanel("text"),
         FieldPanel("language"),
-        FieldPanel("vocabulary"),
+        AutocompletePanel("vocabulary"),
     ]
 
     @property

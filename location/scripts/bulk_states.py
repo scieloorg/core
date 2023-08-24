@@ -18,18 +18,18 @@ def run(*args):
 
     # Delete all cities
     models.State.objects.all().delete()
+    # User
+    if args:
+        user_id = args[0]
+
+    creator = User.objects.get(id=user_id)
 
     with open(
         os.path.dirname(os.path.realpath(__file__)) + "/../fixtures/states.csv", "r"
     ) as fp:
         for line in fp.readlines():
             name, acron, region = line.strip().split(SEPARATOR)
-
-            # User
-            if args:
-                user_id = args[0]
-
-            creator = User.objects.get(id=user_id)
+            region = models.Region.get_or_create(name=region, user=creator)
 
             models.State(
                 name=name, acronym=acron, region=region, creator=creator

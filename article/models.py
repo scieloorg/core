@@ -202,7 +202,7 @@ class ArticleFunding(CommonControlField):
 
     panels = [
         FieldPanel("award_id"),
-        FieldPanel("funding_source"),
+        AutocompletePanel("funding_source"),
     ]
 
     def __unicode__(self):
@@ -317,6 +317,11 @@ class ArticleHistory(CommonControlField):
         FlexibleDate, null=True, blank=True, on_delete=models.SET_NULL
     )
 
+    panels = [
+        AutocompletePanel("event_type"),
+        AutocompletePanel("date"),
+    ]
+
     class Meta:
         indexes = [
             models.Index(
@@ -393,6 +398,11 @@ class ArticleCount(CommonControlField):
         blank=True,
     )
 
+    panels = [
+        AutocompletePanel("count_type"),
+        AutocompletePanel("language")
+    ]
+
     class Meta:
         indexes = [
             models.Index(
@@ -431,6 +441,12 @@ class SubArticle(models.Model):
     article_type = models.ForeignKey(
         "ArticleType", on_delete=models.SET_NULL, null=True, blank=True
     )
+
+    panels = [
+        AutocompletePanel("titles"),
+        AutocompletePanel("article"),
+        AutocompletePanel("article_type"),
+    ]
 
     class Meta:
         verbose_name = _("SubArticle")
