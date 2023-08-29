@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
+from modelcluster.fields import ParentalKey
 
 from collection.models import Collection
 from core.forms import CoreAdminModelForm
@@ -19,9 +20,9 @@ class Event(CommonControlField):
         blank=True,
         on_delete=models.SET_NULL,
     )
-    occurrence_date = models.DateField(_("Occurrence date"), null=True, blank=True)
-    occurrence_type = models.CharField(
-        _("Occurrence type"),
+    occurrence_date = models.CharField(_("Occurrence date"), max_length=20, null=True, blank=True)
+    description_type = models.CharField(
+        _("Description type"),
         choices=choices.events,
         max_length=20,
         null=True,
@@ -36,7 +37,7 @@ class Event(CommonControlField):
     panels = [
         AutocompletePanel("collection"),
         FieldPanel("occurrence_date"),
-        FieldPanel("occurrence_type"),
+        FieldPanel("description_type"),
     ]
 
     class Meta:
@@ -45,7 +46,7 @@ class Event(CommonControlField):
         indexes = [
             models.Index(
                 fields=[
-                    "occurrence_type",
+                    "description_type",
                 ]
             ),
         ]
@@ -54,7 +55,7 @@ class Event(CommonControlField):
     def data(self):
         d = {
             "event__occurrence_date": self.occurrence_date,
-            "event__occurrence_type": self.occurrence_type,
+            "event__description_type": self.description_type,
         }
 
         if self.collection:
@@ -64,14 +65,14 @@ class Event(CommonControlField):
 
     def __unicode__(self):
         return "%s in the %s in %s" % (
-            self.occurrence_type,
+            self.description_type,
             self.collection,
             str(self.occurrence_date),
         )
 
     def __str__(self):
         return "%s in the %s in %s" % (
-            self.occurrence_type,
+            self.description_type,
             self.collection,
             str(self.occurrence_date),
         )
@@ -80,12 +81,13 @@ class Event(CommonControlField):
 
 
 class JournalAndCollection(CommonControlField):
-    journal = models.ForeignKey(
+    scielo = ParentalKey(
         SciELOJournal,
         verbose_name=_("Journal"),
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
+        related_name=("journal_history")
     )
     events_collection = models.ManyToManyField(
         Event, verbose_name=_("Events"), blank=True
