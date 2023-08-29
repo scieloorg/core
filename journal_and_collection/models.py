@@ -89,7 +89,7 @@ class Event(CommonControlField):
 
 
 class JournalAndCollection(CommonControlField):
-    scielo = ParentalKey(
+    scielo_journal = ParentalKey(
         SciELOJournal,
         verbose_name=_("Journal"),
         null=True,
