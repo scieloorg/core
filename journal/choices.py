@@ -25,7 +25,7 @@ STATUS = [
 
 PUBLISHING_MODEL = [
     ("C", _("Countinous")),
-    ("U", "undefined"),
+    ("U", _("Undefined")),
 ]
 
 FREQUENCY = [
