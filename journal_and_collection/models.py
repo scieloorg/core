@@ -9,7 +9,7 @@ from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from journal.models import SciELOJournal
 
-from . import choices
+from researcher.choices import MONTHS
 
 
 class Event(CommonControlField):
@@ -20,9 +20,11 @@ class Event(CommonControlField):
         blank=True,
         on_delete=models.SET_NULL,
     )
-    occurrence_date = models.CharField(_("Occurrence date"), max_length=20, null=True, blank=True)
-    description_type = models.TextField(
-        _("Description type"),
+    occurrence_date_year = models.CharField(_("Occurrence date year"), max_length=4)
+    occurrence_date_month = models.CharField(_("Occurrence date month"), max_length=2, choices=MONTHS, null=True, blank=True)
+    occurrence_date_day = models.CharField(_("Occurrence date day"), max_length=2, null=True, blank=True)
+    occurrence_type = models.TextField(
+        _("Occurrence type"),
         null=True,
         blank=True,
     )
@@ -34,8 +36,10 @@ class Event(CommonControlField):
 
     panels = [
         AutocompletePanel("collection"),
-        FieldPanel("occurrence_date"),
-        FieldPanel("description_type"),
+        FieldPanel("occurrence_date_year"),
+        FieldPanel("occurrence_date_month"),
+        FieldPanel("occurrence_date_day"),
+        FieldPanel("occurrence_type"),
     ]
 
     class Meta:
@@ -44,7 +48,7 @@ class Event(CommonControlField):
         indexes = [
             models.Index(
                 fields=[
-                    "description_type",
+                    "occurrence_type",
                 ]
             ),
         ]
@@ -52,8 +56,10 @@ class Event(CommonControlField):
     @property
     def data(self):
         d = {
-            "event__occurrence_date": self.occurrence_date,
-            "event__description_type": self.description_type,
+            "event__occurrence_date_year": self.occurrence_date_year,
+            "event__occurrence_date_month": self.occurrence_date_month,
+            "event__occurrence_date_day": self.occurrence_date_day,
+            "event__occurrence_type": self.occurrence_type,
         }
 
         if self.collection:
@@ -62,17 +68,21 @@ class Event(CommonControlField):
         return d
 
     def __unicode__(self):
-        return "%s in the %s in %s" % (
-            self.description_type,
+        return "%s in the %s in %s/%s/%s" % (
+            self.occurrence_type,
             self.collection,
-            str(self.occurrence_date),
+            self.occurrence_date_year,
+            self.occurrence_date_month,
+            self.occurrence_date_day,
         )
 
     def __str__(self):
-        return "%s in the %s in %s" % (
-            self.description_type,
+        return "%s in the %s in %s/%s/%s" % (
+            self.occurrence_type,
             self.collection,
-            str(self.occurrence_date),
+            self.occurrence_date_year,
+            self.occurrence_date_month,
+            self.occurrence_date_day,
         )
 
     base_form_class = CoreAdminModelForm
