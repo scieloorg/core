@@ -21,10 +21,8 @@ class Event(CommonControlField):
         on_delete=models.SET_NULL,
     )
     occurrence_date = models.CharField(_("Occurrence date"), max_length=20, null=True, blank=True)
-    description_type = models.CharField(
+    description_type = models.TextField(
         _("Description type"),
-        choices=choices.events,
-        max_length=20,
         null=True,
         blank=True,
     )
@@ -94,7 +92,7 @@ class JournalAndCollection(CommonControlField):
     )
 
     panels = [
-        AutocompletePanel("journal"),
+        AutocompletePanel("scielo"),
         AutocompletePanel("events_collection"),
     ]
 
