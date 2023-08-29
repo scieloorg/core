@@ -102,7 +102,7 @@ class JournalAndCollection(CommonControlField):
     )
 
     panels = [
-        AutocompletePanel("scielo"),
+        AutocompletePanel("scielo_journal"),
         AutocompletePanel("events_collection"),
     ]
 
