@@ -880,15 +880,14 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
 
 
 class SubjectDescriptor(CommonControlField):
-    code = models.CharField(max_length=2, null=True, blank=True)
     value = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.code} - {self.value}"
+        return f"{self.value}"
 
 
 class Subject(CommonControlField):
-    code = models.CharField(max_length=2, null=True, blank=True)
+    code = models.CharField(max_length=30, null=True, blank=True)
     value = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
@@ -896,7 +895,7 @@ class Subject(CommonControlField):
 
 
 class WebOfKnowledge(CommonControlField):
-    code = models.CharField(max_length=2, null=True, blank=True)
+    code = models.CharField(max_length=8, null=True, blank=True)
     value = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
@@ -904,11 +903,10 @@ class WebOfKnowledge(CommonControlField):
 
 
 class WebOfKnowledgeSubjectCategory(CommonControlField):
-    code = models.CharField(max_length=2, null=True, blank=True)
     value = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.code} - {self.value}"
+        return f"{self.value}"
 
 
 class Standard(CommonControlField):
