@@ -115,3 +115,14 @@ TYPE = [
     ("DIRECTORY", _("DIRECTORY")),
     ("OTHER", _("OTHER")),
 ]
+
+STUDY_AREA = [
+    (_("AGRICULTURAL SCIENCES"), _("Agricultural Sciences")),
+    (_("APPLIED SOCIAL SCIENCES"), _("Applied Social Sciences")),
+    (_("BIOLOGICAL SCIENCES"), _("Biological Sciences")),
+    (_("ENGINEERING"), _("Engineering")),
+    (_("EXACT AND EARTH SCIENCES"), _("Exact and Earth Sciences")),
+    (_("HEALTH SCIENCES"), _("Health Sciences")),
+    (_("HUMAN SCIENCES"), _("Human Sciences")),
+    (_("LINGUISTICS, LETTERS AND ARTS"), _("Linguistic, Literature and Arts")),
+]
