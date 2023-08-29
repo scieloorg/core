@@ -240,14 +240,14 @@ class Journal(CommonControlField, ClusterableModel):
     )
     frequency = models.CharField(
         _("Frequency"),
-        max_length=29,
+        max_length=4,
         choices=choices.FREQUENCY,
         null=True,
         blank=True,
     )
     publishing_model = models.CharField(
         _("Publishing Model"),
-        max_length=100,
+        max_length=16,
         choices=choices.PUBLISHING_MODEL,
         null=True,
         blank=True,
@@ -286,28 +286,28 @@ class Journal(CommonControlField, ClusterableModel):
     )
     alphabet = models.CharField(
         _("Alphabet"),
-        max_length=17,
+        max_length=4,
         choices=choices.ALPHABET_OF_TITLE,
         null=True,
         blank=True,
     )
     type_of_literature = models.CharField(
         _("Type of Literature"),
-        max_length=50,
+        max_length=4,
         choices=choices.LITERATURE_TYPE,
         null=True,
         blank=True,
     )
     treatment_level = models.CharField(
         _("Type of Literature"),
-        max_length=41,
+        max_length=4,
         choices=choices.TREATMENT_LEVEL,
         null=True,
         blank=True,
     )
     level_of_publication = models.CharField(
         _("Level of Publication"),
-        max_length=20,
+        max_length=2,
         choices=choices.PUBLICATION_LEVEL,
         null=True,
         blank=True,
