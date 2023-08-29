@@ -349,23 +349,23 @@ class Journal(CommonControlField, ClusterableModel):
 
     panels_titles = [
         FieldPanel("title"),
-        FieldPanel("short_titles"),
+        FieldPanel("short_title"),
         AutocompletePanel("other_title"), 
     ]
 
     panels_scope = [
         InlinePanel("mission", label=_("Mission"), classname="collapsed"),
         AutocompletePanel("subject_descriptor"),
-        AutocompletePanel("subjects"),
+        AutocompletePanel("subject"),
         AutocompletePanel("wos_db"),
         AutocompletePanel("wos_area"),
     ]
 
     panels_formal_information = [
-        FieldPanel("Frequency"),
-        FieldPanel("publishing_mode"),
-        FieldPanel("text_languages"),
-        FieldPanel("abstract_languages"),
+        FieldPanel("frequency"),
+        FieldPanel("publishing_model"),
+        FieldPanel("text_language"),
+        FieldPanel("abstract_language"),
         FieldPanel("standard"),
         AutocompletePanel("vocabulary"),
         FieldPanel("alphabet"),
