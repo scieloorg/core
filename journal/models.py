@@ -14,6 +14,8 @@ from core.models import CommonControlField, RichTextWithLang
 from institution.models import InstitutionHistory
 from vocabulary.models import Vocabulary
 from core.models import Language
+from reference.models import JournalReference
+
 from journal.exceptions import (
     JournalCreateOrUpdateError,
     JournalGetError,
@@ -193,7 +195,10 @@ class Journal(CommonControlField, ClusterableModel):
     )
     title = models.TextField(_("Journal Title"), null=True, blank=True)
     short_title = models.TextField(_("Short Title"), null=True, blank=True)
-
+    other_title = models.ManyToManyField(
+        JournalReference,
+        verbose_name=_("Other titles")
+    )
     logo = models.ForeignKey(
         "wagtailimages.Image",
         on_delete=models.SET_NULL,
@@ -345,7 +350,7 @@ class Journal(CommonControlField, ClusterableModel):
     panels_titles = [
         FieldPanel("title"),
         FieldPanel("short_titles"),
-        #  FieldPanel("other_titles"),  # Cria APP reference Modelo Journal m2m
+        AutocompletePanel("other_title"), 
     ]
 
     panels_scope = [
