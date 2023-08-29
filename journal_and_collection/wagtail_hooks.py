@@ -33,7 +33,7 @@ class EventAdmin(ModelAdmin):
     list_display = (
         "collection",
         "occurrence_date",
-        "occurrence_type",
+        "description_type",
         "creator",
         "updated",
         "created",
@@ -42,7 +42,7 @@ class EventAdmin(ModelAdmin):
     search_fields = (
         "collection",
         "occurrence_date",
-        "occurrence_type",
+        "description_type",
         "creator",
         "updated",
         "created",
@@ -51,7 +51,7 @@ class EventAdmin(ModelAdmin):
     list_export = (
         "collection",
         "occurrence_date",
-        "occurrence_type",
+        "description_type",
         "creator",
         "updated",
         "created",
