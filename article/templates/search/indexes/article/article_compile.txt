@@ -1,0 +1,85 @@
+<metadata xmlns="http://www.lyncode.com/xoai"
+    xmlns:fn="http://www.w3.org/2005/xpath-functions"
+    xmlns:fo="http://www.w3.org/1999/XSL/Format"
+    xmlns:xdt="http://www.w3.org/2005/xpath-datatypes"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.lyncode.com/xoai http://www.lyncode.com/xsd/xoai.xsd">
+    <element name="dc">
+        <element name="title">
+            <element name="none">
+            {% for title in object.titles.all %}
+                <field name="value">{{ title.plain_text }}</field>
+            {% endfor%}
+            </element>
+        </element>
+        <element name="creator">
+            <element name="none">
+            {% for research in object.researchers.all %}
+                <field name="value">{{research.given_names}} {{research.last_name}}</field>
+            {% endfor %}
+            </element>
+        </element>
+        <element name="subject">
+            <element name="none">
+            {% for kwd in object.keywords.all %}
+                <field name="value">{{ kwd.text }}</field>
+            {% endfor %}
+            </element>
+        </element>
+        <element name="description">
+            <element name="none">
+            {% for abs in object.abstracts.all %}
+                <field name="value">{{ abs }}</field>
+            {% endfor %}
+            <field name="value"/>
+            </element>
+        </element>
+      <element name="date">
+         <element name="none">
+            <field name="value">{{ object.updated|date:"c" }}</field>
+         </element>
+      </element>
+      <element name="type">
+         <element name="none">
+            <field name="value">{{ object.article_type }}</field>
+         </element>
+      </element>
+      <element name="identifier">
+         <element name="none">
+            {% for doi in object.doi.all %}
+                <field name="value">{{ doi.value }}</field>
+            {% endfor %}
+         </element>
+      </element>
+      <element name="language">
+         <element name="none">
+            <element name="none">
+               <element name="none">
+                    {% for lang in object.languages.all %}
+                        <field name="value">{{ lang }}</field>
+                    {% endfor %}
+               </element>
+            </element>
+         </element>
+      </element>
+      <element name="rights">
+         <element name="none">
+            {% for lic in object.license.all %}
+                <field name="value">{{ lic }}</field>
+            {% endfor %}
+         </element>
+      </element>
+    </element>
+    <element name="bundles"/>
+    <element name="others">
+        <field name="handle"/>
+        <field name="identifier">{{ object.id }}</field>
+        <field name="lastModifyDate">{{ object.updated|date:"c" }}</field>
+    </element>
+    <element name="repository">
+        <field name="mail"/>
+        <field name="name"/>
+    </element>
+</metadata>
+

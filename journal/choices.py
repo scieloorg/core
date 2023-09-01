@@ -24,9 +24,10 @@ STATUS = [
 ]
 
 PUBLISHING_MODEL = [
+
     ("continuous", _("Continuous")),
     ("undefined", _("Undefined")),
-]
+
 
 FREQUENCY = [
     ("?", _("Unknown")),
