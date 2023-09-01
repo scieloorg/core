@@ -7,7 +7,7 @@ from core.models import CommonControlField, TextWithLang
 
 
 class Vocabulary(CommonControlField):
-    name = models.TextField(_("Vocabulary name"), unique=True)
+    name = models.TextField(_("Vocabulary name"), null=True, blank=True)
     acronym = models.CharField(
         _("Vocabulary acronym"), max_length=10, null=True, blank=True
     )
@@ -51,7 +51,7 @@ class Vocabulary(CommonControlField):
         return d
 
     @classmethod
-    def get_or_create(cls, name, acronym, user):
+    def get_or_create(cls, user, name=None, acronym=None):
         try:
             if name and acronym:
                 return cls.objects.get(name=name, acronym=acronym)
@@ -65,7 +65,7 @@ class Vocabulary(CommonControlField):
             vocabulary.acronym = acronym
             vocabulary.creator = user
             vocabulary.save()
-
+            return vocabulary
     base_form_class = CoreAdminModelForm
 
 
