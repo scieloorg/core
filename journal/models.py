@@ -299,7 +299,7 @@ class Journal(CommonControlField, ClusterableModel):
         blank=True,
     )
     treatment_level = models.CharField(
-        _("Type of Literature"),
+        _("Treatment Level"),
         max_length=4,
         choices=choices.TREATMENT_LEVEL,
         null=True,
@@ -355,10 +355,10 @@ class Journal(CommonControlField, ClusterableModel):
 
     panels_scope = [
         InlinePanel("mission", label=_("Mission"), classname="collapsed"),
-        AutocompletePanel("subject_descriptor"),
-        AutocompletePanel("subject"),
-        AutocompletePanel("wos_db"),
-        AutocompletePanel("wos_area"),
+        FieldPanel("subject_descriptor"),
+        FieldPanel("subject"),
+        FieldPanel("wos_db"),
+        FieldPanel("wos_area"),
     ]
 
     panels_formal_information = [
@@ -880,7 +880,7 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
 
 
 class SubjectDescriptor(CommonControlField):
-    value = models.CharField(max_length=100, null=True, blank=True)
+    value = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"{self.value}"
@@ -891,8 +891,35 @@ class Subject(CommonControlField):
     value = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.code} - {self.value}"
+        return f"{self.value}"
 
+    @classmethod
+    def get(cls, code):
+        if not code:
+            raise ValueError("Subject.get requires code paramenter")
+        return cls.objects.get(code=code)                
+    
+    @classmethod
+    def create_or_update(
+        cls,
+        code,
+        user,
+    ):
+        try:
+            obj = cls.get(code=code)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.code = code
+            obj.creator = user
+        # TODO
+        # Melhorar com excecoes especificas.
+        except Exception:
+            raise Exception("Unable to create or update Subject")
+        
+        obj.value = dict(choices.STUDY_AREA)[code]
+        obj.save()
+        return obj
+        
 
 class WebOfKnowledge(CommonControlField):
     code = models.CharField(max_length=8, null=True, blank=True)
@@ -900,6 +927,34 @@ class WebOfKnowledge(CommonControlField):
 
     def __str__(self):
         return f"{self.code} - {self.value}"
+
+
+    @classmethod
+    def get(cls, code):
+        if not code:
+            raise ValueError("WebOfKnowledge.get requires code paramenter")
+        return cls.objects.get(code=code)                
+    
+    @classmethod
+    def create_or_update(
+        cls,
+        code,
+        user,
+    ):
+        try:
+            obj = cls.get(code=code)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.code = code
+            obj.creator = user
+        # TODO
+        # Melhorar com excecoes especificas.
+        except Exception:
+            raise Exception("Unable to create or update WebOfKnowledge")
+        
+        obj.value = dict(choices.WOS_DB)[code]
+        obj.save()
+        return obj
 
 
 class WebOfKnowledgeSubjectCategory(CommonControlField):
@@ -915,6 +970,33 @@ class Standard(CommonControlField):
 
     def __str__(self):
         return f"{self.code} - {self.value}"
+    
+    @classmethod
+    def get(cls, code):
+        if not code:
+            raise ValueError("Standard.get requires code paramenter")
+        return cls.objects.get(code=code)                
+    
+    @classmethod
+    def create_or_update(
+        cls,
+        code,
+        user,
+    ):
+        try:
+            obj = cls.get(code=code)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.code = code
+            obj.creator = user
+        # TODO
+        # Melhorar com excecoes especificas.
+        except Exception:
+            raise Exception("Unable to create or update Standard")
+        
+        obj.value = dict(choices.STANDARD)[code]
+        obj.save()
+        return obj
 
 
 class IndexedAt(CommonControlField):
