@@ -28,7 +28,7 @@ from journal.exceptions import (
 )
 
 from . import choices
-
+from researcher.choices import MONTHS
 
 class OfficialJournal(CommonControlField):
     """
@@ -40,6 +40,8 @@ class OfficialJournal(CommonControlField):
     parallel_titles = models.ManyToManyField(
         "JournalParallelTitles", null=True, blank=True
     )
+    new_title = models.TextField(_("New Title"), null=True, blank=True)
+    old_title = models.TextField(_("Old Title"), null=True, blank=True)
     foundation_year = models.CharField(
         _("Foundation Year"), max_length=4, null=True, blank=True
     )
@@ -53,7 +55,7 @@ class OfficialJournal(CommonControlField):
         _("Terminate year"), max_length=4, null=True, blank=True
     )
     terminate_month = models.CharField(
-        _("Terminate month"), max_length=2, null=True, blank=True
+        _("Terminate month"), max_length=2, choices=MONTHS, null=True, blank=True
     )
     final_volume = models.CharField(
         _("Final Volume"), max_length=2, null=True, blank=True
@@ -71,6 +73,8 @@ class OfficialJournal(CommonControlField):
         FieldPanel("title"), 
         FieldPanel("iso_short_title"),
         AutocompletePanel("parallel_titles"),
+        FieldPanel("old_title"),
+        FieldPanel("new_title"),
     ]
 
     panels_dates = [
