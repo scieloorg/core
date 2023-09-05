@@ -16906,3 +16906,22 @@ label.checkbox { padding-left: 20px; }
 	-webkit-animation-name: fadeOutUpSmall;
 	animation-name: fadeOutUpSmall;
 }
+
+
+.lang-select {
+    margin-top: 28px
+}
+
+[class*="filter-collection-"] {
+    display: grid;
+    grid-template-columns: 1.8rem auto;
+    align-items: start;
+}
+
+​[class*="filter-collection-"] label {
+    margin: 0 0 0 5px
+}
+
+​[class*="filter-collection-"] input[type='checkbox'] {
+    margin: 2px 0 0 0
+}
