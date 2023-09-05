@@ -163,7 +163,7 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     la = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.language")
     license = indexes.MultiValueField(index_fieldname="metadata.dc.rights")
     sources = indexes.MultiValueField(index_fieldname="metadata.dc.source")
-    compile = indexes.CharField(null=True, index_fieldname="item.compile")
+    compile = indexes.CharField(null=True, index_fieldname="item.compile", use_template=True)
 
     def prepare_doi(self, obj):
         if obj.doi:
@@ -182,7 +182,7 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         return True
     
     def prepare_collections(self, obj):
-        return ["TEST",]
+        return ["SciELO",]
     
     def prepare_publishers(self, obj):
         if not obj.publisher: 
@@ -194,14 +194,16 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             return [title.plain_text for title in obj.titles.all()]
         
     def prepare_creator(self, obj):
-        return ["Scientific Electronic Library Online"]
+        if obj.researchers:
+            return [researcher for researcher in obj.researchers.all()]
     
     def prepare_kw(self, obj):
         if obj.keywords:
             return [keyword.text for keyword in obj.keywords.all()]
         
     def prepare_description(self, obj):
-        return [" ",]
+        if obj.abstracts:
+            return [abs.plain_text for abs in obj.abstracts.all()]
         
     def prepare_dates(self, obj):
         return [" ",]
@@ -221,10 +223,6 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         
     def prepare_sources(self, obj):
         return [" ",]
-        
-    def prepare_compile(self, obj):
-        # The xml of the article.
-        return '<?xml version="1.0" encoding="UTF-8"?> <note> <to>Tove</to> <from>Jani</from> <heading>Reminder</heading> <body>Dont forget me this weekend!</body> </note>'
 
     def get_model(self):
         return Article

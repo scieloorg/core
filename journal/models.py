@@ -922,7 +922,7 @@ class Subject(CommonControlField):
         obj.value = dict(choices.STUDY_AREA)[code]
         obj.save()
         return obj
-        
+
 
 class WebOfKnowledge(CommonControlField):
     code = models.CharField(max_length=8, null=True, blank=True)
@@ -930,7 +930,6 @@ class WebOfKnowledge(CommonControlField):
 
     def __str__(self):
         return f"{self.code} - {self.value}"
-
 
     @classmethod
     def get(cls, code):
@@ -973,7 +972,7 @@ class Standard(CommonControlField):
 
     def __str__(self):
         return f"{self.code} - {self.value}"
-    
+
     @classmethod
     def get(cls, code):
         if not code:
