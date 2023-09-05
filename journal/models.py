@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 from wagtail.fields import RichTextField
 from wagtail.models import Orderable
 
@@ -11,6 +12,10 @@ from collection.models import Collection
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField, RichTextWithLang
 from institution.models import InstitutionHistory
+from vocabulary.models import Vocabulary
+from core.models import Language
+from reference.models import JournalTitle
+
 from journal.exceptions import (
     JournalCreateOrUpdateError,
     JournalGetError,
@@ -167,7 +172,7 @@ class SocialNetwork(models.Model):
         return d
 
 
-class Journal(CommonControlField, ClusterableModel, SocialNetwork):
+class Journal(CommonControlField, ClusterableModel):
     """
     A class used to represent a journal model designed in the SciELO context.
 
@@ -190,7 +195,10 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
     )
     title = models.TextField(_("Journal Title"), null=True, blank=True)
     short_title = models.TextField(_("Short Title"), null=True, blank=True)
-
+    other_titles = models.ManyToManyField(
+        JournalTitle,
+        verbose_name=_("Other titles")
+    )
     logo = models.ForeignKey(
         "wagtailimages.Image",
         on_delete=models.SET_NULL,
@@ -225,16 +233,159 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
             )
         ),
     )
+    journal_url = models.URLField(
+        _("Journal Url"),
+        null=True,
+        blank=True,
+    )
+    frequency = models.CharField(
+        _("Frequency"),
+        max_length=4,
+        choices=choices.FREQUENCY,
+        null=True,
+        blank=True,
+    )
+    publishing_model = models.CharField(
+        _("Publishing Model"),
+        max_length=16,
+        choices=choices.PUBLISHING_MODEL,
+        null=True,
+        blank=True,
+    )
+    subject_descriptor = models.ManyToManyField(
+        "SubjectDescriptor",
+        verbose_name=_("Subject Descriptors"),
+    )
+    subject = models.ManyToManyField(
+        "Subject",
+        verbose_name=_("Study Areas"),
+    )
+    wos_db = models.ManyToManyField(
+        "WebOfKnowledge",
+        verbose_name=_("Web of Knowledge Databases"),
+    )
+    wos_area = models.ManyToManyField(
+        "WebOfKnowledgeSubjectCategory",
+        verbose_name=_("Web of Knowledge Subject Categories"),
+    )
+    text_language = models.ManyToManyField(
+        Language,
+        verbose_name=_("Text Languages"),
+        related_name="text_language",
+    )
+    abstract_language = models.ManyToManyField(
+        Language,
+        verbose_name=_("Abstract Languages"),
+        related_name="abstract_language",
+    )
+    standard = models.ForeignKey(
+        "Standard",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    alphabet = models.CharField(
+        _("Alphabet"),
+        max_length=4,
+        choices=choices.ALPHABET_OF_TITLE,
+        null=True,
+        blank=True,
+    )
+    type_of_literature = models.CharField(
+        _("Type of Literature"),
+        max_length=4,
+        choices=choices.LITERATURE_TYPE,
+        null=True,
+        blank=True,
+    )
+    treatment_level = models.CharField(
+        _("Type of Literature"),
+        max_length=4,
+        choices=choices.TREATMENT_LEVEL,
+        null=True,
+        blank=True,
+    )
+    level_of_publication = models.CharField(
+        _("Level of Publication"),
+        max_length=2,
+        choices=choices.PUBLICATION_LEVEL,
+        null=True,
+        blank=True,
+    )
+    national_code = models.TextField(
+        _("National Code"),
+        null=True,
+        blank=True,
+    )
+    classification = models.TextField(
+        _("Classification"),
+        null=True,
+        blank=True,
+    )
+    vocabulary = models.ForeignKey(
+        Vocabulary,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    indexed_at = models.ManyToManyField(
+        "IndexedAt",
+    )
+    secs_code = models.TextField(
+        _("Secs Code"),
+        null=True,
+        blank=True,
+    )
+    medline_code = models.TextField(
+        _("Medline Code"),
+        null=True,
+        blank=True,
+    )
+    medline_short_title = models.TextField(
+        _("Medline Code"),
+        null=True,
+        blank=True,
+    )  # (no xml é abbrev-journal-title do tipo nlm-title)
 
-    panels_identification = [
-        FieldPanel("official"),
+    panels_titles = [
         FieldPanel("title"),
         FieldPanel("short_title"),
-        InlinePanel("collection"),
+        AutocompletePanel("other_titles"), 
     ]
 
-    panels_mission = [
+    panels_scope = [
         InlinePanel("mission", label=_("Mission"), classname="collapsed"),
+        AutocompletePanel("subject_descriptor"),
+        AutocompletePanel("subject"),
+        AutocompletePanel("wos_db"),
+        AutocompletePanel("wos_area"),
+    ]
+
+    panels_formal_information = [
+        FieldPanel("frequency"),
+        FieldPanel("publishing_model"),
+        FieldPanel("text_language"),
+        FieldPanel("abstract_language"),
+        FieldPanel("standard"),
+        AutocompletePanel("vocabulary"),
+        FieldPanel("alphabet"),
+        FieldPanel("classification"),
+        FieldPanel("national_code"),
+        FieldPanel("type_of_literature"),
+        FieldPanel("treatment_level"),
+        FieldPanel("level_of_publication"),
+    ]
+
+    panels_interoperation = [
+        FieldPanel("secs_code"),
+        FieldPanel("medline_code"),
+        FieldPanel("medline_short_title"),
+        AutocompletePanel("indexed_at"),
+    ]
+
+    panels_identification = [
+        AutocompletePanel("official"),
+        AutocompletePanel("collection"),
     ]
 
     panels_institutions = [
@@ -292,8 +443,11 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
 
     edit_handler = TabbedInterface(
         [
+            ObjectList(panels_titles, heading=_("Titles")),
             ObjectList(panels_identification, heading=_("Identification")),
-            ObjectList(panels_mission, heading=_("Missions")),
+            ObjectList(panels_scope, heading=_("Scope")),
+            ObjectList(panels_interoperation, heading=_("Interoperation")),
+            ObjectList(panels_formal_information, heading=_("Formal information")),
             ObjectList(panels_institutions, heading=_("Related Institutions")),
             ObjectList(panels_website, heading=_("Website")),
             ObjectList(panels_about, heading=_("About Journal")),
@@ -366,9 +520,10 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
         obj.submission_online_url = submission_online_url or obj.submission_online_url
         obj.open_access = open_access or obj.open_access
 
-        for scielo_j in SciELOJournal.objects.filter(journal=self):
-            obj.collection.add(scielo_j.collection)
         obj.save()
+        for scielo_j in SciELOJournal.objects.filter(journal=obj):
+            obj.collection.add(scielo_j.collection)
+
         return obj
 
     def __unicode__(self):
@@ -641,7 +796,16 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
     issn_scielo = models.CharField(
         _("ISSN SciELO"), max_length=9, null=True, blank=True
     )
+    status = models.CharField(
+        _("Status"), max_length=12, choices=choices.STATUS, null=True, blank=True
+    )
+
     # TODO adicionar eventos de entrada e saída de coleção / refatorar journal_and_collection
+
+    autocomplete_search_field = "journal_acron"
+
+    def autocomplete_label(self):
+        return str(self)
 
     class Meta:
         verbose_name = _("SciELO Journal")
@@ -660,10 +824,11 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
     base_form_class = CoreAdminModelForm
 
     panels = [
-        FieldPanel("journal"),
+        AutocompletePanel("journal"),
         FieldPanel("journal_acron"),
         FieldPanel("issn_scielo"),
-        FieldPanel("collection"),
+        AutocompletePanel("collection"),
+        InlinePanel("journal_history", label="Jounal and History", classname="collapsed"),
     ]
 
     @classmethod
@@ -708,6 +873,63 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
             )
         obj.issn_scielo = issn_scielo or obj.issn_scielo
         obj.journal_acron = journal_acron or obj.journal_acron
+        obj.collection = collection or obj.collection
         obj.journal = journal or obj.journal
         obj.save()
         return obj
+
+
+class SubjectDescriptor(CommonControlField):
+    value = models.CharField(max_length=100, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.value}"
+
+
+class Subject(CommonControlField):
+    code = models.CharField(max_length=30, null=True, blank=True)
+    value = models.CharField(max_length=100, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.code} - {self.value}"
+
+
+class WebOfKnowledge(CommonControlField):
+    code = models.CharField(max_length=8, null=True, blank=True)
+    value = models.CharField(max_length=100, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.code} - {self.value}"
+
+
+class WebOfKnowledgeSubjectCategory(CommonControlField):
+    value = models.CharField(max_length=100, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.value}"
+
+
+class Standard(CommonControlField):
+    code = models.CharField(max_length=7, null=True, blank=True)
+    value = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.code} - {self.value}"
+
+
+class IndexedAt(CommonControlField):
+    name = models.TextField(_("Name"), null=True, blank=False)
+    acronym = models.TextField(_("Acronym"), null=True, blank=False)
+    url = models.URLField(_("URL"), max_length=255, null=True, blank=False)
+    description = models.TextField(_("Description"), null=True, blank=False)
+    type = models.CharField(
+        _("Type"), max_length=20, choices=choices.TYPE, null=True, blank=False
+    )
+
+    panels = [
+        FieldPanel("name"),
+        FieldPanel("acronym"),
+        FieldPanel("url"),
+        FieldPanel("description"),
+        FieldPanel("type"),
+    ]

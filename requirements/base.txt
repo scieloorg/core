@@ -47,7 +47,7 @@ wagtail-localize==1.5
 
 # Django celery
 # ------------------------------------------------------------------------------
-django-celery-beat==2.5.0  # https://github.com/celery/django-celery-beat
+django-celery-beat==2.4.0  # https://github.com/celery/django-celery-beat
 django_celery_results==2.5.1
 
 # Wagtail-Autocomplete
@@ -63,7 +63,7 @@ minio==7.1.15
 # ------------------------------------------------------------------------------
 lxml==4.9.3 # https://github.com/lxml/lxml
 tornado>=6.3.2 # not directly required, pinned by Snyk to avoid a vulnerability
--e git+https://github.com/scieloorg/packtools#egg=packtools
+-e git+https://git@github.com/scieloorg/packtools@3.2.1#egg=packtools
 
 # Sickle
 # ------------------------------------------------------------------------------

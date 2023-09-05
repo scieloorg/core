@@ -86,7 +86,7 @@ WAGTAIL = [
 DJANGO_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "django.contrib.sessions",
+    "django.contrib.sess<<<<<<< issue-72ions",
     "django.contrib.sites",
     "django.contrib.messages",
     "django.contrib.staticfiles",
@@ -135,6 +135,7 @@ LOCAL_APPS = [
     "xmlsps",
     "search",
     "dataset",
+    "reference",
 ]
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -264,7 +265,7 @@ FIXTURE_DIRS = (str(APPS_DIR / "fixtures"),)
 # https://docs.djangoproject.com/en/dev/ref/settings/#session-cookie-httponly
 SESSION_COOKIE_HTTPONLY = True
 # https://docs.djangoproject.com/en/dev/ref/settings/#csrf-cookie-httponly
-CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False
 # https://docs.djangoproject.com/en/dev/ref/settings/#secure-browser-xss-filter
 SECURE_BROWSER_XSS_FILTER = True
 # https://docs.djangoproject.com/en/dev/ref/settings/#x-frame-options
@@ -337,6 +338,8 @@ CELERY_TASK_TIME_LIMIT = 5 * 60
 CELERY_TASK_SOFT_TIME_LIMIT = 36000
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#beat-scheduler
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+# http://docs.celeryproject.org/en/latest/userguide/configuration.html
+DJANGO_CELERY_BEAT_TZ_AWARE = False
 
 # Celery Results
 # ------------------------------------------------------------------------------
@@ -413,13 +416,25 @@ SIMPLE_JWT = {
 HAYSTACK_CONNECTIONS = {
     "default": {
         "ENGINE": "haystack.backends.solr_backend.SolrEngine",
-        "URL": env("SOLR_URL", default="http://solr:8983/solr/core"),
+        "URL": "%s%s" % (env("SOLR_URL", default="http://solr:8983/solr/"), "core"),
         "ADMIN_URL": "http://solr:8983/solr/admin/cores",
         "INCLUDE_SPELLING": True,
         "SILENTLY_FAIL": False,
         "SOLR_TIMEOUT": 10,
+        "EXCLUDED_INDEXES": ['article.search_indexes.ArticleOAIIndex']
+    },
+    "oai": {
+        "ENGINE": "haystack.backends.solr_backend.SolrEngine",
+        "URL": "%s%s" % (env("SOLR_URL", default="http://solr:8983/solr/"), "oai"),
+        "ADMIN_URL": "http://solr:8983/solr/admin/cores",
+        "INCLUDE_SPELLING": True,
+        "SILENTLY_FAIL": False,
+        "SOLR_TIMEOUT": 10,
+        "EXCLUDED_INDEXES": ['article.search_indexes.ArticleIndex']
     }
 }
+
+HAYSTACK_ROUTERS = ['core.routers.UpdateEverythingRouter', ]
 
 HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.RealtimeSignalProcessor"
 

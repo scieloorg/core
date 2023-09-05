@@ -1,5 +1,4 @@
 from journal import tasks
-from journal.utils.request_api_article_meta import request_journal_article_meta
 
 
 def run(user_id=None, collection="scl", offset=0, limit=10):

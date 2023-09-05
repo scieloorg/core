@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import json
 from datetime import datetime
 from http import HTTPStatus
 from shutil import copyfile
@@ -11,10 +12,12 @@ from django.core.files.base import ContentFile
 from django.db import models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
+from wagtailautocomplete.edit_handlers import AutocompletePanel
+from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
-from pid_provider import exceptions, v3_gen, xml_sps_adapter
+from pid_provider import exceptions
 from xmlsps.models import XMLSPS, XMLIssue, XMLJournal, XMLVersion
 
 LOGGER = logging.getLogger(__name__)
@@ -172,76 +175,57 @@ class PidRequest(CommonControlField):
         FieldPanel("origin_date"),
         FieldPanel("result_type"),
         FieldPanel("result_msg"),
-        FieldPanel("xml_version"),
+        AutocompletePanel("xml_version"),
         FieldPanel("detail"),
     ]
 
     base_form_class = CoreAdminModelForm
 
 
-class XMLRelatedItem(CommonControlField):
-    """
-    Tem função de guardar os relacionamentos entre outro Documento (Artigo)
-    Tem objetivo de identificar o Documento (Artigo)
-    """
-
-    main_doi = models.TextField(_("DOI"), null=True, blank=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["main_doi"]),
-        ]
-
-    def __str__(self):
-        return self.main_doi
-
-    @classmethod
-    def get_or_create(cls, main_doi, creator=None):
-        try:
-            return cls.objects.get(main_doi=main_doi)
-        except cls.DoesNotExist:
-            obj = cls()
-            obj.main_doi = main_doi
-            obj.creator = creator
-            obj.created = utcnow()
-            obj.save()
-            return obj
-
-
 class PidChange(CommonControlField):
+    pkg_name = models.TextField(_("Package name"), null=True, blank=True)
     pid_type = models.CharField(_("PID type"), max_length=23, null=True, blank=True)
-    old = models.CharField(_("PID old"), max_length=23, null=True, blank=True)
-    new = models.CharField(_("PID new"), max_length=23, null=True, blank=True)
+    pid_in_xml = models.CharField(_("PID pid_in_xml"), max_length=23, null=True, blank=True)
+    pid_assigned = models.CharField(_("PID assigned"), max_length=23, null=True, blank=True)
     version = models.ForeignKey(
         XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
     )
 
+    panels = [
+        FieldPanel("pkg_name"),
+        FieldPanel("pid_type"),
+        FieldPanel("pid_in_xml"),
+        FieldPanel("pid_assigned"),
+        AutocompletePanel("version")
+    ]
+
     class Meta:
         indexes = [
-            models.Index(fields=["old"]),
-            models.Index(fields=["new"]),
+            models.Index(fields=["pid_in_xml"]),
+            models.Index(fields=["pid_assigned"]),
             models.Index(fields=["pid_type"]),
             models.Index(fields=["version"]),
         ]
 
     def __str__(self):
-        return f"{self.pid_type} {self.old} -> {self.new}"
+        return f"{self.pid_type} {self.pid_in_xml} -> {self.pid_assigned}"
 
     @classmethod
-    def get_or_create(cls, pid_type, old, new, version, user):
+    def get_or_create(cls, pid_type, pid_in_xml, pid_assigned, version, user, pkg_name):
         try:
             return cls.objects.get(
                 pid_type=pid_type,
-                old=old,
-                new=new,
+                pid_in_xml=pid_in_xml,
+                pid_assigned=pid_assigned,
                 version=version,
             )
         except cls.DoesNotExist:
             obj = cls()
             obj.creator = user
+            obj.pkg_name = pkg_name
             obj.pid_type = pid_type
-            obj.old = old
-            obj.new = new
+            obj.pid_in_xml = pid_in_xml
+            obj.pid_assigned = pid_assigned
             obj.version = version
             obj.save()
             return obj
@@ -259,7 +243,6 @@ class PidProviderXML(CommonControlField):
     issue = models.ForeignKey(
         XMLIssue, on_delete=models.SET_NULL, null=True, blank=True
     )
-    related_items = models.ManyToManyField(XMLRelatedItem)
     current_version = models.ForeignKey(
         XMLVersion, on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -288,12 +271,15 @@ class PidProviderXML(CommonControlField):
     z_partial_body = models.CharField(
         _("partial_body"), max_length=64, null=True, blank=True
     )
+    origin_date = models.CharField(
+        _("Origin date"), max_length=10, null=True, blank=True
+    )
 
     base_form_class = CoreAdminModelForm
 
     panels = [
-        FieldPanel("journal"),
-        FieldPanel("issue"),
+        AutocompletePanel("journal"),
+        AutocompletePanel("issue"),
         FieldPanel("pkg_name"),
         FieldPanel("v3"),
         FieldPanel("v2"),
@@ -310,8 +296,7 @@ class PidProviderXML(CommonControlField):
         FieldPanel("z_collab"),
         FieldPanel("z_links"),
         FieldPanel("z_partial_body"),
-        FieldPanel("current_version"),
-        FieldPanel("related_items"),
+        AutocompletePanel("current_version"),
     ]
 
     class Meta:
@@ -370,6 +355,8 @@ class PidProviderXML(CommonControlField):
         xml_with_pre,
         filename,
         user,
+        origin_date=None,
+        force_update=None,
         is_published=False,
     ):
         """
@@ -412,12 +399,12 @@ class PidProviderXML(CommonControlField):
             # consulta se documento já está registrado
             registered = cls._query_document(xml_adapter)
 
-            if registered and registered.is_equal_to(xml_adapter):
-                # retorna item registrado
-                return registered.data
-
             # analisa se aceita ou rejeita registro
-            cls.evaluate_registration(xml_adapter, registered)
+            updated_data = cls.skip_registration(
+                xml_adapter, registered, force_update, origin_date
+            )
+            if updated_data:
+                return updated_data
 
             # verfica os PIDs encontrados no XML / atualiza-os se necessário
             changed_pids = cls._complete_pids(xml_adapter, registered)
@@ -432,7 +419,9 @@ class PidProviderXML(CommonControlField):
                 )
 
             # cria ou atualiza registro
-            registered = cls._save(registered, xml_adapter, user, changed_pids)
+            registered = cls._save(
+                registered, xml_adapter, user, changed_pids, origin_date
+            )
 
             # cria ou atualiza XMLSPS
             registered._create_or_update_xmlsps(user, is_published)
@@ -443,9 +432,21 @@ class PidProviderXML(CommonControlField):
             return data
 
         except (
+            exceptions.QueryDocumentMultipleObjectsReturnedError,
+        ) as e:
+            data = json.loads(str(e))
+            pid_request = PidRequest.create_or_update(
+                user=user,
+                origin=filename,
+                result_type=str(type(e)),
+                result_msg=_("Found {} records for {}").format(
+                    len(data["items"]), data["params"]),
+                detail=data,
+            )
+            return pid_request.data
+        except (
             exceptions.ForbiddenPidProviderXMLRegistrationError,
             exceptions.NotEnoughParametersToGetDocumentRecordError,
-            exceptions.QueryDocumentMultipleObjectsReturnedError,
             exceptions.InvalidPidError,
         ) as e:
             pid_request = PidRequest.register_failure(
@@ -475,6 +476,7 @@ class PidProviderXML(CommonControlField):
         xml_adapter,
         user,
         changed_pids,
+        origin_date=None,
     ):
         if registered:
             registered.updated_by = user
@@ -484,6 +486,7 @@ class PidProviderXML(CommonControlField):
             registered.creator = user
             registered.created = utcnow()
 
+        registered.origin_date = origin_date
         registered._add_data(xml_adapter, user)
         registered._add_journal(xml_adapter)
         registered._add_issue(xml_adapter, registered.journal)
@@ -492,27 +495,48 @@ class PidProviderXML(CommonControlField):
         registered.save()
 
         registered._add_pid_changes(changed_pids, user)
-        registered._add_related_items(xml_adapter, user)
 
         return registered
 
     @classmethod
-    def evaluate_registration(cls, xml_adapter, registered):
+    def skip_registration(cls, xml_adapter, registered, force_update, origin_date):
         """
         XML é versão AOP, mas
         documento está registrado com versão VoR (fascículo),
         então, recusar o registro,
         pois está tentando registrar uma versão desatualizada
         """
-        logging.info("PidProviderXML.evaluate_registration")
+        logging.info("PidProviderXML.skip_registration")
+
+        if force_update:
+            return
+
+        if not registered:
+            return
+
+        # verifica se é necessário atualizar
+        if registered.is_equal_to(xml_adapter):
+            # XML fornecido é igual ao registrado, não precisa continuar
+            logging.info(f"Skip update: equal")
+            return registered.data
+
         if xml_adapter.is_aop and registered and not registered.is_aop:
+            logging.info(f"Skip update: forbidden")
             raise exceptions.ForbiddenPidProviderXMLRegistrationError(
                 _(
                     "The XML content is an ahead of print version "
                     "but the document {} is already published in an issue"
                 ).format(registered)
             )
-        return True
+
+        if (
+            origin_date
+            and registered.origin_date
+            and registered.origin_date > origin_date
+        ):
+            # retorna item registrado que está mais atualizado
+            logging.info(f"Skip update: is already up-to-date")
+            return registered.data
 
     def is_equal_to(self, xml_adapter):
         return bool(
@@ -579,18 +603,27 @@ class PidProviderXML(CommonControlField):
         items = xml_adapter.query_list
         for params in items:
             cls.validate_query_params(params)
-            xml_adapter.adapt_query_params(params)
+            adapted_params = xml_adapter.adapt_query_params(params)
 
             try:
-                return cls.objects.get(**params)
+                return cls.objects.get(**adapted_params)
             except cls.DoesNotExist:
                 continue
             except cls.MultipleObjectsReturned as e:
                 # seria inesperado já que os dados informados devem encontrar
                 # ocorrência única ou None
-                logging.info(f"params={params} | e={e}")
+                items = []
+                for item in cls.objects.filter(**adapted_params).iterator():
+                    items.append(item.data)
+                try:
+                    cls.objects.filter(**adapted_params).delete()
+                    deleted = True
+                except Exception as e:
+                    logging.exception(e)
+                    deleted = str(e)
+
                 raise exceptions.QueryDocumentMultipleObjectsReturnedError(
-                    _("Found more than one document matching to {}").format(params)
+                    str({"params": adapted_params, "items": items, "deleted": deleted})
                 )
 
     def _add_data(self, xml_adapter, user):
@@ -633,14 +666,6 @@ class PidProviderXML(CommonControlField):
     def _add_current_version(self, xml_adapter, user):
         self.current_version = XMLVersion.get_or_create(user, xml_adapter.xml_with_pre)
 
-    def _add_related_items(self, xml_adapter, creator):
-        if xml_adapter.related_items:
-            self.save()
-        for related in xml_adapter.related_items:
-            self.related_items.add(
-                XMLRelatedItem.get_or_create(related["href"], creator)
-            )
-
     def _add_pid_changes(self, changed_pids, user):
         # requires registered.current_version is set
         if not changed_pids:
@@ -650,11 +675,12 @@ class PidProviderXML(CommonControlField):
                 "PidProviderXML._add_pid_changes requires current_version is set"
             )
         for change_args in changed_pids:
-            if change_args["old"]:
-                # somente registra as mudanças de um old não vazio
+            if change_args["pid_in_xml"]:
+                # somente registra as mudanças de um pid_in_xml não vazio
                 change_args["user"] = user
                 change_args["version"] = self.current_version
-                change = PidChange.get_or_create(**change_args)
+                change_args["pkg_name"] = self.pkg_name
+                PidChange.get_or_create(**change_args)
 
     @classmethod
     def _get_unique_v3(cls):
@@ -713,8 +739,16 @@ class PidProviderXML(CommonControlField):
     @classmethod
     def _complete_pids(cls, xml_adapter, registered):
         """
-        Update `xml_adapter` pids with `registered` pids or
-        create `xml_adapter` pids
+        No XML pode conter ou não os PIDS v2, v3 e aop_pid.
+        Na base de dados o documento do XML pode ou não estar registrado.
+
+        O resultado deste procedimento é que seja garantido que os
+        valores dos PIDs no XML sejam inéditos ou recuperados da base de dados.
+
+        Se no XML existir os PIDs, os valores são verificados na base de dados,
+        se são inéditos, não haverá mudança no XML, mas se os PIDs do XML
+        conflitarem com os PIDs registrados ou seus valores forem inválidos,
+        haverá mudança nos PIDs.
 
         Parameters
         ----------
@@ -732,7 +766,15 @@ class PidProviderXML(CommonControlField):
             aop_pid=xml_adapter.aop_pid,
         )
 
-        # adiciona os pids faltantes aos dados de entrada
+        # garante que não há espaços extras
+        if xml_adapter.v3:
+            xml_adapter.v3 = xml_adapter.v3.strip()
+        if xml_adapter.v2:
+            xml_adapter.v2 = xml_adapter.v2.strip()
+        if xml_adapter.aop_pid:
+            xml_adapter.aop_pid = xml_adapter.aop_pid.strip()
+
+        # adiciona os pids faltantes ao XML fornecido
         cls._add_pid_v3(xml_adapter, registered)
         cls._add_pid_v2(xml_adapter, registered)
         cls._add_aop_pid(xml_adapter, registered)
@@ -745,14 +787,15 @@ class PidProviderXML(CommonControlField):
 
         LOGGER.info("%s %s" % (before, after))
 
+        # verifica se houve mudança nos PIDs do XML
         changes = []
         for k, v in before.items():
-            if v != after[k]:
+            if v and v != after[k]:
                 changes.append(
                     dict(
                         pid_type=k,
-                        old=v,
-                        new=after[k],
+                        pid_in_xml=v,
+                        pid_assigned=after[k],
                     )
                 )
         return changes
