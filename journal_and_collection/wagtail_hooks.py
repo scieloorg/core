@@ -41,6 +41,7 @@ class EventAdmin(ModelAdmin):
     )
     search_fields = (
         "collection__main_name",
+        "collection__name",
         "occurrence_date",
         "occurrence_type",
         "creator__username",
