@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 from wagtail.fields import RichTextField
 from wagtail.models import Orderable
 
@@ -46,19 +47,18 @@ class Issue(CommonControlField, ClusterableModel):
     month = models.CharField(_("Issue month"), max_length=20, null=True, blank=True)
     supplement = models.CharField(_("Supplement"), max_length=20, null=True, blank=True)
 
-    #FIXME
-    #Melhorar a definicao do campo autocomplete
-    autocomplete_search_field = "number"
+
+    autocomplete_search_field = "journal__title"
 
     def autocomplete_label(self):
-        return f"{self.number}, {self.volume}"
+        return f"{self.journal} {self.volume}, {self.number} {self.supplement}"
 
     panels_issue = [
-        FieldPanel("journal"),
+        AutocompletePanel("journal"),
         FieldPanel("volume"),
         FieldPanel("supplement"),
         FieldPanel("number"),
-        FieldPanel("city"),
+        AutocompletePanel("city"),
         FieldPanel("year"),
         FieldPanel("season"),
         FieldPanel("month"),
@@ -73,11 +73,11 @@ class Issue(CommonControlField, ClusterableModel):
     ]
 
     panels_summary = [
-        FieldPanel("sections"),
+        AutocompletePanel("sections"),
     ]
 
     panels_license = [
-        FieldPanel("license"),
+        AutocompletePanel("license"),
     ]
 
     edit_handler = TabbedInterface(
@@ -222,6 +222,11 @@ class IssueTitle(Orderable, CommonControlField):
     language = models.ForeignKey(
         Language, on_delete=models.CASCADE, blank=True, null=True
     )
+
+    panels = [
+        FieldPanel("title"),
+        AutocompletePanel("language")
+    ]
 
     def __str__(self):
         return self.title

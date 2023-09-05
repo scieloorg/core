@@ -18,6 +18,7 @@ from core.search_site import views as search_views  # noqa isort:skip
 urlpatterns = [
     path("", TemplateView.as_view(template_name="home/home_page.html"), name="home"),
     # Django Admin, use {% url "admin:index" %}
+    path("admin/autocomplete/", include(autocomplete_admin_urls)),
     path(settings.DJANGO_ADMIN_URL, admin.site.urls),
     # Wagtail Admin
     path(settings.WAGTAIL_ADMIN_URL, include(wagtailadmin_urls)),
@@ -48,7 +49,6 @@ urlpatterns += i18n_patterns(
     # Index search
     re_path(r"^search/", include("search.urls")),
     # User management
-    path("admin/autocomplete/", include(autocomplete_admin_urls)),
     path("api/v2/", api_router.urls),
     path("users/", include("core.users.urls", namespace="users")),
     path("i18n/", include("django.conf.urls.i18n")),

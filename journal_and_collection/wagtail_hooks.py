@@ -32,7 +32,9 @@ class EventAdmin(ModelAdmin):
 
     list_display = (
         "collection",
-        "occurrence_date",
+        "occurrence_date_year",
+        "occurrence_date_month",
+        "occurrence_date_day",
         "occurrence_type",
         "creator",
         "updated",
@@ -51,7 +53,9 @@ class EventAdmin(ModelAdmin):
     )
     list_export = (
         "collection",
-        "occurrence_date",
+        "occurrence_date_year",
+        "occurrence_date_month",
+        "occurrence_date_day",
         "occurrence_type",
         "creator",
         "updated",

@@ -124,6 +124,7 @@ def get_or_create_researchers(researchers):
         obj = Researcher.get_or_create(
             given_names=researcher.get("given_names"),
             last_name=researcher.get("surname"),
+            declared_name=researcher.get("declared_name"),
             suffix=None,
             orcid=None,
             lattes=None,
