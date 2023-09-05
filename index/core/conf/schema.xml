@@ -49,6 +49,9 @@
     <!-- id unique field -->
     <field name="id" type="string" indexed="true" stored="true" multiValued="false"/>
 
+    <!-- ids for the article -->
+    <field name="ids" type="string" indexed="true" stored="true" multiValued="true"/>
+
     <!-- default search -->
     <field name="text" type="text" indexed="true" stored="true"/>
     <field name="tw" type="text" indexed="true" stored="false" multiValued="true"/>
@@ -58,6 +61,9 @@
     
     <!-- Digital Object Identifier DOI -->
     <field name="doi" type="string" indexed="true" stored="true" multiValued="true" />
+
+    <!-- ur ** list of urls -->
+    <field name="ur" type="string" indexed="true" stored="true" multiValued="true" />
     
     <!-- Titles ** list of titles -->
     <field name="titles" type="string" indexed="true" stored="true" multiValued="true" />
@@ -73,8 +79,11 @@
     
     <field name="toc_sections" type="string" indexed="true" stored="true" multiValued="true" />
     
-    <!-- Abstract **from:ab to:abstract** -->
-    <field name="ab" type="string" indexed="true" stored="true" multiValued="true" />
+    <!-- Dynamic Field to Abstract in any languages **from:ab_* to:abstract_in_* ** -->
+    <dynamicField name="ab_*"  type="text" indexed="false" stored="true"  multiValued="true"/>
+
+    <!-- Dynamic Field to Title in any languages **from:title_in_* to:title_in_* ** -->
+    <dynamicField name="ti_*"  type="text" indexed="false" stored="true"  multiValued="true"/>
     
     <!-- Abstract **from:ab to:abstract_language** -->
     <field name="la_abstract" type="lowercase" indexed="true" stored="true" multiValued="true" />
@@ -96,7 +105,7 @@
     <!-- Publisher ID = consist of 'S' + ISSN + numbers + '-' + and the abbreviation of collection, in the future it can be anything -->
     <field name="pid" type="string" indexed="true" stored="true" multiValued="false" />
     
-    <!-- <field name="pid_v3" type="string" indexed="true" stored="true" multiValued="false" /> -->
+    <field name="pid_v3" type="string" indexed="true" stored="true" multiValued="false" />
     
     <!-- Publication year ex.: 2004 -->
     <field name="publication_year" type="string" indexed="true" stored="true" multiValued="false" />
@@ -121,6 +130,7 @@
 
    <!-- Dynamic field definitions -->
    <dynamicField name="*"  type="text" indexed="true" stored="true"  multiValued="false"/>
+  
    <!-- <dynamicField name="*" type="ignored" /> -->
 
  </fields>
@@ -132,6 +142,8 @@
  <uniqueKey>id</uniqueKey>
 
  <copyField source="text" dest="tw"/>
+ <copyField source="ids" dest="tw"/>
+ <copyField source="doi" dest="tw"/>
  <copyField source="*" dest="tw"/>
 
 </schema>

@@ -4,8 +4,17 @@ from .models import Article
 
 
 class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
+
     text = indexes.CharField(document=True, use_template=True)
+    # doi
     doi = indexes.MultiValueField(null=True)
+
+    # ids
+    ids = indexes.MultiValueField(null=True)
+
+    # URLs
+    ur = indexes.MultiValueField(null=True) 
+
     titles = indexes.MultiValueField(null=True)
     la = indexes.MultiValueField(null=True)
     au = indexes.MultiValueField(null=True)
@@ -18,7 +27,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
 
     journal_title = indexes.CharField(null=True)
     # FIXME 1 artigo pode estar em mais de 1 coleção
-    collection = indexes.CharField(null=True)
+    collection = indexes.CharField(index_fieldname="in", null=True)
     type = indexes.CharField(model_attr="article_type", null=True)
     pid = indexes.CharField(model_attr="pid_v2", null=True)
     pid_v3 = indexes.CharField(model_attr="pid_v3", null=True)
@@ -29,6 +38,48 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     elocation = indexes.CharField(model_attr="elocation_id", null=True)
     start_page = indexes.CharField(model_attr="first_page", null=True)
     end_page = indexes.CharField(model_attr="last_page", null=True)
+
+    def prepare(self, obj):
+        """"
+        Here add the title to with dynamic fields. 
+
+        Example ti_* (title and the translations)
+
+        About the prepare function see: https://django-haystack.readthedocs.io/_/downloads/en/master/pdf/
+        """
+        data = super().prepare(obj)
+
+        return data 
+
+    def prepare_ids(self, obj):
+        """
+        This field have all ids for the article.
+
+        Example: 
+        """
+        ids = []
+
+        if obj.pid_v2:
+            ids.append(obj.pid_v2)
+
+        if obj.pid_v3:
+            ids.append(obj.pid_v3)
+
+        if obj.id:
+            ids.append(obj.id)
+
+        return ids
+
+    def prepare_ur(self, obj):
+        """
+        This field is a URLs for all collection of this article
+        """
+        urls = []
+
+        for collection in obj.journal.collection.all():
+            urls.append("http://%s/scielo.php?script=sci_arttext&pid=%s" % (collection.domain, obj.pid_v2)) 
+
+        return urls
 
     def prepare_journal_title(self, obj):
         if obj.journal:
