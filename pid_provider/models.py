@@ -104,22 +104,7 @@ class PidRequest(CommonControlField):
         indexes = [
             models.Index(
                 fields=[
-                    "origin",
-                ]
-            ),
-            models.Index(
-                fields=[
                     "result_type",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "result_msg",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "origin_date",
                 ]
             ),
         ]
