@@ -2,7 +2,6 @@ from core.utils import utils
 from core.utils.rename_dictionary_keys import rename_dictionary_keys
 from journal.utils.correspondencia import correspondencia_journal
 from journal.utils import journal_utils
-from core.utils.rename_dictionary_keys import rename_dictionary_keys
 from journal.utils.request_api_article_meta import request_journal_article_meta
 
 
@@ -23,16 +22,24 @@ def process_journal_article_meta(collection, limit, user):
                 url_journal, json=True, timeout=30, verify=True
             )
             journal_dict = rename_dictionary_keys(data_journal, correspondencia_journal)
-            journal = journal_utils.create_or_update_journal(
+
+            official_journal = journal_utils.create_or_update_official_journal(
                 title=journal_dict.get("publication_title"),
+                new_title=journal_dict.get("new_title"),
+                old_title=journal_dict.get("old_title"),
+                issn_print_or_electronic=journal_dict.get("issn_print_or_electronic"),
                 issn_scielo=journal_dict.get("issn_id"),
+                type_issn=journal_dict.get("type_issn"),
+                current_issn=journal_dict.get("current_issn"),
+                user=user,
+            )
+            journal = journal_utils.create_or_update_journal(
+                official_journal=official_journal,
+                title=journal_dict.get("publication_title"),
                 short_title=journal_dict.get("short_title"),
                 other_titles=journal_dict.get("other_titles"),
                 submission_online_url=journal_dict.get("url_of_submission_online"),
                 open_access=journal_dict.get("license_of_use"),
-                issn_print_or_electronic=journal_dict.get("issn_print_or_electronic"),
-                type_issn=journal_dict.get("type_issn"),
-                current_issn=journal_dict.get("current_issn"),
                 user=user,
             )
             journal_utils.create_or_update_scielo_journal(
