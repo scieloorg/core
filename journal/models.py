@@ -315,22 +315,7 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
                 fields=[
                     "title",
                 ]
-            ),
-            models.Index(
-                fields=[
-                    "short_title",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "submission_online_url",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "open_access",
-                ]
-            ),                                                          
+            ),                                                         
         ]
 
     @property
