@@ -225,11 +225,6 @@ class License(CommonControlField):
             ),
             models.Index(
                 fields=[
-                    "license_p",
-                ]
-            ),
-            models.Index(
-                fields=[
                     "license_type",
                 ]
             ),
