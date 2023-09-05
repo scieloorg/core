@@ -82,21 +82,6 @@ class Institution(CommonControlField, ClusterableModel):
             ),
             models.Index(
                 fields=[
-                    "level_1",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "level_2",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "level_3",
-                ]
-            ),
-            models.Index(
-                fields=[
                     "url",
                 ]
             ),
