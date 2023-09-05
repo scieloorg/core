@@ -111,12 +111,7 @@ class Issue(CommonControlField, ClusterableModel):
                 fields=[
                     "supplement",
                 ]
-            ),
-            models.Index(
-                fields=[
-                    "season",
-                ]
-            ),            
+            ),          
         ]
 
     @property
@@ -221,15 +216,6 @@ class IssueTitle(Orderable, CommonControlField):
         Language, on_delete=models.CASCADE, blank=True, null=True
     )
 
-    class Meta:
-        indexes = [
-            models.Index(
-                fields=[
-                    "title",
-                ]
-            ),
-        ]
-
     def __str__(self):
         return self.title
 
@@ -242,18 +228,6 @@ class BibliographicStrip(Orderable, TextWithLang, CommonControlField):
         blank=True,
         related_name="bibliographic_strip",
     )
-
-    class Meta:
-        indexes = [
-            models.Index(
-                fields=[
-                    "text",
-                ]
-            ),
-        ]
-
-    def __str__(self):
-        return self.subtitle
 
 
 class TocSection(RichTextWithLang, CommonControlField):
@@ -273,11 +247,6 @@ class TocSection(RichTextWithLang, CommonControlField):
         verbose_name = _("TocSection")
         verbose_name_plural = _("TocSections")
         indexes = [
-            models.Index(
-                fields=[
-                    "text",
-                ]
-            ),
             models.Index(
                 fields=[
                     "plain_text",
