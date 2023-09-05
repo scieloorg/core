@@ -131,7 +131,7 @@ class Migration(migrations.Migration):
             name="publishing_model",
             field=models.CharField(
                 blank=True,
-                choices=[("continous", "Continous"), ("undefined", "Undefined")],
+                choices=[("continuous", "Continuous"), ("undefined", "Undefined")],
                 max_length=16,
                 null=True,
                 verbose_name="Publishing Model",
@@ -542,7 +542,7 @@ class Migration(migrations.Migration):
                 ),
                 ("name", models.TextField(null=True, verbose_name="Name")),
                 ("acronym", models.TextField(null=True, verbose_name="Acronym")),
-                ("url", models.URLField(max_length=255, null=True, verbose_name="URL")),
+                ("url", models.URLField(max_length=500, null=True, verbose_name="URL")),
                 (
                     "description",
                     models.TextField(null=True, verbose_name="Description"),
