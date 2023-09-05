@@ -88,16 +88,6 @@ class Article(CommonControlField):
             ),
             models.Index(
                 fields=[
-                    "pub_date_day",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "pub_date_month",
-                ]
-            ),
-            models.Index(
-                fields=[
                     "pub_date_year",
                 ]
             ),
