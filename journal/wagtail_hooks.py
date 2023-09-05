@@ -69,9 +69,6 @@ class JournalAdmin(ModelAdmin):
     search_fields = (
         "official__title",
         "title",
-        "short_title",
-        "submission_online_url",
-        "url_oa",
     )
 
 
