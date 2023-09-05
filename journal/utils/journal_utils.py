@@ -4,7 +4,11 @@ from core.models import Language
 from institution.models import Institution
 from vocabulary.models import Vocabulary
 from reference.models import JournalTitle
-from .funcs_extract_am import extract_issn_print_electronic, extract_value, extract_value_mission
+from .funcs_extract_am import (
+    extract_issn_print_electronic,
+    extract_value,
+    extract_value_mission,
+)
 from ..models import (
     Collection,
     OfficialJournal,
@@ -17,35 +21,25 @@ from ..models import (
     Standard,
     WebOfKnowledge,
     WebOfKnowledgeSubjectCategory,
-    IndexedAt
+    IndexedAt,
 )
 
 
 def create_or_update_journal(
     title,
-    issn_scielo,
     short_title,
     other_titles,
     submission_online_url,
     open_access,
-    issn_print_or_electronic,
-    type_issn,
-    current_issn,
+    official_journal,
     user,
 ):
     title = extract_value(title)
-    issnl = extract_value(issn_scielo)
     other_titles = get_or_create_other_titles(other_titles=other_titles, user=user)
+
     journal = Journal.create_or_update(
         user=user,
-        official_journal=create_or_update_official_journal(
-            user=user,
-            title=title,
-            issn_print_or_electronic=issn_print_or_electronic,
-            type_issn=type_issn,
-            issnl=issnl,
-            current_issn=current_issn,
-        ),
+        official_journal=official_journal,
         title=title,
         short_title=extract_value(short_title),
         other_titles=other_titles,
@@ -151,11 +145,13 @@ def create_information(
 
 def create_or_update_official_journal(
     title,
+    new_title,
+    old_title,
     issn_print_or_electronic,
+    issn_scielo,
     type_issn,
     current_issn,
     user,
-    issnl=None,
     foundation_year=None,
 ):
     """
@@ -164,6 +160,8 @@ def create_or_update_official_journal(
     Ex current_issn:
         [{"_": "1676-5648"}]
     """
+    title = extract_value(title)
+    issnl = extract_value(issn_scielo)
 
     if type_issn and current_issn:
         for item in type_issn:
@@ -182,6 +180,9 @@ def create_or_update_official_journal(
         title=title,
         foundation_year=foundation_year,
     )
+    obj.new_title = extract_value(new_title)
+    obj.old_title = extract_value(old_title)
+    obj.save()
     return obj
 
 
@@ -340,8 +341,8 @@ def get_or_update_wos_areas(journal, wos_areas, user):
 
 def get_or_create_indexed_at(journal, indexed_at, user):
     """
-        indexed_at:
-            [{'_': 'Index to Dental Literature'}, {'_': 'LILACS'}, {'_': 'Base de Dados BBO'}, {'_': "Ulrich's"}, {'_': 'Biological Abstracts'}, {'_': 'Medline'}]
+    indexed_at:
+        [{'_': 'Index to Dental Literature'}, {'_': 'LILACS'}, {'_': 'Base de Dados BBO'}, {'_': "Ulrich's"}, {'_': 'Biological Abstracts'}, {'_': 'Medline'}]
     """
     data = []
     if indexed_at:
@@ -349,7 +350,7 @@ def get_or_create_indexed_at(journal, indexed_at, user):
         if isinstance(indexed, str):
             indexed = [indexed]
         for i in indexed:
-            obj = IndexedAt.objects.filter(  
+            obj = IndexedAt.objects.filter(
                 Q(name__icontains=i) | Q(acronym__icontains=i)
             ).first()
             if not obj:
