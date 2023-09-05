@@ -380,7 +380,7 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("secs_code"),
         FieldPanel("medline_code"),
         FieldPanel("medline_short_title"),
-        AutocompletePanel("indexed_at"),
+        FieldPanel("indexed_at"),
     ]
 
     panels_identification = [
@@ -500,6 +500,7 @@ class Journal(CommonControlField, ClusterableModel):
         official_journal,
         title=None,
         short_title=None,
+        other_titles=None,
         submission_online_url=None,
         open_access=None,
     ):
@@ -519,10 +520,12 @@ class Journal(CommonControlField, ClusterableModel):
         obj.short_title = short_title or obj.short_title
         obj.submission_online_url = submission_online_url or obj.submission_online_url
         obj.open_access = open_access or obj.open_access
-
         obj.save()
         for scielo_j in SciELOJournal.objects.filter(journal=obj):
             obj.collection.add(scielo_j.collection)
+        
+        if other_titles:
+            obj.other_titles.set(other_titles)
 
         return obj
 
@@ -1002,7 +1005,7 @@ class Standard(CommonControlField):
 class IndexedAt(CommonControlField):
     name = models.TextField(_("Name"), null=True, blank=False)
     acronym = models.TextField(_("Acronym"), null=True, blank=False)
-    url = models.URLField(_("URL"), max_length=255, null=True, blank=False)
+    url = models.URLField(_("URL"), max_length=500, null=True, blank=False)
     description = models.TextField(_("Description"), null=True, blank=False)
     type = models.CharField(
         _("Type"), max_length=20, choices=choices.TYPE, null=True, blank=False
@@ -1015,3 +1018,48 @@ class IndexedAt(CommonControlField):
         FieldPanel("description"),
         FieldPanel("type"),
     ]
+
+    def __str__(self):
+        return f"{self.acronym} - {self.name}"
+    
+    @classmethod
+    def get(
+        cls,
+        name,
+        acronym,
+        ):
+        if name:
+            return cls.objects.get(name=name)
+        if acronym:
+            return cls.objects.get(acronym)
+        raise Exception("IndexedAt.get requires name or acronym paraments")
+    
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        name=None,
+        acronym=None,
+        description=None,
+        url=None,
+        type=None,
+    ):
+        try:
+            obj = cls.get(name=name, acronym=acronym)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.name = name
+            obj.acronym = acronym
+            obj.creator = user
+        # TODO
+        # Melhorar com excecoes especificas.
+        except Exception:
+            raise Exception("Unable to create or update IndexedAt")
+        
+        obj.description = description
+        obj.url = url
+        obj.type = type
+        obj.save()
+
+        return obj
