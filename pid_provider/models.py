@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import json
 from datetime import datetime
 from http import HTTPStatus
 from shutil import copyfile
@@ -11,6 +12,7 @@ from django.core.files.base import ContentFile
 from django.db import models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
 
 from core.forms import CoreAdminModelForm
@@ -173,7 +175,7 @@ class PidRequest(CommonControlField):
         FieldPanel("origin_date"),
         FieldPanel("result_type"),
         FieldPanel("result_msg"),
-        FieldPanel("xml_version"),
+        AutocompletePanel("xml_version"),
         FieldPanel("detail"),
     ]
 
@@ -188,6 +190,14 @@ class PidChange(CommonControlField):
     version = models.ForeignKey(
         XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
     )
+
+    panels = [
+        FieldPanel("pkg_name"),
+        FieldPanel("pid_type"),
+        FieldPanel("pid_in_xml"),
+        FieldPanel("pid_assigned"),
+        AutocompletePanel("version")
+    ]
 
     class Meta:
         indexes = [
@@ -268,8 +278,8 @@ class PidProviderXML(CommonControlField):
     base_form_class = CoreAdminModelForm
 
     panels = [
-        FieldPanel("journal"),
-        FieldPanel("issue"),
+        AutocompletePanel("journal"),
+        AutocompletePanel("issue"),
         FieldPanel("pkg_name"),
         FieldPanel("v3"),
         FieldPanel("v2"),
@@ -286,7 +296,7 @@ class PidProviderXML(CommonControlField):
         FieldPanel("z_collab"),
         FieldPanel("z_links"),
         FieldPanel("z_partial_body"),
-        FieldPanel("current_version"),
+        AutocompletePanel("current_version"),
     ]
 
     class Meta:

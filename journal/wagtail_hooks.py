@@ -66,7 +66,11 @@ class JournalAdmin(ModelAdmin):
         "short_title",
     )
     # list_filter = ()
-    search_fields = ("title",)
+    search_fields = (
+        "title",
+        "official__issn_print",
+        "official__issn_electronic",
+    )
 
 
 class SciELOJournalCreateView(CreateView):

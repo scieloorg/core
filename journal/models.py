@@ -12,6 +12,10 @@ from collection.models import Collection
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField, RichTextWithLang, TextWithLang
 from institution.models import InstitutionHistory
+from vocabulary.models import Vocabulary
+from core.models import Language
+from reference.models import JournalTitle
+
 from journal.exceptions import (
     JournalCreateOrUpdateError,
     JournalGetError,
@@ -220,7 +224,7 @@ class SocialNetwork(models.Model):
         return d
 
 
-class Journal(CommonControlField, ClusterableModel, SocialNetwork):
+class Journal(CommonControlField, ClusterableModel):
     """
     A class used to represent a journal model designed in the SciELO context.
 
@@ -243,7 +247,10 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
     )
     title = models.TextField(_("Journal Title"), null=True, blank=True)
     short_title = models.TextField(_("Short Title"), null=True, blank=True)
-
+    other_titles = models.ManyToManyField(
+        JournalTitle,
+        verbose_name=_("Other titles")
+    )
     logo = models.ForeignKey(
         "wagtailimages.Image",
         on_delete=models.SET_NULL,
@@ -278,16 +285,159 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
             )
         ),
     )
+    journal_url = models.URLField(
+        _("Journal Url"),
+        null=True,
+        blank=True,
+    )
+    frequency = models.CharField(
+        _("Frequency"),
+        max_length=4,
+        choices=choices.FREQUENCY,
+        null=True,
+        blank=True,
+    )
+    publishing_model = models.CharField(
+        _("Publishing Model"),
+        max_length=16,
+        choices=choices.PUBLISHING_MODEL,
+        null=True,
+        blank=True,
+    )
+    subject_descriptor = models.ManyToManyField(
+        "SubjectDescriptor",
+        verbose_name=_("Subject Descriptors"),
+    )
+    subject = models.ManyToManyField(
+        "Subject",
+        verbose_name=_("Study Areas"),
+    )
+    wos_db = models.ManyToManyField(
+        "WebOfKnowledge",
+        verbose_name=_("Web of Knowledge Databases"),
+    )
+    wos_area = models.ManyToManyField(
+        "WebOfKnowledgeSubjectCategory",
+        verbose_name=_("Web of Knowledge Subject Categories"),
+    )
+    text_language = models.ManyToManyField(
+        Language,
+        verbose_name=_("Text Languages"),
+        related_name="text_language",
+    )
+    abstract_language = models.ManyToManyField(
+        Language,
+        verbose_name=_("Abstract Languages"),
+        related_name="abstract_language",
+    )
+    standard = models.ForeignKey(
+        "Standard",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    alphabet = models.CharField(
+        _("Alphabet"),
+        max_length=4,
+        choices=choices.ALPHABET_OF_TITLE,
+        null=True,
+        blank=True,
+    )
+    type_of_literature = models.CharField(
+        _("Type of Literature"),
+        max_length=4,
+        choices=choices.LITERATURE_TYPE,
+        null=True,
+        blank=True,
+    )
+    treatment_level = models.CharField(
+        _("Treatment Level"),
+        max_length=4,
+        choices=choices.TREATMENT_LEVEL,
+        null=True,
+        blank=True,
+    )
+    level_of_publication = models.CharField(
+        _("Level of Publication"),
+        max_length=2,
+        choices=choices.PUBLICATION_LEVEL,
+        null=True,
+        blank=True,
+    )
+    national_code = models.TextField(
+        _("National Code"),
+        null=True,
+        blank=True,
+    )
+    classification = models.TextField(
+        _("Classification"),
+        null=True,
+        blank=True,
+    )
+    vocabulary = models.ForeignKey(
+        Vocabulary,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    indexed_at = models.ManyToManyField(
+        "IndexedAt",
+    )
+    secs_code = models.TextField(
+        _("Secs Code"),
+        null=True,
+        blank=True,
+    )
+    medline_code = models.TextField(
+        _("Medline Code"),
+        null=True,
+        blank=True,
+    )
+    medline_short_title = models.TextField(
+        _("Medline Code"),
+        null=True,
+        blank=True,
+    )  # (no xml é abbrev-journal-title do tipo nlm-title)
+
+    panels_titles = [
+        FieldPanel("title"),
+        FieldPanel("short_title"),
+        AutocompletePanel("other_titles"), 
+    ]
+
+    panels_scope = [
+        InlinePanel("mission", label=_("Mission"), classname="collapsed"),
+        FieldPanel("subject_descriptor"),
+        FieldPanel("subject"),
+        FieldPanel("wos_db"),
+        FieldPanel("wos_area"),
+    ]
+
+    panels_formal_information = [
+        FieldPanel("frequency"),
+        FieldPanel("publishing_model"),
+        FieldPanel("text_language"),
+        FieldPanel("abstract_language"),
+        FieldPanel("standard"),
+        AutocompletePanel("vocabulary"),
+        FieldPanel("alphabet"),
+        FieldPanel("classification"),
+        FieldPanel("national_code"),
+        FieldPanel("type_of_literature"),
+        FieldPanel("treatment_level"),
+        FieldPanel("level_of_publication"),
+    ]
+
+    panels_interoperation = [
+        FieldPanel("secs_code"),
+        FieldPanel("medline_code"),
+        FieldPanel("medline_short_title"),
+        FieldPanel("indexed_at"),
+    ]
 
     panels_identification = [
         AutocompletePanel("official"),
-        FieldPanel("title"),
-        FieldPanel("short_title"),
-        FieldPanel("collection"),
-    ]
-
-    panels_mission = [
-        InlinePanel("mission", label=_("Mission"), classname="collapsed"),
+        AutocompletePanel("collection"),
     ]
 
     panels_institutions = [
@@ -345,8 +495,11 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
 
     edit_handler = TabbedInterface(
         [
+            ObjectList(panels_titles, heading=_("Titles")),
             ObjectList(panels_identification, heading=_("Identification")),
-            ObjectList(panels_mission, heading=_("Missions")),
+            ObjectList(panels_scope, heading=_("Scope")),
+            ObjectList(panels_interoperation, heading=_("Interoperation")),
+            ObjectList(panels_formal_information, heading=_("Formal information")),
             ObjectList(panels_institutions, heading=_("Related Institutions")),
             ObjectList(panels_website, heading=_("Website")),
             ObjectList(panels_about, heading=_("About Journal")),
@@ -399,6 +552,7 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
         official_journal,
         title=None,
         short_title=None,
+        other_titles=None,
         submission_online_url=None,
         open_access=None,
     ):
@@ -418,10 +572,12 @@ class Journal(CommonControlField, ClusterableModel, SocialNetwork):
         obj.short_title = short_title or obj.short_title
         obj.submission_online_url = submission_online_url or obj.submission_online_url
         obj.open_access = open_access or obj.open_access
-
         obj.save()
         for scielo_j in SciELOJournal.objects.filter(journal=obj):
             obj.collection.add(scielo_j.collection)
+        
+        if other_titles:
+            obj.other_titles.set(other_titles)
 
         return obj
 
@@ -695,7 +851,16 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
     issn_scielo = models.CharField(
         _("ISSN SciELO"), max_length=9, null=True, blank=True
     )
+    status = models.CharField(
+        _("Status"), max_length=12, choices=choices.STATUS, null=True, blank=True
+    )
+
     # TODO adicionar eventos de entrada e saída de coleção / refatorar journal_and_collection
+
+    autocomplete_search_field = "journal_acron"
+
+    def autocomplete_label(self):
+        return str(self)
 
     class Meta:
         verbose_name = _("SciELO Journal")
@@ -717,7 +882,8 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         AutocompletePanel("journal"),
         FieldPanel("journal_acron"),
         FieldPanel("issn_scielo"),
-        FieldPanel("collection"),
+        AutocompletePanel("collection"),
+        InlinePanel("journal_history", label="Jounal and History", classname="collapsed"),
     ]
 
     @classmethod
@@ -775,3 +941,183 @@ class JournalParallelTitles(TextWithLang):
 
     def __str__(self):
         return "%s (%s)" % (self.text, self.language)
+class SubjectDescriptor(CommonControlField):
+    value = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.value}"
+
+
+class Subject(CommonControlField):
+    code = models.CharField(max_length=30, null=True, blank=True)
+    value = models.CharField(max_length=100, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.value}"
+
+    @classmethod
+    def get(cls, code):
+        if not code:
+            raise ValueError("Subject.get requires code paramenter")
+        return cls.objects.get(code=code)                
+    
+    @classmethod
+    def create_or_update(
+        cls,
+        code,
+        user,
+    ):
+        try:
+            obj = cls.get(code=code)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.code = code
+            obj.creator = user
+        # TODO
+        # Melhorar com excecoes especificas.
+        except Exception:
+            raise Exception("Unable to create or update Subject")
+        
+        obj.value = dict(choices.STUDY_AREA)[code]
+        obj.save()
+        return obj
+
+
+class WebOfKnowledge(CommonControlField):
+    code = models.CharField(max_length=8, null=True, blank=True)
+    value = models.CharField(max_length=100, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.code} - {self.value}"
+
+    @classmethod
+    def get(cls, code):
+        if not code:
+            raise ValueError("WebOfKnowledge.get requires code paramenter")
+        return cls.objects.get(code=code)                
+    
+    @classmethod
+    def create_or_update(
+        cls,
+        code,
+        user,
+    ):
+        try:
+            obj = cls.get(code=code)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.code = code
+            obj.creator = user
+        # TODO
+        # Melhorar com excecoes especificas.
+        except Exception:
+            raise Exception("Unable to create or update WebOfKnowledge")
+        
+        obj.value = dict(choices.WOS_DB)[code]
+        obj.save()
+        return obj
+
+
+class WebOfKnowledgeSubjectCategory(CommonControlField):
+    value = models.CharField(max_length=100, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.value}"
+
+
+class Standard(CommonControlField):
+    code = models.CharField(max_length=7, null=True, blank=True)
+    value = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.code} - {self.value}"
+
+    @classmethod
+    def get(cls, code):
+        if not code:
+            raise ValueError("Standard.get requires code paramenter")
+        return cls.objects.get(code=code)                
+    
+    @classmethod
+    def create_or_update(
+        cls,
+        code,
+        user,
+    ):
+        try:
+            obj = cls.get(code=code)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.code = code
+            obj.creator = user
+        # TODO
+        # Melhorar com excecoes especificas.
+        except Exception:
+            raise Exception("Unable to create or update Standard")
+        
+        obj.value = dict(choices.STANDARD)[code]
+        obj.save()
+        return obj
+
+
+class IndexedAt(CommonControlField):
+    name = models.TextField(_("Name"), null=True, blank=False)
+    acronym = models.TextField(_("Acronym"), null=True, blank=False)
+    url = models.URLField(_("URL"), max_length=500, null=True, blank=False)
+    description = models.TextField(_("Description"), null=True, blank=False)
+    type = models.CharField(
+        _("Type"), max_length=20, choices=choices.TYPE, null=True, blank=False
+    )
+
+    panels = [
+        FieldPanel("name"),
+        FieldPanel("acronym"),
+        FieldPanel("url"),
+        FieldPanel("description"),
+        FieldPanel("type"),
+    ]
+
+    def __str__(self):
+        return f"{self.acronym} - {self.name}"
+    
+    @classmethod
+    def get(
+        cls,
+        name,
+        acronym,
+        ):
+        if name:
+            return cls.objects.get(name=name)
+        if acronym:
+            return cls.objects.get(acronym)
+        raise Exception("IndexedAt.get requires name or acronym paraments")
+    
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        name=None,
+        acronym=None,
+        description=None,
+        url=None,
+        type=None,
+    ):
+        try:
+            obj = cls.get(name=name, acronym=acronym)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.name = name
+            obj.acronym = acronym
+            obj.creator = user
+        # TODO
+        # Melhorar com excecoes especificas.
+        except Exception:
+            raise Exception("Unable to create or update IndexedAt")
+        
+        obj.description = description
+        obj.url = url
+        obj.type = type
+        obj.save()
+
+        return obj

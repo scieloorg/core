@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
 from wagtail.fields import RichTextField
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
 
@@ -24,6 +25,11 @@ class Gender(index.Indexed, models.Model):
     code = models.CharField(_("Code"), max_length=5, null=True, blank=True)
 
     gender = models.CharField(_("Sex"), max_length=50, null=True, blank=True)
+
+    autocomplete_search_filter = "code"
+
+    def autocomplete_label(self):
+        return str(self)
 
     panels = [
         FieldPanel("code"),
@@ -97,6 +103,7 @@ class Language(CommonControlField):
     code2 = models.TextField(_("Language code 2"), blank=True, null=True)
     
     autocomplete_search_field = "code2"
+    
     def autocomplete_label(self):
         return str(self)
     
@@ -144,7 +151,9 @@ class TextWithLang(models.Model):
         blank=True,
     )
 
-    panels = [FieldPanel("text"), FieldPanel("language")]
+    panels = [
+        FieldPanel("text"), 
+        AutocompletePanel("language")]
 
     class Meta:
         abstract = True
@@ -162,7 +171,7 @@ class RichTextWithLang(models.Model):
     )
 
     panels = [
-        FieldPanel("language"),
+        AutocompletePanel("language"),
         FieldPanel("rich_text"),
         FieldPanel("plain_text"),
     ]
@@ -203,6 +212,13 @@ class License(CommonControlField):
     def autocomplete_label(self):
         return str(self.license_p)
     
+    panels =[
+        FieldPanel("url"),
+        FieldPanel("license_p"),
+        FieldPanel("license_type"),
+        AutocompletePanel("language"),
+    ]
+
     @classmethod
     def get_or_create(cls, url, license_p, license_type, language, creator):
         try:

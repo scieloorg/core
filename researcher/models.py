@@ -1,3 +1,5 @@
+import os
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -38,10 +40,21 @@ class Researcher(ClusterableModel, CommonControlField):
         blank=True,
     )
 
+    autocomplete_search_field = "given_names"
+
     def autocomplete_label(self):
         return str(self)
 
-    autocomplete_search_field = "given_names"
+    panels = [
+        FieldPanel("given_names"),
+        FieldPanel("last_name"),
+        FieldPanel("declared_name"),
+        FieldPanel("suffix"),
+        FieldPanel("orcid"),
+        FieldPanel("lattes"),
+        AutocompletePanel("gender"),
+        FieldPanel("gender_identification_status"),
+    ]
 
     @property
     def get_full_name(self):
