@@ -57,16 +57,6 @@ class Researcher(ClusterableModel, CommonControlField):
             ),
             models.Index(
                 fields=[
-                    "declared_name",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "suffix",
-                ]
-            ),
-            models.Index(
-                fields=[
                     "orcid",
                 ]
             ),
