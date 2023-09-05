@@ -1,7 +1,10 @@
 import re
+from django.db.models import Q
 from core.models import Language
 from institution.models import Institution
 from vocabulary.models import Vocabulary
+from reference.models import JournalTitle
+from .funcs_extract_am import extract_issn_print_electronic, extract_value, extract_value_mission
 from ..models import (
     Collection,
     OfficialJournal,
@@ -14,6 +17,7 @@ from ..models import (
     Standard,
     WebOfKnowledge,
     WebOfKnowledgeSubjectCategory,
+    IndexedAt
 )
 
 
@@ -31,7 +35,7 @@ def create_or_update_journal(
 ):
     title = extract_value(title)
     issnl = extract_value(issn_scielo)
-
+    other_titles = get_or_create_other_titles(other_titles=other_titles, user=user)
     journal = Journal.create_or_update(
         user=user,
         official_journal=create_or_update_official_journal(
@@ -44,6 +48,7 @@ def create_or_update_journal(
         ),
         title=title,
         short_title=extract_value(short_title),
+        other_titles=other_titles,
         submission_online_url=extract_value(submission_online_url),
         open_access=extract_value(open_access),
     )
@@ -83,7 +88,7 @@ def create_scope(
         subject_descriptors=subject_descriptors,
         user=user,
     )
-    create_or_update_subject(journal=journal, subject=subject, user=subject)
+    create_or_update_subject(journal=journal, subject=subject, user=user)
     create_or_update_wos_db(
         journal=journal,
         wos_scie=wos_scie,
@@ -97,6 +102,7 @@ def create_scope(
 def create_interoperation(
     journal, indexed_at, secs_code, medline_code, medline_short_title, user
 ):
+    get_or_create_indexed_at(journal, indexed_at=indexed_at, user=user)
     journal.secs_code = extract_value(secs_code)
     journal.medline_code = extract_value(medline_code)
     journal.medline_short_title = extract_value(medline_short_title)
@@ -154,7 +160,7 @@ def create_or_update_official_journal(
 ):
     """
     Ex type_issn:
-         [{"_": "ONLIN"}]
+        [{"_": "ONLIN"}]
     Ex current_issn:
         [{"_": "1676-5648"}]
     """
@@ -186,48 +192,20 @@ def get_collection(collection):
         return None
 
 
-# colocar em outro arquivo
-def extract_issn_print_electronic(issn_print_or_electronic):
-    issn_print = None
-    issn_electronic = None
-
-    if issn_print_or_electronic:
-        for issn in issn_print_or_electronic:
-            if issn["t"] == "PRINT":
-                issn_print = issn["_"]
-            elif issn["t"] == "ONLIN":
-                issn_electronic = issn["_"]
-    return issn_print, issn_electronic
-
-
-# colocar em outro arquivo
-def extract_value(value):
-    if value and isinstance(value, list):
-        if len(value) > 1:
-            return [x.get("_") for x in value]
-        return [x.get("_") for x in value][0]
-
-
-# colocar em outro arquivo
-def extract_value_mission(mission):
-    """
-    [
-        {
-            "l": "es",
-            "_": "La RAE-eletr\u00f4nica tiene como misi\u00f3n fomentar la producci\u00f3n y la diseminaci\u00f3n del conocimiento en Administraci\u00f3n de Empresas."
-        },
-        {
-            "l": "pt",
-            "_": "A RAE-eletr\u00f4nica tem como miss\u00e3o fomentar a produ\u00e7\u00e3o e a dissemina\u00e7\u00e3o de conhecimento em Administra\u00e7\u00e3o de Empresas."
-        },
-        {
-            "l": "en",
-            "_": "RAE-eletr\u00f4nica's mission is to encourage the production and dissemination of Business Administration knowledge."
-        }
-    ]
-    """
-
-    return [{"lang": x.get("l"), "mission": x.get("_")} for x in mission]
+def get_or_create_other_titles(other_titles, user):
+    data = []
+    if other_titles:
+        ot = extract_value(other_titles)
+        if isinstance(ot, str):
+            ot = [ot]
+        for t in ot:
+            obj, created = JournalTitle.objects.get_or_create(
+                title=t,
+                creator=user,
+            )
+            data.append(obj)
+        # journal.other_titles.set(data)
+        return data
 
 
 def get_or_create_mission(mission, journal, user):
@@ -358,3 +336,26 @@ def get_or_update_wos_areas(journal, wos_areas, user):
                 )
                 data.append(obj)
         journal.wos_area.set(data)
+
+
+def get_or_create_indexed_at(journal, indexed_at, user):
+    """
+        indexed_at:
+            [{'_': 'Index to Dental Literature'}, {'_': 'LILACS'}, {'_': 'Base de Dados BBO'}, {'_': "Ulrich's"}, {'_': 'Biological Abstracts'}, {'_': 'Medline'}]
+    """
+    data = []
+    if indexed_at:
+        indexed = extract_value(indexed_at)
+        if isinstance(indexed, str):
+            indexed = [indexed]
+        for i in indexed:
+            obj = IndexedAt.objects.filter(  
+                Q(name__icontains=i) | Q(acronym__icontains=i)
+            ).first()
+            if not obj:
+                obj = IndexedAt.create_or_update(
+                    name=i,
+                    user=user,
+                )
+            data.append(obj)
+        journal.indexed_at.set(data)
