@@ -59,6 +59,9 @@
     <field name="django_ct" type="string" indexed="true" stored="true" multiValued="false"/>
     <field name="django_id" type="string" indexed="true" stored="true" multiValued="false"/>
     
+    <!-- Abbreviation of collection **from:in to:collection** -->
+    <field name="in" type="string" indexed="true" stored="true" multiValued="true"/>
+
     <!-- Digital Object Identifier DOI -->
     <field name="doi" type="string" indexed="true" stored="true" multiValued="true" />
 
@@ -143,6 +146,9 @@
         AHCI=Arts Humanities Citation Index
       -->
     <field name="wok_citation_index" type="string" indexed="true" stored="true" multiValued="true"/>
+
+    <!-- Field to journal CNPQ subject areas -->
+    <field name="subject_area"  type="string" indexed="true" stored="true"  multiValued="true"/>
 
    <!-- Dynamic field definitions -->
    <dynamicField name="*"  type="text" indexed="true" stored="true"  multiValued="false"/>
