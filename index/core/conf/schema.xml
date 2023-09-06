@@ -66,14 +66,17 @@
     <field name="ur" type="string" indexed="true" stored="true" multiValued="true" />
     
     <!-- Titles ** list of titles -->
-    <field name="titles" type="string" indexed="true" stored="true" multiValued="true" />
+    <field name="ti" type="string" indexed="true" stored="true" multiValued="true" />
     
     <!-- Language **from:la to:languages** list of languages -->
     <field name="la" type="string" indexed="true" stored="true" multiValued="true" />
     
     <!-- Author **from:au to:researchers** -->
     <field name="au" type="string" indexed="true" stored="true" multiValued="true" />
-    
+
+    <!-- Short title **from:ta to:short_title** list of short title -->
+    <field name="ta" type="text" indexed="true" stored="true" multiValued="false"/>
+  
     <!-- Allow search for keywords in different languages -->
     <field name="kw" type="string" indexed="true" stored="true" multiValued="true" />
     
@@ -127,6 +130,19 @@
     
     <!-- Colllection domain to:domain from:domain  -->
     <field name="domain" type="string" indexed="true" stored="true" multiValued="false" />
+
+    <!-- This field is baseed in Web of Science subject category:
+    https://images.webofknowledge.com/WOKRS57B4/help/WOS/hp_subject_category_terms_tasca.html -->
+    <!-- Subject category **from:wok_subject_categories to:subject_categories** -->
+    <field name="wok_subject_categories" type="lowercase" indexed="true" stored="true" multiValued="true"/>
+
+    <!-- This field indicates that index the article is indexed in Web of Science -->
+    <!-- We use de convertion:
+        SCIE=Science Citation Index Expanded
+        SSCI=Social Sciences Citation Index
+        AHCI=Arts Humanities Citation Index
+      -->
+    <field name="wok_citation_index" type="string" indexed="true" stored="true" multiValued="true"/>
 
    <!-- Dynamic field definitions -->
    <dynamicField name="*"  type="text" indexed="true" stored="true"  multiValued="false"/>

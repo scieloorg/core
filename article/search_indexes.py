@@ -15,7 +15,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     # URLs
     ur = indexes.MultiValueField(null=True) 
 
-    titles = indexes.MultiValueField(null=True)
+    titles = indexes.MultiValueField(index_fieldname="ti", null=True)
     la = indexes.MultiValueField(null=True)
     au = indexes.MultiValueField(null=True)
     kw = indexes.MultiValueField(null=True)
@@ -25,7 +25,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     orcid = indexes.MultiValueField(null=True)
     au_orcid = indexes.MultiValueField(null=True)
 
-    journal_title = indexes.CharField(null=True)
+    journal_title = indexes.CharField(index_fieldname="ta", null=True)
     # FIXME 1 artigo pode estar em mais de 1 coleção
     collection = indexes.CharField(index_fieldname="in", null=True)
     type = indexes.CharField(model_attr="article_type", null=True)
@@ -38,6 +38,8 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     elocation = indexes.CharField(model_attr="elocation_id", null=True)
     start_page = indexes.CharField(model_attr="first_page", null=True)
     end_page = indexes.CharField(model_attr="last_page", null=True)
+    pg = indexes.CharField(null=True)
+    wok_citation_index = indexes.CharField(null=True)
 
     def prepare(self, obj):
         """"
@@ -48,6 +50,10 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
         About the prepare function see: https://django-haystack.readthedocs.io/_/downloads/en/master/pdf/
         """
         data = super().prepare(obj)
+
+        # prepare the titles
+        for title in obj.titles.all():
+            data["ti_%s" % title.language.code2] = title.plain_text
 
         return data 
 
@@ -150,6 +156,12 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
             return obj.journal.collection.domain
         except AttributeError:
             pass
+
+    def prepare_pg(self, obj):
+        return "%s-%s" %  (obj.first_page, obj.last_page)
+
+    def prepare_wok_citation_index(self, obj):
+        return [wos.code for wos in obj.journal.wos_db.all()]
 
     def get_model(self):
         return Article
