@@ -1,9 +1,13 @@
 from django.http import HttpResponseRedirect
 from django.utils.translation import gettext as _
-from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
+from django.urls import include, path
+from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
 from wagtail.contrib.modeladmin.views import CreateView
+from wagtail import hooks
 
-from .models import Location
+from .models import City, Region, State, Country, Location, CountryFile
+from .views import import_file_country, validate_country
+from .button_helpers import CountryHelper
 
 
 class LocationCreateView(CreateView):
@@ -43,4 +47,151 @@ class LocationAdmin(ModelAdmin):
     export_filename = "locations"
 
 
-modeladmin_register(LocationAdmin)
+class CityAdmin(ModelAdmin):
+    model = City
+    create_view_class = LocationCreateView
+    menu_label = _("City")
+    menu_icon = "folder"
+    menu_order = 700
+    add_to_settings_menu = False
+    exclude_from_explorer = (
+        False
+    )
+    list_display = (
+        "name",
+    )
+    search_fields = (
+        "name",
+    )
+    list_export = (
+        "name",
+    )
+    export_filename = "cities"
+
+
+class RegionAdmin(ModelAdmin):
+    model = Region
+    create_view_class = LocationCreateView
+    menu_label = _("Region")
+    menu_icon = "folder"
+    menu_order = 700
+    add_to_settings_menu = False
+    exclude_from_explorer = (
+        False
+    )
+    list_display = (
+        "name",
+        "acronym",
+    )
+    search_fields = (
+        "name",
+        "acronym",
+    )
+    list_export = (
+        "name",
+        "acronym",
+    )
+    export_filename = "regions"
+
+
+class StateAdmin(ModelAdmin):
+    model = State
+    create_view_class = LocationCreateView
+    menu_label = _("State")
+    menu_icon = "folder"
+    menu_order = 700
+    add_to_settings_menu = False
+    exclude_from_explorer = (
+        False
+    )
+    list_display = (
+        "name",
+        "acronym",
+        "region",
+    )
+    search_fields = (
+        "name",
+        "acronym",
+        "region",
+    )
+    list_export = (
+        "name",
+        "acronym",
+        "region",
+    )
+    export_filename = "regions"
+
+
+class CountryAdmin(ModelAdmin):
+    model = Country
+    create_view_class = LocationCreateView
+    menu_label = _("Country")
+    menu_icon = "folder"
+    menu_order = 700
+    add_to_settings_menu = False
+    exclude_from_explorer = (
+        False
+    )
+    list_display = (
+        "name",
+        "acronym",
+        "acron3",
+    )
+    search_fields = (
+        "name",
+        "acronym",
+        "acron3",
+    )
+    list_export = (
+        "name",
+        "acronym",
+        "acron3",
+    )
+    export_filename = "countries"
+
+
+class CountryFileAdmin(ModelAdmin):
+    model = CountryFile
+    button_helper_class = CountryHelper
+    menu_label = "Country Upload"
+    menu_icon = "folder"
+    menu_order = 200
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = ("attachment", "line_count", "is_valid")
+    list_filter = ("is_valid",)
+    search_fields = ("attachment",)
+
+
+#modeladmin_register(LocationAdmin)
+class LocationAdminGroup(ModelAdminGroup):
+    menu_label = _("Location")
+    menu_icon = "folder-open-inverse"
+    menu_order = 500
+    items = (
+        LocationAdmin,
+        CityAdmin,
+        RegionAdmin,
+        StateAdmin,
+        CountryAdmin,
+        CountryFileAdmin,
+    )
+
+
+modeladmin_register(LocationAdminGroup)
+
+
+@hooks.register("register_admin_urls")
+def register_url():
+    return [
+        path(
+            "location/country/validate",
+            validate_country,
+            name="validate_country",
+        ),
+        path(
+            "location/country/import_file",
+            import_file_country,
+            name="import_file_country",
+        ),
+    ]
