@@ -31,9 +31,9 @@ class LocationAdmin(ModelAdmin):
         "created",
     )
     search_fields = (
-        "country",
-        "state",
-        "city",
+        "country__name",
+        "state__name",
+        "city__name",
     )
     list_export = (
         "country",

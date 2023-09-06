@@ -34,10 +34,10 @@ class CollectionAdmin(ModelAdmin):
     search_fields = (
         "main_name",
         "collection_type",
-        "creator",
-        "updated",
         "created",
-        "updated_by",
+        "updated",
+        "creator__username",
+        "updated_by__username",
     )
     list_export = (
         "acron3",

@@ -37,10 +37,10 @@ class InstitutionAdmin(ModelAdmin):
     search_fields = (
         "name",
         "institution_type",
-        "creator",
+        "creator__username",
         "updated",
         "created",
-        "updated_by",
+        "updated_by__username",
     )
     list_export = (
         "name",
