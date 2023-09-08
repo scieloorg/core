@@ -279,6 +279,7 @@ class DocumentTitle(RichTextWithLang, CommonControlField):
             
         obj.language = language
         obj.rich_text = title_rich
+        obj.updated_by = user
         obj.save()
         return obj
 
