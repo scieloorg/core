@@ -266,8 +266,35 @@ class TocSection(RichTextWithLang, CommonControlField):
         verbose_name = _("TocSection")
         verbose_name_plural = _("TocSections")
 
+    @classmethod
+    def get(
+        cls,
+        value,
+        language,
+    ):
+        if value and language:
+            return cls.objects.get(plain_text=value, language=language)
+        raise Exception("TocSections.get requires value and language paramenters")
+
+    @classmethod
+    def get_or_create(
+        cls,
+        value,
+        language,
+        user,
+    ):
+        try:
+            return cls.get(value=value, language=language)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.plain_text = value
+            obj.language = language
+            obj.creator = user
+            obj.save()
+            return obj
+
     def __unicode__(self):
-        return f"{self.text} - {self.language}"
+        return f"{self.plain_text} - {self.language}"
 
     def __str__(self):
-        return f"{self.plain_text}"
+        return f"{self.plain_text} - {self.language}"
