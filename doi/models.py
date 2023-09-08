@@ -59,7 +59,7 @@ class DOI(CommonControlField):
     @classmethod
     def get_or_create(cls, value, language, creator):
         try:
-            return cls.objects.get(value=value, language=language, creator=creator)
+            return cls.objects.get(value=value, language=language)
         except cls.DoesNotExist:
             doi = cls()
             doi.value = value
