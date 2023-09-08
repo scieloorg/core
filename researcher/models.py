@@ -77,7 +77,20 @@ class Researcher(ClusterableModel, CommonControlField):
         )
 
     @classmethod
-    def get_or_create(
+    def get(
+        cls,
+        given_names,
+        last_name,
+        orcid,
+    ):
+        if orcid:
+            return cls.objects.get(orcid=orcid)
+        elif given_names or last_name:
+            return cls.objects.get(given_names=given_names, last_name=last_name)
+        raise Exception("Researcher.get requires orcid, given_names or last_names paramenters")
+
+    @classmethod
+    def create_or_update(
         cls,
         given_names,
         last_name,
@@ -92,42 +105,41 @@ class Researcher(ClusterableModel, CommonControlField):
         user=None,
     ):
         try:
-            return cls.objects.get(
+            researcher = cls.get(
                 given_names=given_names,
                 last_name=last_name,
-                suffix=suffix,
                 orcid=orcid,
-                lattes=lattes,
-                gender=gender,
-                gender_identification_status=gender_identification_status,
             )
         except cls.DoesNotExist:
-            institution = None
-            if institution_name:
-                try:
-                    institution = Institution.objects.get(name=institution_name)
-                except Institution.DoesNotExist:
-                    pass
             researcher = cls()
-            researcher.given_names = given_names
-            researcher.last_name = last_name
-            researcher.declared_name = declared_name
-            researcher.suffix = suffix
-            researcher.orcid = orcid
-            researcher.lattes = lattes
-            ## TODO
-            ## Criar get_or_create para model gender e GenderIdentificationStatus
-            researcher.gender = gender
-            researcher.gender_identification_status = gender_identification_status
             researcher.creator = user
-            researcher.save()
-            if email:
-                FieldEmail.objects.create(page=researcher, email=email)
-            if institution:
-                FieldAffiliation.objects.create(
-                    page=researcher, institution=institution
-                )
-            return researcher
+            researcher.orcid = orcid
+
+        researcher.given_names = given_names
+        researcher.last_name = last_name            
+        institution = None
+        if institution_name:
+            try:
+                institution = Institution.objects.get(name=institution_name)
+            except Institution.DoesNotExist:
+                pass
+
+        researcher.declared_name = declared_name
+        researcher.suffix = suffix
+        researcher.lattes = lattes
+        ## TODO
+        ## Criar get_or_create para model gender e GenderIdentificationStatus
+        researcher.gender = gender
+        researcher.gender_identification_status = gender_identification_status
+        researcher.save()
+        
+        if email:
+            FieldEmail.objects.create(page=researcher, email=email)
+        if institution:
+            FieldAffiliation.objects.create(
+                page=researcher, institution=institution
+            )
+        return researcher
 
     panels = [
         FieldPanel("given_names"),
