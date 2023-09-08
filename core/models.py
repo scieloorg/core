@@ -248,6 +248,7 @@ class License(CommonControlField):
         
         license.license_type = license_type
         license.language = language
+        license.updated_by = creator
         license.save()
         return license
 
