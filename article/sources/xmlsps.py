@@ -1,6 +1,8 @@
 from django.db.models import Q
 from django.db.utils import DataError
 from lxml import etree
+
+from packtools.sps.models.article_abstract import Abstract
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_authors import Authors
 from packtools.sps.models.article_doi_with_lang import DoiWithLang
@@ -51,6 +53,7 @@ def load_article(user, xml=None, file_path=None):
         set_first_last_page(xmltree=xmltree, article=article)
         set_elocation_id(xmltree=xmltree, article=article)
         article.save()
+        article.abstracts.set(create_or_create_abstract(xmltree=xmltree, user=user))
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
         article.license.set(get_or_create_licenses(xmltree=xmltree, user=user))
         article.researchers.set(get_or_create_researchers(xmltree=xmltree, user=user))
@@ -155,10 +158,18 @@ def get_or_create_keywords(xmltree, user):
     return data
 
 
-def get_or_create_abstract():
-    ## TODO
-    ## Dependendo do packtools para extrair os dados do abstract
-    pass
+def create_or_create_abstract(xmltree, user):
+    data = []
+    if xmltree.find(".//abstract") is not None:
+        abstract = Abstract(xmltree=xmltree).get_abstracts(style="inline")
+        for ab in abstract:
+            obj = models.DocumentAbstract.create_or_update(
+                text=ab.get('abstract'),
+                language=get_or_create_language(ab.get('lang'), user=user),
+                user=user,
+            )
+            data.append(obj)
+    return data
 
 
 def get_or_create_researchers(xmltree, user):
