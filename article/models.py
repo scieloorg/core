@@ -266,7 +266,7 @@ class DocumentTitle(RichTextWithLang, CommonControlField):
     ):
         if title:
             return cls.objects.get(plain_text=title)
-        raise Exception("DocumentTitle requires title and language paramenters")
+        raise ValueError("DocumentTitle requires title paramenter")
     
     @classmethod
     def create_or_update(cls, title, title_rich, language, user):
