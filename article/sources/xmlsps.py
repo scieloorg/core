@@ -55,13 +55,13 @@ def load_article(user, xml=None, file_path=None):
         article.save()
         article.abstracts.set(create_or_create_abstract(xmltree=xmltree, user=user))
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
-        article.license.set(get_or_create_licenses(xmltree=xmltree, user=user))
-        article.researchers.set(get_or_create_researchers(xmltree=xmltree, user=user))
+        article.license.set(create_or_create_licenses(xmltree=xmltree, user=user))
+        article.researchers.set(create_or_create_researchers(xmltree=xmltree, user=user))
         article.languages.add(get_or_create_main_language(xmltree=xmltree, user=user))
         article.keywords.set(get_or_create_keywords(xmltree=xmltree, user=user))
         article.toc_sections.set(get_or_create_toc_sections(xmltree=xmltree, user=user))
         article.fundings.set(get_or_create_fundings(xmltree=xmltree, user=user))
-        article.titles.set(get_or_create_titles(xmltree=xmltree, user=user))
+        article.titles.set(create_or_update_titles(xmltree=xmltree, user=user))
     except (DataError, TypeError) as e:
         # TODO criar registros das falhas e deixar acessível pela área adm
         # para que os usuários saibam
@@ -124,7 +124,7 @@ def get_or_create_toc_sections(xmltree, user):
     return data
 
 
-def get_or_create_licenses(xmltree, user):
+def create_or_create_licenses(xmltree, user):
     licenses = ArticleLicense(xmltree=xmltree).licenses
     data = []
     for license in licenses:
@@ -172,7 +172,7 @@ def create_or_create_abstract(xmltree, user):
     return data
 
 
-def get_or_create_researchers(xmltree, user):
+def create_or_create_researchers(xmltree, user):
     authors = Authors(xmltree=xmltree).contribs
     # Falta gender e gender_identification_status
     data = []
@@ -212,7 +212,7 @@ def set_elocation_id(xmltree, article):
     article.elocation_id = ArticleMetaIssue(xmltree=xmltree).elocation_id
 
 
-def get_or_create_titles(xmltree, user):
+def create_or_update_titles(xmltree, user):
     titles = ArticleTitles(xmltree=xmltree).article_title_list
     data = []
     for title in titles:
