@@ -230,7 +230,7 @@ class License(CommonControlField):
             return cls.objects.get(url=url, language=language)
         if license_p:
             return cls.objects.get(license_p=license_p, language=language)
-        raise Exception("License.get requires url, language or url paramenter")
+        raise TypeError("License.get requires url, license_p, or language paramenters")
 
     @classmethod
     def create_or_update(cls, url, license_p, license_type, language, creator):
