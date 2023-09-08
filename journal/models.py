@@ -28,7 +28,7 @@ from journal.exceptions import (
 )
 
 from . import choices
-from researcher.choices import MONTHS
+from core.choices import MONTHS
 
 class OfficialJournal(CommonControlField):
     """
