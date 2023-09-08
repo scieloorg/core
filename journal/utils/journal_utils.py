@@ -249,12 +249,19 @@ def get_or_create_sponso(sponsor, journal, user):
 
 
 def get_or_create_subject_descriptor(subject_descriptors, journal, user):
+    """
+    subject_descriptors:
+        [{'_': 'ECONOMIA, TEORIA ECONÔMICA,  HISTÓRIA ECONÔMICA,  ECONOMIA MONETÁRIA E FISCAL, CRESCIMENTO, FLUTUAÇÕES E PLANEJAMENTO ECONÔMICO'}]
+        [{'_': 'MEDICINA'}, {'_': 'PSIQUIATRIA'}, {'_': 'SAUDE MENTAL'}]
+        [{'_': 'AGRONOMIA; FITOPATOLOGIA; FITOSSANIDADE'}]
+    """
     data = []
     if subject_descriptors:
         sub_desc = extract_value(subject_descriptors)
         if isinstance(sub_desc, str):
             sub_desc = [sub_desc]
         for s in sub_desc:
+            # Em alguns casos, subject_descriptors vem separado por "," ou ";"
             for word in re.split(",|;", s):
                 word = word.strip()
                 obj, created = SubjectDescriptor.objects.get_or_create(
@@ -311,7 +318,14 @@ def create_or_update_standard(standard, journal, user):
 
 
 def create_or_update_wos_db(journal, wos_scie, wos_ssci, wos_ahci, user):
+    """
+    wos_scie, wos_ssci, wos_ahci:
+        [{'_': 'SCIE'}]  # Exemplo para wos_scie
+        [{'_': 'SSCI'}]  # Exemplo para wos_ssci
+        [{'_': 'A&HCI'}]  # Exemplo para wos_ahci
+    """
     data = []
+    # Haverá um único valor entre os três (wos_scie, wos_ssci, wos_ahci)
     for db in (wos_scie, wos_ssci, wos_ahci):
         wosdb = extract_value(db)
         if wosdb:
@@ -324,18 +338,22 @@ def create_or_update_wos_db(journal, wos_scie, wos_ssci, wos_ahci, user):
 
 
 def get_or_update_wos_areas(journal, wos_areas, user):
+    """
+    wos_areas:
+        [{'_': 'EDUCATION & EDUCATIONAL RESEARCH'}, {'_': 'HISTORY'}, {'_': 'PHILOSOPHY'}, {'_': 'POLITICAL SCIENCE'}, {'_': 'SOCIOLOGY'}]
+        [{'_': 'LANGUAGE & LINGUISTICS'}, {'_': 'LITERATURE, GERMAN, DUTCH, SCANDINAVIAN'}]
+    """
     data = []
     if wos_areas:
         areas = extract_value(wos_areas)
         if isinstance(areas, str):
             areas = [areas]
         for a in areas:
-            for word in re.split(",|;", a):
-                obj, created = WebOfKnowledgeSubjectCategory.objects.get_or_create(
-                    value=word,
-                    creator=user,
-                )
-                data.append(obj)
+            obj, created = WebOfKnowledgeSubjectCategory.objects.get_or_create(
+                value=a,
+                creator=user,
+            )
+            data.append(obj)
         journal.wos_area.set(data)
 
 
