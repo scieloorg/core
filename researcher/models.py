@@ -56,6 +56,30 @@ class Researcher(ClusterableModel, CommonControlField):
         FieldPanel("gender_identification_status"),
     ]
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    "given_names",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "last_name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "orcid",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "lattes",
+                ]
+            ),
+        ]
+
     @property
     def get_full_name(self):
         return f"{self.last_name}, {self.given_names}"
