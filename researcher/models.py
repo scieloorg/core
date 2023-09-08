@@ -131,6 +131,7 @@ class Researcher(ClusterableModel, CommonControlField):
         ## Criar get_or_create para model gender e GenderIdentificationStatus
         researcher.gender = gender
         researcher.gender_identification_status = gender_identification_status
+        researcher.updated_by = user
         researcher.save()
         
         if email:
