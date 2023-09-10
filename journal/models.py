@@ -1,3 +1,5 @@
+import os
+
 from django.db import models
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -1062,3 +1064,21 @@ class IndexedAt(CommonControlField):
         obj.save()
 
         return obj
+
+class IndexedAtFile(models.Model):
+    attachment = models.ForeignKey(
+        "wagtaildocs.Document",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    is_valid = models.BooleanField(_("Is valid?"), default=False, blank=True, null=True)
+    line_count = models.IntegerField(
+        _("Number of lines"), default=0, blank=True, null=True
+    )
+
+    def filename(self):
+        return os.path.basename(self.attachment.name)
+
+    panels = [FieldPanel("attachment")]
