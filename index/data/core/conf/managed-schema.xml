@@ -231,6 +231,9 @@
     <!-- Digital Object Identifier DOI -->
     <field name="orcid" type="text" indexed="true" stored="true" multiValued="true"/>
 
+   <!-- Auxiliar Digital Object Identifier DOI -->
+   <field name="au_orcid" type="string" indexed="true" stored="true" multiValued="true" />
+
     <!-- Publication date at SciELO: Full ISO Date YYYY-MM-DD -->
     <field name="scielo_publication_date" type="string" indexed="true" stored="true" multiValued="false"/>
 
@@ -270,6 +273,7 @@
 
     <!-- Allow search for keywords in different languages -->
     <field name="kw" type="text" indexed="true" stored="false" multiValued="true"/>
+
 
     <!-- Field that identifies if an article is citable or not -->
     <field name="is_citable"  type="string" indexed="true" stored="true"  multiValued="false"/>

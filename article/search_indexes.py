@@ -19,7 +19,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     la = indexes.MultiValueField(null=True)
     au = indexes.MultiValueField(null=True)
     kw = indexes.MultiValueField(null=True)
-    toc_sections = indexes.MultiValueField(null=True)
+    # toc_sections = indexes.MultiValueField(null=True)
     ab = indexes.MultiValueField(null=True)
     la_abstract = indexes.MultiValueField(null=True)
     orcid = indexes.MultiValueField(null=True)
@@ -56,27 +56,28 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
         for title in obj.titles.all():
             data["ti_%s" % title.language.code2] = title.plain_text
 
-        # prepara the fulltext_pdf_*
-        for collection in obj.journal.collection.all():
-            for lang in obj.languages.all():
-                data[
-                    "fulltext_pdf_%s" % (lang.code2)
-                ] = "http://%s/scielo.php?script=sci_pdf&pid=%s&tlng=%s" % (
-                    collection.domain,
-                    obj.pid_v2,
-                    lang.code2,
-                )
+        if obj.journal:
+            # prepara the fulltext_pdf_*
+            for collection in obj.journal.collection.all():
+                for lang in obj.languages.all():
+                    data[
+                        "fulltext_pdf_%s" % (lang.code2)
+                    ] = "http://%s/scielo.php?script=sci_pdf&pid=%s&tlng=%s" % (
+                        collection.domain,
+                        obj.pid_v2,
+                        lang.code2,
+                    )
 
-        # prepara the fulltext_html_*
-        for collection in obj.journal.collection.all():
-            for lang in obj.languages.all():
-                data[
-                    "fulltext_html_%s" % (lang.code2)
-                ] = "http://%s/scielo.php?script=sci_arttext&pid=%s&tlng=%s" % (
-                    collection.domain,
-                    obj.pid_v2,
-                    lang.code2,
-                )
+            # prepara the fulltext_html_*
+            for collection in obj.journal.collection.all():
+                for lang in obj.languages.all():
+                    data[
+                        "fulltext_html_%s" % (lang.code2)
+                    ] = "http://%s/scielo.php?script=sci_arttext&pid=%s&tlng=%s" % (
+                        collection.domain,
+                        obj.pid_v2,
+                        lang.code2,
+                    )
 
         return data
 
@@ -105,18 +106,19 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
         """
         urls = []
 
-        for collection in obj.journal.collection.all():
-            urls.append(
-                "http://%s/scielo.php?script=sci_arttext&pid=%s"
-                % (collection.domain, obj.pid_v2)
-            )
+        if obj.journal:
+            for collection in obj.journal.collection.all():
+                urls.append(
+                    "http://%s/scielo.php?script=sci_arttext&pid=%s"
+                    % (collection.domain, obj.pid_v2)
+                )
 
         return urls
 
     def prepare_journal_title(self, obj):
         if obj.journal:
             return obj.journal.title
-        
+
     def prepare_subject_areas(self, obj):
         return (
             [subj_areas.value for subj_areas in obj.journal.subject.all()]
@@ -167,9 +169,9 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
         if obj.keywords:
             return [keyword.text for keyword in obj.keywords.all()]
 
-    def prepare_toc_sections(self, obj):
-        if obj.toc_sections:
-            return [toc_section.plain_text for toc_section in obj.toc_sections.all()]
+    # def prepare_toc_sections(self, obj):
+    #     if obj.toc_sections:
+    #         return [toc_section.plain_text for toc_section in obj.toc_sections.all()]
 
     def prepare_issue(self, obj):
         try:
@@ -201,7 +203,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
         return "%s-%s" % (obj.first_page, obj.last_page)
 
     def prepare_wok_citation_index(self, obj):
-        return [wos.code for wos in obj.journal.wos_db.all()]
+        return [wos.code for wos in obj.journal.wos_db.all()] if obj.journal else None
 
     def get_model(self):
         return Article
