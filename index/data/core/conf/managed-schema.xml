@@ -188,6 +188,9 @@
 
     <!-- End Page -->
     <field name="end_page" type="string" indexed="true" stored="true" multiValued="false"/>
+
+    <!-- Copy of ta/short_title -->
+    <field name="ta_cluster" type="string" indexed="true" stored="false" multiValued="false"/>
     
     <!-- Colllection domain to:domain from:domain  -->
     <field name="domain" type="string" indexed="true" stored="true" multiValued="false" />
@@ -210,6 +213,10 @@
         <filter class="solr.LowerCaseFilterFactory"/>
       </analyzer>
     </fieldtype>
+
+    <copyField source="text" dest="tw"/>
+    <copyField source="_text_" dest="tw"/>
+    <copyField source="*" dest="tw"/>
 
 
     <!-- This can be enabled, in case the client does not know what fields may be searched. It isn't enabled by default
