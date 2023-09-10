@@ -1,6 +1,7 @@
 from haystack import indexes
 
 from .models import Article
+from journal.models import SciELOJournal
 
 
 class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
@@ -39,6 +40,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     pg = indexes.CharField(null=True)
     wok_citation_index = indexes.CharField(null=True)
     subject_areas = indexes.CharField(null=True)
+    ta_cluster = indexes.CharField(null=True)
 
     def prepare(self, obj):
         """ "
@@ -114,13 +116,21 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_journal_title(self, obj):
         if obj.journal:
             return obj.journal.title
-
+        
     def prepare_subject_areas(self, obj):
         return (
             [subj_areas.value for subj_areas in obj.journal.subject.all()]
             if obj.journal
             else None
         )
+
+    def prepare_ta_cluster(self, obj):
+        """
+        This function get the SciELOJournal.journal_acron to get the acronym to the journal.
+        """
+        if obj.journal:
+            sci_journal = SciELOJournal.objects.get(journal=obj.journal)
+            return sci_journal.journal_acron
 
     def prepare_collection(self, obj):
         return (
