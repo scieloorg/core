@@ -241,6 +241,18 @@ class License(CommonControlField):
     class Meta:
         verbose_name = _("License")
         verbose_name_plural = _("Licenses")
+        indexes = [
+            models.Index(
+                fields=[
+                    "url",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "license_type",
+                ]
+            ),
+        ]
 
     def __unicode__(self):
         return self.url or self.license_p or ""

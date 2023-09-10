@@ -118,7 +118,7 @@ class Issue(CommonControlField, ClusterableModel):
                 fields=[
                     "supplement",
                 ]
-            ),
+            ),          
         ]
 
     @property
@@ -241,9 +241,6 @@ class BibliographicStrip(Orderable, TextWithLang, CommonControlField):
         related_name="bibliographic_strip",
     )
 
-    def __str__(self):
-        return self.subtitle
-
 
 class TocSection(RichTextWithLang, CommonControlField):
     """
@@ -265,6 +262,13 @@ class TocSection(RichTextWithLang, CommonControlField):
     class Meta:
         verbose_name = _("TocSection")
         verbose_name_plural = _("TocSections")
+        indexes = [
+            models.Index(
+                fields=[
+                    "plain_text",
+                ]
+            ),
+        ]
 
     def __unicode__(self):
         return f"{self.text} - {self.language}"

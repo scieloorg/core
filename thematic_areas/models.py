@@ -34,6 +34,23 @@ class GenericThematicArea(CommonControlField):
     class Meta:
         verbose_name = _("Generic Thematic Area")
         verbose_name_plural = _("Generic Thematic Areas")
+        indexes = [
+            models.Index(
+                fields=[
+                    "text",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "origin",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "level",
+                ]
+            ),
+        ]
 
     def __unicode__(self):
         return "%s" % (self.text,)
@@ -141,6 +158,23 @@ class ThematicArea(CommonControlField):
     class Meta:
         verbose_name = _("Thematic Area")
         verbose_name_plural = _("Thematic Areas")
+        indexes = [
+            models.Index(
+                fields=[
+                    "level0",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "level1",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "level2",
+                ]
+            ),            
+        ]
 
     def __unicode__(self):
         return "%s | %s | %s" % (

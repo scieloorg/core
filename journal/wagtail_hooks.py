@@ -39,8 +39,8 @@ class OfficialJournalAdmin(ModelAdmin):
         "issn_print",
         "issn_electronic",
         "issnl",
-        "creator",
-        "updated_by",
+        "creator__username",
+        "updated_by__username",
     )
 
 
@@ -66,7 +66,10 @@ class JournalAdmin(ModelAdmin):
         "short_title",
     )
     # list_filter = ()
-    search_fields = ("title",)
+    search_fields = (
+        "official__title",
+        "title",
+    )
 
 
 class SciELOJournalCreateView(CreateView):
