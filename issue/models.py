@@ -118,7 +118,7 @@ class Issue(CommonControlField, ClusterableModel):
                 fields=[
                     "supplement",
                 ]
-            ),
+            ),          
         ]
 
     @property
@@ -241,9 +241,6 @@ class BibliographicStrip(Orderable, TextWithLang, CommonControlField):
         related_name="bibliographic_strip",
     )
 
-    def __str__(self):
-        return self.subtitle
-
 
 class TocSection(RichTextWithLang, CommonControlField):
     """
@@ -265,6 +262,40 @@ class TocSection(RichTextWithLang, CommonControlField):
     class Meta:
         verbose_name = _("TocSection")
         verbose_name_plural = _("TocSections")
+        indexes = [
+            models.Index(
+                fields=[
+                    "plain_text",
+                ]
+            ),
+        ]
+
+    @classmethod
+    def get(
+        cls,
+        value,
+        language,
+    ):
+        if value and language:
+            return cls.objects.get(plain_text=value, language=language)
+        raise TypeError("TocSections.get requires value and language paramenters")
+
+    @classmethod
+    def get_or_create(
+        cls,
+        value,
+        language,
+        user,
+    ):
+        try:
+            return cls.get(value=value, language=language)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.plain_text = value
+            obj.language = language
+            obj.creator = user
+            obj.save()
+            return obj
 
     @classmethod
     def get(

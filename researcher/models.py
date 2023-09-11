@@ -56,6 +56,30 @@ class Researcher(ClusterableModel, CommonControlField):
         FieldPanel("gender_identification_status"),
     ]
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    "given_names",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "last_name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "orcid",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "lattes",
+                ]
+            ),
+        ]
+
     @property
     def get_full_name(self):
         return f"{self.last_name}, {self.given_names}"
@@ -87,7 +111,7 @@ class Researcher(ClusterableModel, CommonControlField):
             return cls.objects.get(orcid=orcid)
         elif given_names or last_name:
             return cls.objects.get(given_names=given_names, last_name=last_name)
-        raise Exception("Researcher.get requires orcid, given_names or last_names paramenters")
+        raise TypeError("Researcher.get requires orcid, given_names or last_names paramenters")
 
     @classmethod
     def create_or_update(
@@ -131,6 +155,7 @@ class Researcher(ClusterableModel, CommonControlField):
         ## Criar get_or_create para model gender e GenderIdentificationStatus
         researcher.gender = gender
         researcher.gender_identification_status = gender_identification_status
+        researcher.updated_by = user
         researcher.save()
         
         if email:

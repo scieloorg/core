@@ -42,15 +42,16 @@ class EventAdmin(ModelAdmin):
         "updated_by",
     )
     search_fields = (
-        "collection",
+        "collection__main_name",
+        "collection__name__text",
         "occurrence_date_year",
         "occurrence_date_month",
         "occurrence_date_day",
         "occurrence_type",
-        "creator",
+        "creator__username",
         "updated",
         "created",
-        "updated_by",
+        "updated_by__username",
     )
     list_export = (
         "collection",

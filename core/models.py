@@ -230,7 +230,7 @@ class License(CommonControlField):
             return cls.objects.get(url=url, language=language)
         if license_p:
             return cls.objects.get(license_p=license_p, language=language)
-        raise Exception("License.get requires url, language or url paramenter")
+        raise TypeError("License.get requires url, license_p, or language paramenters")
 
     @classmethod
     def create_or_update(cls, url, license_p, license_type, language, creator):
@@ -248,12 +248,25 @@ class License(CommonControlField):
         
         license.license_type = license_type
         license.language = language
+        license.updated_by = creator
         license.save()
         return license
 
     class Meta:
         verbose_name = _("License")
         verbose_name_plural = _("Licenses")
+        indexes = [
+            models.Index(
+                fields=[
+                    "url",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "license_type",
+                ]
+            ),
+        ]
 
     def __unicode__(self):
         return self.url or self.license_p or ""

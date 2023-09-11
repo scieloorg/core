@@ -29,6 +29,13 @@ class City(CommonControlField):
     class Meta:
         verbose_name = _("City")
         verbose_name_plural = _("Cities")
+        indexes = [
+            models.Index(
+                fields=[
+                    "name"
+                ]
+            ),                        
+        ]
 
     def __unicode__(self):
         return "%s" % self.name
@@ -63,12 +70,25 @@ class Region(CommonControlField):
         return str(self)
 
     panels = [
-        FieldPanel("name")
+        FieldPanel("name"),
+        FieldPanel("acronym")
     ]
 
     class Meta:
         verbose_name = _("Region")
         verbose_name_plural = _("Regions")
+        indexes = [
+            models.Index(
+                fields=[
+                    "name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "acronym",
+                ]
+            ),                        
+        ]
 
     def __unicode__(self):
         return "%s" % self.name
@@ -129,6 +149,18 @@ class State(CommonControlField):
     class Meta:
         verbose_name = _("State")
         verbose_name_plural = _("States")
+        indexes = [
+            models.Index(
+                fields=[
+                    "name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "acronym",
+                ]
+            ),                  
+        ]
 
     def __unicode__(self):
         return "%s" % self.name
@@ -173,9 +205,12 @@ class Country(CommonControlField):
 
     name = models.CharField(_("Country Name"), blank=True, null=True, max_length=255)
     acronym = models.CharField(
-        _("Country Acronym"), blank=True, null=True, max_length=255
+        _("Country Acronym (2 char)"), blank=True, null=True, max_length=2
     )
-
+    acron3 = models.CharField(
+        _("Country Acronym (3 char)"), blank=True, null=True, max_length=3
+    )
+    
     autocomplete_search_field = "name"
 
     def autocomplete_label(self):
@@ -184,11 +219,24 @@ class Country(CommonControlField):
     panels = [
         FieldPanel("name"),
         FieldPanel("acronym"),
+        FieldPanel("acron3"),
     ]
     
     class Meta:
         verbose_name = _("Country")
         verbose_name_plural = _("Countries")
+        indexes = [
+            models.Index(
+                fields=[
+                    "name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "acronym",
+                ]
+            ),                  
+        ]        
 
     def __unicode__(self):
         return "%s" % self.name
@@ -197,7 +245,7 @@ class Country(CommonControlField):
         return "%s" % self.name
 
     @classmethod
-    def get_or_create(cls, user, name=None, acronym=None):
+    def get_or_create(cls, user, name=None, acronym=None, acron3=None):
         if name:
             try:
                 return cls.objects.get(name__icontains=name)
@@ -214,6 +262,7 @@ class Country(CommonControlField):
             country = Country()
             country.name = name
             country.acronym = acronym
+            country.acron3 = acron3
             country.creator = user
             country.save()
             return country
@@ -291,3 +340,22 @@ class Location(CommonControlField):
         return location
 
     base_form_class = CoreAdminModelForm
+
+
+class CountryFile(models.Model):
+    attachment = models.ForeignKey(
+        "wagtaildocs.Document",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    is_valid = models.BooleanField(_("Is valid?"), default=False, blank=True, null=True)
+    line_count = models.IntegerField(
+        _("Number of lines"), default=0, blank=True, null=True
+    )
+
+    def filename(self):
+        return os.path.basename(self.attachment.name)
+
+    panels = [FieldPanel("attachment")]

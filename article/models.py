@@ -107,6 +107,16 @@ class Article(CommonControlField):
                     "pid_v2",
                 ]
             ),
+            models.Index(
+                fields=[
+                    "pid_v3",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "pub_date_year",
+                ]
+            ),
         ]
 
     def __unicode__(self):
@@ -266,12 +276,12 @@ class DocumentTitle(RichTextWithLang, CommonControlField):
     ):
         if title:
             return cls.objects.get(plain_text=title)
-        raise Exception("DocumentTitle requires title and language paramenters")
+        raise ValueError("DocumentTitle requires title paramenter")
     
     @classmethod
     def create_or_update(cls, title, title_rich, language, user):
         try:
-            return cls.get(title=title)
+            obj = cls.get(title=title)
         except cls.DoesNotExist:
             obj = cls()
             obj.plain_text = title
@@ -279,6 +289,7 @@ class DocumentTitle(RichTextWithLang, CommonControlField):
             
         obj.language = language
         obj.rich_text = title_rich
+        obj.updated_by = user
         obj.save()
         return obj
 
@@ -297,6 +308,39 @@ class DocumentAbstract(RichTextWithLang, CommonControlField):
 
     def autocomplete_label(self):
         return str(self)
+
+    def __str__(self):
+        return f"{self.plain_text} - {self.language}"
+    
+
+    @classmethod
+    def get(
+        cls,
+        text,
+    ):
+        if text:
+            return cls.objects.get(plain_text=text)
+        raise ValueError("DocumentAbstract.get requires text paramenter")
+
+    @classmethod
+    def create_or_update(
+        cls,
+        text,
+        language,
+        user,
+    ):
+        try:
+            obj = cls.get(text=text)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.plain_text = text
+            obj.creator = user
+
+        obj.language = language
+        obj.updated_by = user
+        obj.save()
+        return obj
+
 
 class ArticleEventType(CommonControlField):
     code = models.CharField(_("Code"), blank=True, null=True, max_length=20)
