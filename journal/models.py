@@ -46,10 +46,10 @@ class OfficialJournal(CommonControlField):
         _("Foundation Year"), max_length=4, null=True, blank=True
     )
     initial_volume = models.CharField(
-        _("Initial Volume"), max_length=1, null=True, blank=True
+        _("Initial Volume"), max_length=32, null=True, blank=True
     )
     initial_number = models.CharField(
-        _("Initial Number"), max_length=1, null=True, blank=True
+        _("Initial Number"), max_length=32, null=True, blank=True
     )
     terminate_year = models.CharField(
         _("Terminate year"), max_length=4, null=True, blank=True
@@ -58,10 +58,10 @@ class OfficialJournal(CommonControlField):
         _("Terminate month"), max_length=2, choices=MONTHS, null=True, blank=True
     )
     final_volume = models.CharField(
-        _("Final Volume"), max_length=2, null=True, blank=True
+        _("Final Volume"), max_length=32, null=True, blank=True
     )
     final_number = models.CharField(
-        _("Final Number"), max_length=2, null=True, blank=True
+        _("Final Number"), max_length=32, null=True, blank=True
     )
     issn_print = models.CharField(_("ISSN Print"), max_length=9, null=True, blank=True)
     issn_electronic = models.CharField(
@@ -436,7 +436,7 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("secs_code"),
         FieldPanel("medline_code"),
         FieldPanel("medline_short_title"),
-        FieldPanel("indexed_at"),
+        AutocompletePanel("indexed_at"),
     ]
 
     panels_identification = [
@@ -1072,6 +1072,11 @@ class IndexedAt(CommonControlField):
     type = models.CharField(
         _("Type"), max_length=20, choices=choices.TYPE, null=True, blank=False
     )
+
+    autocomplete_search_field = "name"
+
+    def autocomplete_label(self):
+        return str(self)
 
     panels = [
         FieldPanel("name"),
