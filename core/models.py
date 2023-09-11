@@ -220,23 +220,37 @@ class License(CommonControlField):
     ]
 
     @classmethod
-    def get_or_create(cls, url, license_p, license_type, language, creator):
+    def get(
+        cls,
+        url,
+        license_p,
+        language,
+        ):
+        if url:
+            return cls.objects.get(url=url, language=language)
+        if license_p:
+            return cls.objects.get(license_p=license_p, language=language)
+        raise TypeError("License.get requires url, license_p, or language paramenters")
+
+    @classmethod
+    def create_or_update(cls, url, license_p, license_type, language, creator):
         try:
-            return cls.objects.get(
+            return cls.get(
                 url=url,
                 license_p=license_p,
-                license_type=license_type,
                 language=language,
             )
         except cls.DoesNotExist:
             license = cls()
             license.url = url
-            license.license_p = license_p
-            license.license_type = license_type
-            license.language = language
             license.creator = creator
-            license.save()
-            return license
+            license.license_p = license_p
+        
+        license.license_type = license_type
+        license.language = language
+        license.updated_by = creator
+        license.save()
+        return license
 
     class Meta:
         verbose_name = _("License")

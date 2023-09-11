@@ -2,6 +2,7 @@ from core.utils import utils
 from core.utils.rename_dictionary_keys import rename_dictionary_keys
 from journal.utils.correspondencia import correspondencia_journal
 from journal.utils import journal_utils
+from core.utils.rename_dictionary_keys import rename_dictionary_keys
 from journal.utils.request_api_article_meta import request_journal_article_meta
 
 

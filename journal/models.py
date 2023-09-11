@@ -1,3 +1,5 @@
+import os
+
 from django.db import models
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -25,6 +27,10 @@ from journal.exceptions import (
     OfficialJournalGetError,
     SciELOJournalCreateOrUpdateError,
     SciELOJournalGetError,
+    StandardCreationOrUpdateError,
+    SubjectCreationOrUpdateError,
+    WosdbCreationOrUpdateError,
+    IndexedAtCreationOrUpdateError
 )
 
 from . import choices
@@ -436,7 +442,7 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("secs_code"),
         FieldPanel("medline_code"),
         FieldPanel("medline_short_title"),
-        AutocompletePanel("indexed_at"),
+        FieldPanel("indexed_at"),
     ]
 
     panels_identification = [
@@ -990,10 +996,8 @@ class Subject(CommonControlField):
             obj = cls()
             obj.code = code
             obj.creator = user
-        # TODO
-        # Melhorar com excecoes especificas.
-        except Exception:
-            raise Exception("Unable to create or update Subject")
+        except SubjectCreationOrUpdateError as e :
+            raise SubjectCreationOrUpdateError(code=code, message=e)
         
         obj.value = dict(choices.STUDY_AREA)[code]
         obj.save()
@@ -1025,10 +1029,8 @@ class WebOfKnowledge(CommonControlField):
             obj = cls()
             obj.code = code
             obj.creator = user
-        # TODO
-        # Melhorar com excecoes especificas.
-        except Exception:
-            raise Exception("Unable to create or update WebOfKnowledge")
+        except WosdbCreationOrUpdateError as e:
+            raise WosdbCreationOrUpdateError(code=code, message=e)
         
         obj.value = dict(choices.WOS_DB)[code]
         obj.save()
@@ -1067,10 +1069,8 @@ class Standard(CommonControlField):
             obj = cls()
             obj.code = code
             obj.creator = user
-        # TODO
-        # Melhorar com excecoes especificas.
-        except Exception:
-            raise Exception("Unable to create or update Standard")
+        except StandardCreationOrUpdateError as e:
+            raise StandardCreationOrUpdateError(code=code, message=e)
         
         obj.value = dict(choices.STANDARD)[code]
         obj.save()
@@ -1132,10 +1132,8 @@ class IndexedAt(CommonControlField):
             obj.name = name
             obj.acronym = acronym
             obj.creator = user
-        # TODO
-        # Melhorar com excecoes especificas.
-        except Exception:
-            raise Exception("Unable to create or update IndexedAt")
+        except IndexedAtCreationOrUpdateError as e :
+            raise IndexedAtCreationOrUpdateError(name=name, acronym=acronym, message=e)
         
         obj.description = description
         obj.url = url
@@ -1143,3 +1141,23 @@ class IndexedAt(CommonControlField):
         obj.save()
 
         return obj
+
+
+class IndexedAtFile(models.Model):
+    attachment = models.ForeignKey(
+        "wagtaildocs.Document",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    is_valid = models.BooleanField(_("Is valid?"), default=False, blank=True, null=True)
+    line_count = models.IntegerField(
+        _("Number of lines"), default=0, blank=True, null=True
+    )
+
+    def filename(self):
+        return os.path.basename(self.attachment.name)
+
+    panels = [FieldPanel("attachment")]
+

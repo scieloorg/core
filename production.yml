@@ -41,13 +41,12 @@ services:
       - ./.envs/.production/.postgres
   
   solr:
-      image: solr:7.7.1
+      image: solr:9.3
       restart: always
       ports:
          - "8983:8983"
       volumes:
-         - ./index/core:/opt/solr/server/solr/core
-         - ./index/oai:/opt/solr/server/solr/oai
+          - ./index/data:/var/solr
       environment:
           - SOLR_JAVA_MEM=-Xms512m -Xmx512m
           - SOLR_HEAP=512m

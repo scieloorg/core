@@ -343,6 +343,7 @@ def get_or_update_wos_areas(journal, wos_areas, user):
         [{'_': 'EDUCATION & EDUCATIONAL RESEARCH'}, {'_': 'HISTORY'}, {'_': 'PHILOSOPHY'}, {'_': 'POLITICAL SCIENCE'}, {'_': 'SOCIOLOGY'}]
         [{'_': 'LANGUAGE & LINGUISTICS'}, {'_': 'LITERATURE, GERMAN, DUTCH, SCANDINAVIAN'}]
     """
+
     data = []
     if wos_areas:
         areas = extract_value(wos_areas)
