@@ -4,18 +4,21 @@
 
 <div style="background-color: #f8f8f6; width: 100%;">
     {% if item.ab %}
-    {% trans "Resumo" %}:
-      {% for lang in item.la_abstract %}
-        <a href="#" class="toggleLink" style="text-transform: uppercase;"><i class="arrow"></i>{{lang}} </a> 
-      {% endfor %}
-    {% endif %}
+      {% trans "Resumo" %}:
+        {% for lang in item.la_abstract %}
+          <a href="#" class="toggleLink" style="text-transform: uppercase;"><i class="arrow"></i>{{lang}} </a> |
+        {% endfor %}
+      {% endif %}
     {% if item.pid %}
-    | {% trans "Texto" %}:
-      {% for lang in item.la %}
-        <a href="{{item.domain}}/scielo.php?script=sci_arttext&pid={{item.pid_v2}}&lng={{item.la.0}}&tlng={{lang}}">{{lang}}</a>
+      {% trans "Texto" %}:
+        {% for lang in item.la %}
+          <a href="//{{item.domain}}/scielo.php?script=sci_arttext&pid={{item.pid}}&lng={{item.la}}&tlng={{lang}}" target="_blank">{{lang|upper}}</a>
+        {% endfor%}
+        |  PDF: 
+        {% for lang in item.la %}
+          <a href="//{{item.domain}}/scielo.php?script=sci_pdf&pid={{item.pid}}&lng={{item.la}}&tlng={{lang}}" target="_blank">{{lang|upper}}</a>
       {% endfor%}
     {% endif %}
-    | PDF: 
 </div>
 {% for abstract in item.ab %}
     <div class="hiddenText hidden">{{abstract}}</div>

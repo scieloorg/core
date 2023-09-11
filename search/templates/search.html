@@ -6,6 +6,8 @@
 
 {% get_settings use_default_site=True %}
 
+{% block title %}{% trans "Pesquisa | SciELO" %}{% endblock title %}
+
 {% block content %}
 
 <!-- content -->
@@ -68,16 +70,16 @@
                 {% else %}
                 {% trans "0 registros encontrados para o termo" %}: <b>{{ search_query }}</b>
                 {% endif %}
-                <div class="row">
+                <!-- <div class="row">
                   <div id="filter_label" class="col-sm-1 col-md-1 col-lg-1" style="display:none;">Filtros:</div>
 
                   <div id="filter_items" class="col-sm-7 col-md-7 col-lg-7" style="display:none;">
-                    <!-- filters items -->
+                    
                   </div>
                     <div id="filter_clean" class="col-sm-2 col-md-2 col-lg-2" style="display:none;">
                     <a href="#" id="clean-button" class="ml-0 mr-0" style="color: #555; line-height: inherit; text-decoration: none;"><i class="icon-remove" style="vertical-align: -2px;"></i> Limpar filtros </a>
                     </div>
-                </div>
+                </div> -->
 
               </div>
             </div>
@@ -96,8 +98,8 @@
             <div class="col-xl-2 col-sm-2 col-md-2">
               {% trans "Ordenar por" %}:
               <select id="selectSortKey" class="selector ordem form-control form-control-sm">
-                <option value="pub_date_year desc">{% trans "Publicação - Mais novos primeiros" %} </option>
-                <option value="pub_date_year asc">{% trans "Publicação - Mais antigos primeiros" %} </option>
+                <option value="year_cluster desc" selected>{% trans "Publicação - Mais novos primeiros" %} </option>
+                <option value="year_cluster asc">{% trans "Publicação - Mais antigos primeiros" %} </option>
                 <!-- <option value="created desc">{% trans "Ordem descrecente de criação" %} </option> -->
                 <!-- <option value="score asc">{% trans "Relevância" %} </option> -->
               </select>
@@ -113,7 +115,7 @@
 
             <div class="col-xl-2 col-sm-2 col-md-2">
               {% trans "Itens por página" %}:
-              <select id="itensPage" name="itensPage" class="selector ordem form-control form-control-sm">
+              <select id="itensPage" name="itensPage" class="selector ordem form-control form-control-sm" style="width:50%;">
                 <option value="5">5</option>
                 <option value="10">10</option>
                 <option value="20">20</option>

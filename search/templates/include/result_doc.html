@@ -11,7 +11,7 @@
     <div class="col-md-12 pe-md-12">
 
       <div class="entry-title title-sm">
-        <h2><a href="#" target="_blank">{{ item.titles.0 }}</a> <a href="#" target="_blank"><i class="icon-line-external-link"></i></a></h2>
+        <h2><a href="{{ item.ur.0 }}" target="_blank">{{ item.ti.0 }}</a> <a href="{{ item.ur.0 }}" target="_blank"><i class="icon-line-external-link"></i></a></h2>
       </div>
       <div class="entry-meta">
         <ul>
@@ -25,13 +25,17 @@
               </li>
             {% endfor %}
           {% endif %}
+        </ul>
 
+        <br/>
+        
+        <ul>
           {% if item.publication_year %}<li><span>{{ item.publication_year }}</span></li>{% endif %}
           {% if item.volume %}<li><span>{% trans "Volume" %} {{ item.volume }}</span></li>{% endif %}
           {% if item.elocation %}<li><span>elocation {{ item.elocation }}</span></li>{% endif %}
           {% if item.journal_title %}<li><span>{{ item.journal_title }}</span></li>{% endif %}
         </ul>
-        
+
         {% include 'include/result_doc_actions.html' %}
         
         {% if item.doi %}
