@@ -27,6 +27,10 @@ from journal.exceptions import (
     OfficialJournalGetError,
     SciELOJournalCreateOrUpdateError,
     SciELOJournalGetError,
+    StandardCreationOrUpdateError,
+    SubjectCreationOrUpdateError,
+    WosdbCreationOrUpdateError,
+    IndexedAtCreationOrUpdateError
 )
 
 from . import choices
@@ -916,10 +920,8 @@ class Subject(CommonControlField):
             obj = cls()
             obj.code = code
             obj.creator = user
-        # TODO
-        # Melhorar com excecoes especificas.
-        except Exception:
-            raise Exception("Unable to create or update Subject")
+        except SubjectCreationOrUpdateError as e :
+            raise SubjectCreationOrUpdateError(code=code, message=e)
         
         obj.value = dict(choices.STUDY_AREA)[code]
         obj.save()
@@ -951,10 +953,8 @@ class WebOfKnowledge(CommonControlField):
             obj = cls()
             obj.code = code
             obj.creator = user
-        # TODO
-        # Melhorar com excecoes especificas.
-        except Exception:
-            raise Exception("Unable to create or update WebOfKnowledge")
+        except WosdbCreationOrUpdateError as e:
+            raise WosdbCreationOrUpdateError(code=code, message=e)
         
         obj.value = dict(choices.WOS_DB)[code]
         obj.save()
@@ -993,10 +993,8 @@ class Standard(CommonControlField):
             obj = cls()
             obj.code = code
             obj.creator = user
-        # TODO
-        # Melhorar com excecoes especificas.
-        except Exception:
-            raise Exception("Unable to create or update Standard")
+        except StandardCreationOrUpdateError as e:
+            raise StandardCreationOrUpdateError(code=code, message=e)
         
         obj.value = dict(choices.STANDARD)[code]
         obj.save()
@@ -1053,10 +1051,8 @@ class IndexedAt(CommonControlField):
             obj.name = name
             obj.acronym = acronym
             obj.creator = user
-        # TODO
-        # Melhorar com excecoes especificas.
-        except Exception:
-            raise Exception("Unable to create or update IndexedAt")
+        except IndexedAtCreationOrUpdateError as e :
+            raise IndexedAtCreationOrUpdateError(name=name, acronym=acronym, message=e)
         
         obj.description = description
         obj.url = url
