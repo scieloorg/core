@@ -41,6 +41,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     wok_citation_index = indexes.CharField(null=True)
     subject_areas = indexes.CharField(null=True)
     ta_cluster = indexes.CharField(null=True)
+    year_cluster = indexes.CharField(null=True)
 
     def prepare(self, obj):
         """ "
@@ -134,6 +135,12 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
             sci_journal = SciELOJournal.objects.get(journal=obj.journal)
             return sci_journal.journal_acron
 
+    def prepare_year_cluster(self, obj):
+        """
+        This function get the SciELOJournal.journal_acron to get the acronym to the journal.
+        """
+        return str(obj.pub_date_year)
+
     def prepare_collection(self, obj):
         return (
             [collection.acron3 for collection in obj.journal.collection.all()]
@@ -195,7 +202,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
 
     def prepare_domain(self, obj):
         try:
-            return obj.journal.collection.domain
+            return obj.journal.collection.all()[0].domain
         except AttributeError:
             pass
 
