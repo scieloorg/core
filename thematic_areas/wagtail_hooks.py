@@ -48,7 +48,7 @@ class GenericThematicAreaAdmin(ModelAdmin):
     )
     list_display = (
         "text",
-        "lang",
+        "language",
         "origin",
         "level",
         "level_up",
@@ -56,7 +56,11 @@ class GenericThematicAreaAdmin(ModelAdmin):
         "updated",
         "created",
     )
-    search_fields = ("text",)
+    search_fields = (
+        "text",
+        "origin",
+        "level",
+    )
     list_export = (
         "text",
         "lang",
@@ -88,7 +92,7 @@ class GenericThematicAreaFileAdmin(ModelAdmin):
         "created",
     )
     list_filter = ("is_valid",)
-    search_fields = ("attachment",)
+    search_fields = ("attachment__title",)
 
 
 class GenericThematicAreaAdminGroup(ModelAdminGroup):
@@ -185,7 +189,7 @@ class ThematicAreaFileAdmin(ModelAdmin):
         "created",
     )
     list_filter = ("is_valid",)
-    search_fields = ("attachment",)
+    search_fields = ("attachment__title",)
 
 
 class ThematicAreaAdminGroup(ModelAdminGroup):
