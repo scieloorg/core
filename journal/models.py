@@ -471,6 +471,11 @@ class Journal(CommonControlField, ClusterableModel):
                     "official",
                 ]
             ),
+            models.Index(
+                fields=[
+                    "title",
+                ]
+            ),                                                         
         ]
 
     @property
@@ -819,9 +824,17 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
     class Meta:
         verbose_name = _("SciELO Journal")
         verbose_name_plural = _("SciELO Journals")
-        index_together = [
-            ["collection", "journal_acron"],
-            ["collection", "issn_scielo"],
+        indexes = [
+            models.Index(
+                fields=[
+                    "collection", "journal_acron",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "collection", "issn_scielo",
+                ]
+            ),                        
         ]
 
     def __unicode__(self):
