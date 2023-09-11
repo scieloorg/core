@@ -15,28 +15,28 @@ class Migration(migrations.Migration):
             model_name="officialjournal",
             name="final_number",
             field=models.CharField(
-                blank=True, max_length=2, null=True, verbose_name="Final Number"
+                blank=True, max_length=32, null=True, verbose_name="Final Number"
             ),
         ),
         migrations.AddField(
             model_name="officialjournal",
             name="final_volume",
             field=models.CharField(
-                blank=True, max_length=2, null=True, verbose_name="Final Volume"
+                blank=True, max_length=32, null=True, verbose_name="Final Volume"
             ),
         ),
         migrations.AddField(
             model_name="officialjournal",
             name="initial_number",
             field=models.CharField(
-                blank=True, max_length=1, null=True, verbose_name="Initial Number"
+                blank=True, max_length=32, null=True, verbose_name="Initial Number"
             ),
         ),
         migrations.AddField(
             model_name="officialjournal",
             name="initial_volume",
             field=models.CharField(
-                blank=True, max_length=1, null=True, verbose_name="Initial Volume"
+                blank=True, max_length=32, null=True, verbose_name="Initial Volume"
             ),
         ),
         migrations.AddField(
