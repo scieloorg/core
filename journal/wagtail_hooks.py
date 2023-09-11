@@ -6,8 +6,12 @@ from wagtail.contrib.modeladmin.options import (
     modeladmin_register,
 )
 from wagtail.contrib.modeladmin.views import CreateView
+from wagtail import hooks
+from django.urls import path
 
-from .models import Journal, OfficialJournal, SciELOJournal
+from .models import Journal, OfficialJournal, SciELOJournal, IndexedAt, IndexedAtFile
+from .button_helper import IndexedAtHelper
+from .views import import_file, validate
 
 
 class OfficialJournalCreateView(CreateView):
@@ -67,8 +71,9 @@ class JournalAdmin(ModelAdmin):
     )
     # list_filter = ()
     search_fields = (
-        "official__title",
         "title",
+        "official__issn_print",
+        "official__issn_electronic",
     )
 
 
@@ -108,3 +113,59 @@ class JournalAdminGroup(ModelAdminGroup):
 
 
 modeladmin_register(JournalAdminGroup)
+
+
+class IndexedAtAdmin(ModelAdmin):
+    model = IndexedAt
+    menu_label = "Indexed At"
+    menu_icon = "folder"
+    menu_order = 100
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = ("name", "acronym", "url", "description", "type")
+    list_filter = ("type",)
+    search_fields = ("name", "acronym")
+    list_export = ("name", "acronym", "url", "description", "type")
+    export_filename = "indexed_at"
+
+
+class IndexedAtFileAdmin(ModelAdmin):
+    model = IndexedAtFile
+    button_helper_class = IndexedAtHelper
+    menu_label = "Indexed At Upload"
+    menu_icon = "folder"
+    menu_order = 200
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = ("attachment", "line_count", "is_valid")
+    list_filter = ("is_valid",)
+    search_fields = ("attachment",)
+
+
+class IndexedAtAdminGroup(ModelAdminGroup):
+    menu_label = "Indexed At"
+    menu_icon = "folder-open-inverse"
+    menu_order = 200
+    items = (
+        IndexedAtAdmin,
+        IndexedAtFileAdmin,
+    )
+
+
+modeladmin_register(IndexedAtAdminGroup)
+
+
+@hooks.register("register_admin_urls")
+def register_calendar_url():
+    return [
+        path(
+            "controlled_lists/indexedatfile/validate", 
+            validate, 
+            name="validate",
+        ),
+        path(
+            "controlled_lists/indexedatfile/import_file",
+            import_file,
+            name="import_file",
+        ),
+    ]
