@@ -35,7 +35,7 @@
                 <input type="checkbox" id="{{ facet }}:{{ item.0 }}" name="{{ item.0 }}"
                     data-cluster-name="{{facet}}" data-item-name="{{item.0}}"
                     value="{{ facet }}:{{ item.0 }}" class="ml-3">
-                <label for="{{ facet }}:{{ item.0 }}" id="{{ facet }}:{{ item.0 }}" class="filter-name fw-600 fs-xl ml-1">{{ item.0|replace}}(<b>{{ item.1 }}</b>)</label>
+                <label for="{{ facet }}:{{ item.0 }}" id="{{ facet }}:{{ item.0 }}" class="filter-name fw-600 fs-xl ml-1">{{ item.0|replace|translate_data}} (<b>{{ item.1 }}</b>)</label>
 
                 </div>
 

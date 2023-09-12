@@ -1,6 +1,11 @@
 # Solr
-index/core/data
-index/oai/data
+index/7.7.3/core/data/
+index/7.7.3/oai/data/
+index/data/core/data/
+index/data/oai/data/
+
+*snapshot*
+
 ### Python template
 # Byte-compiled / optimized / DLL files
 __pycache__/
