@@ -24,8 +24,8 @@ STATUS = [
 ]
 
 PUBLISHING_MODEL = [
-    ("C", _("Countinous")),
-    ("U", _("Undefined")),
+    ("continuous", _("Continuous")),
+    ("undefined", _("Undefined")),
 ]
 
 FREQUENCY = [
@@ -60,7 +60,7 @@ ALPHABET_OF_TITLE = [
 ]
 
 STANDARD = [
-    ("app", _("American Psychological Association")),
+    ("apa", _("American Psychological Association")),
     ("iso690", _("iso 690/87 - international standard organization")),
     ("nbr6023", _("nbr 6023/89 - associação nacional de normas técnicas")),
     ("other", _("other standard")),
@@ -117,12 +117,19 @@ TYPE = [
 ]
 
 STUDY_AREA = [
-    (_("AGRICULTURAL SCIENCES"), _("Agricultural Sciences")),
-    (_("APPLIED SOCIAL SCIENCES"), _("Applied Social Sciences")),
-    (_("BIOLOGICAL SCIENCES"), _("Biological Sciences")),
-    (_("ENGINEERING"), _("Engineering")),
-    (_("EXACT AND EARTH SCIENCES"), _("Exact and Earth Sciences")),
-    (_("HEALTH SCIENCES"), _("Health Sciences")),
-    (_("HUMAN SCIENCES"), _("Human Sciences")),
-    (_("LINGUISTICS, LETTERS AND ARTS"), _("Linguistic, Literature and Arts")),
+    (_("Agricultural Sciences"), _("Agricultural Sciences")),
+    (_("Applied Social Sciences"), _("Applied Social Sciences")),
+    (_("Biological Sciences"), _("Biological Sciences")),
+    (_("Engineering"), _("Engineering")),
+    (_("Exact and Earth Sciences"), _("Exact and Earth Sciences")),
+    (_("Health Sciences"), _("Health Sciences")),
+    (_("Human Sciences"), _("Human Sciences")),
+    (_("Linguistics, Letters and Arts"), _("Linguistic, Literature and Arts")),
+    (_("Psicanalise"), _("Psicanalise")),
+]
+
+WOS_DB = [
+    ("SCIE", _("Science Citation Index Expanded")),
+    ("SSCI", _("Social Sciences Citation Index")),
+    ("A&HCI", _("Arts Humanities Citation Index")),
 ]

@@ -1,3 +1,5 @@
+import os
+
 from django.db import models
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -25,6 +27,10 @@ from journal.exceptions import (
     OfficialJournalGetError,
     SciELOJournalCreateOrUpdateError,
     SciELOJournalGetError,
+    StandardCreationOrUpdateError,
+    SubjectCreationOrUpdateError,
+    WosdbCreationOrUpdateError,
+    IndexedAtCreationOrUpdateError
 )
 
 from . import choices
@@ -299,7 +305,7 @@ class Journal(CommonControlField, ClusterableModel):
         blank=True,
     )
     treatment_level = models.CharField(
-        _("Type of Literature"),
+        _("Treatment Level"),
         max_length=4,
         choices=choices.TREATMENT_LEVEL,
         null=True,
@@ -355,10 +361,10 @@ class Journal(CommonControlField, ClusterableModel):
 
     panels_scope = [
         InlinePanel("mission", label=_("Mission"), classname="collapsed"),
-        AutocompletePanel("subject_descriptor"),
-        AutocompletePanel("subject"),
-        AutocompletePanel("wos_db"),
-        AutocompletePanel("wos_area"),
+        FieldPanel("subject_descriptor"),
+        FieldPanel("subject"),
+        FieldPanel("wos_db"),
+        FieldPanel("wos_area"),
     ]
 
     panels_formal_information = [
@@ -380,7 +386,7 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("secs_code"),
         FieldPanel("medline_code"),
         FieldPanel("medline_short_title"),
-        AutocompletePanel("indexed_at"),
+        FieldPanel("indexed_at"),
     ]
 
     panels_identification = [
@@ -505,6 +511,7 @@ class Journal(CommonControlField, ClusterableModel):
         official_journal,
         title=None,
         short_title=None,
+        other_titles=None,
         submission_online_url=None,
         open_access=None,
     ):
@@ -524,10 +531,12 @@ class Journal(CommonControlField, ClusterableModel):
         obj.short_title = short_title or obj.short_title
         obj.submission_online_url = submission_online_url or obj.submission_online_url
         obj.open_access = open_access or obj.open_access
-
         obj.save()
         for scielo_j in SciELOJournal.objects.filter(journal=obj):
             obj.collection.add(scielo_j.collection)
+        
+        if other_titles:
+            obj.other_titles.set(other_titles)
 
         return obj
 
@@ -893,7 +902,7 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
 
 
 class SubjectDescriptor(CommonControlField):
-    value = models.CharField(max_length=100, null=True, blank=True)
+    value = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"{self.value}"
@@ -904,7 +913,32 @@ class Subject(CommonControlField):
     value = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.code} - {self.value}"
+        return f"{self.value}"
+
+    @classmethod
+    def get(cls, code):
+        if not code:
+            raise ValueError("Subject.get requires code paramenter")
+        return cls.objects.get(code=code)                
+    
+    @classmethod
+    def create_or_update(
+        cls,
+        code,
+        user,
+    ):
+        try:
+            obj = cls.get(code=code)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.code = code
+            obj.creator = user
+        except SubjectCreationOrUpdateError as e :
+            raise SubjectCreationOrUpdateError(code=code, message=e)
+        
+        obj.value = dict(choices.STUDY_AREA)[code]
+        obj.save()
+        return obj
 
 
 class WebOfKnowledge(CommonControlField):
@@ -913,6 +947,31 @@ class WebOfKnowledge(CommonControlField):
 
     def __str__(self):
         return f"{self.code} - {self.value}"
+
+    @classmethod
+    def get(cls, code):
+        if not code:
+            raise ValueError("WebOfKnowledge.get requires code paramenter")
+        return cls.objects.get(code=code)                
+    
+    @classmethod
+    def create_or_update(
+        cls,
+        code,
+        user,
+    ):
+        try:
+            obj = cls.get(code=code)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.code = code
+            obj.creator = user
+        except WosdbCreationOrUpdateError as e:
+            raise WosdbCreationOrUpdateError(code=code, message=e)
+        
+        obj.value = dict(choices.WOS_DB)[code]
+        obj.save()
+        return obj
 
 
 class WebOfKnowledgeSubjectCategory(CommonControlField):
@@ -929,11 +988,36 @@ class Standard(CommonControlField):
     def __str__(self):
         return f"{self.code} - {self.value}"
 
+    @classmethod
+    def get(cls, code):
+        if not code:
+            raise ValueError("Standard.get requires code paramenter")
+        return cls.objects.get(code=code)                
+    
+    @classmethod
+    def create_or_update(
+        cls,
+        code,
+        user,
+    ):
+        try:
+            obj = cls.get(code=code)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.code = code
+            obj.creator = user
+        except StandardCreationOrUpdateError as e:
+            raise StandardCreationOrUpdateError(code=code, message=e)
+        
+        obj.value = dict(choices.STANDARD)[code]
+        obj.save()
+        return obj
+
 
 class IndexedAt(CommonControlField):
     name = models.TextField(_("Name"), null=True, blank=False)
     acronym = models.TextField(_("Acronym"), null=True, blank=False)
-    url = models.URLField(_("URL"), max_length=255, null=True, blank=False)
+    url = models.URLField(_("URL"), max_length=500, null=True, blank=False)
     description = models.TextField(_("Description"), null=True, blank=False)
     type = models.CharField(
         _("Type"), max_length=20, choices=choices.TYPE, null=True, blank=False
@@ -946,3 +1030,64 @@ class IndexedAt(CommonControlField):
         FieldPanel("description"),
         FieldPanel("type"),
     ]
+
+    def __str__(self):
+        return f"{self.acronym} - {self.name}"
+    
+    @classmethod
+    def get(
+        cls,
+        name,
+        acronym,
+        ):
+        if name:
+            return cls.objects.get(name=name)
+        if acronym:
+            return cls.objects.get(acronym)
+        raise Exception("IndexedAt.get requires name or acronym paraments")
+    
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        name=None,
+        acronym=None,
+        description=None,
+        url=None,
+        type=None,
+    ):
+        try:
+            obj = cls.get(name=name, acronym=acronym)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.name = name
+            obj.acronym = acronym
+            obj.creator = user
+        except IndexedAtCreationOrUpdateError as e :
+            raise IndexedAtCreationOrUpdateError(name=name, acronym=acronym, message=e)
+        
+        obj.description = description
+        obj.url = url
+        obj.type = type
+        obj.save()
+
+        return obj
+
+class IndexedAtFile(models.Model):
+    attachment = models.ForeignKey(
+        "wagtaildocs.Document",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    is_valid = models.BooleanField(_("Is valid?"), default=False, blank=True, null=True)
+    line_count = models.IntegerField(
+        _("Number of lines"), default=0, blank=True, null=True
+    )
+
+    def filename(self):
+        return os.path.basename(self.attachment.name)
+
+    panels = [FieldPanel("attachment")]

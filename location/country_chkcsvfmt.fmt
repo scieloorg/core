@@ -1,0 +1,11 @@
+[Country]
+data_required=True
+type=String
+
+[Acronym 2 letters]
+data_required=True
+type=String
+
+[Acronym 3 letters]
+data_required=True
+type=String

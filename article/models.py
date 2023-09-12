@@ -63,8 +63,8 @@ class Article(CommonControlField):
     toc_sections = models.ManyToManyField(TocSection, blank=True)
     license = models.ManyToManyField(License, blank=True)
     issue = models.ForeignKey(Issue, on_delete=models.SET_NULL, null=True, blank=True)
-    first_page = models.CharField(max_length=5, null=True, blank=True)
-    last_page = models.CharField(max_length=5, null=True, blank=True)
+    first_page = models.CharField(max_length=10, null=True, blank=True)
+    last_page = models.CharField(max_length=10, null=True, blank=True)
     elocation_id = models.CharField(max_length=20, null=True, blank=True)
     keywords = models.ManyToManyField(Keyword, blank=True)
     publisher = models.ForeignKey(
@@ -245,6 +245,7 @@ class ArticleFunding(CommonControlField):
             if funding_source:
                 article_funding.funding_source = Sponsor.get_or_create(
                     inst_name=funding_source,
+                    user=user,
                     inst_acronym=None,
                     level_1=None,
                     level_2=None,
@@ -271,6 +272,30 @@ class DocumentTitle(RichTextWithLang, CommonControlField):
     
     def __str__(self):
         return f"{self.plain_text} - {self.language}"
+    
+    @classmethod
+    def get(
+        cls,
+        title,
+    ):
+        if title:
+            return cls.objects.get(plain_text=title)
+        raise ValueError("DocumentTitle requires title paramenter")
+    
+    @classmethod
+    def create_or_update(cls, title, title_rich, language, user):
+        try:
+            obj = cls.get(title=title)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.plain_text = title
+            obj.creator = user
+            
+        obj.language = language
+        obj.rich_text = title_rich
+        obj.updated_by = user
+        obj.save()
+        return obj
 
 
 class ArticleType(models.Model):
@@ -287,6 +312,39 @@ class DocumentAbstract(RichTextWithLang, CommonControlField):
 
     def autocomplete_label(self):
         return str(self)
+
+    def __str__(self):
+        return f"{self.plain_text} - {self.language}"
+    
+
+    @classmethod
+    def get(
+        cls,
+        text,
+    ):
+        if text:
+            return cls.objects.get(plain_text=text)
+        raise ValueError("DocumentAbstract.get requires text paramenter")
+
+    @classmethod
+    def create_or_update(
+        cls,
+        text,
+        language,
+        user,
+    ):
+        try:
+            obj = cls.get(text=text)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.plain_text = text
+            obj.creator = user
+
+        obj.language = language
+        obj.updated_by = user
+        obj.save()
+        return obj
+
 
 class ArticleEventType(CommonControlField):
     code = models.CharField(_("Code"), blank=True, null=True, max_length=20)

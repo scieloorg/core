@@ -1,6 +1,8 @@
 from django.db.models import Q
 from django.db.utils import DataError
 from lxml import etree
+
+from packtools.sps.models.article_abstract import Abstract
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_authors import Authors
 from packtools.sps.models.article_doi_with_lang import DoiWithLang
@@ -51,14 +53,15 @@ def load_article(user, xml=None, file_path=None):
         set_first_last_page(xmltree=xmltree, article=article)
         set_elocation_id(xmltree=xmltree, article=article)
         article.save()
+        article.abstracts.set(create_or_create_abstract(xmltree=xmltree, user=user))
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
-        article.license.set(get_or_create_licenses(xmltree=xmltree, user=user))
-        article.researchers.set(get_or_create_researchers(xmltree=xmltree, user=user))
+        article.license.set(create_or_create_licenses(xmltree=xmltree, user=user))
+        article.researchers.set(create_or_create_researchers(xmltree=xmltree, user=user))
         article.languages.add(get_or_create_main_language(xmltree=xmltree, user=user))
         article.keywords.set(get_or_create_keywords(xmltree=xmltree, user=user))
         article.toc_sections.set(get_or_create_toc_sections(xmltree=xmltree, user=user))
         article.fundings.set(get_or_create_fundings(xmltree=xmltree, user=user))
-        article.titles.set(get_or_create_titles(xmltree=xmltree, user=user))
+        article.titles.set(create_or_update_titles(xmltree=xmltree, user=user))
     except (DataError, TypeError) as e:
         # TODO criar registros das falhas e deixar acessível pela área adm
         # para que os usuários saibam
@@ -100,7 +103,7 @@ def get_or_create_fundings(xmltree, user):
             for id in funding_source.get("award-id") or []:
                 obj = models.ArticleFunding.get_or_create(
                     award_id=id,
-                    funding_source=get_or_create_sponso(funding_name=funding),
+                    funding_source=get_or_create_sponso(funding_name=funding, user=user),
                     user=user,
                 )
                 data.append(obj)
@@ -111,22 +114,21 @@ def get_or_create_toc_sections(xmltree, user):
     toc_sections = ArticleTocSections(xmltree=xmltree).all_section_dict
     data = []
     for key, value in toc_sections.items():
-        ## TODO
-        ## Criar classmethodod get_or_create??
-        obj, create = TocSection.objects.get_or_create(
-            plain_text=value,
-            language=get_or_create_language(key, user=user),
-            creator=user,
-        )
-        data.append(obj)
+        if value:
+            obj = TocSection.get_or_create(
+                value=value,
+                language=get_or_create_language(key, user=user),
+                user=user,
+            )
+            data.append(obj)
     return data
 
 
-def get_or_create_licenses(xmltree, user):
+def create_or_create_licenses(xmltree, user):
     licenses = ArticleLicense(xmltree=xmltree).licenses
     data = []
     for license in licenses:
-        obj = models.License.get_or_create(
+        obj = models.License.create_or_update(
             url=license.get("link"),
             language=get_or_create_language(license.get("lang"), user=user),
             license_p=license.get("license_p"),
@@ -156,23 +158,35 @@ def get_or_create_keywords(xmltree, user):
     return data
 
 
-def get_or_create_abstract():
-    ## TODO
-    ## Dependendo do packtools para extrair os dados do abstract
-    pass
+def create_or_create_abstract(xmltree, user):
+    data = []
+    if xmltree.find(".//abstract") is not None:
+        abstract = Abstract(xmltree=xmltree).get_abstracts(style="inline")
+        for ab in abstract:
+            obj = models.DocumentAbstract.create_or_update(
+                text=ab.get('abstract'),
+                language=get_or_create_language(ab.get('lang'), user=user),
+                user=user,
+            )
+            data.append(obj)
+    return data
 
 
-def get_or_create_researchers(xmltree, user):
+def create_or_create_researchers(xmltree, user):
     authors = Authors(xmltree=xmltree).contribs
     # Falta gender e gender_identification_status
     data = []
     for author in authors:
-        obj, created = models.Researcher.objects.get_or_create(
+        obj = models.Researcher.create_or_update(
             given_names=author.get("given_names"),
             last_name=author.get("surname"),
+            declared_name=None,
+            email=None,
             orcid=author.get("orcid"),
             suffix=author.get("suffix"),
             lattes=author.get("lattes"),
+            institution_name=None,
+            user=user,
         )
         data.append(obj)
     return data
@@ -198,20 +212,19 @@ def set_elocation_id(xmltree, article):
     article.elocation_id = ArticleMetaIssue(xmltree=xmltree).elocation_id
 
 
-def get_or_create_titles(xmltree, user):
+def create_or_update_titles(xmltree, user):
     titles = ArticleTitles(xmltree=xmltree).article_title_list
     data = []
     for title in titles:
         format_title = " ".join(title.get("text", "").split())
-        ## TODO
-        ## Criar get_or_create para DocumentTitle
-        obj, created = models.DocumentTitle.objects.get_or_create(
-            plain_text=format_title,
-            rich_text=title.get("text"),
-            language=get_or_create_language(title.get("lang"), user=user),
-            creator=user,
-        )
-        data.append(obj)
+        if format_title:
+            obj = models.DocumentTitle.create_or_update(
+                title=format_title,
+                title_rich=title.get("text"),
+                language=get_or_create_language(title.get("lang"), user=user),
+                user=user,
+            )
+            data.append(obj)
     return data
 
 
@@ -248,9 +261,10 @@ def get_or_create_main_language(xmltree, user):
     return obj
 
 
-def get_or_create_sponso(funding_name):
+def get_or_create_sponso(funding_name, user):
     obj = models.Sponsor.get_or_create(
         inst_name=funding_name,
+        user=user,
         inst_acronym=None,
         level_1=None,
         level_2=None,
