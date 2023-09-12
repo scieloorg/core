@@ -10,7 +10,7 @@ from wagtail.models import Page
 from wagtailcaptcha.models import WagtailCaptchaEmailForm
 
 
-class HomePage(Page):
+class HomeORGPage(Page):
     pass
 
 
