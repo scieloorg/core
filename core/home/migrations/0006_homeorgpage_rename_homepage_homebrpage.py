@@ -30,9 +30,5 @@ class Migration(migrations.Migration):
                 "abstract": False,
             },
             bases=("wagtailcore.page",),
-        ),
-        migrations.RenameModel(
-            old_name="HomePage",
-            new_name="HomeBRPage",
-        ),
+        )
     ]
