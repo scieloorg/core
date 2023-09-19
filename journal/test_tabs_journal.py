@@ -43,3 +43,14 @@ class TabsJournalTest(unittest.TestCase):
 
         self.assertDictEqual(expected, obtained)
 
+    def test_get_issn_scielo(self):
+        obtained = {}
+
+        get_issn_scielo(self.scl, obtained)
+
+        expected = {
+            "ISSN SciELO": "0000-0000"
+        }
+
+        self.assertDictEqual(expected, obtained)
+
