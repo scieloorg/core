@@ -54,3 +54,17 @@ class TabsJournalTest(unittest.TestCase):
 
         self.assertDictEqual(expected, obtained)
 
+    def test_get_collection(self):
+        obtained = {}
+
+        get_collection(self.scl, obtained)
+
+        expected = {
+            "collection": "bol"
+        }
+
+        self.assertDictEqual(expected, obtained)
+
+
+if __name__ == '__main__':
+    unittest.main()
