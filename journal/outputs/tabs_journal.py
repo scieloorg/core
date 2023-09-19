@@ -16,3 +16,7 @@ def get_collection(obj, dict_data={}):
             print(f"There is no information about 'collection' in the object {obj}")
 
 
+def get_tabs_journal(obj, dict_data={}):
+    get_issn_scielo(obj, dict_data)
+    get_collection(obj, dict_data)
+
