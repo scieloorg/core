@@ -17,21 +17,20 @@ from journal.outputs.tabs_journal import (
 
 class TabsJournalTest(unittest.TestCase):
     def setUp(self):
-        self.col = Collection()
-        self.col.acron3 = "bol"
-        self.col.save()
+        self.official_journal = OfficialJournal.objects.create(
+            issn_print="0000-0000",
+            issn_electronic="1111-1111",
+            issnl="2222-2222",
+        )
 
-        self.jnl = Journal()
-        self.jnl.save()
-        self.jnl.collection.add(self.col)
-        self.jnl.save()
+        self.journal = Journal.objects.create(
+            official=self.official_journal,
+        )
 
-        self.scl = SciELOJournal()
-        self.scl.issn_scielo = "0000-0000"
-        self.scl.save()
-        self.scl.journal = self.jnl
-        self.scl.collection = self.col
-        self.scl.save()
+        self.scielo_journal = SciELOJournal.objects.create(
+            issn_scielo="0000-0000",
+            journal=self.journal,
+        )
 
     def test_get_tabs_journal(self):
         obtained = {}
