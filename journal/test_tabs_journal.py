@@ -32,14 +32,22 @@ class TabsJournalTest(unittest.TestCase):
             journal=self.journal,
         )
 
-    def test_get_tabs_journal(self):
+    @patch('journal.outputs.tabs_journal.get_date')
+    def test_add_tabs_journal(self, mock_get_date):
         obtained = {}
 
-        get_tabs_journal(self.scl, obtained)
+        mock_get_date.return_value = "1900-01-01"
+
+        add_extraction_date(obtained)
+
+        add_tabs_journal(self.scielo_journal, collection="bol", dict_data=obtained)
 
         expected = {
+            "extraction date": "1900-01-01",
+            "study unit": "journal",
+            "collection": "bol",
             "ISSN SciELO": "0000-0000",
-            "collection": "bol"
+            "ISSN's": "0000-0000;1111-1111;2222-2222"
         }
 
         self.assertDictEqual(expected, obtained)
