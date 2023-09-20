@@ -48,3 +48,14 @@ class WosdbCreationOrUpdateError(Exception):
 class IndexedAtCreationOrUpdateError(Exception):
     def __init__(self, name, acronym, message):
         super().__init__(f"Unable to create or update IndexedAt with name: {name} and acronym: {acronym}: {str(message)}")
+
+
+class AddIssnScieloToTabsError(Exception):
+    def __init__(self, message, obj):
+        super().__init__(f"Unable to add ISSN SciELO Tabs from {str(obj)}: {str(message)}")
+
+
+class AddIssnsToTabsError(Exception):
+    def __init__(self, message, obj):
+        super().__init__(f"Unable to add ISSN's Tabs from {str(obj)}: {str(message)}")
+
