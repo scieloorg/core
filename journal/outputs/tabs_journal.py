@@ -20,10 +20,11 @@ def add_extraction_date(dict_data={}):
     dict_data["extraction date"] = get_date()
 
 
+def add_issn_scielo(obj, dict_data={}):
     try:
         dict_data["ISSN SciELO"] = obj.issn_scielo
     except AttributeError as e:
-        print(f"There is no information about 'issn_scielo' in the object {obj}")
+        raise AddIssnScieloToTabsError(e, obj)
 
 
 def get_collection(obj, dict_data={}):
