@@ -41,7 +41,11 @@ def add_issns(obj, dict_data={}):
         raise AddIssnsToTabsError(e, obj)
 
 
-def get_tabs_journal(obj, dict_data={}):
-    get_issn_scielo(obj, dict_data)
-    get_collection(obj, dict_data)
-
+def add_tabs_journal(obj, collection, dict_data={}):
+    add_extraction_date(dict_data)
+    dict_data.update({
+        "study unit": "journal",
+        "collection": collection
+    })
+    add_issn_scielo(obj, dict_data)
+    add_issns(obj, dict_data)
