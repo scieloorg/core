@@ -27,14 +27,18 @@ def add_issn_scielo(obj, dict_data={}):
         raise AddIssnScieloToTabsError(e, obj)
 
 
-def get_collection(obj, dict_data={}):
+def add_issns(obj, dict_data={}):
     try:
-        dict_data["collection"] = obj.collection.acron3
-    except AttributeError:
-        try:
-            dict_data["collection"] = obj.journal.collection.all()[0].acron3
-        except AttributeError:
-            print(f"There is no information about 'collection' in the object {obj}")
+        issn = None
+        if type(obj) is OfficialJournal:
+            issn = obj
+        elif type(obj) is Journal:
+            issn = obj.official
+        elif type(obj) is SciELOJournal:
+            issn = obj.journal.official
+        dict_data["ISSN's"] = ";".join([issn.issn_print, issn.issn_electronic, issn.issnl])
+    except AttributeError as e:
+        raise AddIssnsToTabsError(e, obj)
 
 
 def get_tabs_journal(obj, dict_data={}):
