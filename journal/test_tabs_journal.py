@@ -1,15 +1,17 @@
 import unittest
+from unittest.mock import patch
 
 from journal.models import (
     SciELOJournal,
     Journal,
-    Collection,
+    OfficialJournal,
 )
 
 from journal.outputs.tabs_journal import (
-    get_tabs_journal,
-    get_issn_scielo,
-    get_collection,
+    add_extraction_date,
+    add_tabs_journal,
+    add_issn_scielo,
+    add_issns,
 )
 
 
