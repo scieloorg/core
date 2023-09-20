@@ -12,6 +12,14 @@ from journal.models import (
 )
 
 
+def get_date():
+    return datetime.utcnow().strftime("%Y-%m-%d")
+
+
+def add_extraction_date(dict_data={}):
+    dict_data["extraction date"] = get_date()
+
+
     try:
         dict_data["ISSN SciELO"] = obj.issn_scielo
     except AttributeError as e:
