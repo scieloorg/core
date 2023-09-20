@@ -1,5 +1,17 @@
+from datetime import datetime
 
-def get_issn_scielo(obj, dict_data={}):
+from journal.exceptions import (
+    AddIssnScieloToTabsError,
+    AddIssnsToTabsError,
+)
+
+from journal.models import (
+    Journal,
+    OfficialJournal,
+    SciELOJournal,
+)
+
+
     try:
         dict_data["ISSN SciELO"] = obj.issn_scielo
     except AttributeError as e:
