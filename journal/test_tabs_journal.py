@@ -52,10 +52,24 @@ class TabsJournalTest(unittest.TestCase):
 
         self.assertDictEqual(expected, obtained)
 
-    def test_get_issn_scielo(self):
+    @patch('journal.outputs.tabs_journal.get_date')
+    def test_add_extraction_date(self, mock_get_date):
         obtained = {}
 
-        get_issn_scielo(self.scl, obtained)
+        mock_get_date.return_value = "1900-01-01"
+
+        add_extraction_date(obtained)
+
+        expected = {
+            "extraction date": "1900-01-01"
+        }
+
+        self.assertDictEqual(expected, obtained)
+
+    def test_add_issn_scielo(self):
+        obtained = {}
+
+        add_issn_scielo(self.scielo_journal, obtained)
 
         expected = {
             "ISSN SciELO": "0000-0000"
