@@ -1,5 +1,6 @@
 import os
 
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -12,11 +13,12 @@ from wagtail.models import Orderable
 
 from collection.models import Collection
 from core.forms import CoreAdminModelForm
-from core.models import CommonControlField, RichTextWithLang
+from core.models import CommonControlField, RichTextWithLang, License
 from institution.models import InstitutionHistory
 from vocabulary.models import Vocabulary
 from core.models import Language
 from reference.models import JournalTitle
+
 
 from journal.exceptions import (
     JournalCreateOrUpdateError,
@@ -30,10 +32,12 @@ from journal.exceptions import (
     StandardCreationOrUpdateError,
     SubjectCreationOrUpdateError,
     WosdbCreationOrUpdateError,
-    IndexedAtCreationOrUpdateError
+    IndexedAtCreationOrUpdateError,
 )
 
 from . import choices
+
+User = get_user_model()
 
 
 class OfficialJournal(CommonControlField):
@@ -201,10 +205,7 @@ class Journal(CommonControlField, ClusterableModel):
     )
     title = models.TextField(_("Journal Title"), null=True, blank=True)
     short_title = models.TextField(_("Short Title"), null=True, blank=True)
-    other_titles = models.ManyToManyField(
-        JournalTitle,
-        verbose_name=_("Other titles")
-    )
+    other_titles = models.ManyToManyField(JournalTitle, verbose_name=_("Other titles"))
     logo = models.ForeignKey(
         "wagtailimages.Image",
         on_delete=models.SET_NULL,
@@ -239,8 +240,8 @@ class Journal(CommonControlField, ClusterableModel):
             )
         ),
     )
-    journal_url = models.URLField(
-        _("Journal Url"),
+    collection_main_url = models.URLField(
+        _("Collection Main Url"),
         null=True,
         blank=True,
     )
@@ -352,15 +353,80 @@ class Journal(CommonControlField, ClusterableModel):
         null=True,
         blank=True,
     )  # (no xml é abbrev-journal-title do tipo nlm-title)
+    url_of_journal = models.URLField(
+        _("Url of Journal"),
+        null=True,
+        blank=True,
+    )
+    use_license = models.ForeignKey(
+        License,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
+    center_code = models.TextField(
+        _("Center code"),
+        blank=True,
+        null=True,
+    )
+    identification_number = models.CharField(
+        _("Identification Number"),
+        max_length=9,
+        blank=True,
+        null=True,
+    )
+    ftp = models.CharField(
+        _("Ftp"),
+        max_length=50,
+        blank=True,
+        null=True,
+    )
+    user_subscription = models.CharField(
+        _("User Subscription"),
+        max_length=3,
+        blank=True,
+        null=True,
+    )
+    subtitle = models.TextField(
+        _("Subtitle"),
+        blank=True,
+        null=True,
+    )
+    section = models.CharField(
+        _("Section"),
+        max_length=255,
+        blank=True,
+        null=True,
+    )
+    has_supplement = models.TextField(
+        _("Has Supplement"),
+        blank=True,
+        null=True,
+    )
+    is_supplement = models.CharField(
+        _("Is supplement"),
+        max_length=255,
+        blank=True,
+        null=True,
+    )
+    acronym_letters = models.CharField(
+        _("Acronym Letters"),
+        max_length=8,
+        blank=True,
+        null=True,
+    )
 
     panels_titles = [
+        AutocompletePanel("official"),
         FieldPanel("title"),
         FieldPanel("short_title"),
-        AutocompletePanel("other_titles"), 
+        AutocompletePanel("other_titles"),
     ]
 
-    panels_scope = [
+    panels_scope_and_about = [
         InlinePanel("mission", label=_("Mission"), classname="collapsed"),
+        InlinePanel("history", label=_("Brief History"), classname="collapsed"),
+        InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
         FieldPanel("subject_descriptor"),
         FieldPanel("subject"),
         FieldPanel("wos_db"),
@@ -390,7 +456,6 @@ class Journal(CommonControlField, ClusterableModel):
     ]
 
     panels_identification = [
-        AutocompletePanel("official"),
         AutocompletePanel("collection"),
     ]
 
@@ -405,18 +470,16 @@ class Journal(CommonControlField, ClusterableModel):
 
     panels_website = [
         FieldPanel("logo", heading=_("Logo")),
+        FieldPanel("url_of_journal"),
         FieldPanel("submission_online_url"),
+        FieldPanel("collection_main_url"),
         InlinePanel("journalsocialnetwork", label=_("Social Network")),
-    ]
-
-    panels_about = [
-        InlinePanel("history", label=_("Brief History"), classname="collapsed"),
-        InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
     ]
 
     panels_open_science = [
         FieldPanel("open_access"),
         FieldPanel("url_oa"),
+        AutocompletePanel("use_license")
     ]
 
     panels_policy = [
@@ -446,19 +509,32 @@ class Journal(CommonControlField, ClusterableModel):
             classname="collapsed",
         ),
     ]
+    panels_notes = [InlinePanel("annotation", label=_("Notes"), classname="collapsed")]
+
+    panels_legacy_compatibility_fields = [
+        FieldPanel("center_code"),
+        FieldPanel("identification_number"),
+        FieldPanel("ftp"),
+        FieldPanel("user_subscription"),
+        FieldPanel("subtitle"),
+        FieldPanel("section"),
+        FieldPanel("has_supplement"),
+        FieldPanel("is_supplement"),
+        FieldPanel("acronym_letters"),
+    ]
 
     edit_handler = TabbedInterface(
         [
             ObjectList(panels_titles, heading=_("Titles")),
             ObjectList(panels_identification, heading=_("Identification")),
-            ObjectList(panels_scope, heading=_("Scope")),
+            ObjectList(panels_scope_and_about, heading=_("Scope")),
             ObjectList(panels_interoperation, heading=_("Interoperation")),
             ObjectList(panels_formal_information, heading=_("Formal information")),
             ObjectList(panels_institutions, heading=_("Related Institutions")),
             ObjectList(panels_website, heading=_("Website")),
-            ObjectList(panels_about, heading=_("About Journal")),
             ObjectList(panels_open_science, heading=_("Open Science")),
             ObjectList(panels_policy, heading=_("Journal Policy")),
+            ObjectList(panels_notes, heading=_("Notes")),
         ]
     )
 
@@ -475,7 +551,7 @@ class Journal(CommonControlField, ClusterableModel):
                 fields=[
                     "title",
                 ]
-            ),                                                         
+            ),
         ]
 
     @property
@@ -534,7 +610,7 @@ class Journal(CommonControlField, ClusterableModel):
         obj.save()
         for scielo_j in SciELOJournal.objects.filter(journal=obj):
             obj.collection.add(scielo_j.collection)
-        
+
         if other_titles:
             obj.other_titles.set(other_titles)
 
@@ -827,14 +903,16 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         indexes = [
             models.Index(
                 fields=[
-                    "collection", "journal_acron",
+                    "collection",
+                    "journal_acron",
                 ]
             ),
             models.Index(
                 fields=[
-                    "collection", "issn_scielo",
+                    "collection",
+                    "issn_scielo",
                 ]
-            ),                        
+            ),
         ]
 
     def __unicode__(self):
@@ -849,8 +927,11 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         AutocompletePanel("journal"),
         FieldPanel("journal_acron"),
         FieldPanel("issn_scielo"),
+        FieldPanel("status"),
         AutocompletePanel("collection"),
-        InlinePanel("journal_history", label="Jounal and History", classname="collapsed"),
+        InlinePanel(
+            "journal_history", label="Jounal and History", classname="collapsed"
+        ),
     ]
 
     @classmethod
@@ -880,6 +961,7 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         issn_scielo=None,
         journal_acron=None,
         journal=None,
+        code_status=None,
     ):
         try:
             obj = cls.get(
@@ -897,6 +979,7 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         obj.journal_acron = journal_acron or obj.journal_acron
         obj.collection = collection or obj.collection
         obj.journal = journal or obj.journal
+        obj.status = dict(choices.STATUS).get(code_status)
         obj.save()
         return obj
 
@@ -919,8 +1002,8 @@ class Subject(CommonControlField):
     def get(cls, code):
         if not code:
             raise ValueError("Subject.get requires code paramenter")
-        return cls.objects.get(code=code)                
-    
+        return cls.objects.get(code=code)
+
     @classmethod
     def create_or_update(
         cls,
@@ -933,10 +1016,10 @@ class Subject(CommonControlField):
             obj = cls()
             obj.code = code
             obj.creator = user
-        except SubjectCreationOrUpdateError as e :
+        except SubjectCreationOrUpdateError as e:
             raise SubjectCreationOrUpdateError(code=code, message=e)
-        
-        obj.value = dict(choices.STUDY_AREA)[code]
+
+        obj.value = dict(choices.STUDY_AREA).get(code)
         obj.save()
         return obj
 
@@ -952,8 +1035,8 @@ class WebOfKnowledge(CommonControlField):
     def get(cls, code):
         if not code:
             raise ValueError("WebOfKnowledge.get requires code paramenter")
-        return cls.objects.get(code=code)                
-    
+        return cls.objects.get(code=code)
+
     @classmethod
     def create_or_update(
         cls,
@@ -968,8 +1051,8 @@ class WebOfKnowledge(CommonControlField):
             obj.creator = user
         except WosdbCreationOrUpdateError as e:
             raise WosdbCreationOrUpdateError(code=code, message=e)
-        
-        obj.value = dict(choices.WOS_DB)[code]
+
+        obj.value = dict(choices.WOS_DB).get(code)
         obj.save()
         return obj
 
@@ -992,8 +1075,8 @@ class Standard(CommonControlField):
     def get(cls, code):
         if not code:
             raise ValueError("Standard.get requires code paramenter")
-        return cls.objects.get(code=code)                
-    
+        return cls.objects.get(code=code)
+
     @classmethod
     def create_or_update(
         cls,
@@ -1008,8 +1091,8 @@ class Standard(CommonControlField):
             obj.creator = user
         except StandardCreationOrUpdateError as e:
             raise StandardCreationOrUpdateError(code=code, message=e)
-        
-        obj.value = dict(choices.STANDARD)[code]
+
+        obj.value = dict(choices.STANDARD).get(code)
         obj.save()
         return obj
 
@@ -1033,19 +1116,18 @@ class IndexedAt(CommonControlField):
 
     def __str__(self):
         return f"{self.acronym} - {self.name}"
-    
+
     @classmethod
     def get(
         cls,
         name,
         acronym,
-        ):
+    ):
         if name:
             return cls.objects.get(name=name)
         if acronym:
             return cls.objects.get(acronym)
         raise Exception("IndexedAt.get requires name or acronym paraments")
-    
 
     @classmethod
     def create_or_update(
@@ -1064,15 +1146,16 @@ class IndexedAt(CommonControlField):
             obj.name = name
             obj.acronym = acronym
             obj.creator = user
-        except IndexedAtCreationOrUpdateError as e :
+        except IndexedAtCreationOrUpdateError as e:
             raise IndexedAtCreationOrUpdateError(name=name, acronym=acronym, message=e)
-        
+
         obj.description = description
         obj.url = url
         obj.type = type
         obj.save()
 
         return obj
+
 
 class IndexedAtFile(models.Model):
     attachment = models.ForeignKey(
@@ -1091,3 +1174,19 @@ class IndexedAtFile(models.Model):
         return os.path.basename(self.attachment.name)
 
     panels = [FieldPanel("attachment")]
+
+
+class Annotation(CommonControlField):
+    journal = ParentalKey(Journal, on_delete=models.CASCADE, related_name="annotation")
+    notes = models.TextField(_("Notes"), blank=True, null=True)
+    creation_date = models.DateField(_("Creation Date"), blank=True, null=True)
+    update_date = models.DateField(_("Update Date"), blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.notes} - {self.creation_date} - {self.update_date}"
+
+    panels = [
+        FieldPanel("notes"),
+        FieldPanel("creation_date", classname="myReadonlyInput"),
+        FieldPanel("update_date", classname="myReadonlyInput"),
+    ]
