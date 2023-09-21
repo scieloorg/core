@@ -1,13 +1,17 @@
 def extract_issn_print_electronic(issn_print_or_electronic):
+    """
+    issn_print_or_electronic:
+        [{'t': 'ONLIN', '_': '1677-9487'}], [{'t': 'PRINT', '_': '0034-7299'}]
+    """
     issn_print = None
     issn_electronic = None
 
     if issn_print_or_electronic:
         for issn in issn_print_or_electronic:
-            if issn["t"] == "PRINT":
-                issn_print = issn["_"]
-            elif issn["t"] == "ONLIN":
-                issn_electronic = issn["_"]
+            if issn.get("t") == "PRINT":
+                issn_print = issn.get("_").strip()
+            elif issn.get("t") == "ONLIN":
+                issn_electronic = issn.get("_").strip()
     return issn_print, issn_electronic
 
 
