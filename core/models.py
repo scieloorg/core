@@ -210,7 +210,7 @@ class License(CommonControlField):
     autocomplete_search_field = "license_p"
 
     def autocomplete_label(self):
-        return str(self.license_p)
+        return str(self)
     
     panels =[
         FieldPanel("url"),
@@ -225,30 +225,34 @@ class License(CommonControlField):
         url,
         license_p,
         language,
+        license_type,
         ):
         if url:
             return cls.objects.get(url=url, language=language)
         if license_p:
             return cls.objects.get(license_p=license_p, language=language)
-        raise TypeError("License.get requires url, license_p, or language paramenters")
+        if license_type:
+            return cls.objects.get(license_type=license_type, language=language)
+        raise ValueError("License.get requires url, license_p, or license_type paramenters")
 
     @classmethod
-    def create_or_update(cls, url, license_p, license_type, language, creator):
+    def create_or_update(cls, user, url=None, license_p=None, license_type=None, language=None,):
         try:
-            return cls.get(
+            license = cls.get(
                 url=url,
                 license_p=license_p,
                 language=language,
+                license_type=license_type,
             )
         except cls.DoesNotExist:
             license = cls()
-            license.url = url
-            license.creator = creator
-            license.license_p = license_p
-        
-        license.license_type = license_type
+            license.creator = user
+
+        license.url = url
+        license.license_p = license_p
+        license.license_type = license_type    
         license.language = language
-        license.updated_by = creator
+        license.updated_by = user
         license.save()
         return license
 
@@ -269,7 +273,7 @@ class License(CommonControlField):
         ]
 
     def __unicode__(self):
-        return self.url or self.license_p or ""
+        return self.url or self.license_p or self.license_type or ""
 
     def __str__(self):
-        return self.url or self.license_p or ""
+        return self.url or self.license_p or self.license_type or ""
