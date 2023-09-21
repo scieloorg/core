@@ -979,7 +979,7 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         obj.journal_acron = journal_acron or obj.journal_acron
         obj.collection = collection or obj.collection
         obj.journal = journal or obj.journal
-        obj.status = dict(choices.STATUS).get(code_status)
+        obj.status = dict(choices.STATUS).get(code_status) or obj.status
         obj.save()
         return obj
 
@@ -1019,7 +1019,8 @@ class Subject(CommonControlField):
         except SubjectCreationOrUpdateError as e:
             raise SubjectCreationOrUpdateError(code=code, message=e)
 
-        obj.value = dict(choices.STUDY_AREA).get(code)
+        obj.value = dict(choices.STUDY_AREA).get(code) or obj.value
+        obj.updated = user
         obj.save()
         return obj
 
@@ -1052,7 +1053,8 @@ class WebOfKnowledge(CommonControlField):
         except WosdbCreationOrUpdateError as e:
             raise WosdbCreationOrUpdateError(code=code, message=e)
 
-        obj.value = dict(choices.WOS_DB).get(code)
+        obj.value = dict(choices.WOS_DB).get(code) or obj.value
+        obj.updated_by = user
         obj.save()
         return obj
 
@@ -1092,7 +1094,8 @@ class Standard(CommonControlField):
         except StandardCreationOrUpdateError as e:
             raise StandardCreationOrUpdateError(code=code, message=e)
 
-        obj.value = dict(choices.STANDARD).get(code)
+        obj.value = dict(choices.STANDARD).get(code) or obj.value
+        obj.updated_by = user
         obj.save()
         return obj
 
@@ -1149,9 +1152,10 @@ class IndexedAt(CommonControlField):
         except IndexedAtCreationOrUpdateError as e:
             raise IndexedAtCreationOrUpdateError(name=name, acronym=acronym, message=e)
 
-        obj.description = description
-        obj.url = url
-        obj.type = type
+        obj.description = description or obj.description
+        obj.url = url or obj.url
+        obj.type = type or obj.type
+        obj.updated_by = user
         obj.save()
 
         return obj
