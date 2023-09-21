@@ -278,7 +278,6 @@ def update_panel_legacy_compatibility_fields(
     user_subs = extract_value(user_subscription)
     if user_subs and 2 <= len(user_subs) <= 3:
         journal.user_subscription = user_subs
-    print(extract_value(center_code))
     journal.center_code = extract_value(center_code)
     journal.identification_number = extract_value(identification_number)
     journal.ftp = extract_value(ftp)
