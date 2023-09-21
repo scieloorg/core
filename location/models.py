@@ -131,7 +131,7 @@ class State(CommonControlField):
         acronym
     """
 
-    name = models.TextField(_("State name"))
+    name = models.TextField(_("State name"), null=True, blank=True)
     acronym = models.CharField(_("State Acronym"), max_length=2, null=True, blank=True)
     region = models.ForeignKey(Region, on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -270,6 +270,55 @@ class Country(CommonControlField):
     base_form_class = CoreAdminModelForm
 
 
+class Address(CommonControlField):
+    """
+    Represent the list of address
+    Fields:
+        name
+    """
+    name = models.TextField(_("Address"), blank=True, null=True)
+
+    autocomplete_search_field = "name"
+
+    def autocomplete_label(self):
+        return str(self)
+    
+    panels = [
+        FieldPanel("name")
+    ]
+
+    class Meta:
+        verbose_name = _("Address")
+        verbose_name_plural = _("Adresses")
+        indexes = [
+            models.Index(
+                fields=[
+                    "name"
+                ]
+            ),                        
+        ]
+
+    def __unicode__(self):
+        return "%s" % self.name
+
+    def __str__(self):
+        return "%s" % self.name
+
+    @classmethod
+    def get_or_create(cls, user, name):
+        if name:
+            try:
+                return cls.objects.get(name=name)
+            except:
+                address = cls()
+                address.name = name
+                address.creator = user
+                address.save()
+                return address
+
+    base_form_class = CoreAdminModelForm
+
+
 class Location(CommonControlField):
     region = models.ForeignKey(Region, on_delete=models.SET_NULL, null=True, blank=True)
     city = models.ForeignKey(
@@ -289,6 +338,13 @@ class Location(CommonControlField):
     country = models.ForeignKey(
         Country,
         verbose_name=_("Country"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    address = models.ForeignKey(
+        Address,
+        verbose_name=_("Address"),
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -318,7 +374,7 @@ class Location(CommonControlField):
 
     @classmethod
     def get_or_create(
-        cls, user, location_region, location_country, location_state, location_city
+        cls, user, location_region, location_country, location_state, location_city, location_address,
     ):
         # check if exists the location
         try:
