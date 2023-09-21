@@ -106,12 +106,15 @@ class Researcher(ClusterableModel, CommonControlField):
         given_names,
         last_name,
         orcid,
+        declared_name,
     ):
         if orcid:
             return cls.objects.get(orcid=orcid)
         elif given_names or last_name:
             return cls.objects.get(given_names=given_names, last_name=last_name)
-        raise TypeError("Researcher.get requires orcid, given_names or last_names paramenters")
+        elif declared_name:
+            return cls.objects.get(declared_name=declared_name)
+        raise ValueError("Researcher.get requires orcid, given_names, last_names or declared_name paramenters")
 
     @classmethod
     def create_or_update(
@@ -133,6 +136,7 @@ class Researcher(ClusterableModel, CommonControlField):
                 given_names=given_names,
                 last_name=last_name,
                 orcid=orcid,
+                declared_name=declared_name,
             )
         except cls.DoesNotExist:
             researcher = cls()
