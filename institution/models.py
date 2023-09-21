@@ -161,17 +161,18 @@ class Institution(CommonControlField, ClusterableModel):
         except cls.DoesNotExist:
             institution = cls()
             institution.name = inst_name
+            institution.creator = user
         
-        institution.acronym = inst_acronym
-        institution.level_1 = level_1
-        institution.level_2 = level_2
-        institution.level_3 = level_3
-        institution.location = location
-        institution.official = official
-        institution.is_official = is_official
-        institution.url = url
-        institution.copyright_holder = copyright_holder
-        institution.creator = user
+        institution.acronym = inst_acronym or institution.acronym
+        institution.level_1 = level_1 or institution.level_1
+        institution.level_2 = level_2 or institution.level_2
+        institution.level_3 = level_3 or institution.level_3
+        institution.location = location or institution.location
+        institution.official = official or institution.official
+        institution.is_official = is_official or institution.is_official
+        institution.url = url or institution.url
+        institution.copyright_holder = copyright_holder or institution.copyright_holder
+        institution.updated_by = user
         institution.save()
         return institution
 
