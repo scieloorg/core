@@ -91,8 +91,8 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="journal",
-            name="journal_url",
-            field=models.URLField(blank=True, null=True, verbose_name="Journal Url"),
+            name="collection_main_url",
+            field=models.URLField(blank=True, null=True, verbose_name="Collection Main Url"),
         ),
         migrations.AddField(
             model_name="journal",
