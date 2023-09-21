@@ -9,7 +9,7 @@ from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from journal.models import SciELOJournal
 
-from researcher.choices import MONTHS
+from core.choices import MONTHS
 
 
 class Event(CommonControlField):

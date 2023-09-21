@@ -7,11 +7,11 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("wagtaildocs", "0012_uploadeddocument"),
-        ("vocabulary", "0002_alter_vocabulary_name"),
         ("reference", "0001_initial"),
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ("core", "0001_initial"),
+        ("vocabulary", "0002_alter_vocabulary_name"),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ("wagtaildocs", "0012_uploadeddocument"),
         ("journal", "0001_initial"),
     ]
 

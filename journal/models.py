@@ -13,7 +13,7 @@ from wagtail.models import Orderable
 
 from collection.models import Collection
 from core.forms import CoreAdminModelForm
-from core.models import CommonControlField, RichTextWithLang, License
+from core.models import CommonControlField, RichTextWithLang, License, TextWithLang
 from institution.models import InstitutionHistory
 from vocabulary.models import Vocabulary
 from core.models import Language
@@ -36,6 +36,7 @@ from journal.exceptions import (
 )
 
 from . import choices
+from core.choices import MONTHS
 
 User = get_user_model()
 
@@ -46,14 +47,70 @@ class OfficialJournal(CommonControlField):
     """
 
     title = models.TextField(_("Official Title"), null=True, blank=True)
+    iso_short_title = models.TextField(_("ISO Short Title"), null=True, blank=True)
+    parallel_titles = models.ManyToManyField(
+        "JournalParallelTitles", null=True, blank=True
+    )
+    new_title = models.TextField(_("New Title"), null=True, blank=True)
+    old_title = models.TextField(_("Old Title"), null=True, blank=True)
     foundation_year = models.CharField(
         _("Foundation Year"), max_length=4, null=True, blank=True
+    )
+    initial_volume = models.CharField(
+        _("Initial Volume"), max_length=32, null=True, blank=True
+    )
+    initial_number = models.CharField(
+        _("Initial Number"), max_length=32, null=True, blank=True
+    )
+    terminate_year = models.CharField(
+        _("Terminate year"), max_length=4, null=True, blank=True
+    )
+    terminate_month = models.CharField(
+        _("Terminate month"), max_length=2, choices=MONTHS, null=True, blank=True
+    )
+    final_volume = models.CharField(
+        _("Final Volume"), max_length=32, null=True, blank=True
+    )
+    final_number = models.CharField(
+        _("Final Number"), max_length=32, null=True, blank=True
     )
     issn_print = models.CharField(_("ISSN Print"), max_length=9, null=True, blank=True)
     issn_electronic = models.CharField(
         _("ISSN Eletronic"), max_length=9, null=True, blank=True
     )
     issnl = models.CharField(_("ISSNL"), max_length=9, null=True, blank=True)
+
+    panels_titles = [
+        FieldPanel("title"), 
+        FieldPanel("iso_short_title"),
+        AutocompletePanel("parallel_titles"),
+        FieldPanel("old_title"),
+        FieldPanel("new_title"),
+    ]
+
+    panels_dates = [
+        FieldPanel("foundation_year"),
+        FieldPanel("initial_volume"),
+        FieldPanel("initial_number"),
+        FieldPanel("terminate_year"),
+        FieldPanel("terminate_month"),        
+        FieldPanel("final_volume"),
+        FieldPanel("final_number"),
+    ]
+
+    panels_issns = [
+        FieldPanel("issn_print"),
+        FieldPanel("issn_electronic"),
+        FieldPanel("issnl"),
+    ]
+
+    edit_handler = TabbedInterface(
+        [
+            ObjectList(panels_titles, heading=_("Titles")),
+            ObjectList(panels_dates, heading=_("Dates")),
+            ObjectList(panels_issns, heading=_("Issns")),
+        ]
+    )
 
     class Meta:
         verbose_name = _("Official Journal")
@@ -977,6 +1034,13 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         return obj
 
 
+class JournalParallelTitles(TextWithLang):
+
+    def __unicode__(self):
+        return "%s (%s)" % (self.text, self.language)
+
+    def __str__(self):
+        return "%s (%s)" % (self.text, self.language)
 class SubjectDescriptor(CommonControlField):
     value = models.CharField(max_length=255, null=True, blank=True)
 
@@ -1101,6 +1165,11 @@ class IndexedAt(CommonControlField):
     type = models.CharField(
         _("Type"), max_length=20, choices=choices.TYPE, null=True, blank=False
     )
+
+    autocomplete_search_field = "name"
+
+    def autocomplete_label(self):
+        return str(self)
 
     panels = [
         FieldPanel("name"),

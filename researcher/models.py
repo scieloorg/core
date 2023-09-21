@@ -12,9 +12,9 @@ from core.models import CommonControlField, Gender
 from institution.models import Institution, InstitutionHistory
 from journal.models import Journal
 
-from . import choices
+from core.choices import MONTHS
 from .forms import ResearcherForm
-
+from . import choices
 
 class Researcher(ClusterableModel, CommonControlField):
     """
@@ -205,9 +205,9 @@ class EditorialBoardMember(models.Model):
         _("Role"), max_length=255, choices=choices.ROLE, null=False, blank=False
     )
     initial_year = models.IntegerField(blank=True, null=True)
-    initial_month = models.IntegerField(blank=True, null=True, choices=choices.MONTHS)
+    initial_month = models.IntegerField(blank=True, null=True, choices=MONTHS)
     final_year = models.IntegerField(blank=True, null=True)
-    final_month = models.IntegerField(blank=True, null=True, choices=choices.MONTHS)
+    final_month = models.IntegerField(blank=True, null=True, choices=MONTHS)
 
     panels = [
         AutocompletePanel("journal"),

@@ -38,25 +38,15 @@ def create_or_update_journal(
     short_title,
     other_titles,
     submission_online_url,
-    issn_scielo,
-    issn_print_or_electronic,
-    type_issn,
-    current_issn,
+    official_journal,
     user,
 ):
     title = extract_value(title)
-    issnl = extract_value(issn_scielo)
     other_titles = get_or_create_other_titles(other_titles=other_titles, user=user)
+
     journal = Journal.create_or_update(
         user=user,
-        official_journal=create_or_update_official_journal(
-            user=user,
-            title=title,
-            issn_print_or_electronic=issn_print_or_electronic,
-            type_issn=type_issn,
-            issnl=issnl,
-            current_issn=current_issn,
-        ),
+        official_journal=official_journal,
         title=title,
         short_title=extract_value(short_title),
         other_titles=other_titles,
@@ -290,11 +280,13 @@ def update_panel_legacy_compatibility_fields(
 
 def create_or_update_official_journal(
     title,
+    new_title,
+    old_title,
     issn_print_or_electronic,
+    issn_scielo,
     type_issn,
     current_issn,
     user,
-    issnl=None,
     foundation_year=None,
 ):
     """
@@ -303,6 +295,8 @@ def create_or_update_official_journal(
     Ex current_issn:
         [{"_": "1676-5648"}]
     """
+    title = extract_value(title)
+    issnl = extract_value(issn_scielo)
 
     if type_issn and current_issn:
         for item in type_issn:
@@ -321,6 +315,9 @@ def create_or_update_official_journal(
         title=title,
         foundation_year=foundation_year,
     )
+    obj.new_title = extract_value(new_title)
+    obj.old_title = extract_value(old_title)
+    obj.save()
     return obj
 
 
@@ -390,12 +387,19 @@ def get_or_create_sponsor(sponsor, journal, user):
 
 
 def get_or_create_subject_descriptor(subject_descriptors, journal, user):
+    """
+    subject_descriptors:
+        [{'_': 'ECONOMIA, TEORIA ECONÔMICA,  HISTÓRIA ECONÔMICA,  ECONOMIA MONETÁRIA E FISCAL, CRESCIMENTO, FLUTUAÇÕES E PLANEJAMENTO ECONÔMICO'}]
+        [{'_': 'MEDICINA'}, {'_': 'PSIQUIATRIA'}, {'_': 'SAUDE MENTAL'}]
+        [{'_': 'AGRONOMIA; FITOPATOLOGIA; FITOSSANIDADE'}]
+    """
     data = []
     if subject_descriptors:
         sub_desc = extract_value(subject_descriptors)
         if isinstance(sub_desc, str):
             sub_desc = [sub_desc]
         for s in sub_desc:
+            # Em alguns casos, subject_descriptors vem separado por "," ou ";"
             for word in re.split(",|;", s):
                 word = word.strip()
                 obj, created = SubjectDescriptor.objects.get_or_create(
@@ -453,7 +457,14 @@ def create_or_update_standard(standard, journal, user):
 
 
 def create_or_update_wos_db(journal, wos_scie, wos_ssci, wos_ahci, user):
+    """
+    wos_scie, wos_ssci, wos_ahci:
+        [{'_': 'SCIE'}]  # Exemplo para wos_scie
+        [{'_': 'SSCI'}]  # Exemplo para wos_ssci
+        [{'_': 'A&HCI'}]  # Exemplo para wos_ahci
+    """
     data = []
+    # Haverá um único valor entre os três (wos_scie, wos_ssci, wos_ahci)
     for db in (wos_scie, wos_ssci, wos_ahci):
         wosdb = extract_value(db)
         if wosdb:
@@ -466,25 +477,30 @@ def create_or_update_wos_db(journal, wos_scie, wos_ssci, wos_ahci, user):
 
 
 def get_or_update_wos_areas(journal, wos_areas, user):
+    """
+    wos_areas:
+        [{'_': 'EDUCATION & EDUCATIONAL RESEARCH'}, {'_': 'HISTORY'}, {'_': 'PHILOSOPHY'}, {'_': 'POLITICAL SCIENCE'}, {'_': 'SOCIOLOGY'}]
+        [{'_': 'LANGUAGE & LINGUISTICS'}, {'_': 'LITERATURE, GERMAN, DUTCH, SCANDINAVIAN'}]
+    """
+
     data = []
     if wos_areas:
         areas = extract_value(wos_areas)
         if isinstance(areas, str):
             areas = [areas]
         for a in areas:
-            for word in re.split(",|;", a):
-                obj, created = WebOfKnowledgeSubjectCategory.objects.get_or_create(
-                    value=word,
-                    creator=user,
-                )
-                data.append(obj)
+            obj, created = WebOfKnowledgeSubjectCategory.objects.get_or_create(
+                value=a,
+                creator=user,
+            )
+            data.append(obj)
         journal.wos_area.set(data)
 
 
 def get_or_create_indexed_at(journal, indexed_at, user):
     """
-        indexed_at:
-            [{'_': 'Index to Dental Literature'}, {'_': 'LILACS'}, {'_': 'Base de Dados BBO'}, {'_': "Ulrich's"}, {'_': 'Biological Abstracts'}, {'_': 'Medline'}]
+    indexed_at:
+        [{'_': 'Index to Dental Literature'}, {'_': 'LILACS'}, {'_': 'Base de Dados BBO'}, {'_': "Ulrich's"}, {'_': 'Biological Abstracts'}, {'_': 'Medline'}]
     """
     data = []
     if indexed_at:
@@ -492,7 +508,7 @@ def get_or_create_indexed_at(journal, indexed_at, user):
         if isinstance(indexed, str):
             indexed = [indexed]
         for i in indexed:
-            obj = IndexedAt.objects.filter(  
+            obj = IndexedAt.objects.filter(
                 Q(name__icontains=i) | Q(acronym__icontains=i)
             ).first()
             if not obj:
