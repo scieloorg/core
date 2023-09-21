@@ -287,9 +287,9 @@ class DocumentTitle(RichTextWithLang, CommonControlField):
             obj.plain_text = title
             obj.creator = user
             
-        obj.language = language
-        obj.rich_text = title_rich
-        obj.updated_by = user
+        obj.language = language or obj.language
+        obj.rich_text = title_rich or obj.title_rich
+        obj.updated_by = user 
         obj.save()
         return obj
 
@@ -336,7 +336,7 @@ class DocumentAbstract(RichTextWithLang, CommonControlField):
             obj.plain_text = text
             obj.creator = user
 
-        obj.language = language
+        obj.language = language or obj.language
         obj.updated_by = user
         obj.save()
         return obj
