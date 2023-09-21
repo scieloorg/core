@@ -216,12 +216,7 @@ class Journal(CommonControlField, ClusterableModel):
     submission_online_url = models.URLField(
         _("Submission online URL"), null=True, blank=True
     )
-
-    collection = models.ManyToManyField(
-        Collection,
-        verbose_name=_("Collection"),
-    )
-
+    
     open_access = models.CharField(
         _("Open Access status"),
         max_length=10,
@@ -608,8 +603,6 @@ class Journal(CommonControlField, ClusterableModel):
         obj.submission_online_url = submission_online_url or obj.submission_online_url
         obj.open_access = open_access or obj.open_access
         obj.save()
-        for scielo_j in SciELOJournal.objects.filter(journal=obj):
-            obj.collection.add(scielo_j.collection)
 
         if other_titles:
             obj.other_titles.set(other_titles)
