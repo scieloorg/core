@@ -626,7 +626,7 @@ class Journal(CommonControlField, ClusterableModel):
 
 
 class Mission(Orderable, RichTextWithLang, CommonControlField):
-    journal = ParentalKey(Journal, on_delete=models.CASCADE, related_name="mission")
+    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="mission", null=True)
 
     class Meta:
         indexes = [
@@ -691,17 +691,17 @@ class Mission(Orderable, RichTextWithLang, CommonControlField):
 
 
 class Owner(Orderable, InstitutionHistory):
-    page = ParentalKey(Journal, on_delete=models.CASCADE, related_name="owner")
+    page = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="owner", null=True)
 
 
 class EditorialManager(Orderable, InstitutionHistory):
     page = ParentalKey(
-        Journal, on_delete=models.CASCADE, related_name="editorialmanager"
+        Journal, on_delete=models.SET_NULL, related_name="editorialmanager", null=True
     )
 
 
 class Publisher(Orderable, InstitutionHistory):
-    page = ParentalKey(Journal, on_delete=models.CASCADE, related_name="publisher")
+    page = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="publisher", null=True)
 
 
 class Sponsor(Orderable, InstitutionHistory):
@@ -710,7 +710,7 @@ class Sponsor(Orderable, InstitutionHistory):
 
 class JournalSocialNetwork(Orderable, SocialNetwork):
     page = ParentalKey(
-        Journal, on_delete=models.CASCADE, related_name="journalsocialnetwork"
+        Journal, on_delete=models.SET_NULL, related_name="journalsocialnetwork", null=True
     )
 
 
@@ -726,7 +726,7 @@ class OpenData(Orderable, RichTextWithLang, CommonControlField):
             )
         ),
     )
-    journal = ParentalKey(Journal, on_delete=models.CASCADE, related_name="open_data")
+    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="open_data", null=True)
 
 
 class Preprint(Orderable, RichTextWithLang, CommonControlField):
@@ -744,7 +744,7 @@ class Preprint(Orderable, RichTextWithLang, CommonControlField):
             recognized by the journal."""
         ),
     )
-    journal = ParentalKey(Journal, on_delete=models.CASCADE, related_name="preprint")
+    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="preprint", null=True)
 
 
 class History(Orderable, RichTextWithLang, CommonControlField):
@@ -755,7 +755,7 @@ class History(Orderable, RichTextWithLang, CommonControlField):
             "Insert here a brief history with events and milestones in the trajectory of the journal"
         ),
     )
-    journal = ParentalKey(Journal, on_delete=models.CASCADE, related_name="history")
+    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="history", null=True)
 
 
 class Focus(Orderable, RichTextWithLang, CommonControlField):
@@ -764,14 +764,14 @@ class Focus(Orderable, RichTextWithLang, CommonControlField):
         blank=True,
         help_text=_("Insert here the focus and scope of the journal"),
     )
-    journal = ParentalKey(Journal, on_delete=models.CASCADE, related_name="focus")
+    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="focus", null=True)
 
 
 class Review(Orderable, RichTextWithLang, CommonControlField):
     rich_text = RichTextField(
         null=True, blank=True, help_text=_("Brief description of the review flow")
     )
-    journal = ParentalKey(Journal, on_delete=models.CASCADE, related_name="review")
+    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="review", null=True)
 
 
 class Ecommittee(Orderable, RichTextWithLang, CommonControlField):
@@ -783,7 +783,7 @@ class Ecommittee(Orderable, RichTextWithLang, CommonControlField):
             the institution responsible for approving the research"""
         ),
     )
-    journal = ParentalKey(Journal, on_delete=models.CASCADE, related_name="ecommittee")
+    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="ecommittee", null=True)
 
 
 class Copyright(Orderable, RichTextWithLang, CommonControlField):
@@ -796,7 +796,7 @@ class Copyright(Orderable, RichTextWithLang, CommonControlField):
             item 5.2.10.1.2. - Copyright"""
         ),
     )
-    journal = ParentalKey(Journal, on_delete=models.CASCADE, related_name="copyright")
+    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="copyright", null=True)
 
 
 class WebsiteResponsibility(Orderable, RichTextWithLang, CommonControlField):
@@ -809,7 +809,7 @@ class WebsiteResponsibility(Orderable, RichTextWithLang, CommonControlField):
         ),
     )
     journal = ParentalKey(
-        Journal, on_delete=models.CASCADE, related_name="website_responsibility"
+        Journal, on_delete=models.SET_NULL, related_name="website_responsibility", null=True
     )
 
 
@@ -825,7 +825,7 @@ class AuthorResponsibility(Orderable, RichTextWithLang, CommonControlField):
         ),
     )
     journal = ParentalKey(
-        Journal, on_delete=models.CASCADE, related_name="author_responsibility"
+        Journal, on_delete=models.SET_NULL, related_name="author_responsibility", null=True
     )
 
 
@@ -844,12 +844,12 @@ class Policies(Orderable, RichTextWithLang, CommonControlField):
             )
         ),
     )
-    journal = ParentalKey(Journal, on_delete=models.CASCADE, related_name="policies")
+    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="policies", null=True)
 
 
 class ConflictPolicy(Orderable, RichTextWithLang, CommonControlField):
     journal = ParentalKey(
-        Journal, on_delete=models.CASCADE, related_name="conflict_policy"
+        Journal, on_delete=models.SET_NULL, related_name="conflict_policy", null=True
     )
 
 
@@ -1181,7 +1181,7 @@ class IndexedAtFile(models.Model):
 
 
 class Annotation(CommonControlField):
-    journal = ParentalKey(Journal, on_delete=models.CASCADE, related_name="annotation")
+    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="annotation", null=True)
     notes = models.TextField(_("Notes"), blank=True, null=True)
     creation_date = models.DateField(_("Creation Date"), blank=True, null=True)
     update_date = models.DateField(_("Update Date"), blank=True, null=True)
