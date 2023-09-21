@@ -117,15 +117,15 @@ TYPE = [
 ]
 
 STUDY_AREA = [
-    (_("Agricultural Sciences"), _("Agricultural Sciences")),
-    (_("Applied Social Sciences"), _("Applied Social Sciences")),
-    (_("Biological Sciences"), _("Biological Sciences")),
-    (_("Engineering"), _("Engineering")),
-    (_("Exact and Earth Sciences"), _("Exact and Earth Sciences")),
-    (_("Health Sciences"), _("Health Sciences")),
-    (_("Human Sciences"), _("Human Sciences")),
-    (_("Linguistics, Letters and Arts"), _("Linguistic, Literature and Arts")),
-    (_("Psicanalise"), _("Psicanalise")),
+    ("Agricultural Sciences", _("Agricultural Sciences")),
+    ("Applied Social Sciences", _("Applied Social Sciences")),
+    ("Biological Sciences", _("Biological Sciences")),
+    ("Engineering", _("Engineering")),
+    ("Exact and Earth Sciences", _("Exact and Earth Sciences")),
+    ("Health Sciences", _("Health Sciences")),
+    ("Human Sciences", _("Human Sciences")),
+    ("Linguistics, Letters and Arts", _("Linguistic, Literature and Arts")),
+    ("Psicanalise", _("Psicanalise")),
 ]
 
 WOS_DB = [
