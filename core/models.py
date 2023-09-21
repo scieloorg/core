@@ -248,10 +248,10 @@ class License(CommonControlField):
             license = cls()
             license.creator = user
 
-        license.url = url
-        license.license_p = license_p
-        license.license_type = license_type    
-        license.language = language
+        license.url = url or license.url
+        license.license_p = license_p or license.license_p
+        license.license_type = license_type or license.license_type
+        license.language = language or license.language
         license.updated_by = user
         license.save()
         return license
