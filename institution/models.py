@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext as _
 from modelcluster.models import ClusterableModel
-from wagtail.admin.panels import FieldPanel, InlinePanel
+from wagtail.admin.panels import FieldPanel, InlinePanel, PageChooserPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
@@ -16,7 +16,7 @@ class Institution(CommonControlField, ClusterableModel):
     institution_type = models.TextField(
         _("Institution Type"), choices=choices.inst_type, null=True, blank=True
     )
-
+    copyright_holder = models.TextField(_("Copy Right Holder"), null=True, blank=True)
     location = models.ForeignKey(
         Location, null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -128,7 +128,20 @@ class Institution(CommonControlField, ClusterableModel):
         return _data
 
     @classmethod
-    def get_or_create(
+    def get(
+        cls,
+        inst_name,
+        inst_acronym,
+    ):
+        if inst_name:
+            return cls.objects.get(name=inst_name)
+        if inst_acronym:
+            return cls.objects.get(acronym=inst_acronym)
+        raise ValueError("Requires inst_name or inst_acronym paramenters")
+
+
+    @classmethod
+    def create_or_update(
         cls,
         inst_name,
         inst_acronym,
@@ -138,38 +151,28 @@ class Institution(CommonControlField, ClusterableModel):
         location,
         official,
         is_official,
+        copyright_holder,
+        url,
         user,
     ):
-        # Institution
-        # check if exists the institution
-        parms = {}
-        if inst_name:
-            parms["name"] = inst_name
-        if inst_acronym:
-            parms["acronym"] = inst_acronym
-        if location:
-            parms["location"] = location
-        if level_1:
-            parms["level_1"] = level_1
-        if level_2:
-            parms["level_2"] = level_2
-        if level_3:
-            parms["level_3"] = level_3
 
         try:
-            return cls.objects.get(**parms)
-        except:
+            institution = cls.get(inst_name=inst_name, inst_acronym=inst_acronym)
+        except cls.DoesNotExist:
             institution = cls()
             institution.name = inst_name
-            institution.acronym = inst_acronym
-            institution.level_1 = level_1
-            institution.level_2 = level_2
-            institution.level_3 = level_3
-            institution.location = location
-            institution.official = official
-            institution.is_official = is_official
-            institution.creator = user
-            institution.save()
+        
+        institution.acronym = inst_acronym
+        institution.level_1 = level_1
+        institution.level_2 = level_2
+        institution.level_3 = level_3
+        institution.location = location
+        institution.official = official
+        institution.is_official = is_official
+        institution.url = url
+        institution.copyright_holder = copyright_holder
+        institution.creator = user
+        institution.save()
         return institution
 
     base_form_class = CoreAdminModelForm
