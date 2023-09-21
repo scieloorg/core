@@ -704,10 +704,6 @@ class Publisher(Orderable, InstitutionHistory):
     page = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="publisher", null=True)
 
 
-class Sponsor(Orderable, InstitutionHistory):
-    page = ParentalKey(Journal, on_delete=models.CASCADE, related_name="sponsor")
-
-
 class JournalSocialNetwork(Orderable, SocialNetwork):
     page = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="journalsocialnetwork", null=True
