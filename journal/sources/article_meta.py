@@ -109,7 +109,9 @@ def process_journal_article_meta(collection, limit, user):
                 journal=journal,
                 url_of_the_journal=journal_dict.get("url_of_the_journal"),
                 url_of_submission_online=journal_dict.get("url_of_submission_online"),
-                url_of_the_main_collection=journal_dict.get("url_of_the_main_collection"),
+                url_of_the_main_collection=journal_dict.get(
+                    "url_of_the_main_collection"
+                ),
                 license_of_use=journal_dict.get("license_of_use"),
                 user=user,
             )
@@ -118,7 +120,7 @@ def process_journal_article_meta(collection, limit, user):
                 notes=journal_dict.get("notes"),
                 creation_date=journal_dict.get("creation_date"),
                 update_date=journal_dict.get("update_date"),
-                user=user
+                user=user,
             )
             journal_utils.update_panel_legacy_compatibility_fields(
                 journal=journal,

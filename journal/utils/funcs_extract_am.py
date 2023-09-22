@@ -56,5 +56,5 @@ def parse_date_string(date):
             month = None
         elif date.isdigit and len(date) == 8:
             year = date[0:4]
-            month = date[4:6] if date[4:6] != '00' else None 
+            month = date[4:6] if date[4:6] != "00" else None
     return year, month

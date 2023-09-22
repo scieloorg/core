@@ -9,7 +9,7 @@ from .funcs_extract_am import (
     extract_issn_print_electronic,
     extract_value,
     extract_value_mission,
-    parse_date_string
+    parse_date_string,
 )
 from journal.models import (
     Collection,
@@ -27,7 +27,7 @@ from journal.models import (
     WebOfKnowledge,
     WebOfKnowledgeSubjectCategory,
     IndexedAt,
-    JournalParallelTitles
+    JournalParallelTitles,
 )
 from location.models import City, Region, Location, State, Country, Address
 
@@ -164,19 +164,19 @@ def update_panel_institution(
     user,
 ):
     location = create_or_update_location(
-    address,    
-    publisher_country,
-    publisher_state,
-    publisher_city,
-    user,
+        address,
+        publisher_country,
+        publisher_state,
+        publisher_city,
+        user,
     )
     url = extract_value(electronic_address)
     copyright_holder = extract_value(copyright_holder)
     publisher = extract_value(publisher)
-    
+
     if isinstance(publisher, str):
         publisher = [publisher]
-    
+
     if publisher:
         for p in publisher:
             if p:
@@ -209,19 +209,16 @@ def update_panel_website(
     url_of_submission_online,
     url_of_the_main_collection,
     license_of_use,
-    user
+    user,
 ):
-    
     journal.url_of_journal = extract_value(url_of_the_journal)
     journal.collection_main_url = extract_value(url_of_the_main_collection)
     journal.submission_online_url = extract_value(url_of_submission_online)
     license_type = extract_value(license_of_use)
     if license_type:
-        license = License.create_or_update(
-            license_type=license_type,
-            user=user 
-        )
+        license = License.create_or_update(license_type=license_type, user=user)
         journal.use_license = license
+
 
 def update_panel_notes(
     journal,
@@ -231,12 +228,12 @@ def update_panel_notes(
     user,
 ):
     """
-        Ex notes:
-            [{'_': 'Editor:'}, {'_': 'Denis Coitinho Silveira'}, {'_': 'Rua Lobo da Costa, 270/501'}, {'_': '90050-110'}, {'_': 'UNISINOS - Universidade do Vale do Rio dos Sinos'}, {'_': 'Porto Alegre'}, {'_': 'RS'}, {'_': 'Brasil'}, {'_': '51 32269513; 51 983107257'}, {'_': 'deniscoitinhosilveira@gmail.com'}]
-            [{'_': 'Iniciou no v12n1'}]
-        Ex creation_date e update_date:
-            [{'_': '20060208'}]
-            [{'_': '20120824'}]
+    Ex notes:
+        [{'_': 'Editor:'}, {'_': 'Denis Coitinho Silveira'}, {'_': 'Rua Lobo da Costa, 270/501'}, {'_': '90050-110'}, {'_': 'UNISINOS - Universidade do Vale do Rio dos Sinos'}, {'_': 'Porto Alegre'}, {'_': 'RS'}, {'_': 'Brasil'}, {'_': '51 32269513; 51 983107257'}, {'_': 'deniscoitinhosilveira@gmail.com'}]
+        [{'_': 'Iniciou no v12n1'}]
+    Ex creation_date e update_date:
+        [{'_': '20060208'}]
+        [{'_': '20120824'}]
     """
     notes = extract_value(notes)
     if notes:
@@ -251,7 +248,7 @@ def update_panel_notes(
 
         if isinstance(notes, str):
             notes = [notes]
-        n = '\n'.join(notes)
+        n = "\n".join(notes)
         obj = Annotation.create_or_update(
             journal=journal,
             notes=n,
@@ -331,18 +328,25 @@ def create_or_update_official_journal(
         title=title,
         foundation_year=foundation_year,
     )
-    get_or_update_parallel_titles(of_journal=official_journal, parallel_titles=parallel_titles)
+    get_or_update_parallel_titles(
+        of_journal=official_journal, parallel_titles=parallel_titles
+    )
     official_journal.new_title = extract_value(new_title)
     official_journal.old_title = extract_value(old_title)
     official_journal.iso_short_title = extract_value(iso_short_title)
-    
+
     initial_date = extract_value(initial_date)
     terminate_date = extract_value(terminate_date)
-    official_journal.initial_year, official_journal.initial_month = parse_date_string(date=initial_date)
+    official_journal.initial_year, official_journal.initial_month = parse_date_string(
+        date=initial_date
+    )
     official_journal.initial_number = extract_value(initial_number)
     official_journal.initial_volume = extract_value(initial_volume)
-    
-    official_journal.terminate_year, official_journal.terminate_month = parse_date_string(date=terminate_date)
+
+    (
+        official_journal.terminate_year,
+        official_journal.terminate_month,
+    ) = parse_date_string(date=terminate_date)
     official_journal.final_number = extract_value(final_number)
     official_journal.final_volume = extract_value(final_volume)
     official_journal.save()
@@ -594,12 +598,12 @@ def create_or_update_location(
         acronym=state_acronym,
         user=user,
     )
-    
+
     address = extract_value(address)
     if address:
         if isinstance(address, str):
             address = [address]
-        address = '\n'.join(address)
+        address = "\n".join(address)
     address = Address.get_or_create(
         name=address,
         user=user,

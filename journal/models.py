@@ -56,8 +56,12 @@ class OfficialJournal(CommonControlField):
     foundation_year = models.CharField(
         _("Foundation Year"), max_length=4, null=True, blank=True
     )
-    initial_year = models.CharField(_("Initial Year"), max_length=4, blank=True, null=True)
-    initial_month = models.CharField(_("Month Year"), max_length=2, choices=MONTHS, blank=True, null=True)
+    initial_year = models.CharField(
+        _("Initial Year"), max_length=4, blank=True, null=True
+    )
+    initial_month = models.CharField(
+        _("Month Year"), max_length=2, choices=MONTHS, blank=True, null=True
+    )
     initial_volume = models.CharField(
         _("Initial Volume"), max_length=32, null=True, blank=True
     )
@@ -83,7 +87,7 @@ class OfficialJournal(CommonControlField):
     issnl = models.CharField(_("ISSNL"), max_length=9, null=True, blank=True)
 
     panels_titles = [
-        FieldPanel("title"), 
+        FieldPanel("title"),
         FieldPanel("iso_short_title"),
         AutocompletePanel("parallel_titles"),
         FieldPanel("old_title"),
@@ -277,7 +281,7 @@ class Journal(CommonControlField, ClusterableModel):
     submission_online_url = models.URLField(
         _("Submission online URL"), null=True, blank=True
     )
-    
+
     open_access = models.CharField(
         _("Open Access status"),
         max_length=10,
@@ -535,7 +539,7 @@ class Journal(CommonControlField, ClusterableModel):
     panels_open_science = [
         FieldPanel("open_access"),
         FieldPanel("url_oa"),
-        AutocompletePanel("use_license")
+        AutocompletePanel("use_license"),
     ]
 
     panels_policy = [
@@ -680,7 +684,9 @@ class Journal(CommonControlField, ClusterableModel):
 
 
 class Mission(Orderable, RichTextWithLang, CommonControlField):
-    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="mission", null=True)
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="mission", null=True
+    )
 
     class Meta:
         indexes = [
@@ -745,7 +751,9 @@ class Mission(Orderable, RichTextWithLang, CommonControlField):
 
 
 class Owner(Orderable, InstitutionHistory):
-    page = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="owner", null=True)
+    page = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="owner", null=True
+    )
 
 
 class EditorialManager(Orderable, InstitutionHistory):
@@ -755,7 +763,9 @@ class EditorialManager(Orderable, InstitutionHistory):
 
 
 class Publisher(Orderable, InstitutionHistory):
-    page = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="publisher", null=True)
+    page = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="publisher", null=True
+    )
 
 
 class Sponsor(Orderable, InstitutionHistory):
@@ -764,7 +774,10 @@ class Sponsor(Orderable, InstitutionHistory):
 
 class JournalSocialNetwork(Orderable, SocialNetwork):
     page = ParentalKey(
-        Journal, on_delete=models.SET_NULL, related_name="journalsocialnetwork", null=True
+        Journal,
+        on_delete=models.SET_NULL,
+        related_name="journalsocialnetwork",
+        null=True,
     )
 
 
@@ -780,7 +793,9 @@ class OpenData(Orderable, RichTextWithLang, CommonControlField):
             )
         ),
     )
-    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="open_data", null=True)
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="open_data", null=True
+    )
 
 
 class Preprint(Orderable, RichTextWithLang, CommonControlField):
@@ -798,7 +813,9 @@ class Preprint(Orderable, RichTextWithLang, CommonControlField):
             recognized by the journal."""
         ),
     )
-    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="preprint", null=True)
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="preprint", null=True
+    )
 
 
 class History(Orderable, RichTextWithLang, CommonControlField):
@@ -809,7 +826,9 @@ class History(Orderable, RichTextWithLang, CommonControlField):
             "Insert here a brief history with events and milestones in the trajectory of the journal"
         ),
     )
-    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="history", null=True)
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="history", null=True
+    )
 
 
 class Focus(Orderable, RichTextWithLang, CommonControlField):
@@ -818,14 +837,18 @@ class Focus(Orderable, RichTextWithLang, CommonControlField):
         blank=True,
         help_text=_("Insert here the focus and scope of the journal"),
     )
-    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="focus", null=True)
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="focus", null=True
+    )
 
 
 class Review(Orderable, RichTextWithLang, CommonControlField):
     rich_text = RichTextField(
         null=True, blank=True, help_text=_("Brief description of the review flow")
     )
-    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="review", null=True)
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="review", null=True
+    )
 
 
 class Ecommittee(Orderable, RichTextWithLang, CommonControlField):
@@ -837,7 +860,9 @@ class Ecommittee(Orderable, RichTextWithLang, CommonControlField):
             the institution responsible for approving the research"""
         ),
     )
-    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="ecommittee", null=True)
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="ecommittee", null=True
+    )
 
 
 class Copyright(Orderable, RichTextWithLang, CommonControlField):
@@ -850,7 +875,9 @@ class Copyright(Orderable, RichTextWithLang, CommonControlField):
             item 5.2.10.1.2. - Copyright"""
         ),
     )
-    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="copyright", null=True)
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="copyright", null=True
+    )
 
 
 class WebsiteResponsibility(Orderable, RichTextWithLang, CommonControlField):
@@ -863,7 +890,10 @@ class WebsiteResponsibility(Orderable, RichTextWithLang, CommonControlField):
         ),
     )
     journal = ParentalKey(
-        Journal, on_delete=models.SET_NULL, related_name="website_responsibility", null=True
+        Journal,
+        on_delete=models.SET_NULL,
+        related_name="website_responsibility",
+        null=True,
     )
 
 
@@ -879,7 +909,10 @@ class AuthorResponsibility(Orderable, RichTextWithLang, CommonControlField):
         ),
     )
     journal = ParentalKey(
-        Journal, on_delete=models.SET_NULL, related_name="author_responsibility", null=True
+        Journal,
+        on_delete=models.SET_NULL,
+        related_name="author_responsibility",
+        null=True,
     )
 
 
@@ -898,7 +931,9 @@ class Policies(Orderable, RichTextWithLang, CommonControlField):
             )
         ),
     )
-    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="policies", null=True)
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="policies", null=True
+    )
 
 
 class ConflictPolicy(Orderable, RichTextWithLang, CommonControlField):
@@ -1039,8 +1074,6 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
 
 
 class JournalParallelTitles(TextWithLang):
-
-
     autocomplete_search_field = "text"
 
     def autocomplete_label(self):
@@ -1051,7 +1084,7 @@ class JournalParallelTitles(TextWithLang):
 
     def __str__(self):
         return "%s (%s)" % (self.text, self.language)
-    
+
 
 class SubjectDescriptor(CommonControlField):
     value = models.CharField(max_length=255, null=True, blank=True)
@@ -1255,7 +1288,9 @@ class IndexedAtFile(models.Model):
 
 
 class Annotation(CommonControlField):
-    journal = ParentalKey(Journal, on_delete=models.SET_NULL, related_name="annotation", null=True)
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="annotation", null=True
+    )
     notes = models.TextField(_("Notes"), blank=True, null=True)
     creation_date = models.DateField(_("Creation Date"), blank=True, null=True)
     update_date = models.DateField(_("Update Date"), blank=True, null=True)
@@ -1270,14 +1305,14 @@ class Annotation(CommonControlField):
     ]
 
     @classmethod
-    def get(cls, 
-        notes,
-        creation_date,
-        update_date
-    ):
+    def get(cls, notes, creation_date, update_date):
         if notes and creation_date and update_date:
-            return cls.objects.get(notes=notes, creation_date=creation_date, update_date=update_date)
-        raise ValueError("Annotation.get requires notes, creation_date e update_date paramenters")
+            return cls.objects.get(
+                notes=notes, creation_date=creation_date, update_date=update_date
+            )
+        raise ValueError(
+            "Annotation.get requires notes, creation_date e update_date paramenters"
+        )
 
     @classmethod
     def create_or_update(
@@ -1289,7 +1324,9 @@ class Annotation(CommonControlField):
         user,
     ):
         try:
-            annotation = cls.get(notes=notes, creation_date=creation_date, update_date=update_date)
+            annotation = cls.get(
+                notes=notes, creation_date=creation_date, update_date=update_date
+            )
         except cls.DoesNotExist:
             annotation = cls()
             annotation.creator = user
