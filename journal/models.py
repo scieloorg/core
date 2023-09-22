@@ -979,7 +979,10 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         _("Status"), max_length=12, choices=choices.STATUS, null=True, blank=True
     )
 
-    # TODO adicionar eventos de entrada e saída de coleção / refatorar journal_and_collection
+    journal_history = models.ManyToManyField(
+        "JournalHistory",
+        verbose_name=_("Journal History"),
+    )
 
     autocomplete_search_field = "journal_acron"
 
@@ -1018,9 +1021,7 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         FieldPanel("issn_scielo"),
         FieldPanel("status"),
         AutocompletePanel("collection"),
-        InlinePanel(
-            "journal_history", label="Jounal and History", classname="collapsed"
-        ),
+        AutocompletePanel("journal_history"),
     ]
 
     @classmethod
@@ -1068,7 +1069,7 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         obj.journal_acron = journal_acron or obj.journal_acron
         obj.collection = collection or obj.collection
         obj.journal = journal or obj.journal
-        obj.status = dict(choices.STATUS).get(code_status) or obj.status
+        obj.status = code_status or obj.status
         obj.save()
         return obj
 
@@ -1336,3 +1337,71 @@ class Annotation(CommonControlField):
         annotation.updated_by = user
         annotation.save()
         return annotation
+    
+
+class JournalHistory(CommonControlField):
+    initial_year = models.CharField(_("Initial Occurrence date year"), max_length=4, null=True, blank=True)
+    initial_month = models.CharField(_("Initial Occurrence date month"), max_length=2, choices=MONTHS, null=True, blank=True)
+    initial_day = models.CharField(_("Initial Occurrence date day"), max_length=2, null=True, blank=True)
+    final_year = models.CharField(_("Final Occurrence date year"), max_length=4, null=True, blank=True)
+    final_month = models.CharField(_("Final Occurrence date month"), max_length=2, choices=MONTHS, null=True, blank=True)
+    final_day = models.CharField(_("Final Occurrence date day"), max_length=2, null=True, blank=True)
+    occurrence_type = models.TextField(
+        _("Occurrence type"),
+        null=True,
+        blank=True,
+    )
+
+    autocomplete_search_field = "occurrence_type"
+
+    def autocomplete_label(self):
+        return str(self)
+
+    panels = [
+        FieldPanel("initial_year"),
+        FieldPanel("initial_month"),
+        FieldPanel("initial_day"),
+        FieldPanel("final_year"),
+        FieldPanel("final_month"),
+        FieldPanel("final_day"),
+        FieldPanel("occurrence_type"),
+    ]
+
+    class Meta:
+        verbose_name = _("Event")
+        verbose_name_plural = _("Events")
+        indexes = [
+            models.Index(
+                fields=[
+                    "occurrence_type",
+                ]
+            ),
+        ]
+
+    @property
+    def data(self):
+        d = {
+            "occurrence_type": self.occurrence_type,
+            "initial_year": self.initial_year,
+            "initial_month": self.initial_month,
+            "initial_day": self.initial_day,
+            "final_year": self.final_year,
+            "final_month": self.final_month,
+            "final_day": self.final_day,
+        }
+
+        return d
+
+    def __str__(self):
+        return "%s from %s/%s/%s to %s/%s/%s" % (
+            self.occurrence_type,
+            self.initial_year,
+            self.initial_month,
+            self.initial_day or '00',
+            self.final_year,
+            self.final_month,
+            self.final_day or '00',
+        )
+
+    base_form_class = CoreAdminModelForm
+
