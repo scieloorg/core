@@ -515,10 +515,6 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("indexed_at"),
     ]
 
-    panels_identification = [
-        AutocompletePanel("collection"),
-    ]
-
     panels_institutions = [
         InlinePanel("owner", label=_("Owner"), classname="collapsed"),
         InlinePanel(
@@ -586,7 +582,6 @@ class Journal(CommonControlField, ClusterableModel):
     edit_handler = TabbedInterface(
         [
             ObjectList(panels_titles, heading=_("Titles")),
-            ObjectList(panels_identification, heading=_("Identification")),
             ObjectList(panels_scope_and_about, heading=_("Scope")),
             ObjectList(panels_interoperation, heading=_("Interoperation")),
             ObjectList(panels_formal_information, heading=_("Formal information")),
