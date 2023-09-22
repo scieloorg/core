@@ -204,10 +204,10 @@ class EditorialBoardMember(models.Model):
     role = models.CharField(
         _("Role"), max_length=255, choices=choices.ROLE, null=False, blank=False
     )
-    initial_year = models.IntegerField(blank=True, null=True)
-    initial_month = models.IntegerField(blank=True, null=True, choices=MONTHS)
-    final_year = models.IntegerField(blank=True, null=True)
-    final_month = models.IntegerField(blank=True, null=True, choices=MONTHS)
+    initial_year = models.CharField(max_length=4, blank=True, null=True)
+    initial_month = models.CharField(max_length=2, blank=True, null=True, choices=MONTHS)
+    final_year = models.CharField(max_length=4, blank=True, null=True)
+    final_month = models.CharField(max_length=2, blank=True, null=True, choices=MONTHS)
 
     panels = [
         AutocompletePanel("journal"),
