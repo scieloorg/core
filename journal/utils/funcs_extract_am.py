@@ -41,3 +41,20 @@ def extract_value_mission(mission):
     """
 
     return [{"lang": x.get("l"), "mission": x.get("_")} for x in mission]
+
+
+def parse_date_string(date):
+    """
+    Exemplos de date:
+        '20121200', '2002', '20130000' e None
+    """
+    year = None
+    month = None
+    if date:
+        if date.isdigit() and len(date) == 4:
+            year = date
+            month = None
+        elif date.isdigit and len(date) == 8:
+            year = date[0:4]
+            month = date[4:6] if date[4:6] != '00' else None 
+    return year, month
