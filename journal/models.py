@@ -56,6 +56,8 @@ class OfficialJournal(CommonControlField):
     foundation_year = models.CharField(
         _("Foundation Year"), max_length=4, null=True, blank=True
     )
+    initial_year = models.CharField(_("Initial Year"), max_length=4, blank=True, null=True)
+    initial_month = models.CharField(_("Month Year"), max_length=2, choices=MONTHS, blank=True, null=True)
     initial_volume = models.CharField(
         _("Initial Volume"), max_length=32, null=True, blank=True
     )
@@ -90,10 +92,12 @@ class OfficialJournal(CommonControlField):
 
     panels_dates = [
         FieldPanel("foundation_year"),
+        FieldPanel("initial_year"),
+        FieldPanel("initial_month"),
+        FieldPanel("terminate_year"),
+        FieldPanel("terminate_month"),
         FieldPanel("initial_volume"),
         FieldPanel("initial_number"),
-        FieldPanel("terminate_year"),
-        FieldPanel("terminate_month"),        
         FieldPanel("final_volume"),
         FieldPanel("final_number"),
     ]
@@ -1036,11 +1040,19 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
 
 class JournalParallelTitles(TextWithLang):
 
+
+    autocomplete_search_field = "text"
+
+    def autocomplete_label(self):
+        return str(self)
+
     def __unicode__(self):
         return "%s (%s)" % (self.text, self.language)
 
     def __str__(self):
         return "%s (%s)" % (self.text, self.language)
+    
+
 class SubjectDescriptor(CommonControlField):
     value = models.CharField(max_length=255, null=True, blank=True)
 
@@ -1256,3 +1268,34 @@ class Annotation(CommonControlField):
         FieldPanel("creation_date", classname="myReadonlyInput"),
         FieldPanel("update_date", classname="myReadonlyInput"),
     ]
+
+    @classmethod
+    def get(cls, 
+        notes,
+        creation_date,
+        update_date
+    ):
+        if notes and creation_date and update_date:
+            return cls.objects.get(notes=notes, creation_date=creation_date, update_date=update_date)
+        raise ValueError("Annotation.get requires notes, creation_date e update_date paramenters")
+
+    @classmethod
+    def create_or_update(
+        cls,
+        journal,
+        notes,
+        creation_date,
+        update_date,
+        user,
+    ):
+        try:
+            annotation = cls.get(notes=notes, creation_date=creation_date, update_date=update_date)
+        except cls.DoesNotExist:
+            annotation = cls()
+            annotation.creator = user
+
+        annotation.journal = journal or annotation.journal
+        annotation.notes = notes or annotation.notes
+        annotation.updated_by = user
+        annotation.save()
+        return annotation
