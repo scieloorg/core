@@ -9,6 +9,7 @@ from .funcs_extract_am import (
     extract_issn_print_electronic,
     extract_value,
     extract_value_mission,
+    parse_date_string
 )
 from journal.models import (
     Collection,
@@ -18,7 +19,6 @@ from journal.models import (
     Mission,
     Publisher,
     Owner,
-    Copyright,
     Annotation,
     Sponsor,
     SubjectDescriptor,
@@ -27,6 +27,7 @@ from journal.models import (
     WebOfKnowledge,
     WebOfKnowledgeSubjectCategory,
     IndexedAt,
+    JournalParallelTitles
 )
 from location.models import City, Region, Location, State, Country, Address
 
@@ -233,24 +234,31 @@ def update_panel_notes(
         Ex notes:
             [{'_': 'Editor:'}, {'_': 'Denis Coitinho Silveira'}, {'_': 'Rua Lobo da Costa, 270/501'}, {'_': '90050-110'}, {'_': 'UNISINOS - Universidade do Vale do Rio dos Sinos'}, {'_': 'Porto Alegre'}, {'_': 'RS'}, {'_': 'Brasil'}, {'_': '51 32269513; 51 983107257'}, {'_': 'deniscoitinhosilveira@gmail.com'}]
             [{'_': 'Iniciou no v12n1'}]
+        Ex creation_date e update_date:
+            [{'_': '20060208'}]
+            [{'_': '20120824'}]
     """
     notes = extract_value(notes)
     if notes:
-        creation_date = datetime.strptime(extract_value(creation_date), "%Y%m%d")
-        update_date = datetime.strptime(extract_value(update_date), "%Y%m%d")
+        try:
+            creation_date = datetime.strptime(extract_value(creation_date), "%Y%m%d")
+        except ValueError:
+            creation_date = None
+        try:
+            update_date = datetime.strptime(extract_value(update_date), "%Y%m%d")
+        except ValueError:
+            update_date = None
+
         if isinstance(notes, str):
             notes = [notes]
         n = '\n'.join(notes)
-        obj, created = Annotation.objects.get_or_create(
+        obj = Annotation.create_or_update(
             journal=journal,
             notes=n,
             creation_date=creation_date,
             update_date=update_date,
-            updated_by=user,
+            user=user,
         )
-        if created:
-            obj.creator = user
-            obj.save()
 
 
 def update_panel_legacy_compatibility_fields(
@@ -286,6 +294,14 @@ def create_or_update_official_journal(
     issn_scielo,
     type_issn,
     current_issn,
+    initial_date,
+    initial_volume,
+    initial_number,
+    terminate_date,
+    final_volume,
+    final_number,
+    iso_short_title,
+    parallel_titles,
     user,
     foundation_year=None,
 ):
@@ -307,7 +323,7 @@ def create_or_update_official_journal(
         issn_print_or_electronic=issn
     )
 
-    obj = OfficialJournal.create_or_update(
+    official_journal = OfficialJournal.create_or_update(
         user=user,
         issn_print=issn_print,
         issn_electronic=issn_electronic,
@@ -315,10 +331,22 @@ def create_or_update_official_journal(
         title=title,
         foundation_year=foundation_year,
     )
-    obj.new_title = extract_value(new_title)
-    obj.old_title = extract_value(old_title)
-    obj.save()
-    return obj
+    get_or_update_parallel_titles(of_journal=official_journal, parallel_titles=parallel_titles)
+    official_journal.new_title = extract_value(new_title)
+    official_journal.old_title = extract_value(old_title)
+    official_journal.iso_short_title = extract_value(iso_short_title)
+    
+    initial_date = extract_value(initial_date)
+    terminate_date = extract_value(terminate_date)
+    official_journal.initial_year, official_journal.initial_month = parse_date_string(date=initial_date)
+    official_journal.initial_number = extract_value(initial_number)
+    official_journal.initial_volume = extract_value(initial_volume)
+    
+    official_journal.terminate_year, official_journal.terminate_month = parse_date_string(date=terminate_date)
+    official_journal.final_number = extract_value(final_number)
+    official_journal.final_volume = extract_value(final_volume)
+    official_journal.save()
+    return official_journal
 
 
 def get_collection(collection):
@@ -585,3 +613,17 @@ def create_or_update_location(
         user=user,
     )
     return location
+
+
+def get_or_update_parallel_titles(of_journal, parallel_titles):
+    data = []
+    if parallel_titles:
+        titles = extract_value(parallel_titles)
+        if isinstance(titles, str):
+            titles = [titles]
+        for title in titles:
+            obj, created = JournalParallelTitles.objects.get_or_create(
+                text=title,
+            )
+            data.append(obj)
+        of_journal.parallel_titles.set(data)
