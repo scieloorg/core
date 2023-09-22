@@ -21,7 +21,7 @@ class Event(CommonControlField):
         on_delete=models.SET_NULL,
     )
     occurrence_date_year = models.CharField(_("Occurrence date year"), max_length=4)
-    occurrence_date_month = models.IntegerField(_("Occurrence date month"), max_length=2, choices=MONTHS, null=True, blank=True)
+    occurrence_date_month = models.CharField(_("Occurrence date month"), max_length=2, choices=MONTHS, null=True, blank=True)
     occurrence_date_day = models.CharField(_("Occurrence date day"), max_length=2, null=True, blank=True)
     occurrence_type = models.TextField(
         _("Occurrence type"),
