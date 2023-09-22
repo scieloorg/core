@@ -10,6 +10,7 @@ from .funcs_extract_am import (
     extract_value,
     extract_value_mission,
     parse_date_string,
+    extract_value_from_journal_history,
 )
 from journal.models import (
     Collection,
@@ -28,6 +29,7 @@ from journal.models import (
     WebOfKnowledgeSubjectCategory,
     IndexedAt,
     JournalParallelTitles,
+    JournalHistory
 )
 from location.models import City, Region, Location, State, Country, Address
 
@@ -57,7 +59,7 @@ def create_or_update_journal(
 
 
 def create_or_update_scielo_journal(
-    journal, collection, issn_scielo, journal_acron, status, user
+    journal, collection, issn_scielo, journal_acron, status, journal_history, user
 ):
     issnl = extract_value(issn_scielo)
     code_status = extract_value(status)
@@ -69,6 +71,7 @@ def create_or_update_scielo_journal(
         journal=journal,
         code_status=code_status,
     )
+    get_or_create_journal_history(scielo_journal=scielo_journal, journal_history=journal_history)
     return scielo_journal
 
 
@@ -631,3 +634,21 @@ def get_or_update_parallel_titles(of_journal, parallel_titles):
             )
             data.append(obj)
         of_journal.parallel_titles.set(data)
+
+
+def get_or_create_journal_history(scielo_journal, journal_history):
+    data = []
+    if journal_history:
+        journal_history = extract_value_from_journal_history(journal_history)
+        for jh in journal_history:
+            obj, created = JournalHistory.objects.get_or_create(
+                initial_year=jh.get("initial_year"),
+                initial_month=jh.get("initial_month"),
+                initial_day=jh.get("initial_day"),
+                final_year=jh.get("final_year"),
+                final_month=jh.get("final_month"),
+                final_day=jh.get("final_day"),
+                occurrence_type=jh.get("occurrence_type"),
+            )
+            data.append(obj)
+        scielo_journal.journal_history.set(data)
