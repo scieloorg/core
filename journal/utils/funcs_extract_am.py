@@ -58,3 +58,27 @@ def parse_date_string(date):
             year = date[0:4]
             month = date[4:6] if date[4:6] != "00" else None
     return year, month
+
+
+def extract_value_from_journal_history(value):
+    """
+    Ex value:
+        [
+            {'c': '20120600', 'b': 'C', 'a': '20080000', 'd': 'S', '_': '', 'e': 'suspended-by-committee'}, 
+            {'c': '20030000', 'b': 'C', 'a': '19991216', 'd': 'S', '_': '', 'e': 'suspended-by-committee'}
+        ]
+    """
+    data = []
+    if value:
+        for v in value:
+            initial_year, initial_month = parse_date_string(value[0].get("a"))
+            final_year, final_month = parse_date_string(value[0].get("c"))
+            type = v.get("e")
+            data.append({
+                "initial_year": initial_year,
+                "initial_month": initial_month,
+                "final_year": final_year,
+                "final_month": final_month,
+                "occurrence_type": type,
+            })
+        return data
