@@ -258,7 +258,13 @@ class Country(CommonControlField):
             except:
                 pass
 
-        if name or acronym:
+        if acron3:
+            try:
+                return cls.objects.get(acron3__icontains=acron3)
+            except:
+                pass
+
+        if name or acronym or acron3:
             country = Country()
             country.name = name
             country.acronym = acronym
