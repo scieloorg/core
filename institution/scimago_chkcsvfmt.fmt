@@ -1,0 +1,11 @@
+[Organization]
+data_required=True
+type=String
+
+[Country]
+data_required=True
+type=String
+
+[URL]
+data_required=True
+type=String
