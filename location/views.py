@@ -63,6 +63,10 @@ def import_file_country(request):
 
             for line, row in enumerate(data):
                 c = Country()
+                c.name = row["Country"]
+                c.acronym = row["Acronym 2 letters"]
+                c.acron3 = row["Acronym 3 letters"]
+                c.creator = request.user
                 c.save()
 
     except Exception as ex:
