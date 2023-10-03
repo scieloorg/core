@@ -115,6 +115,7 @@ class TabsJournalTest(unittest.TestCase):
 
         self.assertDictEqual(expected, obtained)
 
+    def test_add_issns(self):
         obtained = {}
 
         add_issns(self.scielo_journal, obtained)
