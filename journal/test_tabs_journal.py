@@ -27,20 +27,37 @@ User = get_user_model()
 
 class TabsJournalTest(unittest.TestCase):
     def setUp(self):
-        self.official_journal = OfficialJournal.objects.create(
+        user, created = User.objects.get_or_create(username="teste_user", password="teste_user")
+        self.collection = Collection()
+        self.collection.acron3 = "bol"
+        self.collection.save()
+
+        self.official_journal = OfficialJournal.create_or_update(
+            user=user,
+            title="Official Journal Title",
             issn_print="0000-0000",
             issn_electronic="1111-1111",
             issnl="2222-2222",
+            foundation_year=None
         )
-
-        self.journal = Journal.objects.create(
-            official=self.official_journal,
+        self.journal = Journal.create_or_update(
+            user=user,
+            official_journal=self.official_journal,
+            title="Journal Title",
+            short_title=None,
+            other_titles=None,
         )
+        self.journal.subject.add(Subject.create_or_update(code="Health Sciences", user=user))
+        self.journal.subject.add(Subject.create_or_update(code="Exact and Earth Sciences", user=user))
 
-        self.scielo_journal = SciELOJournal.objects.create(
+        self.scielo_journal = SciELOJournal.create_or_update(
+            user=user,
+            collection=self.collection,
             issn_scielo="0000-0000",
             journal=self.journal,
+            journal_acron=None
         )
+        self.scielo_journal.status = "Current"
 
     @patch('journal.outputs.tabs_journal.get_date')
     def test_add_tabs_journal(self, mock_get_date):
