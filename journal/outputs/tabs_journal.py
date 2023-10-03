@@ -67,6 +67,36 @@ def add_issn_scielo(scielo_journal, dict_data={}):
         raise AddIssnScieloToTabsError(e, scielo_journal)
 
 
+def add_issns(scielo_journal, dict_data={}):
+    """
+    Adiciona uma série de ISSN's em um dicionário
+
+    Parameters
+    ----------
+    scielo_journal : journal.models.SciELOJournal
+        Objeto com dados de um periódico SciELO
+
+    dict_data : dict
+        Dicionário que receberá os dados
+
+    Returns
+    -------
+    dict_data : dict
+        Dicionário com dados adicionados, como por exemplo:
+        {
+            "ISSN's": "0000-0000;1111-1111;2222-2222"
+        }
+    """
+    try:
+        dict_data["ISSN's"] = ";".join([
+            scielo_journal.journal.official.issn_print,
+            scielo_journal.journal.official.issn_electronic,
+            scielo_journal.journal.official.issnl
+        ])
+    except AttributeError as e:
+        raise AddIssnsToTabsError(e, scielo_journal)
+
+
     try:
         dict_data["ISSN SciELO"] = obj.issn_scielo
     except AttributeError as e:
