@@ -173,17 +173,30 @@ def add_title_thematic_areas(scielo_journal, dict_data={}):
         raise AddTitleThematicAreasError(e, scielo_journal)
 
 
+def add_title_current_status(scielo_journal, dict_data={}):
+    """
+    Adiciona o estado do periódico em um dicionário
+
+    Parameters
+    ----------
+    scielo_journal : journal.models.SciELOJournal
+        Objeto com dados de um periódico SciELO
+
+    dict_data : dict
+        Dicionário que receberá os dados
+
+    Returns
+    -------
+    dict_data : dict
+        Dicionário com dados adicionados, como por exemplo:
+        {
+            "title current status": "current"
+        }
+    """
     try:
-        issn = None
-        if type(obj) is OfficialJournal:
-            issn = obj
-        elif type(obj) is Journal:
-            issn = obj.official
-        elif type(obj) is SciELOJournal:
-            issn = obj.journal.official
-        dict_data["ISSN's"] = ";".join([issn.issn_print, issn.issn_electronic, issn.issnl])
+        dict_data["title current status"] = scielo_journal.status.lower()
     except AttributeError as e:
-        raise AddIssnsToTabsError(e, obj)
+        raise AddTitleCurrentStatusError(e, scielo_journal)
 
 
 def add_tabs_journal(obj, collection, dict_data={}):
