@@ -97,10 +97,32 @@ def add_issns(scielo_journal, dict_data={}):
         raise AddIssnsToTabsError(e, scielo_journal)
 
 
+def add_title_at_scielo(scielo_journal, dict_data={}):
+    """
+    Adiciona o título do periódico em um dicionário
+
+    Parameters
+    ----------
+    scielo_journal : journal.models.SciELOJournal
+        Objeto com dados de um periódico SciELO
+
+    dict_data : dict
+        Dicionário que receberá os dados
+
+    Returns
+    -------
+    dict_data : dict
+        Dicionário com dados adicionados, como por exemplo:
+        {
+            "title at SciELO": "Journal Title"
+        }
+    """
     try:
-        dict_data["ISSN SciELO"] = obj.issn_scielo
+        dict_data["title at SciELO"] = scielo_journal.journal.title
     except AttributeError as e:
-        raise AddIssnScieloToTabsError(e, obj)
+        raise AddTitleAtScieloError(e, scielo_journal)
+
+
 
 
 def add_issns(obj, dict_data={}):
