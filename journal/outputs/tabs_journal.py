@@ -41,7 +41,32 @@ def add_extraction_date(dict_data={}):
     dict_data["extraction date"] = get_date()
 
 
-def add_issn_scielo(obj, dict_data={}):
+def add_issn_scielo(scielo_journal, dict_data={}):
+    """
+    Adiciona o ISSN SciELO em um dicionário
+
+    Parameters
+    ----------
+    scielo_journal : journal.models.SciELOJournal
+        Objeto com dados de um periódico SciELO
+
+    dict_data : dict
+        Dicionário que receberá os dados
+
+    Returns
+    -------
+    dict_data : dict
+        Dicionário com dados adicionados, como por exemplo:
+        {
+            "ISSN SciELO": "0000-0000"
+        }
+    """
+    try:
+        dict_data["ISSN SciELO"] = scielo_journal.issn_scielo
+    except AttributeError as e:
+        raise AddIssnScieloToTabsError(e, scielo_journal)
+
+
     try:
         dict_data["ISSN SciELO"] = obj.issn_scielo
     except AttributeError as e:
