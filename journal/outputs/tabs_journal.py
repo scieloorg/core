@@ -22,6 +22,22 @@ def get_date():
 
 
 def add_extraction_date(dict_data={}):
+    """
+    Adiciona a data de extração dos dados em um dicionário
+
+    Parameters
+    ----------
+    dict_data : dict
+        Dicionário que receberá os dados
+
+    Returns
+    -------
+    dict_data : dict
+        Dicionário com dados adicionados, como por exemplo:
+        {
+            "extraction date": "1900-01-01"
+        }
+    """
     dict_data["extraction date"] = get_date()
 
 
