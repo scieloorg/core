@@ -10,6 +10,14 @@ from journal.exceptions import (
 
 
 def get_date():
+    """
+    Obtem a data de execução do código
+
+    Returns
+    -------
+    str
+        2023-08-30
+    """
     return datetime.utcnow().strftime("%Y-%m-%d")
 
 
