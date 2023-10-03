@@ -199,11 +199,47 @@ def add_title_current_status(scielo_journal, dict_data={}):
         raise AddTitleCurrentStatusError(e, scielo_journal)
 
 
-def add_tabs_journal(obj, collection, dict_data={}):
+def add_tabs_journal(scielo_journal, collection, dict_data={}):
+    """
+    Adiciona informações do periódico em um dicionário
+
+    Parameters
+    ----------
+    scielo_journal : journal.models.SciELOJournal
+        Objeto com dados de um periódico SciELO
+
+    dict_data : dict
+        Dicionário que receberá os dados
+
+    Returns
+    -------
+    dict_data : dict
+        Dicionário com dados adicionados, como por exemplo:
+        {
+            "extraction date": "1900-01-01",
+            "study unit": "journal",
+            "collection": "bol",
+            "ISSN SciELO": "0000-0000",
+            "ISSN's": "0000-0000;1111-1111;2222-2222",
+            "title at SciELO": "Journal Title",
+            "title thematic areas": "Health Sciences;Exact and Earth Sciences",
+            "title is agricultural sciences": 0,
+            "title is applied social sciences": 0,
+            "title is biological sciences": 0,
+            "title is engineering": 0,
+            "title is exact and earth sciences": 1,
+            "title is health sciences": 1,
+            "title is human sciences": 0,
+            "title is linguistics, letters and arts": 0,
+            "title is multidisciplinary": 0
+        }
+    """
     add_extraction_date(dict_data)
     dict_data.update({
         "study unit": "journal",
         "collection": collection
     })
-    add_issn_scielo(obj, dict_data)
-    add_issns(obj, dict_data)
+    add_issn_scielo(scielo_journal, dict_data)
+    add_issns(scielo_journal, dict_data)
+    add_title_at_scielo(scielo_journal, dict_data)
+    add_title_thematic_areas(scielo_journal, dict_data)
