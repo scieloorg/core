@@ -137,6 +137,17 @@ class TabsJournalTest(unittest.TestCase):
 
         self.assertDictEqual(expected, obtained)
 
+    def test_add_title_current_status(self):
+        obtained = {}
+
+        add_title_current_status(self.scielo_journal, obtained)
+
+        expected = {
+            "title current status": "current"
+        }
+
+        self.assertDictEqual(expected, obtained)
+
 
 if __name__ == '__main__':
     unittest.main()
