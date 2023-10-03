@@ -3,12 +3,9 @@ from datetime import datetime
 from journal.exceptions import (
     AddIssnScieloToTabsError,
     AddIssnsToTabsError,
-)
-
-from journal.models import (
-    Journal,
-    OfficialJournal,
-    SciELOJournal,
+    AddTitleAtScieloError,
+    AddTitleThematicAreasError,
+    AddTitleCurrentStatusError,
 )
 
 
