@@ -74,7 +74,18 @@ class TabsJournalTest(unittest.TestCase):
             "study unit": "journal",
             "collection": "bol",
             "ISSN SciELO": "0000-0000",
-            "ISSN's": "0000-0000;1111-1111;2222-2222"
+            "ISSN's": "0000-0000;1111-1111;2222-2222",
+            "title at SciELO": "Journal Title",
+            "title thematic areas": "Health Sciences;Exact and Earth Sciences",
+            "title is agricultural sciences": 0,
+            "title is applied social sciences": 0,
+            "title is biological sciences": 0,
+            "title is engineering": 0,
+            "title is exact and earth sciences": 1,
+            "title is health sciences": 1,
+            "title is human sciences": 0,
+            "title is linguistics, letters and arts": 0,
+            "title is multidisciplinary": 0
         }
 
         self.assertDictEqual(expected, obtained)
