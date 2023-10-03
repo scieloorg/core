@@ -123,9 +123,56 @@ def add_title_at_scielo(scielo_journal, dict_data={}):
         raise AddTitleAtScieloError(e, scielo_journal)
 
 
+def add_title_thematic_areas(scielo_journal, dict_data={}):
+    """
+    Adiciona as áreas temáticas do periódico em um dicionário
+
+    Parameters
+    ----------
+    scielo_journal : journal.models.SciELOJournal
+        Objeto com dados de um periódico SciELO
+
+    dict_data : dict
+        Dicionário que receberá os dados
+
+    Returns
+    -------
+    dict_data : dict
+        Dicionário com dados adicionados, como por exemplo:
+        {
+            "title thematic areas": "Health Sciences;Exact and Earth Sciences",
+            "title is agricultural sciences": 0,
+            "title is applied social sciences": 0,
+            "title is biological sciences": 0,
+            "title is engineering": 0,
+            "title is exact and earth sciences": 1,
+            "title is health sciences": 1,
+            "title is human sciences": 0,
+            "title is linguistics, letters and arts": 0,
+            "title is multidisciplinary": 0
+        }
+    """
+    subjects = {
+        "title is agricultural sciences": "Agricultural Sciences",
+        "title is applied social sciences": "Applied Social Sciences",
+        "title is biological sciences": "Biological Sciences",
+        "title is engineering": "Engineering",
+        "title is exact and earth sciences": "Exact and Earth Sciences",
+        "title is health sciences": "Health Sciences",
+        "title is human sciences": "Human Sciences",
+        "title is linguistics, letters and arts": "Linguistic, Literature and Arts",
+        "title is multidisciplinary": "Multidisciplinary"
+    }
+
+    try:
+        thematic_areas = [subject.value for subject in scielo_journal.journal.subject.iterator()]
+        dict_data["title thematic areas"] = ";".join(thematic_areas)
+        for column, value in subjects.items():
+            dict_data[column] = 1 if value in thematic_areas else 0
+    except AttributeError as e:
+        raise AddTitleThematicAreasError(e, scielo_journal)
 
 
-def add_issns(obj, dict_data={}):
     try:
         issn = None
         if type(obj) is OfficialJournal:
