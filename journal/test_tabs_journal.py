@@ -148,6 +148,26 @@ class TabsJournalTest(unittest.TestCase):
 
         self.assertDictEqual(expected, obtained)
 
+    def test_add_title_thematic_areas(self):
+        obtained = {}
+
+        add_title_thematic_areas(self.scielo_journal, obtained)
+
+        expected = {
+            "title thematic areas": "Health Sciences;Exact and Earth Sciences",
+            "title is agricultural sciences": 0,
+            "title is applied social sciences": 0,
+            "title is biological sciences": 0,
+            "title is engineering": 0,
+            "title is exact and earth sciences": 1,
+            "title is health sciences": 1,
+            "title is human sciences": 0,
+            "title is linguistics, letters and arts": 0,
+            "title is multidisciplinary": 0
+        }
+
+        self.assertDictEqual(expected, obtained)
+
 
 if __name__ == '__main__':
     unittest.main()
