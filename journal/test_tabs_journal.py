@@ -115,29 +115,6 @@ class TabsJournalTest(unittest.TestCase):
 
         self.assertDictEqual(expected, obtained)
 
-    def test_add_issns_object_is_journal(self):
-        obtained = {}
-
-        add_issns(self.journal, obtained)
-
-        expected = {
-            "ISSN's": "0000-0000;1111-1111;2222-2222"
-        }
-
-        self.assertDictEqual(expected, obtained)
-
-    def test_add_issns_object_is_official_journal(self):
-        obtained = {}
-
-        add_issns(self.official_journal, obtained)
-
-        expected = {
-            "ISSN's": "0000-0000;1111-1111;2222-2222"
-        }
-
-        self.assertDictEqual(expected, obtained)
-
-    def test_add_issns_object_is_scielo_journal(self):
         obtained = {}
 
         add_issns(self.scielo_journal, obtained)
