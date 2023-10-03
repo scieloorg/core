@@ -59,3 +59,17 @@ class AddIssnsToTabsError(Exception):
     def __init__(self, message, obj):
         super().__init__(f"Unable to add ISSN's Tabs from {str(obj)}: {str(message)}")
 
+
+class AddTitleAtScieloError(Exception):
+    def __init__(self, message, obj):
+        super().__init__(f"Unable to add Title at SciELO Tabs from {str(obj)}: {str(message)}")
+
+
+class AddTitleThematicAreasError(Exception):
+    def __init__(self, message, obj):
+        super().__init__(f"Unable to add Title Thematic Areas Tabs from {str(obj)}: {str(message)}")
+
+
+class AddTitleCurrentStatusError(Exception):
+    def __init__(self, message, obj):
+        super().__init__(f"Unable to add Title Current Status Tabs from {str(obj)}: {str(message)}")
