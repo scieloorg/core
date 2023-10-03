@@ -1,10 +1,15 @@
 import unittest
 from unittest.mock import patch
 
+from django.contrib.auth import get_user_model
+
+
 from journal.models import (
     SciELOJournal,
     Journal,
     OfficialJournal,
+    Collection,
+    Subject,
 )
 
 from journal.outputs.tabs_journal import (
@@ -12,7 +17,12 @@ from journal.outputs.tabs_journal import (
     add_tabs_journal,
     add_issn_scielo,
     add_issns,
+    add_title_at_scielo,
+    add_title_thematic_areas,
+    add_title_current_status,
 )
+
+User = get_user_model()
 
 
 class TabsJournalTest(unittest.TestCase):
