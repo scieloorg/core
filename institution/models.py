@@ -151,7 +151,6 @@ class Institution(CommonControlField, ClusterableModel):
         location,
         official,
         is_official,
-        copyright_holder,
         url,
         user,
     ):

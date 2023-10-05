@@ -188,7 +188,6 @@ def update_panel_institution(
                     user=user,
                     location=location,
                     url=url,
-                    copyright_holder=copyright_holder,
                     inst_acronym=None,
                     level_1=None,
                     level_2=None,
