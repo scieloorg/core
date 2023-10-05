@@ -16,7 +16,6 @@ class Institution(CommonControlField, ClusterableModel):
     institution_type = models.TextField(
         _("Institution Type"), choices=choices.inst_type, null=True, blank=True
     )
-    copyright_holder = models.TextField(_("Copy Right Holder"), null=True, blank=True)
     location = models.ForeignKey(
         Location, null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -209,6 +208,12 @@ class InstitutionHistory(models.Model):
 
 
 class Sponsor(Institution):
+    panels = Institution.panels
+
+    base_form_class = CoreAdminModelForm
+
+
+class CopyRightHolder(Institution):
     panels = Institution.panels
 
     base_form_class = CoreAdminModelForm
