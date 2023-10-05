@@ -241,6 +241,7 @@ class License(CommonControlField):
                 language=language,
                 license_type=license_type,
             )
+            license.updated_by = user
         except cls.DoesNotExist:
             license = cls()
             license.creator = user
@@ -249,7 +250,6 @@ class License(CommonControlField):
         license.license_p = license_p or license.license_p
         license.license_type = license_type or license.license_type
         license.language = language or license.language
-        license.updated_by = user
         license.save()
         return license
 
@@ -270,7 +270,7 @@ class License(CommonControlField):
         ]
 
     def __unicode__(self):
-        return self.url or self.license_p or self.license_type or ""
+        return self.license_type or self.url or self.license_p or ""
 
     def __str__(self):
-        return self.url or self.license_p or self.license_type or ""
+        return self.license_type or self.url or self.license_p or ""
