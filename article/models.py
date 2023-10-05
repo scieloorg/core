@@ -282,6 +282,7 @@ class DocumentTitle(RichTextWithLang, CommonControlField):
     def create_or_update(cls, title, title_rich, language, user):
         try:
             obj = cls.get(title=title)
+            obj.updated_by = user
         except cls.DoesNotExist:
             obj = cls()
             obj.plain_text = title
@@ -289,7 +290,6 @@ class DocumentTitle(RichTextWithLang, CommonControlField):
             
         obj.language = language or obj.language
         obj.rich_text = title_rich or obj.title_rich
-        obj.updated_by = user 
         obj.save()
         return obj
 
@@ -320,7 +320,7 @@ class DocumentAbstract(RichTextWithLang, CommonControlField):
     ):
         if text:
             return cls.objects.get(plain_text=text)
-        raise ValueError("DocumentAbstract.get requires text paramenter")
+        raise ValueError("DocumentAbstract.get requires text parameter")
 
     @classmethod
     def create_or_update(
