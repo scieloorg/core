@@ -413,8 +413,8 @@ class Journal(CommonControlField, ClusterableModel):
         null=True,
         blank=True,
     )  # (no xml é abbrev-journal-title do tipo nlm-title)
-    url_of_journal = models.URLField(
-        _("Url of Journal"),
+    journal_url = models.URLField(
+        _("Journal URL"),
         null=True,
         blank=True,
     )
