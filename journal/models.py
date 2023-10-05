@@ -51,8 +51,22 @@ class OfficialJournal(CommonControlField):
     parallel_titles = models.ManyToManyField(
         "JournalParallelTitles", null=True, blank=True
     )
-    new_title = models.ForeignKey("self", verbose_name=_("New Title"), on_delete=models.SET_NULL, null=True, blank=True, related_name="new_title_journal")
-    old_title = models.ForeignKey("self", verbose_name=_("Old Title"), on_delete=models.SET_NULL, null=True, blank=True, related_name="old_title_journal")
+    new_title = models.ForeignKey(
+        "self",
+        verbose_name=_("New Title"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="new_title_journal",
+    )
+    old_title = models.ForeignKey(
+        "self",
+        verbose_name=_("Old Title"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="old_title_journal",
+    )
     foundation_year = models.CharField(
         _("Foundation Year"), max_length=4, null=True, blank=True
     )
@@ -1332,15 +1346,35 @@ class Annotation(CommonControlField):
         annotation.updated_by = user
         annotation.save()
         return annotation
-    
+
 
 class JournalHistory(CommonControlField):
-    initial_year = models.CharField(_("Initial Occurrence date year"), max_length=4, null=True, blank=True)
-    initial_month = models.CharField(_("Initial Occurrence date month"), max_length=2, choices=MONTHS, null=True, blank=True)
-    initial_day = models.CharField(_("Initial Occurrence date day"), max_length=2, null=True, blank=True)
-    final_year = models.CharField(_("Final Occurrence date year"), max_length=4, null=True, blank=True)
-    final_month = models.CharField(_("Final Occurrence date month"), max_length=2, choices=MONTHS, null=True, blank=True)
-    final_day = models.CharField(_("Final Occurrence date day"), max_length=2, null=True, blank=True)
+    initial_year = models.CharField(
+        _("Initial Occurrence date year"), max_length=4, null=True, blank=True
+    )
+    initial_month = models.CharField(
+        _("Initial Occurrence date month"),
+        max_length=2,
+        choices=MONTHS,
+        null=True,
+        blank=True,
+    )
+    initial_day = models.CharField(
+        _("Initial Occurrence date day"), max_length=2, null=True, blank=True
+    )
+    final_year = models.CharField(
+        _("Final Occurrence date year"), max_length=4, null=True, blank=True
+    )
+    final_month = models.CharField(
+        _("Final Occurrence date month"),
+        max_length=2,
+        choices=MONTHS,
+        null=True,
+        blank=True,
+    )
+    final_day = models.CharField(
+        _("Final Occurrence date day"), max_length=2, null=True, blank=True
+    )
     occurrence_type = models.TextField(
         _("Occurrence type"),
         null=True,
@@ -1392,11 +1426,10 @@ class JournalHistory(CommonControlField):
             self.occurrence_type,
             self.initial_year,
             self.initial_month,
-            self.initial_day or '00',
+            self.initial_day or "00",
             self.final_year,
             self.final_month,
-            self.final_day or '00',
+            self.final_day or "00",
         )
 
     base_form_class = CoreAdminModelForm
-
