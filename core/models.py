@@ -223,14 +223,11 @@ class License(CommonControlField):
     def get(
         cls,
         url,
-        license_p,
         language,
         license_type,
         ):
         if url:
             return cls.objects.get(url=url, language=language)
-        if license_p:
-            return cls.objects.get(license_p=license_p, language=language)
         if license_type:
             return cls.objects.get(license_type=license_type, language=language)
         raise ValueError("License.get requires url, license_p, or license_type paramenters")
