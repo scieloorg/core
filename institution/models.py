@@ -1,7 +1,8 @@
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext as _
 from modelcluster.models import ClusterableModel
-from wagtail.admin.panels import FieldPanel, InlinePanel, PageChooserPanel
+from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
@@ -157,6 +158,7 @@ class Institution(CommonControlField, ClusterableModel):
 
         try:
             institution = cls.get(inst_name=inst_name, inst_acronym=inst_acronym)
+            institution.updated_by = user
         except cls.DoesNotExist:
             institution = cls()
             institution.name = inst_name
@@ -171,7 +173,6 @@ class Institution(CommonControlField, ClusterableModel):
         institution.is_official = is_official or institution.is_official
         institution.url = url or institution.url
         institution.copyright_holder = copyright_holder or institution.copyright_holder
-        institution.updated_by = user
         institution.save()
         return institution
 
