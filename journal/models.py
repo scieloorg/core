@@ -51,8 +51,8 @@ class OfficialJournal(CommonControlField):
     parallel_titles = models.ManyToManyField(
         "JournalParallelTitles", null=True, blank=True
     )
-    new_title = models.TextField(_("New Title"), null=True, blank=True)
-    old_title = models.TextField(_("Old Title"), null=True, blank=True)
+    new_title = models.ForeignKey("self", verbose_name=_("New Title"), null=True, blank=True)
+    old_title = models.ForeignKey("self", verbose_name=_("Old Title"), null=True, blank=True)
     foundation_year = models.CharField(
         _("Foundation Year"), max_length=4, null=True, blank=True
     )
