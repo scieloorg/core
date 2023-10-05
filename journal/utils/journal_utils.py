@@ -346,10 +346,10 @@ def create_or_update_official_journal(
     official_journal.initial_number = extract_value(initial_number)
     official_journal.initial_volume = extract_value(initial_volume)
 
-    (
-        official_journal.terminate_year,
-        official_journal.terminate_month,
-    ) = parse_date_string(date=terminate_date)
+    year, month = parse_date_string(date=terminate_date)
+    official_journal.terminate_year = year
+    official_journal.terminate_month = month
+    
     official_journal.final_number = extract_value(final_number)
     official_journal.final_volume = extract_value(final_volume)
     official_journal.save()
