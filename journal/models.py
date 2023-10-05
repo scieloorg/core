@@ -1099,7 +1099,7 @@ class Subject(CommonControlField):
     @classmethod
     def get(cls, code):
         if not code:
-            raise ValueError("Subject.get requires code paramenter")
+            raise ValueError("Subject.get requires code parameter")
         return cls.objects.get(code=code)
 
     @classmethod
@@ -1133,7 +1133,7 @@ class WebOfKnowledge(CommonControlField):
     @classmethod
     def get(cls, code):
         if not code:
-            raise ValueError("WebOfKnowledge.get requires code paramenter")
+            raise ValueError("WebOfKnowledge.get requires code parameter")
         return cls.objects.get(code=code)
 
     @classmethod
@@ -1174,7 +1174,7 @@ class Standard(CommonControlField):
     @classmethod
     def get(cls, code):
         if not code:
-            raise ValueError("Standard.get requires code paramenter")
+            raise ValueError("Standard.get requires code parameter")
         return cls.objects.get(code=code)
 
     @classmethod
@@ -1233,7 +1233,7 @@ class IndexedAt(CommonControlField):
             return cls.objects.get(name=name)
         if acronym:
             return cls.objects.get(acronym)
-        raise Exception("IndexedAt.get requires name or acronym paraments")
+        raise Exception("IndexedAt.get requires name or acronym paramets")
 
     @classmethod
     def create_or_update(
@@ -1307,7 +1307,7 @@ class Annotation(CommonControlField):
                 notes=notes, creation_date=creation_date, update_date=update_date
             )
         raise ValueError(
-            "Annotation.get requires notes, creation_date e update_date paramenters"
+            "Annotation.get requires notes, creation_date e update_date parameters"
         )
 
     @classmethod

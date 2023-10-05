@@ -136,7 +136,7 @@ class Institution(CommonControlField, ClusterableModel):
             return cls.objects.get(name=inst_name)
         if inst_acronym:
             return cls.objects.get(acronym=inst_acronym)
-        raise ValueError("Requires inst_name or inst_acronym paramenters")
+        raise ValueError("Requires inst_name or inst_acronym parameters")
 
 
     @classmethod

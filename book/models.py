@@ -162,7 +162,7 @@ class Book(CommonControlField, ClusterableModel):
             return cls.objects.get(eisbn=eisbn)
         if identifier:
             return cls.objects.get(identifier=identifier)
-        raise ValueError("Books.get requires doi, isbn, eisbn or identifier paramenters")
+        raise ValueError("Books.get requires doi, isbn, eisbn or identifier parameters")
 
     @classmethod
     def create_or_update(

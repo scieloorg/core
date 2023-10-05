@@ -114,7 +114,7 @@ class Researcher(ClusterableModel, CommonControlField):
             return cls.objects.get(given_names=given_names, last_name=last_name)
         elif declared_name:
             return cls.objects.get(declared_name=declared_name)
-        raise ValueError("Researcher.get requires orcid, given_names, last_names or declared_name paramenters")
+        raise ValueError("Researcher.get requires orcid, given_names, last_names or declared_name parameters")
 
     @classmethod
     def create_or_update(
