@@ -172,7 +172,6 @@ class Institution(CommonControlField, ClusterableModel):
         institution.official = official or institution.official
         institution.is_official = is_official or institution.is_official
         institution.url = url or institution.url
-        institution.copyright_holder = copyright_holder or institution.copyright_holder
         institution.save()
         return institution
 
