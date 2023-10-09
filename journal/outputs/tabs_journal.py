@@ -257,6 +257,29 @@ def add_short_title_scielo(scielo_journal, dict_data={}):
         raise AddShortTitleScieloError(e, scielo_journal)
 
 
+def add_title_pubmed(scielo_journal, dict_data={}):
+    """
+        Adiciona o título PubMed do periódico em um dicionário
+
+        Parameters
+        ----------
+        scielo_journal : journal.models.SciELOJournal
+            Objeto com dados de um periódico SciELO
+
+        dict_data : dict
+            Dicionário que receberá os dados
+
+        Returns
+        -------
+        dict_data : dict
+            Dicionário com dados adicionados, como por exemplo:
+            {
+                "title PubMed": None
+            }
+        """
+    # TODO os valores para esse atributo não são disponíveis
+
+
 def add_tabs_journal(scielo_journal, collection, dict_data={}):
     """
     Adiciona informações do periódico em um dicionário
