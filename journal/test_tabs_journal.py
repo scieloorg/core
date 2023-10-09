@@ -200,6 +200,17 @@ class TabsJournalTest(unittest.TestCase):
 
         self.assertDictEqual(expected, obtained)
 
+    def test_add_short_title_scielo(self):
+        obtained = {}
+
+        add_short_title_scielo(self.scielo_journal, obtained)
+
+        expected = {
+            "short title SciELO": "Journal Short Title"
+        }
+
+        self.assertDictEqual(expected, obtained)
+
 
 if __name__ == '__main__':
     unittest.main()
