@@ -342,7 +342,10 @@ def add_tabs_journal(scielo_journal, collection, dict_data={}):
             "title is health sciences": 1,
             "title is human sciences": 0,
             "title is linguistics, letters and arts": 0,
-            "title is multidisciplinary": 0
+            "title is multidisciplinary": 0,
+            "title + subtitle SciELO": "Journal Title",
+            "short title SciELO": "Journal Short Title",
+            "publisher name": "Colegio Médico de La Paz; Sociedad Boliviana de Pediatría"
         }
     """
     add_extraction_date(dict_data)
@@ -354,3 +357,6 @@ def add_tabs_journal(scielo_journal, collection, dict_data={}):
     add_issns(scielo_journal, dict_data)
     add_title_at_scielo(scielo_journal, dict_data)
     add_title_thematic_areas(scielo_journal, dict_data)
+    add_title_subtitle_scielo(scielo_journal, dict_data)
+    add_short_title_scielo(scielo_journal, dict_data)
+    add_publisher_name(scielo_journal, dict_data)
