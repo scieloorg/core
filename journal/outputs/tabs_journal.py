@@ -280,6 +280,33 @@ def add_title_pubmed(scielo_journal, dict_data={}):
     # TODO os valores para esse atributo não são disponíveis
 
 
+def add_publisher_name(scielo_journal, dict_data={}):
+    """
+        Adiciona o título curto do periódico em um dicionário
+
+        Parameters
+        ----------
+        scielo_journal : journal.models.SciELOJournal
+            Objeto com dados de um periódico SciELO
+
+        dict_data : dict
+            Dicionário que receberá os dados
+
+        Returns
+        -------
+        dict_data : dict
+            Dicionário com dados adicionados, como por exemplo:
+            {
+                "publisher name": "Colegio Médico de La Paz; Sociedad Boliviana de Pediatría"
+            }
+        """
+    try:
+        publishers = Publisher.objects.filter(page=scielo_journal.journal)
+        dict_data["publisher name"] = "; ".join([p.institution.name for p in publishers])
+    except AttributeError as e:
+        raise AddPublisherNameError(e, scielo_journal)
+
+
 def add_tabs_journal(scielo_journal, collection, dict_data={}):
     """
     Adiciona informações do periódico em um dicionário
