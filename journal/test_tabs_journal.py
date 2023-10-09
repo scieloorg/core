@@ -211,6 +211,17 @@ class TabsJournalTest(unittest.TestCase):
 
         self.assertDictEqual(expected, obtained)
 
+    def test_add_publisher_name(self):
+        obtained = {}
+
+        add_publisher_name(self.scielo_journal, obtained)
+
+        expected = {
+            "publisher name": "Colegio Médico de La Paz; Sociedad Boliviana de Pediatría"
+        }
+
+        self.assertDictEqual(expected, obtained)
+
 
 if __name__ == '__main__':
     unittest.main()
