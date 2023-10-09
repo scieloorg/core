@@ -231,6 +231,32 @@ def add_title_subtitle_scielo(scielo_journal, dict_data={}):
         raise AddTitleSubtitleScieloError(e, scielo_journal)
 
 
+def add_short_title_scielo(scielo_journal, dict_data={}):
+    """
+        Adiciona o título curto do periódico em um dicionário
+
+        Parameters
+        ----------
+        scielo_journal : journal.models.SciELOJournal
+            Objeto com dados de um periódico SciELO
+
+        dict_data : dict
+            Dicionário que receberá os dados
+
+        Returns
+        -------
+        dict_data : dict
+            Dicionário com dados adicionados, como por exemplo:
+            {
+                "short title SciELO": "Journal Short Title"
+            }
+        """
+    try:
+        dict_data["short title SciELO"] = scielo_journal.journal.short_title
+    except AttributeError as e:
+        raise AddShortTitleScieloError(e, scielo_journal)
+
+
 def add_tabs_journal(scielo_journal, collection, dict_data={}):
     """
     Adiciona informações do periódico em um dicionário
