@@ -1,11 +1,17 @@
 from datetime import datetime
 
+from journal.models import Publisher, Copyright
+
 from journal.exceptions import (
     AddIssnScieloToTabsError,
     AddIssnsToTabsError,
     AddTitleAtScieloError,
     AddTitleThematicAreasError,
     AddTitleCurrentStatusError,
+    AddTitleSubtitleScieloError,
+    AddShortTitleScieloError,
+    AddPublisherNameError,
+    AddUseLicenseError,
 )
 
 
