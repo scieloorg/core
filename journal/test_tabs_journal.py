@@ -3,6 +3,8 @@ from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 
+from institution.models import Institution
+
 
 from journal.models import (
     SciELOJournal,
@@ -10,6 +12,8 @@ from journal.models import (
     OfficialJournal,
     Collection,
     Subject,
+    Publisher,
+    Copyright,
 )
 
 from journal.outputs.tabs_journal import (
@@ -20,6 +24,10 @@ from journal.outputs.tabs_journal import (
     add_title_at_scielo,
     add_title_thematic_areas,
     add_title_current_status,
+    add_title_subtitle_scielo,
+    add_short_title_scielo,
+    add_publisher_name,
+    add_use_license,
 )
 
 User = get_user_model()
