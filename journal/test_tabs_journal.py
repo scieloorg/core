@@ -34,11 +34,11 @@ User = get_user_model()
 
 
 class TabsJournalTest(unittest.TestCase):
+    maxDiff = None
+
     def setUp(self):
         user, created = User.objects.get_or_create(username="teste_user", password="teste_user")
-        self.collection = Collection()
-        self.collection.acron3 = "bol"
-        self.collection.save()
+        self.collection, created = Collection.objects.get_or_create(acron3="bol", creator=user)
 
         self.official_journal = OfficialJournal.create_or_update(
             user=user,
@@ -52,11 +52,18 @@ class TabsJournalTest(unittest.TestCase):
             user=user,
             official_journal=self.official_journal,
             title="Journal Title",
-            short_title=None,
+            short_title="Journal Short Title",
             other_titles=None,
         )
         self.journal.subject.add(Subject.create_or_update(code="Health Sciences", user=user))
         self.journal.subject.add(Subject.create_or_update(code="Exact and Earth Sciences", user=user))
+
+        for publ in ["Colegio Médico de La Paz", "Sociedad Boliviana de Pediatría"]:
+            self.publisher = Publisher(page=self.journal)
+            self.publisher.save()
+            self.publisher.institution, created = Institution.objects.get_or_create(name=publ, creator=user)
+            self.publisher.institution.save()
+            self.publisher.save()
 
         self.scielo_journal = SciELOJournal.create_or_update(
             user=user,
@@ -66,6 +73,9 @@ class TabsJournalTest(unittest.TestCase):
             journal_acron=None
         )
         self.scielo_journal.status = "Current"
+
+    def tearDown(self):
+        Publisher.objects.all().delete()
 
     @patch('journal.outputs.tabs_journal.get_date')
     def test_add_tabs_journal(self, mock_get_date):
