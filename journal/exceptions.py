@@ -73,3 +73,23 @@ class AddTitleThematicAreasError(Exception):
 class AddTitleCurrentStatusError(Exception):
     def __init__(self, message, obj):
         super().__init__(f"Unable to add Title Current Status Tabs from {str(obj)}: {str(message)}")
+
+
+class AddTitleSubtitleScieloError(Exception):
+    def __init__(self, message, obj):
+        super().__init__(f"Unable to add Title and Subtitle SciELO Tabs from {str(obj)}: {str(message)}")
+
+
+class AddShortTitleScieloError(Exception):
+    def __init__(self, message, obj):
+        super().__init__(f"Unable to add Short Title SciELO Tabs from {str(obj)}: {str(message)}")
+
+
+class AddPublisherNameError(Exception):
+    def __init__(self, message, obj):
+        super().__init__(f"Unable to add Publisher Name Tabs from {str(obj)}: {str(message)}")
+
+
+class AddUseLicenseError(Exception):
+    def __init__(self, message, obj):
+        super().__init__(f"Unable to add Use License Tabs from {str(obj)}: {str(message)}")
