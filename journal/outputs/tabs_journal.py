@@ -316,6 +316,9 @@ def add_tabs_journal(scielo_journal, collection, dict_data={}):
     scielo_journal : journal.models.SciELOJournal
         Objeto com dados de um periódico SciELO
 
+    collection : str
+        Nome da coleção de interesse
+
     dict_data : dict
         Dicionário que receberá os dados
 
