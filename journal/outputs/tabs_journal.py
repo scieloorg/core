@@ -205,6 +205,32 @@ def add_title_current_status(scielo_journal, dict_data={}):
         raise AddTitleCurrentStatusError(e, scielo_journal)
 
 
+def add_title_subtitle_scielo(scielo_journal, dict_data={}):
+    """
+        Adiciona o título e o subtítulo do periódico em um dicionário
+
+        Parameters
+        ----------
+        scielo_journal : journal.models.SciELOJournal
+            Objeto com dados de um periódico SciELO
+
+        dict_data : dict
+            Dicionário que receberá os dados
+
+        Returns
+        -------
+        dict_data : dict
+            Dicionário com dados adicionados, como por exemplo:
+            {
+                "title + subtitle SciELO": "Journal Title"
+            }
+        """
+    try:
+        dict_data["title + subtitle SciELO"] = scielo_journal.journal.title
+    except AttributeError as e:
+        raise AddTitleSubtitleScieloError(e, scielo_journal)
+
+
 def add_tabs_journal(scielo_journal, collection, dict_data={}):
     """
     Adiciona informações do periódico em um dicionário
