@@ -103,7 +103,10 @@ class TabsJournalTest(unittest.TestCase):
             "title is health sciences": 1,
             "title is human sciences": 0,
             "title is linguistics, letters and arts": 0,
-            "title is multidisciplinary": 0
+            "title is multidisciplinary": 0,
+            "title + subtitle SciELO": "Journal Title",
+            "short title SciELO": "Journal Short Title",
+            "publisher name": "Colegio Médico de La Paz; Sociedad Boliviana de Pediatría"
         }
 
         self.assertDictEqual(expected, obtained)
