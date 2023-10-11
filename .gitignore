@@ -1,6 +1,7 @@
 # Solr
 index/core/data
 index/oai/data
+index/data
 ### Python template
 # Byte-compiled / optimized / DLL files
 __pycache__/
