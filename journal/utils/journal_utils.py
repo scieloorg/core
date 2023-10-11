@@ -2,7 +2,7 @@ import re
 
 from django.db.models import Q
 from core.models import Language, License
-from institution.models import Institution
+from institution.models import Publisher, Owner, Sponsor, CopyrightHolder
 from vocabulary.models import Vocabulary
 from reference.models import JournalTitle
 from .funcs_extract_am import (
@@ -18,10 +18,10 @@ from journal.models import (
     Journal,
     SciELOJournal,
     Mission,
-    Publisher,
-    Owner,
+    PublisherHistory,
+    OwnerHistory,
     Annotation,
-    Sponsor,
+    SponsorHistory,
     SubjectDescriptor,
     Subject,
     Standard,
@@ -29,7 +29,8 @@ from journal.models import (
     WebOfKnowledgeSubjectCategory,
     IndexedAt,
     JournalParallelTitles,
-    JournalHistory
+    JournalHistory,
+    CopyrightHolderHistory,
 )
 from location.models import City, Region, Location, State, Country, Address
 
@@ -174,7 +175,6 @@ def update_panel_institution(
         user,
     )
     url = extract_value(electronic_address)
-    copyright_holder = extract_value(copyright_holder)
     publisher = extract_value(publisher)
 
     if isinstance(publisher, str):
@@ -183,7 +183,7 @@ def update_panel_institution(
     if publisher:
         for p in publisher:
             if p:
-                institution = Institution.create_or_update(
+                publisher = Publisher.create_or_update(
                     inst_name=p,
                     user=user,
                     location=location,
@@ -195,15 +195,37 @@ def update_panel_institution(
                     official=None,
                     is_official=None,
                 )
-                publisher = Publisher.objects.get_or_create(
-                    page=journal,
-                    institution=institution,
+                publisher_history = PublisherHistory.create_or_update(
+                    publisher=publisher,
+                    user=user,
                 )
-                Owner.objects.get_or_create(
-                    page=journal,
-                    institution=institution,
+                publisher_history.journal = journal
+                publisher_history.save()
+                owner = Owner.create_or_update(
+                    inst_name=p,
+                    user=user,
+                    location=location,
+                    url=url,
+                    inst_acronym=None,
+                    level_1=None,
+                    level_2=None,
+                    level_3=None,
+                    official=None,
+                    is_official=None,
                 )
-
+                owner_history = OwnerHistory.create_or_update(
+                    owner=owner,
+                    user=user,
+                )
+                owner_history.journal = journal
+                owner_history.save()
+                
+    
+    get_or_create_copyright_holder(
+        journal=journal, 
+        copyright_holder_name=copyright_holder, 
+        user=user
+    )
 
 def update_panel_website(
     journal,
@@ -333,8 +355,8 @@ def create_or_update_official_journal(
     get_or_update_parallel_titles(
         of_journal=official_journal, parallel_titles=parallel_titles
     )
-    official_journal.new_title = extract_value(new_title)
-    official_journal.old_title = extract_value(old_title)
+    # official_journal.new_title = extract_value(new_title)
+    # official_journal.old_title = extract_value(old_title)
     official_journal.iso_short_title = extract_value(iso_short_title)
 
     initial_date = extract_value(initial_date)
@@ -402,22 +424,24 @@ def get_or_create_sponsor(sponsor, journal, user):
             ## Fundação Getulio Vargas/ Escola de Administração de Empresas de São Paulo
             ## CNPq - Conselho Nacional de Desenvolvimento Científico e Tecnológico (PIEB)
             if name:
-                obj, created = Sponsor.objects.get_or_create(
-                    page=journal,
-                    institution=Institution.create_or_update(
-                        inst_name=name,
-                        copyright_holder=None,
-                        inst_acronym=None,
-                        level_1=None,
-                        level_2=None,
-                        level_3=None,
-                        location=None,
-                        official=None,
-                        is_official=None,
-                        url=None,
-                        user=user,
-                    ),
+                sponsor = Sponsor.create_or_update(
+                    inst_name=name,
+                    user=user,
+                    inst_acronym=None,
+                    level_1=None,
+                    level_2=None,
+                    level_3=None,
+                    location=None,
+                    official=None,
+                    is_official=None,
+                    url=None,
                 )
+                sponsor_history = SponsorHistory.create_or_update(
+                    sponsor=sponsor,
+                    user=user,
+                )
+                sponsor_history.journal = journal
+                sponsor_history.save()
 
 
 def get_or_create_subject_descriptor(subject_descriptors, journal, user):
@@ -651,3 +675,30 @@ def get_or_create_journal_history(scielo_journal, journal_history):
             )
             data.append(obj)
         scielo_journal.journal_history.set(data)
+
+
+def get_or_create_copyright_holder(journal, copyright_holder_name, user):
+    """
+    Ex copyright_holder_name:
+        [{'_': 'Departamento de História da Universidade Federal Fluminense - UFF'}]
+    """
+    copyright_holder_name = extract_value(copyright_holder_name)
+    if copyright_holder_name:
+        copyright_holder = CopyrightHolder.create_or_update(
+            inst_name=copyright_holder_name,
+            user=user,
+            inst_acronym=None,
+            level_1=None,
+            level_2=None,
+            level_3=None,
+            location=None,
+            official=None,
+            is_official=None,
+            url=None,
+        )
+        copyright_holder_history = CopyrightHolderHistory.create_or_update(
+            copyright_holder=copyright_holder,
+            user=user,
+        )
+        copyright_holder_history.journal = journal
+        copyright_holder_history.save()
