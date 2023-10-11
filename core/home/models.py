@@ -13,7 +13,6 @@ from wagtailcaptcha.models import WagtailCaptchaEmailForm
 class HomePage(Page):
     pass
 
-
 class FormField(AbstractFormField):
     page = ParentalKey("FormPage", on_delete=models.CASCADE, related_name="form_fields")
 

@@ -20,7 +20,7 @@ def search(request):
     fqfilters = request.GET.get("filters")
     facet_name = request.GET.get("more_facet_name")
     facet_count = request.GET.get("more_facet_count")
-    sort_by = request.GET.get("selectSortKey", "pub_date_year desc")
+    sort_by = request.GET.get("selectSortKey", "year_cluster desc")
 
     if search_query == "" or not search_query:
         query = "*:*"
@@ -81,5 +81,6 @@ def search(request):
             "itensPage": rows,
             "settings": settings,
             "total_pages": total_pages,
+            "selectSortKey": sort_by,
         },
     )

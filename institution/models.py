@@ -7,9 +7,10 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
-from location.models import Location
+from location.models import Location, Country
 
 from . import choices
+from .forms import ScimagoForm
 
 
 class Institution(CommonControlField, ClusterableModel):
@@ -442,3 +443,95 @@ class EditorialManagerHistoryItem(CommonControlField):
         history.final_date = final_date
         history.save()
         return history    
+
+
+class Scimago(CommonControlField, ClusterableModel):
+    institution = models.TextField(_("Institution"), null=True, blank=True)
+    country = models.ForeignKey(
+        Country, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    url = models.URLField("url", blank=True, null=True)
+
+    panels = [
+        FieldPanel("institution"),
+        AutocompletePanel("country", heading=_("Country")),
+        FieldPanel("url"),
+    ]
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    "institution",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "url",
+                ]
+            )
+        ]
+    
+    def __unicode__(self):
+        return "%s | %s | %s" % (
+            self.institution,
+            self.country,
+            self.url,
+        )
+
+    def __str__(self):
+        return "%s | %s | %s" % (
+            self.institution,
+            self.country,
+            self.url,
+        )
+
+    @classmethod
+    def get(cls, institution=None, country_acron3=None):
+        if institution and country_acron3:
+            return cls.objects.get(institution__icontains=institution, country__acron3__icontains=country_acron3)
+        raise ValueError("Scimago.get requires institution and country acronym (3 char)")
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        institution,
+        country_acron3,
+        url
+    ):
+        try:
+            obj = cls.get(institution=institution, country_acron3=country_acron3)
+            obj.updated_by = user
+        except (cls.DoesNotExist, ValueError):
+            obj = cls(creator=user)
+
+        c = Country()
+        c = c.get_or_create(user=user, acron3=country_acron3)
+
+        obj.institution = institution or obj.institution
+        obj.country = c or obj.country
+        obj.url = url or obj.url
+        obj.save()
+        return obj
+    
+    base_form_class = ScimagoForm
+
+
+class ScimagoFile(models.Model):
+    attachment = models.ForeignKey(
+        "wagtaildocs.Document",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    is_valid = models.BooleanField(_("Is valid?"), default=False, blank=True, null=True)
+    line_count = models.IntegerField(
+        _("Number of lines"), default=0, blank=True, null=True
+    )
+
+    def filename(self):
+        return os.path.basename(self.attachment.name)
+
+    panels = [FieldPanel("attachment")]
