@@ -196,7 +196,7 @@ def update_panel_institution(
                     is_official=None,
                 )
                 publisher_history = PublisherHistory.create_or_update(
-                    publisher=publisher,
+                    institution=publisher,
                     user=user,
                 )
                 publisher_history.journal = journal
@@ -214,7 +214,7 @@ def update_panel_institution(
                     is_official=None,
                 )
                 owner_history = OwnerHistory.create_or_update(
-                    owner=owner,
+                    institution=owner,
                     user=user,
                 )
                 owner_history.journal = journal
@@ -437,7 +437,7 @@ def get_or_create_sponsor(sponsor, journal, user):
                     url=None,
                 )
                 sponsor_history = SponsorHistory.create_or_update(
-                    sponsor=sponsor,
+                    institution=sponsor,
                     user=user,
                 )
                 sponsor_history.journal = journal
@@ -697,7 +697,7 @@ def get_or_create_copyright_holder(journal, copyright_holder_name, user):
             url=None,
         )
         copyright_holder_history = CopyrightHolderHistory.create_or_update(
-            copyright_holder=copyright_holder,
+            institution=copyright_holder,
             user=user,
         )
         copyright_holder_history.journal = journal
