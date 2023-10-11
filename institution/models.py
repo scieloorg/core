@@ -132,12 +132,15 @@ class Institution(CommonControlField, ClusterableModel):
         cls,
         inst_name,
         inst_acronym,
+        location,
     ):
+        if inst_name and inst_acronym and location:
+            return cls.objects.get(name=inst_name, acronym=inst_acronym, location=location)
         if inst_name:
             return cls.objects.get(name=inst_name)
         if inst_acronym:
-            return cls.objects.get(acronym=inst_acronym)
-        raise ValueError("Requires inst_name or inst_acronym parameters")
+            return cls.objects.get(acronym=inst_acronym)            
+        raise ValueError("Requires inst_name, inst_acronym or location parameters")
 
 
     @classmethod
@@ -156,7 +159,7 @@ class Institution(CommonControlField, ClusterableModel):
     ):
 
         try:
-            institution = cls.get(inst_name=inst_name, inst_acronym=inst_acronym)
+            institution = cls.get(inst_name=inst_name, inst_acronym=inst_acronym, location=location)
             institution.updated_by = user
         except cls.DoesNotExist:
             institution = cls()
@@ -212,7 +215,230 @@ class Sponsor(Institution):
     base_form_class = CoreAdminModelForm
 
 
-class CopyRightHolder(Institution):
+class SponsorHistoryItem(CommonControlField):
+    sponsor = models.ForeignKey(
+        Sponsor, 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+    )
+    initial_date = models.DateField(_("Initial Date"), null=True, blank=True)
+    final_date = models.DateField(_("Final Date"), null=True, blank=True)
+    
+    panels = [
+        AutocompletePanel("sponsor", heading=_("Sponsor")),
+        FieldPanel("initial_date"),
+        FieldPanel("final_date"),
+    ]
+
+    @classmethod
+    def get(
+        cls,
+        sponsor, 
+    ):
+        if sponsor:
+            return cls.objects.get(sponsor=sponsor)    
+        raise ValueError("Requires sponsor parameter") 
+
+    @classmethod
+    def create_or_update(cls, sponsor, user, initial_date=None, final_date=None):
+        try:
+            history = cls.get(sponsor=sponsor)
+            history.updated_by = user
+        except cls.DoesNotExist:
+            history = cls()
+            history.sponsor = sponsor
+            history.creator = user
+        
+        history.initial_date = initial_date
+        history.final_date = final_date
+        history.save()
+        return history
+
+
+class Publisher(Institution):
     panels = Institution.panels
 
     base_form_class = CoreAdminModelForm
+
+
+class PublisherHistoryItem(CommonControlField):
+    publisher = models.ForeignKey(
+        Publisher, 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+    )
+    initial_date = models.DateField(_("Initial Date"), null=True, blank=True)
+    final_date = models.DateField(_("Final Date"), null=True, blank=True)
+    
+    panels = [
+        AutocompletePanel("publisher", heading=_("Publisher")),
+        FieldPanel("initial_date"),
+        FieldPanel("final_date"),
+    ]
+
+    @classmethod
+    def get(
+        cls,
+        publisher, 
+    ):
+        if publisher:
+            return cls.objects.get(publisher=publisher)    
+        raise ValueError("Requires publisher parameter") 
+
+    @classmethod
+    def create_or_update(cls, publisher, user, initial_date=None, final_date=None):
+        try:
+            history = cls.get(publisher=publisher)
+            history.updated_by = user
+        except cls.DoesNotExist:
+            history = cls()
+            history.publisher = publisher
+            history.creator = user
+        
+        history.initial_date = initial_date
+        history.final_date = final_date
+        history.save()
+        return history
+
+
+class CopyrightHolder(Institution):
+    panels = Institution.panels
+
+    base_form_class = CoreAdminModelForm
+    
+
+class CopyrightHolderHistoryItem(CommonControlField):
+    copyright_holder = models.ForeignKey(
+        CopyrightHolder, 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+    )
+    initial_date = models.DateField(_("Initial Date"), null=True, blank=True)
+    final_date = models.DateField(_("Final Date"), null=True, blank=True)
+    
+    panels = [
+        AutocompletePanel("copyright_holder", heading=_("CopyRight Holder")),
+        FieldPanel("initial_date"),
+        FieldPanel("final_date"),
+    ]
+
+    @classmethod
+    def get(
+        cls,
+        copyright_holder, 
+    ):
+        if copyright_holder:
+            return cls.objects.get(copyright_holder=copyright_holder)    
+        raise ValueError("Requires copyright_holder parameter") 
+
+    @classmethod
+    def create_or_update(cls, copyright_holder, user, initial_date=None, final_date=None):
+        try:
+            history = cls.get(copyright_holder=copyright_holder)
+            history.updated_by = user
+        except cls.DoesNotExist:
+            history = cls()
+            history.copyright_holder = copyright_holder
+            history.creator = user
+        
+        history.initial_date = initial_date
+        history.final_date = final_date
+        history.save()
+        return history
+
+
+class Owner(Institution):
+    panels = Institution.panels
+
+    base_form_class = CoreAdminModelForm
+
+
+class OwnerHistoryItem(CommonControlField):
+    owner = models.ForeignKey(
+        Owner, 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+    )
+    initial_date = models.DateField(_("Initial Date"), null=True, blank=True)
+    final_date = models.DateField(_("Final Date"), null=True, blank=True)
+    
+    panels = [
+        AutocompletePanel("owner", heading=_("Owner")),
+        FieldPanel("initial_date"),
+        FieldPanel("final_date"),
+    ]
+
+    @classmethod
+    def get(
+        cls,
+        owner, 
+    ):
+        if owner:
+            return cls.objects.get(owner=owner)    
+        raise ValueError("Requires copyright_holder parameter") 
+
+    @classmethod
+    def create_or_update(cls, owner, user, initial_date=None, final_date=None):
+        try:
+            history = cls.get(owner=owner)
+            history.updated_by = user
+        except cls.DoesNotExist:
+            history = cls()
+            history.owner = owner
+            history.creator = user
+        
+        history.initial_date = initial_date
+        history.final_date = final_date
+        history.save()
+        return history
+
+
+class EditorialManager(Institution):
+    panels = Institution.panels
+
+    base_form_class = CoreAdminModelForm
+
+
+class EditorialManagerHistoryItem(CommonControlField):
+    editorial_manager = models.ForeignKey(
+        EditorialManager, 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+    )
+    initial_date = models.DateField(_("Initial Date"), null=True, blank=True)
+    final_date = models.DateField(_("Final Date"), null=True, blank=True)
+    
+    panels = [
+        AutocompletePanel("editorial_manager", heading=_("Editorial Manager")),
+        FieldPanel("initial_date"),
+        FieldPanel("final_date"),
+    ]
+
+    @classmethod
+    def get(
+        cls,
+        editorial_manager, 
+    ):
+        if editorial_manager:
+            return cls.objects.get(editorial_manager=editorial_manager)    
+        raise ValueError("Requires copyright_holder parameter") 
+
+    @classmethod
+    def create_or_update(cls, editorial_manager, user, initial_date=None, final_date=None):
+        try:
+            history = cls.get(editorial_manager=editorial_manager)
+            history.updated_by = user
+        except cls.DoesNotExist:
+            history = cls()
+            history.editorial_manager = editorial_manager
+            history.creator = user
+        
+        history.initial_date = initial_date
+        history.final_date = final_date
+        history.save()
+        return history    
