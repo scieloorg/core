@@ -14,7 +14,7 @@ from wagtail.models import Orderable
 from collection.models import Collection
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField, RichTextWithLang, License, TextWithLang
-from institution.models import InstitutionHistory
+from institution.models import OwnerHistoryItem, PublisherHistoryItem, CopyrightHolderHistoryItem, EditorialManagerHistoryItem, SponsorHistoryItem
 from vocabulary.models import Vocabulary
 from core.models import Language
 from reference.models import JournalTitle
@@ -530,17 +530,18 @@ class Journal(CommonControlField, ClusterableModel):
     ]
 
     panels_institutions = [
-        InlinePanel("owner", label=_("Owner"), classname="collapsed"),
+        InlinePanel("owner_history", label=_("Owner"), classname="collapsed"),
         InlinePanel(
-            "editorialmanager", label=_("Editorial Manager"), classname="collapsed"
+            "editorialmanager_history", label=_("Editorial Manager"), classname="collapsed"
         ),
-        InlinePanel("publisher", label=_("Publisher"), classname="collapsed"),
-        InlinePanel("sponsor", label=_("Sponsor"), classname="collapsed"),
+        InlinePanel("publisher_history", label=_("Publisher"), classname="collapsed"),
+        InlinePanel("sponsor_history", label=_("Sponsor"), classname="collapsed"),
+        InlinePanel("copyright_holder_history", label=_("Copyright Holder"), classname="collapsed"),
     ]
 
     panels_website = [
         FieldPanel("logo", heading=_("Logo")),
-        FieldPanel("url_of_journal"),
+        FieldPanel("journal_url"),
         FieldPanel("submission_online_url"),
         FieldPanel("collection_main_url"),
         InlinePanel("journalsocialnetwork", label=_("Social Network")),
@@ -758,27 +759,28 @@ class Mission(Orderable, RichTextWithLang, CommonControlField):
         obj.save()
         return obj
 
-
-class Owner(Orderable, InstitutionHistory):
-    page = ParentalKey(
-        Journal, on_delete=models.SET_NULL, related_name="owner", null=True
+class OwnerHistory(Orderable, OwnerHistoryItem):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="owner_history", null=True
     )
 
 
-class EditorialManager(Orderable, InstitutionHistory):
-    page = ParentalKey(
-        Journal, on_delete=models.SET_NULL, related_name="editorialmanager", null=True
+class EditorialManagerHistory(Orderable, EditorialManagerHistoryItem):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="editorialmanager_history", null=True
     )
 
-
-class Publisher(Orderable, InstitutionHistory):
-    page = ParentalKey(
-        Journal, on_delete=models.SET_NULL, related_name="publisher", null=True
+class PublisherHistory(Orderable, PublisherHistoryItem):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="publisher_history", null=True
     )
 
+class SponsorHistory(Orderable, SponsorHistoryItem):
+    journal = ParentalKey(Journal, on_delete=models.SET_NULL, null=True, related_name="sponsor_history")
 
-class Sponsor(Orderable, InstitutionHistory):
-    page = ParentalKey(Journal, on_delete=models.CASCADE, related_name="sponsor")
+
+class CopyrightHolderHistory(Orderable, CopyrightHolderHistoryItem):
+    journal = ParentalKey(Journal, on_delete=models.SET_NULL, null=True, related_name="copyright_holder_history")
 
 
 class JournalSocialNetwork(Orderable, SocialNetwork):
