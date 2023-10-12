@@ -74,7 +74,7 @@ WAGTAIL = [
     "wagtail.images",
     "wagtail.search",
     "wagtail.admin",
-    "wagtail.core",
+    "wagtail",
     "wagtail.locales",
     "wagtail.api.v2",
     "wagtail.contrib.settings",
