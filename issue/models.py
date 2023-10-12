@@ -278,34 +278,7 @@ class TocSection(RichTextWithLang, CommonControlField):
     ):
         if value and language:
             return cls.objects.get(plain_text=value, language=language)
-        raise TypeError("TocSections.get requires value and language paramenters")
-
-    @classmethod
-    def get_or_create(
-        cls,
-        value,
-        language,
-        user,
-    ):
-        try:
-            return cls.get(value=value, language=language)
-        except cls.DoesNotExist:
-            obj = cls()
-            obj.plain_text = value
-            obj.language = language
-            obj.creator = user
-            obj.save()
-            return obj
-
-    @classmethod
-    def get(
-        cls,
-        value,
-        language,
-    ):
-        if value and language:
-            return cls.objects.get(plain_text=value, language=language)
-        raise Exception("TocSections.get requires value and language paramenters")
+        raise ValueError("TocSections.get requires value and language paramenters")
 
     @classmethod
     def get_or_create(
