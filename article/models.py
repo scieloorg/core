@@ -125,6 +125,10 @@ class Article(CommonControlField):
     def __str__(self):
         return "%s" % self.pid_v2
 
+    @property
+    def collection(self):
+        return self.journal.collection
+
     @classmethod
     def last_created_date(cls):
         try:

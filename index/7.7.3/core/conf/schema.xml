@@ -49,6 +49,9 @@
     <!-- id unique field -->
     <field name="id" type="string" indexed="true" stored="true" multiValued="false"/>
 
+    <!-- ids for the article -->
+    <field name="ids" type="string" indexed="true" stored="true" multiValued="true"/>
+
     <!-- default search -->
     <field name="text" type="text" indexed="true" stored="true"/>
     <field name="tw" type="text" indexed="true" stored="false" multiValued="true"/>
@@ -56,25 +59,37 @@
     <field name="django_ct" type="string" indexed="true" stored="true" multiValued="false"/>
     <field name="django_id" type="string" indexed="true" stored="true" multiValued="false"/>
     
+    <!-- Abbreviation of collection **from:in to:collection** -->
+    <field name="in" type="string" indexed="true" stored="true" multiValued="true"/>
+
     <!-- Digital Object Identifier DOI -->
     <field name="doi" type="string" indexed="true" stored="true" multiValued="true" />
+
+    <!-- ur ** list of urls -->
+    <field name="ur" type="string" indexed="true" stored="true" multiValued="true" />
     
     <!-- Titles ** list of titles -->
-    <field name="titles" type="string" indexed="true" stored="true" multiValued="true" />
+    <field name="ti" type="string" indexed="true" stored="true" multiValued="true" />
     
     <!-- Language **from:la to:languages** list of languages -->
     <field name="la" type="string" indexed="true" stored="true" multiValued="true" />
     
     <!-- Author **from:au to:researchers** -->
     <field name="au" type="string" indexed="true" stored="true" multiValued="true" />
-    
+
+    <!-- Short title **from:ta to:short_title** list of short title -->
+    <field name="ta" type="text" indexed="true" stored="true" multiValued="false"/>
+  
     <!-- Allow search for keywords in different languages -->
     <field name="kw" type="string" indexed="true" stored="true" multiValued="true" />
     
     <field name="toc_sections" type="string" indexed="true" stored="true" multiValued="true" />
     
-    <!-- Abstract **from:ab to:abstract** -->
-    <field name="ab" type="string" indexed="true" stored="true" multiValued="true" />
+    <!-- Dynamic Field to Abstract in any languages **from:ab_* to:abstract_in_* ** -->
+    <dynamicField name="ab_*"  type="text" indexed="false" stored="true"  multiValued="true"/>
+
+    <!-- Dynamic Field to Title in any languages **from:title_in_* to:title_in_* ** -->
+    <dynamicField name="ti_*"  type="text" indexed="false" stored="true"  multiValued="true"/>
     
     <!-- Abstract **from:ab to:abstract_language** -->
     <field name="la_abstract" type="lowercase" indexed="true" stored="true" multiValued="true" />
@@ -96,7 +111,7 @@
     <!-- Publisher ID = consist of 'S' + ISSN + numbers + '-' + and the abbreviation of collection, in the future it can be anything -->
     <field name="pid" type="string" indexed="true" stored="true" multiValued="false" />
     
-    <!-- <field name="pid_v3" type="string" indexed="true" stored="true" multiValued="false" /> -->
+    <field name="pid_v3" type="string" indexed="true" stored="true" multiValued="false" />
     
     <!-- Publication year ex.: 2004 -->
     <field name="publication_year" type="string" indexed="true" stored="true" multiValued="false" />
@@ -119,8 +134,25 @@
     <!-- Colllection domain to:domain from:domain  -->
     <field name="domain" type="string" indexed="true" stored="true" multiValued="false" />
 
+    <!-- This field is baseed in Web of Science subject category:
+    https://images.webofknowledge.com/WOKRS57B4/help/WOS/hp_subject_category_terms_tasca.html -->
+    <!-- Subject category **from:wok_subject_categories to:subject_categories** -->
+    <field name="wok_subject_categories" type="lowercase" indexed="true" stored="true" multiValued="true"/>
+
+    <!-- This field indicates that index the article is indexed in Web of Science -->
+    <!-- We use de convertion:
+        SCIE=Science Citation Index Expanded
+        SSCI=Social Sciences Citation Index
+        AHCI=Arts Humanities Citation Index
+      -->
+    <field name="wok_citation_index" type="string" indexed="true" stored="true" multiValued="true"/>
+
+    <!-- Field to journal CNPQ subject areas -->
+    <field name="subject_area"  type="string" indexed="true" stored="true"  multiValued="true"/>
+
    <!-- Dynamic field definitions -->
    <dynamicField name="*"  type="text" indexed="true" stored="true"  multiValued="false"/>
+  
    <!-- <dynamicField name="*" type="ignored" /> -->
 
  </fields>
@@ -132,6 +164,8 @@
  <uniqueKey>id</uniqueKey>
 
  <copyField source="text" dest="tw"/>
+ <copyField source="ids" dest="tw"/>
+ <copyField source="doi" dest="tw"/>
  <copyField source="*" dest="tw"/>
 
 </schema>
