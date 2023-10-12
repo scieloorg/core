@@ -15,7 +15,6 @@ from wagtail.admin.panels import (
     MultiFieldPanel,
     ObjectList,
     PageChooserPanel,
-    StreamFieldPanel,
     TabbedInterface,
 )
 

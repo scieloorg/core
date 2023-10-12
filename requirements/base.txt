@@ -14,7 +14,7 @@ xmltodict==0.13.0  # https://github.com/martinblech/xmltodict.git
 # Django
 # ------------------------------------------------------------------------------
 # django==4.1.8  # pyup: < 4.0  # https://www.djangoproject.com/
-django==4.1.10
+django==4.2.6
 django-environ==0.10.0  # https://github.com/joke2k/django-environ
 django-model-utils==4.3.1  # https://github.com/jazzband/django-model-utils
 django-allauth==0.54.0  # https://github.com/pennersr/django-allauth
@@ -29,7 +29,7 @@ djangorestframework-simplejwt==5.2.2  # https://django-rest-framework-simplejwt.
 
 # Wagtail
 # ------------------------------------------------------------------------------
-wagtail==4.2.3  # https://github.com/wagtail/wagtail
+wagtail==5.1.2  # https://github.com/wagtail/wagtail
 
 
 # Wagtail Recaptcha
@@ -43,11 +43,11 @@ wagtailmenus==3.1.8
 
 # Wagtail Localize
 # ------------------------------------------------------------------------------
-wagtail-localize==1.5
+wagtail-localize==1.6
 
 # Django celery
 # ------------------------------------------------------------------------------
-django-celery-beat==2.4.0  # https://github.com/celery/django-celery-beat
+django-celery-beat==2.5.0  # https://github.com/celery/django-celery-beat
 django_celery_results==2.5.1
 
 # Wagtail-Autocomplete
