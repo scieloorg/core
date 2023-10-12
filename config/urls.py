@@ -16,7 +16,7 @@ from core.api.wagtail.api import api_router
 from core.search_site import views as search_views  # noqa isort:skip
 
 urlpatterns = [
-    path("", TemplateView.as_view(template_name="home/home_page.html"), name="home"),
+    # path("", TemplateView.as_view(template_name="home/home_page.html"), name="home"),
     # Django Admin, use {% url "admin:index" %}
     path("admin/autocomplete/", include(autocomplete_admin_urls)),
     path(settings.DJANGO_ADMIN_URL, admin.site.urls),

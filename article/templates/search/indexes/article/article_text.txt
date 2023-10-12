@@ -1,5 +1,7 @@
+{{object.id}}
 {{object.pid}}
 {{object.pid_v3}}
+{{object.pid_v2}}
 {{object.publication_year}}
 {{object.type.text}}
 {% for title in object.titles.all %}
