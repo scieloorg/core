@@ -17,6 +17,8 @@ from core.models import (
 )
 from journal.models import Journal
 from location.models import City
+from researcher.models import Researcher
+from researcher import choices
 
 
 class Issue(CommonControlField, ClusterableModel):
@@ -302,3 +304,32 @@ class TocSection(RichTextWithLang, CommonControlField):
 
     def __str__(self):
         return f"{self.plain_text} - {self.language}"
+
+
+class EditorialBoard(CommonControlField, ClusterableModel):
+    issue = models.ForeignKey(
+        Issue, on_delete=models.CASCADE, blank=True, null=True
+    )
+
+    panels = [
+        AutocompletePanel("issue"),
+        InlinePanel("page_member", label=_("Member")),
+    ]
+
+
+class Member(models.Model):
+    member = models.ForeignKey(
+        Researcher, null=True, blank=True, related_name="+", on_delete=models.CASCADE
+    )
+    role = models.CharField(
+        _("Role"), max_length=255, choices=choices.ROLE, null=False, blank=False
+    )
+    panels = [
+        AutocompletePanel("member"),
+        FieldPanel("role"),
+    ]
+
+
+class FieldMember(Orderable, Member, CommonControlField):
+    page = ParentalKey(EditorialBoard, on_delete=models.CASCADE, related_name="page_member")
+    
