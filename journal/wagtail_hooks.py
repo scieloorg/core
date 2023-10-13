@@ -159,7 +159,7 @@ modeladmin_register(IndexedAtAdminGroup)
 def register_calendar_url():
     return [
         path(
-            "controlled_lists/indexedatfile/validate", 
+            "controlled_lists/indexedatfreile/validate", 
             validate, 
             name="validate",
         ),
