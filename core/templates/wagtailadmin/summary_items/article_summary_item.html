@@ -1,0 +1,12 @@
+{% load i18n wagtailadmin_tags %}
+
+<li>
+    {% icon name="doc-full" %}
+    <a href="{% url 'article_article_modeladmin_index' %}">
+        {% blocktrans trimmed count counter=total_article with total_article|intcomma as total %}
+            <span>{{ total_article }}</span> Article <span class="visuallyhidden">created in {{ site_name }}</span>
+        {% plural %}
+            <span>{{ total_article }}</span> Articles <span class="visuallyhidden">created in {{ site_name }}</span>
+        {% endblocktrans %}
+    </a>
+</li>
