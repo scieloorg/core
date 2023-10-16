@@ -1,3 +1,5 @@
+from django.utils.translation import gettext_lazy as _
+
 LANGUAGE = [
     ("aa", "Afar"),
     ("af", "Afrikaans"),
@@ -184,4 +186,11 @@ LANGUAGE = [
     ("yo", "Yoruba"),
     ("za", "Zhuang, Chuang"),
     ("zu", "Zulu"),
+]
+
+ROLE = [
+    ("Editor-Chefe", _("Editor-Chefe")),
+    ("Editor(es) Executivo", _("Editor(es) Executivo")),
+    ("Editor(es) Associados ou de Seção", _("Editor(es) Associados ou de Seção")),
+    ("Equipe Técnica", _("Equipe Técnica")),
 ]
