@@ -30,4 +30,4 @@ class ProcessingErrorAdmin(ModelAdmin):
     )
 
 
-modeladmin_register(ProcessingErrorAdmin)
+# modeladmin_register(ProcessingErrorAdmin)

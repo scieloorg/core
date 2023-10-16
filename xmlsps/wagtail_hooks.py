@@ -36,4 +36,4 @@ class XMLSPSAdmin(ModelAdmin):
     )
 
 
-modeladmin_register(XMLSPSAdmin)
+# modeladmin_register(XMLSPSAdmin)

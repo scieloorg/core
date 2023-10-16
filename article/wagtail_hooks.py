@@ -86,7 +86,7 @@ class ArticleFundingAdmin(ModelAdmin):
 class ArticleAdminGroup(ModelAdminGroup):
     menu_label = _("Articles")
     menu_icon = "folder-open-inverse"  # change as required
-    menu_order = 100  # will put in 3rd place (000 being 1st, 100 2nd)
+    menu_order = 4  # will put in 3rd place (000 being 1st, 100 2nd)
     items = (ArticleAdmin, ArticleFundingAdmin)
 
 

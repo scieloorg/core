@@ -105,7 +105,7 @@ class GenericThematicAreaAdminGroup(ModelAdminGroup):
     )
 
 
-modeladmin_register(GenericThematicAreaAdminGroup)
+#modeladmin_register(GenericThematicAreaAdminGroup)
 
 
 @hooks.register("register_admin_urls")
@@ -195,7 +195,7 @@ class ThematicAreaFileAdmin(ModelAdmin):
 class ThematicAreaAdminGroup(ModelAdminGroup):
     menu_label = _("Thematic Areas")
     menu_icon = "folder-open-inverse"
-    menu_order = 500
+    menu_order = 11
     items = (
         ThematicAreaAdmin,
         ThematicAreaFileAdmin,

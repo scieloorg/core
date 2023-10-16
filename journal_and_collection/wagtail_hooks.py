@@ -114,4 +114,4 @@ class JournalAndCollectionAdminGroup(ModelAdminGroup):
     items = (EventAdmin, JournalAndCollectionAdmin)
 
 
-modeladmin_register(JournalAndCollectionAdminGroup)
+# modeladmin_register(JournalAndCollectionAdminGroup)

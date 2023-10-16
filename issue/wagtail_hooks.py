@@ -21,8 +21,8 @@ class IssueAdmin(ModelAdmin):
     inspect_view_enabled = True
     menu_label = _("Issues")
     create_view_class = IssueCreateView
-    menu_icon = "folder"
-    menu_order = 300
+    menu_icon = "folder-open-inverse"
+    menu_order = 3
     add_to_settings_menu = False
     exclude_from_explorer = False
 
