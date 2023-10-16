@@ -27,12 +27,12 @@ class VocabularyAdmin(ModelAdmin):
     exclude_from_explorer = False
 
     list_display = (
-        "name ",
+        "name",
         "acronym",
     )
     list_filter = ("name",)
     search_fields = (
-        "name ",
+        "name",
         "acronym",
     )
 
