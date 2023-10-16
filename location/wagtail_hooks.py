@@ -167,7 +167,7 @@ class CountryFileAdmin(ModelAdmin):
 class LocationAdminGroup(ModelAdminGroup):
     menu_label = _("Location")
     menu_icon = "folder-open-inverse"
-    menu_order = 500
+    menu_order = 8
     items = (
         LocationAdmin,
         CityAdmin,

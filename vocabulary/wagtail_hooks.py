@@ -27,12 +27,12 @@ class VocabularyAdmin(ModelAdmin):
     exclude_from_explorer = False
 
     list_display = (
-        "name ",
+        "name",
         "acronym",
     )
     list_filter = ("name",)
     search_fields = (
-        "name ",
+        "name",
         "acronym",
     )
 
@@ -68,7 +68,7 @@ class KeywordAdmin(ModelAdmin):
 class VocabularyGroup(ModelAdminGroup):
     menu_label = _("Vocabulary")
     menu_icon = "folder-open-inverse"  # change as required
-    menu_order = 100  # will put in 3rd place (000 being 1st, 100 2nd)
+    menu_order = 9
     items = (VocabularyAdmin, KeywordAdmin)
 
 

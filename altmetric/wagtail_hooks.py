@@ -28,4 +28,4 @@ class RawAltmetricAdmin(ModelAdmin):
     search_fields = ("issn_scielo",)
 
 
-modeladmin_register(RawAltmetricAdmin)
+# modeladmin_register(RawAltmetricAdmin)

@@ -17,8 +17,8 @@ class CollectionAdmin(ModelAdmin):
     create_view_class = CollectionCreateView
     inspect_view_enabled = True
     menu_label = _("Collection")
-    menu_icon = "folder"
-    menu_order = 200
+    menu_icon = "folder-open-inverse"
+    menu_order = 1
     add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
     exclude_from_explorer = (
         False  # or True to exclude pages of this type from Wagtail's explorer view
