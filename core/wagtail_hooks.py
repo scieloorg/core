@@ -31,24 +31,8 @@ def remove_all_summary_items(request, items):
     items.clear()
 
 
-class JournalSummaryItem(SummaryItem):
-    order = 100
-    template_name = 'wagtailadmin/summary_items/journal_summary_item.html'
-
-    def get_context_data(self, parent_context):
-        site_details = get_site_for_user(self.request.user)
-        total_journal = Journal.objects.all().count()
-        return {
-            "total_journal": total_journal,
-            "site_name": site_details["site_name"],
-        }
-
-    def is_shown(self):
-        return True
-
-
 class CollectionSummaryItem(SummaryItem):
-    order = 200
+    order = 100
     template_name = 'wagtailadmin/summary_items/collection_summary_item.html'
 
     def get_context_data(self, parent_context):
@@ -56,6 +40,22 @@ class CollectionSummaryItem(SummaryItem):
         total_collection = Collection.objects.filter(is_active=True).count()
         return {
             "total_collection": total_collection,
+            "site_name": site_details["site_name"],
+        }
+
+    def is_shown(self):
+        return True
+
+
+class JournalSummaryItem(SummaryItem):
+    order = 200
+    template_name = 'wagtailadmin/summary_items/journal_summary_item.html'
+
+    def get_context_data(self, parent_context):
+        site_details = get_site_for_user(self.request.user)
+        total_journal = Journal.objects.all().count()
+        return {
+            "total_journal": total_journal,
             "site_name": site_details["site_name"],
         }
 
@@ -78,7 +78,7 @@ class ArticleSummaryItem(SummaryItem):
 
 @hooks.register("construct_homepage_summary_items", order=2)
 def add_items_summary_items(request, items):
-    items.append(JournalSummaryItem(request))
     items.append(CollectionSummaryItem(request))
+    items.append(JournalSummaryItem(request))
     items.append(ArticleSummaryItem(request))
 
