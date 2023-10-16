@@ -195,7 +195,7 @@ class ThematicAreaFileAdmin(ModelAdmin):
 class ThematicAreaAdminGroup(ModelAdminGroup):
     menu_label = _("Thematic Areas")
     menu_icon = "folder-open-inverse"
-    menu_order = 11
+    menu_order = 10
     items = (
         ThematicAreaAdmin,
         ThematicAreaFileAdmin,
