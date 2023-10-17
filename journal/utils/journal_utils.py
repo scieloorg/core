@@ -32,7 +32,7 @@ from journal.models import (
     JournalHistory,
     CopyrightHolderHistory,
 )
-from location.models import City, Region, Location, State, Country, Address
+from location.models import City, Location, State, Country, Address
 
 from datetime import datetime
 
@@ -602,7 +602,7 @@ def create_or_update_location(
     else:
         country_name = None
         country_acronym = country_value
-    country = Country.get_or_create(
+    country = Country.create_or_update(
         name=country_name,
         acronym=country_acronym,
         user=user,
@@ -625,6 +625,13 @@ def create_or_update_location(
         user=user,
     )
 
+    location = Location.create_or_update(
+        location_region=None,
+        location_country=country,
+        location_city=city,
+        location_state=state,
+        user=user,
+    )
     address = extract_value(address)
     if address:
         if isinstance(address, str):
@@ -634,14 +641,8 @@ def create_or_update_location(
         name=address,
         user=user,
     )
-    location = Location.get_or_create(
-        location_region=None,
-        location_country=country,
-        location_city=city,
-        location_state=state,
-        location_address=address,
-        user=user,
-    )
+    address.location = location
+    address.save()
     return location
 
 
