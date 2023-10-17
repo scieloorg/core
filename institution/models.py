@@ -137,10 +137,10 @@ class Institution(CommonControlField, ClusterableModel):
     ):
         if inst_name and inst_acronym and location:
             return cls.objects.get(name=inst_name, acronym=inst_acronym, location=location)
-        if inst_name:
-            return cls.objects.get(name=inst_name)
-        if inst_acronym:
-            return cls.objects.get(acronym=inst_acronym)            
+        if inst_name and location:
+            return cls.objects.get(name=inst_name, location=location)
+        if inst_acronym and location:
+            return cls.objects.get(acronym=inst_acronym, location=location)            
         raise ValueError("Requires inst_name, inst_acronym or location parameters")
 
 
