@@ -50,7 +50,7 @@ class City(CommonControlField):
         if name:
             try:
                 return cls.objects.get(name=name)
-            except:
+            except cls.DoesNotExist:
                 city = City()
                 city.name = name
                 city.creator = user
@@ -247,33 +247,38 @@ class Country(CommonControlField):
         return "%s" % self.name
 
     @classmethod
-    def get_or_create(cls, user, name=None, acronym=None, acron3=None):
+    def get(
+        cls,
+        name,
+        acronym,
+        acron3,
+    ):
+        filters = {}
         if name:
-            try:
-                return cls.objects.get(name__icontains=name)
-            except:
-                pass
-
+            filters['name'] = name
         if acronym:
-            try:
-                return cls.objects.get(acronym__icontains=acronym)
-            except:
-                pass
-
+            filters['acronym'] = acronym
         if acron3:
-            try:
-                return cls.objects.get(acron3__icontains=acron3)
-            except:
-                pass
+            filters['acron3'] = acron3
 
-        if name or acronym or acron3:
-            country = Country()
-            country.name = name
-            country.acronym = acronym
-            country.acron3 = acron3
-            country.creator = user
-            country.save()
-            return country
+        if filters:
+            return cls.objects.get(**filters)
+
+    @classmethod
+    def create_or_update(cls, user, name=None, acronym=None, acron3=None):
+        try:
+            region = cls.get(name, acronym, acron3)
+            region.updated_by = user
+        except cls.DoesNotExist:
+            region = cls()
+            region.creator = user
+
+        region.name = name or region.name
+        region.acronym = acronym or region.acronym
+        region.acron3 = acron3 or region.acron3
+        region.save()
+        return region
+        
 
     base_form_class = CoreAdminModelForm
 
@@ -285,6 +290,13 @@ class Address(CommonControlField):
         name
     """
     name = models.TextField(_("Address"), blank=True, null=True)
+    location = models.ForeignKey(
+        "Location",
+        verbose_name=_("Address"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
     autocomplete_search_field = "name"
 
@@ -292,7 +304,8 @@ class Address(CommonControlField):
         return str(self)
     
     panels = [
-        FieldPanel("name")
+        FieldPanel("name"),
+        AutocompletePanel("location")
     ]
 
     class Meta:
@@ -350,13 +363,6 @@ class Location(CommonControlField):
         null=True,
         blank=True,
     )
-    address = models.ForeignKey(
-        Address,
-        verbose_name=_("Address"),
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-    )
 
     autocomplete_search_field = "country__name"
 
@@ -381,26 +387,45 @@ class Location(CommonControlField):
         return "%s | %s | %s" % (self.country, self.state, self.city)
 
     @classmethod
-    def get_or_create(
-        cls, user, location_region, location_country, location_state, location_city, location_address,
+    def get(
+        cls,
+        location_region, 
+        location_country, 
+        location_state, 
+        location_city,
+    ):
+        filters = {}
+
+        if location_region:
+            filters['region'] = location_region
+        if location_country:
+            filters['country'] = location_country
+        if location_state:
+            filters['state'] = location_state
+        if location_city:
+            filters['city'] = location_city
+
+        if filters:
+            return cls.objects.get(**filters)
+        raise ValueError("Location.get requires region, country, city or state parameters")
+
+    @classmethod
+    def create_or_update(
+        cls, user, location_region, location_country, location_state, location_city,
     ):
         # check if exists the location
         try:
-            return cls.objects.get(
-                region=location_region,
-                country=location_country,
-                state=location_state,
-                city=location_city,
-            )
-        except:
-            location = Location()
-            location.region = location_region
-            location.country = location_country
-            location.state = location_state
-            location.city = location_city
+            location = cls.get(location_region, location_country, location_state, location_city)
+            location.updated_by = user
+        except cls.DoesNotExist:
+            location = cls()
             location.creator = user
-            location.save()
-
+        
+        location.region = location_region or location.region 
+        location.country = location_country or location.country 
+        location.state = location_state or location.state
+        location.city = location_city or location.city
+        location.save()
         return location
 
     base_form_class = CoreAdminModelForm
