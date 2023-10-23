@@ -730,7 +730,7 @@
         <str name="facet.field">la</str>
         <str name="facet.field">year_cluster</str>
         <str name="facet.field">cit_type</str>
-        <str name="facet.field">subject_area</str>
+        <str name="facet.field">subject_areas</str>
         <str name="facet.field">wok_subject_categories</str>
         <str name="facet.field">wok_citation_index</str>
         <str name="facet.field">is_citable</str>
