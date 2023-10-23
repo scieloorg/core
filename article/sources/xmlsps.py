@@ -57,7 +57,9 @@ def load_article(user, xml=None, file_path=None):
         article.abstracts.set(create_or_create_abstract(xmltree=xmltree, user=user))
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
         article.license.set(create_or_create_licenses(xmltree=xmltree, user=user))
-        article.researchers.set(create_or_update_researchers(xmltree=xmltree, user=user))
+        article.researchers.set(
+            create_or_update_researchers(xmltree=xmltree, user=user)
+        )
         article.languages.add(get_or_create_main_language(xmltree=xmltree, user=user))
         article.keywords.set(get_or_create_keywords(xmltree=xmltree, user=user))
         article.toc_sections.set(get_or_create_toc_sections(xmltree=xmltree, user=user))
@@ -109,7 +111,9 @@ def get_or_create_fundings(xmltree, user):
                 for id in award_ids:
                     obj = models.ArticleFunding.get_or_create(
                         award_id=id,
-                        funding_source=create_or_update_sponsor(funding_name=fs, user=user),
+                        funding_source=create_or_update_sponsor(
+                            funding_name=fs, user=user
+                        ),
                         user=user,
                     )
                     data.append(obj)
@@ -170,8 +174,8 @@ def create_or_create_abstract(xmltree, user):
         abstract = Abstract(xmltree=xmltree).get_abstracts(style="inline")
         for ab in abstract:
             obj = models.DocumentAbstract.create_or_update(
-                text=ab.get('abstract'),
-                language=get_or_create_language(ab.get('lang'), user=user),
+                text=ab.get("abstract"),
+                language=get_or_create_language(ab.get("lang"), user=user),
                 user=user,
             )
             data.append(obj)
