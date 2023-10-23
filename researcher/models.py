@@ -111,7 +111,7 @@ class Researcher(ClusterableModel, CommonControlField):
         if orcid:
             return cls.objects.get(orcid=orcid)
         elif given_names or last_name:
-            return cls.objects.get(given_names=given_names, last_name=last_name)
+            return cls.objects.get(given_names__iexact=given_names, last_name__iexact=last_name, orcid__isnull=True)
         elif declared_name:
             return cls.objects.get(declared_name=declared_name)
         raise ValueError("Researcher.get requires orcid, given_names, last_names or declared_name parameters")
@@ -138,13 +138,15 @@ class Researcher(ClusterableModel, CommonControlField):
                 orcid=orcid,
                 declared_name=declared_name,
             )
+            researcher.updated_by = user or researcher.updated_by
         except cls.DoesNotExist:
             researcher = cls()
             researcher.creator = user
             researcher.orcid = orcid
 
-        researcher.given_names = given_names
-        researcher.last_name = last_name            
+
+        researcher.given_names = given_names or researcher.given_names
+        researcher.last_name = last_name or researcher.last_name       
         institution = None
         if institution_name:
             try:
@@ -152,14 +154,13 @@ class Researcher(ClusterableModel, CommonControlField):
             except Institution.DoesNotExist:
                 pass
 
-        researcher.declared_name = declared_name
-        researcher.suffix = suffix
-        researcher.lattes = lattes
+        researcher.declared_name = declared_name or researcher.declared_name
+        researcher.suffix = suffix or researcher.suffix
+        researcher.lattes = lattes or researcher.lattes
         ## TODO
         ## Criar get_or_create para model gender e GenderIdentificationStatus
-        researcher.gender = gender
-        researcher.gender_identification_status = gender_identification_status
-        researcher.updated_by = user
+        researcher.gender = gender or researcher.gender
+        researcher.gender_identification_status = gender_identification_status or researcher.gender_identification_status
         researcher.save()
         
         if email:
