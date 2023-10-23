@@ -17,7 +17,7 @@ from core.models import (
 from doi.models import DOI
 from institution.models import Institution, Sponsor
 from issue.models import Issue, TocSection
-from journal.models import Journal
+from journal.models import Journal, SciELOJournal
 from researcher.models import Researcher
 from vocabulary.models import Keyword
 
@@ -126,8 +126,10 @@ class Article(CommonControlField):
         return "%s" % self.pid_v2
 
     @property
-    def collection(self):
-        return self.journal.collection
+    def collections(self):
+        scielo_journals = SciELOJournal.objects.filter(journal=self.journal)
+        for scielo_journal in scielo_journals:
+            yield scielo_journal.collection
 
     @classmethod
     def last_created_date(cls):
@@ -190,7 +192,7 @@ class Article(CommonControlField):
 
 
 class ArticleFunding(CommonControlField):
-    award_id = models.CharField(_("Award ID"), blank=True, null=True, max_length=50)
+    award_id = models.CharField(_("Award ID"), blank=True, null=True, max_length=100)
     funding_source = models.ForeignKey(
         Sponsor, null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -253,6 +255,7 @@ class ArticleFunding(CommonControlField):
                     location=None,
                     official=None,
                     is_official=None,
+                    url=None,
                 )
             article_funding.creator = user
             article_funding.save()
