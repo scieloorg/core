@@ -19,6 +19,7 @@ from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article import models
 from issue.models import TocSection
+from processing_errors.models import ProcessingError
 
 
 class XMLSPSArticleSaveError(Exception):
@@ -56,16 +57,17 @@ def load_article(user, xml=None, file_path=None):
         article.abstracts.set(create_or_create_abstract(xmltree=xmltree, user=user))
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
         article.license.set(create_or_create_licenses(xmltree=xmltree, user=user))
-        article.researchers.set(create_or_create_researchers(xmltree=xmltree, user=user))
+        article.researchers.set(create_or_update_researchers(xmltree=xmltree, user=user))
         article.languages.add(get_or_create_main_language(xmltree=xmltree, user=user))
         article.keywords.set(get_or_create_keywords(xmltree=xmltree, user=user))
         article.toc_sections.set(get_or_create_toc_sections(xmltree=xmltree, user=user))
         article.fundings.set(get_or_create_fundings(xmltree=xmltree, user=user))
         article.titles.set(create_or_update_titles(xmltree=xmltree, user=user))
-    except (DataError, TypeError) as e:
-        # TODO criar registros das falhas e deixar acessível pela área adm
-        # para que os usuários saibam
-        raise XMLSPSArticleSaveError(e)
+    except Exception as e:
+        error = ProcessingError()
+        error.item = etree.tostring(xmltree)
+        error.description = e
+        error.save()
 
 
 def get_or_create_doi(xmltree, user):
@@ -91,22 +93,26 @@ def get_journal(xmltree):
 
 def get_or_create_fundings(xmltree, user):
     """
+    Ex fundings_group:
     [{'funding-source': ['CNPQ'], 'award-id': ['12345', '67890']},
         {'funding-source': ['FAPESP'], 'award-id': ['23456', '56789']},]
     """
 
     fundings_group = FundingGroup(xmltree=xmltree).award_groups
     data = []
+    if fundings_group:
+        for funding in fundings_group:
+            funding_source = funding.get("funding-source", [])
+            award_ids = funding.get("award-id", [])
 
-    for funding_source in fundings_group or []:
-        for funding in funding_source.get("funding-source") or []:
-            for id in funding_source.get("award-id") or []:
-                obj = models.ArticleFunding.get_or_create(
-                    award_id=id,
-                    funding_source=get_or_create_sponso(funding_name=funding, user=user),
-                    user=user,
-                )
-                data.append(obj)
+            for fs in funding_source:
+                for id in award_ids:
+                    obj = models.ArticleFunding.get_or_create(
+                        award_id=id,
+                        funding_source=create_or_update_sponsor(funding_name=fs, user=user),
+                        user=user,
+                    )
+                    data.append(obj)
     return data
 
 
@@ -135,7 +141,7 @@ def create_or_create_licenses(xmltree, user):
             ## TODO
             # Faltando license_type (Alterar no packtools)
             license_type=None,
-            creator=user,
+            user=user,
         )
         data.append(obj)
     return data
@@ -172,7 +178,7 @@ def create_or_create_abstract(xmltree, user):
     return data
 
 
-def create_or_create_researchers(xmltree, user):
+def create_or_update_researchers(xmltree, user):
     authors = Authors(xmltree=xmltree).contribs
     # Falta gender e gender_identification_status
     data = []
@@ -261,8 +267,8 @@ def get_or_create_main_language(xmltree, user):
     return obj
 
 
-def get_or_create_sponso(funding_name, user):
-    obj = models.Sponsor.get_or_create(
+def create_or_update_sponsor(funding_name, user):
+    obj = models.Sponsor.create_or_update(
         inst_name=funding_name,
         user=user,
         inst_acronym=None,
@@ -272,5 +278,6 @@ def get_or_create_sponso(funding_name, user):
         location=None,
         official=None,
         is_official=None,
+        url=None,
     )
     return obj
