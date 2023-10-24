@@ -17,7 +17,7 @@ from core.models import (
 )
 from journal.models import Journal
 from location.models import City
-
+from .exceptions import TocSectionGetError
 
 class Issue(CommonControlField, ClusterableModel):
     """
@@ -278,7 +278,7 @@ class TocSection(RichTextWithLang, CommonControlField):
     ):
         if value and language:
             return cls.objects.get(plain_text=value, language=language)
-        raise ValueError("TocSections.get requires value and language paramenters")
+        raise TocSectionGetError("TocSection.get requires value and language parameters")
 
     @classmethod
     def get_or_create(

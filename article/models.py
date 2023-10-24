@@ -17,7 +17,7 @@ from core.models import (
 from doi.models import DOI
 from institution.models import Institution, Sponsor
 from issue.models import Issue, TocSection
-from journal.models import Journal
+from journal.models import Journal, SciELOJournal
 from researcher.models import Researcher
 from vocabulary.models import Keyword
 
@@ -126,8 +126,10 @@ class Article(CommonControlField):
         return "%s" % self.pid_v2
 
     @property
-    def collection(self):
-        return self.journal.collection
+    def collections(self):
+        scielo_journals = SciELOJournal.objects.filter(journal=self.journal)
+        for scielo_journal in scielo_journals:
+            yield scielo_journal.collection
 
     @classmethod
     def last_created_date(cls):
@@ -190,7 +192,7 @@ class Article(CommonControlField):
 
 
 class ArticleFunding(CommonControlField):
-    award_id = models.CharField(_("Award ID"), blank=True, null=True, max_length=50)
+    award_id = models.CharField(_("Award ID"), blank=True, null=True, max_length=100)
     funding_source = models.ForeignKey(
         Sponsor, null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -243,7 +245,7 @@ class ArticleFunding(CommonControlField):
             article_funding = cls()
             article_funding.award_id = award_id
             if funding_source:
-                article_funding.funding_source = Sponsor.get_or_create(
+                article_funding.funding_source = Sponsor.create_or_update(
                     inst_name=funding_source,
                     user=user,
                     inst_acronym=None,
@@ -253,6 +255,7 @@ class ArticleFunding(CommonControlField):
                     location=None,
                     official=None,
                     is_official=None,
+                    url=None,
                 )
             article_funding.creator = user
             article_funding.save()
@@ -280,20 +283,20 @@ class DocumentTitle(RichTextWithLang, CommonControlField):
     ):
         if title:
             return cls.objects.get(plain_text=title)
-        raise ValueError("DocumentTitle requires title paramenter")
+        raise ValueError("DocumentTitle requires title parameter")
     
     @classmethod
     def create_or_update(cls, title, title_rich, language, user):
         try:
             obj = cls.get(title=title)
+            obj.updated_by = user
         except cls.DoesNotExist:
             obj = cls()
             obj.plain_text = title
             obj.creator = user
             
-        obj.language = language
-        obj.rich_text = title_rich
-        obj.updated_by = user
+        obj.language = language or obj.language
+        obj.rich_text = title_rich or obj.title_rich
         obj.save()
         return obj
 
@@ -324,7 +327,7 @@ class DocumentAbstract(RichTextWithLang, CommonControlField):
     ):
         if text:
             return cls.objects.get(plain_text=text)
-        raise ValueError("DocumentAbstract.get requires text paramenter")
+        raise ValueError("DocumentAbstract.get requires text parameter")
 
     @classmethod
     def create_or_update(
@@ -340,7 +343,7 @@ class DocumentAbstract(RichTextWithLang, CommonControlField):
             obj.plain_text = text
             obj.creator = user
 
-        obj.language = language
+        obj.language = language or obj.language
         obj.updated_by = user
         obj.save()
         return obj

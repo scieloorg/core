@@ -42,7 +42,6 @@ def validate(request):
             if errorlist:
                 raise Exception(_("Validation error"))
             else:
-                print('entrou')
                 file_upload.is_valid = True
                 fp = open(upload_path)
                 file_upload.line_count = len(fp.readlines())
