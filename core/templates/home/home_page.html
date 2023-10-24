@@ -1,10 +1,25 @@
 {% extends "home/scieloorg/base.html" %}
 {% load i18n wagtailcore_tags %}
+{% load wagtailsettings_tags %}
 
 {% block title %}{{page.specific.title}}{% endblock title %}
 
 {% block content %}
 
+<style>
+    #tab-periodicos dl dd>button {
+    background: #fff;
+    border: 1px solid #DAE3F4;
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: #6789D3;
+    padding: 1rem 1.5rem;
+    float: left;
+}
+    .dd-button{
+        margin-bottom: 0px !important;
+    }
+</style>
 
 <div class="container">
 
@@ -19,7 +34,7 @@
                 <h1 class="scielo-logo">
                     <a href="javascript:;">
                         <img src="/static/scieloorg/images/logo-scielo-portal-no-label.svg">
-                        <span>Scientific Electronic Library Online</span>
+                        <span>{% trans 'Scientific Electronic Library Online' %}</span>
                     </a>
                 </h1>
 
@@ -34,11 +49,9 @@
                     <input type="hidden" name="page" id="page" value="1">
 
                     <div class="search-box">
-                        <input type="text" name="q" placeholder="Search articles: Enter one or more words" autofocus>
+                        <input type="text" name="q" placeholder="{% trans 'Search articles: Enter one or more words' %}" autofocus>
                         <a href="javascript:$('#searchForm').submit();" class="btn btn-default btn-input"></a>
-                        <a
-                            href="https://search.scielo.org/?q=*:*&lang=pt&count=15&from=0&output=site&sort=&format=summary&fb=&page=1&q=*&lang=pt&page=1">Advanced
-                            Search</a>
+                        <a href="https://search.scielo.org/?q=*:*&lang=pt&count=15&from=0&output=site&sort=&format=summary&fb=&page=1&q=*&lang=pt&page=1">{% trans 'Advanced Search' %}</a>
                     </div>
                 </form>
             </div>

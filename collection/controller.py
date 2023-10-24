@@ -46,7 +46,7 @@ def load(user):
             collection_object.name.add(collection_name)
         collection_object.status = collection_data.get("status")
         collection_object.has_analytics = collection_data.get("has_analytics")
-        collection_object.type = collection_data.get("type")
+        collection_object.collection_type = collection_data.get("type")
         collection_object.is_active = collection_data.get("is_active")
         collection_object.creator = user
         collection_object.save()

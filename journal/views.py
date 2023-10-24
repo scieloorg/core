@@ -38,7 +38,6 @@ def validate(request):
             errorlist = chkcsv.check_csv_file(
                 upload_path, cols, True, True, True, False
             )
-            print(errorlist)
             if errorlist:
                 raise Exception(_("Validation error"))
             else:

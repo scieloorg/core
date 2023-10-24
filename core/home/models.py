@@ -1,6 +1,8 @@
 from django.db import models
+from django.db.models import Q
 from django.http import JsonResponse
 from django.template.response import TemplateResponse
+from django.utils.translation import get_language
 from modelcluster.fields import ParentalKey
 from wagtail.admin.panels import FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel
 from wagtail.contrib.forms.models import AbstractFormField
@@ -9,9 +11,73 @@ from wagtail.fields import RichTextField
 from wagtail.models import Page
 from wagtailcaptcha.models import WagtailCaptchaEmailForm
 
+from journal.models import Journal
+from journal.choices import STUDY_AREA
+from collection.models import Collection
+from institution.models import Institution
+from core.utils.utils import language_iso
+
 
 class HomePage(Page):
-    pass
+    def get_context(self, request, *args, **kwargs):
+        context = super().get_context(request, *args, **kwargs)
+        lang = language_iso(get_language())
+        collections = Collection.objects.filter(name__language__code2=lang).order_by(
+            "name__text"
+        )
+        children = self.get_children()
+
+        context["collections_journals"] = collections.filter(
+            Q(is_active=True) & Q(status="certified")
+        )
+        context["collections_in_development"] = collections.filter(
+            Q(is_active=True) & Q(status="development")
+        )
+        context["collections_servers_and_repositorios"] = collections.filter(
+            Q(is_active=True)
+            & (Q(collection_type="repositories") | Q(collection_type="preprints"))
+        )
+        context["collections_books"] = collections.filter(
+            Q(is_active=True) & Q(collection_type="books")
+        )
+        context["collections_others"] = collections.filter(
+            Q(is_active=True) & Q(status="diffusion")
+        )
+        context["categories"] = [item[0] for item in STUDY_AREA]
+        context["children"] = children
+        return context
+
+
+class ListJournal(Page):
+    def get_context(self, request, *args, **kwargs):
+        context = super().get_context(request, *args, **kwargs)
+        parent_specific_page = self.get_parent().specific
+        journals = Journal.objects.all()
+
+        category = request.GET.get("category")
+        search_term = request.GET.get("search", "")
+        # search_type = request.GET.get('search_type', '')
+        publisher = category == "publisher"
+        institution = ""
+
+        if any(category in item for item in STUDY_AREA):
+            journals = journals.filter(subject__code=category).order_by("title")
+        elif search_term:
+            journals = journals.filter(title__icontains=search_term)
+        elif publisher:
+            institution = Institution.objects.all().order_by("name")
+        else:
+            journals = journals.order_by("title")
+
+        context["search_term"] = search_term
+        # context['search_type'] = search_type
+        context["parent_page"] = parent_specific_page
+        context["publisher"] = publisher
+        context["institution"] = institution
+        context["category"] = category
+        context["journals"] = journals
+        return context
+
 
 class FormField(AbstractFormField):
     page = ParentalKey("FormPage", on_delete=models.CASCADE, related_name="form_fields")

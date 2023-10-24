@@ -5,9 +5,9 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField, TextWithLang
-
+from core.models import Language
 from . import choices
-
+from django.utils.translation import get_language
 
 class CollectionName(TextWithLang):
     autocomplete_search_filter = "text"
@@ -139,6 +139,10 @@ class Collection(CommonControlField):
         return "%s" % self.main_name or ""
 
     def __str__(self):
-        return "%s" % self.main_name or ""
+        lang = Language.get_or_create(code2=get_language())
+        try:
+            return f"{self.name.all().filter(language=lang)[0].text}"
+        except IndexError:
+            return f"{self.main_name}" or "" 
 
     base_form_class = CoreAdminModelForm
