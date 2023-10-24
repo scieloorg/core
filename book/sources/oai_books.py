@@ -75,8 +75,10 @@ def get_book(rec):
 def create_or_update_book(book, user=None):
     researchers = get_or_create_researchers(book.get("creator"))
     language = Language.get_or_create(code2=book.get("language"))
-    institution = Institution.get_or_create(
+    institution = Institution.create_or_update(
         inst_name=book.get("publisher"),
+        copyright_holder=None,
+        url=None,
         inst_acronym=None,
         level_1=None,
         level_2=None,
@@ -121,7 +123,7 @@ def get_or_create_researchers(researchers):
 
     for researcher in researchers:
         researcher = parse_author_name(researcher)
-        obj = Researcher.get_or_create(
+        obj = Researcher.create_or_update(
             given_names=researcher.get("given_names"),
             last_name=researcher.get("surname"),
             declared_name=researcher.get("declared_name"),

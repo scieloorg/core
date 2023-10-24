@@ -1,4 +1,6 @@
 # Solr
+index/core/data
+index/oai/data
 index/7.7.3/core/data/
 index/7.7.3/oai/data/
 index/data/core/data/

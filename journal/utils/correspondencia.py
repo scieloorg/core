@@ -22,7 +22,6 @@ correspondencia_journal = {
     "v68": "acronym",
     "v69": "url_of_the_journal",
     "v85": "controled_vocabulary",
-    "v90": "notes",
     "v100": "publication_title",
     "v110": "subtitle",
     "v117": "standard",

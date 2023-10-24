@@ -162,7 +162,7 @@ class Book(CommonControlField, ClusterableModel):
             return cls.objects.get(eisbn=eisbn)
         if identifier:
             return cls.objects.get(identifier=identifier)
-        raise ValueError("Books.get requires doi, isbn or eisbn")
+        raise ValueError("Books.get requires doi, isbn, eisbn or identifier parameters")
 
     @classmethod
     def create_or_update(
@@ -183,7 +183,7 @@ class Book(CommonControlField, ClusterableModel):
         try:
             obj = cls.get(doi=doi, isbn=isbn, eisbn=eisbn, identifier=identifier)
             obj.updated_by = user
-        except (cls.DoesNotExist, ValueError):
+        except cls.DoesNotExist:
             obj = cls(creator=user)
 
         obj.doi = doi or obj.doi

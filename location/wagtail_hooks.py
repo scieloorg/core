@@ -5,7 +5,7 @@ from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminGroup, mode
 from wagtail.contrib.modeladmin.views import CreateView
 from wagtail import hooks
 
-from .models import City, Region, State, Country, Location, CountryFile
+from .models import City, Region, State, Country, Location, CountryFile, Address
 from .views import import_file_country, validate_country
 from .button_helpers import CountryHelper
 
@@ -121,6 +121,26 @@ class StateAdmin(ModelAdmin):
     )
     export_filename = "regions"
 
+class AddressAdmin(ModelAdmin):
+    model = Address
+    create_view_class = LocationCreateView
+    menu_label = _("Address")
+    menu_icon = "folder"
+    menu_order = 800
+    add_to_settings_menu = False
+    exclude_from_explorer = (
+        False
+    )
+    list_display = (
+        "name",
+    )
+    search_fields = (
+        "name",
+    )
+    list_export = (
+        "name",
+    )
+
 
 class CountryAdmin(ModelAdmin):
     model = Country
@@ -175,6 +195,7 @@ class LocationAdminGroup(ModelAdminGroup):
         StateAdmin,
         CountryAdmin,
         CountryFileAdmin,
+        AddressAdmin,
     )
 
 

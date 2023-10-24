@@ -149,6 +149,9 @@
     <!-- Abstract **from:ab to:abstract** -->
     <field name="ab" type="text" indexed="true" stored="false" multiValued="true"/>
 
+    <!-- Abstract **from:ab to:abstract_language** -->
+    <field name="la_abstract" type="lowercase" indexed="true" stored="true" multiValued="true" />
+
     <!-- Language **from:la to:languages** list of languages -->
     <field name="la" type="lowercase" indexed="true" stored="true" multiValued="true"/>
 
@@ -266,7 +269,7 @@
     <dynamicField name="ti_*"  type="text" indexed="false" stored="true"  multiValued="true"/>
 
     <!-- Field to journal CNPQ subject areas -->
-    <field name="subject_area"  type="string" indexed="true" stored="true"  multiValued="true"/>
+    <field name="subject_areas"  type="string" indexed="true" stored="true"  multiValued="true"/>
 
     <!-- Dynamic Field to Article Keywords in any languages -->
     <dynamicField name="keyword_*"  type="text" indexed="false" stored="true"  multiValued="true"/>
