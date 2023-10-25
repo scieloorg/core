@@ -475,7 +475,7 @@ class Migration(migrations.Migration):
                 (
                     "award_id",
                     models.CharField(
-                        blank=True, max_length=50, null=True, verbose_name="Award ID"
+                        blank=True, max_length=100, null=True, verbose_name="Award ID"
                     ),
                 ),
                 (
