@@ -179,6 +179,10 @@ class PidRequest(CommonControlField):
             detail=detail,
         )
 
+    @property
+    def created_updated(self):
+        return self.updated or self.created
+
     panels = [
         FieldPanel("origin"),
         FieldPanel("origin_date"),
@@ -242,6 +246,10 @@ class PidChange(CommonControlField):
             obj.version = version
             obj.save()
             return obj
+
+    @property
+    def created_updated(self):
+        return self.updated or self.created
 
 
 class PidProviderXML(CommonControlField):
@@ -333,6 +341,10 @@ class PidProviderXML(CommonControlField):
 
     def __str__(self):
         return f"{self.pkg_name} {self.v3}"
+
+    @property
+    def created_updated(self):
+        return self.updated or self.created
 
     @property
     def data(self):
