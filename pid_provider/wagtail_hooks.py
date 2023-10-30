@@ -65,7 +65,7 @@ class PidProviderXMLAdmin(ModelAdmin):
         "main_doi",
         "created_updated",
     )
-    list_filter = ("article_pub_year",)
+    list_filter = ("article_pub_year", "issue__pub_year")
     search_fields = (
         "pkg_name",
         "v3",
