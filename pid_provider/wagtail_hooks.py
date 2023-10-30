@@ -31,7 +31,7 @@ class PidRequestAdmin(ModelAdmin):
         "origin",
         "result_type",
         "result_msg",
-        "created",
+        "created_updated",
     )
     list_filter = ("result_type",)
     search_fields = (
@@ -63,6 +63,7 @@ class PidProviderXMLAdmin(ModelAdmin):
         "v2",
         "aop_pid",
         "main_doi",
+        "created_updated",
     )
     list_filter = ("article_pub_year",)
     search_fields = (
@@ -97,6 +98,7 @@ class PidChangeAdmin(ModelAdmin):
         "pid_in_xml",
         "pid_assigned",
         "pid_type",
+        "created_updated",
     )
     list_filter = ("pid_type",)
     search_fields = (
