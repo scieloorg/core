@@ -2,7 +2,7 @@ from rest_framework import viewsets
 
 from issue import models
 from .serializers import IssueSerializer
-from core.core.utils.validators import validate_params
+from core.utils.validators import validate_params
 
 
 class GerenicIssueViewSet(viewsets.ModelViewSet):

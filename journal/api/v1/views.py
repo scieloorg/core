@@ -2,7 +2,7 @@ from rest_framework import viewsets
 
 from journal import models
 from .serializers import JournalSerializer
-from core.core.utils.validators import validate_issn, validate_params
+from core.utils.validators import validate_issn, validate_params
 
 
 class GenericJournalViewSet(viewsets.ModelViewSet):
