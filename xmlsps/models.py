@@ -173,6 +173,9 @@ class XMLJournal(models.Model):
         return f"{self.issn_electronic} {self.issn_print}"
 
     class Meta:
+        unique_together = [
+            ["issn_electronic", "issn_print"],
+        ]
         indexes = [
             models.Index(fields=["issn_electronic"]),
             models.Index(fields=["issn_print"]),
@@ -188,7 +191,7 @@ class XMLJournal(models.Model):
                 issn_electronic=issn_electronic,
                 issn_print=issn_print,
             )
-        except (cls.DoesNotExist, IndexError):
+        except cls.DoesNotExist:
             return cls.create(
                 issn_electronic=issn_electronic,
                 issn_print=issn_print,
@@ -196,16 +199,12 @@ class XMLJournal(models.Model):
 
     @classmethod
     def get(cls, issn_electronic=None, issn_print=None):
-        if issn_electronic and issn_print:
-            return cls.objects.filter(
-                issn_electronic=issn_electronic, issn_print=issn_print
-            )[0]
-        if issn_electronic:
-            return cls.objects.filter(issn_electronic=issn_electronic)[0]
-        if issn_print:
-            return cls.objects.filter(issn_print=issn_print)[0]
-        raise XMLJournalGetError(
-            "XMLJournal.get requires issn_electronic or issn_print"
+        if not issn_electronic and not issn_print:
+            raise XMLJournalGetError(
+                "XMLJournal.get requires issn_electronic or issn_print"
+            )
+        return cls.objects.get(
+            issn_electronic=issn_electronic, issn_print=issn_print
         )
 
     @classmethod
@@ -214,13 +213,17 @@ class XMLJournal(models.Model):
             raise XMLJournalCreateError(
                 "XMLJournal.create requires issn_electronic or issn_print"
             )
-
         try:
-            obj = cls(issn_electronic=issn_electronic, issn_print=issn_print)
+            obj = cls()
+            obj.issn_electronic = issn_electronic
+            obj.issn_print = issn_print
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(issn_electronic, issn_print)
+            return cls.get(
+                issn_electronic=issn_electronic,
+                issn_print=issn_print,
+            )
 
 
 class XMLIssue(models.Model):
@@ -273,17 +276,14 @@ class XMLIssue(models.Model):
             raise XMLIssueGetError(f"XMLIssue.get requires journal")
         if pub_year is None:
             raise XMLIssueGetError(f"XMLIssue.get requires pub_year")
-        try:
-            # mesmo com tratamento de exceção DoesNotExist, o registro duplica
-            return cls.objects.filter(
-                journal=journal,
-                volume=volume,
-                number=number,
-                suppl=suppl,
-                pub_year=pub_year,
-            )[0]
-        except IndexError:
-            raise cls.DoesNotExist()
+        # mesmo com tratamento de exceção DoesNotExist, o registro duplica
+        return cls.objects.get(
+            journal=journal,
+            volume=volume,
+            number=number,
+            suppl=suppl,
+            pub_year=pub_year,
+        )
 
     @classmethod
     def create(cls, journal, volume, number, suppl, pub_year):
@@ -292,13 +292,12 @@ class XMLIssue(models.Model):
         if pub_year is None:
             raise XMLIssueCreateError(f"XMLIssue.create requires pub_year")
         try:
-            issue = cls(
-                journal=journal,
-                volume=volume,
-                number=number,
-                suppl=suppl,
-                pub_year=pub_year,
-            )
+            issue = cls()
+            issue.journal = journal
+            issue.volume = volume
+            issue.number = number
+            issue.suppl = suppl
+            issue.pub_year = pub_year
             issue.save()
             return issue
         except IntegrityError:
