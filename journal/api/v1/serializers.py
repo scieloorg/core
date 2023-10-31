@@ -47,9 +47,7 @@ class WebOfKnowledgeSerializer(serializers.ModelSerializer):
 class WebOfKnowledgeSubjectCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.WebOfKnowledgeSubjectCategory
-        fields = [
-            "value"
-        ]
+        fields = ["value"]
 
 
 class StandardSerializer(serializers.ModelSerializer):
@@ -72,6 +70,7 @@ class IndexedAtSerializer(serializers.ModelSerializer):
             "type",
         ]
 
+
 class JournalSerializer(serializers.ModelSerializer):
     # Serializadores para campos de relacionamento, como 'official', devem corresponder aos campos do modelo.
     official = OfficialJournalSerializer(many=False, read_only=True)
@@ -86,7 +85,6 @@ class JournalSerializer(serializers.ModelSerializer):
     vocabulary = VocabularySerializer(many=False, read_only=True)
     indexed_at = IndexedAtSerializer(many=True, read_only=True)
     use_license = LicenseSerializer(many=False, read_only=True)
-
 
     class Meta:
         model = models.Journal

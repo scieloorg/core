@@ -19,6 +19,7 @@ from journal.models import Journal
 from location.models import City
 from .exceptions import TocSectionGetError
 
+
 class Issue(CommonControlField, ClusterableModel):
     """
     Class that represent an Issue
@@ -46,7 +47,6 @@ class Issue(CommonControlField, ClusterableModel):
     year = models.CharField(_("Issue year"), max_length=20, null=True, blank=True)
     month = models.CharField(_("Issue month"), max_length=20, null=True, blank=True)
     supplement = models.CharField(_("Supplement"), max_length=20, null=True, blank=True)
-
 
     autocomplete_search_field = "journal__title"
 
@@ -118,7 +118,7 @@ class Issue(CommonControlField, ClusterableModel):
                 fields=[
                     "supplement",
                 ]
-            ),          
+            ),
         ]
 
     @property
@@ -223,10 +223,7 @@ class IssueTitle(Orderable, CommonControlField):
         Language, on_delete=models.CASCADE, blank=True, null=True
     )
 
-    panels = [
-        FieldPanel("title"),
-        AutocompletePanel("language")
-    ]
+    panels = [FieldPanel("title"), AutocompletePanel("language")]
 
     def __str__(self):
         return self.title
@@ -258,7 +255,7 @@ class TocSection(RichTextWithLang, CommonControlField):
 
     def autocomplete_label(self):
         return str(self.plain_text)
-    
+
     class Meta:
         verbose_name = _("TocSection")
         verbose_name_plural = _("TocSections")
@@ -278,7 +275,9 @@ class TocSection(RichTextWithLang, CommonControlField):
     ):
         if value and language:
             return cls.objects.get(plain_text=value, language=language)
-        raise TocSectionGetError("TocSection.get requires value and language parameters")
+        raise TocSectionGetError(
+            "TocSection.get requires value and language parameters"
+        )
 
     @classmethod
     def get_or_create(

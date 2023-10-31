@@ -56,7 +56,9 @@ def process_journal_article_meta(collection, limit, user):
                 issn_scielo=journal_dict.get("issn_id"),
                 journal_acron=journal_dict.get("acronym"),
                 status=journal_dict.get("publication_status"),
-                journal_history=journal_dict.get("journal_status_history_in_this_collection"),
+                journal_history=journal_dict.get(
+                    "journal_status_history_in_this_collection"
+                ),
                 user=user,
             )
             journal_utils.update_panel_scope_and_about(

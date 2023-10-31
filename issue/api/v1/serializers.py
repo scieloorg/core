@@ -11,10 +11,7 @@ class TocSectionsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.TocSection
-        fields = [
-            "plain_text",
-            "language"
-        ]
+        fields = ["plain_text", "language"]
 
 
 class IssueSerializer(serializers.ModelSerializer):
@@ -46,7 +43,7 @@ class IssueSerializer(serializers.ModelSerializer):
                 "short_title": obj.journal.short_title,
                 "issn_print": obj.journal.official.issn_print,
                 "issn_electronic": obj.journal.official.issn_electronic,
-                "issnl":  obj.journal.official.issnl,
+                "issnl": obj.journal.official.issnl,
                 "scielo_journal": scielo_journal,
             }
         else:

@@ -14,9 +14,7 @@ def process_issue_article_meta(collection, limit, user):
             url_issue = f"https://articlemeta.scielo.org/api/v1/issue/?code={code}"
             data_issue = utils.fetch_data(url_issue, json=True, timeout=30, verify=True)
             fields_issue = [data_issue["issue"]]
-            issue_dict = rename_dictionary_keys(
-                fields_issue, correspondencia_issue
-            )
+            issue_dict = rename_dictionary_keys(fields_issue, correspondencia_issue)
             get_or_create_issue(
                 issn_scielo=issue_dict.get("scielo_issn"),
                 volume=issue_dict.get("volume"),
