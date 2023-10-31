@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from core.api.v1.serializers import LanguageSerializer
-from vocabulary.models import Keyword
+from vocabulary.models import Keyword, Vocabulary
 
 
 class KeywordSerializer(serializers.ModelSerializer):
@@ -13,4 +13,13 @@ class KeywordSerializer(serializers.ModelSerializer):
             # "vocabulary",
             "text",
             "language",
+        ]
+
+
+class VocabularySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vocabulary
+        fields = [
+            "name",
+            "acronym",
         ]
