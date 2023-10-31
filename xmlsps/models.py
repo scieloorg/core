@@ -185,7 +185,7 @@ class XMLJournal(models.Model):
         return f"{self.issn_electronic} {self.issn_print}"
 
     @classmethod
-    def get_or_create(cls, issn_electronic=None, issn_print=None):
+    def get_or_create(cls, issn_electronic, issn_print):
         try:
             return cls.get(
                 issn_electronic=issn_electronic,
@@ -198,7 +198,7 @@ class XMLJournal(models.Model):
             )
 
     @classmethod
-    def get(cls, issn_electronic=None, issn_print=None):
+    def get(cls, issn_electronic, issn_print):
         if not issn_electronic and not issn_print:
             raise XMLJournalGetError(
                 "XMLJournal.get requires issn_electronic or issn_print"
@@ -208,7 +208,7 @@ class XMLJournal(models.Model):
         )
 
     @classmethod
-    def create(cls, issn_electronic=None, issn_print=None):
+    def create(cls, issn_electronic, issn_print):
         if not issn_electronic and not issn_print:
             raise XMLJournalCreateError(
                 "XMLJournal.create requires issn_electronic or issn_print"
