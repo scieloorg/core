@@ -101,6 +101,7 @@ class PidRequest(CommonControlField):
     origin_date = models.CharField(
         _("Origin date"), max_length=10, null=True, blank=True
     )
+    v3 = models.CharField( _("PID v3"), max_length=23, null=True, blank=True)
 
     class Meta:
         indexes = [
@@ -109,12 +110,18 @@ class PidRequest(CommonControlField):
                     "result_type",
                 ]
             ),
+            models.Index(
+                fields=[
+                    "v3",
+                ]
+            ),
         ]
 
     @property
     def data(self):
         _data = {
             "origin": self.origin,
+            "v3": self.v3,
             "origin_date": self.origin_date,
             "result_type": self.result_type,
             "result_msg": self.result_msg,
@@ -147,6 +154,7 @@ class PidRequest(CommonControlField):
         xml_version=None,
         detail=None,
         origin_date=None,
+        v3=None,
     ):
         try:
             obj = cls.get(origin=origin)
@@ -156,6 +164,7 @@ class PidRequest(CommonControlField):
             obj.creator = user
             obj.origin = origin
 
+        obj.v3 = v3 or obj.v3
         obj.result_type = result_type or obj.result_type
         obj.result_msg = result_msg or obj.result_msg
         obj.xml_version = xml_version or obj.xml_version
