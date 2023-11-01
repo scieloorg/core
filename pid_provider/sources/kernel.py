@@ -52,4 +52,12 @@ def load_xml(user, uri, name, acron, year, origin_date=None, force_update=None):
             result_msg=result_msg,
         )
         return pid_request.data
+
+    pid_request = PidRequest.cancel_failure(
+        user=user,
+        origin=uri,
+        origin_date=origin_date,
+        v3=pid_v3,
+    )
+
     return response

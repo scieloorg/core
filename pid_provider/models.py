@@ -189,6 +189,25 @@ class PidRequest(CommonControlField):
             detail=detail,
         )
 
+
+    @classmethod
+    def cancel_failure(cls, user=None, origin=None, v3=None, detail=None, origin_date=None):
+        try:
+            PidRequest.get(origin)
+        except cls.DoesNotExist:
+            # nao é necessario atualizar o status de falha não registrada anteriormente
+            pass
+        else:    
+            return PidRequest.create_or_update(
+                user=user,
+                origin=origin,
+                origin_date=origin_date,
+                result_type="OK",
+                result_msg="OK",
+                detail=detail,
+                v3=v3,
+            )
+
     @property
     def created_updated(self):
         return self.updated or self.created
@@ -464,6 +483,15 @@ class PidProviderXML(CommonControlField):
             # data to return
             data = registered.data.copy()
             data["xml_changed"] = bool(changed_pids)
+
+            pid_request = PidRequest.cancel_failure(
+                user=user,
+                origin=filename,
+                origin_date=origin_date,
+                v3=v3,
+                detail=data,
+            )
+
             return data
 
         except (exceptions.QueryDocumentMultipleObjectsReturnedError,) as e:
