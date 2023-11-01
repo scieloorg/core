@@ -175,7 +175,7 @@ class PidRequest(CommonControlField):
         return obj
 
     @classmethod
-    def register_failure(cls, e, user=None, origin=None, message=None, detail=None):
+    def register_failure(cls, e, user=None, origin=None, message=None, detail=None, origin_date=None):
         logging.exception(e)
         msg = str(e)
         if message:
@@ -183,6 +183,7 @@ class PidRequest(CommonControlField):
         return PidRequest.create_or_update(
             user=user,
             origin=origin,
+            origin_date=origin_date,
             result_type=str(type(e)),
             result_msg=msg,
             detail=detail,
