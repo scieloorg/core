@@ -471,6 +471,7 @@ class PidProviderXML(CommonControlField):
             pid_request = PidRequest.create_or_update(
                 user=user,
                 origin=filename,
+                origin_date=origin_date,
                 result_type=str(type(e)),
                 result_msg=_("Found {} records for {}").format(
                     len(data["items"]), data["params"]
@@ -486,6 +487,7 @@ class PidProviderXML(CommonControlField):
             pid_request = PidRequest.register_failure(
                 e,
                 user=user,
+                origin_date=origin_date,
                 origin=filename,
                 detail={"xml": xml_adapter.tostring()},
             )
