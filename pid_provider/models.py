@@ -101,7 +101,7 @@ class PidRequest(CommonControlField):
     origin_date = models.CharField(
         _("Origin date"), max_length=10, null=True, blank=True
     )
-    v3 = models.CharField( _("PID v3"), max_length=23, null=True, blank=True)
+    v3 = models.CharField(_("PID v3"), max_length=23, null=True, blank=True)
 
     class Meta:
         indexes = [
@@ -175,7 +175,9 @@ class PidRequest(CommonControlField):
         return obj
 
     @classmethod
-    def register_failure(cls, e, user=None, origin=None, message=None, detail=None, origin_date=None):
+    def register_failure(
+        cls, e, user=None, origin=None, message=None, detail=None, origin_date=None
+    ):
         logging.exception(e)
         msg = str(e)
         if message:
@@ -189,15 +191,16 @@ class PidRequest(CommonControlField):
             detail=detail,
         )
 
-
     @classmethod
-    def cancel_failure(cls, user=None, origin=None, v3=None, detail=None, origin_date=None):
+    def cancel_failure(
+        cls, user=None, origin=None, v3=None, detail=None, origin_date=None
+    ):
         try:
             PidRequest.get(origin)
         except cls.DoesNotExist:
             # nao é necessario atualizar o status de falha não registrada anteriormente
             pass
-        else:    
+        else:
             return PidRequest.create_or_update(
                 user=user,
                 origin=origin,
@@ -242,7 +245,7 @@ class PidChange(CommonControlField):
         FieldPanel("pid_type"),
         FieldPanel("pid_in_xml"),
         FieldPanel("pid_assigned"),
-        AutocompletePanel("version")
+        AutocompletePanel("version"),
     ]
 
     class Meta:
