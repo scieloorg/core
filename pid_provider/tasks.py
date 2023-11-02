@@ -9,7 +9,7 @@ from django.utils.translation import gettext as _
 
 from config import celery_app
 from core.utils.utils import fetch_data
-from pid_provider.sources import am, kernel
+from pid_provider.sources import am
 from pid_provider.models import PidRequest
 from pid_provider.controller import provide_pid_for_xml_uri
 
@@ -135,35 +135,14 @@ def provide_pid_for_opac_xmls(
                 }
             )
         except Exception as e:
-            kernel.register_failure(e, user=user, detail={"uri": uri})
+            # por enquanto, o tratamento é para evitar interrupção do laço
+            # TODO registrar o problema em um modelo de resultado de execução de tasks
+            logging.exception("Error: processing {} {}".format(uri, e))
+
         finally:
             page += 1
             if page > pages:
                 break
-
-
-@celery_app.task(bind=True, name="provide_pid_for_am_xml")
-def provide_pid_for_am_xml(
-    self,
-    username,
-    collection_acron,
-    pid_v2,
-    processing_date=None,
-    force_update=None,
-):
-    user = _get_user(self.request, username=username)
-    uri = (
-        f"https://articlemeta.scielo.org/api/v1/article/?"
-        f"collection={collection_acron}&code={pid_v2}&format=xmlrsps"
-    )
-    am.request_pid_v3(
-        user,
-        uri,
-        collection_acron,
-        pid_v2,
-        processing_date,
-        force_update,
-    )
 
 
 @celery_app.task(bind=True, name="provide_pid_for_am_xmls")
