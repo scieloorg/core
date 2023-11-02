@@ -10,6 +10,7 @@ from zipfile import ZipFile
 
 from django.core.files.base import ContentFile
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
@@ -102,6 +103,7 @@ class PidRequest(CommonControlField):
         _("Origin date"), max_length=10, null=True, blank=True
     )
     v3 = models.CharField(_("PID v3"), max_length=23, null=True, blank=True)
+    times = models.IntegerField(null=True, blank=True)
 
     class Meta:
         indexes = [
@@ -115,6 +117,16 @@ class PidRequest(CommonControlField):
                     "v3",
                 ]
             ),
+            models.Index(
+                fields=[
+                    "times",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "detail",
+                ]
+            ),
         ]
 
     @property
@@ -126,6 +138,7 @@ class PidRequest(CommonControlField):
             "result_type": self.result_type,
             "result_msg": self.result_msg,
             "detail": self.detail,
+            "times": self.times,
         }
         return _data
 
@@ -171,6 +184,9 @@ class PidRequest(CommonControlField):
         obj.detail = detail or obj.detail
         obj.origin = origin or obj.origin
         obj.origin_date = origin_date or obj.origin_date
+        if not obj.times:
+            obj.times = 0
+        obj.times += 1
         obj.save()
         return obj
 
@@ -214,6 +230,13 @@ class PidRequest(CommonControlField):
     @property
     def created_updated(self):
         return self.updated or self.created
+
+    @classmethod
+    def items_to_retry(cls):
+        # retorna os itens em que result_type é diferente de OK e a origem é URI
+        return cls.objects.filter(
+            ~Q(result_type="OK"), origin__contains=":"
+        ).iterator()
 
     panels = [
         FieldPanel("origin"),
@@ -491,7 +514,7 @@ class PidProviderXML(CommonControlField):
                 user=user,
                 origin=filename,
                 origin_date=origin_date,
-                v3=v3,
+                v3=data.get("v3"),
                 detail=data,
             )
 

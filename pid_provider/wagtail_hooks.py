@@ -32,6 +32,7 @@ class PidRequestAdmin(ModelAdmin):
         "result_type",
         "result_msg",
         "v3",
+        "times",
         "created_updated",
     )
     list_filter = ("result_type",)

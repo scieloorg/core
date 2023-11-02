@@ -11,7 +11,7 @@ from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 from requests.auth import HTTPBasicAuth
 
 from pid_provider import exceptions
-from pid_provider.models import PidProviderConfig, PidProviderXML
+from pid_provider.models import PidProviderConfig, PidProviderXML, PidRequest
 
 User = get_user_model()
 
@@ -195,3 +195,94 @@ class PidProvider:
         Retorna XML URI ou None
         """
         return PidProviderXML.get_xml_uri(v3)
+
+
+def provide_pid_for_xml_uri(
+    user,
+    uri,
+    pid_v2=None,
+    pid_v3=None,
+    collection_acron=None,
+    journal_acron=None,
+    year=None,
+    origin_date=None,
+    force_update=None,
+):
+
+    if not force_update:
+        # skip update
+        try:
+            if pid_v3:
+                name = pid_v3 + ".xml"
+                return PidProviderXML.objects.get(v3=pid_v3).data
+            if pid_v2:
+                name = pid_v2 + ".xml"
+                return PidProviderXML.objects.get(v2=pid_v2).data
+            return ValueError(
+                "pid_provider.controller.provide_pid_for_xml_uri "
+                "requires pid_v2 or pid_v3"
+            )
+        except PidProviderXML.DoesNotExist:
+            pass
+
+    try:
+        detail = {
+            "pid_v2": pid_v2,
+            "pid_v3": pid_v3,
+            "collection_acron": collection_acron,
+            "journal_acron": journal_acron,
+            "year": year,
+        }
+        for k, v in list(detail.items()):
+            if not v:
+                detail.pop(k)
+
+        logging.info(f"Request pid for {uri}")
+        pp = PidProvider()
+        response = pp.provide_pid_for_xml_uri(
+            uri,
+            name,
+            user,
+            origin_date=origin_date,
+            force_update=force_update,
+            is_published=True,
+        )
+    except Exception as e:
+        return PidRequest.register_failure(
+            e=e,
+            user=user,
+            origin=uri,
+            origin_date=origin_date,
+            detail=detail,
+            v3=pid_v3,
+        )
+
+    try:
+        pid_v3 = response["v3"]
+    except KeyError:
+        pid_v3 = None
+
+    if not pid_v3:
+        result_type = response.get("error_type") or response.get("result_type")
+        result_msg = response.get("error_msg") or response.get("result_msg")
+
+        # Guardar somente se houve problema
+        pid_request = PidRequest.create_or_update(
+            user=user,
+            origin=uri,
+            origin_date=origin_date,
+            result_type=result_type,
+            result_msg=result_msg,
+            detail=detail,
+        )
+        return pid_request.data
+
+    PidRequest.cancel_failure(
+        user=user,
+        origin=uri,
+        origin_date=origin_date,
+        v3=pid_v3,
+        detail=detail,
+    )
+
+    return response

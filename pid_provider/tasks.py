@@ -9,7 +9,9 @@ from django.utils.translation import gettext as _
 
 from config import celery_app
 from core.utils.utils import fetch_data
-from pid_provider.sources import am, kernel
+from pid_provider.sources import am
+from pid_provider.models import PidRequest
+from pid_provider.controller import provide_pid_for_xml_uri
 
 User = get_user_model()
 
@@ -31,72 +33,6 @@ def _get_user(request, username=None, user_id=None):
             return User.objects.get(pk=user_id)
         if username:
             return User.objects.get(username=username)
-
-
-def _read_jsonl(jsonl_file_path):
-    with open(jsonl_file_path, "r") as fp:
-        for row in fp.readlines():
-            yield json.loads(row.strip())
-
-
-@celery_app.task(bind=True, name="load_xml")
-def load_xml(
-    self, username, uri, name, acron, year, origin_date=None, force_update=None
-):
-    user = _get_user(self.request, username=username)
-    kernel.load_xml(user, uri, name, acron, year, origin_date, force_update)
-
-
-@celery_app.task(bind=True, name="load_xmls")
-def load_xmls(
-    self,
-    username=None,
-    domain=None,
-    article_list=None,
-    jsonl_file_path=None,
-    force_update=None,
-):
-    user = _get_user(self.request, username=username)
-
-    domain = domain or "www.scielo.br"
-
-    if jsonl_file_path:
-        article_list = _read_jsonl(jsonl_file_path)
-
-    if not article_list:
-        raise ValueError("pid_provider.tasks.load_xmls requires article_list")
-
-    for article in article_list:
-        acron = article["acron"]
-        pid_v3 = article["pid_v3"]
-        origin_date = article.get("processing_date")
-        uri = f"https://{domain}/j/{acron}/a/{pid_v3}/?format=xml"
-        load_xml.apply_async(
-            kwargs={
-                "username": user.username,
-                "uri": uri,
-                "name": pid_v3 + ".xml",
-                "acron": acron,
-                "year": article["publication_year"],
-                "origin_date": origin_date,
-                "force_update": force_update,
-            }
-        )
-
-
-@celery_app.task(bind=True, name="load_xml_lists")
-def load_xml_lists(self, username=None, jsonl_files_path=None):
-    if not jsonl_files_path:
-        raise ValueError("pid_provider.tasks.load_xml_lists requires jsonl_files_path")
-
-    for filename in os.listdir(jsonl_files_path):
-        load_xmls.apply_async(
-            kwargs={
-                "username": username,
-                "jsonl_file_path": os.path.join(jsonl_files_path, filename),
-            }
-        )
-
 
 """
 {
@@ -134,24 +70,28 @@ def load_xml_lists(self, username=None, jsonl_files_path=None):
 
 
 @celery_app.task(bind=True, name="provide_pid_for_opac_xml")
-def provide_pid_for_opac_xml(self, username=None, documents=None, force_update=None):
-    user = _get_user(self.request, username=username)
+def provide_pid_for_opac_xml(self, username=None, user_id=None, collection_acron=None, documents=None, force_update=None):
     for pid_v3, article in documents.items():
         try:
             logging.info(article)
             acron = article["journal_acronym"]
-            xml_uri = f"https://www.scielo.br/j/{acron}/a/{pid_v3}/?format=xml"
-            load_xml.apply_async(
+            uri = f"https://www.scielo.br/j/{acron}/a/{pid_v3}/?format=xml"
+            origin_date = datetime.strptime(
+                article.get("update") or article.get("create"),
+                "%a, %d %b %Y %H:%M:%S %Z",
+            ).isoformat()[:10]
+
+            task_provide_pid_for_xml_uri.apply_async(
                 kwargs={
-                    "username": user.username,
-                    "uri": xml_uri,
-                    "name": pid_v3 + ".xml",
-                    "acron": acron,
+                    "uri": uri,
+                    "username": username,
+                    "user_id": user_id,
+                    "pid_v2": None,
+                    "pid_v3": pid_v3,
+                    "collection_acron": collection_acron,
+                    "journal_acron": acron,
                     "year": article["publication_date"][:4],
-                    "origin_date": datetime.strptime(
-                        article.get("update") or article.get("create"),
-                        "%a, %d %b %Y %H:%M:%S %Z",
-                    ).isoformat()[:10],
+                    "origin_date": origin_date,
                     "force_update": force_update,
                 }
             )
@@ -164,6 +104,7 @@ def provide_pid_for_opac_xml(self, username=None, documents=None, force_update=N
 def provide_pid_for_opac_xmls(
     self,
     username=None,
+    user_id=None,
     begin_date=None,
     end_date=None,
     limit=None,
@@ -171,8 +112,6 @@ def provide_pid_for_opac_xmls(
     force_update=None,
 ):
     page = 1
-    user = _get_user(self.request, username=username)
-    logging.info(user)
 
     end_date = end_date or datetime.utcnow().isoformat()[:10]
     begin_date = begin_date or (datetime.utcnow() - timedelta(days=30)).isoformat()[:10]
@@ -188,47 +127,28 @@ def provide_pid_for_opac_xmls(
             pages = pages or response["pages"]
             provide_pid_for_opac_xml.apply_async(
                 kwargs={
-                    "username": user.username,
+                    "username": username,
+                    "user_id": user_id,
                     "documents": response["documents"],
                     "force_update": force_update,
                 }
             )
         except Exception as e:
-            kernel.register_failure(e, user=user, detail={"uri": uri})
+            # por enquanto, o tratamento é para evitar interrupção do laço
+            # TODO registrar o problema em um modelo de resultado de execução de tasks
+            logging.exception("Error: processing {} {}".format(uri, e))
+
         finally:
             page += 1
             if page > pages:
                 break
 
 
-@celery_app.task(bind=True, name="provide_pid_for_am_xml")
-def provide_pid_for_am_xml(
-    self,
-    username,
-    collection_acron,
-    pid_v2,
-    processing_date=None,
-    force_update=None,
-):
-    user = _get_user(self.request, username=username)
-    uri = (
-        f"https://articlemeta.scielo.org/api/v1/article/?"
-        f"collection={collection_acron}&code={pid_v2}&format=xmlrsps"
-    )
-    am.request_pid_v3(
-        user,
-        uri,
-        collection_acron,
-        pid_v2,
-        processing_date,
-        force_update,
-    )
-
-
 @celery_app.task(bind=True, name="provide_pid_for_am_xmls")
 def provide_pid_for_am_xmls(
     self,
     username=None,
+    user_id=None,
     items=None,
     force_update=None,
 ):
@@ -236,14 +156,40 @@ def provide_pid_for_am_xmls(
         raise ValueError("provide_pid_for_am_xmls requires pids")
 
     for item in items:
-        item.update({"username": username, "force_update": force_update})
-        provide_pid_for_am_xml.apply_async(kwargs=item)
+        try:
+            uri = None
+            collection_acron = item["collection_acron"]
+            pid_v2 = item["pid_v2"]
+            origin_date = item["processing_date"]
+            uri = (
+                f"https://articlemeta.scielo.org/api/v1/article/?"
+                f"collection={collection_acron}&code={pid_v2}&format=xmlrsps"
+            )
+            task_provide_pid_for_xml_uri.apply_async(
+                kwargs={
+                    "uri": uri,
+                    "username": username,
+                    "user_id": user_id,
+                    "pid_v2": pid_v2,
+                    "pid_v3": None,
+                    "collection_acron": collection_acron,
+                    "journal_acron": None,
+                    "year": None,
+                    "origin_date": origin_date,
+                    "force_update": force_update,
+                }
+            )
+        except Exception as e:
+            # por enquanto, o tratamento é para evitar interrupção do laço
+            # TODO registrar o problema em um modelo de resultado de execução de tasks
+            logging.exception("Error: processing {} {}".format(uri, e))
 
 
 @celery_app.task(bind=True, name="harvest_pids")
 def harvest_pids(
     self,
     username=None,
+    user_id=None,
     collection_acron=None,
     from_date=None,
     limit=None,
@@ -265,6 +211,7 @@ def harvest_pids(
             provide_pid_for_am_xmls.apply_async(
                 kwargs={
                     "username": username,
+                    "user_id": user_id,
                     "items": items,
                     "force_update": force_update,
                 }
@@ -274,3 +221,73 @@ def harvest_pids(
             # por enquanto, o tratamento é para evitar interrupção do laço
             # TODO registrar o problema em um modelo de resultado de execução de tasks
             logging.exception("Error: processing {} {}".format(uri, e))
+
+
+@celery_app.task(bind=True)
+def retry_to_provide_pid_for_failed_uris(
+    self,
+    username=None,
+    user_id=None,
+):
+    for item in PidRequest.items_to_retry():
+        try:
+            origin_date = item.origin_date
+            uri = item.origin
+
+            if item.detail:
+                pid_v2 = item.detail.get("pid_v2")
+                pid_v3 = item.detail.get("pid_v3")
+                collection_acron = item.detail.get("collection_acron")
+                journal_acron = item.detail.get("journal_acron")
+                year = item.detail.get("year")
+            else:
+                pid_v2 = None
+                pid_v3 = None
+                collection_acron = None
+                journal_acron = None
+                year = None
+            logging.info(uri)
+            task_provide_pid_for_xml_uri.apply_async(
+                kwargs={
+                    "uri": uri,
+                    "username": username,
+                    "user_id": user_id,
+                    "pid_v2": pid_v2,
+                    "pid_v3": pid_v3,
+                    "collection_acron": collection_acron,
+                    "journal_acron": journal_acron,
+                    "year": year,
+                    "origin_date": origin_date,
+                }
+            )
+        except Exception as e:
+            # TODO registrar o problema em um modelo de resultado de execução de tasks
+            logging.exception(e)
+
+
+@celery_app.task(bind=True)
+def task_provide_pid_for_xml_uri(
+    self,
+    uri,
+    username=None,
+    user_id=None,
+    pid_v2=None,
+    pid_v3=None,
+    collection_acron=None,
+    journal_acron=None,
+    year=None,
+    origin_date=None,
+    force_update=None,
+):
+    user = _get_user(self.request, username=username, user_id=user_id)
+    provide_pid_for_xml_uri(
+        user,
+        uri,
+        pid_v2=pid_v2,
+        pid_v3=pid_v3,
+        collection_acron=collection_acron,
+        journal_acron=journal_acron,
+        year=year,
+        origin_date=origin_date,
+        force_update=force_update,
+    )
