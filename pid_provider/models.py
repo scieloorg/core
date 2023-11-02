@@ -10,6 +10,7 @@ from zipfile import ZipFile
 
 from django.core.files.base import ContentFile
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
@@ -513,7 +514,7 @@ class PidProviderXML(CommonControlField):
                 user=user,
                 origin=filename,
                 origin_date=origin_date,
-                v3=v3,
+                v3=data.get("v3"),
                 detail=data,
             )
 

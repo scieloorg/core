@@ -233,7 +233,7 @@ def provide_pid_for_xml_uri(
             "journal_acron": journal_acron,
             "year": year,
         }
-        for k, v in detail.items():
+        for k, v in list(detail.items()):
             if not v:
                 detail.pop(k)
 
@@ -253,7 +253,7 @@ def provide_pid_for_xml_uri(
             user=user,
             origin=uri,
             origin_date=origin_date,
-            datail=detail,
+            detail=detail,
             v3=pid_v3,
         )
 
