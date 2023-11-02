@@ -10,6 +10,8 @@ from django.utils.translation import gettext as _
 from config import celery_app
 from core.utils.utils import fetch_data
 from pid_provider.sources import am, kernel
+from pid_provider.models import PidRequest
+from pid_provider.controller import provide_pid_for_xml_uri
 
 User = get_user_model()
 
@@ -274,3 +276,65 @@ def harvest_pids(
             # por enquanto, o tratamento é para evitar interrupção do laço
             # TODO registrar o problema em um modelo de resultado de execução de tasks
             logging.exception("Error: processing {} {}".format(uri, e))
+
+
+@celery_app.task(bind=True)
+def retry_to_provide_pid_for_failed_uris(
+    self,
+    username=None,
+    user_id=None,
+):
+    for item in PidRequest.items_to_retry:
+        try:
+            origin_date = item.origin_date
+            uri = item.origin
+            pid_v2 = item.detail.get("pid_v2")
+            pid_v3 = item.detail.get("pid_v3")
+            collection_acron = item.detail.get("collection_acron")
+            journal_acron = item.detail.get("journal_acron")
+            year = item.detail.get("year")
+
+            task_provide_pid_for_xml_uri.apply_async(
+                kwargs={
+                    "uri": uri,
+                    "username": username,
+                    "user_id": user_id,
+                    "pid_v2": pid_v2,
+                    "pid_v3": pid_v3,
+                    "collection_acron": collection_acron,
+                    "journal_acron": journal_acron,
+                    "year": year,
+                    "origin_date": origin_date,
+                }
+            )
+        except Exception as e:
+            # TODO registrar o problema em um modelo de resultado de execução de tasks
+            logging.exception(e)
+
+
+@celery_app.task(bind=True)
+def task_provide_pid_for_xml_uri(
+    self,
+    uri,
+    username=None,
+    user_id=None,
+    pid_v2=None,
+    pid_v3=None,
+    collection_acron=None,
+    journal_acron=None,
+    year=None,
+    origin_date=None,
+    force_update=None,
+):
+    user = _get_user(self.request, username=username, user_id=user_id)
+    provide_pid_for_xml_uri(
+        user,
+        uri,
+        pid_v2=pid_v2,
+        pid_v3=pid_v3,
+        collection_acron=collection_acron,
+        journal_acron=acron,
+        year=year,
+        origin_date=origin_date,
+        force_update=force_update,
+    )
