@@ -136,24 +136,29 @@ def load_xml_lists(self, username=None, jsonl_files_path=None):
 
 
 @celery_app.task(bind=True, name="provide_pid_for_opac_xml")
-def provide_pid_for_opac_xml(self, username=None, documents=None, force_update=None):
+def provide_pid_for_opac_xml(self, username=None, user_id=None, collection_acron=None, documents=None, force_update=None):
     user = _get_user(self.request, username=username)
     for pid_v3, article in documents.items():
         try:
             logging.info(article)
             acron = article["journal_acronym"]
-            xml_uri = f"https://www.scielo.br/j/{acron}/a/{pid_v3}/?format=xml"
-            load_xml.apply_async(
+            uri = f"https://www.scielo.br/j/{acron}/a/{pid_v3}/?format=xml"
+            origin_date = datetime.strptime(
+                article.get("update") or article.get("create"),
+                "%a, %d %b %Y %H:%M:%S %Z",
+            ).isoformat()[:10]
+
+            task_provide_pid_for_xml_uri.apply_async(
                 kwargs={
-                    "username": user.username,
-                    "uri": xml_uri,
-                    "name": pid_v3 + ".xml",
-                    "acron": acron,
+                    "uri": uri,
+                    "username": username,
+                    "user_id": user_id,
+                    "pid_v2": None,
+                    "pid_v3": pid_v3,
+                    "collection_acron": collection_acron,
+                    "journal_acron": acron,
                     "year": article["publication_date"][:4],
-                    "origin_date": datetime.strptime(
-                        article.get("update") or article.get("create"),
-                        "%a, %d %b %Y %H:%M:%S %Z",
-                    ).isoformat()[:10],
+                    "origin_date": origin_date,
                     "force_update": force_update,
                 }
             )
@@ -231,6 +236,7 @@ def provide_pid_for_am_xml(
 def provide_pid_for_am_xmls(
     self,
     username=None,
+    user_id=None,
     items=None,
     force_update=None,
 ):
@@ -238,8 +244,27 @@ def provide_pid_for_am_xmls(
         raise ValueError("provide_pid_for_am_xmls requires pids")
 
     for item in items:
-        item.update({"username": username, "force_update": force_update})
-        provide_pid_for_am_xml.apply_async(kwargs=item)
+        collection_acron = item["collection_acron"]
+        pid_v2 = item["pid_v2"]
+        origin_date = item["processing_date"]
+        uri = (
+            f"https://articlemeta.scielo.org/api/v1/article/?"
+            f"collection={collection_acron}&code={pid_v2}&format=xmlrsps"
+        )
+        task_provide_pid_for_xml_uri.apply_async(
+            kwargs={
+                "uri": uri,
+                "username": username,
+                "user_id": user_id,
+                "pid_v2": pid_v2,
+                "pid_v3": None,
+                "collection_acron": collection_acron,
+                "journal_acron": None,
+                "year": None,
+                "origin_date": origin_date,
+                "force_update": force_update,
+            }
+        )
 
 
 @celery_app.task(bind=True, name="harvest_pids")
