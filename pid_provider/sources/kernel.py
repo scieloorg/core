@@ -31,6 +31,7 @@ def load_xml(user, uri, name, acron, year, origin_date=None, force_update=None):
             e=e,
             user=user,
             origin=uri,
+            origin_date=origin_date,
         )
 
     try:
@@ -46,8 +47,17 @@ def load_xml(user, uri, name, acron, year, origin_date=None, force_update=None):
         pid_request = PidRequest.create_or_update(
             user=user,
             origin=uri,
+            origin_date=origin_date,
             result_type=result_type,
             result_msg=result_msg,
         )
         return pid_request.data
+
+    pid_request = PidRequest.cancel_failure(
+        user=user,
+        origin=uri,
+        origin_date=origin_date,
+        v3=pid_v3,
+    )
+
     return response

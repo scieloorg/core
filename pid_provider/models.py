@@ -101,6 +101,7 @@ class PidRequest(CommonControlField):
     origin_date = models.CharField(
         _("Origin date"), max_length=10, null=True, blank=True
     )
+    v3 = models.CharField(_("PID v3"), max_length=23, null=True, blank=True)
 
     class Meta:
         indexes = [
@@ -109,12 +110,18 @@ class PidRequest(CommonControlField):
                     "result_type",
                 ]
             ),
+            models.Index(
+                fields=[
+                    "v3",
+                ]
+            ),
         ]
 
     @property
     def data(self):
         _data = {
             "origin": self.origin,
+            "v3": self.v3,
             "origin_date": self.origin_date,
             "result_type": self.result_type,
             "result_msg": self.result_msg,
@@ -147,6 +154,7 @@ class PidRequest(CommonControlField):
         xml_version=None,
         detail=None,
         origin_date=None,
+        v3=None,
     ):
         try:
             obj = cls.get(origin=origin)
@@ -156,6 +164,7 @@ class PidRequest(CommonControlField):
             obj.creator = user
             obj.origin = origin
 
+        obj.v3 = v3 or obj.v3
         obj.result_type = result_type or obj.result_type
         obj.result_msg = result_msg or obj.result_msg
         obj.xml_version = xml_version or obj.xml_version
@@ -166,7 +175,9 @@ class PidRequest(CommonControlField):
         return obj
 
     @classmethod
-    def register_failure(cls, e, user=None, origin=None, message=None, detail=None):
+    def register_failure(
+        cls, e, user=None, origin=None, message=None, detail=None, origin_date=None
+    ):
         logging.exception(e)
         msg = str(e)
         if message:
@@ -174,10 +185,31 @@ class PidRequest(CommonControlField):
         return PidRequest.create_or_update(
             user=user,
             origin=origin,
+            origin_date=origin_date,
             result_type=str(type(e)),
             result_msg=msg,
             detail=detail,
         )
+
+    @classmethod
+    def cancel_failure(
+        cls, user=None, origin=None, v3=None, detail=None, origin_date=None
+    ):
+        try:
+            PidRequest.get(origin)
+        except cls.DoesNotExist:
+            # nao é necessario atualizar o status de falha não registrada anteriormente
+            pass
+        else:
+            return PidRequest.create_or_update(
+                user=user,
+                origin=origin,
+                origin_date=origin_date,
+                result_type="OK",
+                result_msg="OK",
+                detail=detail,
+                v3=v3,
+            )
 
     @property
     def created_updated(self):
@@ -213,7 +245,7 @@ class PidChange(CommonControlField):
         FieldPanel("pid_type"),
         FieldPanel("pid_in_xml"),
         FieldPanel("pid_assigned"),
-        AutocompletePanel("version")
+        AutocompletePanel("version"),
     ]
 
     class Meta:
@@ -454,6 +486,15 @@ class PidProviderXML(CommonControlField):
             # data to return
             data = registered.data.copy()
             data["xml_changed"] = bool(changed_pids)
+
+            pid_request = PidRequest.cancel_failure(
+                user=user,
+                origin=filename,
+                origin_date=origin_date,
+                v3=v3,
+                detail=data,
+            )
+
             return data
 
         except (exceptions.QueryDocumentMultipleObjectsReturnedError,) as e:
@@ -461,6 +502,7 @@ class PidProviderXML(CommonControlField):
             pid_request = PidRequest.create_or_update(
                 user=user,
                 origin=filename,
+                origin_date=origin_date,
                 result_type=str(type(e)),
                 result_msg=_("Found {} records for {}").format(
                     len(data["items"]), data["params"]
@@ -476,6 +518,7 @@ class PidProviderXML(CommonControlField):
             pid_request = PidRequest.register_failure(
                 e,
                 user=user,
+                origin_date=origin_date,
                 origin=filename,
                 detail={"xml": xml_adapter.tostring()},
             )

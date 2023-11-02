@@ -31,11 +31,13 @@ class PidRequestAdmin(ModelAdmin):
         "origin",
         "result_type",
         "result_msg",
+        "v3",
         "created_updated",
     )
     list_filter = ("result_type",)
     search_fields = (
         "origin",
+        "v3",
         "result_msg",
     )
 
