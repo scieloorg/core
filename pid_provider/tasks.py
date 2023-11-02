@@ -71,7 +71,6 @@ def _get_user(request, username=None, user_id=None):
 
 @celery_app.task(bind=True, name="provide_pid_for_opac_xml")
 def provide_pid_for_opac_xml(self, username=None, user_id=None, collection_acron=None, documents=None, force_update=None):
-    user = _get_user(self.request, username=username)
     for pid_v3, article in documents.items():
         try:
             logging.info(article)
@@ -105,6 +104,7 @@ def provide_pid_for_opac_xml(self, username=None, user_id=None, collection_acron
 def provide_pid_for_opac_xmls(
     self,
     username=None,
+    user_id=None,
     begin_date=None,
     end_date=None,
     limit=None,
@@ -112,8 +112,6 @@ def provide_pid_for_opac_xmls(
     force_update=None,
 ):
     page = 1
-    user = _get_user(self.request, username=username)
-    logging.info(user)
 
     end_date = end_date or datetime.utcnow().isoformat()[:10]
     begin_date = begin_date or (datetime.utcnow() - timedelta(days=30)).isoformat()[:10]
@@ -129,7 +127,8 @@ def provide_pid_for_opac_xmls(
             pages = pages or response["pages"]
             provide_pid_for_opac_xml.apply_async(
                 kwargs={
-                    "username": user.username,
+                    "username": username,
+                    "user_id": user_id,
                     "documents": response["documents"],
                     "force_update": force_update,
                 }
@@ -184,6 +183,7 @@ def provide_pid_for_am_xmls(
 def harvest_pids(
     self,
     username=None,
+    user_id=None,
     collection_acron=None,
     from_date=None,
     limit=None,
@@ -205,6 +205,7 @@ def harvest_pids(
             provide_pid_for_am_xmls.apply_async(
                 kwargs={
                     "username": username,
+                    "user_id": user_id,
                     "items": items,
                     "force_update": force_update,
                 }
