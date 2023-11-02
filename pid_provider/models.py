@@ -102,6 +102,7 @@ class PidRequest(CommonControlField):
         _("Origin date"), max_length=10, null=True, blank=True
     )
     v3 = models.CharField(_("PID v3"), max_length=23, null=True, blank=True)
+    times = models.IntegerField(null=True, blank=True)
 
     class Meta:
         indexes = [
@@ -115,6 +116,16 @@ class PidRequest(CommonControlField):
                     "v3",
                 ]
             ),
+            models.Index(
+                fields=[
+                    "times",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "detail",
+                ]
+            ),
         ]
 
     @property
@@ -126,6 +137,7 @@ class PidRequest(CommonControlField):
             "result_type": self.result_type,
             "result_msg": self.result_msg,
             "detail": self.detail,
+            "times": self.times,
         }
         return _data
 
@@ -171,6 +183,9 @@ class PidRequest(CommonControlField):
         obj.detail = detail or obj.detail
         obj.origin = origin or obj.origin
         obj.origin_date = origin_date or obj.origin_date
+        if not obj.times:
+            obj.times = 0
+        obj.times += 1
         obj.save()
         return obj
 
