@@ -156,27 +156,33 @@ def provide_pid_for_am_xmls(
         raise ValueError("provide_pid_for_am_xmls requires pids")
 
     for item in items:
-        collection_acron = item["collection_acron"]
-        pid_v2 = item["pid_v2"]
-        origin_date = item["processing_date"]
-        uri = (
-            f"https://articlemeta.scielo.org/api/v1/article/?"
-            f"collection={collection_acron}&code={pid_v2}&format=xmlrsps"
-        )
-        task_provide_pid_for_xml_uri.apply_async(
-            kwargs={
-                "uri": uri,
-                "username": username,
-                "user_id": user_id,
-                "pid_v2": pid_v2,
-                "pid_v3": None,
-                "collection_acron": collection_acron,
-                "journal_acron": None,
-                "year": None,
-                "origin_date": origin_date,
-                "force_update": force_update,
-            }
-        )
+        try:
+            uri = None
+            collection_acron = item["collection_acron"]
+            pid_v2 = item["pid_v2"]
+            origin_date = item["processing_date"]
+            uri = (
+                f"https://articlemeta.scielo.org/api/v1/article/?"
+                f"collection={collection_acron}&code={pid_v2}&format=xmlrsps"
+            )
+            task_provide_pid_for_xml_uri.apply_async(
+                kwargs={
+                    "uri": uri,
+                    "username": username,
+                    "user_id": user_id,
+                    "pid_v2": pid_v2,
+                    "pid_v3": None,
+                    "collection_acron": collection_acron,
+                    "journal_acron": None,
+                    "year": None,
+                    "origin_date": origin_date,
+                    "force_update": force_update,
+                }
+            )
+        except Exception as e:
+            # por enquanto, o tratamento é para evitar interrupção do laço
+            # TODO registrar o problema em um modelo de resultado de execução de tasks
+            logging.exception("Error: processing {} {}".format(uri, e))
 
 
 @celery_app.task(bind=True, name="harvest_pids")
