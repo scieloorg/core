@@ -144,8 +144,8 @@ def provide_pid_for_opac_xmls(
                 break
 
 
-@celery_app.task(bind=True, name="provide_pid_for_am_xmls")
-def provide_pid_for_am_xmls(
+@celery_app.task(bind=True, name="provide_pid_for_am_xml_uri_list")
+def provide_pid_for_am_xml_uri_list(
     self,
     username=None,
     user_id=None,
@@ -153,7 +153,7 @@ def provide_pid_for_am_xmls(
     force_update=None,
 ):
     if not items:
-        raise ValueError("provide_pid_for_am_xmls requires pids")
+        raise ValueError("provide_pid_for_am_xml_uri_list requires pids")
 
     for item in items:
         try:
@@ -185,8 +185,8 @@ def provide_pid_for_am_xmls(
             logging.exception("Error: processing {} {}".format(uri, e))
 
 
-@celery_app.task(bind=True, name="harvest_pids")
-def harvest_pids(
+@celery_app.task(bind=True, name="task_provide_pid_for_am_collection")
+def task_provide_pid_for_am_collection(
     self,
     username=None,
     user_id=None,
@@ -208,7 +208,7 @@ def harvest_pids(
             # get_items retorna gerador, list() é para tornar "serializável"
             items = list(harvester.get_items(response))
 
-            provide_pid_for_am_xmls.apply_async(
+            provide_pid_for_am_xml_uri_list.apply_async(
                 kwargs={
                     "username": username,
                     "user_id": user_id,
