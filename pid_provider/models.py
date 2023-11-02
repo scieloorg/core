@@ -215,6 +215,13 @@ class PidRequest(CommonControlField):
     def created_updated(self):
         return self.updated or self.created
 
+    @classmethod
+    def items_to_retry(cls):
+        # retorna os itens em que result_type é diferente de OK e a origem é URI
+        return cls.objects.filter(
+            ~Q(result_type="OK"), origin__contains=":"
+        ).iterator()
+
     panels = [
         FieldPanel("origin"),
         FieldPanel("origin_date"),
