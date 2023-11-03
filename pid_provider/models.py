@@ -20,7 +20,7 @@ from collection.models import Collection
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from pid_provider import exceptions
-from xmlsps.models import XMLSPS, XMLIssue, XMLJournal, XMLVersion
+from xmlsps.models import XMLSPS, XMLVersion
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -316,12 +316,15 @@ class PidProviderXML(CommonControlField):
     armazenando dados chaves que garantem a identificação do XML
     """
 
-    journal = models.ForeignKey(
-        XMLJournal, on_delete=models.SET_NULL, null=True, blank=True
+    issn_electronic = models.CharField(
+        _("issn_epub"), max_length=9, null=True, blank=True
     )
-    issue = models.ForeignKey(
-        XMLIssue, on_delete=models.SET_NULL, null=True, blank=True
-    )
+    issn_print = models.CharField(_("issn_ppub"), max_length=9, null=True, blank=True)
+    pub_year = models.CharField(_("pub_year"), max_length=4, null=True, blank=True)
+    volume = models.CharField(_("volume"), max_length=10, null=True, blank=True)
+    number = models.CharField(_("number"), max_length=10, null=True, blank=True)
+    suppl = models.CharField(_("suppl"), max_length=10, null=True, blank=True)
+
     current_version = models.ForeignKey(
         XMLVersion, on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -357,8 +360,12 @@ class PidProviderXML(CommonControlField):
     base_form_class = CoreAdminModelForm
 
     panels = [
-        AutocompletePanel("journal"),
-        AutocompletePanel("issue"),
+        FieldPanel("issn_electronic"),
+        FieldPanel("issn_print"),
+        FieldPanel("pub_year"),
+        FieldPanel("volume"),
+        FieldPanel("number"),
+        FieldPanel("suppl"),
         FieldPanel("pkg_name"),
         FieldPanel("v3"),
         FieldPanel("v2"),
@@ -382,8 +389,12 @@ class PidProviderXML(CommonControlField):
         indexes = [
             models.Index(fields=["pkg_name"]),
             models.Index(fields=["v3"]),
-            models.Index(fields=["journal"]),
-            models.Index(fields=["issue"]),
+            models.Index(fields=["issn_electronic"]),
+            models.Index(fields=["issn_print"]),
+            models.Index(fields=["pub_year"]),
+            models.Index(fields=["volume"]),
+            models.Index(fields=["number"]),
+            models.Index(fields=["suppl"]),
             models.Index(fields=["elocation_id"]),
             models.Index(fields=["fpage"]),
             models.Index(fields=["fpage_seq"]),
@@ -430,7 +441,7 @@ class PidProviderXML(CommonControlField):
 
     @property
     def is_aop(self):
-        return self.issue is None
+        return self.volume is None and self.number is None and self.suppl is None
 
     @classmethod
     def register(
@@ -582,7 +593,7 @@ class PidProviderXML(CommonControlField):
         registered.origin_date = origin_date
         registered._add_data(xml_adapter, user)
         registered._add_journal(xml_adapter)
-        registered._add_issue(xml_adapter, registered.journal)
+        registered._add_issue(xml_adapter)
         registered._add_current_version(xml_adapter, user)
 
         registered.save()
@@ -698,6 +709,11 @@ class PidProviderXML(CommonControlField):
             cls.validate_query_params(params)
             adapted_params = xml_adapter.adapt_query_params(params)
 
+            adapted_params = {
+                name.replace('journal__', '').replace('issue__', ''): v
+                for name, v in adapted_params.copy().items()
+            }
+
             try:
                 return cls.objects.get(**adapted_params)
             except cls.DoesNotExist:
@@ -741,20 +757,14 @@ class PidProviderXML(CommonControlField):
         self.z_partial_body = xml_adapter.z_partial_body
 
     def _add_journal(self, xml_adapter):
-        self.journal = XMLJournal.get_or_create(
-            xml_adapter.journal_issn_electronic,
-            xml_adapter.journal_issn_print,
-        )
+        self.issn_electronic = xml_adapter.journal_issn_electronic
+        self.issn_print = xml_adapter.journal_issn_print
 
-    def _add_issue(self, xml_adapter, journal):
-        if xml_adapter.volume or xml_adapter.number or xml_adapter.suppl:
-            self.issue = XMLIssue.get_or_create(
-                journal,
-                xml_adapter.volume,
-                xml_adapter.number,
-                xml_adapter.suppl,
-                xml_adapter.pub_year,
-            )
+    def _add_issue(self, xml_adapter):
+        self.volume = xml_adapter.volume
+        self.number = xml_adapter.number
+        self.suppl = xml_adapter.suppl
+        self.pub_year = xml_adapter.pub_year
 
     def _add_current_version(self, xml_adapter, user):
         self.current_version = XMLVersion.get_or_create(user, xml_adapter.xml_with_pre)
