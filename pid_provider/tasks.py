@@ -8,21 +8,14 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 
 from config import celery_app
+
+from collection.models import Collection
 from core.utils.utils import fetch_data
 from pid_provider.sources import am
-from pid_provider.models import PidRequest
+from pid_provider.models import PidRequest, CollectionPidRequest
 from pid_provider.controller import provide_pid_for_xml_uri
 
 User = get_user_model()
-
-
-# def fetch_data(uri, json=True, timeout=30, verify=True):
-#     try:
-#         data = core_fetch_data(uri, json=json, timeout=timeout, verify=verify)
-#     except Exception as e:
-#         return {}
-#     else:
-#         return data.json()
 
 
 def _get_user(request, username=None, user_id=None):
@@ -111,11 +104,27 @@ def provide_pid_for_opac_xmls(
     pages=None,
     force_update=None,
 ):
-    page = 1
 
-    end_date = end_date or datetime.utcnow().isoformat()[:10]
-    begin_date = begin_date or (datetime.utcnow() - timedelta(days=30)).isoformat()[:10]
+    page = 1
     limit = limit or 100
+    collection_acron = "scl"
+    end_date = end_date or datetime.utcnow().isoformat()[:10]
+
+    if not begin_date:
+        user = _get_user(self.request, username=username, user_id=user_id)
+
+        try:
+            if Collection.objects.count() == 0:
+                Collection.load(user)
+        except Exception as e:
+            logging.exception(e)
+
+        obj = CollectionPidRequest.create_or_update(
+            user=user,
+            collection=Collection.objects.get(acron3=collection_acron),
+        )
+        begin_date = obj.end_date or "2000-01-01"
+
     while True:
         try:
             uri = (
@@ -129,6 +138,7 @@ def provide_pid_for_opac_xmls(
                 kwargs={
                     "username": username,
                     "user_id": user_id,
+                    "collection_acron": collection_acron,
                     "documents": response["documents"],
                     "force_update": force_update,
                 }
@@ -183,6 +193,50 @@ def provide_pid_for_am_xml_uri_list(
             # por enquanto, o tratamento é para evitar interrupção do laço
             # TODO registrar o problema em um modelo de resultado de execução de tasks
             logging.exception("Error: processing {} {}".format(uri, e))
+
+
+@celery_app.task(bind=True, name="provide_pid_for_am_xmls")
+def provide_pid_for_am_xmls(
+    self,
+    username=None,
+    user_id=None,
+    collections=None,
+    force_update=None,
+    limit=None,
+    stop=None,
+):
+
+    user = _get_user(self.request, username=username, user_id=user_id)
+    try:
+        if Collection.objects.count() == 0:
+            Collection.load(user)
+    except Exception as e:
+        logging.exception(e)
+
+    collections = collections or [
+        "arg", "bol", "chl", "col", "cri", "cub", "ecu", "esp", "mex", "prt",
+        "pry", "psi", "rve", "spa", "sza", "ury", "ven", "wid",
+    ]
+    for item in collections:
+        try:
+            collection = Collection.objects.get(acron3=item)
+        except Collection.DoesNotExist:
+            continue
+        obj = CollectionPidRequest.create_or_update(
+            user=user,
+            collection=collection,
+        )
+        task_provide_pid_for_am_collection.apply_async(
+            kwargs={
+                "username": username,
+                "user_id": user_id,
+                "collection_acron": item,
+                "from_date": obj.end_date,
+                "force_update": force_update,
+                "limit": limit,
+                "stop": stop,
+            }
+        )
 
 
 @celery_app.task(bind=True, name="task_provide_pid_for_am_collection")
