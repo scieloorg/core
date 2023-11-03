@@ -15,7 +15,7 @@ from collection.models import Collection
 from core.utils.utils import fetch_data
 from pid_provider.models import PidRequest, CollectionPidRequest
 from pid_provider.sources import am
-from pid_provider.sources.harvesting import provide_pid_for_xml_uri
+from pid_provider.sources.harvesting import provide_pid_for_opac_and_am_xml
 from tracker.models import UnexpectedEvent
 
 User = get_user_model()
@@ -133,7 +133,7 @@ def provide_pid_for_opac_xml(
                 }
             )
         else:
-            task_provide_pid_for_xml_uri.apply_async(
+            task_provide_pid_for_opac_and_am_xml.apply_async(
                 kwargs={
                     "uri": uri,
                     "username": username,
@@ -241,7 +241,7 @@ def provide_pid_for_am_xml_uri_list(
                 }
             )
         else:
-            task_provide_pid_for_xml_uri.apply_async(
+            task_provide_pid_for_opac_and_am_xml.apply_async(
                 kwargs={
                     "uri": uri,
                     "username": username,
@@ -385,7 +385,7 @@ def retry_to_provide_pid_for_failed_uris(
                 }
             )
         else:
-            task_provide_pid_for_xml_uri.apply_async(
+            task_provide_pid_for_opac_and_am_xml.apply_async(
                 kwargs={
                     "uri": uri,
                     "username": username,
@@ -401,7 +401,7 @@ def retry_to_provide_pid_for_failed_uris(
 
 
 @celery_app.task(bind=True)
-def task_provide_pid_for_xml_uri(
+def task_provide_pid_for_opac_and_am_xml(
     self,
     uri,
     username=None,
@@ -415,7 +415,7 @@ def task_provide_pid_for_xml_uri(
     force_update=None,
 ):
     user = _get_user(self.request, username=username, user_id=user_id)
-    provide_pid_for_xml_uri(
+    provide_pid_for_opac_and_am_xml(
         user,
         uri,
         pid_v2=pid_v2,

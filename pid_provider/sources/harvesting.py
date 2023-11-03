@@ -12,7 +12,7 @@ LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 
 
-def provide_pid_for_xml_uri(
+def provide_pid_for_opac_and_am_xml(
     user,
     uri,
     pid_v2=None,
@@ -34,7 +34,7 @@ def provide_pid_for_xml_uri(
                 name = pid_v2 + ".xml"
                 return PidProviderXML.objects.get(v2=pid_v2).data
             return ValueError(
-                "pid_provider.controller.provide_pid_for_xml_uri "
+                "pid_provider.provide_pid_for_opac_and_am_xml "
                 "requires pid_v2 or pid_v3"
             )
         except PidProviderXML.DoesNotExist:
