@@ -11,9 +11,9 @@ from config import celery_app
 
 from collection.models import Collection
 from core.utils.utils import fetch_data
-from pid_provider.sources import am
 from pid_provider.models import PidRequest, CollectionPidRequest
-from pid_provider.controller import provide_pid_for_xml_uri
+from pid_provider.sources import am
+from pid_provider.sources.harvesting import provide_pid_for_xml_uri
 
 User = get_user_model()
 
