@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import sys
+import traceback
 from datetime import datetime, timedelta
 
 import requests
@@ -14,6 +16,7 @@ from core.utils.utils import fetch_data
 from pid_provider.models import PidRequest, CollectionPidRequest
 from pid_provider.sources import am
 from pid_provider.sources.harvesting import provide_pid_for_xml_uri
+from tracker.models import UnexpectedEvent
 
 User = get_user_model()
 
@@ -26,6 +29,7 @@ def _get_user(request, username=None, user_id=None):
             return User.objects.get(pk=user_id)
         if username:
             return User.objects.get(username=username)
+
 
 """
 {
@@ -63,7 +67,14 @@ def _get_user(request, username=None, user_id=None):
 
 
 @celery_app.task(bind=True, name="provide_pid_for_opac_xml")
-def provide_pid_for_opac_xml(self, username=None, user_id=None, collection_acron=None, documents=None, force_update=None):
+def provide_pid_for_opac_xml(
+    self,
+    username=None,
+    user_id=None,
+    collection_acron=None,
+    documents=None,
+    force_update=None,
+):
     for pid_v3, article in documents.items():
         try:
             logging.info(article)
@@ -214,8 +225,24 @@ def provide_pid_for_am_xmls(
         logging.exception(e)
 
     collections = collections or [
-        "arg", "bol", "chl", "col", "cri", "cub", "ecu", "esp", "mex", "prt",
-        "pry", "psi", "rve", "spa", "sza", "ury", "ven", "wid",
+        "arg",
+        "bol",
+        "chl",
+        "col",
+        "cri",
+        "cub",
+        "ecu",
+        "esp",
+        "mex",
+        "prt",
+        "pry",
+        "psi",
+        "rve",
+        "spa",
+        "sza",
+        "ury",
+        "ven",
+        "wid",
     ]
     for item in collections:
         try:

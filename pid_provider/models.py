@@ -193,7 +193,13 @@ class PidRequest(CommonControlField):
 
     @classmethod
     def register_failure(
-        cls, e, user=None, origin=None, message=None, detail=None, origin_date=None,
+        cls,
+        e,
+        user=None,
+        origin=None,
+        message=None,
+        detail=None,
+        origin_date=None,
         v3=None,
     ):
         logging.exception(e)
@@ -237,9 +243,7 @@ class PidRequest(CommonControlField):
     @classmethod
     def items_to_retry(cls):
         # retorna os itens em que result_type é diferente de OK e a origem é URI
-        return cls.objects.filter(
-            ~Q(result_type="OK"), origin__contains=":"
-        ).iterator()
+        return cls.objects.filter(~Q(result_type="OK"), origin__contains=":").iterator()
 
     panels = [
         FieldPanel("origin"),
@@ -421,8 +425,8 @@ class PidProviderXML(CommonControlField):
     def public_items(cls, from_date):
         now = datetime.utcnow().isoformat()[:10]
         return cls.objects.filter(
-            Q(website_publication_date__lte=now) &
-            (Q(created__gte=from_date) | Q(updated__gte=from_date)),
+            Q(website_publication_date__lte=now)
+            & (Q(created__gte=from_date) | Q(updated__gte=from_date)),
         ).iterator()
 
     @property
@@ -724,7 +728,7 @@ class PidProviderXML(CommonControlField):
                 adapted_params_["number__isnull"] = True
                 adapted_params_["suppl__isnull"] = True
             adapted_params = {
-                name.replace('journal__', '').replace('issue__', ''): v
+                name.replace("journal__", "").replace("issue__", ""): v
                 for name, v in adapted_params_.items()
             }
 
@@ -1037,7 +1041,9 @@ class PidProviderXML(CommonControlField):
 
 
 class CollectionPidRequest(CommonControlField):
-    collection = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True, blank=True)
+    collection = models.ForeignKey(
+        Collection, on_delete=models.SET_NULL, null=True, blank=True
+    )
     end_date = models.CharField(max_length=10, null=True, blank=True)
 
     def __unicode__(self):
