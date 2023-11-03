@@ -267,11 +267,11 @@ class PidChange(CommonControlField):
     )
 
     panels = [
-        FieldPanel("pkg_name"),
-        FieldPanel("pid_type"),
-        FieldPanel("pid_in_xml"),
-        FieldPanel("pid_assigned"),
-        AutocompletePanel("version"),
+        # FieldPanel("pkg_name", read_only=True),
+        FieldPanel("pid_type", read_only=True),
+        FieldPanel("pid_in_xml", read_only=True),
+        FieldPanel("pid_assigned", read_only=True),
+        AutocompletePanel("version", read_only=True),
     ]
 
     class Meta:
@@ -366,29 +366,29 @@ class PidProviderXML(CommonControlField):
     base_form_class = CoreAdminModelForm
 
     panels = [
-        FieldPanel("issn_electronic"),
-        FieldPanel("issn_print"),
-        FieldPanel("pub_year"),
-        FieldPanel("volume"),
-        FieldPanel("number"),
-        FieldPanel("suppl"),
-        FieldPanel("pkg_name"),
-        FieldPanel("v3"),
-        FieldPanel("v2"),
-        FieldPanel("aop_pid"),
-        FieldPanel("main_doi"),
-        FieldPanel("elocation_id"),
-        FieldPanel("fpage"),
-        FieldPanel("fpage_seq"),
-        FieldPanel("lpage"),
-        FieldPanel("article_pub_year"),
-        FieldPanel("main_toc_section"),
-        FieldPanel("z_article_titles_texts"),
-        FieldPanel("z_surnames"),
-        FieldPanel("z_collab"),
-        FieldPanel("z_links"),
-        FieldPanel("z_partial_body"),
-        AutocompletePanel("current_version"),
+        FieldPanel("issn_electronic", read_only=True),
+        FieldPanel("issn_print", read_only=True),
+        FieldPanel("pub_year", read_only=True),
+        FieldPanel("volume", read_only=True),
+        FieldPanel("number", read_only=True),
+        FieldPanel("suppl", read_only=True),
+        # FieldPanel("pkg_name", read_only=True),
+        # FieldPanel("v3", read_only=True),
+        FieldPanel("v2", read_only=True),
+        FieldPanel("aop_pid", read_only=True),
+        FieldPanel("main_doi", read_only=True),
+        FieldPanel("elocation_id", read_only=True),
+        FieldPanel("fpage", read_only=True),
+        FieldPanel("fpage_seq", read_only=True),
+        FieldPanel("lpage", read_only=True),
+        FieldPanel("website_publication_date", read_only=True),
+        FieldPanel("main_toc_section", read_only=True),
+        # FieldPanel("z_article_titles_texts", read_only=True),
+        # FieldPanel("z_surnames", read_only=True),
+        # FieldPanel("z_collab", read_only=True),
+        # FieldPanel("z_links", read_only=True),
+        # FieldPanel("z_partial_body", read_only=True),
+        AutocompletePanel("current_version", read_only=True),
     ]
 
     class Meta:
