@@ -10,8 +10,9 @@ from django.utils.translation import gettext as _
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 from requests.auth import HTTPBasicAuth
 
+from collection.models import Collection
 from pid_provider import exceptions
-from pid_provider.models import PidProviderConfig, PidProviderXML, PidRequest
+from pid_provider.models import PidProviderConfig, PidProviderXML, PidRequest, CollectionPidRequest
 
 User = get_user_model()
 
@@ -284,5 +285,12 @@ def provide_pid_for_xml_uri(
         v3=pid_v3,
         detail=detail,
     )
-
+    try:
+        CollectionPidRequest.create_or_update(
+            user=user,
+            collection=Collection.objects.get(acron3=collection_acron),
+            end_date=origin_date,
+        )
+    except Exception as e:
+        logging.exception(e)
     return response

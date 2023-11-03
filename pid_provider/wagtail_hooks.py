@@ -7,7 +7,7 @@ from wagtail.contrib.modeladmin.options import (
 )
 from wagtail.contrib.modeladmin.views import CreateView
 
-from .models import PidRequest, PidProviderXML, PidChange
+from .models import PidRequest, PidProviderXML, PidChange, CollectionPidRequest
 
 
 class PidRequestCreateView(CreateView):
@@ -40,6 +40,30 @@ class PidRequestAdmin(ModelAdmin):
         "origin",
         "v3",
         "result_msg",
+    )
+
+
+class CollectionPidRequestAdmin(ModelAdmin):
+    list_per_page = 10
+    model = CollectionPidRequest
+    inspect_view_enabled = True
+    menu_label = _("Collection Pid Requests")
+    create_view_class = PidRequestCreateView
+    menu_icon = "folder"
+    menu_order = 300
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+
+    list_display = (
+        "collection",
+        "end_date",
+        "created",
+        "updated",
+    )
+    list_filter = []
+    search_fields = (
+        "collection__acron3",
+        "collection__name",
     )
 
 

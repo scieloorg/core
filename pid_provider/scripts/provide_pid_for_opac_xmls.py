@@ -1,7 +1,7 @@
 from pid_provider import tasks
 
 
-def run(username, begin_date, end_date, limit=None, pages=None):
+def run(username, begin_date=None, end_date=None, limit=None, pages=None):
     # executa a task imediatamente
     tasks.provide_pid_for_opac_xmls.apply_async(
         kwargs={

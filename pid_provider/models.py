@@ -16,6 +16,7 @@ from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
 
+from collection.models import Collection
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from pid_provider import exceptions
@@ -192,7 +193,8 @@ class PidRequest(CommonControlField):
 
     @classmethod
     def register_failure(
-        cls, e, user=None, origin=None, message=None, detail=None, origin_date=None
+        cls, e, user=None, origin=None, message=None, detail=None, origin_date=None,
+        v3=None,
     ):
         logging.exception(e)
         msg = str(e)
@@ -205,6 +207,7 @@ class PidRequest(CommonControlField):
             result_type=str(type(e)),
             result_msg=msg,
             detail=detail,
+            v3=v3,
         )
 
     @classmethod
@@ -1007,3 +1010,48 @@ class PidProviderXML(CommonControlField):
                 )
             )
         return True
+
+
+class CollectionPidRequest(CommonControlField):
+    collection = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True, blank=True)
+    end_date = models.CharField(max_length=10, null=True, blank=True)
+
+    def __unicode__(self):
+        return f"{self.collection}"
+
+    def __str__(self):
+        return f"{self.collection}"
+
+    @classmethod
+    def get(
+        cls,
+        collection=None,
+    ):
+        if collection:
+            return cls.objects.get(collection=collection)
+        raise ValueError("PidRequest.get requires parameters")
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user=None,
+        collection=None,
+        end_date=None,
+    ):
+        try:
+            obj = cls.get(collection=collection)
+            obj.updated_by = user
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.creator = user
+            obj.collection = collection
+
+        obj.end_date = end_date or obj.end_date
+        obj.save()
+        return obj
+
+    panels = [
+        FieldPanel("end_date"),
+    ]
+
+    base_form_class = CoreAdminModelForm
