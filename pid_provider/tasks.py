@@ -84,7 +84,13 @@ def provide_pid_for_opac_xml(
                 article.get("update") or article.get("create"),
                 "%a, %d %b %Y %H:%M:%S %Z",
             ).isoformat()[:10]
+            year = article["publication_date"][:4]
 
+        except Exception as e:
+            logging.exception(e)
+            # kernel.register_failure(e, user=user, detail={"article": article})
+
+        else:
             task_provide_pid_for_xml_uri.apply_async(
                 kwargs={
                     "uri": uri,
@@ -94,14 +100,13 @@ def provide_pid_for_opac_xml(
                     "pid_v3": pid_v3,
                     "collection_acron": collection_acron,
                     "journal_acron": acron,
-                    "year": article["publication_date"][:4],
+                    "year": year,
                     "origin_date": origin_date,
                     "force_update": force_update,
                 }
             )
-        except Exception as e:
-            logging.exception(e)
-            # kernel.register_failure(e, user=user, detail={"article": article})
+
+
 
 
 @celery_app.task(bind=True, name="provide_pid_for_opac_xmls")
@@ -145,19 +150,23 @@ def provide_pid_for_opac_xmls(
             logging.info(uri)
             response = fetch_data(uri, json=True, timeout=30, verify=True)
             pages = pages or response["pages"]
+            documents = response["documents"]
+
+        except Exception as e:
+            # por enquanto, o tratamento é para evitar interrupção do laço
+            # TODO registrar o problema em um modelo de resultado de execução de tasks
+            logging.exception("Error: processing {} {}".format(uri, e))
+
+        else:
             provide_pid_for_opac_xml.apply_async(
                 kwargs={
                     "username": username,
                     "user_id": user_id,
                     "collection_acron": collection_acron,
-                    "documents": response["documents"],
+                    "documents": documents,
                     "force_update": force_update,
                 }
             )
-        except Exception as e:
-            # por enquanto, o tratamento é para evitar interrupção do laço
-            # TODO registrar o problema em um modelo de resultado de execução de tasks
-            logging.exception("Error: processing {} {}".format(uri, e))
 
         finally:
             page += 1
@@ -186,6 +195,11 @@ def provide_pid_for_am_xml_uri_list(
                 f"https://articlemeta.scielo.org/api/v1/article/?"
                 f"collection={collection_acron}&code={pid_v2}&format=xmlrsps"
             )
+        except Exception as e:
+            # por enquanto, o tratamento é para evitar interrupção do laço
+            # TODO registrar o problema em um modelo de resultado de execução de tasks
+            logging.exception("Error: processing {} {}".format(uri, e))
+        else:
             task_provide_pid_for_xml_uri.apply_async(
                 kwargs={
                     "uri": uri,
@@ -200,10 +214,6 @@ def provide_pid_for_am_xml_uri_list(
                     "force_update": force_update,
                 }
             )
-        except Exception as e:
-            # por enquanto, o tratamento é para evitar interrupção do laço
-            # TODO registrar o problema em um modelo de resultado de execução de tasks
-            logging.exception("Error: processing {} {}".format(uri, e))
 
 
 @celery_app.task(bind=True, name="provide_pid_for_am_xmls")
@@ -289,6 +299,11 @@ def task_provide_pid_for_am_collection(
             # get_items retorna gerador, list() é para tornar "serializável"
             items = list(harvester.get_items(response))
 
+        except Exception as e:
+            # por enquanto, o tratamento é para evitar interrupção do laço
+            # TODO registrar o problema em um modelo de resultado de execução de tasks
+            logging.exception("Error: processing {} {}".format(uri, e))
+        else:
             provide_pid_for_am_xml_uri_list.apply_async(
                 kwargs={
                     "username": username,
@@ -297,11 +312,6 @@ def task_provide_pid_for_am_collection(
                     "force_update": force_update,
                 }
             )
-
-        except Exception as e:
-            # por enquanto, o tratamento é para evitar interrupção do laço
-            # TODO registrar o problema em um modelo de resultado de execução de tasks
-            logging.exception("Error: processing {} {}".format(uri, e))
 
 
 @celery_app.task(bind=True)
@@ -328,6 +338,10 @@ def retry_to_provide_pid_for_failed_uris(
                 journal_acron = None
                 year = None
             logging.info(uri)
+        except Exception as e:
+            # TODO registrar o problema em um modelo de resultado de execução de tasks
+            logging.exception(e)
+        else:
             task_provide_pid_for_xml_uri.apply_async(
                 kwargs={
                     "uri": uri,
@@ -341,9 +355,6 @@ def retry_to_provide_pid_for_failed_uris(
                     "origin_date": origin_date,
                 }
             )
-        except Exception as e:
-            # TODO registrar o problema em um modelo de resultado de execução de tasks
-            logging.exception(e)
 
 
 @celery_app.task(bind=True)
