@@ -414,15 +414,34 @@ def task_provide_pid_for_opac_and_am_xml(
     origin_date=None,
     force_update=None,
 ):
-    user = _get_user(self.request, username=username, user_id=user_id)
-    provide_pid_for_opac_and_am_xml(
-        user,
-        uri,
-        pid_v2=pid_v2,
-        pid_v3=pid_v3,
-        collection_acron=collection_acron,
-        journal_acron=journal_acron,
-        year=year,
-        origin_date=origin_date,
-        force_update=force_update,
-    )
+    try:
+        user = _get_user(self.request, username=username, user_id=user_id)
+        provide_pid_for_opac_and_am_xml(
+            user,
+            uri,
+            pid_v2=pid_v2,
+            pid_v3=pid_v3,
+            collection_acron=collection_acron,
+            journal_acron=journal_acron,
+            year=year,
+            origin_date=origin_date,
+            force_update=force_update,
+        )
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            e=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "task_provide_pid_for_opac_and_am_xml",
+                "detail": dict(
+                    pid_v2=pid_v2,
+                    pid_v3=pid_v3,
+                    collection_acron=collection_acron,
+                    journal_acron=journal_acron,
+                    year=year,
+                    origin_date=origin_date,
+                    force_update=force_update,
+                ),
+            }
+        )
