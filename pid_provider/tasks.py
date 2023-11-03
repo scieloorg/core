@@ -31,6 +31,41 @@ def _get_user(request, username=None, user_id=None):
             return User.objects.get(username=username)
 
 
+def _load_collections(user):
+    if Collection.objects.count() == 0:
+        try:
+            Collection.load(user)
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                e=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "function": "_load_collections",
+                }
+            )
+            raise
+
+
+def _get_begin_date(user, collection_acron):
+    try:
+        obj = CollectionPidRequest.create_or_update(
+            user=user,
+            collection=Collection.objects.get(acron3=collection_acron),
+        )
+        return obj.end_date
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            e=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "function": "_get_begin_date",
+                "collection_acron": collection_acron,
+            }
+        )
+    return None
+
 """
 {
     "begin_date":"2023-06-01 00-00-00",
@@ -133,18 +168,8 @@ def provide_pid_for_opac_xmls(
 
     if not begin_date:
         user = _get_user(self.request, username=username, user_id=user_id)
-
-        try:
-            if Collection.objects.count() == 0:
-                Collection.load(user)
-        except Exception as e:
-            logging.exception(e)
-
-        obj = CollectionPidRequest.create_or_update(
-            user=user,
-            collection=Collection.objects.get(acron3=collection_acron),
-        )
-        begin_date = obj.end_date or "2000-01-01"
+        _load_collections(user)
+        begin_date = _get_begin_date(user, collection_acron) or "2000-01-01"
 
     while True:
         try:
@@ -244,11 +269,7 @@ def provide_pid_for_am_xmls(
 ):
 
     user = _get_user(self.request, username=username, user_id=user_id)
-    try:
-        if Collection.objects.count() == 0:
-            Collection.load(user)
-    except Exception as e:
-        logging.exception(e)
+    _load_collections(user)
 
     collections = collections or [
         "arg",
@@ -271,20 +292,13 @@ def provide_pid_for_am_xmls(
         "wid",
     ]
     for item in collections:
-        try:
-            collection = Collection.objects.get(acron3=item)
-        except Collection.DoesNotExist:
-            continue
-        obj = CollectionPidRequest.create_or_update(
-            user=user,
-            collection=collection,
-        )
+        from_date = _get_begin_date(user, item) or "1997-01-01"
         task_provide_pid_for_am_collection.apply_async(
             kwargs={
                 "username": username,
                 "user_id": user_id,
                 "collection_acron": item,
-                "from_date": obj.end_date,
+                "from_date": from_date,
                 "force_update": force_update,
                 "limit": limit,
                 "stop": stop,
