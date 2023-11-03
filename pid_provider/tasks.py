@@ -87,9 +87,16 @@ def provide_pid_for_opac_xml(
             year = article["publication_date"][:4]
 
         except Exception as e:
-            logging.exception(e)
-            # kernel.register_failure(e, user=user, detail={"article": article})
-
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                e=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "task": "provide_pid_for_opac_xml",
+                    "pid_v3": pid_v3,
+                    "article": article,
+                }
+            )
         else:
             task_provide_pid_for_xml_uri.apply_async(
                 kwargs={
@@ -105,8 +112,6 @@ def provide_pid_for_opac_xml(
                     "force_update": force_update,
                 }
             )
-
-
 
 
 @celery_app.task(bind=True, name="provide_pid_for_opac_xmls")
@@ -147,16 +152,20 @@ def provide_pid_for_opac_xmls(
                 f"https://www.scielo.br/api/v1/counter_dict?end_date={end_date}"
                 f"&begin_date={begin_date}&limit={limit}&page={page}"
             )
-            logging.info(uri)
             response = fetch_data(uri, json=True, timeout=30, verify=True)
             pages = pages or response["pages"]
             documents = response["documents"]
 
         except Exception as e:
-            # por enquanto, o tratamento é para evitar interrupção do laço
-            # TODO registrar o problema em um modelo de resultado de execução de tasks
-            logging.exception("Error: processing {} {}".format(uri, e))
-
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                e=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "task": "provide_pid_for_opac_xmls",
+                    "uri": uri,
+                }
+            )
         else:
             provide_pid_for_opac_xml.apply_async(
                 kwargs={
@@ -196,9 +205,16 @@ def provide_pid_for_am_xml_uri_list(
                 f"collection={collection_acron}&code={pid_v2}&format=xmlrsps"
             )
         except Exception as e:
-            # por enquanto, o tratamento é para evitar interrupção do laço
-            # TODO registrar o problema em um modelo de resultado de execução de tasks
-            logging.exception("Error: processing {} {}".format(uri, e))
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                e=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "task": "provide_pid_for_am_xml_uri_list",
+                    "uri": uri,
+                    "item": item,
+                }
+            )
         else:
             task_provide_pid_for_xml_uri.apply_async(
                 kwargs={
@@ -300,9 +316,15 @@ def task_provide_pid_for_am_collection(
             items = list(harvester.get_items(response))
 
         except Exception as e:
-            # por enquanto, o tratamento é para evitar interrupção do laço
-            # TODO registrar o problema em um modelo de resultado de execução de tasks
-            logging.exception("Error: processing {} {}".format(uri, e))
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                e=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "task": "task_provide_pid_for_am_collection",
+                    "uri": uri,
+                }
+            )
         else:
             provide_pid_for_am_xml_uri_list.apply_async(
                 kwargs={
@@ -337,10 +359,17 @@ def retry_to_provide_pid_for_failed_uris(
                 collection_acron = None
                 journal_acron = None
                 year = None
-            logging.info(uri)
         except Exception as e:
-            # TODO registrar o problema em um modelo de resultado de execução de tasks
-            logging.exception(e)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                e=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "task": "retry_to_provide_pid_for_failed_uris",
+                    "item": str(item),
+                    "detail": item.detail,
+                }
+            )
         else:
             task_provide_pid_for_xml_uri.apply_async(
                 kwargs={
