@@ -246,12 +246,12 @@ class PidRequest(CommonControlField):
         return cls.objects.filter(~Q(result_type="OK"), origin__contains=":").iterator()
 
     panels = [
-        FieldPanel("origin"),
-        FieldPanel("origin_date"),
-        FieldPanel("result_type"),
-        FieldPanel("result_msg"),
-        AutocompletePanel("xml_version"),
-        FieldPanel("detail"),
+        # FieldPanel("origin", read_only=True),
+        FieldPanel("origin_date", read_only=True),
+        FieldPanel("result_type", read_only=True),
+        FieldPanel("result_msg", read_only=True),
+        # AutocompletePanel("xml_version", read_only=True),
+        FieldPanel("detail", read_only=True),
     ]
 
     base_form_class = CoreAdminModelForm
