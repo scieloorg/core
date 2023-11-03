@@ -594,7 +594,9 @@ class PidProviderXML(CommonControlField):
             registered.created = utcnow()
 
         # evita que artigos WIP fique disponíveis antes de estarem públicos
-        registered.website_publication_date = xml_adapter.article_publication_date
+        registered.website_publication_date = (
+            xml_adapter.xml_with_pre.article_publication_date or origin_date
+        )
 
         registered.origin_date = origin_date
         registered._add_data(xml_adapter, user)
