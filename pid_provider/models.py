@@ -713,11 +713,17 @@ class PidProviderXML(CommonControlField):
         items = xml_adapter.query_list
         for params in items:
             cls.validate_query_params(params)
-            adapted_params = xml_adapter.adapt_query_params(params)
 
+            adapted_params_ = xml_adapter.adapt_query_params(params)
+
+            if adapted_params_.get("issue__isnull"):
+                adapted_params_.pop("issue__isnull")
+                adapted_params_["volume__isnull"] = True
+                adapted_params_["number__isnull"] = True
+                adapted_params_["suppl__isnull"] = True
             adapted_params = {
                 name.replace('journal__', '').replace('issue__', ''): v
-                for name, v in adapted_params.copy().items()
+                for name, v in adapted_params_.items()
             }
 
             try:
