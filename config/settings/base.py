@@ -134,6 +134,7 @@ LOCAL_APPS = [
     "xmlsps",
     "search",
     "reference",
+    "tracker",
 ]
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
