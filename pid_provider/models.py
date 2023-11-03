@@ -20,7 +20,7 @@ from collection.models import Collection
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from pid_provider import exceptions
-from xmlsps.models import XMLSPS, XMLVersion
+from xmlsps.models import XMLVersion
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -353,8 +353,14 @@ class PidProviderXML(CommonControlField):
     z_partial_body = models.CharField(
         _("partial_body"), max_length=64, null=True, blank=True
     )
+    # data de atualização / criação do registro fonte
     origin_date = models.CharField(
         _("Origin date"), max_length=10, null=True, blank=True
+    )
+    # data de primeira publicação no site
+    # evita que artigos WIP fique disponíveis antes de estarem públicos
+    website_publication_date = models.CharField(
+        _("Website publication date"), max_length=10, null=True, blank=True
     )
 
     base_form_class = CoreAdminModelForm
@@ -411,6 +417,14 @@ class PidProviderXML(CommonControlField):
     def __str__(self):
         return f"{self.pkg_name} {self.v3}"
 
+    @classmethod
+    def public_items(cls, from_date):
+        now = datetime.utcnow().isoformat()[:10]
+        return cls.objects.filter(
+            Q(website_publication_date__lte=now) &
+            (Q(created__gte=from_date) | Q(updated__gte=from_date)),
+        ).iterator()
+
     @property
     def created_updated(self):
         return self.updated or self.created
@@ -452,6 +466,7 @@ class PidProviderXML(CommonControlField):
         origin_date=None,
         force_update=None,
         is_published=False,
+        website_publication_date=None,
     ):
         """
         Evaluate the XML data and returns corresponding PID v3, v2, aop_pid
@@ -517,8 +532,8 @@ class PidProviderXML(CommonControlField):
                 registered, xml_adapter, user, changed_pids, origin_date
             )
 
-            # cria ou atualiza XMLSPS
-            registered._create_or_update_xmlsps(user, is_published)
+            # TODO substituir is_published por website_publication_date
+            # preencher self.website_publication_date = website_publication_date
 
             # data to return
             data = registered.data.copy()
@@ -561,18 +576,6 @@ class PidProviderXML(CommonControlField):
             )
             return pid_request.data
 
-    def _create_or_update_xmlsps(self, user, is_published):
-        XMLSPS.create_or_update(
-            pid_v3=self.v3,
-            pid_v2=self.v2,
-            aop_pid=self.aop_pid,
-            xml_journal=self.journal,
-            xml_issue=self.issue,
-            xml_version=self.current_version,
-            user=user,
-            is_published=is_published,
-        )
-
     @classmethod
     def _save(
         cls,
@@ -589,6 +592,9 @@ class PidProviderXML(CommonControlField):
             registered = cls()
             registered.creator = user
             registered.created = utcnow()
+
+        # evita que artigos WIP fique disponíveis antes de estarem públicos
+        registered.website_publication_date = xml_adapter.article_publication_date
 
         registered.origin_date = origin_date
         registered._add_data(xml_adapter, user)
