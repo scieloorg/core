@@ -5,7 +5,7 @@ from article.models import Article
 from article.sources import xmlsps
 from article.sources.preprint import harvest_preprints
 from config import celery_app
-from xmlsps.models import XMLSPS
+from pid_provider.models import PidProviderXML
 
 from . import controller
 
@@ -28,7 +28,7 @@ def load_article(self, user_id, file_path=None, xml=None):
 def load_articles(self, user_id=None):
     from_date = Article.last_created_date()
 
-    for item in XMLSPS.list(from_date):
+    for item in PidProviderXML.public_items(from_date):
         load_article.apply_async(args=(user_id,), kwargs={"xml": item.xml})
 
 

@@ -90,9 +90,10 @@ class PidProviderXMLAdmin(ModelAdmin):
         "v2",
         "aop_pid",
         "main_doi",
+        "website_publication_date",
         "created_updated",
     )
-    list_filter = ("article_pub_year", "issue__pub_year")
+    list_filter = ("article_pub_year", "pub_year")
     search_fields = (
         "pkg_name",
         "v3",
@@ -100,6 +101,7 @@ class PidProviderXMLAdmin(ModelAdmin):
         "aop_pid",
         "main_doi",
         "article_pub_year",
+        "website_publication_date",
     )
 
 

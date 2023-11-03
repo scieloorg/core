@@ -20,7 +20,7 @@ from collection.models import Collection
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from pid_provider import exceptions
-from xmlsps.models import XMLSPS, XMLIssue, XMLJournal, XMLVersion
+from xmlsps.models import XMLVersion
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -267,11 +267,11 @@ class PidChange(CommonControlField):
     )
 
     panels = [
-        FieldPanel("pkg_name"),
-        FieldPanel("pid_type"),
-        FieldPanel("pid_in_xml"),
-        FieldPanel("pid_assigned"),
-        AutocompletePanel("version"),
+        # FieldPanel("pkg_name", read_only=True),
+        FieldPanel("pid_type", read_only=True),
+        FieldPanel("pid_in_xml", read_only=True),
+        FieldPanel("pid_assigned", read_only=True),
+        AutocompletePanel("version", read_only=True),
     ]
 
     class Meta:
@@ -316,12 +316,15 @@ class PidProviderXML(CommonControlField):
     armazenando dados chaves que garantem a identificação do XML
     """
 
-    journal = models.ForeignKey(
-        XMLJournal, on_delete=models.SET_NULL, null=True, blank=True
+    issn_electronic = models.CharField(
+        _("issn_epub"), max_length=9, null=True, blank=True
     )
-    issue = models.ForeignKey(
-        XMLIssue, on_delete=models.SET_NULL, null=True, blank=True
-    )
+    issn_print = models.CharField(_("issn_ppub"), max_length=9, null=True, blank=True)
+    pub_year = models.CharField(_("pub_year"), max_length=4, null=True, blank=True)
+    volume = models.CharField(_("volume"), max_length=10, null=True, blank=True)
+    number = models.CharField(_("number"), max_length=10, null=True, blank=True)
+    suppl = models.CharField(_("suppl"), max_length=10, null=True, blank=True)
+
     current_version = models.ForeignKey(
         XMLVersion, on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -350,40 +353,54 @@ class PidProviderXML(CommonControlField):
     z_partial_body = models.CharField(
         _("partial_body"), max_length=64, null=True, blank=True
     )
+    # data de atualização / criação do registro fonte
     origin_date = models.CharField(
         _("Origin date"), max_length=10, null=True, blank=True
+    )
+    # data de primeira publicação no site
+    # evita que artigos WIP fique disponíveis antes de estarem públicos
+    website_publication_date = models.CharField(
+        _("Website publication date"), max_length=10, null=True, blank=True
     )
 
     base_form_class = CoreAdminModelForm
 
     panels = [
-        AutocompletePanel("journal"),
-        AutocompletePanel("issue"),
-        FieldPanel("pkg_name"),
-        FieldPanel("v3"),
-        FieldPanel("v2"),
-        FieldPanel("aop_pid"),
-        FieldPanel("main_doi"),
-        FieldPanel("elocation_id"),
-        FieldPanel("fpage"),
-        FieldPanel("fpage_seq"),
-        FieldPanel("lpage"),
-        FieldPanel("article_pub_year"),
-        FieldPanel("main_toc_section"),
-        FieldPanel("z_article_titles_texts"),
-        FieldPanel("z_surnames"),
-        FieldPanel("z_collab"),
-        FieldPanel("z_links"),
-        FieldPanel("z_partial_body"),
-        AutocompletePanel("current_version"),
+        FieldPanel("issn_electronic", read_only=True),
+        FieldPanel("issn_print", read_only=True),
+        FieldPanel("pub_year", read_only=True),
+        FieldPanel("volume", read_only=True),
+        FieldPanel("number", read_only=True),
+        FieldPanel("suppl", read_only=True),
+        # FieldPanel("pkg_name", read_only=True),
+        # FieldPanel("v3", read_only=True),
+        FieldPanel("v2", read_only=True),
+        FieldPanel("aop_pid", read_only=True),
+        FieldPanel("main_doi", read_only=True),
+        FieldPanel("elocation_id", read_only=True),
+        FieldPanel("fpage", read_only=True),
+        FieldPanel("fpage_seq", read_only=True),
+        FieldPanel("lpage", read_only=True),
+        FieldPanel("website_publication_date", read_only=True),
+        FieldPanel("main_toc_section", read_only=True),
+        # FieldPanel("z_article_titles_texts", read_only=True),
+        # FieldPanel("z_surnames", read_only=True),
+        # FieldPanel("z_collab", read_only=True),
+        # FieldPanel("z_links", read_only=True),
+        # FieldPanel("z_partial_body", read_only=True),
+        AutocompletePanel("current_version", read_only=True),
     ]
 
     class Meta:
         indexes = [
             models.Index(fields=["pkg_name"]),
             models.Index(fields=["v3"]),
-            models.Index(fields=["journal"]),
-            models.Index(fields=["issue"]),
+            models.Index(fields=["issn_electronic"]),
+            models.Index(fields=["issn_print"]),
+            models.Index(fields=["pub_year"]),
+            models.Index(fields=["volume"]),
+            models.Index(fields=["number"]),
+            models.Index(fields=["suppl"]),
             models.Index(fields=["elocation_id"]),
             models.Index(fields=["fpage"]),
             models.Index(fields=["fpage_seq"]),
@@ -399,6 +416,14 @@ class PidProviderXML(CommonControlField):
 
     def __str__(self):
         return f"{self.pkg_name} {self.v3}"
+
+    @classmethod
+    def public_items(cls, from_date):
+        now = datetime.utcnow().isoformat()[:10]
+        return cls.objects.filter(
+            Q(website_publication_date__lte=now) &
+            (Q(created__gte=from_date) | Q(updated__gte=from_date)),
+        ).iterator()
 
     @property
     def created_updated(self):
@@ -430,7 +455,7 @@ class PidProviderXML(CommonControlField):
 
     @property
     def is_aop(self):
-        return self.issue is None
+        return self.volume is None and self.number is None and self.suppl is None
 
     @classmethod
     def register(
@@ -441,6 +466,7 @@ class PidProviderXML(CommonControlField):
         origin_date=None,
         force_update=None,
         is_published=False,
+        website_publication_date=None,
     ):
         """
         Evaluate the XML data and returns corresponding PID v3, v2, aop_pid
@@ -506,8 +532,8 @@ class PidProviderXML(CommonControlField):
                 registered, xml_adapter, user, changed_pids, origin_date
             )
 
-            # cria ou atualiza XMLSPS
-            registered._create_or_update_xmlsps(user, is_published)
+            # TODO substituir is_published por website_publication_date
+            # preencher self.website_publication_date = website_publication_date
 
             # data to return
             data = registered.data.copy()
@@ -550,18 +576,6 @@ class PidProviderXML(CommonControlField):
             )
             return pid_request.data
 
-    def _create_or_update_xmlsps(self, user, is_published):
-        XMLSPS.create_or_update(
-            pid_v3=self.v3,
-            pid_v2=self.v2,
-            aop_pid=self.aop_pid,
-            xml_journal=self.journal,
-            xml_issue=self.issue,
-            xml_version=self.current_version,
-            user=user,
-            is_published=is_published,
-        )
-
     @classmethod
     def _save(
         cls,
@@ -579,10 +593,15 @@ class PidProviderXML(CommonControlField):
             registered.creator = user
             registered.created = utcnow()
 
+        # evita que artigos WIP fique disponíveis antes de estarem públicos
+        registered.website_publication_date = (
+            xml_adapter.xml_with_pre.article_publication_date or origin_date
+        )
+
         registered.origin_date = origin_date
         registered._add_data(xml_adapter, user)
         registered._add_journal(xml_adapter)
-        registered._add_issue(xml_adapter, registered.journal)
+        registered._add_issue(xml_adapter)
         registered._add_current_version(xml_adapter, user)
 
         registered.save()
@@ -696,7 +715,18 @@ class PidProviderXML(CommonControlField):
         items = xml_adapter.query_list
         for params in items:
             cls.validate_query_params(params)
-            adapted_params = xml_adapter.adapt_query_params(params)
+
+            adapted_params_ = xml_adapter.adapt_query_params(params)
+
+            if adapted_params_.get("issue__isnull"):
+                adapted_params_.pop("issue__isnull")
+                adapted_params_["volume__isnull"] = True
+                adapted_params_["number__isnull"] = True
+                adapted_params_["suppl__isnull"] = True
+            adapted_params = {
+                name.replace('journal__', '').replace('issue__', ''): v
+                for name, v in adapted_params_.items()
+            }
 
             try:
                 return cls.objects.get(**adapted_params)
@@ -741,20 +771,14 @@ class PidProviderXML(CommonControlField):
         self.z_partial_body = xml_adapter.z_partial_body
 
     def _add_journal(self, xml_adapter):
-        self.journal = XMLJournal.get_or_create(
-            xml_adapter.journal_issn_electronic,
-            xml_adapter.journal_issn_print,
-        )
+        self.issn_electronic = xml_adapter.journal_issn_electronic
+        self.issn_print = xml_adapter.journal_issn_print
 
-    def _add_issue(self, xml_adapter, journal):
-        if xml_adapter.volume or xml_adapter.number or xml_adapter.suppl:
-            self.issue = XMLIssue.get_or_create(
-                journal,
-                xml_adapter.volume,
-                xml_adapter.number,
-                xml_adapter.suppl,
-                xml_adapter.pub_year,
-            )
+    def _add_issue(self, xml_adapter):
+        self.volume = xml_adapter.volume
+        self.number = xml_adapter.number
+        self.suppl = xml_adapter.suppl
+        self.pub_year = xml_adapter.pub_year
 
     def _add_current_version(self, xml_adapter, user):
         self.current_version = XMLVersion.get_or_create(user, xml_adapter.xml_with_pre)
