@@ -1,8 +1,5 @@
 import logging
 
-from pid_provider.controller import PidProvider, provide_pid_for_xml_uri
-from pid_provider.models import PidRequest, PidProviderXML
-
 
 class AMHarvesting:
     # https://articlemeta.scielo.org/api/v1/article/identifiers/?limit=2&collection=mex
