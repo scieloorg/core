@@ -13,8 +13,11 @@ class SciELOJournalArticleMetaCreateUpdateError(Exception):
         super().__init__(f"Failed to save SciELO Journal from article meta: {message}")
 
 
-def request_journal_article_meta(offset=None, limit=10, collection="scl"):
+def _get_collection_journals(offset=None, limit=None, collection=None):
+    limit = limit or 10
     offset = f"&offset={offset}" if offset else ""
+    if not collection:
+        raise ValueError("journal.sources.article_meta._get_collection_journals requires collection")
     url = (
         f"https://articlemeta.scielo.org/api/v1/journal/identifiers/?collection={collection}&limit={limit}"
         + offset
@@ -25,7 +28,7 @@ def request_journal_article_meta(offset=None, limit=10, collection="scl"):
 
 def process_journal_article_meta(collection, limit, user):
     offset = 0
-    data = request_journal_article_meta(collection=collection, limit=limit)
+    data = _get_collection_journals(collection=collection, limit=limit)
     total_limit = data["meta"]["total"]
     while offset < total_limit:
         for journal in data["objects"]:
@@ -37,7 +40,7 @@ def process_journal_article_meta(collection, limit, user):
             _register_journal_data(user, collection, issn, data_journal)
 
         offset += 10
-        data = request_journal_article_meta(
+        data = _get_collection_journals(
             collection=collection, limit=limit, offset=offset
         )
 
