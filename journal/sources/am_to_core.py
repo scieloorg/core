@@ -29,7 +29,7 @@ from location.models import Address, City, Country, Location, State
 from reference.models import JournalTitle
 from vocabulary.models import Vocabulary
 
-from .funcs_extract_am import (
+from .am_data_extraction import (
     extract_issn_print_electronic,
     extract_value,
     extract_value_from_journal_history,
