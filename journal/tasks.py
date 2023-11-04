@@ -34,8 +34,22 @@ def load_journal_from_classic_website(self, username=None, user_id=None):
 
 
 @celery_app.task(bin=True)
-def load_journal_from_article_meta(self, username=None, user_id=None):
+def load_journal_from_article_meta(self, username=None, user_id=None, limit=None):
+    for item in Collection.objects.iterator():
+        _load_journal_from_article_meta_for_one_collection.apply_async(
+            kwargs=dict(
+                user_id=user_id,
+                username=username,
+                collection_acron=item.acron3,
+                limit=limit,
+            )
+        )
+
+
+@celery_app.task(bin=True)
+def _load_journal_from_article_meta_for_one_collection(
+    self, username=None, user_id=None, collection_acron=None, limit=None
+):
     user = _get_user(self.request, username=username, user_id=user_id)
-    process_journal_article_meta(
-        collection=kwargs["collection"], limit=kwargs["limit"], user=user
-    )
+
+    process_journal_article_meta(collection=collection_acron, limit=limit, user=user)
