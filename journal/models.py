@@ -7,26 +7,29 @@ from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
-from wagtailautocomplete.edit_handlers import AutocompletePanel
 from wagtail.fields import RichTextField
 from wagtail.models import Orderable
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from collection.models import Collection
+from core.choices import MONTHS
 from core.forms import CoreAdminModelForm
-from core.models import CommonControlField, RichTextWithLang, License, TextWithLang
+from core.models import (
+    CommonControlField,
+    Language,
+    License,
+    RichTextWithLang,
+    TextWithLang,
+)
 from institution.models import (
-    OwnerHistoryItem,
-    PublisherHistoryItem,
     CopyrightHolderHistoryItem,
     EditorialManagerHistoryItem,
+    OwnerHistoryItem,
+    PublisherHistoryItem,
     SponsorHistoryItem,
 )
-from vocabulary.models import Vocabulary
-from core.models import Language
-from reference.models import JournalTitle
-
-
 from journal.exceptions import (
+    IndexedAtCreationOrUpdateError,
     JournalCreateOrUpdateError,
     JournalGetError,
     MissionCreateOrUpdateError,
@@ -38,11 +41,11 @@ from journal.exceptions import (
     StandardCreationOrUpdateError,
     SubjectCreationOrUpdateError,
     WosdbCreationOrUpdateError,
-    IndexedAtCreationOrUpdateError,
 )
+from reference.models import JournalTitle
+from vocabulary.models import Vocabulary
 
 from . import choices
-from core.choices import MONTHS
 
 User = get_user_model()
 
