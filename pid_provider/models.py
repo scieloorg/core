@@ -723,7 +723,7 @@ class PidProviderXML(CommonControlField):
                     "detail": dict(
                         origin=origin,
                     ),
-                }
+                },
             )
             return {"error_msg": str(e), "error_type": str(type(e))}
 

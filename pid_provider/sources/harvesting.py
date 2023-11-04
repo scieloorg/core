@@ -88,5 +88,5 @@ def provide_pid_for_opac_and_am_xml(
                     origin_date=origin_date,
                     force_update=force_update,
                 ),
-            }
+            },
         )

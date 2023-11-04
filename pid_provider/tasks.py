@@ -42,7 +42,7 @@ def _load_collections(user):
                 exc_traceback=exc_traceback,
                 detail={
                     "function": "_load_collections",
-                }
+                },
             )
             raise
 
@@ -62,9 +62,10 @@ def _get_begin_date(user, collection_acron):
             detail={
                 "function": "_get_begin_date",
                 "collection_acron": collection_acron,
-            }
+            },
         )
     return None
+
 
 """
 {
@@ -130,7 +131,7 @@ def provide_pid_for_opac_xml(
                     "task": "provide_pid_for_opac_xml",
                     "pid_v3": pid_v3,
                     "article": article,
-                }
+                },
             )
         else:
             task_provide_pid_for_opac_and_am_xml.apply_async(
@@ -189,7 +190,7 @@ def provide_pid_for_opac_xmls(
                 detail={
                     "task": "provide_pid_for_opac_xmls",
                     "uri": uri,
-                }
+                },
             )
         else:
             provide_pid_for_opac_xml.apply_async(
@@ -238,7 +239,7 @@ def provide_pid_for_am_xml_uri_list(
                     "task": "provide_pid_for_am_xml_uri_list",
                     "uri": uri,
                     "item": item,
-                }
+                },
             )
         else:
             task_provide_pid_for_opac_and_am_xml.apply_async(
@@ -337,7 +338,7 @@ def task_provide_pid_for_am_collection(
                 detail={
                     "task": "task_provide_pid_for_am_collection",
                     "uri": uri,
-                }
+                },
             )
         else:
             provide_pid_for_am_xml_uri_list.apply_async(
@@ -382,7 +383,7 @@ def retry_to_provide_pid_for_failed_uris(
                     "task": "retry_to_provide_pid_for_failed_uris",
                     "item": str(item),
                     "detail": item.detail,
-                }
+                },
             )
         else:
             task_provide_pid_for_opac_and_am_xml.apply_async(
@@ -443,5 +444,5 @@ def task_provide_pid_for_opac_and_am_xml(
                     origin_date=origin_date,
                     force_update=force_update,
                 ),
-            }
+            },
         )

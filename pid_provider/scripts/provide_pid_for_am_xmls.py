@@ -3,9 +3,7 @@ import json
 from pid_provider import tasks
 
 
-def run(
-    username, collections, limit=None, stop=None, force_update=None
-):
+def run(username, collections, limit=None, stop=None, force_update=None):
     return tasks.provide_pid_for_am_xmls.apply_async(
         kwargs={
             "username": username,

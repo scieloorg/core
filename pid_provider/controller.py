@@ -63,7 +63,7 @@ class PidProvider:
                         force_update=force_update,
                         is_published=is_published,
                     ),
-                }
+                },
             )
             yield {
                 "error_msg": f"Unable to provide pid for {zip_xml_file_path} {e}",
@@ -103,7 +103,7 @@ class PidProvider:
                         force_update=force_update,
                         is_published=is_published,
                     ),
-                }
+                },
             )
             return {
                 "error_msg": f"Unable to provide pid for {xml_uri} {e}",
@@ -193,7 +193,7 @@ class PidProvider:
                     "input": dict(
                         xml_uri=xml_uri,
                     ),
-                }
+                },
             )
             return {
                 "error_msg": f"Unable to check whether {xml_uri} is registered {e}",
@@ -230,7 +230,7 @@ class PidProvider:
                     "input": dict(
                         zip_xml_file_path=zip_xml_file_path,
                     ),
-                }
+                },
             )
             return {
                 "error_msg": f"Unable to check whether {zip_xml_file_path} is registered {e}",
