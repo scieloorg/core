@@ -1,22 +1,19 @@
-import json
 import logging
-import os
 import sys
-import traceback
-from datetime import datetime, timedelta
+from datetime import datetime
 
-import requests
 from django.contrib.auth import get_user_model
-from django.utils.translation import gettext as _
-
-from config import celery_app
 
 from collection.models import Collection
+from config import celery_app
 from core.utils.utils import fetch_data
-from pid_provider.models import PidRequest, CollectionPidRequest
+from pid_provider.models import CollectionPidRequest, PidRequest
 from pid_provider.sources import am
 from pid_provider.sources.harvesting import provide_pid_for_opac_and_am_xml
 from tracker.models import UnexpectedEvent
+
+# from django.utils.translation import gettext as _
+
 
 User = get_user_model()
 

@@ -1,22 +1,14 @@
-import hashlib
-import logging
-import os
 import json
+import logging
 import sys
-import traceback
 from datetime import datetime
-from http import HTTPStatus
-from shutil import copyfile
-from tempfile import TemporaryDirectory
-from zipfile import ZipFile
 
-from django.core.files.base import ContentFile
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext as _
+from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
 from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
-from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
 
 from collection.models import Collection
 from core.forms import CoreAdminModelForm
@@ -780,7 +772,7 @@ class PidProviderXML(CommonControlField):
                 #     deleted = str(e)
 
                 raise exceptions.QueryDocumentMultipleObjectsReturnedError(
-                    str({"params": adapted_params, "items": items, "deleted": deleted})
+                    str({"params": adapted_params, "items": items})
                 )
 
     def _add_data(self, xml_adapter, user):

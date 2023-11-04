@@ -1,13 +1,11 @@
 import logging
 import sys
-import traceback
 
-from django.utils.translation import gettext as _
+# from django.utils.translation import gettext as _
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
-from pid_provider.models import PidProviderConfig, PidProviderXML
+from pid_provider.models import PidProviderXML
 from tracker.models import UnexpectedEvent
-
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
