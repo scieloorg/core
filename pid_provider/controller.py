@@ -38,25 +38,15 @@ class PidProvider:
         """
         try:
             for xml_with_pre in XMLWithPre.create(path=zip_xml_file_path):
-                logging.info("provide_pid_for_xml_zip:")
-                try:
-                    registered = self.provide_pid_for_xml_with_pre(
-                        xml_with_pre,
-                        xml_with_pre.filename,
-                        user,
-                        origin_date=origin_date,
-                        force_update=force_update,
-                        is_published=is_published,
-                    )
-                    registered["filename"] = xml_with_pre.filename
-                    logging.info(registered)
-                    yield registered
-                except Exception as e:
-                    logging.exception(e)
-                    yield {
-                        "error_msg": f"Unable to provide pid for {zip_xml_file_path} {e}",
-                        "error_type": str(type(e)),
-                    }
+                yield self.provide_pid_for_xml_with_pre(
+                    xml_with_pre,
+                    xml_with_pre.filename,
+                    user,
+                    origin_date=origin_date,
+                    force_update=force_update,
+                    is_published=is_published,
+                    origin=zip_xml_file_path,
+                )
         except Exception as e:
             logging.exception(e)
             yield {
@@ -96,6 +86,7 @@ class PidProvider:
                 origin_date=origin_date,
                 force_update=force_update,
                 is_published=is_published,
+                origin=xml_uri,
             )
 
     def provide_pid_for_xml_with_pre(
@@ -106,6 +97,7 @@ class PidProvider:
         origin_date=None,
         force_update=None,
         is_published=None,
+        origin=None,
     ):
         """
         Fornece / Valida PID para o XML no formato de objeto de XMLWithPre
@@ -117,14 +109,14 @@ class PidProvider:
             origin_date=origin_date,
             force_update=force_update,
             is_published=is_published,
+            origin=origin,
         )
         logging.info("")
-        registered["xml_with_pre"] = xml_with_pre
-        logging.info(f"provide_pid_for_xml_with_pre result: {registered}")
+        logging.info(f"provide pid for {origin} result: {registered}")
         return registered
 
     @classmethod
-    def is_registered_xml_with_pre(cls, xml_with_pre):
+    def is_registered_xml_with_pre(cls, xml_with_pre, origin):
         """
         Returns
         -------
@@ -139,7 +131,7 @@ class PidProvider:
                 "updated": self.updated.isoformat(),
             }
         """
-        return PidProviderXML.get_registered(xml_with_pre)
+        return PidProviderXML.get_registered(xml_with_pre, origin)
 
     @classmethod
     def is_registered_xml_uri(cls, xml_uri):
@@ -157,8 +149,15 @@ class PidProvider:
                 "updated": self.updated.isoformat(),
             }
         """
-        xml_with_pre = XMLWithPre.create(uri=xml_uri)
-        return cls.is_registered_xml_with_pre(xml_with_pre)
+        try:
+            for xml_with_pre in XMLWithPre.create(uri=xml_uri):
+                return cls.is_registered_xml_with_pre(xml_with_pre, xml_uri)
+        except Exception as e:
+            logging.exception(e)
+            return {
+                "error_msg": f"Unable to check whether {xml_uri} is registered {e}",
+                "error_type": str(type(e)),
+            }
 
     @classmethod
     def is_registered_xml_zip(cls, zip_xml_file_path):
@@ -177,14 +176,27 @@ class PidProvider:
                 "updated": self.updated.isoformat(),
                 }
         """
-        for xml_with_pre in XMLWithPre.create(path=zip_xml_file_path):
-            registered = cls.is_registered_xml_with_pre(xml_with_pre)
-            registered["filename"] = xml_with_pre.filename
-            yield registered
+        try:
+            for xml_with_pre in XMLWithPre.create(path=zip_xml_file_path):
+                yield cls.is_registered_xml_with_pre(xml_with_pre, zip_xml_file_path)
+        except Exception as e:
+            logging.exception(e)
+            return {
+                "error_msg": f"Unable to check whether {zip_xml_file_path} is registered {e}",
+                "error_type": str(type(e)),
+            }
 
-    @classmethod
-    def get_xml_uri(cls, v3):
-        """
-        Retorna XML URI ou None
-        """
-        return PidProviderXML.get_xml_uri(v3)
+    # @classmethod
+    # def get_xml_uri(cls, v3):
+    #     """
+    #     Retorna XML URI ou None
+    #     """
+    #     try:
+    #         # NAO EXISTE
+    #         return PidProviderXML.get_xml_uri(v3)
+    #     except Exception as e:
+    #         logging.exception(e)
+    #         return {
+    #             "error_msg": f"Unable to get xml uri for {v3} {e}",
+    #             "error_type": str(type(e)),
+    #         }
