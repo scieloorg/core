@@ -2,8 +2,8 @@ import sys
 
 from core.utils.rename_dictionary_keys import rename_dictionary_keys
 from core.utils.utils import fetch_data
-from journal.utils import journal_utils
-from journal.utils.correspondencia import correspondencia_journal
+from journal.sources import am_to_core
+from journal.sources.am_field_names import correspondencia_journal
 from tracker.models import UnexpectedEvent
 
 
@@ -48,7 +48,7 @@ def _register_journal_data(user, collection, issn, data_journal):
     try:
         journal_dict = rename_dictionary_keys(data_journal, correspondencia_journal)
 
-        official_journal = journal_utils.create_or_update_official_journal(
+        official_journal = am_to_core.create_or_update_official_journal(
             title=journal_dict.get("publication_title"),
             new_title=journal_dict.get("new_title"),
             old_title=journal_dict.get("old_title"),
@@ -66,7 +66,7 @@ def _register_journal_data(user, collection, issn, data_journal):
             parallel_titles=journal_dict.get("parallel_titles"),
             user=user,
         )
-        journal = journal_utils.create_or_update_journal(
+        journal = am_to_core.create_or_update_journal(
             official_journal=official_journal,
             title=journal_dict.get("publication_title"),
             short_title=journal_dict.get("short_title"),
@@ -74,7 +74,7 @@ def _register_journal_data(user, collection, issn, data_journal):
             submission_online_url=journal_dict.get("url_of_submission_online"),
             user=user,
         )
-        journal_utils.create_or_update_scielo_journal(
+        am_to_core.create_or_update_scielo_journal(
             journal=journal,
             collection=journal_dict.get("collection"),
             issn_scielo=journal_dict.get("issn_id"),
@@ -85,7 +85,7 @@ def _register_journal_data(user, collection, issn, data_journal):
             ),
             user=user,
         )
-        journal_utils.update_panel_scope_and_about(
+        am_to_core.update_panel_scope_and_about(
             journal=journal,
             mission=journal_dict.get("mission"),
             sponsor=journal_dict.get("sponsor"),
@@ -97,7 +97,7 @@ def _register_journal_data(user, collection, issn, data_journal):
             wos_areas=journal_dict.get("subject_categories"),
             user=user,
         )
-        journal_utils.update_panel_interoperation(
+        am_to_core.update_panel_interoperation(
             journal=journal,
             indexed_at=journal_dict.get("indexing_coverage"),
             secs_code=journal_dict.get("secs_code"),
@@ -105,7 +105,7 @@ def _register_journal_data(user, collection, issn, data_journal):
             medline_short_title=journal_dict.get("medline_short_title"),
             user=user,
         )
-        journal_utils.update_panel_information(
+        am_to_core.update_panel_information(
             journal=journal,
             frequency=journal_dict.get("frequency"),
             publishing_model=journal_dict.get("publishing_model"),
@@ -121,7 +121,7 @@ def _register_journal_data(user, collection, issn, data_journal):
             vocabulary=journal_dict.get("controled_vocabulary"),
             user=user,
         )
-        journal_utils.update_panel_institution(
+        am_to_core.update_panel_institution(
             journal=journal,
             publisher=journal_dict.get("publisher"),
             copyright_holder=journal_dict.get("copyright_holder"),
@@ -132,7 +132,7 @@ def _register_journal_data(user, collection, issn, data_journal):
             publisher_city=journal_dict.get("publisher_city"),
             user=user,
         )
-        journal_utils.update_panel_website(
+        am_to_core.update_panel_website(
             journal=journal,
             url_of_the_journal=journal_dict.get("url_of_the_journal"),
             url_of_submission_online=journal_dict.get("url_of_submission_online"),
@@ -140,14 +140,14 @@ def _register_journal_data(user, collection, issn, data_journal):
             license_of_use=journal_dict.get("license_of_use"),
             user=user,
         )
-        journal_utils.update_panel_notes(
+        am_to_core.update_panel_notes(
             journal=journal,
             notes=journal_dict.get("notes"),
             creation_date=journal_dict.get("creation_date"),
             update_date=journal_dict.get("update_date"),
             user=user,
         )
-        journal_utils.update_panel_legacy_compatibility_fields(
+        am_to_core.update_panel_legacy_compatibility_fields(
             journal=journal,
             center_code=journal_dict.get("center_code"),
             identification_number=journal_dict.get("identification_number"),
