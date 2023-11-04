@@ -26,16 +26,18 @@ def _get_user(request, username=None, user_id=None):
             return User.objects.get(username=username)
 
 
-@celery_app.task(bin=True)
+@celery_app.task(bind=True)
 def load_journal_from_classic_website(self, username=None, user_id=None):
     user = _get_user(self.request, username=username, user_id=user_id)
     classic_website.load(user)
 
 
-@celery_app.task(bin=True)
+
+
+@celery_app.task(bind=True)
 def load_journal_from_article_meta(self, username=None, user_id=None, limit=None):
     try:
-        for item in Collection.objects.iterator():
+        for item in Collection.objects.filter(collection_type="journals").iterator():
             load_journal_from_article_meta_for_one_collection.apply_async(
                 kwargs=dict(
                     user_id=user_id,
@@ -55,7 +57,7 @@ def load_journal_from_article_meta(self, username=None, user_id=None, limit=None
         )
 
 
-@celery_app.task(bin=True)
+@celery_app.task(bind=True)
 def load_journal_from_article_meta_for_one_collection(
     self, username=None, user_id=None, collection_acron=None, limit=None
 ):
