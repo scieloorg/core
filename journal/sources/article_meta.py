@@ -1,14 +1,23 @@
 from core.utils import utils
 from core.utils.rename_dictionary_keys import rename_dictionary_keys
-from journal.utils.correspondencia import correspondencia_journal
+from core.utils.utils import fetch_data
 from journal.utils import journal_utils
-from core.utils.rename_dictionary_keys import rename_dictionary_keys
-from journal.utils.request_api_article_meta import request_journal_article_meta
+from journal.utils.correspondencia import correspondencia_journal
 
 
 class SciELOJournalArticleMetaCreateUpdateError(Exception):
     def __init__(self, message):
         super().__init__(f"Failed to save SciELO Journal from article meta: {message}")
+
+
+def request_journal_article_meta(offset=None, limit=10, collection="scl"):
+    offset = f"&offset={offset}" if offset else ""
+    url = (
+        f"https://articlemeta.scielo.org/api/v1/journal/identifiers/?collection={collection}&limit={limit}"
+        + offset
+    )
+    data = fetch_data(url, json=True, timeout=30, verify=True)
+    return data
 
 
 def process_journal_article_meta(collection, limit, user):
@@ -18,8 +27,8 @@ def process_journal_article_meta(collection, limit, user):
     while offset < total_limit:
         for journal in data["objects"]:
             issn = journal["code"]
-            url_journal = f"https://articlemeta.scielo.org/api/v1/journal/?issn={issn}"
-            data_journal = utils.fetch_data(
+            url_journal = f"https://articlemeta.scielo.org/api/v1/journal/?collection={collection}&issn={issn}"
+            data_journal = fetch_data(
                 url_journal, json=True, timeout=30, verify=True
             )
             journal_dict = rename_dictionary_keys(data_journal, correspondencia_journal)
@@ -56,7 +65,9 @@ def process_journal_article_meta(collection, limit, user):
                 issn_scielo=journal_dict.get("issn_id"),
                 journal_acron=journal_dict.get("acronym"),
                 status=journal_dict.get("publication_status"),
-                journal_history=journal_dict.get("journal_status_history_in_this_collection"),
+                journal_history=journal_dict.get(
+                    "journal_status_history_in_this_collection"
+                ),
                 user=user,
             )
             journal_utils.update_panel_scope_and_about(
