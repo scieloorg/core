@@ -54,13 +54,16 @@ def load_journal_from_article_meta(self, username=None, user_id=None, limit=None
             },
         )
 
+
 @celery_app.task(bin=True)
 def load_journal_from_article_meta_for_one_collection(
     self, username=None, user_id=None, collection_acron=None, limit=None
 ):
     try:
         user = _get_user(self.request, username=username, user_id=user_id)
-        process_journal_article_meta(collection=collection_acron, limit=limit, user=user)
+        process_journal_article_meta(
+            collection=collection_acron, limit=limit, user=user
+        )
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(

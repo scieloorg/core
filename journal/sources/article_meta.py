@@ -1,6 +1,5 @@
 import sys
 
-from core.utils import utils
 from core.utils.rename_dictionary_keys import rename_dictionary_keys
 from core.utils.utils import fetch_data
 from journal.utils import journal_utils
@@ -17,7 +16,9 @@ def _get_collection_journals(offset=None, limit=None, collection=None):
     limit = limit or 10
     offset = f"&offset={offset}" if offset else ""
     if not collection:
-        raise ValueError("journal.sources.article_meta._get_collection_journals requires collection")
+        raise ValueError(
+            "journal.sources.article_meta._get_collection_journals requires collection"
+        )
     url = (
         f"https://articlemeta.scielo.org/api/v1/journal/identifiers/?collection={collection}&limit={limit}"
         + offset
@@ -34,9 +35,7 @@ def process_journal_article_meta(collection, limit, user):
         for journal in data["objects"]:
             issn = journal["code"]
             url_journal = f"https://articlemeta.scielo.org/api/v1/journal/?collection={collection}&issn={issn}"
-            data_journal = fetch_data(
-                url_journal, json=True, timeout=30, verify=True
-            )
+            data_journal = fetch_data(url_journal, json=True, timeout=30, verify=True)
             _register_journal_data(user, collection, issn, data_journal)
 
         offset += 10
@@ -137,9 +136,7 @@ def _register_journal_data(user, collection, issn, data_journal):
             journal=journal,
             url_of_the_journal=journal_dict.get("url_of_the_journal"),
             url_of_submission_online=journal_dict.get("url_of_submission_online"),
-            url_of_the_main_collection=journal_dict.get(
-                "url_of_the_main_collection"
-            ),
+            url_of_the_main_collection=journal_dict.get("url_of_the_main_collection"),
             license_of_use=journal_dict.get("license_of_use"),
             user=user,
         )
@@ -174,4 +171,4 @@ def _register_journal_data(user, collection, issn, data_journal):
                 "issn": issn,
                 "data_journal": data_journal,
             },
-        )        
+        )

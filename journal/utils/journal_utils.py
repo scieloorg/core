@@ -72,7 +72,9 @@ def create_or_update_scielo_journal(
         journal=journal,
         code_status=code_status,
     )
-    get_or_create_journal_history(scielo_journal=scielo_journal, journal_history=journal_history)
+    get_or_create_journal_history(
+        scielo_journal=scielo_journal, journal_history=journal_history
+    )
     return scielo_journal
 
 
@@ -219,13 +221,11 @@ def update_panel_institution(
                 )
                 owner_history.journal = journal
                 owner_history.save()
-                
-    
+
     get_or_create_copyright_holder(
-        journal=journal, 
-        copyright_holder_name=copyright_holder, 
-        user=user
+        journal=journal, copyright_holder_name=copyright_holder, user=user
     )
+
 
 def update_panel_website(
     journal,
@@ -370,7 +370,7 @@ def create_or_update_official_journal(
     year, month = parse_date_string(date=terminate_date)
     official_journal.terminate_year = year
     official_journal.terminate_month = month
-    
+
     official_journal.final_number = extract_value(final_number)
     official_journal.final_volume = extract_value(final_volume)
     official_journal.save()
