@@ -6,6 +6,7 @@ from django.utils.translation import gettext as _
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from pid_provider.models import PidProviderConfig, PidProviderXML
+from tracker.models import UnexpectedEvent
 
 
 LOGGER = logging.getLogger(__name__)
@@ -48,7 +49,22 @@ class PidProvider:
                     origin=zip_xml_file_path,
                 )
         except Exception as e:
-            logging.exception(e)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                e=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "operation": "PidProvider.provide_pid_for_xml_zip",
+                    "input": dict(
+                        zip_xml_file_path=zip_xml_file_path,
+                        user=user.username,
+                        filename=filename,
+                        origin_date=origin_date,
+                        force_update=force_update,
+                        is_published=is_published,
+                    ),
+                }
+            )
             yield {
                 "error_msg": f"Unable to provide pid for {zip_xml_file_path} {e}",
                 "error_type": str(type(e)),
@@ -73,7 +89,22 @@ class PidProvider:
         try:
             xml_with_pre = list(XMLWithPre.create(uri=xml_uri))[0]
         except Exception as e:
-            logging.exception(e)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                e=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "operation": "PidProvider.provide_pid_for_xml_uri",
+                    "input": dict(
+                        xml_uri=xml_uri,
+                        user=user.username,
+                        name=name,
+                        origin_date=origin_date,
+                        force_update=force_update,
+                        is_published=is_published,
+                    ),
+                }
+            )
             return {
                 "error_msg": f"Unable to provide pid for {xml_uri} {e}",
                 "error_type": str(type(e)),
@@ -153,7 +184,17 @@ class PidProvider:
             for xml_with_pre in XMLWithPre.create(uri=xml_uri):
                 return cls.is_registered_xml_with_pre(xml_with_pre, xml_uri)
         except Exception as e:
-            logging.exception(e)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                e=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "operation": "PidProvider.is_registered_xml_uri",
+                    "input": dict(
+                        xml_uri=xml_uri,
+                    ),
+                }
+            )
             return {
                 "error_msg": f"Unable to check whether {xml_uri} is registered {e}",
                 "error_type": str(type(e)),
@@ -180,7 +221,17 @@ class PidProvider:
             for xml_with_pre in XMLWithPre.create(path=zip_xml_file_path):
                 yield cls.is_registered_xml_with_pre(xml_with_pre, zip_xml_file_path)
         except Exception as e:
-            logging.exception(e)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                e=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "operation": "PidProvider.is_registered_xml_zip",
+                    "input": dict(
+                        zip_xml_file_path=zip_xml_file_path,
+                    ),
+                }
+            )
             return {
                 "error_msg": f"Unable to check whether {zip_xml_file_path} is registered {e}",
                 "error_type": str(type(e)),
