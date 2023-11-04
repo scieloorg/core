@@ -2,6 +2,8 @@ import hashlib
 import logging
 import os
 import json
+import sys
+import traceback
 from datetime import datetime
 from http import HTTPStatus
 from shutil import copyfile
@@ -20,6 +22,7 @@ from collection.models import Collection
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from pid_provider import exceptions
+from tracker.models import UnexpectedEvent
 from xmlsps.models import XMLVersion
 
 LOGGER = logging.getLogger(__name__)
@@ -711,7 +714,17 @@ class PidProviderXML(CommonControlField):
             #     exceptions.NotEnoughParametersToGetDocumentRecordError,
             #     exceptions.QueryDocumentMultipleObjectsReturnedError,
             # ) as e:
-            logging.exception(e)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                e=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "operation": "PidProviderXML.get_registered",
+                    "detail": dict(
+                        origin=origin,
+                    ),
+                }
+            )
             return {"error_msg": str(e), "error_type": str(type(e))}
 
     @classmethod
@@ -759,12 +772,12 @@ class PidProviderXML(CommonControlField):
                 items = []
                 for item in cls.objects.filter(**adapted_params).iterator():
                     items.append(item.data)
-                try:
-                    cls.objects.filter(**adapted_params).delete()
-                    deleted = True
-                except Exception as e:
-                    logging.exception(e)
-                    deleted = str(e)
+                # try:
+                #     cls.objects.filter(**adapted_params).delete()
+                #     deleted = True
+                # except Exception as e:
+                #     logging.exception(e)
+                #     deleted = str(e)
 
                 raise exceptions.QueryDocumentMultipleObjectsReturnedError(
                     str({"params": adapted_params, "items": items, "deleted": deleted})
