@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 
 from config import celery_app
-from journal import controller
+from journal.sources import classic_website
 from journal.sources.article_meta import process_journal_article_meta
 
 User = get_user_model()
@@ -17,7 +17,7 @@ def load_journal(*args):
 
     user = User.objects.get(id=args[0] if args else 1)
 
-    controller.load(user)
+    classic_website.load(user)
 
 
 @celery_app.task()
