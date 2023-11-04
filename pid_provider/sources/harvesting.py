@@ -1,11 +1,13 @@
 import logging
+import sys
 
 from django.contrib.auth import get_user_model
-from django.utils.translation import gettext as _
+# from django.utils.translation import gettext as _
 
 from collection.models import Collection
 from pid_provider.controller import PidProvider
-from pid_provider.models import PidProviderXML, PidRequest, CollectionPidRequest
+from pid_provider.models import CollectionPidRequest, PidProviderXML
+from tracker.models import UnexpectedEvent
 
 User = get_user_model()
 
@@ -53,7 +55,6 @@ def provide_pid_for_opac_and_am_xml(
             if not v:
                 detail.pop(k)
 
-        logging.info(f"Request pid for {uri}")
         pp = PidProvider()
         response = pp.provide_pid_for_xml_uri(
             uri,
@@ -63,49 +64,27 @@ def provide_pid_for_opac_and_am_xml(
             force_update=force_update,
             is_published=True,
         )
-    except Exception as e:
-        return PidRequest.register_failure(
-            e=e,
-            user=user,
-            origin=uri,
-            origin_date=origin_date,
-            detail=detail,
-            v3=pid_v3,
-        )
-
-    try:
-        pid_v3 = response["v3"]
-    except KeyError:
-        pid_v3 = None
-
-    if not pid_v3:
-        result_type = response.get("error_type") or response.get("result_type")
-        result_msg = response.get("error_msg") or response.get("result_msg")
-
-        # Guardar somente se houve problema
-        pid_request = PidRequest.create_or_update(
-            user=user,
-            origin=uri,
-            origin_date=origin_date,
-            result_type=result_type,
-            result_msg=result_msg,
-            detail=detail,
-        )
-        return pid_request.data
-
-    PidRequest.cancel_failure(
-        user=user,
-        origin=uri,
-        origin_date=origin_date,
-        v3=pid_v3,
-        detail=detail,
-    )
-    try:
         CollectionPidRequest.create_or_update(
             user=user,
             collection=Collection.objects.get(acron3=collection_acron),
             end_date=origin_date,
         )
+        return response
     except Exception as e:
-        logging.exception(e)
-    return response
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            e=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "operation": "provide_pid_for_opac_and_am_xml",
+                "detail": dict(
+                    pid_v2=pid_v2,
+                    pid_v3=pid_v3,
+                    collection_acron=collection_acron,
+                    journal_acron=journal_acron,
+                    year=year,
+                    origin_date=origin_date,
+                    force_update=force_update,
+                ),
+            },
+        )

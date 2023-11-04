@@ -1,25 +1,20 @@
-import hashlib
-import logging
-import os
 import json
+import logging
+import sys
 from datetime import datetime
-from http import HTTPStatus
-from shutil import copyfile
-from tempfile import TemporaryDirectory
-from zipfile import ZipFile
 
-from django.core.files.base import ContentFile
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext as _
+from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
 from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
-from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
 
 from collection.models import Collection
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from pid_provider import exceptions
+from tracker.models import UnexpectedEvent
 from xmlsps.models import XMLVersion
 
 LOGGER = logging.getLogger(__name__)
@@ -471,6 +466,7 @@ class PidProviderXML(CommonControlField):
         force_update=None,
         is_published=False,
         website_publication_date=None,
+        origin=None,
     ):
         """
         Evaluate the XML data and returns corresponding PID v3, v2, aop_pid
@@ -504,7 +500,12 @@ class PidProviderXML(CommonControlField):
 
         """
         try:
-            logging.info(f"PidProviderXML.register ....  {filename}")
+            input_data = {}
+            input_data["xml_with_pre"] = xml_with_pre
+            input_data["filename"] = filename
+            input_data["origin"] = origin
+
+            logging.info(f"PidProviderXML.register ....  {origin or filename}")
 
             # adaptador do xml with pre
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
@@ -545,19 +546,20 @@ class PidProviderXML(CommonControlField):
 
             pid_request = PidRequest.cancel_failure(
                 user=user,
-                origin=filename,
+                origin=origin,
                 origin_date=origin_date,
                 v3=data.get("v3"),
                 detail=data,
             )
-
-            return data
+            response = input_data
+            response.update(data)
+            return response
 
         except (exceptions.QueryDocumentMultipleObjectsReturnedError,) as e:
             data = json.loads(str(e))
             pid_request = PidRequest.create_or_update(
                 user=user,
-                origin=filename,
+                origin=origin,
                 origin_date=origin_date,
                 result_type=str(type(e)),
                 result_msg=_("Found {} records for {}").format(
@@ -565,20 +567,30 @@ class PidProviderXML(CommonControlField):
                 ),
                 detail=data,
             )
-            return pid_request.data
-        except (
-            exceptions.ForbiddenPidProviderXMLRegistrationError,
-            exceptions.NotEnoughParametersToGetDocumentRecordError,
-            exceptions.InvalidPidError,
-        ) as e:
+            response = input_data
+            response.update(pid_request.data)
+            return response
+        except Exception as e:
+            # exceptions.ForbiddenPidProviderXMLRegistrationError,
+            # exceptions.NotEnoughParametersToGetDocumentRecordError,
+            # exceptions.InvalidPidError,
+            # outras
+            try:
+                detail = {}
+                if ":" not in origin:
+                    detail["xml"] = xml_adapter.tostring()
+            except Exception as x:
+                pass
             pid_request = PidRequest.register_failure(
                 e,
                 user=user,
                 origin_date=origin_date,
-                origin=filename,
-                detail={"xml": xml_adapter.tostring()},
+                origin=origin,
+                detail=detail,
             )
-            return pid_request.data
+            response = input_data
+            response.update(pid_request.data)
+            return response
 
     @classmethod
     def _save(
@@ -661,7 +673,7 @@ class PidProviderXML(CommonControlField):
         )
 
     @classmethod
-    def get_registered(cls, xml_with_pre):
+    def get_registered(cls, xml_with_pre, origin):
         """
         Get registered
 
@@ -685,17 +697,27 @@ class PidProviderXML(CommonControlField):
             or
             {"error_msg": str(e), "error_type": str(type(e))}
         """
-        xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
         try:
+            xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
             registered = cls._query_document(xml_adapter)
-        except (
-            exceptions.NotEnoughParametersToGetDocumentRecordError,
-            exceptions.QueryDocumentMultipleObjectsReturnedError,
-        ) as e:
-            logging.exception(e)
-            return {"error_msg": str(e), "error_type": str(type(e))}
-        if registered:
             return registered.data
+        except Exception as e:
+            # except (
+            #     exceptions.NotEnoughParametersToGetDocumentRecordError,
+            #     exceptions.QueryDocumentMultipleObjectsReturnedError,
+            # ) as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                e=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "operation": "PidProviderXML.get_registered",
+                    "detail": dict(
+                        origin=origin,
+                    ),
+                },
+            )
+            return {"error_msg": str(e), "error_type": str(type(e))}
 
     @classmethod
     def _query_document(cls, xml_adapter):
@@ -742,15 +764,15 @@ class PidProviderXML(CommonControlField):
                 items = []
                 for item in cls.objects.filter(**adapted_params).iterator():
                     items.append(item.data)
-                try:
-                    cls.objects.filter(**adapted_params).delete()
-                    deleted = True
-                except Exception as e:
-                    logging.exception(e)
-                    deleted = str(e)
+                # try:
+                #     cls.objects.filter(**adapted_params).delete()
+                #     deleted = True
+                # except Exception as e:
+                #     logging.exception(e)
+                #     deleted = str(e)
 
                 raise exceptions.QueryDocumentMultipleObjectsReturnedError(
-                    str({"params": adapted_params, "items": items, "deleted": deleted})
+                    str({"params": adapted_params, "items": items})
                 )
 
     def _add_data(self, xml_adapter, user):
