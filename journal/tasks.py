@@ -6,7 +6,6 @@ from django.contrib.auth import get_user_model
 
 from collection.models import Collection
 from config import celery_app
-from core.utils.utils import fetch_data
 from journal.sources import classic_website
 from journal.sources.article_meta import process_journal_article_meta
 from tracker.models import UnexpectedEvent
@@ -35,21 +34,40 @@ def load_journal_from_classic_website(self, username=None, user_id=None):
 
 @celery_app.task(bin=True)
 def load_journal_from_article_meta(self, username=None, user_id=None, limit=None):
-    for item in Collection.objects.iterator():
-        _load_journal_from_article_meta_for_one_collection.apply_async(
-            kwargs=dict(
-                user_id=user_id,
-                username=username,
-                collection_acron=item.acron3,
-                limit=limit,
+    try:
+        for item in Collection.objects.iterator():
+            load_journal_from_article_meta_for_one_collection.apply_async(
+                kwargs=dict(
+                    user_id=user_id,
+                    username=username,
+                    collection_acron=item.acron3,
+                    limit=limit,
+                )
             )
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            e=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "journal.tasks.load_journal_from_article_meta",
+            },
         )
 
-
 @celery_app.task(bin=True)
-def _load_journal_from_article_meta_for_one_collection(
+def load_journal_from_article_meta_for_one_collection(
     self, username=None, user_id=None, collection_acron=None, limit=None
 ):
-    user = _get_user(self.request, username=username, user_id=user_id)
-
-    process_journal_article_meta(collection=collection_acron, limit=limit, user=user)
+    try:
+        user = _get_user(self.request, username=username, user_id=user_id)
+        process_journal_article_meta(collection=collection_acron, limit=limit, user=user)
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            e=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "journal.tasks.load_journal_from_article_meta_for_one_collection",
+                "collection_acron": collection_acron,
+            },
+        )
