@@ -1,16 +1,16 @@
 from django.http import HttpResponseRedirect
+from django.urls import path
 from django.utils.translation import gettext as _
+from wagtail import hooks
 from wagtail.contrib.modeladmin.options import (
     ModelAdmin,
     ModelAdminGroup,
     modeladmin_register,
 )
 from wagtail.contrib.modeladmin.views import CreateView
-from wagtail import hooks
-from django.urls import path
 
-from .models import Journal, OfficialJournal, SciELOJournal, IndexedAt, IndexedAtFile
 from .button_helper import IndexedAtHelper
+from .models import IndexedAt, IndexedAtFile, Journal, OfficialJournal, SciELOJournal
 from .views import import_file, validate
 
 

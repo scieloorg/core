@@ -1,40 +1,41 @@
 import re
+from datetime import datetime
 
 from django.db.models import Q
+
 from core.models import Language, License
-from institution.models import Publisher, Owner, Sponsor, CopyrightHolder
-from vocabulary.models import Vocabulary
+from institution.models import CopyrightHolder, Owner, Publisher, Sponsor
+from journal.models import (
+    Annotation,
+    Collection,
+    CopyrightHolderHistory,
+    IndexedAt,
+    Journal,
+    JournalHistory,
+    JournalParallelTitles,
+    Mission,
+    OfficialJournal,
+    OwnerHistory,
+    PublisherHistory,
+    SciELOJournal,
+    SponsorHistory,
+    Standard,
+    Subject,
+    SubjectDescriptor,
+    WebOfKnowledge,
+    WebOfKnowledgeSubjectCategory,
+)
+from location.models import Address, City, Country, Location, State
 from reference.models import JournalTitle
+from vocabulary.models import Vocabulary
+
 from .funcs_extract_am import (
     extract_issn_print_electronic,
     extract_value,
+    extract_value_from_journal_history,
     extract_value_mission,
     parse_date_string,
-    extract_value_from_journal_history,
 )
-from journal.models import (
-    Collection,
-    OfficialJournal,
-    Journal,
-    SciELOJournal,
-    Mission,
-    PublisherHistory,
-    OwnerHistory,
-    Annotation,
-    SponsorHistory,
-    SubjectDescriptor,
-    Subject,
-    Standard,
-    WebOfKnowledge,
-    WebOfKnowledgeSubjectCategory,
-    IndexedAt,
-    JournalParallelTitles,
-    JournalHistory,
-    CopyrightHolderHistory,
-)
-from location.models import City, Location, State, Country, Address
-
-from datetime import datetime
 
 
 def create_or_update_journal(
