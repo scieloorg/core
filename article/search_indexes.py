@@ -39,7 +39,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     end_page = indexes.CharField(model_attr="last_page", null=True)
     pg = indexes.CharField(null=True)
     wok_citation_index = indexes.CharField(null=True)
-    subject_areas = indexes.CharField(null=True)
+    subject_areas = indexes.MultiValueField(null=True)
     ta_cluster = indexes.CharField(null=True)
     year_cluster = indexes.CharField(null=True)
 
@@ -58,8 +58,11 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
             data["ti_%s" % title.language.code2] = title.plain_text
 
         if obj.journal:
+            collections = obj.collections
             # prepara the fulltext_pdf_*
-            for collection in obj.journal.collection.all():
+            # FIXME
+            # Article languages nao tem a mesma correpondencia de languages PDF
+            for collection in collections:
                 for lang in obj.languages.all():
                     data[
                         "fulltext_pdf_%s" % (lang.code2)
@@ -70,7 +73,9 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
                     )
 
             # prepara the fulltext_html_*
-            for collection in obj.journal.collection.all():
+            # FIXME
+            # Article languages nao tem a mesma correpondencia de languages HTML
+            for collection in collections:
                 for lang in obj.languages.all():
                     data[
                         "fulltext_html_%s" % (lang.code2)
@@ -105,10 +110,11 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
         """
         This field is a URLs for all collection of this article.
         """
+        collections = obj.collections
         urls = []
-
+        
         if obj.journal:
-            for collection in obj.journal.collection.all():
+            for collection in collections:
                 urls.append(
                     "http://%s/scielo.php?script=sci_arttext&pid=%s"
                     % (collection.domain, obj.pid_v2)
@@ -142,8 +148,9 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
         return str(obj.pub_date_year)
 
     def prepare_collection(self, obj):
+        collections = obj.collections
         return (
-            [collection.acron3 for collection in obj.journal.collection.all()]
+            [collection.acron3 for collection in collections]
             if obj.journal
             else None
         )
@@ -201,8 +208,9 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
             return [abstract.language for abstract in obj.abstracts.all()]
 
     def prepare_domain(self, obj):
+        collections = obj.collections
         try:
-            return obj.journal.collection.all()[0].domain
+            return collections.all()[0].domain
         except AttributeError:
             pass
 

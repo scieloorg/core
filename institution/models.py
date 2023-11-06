@@ -1,7 +1,10 @@
+import os
+
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext as _
 from modelcluster.models import ClusterableModel
-from wagtail.admin.panels import FieldPanel, InlinePanel
+from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
@@ -17,7 +20,6 @@ class Institution(CommonControlField, ClusterableModel):
     institution_type = models.TextField(
         _("Institution Type"), choices=choices.inst_type, null=True, blank=True
     )
-
     location = models.ForeignKey(
         Location, null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -129,7 +131,28 @@ class Institution(CommonControlField, ClusterableModel):
         return _data
 
     @classmethod
-    def get_or_create(
+    def get(
+        cls,
+        inst_name,
+        inst_acronym,
+        location,
+    ):
+        filters = {}
+        
+        if inst_name:
+            filters['name'] = inst_name
+        if inst_acronym:
+            filters['acronym'] = inst_acronym
+        if location:
+            filters['location'] = location
+
+        if filters:
+            return cls.objects.get(**filters)            
+        raise ValueError("Requires inst_name, inst_acronym or location parameters")
+
+
+    @classmethod
+    def create_or_update(
         cls,
         inst_name,
         inst_acronym,
@@ -139,38 +162,27 @@ class Institution(CommonControlField, ClusterableModel):
         location,
         official,
         is_official,
+        url,
         user,
     ):
-        # Institution
-        # check if exists the institution
-        parms = {}
-        if inst_name:
-            parms["name"] = inst_name
-        if inst_acronym:
-            parms["acronym"] = inst_acronym
-        if location:
-            parms["location"] = location
-        if level_1:
-            parms["level_1"] = level_1
-        if level_2:
-            parms["level_2"] = level_2
-        if level_3:
-            parms["level_3"] = level_3
 
         try:
-            return cls.objects.get(**parms)
-        except:
+            institution = cls.get(inst_name=inst_name, inst_acronym=inst_acronym, location=location)
+            institution.updated_by = user
+        except cls.DoesNotExist:
             institution = cls()
             institution.name = inst_name
-            institution.acronym = inst_acronym
-            institution.level_1 = level_1
-            institution.level_2 = level_2
-            institution.level_3 = level_3
-            institution.location = location
-            institution.official = official
-            institution.is_official = is_official
             institution.creator = user
-            institution.save()
+        
+        institution.acronym = inst_acronym or institution.acronym
+        institution.level_1 = level_1 or institution.level_1
+        institution.level_2 = level_2 or institution.level_2
+        institution.level_3 = level_3 or institution.level_3
+        institution.location = location or institution.location
+        institution.official = official or institution.official
+        institution.is_official = is_official or institution.is_official
+        institution.url = url or institution.url
+        institution.save()
         return institution
 
     base_form_class = CoreAdminModelForm
@@ -205,10 +217,118 @@ class InstitutionHistory(models.Model):
         return history
 
 
+class BaseHistoryItem(CommonControlField):
+    initial_date = models.DateField(_("Initial Date"), null=True, blank=True)
+    final_date = models.DateField(_("Final Date"), null=True, blank=True)
+
+    panels = [
+        AutocompletePanel("institution"),
+        FieldPanel("initial_date"),
+        FieldPanel("final_date"),
+    ]
+
+
+    @classmethod
+    def get(
+        cls,
+        institution, 
+    ):
+        if institution:
+            return cls.objects.get(institution=institution)    
+        raise ValueError("Requires item parameter") 
+
+    @classmethod
+    def create_or_update(cls, institution, user, initial_date=None, final_date=None):
+        try:
+            history = cls.get(institution=institution)
+            history.updated_by = user
+        except cls.DoesNotExist:
+            history = cls()
+            history.institution = institution
+            history.creator = user
+        
+        history.initial_date = initial_date
+        history.final_date = final_date
+        history.save()
+        return history
+    
+    class Meta:
+        abstract = True
+
+
 class Sponsor(Institution):
     panels = Institution.panels
 
     base_form_class = CoreAdminModelForm
+
+
+class SponsorHistoryItem(BaseHistoryItem):
+    institution = models.ForeignKey(
+        Sponsor,
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+    )
+
+
+class Publisher(Institution):
+    panels = Institution.panels
+
+    base_form_class = CoreAdminModelForm
+
+
+class PublisherHistoryItem(BaseHistoryItem):
+    institution = models.ForeignKey(
+        Publisher, 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+    )
+
+
+class CopyrightHolder(Institution):
+    panels = Institution.panels
+
+    base_form_class = CoreAdminModelForm
+    
+
+class CopyrightHolderHistoryItem(BaseHistoryItem):
+    institution = models.ForeignKey(
+        CopyrightHolder, 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+    )
+
+
+class Owner(Institution):
+    panels = Institution.panels
+
+    base_form_class = CoreAdminModelForm
+
+
+class OwnerHistoryItem(BaseHistoryItem):
+    institution = models.ForeignKey(
+        Owner, 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+    )
+
+
+class EditorialManager(Institution):
+    panels = Institution.panels
+
+    base_form_class = CoreAdminModelForm
+
+
+class EditorialManagerHistoryItem(BaseHistoryItem):
+    institution = models.ForeignKey(
+        EditorialManager, 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True,
+    )
 
 
 class Scimago(CommonControlField, ClusterableModel):

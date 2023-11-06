@@ -25,9 +25,9 @@ class ProcessingErrorAdmin(ModelAdmin):
     list_display = (
         "item",
         "description",
-        "type",
+        "type_field",
         "step",
     )
 
 
-modeladmin_register(ProcessingErrorAdmin)
+# modeladmin_register(ProcessingErrorAdmin)

@@ -1,0 +1,12 @@
+{% load i18n wagtailadmin_tags %}
+
+<li>
+    {% icon name="site" %}
+    <a href="{% url 'collection_collection_modeladmin_index'%}">
+        {% blocktrans trimmed count counter=total_collection with total_collection|intcomma as total %}
+            <span>{{ total_collection }}</span> Collection <span class="visuallyhidden">created in {{ site_name }}</span>
+        {% plural %}
+            <span>{{ total_collection }}</span> Collections <span class="visuallyhidden">created in {{ site_name }}</span>
+        {% endblocktrans %}
+    </a>
+</li>

@@ -12,9 +12,9 @@ from core.models import CommonControlField, Gender
 from institution.models import Institution, InstitutionHistory
 from journal.models import Journal
 
-from . import choices
+from core.choices import MONTHS
 from .forms import ResearcherForm
-
+from . import choices
 
 class Researcher(ClusterableModel, CommonControlField):
     """
@@ -106,12 +106,15 @@ class Researcher(ClusterableModel, CommonControlField):
         given_names,
         last_name,
         orcid,
+        declared_name,
     ):
         if orcid:
             return cls.objects.get(orcid=orcid)
         elif given_names or last_name:
-            return cls.objects.get(given_names=given_names, last_name=last_name)
-        raise TypeError("Researcher.get requires orcid, given_names or last_names paramenters")
+            return cls.objects.get(given_names__iexact=given_names, last_name__iexact=last_name, orcid__isnull=True)
+        elif declared_name:
+            return cls.objects.get(declared_name=declared_name)
+        raise ValueError("Researcher.get requires orcid, given_names, last_names or declared_name parameters")
 
     @classmethod
     def create_or_update(
@@ -133,14 +136,17 @@ class Researcher(ClusterableModel, CommonControlField):
                 given_names=given_names,
                 last_name=last_name,
                 orcid=orcid,
+                declared_name=declared_name,
             )
+            researcher.updated_by = user or researcher.updated_by
         except cls.DoesNotExist:
             researcher = cls()
             researcher.creator = user
             researcher.orcid = orcid
 
-        researcher.given_names = given_names
-        researcher.last_name = last_name            
+
+        researcher.given_names = given_names or researcher.given_names
+        researcher.last_name = last_name or researcher.last_name       
         institution = None
         if institution_name:
             try:
@@ -148,14 +154,13 @@ class Researcher(ClusterableModel, CommonControlField):
             except Institution.DoesNotExist:
                 pass
 
-        researcher.declared_name = declared_name
-        researcher.suffix = suffix
-        researcher.lattes = lattes
+        researcher.declared_name = declared_name or researcher.declared_name
+        researcher.suffix = suffix or researcher.suffix
+        researcher.lattes = lattes or researcher.lattes
         ## TODO
         ## Criar get_or_create para model gender e GenderIdentificationStatus
-        researcher.gender = gender
-        researcher.gender_identification_status = gender_identification_status
-        researcher.updated_by = user
+        researcher.gender = gender or researcher.gender
+        researcher.gender_identification_status = gender_identification_status or researcher.gender_identification_status
         researcher.save()
         
         if email:
@@ -200,10 +205,10 @@ class EditorialBoardMember(models.Model):
     role = models.CharField(
         _("Role"), max_length=255, choices=choices.ROLE, null=False, blank=False
     )
-    initial_year = models.IntegerField(blank=True, null=True)
-    initial_month = models.IntegerField(blank=True, null=True, choices=choices.MONTHS)
-    final_year = models.IntegerField(blank=True, null=True)
-    final_month = models.IntegerField(blank=True, null=True, choices=choices.MONTHS)
+    initial_year = models.CharField(max_length=4, blank=True, null=True)
+    initial_month = models.CharField(max_length=2, blank=True, null=True, choices=MONTHS)
+    final_year = models.CharField(max_length=4, blank=True, null=True)
+    final_month = models.CharField(max_length=2, blank=True, null=True, choices=MONTHS)
 
     panels = [
         AutocompletePanel("journal"),

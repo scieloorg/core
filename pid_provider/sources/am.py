@@ -1,8 +1,5 @@
 import logging
 
-from pid_provider.controller import PidProvider
-from pid_provider.models import PidRequest, PidProviderXML
-
 
 class AMHarvesting:
     # https://articlemeta.scielo.org/api/v1/article/identifiers/?limit=2&collection=mex
@@ -105,47 +102,3 @@ class AMHarvesting:
             # força a interrumpção
             if self._stop and self._stop <= self._offset:
                 break
-
-
-def request_pid_v3(user, uri, collection_acron, pid_v2, processing_date, force_update):
-    if not force_update:
-        # skip update
-        try:
-            return PidProviderXML.objects.get(v2=pid_v2).data
-        except PidProviderXML.DoesNotExist:
-            pass
-
-    try:
-        logging.info(f"Request pid for {uri}")
-        pp = PidProvider()
-        response = pp.provide_pid_for_xml_uri(
-            uri,
-            pid_v2 + ".xml",
-            user,
-            force_update=force_update,
-            origin_date=processing_date,
-            is_published=True,
-        )
-    except Exception as e:
-        return PidRequest.register_failure(
-            e=e,
-            user=user,
-            origin=uri,
-        )
-
-    try:
-        pid_v3 = response["v3"]
-    except KeyError:
-        pid_v3 = None
-
-    if not pid_v3:
-        result_type = response.get("error_type") or response.get("result_type")
-        result_msg = response.get("error_msg") or response.get("result_msg")
-
-        # Guardar somente se houve problema
-        pid_request = PidRequest.create_or_update(
-            user=user,
-            origin=uri,
-            result_type=result_type,
-            result_msg=result_msg,
-        )

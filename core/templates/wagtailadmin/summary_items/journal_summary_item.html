@@ -1,0 +1,12 @@
+{% load i18n wagtailadmin_tags %}
+
+<li>
+    {% icon name="folder-inverse" %}
+    <a href="{% url 'journal_journal_modeladmin_index' %}">
+        {% blocktrans trimmed count counter=total_journal with total_journal|intcomma as total %}
+            <span>{{ total_journal }}</span> Journal <span class="visuallyhidden">created in {{ site_name }}</span>
+        {% plural %}
+            <span>{{ total_journal }}</span> Journals <span class="visuallyhidden">created in {{ site_name }}</span>
+        {% endblocktrans %}
+    </a>
+</li>

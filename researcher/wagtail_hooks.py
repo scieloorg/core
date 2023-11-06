@@ -25,7 +25,7 @@ class ResearcherAdmin(ModelAdmin):
     create_view_class = ResearcherCreateView
     menu_label = _("Researcher")
     menu_icon = "folder"
-    menu_order = 1000
+    menu_order = 9
     add_to_settings_menu = False
     exclude_from_explorer = False
     search_fields = (
@@ -71,7 +71,7 @@ class EditorialBoardMemberAdminGroup(ModelAdminGroup):
     )
 
 
-modeladmin_register(EditorialBoardMemberAdminGroup)
+# modeladmin_register(EditorialBoardMemberAdminGroup)
 
 
 @hooks.register("register_admin_urls")

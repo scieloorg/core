@@ -1,13 +1,17 @@
 def extract_issn_print_electronic(issn_print_or_electronic):
+    """
+    issn_print_or_electronic:
+        [{'t': 'ONLIN', '_': '1677-9487'}], [{'t': 'PRINT', '_': '0034-7299'}]
+    """
     issn_print = None
     issn_electronic = None
 
     if issn_print_or_electronic:
         for issn in issn_print_or_electronic:
-            if issn["t"] == "PRINT":
-                issn_print = issn["_"]
-            elif issn["t"] == "ONLIN":
-                issn_electronic = issn["_"]
+            if issn.get("t") == "PRINT":
+                issn_print = issn.get("_").strip()
+            elif issn.get("t") == "ONLIN":
+                issn_electronic = issn.get("_").strip()
     return issn_print, issn_electronic
 
 
@@ -37,3 +41,44 @@ def extract_value_mission(mission):
     """
 
     return [{"lang": x.get("l"), "mission": x.get("_")} for x in mission]
+
+
+def parse_date_string(date):
+    """
+    Exemplos de date:
+        '20121200', '2002', '20130000' e None
+    """
+    year = None
+    month = None
+    if date:
+        if date.isdigit() and len(date) == 4:
+            year = date
+            month = None
+        elif date.isdigit and len(date) == 8:
+            year = date[0:4]
+            month = date[4:6] if date[4:6] != "00" else None
+    return year, month
+
+
+def extract_value_from_journal_history(value):
+    """
+    Ex value:
+        [
+            {'c': '20120600', 'b': 'C', 'a': '20080000', 'd': 'S', '_': '', 'e': 'suspended-by-committee'}, 
+            {'c': '20030000', 'b': 'C', 'a': '19991216', 'd': 'S', '_': '', 'e': 'suspended-by-committee'}
+        ]
+    """
+    data = []
+    if value:
+        for v in value:
+            initial_year, initial_month = parse_date_string(value[0].get("a"))
+            final_year, final_month = parse_date_string(value[0].get("c"))
+            type = v.get("e")
+            data.append({
+                "initial_year": initial_year,
+                "initial_month": initial_month,
+                "final_year": final_year,
+                "final_month": final_month,
+                "occurrence_type": type,
+            })
+        return data

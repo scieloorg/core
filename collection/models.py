@@ -1,10 +1,14 @@
+import json
+import logging
+
+import requests
 from django.db import models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
-from core.models import CommonControlField, TextWithLang
+from core.models import CommonControlField, TextWithLang, Language
 
 from . import choices
 
@@ -29,6 +33,18 @@ class CollectionName(TextWithLang):
 
     def __str__(self):
         return "%s (%s)" % (self.text, self.language)
+
+    @classmethod
+    def get_or_create(cls, lang, name, user=None):
+        try:
+            obj = cls.objects.get(language=lang, text=name)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.language = lang
+            obj.text = name
+            obj.creator = user
+            obj.save()
+        return obj
 
 
 class Collection(CommonControlField):
@@ -142,3 +158,57 @@ class Collection(CommonControlField):
         return "%s" % self.main_name or ""
 
     base_form_class = CoreAdminModelForm
+
+    @classmethod
+    def load(cls, user, collections_data=None):
+        if not collections_data:
+            response = requests.get(
+                "https://articlemeta.scielo.org/api/v1/collection/identifiers/"
+            )
+            collections_data = json.loads(response.text)
+
+        for collection_data in collections_data:
+            logging.info(collection_data)
+            cls.create_or_update(
+                user,
+                main_name=collection_data.get("original_name"),
+                acron2=collection_data.get("acron2"),
+                acron3=collection_data.get("acron"),
+                code=collection_data.get("code"),
+                domain=collection_data.get("domain"),
+                names=collection_data.get("name"),
+                status=collection_data.get("status"),
+                has_analytics=collection_data.get("has_analytics"),
+                collection_type=collection_data.get("type"),
+                is_active=collection_data.get("is_active"),
+            )
+
+    @classmethod
+    def create_or_update(
+        cls, user, main_name, acron2, acron3, code, domain,
+        names, status, has_analytics, collection_type, is_active,
+    ):
+        try:
+            obj = cls.objects.get(acron3=acron3)
+            obj.updated_by = user
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.acron3 = acron3
+            obj.creator = user
+
+        obj.main_name = main_name
+        obj.acron2 = acron2
+        obj.code = code
+        obj.domain = domain
+        obj.status = status
+        obj.has_analytics = has_analytics
+        obj.collection_type = collection_type
+        obj.is_active = is_active
+        obj.save()
+        for language in names:
+            lang = Language.get_or_create(code2=language, creator=user)
+            obj.name.add(
+                CollectionName.get_or_create(lang, names.get(language), user))
+        obj.save()
+        logging.info(acron3)
+        return obj

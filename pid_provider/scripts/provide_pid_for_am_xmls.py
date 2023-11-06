@@ -1,16 +1,15 @@
+import json
+
 from pid_provider import tasks
 
 
-def run(
-    username, collection_acron, from_date=None, limit=None, stop=None, force_update=None
-):
-    return tasks.harvest_pids.apply_async(
+def run(username, collections, limit=None, stop=None, force_update=None):
+    return tasks.provide_pid_for_am_xmls.apply_async(
         kwargs={
             "username": username,
-            "collection_acron": collection_acron,
-            "from_date": from_date or "1900-01-01",
-            "limit": int(limit or 1000),
+            "collections": json.loads(collections),
             "force_update": force_update or False,
+            "limit": int(limit or 1000),
             "stop": int(stop or 1000),
         }
     )

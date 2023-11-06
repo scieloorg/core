@@ -108,7 +108,7 @@ class SciELOJournalAdmin(ModelAdmin):
 class JournalAdminGroup(ModelAdminGroup):
     menu_label = _("Journals")
     menu_icon = "folder-open-inverse"  # change as required
-    menu_order = 100  # will put in 3rd place (000 being 1st, 100 2nd)
+    menu_order = 2
     items = (JournalAdmin, OfficialJournalAdmin, SciELOJournalAdmin)
 
 
@@ -152,15 +152,15 @@ class IndexedAtAdminGroup(ModelAdminGroup):
     )
 
 
-modeladmin_register(IndexedAtAdminGroup)
+# modeladmin_register(IndexedAtAdminGroup)
 
 
 @hooks.register("register_admin_urls")
 def register_calendar_url():
     return [
         path(
-            "controlled_lists/indexedatfile/validate", 
-            validate, 
+            "controlled_lists/indexedatfile/validate",
+            validate,
             name="validate",
         ),
         path(

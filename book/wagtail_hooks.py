@@ -44,7 +44,7 @@ class BookAdmin(ModelAdmin):
 class BookAdminGroup(ModelAdminGroup):
     menu_label = _("Books")
     menu_icon = "folder-open-inverse"  # change as required
-    menu_order = 900  # will put in 3rd place (000 being 1st, 100 2nd)
+    menu_order = 5  # will put in 3rd place (000 being 1st, 100 2nd)
     items = (BookAdmin,)
 
 

@@ -74,7 +74,7 @@ WAGTAIL = [
     "wagtail.images",
     "wagtail.search",
     "wagtail.admin",
-    "wagtail.core",
+    "wagtail",
     "wagtail.locales",
     "wagtail.api.v2",
     "wagtail.contrib.settings",
@@ -124,7 +124,6 @@ LOCAL_APPS = [
     "institution",
     "issue",
     "journal",
-    "journal_and_collection",
     "location",
     "pid_provider",
     "processing_errors",
@@ -135,6 +134,7 @@ LOCAL_APPS = [
     "xmlsps",
     "search",
     "reference",
+    "tracker",
 ]
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -194,6 +194,7 @@ MIDDLEWARE = [
     "django.middleware.common.BrokenLinkEmailsMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 # STATIC
