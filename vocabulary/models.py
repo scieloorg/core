@@ -51,14 +51,25 @@ class Vocabulary(CommonControlField):
         return d
 
     @classmethod
+    def load(cls, user, items=None):
+        if cls.objects.count() == 0:
+            items = items or [
+                {"name": "Health Science Descriptors", "acronym": "decs"},
+                {"name": "Not defined", "acronym": "nd"},
+            ]
+            for item in items:
+                cls.get_or_create(user, **item)
+
+    @classmethod
+    def get(cls, acronym=None):
+        if not acronym:
+            raise ValueError("Vocabulary.get_or_create requires acronym")
+        return cls.objects.get(acronym=acronym)
+
+    @classmethod
     def get_or_create(cls, user, name=None, acronym=None):
         try:
-            if name and acronym:
-                return cls.objects.get(name=name, acronym=acronym)
-            if name:
-                return cls.objects.get(name=name)
-            if acronym:
-                return cls.objects.get(acronym=acronym)
+            return cls.get(acronym=acronym)
         except cls.DoesNotExist:
             vocabulary = cls()
             vocabulary.name = name
@@ -66,6 +77,8 @@ class Vocabulary(CommonControlField):
             vocabulary.creator = user
             vocabulary.save()
             return vocabulary
+
+
     base_form_class = CoreAdminModelForm
 
 
