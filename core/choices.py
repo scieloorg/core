@@ -188,6 +188,13 @@ LANGUAGE = [
     ("zu", "Zulu"),
 ]
 
+ROLE = [
+    ("Editor-Chefe", _("Editor-Chefe")),
+    ("Editor(es) Executivo", _("Editor(es) Executivo")),
+    ("Editor(es) Associados ou de Seção", _("Editor(es) Associados ou de Seção")),
+    ("Equipe Técnica", _("Equipe Técnica")),
+]
+
 MONTHS = [
     ("01", _("January")),
     ("02", _("February")),
