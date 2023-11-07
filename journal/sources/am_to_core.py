@@ -11,6 +11,7 @@ from journal.models import (
     CopyrightHolderHistory,
     IndexedAt,
     Journal,
+    JournalEmail,
     JournalHistory,
     JournalParallelTitles,
     Mission,
@@ -171,13 +172,21 @@ def update_panel_institution(
     user,
 ):
     location = create_or_update_location(
+        journal,
         address,
         publisher_country,
         publisher_state,
         publisher_city,
         user,
     )
-    url = extract_value(electronic_address)
+    electronic_address = extract_value(electronic_address)
+    for item in electronic_address.replace(";", ',').split(","):
+        try:
+            item = item.strip()
+            JournalEmail.objects.get(journal=journal, email=item)
+        except JournalEmail.DoesNotExist:
+            JournalEmail.objects.create(journal=journal, email=item)
+
     publisher = extract_value(publisher)
 
     if isinstance(publisher, str):
@@ -186,11 +195,12 @@ def update_panel_institution(
     if publisher:
         for p in publisher:
             if p:
+                journal.contact_name = p
                 publisher = Publisher.create_or_update(
                     inst_name=p,
                     user=user,
                     location=location,
-                    url=url,
+                    url=None,
                     inst_acronym=None,
                     level_1=None,
                     level_2=None,
@@ -208,7 +218,7 @@ def update_panel_institution(
                     inst_name=p,
                     user=user,
                     location=location,
-                    url=url,
+                    url=None,
                     inst_acronym=None,
                     level_1=None,
                     level_2=None,
@@ -236,7 +246,7 @@ def update_panel_website(
     license_of_use,
     user,
 ):
-    journal.url_of_journal = extract_value(url_of_the_journal)
+    journal.journal_url = extract_value(url_of_the_journal)
     journal.collection_main_url = extract_value(url_of_the_main_collection)
     journal.submission_online_url = extract_value(url_of_submission_online)
     license_type = extract_value(license_of_use)
@@ -576,6 +586,7 @@ def get_or_create_indexed_at(journal, indexed_at, user):
 
 
 def create_or_update_location(
+    journal,
     address,
     publisher_country,
     publisher_state,
@@ -634,12 +645,10 @@ def create_or_update_location(
         if isinstance(address, str):
             address = [address]
         address = "\n".join(address)
-    address = Address.get_or_create(
-        name=address,
-        user=user,
-    )
-    address.location = location
-    address.save()
+
+    journal.contact_location = location
+    journal.contact_address = address
+
     return location
 
 
