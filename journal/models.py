@@ -42,6 +42,7 @@ from journal.exceptions import (
     SubjectCreationOrUpdateError,
     WosdbCreationOrUpdateError,
 )
+from location.models import Location
 from reference.models import JournalTitle
 from vocabulary.models import Vocabulary
 
@@ -305,6 +306,12 @@ class Journal(CommonControlField, ClusterableModel):
         _("Submission online URL"), null=True, blank=True
     )
 
+    contact_name = models.TextField(null=True, blank=True)
+    contact_address = models.TextField(_("Address"), null=True, blank=True)
+    contact_location = models.ForeignKey(
+        Location, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
     open_access = models.CharField(
         _("Open Access status"),
         max_length=10,
@@ -432,7 +439,7 @@ class Journal(CommonControlField, ClusterableModel):
         blank=True,
     )
     medline_short_title = models.TextField(
-        _("Medline Code"),
+        _("Medline Title"),
         null=True,
         blank=True,
     )  # (no xml é abbrev-journal-title do tipo nlm-title)
@@ -555,6 +562,10 @@ class Journal(CommonControlField, ClusterableModel):
     ]
 
     panels_website = [
+        FieldPanel("contact_name"),
+        FieldPanel("contact_address"),
+        FieldPanel("contact_location"),
+        InlinePanel("journal_email", label=_("Contact e-mail")),
         FieldPanel("logo", heading=_("Logo")),
         FieldPanel("journal_url"),
         FieldPanel("submission_online_url"),
@@ -709,6 +720,13 @@ class Journal(CommonControlField, ClusterableModel):
         return "%s" % self.official or ""
 
     base_form_class = CoreAdminModelForm
+
+
+class JournalEmail(Orderable):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="journal_email", null=True
+    )
+    email = models.EmailField()
 
 
 class Mission(Orderable, RichTextWithLang, CommonControlField):
@@ -1255,7 +1273,8 @@ class Standard(CommonControlField):
             obj.save()
         except Exception as e:
             raise StandardCreationOrUpdateError(
-                f"Unable to create or update Standard {code} {value}. Exception: {type(e)} {e}")
+                f"Unable to create or update Standard {code} {value}. Exception: {type(e)} {e}"
+            )
         return obj
 
 
