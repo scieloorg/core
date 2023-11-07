@@ -24,4 +24,6 @@ def task_start(
 ):
     user = _get_user(user_id, username)
     Language.load(user)
+    Country.load(user)
     Collection.load(user)
+
