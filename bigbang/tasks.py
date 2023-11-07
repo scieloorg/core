@@ -3,6 +3,8 @@ import logging
 from django.contrib.auth import get_user_model
 from config import celery_app
 from collection.models import Collection
+from core.models import Language
+
 
 User = get_user_model()
 
@@ -21,4 +23,5 @@ def task_start(
     username=None,
 ):
     user = _get_user(user_id, username)
+    Language.load(user)
     Collection.load(user)
