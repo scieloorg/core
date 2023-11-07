@@ -1,40 +1,41 @@
 import re
+from datetime import datetime
 
 from django.db.models import Q
+
 from core.models import Language, License
-from institution.models import Publisher, Owner, Sponsor, CopyrightHolder
-from vocabulary.models import Vocabulary
-from reference.models import JournalTitle
-from .funcs_extract_am import (
-    extract_issn_print_electronic,
-    extract_value,
-    extract_value_mission,
-    parse_date_string,
-    extract_value_from_journal_history,
-)
+from institution.models import CopyrightHolder, Owner, Publisher, Sponsor
 from journal.models import (
-    Collection,
-    OfficialJournal,
-    Journal,
-    SciELOJournal,
-    Mission,
-    PublisherHistory,
-    OwnerHistory,
     Annotation,
+    Collection,
+    CopyrightHolderHistory,
+    IndexedAt,
+    Journal,
+    JournalHistory,
+    JournalParallelTitles,
+    Mission,
+    OfficialJournal,
+    OwnerHistory,
+    PublisherHistory,
+    SciELOJournal,
     SponsorHistory,
-    SubjectDescriptor,
-    Subject,
     Standard,
+    Subject,
+    SubjectDescriptor,
     WebOfKnowledge,
     WebOfKnowledgeSubjectCategory,
-    IndexedAt,
-    JournalParallelTitles,
-    JournalHistory,
-    CopyrightHolderHistory,
 )
-from location.models import City, Location, State, Country, Address
+from location.models import Address, City, Country, Location, State
+from reference.models import JournalTitle
+from vocabulary.models import Vocabulary
 
-from datetime import datetime
+from .am_data_extraction import (
+    extract_issn_print_electronic,
+    extract_value,
+    extract_value_from_journal_history,
+    extract_value_mission,
+    parse_date_string,
+)
 
 
 def create_or_update_journal(
@@ -72,7 +73,9 @@ def create_or_update_scielo_journal(
         journal=journal,
         code_status=code_status,
     )
-    get_or_create_journal_history(scielo_journal=scielo_journal, journal_history=journal_history)
+    get_or_create_journal_history(
+        scielo_journal=scielo_journal, journal_history=journal_history
+    )
     return scielo_journal
 
 
@@ -219,13 +222,11 @@ def update_panel_institution(
                 )
                 owner_history.journal = journal
                 owner_history.save()
-                
-    
+
     get_or_create_copyright_holder(
-        journal=journal, 
-        copyright_holder_name=copyright_holder, 
-        user=user
+        journal=journal, copyright_holder_name=copyright_holder, user=user
     )
+
 
 def update_panel_website(
     journal,
@@ -370,7 +371,7 @@ def create_or_update_official_journal(
     year, month = parse_date_string(date=terminate_date)
     official_journal.terminate_year = year
     official_journal.terminate_month = month
-    
+
     official_journal.final_number = extract_value(final_number)
     official_journal.final_volume = extract_value(final_volume)
     official_journal.save()
