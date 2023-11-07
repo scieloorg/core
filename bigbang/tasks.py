@@ -4,6 +4,8 @@ from django.contrib.auth import get_user_model
 from config import celery_app
 from collection.models import Collection
 from core.models import Language
+from location.models import Country
+from journal.models import Standard
 
 
 User = get_user_model()
@@ -26,4 +28,4 @@ def task_start(
     Language.load(user)
     Country.load(user)
     Collection.load(user)
-
+    Standard.load(user)
