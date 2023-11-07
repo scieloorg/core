@@ -118,6 +118,12 @@ class Language(CommonControlField):
         return self.code2 or "idioma ausente / não informado"
 
     @classmethod
+    def load(cls, user):
+        if cls.objects.count() == 0:
+            for k, v in choices.LANGUAGE:
+                cls.get_or_create(name=v, code2=k, creator=user)
+
+    @classmethod
     def get_or_create(cls, name=None, code2=None, creator=None):
         code2 = language_iso(code2)
         if code2:
