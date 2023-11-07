@@ -1219,6 +1219,13 @@ class Standard(CommonControlField):
         return f"{self.code} - {self.value}"
 
     @classmethod
+    def load(cls, user, items):
+        if cls.objects.count() == 0:
+            for item in choices.STANDARD:
+                code, value = item
+                cls.create_or_update(user, code=code, value=value)
+
+    @classmethod
     def get(cls, code):
         if not code:
             raise ValueError("Standard.get requires code parameter")
@@ -1227,21 +1234,28 @@ class Standard(CommonControlField):
     @classmethod
     def create_or_update(
         cls,
-        code,
         user,
+        code,
+        value=None,
     ):
         try:
             obj = cls.get(code=code)
+            obj.updated_by = user
         except cls.DoesNotExist:
             obj = cls()
             obj.code = code
             obj.creator = user
-        except StandardCreationOrUpdateError as e:
-            raise StandardCreationOrUpdateError(code=code, message=e)
 
-        obj.value = dict(choices.STANDARD).get(code) or obj.value
-        obj.updated_by = user
-        obj.save()
+        try:
+            obj.value = value or dict(choices.STANDARD).get(code) or obj.value
+        except Exception as e:
+            pass
+
+        try:
+            obj.save()
+        except Exception as e:
+            raise StandardCreationOrUpdateError(
+                f"Unable to create or update Standard {code} {value}. Exception: {type(e)} {e}")
         return obj
 
 
