@@ -1,12 +1,19 @@
+import csv
 import os
+import logging
 
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext as _
-from wagtail.admin.panels import FieldPanel
+from modelcluster.fields import ParentalKey
+from modelcluster.models import ClusterableModel
+from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
+from wagtail.fields import RichTextField
+from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
-from core.models import CommonControlField
+from core.models import CommonControlField, Language, TextWithLang
 
 
 class City(CommonControlField):
@@ -196,7 +203,48 @@ class State(CommonControlField):
     base_form_class = CoreAdminModelForm
 
 
-class Country(CommonControlField):
+class CountryName(TextWithLang, Orderable):
+    country = ParentalKey("Country", on_delete=models.SET_NULL, blank=True, null=True, related_name="country_name")
+
+    autocomplete_search_filter = "text"
+
+    def autocomplete_label(self):
+        return str(self)
+
+    @property
+    def data(self):
+        d = {
+            "country_name__text": self.text,
+            "country_name__language": self.language,
+        }
+
+        return d
+
+    def __unicode__(self):
+        return "%s (%s)" % (self.text, self.language)
+
+    def __str__(self):
+        return "%s (%s)" % (self.text, self.language)
+
+    @classmethod
+    def get(cls, country, language, text):
+        return cls.objects.get(country=country, language=language, text=text)
+
+    @classmethod
+    def get_or_create(cls, country, language, text, user=None):
+        try:
+            obj = cls.get(country=country, language=language, text=text)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.country = country
+            obj.language = language
+            obj.text = text
+            obj.creator = user
+            obj.save()
+        return obj
+
+
+class Country(CommonControlField, ClusterableModel):
     """
     Represent the list of Countries
 
@@ -219,9 +267,10 @@ class Country(CommonControlField):
         return str(self)
     
     panels = [
-        FieldPanel("name"),
         FieldPanel("acronym"),
         FieldPanel("acron3"),
+        FieldPanel("name"),
+        InlinePanel("country_name", label=_("Country names")),
     ]
     
     class Meta:
@@ -247,37 +296,56 @@ class Country(CommonControlField):
         return "%s" % self.name
 
     @classmethod
+    def load(cls, user):
+        # País (pt);País (en);Capital;Código ISO (3 letras);Código ISO (2 letras)
+        if cls.objects.count() == 0:
+            fieldnames = ["name_pt", "name_en", "Capital", "acron3", "acron2"]
+            with open("./location/fixtures/country.csv", newline='') as csvfile:
+                reader = csv.DictReader(csvfile, fieldnames=fieldnames, delimiter=";")
+                for row in reader:
+                    if row["acron2"] == "acron2":
+                        continue
+                    try:
+                        cls.create_or_update(
+                            user, name=None, acronym=row["acron2"], acron3=row["acron3"],
+                            country_names={"pt": row["name_pt"], "en": row["name_en"]}
+                        )
+                    except Exception as e:
+                        print(f"{e} {row}")
+                        raise
+
+    @classmethod
     def get(
         cls,
         name,
         acronym,
         acron3,
     ):
-        filters = {}
-        if name:
-            filters['name'] = name
-        if acronym:
-            filters['acronym'] = acronym
-        if acron3:
-            filters['acron3'] = acron3
-
-        if filters:
-            return cls.objects.get(**filters)
+        if any([name, acronym, acron3]):
+            return cls.objects.get(Q(name=name) | Q(acronym=acronym) | Q(acron3=acron3))
+        raise ValueError("Country.get requires parameters")
 
     @classmethod
-    def create_or_update(cls, user, name=None, acronym=None, acron3=None):
+    def create_or_update(cls, user, name=None, acronym=None, acron3=None, country_names=None):
         try:
-            region = cls.get(name, acronym, acron3)
-            region.updated_by = user
+            obj = cls.get(name, acronym, acron3)
+            obj.updated_by = user
         except cls.DoesNotExist:
-            region = cls()
-            region.creator = user
+            obj = cls()
+            obj.creator = user
 
-        region.name = name or region.name
-        region.acronym = acronym or region.acronym
-        region.acron3 = acron3 or region.acron3
-        region.save()
-        return region
+        obj.name = name or obj.name
+        obj.acronym = acronym or obj.acronym
+        obj.acron3 = acron3 or obj.acron3
+        obj.save()
+
+        logging.info(country_names)
+        logging.info(type(country_names))
+        for language, text in (country_names or {}).items():
+            logging.info(f"{language} {text}")
+            language = Language.get_or_create(code2=language)
+            CountryName.get_or_create(country=obj, language=language, text=text, user=user)
+        return obj
         
 
     base_form_class = CoreAdminModelForm
