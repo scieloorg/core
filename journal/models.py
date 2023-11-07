@@ -1237,7 +1237,7 @@ class Standard(CommonControlField):
         return f"{self.code} - {self.value}"
 
     @classmethod
-    def load(cls, user, items):
+    def load(cls, user):
         if cls.objects.count() == 0:
             for item in choices.STANDARD:
                 code, value = item
