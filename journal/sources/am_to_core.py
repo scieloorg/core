@@ -508,11 +508,7 @@ def get_or_create_vocabulary(vocabulary, journal, user):
 def create_or_update_standard(standard, journal, user):
     if standard:
         standard = extract_value(standard)
-        obj = Standard.create_or_update(
-            code=standard,
-            user=user,
-        )
-        journal.standard = obj
+        journal.standard = Standard.get(standard)
 
 
 def create_or_update_wos_db(journal, wos_scie, wos_ssci, wos_ahci, user):
