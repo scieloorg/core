@@ -1,7 +1,6 @@
 import json
 import logging
 
-import requests
 from django.db import models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
@@ -9,7 +8,7 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField, TextWithLang, Language
-
+from core.utils.utils import fetch_data
 from . import choices
 
 
@@ -162,10 +161,11 @@ class Collection(CommonControlField):
     @classmethod
     def load(cls, user, collections_data=None):
         if not collections_data:
-            response = requests.get(
-                "https://articlemeta.scielo.org/api/v1/collection/identifiers/"
+            collections_data = fetch_data(
+                "https://articlemeta.scielo.org/api/v1/collection/identifiers/",
+                json=True,
+                verify=False,
             )
-            collections_data = json.loads(response.text)
 
         for collection_data in collections_data:
             logging.info(collection_data)

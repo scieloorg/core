@@ -32,8 +32,6 @@ def load_journal_from_classic_website(self, username=None, user_id=None):
     classic_website.load(user)
 
 
-
-
 @celery_app.task(bind=True)
 def load_journal_from_article_meta(self, username=None, user_id=None, limit=None, collection_acron=None):
     try:

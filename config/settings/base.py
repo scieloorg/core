@@ -117,6 +117,7 @@ LOCAL_APPS = [
     # Your stuff: custom apps go here
     "altmetric",
     "article",
+    "bigbang",
     "book",
     "collection",
     "core",
