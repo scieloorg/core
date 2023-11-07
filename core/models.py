@@ -3,9 +3,9 @@ from django.db import models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
 from wagtail.fields import RichTextField
-from wagtailautocomplete.edit_handlers import AutocompletePanel
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from . import choices
 from .utils.utils import language_iso
@@ -101,12 +101,12 @@ class Language(CommonControlField):
 
     name = models.TextField(_("Language Name"), blank=True, null=True)
     code2 = models.TextField(_("Language code 2"), blank=True, null=True)
-    
+
     autocomplete_search_field = "code2"
-    
+
     def autocomplete_label(self):
         return str(self)
-    
+
     class Meta:
         verbose_name = _("Language")
         verbose_name_plural = _("Languages")
@@ -116,6 +116,12 @@ class Language(CommonControlField):
 
     def __str__(self):
         return self.code2 or "idioma ausente / não informado"
+
+    @classmethod
+    def load(cls, user):
+        if cls.objects.count() == 0:
+            for k, v in choices.LANGUAGE:
+                cls.get_or_create(name=v, code2=k, creator=user)
 
     @classmethod
     def get_or_create(cls, name=None, code2=None, creator=None):
@@ -151,9 +157,7 @@ class TextWithLang(models.Model):
         blank=True,
     )
 
-    panels = [
-        FieldPanel("text"), 
-        AutocompletePanel("language")]
+    panels = [FieldPanel("text"), AutocompletePanel("language")]
 
     class Meta:
         abstract = True
@@ -211,8 +215,8 @@ class License(CommonControlField):
 
     def autocomplete_label(self):
         return str(self)
-    
-    panels =[
+
+    panels = [
         FieldPanel("url"),
         FieldPanel("license_p"),
         FieldPanel("license_type"),
@@ -225,7 +229,7 @@ class License(CommonControlField):
         url,
         language,
         license_type,
-        ):
+    ):
         if url:
             return cls.objects.get(url=url, language=language)
         if license_type:
@@ -233,7 +237,14 @@ class License(CommonControlField):
         raise ValueError("License.get requires url or license_type parameters")
 
     @classmethod
-    def create_or_update(cls, user, url=None, license_p=None, license_type=None, language=None,):
+    def create_or_update(
+        cls,
+        user,
+        url=None,
+        license_p=None,
+        license_type=None,
+        language=None,
+    ):
         try:
             license = cls.get(
                 url=url,

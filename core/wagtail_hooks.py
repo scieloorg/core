@@ -3,11 +3,12 @@
 from django.templatetags.static import static
 from django.utils.html import format_html
 from wagtail import hooks
-from wagtail.admin.site_summary import SummaryItem
-from journal.models import Journal
-from collection.models import Collection
-from article.models import Article
 from wagtail.admin.navigation import get_site_for_user
+from wagtail.admin.site_summary import SummaryItem
+
+from article.models import Article
+from collection.models import Collection
+from journal.models import Journal
 
 
 @hooks.register("insert_global_admin_css", order=100)
@@ -33,7 +34,7 @@ def remove_all_summary_items(request, items):
 
 class CollectionSummaryItem(SummaryItem):
     order = 100
-    template_name = 'wagtailadmin/summary_items/collection_summary_item.html'
+    template_name = "wagtailadmin/summary_items/collection_summary_item.html"
 
     def get_context_data(self, parent_context):
         site_details = get_site_for_user(self.request.user)
@@ -49,7 +50,7 @@ class CollectionSummaryItem(SummaryItem):
 
 class JournalSummaryItem(SummaryItem):
     order = 200
-    template_name = 'wagtailadmin/summary_items/journal_summary_item.html'
+    template_name = "wagtailadmin/summary_items/journal_summary_item.html"
 
     def get_context_data(self, parent_context):
         site_details = get_site_for_user(self.request.user)
@@ -65,7 +66,7 @@ class JournalSummaryItem(SummaryItem):
 
 class ArticleSummaryItem(SummaryItem):
     order = 300
-    template_name = 'wagtailadmin/summary_items/article_summary_item.html'
+    template_name = "wagtailadmin/summary_items/article_summary_item.html"
 
     def get_context_data(self, parent_context):
         site_details = get_site_for_user(self.request.user)
@@ -81,4 +82,3 @@ def add_items_summary_items(request, items):
     items.append(CollectionSummaryItem(request))
     items.append(JournalSummaryItem(request))
     items.append(ArticleSummaryItem(request))
-
