@@ -23,7 +23,6 @@ from core.models import (
 )
 from institution.models import (
     CopyrightHolderHistoryItem,
-    EditorialManagerHistoryItem,
     OwnerHistoryItem,
     PublisherHistoryItem,
     SponsorHistoryItem,
@@ -547,11 +546,6 @@ class Journal(CommonControlField, ClusterableModel):
 
     panels_institutions = [
         InlinePanel("owner_history", label=_("Owner"), classname="collapsed"),
-        InlinePanel(
-            "editorialmanager_history",
-            label=_("Editorial Manager"),
-            classname="collapsed",
-        ),
         InlinePanel("publisher_history", label=_("Publisher"), classname="collapsed"),
         InlinePanel("sponsor_history", label=_("Sponsor"), classname="collapsed"),
         InlinePanel(
@@ -799,15 +793,6 @@ class Mission(Orderable, RichTextWithLang, CommonControlField):
 class OwnerHistory(Orderable, OwnerHistoryItem):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="owner_history", null=True
-    )
-
-
-class EditorialManagerHistory(Orderable, EditorialManagerHistoryItem):
-    journal = ParentalKey(
-        Journal,
-        on_delete=models.SET_NULL,
-        related_name="editorialmanager_history",
-        null=True,
     )
 
 
