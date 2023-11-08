@@ -29,7 +29,7 @@ def load_articles(self, user_id=None):
     from_date = Article.last_created_date()
 
     for item in PidProviderXML.public_items(from_date):
-        load_article.apply_async(args=(user_id,), kwargs={"xml": item.xml})
+        load_article.apply_async(args=(user_id,), kwargs={"xml": item.current_version.xml})
 
 
 @celery_app.task(bind=True, name=_("load_preprints"))
