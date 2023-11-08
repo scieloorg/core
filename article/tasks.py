@@ -9,6 +9,7 @@ from article.sources.preprint import harvest_preprints
 from config import celery_app
 from pid_provider.models import PidProviderXML
 from tracker.models import UnexpectedEvent
+
 from . import controller
 
 User = get_user_model()
