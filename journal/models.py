@@ -517,17 +517,17 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel("mission", label=_("Mission"), classname="collapsed"),
         InlinePanel("history", label=_("Brief History"), classname="collapsed"),
         InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
-        FieldPanel("subject_descriptor"),
+        AutocompletePanel("subject_descriptor"),
         FieldPanel("subject"),
         FieldPanel("wos_db"),
-        FieldPanel("wos_area"),
+        AutocompletePanel("wos_area"),
     ]
 
     panels_formal_information = [
         FieldPanel("frequency"),
         FieldPanel("publishing_model"),
-        FieldPanel("text_language"),
-        FieldPanel("abstract_language"),
+        AutocompletePanel("text_language"),
+        AutocompletePanel("abstract_language"),
         FieldPanel("standard"),
         AutocompletePanel("vocabulary"),
         FieldPanel("alphabet"),
@@ -542,7 +542,7 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("secs_code"),
         FieldPanel("medline_code"),
         FieldPanel("medline_short_title"),
-        FieldPanel("indexed_at"),
+        AutocompletePanel("indexed_at"),
     ]
 
     panels_institutions = [
@@ -1150,8 +1150,16 @@ class JournalParallelTitles(TextWithLang):
 class SubjectDescriptor(CommonControlField):
     value = models.CharField(max_length=255, null=True, blank=True)
 
+    autocomplete_search_field = "value"
+
+    def autocomplete_label(self):
+        return str(self)
+
     def __str__(self):
         return f"{self.value}"
+    
+    class Meta:
+        ordering = ['value']
 
 
 class Subject(CommonControlField):
@@ -1225,8 +1233,16 @@ class WebOfKnowledge(CommonControlField):
 class WebOfKnowledgeSubjectCategory(CommonControlField):
     value = models.CharField(max_length=100, null=True, blank=True)
 
+    autocomplete_search_field = "value"
+
+    def autocomplete_label(self):
+        return str(self)
+
     def __str__(self):
         return f"{self.value}"
+
+    class Meta:
+        ordering = ['value']
 
 
 class Standard(CommonControlField):
@@ -1302,6 +1318,9 @@ class IndexedAt(CommonControlField):
 
     def __str__(self):
         return f"{self.acronym} - {self.name}"
+
+    class Meta:
+        ordering = ['name']
 
     @classmethod
     def get(
