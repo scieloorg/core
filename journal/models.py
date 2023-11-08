@@ -69,14 +69,10 @@ class OfficialJournal(CommonControlField):
         blank=True,
         related_name="new_title_journal",
     )
-    old_title = models.ForeignKey(
-        "self",
-        verbose_name=_("Old Title"),
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="old_title_journal",
+    old_title = models.ManyToManyField(
+        "self", null=True, blank=True
     )
+    
     foundation_year = models.CharField(
         _("Foundation Year"), max_length=4, null=True, blank=True
     )
@@ -114,7 +110,7 @@ class OfficialJournal(CommonControlField):
         FieldPanel("title"),
         FieldPanel("iso_short_title"),
         AutocompletePanel("parallel_titles"),
-        FieldPanel("old_title"),
+        AutocompletePanel("old_title"),
         FieldPanel("new_title"),
     ]
 
