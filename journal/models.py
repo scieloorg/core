@@ -170,6 +170,7 @@ class OfficialJournal(CommonControlField):
                 ]
             ),
         ]
+        ordering = ['title']
 
     def __unicode__(self):
         return "%s - %s" % (self.issnl, self.title) or ""
