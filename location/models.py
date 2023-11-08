@@ -53,6 +53,15 @@ class City(CommonControlField):
         return "%s" % self.name
 
     @classmethod
+    def load(cls, user, city_data=None):
+        if cls.objects.exists():
+            city_data = "./location/fixtures/cities.csv"
+            with open(city_data, "r") as fp:
+                for line in fp.readlines():
+                    name = line.strip()
+                    cls.get_or_create(name=name, user=user)
+
+    @classmethod
     def get_or_create(cls, user, name):
         if name:
             try:
@@ -176,6 +185,19 @@ class State(CommonControlField):
 
     def __str__(self):
         return "%s" % self.name
+
+    @classmethod
+    def load(cls, user, state_data=None):
+        if state_data or not cls.objects.exists():
+            state_data = state_data or "./location/fixtures/states.csv"
+            with open(state_data, "r") as csvfile:
+                reader = csv.DictReader(csvfile, fieldnames=['name', 'acron2', 'region'], delimiter=";")
+                for row in reader:
+                    cls.get_or_create(
+                        name=row["name"],
+                        acronym=row["acron2"],
+                        user=user,
+                    )
 
     @classmethod
     def get_or_create(cls, user, name=None, acronym=None):
