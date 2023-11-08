@@ -1,9 +1,10 @@
 import json
+import sys
 
 import requests
 import xmltodict
 
-from processing_errors.models import ProcessingError
+from tracker.models import UnexpectedEvent
 
 from .models import Issue
 from journal.models import SciELOJournal
@@ -19,12 +20,15 @@ def get_journal_xml(collection, issn):
         return xmltodict.parse(journal.text)
 
     except Exception as e:
-        error = ProcessingError()
-        error.item = f"Error getting the ISSN {issn} of the {collection} collection"
-        error.step = "Journal record search error"
-        error.description = str(e)[:509]
-        error.type = str(type(e))
-        error.save()
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            e=e,
+            exc_traceback=exc_traceback,
+            detail=dict(
+                function="issue.controller.get_journal_xml",
+                message=f"Error getting the ISSN {issn} of the {collection} collection"
+            )
+        )
 
 
 def get_issue(user, journal_xml, collection):
@@ -62,22 +66,27 @@ def get_issue(user, journal_xml, collection):
                         supplement=supplement,
                     )
                 except Exception as e:
-                    error = ProcessingError()
-                    error.item = f"Error getting or creating issue for {journal_xml['SERIAL']['ISSN_AS_ID']}"
-                    error.step = "Issue record creating error"
-                    error.description = str(e)[:509]
-                    error.type = str(type(e))
-                    error.save()
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    UnexpectedEvent.create(
+                        e=e,
+                        exc_traceback=exc_traceback,
+                        detail=dict(
+                            function="issue.controller.get_issue",
+                            message=f"Error getting or creating issue for {journal_xml['SERIAL']['ISSN_AS_ID']}"
+                        )
+                    )                    
+
 
     except Exception as e:
-        error = ProcessingError()
-        error.item = (
-            f"Error getting SciELO journal for {journal_xml['SERIAL']['ISSN_AS_ID']}"
-        )
-        error.step = "SciELO journal record recovery error"
-        error.description = str(e)[:509]
-        error.type = str(type(e))
-        error.save()
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            e=e,
+            exc_traceback=exc_traceback,
+            detail=dict(
+                function="issue.controller.get_issue",
+                message=f"Error getting SciELO journal for {journal_xml['SERIAL']['ISSN_AS_ID']}"
+            )
+        )        
 
 
 def load(user):
@@ -88,9 +97,12 @@ def load(user):
             )
             get_issue(user, journal_xml, journal.collection)
         except Exception as e:
-            error = ProcessingError()
-            error.item = f"Error getting record XML"
-            error.step = "SciELO journal record recovery error"
-            error.description = str(e)[:509]
-            error.type = str(type(e))
-            error.save()
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                e=e,
+                exc_traceback=exc_traceback,
+                detail=dict(
+                    function="issue.controller.load",
+                    message=f"Error getting record XML"
+                )
+            )

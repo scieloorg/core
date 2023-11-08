@@ -1,3 +1,5 @@
+import sys
+
 from django.db.models import Q
 from django.db.utils import DataError
 from lxml import etree
@@ -19,7 +21,7 @@ from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article import models
 from issue.models import TocSection
-from processing_errors.models import ProcessingError
+from tracker.models import UnexpectedEvent
 
 
 class XMLSPSArticleSaveError(Exception):
@@ -66,10 +68,16 @@ def load_article(user, xml=None, file_path=None):
         article.fundings.set(get_or_create_fundings(xmltree=xmltree, user=user))
         article.titles.set(create_or_update_titles(xmltree=xmltree, user=user))
     except Exception as e:
-        error = ProcessingError()
-        error.item = etree.tostring(xmltree)
-        error.description = e
-        error.save()
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            e=e,
+            exc_traceback=exc_traceback,
+            detail=dict(
+                function="article.sources.xmlsps.load_article",
+                message=f"Error extracting and saving in Article model. xmltree: {xmltree}"
+            )
+        )
+        
 
 
 def get_or_create_doi(xmltree, user):
