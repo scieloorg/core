@@ -49,7 +49,7 @@ class PidProvider:
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
-                e=e,
+                exception=e,
                 exc_traceback=exc_traceback,
                 detail={
                     "operation": "PidProvider.provide_pid_for_xml_zip",
@@ -89,7 +89,7 @@ class PidProvider:
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
-                e=e,
+                exception=e,
                 exc_traceback=exc_traceback,
                 detail={
                     "operation": "PidProvider.provide_pid_for_xml_uri",
@@ -184,7 +184,7 @@ class PidProvider:
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
-                e=e,
+                exception=e,
                 exc_traceback=exc_traceback,
                 detail={
                     "operation": "PidProvider.is_registered_xml_uri",
@@ -221,7 +221,7 @@ class PidProvider:
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
-                e=e,
+                exception=e,
                 exc_traceback=exc_traceback,
                 detail={
                     "operation": "PidProvider.is_registered_xml_zip",

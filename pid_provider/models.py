@@ -708,7 +708,7 @@ class PidProviderXML(CommonControlField):
             # ) as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
-                e=e,
+                exception=e,
                 exc_traceback=exc_traceback,
                 detail={
                     "operation": "PidProviderXML.get_registered",

@@ -52,7 +52,7 @@ def load_journal_from_article_meta(self, username=None, user_id=None, limit=None
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
-            e=e,
+            exception=e,
             exc_traceback=exc_traceback,
             detail={
                 "task": "journal.tasks.load_journal_from_article_meta",
@@ -72,7 +72,7 @@ def load_journal_from_article_meta_for_one_collection(
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
-            e=e,
+            exception=e,
             exc_traceback=exc_traceback,
             detail={
                 "task": "journal.tasks.load_journal_from_article_meta_for_one_collection",

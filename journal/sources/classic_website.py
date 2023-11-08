@@ -1,3 +1,4 @@
+import sys
 import json
 
 import requests
@@ -5,7 +6,7 @@ import xmltodict
 
 from collection.models import Collection
 from institution.models import Institution, InstitutionHistory
-from processing_errors.models import ProcessingError
+from tracker.models import UnexpectedEvent
 
 from journal.models import Journal, Mission, OfficialJournal, SciELOJournal
 
@@ -22,19 +23,25 @@ def get_issn(collection):
             try:
                 yield issn["TITLE"]["@ISSN"]
             except Exception as e:
-                error = ProcessingError()
-                error.item = f"ISSN's list of {collection} collection error"
-                error.step = "Get an ISSN from a collection error"
-                error.description = str(e)[:509]
-                error.type = str(type(e))
-                error.save()
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail=dict(
+                        function="journal.sources.classic_website.get_issn",
+                        message=f"ISSN's list of {collection} collection error",
+                    )
+                )
 
     except Exception as e:
-        error = ProcessingError()
-        error.step = "Collection ISSN's list search error"
-        error.description = str(e)[:509]
-        error.type = str(type(e))
-        error.save()
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail=dict(
+                function="journal.sources.classic_website.get_issn",
+            )
+        )
 
 
 def get_journal_xml(collection, issn):
@@ -46,12 +53,15 @@ def get_journal_xml(collection, issn):
         return xmltodict.parse(official_journal.text)
 
     except Exception as e:
-        error = ProcessingError()
-        error.item = f"Error getting the ISSN {issn} of the {collection} collection"
-        error.step = "Journal record search error"
-        error.description = str(e)[:509]
-        error.type = str(type(e))
-        error.save()
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail=dict(
+                function="journal.sources.classic_website.get_journal_xml",
+                message=f"Error getting the ISSN {issn} of the {collection} collection",
+            )
+        )
 
 
 def get_official_journal(user, journal_xml):
@@ -81,12 +91,15 @@ def get_official_journal(user, journal_xml):
         return official_journal
 
     except Exception as e:
-        error = ProcessingError()
-        error.item = f"Error getting or creating official journal for {journal_xml['SERIAL']['ISSN_AS_ID']}"
-        error.step = "Official journal record creation error"
-        error.description = str(e)[:509]
-        error.type = str(type(e))
-        error.save()
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail=dict(
+                function="journal.sources.classic_website.get_official_journal",
+                message=f"Error getting or creating official journal for {journal_xml['SERIAL']['ISSN_AS_ID']}",
+            )
+        )                
 
 
 def create_journal(user, journal_xml, collection):
@@ -105,7 +118,8 @@ def create_journal(user, journal_xml, collection):
         scielo_journal = SciELOJournal.create_or_update(
             user=user,
             collection=collection,
-            journal_acron=journal_acron,
+            # FIXME
+            # journal_acron=journal_acron,
             issn_scielo=issn_scielo,
             journal=journal,
         )
@@ -140,12 +154,15 @@ def create_journal(user, journal_xml, collection):
         return journal
 
     except Exception as e:
-        error = ProcessingError()
-        error.item = f"Error getting or creating SciELO journal for {journal_xml['SERIAL']['ISSN_AS_ID']}"
-        error.step = "SciELO journal record creation error"
-        error.description = str(e)[:509]
-        error.type = str(type(e))
-        error.save()
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail=dict(
+                function="journal.sources.classic_website.create_journal",
+                message=f"Error getting or creating SciELO journal for {journal_xml['SERIAL']['ISSN_AS_ID']}",
+            )
+        )    
 
 
 def load(user):

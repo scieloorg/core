@@ -163,7 +163,7 @@ def _register_journal_data(user, collection, issn, data_journal):
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
-            e=e,
+            exception=e,
             exc_traceback=exc_traceback,
             detail={
                 "function": "journal.sources.article_meta._register_journal_data",

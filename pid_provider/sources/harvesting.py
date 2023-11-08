@@ -73,7 +73,7 @@ def provide_pid_for_opac_and_am_xml(
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
-            e=e,
+            exception=e,
             exc_traceback=exc_traceback,
             detail={
                 "operation": "provide_pid_for_opac_and_am_xml",
