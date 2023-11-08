@@ -3,6 +3,7 @@ from datetime import datetime
 from django.db import models
 from django.db.models import Case, When
 from django.utils.translation import gettext as _
+from wagtail.fields import RichTextField
 from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
@@ -20,6 +21,7 @@ from issue.models import Issue, TocSection
 from journal.models import Journal, SciELOJournal
 from researcher.models import Researcher
 from vocabulary.models import Keyword
+from reference.models import Reference
 
 
 class Article(CommonControlField):
@@ -529,3 +531,49 @@ class SubArticle(models.Model):
 
     def __str__(self):
         return f"{self.title}"
+
+
+class ReferenceInArticle(CommonControlField):
+    article = models.ForeignKey(
+        Article,
+        verbose_name=_("Article"),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    attrib_id = models.CharField(
+        _("Attrib id"), max_length=8, blank=True, null=True
+    )
+    label = models.CharField(
+        _("Label"), max_length=10, blank=True, null=True
+    )
+    mixed_citation = RichTextField(_("Mixed citation"), null=True, blank=True)
+    reference = models.ForeignKey(
+        Reference,
+        verbose_name=_("Reference"),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+
+    @classmethod
+    def get(cls, article, attrib_id):
+        if article and attrib_id:
+            return cls.objects.get(article=article, attrib_id=attrib_id)
+
+        raise TypeError("ReferenceInArticle.get requires article and attrib_id parameters")
+
+
+    def create_or_update(cls, article, attrib_id, label, mixed_citation, reference, user):
+        try:
+            obj = cls.get(  article=article, 
+                            attrib_id=attrib_id
+                            )
+            obj.updated_by = user
+        except (cls.DoesNotExist, ValueError):
+            obj = cls(creator = user)
+            obj.label = label or obj.label
+            obj.mixed_citation = mixed_citation or obj.mixed_citation
+            obj.reference = reference or obj.reference
+            obj.save()
+        return obj
