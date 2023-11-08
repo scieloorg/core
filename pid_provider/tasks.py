@@ -35,7 +35,7 @@ def _load_collections(user):
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
-                e=e,
+                exception=e,
                 exc_traceback=exc_traceback,
                 detail={
                     "function": "_load_collections",
@@ -54,7 +54,7 @@ def _get_begin_date(user, collection_acron):
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
-            e=e,
+            exception=e,
             exc_traceback=exc_traceback,
             detail={
                 "function": "_get_begin_date",
@@ -122,7 +122,7 @@ def provide_pid_for_opac_xml(
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
-                e=e,
+                exception=e,
                 exc_traceback=exc_traceback,
                 detail={
                     "task": "provide_pid_for_opac_xml",
@@ -182,7 +182,7 @@ def provide_pid_for_opac_xmls(
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
-                e=e,
+                exception=e,
                 exc_traceback=exc_traceback,
                 detail={
                     "task": "provide_pid_for_opac_xmls",
@@ -230,7 +230,7 @@ def provide_pid_for_am_xml_uri_list(
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
-                e=e,
+                exception=e,
                 exc_traceback=exc_traceback,
                 detail={
                     "task": "provide_pid_for_am_xml_uri_list",
@@ -330,7 +330,7 @@ def task_provide_pid_for_am_collection(
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
-                e=e,
+                exception=e,
                 exc_traceback=exc_traceback,
                 detail={
                     "task": "task_provide_pid_for_am_collection",
@@ -374,7 +374,7 @@ def retry_to_provide_pid_for_failed_uris(
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
-                e=e,
+                exception=e,
                 exc_traceback=exc_traceback,
                 detail={
                     "task": "retry_to_provide_pid_for_failed_uris",
@@ -428,7 +428,7 @@ def task_provide_pid_for_opac_and_am_xml(
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
-            e=e,
+            exception=e,
             exc_traceback=exc_traceback,
             detail={
                 "task": "task_provide_pid_for_opac_and_am_xml",

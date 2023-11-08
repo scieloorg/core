@@ -70,7 +70,7 @@ def load_article(user, xml=None, file_path=None):
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
-            e=e,
+            exception=e,
             exc_traceback=exc_traceback,
             detail=dict(
                 function="article.sources.xmlsps.load_article",

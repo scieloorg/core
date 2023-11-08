@@ -25,7 +25,7 @@ def get_issn(collection):
             except Exception as e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 UnexpectedEvent.create(
-                    e=e,
+                    exception=e,
                     exc_traceback=exc_traceback,
                     detail=dict(
                         function="journal.sources.classic_website.get_issn",
@@ -36,7 +36,7 @@ def get_issn(collection):
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
-            e=e,
+            exception=e,
             exc_traceback=exc_traceback,
             detail=dict(
                 function="journal.sources.classic_website.get_issn",
@@ -55,7 +55,7 @@ def get_journal_xml(collection, issn):
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
-            e=e,
+            exception=e,
             exc_traceback=exc_traceback,
             detail=dict(
                 function="journal.sources.classic_website.get_journal_xml",
@@ -93,7 +93,7 @@ def get_official_journal(user, journal_xml):
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
-            e=e,
+            exception=e,
             exc_traceback=exc_traceback,
             detail=dict(
                 function="journal.sources.classic_website.get_official_journal",
@@ -156,7 +156,7 @@ def create_journal(user, journal_xml, collection):
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
-            e=e,
+            exception=e,
             exc_traceback=exc_traceback,
             detail=dict(
                 function="journal.sources.classic_website.create_journal",

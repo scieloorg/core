@@ -76,17 +76,17 @@ class UnexpectedEvent(models.Model):
     @classmethod
     def create(
         cls,
-        e=None,
+        exception=None,
         exc_traceback=None,
         detail=None,
     ):
         try:
-            if e:
-                logging.exception(e)
+            if exception:
+                logging.exception(exception)
 
             obj = cls()
-            obj.exception_msg = e
-            obj.exception_type = type(e)
+            obj.exception_msg = exception
+            obj.exception_type = type(exception)
             obj.detail = detail
             if exc_traceback:
                 obj.traceback = traceback.format_tb(exc_traceback)
@@ -94,7 +94,7 @@ class UnexpectedEvent(models.Model):
             return obj
         except Exception as exc:
             raise UnexpectedEventCreateError(
-                f"Unable to create unexpected event ({e} {exc_traceback}). EXCEPTION {exc}"
+                f"Unable to create unexpected event ({exception} {exc_traceback}). EXCEPTION {exc}"
             )
 
 
@@ -154,7 +154,7 @@ class Event(CommonControlField):
             if e:
                 logging.exception(f"{message}: {e}")
                 obj.unexpected_event = UnexpectedEvent.create(
-                    e=e,
+                    exception=e,
                     exc_traceback=exc_traceback,
                 )
                 obj.save()
@@ -246,7 +246,7 @@ class EventReport(CommonControlField):
 #                 message=message,
 #                 message_type=message_type,
 #                 detail=detail,
-#                 e=e,
+#                 exception=e,
 #                 exc_traceback=exc_traceback,
 #             )
 #             obj.proc_event_logger = self
@@ -311,7 +311,7 @@ class EventReport(CommonControlField):
 #     #             message=message,
 #     #             message_type=message_type,
 #     #             detail=detail,
-#     #             e=e,
+#     #             exception=e,
 #     #             exc_traceback=exc_traceback,
 #     #         )
 #     #         obj.proc_event_logger = proc_event_logger

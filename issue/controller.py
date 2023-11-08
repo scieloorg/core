@@ -22,7 +22,7 @@ def get_journal_xml(collection, issn):
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
-            e=e,
+            exception=e,
             exc_traceback=exc_traceback,
             detail=dict(
                 function="issue.controller.get_journal_xml",
@@ -68,7 +68,7 @@ def get_issue(user, journal_xml, collection):
                 except Exception as e:
                     exc_type, exc_value, exc_traceback = sys.exc_info()
                     UnexpectedEvent.create(
-                        e=e,
+                        exception=e,
                         exc_traceback=exc_traceback,
                         detail=dict(
                             function="issue.controller.get_issue",
@@ -80,7 +80,7 @@ def get_issue(user, journal_xml, collection):
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
-            e=e,
+            exception=e,
             exc_traceback=exc_traceback,
             detail=dict(
                 function="issue.controller.get_issue",
@@ -99,7 +99,7 @@ def load(user):
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
-                e=e,
+                exception=e,
                 exc_traceback=exc_traceback,
                 detail=dict(
                     function="issue.controller.load",
