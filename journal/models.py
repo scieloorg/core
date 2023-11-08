@@ -1162,6 +1162,13 @@ class Subject(CommonControlField):
         return f"{self.value}"
 
     @classmethod
+    def load(cls, user):
+        if not cls.objects.exists():
+            for item in choices.STUDY_AREA:
+                code, _ = item
+                cls.create_or_update(code=code, user=user,)
+
+    @classmethod
     def get(cls, code):
         if not code:
             raise ValueError("Subject.get requires code parameter")
@@ -1195,6 +1202,13 @@ class WebOfKnowledge(CommonControlField):
     def __str__(self):
         return f"{self.code} - {self.value}"
 
+    @classmethod
+    def load(cls, user):
+        if not cls.objects.exists():
+            for item in choices.WOS_DB:
+                code, _ = item
+                cls.create_or_update(code=code, user=user)
+    
     @classmethod
     def get(cls, code):
         if not code:
