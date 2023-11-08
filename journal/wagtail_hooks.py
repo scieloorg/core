@@ -36,6 +36,8 @@ class OfficialJournalAdmin(ModelAdmin):
         "issn_print",
         "issn_electronic",
         "issnl",
+        "created",
+        "updated",        
     )
     list_filter = ("foundation_year",)
     search_fields = (
@@ -68,6 +70,8 @@ class JournalAdmin(ModelAdmin):
         "official",
         "title",
         "short_title",
+        "created",
+        "updated",
     )
     # list_filter = ()
     search_fields = (
@@ -98,6 +102,8 @@ class SciELOJournalAdmin(ModelAdmin):
         "issn_scielo",
         "journal_acron",
         "journal",
+        "created",
+        "updated",        
     )
     search_fields = (
         "journal_acron",
