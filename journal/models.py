@@ -567,7 +567,7 @@ class Journal(CommonControlField, ClusterableModel):
     panels_open_science = [
         FieldPanel("open_access"),
         FieldPanel("url_oa"),
-        AutocompletePanel("use_license"),
+        FieldPanel("use_license"),
     ]
 
     panels_policy = [
