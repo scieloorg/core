@@ -424,6 +424,12 @@ class Journal(CommonControlField, ClusterableModel):
         null=True,
         blank=True,
     )
+
+    indexed_at = models.TextField(
+        _("Secs Code"),
+        null=True,
+        blank=True,
+    )
     indexed_at = models.ManyToManyField(
         "IndexedAt",
     )
@@ -1299,12 +1305,12 @@ class Standard(CommonControlField):
 
 
 class IndexedAt(CommonControlField):
-    name = models.TextField(_("Name"), null=True, blank=False)
-    acronym = models.TextField(_("Acronym"), null=True, blank=False)
-    url = models.URLField(_("URL"), max_length=500, null=True, blank=False)
-    description = models.TextField(_("Description"), null=True, blank=False)
+    name = models.TextField(_("Name"), null=True, blank=True)
+    acronym = models.TextField(_("Acronym"), null=True, blank=True)
+    url = models.URLField(_("URL"), max_length=500, null=True, blank=True)
+    description = models.TextField(_("Description"), null=True, blank=True)
     type = models.CharField(
-        _("Type"), max_length=20, choices=choices.TYPE, null=True, blank=False
+        _("Type"), max_length=20, choices=choices.TYPE, null=True, blank=True
     )
 
     autocomplete_search_field = "name"
