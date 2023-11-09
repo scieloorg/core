@@ -1,14 +1,13 @@
-import sys
 import json
+import sys
 
 import requests
 import xmltodict
 
 from collection.models import Collection
 from institution.models import Institution, InstitutionHistory
-from tracker.models import UnexpectedEvent
-
 from journal.models import Journal, Mission, OfficialJournal, SciELOJournal
+from tracker.models import UnexpectedEvent
 
 
 def get_issn(collection):
@@ -30,7 +29,7 @@ def get_issn(collection):
                     detail=dict(
                         function="journal.sources.classic_website.get_issn",
                         message=f"ISSN's list of {collection} collection error",
-                    )
+                    ),
                 )
 
     except Exception as e:
@@ -40,7 +39,7 @@ def get_issn(collection):
             exc_traceback=exc_traceback,
             detail=dict(
                 function="journal.sources.classic_website.get_issn",
-            )
+            ),
         )
 
 
@@ -60,7 +59,7 @@ def get_journal_xml(collection, issn):
             detail=dict(
                 function="journal.sources.classic_website.get_journal_xml",
                 message=f"Error getting the ISSN {issn} of the {collection} collection",
-            )
+            ),
         )
 
 
@@ -98,8 +97,8 @@ def get_official_journal(user, journal_xml):
             detail=dict(
                 function="journal.sources.classic_website.get_official_journal",
                 message=f"Error getting or creating official journal for {journal_xml['SERIAL']['ISSN_AS_ID']}",
-            )
-        )                
+            ),
+        )
 
 
 def create_journal(user, journal_xml, collection):
@@ -161,8 +160,8 @@ def create_journal(user, journal_xml, collection):
             detail=dict(
                 function="journal.sources.classic_website.create_journal",
                 message=f"Error getting or creating SciELO journal for {journal_xml['SERIAL']['ISSN_AS_ID']}",
-            )
-        )    
+            ),
+        )
 
 
 def load(user):
