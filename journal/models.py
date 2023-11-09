@@ -529,12 +529,6 @@ class Journal(CommonControlField, ClusterableModel):
         AutocompletePanel("abstract_language"),
         FieldPanel("standard"),
         AutocompletePanel("vocabulary"),
-        FieldPanel("alphabet"),
-        FieldPanel("classification"),
-        FieldPanel("national_code"),
-        FieldPanel("type_of_literature"),
-        FieldPanel("treatment_level"),
-        FieldPanel("level_of_publication"),
     ]
 
     panels_interoperation = [
@@ -571,12 +565,12 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("open_access"),
         FieldPanel("url_oa"),
         FieldPanel("use_license"),
-    ]
-
-    panels_policy = [
         InlinePanel("open_data", label=_("Open data"), classname="collapsed"),
         InlinePanel("preprint", label=_("Preprint"), classname="collapsed"),
         InlinePanel("review", label=_("Peer review"), classname="collapsed"),
+    ]
+
+    panels_policy = [
         InlinePanel("ecommittee", label=_("Ethics Committee"), classname="collapsed"),
         InlinePanel("copyright", label=_("Copyright"), classname="collapsed"),
         InlinePanel(
@@ -603,6 +597,12 @@ class Journal(CommonControlField, ClusterableModel):
     panels_notes = [InlinePanel("annotation", label=_("Notes"), classname="collapsed")]
 
     panels_legacy_compatibility_fields = [
+        FieldPanel("alphabet"),
+        FieldPanel("classification"),
+        FieldPanel("national_code"),
+        FieldPanel("type_of_literature"),
+        FieldPanel("treatment_level"),
+        FieldPanel("level_of_publication"),
         FieldPanel("center_code"),
         FieldPanel("identification_number"),
         FieldPanel("ftp"),
