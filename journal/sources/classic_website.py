@@ -1,14 +1,13 @@
-import sys
 import json
+import sys
 
 import requests
 import xmltodict
 
 from collection.models import Collection
 from institution.models import Institution, InstitutionHistory
-from tracker.models import UnexpectedEvent
-
 from journal.models import Journal, Mission, OfficialJournal, SciELOJournal
+from tracker.models import UnexpectedEvent
 
 
 def get_issn(collection):

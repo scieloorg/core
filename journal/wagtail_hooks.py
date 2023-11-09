@@ -9,8 +9,8 @@ from wagtail.contrib.modeladmin.options import (
 )
 from wagtail.contrib.modeladmin.views import CreateView
 
-from .button_helper import IndexedAtHelper
 from . import models
+from .button_helper import IndexedAtHelper
 from .views import import_file, validate
 
 
