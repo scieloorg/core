@@ -67,9 +67,8 @@ class JournalAdmin(ModelAdmin):
     exclude_from_explorer = False
 
     list_display = (
-        "official",
         "title",
-        "short_title",
+        "official__issn_electronic",
         "created",
         "updated",
     )
