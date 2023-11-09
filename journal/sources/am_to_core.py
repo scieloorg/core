@@ -180,7 +180,7 @@ def update_panel_institution(
         user,
     )
     electronic_address = extract_value(electronic_address)
-    for item in electronic_address.replace(";", ',').split(","):
+    for item in electronic_address.replace(";", ",").split(","):
         try:
             item = item.strip()
             JournalEmail.objects.get(journal=journal, email=item)

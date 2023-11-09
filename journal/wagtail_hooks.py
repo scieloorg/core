@@ -37,7 +37,7 @@ class OfficialJournalAdmin(ModelAdmin):
         "issn_electronic",
         "issnl",
         "created",
-        "updated",        
+        "updated",
     )
     list_filter = ("foundation_year",)
     search_fields = (
@@ -103,7 +103,7 @@ class SciELOJournalAdmin(ModelAdmin):
         "journal_acron",
         "journal",
         "created",
-        "updated",        
+        "updated",
     )
     search_fields = (
         "journal_acron",
@@ -160,6 +160,7 @@ class IndexedAtAdminGroup(ModelAdminGroup):
 
 # modeladmin_register(IndexedAtAdminGroup)
 
+
 class WebOfKnowledgeAdmin(ModelAdmin):
     model = models.WebOfKnowledge
     menu_icon = "folder"
@@ -175,6 +176,8 @@ class WebOfKnowledgeAdmin(ModelAdmin):
         "code",
         "value",
     )
+
+
 class SubjectAdmin(ModelAdmin):
     model = models.Subject
     menu_icon = "folder"
@@ -191,6 +194,7 @@ class SubjectAdmin(ModelAdmin):
         "value",
     )
 
+
 class ListCodesAdminGroup(ModelAdminGroup):
     menu_label = "List of codes"
     menu_icon = "folder-open-inverse"
@@ -200,7 +204,9 @@ class ListCodesAdminGroup(ModelAdminGroup):
         WebOfKnowledgeAdmin,
     )
 
+
 modeladmin_register(ListCodesAdminGroup)
+
 
 @hooks.register("register_admin_urls")
 def register_calendar_url():

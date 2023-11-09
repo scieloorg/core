@@ -68,10 +68,8 @@ class OfficialJournal(CommonControlField):
         blank=True,
         related_name="new_title_journal",
     )
-    old_title = models.ManyToManyField(
-        "self", null=True, blank=True
-    )
-    
+    old_title = models.ManyToManyField("self", null=True, blank=True)
+
     foundation_year = models.CharField(
         _("Foundation Year"), max_length=4, null=True, blank=True
     )
@@ -169,7 +167,7 @@ class OfficialJournal(CommonControlField):
                 ]
             ),
         ]
-        ordering = ['title']
+        ordering = ["title"]
 
     def __unicode__(self):
         return "%s - %s" % (self.issnl, self.title) or ""
@@ -1139,9 +1137,9 @@ class SubjectDescriptor(CommonControlField):
 
     def __str__(self):
         return f"{self.value}"
-    
+
     class Meta:
-        ordering = ['value']
+        ordering = ["value"]
 
 
 class Subject(CommonControlField):
@@ -1156,7 +1154,10 @@ class Subject(CommonControlField):
         if not cls.objects.exists():
             for item in choices.STUDY_AREA:
                 code, _ = item
-                cls.create_or_update(code=code, user=user,)
+                cls.create_or_update(
+                    code=code,
+                    user=user,
+                )
 
     @classmethod
     def get(cls, code):
@@ -1198,7 +1199,7 @@ class WebOfKnowledge(CommonControlField):
             for item in choices.WOS_DB:
                 code, _ = item
                 cls.create_or_update(code=code, user=user)
-    
+
     @classmethod
     def get(cls, code):
         if not code:
@@ -1238,7 +1239,7 @@ class WebOfKnowledgeSubjectCategory(CommonControlField):
         return f"{self.value}"
 
     class Meta:
-        ordering = ['value']
+        ordering = ["value"]
 
 
 class Standard(CommonControlField):
@@ -1316,7 +1317,7 @@ class IndexedAt(CommonControlField):
         return f"{self.acronym} - {self.name}"
 
     class Meta:
-        ordering = ['name']
+        ordering = ["name"]
 
     @classmethod
     def get(
