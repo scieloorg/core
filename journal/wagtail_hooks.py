@@ -10,7 +10,7 @@ from wagtail.contrib.modeladmin.options import (
 from wagtail.contrib.modeladmin.views import CreateView
 
 from .button_helper import IndexedAtHelper
-from .models import IndexedAt, IndexedAtFile, Journal, OfficialJournal, SciELOJournal
+from . import models
 from .views import import_file, validate
 
 
@@ -21,7 +21,7 @@ class OfficialJournalCreateView(CreateView):
 
 
 class OfficialJournalAdmin(ModelAdmin):
-    model = OfficialJournal
+    model = models.OfficialJournal
     inspect_view_enabled = True
     menu_label = _("Official Journals")
     create_view_class = OfficialJournalCreateView
@@ -57,7 +57,7 @@ class JournalCreateView(CreateView):
 
 
 class JournalAdmin(ModelAdmin):
-    model = Journal
+    model = models.Journal
     inspect_view_enabled = True
     menu_label = _("Journals")
     create_view_class = JournalCreateView
@@ -88,7 +88,7 @@ class SciELOJournalCreateView(CreateView):
 
 
 class SciELOJournalAdmin(ModelAdmin):
-    model = SciELOJournal
+    model = models.SciELOJournal
     inspect_view_enabled = True
     menu_label = _("SciELO Journals")
     create_view_class = SciELOJournalCreateView
@@ -122,7 +122,7 @@ modeladmin_register(JournalAdminGroup)
 
 
 class IndexedAtAdmin(ModelAdmin):
-    model = IndexedAt
+    model = models.IndexedAt
     menu_label = "Indexed At"
     menu_icon = "folder"
     menu_order = 100
@@ -136,7 +136,7 @@ class IndexedAtAdmin(ModelAdmin):
 
 
 class IndexedAtFileAdmin(ModelAdmin):
-    model = IndexedAtFile
+    model = models.IndexedAtFile
     button_helper_class = IndexedAtHelper
     menu_label = "Indexed At Upload"
     menu_icon = "folder"
@@ -160,6 +160,47 @@ class IndexedAtAdminGroup(ModelAdminGroup):
 
 # modeladmin_register(IndexedAtAdminGroup)
 
+class WebOfKnowledgeAdmin(ModelAdmin):
+    model = models.WebOfKnowledge
+    menu_icon = "folder"
+    menu_order = 200
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "code",
+        "value",
+    )
+
+    search_fields = (
+        "code",
+        "value",
+    )
+class SubjectAdmin(ModelAdmin):
+    model = models.Subject
+    menu_icon = "folder"
+    menu_order = 100
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "code",
+        "value",
+    )
+
+    search_fields = (
+        "code",
+        "value",
+    )
+
+class ListCodesAdminGroup(ModelAdminGroup):
+    menu_label = "List of codes"
+    menu_icon = "folder-open-inverse"
+    menu_order = 1100
+    items = (
+        SubjectAdmin,
+        WebOfKnowledgeAdmin,
+    )
+
+modeladmin_register(ListCodesAdminGroup)
 
 @hooks.register("register_admin_urls")
 def register_calendar_url():
