@@ -215,7 +215,7 @@ class License(CommonControlField):
     language = models.ForeignKey(
         Language, on_delete=models.SET_NULL, null=True, blank=True
     )
-    autocomplete_search_field = "license_p"
+    autocomplete_search_field = "license_type"
 
     def autocomplete_label(self):
         return str(self)
