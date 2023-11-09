@@ -510,6 +510,9 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("title"),
         FieldPanel("short_title"),
         AutocompletePanel("other_titles"),
+        FieldPanel("secs_code"),
+        FieldPanel("medline_code"),
+        FieldPanel("medline_short_title"),
     ]
 
     panels_scope_and_about = [
@@ -521,18 +524,6 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("subject"),
         FieldPanel("wos_db"),
         AutocompletePanel("wos_area"),
-        FieldPanel("secs_code"),
-        FieldPanel("medline_code"),
-        FieldPanel("medline_short_title"),
-    ]
-
-    panels_formal_information = [
-        FieldPanel("frequency"),
-        FieldPanel("publishing_model"),
-        AutocompletePanel("text_language"),
-        AutocompletePanel("abstract_language"),
-        FieldPanel("standard"),
-        AutocompletePanel("vocabulary"),
     ]
 
     panels_institutions = [
@@ -556,6 +547,12 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("submission_online_url"),
         FieldPanel("collection_main_url"),
         InlinePanel("journalsocialnetwork", label=_("Social Network")),
+        FieldPanel("frequency"),
+        FieldPanel("publishing_model"),
+        AutocompletePanel("text_language"),
+        AutocompletePanel("abstract_language"),
+        FieldPanel("standard"),
+        AutocompletePanel("vocabulary"),
     ]
 
     panels_open_science = [
@@ -615,9 +612,7 @@ class Journal(CommonControlField, ClusterableModel):
         [
             ObjectList(panels_titles, heading=_("Titles")),
             ObjectList(panels_scope_and_about, heading=_("Scope and about")),
-            ObjectList(panels_interoperation, heading=_("Interoperation")),
-            ObjectList(panels_formal_information, heading=_("Formal information")),
-            ObjectList(panels_institutions, heading=_("Related Institutions")),
+            ObjectList(panels_institutions, heading=_("Institutions")),
             ObjectList(panels_website, heading=_("Website")),
             ObjectList(panels_open_science, heading=_("Open Science")),
             ObjectList(panels_policy, heading=_("Journal Policy")),
