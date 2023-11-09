@@ -64,12 +64,12 @@ def create_or_update_journal(
 def create_or_update_scielo_journal(
     journal, collection, issn_scielo, journal_acron, status, journal_history, user
 ):
-    issnl = extract_value(issn_scielo)
+    issn_scielo = extract_value(issn_scielo)
     code_status = extract_value(status)
     scielo_journal = SciELOJournal.create_or_update(
         user=user,
         collection=get_collection(collection),
-        issn_scielo=issnl,
+        issn_scielo=issn_scielo,
         journal_acron=extract_value(journal_acron),
         journal=journal,
         code_status=code_status,
@@ -344,7 +344,7 @@ def create_or_update_official_journal(
         [{"_": "1676-5648"}]
     """
     title = extract_value(title)
-    issnl = extract_value(issn_scielo)
+    issn_scielo = extract_value(issn_scielo)
 
     if type_issn and current_issn:
         for item in type_issn:
@@ -359,7 +359,7 @@ def create_or_update_official_journal(
         user=user,
         issn_print=issn_print,
         issn_electronic=issn_electronic,
-        issnl=issnl,
+        issnl=None,
         title=title,
         foundation_year=foundation_year,
     )
