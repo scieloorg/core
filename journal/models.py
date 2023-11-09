@@ -516,10 +516,14 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel("mission", label=_("Mission"), classname="collapsed"),
         InlinePanel("history", label=_("Brief History"), classname="collapsed"),
         InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
+        AutocompletePanel("indexed_at"),
         AutocompletePanel("subject_descriptor"),
         FieldPanel("subject"),
         FieldPanel("wos_db"),
         AutocompletePanel("wos_area"),
+        FieldPanel("secs_code"),
+        FieldPanel("medline_code"),
+        FieldPanel("medline_short_title"),
     ]
 
     panels_formal_information = [
@@ -529,13 +533,6 @@ class Journal(CommonControlField, ClusterableModel):
         AutocompletePanel("abstract_language"),
         FieldPanel("standard"),
         AutocompletePanel("vocabulary"),
-    ]
-
-    panels_interoperation = [
-        FieldPanel("secs_code"),
-        FieldPanel("medline_code"),
-        FieldPanel("medline_short_title"),
-        AutocompletePanel("indexed_at"),
     ]
 
     panels_institutions = [
