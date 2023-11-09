@@ -169,11 +169,16 @@ class OfficialJournal(CommonControlField):
         ]
         ordering = ["title"]
 
+    autocomplete_search_field = "title"
+
+    def autocomplete_label(self):
+        return str(self)
+
     def __unicode__(self):
-        return "%s - %s" % (self.issnl, self.title) or ""
+        return f"{self.issn_electronic} {self.issn_print} {self.title}"
 
     def __str__(self):
-        return "%s - %s" % (self.issnl, self.title) or ""
+        return f"{self.issn_electronic} {self.issn_print} {self.title}"
 
     @property
     def data(self):
