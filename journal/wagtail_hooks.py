@@ -65,18 +65,24 @@ class JournalAdmin(ModelAdmin):
     menu_order = 200
     add_to_settings_menu = False
     exclude_from_explorer = False
+    list_per_page = 20
 
     list_display = (
         "title",
-        "official__issn_electronic",
+        "contact_location",
         "created",
         "updated",
     )
-    # list_filter = ()
+    list_filter = (
+        "use_license",
+        "publishing_model",
+        "subject",
+    )
     search_fields = (
         "title",
         "official__issn_print",
         "official__issn_electronic",
+        "contact_location__country__name",
     )
 
 

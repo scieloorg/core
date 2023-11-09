@@ -645,6 +645,16 @@ class Journal(CommonControlField, ClusterableModel):
                     "title",
                 ]
             ),
+            models.Index(
+                fields=[
+                    "use_license",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "publishing_model",
+                ]
+            ),
         ]
 
     @property
