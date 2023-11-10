@@ -133,7 +133,7 @@ class IndexedAtAdmin(ModelAdmin):
     menu_order = 100
     add_to_settings_menu = False
     exclude_from_explorer = False
-    list_display = ("name", "acronym", "url", "description", "type")
+    list_display = ("name", "acronym", "type")
     list_filter = ("type",)
     search_fields = ("name", "acronym")
     list_export = ("name", "acronym", "url", "description", "type")
@@ -207,6 +207,8 @@ class ListCodesAdminGroup(ModelAdminGroup):
     items = (
         SubjectAdmin,
         WebOfKnowledgeAdmin,
+        IndexedAtAdmin,
+        IndexedAtFileAdmin,
     )
 
 
