@@ -1312,7 +1312,12 @@ class IndexedAt(CommonControlField):
     type = models.CharField(
         _("Type"), max_length=20, choices=choices.TYPE, null=True, blank=True
     )
-
+    main_objective = models.CharField(
+        _("Main Objective"), max_length=20, choices=choices.INDEXED_AT_MAIN_OBJECTIVE,
+        null=True, blank=True)
+    relevance = models.CharField(
+        _("Relevance"), max_length=64, choices=choices.INDEXED_AT_RELEVANCE,
+        null=True, blank=True)
     autocomplete_search_field = "name"
 
     def autocomplete_label(self):

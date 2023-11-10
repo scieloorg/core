@@ -133,3 +133,20 @@ WOS_DB = [
     ("SSCI", _("Social Sciences Citation Index")),
     ("A&HCI", _("Arts Humanities Citation Index")),
 ]
+
+
+INDEXED_AT_MAIN_OBJECTIVE = [
+    ("QUALITY_INDICATOR", _("Quality indicator")),
+    ("METRICS", _("Metrics")),
+    ("VISIBILITY", _("Visibility")),
+    ("ACCESSIBILITY", _("Accessibility")),
+]
+
+
+INDEXED_AT_RELEVANCE = [
+    ("CRITERIA-FOR-OTHER-PLATFORMS", _("Criteria for other platforms")),
+    ("CRITERIA-FOR-SCIELO", _("Criteria for SciELO")),
+    ("CRITERIA-FOR-SCIELO-AND-OTHER-PLATFORMS", _("Criteria for SciELO and other platforms")),
+    ("NONE", _("No relevance")),
+    ("NOT_EVALUATED", _("Not evaluated")),
+]
