@@ -1338,11 +1338,13 @@ class IndexedAt(CommonControlField):
         name,
         acronym,
     ):
+        if name and acronym:
+            return cls.objects.get(acronym=acronym, name=name)
         if name:
             return cls.objects.get(name=name)
         if acronym:
-            return cls.objects.get(acronym)
-        raise Exception("IndexedAt.get requires name or acronym paramets")
+            return cls.objects.get(acronym=acronym)
+        raise Exception("IndexedAt.get requires name or acronym as parameters")
 
     @classmethod
     def create_or_update(
