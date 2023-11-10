@@ -1361,14 +1361,15 @@ class IndexedAt(CommonControlField):
             obj.name = name
             obj.acronym = acronym
             obj.creator = user
-        except IndexedAtCreationOrUpdateError as e:
-            raise IndexedAtCreationOrUpdateError(name=name, acronym=acronym, message=e)
 
-        obj.description = description or obj.description
-        obj.url = url or obj.url
-        obj.type = type or obj.type
-        obj.updated_by = user
-        obj.save()
+        try:
+            obj.description = description or obj.description
+            obj.url = url or obj.url
+            obj.type = type or obj.type
+            obj.updated_by = user
+            obj.save()
+        except Exception as e:
+            raise IndexedAtCreationOrUpdateError(name=name, acronym=acronym, message=e)
 
         return obj
 
