@@ -1,4 +1,5 @@
 from django.db import models
+
 from core.models import CommonControlField
 
 # Create your models here.

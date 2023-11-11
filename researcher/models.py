@@ -8,13 +8,13 @@ from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
+from core.choices import MONTHS
 from core.models import CommonControlField, Gender
 from institution.models import Institution, InstitutionHistory
 from journal.models import Journal
 
-from core.choices import MONTHS
-from .forms import ResearcherForm
 from . import choices
+from .forms import ResearcherForm
 
 
 class Researcher(ClusterableModel, CommonControlField):

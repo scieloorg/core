@@ -12,6 +12,7 @@ from core.libs import chkcsv
 
 from .models import Country, CountryFile
 
+
 # Create your views here.
 def validate_country(request):
     errorlist = []

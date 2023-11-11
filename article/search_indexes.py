@@ -1,7 +1,8 @@
 from haystack import indexes
 
-from .models import Article
 from journal.models import SciELOJournal
+
+from .models import Article
 
 
 class ArticleIndex(indexes.SearchIndex, indexes.Indexable):

@@ -1,17 +1,17 @@
 from django.http import HttpResponseRedirect
-from django.utils.translation import gettext as _
 from django.urls import include, path
+from django.utils.translation import gettext as _
+from wagtail import hooks
 from wagtail.contrib.modeladmin.options import (
     ModelAdmin,
     ModelAdminGroup,
     modeladmin_register,
 )
 from wagtail.contrib.modeladmin.views import CreateView
-from wagtail import hooks
 
-from .models import City, Region, State, Country, Location, CountryFile, Address
-from .views import import_file_country, validate_country
 from .button_helpers import CountryHelper
+from .models import Address, City, Country, CountryFile, Location, Region, State
+from .views import import_file_country, validate_country
 
 
 class LocationCreateView(CreateView):

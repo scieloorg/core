@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
+
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField, TextWithLang
 

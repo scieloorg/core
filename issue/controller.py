@@ -4,10 +4,10 @@ import sys
 import requests
 import xmltodict
 
+from journal.models import SciELOJournal
 from tracker.models import UnexpectedEvent
 
 from .models import Issue
-from journal.models import SciELOJournal
 
 
 def get_journal_xml(collection, issn):

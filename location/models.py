@@ -1,6 +1,6 @@
 import csv
-import os
 import logging
+import os
 
 from django.db import models
 from django.db.models import Q

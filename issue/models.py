@@ -3,10 +3,11 @@ from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
-from wagtailautocomplete.edit_handlers import AutocompletePanel
 from wagtail.fields import RichTextField
 from wagtail.models import Orderable
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 
+from core import choices
 from core.forms import CoreAdminModelForm
 from core.models import (
     CommonControlField,
@@ -18,7 +19,6 @@ from core.models import (
 from journal.models import Journal
 from location.models import City
 from researcher.models import Researcher
-from core import choices
 
 from .exceptions import TocSectionGetError
 

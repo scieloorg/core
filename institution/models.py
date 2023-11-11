@@ -9,7 +9,7 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
-from location.models import Location, Country
+from location.models import Country, Location
 
 from . import choices
 from .forms import ScimagoForm
