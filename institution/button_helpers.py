@@ -16,9 +16,7 @@ class ScimagoHelper(ButtonHelper):
     def validate_button(self, obj):
         text = _("Validate")
         return {
-            "url": reverse("validate_scimago")
-            + "?file_id="
-            + str(obj.id),
+            "url": reverse("validate_scimago") + "?file_id=" + str(obj.id),
             "label": text,
             "classname": self.finalise_classname(self.validate_button_classnames),
             "title": text,
@@ -27,9 +25,7 @@ class ScimagoHelper(ButtonHelper):
     def import_button(self, obj):
         text = _("Import")
         return {
-            "url": reverse("import_file_scimago")
-            + "?file_id="
-            + str(obj.id),
+            "url": reverse("import_file_scimago") + "?file_id=" + str(obj.id),
             "label": text,
             "classname": self.finalise_classname(self.import_button_classnames),
             "title": text,
@@ -46,4 +42,3 @@ class ScimagoHelper(ButtonHelper):
         if "import" not in (exclude or []):
             btns.append(self.import_button(obj))
         return btns
-    

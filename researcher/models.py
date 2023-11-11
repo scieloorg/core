@@ -16,6 +16,7 @@ from core.choices import MONTHS
 from .forms import ResearcherForm
 from . import choices
 
+
 class Researcher(ClusterableModel, CommonControlField):
     """
     Class that represent the Researcher
@@ -111,10 +112,16 @@ class Researcher(ClusterableModel, CommonControlField):
         if orcid:
             return cls.objects.get(orcid=orcid)
         elif given_names or last_name:
-            return cls.objects.get(given_names__iexact=given_names, last_name__iexact=last_name, orcid__isnull=True)
+            return cls.objects.get(
+                given_names__iexact=given_names,
+                last_name__iexact=last_name,
+                orcid__isnull=True,
+            )
         elif declared_name:
             return cls.objects.get(declared_name=declared_name)
-        raise ValueError("Researcher.get requires orcid, given_names, last_names or declared_name parameters")
+        raise ValueError(
+            "Researcher.get requires orcid, given_names, last_names or declared_name parameters"
+        )
 
     @classmethod
     def create_or_update(
@@ -144,9 +151,8 @@ class Researcher(ClusterableModel, CommonControlField):
             researcher.creator = user
             researcher.orcid = orcid
 
-
         researcher.given_names = given_names or researcher.given_names
-        researcher.last_name = last_name or researcher.last_name       
+        researcher.last_name = last_name or researcher.last_name
         institution = None
         if institution_name:
             try:
@@ -160,15 +166,15 @@ class Researcher(ClusterableModel, CommonControlField):
         ## TODO
         ## Criar get_or_create para model gender e GenderIdentificationStatus
         researcher.gender = gender or researcher.gender
-        researcher.gender_identification_status = gender_identification_status or researcher.gender_identification_status
+        researcher.gender_identification_status = (
+            gender_identification_status or researcher.gender_identification_status
+        )
         researcher.save()
-        
+
         if email:
             FieldEmail.objects.create(page=researcher, email=email)
         if institution:
-            FieldAffiliation.objects.create(
-                page=researcher, institution=institution
-            )
+            FieldAffiliation.objects.create(page=researcher, institution=institution)
         return researcher
 
     panels = [

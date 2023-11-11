@@ -112,7 +112,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
         """
         collections = obj.collections
         urls = []
-        
+
         if obj.journal:
             for collection in collections:
                 urls.append(
@@ -150,9 +150,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_collection(self, obj):
         collections = obj.collections
         return (
-            [collection.acron3 for collection in collections]
-            if obj.journal
-            else None
+            [collection.acron3 for collection in collections] if obj.journal else None
         )
 
     def prepare_doi(self, obj):

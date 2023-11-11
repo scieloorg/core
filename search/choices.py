@@ -80,6 +80,3 @@ translates = {
     "obituary": _("Obituário"),
     "in brief": _("Em resumo"),
 }
-
-
-

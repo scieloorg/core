@@ -78,7 +78,6 @@ class Vocabulary(CommonControlField):
             vocabulary.save()
             return vocabulary
 
-
     base_form_class = CoreAdminModelForm
 
 

@@ -12,4 +12,3 @@ ROLE = [
     ("Editor(es) Associados ou de Seção", _("Editor(es) Associados ou de Seção")),
     ("Equipe Técnica", _("Equipe Técnica")),
 ]
-

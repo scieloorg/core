@@ -122,9 +122,7 @@ class ScimagoAdmin(ModelAdmin):
     menu_icon = "folder"
     menu_order = 700
     add_to_settings_menu = False
-    exclude_from_explorer = (
-        False
-    )
+    exclude_from_explorer = False
     list_display = (
         "institution",
         "country",

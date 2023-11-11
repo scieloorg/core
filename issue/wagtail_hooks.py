@@ -33,7 +33,7 @@ class IssueAdmin(ModelAdmin):
         "year",
         "month",
         "created",
-        "updated",        
+        "updated",
     )
     list_filter = (
         "year",

@@ -105,7 +105,7 @@ class GenericThematicAreaAdminGroup(ModelAdminGroup):
     )
 
 
-#modeladmin_register(GenericThematicAreaAdminGroup)
+# modeladmin_register(GenericThematicAreaAdminGroup)
 
 
 @hooks.register("register_admin_urls")

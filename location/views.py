@@ -10,10 +10,7 @@ from wagtail.admin import messages
 
 from core.libs import chkcsv
 
-from .models import (
-    Country,
-    CountryFile
-)
+from .models import Country, CountryFile
 
 # Create your views here.
 def validate_country(request):

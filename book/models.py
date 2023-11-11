@@ -111,7 +111,7 @@ class Book(CommonControlField, ClusterableModel):
             models.Index(
                 fields=[
                     "year",
-                    ]
+                ]
             ),
             models.Index(
                 fields=[
