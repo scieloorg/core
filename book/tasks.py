@@ -1,6 +1,5 @@
-from config import celery_app
-
 from book.sources.oai_books import harvest_books
+from config import celery_app
 
 
 @celery_app.task()

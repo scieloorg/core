@@ -7,7 +7,7 @@ from wagtail.contrib.modeladmin.options import (
 )
 from wagtail.contrib.modeladmin.views import CreateView
 
-from .models import Issue, EditorialBoard
+from .models import EditorialBoard, Issue
 
 
 class IssueCreateView(CreateView):
@@ -33,7 +33,7 @@ class IssueAdmin(ModelAdmin):
         "year",
         "month",
         "created",
-        "updated",        
+        "updated",
     )
     list_filter = (
         "year",

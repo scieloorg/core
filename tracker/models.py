@@ -1,8 +1,8 @@
-from datetime import datetime
 import json
 import logging
 import traceback
 import uuid
+from datetime import datetime
 
 from django.core.files.base import ContentFile
 from django.db import models
@@ -10,12 +10,11 @@ from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
-from wagtailautocomplete.edit_handlers import AutocompletePanel
 from wagtail.models import Orderable
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
-
 from tracker import choices
 
 

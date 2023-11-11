@@ -421,7 +421,7 @@ HAYSTACK_CONNECTIONS = {
         "INCLUDE_SPELLING": True,
         "SILENTLY_FAIL": False,
         "SOLR_TIMEOUT": 10,
-        "EXCLUDED_INDEXES": ['article.search_indexes.ArticleOAIIndex']
+        "EXCLUDED_INDEXES": ["article.search_indexes.ArticleOAIIndex"],
     },
     "oai": {
         "ENGINE": "haystack.backends.solr_backend.SolrEngine",
@@ -430,11 +430,13 @@ HAYSTACK_CONNECTIONS = {
         "INCLUDE_SPELLING": True,
         "SILENTLY_FAIL": False,
         "SOLR_TIMEOUT": 10,
-        "EXCLUDED_INDEXES": ['article.search_indexes.ArticleIndex']
-    }
+        "EXCLUDED_INDEXES": ["article.search_indexes.ArticleIndex"],
+    },
 }
 
-HAYSTACK_ROUTERS = ['core.routers.UpdateEverythingRouter', ]
+HAYSTACK_ROUTERS = [
+    "core.routers.UpdateEverythingRouter",
+]
 
 HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.RealtimeSignalProcessor"
 

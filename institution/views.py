@@ -10,10 +10,8 @@ from wagtail.admin import messages
 
 from core.libs import chkcsv
 
-from .models import (
-    Scimago,
-    ScimagoFile
-)
+from .models import Scimago, ScimagoFile
+
 
 # Create your views here.
 def validate_scimago(request):

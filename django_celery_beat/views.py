@@ -20,7 +20,7 @@ def task_run(request):
     current_app.loader.import_default_modules()
 
     task = current_app.tasks.get(p_task.task)
-    
+
     kwargs = json.loads(p_task.kwargs)
     kwargs["user_id"] = request.user.id
 

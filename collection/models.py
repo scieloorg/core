@@ -7,8 +7,9 @@ from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
-from core.models import CommonControlField, TextWithLang, Language
+from core.models import CommonControlField, Language, TextWithLang
 from core.utils.utils import fetch_data
+
 from . import choices
 
 
@@ -185,8 +186,18 @@ class Collection(CommonControlField):
 
     @classmethod
     def create_or_update(
-        cls, user, main_name, acron2, acron3, code, domain,
-        names, status, has_analytics, collection_type, is_active,
+        cls,
+        user,
+        main_name,
+        acron2,
+        acron3,
+        code,
+        domain,
+        names,
+        status,
+        has_analytics,
+        collection_type,
+        is_active,
     ):
         try:
             obj = cls.objects.get(acron3=acron3)
@@ -207,8 +218,7 @@ class Collection(CommonControlField):
         obj.save()
         for language in names:
             lang = Language.get_or_create(code2=language, creator=user)
-            obj.name.add(
-                CollectionName.get_or_create(lang, names.get(language), user))
+            obj.name.add(CollectionName.get_or_create(lang, names.get(language), user))
         obj.save()
         logging.info(acron3)
         return obj

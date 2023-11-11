@@ -29,9 +29,7 @@ class XMLVersionAdmin(ModelAdmin):
         "updated",
     )
     # list_filter = ("is_published",)
-    search_fields = (
-        "pid_v3",
-    )
+    search_fields = ("pid_v3",)
 
 
 modeladmin_register(XMLVersionAdmin)

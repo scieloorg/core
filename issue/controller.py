@@ -4,10 +4,10 @@ import sys
 import requests
 import xmltodict
 
+from journal.models import SciELOJournal
 from tracker.models import UnexpectedEvent
 
 from .models import Issue
-from journal.models import SciELOJournal
 
 
 def get_journal_xml(collection, issn):
@@ -26,8 +26,8 @@ def get_journal_xml(collection, issn):
             exc_traceback=exc_traceback,
             detail=dict(
                 function="issue.controller.get_journal_xml",
-                message=f"Error getting the ISSN {issn} of the {collection} collection"
-            )
+                message=f"Error getting the ISSN {issn} of the {collection} collection",
+            ),
         )
 
 
@@ -72,10 +72,9 @@ def get_issue(user, journal_xml, collection):
                         exc_traceback=exc_traceback,
                         detail=dict(
                             function="issue.controller.get_issue",
-                            message=f"Error getting or creating issue for {journal_xml['SERIAL']['ISSN_AS_ID']}"
-                        )
-                    )                    
-
+                            message=f"Error getting or creating issue for {journal_xml['SERIAL']['ISSN_AS_ID']}",
+                        ),
+                    )
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -84,9 +83,9 @@ def get_issue(user, journal_xml, collection):
             exc_traceback=exc_traceback,
             detail=dict(
                 function="issue.controller.get_issue",
-                message=f"Error getting SciELO journal for {journal_xml['SERIAL']['ISSN_AS_ID']}"
-            )
-        )        
+                message=f"Error getting SciELO journal for {journal_xml['SERIAL']['ISSN_AS_ID']}",
+            ),
+        )
 
 
 def load(user):
@@ -103,6 +102,6 @@ def load(user):
                 exc_traceback=exc_traceback,
                 detail=dict(
                     function="issue.controller.load",
-                    message=f"Error getting record XML"
-                )
+                    message=f"Error getting record XML",
+                ),
             )

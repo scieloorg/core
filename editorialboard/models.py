@@ -8,13 +8,14 @@ from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
+from core.choices import MONTHS
 from core.models import CommonControlField, Gender
 from institution.models import Institution, InstitutionHistory
 from journal.models import Journal
 
-from core.choices import MONTHS
-from .forms import ResearcherForm
 from . import choices
+from .forms import ResearcherForm
+
 
 class Researcher(ClusterableModel, CommonControlField):
     """
@@ -111,10 +112,16 @@ class Researcher(ClusterableModel, CommonControlField):
         if orcid:
             return cls.objects.get(orcid=orcid)
         elif given_names or last_name:
-            return cls.objects.get(given_names__iexact=given_names, last_name__iexact=last_name, orcid__isnull=True)
+            return cls.objects.get(
+                given_names__iexact=given_names,
+                last_name__iexact=last_name,
+                orcid__isnull=True,
+            )
         elif declared_name:
             return cls.objects.get(declared_name=declared_name)
-        raise ValueError("Researcher.get requires orcid, given_names, last_names or declared_name parameters")
+        raise ValueError(
+            "Researcher.get requires orcid, given_names, last_names or declared_name parameters"
+        )
 
     @classmethod
     def create_or_update(
@@ -144,9 +151,8 @@ class Researcher(ClusterableModel, CommonControlField):
             researcher.creator = user
             researcher.orcid = orcid
 
-
         researcher.given_names = given_names or researcher.given_names
-        researcher.last_name = last_name or researcher.last_name       
+        researcher.last_name = last_name or researcher.last_name
         institution = None
         if institution_name:
             try:
@@ -160,15 +166,15 @@ class Researcher(ClusterableModel, CommonControlField):
         ## TODO
         ## Criar get_or_create para model gender e GenderIdentificationStatus
         researcher.gender = gender or researcher.gender
-        researcher.gender_identification_status = gender_identification_status or researcher.gender_identification_status
+        researcher.gender_identification_status = (
+            gender_identification_status or researcher.gender_identification_status
+        )
         researcher.save()
-        
+
         if email:
             FieldEmail.objects.create(page=researcher, email=email)
         if institution:
-            FieldAffiliation.objects.create(
-                page=researcher, institution=institution
-            )
+            FieldAffiliation.objects.create(page=researcher, institution=institution)
         return researcher
 
     panels = [
@@ -206,7 +212,9 @@ class EditorialBoardMember(models.Model):
         _("Role"), max_length=255, choices=choices.ROLE, null=False, blank=False
     )
     initial_year = models.CharField(max_length=4, blank=True, null=True)
-    initial_month = models.CharField(max_length=2, blank=True, null=True, choices=MONTHS)
+    initial_month = models.CharField(
+        max_length=2, blank=True, null=True, choices=MONTHS
+    )
     final_year = models.CharField(max_length=4, blank=True, null=True)
     final_month = models.CharField(max_length=2, blank=True, null=True, choices=MONTHS)
 
