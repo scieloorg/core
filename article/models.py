@@ -75,7 +75,6 @@ class Article(CommonControlField):
         on_delete=models.SET_NULL,
     )
 
-
     panels = [
         FieldPanel("pid_v2"),
         FieldPanel("pid_v3"),
@@ -196,12 +195,12 @@ class ArticleFunding(CommonControlField):
     funding_source = models.ForeignKey(
         Sponsor, null=True, blank=True, on_delete=models.SET_NULL
     )
-    
+
     autocomplete_search_field = "award_id"
-    
+
     def autocomplete_label(self):
         return str(self)
-        
+
     class Meta:
         indexes = [
             models.Index(
@@ -267,15 +266,15 @@ class ArticleFunding(CommonControlField):
 
 class DocumentTitle(RichTextWithLang, CommonControlField):
     ...
-    
+
     autocomplete_search_field = "plain_text"
 
     def autocomplete_label(self):
         return str(self)
-    
+
     def __str__(self):
         return f"{self.plain_text} - {self.language}"
-    
+
     @classmethod
     def get(
         cls,
@@ -284,7 +283,7 @@ class DocumentTitle(RichTextWithLang, CommonControlField):
         if title:
             return cls.objects.get(plain_text=title)
         raise ValueError("DocumentTitle requires title parameter")
-    
+
     @classmethod
     def create_or_update(cls, title, title_rich, language, user):
         try:
@@ -294,7 +293,7 @@ class DocumentTitle(RichTextWithLang, CommonControlField):
             obj = cls()
             obj.plain_text = title
             obj.creator = user
-            
+
         obj.language = language or obj.language
         obj.rich_text = title_rich or obj.title_rich
         obj.save()
@@ -318,7 +317,6 @@ class DocumentAbstract(RichTextWithLang, CommonControlField):
 
     def __str__(self):
         return f"{self.plain_text} - {self.language}"
-    
 
     @classmethod
     def get(
@@ -473,10 +471,7 @@ class ArticleCount(CommonControlField):
         blank=True,
     )
 
-    panels = [
-        AutocompletePanel("count_type"),
-        AutocompletePanel("language")
-    ]
+    panels = [AutocompletePanel("count_type"), AutocompletePanel("language")]
 
     class Meta:
         indexes = [

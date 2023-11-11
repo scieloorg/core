@@ -1,12 +1,12 @@
 import logging
 
 from django.contrib.auth import get_user_model
-from config import celery_app
-from collection.models import Collection
-from core.models import Language
-from location.models import Country, City, State
-from journal.models import Standard, Subject, WebOfKnowledge
 
+from collection.models import Collection
+from config import celery_app
+from core.models import Language
+from journal.models import Standard, Subject, WebOfKnowledge
+from location.models import City, Country, State
 
 User = get_user_model()
 

@@ -1,6 +1,6 @@
 import csv
-import os
 import logging
+import os
 
 from django.db import models
 from django.db.models import Q
@@ -30,20 +30,14 @@ class City(CommonControlField):
 
     def autocomplete_label(self):
         return str(self)
-    
-    panels = [
-        FieldPanel("name")
-    ]
+
+    panels = [FieldPanel("name")]
 
     class Meta:
         verbose_name = _("City")
         verbose_name_plural = _("Cities")
         indexes = [
-            models.Index(
-                fields=[
-                    "name"
-                ]
-            ),                        
+            models.Index(fields=["name"]),
         ]
 
     def __unicode__(self):
@@ -87,10 +81,7 @@ class Region(CommonControlField):
     def autocomplete_label(self):
         return str(self)
 
-    panels = [
-        FieldPanel("name"),
-        FieldPanel("acronym")
-    ]
+    panels = [FieldPanel("name"), FieldPanel("acronym")]
 
     class Meta:
         verbose_name = _("Region")
@@ -105,7 +96,7 @@ class Region(CommonControlField):
                 fields=[
                     "acronym",
                 ]
-            ),                        
+            ),
         ]
 
     def __unicode__(self):
@@ -158,11 +149,7 @@ class State(CommonControlField):
     def autocomplete_label(self):
         return str(self)
 
-    panels = [
-        FieldPanel("name"),
-        FieldPanel("acronym"),
-        AutocompletePanel("region")
-    ]
+    panels = [FieldPanel("name"), FieldPanel("acronym"), AutocompletePanel("region")]
 
     class Meta:
         verbose_name = _("State")
@@ -177,7 +164,7 @@ class State(CommonControlField):
                 fields=[
                     "acronym",
                 ]
-            ),                  
+            ),
         ]
 
     def __unicode__(self):
@@ -191,7 +178,9 @@ class State(CommonControlField):
         if state_data or not cls.objects.exists():
             state_data = state_data or "./location/fixtures/states.csv"
             with open(state_data, "r") as csvfile:
-                reader = csv.DictReader(csvfile, fieldnames=['name', 'acron2', 'region'], delimiter=";")
+                reader = csv.DictReader(
+                    csvfile, fieldnames=["name", "acron2", "region"], delimiter=";"
+                )
                 for row in reader:
                     cls.get_or_create(
                         name=row["name"],
@@ -226,7 +215,13 @@ class State(CommonControlField):
 
 
 class CountryName(TextWithLang, Orderable):
-    country = ParentalKey("Country", on_delete=models.SET_NULL, blank=True, null=True, related_name="country_name")
+    country = ParentalKey(
+        "Country",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="country_name",
+    )
 
     autocomplete_search_filter = "text"
 
@@ -282,19 +277,19 @@ class Country(CommonControlField, ClusterableModel):
     acron3 = models.CharField(
         _("Country Acronym (3 char)"), blank=True, null=True, max_length=3
     )
-    
+
     autocomplete_search_field = "name"
 
     def autocomplete_label(self):
         return str(self)
-    
+
     panels = [
         FieldPanel("acronym"),
         FieldPanel("acron3"),
         FieldPanel("name"),
         InlinePanel("country_name", label=_("Country names")),
     ]
-    
+
     class Meta:
         verbose_name = _("Country")
         verbose_name_plural = _("Countries")
@@ -308,8 +303,8 @@ class Country(CommonControlField, ClusterableModel):
                 fields=[
                     "acronym",
                 ]
-            ),                  
-        ]        
+            ),
+        ]
 
     def __unicode__(self):
         return "%s" % self.name
@@ -322,15 +317,18 @@ class Country(CommonControlField, ClusterableModel):
         # País (pt);País (en);Capital;Código ISO (3 letras);Código ISO (2 letras)
         if cls.objects.count() == 0:
             fieldnames = ["name_pt", "name_en", "Capital", "acron3", "acron2"]
-            with open("./location/fixtures/country.csv", newline='') as csvfile:
+            with open("./location/fixtures/country.csv", newline="") as csvfile:
                 reader = csv.DictReader(csvfile, fieldnames=fieldnames, delimiter=";")
                 for row in reader:
                     if row["acron2"] == "acron2":
                         continue
                     try:
                         cls.create_or_update(
-                            user, name=None, acronym=row["acron2"], acron3=row["acron3"],
-                            country_names={"pt": row["name_pt"], "en": row["name_en"]}
+                            user,
+                            name=None,
+                            acronym=row["acron2"],
+                            acron3=row["acron3"],
+                            country_names={"pt": row["name_pt"], "en": row["name_en"]},
                         )
                     except Exception as e:
                         print(f"{e} {row}")
@@ -348,7 +346,9 @@ class Country(CommonControlField, ClusterableModel):
         raise ValueError("Country.get requires parameters")
 
     @classmethod
-    def create_or_update(cls, user, name=None, acronym=None, acron3=None, country_names=None):
+    def create_or_update(
+        cls, user, name=None, acronym=None, acron3=None, country_names=None
+    ):
         try:
             obj = cls.get(name, acronym, acron3)
             obj.updated_by = user
@@ -366,9 +366,10 @@ class Country(CommonControlField, ClusterableModel):
         for language, text in (country_names or {}).items():
             logging.info(f"{language} {text}")
             language = Language.get_or_create(code2=language)
-            CountryName.get_or_create(country=obj, language=language, text=text, user=user)
+            CountryName.get_or_create(
+                country=obj, language=language, text=text, user=user
+            )
         return obj
-        
 
     base_form_class = CoreAdminModelForm
 
@@ -379,6 +380,7 @@ class Address(CommonControlField):
     Fields:
         name
     """
+
     name = models.TextField(_("Address"), blank=True, null=True)
     location = models.ForeignKey(
         "Location",
@@ -392,21 +394,14 @@ class Address(CommonControlField):
 
     def autocomplete_label(self):
         return str(self)
-    
-    panels = [
-        FieldPanel("name"),
-        AutocompletePanel("location")
-    ]
+
+    panels = [FieldPanel("name"), AutocompletePanel("location")]
 
     class Meta:
         verbose_name = _("Address")
         verbose_name_plural = _("Adresses")
         indexes = [
-            models.Index(
-                fields=[
-                    "name"
-                ]
-            ),                        
+            models.Index(fields=["name"]),
         ]
 
     def __unicode__(self):
@@ -479,40 +474,49 @@ class Location(CommonControlField):
     @classmethod
     def get(
         cls,
-        location_region, 
-        location_country, 
-        location_state, 
+        location_region,
+        location_country,
+        location_state,
         location_city,
     ):
         filters = {}
 
         if location_region:
-            filters['region'] = location_region
+            filters["region"] = location_region
         if location_country:
-            filters['country'] = location_country
+            filters["country"] = location_country
         if location_state:
-            filters['state'] = location_state
+            filters["state"] = location_state
         if location_city:
-            filters['city'] = location_city
+            filters["city"] = location_city
 
         if filters:
             return cls.objects.get(**filters)
-        raise ValueError("Location.get requires region, country, city or state parameters")
+        raise ValueError(
+            "Location.get requires region, country, city or state parameters"
+        )
 
     @classmethod
     def create_or_update(
-        cls, user, location_region, location_country, location_state, location_city,
+        cls,
+        user,
+        location_region,
+        location_country,
+        location_state,
+        location_city,
     ):
         # check if exists the location
         try:
-            location = cls.get(location_region, location_country, location_state, location_city)
+            location = cls.get(
+                location_region, location_country, location_state, location_city
+            )
             location.updated_by = user
         except cls.DoesNotExist:
             location = cls()
             location.creator = user
-        
-        location.region = location_region or location.region 
-        location.country = location_country or location.country 
+
+        location.region = location_region or location.region
+        location.country = location_country or location.country
         location.state = location_state or location.state
         location.city = location_city or location.city
         location.save()

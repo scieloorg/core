@@ -1,17 +1,17 @@
 from django.http import HttpResponseRedirect
-from django.utils.translation import gettext as _
 from django.urls import include, path
+from django.utils.translation import gettext as _
+from wagtail import hooks
 from wagtail.contrib.modeladmin.options import (
     ModelAdmin,
     ModelAdminGroup,
     modeladmin_register,
 )
 from wagtail.contrib.modeladmin.views import CreateView
-from wagtail import hooks
 
-from .models import Institution, Sponsor, Scimago, ScimagoFile
-from .views import import_file_scimago, validate_scimago
 from .button_helpers import ScimagoHelper
+from .models import Institution, Scimago, ScimagoFile, Sponsor
+from .views import import_file_scimago, validate_scimago
 
 
 class InstitutionCreateView(CreateView):
@@ -122,9 +122,7 @@ class ScimagoAdmin(ModelAdmin):
     menu_icon = "folder"
     menu_order = 700
     add_to_settings_menu = False
-    exclude_from_explorer = (
-        False
-    )
+    exclude_from_explorer = False
     list_display = (
         "institution",
         "country",

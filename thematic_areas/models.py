@@ -173,7 +173,7 @@ class ThematicArea(CommonControlField):
                 fields=[
                     "level2",
                 ]
-            ),            
+            ),
         ]
 
     def __unicode__(self):

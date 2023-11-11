@@ -20,7 +20,7 @@ class DOI(CommonControlField):
         blank=True,
     )
     autocomplete_search_field = "value"
-    
+
     panels = [
         FieldPanel("value"),
         AutocompletePanel("language"),
@@ -39,10 +39,10 @@ class DOI(CommonControlField):
                 ]
             ),
         ]
-    
+
     def autocomplete_label(self):
         return str(self.value)
-    
+
     @property
     def data(self):
         return {
