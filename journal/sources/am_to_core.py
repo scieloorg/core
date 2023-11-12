@@ -26,7 +26,7 @@ from journal.models import (
     WebOfKnowledge,
     WebOfKnowledgeSubjectCategory,
 )
-from location.models import Address, City, Country, Location, State
+from location.models import City, Country, Location, State
 from reference.models import JournalTitle
 from vocabulary.models import Vocabulary
 
@@ -634,7 +634,6 @@ def create_or_update_location(
     )
 
     location = Location.create_or_update(
-        location_region=None,
         location_country=country,
         location_city=city,
         location_state=state,
