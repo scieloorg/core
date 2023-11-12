@@ -427,57 +427,6 @@ class Country(CommonControlField, ClusterableModel):
     base_form_class = CoreAdminModelForm
 
 
-class Address(CommonControlField):
-    """
-    Represent the list of address
-    Fields:
-        name
-    """
-
-    name = models.TextField(_("Address"), blank=True, null=True)
-    location = models.ForeignKey(
-        "Location",
-        verbose_name=_("Address"),
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-    )
-
-    autocomplete_search_field = "name"
-
-    def autocomplete_label(self):
-        return str(self)
-
-    panels = [FieldPanel("name"), AutocompletePanel("location")]
-
-    class Meta:
-        verbose_name = _("Address")
-        verbose_name_plural = _("Adresses")
-        indexes = [
-            models.Index(fields=["name"]),
-        ]
-
-    def __unicode__(self):
-        return "%s" % self.name
-
-    def __str__(self):
-        return "%s" % self.name
-
-    @classmethod
-    def get_or_create(cls, user, name):
-        if name:
-            try:
-                return cls.objects.get(name=name)
-            except:
-                address = cls()
-                address.name = name
-                address.creator = user
-                address.save()
-                return address
-
-    base_form_class = CoreAdminModelForm
-
-
 class Location(CommonControlField):
     city = models.ForeignKey(
         City,
