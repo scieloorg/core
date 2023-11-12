@@ -324,12 +324,12 @@ class Country(CommonControlField, ClusterableModel):
     autocomplete_search_field = "name"
 
     def autocomplete_label(self):
-        return str(self)
+        return self.name or self.acronym
 
     panels = [
+        FieldPanel("name"),
         FieldPanel("acronym"),
         FieldPanel("acron3"),
-        FieldPanel("name"),
         InlinePanel("country_name", label=_("Country names")),
     ]
 
@@ -350,10 +350,10 @@ class Country(CommonControlField, ClusterableModel):
         ]
 
     def __unicode__(self):
-        return "%s" % self.name
+        return self.name or self.acronym
 
     def __str__(self):
-        return "%s" % self.name
+        return self.name or self.acronym
 
     @classmethod
     def load(cls, user):
@@ -363,34 +363,41 @@ class Country(CommonControlField, ClusterableModel):
             with open("./location/fixtures/country.csv", newline="") as csvfile:
                 reader = csv.DictReader(csvfile, fieldnames=fieldnames, delimiter=";")
                 for row in reader:
-                    if row["acron2"] == "acron2":
-                        continue
-                    try:
-                        cls.create_or_update(
-                            user,
-                            name=None,
-                            acronym=row["acron2"],
-                            acron3=row["acron3"],
-                            country_names={"pt": row["name_pt"], "en": row["name_en"]},
-                        )
-                    except Exception as e:
-                        print(f"{e} {row}")
-                        raise
+                    cls.create_or_update(
+                        user,
+                        name=None,
+                        acronym=row["acron2"],
+                        acron3=row["acron3"],
+                        country_names={"pt": row["name_pt"], "en": row["name_en"]},
+                    )
 
     @classmethod
     def get(
         cls,
         name,
-        acronym,
-        acron3,
+        acronym=None,
+        acron3=None,
     ):
-        if any([name, acronym, acron3]):
-            return cls.objects.get(Q(name=name) | Q(acronym=acronym) | Q(acron3=acron3))
-        raise ValueError("Country.get requires parameters")
+        if not name and not acronym and not acron3:
+            raise ValueError("Country.get requires parameters")
+
+        try:
+            if acronym:
+                return cls.objects.get(acronym=acronym)
+            if acron3:
+                return cls.objects.get(acron3=acron3)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.get(acronym=acronym, acron3=acron3, name=name)
+        except cls.DoesNotExist:
+            try:
+                if name:
+                    return CountryName.objects.get(name=name).country
+            except Exception as e:
+                raise cls.DoesNotExist(e)
 
     @classmethod
     def create_or_update(
-        cls, user, name=None, acronym=None, acron3=None, country_names=None
+        cls, user, name=None, acronym=None, acron3=None, country_names=None, lang_code2=None,
     ):
         try:
             obj = cls.get(name, acronym, acron3)
@@ -404,12 +411,15 @@ class Country(CommonControlField, ClusterableModel):
         obj.acron3 = acron3 or obj.acron3
         obj.save()
 
-        logging.info(country_names)
-        logging.info(type(country_names))
-        for language, text in (country_names or {}).items():
-            logging.info(f"{language} {text}")
-            language = Language.get_or_create(code2=language)
-            CountryName.get_or_create(
+        country_names = country_names or {}
+
+        if lang_code2 and name:
+            country_names[lang_code2] = name
+
+        for lang_code2, text in country_names.items():
+            logging.info(f"{lang_code2} {text}")
+            language = Language.get_or_create(code2=lang_code2)
+            CountryName.create_or_update(
                 country=obj, language=language, text=text, user=user
             )
         return obj
