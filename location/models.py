@@ -41,10 +41,10 @@ class City(CommonControlField):
         ]
 
     def __unicode__(self):
-        return "%s" % self.name
+        return self.name
 
     def __str__(self):
-        return "%s" % self.name
+        return self.name
 
     @classmethod
     def load(cls, user, city_data=None):
@@ -56,7 +56,7 @@ class City(CommonControlField):
                     cls.get_or_create(name=name, user=user)
 
     @classmethod
-    def get_or_create(cls, user, name):
+    def get_or_create(cls, user=None, name=None):
         if name:
             try:
                 return cls.objects.get(name=name)
