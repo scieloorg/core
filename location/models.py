@@ -238,10 +238,29 @@ class CountryName(TextWithLang, Orderable):
         related_name="country_name",
     )
 
+    panels = [FieldPanel("text"), AutocompletePanel("language")]
+    base_form_class = CoreAdminModelForm
+
+    class Meta:
+        verbose_name = _("Country name")
+        verbose_name_plural = _("Country names")
+        indexes = [
+            models.Index(
+                fields=[
+                    "language",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "text",
+                ]
+            ),
+        ]
+
     autocomplete_search_filter = "text"
 
     def autocomplete_label(self):
-        return str(self)
+        return f"{self.text} ({self.language})"
 
     @property
     def data(self):
@@ -253,26 +272,35 @@ class CountryName(TextWithLang, Orderable):
         return d
 
     def __unicode__(self):
-        return "%s (%s)" % (self.text, self.language)
+        return f"{self.text} ({self.language})"
 
     def __str__(self):
-        return "%s (%s)" % (self.text, self.language)
-
-    @classmethod
-    def get(cls, country, language, text):
-        return cls.objects.get(country=country, language=language, text=text)
+        return f"{self.text} ({self.language})"
 
     @classmethod
     def get_or_create(cls, country, language, text, user=None):
+        return cls.create_or_update(user, country, language, text)
+
+    @classmethod
+    def get(cls, country, language):
+        if not country and not language:
+            raise ValueError("CountryName.get requires country or language")
+        return cls.objects.get(country=country, language=language)
+
+    @classmethod
+    def create_or_update(cls, user, country, language, text):
         try:
-            obj = cls.get(country=country, language=language, text=text)
+            obj = cls.get(country, language)
+            obj.updated_by = user
         except cls.DoesNotExist:
             obj = cls()
-            obj.country = country
-            obj.language = language
-            obj.text = text
             obj.creator = user
-            obj.save()
+
+        obj.country = country or obj.country
+        obj.language = language or obj.language
+        obj.text = text or obj.text
+        obj.save()
+
         return obj
 
 
