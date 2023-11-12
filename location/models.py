@@ -479,7 +479,6 @@ class Address(CommonControlField):
 
 
 class Location(CommonControlField):
-    region = models.ForeignKey(Region, on_delete=models.SET_NULL, null=True, blank=True)
     city = models.ForeignKey(
         City,
         verbose_name=_("City"),
@@ -502,13 +501,19 @@ class Location(CommonControlField):
         blank=True,
     )
 
-    autocomplete_search_field = "country__name"
+    # autocomplete_search_field = "country__name"
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return Location.objects.filter(
+            Q(city__name__icontains=search_term)
+            | Q(state__name__icontains=search_term)
+            | Q(country__name__icontain=search_term)
+        )
 
     def autocomplete_label(self):
         return str(self)
 
     panels = [
-        AutocompletePanel("region"),
         AutocompletePanel("city"),
         AutocompletePanel("state"),
         AutocompletePanel("country"),
@@ -519,41 +524,34 @@ class Location(CommonControlField):
         verbose_name_plural = _("Locations")
 
     def __unicode__(self):
-        return "%s | %s | %s" % (self.country, self.state, self.city)
+        return f"{self.country} | {self.state} | {self.city}"
 
     def __str__(self):
-        return "%s | %s | %s" % (self.country, self.state, self.city)
+        return f"{self.country} | {self.state} | {self.city}"
 
     @classmethod
     def get(
         cls,
-        location_region,
         location_country,
         location_state,
         location_city,
     ):
         filters = {}
 
-        if location_region:
-            filters["region"] = location_region
-        if location_country:
-            filters["country"] = location_country
-        if location_state:
-            filters["state"] = location_state
-        if location_city:
-            filters["city"] = location_city
-
-        if filters:
-            return cls.objects.get(**filters)
+        if location_country or location_state or location_city:
+            return cls.objects.get(
+                country=location_country,
+                state=location_state,
+                city=location_city,
+            )
         raise ValueError(
-            "Location.get requires region, country, city or state parameters"
+            "Location.get requires country or state or city parameters"
         )
 
     @classmethod
     def create_or_update(
         cls,
         user,
-        location_region,
         location_country,
         location_state,
         location_city,
@@ -561,14 +559,13 @@ class Location(CommonControlField):
         # check if exists the location
         try:
             location = cls.get(
-                location_region, location_country, location_state, location_city
+                location_country, location_state, location_city
             )
             location.updated_by = user
         except cls.DoesNotExist:
             location = cls()
             location.creator = user
 
-        location.region = location_region or location.region
         location.country = location_country or location.country
         location.state = location_state or location.state
         location.city = location_city or location.city
