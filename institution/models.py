@@ -137,18 +137,26 @@ class Institution(CommonControlField, ClusterableModel):
         inst_acronym,
         location,
     ):
-        filters = {}
-
-        if inst_name:
-            filters["name"] = inst_name
-        if inst_acronym:
-            filters["acronym"] = inst_acronym
-        if location:
-            filters["location"] = location
-
-        if filters:
-            return cls.objects.get(**filters)
-        raise ValueError("Requires inst_name, inst_acronym or location parameters")
+        if inst_name or inst_acronym:
+            try:
+                if inst_name and inst_acronym:
+                    return cls.objects.get(
+                        Q(inst_name__iexact=inst_name) |
+                        Q(inst_acronym__iexact=inst_acronym),
+                        location=location,
+                    )
+                return cls.objects.get(
+                    inst_name__iexact=inst_name,
+                    inst_acronym__iexact=inst_acronym,
+                    location=location,
+                )
+            except cls.MultipleObjectsReturned:
+                return cls.objects.get(
+                    inst_name__iexact=inst_name,
+                    inst_acronym__iexact=inst_acronym,
+                    location=location,
+                )
+        raise ValueError("Requires inst_name or inst_acronym parameters")
 
     @classmethod
     def create_or_update(
@@ -172,9 +180,9 @@ class Institution(CommonControlField, ClusterableModel):
             institution.updated_by = user
         except cls.DoesNotExist:
             institution = cls()
-            institution.name = inst_name
             institution.creator = user
 
+        institution.name = inst_name or institution.name
         institution.acronym = inst_acronym or institution.acronym
         institution.level_1 = level_1 or institution.level_1
         institution.level_2 = level_2 or institution.level_2
