@@ -79,7 +79,7 @@ class Region(CommonControlField):
     autocomplete_search_field = "name"
 
     def autocomplete_label(self):
-        return str(self)
+        return f"{self.name or self.acronym}"
 
     panels = [FieldPanel("name"), FieldPanel("acronym")]
 
@@ -100,33 +100,40 @@ class Region(CommonControlField):
         ]
 
     def __unicode__(self):
-        return "%s" % self.name
+        return f"{self.name} ({self.acronym})"
 
     def __str__(self):
-        return "%s" % self.name
+        return f"{self.name} ({self.acronym})"
 
     @classmethod
-    def get_or_create(cls, user, name=None, acronym=None):
-        if name:
-            try:
-                return cls.objects.get(name__icontains=name)
-            except:
-                pass
+    def get_or_create(cls, user=None, name=None, acronym=None):
+        return cls.create_or_update(user, name=name, acronym=acronym)
 
-        if acronym:
-            try:
-                return cls.objects.get(acronym__icontains=acronym)
-            except:
-                pass
+    @classmethod
+    def get(cls, name=None, acronym=None):
+        if not name and not acronym:
+            raise ValueError("Region.get requires name or acronym")
+        try:
+            return cls.objects.get(
+                Q(name__iexact=name) | Q(acronym__iexact=acronym)
+            )
+        except cls.MultipleObjectsReturned:
+            return cls.objects.get(name__iexact=name, acronym__iexact=acronym)
 
-        if name or acronym:
-            region = Region()
-            region.name = name
-            region.acronym = acronym
-            region.creator = user
-            region.save()
+    @classmethod
+    def create_or_update(cls, user, name=None, acronym=None):
+        try:
+            obj = cls.get(name=name, acronym=acronym)
+            obj.updated_by = user
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.creator = user
 
-            return region
+        obj.name = name or obj.name
+        obj.acronym = acronym or obj.acronym
+        obj.save()
+
+        return obj
 
     base_form_class = CoreAdminModelForm
 
