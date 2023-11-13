@@ -1,3 +1,4 @@
+import csv
 import os
 
 from django.db import models
@@ -189,6 +190,20 @@ class ThematicArea(CommonControlField):
             self.level1,
             self.level2,
         )
+
+    @classmethod
+    def load(cls, user, thematic_area_data=None):
+        if thematic_area_data or not cls.objects.exists():
+            thematic_area_data = thematic_area_data or "./thematic_areas/fixtures/thematic_areas.csv"
+            with open(thematic_area_data, "r") as csvfile:
+                reader = csv.DictReader(csvfile, fieldnames=["level0", "level1", "level2"], delimiter=";")
+                for row in reader:
+                    cls.get_or_create(
+                        level0=row["level0"],
+                        level1=row["level1"],
+                        level2=row["level2"],
+                        user=user,
+                    )
 
     @classmethod
     def get_or_create(cls, level0, level1, level2, user):

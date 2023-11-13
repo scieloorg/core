@@ -1,350 +1,94 @@
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Matemática;Álgebra
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Matemática;Análise
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Matemática;Geometria e Topologia
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Matemática;Matemática Aplicada
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Probabilidade e estatística;Probabilidade
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Probabilidade e estatística;Estatística
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Probabilidade e estatística;Probabilidade e Estatística Aplicadas
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Ciência da computação;Teoria da Computação
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Ciência da computação;Matemática da Computação
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Ciência da computação;Metodologia e Técnicas da Computação
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Ciência da computação;Sistemas de Computação
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Astronomia;Astronomia de Posição e Mecânica Celeste
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Astronomia;Astrofísica Estelar
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Astronomia;Astrofísica do Meio Interestelar
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Astronomia;Astrofísica Extragaláctica
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Astronomia;Astrofísica do Sistema Solar
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Astronomia;Instrumentação Astronômica
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Física;Física Geral
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Física;Áreas Clássicas de Fenomenologia e suas Aplicações
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Física;Física das Partículas Elementares e Campos
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Física;Física Nuclear
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Física;Física Atômica e Molecular
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Física;Física dos Fluídos, Física de Plasmas e Descargas Elétricas
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Física;Física da Matéria Condensada
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Química;Química Orgânica
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Química;Química Inorgânica
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Química;Físico-Química
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Química;Química Analítica
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Geociências;Geologia
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Geociências;Geofísica
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Geociências;Meteorologia
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Geociências;Geodésia
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Geociências;Geografia Física
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Oceanografia;Oceanografia Biológica
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Oceanografia;Oceanografia Física
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Oceanografia;Oceanografia Química
-Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Oceanografia;Oceanografia Geológica
-Ciências da Vida;Ciências Biológicas;Biologia geral;
-Ciências da Vida;Ciências Biológicas;Genética;Genética Quantitativa
-Ciências da Vida;Ciências Biológicas;Genética;Genética Molecular e de Microorganismos
-Ciências da Vida;Ciências Biológicas;Genética;Genética Vegetal
-Ciências da Vida;Ciências Biológicas;Genética;Genética Animal
-Ciências da Vida;Ciências Biológicas;Genética;Genética Humana e Médica
-Ciências da Vida;Ciências Biológicas;Genética;Mutagênese
-Ciências da Vida;Ciências Biológicas;Botânica;Paleobotânica
-Ciências da Vida;Ciências Biológicas;Botânica;Morfologia Vegetal
-Ciências da Vida;Ciências Biológicas;Botânica;Fisiologia Vegetal
-Ciências da Vida;Ciências Biológicas;Botânica;Taxonomia Vegetal
-Ciências da Vida;Ciências Biológicas;Botânica;Fitogeografia
-Ciências da Vida;Ciências Biológicas;Botânica;Botânica Aplicada
-Ciências da Vida;Ciências Biológicas;Zoologia;Paleozoologia
-Ciências da Vida;Ciências Biológicas;Zoologia;Morfologia dos Grupos Recentes
-Ciências da Vida;Ciências Biológicas;Zoologia;Fisiologia dos Grupos Recentes
-Ciências da Vida;Ciências Biológicas;Zoologia;Comportamento Animal
-Ciências da Vida;Ciências Biológicas;Zoologia;Taxonomia dos Grupos Recentes
-Ciências da Vida;Ciências Biológicas;Zoologia;Zoologia Aplicada
-Ciências da Vida;Ciências Biológicas;Ecologia;Ecologia Teórica
-Ciências da Vida;Ciências Biológicas;Ecologia;Ecologia de Ecossistemas
-Ciências da Vida;Ciências Biológicas;Ecologia;Ecologia Aplicada
-Ciências da Vida;Ciências Biológicas;Morfologia;Citologia e Biologia Celular
-Ciências da Vida;Ciências Biológicas;Morfologia;Embriologia
-Ciências da Vida;Ciências Biológicas;Morfologia;Histologia
-Ciências da Vida;Ciências Biológicas;Morfologia;Anatomia
-Ciências da Vida;Ciências Biológicas;Fisiologia;Fisiologia Geral
-Ciências da Vida;Ciências Biológicas;Fisiologia;Fisiologia de Orgãos e Sistemas
-Ciências da Vida;Ciências Biológicas;Fisiologia;Fisiologia do Esforço
-Ciências da Vida;Ciências Biológicas;Fisiologia;Fisiologia Comparada
-Ciências da Vida;Ciências Biológicas;Bioquímica;Química de Macromoléculas
-Ciências da Vida;Ciências Biológicas;Bioquímica;Bioquímica de Microorganismos
-Ciências da Vida;Ciências Biológicas;Bioquímica;Metabolismo e Bioenergética
-Ciências da Vida;Ciências Biológicas;Bioquímica;Biologia Molecular
-Ciências da Vida;Ciências Biológicas;Bioquímica;Enzimologia
-Ciências da Vida;Ciências Biológicas;Biofísica;Biofísica Molecular
-Ciências da Vida;Ciências Biológicas;Biofísica;Biofísica Celular
-Ciências da Vida;Ciências Biológicas;Biofísica;Biofísica de Processos e Sistemas
-Ciências da Vida;Ciências Biológicas;Biofísica;Radiologia e Fotobiologia
-Ciências da Vida;Ciências Biológicas;Farmacologia;Farmacologia Geral
-Ciências da Vida;Ciências Biológicas;Farmacologia;Farmacologia Autonômica
-Ciências da Vida;Ciências Biológicas;Farmacologia;Neuropsicofarmacologia
-Ciências da Vida;Ciências Biológicas;Farmacologia;Farmacologia Cardiorenal
-Ciências da Vida;Ciências Biológicas;Farmacologia;Farmacologia Bioquímica e Molecular
-Ciências da Vida;Ciências Biológicas;Farmacologia;Etnofarmacologia
-Ciências da Vida;Ciências Biológicas;Farmacologia;Toxicologia
-Ciências da Vida;Ciências Biológicas;Farmacologia;Farmacologia Clínica
-Ciências da Vida;Ciências Biológicas;Imunologia;Imunoquímica
-Ciências da Vida;Ciências Biológicas;Imunologia;Imunologia Celular
-Ciências da Vida;Ciências Biológicas;Imunologia;Imunogenética
-Ciências da Vida;Ciências Biológicas;Imunologia;Imunologia Aplicada
-Ciências da Vida;Ciências Biológicas;Microbiologia;Biologia e Fisiologia dos Mircroorganismos
-Ciências da Vida;Ciências Biológicas;Microbiologia;Microbiologia Aplicada
-Ciências da Vida;Ciências Biológicas;Parasitologia;Protozoologia de Parasitos
-Ciências da Vida;Ciências Biológicas;Parasitologia;Helmintologia de Parasitos
-Ciências da Vida;Ciências Biológicas;Parasitologia;Entomologia e Malacologia de Parasitos e Vetores
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia civil;Construção Civil
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia civil;Estruturas
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia civil;Geotécnica
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia civil;Engenharia Hidráulica
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia civil;Infra-Estrutura de Transportes
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia de minas;Pesquisa Mineral
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia de minas;Lavra
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia de minas;Tratamento de Minérios
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia de materiais e metalúrgica;Instalações e Equipamentos Metalúrgicos
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia de materiais e metalúrgica;Metalurgia Extrativa
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia de materiais e metalúrgica;Metalurgia de Transformação
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia de materiais e metalúrgica;Metalurgia Física
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia de materiais e metalúrgica;Materiais não-Metálicos
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia elétrica;Materiais Elétricos
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia elétrica;"Medidas Elétricas, Magnéticas e Eletrônicas, Instrumentação"
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia elétrica;Circuitos Elétricos, Magnéticos e Eletrônicos
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia elétrica;Sistemas Elétricos de Potência
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia elétrica;Eletrônica Industrial, Sistemas e Controles Eletrônicos
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia elétrica;Telecomunicações
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia mecânica;Fenômenos de Transporte
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia mecânica;Engenharia Térmica
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia mecânica;Mecânica dos Sólidos
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia mecânica;Projetos de Máquinas
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia mecânica;Processos de Fabricação
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia química;Processos Industriais de Engenharia Química
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia química;Operações Industriais e Equipamentos para Engenharia Química
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia química;Tecnologia Química
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia sanitária;Recursos Hídricos
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia sanitária;Tratamento de Águas de Abastecimento e Residuárias
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia sanitária;Saneamento Básico
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia sanitária;Saneamento Ambiental
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia de produção;Gerência de Produção
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia de produção;Pesquisa Operacional
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia de produção;Engenharia do Produto
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia de produção;Engenharia Econômica
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia nuclear;Aplicações de Radioisótopos
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia nuclear;Fusão Controlada
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia nuclear;Combustível Nuclear
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia nuclear;Tecnologia de Reatores
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia de transportes;Planejamento de Transportes
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia de transportes;Veículos e Equipamentos de Controle
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia de transportes;Operações de Transportes
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia naval e oceânica;Hidrodinâmica de Navios e Sistemas Oceânicos
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia naval e oceânica;Estruturas Navais e Oceânicas
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia naval e oceânica;Máquinas Marítimas
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia naval e oceânica;Projetos de Navios e de Sistemas Oceânicos
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia naval e oceânica;Tecnologia de Construção Naval e de Sistemas Oceânicos
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia aeroespacial;Aerodinâmica
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia aeroespacial;Dinâmica de Vôo
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia aeroespacial;Estruturas Aeroespaciais
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia aeroespacial;Materiais e Processos para Engenharia Aeronáutica e Aeroespacial
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia aeroespacial;Propulsão Aeroespacial
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia aeroespacial;Sistemas Aeroespaciais
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia biomédica;Bioengenharia
-Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharia biomédica;Engenharia Médica
-Ciências da Vida;Ciências da Saúde;Medicina;Clínica Médica
-Ciências da Vida;Ciências da Saúde;Medicina;Cirurgia
-Ciências da Vida;Ciências da Saúde;Medicina;Saúde Materno-Infantil
-Ciências da Vida;Ciências da Saúde;Medicina;Psiquiatria
-Ciências da Vida;Ciências da Saúde;Medicina;Anatomia Patológica e Patologia Clínica
-Ciências da Vida;Ciências da Saúde;Medicina;Radiologia Médica
-Ciências da Vida;Ciências da Saúde;Medicina;Medicina Legal e Deontologia
-Ciências da Vida;Ciências da Saúde;Odontologia;Clínica Odontológica
-Ciências da Vida;Ciências da Saúde;Odontologia;Cirurgia Buco-Maxilo-Facial
-Ciências da Vida;Ciências da Saúde;Odontologia;Ortodontia
-Ciências da Vida;Ciências da Saúde;Odontologia;Odontopediatria
-Ciências da Vida;Ciências da Saúde;Odontologia;Periodontia
-Ciências da Vida;Ciências da Saúde;Odontologia;Endodontia
-Ciências da Vida;Ciências da Saúde;Odontologia;Radiologia Odontológica
-Ciências da Vida;Ciências da Saúde;Odontologia;Odontologia Social e Preventiva
-Ciências da Vida;Ciências da Saúde;Odontologia;Materiais Odontológicos
-Ciências da Vida;Ciências da Saúde;Farmácia;Farmacotecnia
-Ciências da Vida;Ciências da Saúde;Farmácia;Farmacognosia
-Ciências da Vida;Ciências da Saúde;Farmácia;Análise Toxicológica
-Ciências da Vida;Ciências da Saúde;Farmácia;Análise e Controle de Medicamentos
-Ciências da Vida;Ciências da Saúde;Farmácia;Bromatologia
-Ciências da Vida;Ciências da Saúde;Enfermagem;Enfermagem Médico-Cirúrgica
-Ciências da Vida;Ciências da Saúde;Enfermagem;Enfermagem Obstétrica
-Ciências da Vida;Ciências da Saúde;Enfermagem;Enfermagem Pediátrica
-Ciências da Vida;Ciências da Saúde;Enfermagem;Enfermagem Psiquiátrica
-Ciências da Vida;Ciências da Saúde;Enfermagem;Enfermagem de Doenças Contagiosas
-Ciências da Vida;Ciências da Saúde;Enfermagem;Enfermagem de Saúde Pública
-Ciências da Vida;Ciências da Saúde;Nutrição;Bioquímica da Nutrição
-Ciências da Vida;Ciências da Saúde;Nutrição;Dietética
-Ciências da Vida;Ciências da Saúde;Nutrição;Análise Nutricional de População
-Ciências da Vida;Ciências da Saúde;Nutrição;Desnutrição e Desenvolvimento Fisiológico
-Ciências da Vida;Ciências da Saúde;Saúde coletiva;Epidemiologia
-Ciências da Vida;Ciências da Saúde;Saúde coletiva;Saúde Pública
-Ciências da Vida;Ciências da Saúde;Saúde coletiva;Medicina Preventiva
-Ciências da Vida;Ciências da Saúde;Fonoaudiologia;
-Ciências da Vida;Ciências da Saúde;Fisioterapia e terapia ocupacional;
-Ciências da Vida;Ciências da Saúde;Educação física;
-Ciências da Vida;Ciências Agrárias;Agronomia;Ciência do Solo
-Ciências da Vida;Ciências Agrárias;Agronomia;Fitossanidade
-Ciências da Vida;Ciências Agrárias;Agronomia;Fitotecnia
-Ciências da Vida;Ciências Agrárias;Agronomia;Floricultura, Parques e Jardins
-Ciências da Vida;Ciências Agrárias;Agronomia;Agrometeorologia
-Ciências da Vida;Ciências Agrárias;Agronomia;Extensão Rural
-Ciências da Vida;Ciências Agrárias;Recursos florestais e engenharia florestal;Silvicultura
-Ciências da Vida;Ciências Agrárias;Recursos florestais e engenharia florestal;Manejo Florestal
-Ciências da Vida;Ciências Agrárias;Recursos florestais e engenharia florestal;Técnicas e Operações Florestais
-Ciências da Vida;Ciências Agrárias;Recursos florestais e engenharia florestal;Tecnologia e Utilização de Produtos Florestais
-Ciências da Vida;Ciências Agrárias;Recursos florestais e engenharia florestal;Conservação da Natureza
-Ciências da Vida;Ciências Agrárias;Recursos florestais e engenharia florestal;Energia de Biomassa Florestal
-Ciências da Vida;Ciências Agrárias;Engenharia agrícola;Máquinas e Implementos Agrícolas
-Ciências da Vida;Ciências Agrárias;Engenharia agrícola;Engenharia de Água e Solo
-Ciências da Vida;Ciências Agrárias;Engenharia agrícola;Engenharia de Processamento de Produtos Agrícolas
-Ciências da Vida;Ciências Agrárias;Engenharia agrícola;Construções Rurais e Ambiência
-Ciências da Vida;Ciências Agrárias;Engenharia agrícola;Energização Rural
-Ciências da Vida;Ciências Agrárias;Zootecnia;Ecologia dos Animais Domésticos e Etologia
-Ciências da Vida;Ciências Agrárias;Zootecnia;Genética e Melhoramento dos Animais Domésticos
-Ciências da Vida;Ciências Agrárias;Zootecnia;Nutrição e Alimentação Animal
-Ciências da Vida;Ciências Agrárias;Zootecnia;Pastagem e Forragicultura
-Ciências da Vida;Ciências Agrárias;Zootecnia;Produção Animal
-Ciências da Vida;Ciências Agrárias;Medicina veterinária;Clínica e Cirurgia Animal
-Ciências da Vida;Ciências Agrárias;Medicina veterinária;Medicina Veterinária Preventiva
-Ciências da Vida;Ciências Agrárias;Medicina veterinária;Patologia Animal
-Ciências da Vida;Ciências Agrárias;Medicina veterinária;Reprodução Animal
-Ciências da Vida;Ciências Agrárias;Medicina veterinária;Inspeção de Produtos de Origem Animal
-Ciências da Vida;Ciências Agrárias;Recursos pesqueiros e engenharia de pesca;Recursos Pesqueiros Marinhos
-Ciências da Vida;Ciências Agrárias;Recursos pesqueiros e engenharia de pesca;Recursos Pesqueiros de Águas Interiores
-Ciências da Vida;Ciências Agrárias;Recursos pesqueiros e engenharia de pesca;Aquicultura
-Ciências da Vida;Ciências Agrárias;Recursos pesqueiros e engenharia de pesca;Engenharia de Pesca
-Ciências da Vida;Ciências Agrárias;Ciência e tecnologia de alimentos;Ciência de Alimentos
-Ciências da Vida;Ciências Agrárias;Ciência e tecnologia de alimentos;Tecnologia de Alimentos
-Ciências da Vida;Ciências Agrárias;Ciência e tecnologia de alimentos;Engenharia de Alimentos
-Humanidades;Ciências Sociais Aplicadas;Direito;Teoria do Direito
-Humanidades;Ciências Sociais Aplicadas;Direito;Direito Público
-Humanidades;Ciências Sociais Aplicadas;Direito;Direito Privado
-Humanidades;Ciências Sociais Aplicadas;Direito;Direitos Especiais
-Humanidades;Ciências Sociais Aplicadas;Administração;Administraçao de Empresas
-Humanidades;Ciências Sociais Aplicadas;Administração;Administração Pública
-Humanidades;Ciências Sociais Aplicadas;Administração;Administração de Setores Específicos
-Humanidades;Ciências Sociais Aplicadas;Administração;Ciências Contábeis
-Humanidades;Ciências Sociais Aplicadas;Economia;Teoria Econômica
-Humanidades;Ciências Sociais Aplicadas;Economia;Métodos Quantitativos em Economia
-Humanidades;Ciências Sociais Aplicadas;Economia;Economia Monetária e Fiscal
-Humanidades;Ciências Sociais Aplicadas;Economia;Crescimento, Flutuações e Planejamento Econômico
-Humanidades;Ciências Sociais Aplicadas;Economia;Economia Internacional
-Humanidades;Ciências Sociais Aplicadas;Economia;Economia de Recursos Humanos
-Humanidades;Ciências Sociais Aplicadas;Economia;Economia Industrial
-Humanidades;Ciências Sociais Aplicadas;Economia;Economia do Bem-Estar Social
-Humanidades;Ciências Sociais Aplicadas;Economia;Economia Regional e Urbana
-Humanidades;Ciências Sociais Aplicadas;Economia;Economia Agrária e dos Recursos Naturais
-Humanidades;Ciências Sociais Aplicadas;Arquitetura e urbanismo;Fundamentos de Arquitetura e Urbanismo
-Humanidades;Ciências Sociais Aplicadas;Arquitetura e urbanismo;Projetos de Arquitetura e Urbanismo
-Humanidades;Ciências Sociais Aplicadas;Arquitetura e urbanismo;Tecnologia de Arquitetura e Urbanismo
-Humanidades;Ciências Sociais Aplicadas;Arquitetura e urbanismo;Paisagismo
-Humanidades;Ciências Sociais Aplicadas;Planejamento urbano e regional;Fundamentos do Planejamento Urbano e Regional
-Humanidades;Ciências Sociais Aplicadas;Planejamento urbano e regional;Metodos e Técnicas do Planejamento Urbano e Regional
-Humanidades;Ciências Sociais Aplicadas;Planejamento urbano e regional;Serviços Urbanos e Regionais
-Humanidades;Ciências Sociais Aplicadas;Demografia;Componentes da Dinâmica Demográfica
-Humanidades;Ciências Sociais Aplicadas;Demografia;Nupcialidade e Família
-Humanidades;Ciências Sociais Aplicadas;Demografia;Demografia Histórica
-Humanidades;Ciências Sociais Aplicadas;Demografia;Política Pública e População
-Humanidades;Ciências Sociais Aplicadas;Demografia;Fontes de Dados Demográficos
-Humanidades;Ciências Sociais Aplicadas;Ciência da informação;Teoria da Informação
-Humanidades;Ciências Sociais Aplicadas;Ciência da informação;Biblioteconomia
-Humanidades;Ciências Sociais Aplicadas;Ciência da informação;Arquivologia
-Humanidades;Ciências Sociais Aplicadas;Museologia;
-Humanidades;Ciências Sociais Aplicadas;Comunicação;Teoria da Comunicação
-Humanidades;Ciências Sociais Aplicadas;Comunicação;Jornalismo e Editoração
-Humanidades;Ciências Sociais Aplicadas;Comunicação;Rádio e Televisão
-Humanidades;Ciências Sociais Aplicadas;Comunicação;Relações Públicas e Propaganda
-Humanidades;Ciências Sociais Aplicadas;Comunicação;Comunicação Visual
-Humanidades;Ciências Sociais Aplicadas;Serviço social;Fundamentos do Serviço Social
-Humanidades;Ciências Sociais Aplicadas;Serviço social;Serviço Social Aplicado
-Humanidades;Ciências Sociais Aplicadas;Economia doméstica;
-Humanidades;Ciências Sociais Aplicadas;Desenho industrial;Programação Visual
-Humanidades;Ciências Sociais Aplicadas;Desenho industrial;Desenho de Produto
-Humanidades;Ciências Sociais Aplicadas;Turismo;
-Humanidades;Ciências Humanas;Filosofia;História da Filosofia
-Humanidades;Ciências Humanas;Filosofia;Metafísica
-Humanidades;Ciências Humanas;Filosofia;Lógica
-Humanidades;Ciências Humanas;Filosofia;Ética
-Humanidades;Ciências Humanas;Filosofia;Epistemologia
-Humanidades;Ciências Humanas;Filosofia;Filosofia Brasileira
-Humanidades;Ciências Humanas;Sociologia;Fundamentos da Sociologia
-Humanidades;Ciências Humanas;Sociologia;Sociologia do Conhecimento
-Humanidades;Ciências Humanas;Sociologia;Sociologia do Desenvolvimento
-Humanidades;Ciências Humanas;Sociologia;Sociologia Urbana
-Humanidades;Ciências Humanas;Sociologia;Sociologia Rural
-Humanidades;Ciências Humanas;Sociologia;Sociologia da Saúde
-Humanidades;Ciências Humanas;Sociologia;Outras Sociologias Específicas
-Humanidades;Ciências Humanas;Antropologia;Teoria Antropológica
-Humanidades;Ciências Humanas;Antropologia;Etnologia Indígena
-Humanidades;Ciências Humanas;Antropologia;Antropologia Urbana
-Humanidades;Ciências Humanas;Antropologia;Antropologia Rural
-Humanidades;Ciências Humanas;Antropologia;Antropologia das Populações Afro-Brasileiras
-Humanidades;Ciências Humanas;Arqueologia;Teoria e Método em Arqueologia
-Humanidades;Ciências Humanas;Arqueologia;Arqueologia Pré-Histórica
-Humanidades;Ciências Humanas;Arqueologia;Arqueologia Histórica
-Humanidades;Ciências Humanas;História;Teoria e Filosofia da História
-Humanidades;Ciências Humanas;História;História Antiga e Medieval
-Humanidades;Ciências Humanas;História;História Moderna e Contemporânea
-Humanidades;Ciências Humanas;História;História da América
-Humanidades;Ciências Humanas;História;História do Brasil
-Humanidades;Ciências Humanas;História;História das Ciências
-Humanidades;Ciências Humanas;Geografia;Geografia Humana
-Humanidades;Ciências Humanas;Geografia;Geografia Regional
-Humanidades;Ciências Humanas;Psicologia;Fundamentos e Medidas da Psicologia
-Humanidades;Ciências Humanas;Psicologia;Psicologia Experimental
-Humanidades;Ciências Humanas;Psicologia;Psicologia Fisiológica
-Humanidades;Ciências Humanas;Psicologia;Psicologia Comparativa
-Humanidades;Ciências Humanas;Psicologia;Psicologia Social
-Humanidades;Ciências Humanas;Psicologia;Psicologia Cognitiva
-Humanidades;Ciências Humanas;Psicologia;Psicologia do Desenvolvimento Humano
-Humanidades;Ciências Humanas;Psicologia;Psicologia do Ensino e da Aprendizagem
-Humanidades;Ciências Humanas;Psicologia;Psicologia do Trabalho e Organizacional
-Humanidades;Ciências Humanas;Psicologia;Tratamento e Prevenção Psicológica
-Humanidades;Ciências Humanas;Educação;Fundamentos da Educação
-Humanidades;Ciências Humanas;Educação;Administração Educacional
-Humanidades;Ciências Humanas;Educação;Planejamento e Avaliação Educacional
-Humanidades;Ciências Humanas;Educação;Ensino-Aprendizagem
-Humanidades;Ciências Humanas;Educação;Currículo
-Humanidades;Ciências Humanas;Educação;Orientação e Aconselhamento
-Humanidades;Ciências Humanas;Educação;Tópicos Específicos de Educação
-Humanidades;Ciências Humanas;Ciência política;Teoria Política
-Humanidades;Ciências Humanas;Ciência política;Estado e Governo
-Humanidades;Ciências Humanas;Ciência política;Comportamento Político
-Humanidades;Ciências Humanas;Ciência política;Políticas Públicas
-Humanidades;Ciências Humanas;Ciência política;Política Internacional
-Humanidades;Ciências Humanas;Teologia;História da Teologia
-Humanidades;Ciências Humanas;Teologia;Teologia Moral
-Humanidades;Ciências Humanas;Teologia;Teologia Sistemática
-Humanidades;Ciências Humanas;Teologia;Teologia Pastoral
-Humanidades;Linguística, Letras e Artes;Linguística;Teoria e Análise Linguística
-Humanidades;Linguística, Letras e Artes;Linguística;Filosofia da Linguagem
-Humanidades;Linguística, Letras e Artes;Linguística;Linguística Histórica
-Humanidades;Linguística, Letras e Artes;Linguística;Sociolinguística e Dialetologia
-Humanidades;Linguística, Letras e Artes;Linguística;Psicolinguística
-Humanidades;Linguística, Letras e Artes;Linguística;Linguística Aplicada
-Humanidades;Linguística, Letras e Artes;Letras;Língua Portuguesa
-Humanidades;Linguística, Letras e Artes;Letras;Línguas Estrangeiras Modernas
-Humanidades;Linguística, Letras e Artes;Letras;Línguas Clássicas
-Humanidades;Linguística, Letras e Artes;Letras;Línguas Indígenas
-Humanidades;Linguística, Letras e Artes;Letras;Teoria Literária
-Humanidades;Linguística, Letras e Artes;Letras;Literatura Brasileira
-Humanidades;Linguística, Letras e Artes;Letras;Outras Literaturas Vernáculas
-Humanidades;Linguística, Letras e Artes;Letras;Literaturas Estrangeiras Modernas
-Humanidades;Linguística, Letras e Artes;Letras;Literaturas Clássicas
-Humanidades;Linguística, Letras e Artes;Letras;Literatura Comparada
-Humanidades;Linguística, Letras e Artes;Artes;Fundamentos e Críticas das Artes
-Humanidades;Linguística, Letras e Artes;Artes;Artes Plásticas
-Humanidades;Linguística, Letras e Artes;Artes;Música
-Humanidades;Linguística, Letras e Artes;Artes;Dança
-Humanidades;Linguística, Letras e Artes;Artes;Teatro
-Humanidades;Linguística, Letras e Artes;Artes;Ópera
-Humanidades;Linguística, Letras e Artes;Artes;Fotografia
-Humanidades;Linguística, Letras e Artes;Artes;Cinema
-Humanidades;Linguística, Letras e Artes;Artes;Artes do Vídeo
-Humanidades;Linguística, Letras e Artes;Artes;Educação Artística
-Ciências Físicas, Tecnológicas e Multidisciplinares;Multidisciplinar;Biotecnologia;
-Ciências Físicas, Tecnológicas e Multidisciplinares;Multidisciplinar;Ciências Ambientais;
-Ciências Físicas, Tecnológicas e Multidisciplinares;Multidisciplinar;Ensino;
-Ciências Físicas, Tecnológicas e Multidisciplinares;Multidisciplinar;Interdisciplinar;
-Ciências Físicas, Tecnológicas e Multidisciplinares;Multidisciplinar;Materiais;
+Ciências da Vida;Ciências Agrárias;Ciências Agrárias I
+Ciências da Vida;Ciências Agrárias;Ciência de Alimentos
+Ciências da Vida;Ciências Agrárias;Medicina Veterinária – Memória de Documentos
+Ciências da Vida;Ciências Agrárias;Medicina Veterinária
+Ciências da Vida;Ciências Agrárias;Zootecnia/Recursos Pesqueiros
+Ciências da Vida;Ciências Agrárias;Ciência de Alimentos – Memória de documentos
+Ciências da Vida;Ciências Biológicas;Biodiversidade
+Ciências da Vida;Ciências Biológicas;Ciências Biológicas I
+Ciências da Vida;Ciências Biológicas;Ciências Biológicas II
+Ciências da Vida;Ciências Biológicas;Ciências Biológicas III
+Ciências da Vida;Ciências Biológicas;Biodiversidade – Memória da área
+Ciências da Vida;Ciências Biológicas;Ciências Biológicas I – Memória da área
+Ciências da Vida;Ciências Biológicas;Ciências Biológicas II – Memória da área
+Ciências da Vida;Ciências Biológicas;Ciências Biológicas III – Memória da área
+Ciências da Vida;Ciências da Saúde;Educação Física
+Ciências da Vida;Ciências da Saúde;Enfermagem
+Ciências da Vida;Ciências da Saúde;Farmácia
+Ciências da Vida;Ciências da Saúde;Medicina I
+Ciências da Vida;Ciências da Saúde;Medicina II
+Ciências da Vida;Ciências da Saúde;Medicina III
+Ciências da Vida;Ciências da Saúde;Nutrição
+Ciências da Vida;Ciências da Saúde;Odontologia
+Ciências da Vida;Ciências da Saúde;Saúde Coletiva
+Ciências da Vida;Ciências da Saúde;Educação Física – Memória da área
+Ciências da Vida;Ciências da Saúde;Enfermagem – Memória da área
+Ciências da Vida;Ciências da Saúde;Farmácia – Memória da área
+Ciências da Vida;Ciências da Saúde;Medicina I – Memória da área
+Ciências da Vida;Ciências da Saúde;Medicina II – Memória da área
+Ciências da Vida;Ciências da Saúde;Medicina III – Memória da área
+Ciências da Vida;Ciências da Saúde;Odontologia – Memória da área
+Ciências da Vida;Ciências da Saúde;Saúde Coletiva – Memória da área
+Humanidades;Ciências Humanas;Antropologia/Arqueologia
+Humanidades;Ciências Humanas;Ciência Política e Relações Internacionais
+Humanidades;Ciências Humanas;Ciências da Religião e Teologia
+Humanidades;Ciências Humanas;Educação
+Humanidades;Ciências Humanas;Filosofia
+Humanidades;Ciências Humanas;Geografia
+Humanidades;Ciências Humanas;História
+Humanidades;Ciências Humanas;Psicologia
+Humanidades;Ciências Humanas;Sociologia
+Humanidades;Ciências Humanas;Antropologia/Arqueologia – Memória da área
+Humanidades;Ciências Humanas;Ciência Política e Relações Internacionais – Memória da área
+Humanidades;Ciências Humanas;Ciências da Religião e Teologia – Memória da área
+Humanidades;Ciências Humanas;Educação – Memória da área
+Humanidades;Ciências Humanas;Filosofia – Memória da área
+Humanidades;Ciências Humanas;Geografia – Memória da área
+Humanidades;Ciências Humanas;História – Memória da área
+Humanidades;Ciências Humanas;Psicologia – Memória da área
+Humanidades;Ciências Humanas;Sociologia – Memória da área
+Humanidades;Ciências Sociais Aplicadas;Administração Pública e de Empresas, Ciências Contábeis e Turismo
+Humanidades;Ciências Sociais Aplicadas;Arquitetura, Urbanismo e Design
+Humanidades;Ciências Sociais Aplicadas;Comunicação e Informação
+Humanidades;Ciências Sociais Aplicadas;Direito
+Humanidades;Ciências Sociais Aplicadas;Economia
+Humanidades;Ciências Sociais Aplicadas;Planejamento Urbano e Regional/Demografia
+Humanidades;Ciências Sociais Aplicadas;Serviço Social
+Humanidades;Ciências Sociais Aplicadas;Administração Pública e de Empresas, Ciências Contábeis e Turismo - Memória da área
+Humanidades;Ciências Sociais Aplicadas;Comunicação e Informação - Memória da área
+Humanidades;Ciências Sociais Aplicadas;Direito - Memória da área 
+Humanidades;Ciências Sociais Aplicadas;Economia - Memória da área
+Humanidades;Ciências Sociais Aplicadas;Planejamento Urbano e Reginal/Demografia - Memória da Área
+Humanidades;Ciências Sociais Aplicadas;Serviço Social - Memória da área
+Humanidades;Linguística, Letras e Artes;Artes
+Humanidades;Linguística, Letras e Artes;Linguística e Literatura
+Humanidades;Linguística, Letras e Artes;Artes - Memória de documentos
+Humanidades;Linguística, Letras e Artes;Linguística e Literatura - Memória da área
+Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Astronomia/Física
+Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Ciência da Computação
+Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Geociências
+Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Matemática/Probabilidade e Estatística
+Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Química
+Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Astronomia/Física - Memória da área
+Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Ciência da Computação - Memória da área
+Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Geociências - Memória da área 
+Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Matemática/Probabilidade e Estatística - Memória da área
+Ciências Físicas, Tecnológicas e Multidisciplinares;Ciências Exatas e da Terra;Química - Memória da área
+Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharias I
+Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharias II
+Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharias III
+Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharias IV
+Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharias I - Memória da área
+Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharias II - Memória da área
+Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharias III - Memória da área
+Ciências Físicas, Tecnológicas e Multidisciplinares;Engenharias;Engenharias IV - Memória da área
+Ciências Físicas, Tecnológicas e Multidisciplinares;Multidisciplinar;Biotecnologia
+Ciências Físicas, Tecnológicas e Multidisciplinares;Multidisciplinar;Ciências Ambientais
+Ciências Físicas, Tecnológicas e Multidisciplinares;Multidisciplinar;Ensino
+Ciências Físicas, Tecnológicas e Multidisciplinares;Multidisciplinar;Interdisciplinar
+Ciências Físicas, Tecnológicas e Multidisciplinares;Multidisciplinar;Materiais 
+Ciências Físicas, Tecnológicas e Multidisciplinares;Multidisciplinar;Biotecnologia - Memória da área
+Ciências Físicas, Tecnológicas e Multidisciplinares;Multidisciplinar;Ciências Ambientais - Memória da área
+Ciências Físicas, Tecnológicas e Multidisciplinares;Multidisciplinar;Ensino - Memória da área
+Ciências Físicas, Tecnológicas e Multidisciplinares;Multidisciplinar;Interdisciplinar - Memória da área
+Ciências Físicas, Tecnológicas e Multidisciplinares;Multidisciplinar;Materiais - Memória da área

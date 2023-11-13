@@ -5,7 +5,7 @@ from django.db import models
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
-from modelcluster.models import ClusterableModel
+from modelcluster.models import ClusterableModel, ParentalManyToManyField
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 from wagtail.fields import RichTextField
 from wagtail.models import Orderable
@@ -45,6 +45,7 @@ from journal.exceptions import (
 from location.models import Location
 from reference.models import JournalTitle
 from vocabulary.models import Vocabulary
+from thematic_areas.models import ThematicArea
 
 from . import choices
 
@@ -517,6 +518,7 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel("mission", label=_("Mission"), classname="collapsed"),
         InlinePanel("history", label=_("Brief History"), classname="collapsed"),
         InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
+        InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
         FieldPanel("subject_descriptor"),
         FieldPanel("subject"),
         FieldPanel("wos_db"),
@@ -1000,6 +1002,13 @@ class ConflictPolicy(Orderable, RichTextWithLang, CommonControlField):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="conflict_policy", null=True
     )
+
+
+class ThematicAreaJournal(Orderable, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="thematic_area", null=True
+    )
+    thematic_area = models.ForeignKey(ThematicArea, on_delete=models.SET_NULL, blank=True, null=True)
 
 
 class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
