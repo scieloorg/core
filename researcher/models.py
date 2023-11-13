@@ -1,6 +1,9 @@
+import logging
+import sys
 import os
 
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -10,11 +13,190 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.choices import MONTHS
 from core.models import CommonControlField, Gender
-from institution.models import Institution, InstitutionHistory
+from core.forms import CoreAdminModelForm
+from institution.models import Institution, BaseHistoryItem
 from journal.models import Journal
+from tracker.models import UnexpectedEvent
 
 from . import choices
 from .forms import ResearcherForm
+
+
+class PersonName(CommonControlField):
+    """
+    Class that represent the PersonName
+    """
+
+    declared_name = models.CharField(
+        _("Declared Name"), max_length=256, blank=True, null=True
+    )
+    given_names = models.CharField(
+        _("Given names"), max_length=128, blank=True, null=True
+    )
+    last_name = models.CharField(_("Last name"), max_length=128, blank=True, null=True)
+    suffix = models.CharField(_("Suffix"), max_length=64, blank=True, null=True)
+
+    panels = [
+        FieldPanel("given_names"),
+        FieldPanel("last_name"),
+        FieldPanel("suffix"),
+        FieldPanel("declared_name"),
+    ]
+    base_form_class = CoreAdminModelForm
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    "given_names",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "last_name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "declared_name",
+                ]
+            ),
+        ]
+
+    def __unicode__(self):
+        return self.get_full_name
+
+    def __str__(self):
+        return self.get_full_name
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return PersonName.objects.filter(
+            Q(last_name__icontains=search_term)
+            | Q(declared_name__icontains=search_term)
+            | Q(given_names__icontain=search_term)
+        )
+
+    def autocomplete_label(self):
+        return str(self)
+
+    @property
+    def get_full_name(self):
+        # usado no search_index
+        if self.suffix and self.last_name:
+            return f"{self.last_name} {self.suffix}, {self.given_names}"
+        if self.last_name:
+            return f"{self.last_name}, {self.given_names}"
+        return self.declared_name
+
+    @classmethod
+    def get(
+        cls,
+        given_names,
+        last_name,
+        suffix,
+        declared_name,
+    ):
+        if not last_name and not given_names or not declared_name:
+            raise ValueError(
+                "PersonName.get requires given_names and last_names or declared_name parameters"
+            )
+
+        return cls.objects.get(
+            given_names__iexact=given_names,
+            last_name__iexact=last_name,
+            suffix__iexact=suffix,
+            declared_name__iexact=declared_name,
+        )
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        given_names,
+        last_name,
+        suffix,
+        declared_name,
+    ):
+        try:
+            obj = cls.get(
+                given_names=given_names,
+                last_name=last_name,
+                suffix=suffix,
+                declared_name=declared_name,
+            )
+            obj.updated_by = user or obj.updated_by
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.creator = user
+
+        obj.declared_name = declared_name or obj.declared_name
+        obj.given_names = given_names or obj.given_names
+        obj.last_name = last_name or obj.last_name
+        obj.suffix = suffix or obj.suffix
+
+        if not obj.declared_name:
+            obj.declared_name = self.given_names + " " + self.last_name
+            if obj.suffix:
+                obj.declared_name += " " + obj.suffix
+        obj.save()
+        return obj
+
+
+class OrcidModel(CommonControlField):
+    orcid = models.CharField(_("ORCID"), max_length=20, blank=True, null=True)
+    person_names = models.ManyToManyField(PersonName)
+
+    panels = [
+        FieldPanel("orcid"),
+        AutocompletePanel("person_names"),
+    ]
+
+    base_form_class = CoreAdminModelForm
+
+    autocomplete_search_field = "orcid"
+
+    def autocomplete_label(self):
+        return self.orcid
+
+    @property
+    def get_full_name(self):
+        try:
+            return sorted(self.get_full_names)[-1]
+        except IndexError:
+            return None
+
+    @property
+    def get_full_names(self):
+        for item in self.person_names.iterator():
+            yield item.get_full_name
+
+    @classmethod
+    def get_or_create(cls, orcid, user=None):
+        try:
+            return cls.get(orcid=orcid)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.orcid = orcid
+            obj.save()
+            return obj
+
+    @classmethod
+    def create_or_update(cls, user, orcid, person_name):
+        try:
+            obj = cls.get(orcid=orcid)
+            obj.updated_by = user
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.creator = user
+            obj.orcid = orcid
+            obj.save()
+
+        if person_name:
+            obj.person_names.add(person_name)
+            obj.save()
+
+        return obj
 
 
 class Researcher(ClusterableModel, CommonControlField):
