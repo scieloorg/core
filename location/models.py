@@ -258,8 +258,12 @@ class CountryName(TextWithLang, Orderable):
         related_name="country_name",
     )
 
-    panels = [FieldPanel("text"), AutocompletePanel("language")]
     base_form_class = CoreAdminModelForm
+    panels = [FieldPanel("text"), AutocompletePanel("language")]
+    autocomplete_search_filter = "text"
+
+    def autocomplete_label(self):
+        return f"{self.text} ({self.language})"
 
     class Meta:
         verbose_name = _("Country name")
@@ -276,11 +280,6 @@ class CountryName(TextWithLang, Orderable):
                 ]
             ),
         ]
-
-    autocomplete_search_filter = "text"
-
-    def autocomplete_label(self):
-        return f"{self.text} ({self.language})"
 
     @property
     def data(self):
@@ -309,6 +308,7 @@ class CountryName(TextWithLang, Orderable):
 
     @classmethod
     def create_or_update(cls, user, country, language, text):
+        text = text and text.strip()
         try:
             obj = cls.get(country, language)
             obj.updated_by = user
@@ -322,6 +322,14 @@ class CountryName(TextWithLang, Orderable):
         obj.save()
 
         return obj
+
+    @classmethod
+    def get_country(cls, name):
+        name = name and name.strip()
+        for item in CountryName.objects.filter(text=name).iterator():
+            if item.country:
+                return item.country
+        raise cls.DoesNotExist(f"CountryName {name} does not exist")
 
 
 class Country(CommonControlField, ClusterableModel):
@@ -341,17 +349,24 @@ class Country(CommonControlField, ClusterableModel):
         _("Country Acronym (3 char)"), blank=True, null=True, max_length=3
     )
 
-    autocomplete_search_field = "name"
-
-    def autocomplete_label(self):
-        return self.name or self.acronym
-
+    base_form_class = CoreAdminModelForm
     panels = [
         FieldPanel("name"),
         FieldPanel("acronym"),
         FieldPanel("acron3"),
         InlinePanel("country_name", label=_("Country names")),
     ]
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return Country.objects.filter(
+            Q(name__icontains=search_term)
+            | Q(acronym__icontains=search_term)
+            | Q(acron3__icontains=search_term)
+        )
+
+    def autocomplete_label(self):
+        return self.name or self.acronym
 
     class Meta:
         verbose_name = _("Country")
@@ -385,7 +400,7 @@ class Country(CommonControlField, ClusterableModel):
                 for row in reader:
                     cls.create_or_update(
                         user,
-                        name=None,
+                        name=row["name_en"],
                         acronym=row["acron2"],
                         acron3=row["acron3"],
                         country_names={"pt": row["name_pt"], "en": row["name_en"]},
@@ -398,22 +413,23 @@ class Country(CommonControlField, ClusterableModel):
         acronym=None,
         acron3=None,
     ):
-        if not name and not acronym and not acron3:
-            raise ValueError("Country.get requires parameters")
+        name = name and name.strip()
+        acronym = acronym and acronym.strip()
+        acron3 = acron3 and acron3.strip()
 
-        try:
-            if acronym:
-                return cls.objects.get(acronym=acronym)
-            if acron3:
-                return cls.objects.get(acron3=acron3)
-        except cls.MultipleObjectsReturned:
-            return cls.objects.get(acronym=acronym, acron3=acron3, name=name)
-        except cls.DoesNotExist:
+        if acronym:
+            return cls.objects.get(acronym=acronym)
+        if acron3:
+            return cls.objects.get(acron3=acron3)
+        if name:
             try:
-                if name:
-                    return CountryName.objects.get(name=name).country
-            except Exception as e:
-                raise cls.DoesNotExist(e)
+                return cls.objects.get(name=name)
+            except cls.DoesNotExist:
+                try:
+                    return CountryName.get_country(name)
+                except CountryName.DoesNotExist as e:
+                    raise cls.DoesNotExist(e)
+        raise ValueError("Country.get requires parameters")
 
     @classmethod
     def create_or_update(
@@ -425,6 +441,11 @@ class Country(CommonControlField, ClusterableModel):
         country_names=None,
         lang_code2=None,
     ):
+        name = name and name.strip()
+        acronym = acronym and acronym.strip()
+        acron3 = acron3 and acron3.strip()
+        lang_code2 = lang_code2 and lang_code2.strip()
+
         try:
             obj = cls.get(name, acronym, acron3)
             obj.updated_by = user
@@ -449,8 +470,6 @@ class Country(CommonControlField, ClusterableModel):
                 country=obj, language=language, text=text, user=user
             )
         return obj
-
-    base_form_class = CoreAdminModelForm
 
 
 class Location(CommonControlField):
