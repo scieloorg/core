@@ -204,20 +204,17 @@ class Researcher(ClusterableModel, CommonControlField):
     Class that represent the Researcher
     """
 
-    given_names = models.CharField(
-        _("Given names"), max_length=128, blank=True, null=True
+    person_name = models.ForeignKey(
+        PersonName, on_delete=models.SET_NULL, blank=True, null=True
     )
-    last_name = models.CharField(_("Last name"), max_length=128, blank=True, null=True)
-    declared_name = models.CharField(
-        _("Declared Name"), max_length=255, blank=True, null=True
+    orcid = models.ForeignKey(
+        OrcidModel, on_delete=models.SET_NULL, blank=True, null=True
     )
-    suffix = models.CharField(_("Suffix"), max_length=128, blank=True, null=True)
-    orcid = models.TextField(_("ORCID"), blank=True, null=True)
-    lattes = models.TextField(_("Lattes"), blank=True, null=True)
+    lattes = models.URLField(_("Lattes"), max_length=256, blank=True, null=True)
     gender = models.ForeignKey(Gender, blank=True, null=True, on_delete=models.SET_NULL)
     gender_identification_status = models.CharField(
         _("Gender identification status"),
-        max_length=255,
+        max_length=16,
         choices=choices.GENDER_IDENTIFICATION_STATUS,
         null=True,
         blank=True,
