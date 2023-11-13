@@ -107,17 +107,15 @@ class StateAdmin(ModelAdmin):
     list_display = (
         "name",
         "acronym",
-        "region",
     )
     search_fields = (
         "name",
         "acronym",
-        "region",
     )
     list_export = (
         "name",
         "acronym",
-        "region",
+        # "region",
     )
     export_filename = "regions"
 
