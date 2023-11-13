@@ -220,39 +220,31 @@ class Researcher(ClusterableModel, CommonControlField):
         blank=True,
     )
 
-    autocomplete_search_field = "given_names"
+    @staticmethod
+    def autocomplete_custom_queryset_filter(any_name):
+        return Researcher.objects.filter(
+            Q(person_name__last_name__icontains=any_name)
+            | Q(person_name__declared_name__icontains=any_name)
+            | Q(person_name__given_names__icontain=any_name)
+        ).iterator()
 
     def autocomplete_label(self):
-        return str(self)
+        return f"{self.get_full_name} {self.orcid and self.orcid.orcid}"
 
     panels = [
-        FieldPanel("given_names"),
-        FieldPanel("last_name"),
-        FieldPanel("declared_name"),
-        FieldPanel("suffix"),
-        FieldPanel("orcid"),
+        AutocompletePanel("person_name"),
+        AutocompletePanel("orcid"),
         FieldPanel("lattes"),
         AutocompletePanel("gender"),
         FieldPanel("gender_identification_status"),
+        InlinePanel("researcher_email", label=_("Email")),
+        InlinePanel("researcher_affiliation", label=_("Affiliation")),
     ]
+
+    base_form_class = ResearcherForm
 
     class Meta:
         indexes = [
-            models.Index(
-                fields=[
-                    "given_names",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "last_name",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "orcid",
-                ]
-            ),
             models.Index(
                 fields=[
                     "lattes",
@@ -367,8 +359,6 @@ class Researcher(ClusterableModel, CommonControlField):
         FieldPanel("gender_identification_status"),
         InlinePanel("affiliation", label=_("Affiliation")),
     ]
-
-    base_form_class = ResearcherForm
 
 
 class ResearcherEmail(Orderable):
