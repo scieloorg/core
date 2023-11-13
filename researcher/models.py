@@ -261,6 +261,108 @@ class Researcher(ClusterableModel, CommonControlField):
 
     def __str__(self):
         return self.get_full_name
+    @classmethod
+    def get_by_lattes(cls, lattes):
+        if lattes:
+            return cls.objects.get(lattes=lattes)
+        raise ValueError("Researcher.get_by_lattes requires lattes")
+
+    @classmethod
+    def get_by_orcid(cls, orcid):
+        if orcid:
+            return cls.objects.get(orcid__orcid=orcid)
+        raise ValueError("Researcher.get_by_orcid requires orcid")
+
+    @classmethod
+    def get_by_email(
+        cls,
+        email,
+        person_name,
+    ):
+        try:
+            return ResearcherEmail.get_researcher(
+                email,
+                person_name,
+            )
+        except ResearcherEmail.DoesNotExist as e:
+            raise Researcher.DoesNotExist(e)
+        raise ValueError("Researcher.get_by_email requires email")
+
+    @classmethod
+    def get_by_affiliation_data(
+        cls,
+        person_name,
+        institutions,
+        affiliation_year,
+    ):
+
+        try:
+            return AffiliationHistory.get_researcher(
+                person_name,
+                institutions,
+                affiliation_year,
+            )
+        except AffiliationHistory.DoesNotExist as e:
+            raise Researcher.DoesNotExist(e)
+
+    @classmethod
+    def get_by_researcher_data(
+        cls,
+        orcid,
+        lattes,
+        email,
+        person_name,
+        institutions,
+        affiliation_year=None,
+    ):
+        try:
+            return self.get_by_orcid(orcid)
+        except (ValueError, cls.DoesNotExist) as e:
+            logging.info(f"Unable to get researcher by orcid {orcid} {type(e)} {e}")
+        try:
+            return self.get_by_lattes(lattes)
+        except (ValueError, cls.DoesNotExist) as e:
+            logging.info(f"Unable to get researcher by lattes {lattes} {type(e)} {e}")
+
+        try:
+            return self.get_by_email(email, person_name)
+        except (ValueError, cls.DoesNotExist) as e:
+            logging.info(f"Unable to get researcher by email {email} {type(e)} {e}")
+
+        try:
+            return self.get_by_affiliation_data(
+                person_name,
+                institutions,
+                affiliation_year,
+            )
+        except (ValueError, cls.DoesNotExist) as e:
+            logging.info(
+                f"Unable to get researcher by affiliation {institutions} {type(e)} {e}"
+            )
+
+        try:
+            # os registros mais antigos não possuiam affiliation
+            return cls.objects.get(
+                person_name=person_name,
+                orcid__isnull=True,
+                lattes__isnull=True,
+            )
+        except cls.MultipleObjectsReturned as exception:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=exception,
+                exc_traceback=exc_traceback,
+                detail={
+                    "operation": "Researcher.get_by_researcher_data",
+                    "params": dict(
+                        orcid=orcid,
+                        lattes=lattes,
+                        email=email,
+                        person_name=str(person_name),
+                        affiliation_year=affiliation_year,
+                    ),
+                },
+            )
 
     @classmethod
     def get(
