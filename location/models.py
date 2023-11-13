@@ -127,12 +127,13 @@ class State(CommonControlField):
                     state_data = csv.DictReader(
                         csvfile, fieldnames=["name", "acronym", "region"], delimiter=";"
                     )
-            for row in state_data:
-                cls.get_or_create(
-                    name=row["name"],
-                    acronym=row["acronym"],
-                    user=user,
-                )
+                    for row in state_data:
+                        logging.info(row)
+                        cls.get_or_create(
+                            name=row["name"],
+                            acronym=row["acronym"],
+                            user=user,
+                        )
 
     @classmethod
     def get_or_create(cls, user=None, name=None, acronym=None):
