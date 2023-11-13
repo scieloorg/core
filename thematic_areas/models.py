@@ -128,7 +128,6 @@ class ThematicArea(CommonControlField):
 
     level0 = models.TextField(
         _("Level 0"),
-        choices=choices.thematic_level0,
         blank=True,
         null=True,
         help_text=_(
@@ -138,7 +137,6 @@ class ThematicArea(CommonControlField):
 
     level1 = models.TextField(
         _("Level 1"),
-        choices=choices.thematic_level1,
         blank=True,
         null=True,
         help_text=_(
@@ -148,7 +146,6 @@ class ThematicArea(CommonControlField):
 
     level2 = models.TextField(
         _("Level 2"),
-        choices=choices.thematic_level2,
         blank=True,
         null=True,
         help_text=_(
@@ -178,18 +175,10 @@ class ThematicArea(CommonControlField):
         ]
 
     def __unicode__(self):
-        return "%s | %s | %s" % (
-            self.level0,
-            self.level1,
-            self.level2,
-        )
-
+        return f"{self.level0} | {self.level1} | {self.level2}"
+    
     def __str__(self):
-        return "%s | %s | %s" % (
-            self.level0,
-            self.level1,
-            self.level2,
-        )
+        return f"{self.level0} | {self.level1} | {self.level2}"
 
     @classmethod
     def load(cls, user, thematic_area_data=None):

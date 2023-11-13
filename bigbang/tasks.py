@@ -7,6 +7,7 @@ from core.models import Language
 from location.models import Country, City, State
 from journal.models import Standard, Subject, WebOfKnowledge
 from vocabulary.models import Vocabulary
+from thematic_areas.models import ThematicArea
 
 User = get_user_model()
 
@@ -35,4 +36,5 @@ def task_start(
     Country.load(user)
     State.load(user)
     City.load(user)
+    ThematicArea.load(user)
     
