@@ -26,12 +26,12 @@ class City(CommonControlField):
 
     name = models.TextField(_("Name of the city"), unique=True)
 
+    base_form_class = CoreAdminModelForm
+    panels = [FieldPanel("name")]
     autocomplete_search_field = "name"
 
     def autocomplete_label(self):
         return str(self)
-
-    panels = [FieldPanel("name")]
 
     class Meta:
         verbose_name = _("City")
@@ -48,26 +48,29 @@ class City(CommonControlField):
 
     @classmethod
     def load(cls, user, city_data=None):
-        if cls.objects.exists():
-            city_data = "./location/fixtures/cities.csv"
-            with open(city_data, "r") as fp:
-                for line in fp.readlines():
-                    name = line.strip()
+        if not cls.objects.exists():
+            if not city_data:
+                with open("./location/fixtures/cities.csv", "r") as fp:
+                    city_data = fp.readlines()
+            for name in city_data:
+                try:
                     cls.get_or_create(name=name, user=user)
+                except Exception as e:
+                    logging.exception(e)
 
     @classmethod
     def get_or_create(cls, user=None, name=None):
-        if name:
-            try:
-                return cls.objects.get(name=name)
-            except cls.DoesNotExist:
-                city = City()
-                city.name = name
-                city.creator = user
-                city.save()
-                return city
-
-    base_form_class = CoreAdminModelForm
+        name = name.strip()
+        if not name:
+            raise ValueError("City.get_or_create requires name")
+        try:
+            return cls.objects.get(name__iexact=name)
+        except cls.DoesNotExist:
+            city = City()
+            city.name = name
+            city.creator = user
+            city.save()
+            return city
 
 
 class Region(CommonControlField):
