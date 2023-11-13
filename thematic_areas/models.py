@@ -182,7 +182,7 @@ class ThematicArea(CommonControlField):
 
     @classmethod
     def load(cls, user, thematic_area_data=None):
-        if thematic_area_data or not cls.objects.exists():
+        if not cls.objects.exists():
             thematic_area_data = thematic_area_data or "./thematic_areas/fixtures/thematic_areas.csv"
             with open(thematic_area_data, "r") as csvfile:
                 reader = csv.DictReader(csvfile, fieldnames=["level0", "level1", "level2"], delimiter=";")
