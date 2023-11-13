@@ -74,11 +74,11 @@ class PersonName(CommonControlField):
         return PersonName.objects.filter(
             Q(last_name__icontains=search_term)
             | Q(declared_name__icontains=search_term)
-            | Q(given_names__icontain=search_term)
+            | Q(given_names__icontains=search_term)
         )
 
     def autocomplete_label(self):
-        return str(self)
+        return self.declared_name or f"{self.given_names} {self.last_name} {self.suffix}" 
 
     @property
     def get_full_name(self):
@@ -225,8 +225,8 @@ class Researcher(ClusterableModel, CommonControlField):
         return Researcher.objects.filter(
             Q(person_name__last_name__icontains=any_name)
             | Q(person_name__declared_name__icontains=any_name)
-            | Q(person_name__given_names__icontain=any_name)
-        ).iterator()
+            | Q(person_name__given_names__icontains=any_name)
+        )
 
     def autocomplete_label(self):
         return f"{self.get_full_name} {self.orcid and self.orcid.orcid}"
