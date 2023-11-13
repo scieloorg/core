@@ -150,14 +150,18 @@ class State(CommonControlField):
 
     name = models.TextField(_("State name"), null=True, blank=True)
     acronym = models.CharField(_("State Acronym"), max_length=2, null=True, blank=True)
-    region = models.ForeignKey(Region, on_delete=models.SET_NULL, null=True, blank=True)
 
-    autocomplete_search_field = "name"
+    base_form_class = CoreAdminModelForm
+    panels = [FieldPanel("name"), FieldPanel("acronym")]
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return State.objects.filter(
+            Q(name__icontains=search_term) | Q(acronym__icontains=search_term)
+        )
 
     def autocomplete_label(self):
         return f"{self.acronym or self.name}"
-
-    panels = [FieldPanel("name"), FieldPanel("acronym"), AutocompletePanel("region")]
 
     class Meta:
         verbose_name = _("State")
@@ -183,34 +187,54 @@ class State(CommonControlField):
 
     @classmethod
     def load(cls, user, state_data=None):
-        if state_data or not cls.objects.exists():
-            state_data = state_data or "./location/fixtures/states.csv"
-            with open(state_data, "r") as csvfile:
-                reader = csv.DictReader(
-                    csvfile, fieldnames=["name", "acron2", "region"], delimiter=";"
-                )
-                for row in reader:
-                    cls.get_or_create(
-                        name=row["name"],
-                        acronym=row["acron2"],
-                        user=user,
+        if not cls.objects.exists():
+            if not state_data:
+                with open("./location/fixtures/states.csv", "r") as csvfile:
+                    state_data = csv.DictReader(
+                        csvfile, fieldnames=["name", "acronym", "region"], delimiter=";"
                     )
+            for row in state_data:
+                cls.get_or_create(
+                    name=row["name"],
+                    acronym=row["acronym"],
+                    user=user,
+                )
 
     @classmethod
-    def get_or_create(cls, user, name=None, acronym=None, region=None):
-        return cls.create_or_update(user, name=name, acronym=acronym, region=region)
+    def get_or_create(cls, user=None, name=None, acronym=None):
+        return cls.create_or_update(user, name=name, acronym=acronym)
 
     @classmethod
     def get(cls, name=None, acronym=None):
+        name = name and name.strip()
+        acronym = acronym and acronym.strip()
         if not name and not acronym:
             raise ValueError("State.get requires name or acronym")
-        try:
-            return cls.objects.get(Q(name__iexact=name) | Q(acronym__iexact=acronym))
-        except cls.MultipleObjectsReturned:
-            return cls.objects.get(name__iexact=name, acronym__iexact=acronym)
+        if name and acronym:
+            # os valores fornecidos são name e acronym
+            # mas não necessariamente ambos estão registrados
+            try:
+                # estão no mesmo registro
+                return cls.objects.get(
+                    Q(name__iexact=name) | Q(acronym__iexact=acronym)
+                )
+            except cls.MultipleObjectsReturned:
+                try:
+                    # name e acron estão no mesmo registro
+                    return cls.objects.get(name__iexact=name, acronym__iexact=acronym)
+                except cls.DoesNotExist:
+                    # não encontrados juntos no mesmo registro
+                    pass
+        if acronym:
+            # prioridade para acronym
+            return cls.objects.get(acronym__iexact=acronym)
+        if name:
+            return cls.objects.get(name__iexact=name)
 
     @classmethod
-    def create_or_update(cls, user, name=None, acronym=None, region=None):
+    def create_or_update(cls, user, name=None, acronym=None):
+        name = name and name.strip()
+        acronym = acronym and acronym.strip()
         try:
             obj = cls.get(name=name, acronym=acronym)
             obj.updated_by = user
@@ -218,14 +242,11 @@ class State(CommonControlField):
             obj = cls()
             obj.creator = user
 
-        obj.region = region or obj.region
         obj.name = name or obj.name
         obj.acronym = acronym or obj.acronym
         obj.save()
 
         return obj
-
-    base_form_class = CoreAdminModelForm
 
 
 class CountryName(TextWithLang, Orderable):
