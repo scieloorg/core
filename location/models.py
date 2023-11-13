@@ -495,6 +495,14 @@ class Location(CommonControlField):
         blank=True,
     )
 
+    base_form_class = CoreAdminModelForm
+
+    panels = [
+        AutocompletePanel("city"),
+        AutocompletePanel("state"),
+        AutocompletePanel("country"),
+    ]
+
     # autocomplete_search_field = "country__name"
     @staticmethod
     def autocomplete_custom_queryset_filter(search_term):
@@ -506,12 +514,6 @@ class Location(CommonControlField):
 
     def autocomplete_label(self):
         return str(self)
-
-    panels = [
-        AutocompletePanel("city"),
-        AutocompletePanel("state"),
-        AutocompletePanel("country"),
-    ]
 
     class Meta:
         verbose_name = _("Location")
@@ -530,8 +532,6 @@ class Location(CommonControlField):
         location_state,
         location_city,
     ):
-        filters = {}
-
         if location_country or location_state or location_city:
             return cls.objects.get(
                 country=location_country,
@@ -562,7 +562,51 @@ class Location(CommonControlField):
         location.save()
         return location
 
-    base_form_class = CoreAdminModelForm
+    @classmethod
+    def create_or_update_location(
+        user, country_name, country_code, state_name, city_name
+    ):
+        params = dict(
+            country_name=country_name,
+            country_code=country_code,
+            state_name=state_name,
+            city_name=city_name,
+        )
+        try:
+            location_country = Country.create_or_update(
+                user,
+                name=country_name,
+                acronym=country_code,
+                acron3=None,
+                country_names=None,
+                lang_code2=article_lang,
+            )
+        except Exception as e:
+            location_country = None
+            logging.exception(f"params: {params} {type(e)} {e}")
+
+        try:
+            location_state = State.create_or_update(
+                user,
+                name=state_name,
+                acronym=None,
+            )
+        except Exception as e:
+            location_state = None
+            logging.exception(f"params: {params} {type(e)} {e}")
+
+        try:
+            location_city = City.get_or_create(user=user, name=city_name)
+        except Exception as e:
+            location_city = None
+            logging.exception(f"params: {params} {type(e)} {e}")
+
+        return Location.create_or_update(
+            user,
+            location_country=location_country,
+            location_state=location_state,
+            location_city=location_city,
+        )
 
 
 class CountryFile(models.Model):
