@@ -619,7 +619,7 @@ def create_or_update_location(
     if country_value is not None and len(country_value) > 2:
         country = CountryName.objects.get(text=country_value).country
     elif country_value:
-        country = Country.get(acronym=country_value)
+        country = Country.get(name=None, acronym=country_value)
     else:
         country = None
 
@@ -641,7 +641,6 @@ def create_or_update_location(
 
     if country or city or state:
         location = Location.create_or_update(
-            location_region=None,
             location_country=country,
             location_city=city,
             location_state=state,
