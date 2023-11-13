@@ -114,9 +114,7 @@ class Region(CommonControlField):
         if not name and not acronym:
             raise ValueError("Region.get requires name or acronym")
         try:
-            return cls.objects.get(
-                Q(name__iexact=name) | Q(acronym__iexact=acronym)
-            )
+            return cls.objects.get(Q(name__iexact=name) | Q(acronym__iexact=acronym))
         except cls.MultipleObjectsReturned:
             return cls.objects.get(name__iexact=name, acronym__iexact=acronym)
 
@@ -204,9 +202,7 @@ class State(CommonControlField):
         if not name and not acronym:
             raise ValueError("State.get requires name or acronym")
         try:
-            return cls.objects.get(
-                Q(name__iexact=name) | Q(acronym__iexact=acronym)
-            )
+            return cls.objects.get(Q(name__iexact=name) | Q(acronym__iexact=acronym))
         except cls.MultipleObjectsReturned:
             return cls.objects.get(name__iexact=name, acronym__iexact=acronym)
 
@@ -397,7 +393,13 @@ class Country(CommonControlField, ClusterableModel):
 
     @classmethod
     def create_or_update(
-        cls, user, name=None, acronym=None, acron3=None, country_names=None, lang_code2=None,
+        cls,
+        user,
+        name=None,
+        acronym=None,
+        acron3=None,
+        country_names=None,
+        lang_code2=None,
     ):
         try:
             obj = cls.get(name, acronym, acron3)
@@ -493,9 +495,7 @@ class Location(CommonControlField):
                 state=location_state,
                 city=location_city,
             )
-        raise ValueError(
-            "Location.get requires country or state or city parameters"
-        )
+        raise ValueError("Location.get requires country or state or city parameters")
 
     @classmethod
     def create_or_update(
@@ -507,9 +507,7 @@ class Location(CommonControlField):
     ):
         # check if exists the location
         try:
-            location = cls.get(
-                location_country, location_state, location_city
-            )
+            location = cls.get(location_country, location_state, location_city)
             location.updated_by = user
         except cls.DoesNotExist:
             location = cls()
