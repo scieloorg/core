@@ -191,7 +191,7 @@ def update_panel_institution(
 
     for item in electronic_address:
         try:
-            item = item.strip().lower()
+            item = item and item.strip().lower()
             JournalEmail.objects.get(journal=journal, email=item)
         except JournalEmail.DoesNotExist:
             JournalEmail.objects.create(journal=journal, email=item)
@@ -478,13 +478,14 @@ def get_or_create_subject_descriptor(subject_descriptors, journal, user):
             sub_desc = [sub_desc]
         for s in sub_desc:
             # Em alguns casos, subject_descriptors vem separado por "," ou ";"
-            for word in re.split(",|;", s):
-                word = word.strip()
-                obj, created = SubjectDescriptor.objects.get_or_create(
-                    value=word,
-                    creator=user,
-                )
-                data.append(obj)
+            if s:
+                for word in re.split(",|;", s):
+                    word = word.strip()
+                    obj, created = SubjectDescriptor.objects.get_or_create(
+                        value=word,
+                        creator=user,
+                    )
+                    data.append(obj)
         journal.subject_descriptor.set(data)
 
 
@@ -639,14 +640,13 @@ def create_or_update_location(
     else:
         state = None
 
-    if country or city or state:
-        location = Location.create_or_update(
-            location_country=country,
-            location_city=city,
-            location_state=state,
-            user=user,
-        )
-        journal.contact_location = location
+    location = Location.create_or_update(
+        location_country=country,
+        location_city=city,
+        location_state=state,
+        user=user,
+    )
+    journal.contact_location = location
         
     address = extract_value(address)
     if address:
