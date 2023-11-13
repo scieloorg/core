@@ -389,68 +389,116 @@ class Researcher(ClusterableModel, CommonControlField):
     @classmethod
     def create_or_update(
         cls,
-        given_names,
-        last_name,
-        declared_name,
-        suffix,
-        orcid,
-        lattes,
-        email,
-        institution_name,
+        given_names=None,
+        last_name=None,
+        declared_name=None,
+        suffix=None,
+        orcid=None,
+        lattes=None,
+        email=None,
+        institution_name=None,
+        person_name=None,
+        affiliation_year=None,
+        institutions=None,
         gender=None,
         gender_identification_status=None,
         user=None,
     ):
-        try:
-            researcher = cls.get(
-                given_names=given_names,
-                last_name=last_name,
-                orcid=orcid,
-                declared_name=declared_name,
-            )
-            researcher.updated_by = user or researcher.updated_by
-        except cls.DoesNotExist:
-            researcher = cls()
-            researcher.creator = user
-            researcher.orcid = orcid
-
-        researcher.given_names = given_names or researcher.given_names
-        researcher.last_name = last_name or researcher.last_name
-        institution = None
-        if institution_name:
-            try:
-                institution = Institution.objects.get(name=institution_name)
-            except Institution.DoesNotExist:
-                pass
-
-        researcher.declared_name = declared_name or researcher.declared_name
-        researcher.suffix = suffix or researcher.suffix
-        researcher.lattes = lattes or researcher.lattes
-        ## TODO
-        ## Criar get_or_create para model gender e GenderIdentificationStatus
-        researcher.gender = gender or researcher.gender
-        researcher.gender_identification_status = (
-            gender_identification_status or researcher.gender_identification_status
+        params = dict(
+            given_names=given_names,
+            last_name=last_name,
+            declared_name=declared_name,
+            suffix=suffix,
+            orcid=orcid,
+            lattes=lattes,
+            email=email,
+            institution_name=institution_name,
+            person_name=person_name,
+            affiliation_year=affiliation_year,
+            institutions=institutions,
+            gender=gender,
+            gender_identification_status=gender_identification_status,
         )
-        researcher.save()
+        params = {k: str(v) for k, v in params.items()}
+        try:
+            if not person_name:
+                person_name = PersonName.create_or_update(
+                    user,
+                    given_names=given_names,
+                    last_name=last_name,
+                    declared_name=declared_name,
+                    suffix=suffix,
+                )
 
-        if email:
-            FieldEmail.objects.create(page=researcher, email=email)
-        if institution:
-            FieldAffiliation.objects.create(page=researcher, institution=institution)
+            if not institutions and institution_name:
+                institution = Institution.create_or_update(
+                    inst_name=institution_name,
+                    inst_acronym=None,
+                    level_1=None,
+                    level_2=None,
+                    level_3=None,
+                    location=None,
+                    official=None,
+                    is_official=None,
+                    url=None,
+                    user=user,
+                )
+                if institution:
+                    institutions = [institution]
+
+            try:
+                researcher = cls.get_by_researcher_data(
+                    orcid,
+                    lattes,
+                    email,
+                    person_name,
+                    institutions,
+                    affiliation_year,
+                )
+                researcher.updated_by = user
+            except cls.DoesNotExist:
+                researcher = cls()
+                researcher.creator = user
+
+            researcher.lattes = lattes or researcher.lattes
+            ## TODO
+            ## Criar get_or_create para model gender e GenderIdentificationStatus
+            researcher.gender = gender or researcher.gender
+            researcher.gender_identification_status = (
+                gender_identification_status or researcher.gender_identification_status
+            )
+            researcher.orcid = OrcidModel.create_or_update(
+                user,
+                orcid,
+                person_name,
+            )
+        except Exception as exception:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=exception,
+                exc_traceback=exc_traceback,
+                detail={
+                    "operation": "Researcher.create_or_update",
+                    "params": params,
+                },
+            )
+            raise exception
+
+        try:
+            researcher.save()
+        except Exception as exception:
+            raise ResearcherCreateOrUpdateError(
+                f"Unable to create or update Researcher {params}. Exception {type(e)} {e}"
+            )
+
+        # Cria relacionamentos de Researcher com AffiliationHistory
+        AffiliationHistory.create_or_update_history(
+            user, researcher, institutions, affiliation_year
+        )
+
+        # Cria relacionamentos de Researcher com ResearcherEmail
+        ResearcherEmail.create_or_update(user, researcher=researcher, email=email)
         return researcher
-
-    panels = [
-        FieldPanel("given_names"),
-        FieldPanel("last_name"),
-        FieldPanel("suffix"),
-        FieldPanel("orcid"),
-        FieldPanel("lattes"),
-        InlinePanel("page_email", label=_("Email")),
-        FieldPanel("gender"),
-        FieldPanel("gender_identification_status"),
-        InlinePanel("affiliation", label=_("Affiliation")),
-    ]
 
 
 class ResearcherEmail(Orderable):
