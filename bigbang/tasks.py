@@ -4,9 +4,9 @@ from django.contrib.auth import get_user_model
 from config import celery_app
 from collection.models import Collection
 from core.models import Language
-from location.models import Country, City, State
+from location.models import Country, City, State, CountryName
 from journal.models import Standard, Subject, WebOfKnowledge
-
+from vocabulary.models import Vocabulary
 
 User = get_user_model()
 
@@ -26,10 +26,13 @@ def task_start(
 ):
     user = _get_user(user_id, username)
     Language.load(user)
-    Country.load(user)
     Collection.load(user)
+    Collection.load(user)
+    Vocabulary.load(user)
     Standard.load(user)
     Subject.load(user)
     WebOfKnowledge.load(user)
-    City.load(user)
+    Country.load(user)
     State.load(user)
+    City.load(user)
+    
