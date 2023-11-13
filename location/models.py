@@ -60,7 +60,7 @@ class City(CommonControlField):
 
     @classmethod
     def get_or_create(cls, user=None, name=None):
-        name = name.strip()
+        name = name and name.strip()
         if not name:
             raise ValueError("City.get_or_create requires name")
         try:
