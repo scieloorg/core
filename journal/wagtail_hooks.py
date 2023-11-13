@@ -207,52 +207,6 @@ class ListCodesAdminGroup(ModelAdminGroup):
 
 modeladmin_register(ListCodesAdminGroup)
 
-class WebOfKnowledgeAdmin(ModelAdmin):
-    model = models.WebOfKnowledge
-    menu_icon = "folder"
-    menu_order = 200
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-    list_display = (
-        "code",
-        "value",
-    )
-
-    search_fields = (
-        "code",
-        "value",
-    )
-
-
-class SubjectAdmin(ModelAdmin):
-    model = models.Subject
-    menu_icon = "folder"
-    menu_order = 100
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-    list_display = (
-        "code",
-        "value",
-    )
-
-    search_fields = (
-        "code",
-        "value",
-    )
-
-
-class ListCodesAdminGroup(ModelAdminGroup):
-    menu_label = "List of codes"
-    menu_icon = "folder-open-inverse"
-    menu_order = 1100
-    items = (
-        SubjectAdmin,
-        WebOfKnowledgeAdmin,
-    )
-
-
-modeladmin_register(ListCodesAdminGroup)
-
 
 @hooks.register("register_admin_urls")
 def register_calendar_url():
