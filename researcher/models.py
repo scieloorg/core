@@ -261,6 +261,7 @@ class Researcher(ClusterableModel, CommonControlField):
 
     def __str__(self):
         return self.get_full_name
+
     @classmethod
     def get_by_lattes(cls, lattes):
         if lattes:
@@ -438,6 +439,7 @@ class Researcher(ClusterableModel, CommonControlField):
                 researcher = cls()
                 researcher.creator = user
 
+            researcher.person_name = person_name
             researcher.lattes = lattes or researcher.lattes
             ## TODO
             ## Criar get_or_create para model gender e GenderIdentificationStatus
