@@ -254,23 +254,13 @@ class Researcher(ClusterableModel, CommonControlField):
 
     @property
     def get_full_name(self):
-        return f"{self.last_name}, {self.given_names}"
+        return (self.orcid or self.person_name).get_full_name
 
     def __unicode__(self):
-        return "%s%s, %s (%s)" % (
-            self.last_name,
-            self.suffix and f" {self.suffix}" or "",
-            self.given_names,
-            self.orcid,
-        )
+        return self.get_full_name
 
     def __str__(self):
-        return "%s%s, %s (%s)" % (
-            self.last_name,
-            self.suffix and f" {self.suffix}" or "",
-            self.given_names,
-            self.orcid,
-        )
+        return self.get_full_name
 
     @classmethod
     def get(
