@@ -1,13 +1,17 @@
 from django.http import HttpResponseRedirect
-from django.utils.translation import gettext as _
 from django.urls import include, path
-from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
-from wagtail.contrib.modeladmin.views import CreateView
+from django.utils.translation import gettext as _
 from wagtail import hooks
+from wagtail.contrib.modeladmin.options import (
+    ModelAdmin,
+    ModelAdminGroup,
+    modeladmin_register,
+)
+from wagtail.contrib.modeladmin.views import CreateView
 
-from .models import City, Region, State, Country, Location, CountryFile, Address
-from .views import import_file_country, validate_country
 from .button_helpers import CountryHelper
+from .models import City, Country, CountryFile, Location, State
+from .views import import_file_country, validate_country
 
 
 class LocationCreateView(CreateView):
@@ -54,44 +58,11 @@ class CityAdmin(ModelAdmin):
     menu_icon = "folder"
     menu_order = 700
     add_to_settings_menu = False
-    exclude_from_explorer = (
-        False
-    )
-    list_display = (
-        "name",
-    )
-    search_fields = (
-        "name",
-    )
-    list_export = (
-        "name",
-    )
+    exclude_from_explorer = False
+    list_display = ("name",)
+    search_fields = ("name",)
+    list_export = ("name",)
     export_filename = "cities"
-
-
-class RegionAdmin(ModelAdmin):
-    model = Region
-    create_view_class = LocationCreateView
-    menu_label = _("Region")
-    menu_icon = "folder"
-    menu_order = 700
-    add_to_settings_menu = False
-    exclude_from_explorer = (
-        False
-    )
-    list_display = (
-        "name",
-        "acronym",
-    )
-    search_fields = (
-        "name",
-        "acronym",
-    )
-    list_export = (
-        "name",
-        "acronym",
-    )
-    export_filename = "regions"
 
 
 class StateAdmin(ModelAdmin):
@@ -101,9 +72,7 @@ class StateAdmin(ModelAdmin):
     menu_icon = "folder"
     menu_order = 700
     add_to_settings_menu = False
-    exclude_from_explorer = (
-        False
-    )
+    exclude_from_explorer = False
     list_display = (
         "name",
         "acronym",
@@ -115,29 +84,8 @@ class StateAdmin(ModelAdmin):
     list_export = (
         "name",
         "acronym",
-        # "region",
     )
-    export_filename = "regions"
-
-class AddressAdmin(ModelAdmin):
-    model = Address
-    create_view_class = LocationCreateView
-    menu_label = _("Address")
-    menu_icon = "folder"
-    menu_order = 800
-    add_to_settings_menu = False
-    exclude_from_explorer = (
-        False
-    )
-    list_display = (
-        "name",
-    )
-    search_fields = (
-        "name",
-    )
-    list_export = (
-        "name",
-    )
+    export_filename = "states"
 
 
 class CountryAdmin(ModelAdmin):
@@ -147,9 +95,7 @@ class CountryAdmin(ModelAdmin):
     menu_icon = "folder"
     menu_order = 700
     add_to_settings_menu = False
-    exclude_from_explorer = (
-        False
-    )
+    exclude_from_explorer = False
     list_display = (
         "name",
         "acronym",
@@ -181,7 +127,7 @@ class CountryFileAdmin(ModelAdmin):
     search_fields = ("attachment",)
 
 
-#modeladmin_register(LocationAdmin)
+# modeladmin_register(LocationAdmin)
 class LocationAdminGroup(ModelAdminGroup):
     menu_label = _("Location")
     menu_icon = "folder-open-inverse"
@@ -189,11 +135,9 @@ class LocationAdminGroup(ModelAdminGroup):
     items = (
         LocationAdmin,
         CityAdmin,
-        RegionAdmin,
         StateAdmin,
         CountryAdmin,
         CountryFileAdmin,
-        AddressAdmin,
     )
 
 

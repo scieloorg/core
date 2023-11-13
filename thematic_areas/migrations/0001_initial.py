@@ -10,8 +10,8 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("wagtaildocs", "0012_uploadeddocument"),
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ("core", "0001_initial"),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [

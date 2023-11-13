@@ -102,7 +102,7 @@ class Language(CommonControlField):
     name = models.TextField(_("Language Name"), blank=True, null=True)
     code2 = models.TextField(_("Language code 2"), blank=True, null=True)
 
-    autocomplete_search_field = "code2"
+    autocomplete_search_field = "name"
 
     def autocomplete_label(self):
         return str(self)
@@ -112,10 +112,14 @@ class Language(CommonControlField):
         verbose_name_plural = _("Languages")
 
     def __unicode__(self):
-        return self.code2 or "idioma ausente / não informado"
+        if self.name or self.code2:
+            return f"{self.name} | {self.code2}"
+        return "None"
 
     def __str__(self):
-        return self.code2 or "idioma ausente / não informado"
+        if self.name or self.code2:
+            return f"{self.name} | {self.code2}"
+        return "None"
 
     @classmethod
     def load(cls, user):
@@ -211,7 +215,7 @@ class License(CommonControlField):
     language = models.ForeignKey(
         Language, on_delete=models.SET_NULL, null=True, blank=True
     )
-    autocomplete_search_field = "license_p"
+    autocomplete_search_field = "license_type"
 
     def autocomplete_label(self):
         return str(self)

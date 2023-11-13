@@ -9,8 +9,8 @@ from wagtail.contrib.modeladmin.options import (
 )
 from wagtail.contrib.modeladmin.views import CreateView
 
-from .button_helper import IndexedAtHelper
 from . import models
+from .button_helper import IndexedAtHelper
 from .views import import_file, validate
 
 
@@ -37,7 +37,7 @@ class OfficialJournalAdmin(ModelAdmin):
         "issn_electronic",
         "issnl",
         "created",
-        "updated",        
+        "updated",
     )
     list_filter = ("foundation_year",)
     search_fields = (
@@ -65,19 +65,24 @@ class JournalAdmin(ModelAdmin):
     menu_order = 200
     add_to_settings_menu = False
     exclude_from_explorer = False
+    list_per_page = 20
 
     list_display = (
-        "official",
         "title",
-        "short_title",
+        "contact_location",
         "created",
         "updated",
     )
-    # list_filter = ()
+    list_filter = (
+        "use_license",
+        "publishing_model",
+        "subject",
+    )
     search_fields = (
         "title",
         "official__issn_print",
         "official__issn_electronic",
+        "contact_location__country__name",
     )
 
 
@@ -103,7 +108,7 @@ class SciELOJournalAdmin(ModelAdmin):
         "journal_acron",
         "journal",
         "created",
-        "updated",        
+        "updated",
     )
     search_fields = (
         "journal_acron",
@@ -201,6 +206,53 @@ class ListCodesAdminGroup(ModelAdminGroup):
     )
 
 modeladmin_register(ListCodesAdminGroup)
+
+class WebOfKnowledgeAdmin(ModelAdmin):
+    model = models.WebOfKnowledge
+    menu_icon = "folder"
+    menu_order = 200
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "code",
+        "value",
+    )
+
+    search_fields = (
+        "code",
+        "value",
+    )
+
+
+class SubjectAdmin(ModelAdmin):
+    model = models.Subject
+    menu_icon = "folder"
+    menu_order = 100
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "code",
+        "value",
+    )
+
+    search_fields = (
+        "code",
+        "value",
+    )
+
+
+class ListCodesAdminGroup(ModelAdminGroup):
+    menu_label = "List of codes"
+    menu_icon = "folder-open-inverse"
+    menu_order = 1100
+    items = (
+        SubjectAdmin,
+        WebOfKnowledgeAdmin,
+    )
+
+
+modeladmin_register(ListCodesAdminGroup)
+
 
 @hooks.register("register_admin_urls")
 def register_calendar_url():

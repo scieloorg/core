@@ -11,6 +11,7 @@ class Migration(migrations.Migration):
         ("core", "0001_initial"),
         ("institution", "0001_initial"),
         ("book", "0001_initial"),
+        ("institution", "0001_initial"),
     ]
 
     operations = [

@@ -16,6 +16,7 @@ class Migration(migrations.Migration):
         ("wagtailimages", "0025_alter_image_file_alter_rendition_file"),
         ("location", "0001_initial"),
         ("wagtaildocs", "0012_uploadeddocument"),
+        ("wagtailimages", "0025_alter_image_file_alter_rendition_file"),
         ("journal", "0001_initial"),
         ("collection", "0001_initial"),
         ("vocabulary", "0001_initial"),
@@ -820,16 +821,6 @@ class Migration(migrations.Migration):
                 related_name="%(class)s_last_mod_user",
                 to=settings.AUTH_USER_MODEL,
                 verbose_name="Updater",
-            ),
-        ),
-        migrations.AddField(
-            model_name="editorialmanagerhistory",
-            name="journal",
-            field=modelcluster.fields.ParentalKey(
-                null=True,
-                on_delete=django.db.models.deletion.SET_NULL,
-                related_name="editorialmanager_history",
-                to="journal.journal",
             ),
         ),
         migrations.AddField(

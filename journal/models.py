@@ -23,7 +23,6 @@ from core.models import (
 )
 from institution.models import (
     CopyrightHolderHistoryItem,
-    EditorialManagerHistoryItem,
     OwnerHistoryItem,
     PublisherHistoryItem,
     SponsorHistoryItem,
@@ -70,14 +69,8 @@ class OfficialJournal(CommonControlField):
         blank=True,
         related_name="new_title_journal",
     )
-    old_title = models.ForeignKey(
-        "self",
-        verbose_name=_("Old Title"),
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="old_title_journal",
-    )
+    old_title = models.ManyToManyField("self", null=True, blank=True)
+
     foundation_year = models.CharField(
         _("Foundation Year"), max_length=4, null=True, blank=True
     )
@@ -115,7 +108,7 @@ class OfficialJournal(CommonControlField):
         FieldPanel("title"),
         FieldPanel("iso_short_title"),
         AutocompletePanel("parallel_titles"),
-        FieldPanel("old_title"),
+        AutocompletePanel("old_title"),
         FieldPanel("new_title"),
     ]
 
@@ -175,12 +168,18 @@ class OfficialJournal(CommonControlField):
                 ]
             ),
         ]
+        ordering = ["title"]
+
+    autocomplete_search_field = "title"
+
+    def autocomplete_label(self):
+        return str(self)
 
     def __unicode__(self):
-        return "%s - %s" % (self.issnl, self.title) or ""
+        return f"{self.issn_electronic} {self.issn_print} {self.title}"
 
     def __str__(self):
-        return "%s - %s" % (self.issnl, self.title) or ""
+        return f"{self.issn_electronic} {self.issn_print} {self.title}"
 
     @property
     def data(self):
@@ -512,6 +511,9 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("title"),
         FieldPanel("short_title"),
         AutocompletePanel("other_titles"),
+        FieldPanel("secs_code"),
+        FieldPanel("medline_code"),
+        FieldPanel("medline_short_title"),
     ]
 
     panels_scope_and_about = [
@@ -519,41 +521,15 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel("history", label=_("Brief History"), classname="collapsed"),
         InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
         InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
-        FieldPanel("subject_descriptor"),
+        AutocompletePanel("indexed_at"),
+        AutocompletePanel("subject_descriptor"),
         FieldPanel("subject"),
         FieldPanel("wos_db"),
-        FieldPanel("wos_area"),
-    ]
-
-    panels_formal_information = [
-        FieldPanel("frequency"),
-        FieldPanel("publishing_model"),
-        FieldPanel("text_language"),
-        FieldPanel("abstract_language"),
-        FieldPanel("standard"),
-        AutocompletePanel("vocabulary"),
-        FieldPanel("alphabet"),
-        FieldPanel("classification"),
-        FieldPanel("national_code"),
-        FieldPanel("type_of_literature"),
-        FieldPanel("treatment_level"),
-        FieldPanel("level_of_publication"),
-    ]
-
-    panels_interoperation = [
-        FieldPanel("secs_code"),
-        FieldPanel("medline_code"),
-        FieldPanel("medline_short_title"),
-        FieldPanel("indexed_at"),
+        AutocompletePanel("wos_area"),
     ]
 
     panels_institutions = [
         InlinePanel("owner_history", label=_("Owner"), classname="collapsed"),
-        InlinePanel(
-            "editorialmanager_history",
-            label=_("Editorial Manager"),
-            classname="collapsed",
-        ),
         InlinePanel("publisher_history", label=_("Publisher"), classname="collapsed"),
         InlinePanel("sponsor_history", label=_("Sponsor"), classname="collapsed"),
         InlinePanel(
@@ -573,18 +549,24 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("submission_online_url"),
         FieldPanel("collection_main_url"),
         InlinePanel("journalsocialnetwork", label=_("Social Network")),
+        FieldPanel("frequency"),
+        FieldPanel("publishing_model"),
+        AutocompletePanel("text_language"),
+        AutocompletePanel("abstract_language"),
+        FieldPanel("standard"),
+        AutocompletePanel("vocabulary"),
     ]
 
     panels_open_science = [
         FieldPanel("open_access"),
         FieldPanel("url_oa"),
-        AutocompletePanel("use_license"),
-    ]
-
-    panels_policy = [
+        FieldPanel("use_license"),
         InlinePanel("open_data", label=_("Open data"), classname="collapsed"),
         InlinePanel("preprint", label=_("Preprint"), classname="collapsed"),
         InlinePanel("review", label=_("Peer review"), classname="collapsed"),
+    ]
+
+    panels_policy = [
         InlinePanel("ecommittee", label=_("Ethics Committee"), classname="collapsed"),
         InlinePanel("copyright", label=_("Copyright"), classname="collapsed"),
         InlinePanel(
@@ -611,6 +593,12 @@ class Journal(CommonControlField, ClusterableModel):
     panels_notes = [InlinePanel("annotation", label=_("Notes"), classname="collapsed")]
 
     panels_legacy_compatibility_fields = [
+        FieldPanel("alphabet"),
+        FieldPanel("classification"),
+        FieldPanel("national_code"),
+        FieldPanel("type_of_literature"),
+        FieldPanel("treatment_level"),
+        FieldPanel("level_of_publication"),
         FieldPanel("center_code"),
         FieldPanel("identification_number"),
         FieldPanel("ftp"),
@@ -626,9 +614,7 @@ class Journal(CommonControlField, ClusterableModel):
         [
             ObjectList(panels_titles, heading=_("Titles")),
             ObjectList(panels_scope_and_about, heading=_("Scope and about")),
-            ObjectList(panels_interoperation, heading=_("Interoperation")),
-            ObjectList(panels_formal_information, heading=_("Formal information")),
-            ObjectList(panels_institutions, heading=_("Related Institutions")),
+            ObjectList(panels_institutions, heading=_("Institutions")),
             ObjectList(panels_website, heading=_("Website")),
             ObjectList(panels_open_science, heading=_("Open Science")),
             ObjectList(panels_policy, heading=_("Journal Policy")),
@@ -651,6 +637,16 @@ class Journal(CommonControlField, ClusterableModel):
             models.Index(
                 fields=[
                     "title",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "use_license",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "publishing_model",
                 ]
             ),
         ]
@@ -801,15 +797,6 @@ class Mission(Orderable, RichTextWithLang, CommonControlField):
 class OwnerHistory(Orderable, OwnerHistoryItem):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="owner_history", null=True
-    )
-
-
-class EditorialManagerHistory(Orderable, EditorialManagerHistoryItem):
-    journal = ParentalKey(
-        Journal,
-        on_delete=models.SET_NULL,
-        related_name="editorialmanager_history",
-        null=True,
     )
 
 
@@ -1159,8 +1146,16 @@ class JournalParallelTitles(TextWithLang):
 class SubjectDescriptor(CommonControlField):
     value = models.CharField(max_length=255, null=True, blank=True)
 
+    autocomplete_search_field = "value"
+
+    def autocomplete_label(self):
+        return str(self)
+
     def __str__(self):
         return f"{self.value}"
+
+    class Meta:
+        ordering = ["value"]
 
 
 class Subject(CommonControlField):
@@ -1217,7 +1212,7 @@ class WebOfKnowledge(CommonControlField):
             for item in choices.WOS_DB:
                 code, _ = item
                 cls.create_or_update(code=code, user=user)
-    
+                
     @classmethod
     def get(cls, code):
         if not code:
@@ -1248,8 +1243,16 @@ class WebOfKnowledge(CommonControlField):
 class WebOfKnowledgeSubjectCategory(CommonControlField):
     value = models.CharField(max_length=100, null=True, blank=True)
 
+    autocomplete_search_field = "value"
+
+    def autocomplete_label(self):
+        return str(self)
+
     def __str__(self):
         return f"{self.value}"
+
+    class Meta:
+        ordering = ["value"]
 
 
 class Standard(CommonControlField):
@@ -1325,6 +1328,9 @@ class IndexedAt(CommonControlField):
 
     def __str__(self):
         return f"{self.acronym} - {self.name}"
+
+    class Meta:
+        ordering = ["name"]
 
     @classmethod
     def get(

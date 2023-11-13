@@ -33,10 +33,14 @@ def load_journal_from_classic_website(self, username=None, user_id=None):
 
 
 @celery_app.task(bind=True)
-def load_journal_from_article_meta(self, username=None, user_id=None, limit=None, collection_acron=None):
+def load_journal_from_article_meta(
+    self, username=None, user_id=None, limit=None, collection_acron=None
+):
     try:
         if collection_acron:
-            items = Collection.objects.filter(collection_type="journals", acron3=collection_acron).iterator()
+            items = Collection.objects.filter(
+                collection_type="journals", acron3=collection_acron
+            ).iterator()
         else:
             items = Collection.objects.filter(collection_type="journals").iterator()
 

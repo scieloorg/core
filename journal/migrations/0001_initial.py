@@ -268,31 +268,6 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name="EditorialManagerHistory",
-            fields=[
-                (
-                    "editorialmanagerhistoryitem_ptr",
-                    models.OneToOneField(
-                        auto_created=True,
-                        on_delete=django.db.models.deletion.CASCADE,
-                        parent_link=True,
-                        primary_key=True,
-                        serialize=False,
-                        to="institution.editorialmanagerhistoryitem",
-                    ),
-                ),
-                (
-                    "sort_order",
-                    models.IntegerField(blank=True, editable=False, null=True),
-                ),
-            ],
-            options={
-                "ordering": ["sort_order"],
-                "abstract": False,
-            },
-            bases=("institution.editorialmanagerhistoryitem", models.Model),
-        ),
-        migrations.CreateModel(
             name="Focus",
             fields=[
                 (
@@ -430,7 +405,7 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "abstract": False,
+                "ordering": ["name"],
             },
         ),
         migrations.CreateModel(
@@ -1715,7 +1690,7 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "abstract": False,
+                "ordering": ["value"],
             },
         ),
         migrations.CreateModel(
@@ -1773,7 +1748,324 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
+<<<<<<< HEAD
             name="ThematicAreaJournal",
+=======
+            name="SubjectDescriptor",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "created",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Creation date"
+                    ),
+                ),
+                (
+                    "updated",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Last update date"
+                    ),
+                ),
+                ("value", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "creator",
+                    models.ForeignKey(
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_creator",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Creator",
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        blank=True,
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_last_mod_user",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Updater",
+                    ),
+                ),
+            ],
+            options={
+                "ordering": ["value"],
+            },
+        ),
+        migrations.CreateModel(
+            name="Subject",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "created",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Creation date"
+                    ),
+                ),
+                (
+                    "updated",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Last update date"
+                    ),
+                ),
+                ("code", models.CharField(blank=True, max_length=30, null=True)),
+                ("value", models.CharField(blank=True, max_length=100, null=True)),
+                (
+                    "creator",
+                    models.ForeignKey(
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_creator",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Creator",
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        blank=True,
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_last_mod_user",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Updater",
+                    ),
+                ),
+            ],
+            options={
+                "abstract": False,
+            },
+        ),
+        migrations.CreateModel(
+            name="Standard",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "created",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Creation date"
+                    ),
+                ),
+                (
+                    "updated",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Last update date"
+                    ),
+                ),
+                ("code", models.CharField(blank=True, max_length=7, null=True)),
+                ("value", models.TextField(blank=True, null=True)),
+                (
+                    "creator",
+                    models.ForeignKey(
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_creator",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Creator",
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        blank=True,
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_last_mod_user",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Updater",
+                    ),
+                ),
+            ],
+            options={
+                "abstract": False,
+            },
+        ),
+        migrations.CreateModel(
+            name="SponsorHistory",
+            fields=[
+                (
+                    "sponsorhistoryitem_ptr",
+                    models.OneToOneField(
+                        auto_created=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        parent_link=True,
+                        primary_key=True,
+                        serialize=False,
+                        to="institution.sponsorhistoryitem",
+                    ),
+                ),
+                (
+                    "sort_order",
+                    models.IntegerField(blank=True, editable=False, null=True),
+                ),
+                (
+                    "journal",
+                    modelcluster.fields.ParentalKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="sponsor_history",
+                        to="journal.journal",
+                    ),
+                ),
+            ],
+            options={
+                "ordering": ["sort_order"],
+                "abstract": False,
+            },
+            bases=("institution.sponsorhistoryitem", models.Model),
+        ),
+        migrations.CreateModel(
+            name="SciELOJournal",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "created",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Creation date"
+                    ),
+                ),
+                (
+                    "updated",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Last update date"
+                    ),
+                ),
+                (
+                    "name",
+                    models.TextField(
+                        blank=True,
+                        choices=[("facebook", "Facebook"), ("twitter", "Twitter")],
+                        null=True,
+                        verbose_name="Name",
+                    ),
+                ),
+                ("url", models.URLField(blank=True, null=True, verbose_name="URL")),
+                (
+                    "journal_acron",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Journal Acronym"
+                    ),
+                ),
+                (
+                    "issn_scielo",
+                    models.CharField(
+                        blank=True, max_length=9, null=True, verbose_name="ISSN SciELO"
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("?", "Unknow"),
+                            ("C", "Current"),
+                            ("D", "Ceased"),
+                            ("R", "Reports only"),
+                            ("S", "Suspended"),
+                        ],
+                        max_length=12,
+                        null=True,
+                        verbose_name="Status",
+                    ),
+                ),
+                (
+                    "collection",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to="collection.collection",
+                        verbose_name="Collection",
+                    ),
+                ),
+                (
+                    "creator",
+                    models.ForeignKey(
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_creator",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Creator",
+                    ),
+                ),
+                (
+                    "journal",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="journal.journal",
+                        verbose_name="Journal",
+                    ),
+                ),
+                (
+                    "journal_history",
+                    models.ManyToManyField(
+                        to="journal.journalhistory", verbose_name="Journal History"
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        blank=True,
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_last_mod_user",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Updater",
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "SciELO Journal",
+                "verbose_name_plural": "SciELO Journals",
+            },
+        ),
+        migrations.CreateModel(
+            name="Review",
+>>>>>>> fbd379c240910fee0050f758af5240598091828a
             fields=[
                 (
                     "id",
@@ -1816,7 +2108,736 @@ class Migration(migrations.Migration):
                     modelcluster.fields.ParentalKey(
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
+<<<<<<< HEAD
                         related_name="thematic_area",
+=======
+                        related_name="review",
+                        to="journal.journal",
+                    ),
+                ),
+                (
+                    "language",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="core.language",
+                        verbose_name="Idioma",
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        blank=True,
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_last_mod_user",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Updater",
+                    ),
+                ),
+            ],
+            options={
+                "ordering": ["sort_order"],
+                "abstract": False,
+            },
+        ),
+        migrations.CreateModel(
+            name="PublisherHistory",
+            fields=[
+                (
+                    "publisherhistoryitem_ptr",
+                    models.OneToOneField(
+                        auto_created=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        parent_link=True,
+                        primary_key=True,
+                        serialize=False,
+                        to="institution.publisherhistoryitem",
+                    ),
+                ),
+                (
+                    "sort_order",
+                    models.IntegerField(blank=True, editable=False, null=True),
+                ),
+                (
+                    "journal",
+                    modelcluster.fields.ParentalKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="publisher_history",
+                        to="journal.journal",
+                    ),
+                ),
+            ],
+            options={
+                "ordering": ["sort_order"],
+                "abstract": False,
+            },
+            bases=("institution.publisherhistoryitem", models.Model),
+        ),
+        migrations.CreateModel(
+            name="Preprint",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "sort_order",
+                    models.IntegerField(blank=True, editable=False, null=True),
+                ),
+                (
+                    "created",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Creation date"
+                    ),
+                ),
+                (
+                    "updated",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Last update date"
+                    ),
+                ),
+                (
+                    "plain_text",
+                    models.TextField(blank=True, null=True, verbose_name="Plain Text"),
+                ),
+                (
+                    "rich_text",
+                    wagtail.fields.RichTextField(
+                        blank=True,
+                        help_text="A preprint is defined as a manuscript ready for submission to a journal that is deposited \n            with trusted preprint servers before or in parallel with submission to a journal. \n            This practice joins that of continuous publication as mechanisms to speed up research communication. \n            Preprints share with journals the originality in the publication of articles and inhibit the use of \n            the double-blind procedure in the evaluation of manuscripts. \n            The use of preprints is an option and choice of the authors and it is up to the journals to adapt \n            their policies to accept the submission of manuscripts previously deposited in a preprints server \n            recognized by the journal.",
+                        null=True,
+                    ),
+                ),
+                (
+                    "creator",
+                    models.ForeignKey(
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_creator",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Creator",
+                    ),
+                ),
+                (
+                    "journal",
+                    modelcluster.fields.ParentalKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="preprint",
+                        to="journal.journal",
+                    ),
+                ),
+                (
+                    "language",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="core.language",
+                        verbose_name="Idioma",
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        blank=True,
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_last_mod_user",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Updater",
+                    ),
+                ),
+            ],
+            options={
+                "ordering": ["sort_order"],
+                "abstract": False,
+            },
+        ),
+        migrations.CreateModel(
+            name="Policies",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "sort_order",
+                    models.IntegerField(blank=True, editable=False, null=True),
+                ),
+                (
+                    "created",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Creation date"
+                    ),
+                ),
+                (
+                    "updated",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Last update date"
+                    ),
+                ),
+                (
+                    "plain_text",
+                    models.TextField(blank=True, null=True, verbose_name="Plain Text"),
+                ),
+                (
+                    "rich_text",
+                    wagtail.fields.RichTextField(
+                        blank=True,
+                        help_text="Describe here how the journal will deal with ethical issues and/or \n            issues that may damage the journal's reputation. What is the journal's position regarding \n            the retraction policy that the journal will adopt in cases of misconduct. \n            Best practice guide: <a target='_blank' \n            href='https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-Praticas-para-o-Fortalecimento-da-Etica-na-Publicacao-Cientifica.pdf'>\n            https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-Praticas-para-o-Fortalecimento-da-Etica-na-Publicacao-Cientifica.pdf</a>",
+                        null=True,
+                    ),
+                ),
+                (
+                    "creator",
+                    models.ForeignKey(
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_creator",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Creator",
+                    ),
+                ),
+                (
+                    "journal",
+                    modelcluster.fields.ParentalKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="policies",
+                        to="journal.journal",
+                    ),
+                ),
+                (
+                    "language",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="core.language",
+                        verbose_name="Idioma",
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        blank=True,
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_last_mod_user",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Updater",
+                    ),
+                ),
+            ],
+            options={
+                "ordering": ["sort_order"],
+                "abstract": False,
+            },
+        ),
+        migrations.CreateModel(
+            name="OwnerHistory",
+            fields=[
+                (
+                    "ownerhistoryitem_ptr",
+                    models.OneToOneField(
+                        auto_created=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        parent_link=True,
+                        primary_key=True,
+                        serialize=False,
+                        to="institution.ownerhistoryitem",
+                    ),
+                ),
+                (
+                    "sort_order",
+                    models.IntegerField(blank=True, editable=False, null=True),
+                ),
+                (
+                    "journal",
+                    modelcluster.fields.ParentalKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="owner_history",
+                        to="journal.journal",
+                    ),
+                ),
+            ],
+            options={
+                "ordering": ["sort_order"],
+                "abstract": False,
+            },
+            bases=("institution.ownerhistoryitem", models.Model),
+        ),
+        migrations.CreateModel(
+            name="OpenData",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "sort_order",
+                    models.IntegerField(blank=True, editable=False, null=True),
+                ),
+                (
+                    "created",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Creation date"
+                    ),
+                ),
+                (
+                    "updated",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Last update date"
+                    ),
+                ),
+                (
+                    "plain_text",
+                    models.TextField(blank=True, null=True, verbose_name="Plain Text"),
+                ),
+                (
+                    "rich_text",
+                    wagtail.fields.RichTextField(
+                        blank=True,
+                        help_text="Refers to sharing data, codes, methods and other materials used and \n            resulting from research that are usually the basis of the texts of articles published by journals. \n            Guide: <a target='_blank' href='https://wp.scielo.org/wp-content/uploads/Guia_TOP_pt.pdf'>https://wp.scielo.org/wp-content/uploads/Guia_TOP_pt.pdf</a>",
+                        null=True,
+                    ),
+                ),
+                (
+                    "creator",
+                    models.ForeignKey(
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_creator",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Creator",
+                    ),
+                ),
+                (
+                    "journal",
+                    modelcluster.fields.ParentalKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="open_data",
+                        to="journal.journal",
+                    ),
+                ),
+                (
+                    "language",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="core.language",
+                        verbose_name="Idioma",
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        blank=True,
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_last_mod_user",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Updater",
+                    ),
+                ),
+            ],
+            options={
+                "ordering": ["sort_order"],
+                "abstract": False,
+            },
+        ),
+        migrations.CreateModel(
+            name="OfficialJournal",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "created",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Creation date"
+                    ),
+                ),
+                (
+                    "updated",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Last update date"
+                    ),
+                ),
+                (
+                    "title",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Official Title"
+                    ),
+                ),
+                (
+                    "iso_short_title",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="ISO Short Title"
+                    ),
+                ),
+                (
+                    "foundation_year",
+                    models.CharField(
+                        blank=True,
+                        max_length=4,
+                        null=True,
+                        verbose_name="Foundation Year",
+                    ),
+                ),
+                (
+                    "initial_year",
+                    models.CharField(
+                        blank=True, max_length=4, null=True, verbose_name="Initial Year"
+                    ),
+                ),
+                (
+                    "initial_month",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("01", "January"),
+                            ("02", "February"),
+                            ("03", "March"),
+                            ("04", "April"),
+                            ("05", "May"),
+                            ("06", "June"),
+                            ("07", "July"),
+                            ("08", "August"),
+                            ("09", "September"),
+                            ("10", "October"),
+                            ("11", "November"),
+                            ("12", "December"),
+                        ],
+                        max_length=2,
+                        null=True,
+                        verbose_name="Month Year",
+                    ),
+                ),
+                (
+                    "initial_volume",
+                    models.CharField(
+                        blank=True,
+                        max_length=32,
+                        null=True,
+                        verbose_name="Initial Volume",
+                    ),
+                ),
+                (
+                    "initial_number",
+                    models.CharField(
+                        blank=True,
+                        max_length=32,
+                        null=True,
+                        verbose_name="Initial Number",
+                    ),
+                ),
+                (
+                    "terminate_year",
+                    models.CharField(
+                        blank=True,
+                        max_length=4,
+                        null=True,
+                        verbose_name="Terminate year",
+                    ),
+                ),
+                (
+                    "terminate_month",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("01", "January"),
+                            ("02", "February"),
+                            ("03", "March"),
+                            ("04", "April"),
+                            ("05", "May"),
+                            ("06", "June"),
+                            ("07", "July"),
+                            ("08", "August"),
+                            ("09", "September"),
+                            ("10", "October"),
+                            ("11", "November"),
+                            ("12", "December"),
+                        ],
+                        max_length=2,
+                        null=True,
+                        verbose_name="Terminate month",
+                    ),
+                ),
+                (
+                    "final_volume",
+                    models.CharField(
+                        blank=True,
+                        max_length=32,
+                        null=True,
+                        verbose_name="Final Volume",
+                    ),
+                ),
+                (
+                    "final_number",
+                    models.CharField(
+                        blank=True,
+                        max_length=32,
+                        null=True,
+                        verbose_name="Final Number",
+                    ),
+                ),
+                (
+                    "issn_print",
+                    models.CharField(
+                        blank=True, max_length=9, null=True, verbose_name="ISSN Print"
+                    ),
+                ),
+                (
+                    "issn_electronic",
+                    models.CharField(
+                        blank=True,
+                        max_length=9,
+                        null=True,
+                        verbose_name="ISSN Eletronic",
+                    ),
+                ),
+                (
+                    "issnl",
+                    models.CharField(
+                        blank=True, max_length=9, null=True, verbose_name="ISSNL"
+                    ),
+                ),
+                (
+                    "creator",
+                    models.ForeignKey(
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_creator",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Creator",
+                    ),
+                ),
+                (
+                    "new_title",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="new_title_journal",
+                        to="journal.officialjournal",
+                        verbose_name="New Title",
+                    ),
+                ),
+                (
+                    "old_title",
+                    models.ManyToManyField(
+                        blank=True, null=True, to="journal.officialjournal"
+                    ),
+                ),
+                (
+                    "parallel_titles",
+                    models.ManyToManyField(
+                        blank=True, null=True, to="journal.journalparalleltitles"
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        blank=True,
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_last_mod_user",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Updater",
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "Official Journal",
+                "verbose_name_plural": "Official Journals",
+                "ordering": ["title"],
+            },
+        ),
+        migrations.CreateModel(
+            name="Mission",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "sort_order",
+                    models.IntegerField(blank=True, editable=False, null=True),
+                ),
+                (
+                    "created",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Creation date"
+                    ),
+                ),
+                (
+                    "updated",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Last update date"
+                    ),
+                ),
+                (
+                    "rich_text",
+                    wagtail.fields.RichTextField(
+                        blank=True, null=True, verbose_name="Rich Text"
+                    ),
+                ),
+                (
+                    "plain_text",
+                    models.TextField(blank=True, null=True, verbose_name="Plain Text"),
+                ),
+                (
+                    "creator",
+                    models.ForeignKey(
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_creator",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Creator",
+                    ),
+                ),
+                (
+                    "journal",
+                    modelcluster.fields.ParentalKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="mission",
+                        to="journal.journal",
+                    ),
+                ),
+                (
+                    "language",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="core.language",
+                        verbose_name="Idioma",
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        blank=True,
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_last_mod_user",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Updater",
+                    ),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
+            name="JournalSocialNetwork",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "sort_order",
+                    models.IntegerField(blank=True, editable=False, null=True),
+                ),
+                (
+                    "name",
+                    models.TextField(
+                        blank=True,
+                        choices=[("facebook", "Facebook"), ("twitter", "Twitter")],
+                        null=True,
+                        verbose_name="Name",
+                    ),
+                ),
+                ("url", models.URLField(blank=True, null=True, verbose_name="URL")),
+                (
+                    "page",
+                    modelcluster.fields.ParentalKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="journalsocialnetwork",
+                        to="journal.journal",
+                    ),
+                ),
+            ],
+            options={
+                "ordering": ["sort_order"],
+                "abstract": False,
+            },
+        ),
+        migrations.CreateModel(
+            name="JournalEmail",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "sort_order",
+                    models.IntegerField(blank=True, editable=False, null=True),
+                ),
+                ("email", models.EmailField(max_length=254)),
+                (
+                    "journal",
+                    modelcluster.fields.ParentalKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="journal_email",
+>>>>>>> fbd379c240910fee0050f758af5240598091828a
                         to="journal.journal",
                     ),
                 ),

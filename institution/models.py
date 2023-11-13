@@ -9,7 +9,7 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
-from location.models import Location, Country
+from location.models import Country, Location
 
 from . import choices
 from .forms import ScimagoForm
@@ -137,19 +137,26 @@ class Institution(CommonControlField, ClusterableModel):
         inst_acronym,
         location,
     ):
-        filters = {}
-        
-        if inst_name:
-            filters['name'] = inst_name
-        if inst_acronym:
-            filters['acronym'] = inst_acronym
-        if location:
-            filters['location'] = location
-
-        if filters:
-            return cls.objects.get(**filters)            
-        raise ValueError("Requires inst_name, inst_acronym or location parameters")
-
+        if inst_name or inst_acronym:
+            try:
+                if inst_name and inst_acronym:
+                    return cls.objects.get(
+                        Q(inst_name__iexact=inst_name) |
+                        Q(inst_acronym__iexact=inst_acronym),
+                        location=location,
+                    )
+                return cls.objects.get(
+                    inst_name__iexact=inst_name,
+                    inst_acronym__iexact=inst_acronym,
+                    location=location,
+                )
+            except cls.MultipleObjectsReturned:
+                return cls.objects.get(
+                    inst_name__iexact=inst_name,
+                    inst_acronym__iexact=inst_acronym,
+                    location=location,
+                )
+        raise ValueError("Requires inst_name or inst_acronym parameters")
 
     @classmethod
     def create_or_update(
@@ -167,13 +174,15 @@ class Institution(CommonControlField, ClusterableModel):
     ):
 
         try:
-            institution = cls.get(inst_name=inst_name, inst_acronym=inst_acronym, location=location)
+            institution = cls.get(
+                inst_name=inst_name, inst_acronym=inst_acronym, location=location
+            )
             institution.updated_by = user
         except cls.DoesNotExist:
             institution = cls()
-            institution.name = inst_name
             institution.creator = user
-        
+
+        institution.name = inst_name or institution.name
         institution.acronym = inst_acronym or institution.acronym
         institution.level_1 = level_1 or institution.level_1
         institution.level_2 = level_2 or institution.level_2
@@ -227,15 +236,14 @@ class BaseHistoryItem(CommonControlField):
         FieldPanel("final_date"),
     ]
 
-
     @classmethod
     def get(
         cls,
-        institution, 
+        institution,
     ):
         if institution:
-            return cls.objects.get(institution=institution)    
-        raise ValueError("Requires item parameter") 
+            return cls.objects.get(institution=institution)
+        raise ValueError("Requires item parameter")
 
     @classmethod
     def create_or_update(cls, institution, user, initial_date=None, final_date=None):
@@ -246,12 +254,12 @@ class BaseHistoryItem(CommonControlField):
             history = cls()
             history.institution = institution
             history.creator = user
-        
+
         history.initial_date = initial_date
         history.final_date = final_date
         history.save()
         return history
-    
+
     class Meta:
         abstract = True
 
@@ -265,8 +273,8 @@ class Sponsor(Institution):
 class SponsorHistoryItem(BaseHistoryItem):
     institution = models.ForeignKey(
         Sponsor,
-        on_delete=models.SET_NULL, 
-        blank=True, 
+        on_delete=models.SET_NULL,
+        blank=True,
         null=True,
     )
 
@@ -279,9 +287,9 @@ class Publisher(Institution):
 
 class PublisherHistoryItem(BaseHistoryItem):
     institution = models.ForeignKey(
-        Publisher, 
-        on_delete=models.SET_NULL, 
-        blank=True, 
+        Publisher,
+        on_delete=models.SET_NULL,
+        blank=True,
         null=True,
     )
 
@@ -290,13 +298,13 @@ class CopyrightHolder(Institution):
     panels = Institution.panels
 
     base_form_class = CoreAdminModelForm
-    
+
 
 class CopyrightHolderHistoryItem(BaseHistoryItem):
     institution = models.ForeignKey(
-        CopyrightHolder, 
-        on_delete=models.SET_NULL, 
-        blank=True, 
+        CopyrightHolder,
+        on_delete=models.SET_NULL,
+        blank=True,
         null=True,
     )
 
@@ -309,9 +317,9 @@ class Owner(Institution):
 
 class OwnerHistoryItem(BaseHistoryItem):
     institution = models.ForeignKey(
-        Owner, 
-        on_delete=models.SET_NULL, 
-        blank=True, 
+        Owner,
+        on_delete=models.SET_NULL,
+        blank=True,
         null=True,
     )
 
@@ -324,9 +332,9 @@ class EditorialManager(Institution):
 
 class EditorialManagerHistoryItem(BaseHistoryItem):
     institution = models.ForeignKey(
-        EditorialManager, 
-        on_delete=models.SET_NULL, 
-        blank=True, 
+        EditorialManager,
+        on_delete=models.SET_NULL,
+        blank=True,
         null=True,
     )
 
@@ -355,9 +363,9 @@ class Scimago(CommonControlField, ClusterableModel):
                 fields=[
                     "url",
                 ]
-            )
+            ),
         ]
-    
+
     def __unicode__(self):
         return "%s | %s | %s" % (
             self.institution,
@@ -375,17 +383,16 @@ class Scimago(CommonControlField, ClusterableModel):
     @classmethod
     def get(cls, institution=None, country_acron3=None):
         if institution and country_acron3:
-            return cls.objects.get(institution__icontains=institution, country__acron3__icontains=country_acron3)
-        raise ValueError("Scimago.get requires institution and country acronym (3 char)")
+            return cls.objects.get(
+                institution__icontains=institution,
+                country__acron3__icontains=country_acron3,
+            )
+        raise ValueError(
+            "Scimago.get requires institution and country acronym (3 char)"
+        )
 
     @classmethod
-    def create_or_update(
-        cls,
-        user,
-        institution,
-        country_acron3,
-        url
-    ):
+    def create_or_update(cls, user, institution, country_acron3, url):
         try:
             obj = cls.get(institution=institution, country_acron3=country_acron3)
             obj.updated_by = user
@@ -400,7 +407,7 @@ class Scimago(CommonControlField, ClusterableModel):
         obj.url = url or obj.url
         obj.save()
         return obj
-    
+
     base_form_class = ScimagoForm
 
 

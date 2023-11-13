@@ -4,8 +4,8 @@ from datetime import datetime
 from django.core.files.base import ContentFile
 from django.db import models
 from django.db.models import Q
-from django.utils.translation import gettext as _
 from django.db.utils import IntegrityError
+from django.utils.translation import gettext as _
 from lxml import etree
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 from wagtail.admin.panels import FieldPanel

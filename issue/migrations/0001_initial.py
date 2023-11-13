@@ -11,8 +11,9 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ("core", "0001_initial"),
+        ("researcher", "0001_initial"),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
@@ -154,49 +155,6 @@ class Migration(migrations.Migration):
             options={
                 "verbose_name": "Issue",
                 "verbose_name_plural": "Issues",
-            },
-        ),
-        migrations.CreateModel(
-            name="IssueTitle",
-            fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name="ID",
-                    ),
-                ),
-                (
-                    "sort_order",
-                    models.IntegerField(blank=True, editable=False, null=True),
-                ),
-                (
-                    "created",
-                    models.DateTimeField(
-                        auto_now_add=True, verbose_name="Creation date"
-                    ),
-                ),
-                (
-                    "updated",
-                    models.DateTimeField(
-                        auto_now=True, verbose_name="Last update date"
-                    ),
-                ),
-                (
-                    "title",
-                    models.CharField(
-                        blank=True,
-                        max_length=100,
-                        null=True,
-                        verbose_name="Issue Title",
-                    ),
-                ),
-            ],
-            options={
-                "ordering": ["sort_order"],
-                "abstract": False,
             },
         ),
         migrations.CreateModel(
@@ -342,6 +300,113 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="page_member",
                         to="issue.editorialboard",
+                    ),
+                ),
+                (
+                    "member",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to="researcher.researcher",
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        blank=True,
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_last_mod_user",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Updater",
+                    ),
+                ),
+            ],
+            options={
+                "ordering": ["sort_order"],
+                "abstract": False,
+            },
+        ),
+        migrations.CreateModel(
+            name="IssueTitle",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "sort_order",
+                    models.IntegerField(blank=True, editable=False, null=True),
+                ),
+                (
+                    "created",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Creation date"
+                    ),
+                ),
+                (
+                    "updated",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Last update date"
+                    ),
+                ),
+                (
+                    "title",
+                    models.CharField(
+                        blank=True,
+                        max_length=100,
+                        null=True,
+                        verbose_name="Issue Title",
+                    ),
+                ),
+                (
+                    "creator",
+                    models.ForeignKey(
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_creator",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Creator",
+                    ),
+                ),
+                (
+                    "issue",
+                    modelcluster.fields.ParentalKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="issue_title",
+                        to="issue.issue",
+                    ),
+                ),
+                (
+                    "language",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="core.language",
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        blank=True,
+                        editable=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="%(class)s_last_mod_user",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Updater",
                     ),
                 ),
             ],

@@ -74,10 +74,9 @@ def load_article(user, xml=None, file_path=None):
             exc_traceback=exc_traceback,
             detail=dict(
                 function="article.sources.xmlsps.load_article",
-                message=f"Error extracting and saving in Article model. xmltree: {xmltree}"
-            )
+                message=f"Error extracting and saving in Article model. xmltree: {xmltree}",
+            ),
         )
-        
 
 
 def get_or_create_doi(xmltree, user):
