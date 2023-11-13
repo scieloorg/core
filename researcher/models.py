@@ -365,28 +365,6 @@ class Researcher(ClusterableModel, CommonControlField):
             )
 
     @classmethod
-    def get(
-        cls,
-        given_names,
-        last_name,
-        orcid,
-        declared_name,
-    ):
-        if orcid:
-            return cls.objects.get(orcid=orcid)
-        elif given_names or last_name:
-            return cls.objects.get(
-                given_names__iexact=given_names,
-                last_name__iexact=last_name,
-                orcid__isnull=True,
-            )
-        elif declared_name:
-            return cls.objects.get(declared_name=declared_name)
-        raise ValueError(
-            "Researcher.get requires orcid, given_names, last_names or declared_name parameters"
-        )
-
-    @classmethod
     def create_or_update(
         cls,
         given_names=None,
