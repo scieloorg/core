@@ -374,10 +374,126 @@ class Researcher(ClusterableModel, CommonControlField):
     base_form_class = ResearcherForm
 
 
-class FieldEmail(Orderable):
-    page = ParentalKey(Researcher, on_delete=models.CASCADE, related_name="page_email")
+class ResearcherEmail(Orderable):
+    researcher = ParentalKey(
+        Researcher,
+        on_delete=models.SET_NULL,
+        related_name="researcher_email",
+        blank=True,
+        null=True,
+    )
     email = models.EmailField(_("Email"), max_length=128, blank=True, null=True)
 
+    @classmethod
+    def create_or_update(cls, user, researcher, email):
+        try:
+            obj = cls.objects.get(researcher=researcher)
+            obj.updated_by = user
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.researcher = researcher
+            obj.creator = user
+        obj.email = email
+        obj.save()
+        return obj
 
-class FieldAffiliation(Orderable, InstitutionHistory):
-    page = ParentalKey(Researcher, on_delete=models.CASCADE, related_name="affiliation")
+    @classmethod
+    def get_researcher(
+        cls,
+        email,
+        person_name,
+    ):
+        if email and person_name:
+            obj = cls.objects.get(
+                email,
+                researcher__person_name=person_name,
+            )
+            return obj.researcher
+        raise ValueError("Researcher.get_by_email requires email")
+
+
+class Affiliation(Institution):
+    panels = Institution.panels
+
+    base_form_class = CoreAdminModelForm
+
+
+class AffiliationHistoryItem(BaseHistoryItem):
+    institution = models.ForeignKey(
+        Affiliation,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
+
+
+class AffiliationHistory(Orderable, AffiliationHistoryItem):
+    researcher = ParentalKey(
+        Researcher,
+        on_delete=models.SET_NULL,
+        related_name="researcher_affiliation",
+        blank=True,
+        null=True,
+    )
+
+    @classmethod
+    def get_researcher(
+        cls,
+        person_name,
+        institutions,
+        affiliation_year,
+    ):
+
+        if not person_name and not institutions:
+            ValueError("AffiliationHistory.get_researcher requires person_name and institutions")
+
+        if affiliation_year is None:
+            params = dict(
+                initial_year=None,
+                final_year=None,
+            )
+        else:
+            params = dict(
+                initial_year__lte=affiliation_year,
+                final_year__gte=affiliation_year,
+            )
+
+        for institution in institutions:
+            for item in cls.objects.filter(
+                researcher__person_name=person_name,
+                institution=institution,
+                **params
+            ):
+                if item.researcher:
+                    return item.researcher
+
+        params = dict(
+            person_name=person_name,
+            institutions=institutions,
+            affiliation_year=affiliation_year,
+        )
+        raise cls.DoesNotExist(
+            f"AffiliationHistory does not exist {params}")
+
+    @classmethod
+    def create_or_update_history(cls, user, researcher, institutions, affiliation_year):
+        # Cria relacionamentos de Researcher com AffiliationHistory
+        for institution in institutions or []:
+            try:
+                obj = cls.create_or_update(
+                    institution, user,
+                    initial_date=affiliation_year, final_date=affiliation_year)
+                obj.researcher = researcher
+                obj.save()
+            except Exception as exception:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=exception,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "operation": "AffiliationHistory.create_or_update_history",
+                        "researcher": str(researcher),
+                        "institution": str(institution),
+                        "affiliation_year": affiliation_year,
+                    },
+                )
