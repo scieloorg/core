@@ -26,12 +26,12 @@ class City(CommonControlField):
 
     name = models.TextField(_("Name of the city"), unique=True)
 
+    base_form_class = CoreAdminModelForm
+    panels = [FieldPanel("name")]
     autocomplete_search_field = "name"
 
     def autocomplete_label(self):
         return str(self)
-
-    panels = [FieldPanel("name")]
 
     class Meta:
         verbose_name = _("City")
@@ -48,94 +48,29 @@ class City(CommonControlField):
 
     @classmethod
     def load(cls, user, city_data=None):
-        if cls.objects.exists():
-            city_data = "./location/fixtures/cities.csv"
-            with open(city_data, "r") as fp:
-                for line in fp.readlines():
-                    name = line.strip()
+        if not cls.objects.exists():
+            if not city_data:
+                with open("./location/fixtures/cities.csv", "r") as fp:
+                    city_data = fp.readlines()
+            for name in city_data:
+                try:
                     cls.get_or_create(name=name, user=user)
+                except Exception as e:
+                    logging.exception(e)
 
     @classmethod
     def get_or_create(cls, user=None, name=None):
-        if name:
-            try:
-                return cls.objects.get(name=name)
-            except cls.DoesNotExist:
-                city = City()
-                city.name = name
-                city.creator = user
-                city.save()
-                return city
-
-    base_form_class = CoreAdminModelForm
-
-
-class Region(CommonControlField):
-    name = models.TextField(_("Name of the region"), null=True, blank=True)
-    acronym = models.CharField(
-        _("Region Acronym"), max_length=10, null=True, blank=True
-    )
-
-    autocomplete_search_field = "name"
-
-    def autocomplete_label(self):
-        return f"{self.name or self.acronym}"
-
-    panels = [FieldPanel("name"), FieldPanel("acronym")]
-
-    class Meta:
-        verbose_name = _("Region")
-        verbose_name_plural = _("Regions")
-        indexes = [
-            models.Index(
-                fields=[
-                    "name",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "acronym",
-                ]
-            ),
-        ]
-
-    def __unicode__(self):
-        return f"{self.name} ({self.acronym})"
-
-    def __str__(self):
-        return f"{self.name} ({self.acronym})"
-
-    @classmethod
-    def get_or_create(cls, user=None, name=None, acronym=None):
-        return cls.create_or_update(user, name=name, acronym=acronym)
-
-    @classmethod
-    def get(cls, name=None, acronym=None):
-        if not name and not acronym:
-            raise ValueError("Region.get requires name or acronym")
+        name = name.strip()
+        if not name:
+            raise ValueError("City.get_or_create requires name")
         try:
-            return cls.objects.get(
-                Q(name__iexact=name) | Q(acronym__iexact=acronym)
-            )
-        except cls.MultipleObjectsReturned:
-            return cls.objects.get(name__iexact=name, acronym__iexact=acronym)
-
-    @classmethod
-    def create_or_update(cls, user, name=None, acronym=None):
-        try:
-            obj = cls.get(name=name, acronym=acronym)
-            obj.updated_by = user
+            return cls.objects.get(name__iexact=name)
         except cls.DoesNotExist:
-            obj = cls()
-            obj.creator = user
-
-        obj.name = name or obj.name
-        obj.acronym = acronym or obj.acronym
-        obj.save()
-
-        return obj
-
-    base_form_class = CoreAdminModelForm
+            city = City()
+            city.name = name
+            city.creator = user
+            city.save()
+            return city
 
 
 class State(CommonControlField):
@@ -149,14 +84,18 @@ class State(CommonControlField):
 
     name = models.TextField(_("State name"), null=True, blank=True)
     acronym = models.CharField(_("State Acronym"), max_length=2, null=True, blank=True)
-    region = models.ForeignKey(Region, on_delete=models.SET_NULL, null=True, blank=True)
 
-    autocomplete_search_field = "name"
+    base_form_class = CoreAdminModelForm
+    panels = [FieldPanel("name"), FieldPanel("acronym")]
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return State.objects.filter(
+            Q(name__icontains=search_term) | Q(acronym__icontains=search_term)
+        )
 
     def autocomplete_label(self):
         return f"{self.acronym or self.name}"
-
-    panels = [FieldPanel("name"), FieldPanel("acronym"), AutocompletePanel("region")]
 
     class Meta:
         verbose_name = _("State")
@@ -182,36 +121,55 @@ class State(CommonControlField):
 
     @classmethod
     def load(cls, user, state_data=None):
-        if state_data or not cls.objects.exists():
-            state_data = state_data or "./location/fixtures/states.csv"
-            with open(state_data, "r") as csvfile:
-                reader = csv.DictReader(
-                    csvfile, fieldnames=["name", "acron2", "region"], delimiter=";"
-                )
-                for row in reader:
-                    cls.get_or_create(
-                        name=row["name"],
-                        acronym=row["acron2"],
-                        user=user,
+        if not cls.objects.exists():
+            if not state_data:
+                with open("./location/fixtures/states.csv", "r") as csvfile:
+                    state_data = csv.DictReader(
+                        csvfile, fieldnames=["name", "acronym", "region"], delimiter=";"
                     )
+                    for row in state_data:
+                        logging.info(row)
+                        cls.get_or_create(
+                            name=row["name"],
+                            acronym=row["acronym"],
+                            user=user,
+                        )
 
     @classmethod
-    def get_or_create(cls, user, name=None, acronym=None, region=None):
-        return cls.create_or_update(user, name=name, acronym=acronym, region=region)
+    def get_or_create(cls, user=None, name=None, acronym=None):
+        return cls.create_or_update(user, name=name, acronym=acronym)
 
     @classmethod
     def get(cls, name=None, acronym=None):
+        name = name and name.strip()
+        acronym = acronym and acronym.strip()
         if not name and not acronym:
             raise ValueError("State.get requires name or acronym")
-        try:
-            return cls.objects.get(
-                Q(name__iexact=name) | Q(acronym__iexact=acronym)
-            )
-        except cls.MultipleObjectsReturned:
-            return cls.objects.get(name__iexact=name, acronym__iexact=acronym)
+        if name and acronym:
+            # os valores fornecidos são name e acronym
+            # mas não necessariamente ambos estão registrados
+            try:
+                # estão no mesmo registro
+                return cls.objects.get(
+                    Q(name__iexact=name) | Q(acronym__iexact=acronym)
+                )
+            except cls.MultipleObjectsReturned:
+                try:
+                    # name e acron estão no mesmo registro
+                    return cls.objects.get(name__iexact=name, acronym__iexact=acronym)
+                except cls.DoesNotExist:
+                    # não encontrados juntos no mesmo registro
+                    pass
+        if acronym:
+            # prioridade para acronym
+            return cls.objects.get(acronym__iexact=acronym)
+        if name:
+            return cls.objects.get(name__iexact=name)
 
     @classmethod
-    def create_or_update(cls, user, name=None, acronym=None, region=None):
+    def create_or_update(cls, user, name=None, acronym=None):
+        name = name and name.strip()
+        acronym = acronym and acronym.strip()
         try:
             obj = cls.get(name=name, acronym=acronym)
             obj.updated_by = user
@@ -219,14 +177,11 @@ class State(CommonControlField):
             obj = cls()
             obj.creator = user
 
-        obj.region = region or obj.region
         obj.name = name or obj.name
         obj.acronym = acronym or obj.acronym
         obj.save()
 
         return obj
-
-    base_form_class = CoreAdminModelForm
 
 
 class CountryName(TextWithLang, Orderable):
@@ -238,8 +193,12 @@ class CountryName(TextWithLang, Orderable):
         related_name="country_name",
     )
 
-    panels = [FieldPanel("text"), AutocompletePanel("language")]
     base_form_class = CoreAdminModelForm
+    panels = [FieldPanel("text"), AutocompletePanel("language")]
+    autocomplete_search_filter = "text"
+
+    def autocomplete_label(self):
+        return f"{self.text} ({self.language})"
 
     class Meta:
         verbose_name = _("Country name")
@@ -256,11 +215,6 @@ class CountryName(TextWithLang, Orderable):
                 ]
             ),
         ]
-
-    autocomplete_search_filter = "text"
-
-    def autocomplete_label(self):
-        return f"{self.text} ({self.language})"
 
     @property
     def data(self):
@@ -289,6 +243,7 @@ class CountryName(TextWithLang, Orderable):
 
     @classmethod
     def create_or_update(cls, user, country, language, text):
+        text = text and text.strip()
         try:
             obj = cls.get(country, language)
             obj.updated_by = user
@@ -302,6 +257,14 @@ class CountryName(TextWithLang, Orderable):
         obj.save()
 
         return obj
+
+    @classmethod
+    def get_country(cls, name):
+        name = name and name.strip()
+        for item in CountryName.objects.filter(text=name).iterator():
+            if item.country:
+                return item.country
+        raise cls.DoesNotExist(f"CountryName {name} does not exist")
 
 
 class Country(CommonControlField, ClusterableModel):
@@ -321,17 +284,24 @@ class Country(CommonControlField, ClusterableModel):
         _("Country Acronym (3 char)"), blank=True, null=True, max_length=3
     )
 
-    autocomplete_search_field = "name"
-
-    def autocomplete_label(self):
-        return self.name or self.acronym
-
+    base_form_class = CoreAdminModelForm
     panels = [
         FieldPanel("name"),
         FieldPanel("acronym"),
         FieldPanel("acron3"),
         InlinePanel("country_name", label=_("Country names")),
     ]
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return Country.objects.filter(
+            Q(name__icontains=search_term)
+            | Q(acronym__icontains=search_term)
+            | Q(acron3__icontains=search_term)
+        )
+
+    def autocomplete_label(self):
+        return self.name or self.acronym
 
     class Meta:
         verbose_name = _("Country")
@@ -365,7 +335,7 @@ class Country(CommonControlField, ClusterableModel):
                 for row in reader:
                     cls.create_or_update(
                         user,
-                        name=None,
+                        name=row["name_en"],
                         acronym=row["acron2"],
                         acron3=row["acron3"],
                         country_names={"pt": row["name_pt"], "en": row["name_en"]},
@@ -378,27 +348,39 @@ class Country(CommonControlField, ClusterableModel):
         acronym=None,
         acron3=None,
     ):
-        if not name and not acronym and not acron3:
-            raise ValueError("Country.get requires parameters")
+        name = name and name.strip()
+        acronym = acronym and acronym.strip()
+        acron3 = acron3 and acron3.strip()
 
-        try:
-            if acronym:
-                return cls.objects.get(acronym=acronym)
-            if acron3:
-                return cls.objects.get(acron3=acron3)
-        except cls.MultipleObjectsReturned:
-            return cls.objects.get(acronym=acronym, acron3=acron3, name=name)
-        except cls.DoesNotExist:
+        if acronym:
+            return cls.objects.get(acronym=acronym)
+        if acron3:
+            return cls.objects.get(acron3=acron3)
+        if name:
             try:
-                if name:
-                    return CountryName.objects.get(name=name).country
-            except Exception as e:
-                raise cls.DoesNotExist(e)
+                return cls.objects.get(name=name)
+            except cls.DoesNotExist:
+                try:
+                    return CountryName.get_country(name)
+                except CountryName.DoesNotExist as e:
+                    raise cls.DoesNotExist(e)
+        raise ValueError("Country.get requires parameters")
 
     @classmethod
     def create_or_update(
-        cls, user, name=None, acronym=None, acron3=None, country_names=None, lang_code2=None,
+        cls,
+        user,
+        name=None,
+        acronym=None,
+        acron3=None,
+        country_names=None,
+        lang_code2=None,
     ):
+        name = name and name.strip()
+        acronym = acronym and acronym.strip()
+        acron3 = acron3 and acron3.strip()
+        lang_code2 = lang_code2 and lang_code2.strip()
+
         try:
             obj = cls.get(name, acronym, acron3)
             obj.updated_by = user
@@ -424,8 +406,6 @@ class Country(CommonControlField, ClusterableModel):
             )
         return obj
 
-    base_form_class = CoreAdminModelForm
-
 
 class Location(CommonControlField):
     city = models.ForeignKey(
@@ -450,6 +430,14 @@ class Location(CommonControlField):
         blank=True,
     )
 
+    base_form_class = CoreAdminModelForm
+
+    panels = [
+        AutocompletePanel("city"),
+        AutocompletePanel("state"),
+        AutocompletePanel("country"),
+    ]
+
     # autocomplete_search_field = "country__name"
     @staticmethod
     def autocomplete_custom_queryset_filter(search_term):
@@ -461,12 +449,6 @@ class Location(CommonControlField):
 
     def autocomplete_label(self):
         return str(self)
-
-    panels = [
-        AutocompletePanel("city"),
-        AutocompletePanel("state"),
-        AutocompletePanel("country"),
-    ]
 
     class Meta:
         verbose_name = _("Location")
@@ -485,17 +467,13 @@ class Location(CommonControlField):
         location_state,
         location_city,
     ):
-        filters = {}
-
         if location_country or location_state or location_city:
             return cls.objects.get(
                 country=location_country,
                 state=location_state,
                 city=location_city,
             )
-        raise ValueError(
-            "Location.get requires country or state or city parameters"
-        )
+        raise ValueError("Location.get requires country or state or city parameters")
 
     @classmethod
     def create_or_update(
@@ -507,9 +485,7 @@ class Location(CommonControlField):
     ):
         # check if exists the location
         try:
-            location = cls.get(
-                location_country, location_state, location_city
-            )
+            location = cls.get(location_country, location_state, location_city)
             location.updated_by = user
         except cls.DoesNotExist:
             location = cls()
@@ -521,7 +497,51 @@ class Location(CommonControlField):
         location.save()
         return location
 
-    base_form_class = CoreAdminModelForm
+    @classmethod
+    def create_or_update_location(
+        user, country_name, country_code, state_name, city_name
+    ):
+        params = dict(
+            country_name=country_name,
+            country_code=country_code,
+            state_name=state_name,
+            city_name=city_name,
+        )
+        try:
+            location_country = Country.create_or_update(
+                user,
+                name=country_name,
+                acronym=country_code,
+                acron3=None,
+                country_names=None,
+                lang_code2=article_lang,
+            )
+        except Exception as e:
+            location_country = None
+            logging.exception(f"params: {params} {type(e)} {e}")
+
+        try:
+            location_state = State.create_or_update(
+                user,
+                name=state_name,
+                acronym=None,
+            )
+        except Exception as e:
+            location_state = None
+            logging.exception(f"params: {params} {type(e)} {e}")
+
+        try:
+            location_city = City.get_or_create(user=user, name=city_name)
+        except Exception as e:
+            location_city = None
+            logging.exception(f"params: {params} {type(e)} {e}")
+
+        return Location.create_or_update(
+            user,
+            location_country=location_country,
+            location_state=location_state,
+            location_city=location_city,
+        )
 
 
 class CountryFile(models.Model):
