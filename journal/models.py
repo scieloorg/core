@@ -5,7 +5,7 @@ from django.db import models
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
-from modelcluster.models import ClusterableModel
+from modelcluster.models import ClusterableModel, ParentalManyToManyField
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 from wagtail.fields import RichTextField
 from wagtail.models import Orderable
@@ -44,6 +44,7 @@ from journal.exceptions import (
 from location.models import Location
 from reference.models import JournalTitle
 from vocabulary.models import Vocabulary
+from thematic_areas.models import ThematicArea
 
 from . import choices
 
@@ -519,6 +520,7 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel("mission", label=_("Mission"), classname="collapsed"),
         InlinePanel("history", label=_("Brief History"), classname="collapsed"),
         InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
+        InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
         AutocompletePanel("indexed_at"),
         AutocompletePanel("subject_descriptor"),
         FieldPanel("subject"),
@@ -989,6 +991,13 @@ class ConflictPolicy(Orderable, RichTextWithLang, CommonControlField):
     )
 
 
+class ThematicAreaJournal(Orderable, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="thematic_area", null=True
+    )
+    thematic_area = models.ForeignKey(ThematicArea, on_delete=models.SET_NULL, blank=True, null=True)
+
+
 class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
     """
     A class used to represent a journal model designed in the SciELO context.
@@ -1161,10 +1170,7 @@ class Subject(CommonControlField):
         if not cls.objects.exists():
             for item in choices.STUDY_AREA:
                 code, _ = item
-                cls.create_or_update(
-                    code=code,
-                    user=user,
-                )
+                cls.create_or_update(code=code, user=user,)
 
     @classmethod
     def get(cls, code):
@@ -1206,7 +1212,7 @@ class WebOfKnowledge(CommonControlField):
             for item in choices.WOS_DB:
                 code, _ = item
                 cls.create_or_update(code=code, user=user)
-
+                
     @classmethod
     def get(cls, code):
         if not code:

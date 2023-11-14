@@ -26,7 +26,7 @@ from journal.models import (
     WebOfKnowledge,
     WebOfKnowledgeSubjectCategory,
 )
-from location.models import City, Country, Location, State
+from location.models import City, CountryName, Location, State, Country
 from reference.models import JournalTitle
 from vocabulary.models import Vocabulary
 
@@ -171,6 +171,12 @@ def update_panel_institution(
     publisher_city,
     user,
 ):
+    """
+    Ex eletronic_addrees:
+        [{"_": "maritzal@telcel.net.ve"}, {"_": " fbengoanutricion@cantv.net"}]
+        [{"_": "info@asppr.net"}] 
+        [{"_": "CLEIejEditor@fing.edu.uy"}]
+    """
     location = create_or_update_location(
         journal,
         address,
@@ -180,9 +186,12 @@ def update_panel_institution(
         user,
     )
     electronic_address = extract_value(electronic_address)
-    for item in electronic_address.replace(";", ",").split(","):
+    if isinstance(electronic_address, str):
+        electronic_address = [electronic_address]
+
+    for item in electronic_address:
         try:
-            item = item.strip()
+            item = item and item.strip().lower()
             JournalEmail.objects.get(journal=journal, email=item)
         except JournalEmail.DoesNotExist:
             JournalEmail.objects.create(journal=journal, email=item)
@@ -469,13 +478,14 @@ def get_or_create_subject_descriptor(subject_descriptors, journal, user):
             sub_desc = [sub_desc]
         for s in sub_desc:
             # Em alguns casos, subject_descriptors vem separado por "," ou ";"
-            for word in re.split(",|;", s):
-                word = word.strip()
-                obj, created = SubjectDescriptor.objects.get_or_create(
-                    value=word,
-                    creator=user,
-                )
-                data.append(obj)
+            if s:
+                for word in re.split(",|;", s):
+                    word = word.strip()
+                    obj, created = SubjectDescriptor.objects.get_or_create(
+                        value=word,
+                        creator=user,
+                    )
+                    data.append(obj)
         journal.subject_descriptor.set(data)
 
 
@@ -486,7 +496,7 @@ def create_or_update_subject(subject, journal, user):
         if isinstance(sub, str):
             sub = [sub]
         for s in sub:
-            obj = Subject.create_or_update(code=s, user=user)
+            obj = Subject.get(code=s,)
             data.append(obj)
         journal.subject.set(data)
 
@@ -511,7 +521,7 @@ def create_or_update_journal_languages(language_data, journal, language_type, us
 def get_or_create_vocabulary(vocabulary, journal, user):
     if vocabulary:
         v = extract_value(vocabulary)
-        obj = Vocabulary.get_or_create(name=None, acronym=v, user=user)
+        obj = Vocabulary.get(acronym=v)
         journal.vocabulary = obj
 
 
@@ -602,36 +612,33 @@ def create_or_update_location(
     address:
         [{'_': 'Rua Felizardo, 750 Jardim Botânico'}, {'_': 'CEP: 90690-200'}, {'_': 'RS - Porto Alegre'}, {'_': '(51) 3308 5814'}]
     """
+
+    #O valor publisher_country pode fornecer tanto 
+    #o nome completo do país quanto o acrônimo do país.
     country_value = extract_value(publisher_country)
 
-    if country_value is not None and len(country_value) >= 2:
-        country_name = country_value
-        country_acronym = None
+    if country_value is not None and len(country_value) > 2:
+        country = CountryName.objects.get(text=country_value).country
+    elif country_value:
+        country = Country.get(name=None, acronym=country_value)
     else:
-        country_name = None
-        country_acronym = country_value
-    country = Country.create_or_update(
-        name=country_name,
-        acronym=country_acronym,
-        user=user,
-    )
+        country = None
+
+    name_city = extract_value(publisher_city)
     city = City.get_or_create(
-        name=extract_value(publisher_city),
+        name=name_city,
         user=user,
     )
 
+    #O valor publisher_state pode fornecer tanto 
+    #o nome completo do estado quanto o acrônimo do estado.
     state_value = extract_value(publisher_state)
-    if state_value is not None and len(state_value) >= 2:
-        state_name = state_value
-        state_acronym = None
+    if state_value is not None and len(state_value) > 2:
+        state = State.get_or_create(name=state_value, user=user)
+    elif state_value:
+        state = State.get_or_create(acronym=state_value, user=user)
     else:
-        state_name = None
-        state_acronym = state_value
-    state = State.get_or_create(
-        name=state_name,
-        acronym=state_acronym,
-        user=user,
-    )
+        state = None
 
     location = Location.create_or_update(
         location_country=country,
@@ -639,13 +646,14 @@ def create_or_update_location(
         location_state=state,
         user=user,
     )
+    journal.contact_location = location
+        
     address = extract_value(address)
     if address:
         if isinstance(address, str):
             address = [address]
         address = "\n".join(address)
 
-    journal.contact_location = location
     journal.contact_address = address
 
     return location

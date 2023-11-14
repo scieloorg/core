@@ -141,19 +141,19 @@ class Institution(CommonControlField, ClusterableModel):
             try:
                 if inst_name and inst_acronym:
                     return cls.objects.get(
-                        Q(inst_name__iexact=inst_name) |
-                        Q(inst_acronym__iexact=inst_acronym),
+                        Q(name__iexact=inst_name) |
+                        Q(acronym__iexact=inst_acronym),
                         location=location,
                     )
                 return cls.objects.get(
-                    inst_name__iexact=inst_name,
-                    inst_acronym__iexact=inst_acronym,
+                    name__iexact=inst_name,
+                    acronym__iexact=inst_acronym,
                     location=location,
                 )
             except cls.MultipleObjectsReturned:
                 return cls.objects.get(
-                    inst_name__iexact=inst_name,
-                    inst_acronym__iexact=inst_acronym,
+                    name__iexact=inst_name,
+                    acronym__iexact=inst_acronym,
                     location=location,
                 )
         raise ValueError("Requires inst_name or inst_acronym parameters")

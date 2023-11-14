@@ -165,7 +165,6 @@ class IndexedAtAdminGroup(ModelAdminGroup):
 
 # modeladmin_register(IndexedAtAdminGroup)
 
-
 class WebOfKnowledgeAdmin(ModelAdmin):
     model = models.WebOfKnowledge
     menu_icon = "folder"
@@ -181,8 +180,6 @@ class WebOfKnowledgeAdmin(ModelAdmin):
         "code",
         "value",
     )
-
-
 class SubjectAdmin(ModelAdmin):
     model = models.Subject
     menu_icon = "folder"
@@ -199,7 +196,6 @@ class SubjectAdmin(ModelAdmin):
         "value",
     )
 
-
 class ListCodesAdminGroup(ModelAdminGroup):
     menu_label = "List of codes"
     menu_icon = "folder-open-inverse"
@@ -208,7 +204,6 @@ class ListCodesAdminGroup(ModelAdminGroup):
         SubjectAdmin,
         WebOfKnowledgeAdmin,
     )
-
 
 modeladmin_register(ListCodesAdminGroup)
 

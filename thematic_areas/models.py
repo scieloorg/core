@@ -1,3 +1,4 @@
+import csv
 import os
 
 from django.db import models
@@ -127,7 +128,6 @@ class ThematicArea(CommonControlField):
 
     level0 = models.TextField(
         _("Level 0"),
-        choices=choices.thematic_level0,
         blank=True,
         null=True,
         help_text=_(
@@ -137,7 +137,6 @@ class ThematicArea(CommonControlField):
 
     level1 = models.TextField(
         _("Level 1"),
-        choices=choices.thematic_level1,
         blank=True,
         null=True,
         help_text=_(
@@ -147,7 +146,6 @@ class ThematicArea(CommonControlField):
 
     level2 = models.TextField(
         _("Level 2"),
-        choices=choices.thematic_level2,
         blank=True,
         null=True,
         help_text=_(
@@ -177,18 +175,24 @@ class ThematicArea(CommonControlField):
         ]
 
     def __unicode__(self):
-        return "%s | %s | %s" % (
-            self.level0,
-            self.level1,
-            self.level2,
-        )
-
+        return f"{self.level0} | {self.level1} | {self.level2}"
+    
     def __str__(self):
-        return "%s | %s | %s" % (
-            self.level0,
-            self.level1,
-            self.level2,
-        )
+        return f"{self.level0} | {self.level1} | {self.level2}"
+
+    @classmethod
+    def load(cls, user, thematic_area_data=None):
+        if not cls.objects.exists():
+            thematic_area_data = thematic_area_data or "./thematic_areas/fixtures/thematic_areas.csv"
+            with open(thematic_area_data, "r") as csvfile:
+                reader = csv.DictReader(csvfile, fieldnames=["level0", "level1", "level2"], delimiter=";")
+                for row in reader:
+                    cls.get_or_create(
+                        level0=row["level0"],
+                        level1=row["level1"],
+                        level2=row["level2"],
+                        user=user,
+                    )
 
     @classmethod
     def get_or_create(cls, level0, level1, level2, user):
