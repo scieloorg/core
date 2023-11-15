@@ -133,3 +133,25 @@ WOS_DB = [
     ("SSCI", _("Social Sciences Citation Index")),
     ("A&HCI", _("Arts Humanities Citation Index")),
 ]
+
+
+# Apr 1998: Admitted to the collection.
+# Aug 2008: Indexing interrupted (Reason: suspended-by-committee).
+# Sep 2009: Admitted to the collection.
+# Jun 2012: Indexing interrupted (Reason: suspended-by-committee).
+JOURNAL_EVENT_TYPE = [
+    ("ADMITTED", _("Admitted to the collection")),
+    ("INTERRUPTED", _("Indexing interrupted")),
+]
+
+# D | Ceased
+# S |not-open-access  Not open access
+# S |suspended-by-committee   Indexing interrupted by committee
+# S |suspended-by-editor  Indexing interrupted by editor
+
+INDEXING_INTERRUPTION_REASON = [
+    ("ceased", _("Ceased journal")),
+    ("not-open-access", _("Not open access")),
+    ("by-committee", _("by the committee")),
+    ("by-editor", _("by the editor")),
+]
