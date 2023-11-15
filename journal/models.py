@@ -1035,11 +1035,6 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         _("Status"), max_length=12, choices=choices.STATUS, null=True, blank=True
     )
 
-    journal_history = models.ManyToManyField(
-        "JournalHistory",
-        verbose_name=_("Journal History"),
-    )
-
     autocomplete_search_field = "journal_acron"
 
     def autocomplete_label(self):
@@ -1077,7 +1072,7 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         FieldPanel("issn_scielo"),
         FieldPanel("status"),
         AutocompletePanel("collection"),
-        AutocompletePanel("journal_history"),
+        InlinePanel("journal_history"),
     ]
 
     @classmethod
