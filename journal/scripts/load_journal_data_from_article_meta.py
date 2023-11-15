@@ -6,6 +6,7 @@ def run(username, collection=None):
         kwargs={
             "username": username, 
             "collection_acron": collection, 
-            "load_data": False
+            "load_data": True
             }
-        )
+    )
+
