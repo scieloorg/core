@@ -254,10 +254,6 @@ class BaseHistoryItem(CommonControlField):
             history.save()
             return history
 
-    @classmethod
-    def create_or_update(cls, institution, user, initial_date=None, final_date=None):
-        return cls.get_or_create(institution, initial_date, final_date, user)
-
     class Meta:
         abstract = True
 
