@@ -425,6 +425,12 @@ class Journal(CommonControlField, ClusterableModel):
         null=True,
         blank=True,
     )
+
+    indexed_at = models.TextField(
+        _("Secs Code"),
+        null=True,
+        blank=True,
+    )
     indexed_at = models.ManyToManyField(
         "IndexedAt",
     )
@@ -1305,14 +1311,19 @@ class Standard(CommonControlField):
 
 
 class IndexedAt(CommonControlField):
-    name = models.TextField(_("Name"), null=True, blank=False)
-    acronym = models.TextField(_("Acronym"), null=True, blank=False)
-    url = models.URLField(_("URL"), max_length=500, null=True, blank=False)
-    description = models.TextField(_("Description"), null=True, blank=False)
+    name = models.TextField(_("Name"), null=True, blank=True)
+    acronym = models.TextField(_("Acronym"), null=True, blank=True)
+    url = models.URLField(_("URL"), max_length=500, null=True, blank=True)
+    description = models.TextField(_("Description"), null=True, blank=True)
     type = models.CharField(
-        _("Type"), max_length=20, choices=choices.TYPE, null=True, blank=False
+        _("Type"), max_length=20, choices=choices.TYPE, null=True, blank=True
     )
-
+    main_objective = models.CharField(
+        _("Main Objective"), max_length=20, choices=choices.INDEXED_AT_MAIN_OBJECTIVE,
+        null=True, blank=True)
+    relevance = models.CharField(
+        _("Relevance"), max_length=64, choices=choices.INDEXED_AT_RELEVANCE,
+        null=True, blank=True)
     autocomplete_search_field = "name"
 
     def autocomplete_label(self):
@@ -1338,11 +1349,13 @@ class IndexedAt(CommonControlField):
         name,
         acronym,
     ):
+        if name and acronym:
+            return cls.objects.get(acronym=acronym, name=name)
         if name:
             return cls.objects.get(name=name)
         if acronym:
-            return cls.objects.get(acronym)
-        raise Exception("IndexedAt.get requires name or acronym paramets")
+            return cls.objects.get(acronym=acronym)
+        raise Exception("IndexedAt.get requires name or acronym as parameters")
 
     @classmethod
     def create_or_update(
@@ -1361,14 +1374,15 @@ class IndexedAt(CommonControlField):
             obj.name = name
             obj.acronym = acronym
             obj.creator = user
-        except IndexedAtCreationOrUpdateError as e:
-            raise IndexedAtCreationOrUpdateError(name=name, acronym=acronym, message=e)
 
-        obj.description = description or obj.description
-        obj.url = url or obj.url
-        obj.type = type or obj.type
-        obj.updated_by = user
-        obj.save()
+        try:
+            obj.description = description or obj.description
+            obj.url = url or obj.url
+            obj.type = type or obj.type
+            obj.updated_by = user
+            obj.save()
+        except Exception as e:
+            raise IndexedAtCreationOrUpdateError(name=name, acronym=acronym, message=e)
 
         return obj
 
