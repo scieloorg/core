@@ -237,6 +237,16 @@ class BaseHistoryItem(CommonControlField):
     ]
 
     @classmethod
+    def get(cls,
+        institution,
+        initial_date,
+        final_date,        
+    ):
+        if not institution:
+            raise ValueError("Requires institution and initial_date or final_dateparameters")
+        return cls.objects.get(institution=institution, initial_date=initial_date, final_date=final_date)
+
+    @classmethod
     def get_or_create(cls, institution, initial_date=None, final_date=None, user=None):
         try:
             # consultar juntos por institution + initial_date + final_date
