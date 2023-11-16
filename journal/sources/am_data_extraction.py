@@ -62,6 +62,8 @@ def parse_date_string(date):
 
 def extract_value_from_journal_history(value):
     """
+    https://articlemeta.scielo.org/api/v1/journal/?collection=scl&issn=0100-8455
+    https://articlemeta.scielo.org/api/v1/journal/?collection=scl&issn=0100-1965
     Ex value:
         [
             {'c': '20120600', 'b': 'C', 'a': '20080000', 'd': 'S', '_': '', 'e': 'suspended-by-committee'},
@@ -71,16 +73,16 @@ def extract_value_from_journal_history(value):
     data = []
     if value:
         for v in value:
-            initial_year, initial_month = parse_date_string(value[0].get("a"))
-            final_year, final_month = parse_date_string(value[0].get("c"))
-            type = v.get("e")
+            initial_year, initial_month = parse_date_string(v.get("a"))
+            final_year, final_month = parse_date_string(v.get("c"))
             data.append(
                 {
                     "initial_year": initial_year,
                     "initial_month": initial_month,
                     "final_year": final_year,
                     "final_month": final_month,
-                    "occurrence_type": type,
+                    "event_type": v.get("d"),
+                    "interruption_reason": v.get("e"),
                 }
             )
         return data

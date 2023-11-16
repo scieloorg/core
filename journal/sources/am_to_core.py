@@ -220,7 +220,7 @@ def update_panel_institution(
                     official=None,
                     is_official=None,
                 )
-                publisher_history = PublisherHistory.create_or_update(
+                publisher_history = PublisherHistory.get_or_create(
                     institution=publisher,
                     user=user,
                 )
@@ -238,7 +238,7 @@ def update_panel_institution(
                     official=None,
                     is_official=None,
                 )
-                owner_history = OwnerHistory.create_or_update(
+                owner_history = OwnerHistory.get_or_create(
                     institution=owner,
                     user=user,
                 )
@@ -459,7 +459,7 @@ def get_or_create_sponsor(sponsor, journal, user):
                     is_official=None,
                     url=None,
                 )
-                sponsor_history = SponsorHistory.create_or_update(
+                sponsor_history = SponsorHistory.get_or_create(
                     institution=sponsor,
                     user=user,
                 )
@@ -691,17 +691,17 @@ def get_or_create_journal_history(scielo_journal, journal_history):
     if journal_history:
         journal_history = extract_value_from_journal_history(journal_history)
         for jh in journal_history:
-            obj, created = JournalHistory.objects.get_or_create(
+            JournalHistory.am_to_core(
+                scielo_journal,
                 initial_year=jh.get("initial_year"),
                 initial_month=jh.get("initial_month"),
                 initial_day=jh.get("initial_day"),
                 final_year=jh.get("final_year"),
                 final_month=jh.get("final_month"),
                 final_day=jh.get("final_day"),
-                occurrence_type=jh.get("occurrence_type"),
+                event_type=jh.get("event_type"),
+                interruption_reason=jh.get("interruption_reason"),
             )
-            data.append(obj)
-        scielo_journal.journal_history.set(data)
 
 
 def get_or_create_copyright_holder(journal, copyright_holder_name, user):
@@ -723,7 +723,7 @@ def get_or_create_copyright_holder(journal, copyright_holder_name, user):
             is_official=None,
             url=None,
         )
-        copyright_holder_history = CopyrightHolderHistory.create_or_update(
+        copyright_holder_history = CopyrightHolderHistory.get_or_create(
             institution=copyright_holder,
             user=user,
         )

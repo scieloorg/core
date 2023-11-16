@@ -237,28 +237,32 @@ class BaseHistoryItem(CommonControlField):
     ]
 
     @classmethod
-    def get(
-        cls,
+    def get(cls,
         institution,
+        initial_date,
+        final_date,        
     ):
-        if institution:
-            return cls.objects.get(institution=institution)
-        raise ValueError("Requires item parameter")
+        if not institution:
+            raise ValueError("Requires institution and initial_date or final_dateparameters")
+        return cls.objects.get(institution=institution, initial_date=initial_date, final_date=final_date)
 
     @classmethod
-    def create_or_update(cls, institution, user, initial_date=None, final_date=None):
+    def get_or_create(cls, institution, initial_date=None, final_date=None, user=None):
         try:
-            history = cls.get(institution=institution)
+            # consultar juntos por institution + initial_date + final_date
+            # mesmo que initial_date ou final_date sejam None
+            # caso contrário o retorno pode ser MultipleObjectReturned
+            return cls.get(institution=institution, initial_date=initial_date, final_date=final_date)
             history.updated_by = user
         except cls.DoesNotExist:
             history = cls()
             history.institution = institution
             history.creator = user
 
-        history.initial_date = initial_date
-        history.final_date = final_date
-        history.save()
-        return history
+            history.initial_date = initial_date
+            history.final_date = final_date
+            history.save()
+            return history
 
     class Meta:
         abstract = True
