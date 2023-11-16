@@ -1,3 +1,4 @@
+import logging
 import os
 
 from django.contrib.auth import get_user_model
@@ -1528,3 +1529,59 @@ class JournalHistory(CommonControlField):
         )
 
     base_form_class = CoreAdminModelForm
+
+
+class AMJournal(CommonControlField):
+    """
+        Modelo que representa a coleta de dados de Journal na API Article Meta.
+        
+        from:
+            https://articlemeta.scielo.org/api/v1/journal/?collection={collection}&issn={issn}"
+    """
+
+    collection = models.ForeignKey(
+        Collection,
+        verbose_name=_("Collection"),
+        on_delete=models.SET_NULL,
+        related_name="+",
+        null=True,
+        blank=True,
+    )
+    scielo_issn = models.CharField(
+        _("Scielo Issn"),
+        max_length=9,
+        blank=True,
+        null=True,
+    )
+    data = models.JSONField(_("JSON File"), 
+        null=True, 
+        blank=True,
+    )
+
+    def __unicode__(self):
+        return f"{self.scielo_issn} | {self.collection}"
+
+    def __str__(self):
+        return f"{self.scielo_issn} | {self.collection}"
+
+    @classmethod
+    def get(cls, scielo_issn, collection):
+        if not scielo_issn and not collection:
+            raise ValueError("Param scielo_issn and collection_acron3 is required")
+        return cls.objects.get(scielo_issn=scielo_issn, collection=collection)
+    
+    @classmethod
+    def create_or_update(cls, scielo_issn, collection, data, user):
+        try:
+            obj = cls.get(scielo_issn=scielo_issn, collection=collection)
+            obj.updated_by = user
+        except cls.DoesNotExist:
+            obj = cls.objects.create()
+            obj.creator = user
+        except cls.MultipleObjectsReturned as e:
+            raise (f"Error ao conseguir AMjournal {scielo_issn}: {e}")
+        obj.collection = collection or obj.collection 
+        obj.scielo_issn = scielo_issn or obj.scielo_issn
+        obj.data = data or obj.data
+        obj.save()
+        return obj

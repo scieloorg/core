@@ -168,21 +168,6 @@ class IndexedAtAdminGroup(ModelAdminGroup):
 class WebOfKnowledgeAdmin(ModelAdmin):
     model = models.WebOfKnowledge
     menu_icon = "folder"
-    menu_order = 200
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-    list_display = (
-        "code",
-        "value",
-    )
-
-    search_fields = (
-        "code",
-        "value",
-    )
-class SubjectAdmin(ModelAdmin):
-    model = models.Subject
-    menu_icon = "folder"
     menu_order = 100
     add_to_settings_menu = False
     exclude_from_explorer = False
@@ -196,6 +181,24 @@ class SubjectAdmin(ModelAdmin):
         "value",
     )
 
+
+class SubjectAdmin(ModelAdmin):
+    model = models.Subject
+    menu_icon = "folder"
+    menu_order = 300
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "code",
+        "value",
+    )
+
+    search_fields = (
+        "code",
+        "value",
+    )
+
+
 class ListCodesAdminGroup(ModelAdminGroup):
     menu_label = "List of codes"
     menu_icon = "folder-open-inverse"
@@ -206,6 +209,20 @@ class ListCodesAdminGroup(ModelAdminGroup):
     )
 
 modeladmin_register(ListCodesAdminGroup)
+
+# TODO
+# Futuramente mudar para JournalAdminGroup 
+# com permissoes de visualizacao restrita
+class AMJournalAdmin(ModelAdmin):
+    model = models.AMJournal
+    menu_label = "AM Journal"
+    menu_icon = "folder"
+    menu_order = 1200
+    list_display = ("scielo_issn", "collection") 
+    list_filter = ("collection",)
+    search_fields = ("scielo_issn",)
+
+modeladmin_register(AMJournalAdmin)
 
 
 @hooks.register("register_admin_urls")
