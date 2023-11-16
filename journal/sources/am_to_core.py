@@ -1,4 +1,5 @@
 import re
+import sys
 from datetime import datetime
 
 from django.db.models import Q
@@ -37,6 +38,8 @@ from .am_data_extraction import (
     extract_value_mission,
     parse_date_string,
 )
+
+from tracker.models import UnexpectedEvent
 
 
 def create_or_update_journal(
@@ -563,11 +566,21 @@ def get_or_update_wos_areas(journal, wos_areas, user):
         areas = extract_value(wos_areas)
         if isinstance(areas, str):
             areas = [areas]
-        for a in areas:
-            obj, created = WebOfKnowledgeSubjectCategory.objects.get_or_create(
-                value=a,
-                creator=user,
-            )
+        for value in areas:
+            try:
+                obj = WebOfKnowledgeSubjectCategory.objects.get(
+                    value=value,
+                )
+            except WebOfKnowledgeSubjectCategory.DoesNotExist as e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "function": "am_to_core.get_or_update_wos_areas",
+                        "wos_areas": value,
+                    },
+                )
             data.append(obj)
         journal.wos_area.set(data)
 

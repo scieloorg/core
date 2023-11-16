@@ -1252,6 +1252,28 @@ class WebOfKnowledgeSubjectCategory(CommonControlField):
     def __str__(self):
         return f"{self.value}"
 
+    @classmethod
+    def load(cls, user):
+        if not cls.objects.exists():
+            with open('./journal/fixture/subjects_categories_wok.csv', "r") as fp:
+                wos_area = fp.readlines()
+            for value in wos_area:
+                try:
+                    cls.get_or_create(value=value.strip(), user=user)
+                except Exception as e:
+                    logging.exception(e)
+
+    @classmethod
+    def get_or_create(cls, value, user):
+        try:
+            obj = cls.objects.get(value=value)
+        except cls.DoesNotExist:
+            obj = cls()
+            obj.creator = user
+            obj.value = value
+            obj.save()
+        return obj
+
     class Meta:
         ordering = ["value"]
 

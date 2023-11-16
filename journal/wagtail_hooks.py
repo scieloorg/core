@@ -199,6 +199,19 @@ class SubjectAdmin(ModelAdmin):
     )
 
 
+class WosAreaAdmin(ModelAdmin):
+    model = models.WebOfKnowledgeSubjectCategory
+    menu_icon = "folder"
+    menu_order = 400
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "value",
+    )
+    search_fields = (
+        "value",
+    )    
+
 class ListCodesAdminGroup(ModelAdminGroup):
     menu_label = "List of codes"
     menu_icon = "folder-open-inverse"
@@ -206,6 +219,7 @@ class ListCodesAdminGroup(ModelAdminGroup):
     items = (
         SubjectAdmin,
         WebOfKnowledgeAdmin,
+        WosAreaAdmin,
     )
 
 modeladmin_register(ListCodesAdminGroup)
