@@ -21,6 +21,7 @@ from core.models import (
     License,
     RichTextWithLang,
     TextWithLang,
+    FileWithLang
 )
 from institution.models import (
     CopyrightHolderHistoryItem,
@@ -560,7 +561,7 @@ class Journal(CommonControlField, ClusterableModel):
 
     panels_open_science = [
         FieldPanel("open_access"),
-        FieldPanel("url_oa"),
+        InlinePanel("file_oa", label=_("Open Science accordance form"), classname="collapsed"),
         FieldPanel("use_license"),
         InlinePanel("open_data", label=_("Open data"), classname="collapsed"),
         InlinePanel("preprint", label=_("Preprint"), classname="collapsed"),
@@ -719,6 +720,25 @@ class Journal(CommonControlField, ClusterableModel):
         return "%s" % self.official or ""
 
     base_form_class = CoreAdminModelForm
+
+
+class FileOpenScience(Orderable, FileWithLang, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="file_oa", null=True
+    )
+    file = models.ForeignKey(
+        "wagtaildocs.Document",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name=_("File"),
+        help_text=mark_safe(
+            _(
+                """Suggested form: <a target='_blank' href='https://wp.scielo.org/wp-content/uploads/Formulario-de-Conformidade-Ciencia-Aberta.docx'>https://wp.scielo.org/wp-content/uploads/Formulario-de-Conformidade-Ciencia-Aberta.docx</a>"""
+            )
+        ),
+        related_name="+",
+    )
 
 
 class JournalEmail(Orderable):
