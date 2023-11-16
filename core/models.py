@@ -288,3 +288,35 @@ class License(CommonControlField):
 
     def __str__(self):
         return self.license_type or self.url or self.license_p or ""
+
+
+class FileWithLang(models.Model):
+    file = models.ForeignKey(
+        "wagtaildocs.Document",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name=_("File"),
+        help_text='',
+        related_name="+",
+    )
+
+    language = models.ForeignKey(
+        Language,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Language"),
+        null=True,
+        blank=True,
+    )
+
+    panels = [
+        AutocompletePanel("language"),
+        FieldPanel("file"),
+    ]
+
+    def filename(self):
+        return os.path.basename(self.file.name)
+
+    class Meta:
+        abstract = True
+        
