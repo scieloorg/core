@@ -169,7 +169,7 @@ class TextWithLang(models.Model):
         abstract = True
 
 
-class RichTextWithLang(models.Model):
+class TextLanguageMixin(models.Model):
     rich_text = RichTextField(_("Rich Text"), null=True, blank=True)
     plain_text = models.TextField(_("Plain Text"), null=True, blank=True)
     language = models.ForeignKey(

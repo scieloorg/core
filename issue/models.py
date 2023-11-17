@@ -13,7 +13,7 @@ from core.models import (
     CommonControlField,
     Language,
     License,
-    RichTextWithLang,
+    TextLanguageMixin,
     TextWithLang,
 )
 from journal.models import Journal
@@ -242,7 +242,7 @@ class BibliographicStrip(Orderable, TextWithLang, CommonControlField):
     )
 
 
-class TocSection(RichTextWithLang, CommonControlField):
+class TocSection(TextLanguageMixin, CommonControlField):
     """
     <article-categories>
         <subj-group subj-group-type="heading">
