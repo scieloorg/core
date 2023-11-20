@@ -14,6 +14,7 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField, Language, TextWithLang
+from core.utils.standardizer import standardize_name, standardize_code_and_name
 
 
 class City(CommonControlField):
@@ -71,6 +72,19 @@ class City(CommonControlField):
             city.creator = user
             city.save()
             return city
+
+    @staticmethod
+    def standardize(text, user=None):
+        """
+        Returns a dict generator which key is the name of the class and
+        the value is the object of the class if user is given
+        or name of the city
+        """
+        standardized_city = standardize_name(text)
+        for item in standardized_city:
+            if user:
+                item = City.get_or_create(user=user, name=item["name"])
+            yield {"city": item}
 
 
 class State(CommonControlField):
@@ -182,6 +196,21 @@ class State(CommonControlField):
         obj.save()
 
         return obj
+
+    @staticmethod
+    def standardize(text, user=None):
+        """
+        Returns a dict generator which key is the name of the class and
+        the value is the object of the class if user is given
+        or dict with code and name
+        """
+        standardized_state = standardize_code_and_name(text)
+        for item in standardized_state:
+            if user:
+                item = State.create_or_update(
+                    user, name=item.get("name"), acronym=item.get("code")
+                )
+            yield {"state": item}
 
 
 class CountryName(TextWithLang, Orderable):
@@ -406,6 +435,26 @@ class Country(CommonControlField, ClusterableModel):
             )
         return obj
 
+    @staticmethod
+    def standardize(text, user=None):
+        """
+        Returns a dict generator which key is the name of the class and
+        which value is or the object of the class or name + code
+        Returns object if user is provided
+        """
+        standardized_country = standardize_code_and_name(text)
+        for item in standardized_country:
+            if user:
+                item = Country.create_or_update(
+                    user,
+                    name=item.get("name"),
+                    acronym=item.get("code"),
+                    acron3=None,
+                    country_names=None,
+                    lang_code2=None,
+                )
+            yield {"country": item}
+
 
 class Location(CommonControlField):
     city = models.ForeignKey(
@@ -463,15 +512,15 @@ class Location(CommonControlField):
     @classmethod
     def get(
         cls,
-        location_country,
-        location_state,
-        location_city,
+        country=None,
+        state=None,
+        city=None,
     ):
-        if location_country or location_state or location_city:
+        if country or state or city:
             return cls.objects.get(
-                country=location_country,
-                state=location_state,
-                city=location_city,
+                country=country,
+                state=state,
+                city=city,
             )
         raise ValueError("Location.get requires country or state or city parameters")
 
@@ -479,69 +528,71 @@ class Location(CommonControlField):
     def create_or_update(
         cls,
         user,
-        location_country,
-        location_state,
-        location_city,
+        country=None,
+        state=None,
+        city=None,
     ):
         # check if exists the location
         try:
-            location = cls.get(location_country, location_state, location_city)
+            location = cls.get(country, state, city)
             location.updated_by = user
         except cls.DoesNotExist:
             location = cls()
             location.creator = user
 
-        location.country = location_country or location.country
-        location.state = location_state or location.state
-        location.city = location_city or location.city
+        location.country = country or location.country
+        location.state = state or location.state
+        location.city = city or location.city
         location.save()
         return location
 
-    @classmethod
-    def create_or_update_location(
-        user, country_name, country_code, state_name, city_name
-    ):
-        params = dict(
-            country_name=country_name,
-            country_code=country_code,
-            state_name=state_name,
-            city_name=city_name,
-        )
-        try:
-            location_country = Country.create_or_update(
-                user,
-                name=country_name,
-                acronym=country_code,
-                acron3=None,
-                country_names=None,
-                lang_code2=None,
-            )
-        except Exception as e:
-            location_country = None
-            logging.exception(f"params: {params} {type(e)} {e}")
+    @staticmethod
+    def _standardize_parts(text_city, text_state, text_country, user=None):
+        cities = list(City.standardize(text_city, user))
+        if cities:
+            # {"city": City object} or {"city": 'city name'}
+            yield cities
 
-        try:
-            location_state = State.create_or_update(
-                user,
-                name=state_name,
-                acronym=None,
-            )
-        except Exception as e:
-            location_state = None
-            logging.exception(f"params: {params} {type(e)} {e}")
+        states = list(State.standardize(text_state, user))
+        if states:
+            # {"state": State object} or
+            # {"state": {"name": 'state name', "code": "state code"}}
+            yield states
 
-        try:
-            location_city = City.get_or_create(user=user, name=city_name)
-        except Exception as e:
-            location_city = None
-            logging.exception(f"params: {params} {type(e)} {e}")
+        countries = list(Country.standardize(text_country, user))
+        if countries:
+            # {"country": Country object} or
+            # {"country": {"name": 'country name', "code": "country code"}}
+            yield countries
 
-        return Location.create_or_update(
-            user,
-            location_country=location_country,
-            location_state=location_state,
-            location_city=location_city,
-        )
+    @staticmethod
+    def standardize_parts(text_city, text_state, text_country, user=None):
+        lists = Location._standardize_parts(
+            text_city, text_state, text_country, user)
+        for param_list in zip(*lists):
+            params = {}
+            for param in param_list:
+                params.update(param)
+            if params:
+                yield params
+
+    @staticmethod
+    def standardize(text_city, text_state, text_country, user=None):
+        """
+        Returns a dict generator which key is the name of the class and
+        which value is or the object of the class or name + code
+        Returns object if user is provided
+        """
+        items = Location.standardize_parts(text_city, text_state, text_country, user)
+        for params in items:
+            if user:
+                # Location object
+                item = Location.create_or_update(user, **params)
+            else:
+                # {"city": 'city name', "state": {"code": '', "name": ''},
+                # "country": {"code": '', "name": ''},}
+                item = params
+            yield {"location": item}
 
 
 class CountryFile(models.Model):
