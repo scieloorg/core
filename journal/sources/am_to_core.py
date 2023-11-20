@@ -654,13 +654,13 @@ def create_or_update_location(
         state = None
 
     location = Location.create_or_update(
-        location_country=country,
-        location_city=city,
-        location_state=state,
         user=user,
+        country=country,
+        state=state,
+        city=city,
     )
     journal.contact_location = location
-        
+
     address = extract_value(address)
     if address:
         if isinstance(address, str):
