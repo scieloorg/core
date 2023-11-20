@@ -1,16 +1,12 @@
-import logging
 import sys
-from datetime import datetime
 
 from django.contrib.auth import get_user_model
 
 from collection.models import Collection
 from config import celery_app
 from journal.sources import classic_website
-from journal.sources.article_meta import process_journal_article_meta
+from journal.sources.article_meta import process_journal_article_meta, _register_journal_data
 from tracker.models import UnexpectedEvent
-
-# from django.utils.translation import gettext as _
 
 
 User = get_user_model()
@@ -34,7 +30,7 @@ def load_journal_from_classic_website(self, username=None, user_id=None):
 
 @celery_app.task(bind=True)
 def load_journal_from_article_meta(
-    self, username=None, user_id=None, limit=None, collection_acron=None
+    self, username=None, user_id=None, limit=None, collection_acron=None, load_data=None
 ):
     try:
         if collection_acron:
@@ -51,6 +47,7 @@ def load_journal_from_article_meta(
                     username=username,
                     collection_acron=item.acron3,
                     limit=limit,
+                    load_data=load_data
                 )
             )
     except Exception as e:
@@ -66,13 +63,16 @@ def load_journal_from_article_meta(
 
 @celery_app.task(bind=True)
 def load_journal_from_article_meta_for_one_collection(
-    self, username=None, user_id=None, collection_acron=None, limit=None
+    self, username=None, user_id=None, collection_acron=None, limit=None, load_data=None,
 ):
+    user = _get_user(self.request, username=username, user_id=user_id)
     try:
-        user = _get_user(self.request, username=username, user_id=user_id)
-        process_journal_article_meta(
-            collection=collection_acron, limit=limit, user=user
-        )
+        if load_data:
+            process_journal_article_meta(
+                collection=collection_acron, limit=limit, user=user
+            )
+        else:
+            _register_journal_data(user=user, collection_acron3=collection_acron)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(

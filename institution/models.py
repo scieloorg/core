@@ -137,18 +137,26 @@ class Institution(CommonControlField, ClusterableModel):
         inst_acronym,
         location,
     ):
-        filters = {}
-
-        if inst_name:
-            filters["name"] = inst_name
-        if inst_acronym:
-            filters["acronym"] = inst_acronym
-        if location:
-            filters["location"] = location
-
-        if filters:
-            return cls.objects.get(**filters)
-        raise ValueError("Requires inst_name, inst_acronym or location parameters")
+        if inst_name or inst_acronym:
+            try:
+                if inst_name and inst_acronym:
+                    return cls.objects.get(
+                        Q(name__iexact=inst_name) |
+                        Q(acronym__iexact=inst_acronym),
+                        location=location,
+                    )
+                return cls.objects.get(
+                    name__iexact=inst_name,
+                    acronym__iexact=inst_acronym,
+                    location=location,
+                )
+            except cls.MultipleObjectsReturned:
+                return cls.objects.get(
+                    name__iexact=inst_name,
+                    acronym__iexact=inst_acronym,
+                    location=location,
+                )
+        raise ValueError("Requires inst_name or inst_acronym parameters")
 
     @classmethod
     def create_or_update(
@@ -172,9 +180,9 @@ class Institution(CommonControlField, ClusterableModel):
             institution.updated_by = user
         except cls.DoesNotExist:
             institution = cls()
-            institution.name = inst_name
             institution.creator = user
 
+        institution.name = inst_name or institution.name
         institution.acronym = inst_acronym or institution.acronym
         institution.level_1 = level_1 or institution.level_1
         institution.level_2 = level_2 or institution.level_2
@@ -229,28 +237,32 @@ class BaseHistoryItem(CommonControlField):
     ]
 
     @classmethod
-    def get(
-        cls,
+    def get(cls,
         institution,
+        initial_date,
+        final_date,        
     ):
-        if institution:
-            return cls.objects.get(institution=institution)
-        raise ValueError("Requires item parameter")
+        if not institution:
+            raise ValueError("Requires institution and initial_date or final_dateparameters")
+        return cls.objects.get(institution=institution, initial_date=initial_date, final_date=final_date)
 
     @classmethod
-    def create_or_update(cls, institution, user, initial_date=None, final_date=None):
+    def get_or_create(cls, institution, initial_date=None, final_date=None, user=None):
         try:
-            history = cls.get(institution=institution)
+            # consultar juntos por institution + initial_date + final_date
+            # mesmo que initial_date ou final_date sejam None
+            # caso contrário o retorno pode ser MultipleObjectReturned
+            return cls.get(institution=institution, initial_date=initial_date, final_date=final_date)
             history.updated_by = user
         except cls.DoesNotExist:
             history = cls()
             history.institution = institution
             history.creator = user
 
-        history.initial_date = initial_date
-        history.final_date = final_date
-        history.save()
-        return history
+            history.initial_date = initial_date
+            history.final_date = final_date
+            history.save()
+            return history
 
     class Meta:
         abstract = True

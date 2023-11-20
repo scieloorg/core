@@ -1,4 +1,5 @@
 import re
+import sys
 from datetime import datetime
 
 from django.db.models import Q
@@ -26,7 +27,7 @@ from journal.models import (
     WebOfKnowledge,
     WebOfKnowledgeSubjectCategory,
 )
-from location.models import Address, City, Country, Location, State
+from location.models import City, CountryName, Location, State, Country
 from reference.models import JournalTitle
 from vocabulary.models import Vocabulary
 
@@ -37,6 +38,8 @@ from .am_data_extraction import (
     extract_value_mission,
     parse_date_string,
 )
+
+from tracker.models import UnexpectedEvent
 
 
 def create_or_update_journal(
@@ -171,6 +174,12 @@ def update_panel_institution(
     publisher_city,
     user,
 ):
+    """
+    Ex eletronic_addrees:
+        [{"_": "maritzal@telcel.net.ve"}, {"_": " fbengoanutricion@cantv.net"}]
+        [{"_": "info@asppr.net"}] 
+        [{"_": "CLEIejEditor@fing.edu.uy"}]
+    """
     location = create_or_update_location(
         journal,
         address,
@@ -180,9 +189,12 @@ def update_panel_institution(
         user,
     )
     electronic_address = extract_value(electronic_address)
-    for item in electronic_address.replace(";", ",").split(","):
+    if isinstance(electronic_address, str):
+        electronic_address = [electronic_address]
+
+    for item in electronic_address:
         try:
-            item = item.strip()
+            item = item and item.strip().lower()
             JournalEmail.objects.get(journal=journal, email=item)
         except JournalEmail.DoesNotExist:
             JournalEmail.objects.create(journal=journal, email=item)
@@ -208,7 +220,7 @@ def update_panel_institution(
                     official=None,
                     is_official=None,
                 )
-                publisher_history = PublisherHistory.create_or_update(
+                publisher_history = PublisherHistory.get_or_create(
                     institution=publisher,
                     user=user,
                 )
@@ -226,7 +238,7 @@ def update_panel_institution(
                     official=None,
                     is_official=None,
                 )
-                owner_history = OwnerHistory.create_or_update(
+                owner_history = OwnerHistory.get_or_create(
                     institution=owner,
                     user=user,
                 )
@@ -447,7 +459,7 @@ def get_or_create_sponsor(sponsor, journal, user):
                     is_official=None,
                     url=None,
                 )
-                sponsor_history = SponsorHistory.create_or_update(
+                sponsor_history = SponsorHistory.get_or_create(
                     institution=sponsor,
                     user=user,
                 )
@@ -469,13 +481,14 @@ def get_or_create_subject_descriptor(subject_descriptors, journal, user):
             sub_desc = [sub_desc]
         for s in sub_desc:
             # Em alguns casos, subject_descriptors vem separado por "," ou ";"
-            for word in re.split(",|;", s):
-                word = word.strip()
-                obj, created = SubjectDescriptor.objects.get_or_create(
-                    value=word,
-                    creator=user,
-                )
-                data.append(obj)
+            if s:
+                for word in re.split(",|;", s):
+                    word = word.strip()
+                    obj, created = SubjectDescriptor.objects.get_or_create(
+                        value=word,
+                        creator=user,
+                    )
+                    data.append(obj)
         journal.subject_descriptor.set(data)
 
 
@@ -486,7 +499,7 @@ def create_or_update_subject(subject, journal, user):
         if isinstance(sub, str):
             sub = [sub]
         for s in sub:
-            obj = Subject.create_or_update(code=s, user=user)
+            obj = Subject.get(code=s,)
             data.append(obj)
         journal.subject.set(data)
 
@@ -511,7 +524,7 @@ def create_or_update_journal_languages(language_data, journal, language_type, us
 def get_or_create_vocabulary(vocabulary, journal, user):
     if vocabulary:
         v = extract_value(vocabulary)
-        obj = Vocabulary.get_or_create(name=None, acronym=v, user=user)
+        obj = Vocabulary.get(acronym=v)
         journal.vocabulary = obj
 
 
@@ -553,11 +566,21 @@ def get_or_update_wos_areas(journal, wos_areas, user):
         areas = extract_value(wos_areas)
         if isinstance(areas, str):
             areas = [areas]
-        for a in areas:
-            obj, created = WebOfKnowledgeSubjectCategory.objects.get_or_create(
-                value=a,
-                creator=user,
-            )
+        for value in areas:
+            try:
+                obj = WebOfKnowledgeSubjectCategory.objects.get(
+                    value=value,
+                )
+            except WebOfKnowledgeSubjectCategory.DoesNotExist as e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "function": "am_to_core.get_or_update_wos_areas",
+                        "wos_areas": value,
+                    },
+                )
             data.append(obj)
         journal.wos_area.set(data)
 
@@ -602,51 +625,48 @@ def create_or_update_location(
     address:
         [{'_': 'Rua Felizardo, 750 Jardim Botânico'}, {'_': 'CEP: 90690-200'}, {'_': 'RS - Porto Alegre'}, {'_': '(51) 3308 5814'}]
     """
+
+    #O valor publisher_country pode fornecer tanto 
+    #o nome completo do país quanto o acrônimo do país.
     country_value = extract_value(publisher_country)
 
-    if country_value is not None and len(country_value) >= 2:
-        country_name = country_value
-        country_acronym = None
+    if country_value is not None and len(country_value) > 2:
+        country = CountryName.objects.get(text=country_value).country
+    elif country_value:
+        country = Country.get(name=None, acronym=country_value)
     else:
-        country_name = None
-        country_acronym = country_value
-    country = Country.create_or_update(
-        name=country_name,
-        acronym=country_acronym,
-        user=user,
-    )
+        country = None
+
+    name_city = extract_value(publisher_city)
     city = City.get_or_create(
-        name=extract_value(publisher_city),
+        name=name_city,
         user=user,
     )
 
+    #O valor publisher_state pode fornecer tanto 
+    #o nome completo do estado quanto o acrônimo do estado.
     state_value = extract_value(publisher_state)
-    if state_value is not None and len(state_value) >= 2:
-        state_name = state_value
-        state_acronym = None
+    if state_value is not None and len(state_value) > 2:
+        state = State.get_or_create(name=state_value, user=user)
+    elif state_value:
+        state = State.get_or_create(acronym=state_value, user=user)
     else:
-        state_name = None
-        state_acronym = state_value
-    state = State.get_or_create(
-        name=state_name,
-        acronym=state_acronym,
-        user=user,
-    )
+        state = None
 
     location = Location.create_or_update(
-        location_region=None,
         location_country=country,
         location_city=city,
         location_state=state,
         user=user,
     )
+    journal.contact_location = location
+        
     address = extract_value(address)
     if address:
         if isinstance(address, str):
             address = [address]
         address = "\n".join(address)
 
-    journal.contact_location = location
     journal.contact_address = address
 
     return location
@@ -671,17 +691,17 @@ def get_or_create_journal_history(scielo_journal, journal_history):
     if journal_history:
         journal_history = extract_value_from_journal_history(journal_history)
         for jh in journal_history:
-            obj, created = JournalHistory.objects.get_or_create(
+            JournalHistory.am_to_core(
+                scielo_journal,
                 initial_year=jh.get("initial_year"),
                 initial_month=jh.get("initial_month"),
                 initial_day=jh.get("initial_day"),
                 final_year=jh.get("final_year"),
                 final_month=jh.get("final_month"),
                 final_day=jh.get("final_day"),
-                occurrence_type=jh.get("occurrence_type"),
+                event_type=jh.get("event_type"),
+                interruption_reason=jh.get("interruption_reason"),
             )
-            data.append(obj)
-        scielo_journal.journal_history.set(data)
 
 
 def get_or_create_copyright_holder(journal, copyright_holder_name, user):
@@ -703,7 +723,7 @@ def get_or_create_copyright_holder(journal, copyright_holder_name, user):
             is_official=None,
             url=None,
         )
-        copyright_holder_history = CopyrightHolderHistory.create_or_update(
+        copyright_holder_history = CopyrightHolderHistory.get_or_create(
             institution=copyright_holder,
             user=user,
         )

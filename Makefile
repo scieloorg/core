@@ -122,3 +122,9 @@ clean_project_images:  ## Remove all images with "core" on name
 
 volume_down:  ## Remove all volume
 	@docker-compose -f $(compose) down -v
+
+clean_migrations: ## Remove all migrations
+	@echo "Cleaning migrations..."
+	@find . -path "*/migrations/*.py" -not -name "__init__.py" -not -path "./django_celery_beat/migrations*" -not -path "./core_settings/migrations*" -not -path "./core/contrib/sites/migrations*" -not -path "./core/users/migrations*" -delete
+	@find . -path "*/migrations/*.pyc" -delete
+	@echo "Migrations cleaned successfully."

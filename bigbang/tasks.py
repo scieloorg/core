@@ -1,12 +1,13 @@
 import logging
 
 from django.contrib.auth import get_user_model
-
-from collection.models import Collection
 from config import celery_app
+from collection.models import Collection
 from core.models import Language
-from journal.models import Standard, Subject, WebOfKnowledge
-from location.models import City, Country, State
+from location.models import Country, City, State
+from journal.models import Standard, Subject, WebOfKnowledge, WebOfKnowledgeSubjectCategory
+from vocabulary.models import Vocabulary
+from thematic_areas.models import ThematicArea
 
 User = get_user_model()
 
@@ -26,10 +27,15 @@ def task_start(
 ):
     user = _get_user(user_id, username)
     Language.load(user)
-    Country.load(user)
     Collection.load(user)
+    Collection.load(user)
+    Vocabulary.load(user)
     Standard.load(user)
     Subject.load(user)
     WebOfKnowledge.load(user)
-    City.load(user)
+    Country.load(user)
     State.load(user)
+    City.load(user)
+    ThematicArea.load(user)
+    WebOfKnowledgeSubjectCategory.load(user)
+    
