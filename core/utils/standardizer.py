@@ -1,7 +1,8 @@
 
 def get_separators(text, exclusion_list=None):
-    exclusion_list = exclusion_list or '!@#$%^&"' + "'"
+    exclusion_list = exclusion_list or '-!@#$%^&"' + "'"
     separators = []
+    text = text and text.replace(' - ', '/').replace("- ", '/').replace(" -", '/')
     for c in text:
         if c.isalnum() or c in exclusion_list:
             continue
@@ -13,7 +14,7 @@ def get_separators(text, exclusion_list=None):
 def get_splitted_text(text):
     text = text and text.strip()
     if not text:
-        return None, None
+        return []
 
     text_ = text
 
@@ -209,6 +210,8 @@ def standardize_code_and_name(original):
         for name in names:
             yield {"name": name}
     else:
+        # como o texto está bem fora do padrão,
+        # pode-se evidenciar retornando o original
         yield {"name": original}
 
 
@@ -217,4 +220,4 @@ def standardize_name(original):
     for item in splitted_text:
         item = item and item.strip()
         if item:
-            yield item
+            yield {"name": item}

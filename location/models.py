@@ -83,7 +83,7 @@ class City(CommonControlField):
         standardized_city = standardize_name(text)
         for item in standardized_city:
             if user:
-                item = City.get_or_create(item, user)
+                item = City.get_or_create(user=user, name=item["name"])
             yield {"city": item}
 
 
