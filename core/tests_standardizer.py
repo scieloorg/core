@@ -22,7 +22,7 @@ class StandardizerGetSeparatorsTest(TestCase):
         self.assertEqual(expected, result)
 
     def test_get_separators_returns_list(self):
-        expected = [",", '/', '-', ';', '(', ')']
+        expected = [",", '/', ';', '(', ')']
         text = "ABC, abc / X - Y; (C)"
         result = standardizer.get_separators(text, exclusion_list=None)
         self.assertEqual(expected, result)
@@ -175,4 +175,4 @@ class StandardizerStandardizeNameTest(TestCase):
         result = standardizer.standardize_name(text)
         for i, item in enumerate(result):
             with self.subTest(i):
-                self.assertEqual(expected[i], item)
+                self.assertEqual({"name": expected[i]}, item)

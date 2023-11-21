@@ -1,8 +1,7 @@
 
 def get_separators(text, exclusion_list=None):
-    exclusion_list = exclusion_list or '-!@#$%^&"' + "'"
+    exclusion_list = exclusion_list or '.-!@#$%&"' + "'"
     separators = []
-    text = text and text.replace(' - ', '/').replace("- ", '/').replace(" -", '/')
     for c in text:
         if c.isalnum() or c in exclusion_list:
             continue
@@ -16,7 +15,8 @@ def get_splitted_text(text):
     if not text:
         return []
 
-    text_ = text
+    text_ = text.replace(' - ', '/').replace("- ", '/').replace(" -", '/')
+    text_ = text_.replace('. ', '/')
 
     separators = get_separators(text_)
 
