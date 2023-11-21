@@ -677,6 +677,13 @@ class Journal(CommonControlField, ClusterableModel):
         ),
     ]
 
+    panels_submission_format = [
+        InlinePanel("article_submission_format",
+            label=_("Article Submission Format"),
+            classname="collapsed",
+        ),
+    ]
+
     edit_handler = TabbedInterface(
         [
             ObjectList(panels_titles, heading=_("Titles")),
@@ -689,6 +696,8 @@ class Journal(CommonControlField, ClusterableModel):
             ObjectList(
                 panels_legacy_compatibility_fields, heading=_("Legacy Compatibility")
             ),
+            ObjectList(panels_instructions_for_authors, heading=_("Instructions for Authors")),
+            ObjectList(panels_submission_format, heading=_("Article Submission Format")),
         ]
     )
 
@@ -1110,6 +1119,14 @@ class SimilarityVerificationSoftwareAdoption(
         blank=True, null=True, help_text=_("Write the link of the software used.")
     )
 
+    panels = [
+        AutocompletePanel("language"),
+        FieldPanel("rich_text"),
+        FieldPanel("policy_description"),
+        FieldPanel("software"),
+        FieldPanel("url_software"),
+    ]
+
 
 class GenderIssues(Orderable, RichTextWithLanguage, CommonControlField):
     journal = ParentalKey(
@@ -1156,6 +1173,12 @@ class FeeCharging(Orderable, RichTextWithLanguage, CommonControlField):
             )
         ),
     )
+    panels = [
+        AutocompletePanel("language"),
+        FieldPanel("coin"),
+        FieldPanel("fee_charge"),
+        FieldPanel("rich_text"),
+    ]
 
 
 class AcceptedDocumentTypes(Orderable, RichTextWithLanguage, CommonControlField):
@@ -1308,6 +1331,14 @@ class ArticleSubmissionFormat(Orderable, RichTextWithLanguage, CommonControlFiel
         related_name="article_submission_format",
         null=True,
     )
+    language = models.ForeignKey(
+        Language,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Language"),
+        null=True,
+        blank=True,
+        help_text=_("Language of Articles")
+    )
     title = models.BooleanField(
         default=False,
         verbose_name=_("Title"),
@@ -1353,11 +1384,9 @@ class ArticleSubmissionFormat(Orderable, RichTextWithLanguage, CommonControlFiel
         default=False,
         verbose_name=_("DOI Registration"),
     )
-    language_of_article = models.BooleanField(
-        default=False, verbose_name=_("Language of Articles")
-    )
-    manuscript_length = models.BooleanField(
-        default=False,
+    manuscript_length = models.IntegerField(
+        blank=True,
+        null=True,
         verbose_name=_("Manuscript Length"),
         help_text=_("Manuscript Length (consider spacing)"),
     )
@@ -1380,6 +1409,24 @@ class ArticleSubmissionFormat(Orderable, RichTextWithLanguage, CommonControlFiel
             "Check this box if the research has been approved by an institutional ethics committee."
         ),
     )
+
+    panels = [
+        AutocompletePanel("language"),
+        FieldPanel("title"),
+        FieldPanel("title_english"),
+        FieldPanel("abstract"),
+        FieldPanel("keyword"),
+        FieldPanel("author_name"),
+        FieldPanel("author_with_affiliation"),
+        FieldPanel("author_orcid"),
+        FieldPanel("author_email"),
+        FieldPanel("funding"),
+        FieldPanel("doi_registration"),
+        FieldPanel("manuscript_length"),
+        FieldPanel("roman_alphabet"),
+        FieldPanel("metadata"),
+        FieldPanel("ethics_approval_statement"),
+    ]
 
 
 class ThematicAreaJournal(Orderable, CommonControlField):
