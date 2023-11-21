@@ -6,7 +6,7 @@ from django.db import models
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
-from modelcluster.models import ClusterableModel, ParentalManyToManyField
+from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 from wagtail.fields import RichTextField
 from wagtail.models import Orderable
@@ -19,7 +19,7 @@ from core.models import (
     CommonControlField,
     Language,
     License,
-    RichTextWithLang,
+    RichTextWithLanguage,
     TextWithLang,
     FileWithLang
 )
@@ -591,9 +591,12 @@ class Journal(CommonControlField, ClusterableModel):
             label=_("Conflict of interest policy"),
             classname="collapsed",
         ),
+        InlinePanel("software_adoption", label=_("Similarity Verification Software Adoption"), classname="collapsed",),
+        InlinePanel("gender_issues", label=_("Gender Issues"), classname="collapsed",),
+        InlinePanel("fee_charging", label=_("Fee Charging"), classname="collapsed",),
     ]
     panels_notes = [InlinePanel("annotation", label=_("Notes"), classname="collapsed")]
-
+    
     panels_legacy_compatibility_fields = [
         FieldPanel("alphabet"),
         FieldPanel("classification"),
@@ -610,6 +613,18 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("has_supplement"),
         FieldPanel("is_supplement"),
         FieldPanel("acronym_letters"),
+    ]
+
+    panels_instructions_for_authors = [
+        InlinePanel("accepted_documment_types", label=_("Accepted Document Types"), classname="collapsed",),
+        InlinePanel("authors_contributions", label=_("Authors Contributions"), classname="collapsed",),
+        InlinePanel("preparing_manuscript", label=_("Preparing Manuscript"), classname="collapsed",),
+        InlinePanel("digital_assets", label=_("Digital Assets"), classname="collapsed",),
+        InlinePanel("citations_and_references", label=_("Citations and References"), classname="collapsed",),
+        InlinePanel("supp_docs_submission", label=_("Supplementary Documents Required for Submission"), classname="collapsed",),
+        InlinePanel("financing_statement", label=_("Financing Statement"), classname="collapsed",),
+        InlinePanel("acknowledgements", label=_("Acknowledgements"), classname="collapsed",),
+        InlinePanel("additional_information", label=_("Additional Information"), classname="collapsed",),
     ]
 
     edit_handler = TabbedInterface(
@@ -748,7 +763,7 @@ class JournalEmail(Orderable):
     email = models.EmailField()
 
 
-class Mission(Orderable, RichTextWithLang, CommonControlField):
+class Mission(Orderable, RichTextWithLanguage, CommonControlField):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="mission", null=True
     )
@@ -851,7 +866,7 @@ class JournalSocialNetwork(Orderable, SocialNetwork):
     )
 
 
-class OpenData(Orderable, RichTextWithLang, CommonControlField):
+class OpenData(Orderable, RichTextWithLanguage, CommonControlField):
     rich_text = RichTextField(
         null=True,
         blank=True,
@@ -868,7 +883,7 @@ class OpenData(Orderable, RichTextWithLang, CommonControlField):
     )
 
 
-class Preprint(Orderable, RichTextWithLang, CommonControlField):
+class Preprint(Orderable, RichTextWithLanguage, CommonControlField):
     rich_text = RichTextField(
         null=True,
         blank=True,
@@ -888,7 +903,7 @@ class Preprint(Orderable, RichTextWithLang, CommonControlField):
     )
 
 
-class History(Orderable, RichTextWithLang, CommonControlField):
+class History(Orderable, RichTextWithLanguage, CommonControlField):
     rich_text = RichTextField(
         null=True,
         blank=True,
@@ -901,7 +916,7 @@ class History(Orderable, RichTextWithLang, CommonControlField):
     )
 
 
-class Focus(Orderable, RichTextWithLang, CommonControlField):
+class Focus(Orderable, RichTextWithLanguage, CommonControlField):
     rich_text = RichTextField(
         null=True,
         blank=True,
@@ -912,7 +927,7 @@ class Focus(Orderable, RichTextWithLang, CommonControlField):
     )
 
 
-class Review(Orderable, RichTextWithLang, CommonControlField):
+class Review(Orderable, RichTextWithLanguage, CommonControlField):
     rich_text = RichTextField(
         null=True, blank=True, help_text=_("Brief description of the review flow")
     )
@@ -921,7 +936,7 @@ class Review(Orderable, RichTextWithLang, CommonControlField):
     )
 
 
-class Ecommittee(Orderable, RichTextWithLang, CommonControlField):
+class Ecommittee(Orderable, RichTextWithLanguage, CommonControlField):
     rich_text = RichTextField(
         null=True,
         blank=True,
@@ -935,7 +950,7 @@ class Ecommittee(Orderable, RichTextWithLang, CommonControlField):
     )
 
 
-class Copyright(Orderable, RichTextWithLang, CommonControlField):
+class Copyright(Orderable, RichTextWithLanguage, CommonControlField):
     rich_text = RichTextField(
         null=True,
         blank=True,
@@ -950,7 +965,7 @@ class Copyright(Orderable, RichTextWithLang, CommonControlField):
     )
 
 
-class WebsiteResponsibility(Orderable, RichTextWithLang, CommonControlField):
+class WebsiteResponsibility(Orderable, RichTextWithLanguage, CommonControlField):
     rich_text = RichTextField(
         null=True,
         blank=True,
@@ -967,7 +982,7 @@ class WebsiteResponsibility(Orderable, RichTextWithLang, CommonControlField):
     )
 
 
-class AuthorResponsibility(Orderable, RichTextWithLang, CommonControlField):
+class AuthorResponsibility(Orderable, RichTextWithLanguage, CommonControlField):
     rich_text = RichTextField(
         null=True,
         blank=True,
@@ -986,7 +1001,7 @@ class AuthorResponsibility(Orderable, RichTextWithLang, CommonControlField):
     )
 
 
-class Policies(Orderable, RichTextWithLang, CommonControlField):
+class Policies(Orderable, RichTextWithLanguage, CommonControlField):
     rich_text = RichTextField(
         null=True,
         blank=True,
@@ -1006,9 +1021,263 @@ class Policies(Orderable, RichTextWithLang, CommonControlField):
     )
 
 
-class ConflictPolicy(Orderable, RichTextWithLang, CommonControlField):
+class ConflictPolicy(Orderable, RichTextWithLanguage, CommonControlField):
+    """
+        Política sobre Conflito de Interesses
+    """
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="conflict_policy", null=True
+    )
+
+
+class SimilarityVerificationSoftwareAdoption(Orderable, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="software_adoption", null=True
+    )
+    rich_text = RichTextField(
+        null=True,
+        blank=True,
+        help_text=_(
+            """Please describe here if the journal uses any similarity verification software. Describe the policy. What cases are checked?
+            At what stage in the workflow are manuscripts verified?"""
+        ),
+        verbose_name=_("Similarity erification software"),
+    )
+    policy_description = RichTextField(
+        null=True,
+        blank=True,
+        help_text=_("Describe the policy. Which cases are verified? At what point in the workflow are the manuscripts checked?"),
+    )
+    software = models.TextField(
+        blank=True,
+        null=True,
+        help_text=_("Write the name of the software used.")
+    )
+    url_software = models.TextField(
+        blank=True,
+        null=True,
+        help_text=_("Write the link of the software used.")
+    )
+
+
+class GenderIssues(Orderable, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="gender_issues", null=True
+    )
+    rich_text = RichTextField(
+        null=True,
+        blank=True,
+        help_text=_("Describe how your journal considers gender diversity in the group of authors, editorial board, and reviewers.")
+    )
+
+
+class FeeCharging(Orderable, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="fee_charging", null=True
+    )
+    coin = models.CharField(
+        max_length=3,
+        null=True,
+        blank=True,
+        choices=choices.COINS,
+    )
+    fee_charge = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        blank=True, 
+        null=True,
+    )
+    rich_text = RichTextField(
+        _("Concepts"),
+        null=True,
+        blank=True,
+        help_text=mark_safe(_("""Please describe any charges to authors related to the submission or publication of works.
+        For article publication: Clearly state when no fees are charged.
+        Under what circumstances are charges applicable? Are there any discounts?
+        SciELO Statement on Financial Sustainability: <a target='_blank' 
+            href='https://mailchi.mp/scielo/declaracao-sobre-sustentabilidade'>
+            https://mailchi.mp/scielo/declaracao-sobre-sustentabilidade</a>
+        """)),
+    )
+
+
+class AcceptedDocumentTypes(Orderable, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="accepted_documment_types", null=True
+    )
+    rich_text = RichTextField(
+        null=True,
+        blank=True,
+        help_text=_("""Describe the types of documents that can be submitted to the journal.
+                    Provide information regarding the positioning related to preprint submissions.
+                    Examples: Original Article, Review Article, Preprints and etc.""")
+    )
+
+
+class AuthorsContributions(Orderable, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="authors_contributions", null=True
+    )
+    rich_text = RichTextField(
+        null=True,
+        blank=True,
+        help_text=mark_safe(_("""Description of how authors contributions should be specified.
+        Does it use any taxonomy? If yes, which one?
+        Does the article text explicitly state the authors contributions?
+        Preferably, use the CREDiT taxonomy structure: <a target='_blank' 
+            href='https://casrai.org/credit/'>https://casrai.org/credit/</a>
+        """))
+    )
+
+
+class PreparingManuscript(Orderable, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="preparing_manuscript", null=True
+    )
+    rich_text = RichTextField(
+        null=True,
+        blank=True,
+        help_text=_("""Specify how authors should present their research and explain why the work is suitable for publication in the journal.""")
+    )
+
+class DigitalAssets(Orderable, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="digital_assets", null=True
+    )
+    rich_text = RichTextField(
+        null=True,
+        blank=True,
+        help_text=_("""Please describe how tables, charts, figures, illustrations, maps, diagrams, and other digital assets in the documents should be presented for publication in the journal. It is important to specify technical details such as format, resolution, size, etc.""")
+    )
+
+
+class CitationsAndReferences(Orderable, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="citations_and_references", null=True
+    )
+    rich_text = RichTextField(
+        null=True,
+        blank=True,
+        help_text=_("""Describe the citation and referencing style used by the journal. Provide examples of document types according to the style.""")
+    )
+
+
+class SuppDocsRequiredForSubmission(Orderable, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="supp_docs_submission", null=True
+    )
+    rich_text = RichTextField(
+        null=True,
+        blank=True,
+        help_text=_("""Describe any supplementary documents requested from authors during manuscript submission. Examples may include Open Science Compliance Form, authors' agreement statement, ethics committee approval form, etc.""")
+    )
+
+
+class FinancingStatement(Orderable, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="financing_statement", null=True
+    )
+    rich_text = RichTextField(
+        null=True,
+        blank=True,
+        # TODO
+        # Criar help_text
+        help_text=_("""???""")
+    )
+
+
+class Acknowledgements(Orderable, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="acknowledgements", null=True
+    )
+    rich_text = RichTextField(
+        null=True,
+        blank=True,
+        help_text=_("""Describe the acknowledgments.""")
+    )
+
+
+class AdditionalInformation(Orderable, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="additional_information", null=True
+    )
+    rich_text = RichTextField(
+        null=True,
+        blank=True,
+        help_text=_("""Free field for entering additional information or data.""")
+    )
+
+class ArticleSubmissionFormat(Orderable, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="article_submission_format", null=True
+    )
+    title = models.BooleanField(
+        default=False,
+        verbose_name=_("Title"),
+    )
+    title_english = models.BooleanField(
+        default=False,
+        verbose_name=_("Title English"),
+    )
+    abstract = models.BooleanField(
+        default=False,
+        verbose_name=_("Abstract"),
+        help_text=_("Abstracts should be clear, easily readable, and provide an excellent comprehensive summary of the article with sufficient length.")
+    )
+    keyword = models.BooleanField(
+        default=False,
+        verbose_name=_("Keyword"),
+        help_text=_("Keywords in Portuguese and English")
+    )
+    author_name = models.BooleanField(
+        default=False,
+        verbose_name=_("Authors names"),
+        help_text=_("For compound surnames, create clear identification [uppercase, bold, and/or hyphen]")
+    )
+    author_with_affiliation = models.BooleanField(
+        default=False,
+        verbose_name=_("Authors with full affiliation")
+    )
+    author_orcid = models.BooleanField(
+        default=False,
+        verbose_name=_("Orcid of authors")
+    )
+    author_email = models.BooleanField(
+        default=False,
+        verbose_name=_("Contact author's e-mail")
+    )
+    funding = models.BooleanField(
+        default=False,
+        verbose_name=_("Article Funding"),
+        help_text=_("Provide information about article funding")
+    )
+    doi_registration = models.BooleanField(
+        default=False,
+        verbose_name=_("DOI Registration"),
+    )
+    language_of_article = models.BooleanField(
+        default=False,
+        verbose_name=_("Language of Articles")
+    )
+    manuscript_length = models.BooleanField(
+        default=False,
+        verbose_name=_("Manuscript Length"),
+        help_text=_("Manuscript Length (consider spacing)")
+    )
+    roman_alphabet = models.BooleanField(
+        default=False,
+        verbose_name=_("Roman Alphabet"),
+        help_text=_("Data must be available in the Roman alphabet")
+    )
+    metadata = models.BooleanField(
+        default=False,
+        verbose_name=_("Metadata"),
+        help_text=_("Metadata, including title, abstract, and keywords, must have a mandatory English version when the language of the text is different from English.")
+    )
+    ethics_approval_statement = models.BooleanField(
+        default=False,
+        verbose_name=_('Ethics Approval Statement'),
+        help_text=_('Check this box if the research has been approved by an institutional ethics committee.')
     )
 
 
