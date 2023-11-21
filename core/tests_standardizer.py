@@ -22,7 +22,7 @@ class StandardizerGetSeparatorsTest(TestCase):
         self.assertEqual(expected, result)
 
     def test_get_separators_returns_list(self):
-        expected = [",", '/', '-', ';', '(', ')']
+        expected = [",", '/', ';', '(', ')']
         text = "ABC, abc / X - Y; (C)"
         result = standardizer.get_separators(text, exclusion_list=None)
         self.assertEqual(expected, result)
@@ -33,6 +33,18 @@ class StandardizerGetSplittedTextTest(TestCase):
     def test_get_splitted_text(self):
         expected = ["ABC", "abc", "X", "Y", "C"]
         text = "ABC, abc / X - Y; (C)"
+        result = standardizer.get_splitted_text(text)
+        self.assertEqual(expected, result)
+
+    def test_get_splitted_text_dot_is_separator(self):
+        expected = ["ABC", "abc", "X", "Y", "C"]
+        text = "ABC, abc. / X - Y; (C)"
+        result = standardizer.get_splitted_text(text)
+        self.assertEqual(expected, result)
+
+    def test_get_splitted_text_for_dot_is_not_separator(self):
+        expected = ["ABC", "ab.c", "X", "Y", "C"]
+        text = "ABC, ab.c. / X - Y; (C)"
         result = standardizer.get_splitted_text(text)
         self.assertEqual(expected, result)
 
@@ -64,7 +76,7 @@ class StandardizerStandardizeAcronymAndNameTest(TestCase):
 
 class StandardizerStandardizeAcronymAndNameOneTest(TestCase):
 
-    def test_standardize_acronym_and_name_one(self):
+    def test_standardize_acronym_and_name_one_with_levels(self):
         expected = {
             "acronym": "ABC", "name": "Abc",
             "level_1": "Faculdade FFF",
@@ -74,25 +86,97 @@ class StandardizerStandardizeAcronymAndNameOneTest(TestCase):
         acrons = ["ABC"]
         names = ["Abc", "Faculdade FFF", "Unidade UUUU", "Programa XXXX", ]
         splitted_text = ["ABC", "Abc", "Faculdade FFF", "Unidade UUUU", "Programa XXXX", ]
+        original = "ABC / Abc - Faculdade FFF - Unidade UUUU - Programa XXXX"
         result = standardizer.standardize_acronym_and_name_one(
-            splitted_text, acrons, names)
+            splitted_text, acrons, names, original)
+        self.assertDictEqual(expected, result)
+
+    def test_standardize_acronym_and_name_one_pair(self):
+        expected = {
+            "acronym": "ABC", "name": "Abc",
+        }
+        acrons = ["ABC"]
+        names = ["Abc"]
+        splitted_text = ["ABC", "Abc"]
+        original = "ABC / Abc"
+        result = standardizer.standardize_acronym_and_name_one(
+            splitted_text, acrons, names, original)
+        self.assertDictEqual(expected, result)
+
+    def test_standardize_acronym_and_name_names_and_acrons_qty_diverge_returns_original(self):
+        expected = {
+            "name": "ABC / Abc - Faculdade FFF - Unidade UUUU - Programa XXXX",
+        }
+        acrons = ["ABC", "FFF"]
+        names = ["Abc", "Faculdade FFF", "Unidade UUUU", "Programa XXXX"]
+        splitted_text = ["ABC", "Abc", "FFF","Faculdade FFF", "Unidade UUUU", "Programa XXXX", ]
+        original = "ABC / Abc - Faculdade FFF - Unidade UUUU - Programa XXXX"
+        result = standardizer.standardize_acronym_and_name_one(
+            splitted_text, acrons, names, original)
         self.assertDictEqual(expected, result)
 
 
 class StandardizerStandardizeAcronymAndNameMultTest(TestCase):
 
-    def test_standardize_acronym_and_name_multiple(self):
+    def test_pairs_and_q_location_same_len_returns_pairs(self):
         expected = [
             {"acronym": "ABC", "name": "Abc"},
-            {"name": "Faculdade FFF"},
-            {"name": "Unidade UUUU"},
-            {"name": "Programa XXXX"},
+            {"acronym": "FFF", "name": "Faculdade FFF"},
         ]
-        splitted_text = ["ABC", "Abc", "Faculdade FFF", "Unidade UUUU", "Programa XXXX", ]
+        splitted_text = ["ABC", "Abc", "FFF", "Faculdade FFF"]
+        q_locations = 2
+        original = "ABC / Abc - FFF / Faculdade FFF"
+        acrons = ["ABC", "FFF"]
+        names = ["Abc", "Faculdade FFF"]
+        result = standardizer.standardize_acronym_and_name_multiple(
+            splitted_text, acrons, names, original, q_locations,
+        )
+        for i, item in enumerate(result):
+            with self.subTest(i):
+                self.assertDictEqual(expected[i], item)
+
+    def test_pairs_qty_diverges_q_locations_returns_original(self):
+        expected = [{
+            "name": "ABC / Abc - FFF / Faculdade FFF"
+        }]
+        splitted_text = ["ABC", "Abc", "FFF", "Faculdade FFF"]
         q_locations = None
-        original = "ABC / Abc - Faculdade FFF - Unidade UUUU - Programa XXXX"
-        acrons = ["ABC"]
-        names = ["Abc", "Faculdade FFF", "Unidade UUUU", "Programa XXXX", ]
+        original = "ABC / Abc - FFF / Faculdade FFF"
+        acrons = ["ABC", "FFF"]
+        names = ["Abc", "Faculdade FFF"]
+        result = standardizer.standardize_acronym_and_name_multiple(
+            splitted_text, acrons, names, original, q_locations,
+        )
+        for i, item in enumerate(result):
+            with self.subTest(i):
+                self.assertDictEqual(expected[i], item)
+
+    def test_2_acrons_and_0_names_and_q_locations_2_returns_acrons(self):
+        expected = [
+            {"acronym": "ABC"},
+            {"acronym": "FFF"},
+        ]
+        splitted_text = ["ABC", "FFF"]
+        q_locations = 2
+        original = "ABC / FFF"
+        acrons = ["ABC", "FFF"]
+        names = []
+        result = standardizer.standardize_acronym_and_name_multiple(
+            splitted_text, acrons, names, original, q_locations,
+        )
+        for i, item in enumerate(result):
+            with self.subTest(i):
+                self.assertDictEqual(expected[i], item)
+
+    def test_qty_acrons_and_names_diverge_returns_original(self):
+        expected = [{
+            "name": "ABC / FFF - Universidade"
+        }]
+        splitted_text = ["ABC", "FFF", ]
+        q_locations = None
+        original = "ABC / FFF - Universidade"
+        acrons = ["ABC", "FFF"]
+        names = ["Universidade"]
         result = standardizer.standardize_acronym_and_name_multiple(
             splitted_text, acrons, names, original, q_locations,
         )
@@ -175,4 +259,4 @@ class StandardizerStandardizeNameTest(TestCase):
         result = standardizer.standardize_name(text)
         for i, item in enumerate(result):
             with self.subTest(i):
-                self.assertEqual(expected[i], item)
+                self.assertEqual({"name": expected[i]}, item)

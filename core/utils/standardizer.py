@@ -1,8 +1,6 @@
-
 def get_separators(text, exclusion_list=None):
-    exclusion_list = exclusion_list or '-!@#$%^&"' + "'"
+    exclusion_list = exclusion_list or '.-!@#$%&"' + "'"
     separators = []
-    text = text and text.replace(' - ', '/').replace("- ", '/').replace(" -", '/')
     for c in text:
         if c.isalnum() or c in exclusion_list:
             continue
@@ -16,26 +14,32 @@ def get_splitted_text(text):
     if not text:
         return []
 
-    text_ = text
+    text_ = text.replace(" - ", "/").replace("- ", "/").replace(" -", "/")
+    text_ = text_.replace(". ", "/")
+    text_ = remove_extra_spaces(text_)
 
     separators = get_separators(text_)
 
-    # padroniza a quantidade de espaços
-    text_ = " ".join([
-        item.strip() for item in text_.split() if item.strip()
-    ])
     for sep in separators:
         text_ = text_.replace(sep, "#####")
 
     return [item.strip() for item in text_.split("#####") if item.strip()]
 
 
-def standardize_acronym_and_name(original, possible_multiple_return=None, q_locations=None):
+def remove_extra_spaces(text):
+    # padroniza a quantidade de espaços
+    return " ".join([item.strip() for item in text.split() if item.strip()])
+
+
+def standardize_acronym_and_name(
+    original, possible_multiple_return=None, q_locations=None
+):
     """
-    Dado o texto original, identifica pares de acrônimo e nome.
-    Os separadores podem separar acrônimo e nome e/ou itens de lista.
-    Ex.: USP / Unicamp
-    São Paulo/SP, Rio de Janeiro/RJ
+    Dado o texto original, identifica pares de acrônimo e nome,
+    ou lista de acrônimos ou lista de nomes.
+    Retorna um ou mais itens dependendo do valor de q_locations que
+    deve ser correspondente à quantidade de itens identificados,
+    caso contrário, retornará `{"name": original}
 
     Parameters
     ----------
@@ -49,7 +53,7 @@ def standardize_acronym_and_name(original, possible_multiple_return=None, q_loca
     names = []
 
     for value in splitted_text:
-        if ' ' in value:
+        if " " in value:
             names.append(value)
         elif value.upper() == value:
             # acrônimos nao tem espaco no nome,
@@ -61,41 +65,38 @@ def standardize_acronym_and_name(original, possible_multiple_return=None, q_loca
             else:
                 acrons.append(value)
 
-    if possible_multiple_return:
-        yield from standardize_acronym_and_name_multiple(splitted_text, acrons, names, original, q_locations, )
-    yield standardize_acronym_and_name_one(splitted_text, acrons, names)
+    if possible_multiple_return and q_locations and q_locations > 1:
+        yield from standardize_acronym_and_name_multiple(
+            splitted_text,
+            acrons,
+            names,
+            original,
+            q_locations,
+        )
+    else:
+        yield standardize_acronym_and_name_one(splitted_text, acrons, names, original)
 
 
-def standardize_acronym_and_name_one(splitted_text, acrons, names):
+def standardize_acronym_and_name_one(splitted_text, acrons, names, original):
     """
-    Dado o texto original, identifica pares de acrônimo e nome.
-    Os separadores podem separar acrônimo e nome e/ou itens de lista.
-    Ex.: USP / Unicamp
-    São Paulo/SP, Rio de Janeiro/RJ
-
+    Retorna um par acron e name ou somente um name ou somente um acron,
+    caso contrário retorna `{"name": original}`
     """
-
+    original = remove_extra_spaces(original)
     if acrons and not names:
-        for acron in acrons:
-            return {"acronym": acron}
+        if len(acrons) > 1:
+            return {"name": original}
 
     if names and not acrons:
-        for name in names:
-            return {"name": name}
+        if len(names) > 1:
+            return name_and_divisions(splitted_text)
 
-    if len(names) == len(acrons):
-        match = None
+    if len(names) == len(acrons) == 1:
         for acron, name in zip(acrons, names):
             if name.startswith(acron[0]):
-                match = True
-            else:
-                match = False
-                break
-        if match:
-            for acron, name in zip(acrons, names):
                 return {"acronym": acron, "name": name}
-        else:
-            return name_and_divisions(splitted_text)
+            else:
+                return {"name": original}
 
     if len(acrons) == 1 and len(names) > 1:
         acron = acrons[0]
@@ -104,80 +105,52 @@ def standardize_acronym_and_name_one(splitted_text, acrons, names):
             splitted_text.remove(acron)
             d.update(name_and_divisions(splitted_text))
             return d
-
+        else:
+            return {"name": original}
     # retorna o original
-    return name_and_divisions(splitted_text)
+    return {"name": original}
 
 
-def standardize_acronym_and_name_multiple(splitted_text, acrons, names, original, q_locations, ):
+def standardize_acronym_and_name_multiple(
+    splitted_text,
+    acrons,
+    names,
+    original,
+    q_locations,
+):
     """
-    Dado o texto original, identifica pares de acrônimo e nome.
-    Os separadores podem separar acrônimo e nome e/ou itens de lista.
-    Ex.: USP / Unicamp
-    São Paulo/SP, Rio de Janeiro/RJ
-
-    Parameters
-    ----------
-    possible_multiple_return : boolean
-    q_locations : int
-        indica se é esperado 1 instituição ou várias
-
+    Retorna os pares acron e name ou somente names ou somente acrons,
+    mas somente se a quantidade está coerente com q_locations,
+    caso contrário retorna `{"name": original}`
     """
+    original = remove_extra_spaces(original)
+
     if acrons and not names:
-        for acron in acrons:
-            yield {"acronym": acron}
+        if q_locations == len(acrons):
+            for acron in acrons:
+                yield {"acronym": acron}
+        return
 
     if names and not acrons:
-        for name in names:
-            yield {"name": name}
+        if q_locations == len(names):
+            for name in names:
+                yield {"name": name}
+        return
 
-    if len(names) == len(acrons):
-        match = None
+    match = False
+    if len(names) == len(acrons) == q_locations:
         for acron, name in zip(acrons, names):
-            if name.startswith(acron[0]):
-                match = True
-            else:
-                match = False
-                break
-        if match:
-            for acron, name in zip(acrons, names):
-                yield {"acronym": acron, "name": name}
-        else:
-            if q_locations == 1:
-                yield name_and_divisions(splitted_text)
-            else:
-                for item in splitted_text:
-                    yield {"name": item}
+            yield {"acronym": acron, "name": name}
 
-    if len(acrons) == 1 and len(names) > 1:
-        acron = acrons[0]
-        if names[0].startswith(acron[0]):
-
-            if q_locations == 1:
-                d = {"acronym": acron}
-                splitted_text.remove(acron)
-                d.update(name_and_divisions(splitted_text))
-                yield d
-            else:
-                yield {"acronym": acron, "name": names[0]}
-                for item in names[1:]:
-                    yield {"name": item}
-        else:
-            if q_locations == 1:
-                yield name_and_divisions(splitted_text)
-            else:
-                for item in splitted_text:
-                    yield {"name": item}
+    elif q_locations == len(splitted_text):
+        for item in splitted_text:
+            yield {"name": item}
     else:
-        if q_locations == 1:
-            yield name_and_divisions(splitted_text)
-        else:
-            for item in splitted_text:
-                yield {"name": item}
+        yield {"name": original}
 
 
 def name_and_divisions(splitted_text):
-    keys = ('name', 'level_1', 'level_2', 'level_3')
+    keys = ("name", "level_1", "level_2", "level_3")
     d = {}
     for k, v in zip(keys, splitted_text):
         d[k] = v
@@ -191,6 +164,8 @@ def standardize_code_and_name(original):
     Ex.: USP / Unicamp
     São Paulo/SP, Rio de Janeiro/RJ
     """
+    original = remove_extra_spaces(original)
+
     splitted_text = get_splitted_text(original)
     codes = []
     names = []
