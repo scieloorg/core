@@ -55,6 +55,8 @@ def report_csv_generator(self, year, issn_scielo, type_report, username):
                     username=username,
                 )
                 func_partial = generate_report_csv_abstract
+            case _:
+                raise ValueError("No match found")
 
         for journal in journals:
             kwargs["journal_id"] = journal.id
