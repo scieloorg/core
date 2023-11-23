@@ -15,52 +15,53 @@ from tracker.models import UnexpectedEvent
 def report_csv_generator(self, year, issn_scielo, type_report, username):
     if year and issn_scielo:
         journals = Journal.objects.filter(article__pub_date_year=year, scielojournal__issn_scielo=issn_scielo)
-    
-        match type_report:
-            case "article":
-                kwargs = dict(
-                    year=year,
-                    columns={
-                        "columns": [
-                            "pid_v2",
-                            "short_title",
-                            "volume",
-                            "number",
-                            "issn_scielo",
-                            "keyword",
-                            "language",
-                            "code_language",
-                        ]
-                    },
-                    username=username,
-                )
-                func_partial = generate_report_csv_articles
-            case "article_funding":
-                pass
-            case "abstract":
-                kwargs = dict(
-                    year=year,
-                    columns={
-                        "columns": [
-                            "pid_v2",
-                            "short_title",
-                            "volume",
-                            "number",
-                            "supplement",
-                            "abstract",
-                            "language",
-                            "code_language",
-                        ]
-                    },
-                    username=username,
-                )
-                func_partial = generate_report_csv_abstract
-            case _:
-                raise ValueError("No match found")
+        
+        if journals:
+            match type_report:
+                case "article":
+                    kwargs = dict(
+                        year=year,
+                        columns={
+                            "columns": [
+                                "pid_v2",
+                                "short_title",
+                                "volume",
+                                "number",
+                                "issn_scielo",
+                                "keyword",
+                                "language",
+                                "code_language",
+                            ]
+                        },
+                        username=username,
+                    )
+                    func_partial = generate_report_csv_articles
+                case "article_funding":
+                    pass
+                case "abstract":
+                    kwargs = dict(
+                        year=year,
+                        columns={
+                            "columns": [
+                                "pid_v2",
+                                "short_title",
+                                "volume",
+                                "number",
+                                "supplement",
+                                "abstract",
+                                "language",
+                                "code_language",
+                            ]
+                        },
+                        username=username,
+                    )
+                    func_partial = generate_report_csv_abstract
+                case _:
+                    raise ValueError("No match found")
 
-        for journal in journals:
-            kwargs["journal_id"] = journal.id
-            func_partial.apply_async(kwargs=kwargs)
+            for journal in journals:
+                kwargs["journal_id"] = journal.id
+                func_partial.apply_async(kwargs=kwargs)
     else: 
         raise ValueError("Parameters 'year' and 'issn_scielo' are required for execution.")
 
