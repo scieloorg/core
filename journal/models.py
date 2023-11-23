@@ -1,4 +1,5 @@
 import logging
+import re
 import os
 
 from django.contrib.auth import get_user_model
@@ -507,7 +508,25 @@ class Journal(CommonControlField, ClusterableModel):
         blank=True,
         null=True,
     )
-
+    author_name = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_("Authors names"),
+        help_text=_(
+            "For compound surnames, create clear identification [uppercase, bold, and/or hyphen]"
+        ),
+        
+    )
+    manuscript_length = models.IntegerField(
+        blank=True,
+        null=True,
+        verbose_name=_("Manuscript Length"),
+        help_text=_("Manuscript Length (consider spacing)"),
+    )
+    format_check_list = models.ManyToManyField(
+        "ArticleSubmissionFormatCheckList",
+        blank=True,
+    )
     panels_titles = [
         AutocompletePanel("official"),
         FieldPanel("title"),
@@ -553,8 +572,6 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel("journalsocialnetwork", label=_("Social Network")),
         FieldPanel("frequency"),
         FieldPanel("publishing_model"),
-        AutocompletePanel("text_language"),
-        AutocompletePanel("abstract_language"),
         FieldPanel("standard"),
         AutocompletePanel("vocabulary"),
     ]
@@ -675,13 +692,11 @@ class Journal(CommonControlField, ClusterableModel):
             label=_("Additional Information"),
             classname="collapsed",
         ),
-    ]
-
-    panels_submission_format = [
-        InlinePanel("article_submission_format",
-            label=_("Article Submission Format"),
-            classname="collapsed",
-        ),
+        FieldPanel("author_name"),
+        FieldPanel("manuscript_length"),
+        FieldPanel("format_check_list"),
+        AutocompletePanel("text_language"),
+        AutocompletePanel("abstract_language"),
     ]
 
     edit_handler = TabbedInterface(
@@ -697,7 +712,6 @@ class Journal(CommonControlField, ClusterableModel):
                 panels_legacy_compatibility_fields, heading=_("Legacy Compatibility")
             ),
             ObjectList(panels_instructions_for_authors, heading=_("Instructions for Authors")),
-            ObjectList(panels_submission_format, heading=_("Article Submission Format")),
         ]
     )
 
@@ -1324,109 +1338,17 @@ class AdditionalInformation(Orderable, RichTextWithLanguage, CommonControlField)
     )
 
 
-class ArticleSubmissionFormat(Orderable, RichTextWithLanguage, CommonControlField):
-    journal = ParentalKey(
-        Journal,
-        on_delete=models.SET_NULL,
-        related_name="article_submission_format",
-        null=True,
-    )
-    language = models.ForeignKey(
-        Language,
-        on_delete=models.SET_NULL,
-        verbose_name=_("Language"),
-        null=True,
+class ArticleSubmissionFormatCheckList(ClusterableModel, RichTextWithLanguage, CommonControlField):
+    rich_text = RichTextField(
+        _("Rich Text"), 
+        null=True, 
         blank=True,
-        help_text=_("Language of Articles")
-    )
-    title = models.BooleanField(
-        default=False,
-        verbose_name=_("Title"),
-    )
-    title_english = models.BooleanField(
-        default=False,
-        verbose_name=_("Title English"),
-    )
-    abstract = models.BooleanField(
-        default=False,
-        verbose_name=_("Abstract"),
-        help_text=_(
-            "Abstracts should be clear, easily readable, and provide an excellent comprehensive summary of the article with sufficient length."
-        ),
-    )
-    keyword = models.BooleanField(
-        default=False,
-        verbose_name=_("Keyword"),
-        help_text=_("Keywords in Portuguese and English"),
-    )
-    author_name = models.BooleanField(
-        default=False,
-        verbose_name=_("Authors names"),
-        help_text=_(
-            "For compound surnames, create clear identification [uppercase, bold, and/or hyphen]"
-        ),
-    )
-    author_with_affiliation = models.BooleanField(
-        default=False, verbose_name=_("Authors with full affiliation")
-    )
-    author_orcid = models.BooleanField(
-        default=False, verbose_name=_("Orcid of authors")
-    )
-    author_email = models.BooleanField(
-        default=False, verbose_name=_("Contact author's e-mail")
-    )
-    funding = models.BooleanField(
-        default=False,
-        verbose_name=_("Article Funding"),
-        help_text=_("Provide information about article funding"),
-    )
-    doi_registration = models.BooleanField(
-        default=False,
-        verbose_name=_("DOI Registration"),
-    )
-    manuscript_length = models.IntegerField(
-        blank=True,
-        null=True,
-        verbose_name=_("Manuscript Length"),
-        help_text=_("Manuscript Length (consider spacing)"),
-    )
-    roman_alphabet = models.BooleanField(
-        default=False,
-        verbose_name=_("Roman Alphabet"),
-        help_text=_("Data must be available in the Roman alphabet"),
-    )
-    metadata = models.BooleanField(
-        default=False,
-        verbose_name=_("Metadata"),
-        help_text=_(
-            "Metadata, including title, abstract, and keywords, must have a mandatory English version when the language of the text is different from English."
-        ),
-    )
-    ethics_approval_statement = models.BooleanField(
-        default=False,
-        verbose_name=_("Ethics Approval Statement"),
-        help_text=_(
-            "Check this box if the research has been approved by an institutional ethics committee."
-        ),
+        help_text=_("Descreva o teim do check list")
     )
 
-    panels = [
-        AutocompletePanel("language"),
-        FieldPanel("title"),
-        FieldPanel("title_english"),
-        FieldPanel("abstract"),
-        FieldPanel("keyword"),
-        FieldPanel("author_name"),
-        FieldPanel("author_with_affiliation"),
-        FieldPanel("author_orcid"),
-        FieldPanel("author_email"),
-        FieldPanel("funding"),
-        FieldPanel("doi_registration"),
-        FieldPanel("manuscript_length"),
-        FieldPanel("roman_alphabet"),
-        FieldPanel("metadata"),
-        FieldPanel("ethics_approval_statement"),
-    ]
+    def __str__(self):
+        remove_tags = re.compile('<.*?>')
+        return re.sub(remove_tags, '', self.rich_text)
 
 
 class ThematicAreaJournal(Orderable, CommonControlField):
