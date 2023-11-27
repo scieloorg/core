@@ -10,3 +10,14 @@
     pointer-events:none;
     cursor:text;
 }
+
+/* Classe para ocultar elementos relacionados ao campo de escolher arquivo (models.FileField)*/
+.hide-file-section input[type="checkbox"][name="file-clear"],
+.hide-file-section label[for="file-clear_id"],
+.hide-file-section input[type="file"][name="file"]  {
+    display: none;
+}
+
+.hide-file-section .w-field__input a {
+    font-weight: bold;
+}

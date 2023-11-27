@@ -135,6 +135,7 @@ LOCAL_APPS = [
     "search",
     "reference",
     "tracker",
+    "report",
 ]
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
