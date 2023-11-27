@@ -1,3 +1,4 @@
+import logging
 import sys
 
 from django.db.models import Q
@@ -20,6 +21,9 @@ from packtools.sps.models.kwd_group import KwdGroup
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article import models
+from institution.models import Institution
+from location.models import City, State, Country, Location
+from researcher.models import Affiliation, AffiliationHistoryItem, AffiliationHistory
 from issue.models import TocSection
 from tracker.models import UnexpectedEvent
 
@@ -190,19 +194,82 @@ def create_or_create_abstract(xmltree, user):
 
 
 def create_or_update_researchers(xmltree, user):
-    authors = Authors(xmltree=xmltree).contribs
+    authors = Authors(xmltree=xmltree).contribs_with_affs
+    """
+    {
+        "id": affiliation_id or None,
+        "label": label or None,
+        "orgname": orgname or None,
+        "orgdiv1": orgdiv1 or None,
+        "orgdiv2": orgdiv2 or None,
+        "original": original or None,
+        "city": city or None,
+        "state": state or None,
+        "country_name": country_name or None,
+        "country_code": country_code or None,
+        "email": email or None,
+    }
+    """
     # Falta gender e gender_identification_status
     data = []
+
+    try:
+        year = ArticleDates(xmltree=xmltree).collection_date.get("year")
+    except Exception as e:
+        year = None
+    try:
+        article_lang = ArticleAndSubArticles(xmltree=xmltree).main_lang
+    except Exception as e:
+        article_lang = None
+
     for author in authors:
+        institutions = []
+        email = author.get("email")
+
+        # affiliations do autor
+        for aff in author.get("affs") or []:
+            email = email or aff.get("email")
+
+            try:
+                location = Location.create_or_update_location(
+                    user,
+                    country_name=aff.get("country_name"),
+                    country_code=aff.get("country_code"),
+                    state_name=aff.get("state"),
+                    city_name=aff.get("city"),
+                )
+            except Exception as e:
+                location = None
+                logging.exception(f"Aff {aff} {type(e)} {e}")
+
+            try:
+                institution = Institution.create_or_update(
+                    inst_name=aff.get("orgname"),
+                    inst_acronym=None,
+                    level_1=aff.get("orgdiv1"),
+                    level_2=aff.get("orgdiv2"),
+                    level_3=None,
+                    location=location,
+                    official=None,
+                    is_official=None,
+                    url=None,
+                    user=user,
+                )
+                institutions.append(institution)
+            except Exception as e:
+                institution = None
+                logging.exception(f"Aff {aff} {type(e)} {e}")
+
         obj = models.Researcher.create_or_update(
             given_names=author.get("given_names"),
             last_name=author.get("surname"),
             declared_name=None,
-            email=None,
+            email=email,
             orcid=author.get("orcid"),
             suffix=author.get("suffix"),
             lattes=author.get("lattes"),
-            institution_name=None,
+            institutions=institutions,
+            affiliation_year=year,
             user=user,
         )
         data.append(obj)
