@@ -28,6 +28,11 @@ def get_splitted_text(text):
 
 def remove_extra_spaces(text):
     # padroniza a quantidade de espaços
+    if text is None:
+        return None
+    elif not isinstance(text, str):
+        raise TypeError("The argument must be a string or list")
+    
     return " ".join([item.strip() for item in text.split() if item.strip()])
 
 
