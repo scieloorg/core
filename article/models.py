@@ -12,7 +12,7 @@ from core.models import (
     FlexibleDate,
     Language,
     License,
-    RichTextWithLang,
+    TextLanguageMixin,
 )
 from doi.models import DOI
 from institution.models import Institution, Sponsor
@@ -264,7 +264,7 @@ class ArticleFunding(CommonControlField):
     base_form_class = CoreAdminModelForm
 
 
-class DocumentTitle(RichTextWithLang, CommonControlField):
+class DocumentTitle(TextLanguageMixin, CommonControlField):
     ...
 
     autocomplete_search_field = "plain_text"
@@ -307,7 +307,7 @@ class ArticleType(models.Model):
         return self.text
 
 
-class DocumentAbstract(RichTextWithLang, CommonControlField):
+class DocumentAbstract(TextLanguageMixin, CommonControlField):
     ...
 
     autocomplete_search_field = "plain_text"

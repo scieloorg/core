@@ -1,3 +1,4 @@
+import logging
 import sys
 
 from django.db.models import Q
@@ -38,7 +39,8 @@ def load_article(user, xml=None, file_path=None):
         raise ValueError(
             "article.sources.xmlsps.load_article requires xml or file_path"
         )
-
+    
+    xml_detail_error = etree.tostring(xmltree)
     pids = ArticleIds(xmltree=xmltree).data
     pid_v2 = pids.get("v2")
     pid_v3 = pids.get("v3")
@@ -74,7 +76,7 @@ def load_article(user, xml=None, file_path=None):
             exc_traceback=exc_traceback,
             detail=dict(
                 function="article.sources.xmlsps.load_article",
-                message=f"Error extracting and saving in Article model. xmltree: {xmltree}",
+                message=f"{xml_detail_error}",
             ),
         )
 

@@ -67,6 +67,10 @@ def load_journal_from_article_meta_for_one_collection(
 ):
     user = _get_user(self.request, username=username, user_id=user_id)
     try:
+        # Se load_data igual a True
+        # Carrega os dados obtidos de article meta em AMJournal
+        # Se load_data igual a Fase
+        # Carrega os dados em Journal a partir de AMJournal.
         if load_data:
             process_journal_article_meta(
                 collection=collection_acron, limit=limit, user=user

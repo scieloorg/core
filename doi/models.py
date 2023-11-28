@@ -5,7 +5,7 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.choices import LANGUAGE
 from core.forms import CoreAdminModelForm
-from core.models import CommonControlField, Language, RichTextWithLang
+from core.models import CommonControlField, Language
 
 from .choices import STATUS
 

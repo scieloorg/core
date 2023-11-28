@@ -10,8 +10,11 @@ from tenacity import (
     wait_exponential,
 )
 from urllib3.util import Retry
+from django.contrib.auth import get_user_model
+
 
 logger = logging.getLogger(__name__)
+User = get_user_model()
 
 
 def language_iso(code):
@@ -80,3 +83,13 @@ def fetch_data(url, headers=None, json=False, timeout=2, verify=True):
             raise
 
     return response.content if not json else response.json()
+
+
+def _get_user(request, username=None, user_id=None):
+    try:
+        return User.objects.get(pk=request.user_id)
+    except AttributeError:
+        if user_id:
+            return User.objects.get(pk=user_id)
+        if username:
+            return User.objects.get(username=username)

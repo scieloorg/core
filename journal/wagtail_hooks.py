@@ -236,7 +236,14 @@ class AMJournalAdmin(ModelAdmin):
     list_filter = ("collection",)
     search_fields = ("scielo_issn",)
 
+class ArticleSubmissionFormatCheckListAdmin(ModelAdmin):
+    model = models.ArticleSubmissionFormatCheckList
+    menu_label = _("Article Submission Format Check List")
+    menu_icon = "folder"
+    menu_order = 1200
+
 modeladmin_register(AMJournalAdmin)
+modeladmin_register(ArticleSubmissionFormatCheckListAdmin)
 
 
 @hooks.register("register_admin_urls")

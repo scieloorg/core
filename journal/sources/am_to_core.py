@@ -629,29 +629,21 @@ def create_or_update_location(
     #O valor publisher_country pode fornecer tanto 
     #o nome completo do país quanto o acrônimo do país.
     country_value = extract_value(publisher_country)
-
-    if country_value is not None and len(country_value) > 2:
-        country = CountryName.objects.get(text=country_value).country
-    elif country_value:
-        country = Country.get(name=None, acronym=country_value)
-    else:
-        country = None
+    country = None
+    for item in Country.standardize(country_value, user=user):
+        country = item.get("country")
 
     name_city = extract_value(publisher_city)
-    city = City.get_or_create(
-        name=name_city,
-        user=user,
-    )
+    city = None
+    for item in City.standardize(name_city, user=user):
+        city = item.get("city")
 
     #O valor publisher_state pode fornecer tanto 
     #o nome completo do estado quanto o acrônimo do estado.
     state_value = extract_value(publisher_state)
-    if state_value is not None and len(state_value) > 2:
-        state = State.get_or_create(name=state_value, user=user)
-    elif state_value:
-        state = State.get_or_create(acronym=state_value, user=user)
-    else:
-        state = None
+    state = None
+    for item in State.standardize(state_value, user=user):
+        state = item.get("state")
 
     location = Location.create_or_update(
         user=user,

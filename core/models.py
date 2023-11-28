@@ -169,7 +169,7 @@ class TextWithLang(models.Model):
         abstract = True
 
 
-class RichTextWithLang(models.Model):
+class TextLanguageMixin(models.Model):
     rich_text = RichTextField(_("Rich Text"), null=True, blank=True)
     plain_text = models.TextField(_("Plain Text"), null=True, blank=True)
     language = models.ForeignKey(
@@ -184,6 +184,25 @@ class RichTextWithLang(models.Model):
         AutocompletePanel("language"),
         FieldPanel("rich_text"),
         FieldPanel("plain_text"),
+    ]
+
+    class Meta:
+        abstract = True
+
+
+class RichTextWithLanguage(models.Model):
+    rich_text = RichTextField(_("Rich Text"), null=True, blank=True)
+    language = models.ForeignKey(
+        Language,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Language"),
+        null=True,
+        blank=True,
+    )
+
+    panels = [
+        AutocompletePanel("language"),
+        FieldPanel("rich_text"),
     ]
 
     class Meta:
