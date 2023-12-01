@@ -1,4 +1,7 @@
 {% load static compress %}
+{% load wagtailcore_tags %}
+{% load i18n %}
+{% load wagtailroutablepage_tags %}
 
 <!DOCTYPE html>
 <!-- saved from url=(0048)http://0.0.0.0:8000/journal/abcd/about/#item-1-2 -->
@@ -132,88 +135,80 @@
             </a>
             <ul>
                 <li>
-                  <a href="http://0.0.0.0:8000/journals/alpha?status=current" class="tab_link">
-                    Lista alfabética de periódicos
-                  </a>
+                      <a href="http://0.0.0.0:8000/journals/alpha?status=current" class="tab_link">
+                        {% trans 'Lista alfabética de periódicos' %}
+                      </a>
+                  </li>
+                  <li>
+                      <a href="http://0.0.0.0:8000/journals/thematic?status=current" class="tab_link">
+                          {% trans 'Lista temática de periódicos' %}
+                      </a>
+                  </li>
+                  <li>
+                      <a href="http://search.scielo.org/?q=*&amp;lang=pt&amp;filter[in][]=scl">
+                          {% trans 'Busca' %}
+                      </a>
+                  </li>
+                  <li>
+                      <a target="_blank" href="http://analytics.scielo.org/?collection=scl">
+                          {% trans 'Métricas' %}
+                      </a>
+                  </li>
+                  <li>
+                      <a href="http://0.0.0.0:8000/about/">
+                          {% trans 'Sobre o SciELO Brasil' %}
+                      </a>
+                  </li>
+                  <li>
+                      <a href="http://0.0.0.0:8000/about/">
+                          {% trans 'Contatos' %}
+                      </a>
+                  </li>
+                  <li>
+                      <a href="http://0.0.0.0:8000/journal/abcd/about/#" id="#floatingBtnError">
+                          {% trans 'Reportar erro' %}
+                      </a>
                 </li>
-                <li>
-                  <a href="http://0.0.0.0:8000/journals/thematic?status=current" class="tab_link">
-                    Lista temática de periódicos
-                  </a>
-                </li>
-                <li>
-                  <a href="http://search.scielo.org/?q=*&amp;lang=pt&amp;filter[in][]=scl">
-                    Busca
-                  </a>
-                </li>
-                <li>
-                  <a target="_blank" href="http://analytics.scielo.org/?collection=scl">
-                    Métricas
-                  </a>
-                </li>
-                <li>
-                  <a href="http://0.0.0.0:8000/about/">
-                    Sobre o SciELO Brasil
-                  </a>
-                </li>
-                <li>
-                  <a href="http://0.0.0.0:8000/about/">
-                    Contatos
-                  </a>
-                </li>
-                <li>
-                  <a href="http://0.0.0.0:8000/journal/abcd/about/#" id="#floatingBtnError">
-                    Reportar erro
-                  </a>
-                </li>
-
-                
-
             </ul>
           </li>
           <li>
-            <a target="_blank" href="http://www.scielo.org/">
-              <strong>SciELO.org - Rede SciELO</strong>
-            </a>
-            <ul>
-              <li>
                 <a target="_blank" href="http://www.scielo.org/">
-                  Coleções nacionais e temáticas
+                  <strong>{% trans 'Coleções nacionais e temáticas' %}</strong>
                 </a>
               </li>
               <li>
                 <a target="_blank" href="http://www.scielo.org/pt/periodicos/listar-por-ordem-alfabetica/">
-                  Lista alfabética de periódicos
+                  {% trans 'Lista alfabética de periódicos' %}
                 </a>
               </li>
               <li>
                 <a target="_blank" href="http://www.scielo.org/pt/periodicos/listar-por-assunto/">
-                  Lista de periódicos por assunto
+                  {% trans 'Lista de periódicos por assunto' %}
                 </a>
               </li>
               <li>
                 <a target="_blank" href="http://search.scielo.org/">
-                  Busca
+                    {% trans 'Busca' %}
                 </a>
               </li>
               <li>
                 <a target="_blank" href="http://analytics.scielo.org/">
-                  Métricas
+                  {% trans 'Métricas' %}
                 </a>
               </li>
               <li>
                 <a target="_blank" href="http://www.scielo.org/pt/sobre-o-scielo/acesso-via-oai-e-rss/">
-                  Acesso OAI e RSS
+                  {% trans 'Acesso OAI e RSS' %}
                 </a>
               </li>
               <li>
                 <a target="_blank" href="http://www.scielo.org/pt/sobre-o-scielo/">
-                  Sobre a Rede SciELO
+                  {% trans 'Sobre a Rede SciELO' %}
                 </a>
               </li>
               <li>
                 <a target="_blank" href="http://www.scielo.org/pt/sobre-o-scielo/contato/">
-                  Contatos
+                  {% trans 'Contatos' %}
                 </a>
               </li>
             </ul>
@@ -222,7 +217,7 @@
             
               <a target="_blank" href="http://blog.scielo.org/">
             
-                <strong>Blog SciELO em Perspectiva</strong>
+                <strong>{% trans 'Blog SciELO em Perspectiva' %}</strong>
               </a>
           </li>
         </ul>
@@ -240,71 +235,63 @@
           <div class="d-none d-sm-block d-lg-none col">
               <div class="dropdown mt-3">
                   <button class="btn btn-link dropdown-toggle mb-0" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-                    <span class="text-truncate scielo__truncate">ABCD. Arquivos Brasileiros de Cirurgia Digestiva (São Paulo) </span>
+                    <span class="text-truncate scielo__truncate">{{journal.title}}</span>
                   </button>
                   <ul class="dropdown-menu scielo__shadow-2" aria-labelledby="dropdownMenuButton1">
                     <li>
-                      <a href="http://0.0.0.0:8000/j/abcd/" class="dropdown-item">
+                      <a href="{% pageurl page %}" class="dropdown-item">
                         
-                          <img src="{% static 'journal_about/img/abcd_globo.gif' %}" class="image" alt="Logomarca do periódico: ABCD. Arquivos Brasileiros de Cirurgia Digestiva (São Paulo)">
+                          <img src="{% static 'journal_about/img/abcd_globo.gif' %}" class="image" alt="Logomarca do periódico: {{journal.title}}">
                         
                       </a>
                     </li>
                     
-                      <li>
-                        <a href="https://www.gnpapers.com.br/abcd/" class="dropdown-item" target="_blank"><span class="material-icons-outlined">launch</span> Submissão de manuscritos</a>
-                      </li>
-                    
                     <li>
-                      <a href="http://0.0.0.0:8000/journal/abcd/about/#about" class="dropdown-item"><span class="material-icons-outlined">info</span> Sobre o periódico</a>
+                      <a href="https://www.gnpapers.com.br/{{journal.scielojournal_set.all.0.journal_acron}}/" class="dropdown-item" target="_blank"><span class="material-icons-outlined">launch</span> {% trans 'Submissão de manuscritos' %}</a>
+                    </li>
+                  
+                    <li>
+                      <a href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#about" class="dropdown-item"><span class="material-icons-outlined">info</span> {% trans 'Sobre o periódico' %}</a>
                     </li>
                     <li>
-                      <a href="http://0.0.0.0:8000/journal/abcd/about/#editors" class="dropdown-item"><span class="material-icons-outlined">people</span> Corpo Editorial</a>
+                      <a href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#editors" class="dropdown-item"><span class="material-icons-outlined">people</span> {% trans 'Corpo Editorial' %}</a>
                     </li>
                     <li>
-                      <a href="http://0.0.0.0:8000/journal/abcd/about/#instructions" class="dropdown-item"><span class="material-icons-outlined">help_outline</span> Instruções aos autores</a>
+                      <a href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#instructions" class="dropdown-item"><span class="material-icons-outlined">help_outline</span> {% trans 'Instruções aos autores' %}</a>
                     </li>
                     <li>
-                      <a href="http://0.0.0.0:8000/journal/abcd/about/#item2" class="dropdown-item"><span class="material-icons-outlined">help_outline</span> Política editorial</a>
+                      <a href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#item2" class="dropdown-item"><span class="material-icons-outlined">help_outline</span> {% trans 'Política editorial' %}</a>
                     </li>
                     <li>
-                      <a href="http://0.0.0.0:8000/journal/abcd/about/#contact" class="dropdown-item"><span class="material-icons-outlined">email</span> Contato</a>
+                      <a href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#contact" class="dropdown-item"><span class="material-icons-outlined">email</span> {% trans 'Contato' %}</a>
                     </li>
+                  
                   </ul>
                 </div>
           </div>
           <div class="col col-lg-3 offset-lg-5">
               <div class="language mt-3">
-                
-<div class="scielo__language">
-  <div class="dropdown">
-    <button id="btnGroupDrop1" type="button" class="btn btn-sm btn-secondary scielo__btn-with-icon--left dropdown-toggle mb-0 float-end mt-1" data-bs-toggle="dropdown" aria-expanded="false">
-      <span class="material-icons-outlined">language</span>
-  
-      
-        <span class="d-lg-none">PT</span>
-        <span class="d-none d-lg-block">Português</span>
-      
-  
-      
-  
-      
-  
-    </button>
-    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btnGroupDrop1">
-      
-        <li><a class="dropdown-item" href="http://0.0.0.0:8000/set_locale/es/" lang="es">Español</a></li>
-        <li><a class="dropdown-item" href="http://0.0.0.0:8000/set_locale/en/" lang="en">English</a></li>
-      
-  
-      
-  
-      
-    
-    </ul>
-  </div>
-</div>
-
+                <!-- DropDown traducoes  -->
+                <div class="scielo__language">
+                  <div class="dropdown">
+                      {% if page %}
+                        <button id="btnGroupDrop1" type="button" class="btn btn-sm btn-secondary scielo__btn-with-icon--left dropdown-toggle mb-0 float-end mt-1" data-bs-toggle="dropdown" aria-expanded="false">
+                          <span class="material-icons-outlined">language</span>
+                            <span class="d-lg-none">PT</span>
+                            <span class="d-none d-lg-block">{{language}}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btnGroupDrop1">
+                          {% for translation in page.get_translations.live %}  
+                            {% get_language_info for translation.locale.language_code as lang %}
+                              <li>
+                                <a class="dropdown-item" href="{% routablepageurl translation 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}" lang="{{ lang.code }}">{{ lang.name_local }}</a>
+                              </li>  
+                          {% endfor%}
+                          <!-- <li><a class="dropdown-item" href="http://0.0.0.0:8000/{{code}}/journal/{{journal.scielojournal_set.all.0.journal_acron}}" lang="es">{{lang}}</a></li> -->
+                        </ul>
+                      {% endif%}
+                  </div>
+                </div>
               </div>
           </div>
       </div>
@@ -312,35 +299,35 @@
           <div class="col">
             <div class="dropdown">
               <button class="btn btn-secondary dropdown-toggle mb-2 w-100" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-                <span class="truncate">ABCD. Arquivos Brasileiros de Cirurgia Digestiva (São Paulo) </span>
+                <span class="truncate">{{journal.title}}</span>
               </button>
               <ul class="dropdown-menu w-100" aria-labelledby="dropdownMenuButton1">
                 <li>
-                  <a href="http://0.0.0.0:8000/j/abcd/" class="dropdown-item">
+                  <a href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}" class="dropdown-item">
                     
-                      <img src="{% static 'journal_about/img/abcd_globo.gif' %}" class="image" alt="Logomarca do periódico: ABCD. Arquivos Brasileiros de Cirurgia Digestiva (São Paulo)">
+                      <img src="{% static 'journal_about/img/abcd_globo.gif' %}" class="image" alt="Logomarca do periódico: {{journal.title}}">
                     
                   </a>
                 </li>
                 
-                  <li>
-                    <a href="https://www.gnpapers.com.br/abcd/" class="dropdown-item" target="_blank"><span class="material-icons-outlined">launch</span> Submissão de manuscritos</a>
-                  </li>
-                
                 <li>
-                  <a href="http://0.0.0.0:8000/journal/abcd/about/#about" class="dropdown-item"><span class="material-icons-outlined">info</span> Sobre o periódico</a>
+                  <a href="https://www.gnpapers.com.br/{{journal.scielojournal_set.all.0.journal_acron}}/" class="dropdown-item" target="_blank"><span class="material-icons-outlined">launch</span> {% trans 'Submissão de manuscritos' %}</a>
+                </li>
+              
+                <li>
+                  <a href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#about" class="dropdown-item"><span class="material-icons-outlined">info</span> {% trans 'Sobre o periódico' %}</a>
                 </li>
                 <li>
-                  <a href="http://0.0.0.0:8000/journal/abcd/about/#editors" class="dropdown-item"><span class="material-icons-outlined">people</span> Corpo Editorial</a>
+                  <a href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#editors" class="dropdown-item"><span class="material-icons-outlined">people</span> {% trans 'Corpo Editorial' %}</a>
                 </li>
                 <li>
-                  <a href="http://0.0.0.0:8000/journal/abcd/about/#instructions" class="dropdown-item"><span class="material-icons-outlined">help_outline</span> Instruções aos autores</a>
+                  <a href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#instructions" class="dropdown-item"><span class="material-icons-outlined">help_outline</span> {% trans 'Instruções aos autores' %}</a>
                 </li>
                 <li>
-                  <a href="http://0.0.0.0:8000/journal/abcd/about/#item2" class="dropdown-item"><span class="material-icons-outlined">article</span> Política editorial</a>
+                  <a href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#item2" class="dropdown-item"><span class="material-icons-outlined">help_outline</span> {% trans 'Política editorial' %}</a>
                 </li>
                 <li>
-                  <a href="http://0.0.0.0:8000/journal/abcd/about/#contact" class="dropdown-item"><span class="material-icons-outlined">email</span> Contato</a>
+                  <a href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#contact" class="dropdown-item"><span class="material-icons-outlined">email</span> {% trans 'Contato' %}</a>
                 </li>
               </ul>
             </div>
@@ -360,44 +347,40 @@
       <div class="col-9 pt-4 pb-4">
         <a href="http://0.0.0.0:8000/j/abcd/">
           
-          <img src="{% static 'journal_about/img/abcd_globo.gif' %}" class="image" alt="Logomarca do periódico: ABCD. Arquivos Brasileiros de Cirurgia Digestiva (São Paulo)">
+          <img src="{% static 'journal_about/img/abcd_globo.gif' %}" class="image" alt="Logomarca do periódico: {{journal.title}}">
           
         </a>
         <h1 class="h4" style="margin: 1rem auto">
           <img src="{% static 'journal_about/img/logo-open-access.svg' %}" alt="Open-access" class="logo-open-access" data-bs-toggle="tooltip" data-bs-original-title="by 4.0 "> {{journal.title}}
         </h1>
         <span class="publisher">
-          Publicação de: <strong class="namePlublisher">{% for publisher in journal.publisher_history.all %}{{publisher.name}}{% endfor %}</strong>
+          {% trans 'Publicação de' %}: <strong class="namePlublisher">{% for publisher in journal.publisher_history.all %}{{ publisher.institution.name }}{% endfor %}</strong>
         </span>
         <br>
         <span class="theme">
-          <span class="area">
-            Área:
-          </span>
+            <span class="area">
+                {% trans 'Área' %}:
+            </span>
             {% for study_area in journal.subject.all %}
-              {{study_area}}
+                {{ study_area }}
             {% endfor %}
-
-            
-            
-          
         </span>
         <span class="issn">
-          
             <span class="issnLabel">
-              Versão impressa ISSN:
+                {% trans 'Versão impressa ISSN' %}:
             </span>
-            {{journal.issn_print}}
+            {% if journal.official.issn_print %}
+                {{ journal.official.issn_print }}
+            {% endif %}
             <br>
-          
-          
             <span class="issnLabel">
-              Versão on-line ISSN:
+                {% trans 'Versão on-line ISSN' %}:
             </span>
-              {{journal.issn_eletronic}}
-          
+            {% if journal.official.issn_electronic %}
+                {{ journal.official.issn_electronic }}
+            {% endif %}
         </span>
-
+      
         <!-- Ini - Se houver um outro título-->
         
         <!-- Fim - Se houver um outro título-->
@@ -409,15 +392,12 @@
       <div class="col-3 pt-5">
         <div class="list-group">
           
-            <a class="list-group-item" href="https://www.gnpapers.com.br/abcd/" target="_blank"><span class="material-icons-outlined">launch</span> Submissão de manuscritos</a>
-          
-            <a class="list-group-item" href="http://0.0.0.0:8000/journal/abcd/about/#item-1"><span class="material-icons-outlined">info</span> Sobre o periódico</a>
-            <a class="list-group-item" href="http://0.0.0.0:8000/journal/abcd/about/#item-3"><span class="material-icons-outlined">people</span> Corpo Editorial</a>
-            <a class="list-group-item" href="http://0.0.0.0:8000/journal/abcd/about/#item-4"><span class="material-icons-outlined">help_outline</span> Instruções aos autores</a>
-            <a class="list-group-item" href="http://0.0.0.0:8000/journal/abcd/about/#item-2"><span class="material-icons-outlined">article</span> Política editorial</a>
-          
-          
-        
+          <a class="list-group-item" href="https://www.gnpapers.com.br/{{journal.scielojournal_set.all.0.journal_acron}}/" target="_blank"><span class="material-icons-outlined">launch</span> {% trans 'Submissão de manuscritos' %}</a>
+
+          <a class="list-group-item" href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#item-1"><span class="material-icons-outlined">info</span> {% trans 'Sobre o periódico' %}</a>
+          <a class="list-group-item" href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#item-3"><span class="material-icons-outlined">people</span> {% trans 'Corpo Editorial' %}</a>
+          <a class="list-group-item" href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#item-4"><span class="material-icons-outlined">help_outline</span> {% trans 'Instruções aos autores' %}</a>
+          <a class="list-group-item" href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#item-2"><span class="material-icons-outlined">article</span> {% trans 'Política editorial' %}</a>
       </div>
     </div>
   </div>
@@ -430,52 +410,33 @@
   <div class="container d-none d-xl-block">
     <div class="row">
       <div class="col-md-2 col-sm-2">
-        <a href="http://0.0.0.0:8000/j/abcd/" class="btn scielo__btn-with-icon--left "><span class="material-icons-outlined">home</span> Home do periódico</a>
+        <a href="http://0.0.0.0:8000/j/abcd/" class="btn scielo__btn-with-icon--left "><span class="material-icons-outlined">home</span>Home do periódico</a>
       </div>
       <div class="col-md-7 col-sm-7">
         
         <div class="btn-group">
-  
-          
-          <a href="http://0.0.0.0:8000/j/abcd/grid" class="btn  ">
-            Todos os números
+          <a href="http://0.0.0.0:8000/j/abcd/grid" class="btn">
+            {% trans 'Todos os números' %}
           </a>
-  
-          
-          
-            
-            <a title="número anterior" href="http://0.0.0.0:8000/j/abcd/i/2021.v34n4/?goto=previous" class="btn">
-              « Número anterior
-            </a>
-          
-  
-          
-          
-            
-            <a title="número atual" href="http://0.0.0.0:8000/j/abcd/i/2021.v34n4/" class="btn">
-              Número atual
-            </a>
-          
-  
-          
-          
-            
-            <a title="número seguinte" href="http://0.0.0.0:8000/journal/abcd/about/#" class="btn disabled">
-              Número seguinte »
-            </a>
-          
-  
+          <a title="{% trans 'número anterior' %}" href="http://0.0.0.0:8000/j/abcd/i/2021.v34n4/?goto=previous" class="btn">
+              « {% trans 'Número anterior' %}
+          </a>
+          <a title="{% trans 'número atual' %}" href="http://0.0.0.0:8000/j/abcd/i/2021.v34n4/" class="btn">
+              {% trans 'Número atual' %}
+          </a>
+          <a title="{% trans 'número seguinte' %}" href="http://0.0.0.0:8000/journal/abcd/about/#" class="btn disabled">
+              {% trans 'Número seguinte' %} »
+          </a>
         </div>
       </div>
       <div class="col-md-3 col-sm-3 text-end">
         <div class="btn-group" role="group" aria-label="Basic example">
-          <a href="http://search.scielo.org/?q=*&amp;lang=pt&amp;filter[ta_cluster][]=ABCD,%20arq.%20bras.%20cir.%20dig." class="btn scielo__btn-with-icon--left"><span class="material-icons-outlined">search</span> Buscar</a>
-          
-          
-            <a target="_blank" href="http://analytics.scielo.org/?journal=0102-6720&amp;collection=scl" class="btn scielo__btn-with-icon--left"><span class="material-icons-outlined">show_chart</span> Métricas</a>
-          
-
-          
+          <a href="http://search.scielo.org/?q=*&amp;lang=pt&amp;filter[ta_cluster][]=ABCD,%20arq.%20bras.%20cir.%20dig." class="btn scielo__btn-with-icon--left">
+            <span class="material-icons-outlined">search</span> {% trans 'Buscar' %}
+          </a>
+          <a target="_blank" href="http://analytics.scielo.org/?journal=0102-6720&amp;collection=scl" class="btn scielo__btn-with-icon--left">
+              <span class="material-icons-outlined">show_chart</span> {% trans 'Métricas' %}
+          </a>        
         </div>
 
       </div>
@@ -495,17 +456,18 @@
     <div class="row">
       <div class="col">
         <div class="btn-group" style="width: 100%;">
-          
-          <a href="http://0.0.0.0:8000/j/abcd/" class="btn btn-secondary scielo__btn-with-icon--only "><span class="material-icons-outlined">home</span></a>
-          
-          <a href="http://0.0.0.0:8000/j/abcd/grid" class="btn btn-secondary  ">
-            Todos
+          <a href="http://0.0.0.0:8000/j/abcd/" class="btn btn-secondary scielo__btn-with-icon--only">
+            <span class="material-icons-outlined">home</span>
           </a>
-          <a href="http://search.scielo.org/?q=*&amp;lang=pt&amp;filter[ta_cluster][]=ABCD,%20arq.%20bras.%20cir.%20dig." class="btn btn-secondary">Buscar</a>
-          
-            <a target="_blank" href="http://analytics.scielo.org/?journal=0102-6720&amp;collection=scl" class="btn btn-secondary">Métricas</a>
-          
-          
+          <a href="http://0.0.0.0:8000/j/abcd/grid" class="btn btn-secondary">
+              {% trans 'Todos' %}
+          </a>
+          <a href="http://search.scielo.org/?q=*&amp;lang=pt&amp;filter[ta_cluster][]=ABCD,%20arq.%20bras.%20cir.%20dig." class="btn btn-secondary">
+              {% trans 'Buscar' %}
+          </a>
+          <a target="_blank" href="http://analytics.scielo.org/?journal=0102-6720&amp;collection=scl" class="btn btn-secondary">
+              {% trans 'Métricas' %}
+          </a>
         </div>
       </div>
     </div>
@@ -513,20 +475,12 @@
       <div class="col">
         <div class="btn-group" style="width: 100%;">
           
-          
             <a href="http://0.0.0.0:8000/j/abcd/i/2021.v34n4/?goto=previous" class="btn btn-secondary scielo__btn-with-icon--only">
               <span class="material-icons-outlined">navigate_before</span>
             </a>
-          
-  
-          
-          
             <a href="http://0.0.0.0:8000/j/abcd/i/2021.v34n4/" class="btn btn-secondary">
               Atual
             </a>
-          
-  
-          
           
             <a href="http://0.0.0.0:8000/journal/abcd/about/#" class="btn btn-secondary scielo__btn-with-icon--only --disabled">
               <span class="material-icons-outlined">navigate_next</span>
@@ -545,34 +499,19 @@
       <div class="col-md-6 col-sm-6">
         <h2>&nbsp;</h2>
         <div class="btn-group">
-  
-          
           <a href="http://0.0.0.0:8000/j/abcd/grid" class="btn no-ico-util ">
             todos
           </a>
   
-          
-          
-          
-            <a href="http://0.0.0.0:8000/j/abcd/i/2021.v34n4/?goto=previous" class="btn">
-              « número anterior
-            </a>
-          
-  
-          
-          
-            <a href="http://0.0.0.0:8000/j/abcd/i/2021.v34n4/" class="btn">
-              número atual
-            </a>
-          
-  
-          
-          
-            <a href="http://0.0.0.0:8000/journal/abcd/about/#" class="btn single group disabled">
-              <span class="material-icons-outlined">navigate_next</span>
-            </a>
-          
-  
+          <a href="http://0.0.0.0:8000/j/abcd/i/2021.v34n4/?goto=previous" class="btn">
+            « número anterior
+          </a>
+          <a href="http://0.0.0.0:8000/j/abcd/i/2021.v34n4/" class="btn">
+            número atual
+          </a>
+          <a href="http://0.0.0.0:8000/journal/abcd/about/#" class="btn single group disabled">
+            <span class="material-icons-outlined">navigate_next</span>
+          </a>
         </div>
       </div>
       <div class="col-md-2 col-sm-2">
@@ -635,7 +574,7 @@
           <div class="col">
 
             <ol class=" breadcrumb mb-0 ps-0">
-              <li class="breadcrumb-item"><a href="http://0.0.0.0:8000/j/abcd/"><span class="material-icons-outlined">navigate_before</span> ABCD. Arquivos Brasileiros de Cirurgia Digestiva (São Paulo)</a></li>
+              <li class="breadcrumb-item"><a href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}"><span class="material-icons-outlined">navigate_before</span> {{journal.title}}</a></li>
             </ol>
 
           </div>
@@ -648,7 +587,7 @@
     <span class="material-icons-outlined">share</span>
   </button>
   <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btnGroupDrop1">
-    <li><a href="javascript:window.print();" class="dropdown-item">Imprimir</a></li>
+    <li><a href="javascript:window.print();" class="dropdown-item">{% trans 'Imprimir' %}</a></li>
     <li><a href="http://0.0.0.0:8000/journals/feed/" type="button" class="dropdown-item" target="_blank">RSS</a></li>
     <li><a href="javascript:;" class="dropdown-item share_modal_id">E-mail</a></li>
     <li><hr class="dropdown-divider"></li>
@@ -671,13 +610,13 @@
       <div class="container">
         <div class="row">
           <div class="col">
-
+            
             <ol class="breadcrumb mb-0 ps-0">
               <li class="breadcrumb-item"><a href="http://0.0.0.0:8000/" alt="Home"><span class="material-icons-outlined">home</span></a></li>
-              <li class="breadcrumb-item"><a href="http://0.0.0.0:8000/about/">Periódicos</a></li>
-              <li class="breadcrumb-item"><a href="http://0.0.0.0:8000/j/abcd/">ABCD. Arquivos Brasileiros de Cirurgia Digestiva (São Paulo)</a></li>
-              <li class="breadcrumb-item">Sobre o periódico</li>
-            </ol>
+              <li class="breadcrumb-item"><a href="http://0.0.0.0:8000/about/">{% trans 'Periódicos' %}</a></li>
+              <li class="breadcrumb-item"><a href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}">{{journal.title}}</a></li>
+              <li class="breadcrumb-item">{% trans 'Sobre o periódico' %}</li>
+          </ol>
             
           </div>
           <div class="col-3 pt-3">
@@ -727,223 +666,227 @@
                             <h5 id="item-1-1">Ficha Bibliográfica</h5>
                             <ul class="mb-4">
                               <li>
-                                <strong>Título do periódico conforme registro do ISSN:</strong>
-                                <i>Memórias do instituto Oswaldo Cruz</i>
+                                <strong>{% trans 'Título do periódico conforme registro do ISSN:' %}</strong>
+                                <i>{{ journal.official.title }}</i>
                               </li>
                               <li>
-                                <strong>Título abreviado:</strong>
-                                <i>Mem. Inst. Oswaldo Cruz</i>
+                                  <strong>{% trans 'Título abreviado:' %}</strong>
+                                  <i>{{ journal.short_title }}</i>
                               </li>
                               <li>
-                                <strong>Publicação de:</strong>
-                                <i>Fundação Oswaldo Cruz - FIOCRUZ</i>
+                                  <strong>{% trans 'Publicação de:' %}</strong>
+                                  {% for publisher in journal.publisher_history.all %}<i>{{ publisher.institution.name }}</i>{% endfor %}
                               </li>
                               <li>
-                                <strong>Periodicidade:</strong>
-                                <i>Anual</i>
+                                  <strong>{% trans 'Periodicidade:' %}</strong>
+                                  <i>{{ journal.get_frequency_display }}</i>
                               </li>
                               <li>
-                                <strong>Modalidade de publicação:</strong>
-                                <i>Contínua</i>
+                                  <strong>{% trans 'Modalidade de publicação:' %}</strong>
+                                  <i>{{ journal.get_publishing_model_display }}</i>
                               </li>
                               <li>
-                                <strong>Ano de criação do periódico:</strong>
-                                <i></i>
+                                  <strong>{% trans 'Ano de criação do periódico:' %}</strong>
+                                  {% if journal.official.foundation_year %}
+                                      <i>{{ journal.official.foundation_year }}</i>
+                                  {% endif %}
                               </li>
                               <li>
-                                <strong>Área:</strong>
-                                <i>Ciências biológicas, Ciências Da Saúde</i>
+                                <strong>{% trans 'Área:' %}</strong>
+                                {% for study_area in journal.subject.all %}
+                                    <i>{{ study_area }}</i>
+                                {% endfor %}
                               </li>
                               <li>
-                                <strong>Versão impressa:</strong>
-                                <i>ISSN: 0074-0276</i>
+                                <strong>{% trans 'Versão impressa:' %}</strong>
+                                {% if journal.official.issn_print %}
+                                    <i>{{ journal.official.issn_print }}</i>
+                                {% endif %}
                               </li>
                               <li>
-                                <strong>Versão on-line ISSN:</strong>
-                                <i>1678-8060</i>
+                                <strong>{% trans 'Versão on-line ISSN:' %}</strong>
+                                {% if journal.official.issn_electronic %}
+                                    <i>{{ journal.official.issn_electronic }}</i>
+                                {% endif %}
                               </li>
                             </ul>
-                            <h5 id="item-1-2">Missão</h5>
+                            <h5 id="item-1-2">{% trans 'Missão' %}</h5>
                             <!-- importada automaticamente de articlemeta -->
-                            <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
-                            <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
-                            <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
-                            <h5 id="item-1-3">Breve Histórico</h5>
+                            {% for m in mission %}
+                                {{ m.rich_text|richtext }}
+                            {% endfor %}
+                            <h5 id="item-1-3">{% trans 'Breve Histórico' %}</h5>
                             <!-- insira aqui um breve histórico com acontecimentos e marcos da trajetória do periódico. -->
-                            <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
-                            <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
-                            <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
-                            <h5 id="item-1-4">Foco e escopo</h5>
+                            {% for bf in brief_history %}
+                                {{ bf.rich_text|richtext }}
+                            {% endfor %}
+                            <h5 id="item-1-4">{% trans 'Foco e escopo' %}</h5>
                             <!-- insira aqui o foco e o escopo do periódico -->
-                            <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
-                            <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
-                            <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
-                            <h5 id="item-1-5">Contato</h5>
+                            {% for hs in focus_and_scope %}
+                                {{ hs.rich_text|richtext }}
+                            {% endfor %}
+                            <h5 id="item-1-5">{% trans 'Contato' %}</h5>
                             <!-- endereço completo da unidade / instituição responsável pelo periódico. Importante ter os campos: logradouro, número, cidade, estado, país, código postal, e-mail, telefone -->
                             <ul type="disc">
                               <li>
-                                <strong>Endereço completo da unidade / instituição responsável pelo periódico:</strong>
-                                <i>Inserir endereço aqui</i>
+                                  <strong>{% trans 'Endereço completo da unidade / instituição responsável pelo periódico:' %}</strong>
+                                  <i>{{ journal.contact_address }}</i>
                               </li>
                               <li>
-                                <strong>Logradouro:</strong>
-                                <i>Inserir logradouro aqui</i>
+                                  <strong>{% trans 'Logradouro:' %}</strong>
+                                  <i>{% trans 'Inserir logradouro aqui' %}</i>
                               </li>
                               <li>
-                                <strong>Número:</strong>
-                                <i>Inserir número aqui</i>
+                                  <strong>{% trans 'Número:' %}</strong>
+                                  <i>{% trans 'Inserir número aqui' %}</i>
                               </li>
                               <li>
-                                <strong>Cidade:</strong>
-                                <i>Inserir cidade aqui</i>
+                                  <strong>{% trans 'Cidade:' %}</strong>
+                                  <i>{% trans 'Inserir cidade aqui' %}</i>
                               </li>
                               <li>
-                                <strong>Estado:</strong>
-                                <i>Inserir estado aqui</i>
+                                  <strong>{% trans 'Estado:' %}</strong>
+                                  <i>{% trans 'Inserir estado aqui' %}</i>
                               </li>
                               <li>
-                                <strong>País:</strong>
-                                <i>Inserir país aqui</i>
+                                  <strong>{% trans 'País:' %}</strong>
+                                  <i>{% trans 'Inserir país aqui' %}</i>
                               </li>
                               <li>
-                                <strong>Código postal:</strong>
-                                <i>Inserir codigo postal aqui</i>
+                                  <strong>{% trans 'Código postal:' %}</strong>
+                                  <i>{% trans 'Inserir codigo postal aqui' %}</i>
                               </li>
                               <li>
-                                <strong>E-mail:</strong>
-                                <i>Inserir e-mail aqui</i>
+                                <strong>{% trans 'E-mail:' %}</strong>
+                                <i>{{ journal.journal_email }}</i>
                               </li>
                               <li>
-                                <strong>Telefone:</strong>
-                                <i>Inserir telefone aqui</i>
+                                <strong>{% trans 'Telefone:' %}</strong>
+                                <i>{% trans 'Inserir telefone aqui' %}</i>
                               </li>
-                            </ul>
-                            <h5 id="item-1-6">Websites e Mídias Sociais</h5>
-                            <ul type="disc">
-                              <li>
-                                <a href="http://www.scielo.br/mioc">www.scielo.br/mioc</a>
-                              </li>
-                              <li>
-                                <a href="http://www.mioc.br/">www.mioc.br</a>
-                              </li>
-                              <li>
-                                <a href="http://0.0.0.0:8000/journal/abcd/about/#">Facebook</a>
-                              </li>
-                              <li>
-                                <a href="http://0.0.0.0:8000/journal/abcd/about/#">X</a>
-                              </li>
-                              <li>
-                                <a href="http://0.0.0.0:8000/journal/abcd/about/#">Blog</a>
-                              </li>
-                              <li>
-                                <a href="http://0.0.0.0:8000/journal/abcd/about/#">Outros</a>
-                              </li>
-                            </ul>
-                            <h5 id="item-1-7">Fontes de indexação</h5>
-                            <ul type="disc">
-                              <li> DOAJ </li>
-                              <li> Scopus </li>
-                              <li> Wos </li>
-                            </ul>
-                            <h5 id="item-1-8">Patrocinadores e agências de Fomento</h5>
-                            <ul type="disc">
-                              <li> item 1 </li>
-                              <li> item 2... </li>
-                            </ul>
+                              </ul>
+                              <h5 id="item-1-6">{% trans 'Websites e Mídias Sociais' %}</h5>
+                              <ul type="disc">
+                                  {% for sn in social_network %}
+                                      <li>
+                                          <a href="{{ sn.url }}">{{ sn.name }}</a>
+                                      </li>  
+                                  {% endfor %}
+                              </ul>
+                              <h5 id="item-1-7">{% trans 'Fontes de indexação' %}</h5>
+                              <ul type="disc">
+                                  {% for indexed_at in journal.indexed_at.all %}
+                                      <li>{{ indexed_at.name }}</li>
+                                  {% endfor %}
+                              </ul>
+                              <h5 id="item-1-8">{% trans 'Patrocinadores e agências de Fomento' %}</h5>
+                              <ul type="disc">
+                                {% for sponsor in sponsor_history %}
+                                  <li>{{sponsor.institution.name}}</li>
+                                {% endfor%}
+                              </ul>
+                            <!-- InlinePanel Preservacao Digital -->
+                            <!-- Panel Policy -->
                             <h5 id="item-1-9">Preservação digital</h5>
                             <ul type="disc">
-                              <li> item 1 </li>
-                              <li> item 2... </li>
+                              {% for dp in digital_preservation %}
+                                <li>{{dp.rich_text|richtext}}</li>
+                              {% endfor%}
                             </ul>
                             <hr>
                             <h4 id="item-2">Política editorial</h4>
                             <!-- journal policy -->
                             <h5 id="item-2-1">Conformidade com a Ciência Aberta</h5>
                             <ul type="disc">
-                              <li> Este periódico adota o formulário SciELO conformidade com a Ciência Aberta disponível neste link: <a href="https://wp.scielo.org/wp-content/uploads/Formulario-de-Conformidade-Ciencia-Aberta.docx">https://wp.scielo.org/wp-content/uploads/Formulario-de-Conformidade-Ciencia-Aberta.docx</a>
-                              </li>
-                              <li> item 2... </li>
+                              {{journal.url_oa}}
                             </ul>
                             <h5 id="item-2-2">Dados abertos</h5>
-                            <p>Campo descritivo</p>
                             <ul type="disc">
-                              <li> help_text: Esta trata "do compartilhamento dos dados, códigos métodos e outros materiais utilizados e resultantes das pesquisas que geralmente ficam subjacentes nos textos dos artigos publicados pelos periódicos". Guia TOP: <a href="https://wp.scielo.org/wp-content/uploads/Guia_TOP_pt.pdf">https://wp.scielo.org/wp-content/uploads/Guia_TOP_pt.pdf</a>
-                              </li>
-                              <li> item 2... </li>
+                              {% for od in open_data %}
+                                {{od.rich_text|richtext}}
+                              {% endfor%}
+                              <li></li>
                             </ul>
                             <h5 id="item-2-3">Preprint</h5>
-                            <p>Campo descritivo</p>
                             <ul type="disc">
-                              <li> help text: (“Um preprint é definido como um manuscrito pronto para submissão a um periódico e que é depositado em servidores de preprints confiáveis antes ou em paralelo à submissão a um periódico. Essa prática se junta à da publicação contínua como mecanismos para acelerar a comunicação das pesquisas. Os preprints compartilham com os periódicos o ineditismo na publicação dos artigos e inibem o uso do procedimento duplo cego na avaliação dos manuscritos. O uso dos preprints é uma opção e escolha dos autores e cabe aos periódicos adaptarem suas políticas para aceitar a submissão de manuscritos previamente depositados em um servidor de preprint reconhecido pelo periódico”). </li>
-                              <li> item 2... </li>
+                              {% for p in preprint %}
+                                <li>{{p.rich_text|richtext}}</li>
+                              {% endfor%}
                             </ul>
                             <h5 id="item-2-4">Peer review informado</h5>
                             <!-- processo de avaliação por pares aberto -->
-                            <p>Campo descritivo</p>
                             <ul type="disc">
-                              <li> help text : Descrição resumida do fluxo de avaliação. Ex: Opções de abertura (“O SciELO considera três opções de avanço da abertura. A primeira é a publicação no artigo final do nome ou nomes dos editores responsáveis pela avaliação. A segunda é oferecer aos pareceristas a opção de dialogar diretamente com o autor correspondente com abertura ou não das identidades. A terceira é oferecer a opção de publicar os pareceres de aprovação de artigos com ou sem a identificação dos pareceristas. Os pareceres constituem um novo tipo de literatura na metodologia SciELO e recebem tratamento similar aos artigos de pesquisa”). </li>
-                              <li> item 2... </li>
+                              {% for r in review %}
+                                <li>{{r.rich_text|richtext}}</li>
+                              {% endfor%}
                             </ul>
+                            <!-- Criar InlinePanel Ethics -->
+                            <!-- Organizar panels -->
                             <h5 id="item-2-5">Ética</h5>
-                            <p>Campo descritivo</p>
                             <ul type="disc">
-                              <li> help text: Informar sobre boas práticas e questões éticas adotadas pelo periódico; qual comitê aprova as pesquisas; se adota, apoia ou segue o COPE. Exemplo utilizado pela Animal Reproduction: “Autores, editores e revisores devem seguir o mais alto nível de ética em toda a pesquisa, aquisição e processamento de dados, até a redação, avaliação e publicação do manuscrito. Durante as etapas de avaliação autores, revisores e editores devem comunicar o Editor-chefe sempre que observarem a existência de um potencial conflito de interesses que possa influenciar na elaboração ou avaliação de manuscritos. A Animal Reproduction considera potenciais conflitos de interesses eventos de natureza pessoal, comercial, política ou acadêmica, envolvendo ou não compensações financeiras. Os Editores da Animal Reproduction tomarão medidas ativas se qualquer suspeita ética ou de má conduta for identificada durante a avaliação ou após a publicação dos manuscritos. Sempre que necessário, as questões serão investigadas de acordo com os fluxogramas disponíveis do Comitê de Ética da Publicação (COPE) em https://publicationethics.org/.” (Recomendação Animal Reproduction) </li>
-                              <li> item 2... </li>
+                              {% for e in ethics %}
+                                {{e.rich_text|richtext}}
+                              {% endfor%}
                             </ul>
                             <h5 id="item-2-5-1">Comitê de Ética</h5>
-                            <p>Os autores devem anexar uma declaração de aprovação do comitê de ética da instituição responsável por aprovar a pesquisa</p>
+                            {% for ec in ecommitte %}
+                              <p>{{ec.rich_text|richtext}}</p>
+                            {% endfor%}
                             <h5 id="item-2-5-2">Direitos Autorais</h5>
-                            <p>Descrever a política que o periódico utiliza para a questão dos direitos autorais. Recomendamos que esta seção esteja de acordo com as recomendações dos critérios SciELO, item 5.2.10.1.2. Direitos do autor – copyright</p>
+                            {% for c in copyright %}
+                              {{c.rich_text|richtext}}
+                            {% endfor%}
                             <h5 id="item-2-5-3">Propriedade Intelectual</h5>
-                            <p>Descritivo</p>
                             <ul type="disc">
-                              <li>
-                                <strong>Responsabilidade do site:</strong> EX. DOAJ: Os termos de direitos autorais aplicados ao conteúdo publicado devem ser claramente declarados e separados dos termos de direitos autorais aplicados ao site.
-                              </li>
-                              <li>
-                                <strong>Responsabilidade do autor:</strong> A declaração de responsabilidade do autor sobre o conteúdo publicado no periódico quem detém os direitos autorais Ex. DOAJ: Os termos de direitos autorais não devem contradizer os termos de licenciamento ou os termos da política de acesso aberto.“Todos os direitos reservados” nunca é apropriado para conteúdo de acesso aberto.
-                              </li>
+                              {% for wr in website_responsibility %}
+                                <li>
+                                  <strong>Responsabilidade do site:</strong> {{website_responsibility.rich_text|richtext}}
+                                </li>
+                              {% endfor%}
+                              {% for wr in author_responsibility %}
+                                <li>
+                                  <strong>Responsabilidade do autor:</strong> {{author_responsibility.rich_text|richtext}}
+                                </li>
+                              {% endfor%}
                             </ul>
                             <h5 id="item-2-5-4">Política de Ética e Más condutas</h5>
                             <p>
                               <strong>Política de retratação:</strong>
                             </p>
                             <ul type="disc">
-                              <li> Descreva aqui como o periódico vai lidar com questões éticas e/ou que possam prejudicar a reputação do periódico. Qual a posição do periódico referente a política de retratação que o periódico adotará nos casos de má conduta. Guia de boas Práticas: <a href="https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-Praticas-para-o-Fortalecimento-da-Etica-na-Publicacao-Cientifica.pdf">https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-Praticas-para-o-Fortalecimento-da-Etica-na-Publicacao-Cientifica.pdf</a>
-                              </li>
+                              {% for p in polices %}
+                                {{p.rich_text|richtext}}
+                              {% endfor%}
+                              <li></li>
                             </ul>
                             <h5 id="item-2-5-5">Política sobre Conflito de Interesses</h5>
-                            <p>Texto descritivo</p>
                             <ul type="disc">
-                              <li> item 1 </li>
-                              <li> item 2... </li>
+                              {% for cp in conflict_policy %}
+                                <li>{{cp.rich_text|richtext}}</li>
+                              {% endfor%}
+                              <li></li>
                             </ul>
                             <h5 id="item-2-5-6">Questões de gênero</h5>
-                            <p>Texto descritivo</p>
                             <ul type="disc">
-                              <li> item 1 </li>
-                              <li> item 2... </li>
+                              {% for gi in gender_issues %}
+                                <li>{{gi.rich_text|richtext}}</li>
+                              {% endfor%}
                             </ul>
                             <h5 id="item-2-6">Licença</h5>
                             <!-- informe a licença adotada pelo periódico
                                                     https://br.creativecommons.org/licencas/  -->
-                            <p> Texto descritivo. Exemplo utilizado pela Animal Reproduction: “Todo o conteúdo da revista e os artigos publicados pela revista Animal Reproduction, exceto onde especificado de outra forma, estão licenciados sob a licença Creative Commons Attribution. Autores de artigos publicados pela Animal Reproduction mantêm os direitos autorais de seus trabalhos, licenciando-os sob a licença Creative Commons Attribution, que permite que os artigos sejam reutilizados e distribuídos sem restrição, desde que o trabalho original seja corretamente citado. A Animal Reproduction encoraja os Autores a autoarquivar seus manuscritos aceitos, publicando-os em blogs pessoais, repositórios institucionais e mídias sociais acadêmicas, bem como postando-os em suas mídias sociais pessoais, desde que seja incluída a citação completa à versão do website da revista.” (Recomendação Animal Reproduction) </p>
                             <ul type="disc">
-                              <li> lececção: <br> cc-by <br> cc-by-nc <br> cc-by-cn-nd <br>
+                              <li> licença: <br> {{journal.use_license.license_type}}
                               </li>
                             </ul>
+                            <!-- Colocar em uma tabela ou tudo em uma linha -->
                             <h5 id="item-2-7">Cobrança de taxas</h5>
-                            <!-- Descreva aqui quaisquer cobranças aos autores relacionadas à submissão ou publicação dos trabalhos.
-                                                    APC
-                                                    Para publicação de artigos 
-                                                    Deixar explícito quando não há cobrança de taxas
-                                                    Que casos há cobrança?
-                                                    Há desconto?
-                                                    Declaração SciELO sobre Sustentabilidade Financeira: https://mailchi.mp/scielo/declaracao-sobre-sustentabilidade   -->
-                            <p> Texto descritivo. </p>
+                            
                             <ul type="disc">
-                              <li> item 1 </li>
-                              <li> item 2... </li>
+                              {% for fq in fee_charging %}
+                                {{fq.rich_text|richtext}}
+                                <li>Moeda: {{fq.coin}}. Valor: {{fq.fee_charge}}</li>
+                              {% endfor %}
                             </ul>
                             <hr>
                             <h4 id="item-3">CORPO EDITORIAL</h4>
@@ -951,6 +894,7 @@
                                                     Considerar os papéis descritos abaixo:-->
                             <h5 id="item-3-1">Editor-Chefe</h5>
                             <!-- Pode haver mais de um. Permitir adicionar novo -->
+                            <!-- Tirar duvida sobre como obter a faculdade -->
                             <ul type="disc">
                               <li> Abel L Packer, Universidade de São Paulo (USP), São Paulo, SP, Brasil Orcid <a href="https://orcid.org/0000-0001-9610-5728">0000-0001-9610-5728</a> | <a href="http://lattes.cnpq.br/6603329734556632">CV Lattes</a> | <a href="mailto:abel@scielo.org">abel@scielo.org</a>
                               </li>
@@ -962,6 +906,7 @@
                             </ul>
                             <h5 id="item-3-3">Editor(es) Associados ou de Seção / Área</h5>
                             <!-- Pode haver mais de um. Permitir adicionar novo -->
+                            <!-- Tirar duvida como obter por area -->
                             <p>
                               <strong>Área 1</strong>
                             </p>
@@ -1001,66 +946,45 @@
                             <h5 id="item-4-1">Tipos de documentos aceitos</h5>
                             <!-- Pode haver mais de um. Permitir adicionar novo -->
                             <ul type="disc">
-                              <li> Artigo Original </li>
-                              <li> Artigo Original </li>
-                              <li> Artigo Original </li>
+                            {% for adt in accepted_documment_types %}
+                              {{adt.rich_text|richtext}}
+                            {% endfor%}
                             </ul>
                             <h5 id="item-4-2">Contribuição dos Autores</h5>
-                            <!-- Descrição de como as contribuições dos autores devem ser explicitadas.
-                                                    Utiliza alguma taxonomia? Qual?
-                                                    O texto do artigo apresenta as contribuições dos autores?
-                                                    De preferência utilizar a estrutura de taxonomia do CREDiT https://casrai.org/credit/
-                                                    -->
-                            <p> Texto descritivo </p>
+                            {% for ac in authors_contributions %}
+                              {{ac.rich_text|richtext}}
+                            {% endfor%}
+                            <!-- Tirar duvida. formato de como vai ficar -->
                             <h5 id="item-4-3">Formato de envio dos artigos</h5>
                             <!-- Descrição de como as contribuições dos autores devem ser explicitadas.
                                                     Utiliza alguma taxonomia? Qual?
                                                     O texto do artigo apresenta as contribuições dos autores?
                                                     De preferência utilizar a estrutura de taxonomia do CREDiT https://casrai.org/credit/
                                                     -->
-                            <p> Texto descritivo </p>
                             <h5 id="item-4-4">Ativos digitais</h5>
-                            <!-- Descrição de como as contribuições dos autores devem ser explicitadas.
-                                                    Utiliza alguma taxonomia? Qual?
-                                                    O texto do artigo apresenta as contribuições dos autores?
-                                                    De preferência utilizar a estrutura de taxonomia do CREDiT https://casrai.org/credit/
-                                                    -->
-                            <p> Texto descritivo </p>
+                            {% for da in digital_assets %}
+                              {{da.rich_text|richtext}}
+                            {% endfor%}
                             <h5 id="item-4-5">Citações e referências</h5>
-                            <!-- Descrição de como as contribuições dos autores devem ser explicitadas.
-                                                    Utiliza alguma taxonomia? Qual?
-                                                    O texto do artigo apresenta as contribuições dos autores?
-                                                    De preferência utilizar a estrutura de taxonomia do CREDiT https://casrai.org/credit/
-                                                    -->
-                            <p> Texto descritivo </p>
+                            {% for cr in citations_and_references %}
+                              {{cr.rich_text|richtext}}
+                            {% endfor%}
                             <h5 id="item-4-6">Documentos Suplementares Necessários para Submissão</h5>
-                            <!-- Descrição de como as contribuições dos autores devem ser explicitadas.
-                                                    Utiliza alguma taxonomia? Qual?
-                                                    O texto do artigo apresenta as contribuições dos autores?
-                                                    De preferência utilizar a estrutura de taxonomia do CREDiT https://casrai.org/credit/
-                                                    -->
-                            <p> Texto descritivo </p>
+                            {% for sds in supp_docs_submission %}
+                              {{sds.rich_text|richtext}}
+                            {% endfor%}
                             <h5 id="item-4-7">Declaração de Financiamento</h5>
-                            <!-- Descrição de como as contribuições dos autores devem ser explicitadas.
-                                                    Utiliza alguma taxonomia? Qual?
-                                                    O texto do artigo apresenta as contribuições dos autores?
-                                                    De preferência utilizar a estrutura de taxonomia do CREDiT https://casrai.org/credit/
-                                                    -->
-                            <p> Texto descritivo </p>
+                            {% for fs in financing_statement %}
+                              {{fs.rich_text|richtext}}
+                            {% endfor%}
                             <h5 id="item-4-8">Agradecimentos</h5>
-                            <!-- Descrição de como as contribuições dos autores devem ser explicitadas.
-                                                    Utiliza alguma taxonomia? Qual?
-                                                    O texto do artigo apresenta as contribuições dos autores?
-                                                    De preferência utilizar a estrutura de taxonomia do CREDiT https://casrai.org/credit/
-                                                    -->
-                            <p> Texto descritivo </p>
+                            {% for ak in acknowledgements %}
+                              {{ak.rich_text|richtext}}
+                            {% endfor%}
                             <h5 id="item-4-9">Informações adicionais</h5>
-                            <!-- Descrição de como as contribuições dos autores devem ser explicitadas.
-                                                    Utiliza alguma taxonomia? Qual?
-                                                    O texto do artigo apresenta as contribuições dos autores?
-                                                    De preferência utilizar a estrutura de taxonomia do CREDiT https://casrai.org/credit/
-                                                    -->
-                            <p> Texto descritivo </p>
+                            {% for ai in additional_information %}
+                              {{ai.rich_text|richtext}}
+                            {% endfor%}
                             <p>
                               <small> *dados precisam estar disponíveis em alfabeto romano </small>
                             </p>
@@ -1634,7 +1558,7 @@
               width: 100%;
             ">
            
-            ABCD. Arquivos Brasileiros de Cirurgia Digestiva (São Paulo)
+            {{journal.title}}
            
           </a>
         
@@ -1755,7 +1679,7 @@
     </script>
 
     
-      <script src="{% static 'journal_about/js/cookiePolicy.min.js' }"></script>
+      <script src="{% static 'journal_about/js/cookiePolicy.min.js' %}"></script>
     
 
     <script src="{% static 'journal_about/js/api.js' %}"></script>
