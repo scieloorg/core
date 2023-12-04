@@ -611,11 +611,11 @@
         <div class="row">
           <div class="col">
             
-            <ol class="breadcrumb mb-0 ps-0">
-              <li class="breadcrumb-item"><a href="http://0.0.0.0:8000/" alt="Home"><span class="material-icons-outlined">home</span></a></li>
-              <li class="breadcrumb-item"><a href="http://0.0.0.0:8000/about/">{% trans 'Periódicos' %}</a></li>
-              <li class="breadcrumb-item"><a href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}">{{journal.title}}</a></li>
-              <li class="breadcrumb-item">{% trans 'Sobre o periódico' %}</li>
+          <ol class="breadcrumb mb-0 ps-0">
+            <li class="breadcrumb-item"><a href="http://0.0.0.0:8000/" alt="Home"><span class="material-icons-outlined">home</span></a></li>
+            <li class="breadcrumb-item"><a href="http://0.0.0.0:8000/about/">{% trans 'Periódicos' %}</a></li>
+            <li class="breadcrumb-item"><a href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}">{{journal.title}}</a></li>
+            <li class="breadcrumb-item">{% trans 'Sobre o periódico' %}</li>
           </ol>
             
           </div>
@@ -733,14 +733,6 @@
                                   <i>{{ journal.contact_address }}</i>
                               </li>
                               <li>
-                                  <strong>{% trans 'Logradouro:' %}</strong>
-                                  <i>{% trans 'Inserir logradouro aqui' %}</i>
-                              </li>
-                              <li>
-                                  <strong>{% trans 'Número:' %}</strong>
-                                  <i>{% trans 'Inserir número aqui' %}</i>
-                              </li>
-                              <li>
                                   <strong>{% trans 'Cidade:' %}</strong>
                                   <i>{% trans 'Inserir cidade aqui' %}</i>
                               </li>
@@ -753,16 +745,8 @@
                                   <i>{% trans 'Inserir país aqui' %}</i>
                               </li>
                               <li>
-                                  <strong>{% trans 'Código postal:' %}</strong>
-                                  <i>{% trans 'Inserir codigo postal aqui' %}</i>
-                              </li>
-                              <li>
                                 <strong>{% trans 'E-mail:' %}</strong>
                                 <i>{{ journal.journal_email }}</i>
-                              </li>
-                              <li>
-                                <strong>{% trans 'Telefone:' %}</strong>
-                                <i>{% trans 'Inserir telefone aqui' %}</i>
                               </li>
                               </ul>
                               <h5 id="item-1-6">{% trans 'Websites e Mídias Sociais' %}</h5>
@@ -1757,12 +1741,6 @@
           </div>
         </div>
       </div>
-
-    
-    
-
-
-   
 
   <div id="flDebug" style="">
   <script type="text/javascript">var DEBUG_TOOLBAR_STATIC_PATH = '/_debug_toolbar/static/'</script>

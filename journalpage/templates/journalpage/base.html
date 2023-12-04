@@ -1,0 +1,182 @@
+{% load static compress %}
+{% load wagtailcore_tags %}
+{% load i18n %}
+{% load wagtailroutablepage_tags %}
+
+<!DOCTYPE html>
+
+<html class="no-js" lang="pt-BR"><script type="text/javascript" async="" src="{% static 'journal_about/js/recaptcha__pt_br.js' %}" crossorigin="anonymous" integrity="sha384-cqfXrHNQ3U196DGElVR4dnG0gDAZuNOTcGt1e0HTcUrY1SD+ti2SI419rW0x2tjR"></script><script type="text/javascript" src="chrome-extension://mdnleldcmiljblolnjhpnblkcekpdkpa/libs/customElements.js" class="__REQUESTLY__SCRIPT"></script><!--<![endif]--><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta http-equiv="origin-trial" content="Az520Inasey3TAyqLyojQa8MnmCALSEU29yQFW8dePZ7xQTvSt73pHazLFTK5f7SyLUJSo2uKLesEtEa9aUYcgMAAACPeyJvcmlnaW4iOiJodHRwczovL2dvb2dsZS5jb206NDQzIiwiZmVhdHVyZSI6IkRpc2FibGVUaGlyZFBhcnR5U3RvcmFnZVBhcnRpdGlvbmluZyIsImV4cGlyeSI6MTcyNTQwNzk5OSwiaXNTdWJkb21haW4iOnRydWUsImlzVGhpcmRQYXJ0eSI6dHJ1ZX0=">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0">
+    <title>SciELO - Brasil</title>
+
+    {% block extra_meta %}{% endblock %}
+
+    <link rel="icon" href="{% static 'journal_about/img/favicon.ico' %}">
+    <!--
+    <link rel="stylesheet" href="/static/css/scielo-bundle.css?v=">
+    <link rel="stylesheet" href="/static/css/scielo-bundle-print.css?v=" media="print">
+    -->
+    <link rel="stylesheet" href="{% static 'journal_about/css/bootstrap.css' %}">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="#"></script>
+    <![endif]-->
+
+
+  {% block extra_css %}{% endblock %}
+  <link rel="stylesheet" href="{% static 'journal_about/css/toolbar.css' %}" type="text/css"><meta id="bbafmabaelnnkondpfpjmdklbmfnbmol"></head>
+  </head>
+  <body class="journal about" data-bs-spy="scroll" data-bs-target=".navbar" data-bs-offset="0">
+    <a name="top"></a>
+
+    {% block content %}{% endblock %}
+
+    <!-- share modal -->
+    <div class="modal fade" id="share_modal_id" tabindex="-1" role="dialog" aria-hidden="true"></div>
+
+    <div class="modal fade in" id="share_modal_confirm_id" tabindex="-1" role="dialog" aria-hidden="false">
+      <div class="modal-dialog modal-sm">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                  <h4 class="modal-title">Mensagem</h4>
+              </div>
+              <div class="modal-body">
+                  <div class="midGlyph">
+
+                      <br><br>
+                  </div>
+              </div>
+          </div>
+      </div>
+    </div>
+    <!-- share modal -->
+
+    <!-- error modal -->
+    <div class="modal fade" id="error_modal_id" tabindex="-1" role="dialog" aria-hidden="true"></div>
+
+    <div class="modal fade in" id="error_modal_confirm_id" tabindex="-1" role="dialog" aria-hidden="false">
+      <div class="modal-dialog modal-sm">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+                  <h4 class="modal-title">Mensagem</h4>
+              </div>
+              <div class="modal-body">
+                  <div class="midGlyph">
+                  </div>
+              </div>
+          </div>
+      </div>
+    </div>
+
+    <!-- Error modal -->
+    <a class="floatingBtnError btn btn-danger" href="http://0.0.0.0:8000/journal/abcd/about/#" id="#floatingBtnError">Reportar erro</a>
+
+    <!-- Scielo Bundle min -->
+    <script src="{% static 'journal_about/js/scielo-bundle-min.js' %}"></script>
+
+    <script>
+
+      $(document).ready(function() {
+
+        // Add rows article search
+        let addRowBtn = $('.addRowBtn');
+        let placeRow = $('.scielo__dinamic-row');
+        let newFormRow = '<div class="row"><div class="col-12"><hr></div><div class="col-2 col-lg-1 text-end"><button type="button" class="btn btn-danger scielo__btn-with-icon--only"><i class="material-icons-outlined">clear</i></button></div><div class="col-10 col-lg-11"><div class="input-group"><div class="input-group-preppend"><select class="form-select" name="bool[]"><option selected>AND</option><option>OR</option><option>AND NOT</option></select></div><textarea name="q[]" class="form-control" aria-label="With textarea" placeholder="Entre uma ou mais palavras"></textarea><div class="input-group-append"><select class="form-select"><option selected value="todos">Todos os índices</option><option value="ano">Ano</option><option value="autor">Autor</option><option value="financiador">Financiador</option><option value="periodico">Periódico</option><option value="resumo">Resumo</option><option value="titulo">Título</option></select></div></div></div></div>';
+
+        let btnRemoveRow = $('.btn-danger');
+
+        addRowBtn.on( "click", function() {
+            placeRow.append( newFormRow );
+        })
+
+        // Remove as linhas inseridas dinamicamente e as que já estavam lá.
+        placeRow.on( "click", ".btn-danger", function() {
+            $(this).parent().parent().animate({'opacity':0},300).hide(1);
+        })
+
+      });
+
+    </script>
+
+    {% block extra_js %}{% endblock %}
+
+    <script>
+
+      // Garante que o valor do campo share_url é a URL corrente.
+      $('#share_url').val(window.location.href);
+
+      moment.locale('{{ session.lang }}');
+
+      $("#date").text(moment().format("L HH:mm:ss ZZ"));
+
+    </script>
+
+      <style type="text/css">
+
+        .bugherd {
+          position: fixed;
+          bottom: 0;
+          width: 15%;
+          height: 40px;
+          right: 0;
+          z-index:999999;
+        }
+        .bugherd-container {
+          width: auto;
+          max-width: 680px;
+          padding: 0 15px;
+        }
+        .bugherd-btn-danger {
+          color: #fff;
+          background-color: #d9534f;
+          border-color: #d43f3a;
+        }
+        .bugherd-btn-danger:focus,
+        .bugherd-btn-danger.focus {
+          color: #fff;
+          background-color: #c9302c;
+          border-color: #761c19;
+        }
+        .bugherd-btn-danger:hover {
+          color: #fff;
+          background-color: #c9302c;
+          border-color: #ac2925;
+        }
+
+        .floatingBtnError {
+          position: fixed;
+          padding: 12px;
+          writing-mode: vertical-rl;
+          right: 8px;
+          top: 45%;
+          transform: rotate(-180deg);
+          line-height: 1rem;
+          height: 160px;
+          transition: none !important;
+          display:none;
+
+          @media (min-width: 1024px){ 
+            display: block;
+          }
+        }
+
+      </style>
+
+      <div class="bugherd" style="display:none;">
+        <div class="bugherd=container">
+          <div class="btn-group" role="group" aria-label="...">
+            <a href="//github.com/scieloorg/opac/issues/new" target="_blank" class="btn btn-danger">Reportar erro</a>
+          </div>
+        </div>
+      </div>
+  
+  </body>
+</html>

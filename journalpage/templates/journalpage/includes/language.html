@@ -1,0 +1,26 @@
+{% load wagtailcore_tags %}
+{% load i18n %}
+{% load wagtailroutablepage_tags %}
+
+<!-- DropDown traducoes  -->
+
+<div class="scielo__language">
+    <div class="dropdown">
+        {% if page %}
+          <button id="btnGroupDrop1" type="button" class="btn btn-sm btn-secondary scielo__btn-with-icon--left dropdown-toggle mb-0 float-end mt-1" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="material-icons-outlined">language</span>
+              <span class="d-lg-none">PT</span>
+              <span class="d-none d-lg-block">{{language}}</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btnGroupDrop1">
+            {% for translation in page.get_translations.live %}  
+              {% get_language_info for translation.locale.language_code as lang %}
+                <li>
+                  <a class="dropdown-item" href="{% routablepageurl translation 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}" lang="{{ lang.code }}">{{ lang.name_local }}</a>
+                </li>  
+            {% endfor%}
+            <!-- <li><a class="dropdown-item" href="http://0.0.0.0:8000/{{code}}/journal/{{journal.scielojournal_set.all.0.journal_acron}}" lang="es">{{lang}}</a></li> -->
+          </ul>
+        {% endif%}
+    </div>
+</div>
