@@ -92,4 +92,4 @@ class JournalPage(RoutablePageMixin, Page):
             "translations": context["available_translations"],
             "page": page,
         }
-        return render(request, "journalpage/SciELO - Brasil.html", context)
+        return render(request, "journalpage/about.html", context)
