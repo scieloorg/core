@@ -222,11 +222,11 @@ def update_panel_institution(
                     url=None,
                 )
                 journal.contact_name = p
-                publisher, created = Publisher.objects.get_or_create(
+                created_publisher, created = Publisher.objects.get_or_create(
                     institution=institution
                 )
                 publisher_history = PublisherHistory.get_or_create(
-                    institution=publisher,
+                    institution=created_publisher,
                     user=user,
                 )
                 publisher_history.journal = journal
@@ -466,11 +466,11 @@ def get_or_create_sponsor(sponsor, journal, user):
                         is_official=None,
                         url=None,
                     )
-                    sponsor, created = Sponsor.objects.get_or_create(
+                    created_sponsor, created = Sponsor.objects.get_or_create(
                         institution=institution,
                     )
                     sponsor_history = SponsorHistory.get_or_create(
-                        institution=sponsor,
+                        institution=created_sponsor,
                         user=user,
                     )
                     sponsor_history.journal = journal
