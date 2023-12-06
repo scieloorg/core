@@ -77,34 +77,28 @@ class SponsorAdmin(ModelAdmin):
         False  # or True to exclude pages of this type from Wagtail's explorer view
     )
     list_display = (
-        "name",
-        "acronym",
-        "level_1",
-        "level_2",
-        "level_3",
-        "location",
-        "official",
-        "is_official",
+        "institution",
     )
     search_fields = (
-        "name",
-        "acronym",
-        "level_1",
-        "level_2",
-        "level_3",
-        "location",
-        "official",
-        "is_official",
+        "institution__name",
+        "institution__acronym",
+        "institution__level_1",
+        "institution__level_2",
+        "institution__level_3",
+        # # "location",
+        # "institution__official",
+        "institution__is_official",
     )
     list_export = (
-        "name",
-        "acronym",
-        "level_1",
-        "level_2",
-        "level_3",
+        "institution",
+        "institution__name",
+        "institution__acronym",
+        "institution__level_1",
+        "institution__level_2",
+        "institution__level_3",
         "location",
         "official",
-        "is_official",
+        "institution__is_official",
     )
     export_filename = "sponsor"
 

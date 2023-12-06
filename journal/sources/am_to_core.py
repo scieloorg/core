@@ -5,7 +5,7 @@ from datetime import datetime
 from django.db.models import Q
 
 from core.models import Language, License
-from institution.models import CopyrightHolder, Owner, Publisher, Sponsor
+from institution.models import CopyrightHolder, Owner, Publisher, Sponsor, Institution
 from journal.models import (
     Annotation,
     Collection,
@@ -38,7 +38,7 @@ from .am_data_extraction import (
     extract_value_mission,
     parse_date_string,
 )
-
+from core.utils.standardizer import standardize_acronym_and_name
 from tracker.models import UnexpectedEvent
 
 
@@ -202,23 +202,28 @@ def update_panel_institution(
     publisher = extract_value(publisher)
 
     if isinstance(publisher, str):
-        publisher = [publisher]
-
+        publisher = re.split(r'\s*[-\/,]\s*', publisher)
+        
     if publisher:
         for p in publisher:
             if p:
-                journal.contact_name = p
-                publisher = Publisher.create_or_update(
-                    inst_name=p,
+                result = standardize_acronym_and_name(original=p, q_locations=1)
+                for r in result:
+                    institution = Institution.create_or_update(
+                    inst_name=r.get("name"),
+                    inst_acronym=r.get("acronym"),
+                    level_1=r.get("level_1"),
+                    level_2=r.get("level_2"),
+                    level_3=r.get("level_3"),
                     user=user,
-                    location=location,
-                    url=None,
-                    inst_acronym=None,
-                    level_1=None,
-                    level_2=None,
-                    level_3=None,
+                    location=None,
                     official=None,
                     is_official=None,
+                    url=None,
+                )
+                journal.contact_name = p
+                publisher, created = Publisher.objects.get_or_create(
+                    institution=institution
                 )
                 publisher_history = PublisherHistory.get_or_create(
                     institution=publisher,
@@ -226,17 +231,8 @@ def update_panel_institution(
                 )
                 publisher_history.journal = journal
                 publisher_history.save()
-                owner = Owner.create_or_update(
-                    inst_name=p,
-                    user=user,
-                    location=location,
-                    url=None,
-                    inst_acronym=None,
-                    level_1=None,
-                    level_2=None,
-                    level_3=None,
-                    official=None,
-                    is_official=None,
+                owner, created = Owner.objects.get_or_create(
+                    institution=institution
                 )
                 owner_history = OwnerHistory.get_or_create(
                     institution=owner,
@@ -436,9 +432,18 @@ def get_or_create_mission(mission, journal, user):
 
 
 def get_or_create_sponsor(sponsor, journal, user):
-    if sponsor and isinstance(sponsor, list):
+    """
+    Ex sponsor:
+        Ex 1: ['CNPq', 'FAPEMIG', 'UFMG', 'CAPES', 'Escola de Música da UFMG']
+        Ex 2: MCT, FINEP, CNPq
+        Ex 3: Conselho Nacional de Desenvolvimento Científico e Tecnológico
+        Ex 4: MCT/CNPq/ FINEP
+    """
+    sponsor = extract_value(sponsor)
+    if isinstance(sponsor, str):
+        sponsor = re.split(r'\s*[-\/,]\s*', sponsor)
+    if sponsor:
         for s in sponsor:
-            name = extract_value([s])
             ## FIXME
             ## Sponso de diferentes formas (insta_name e insta_acronym)
             ## Ex:
@@ -446,25 +451,30 @@ def get_or_create_sponsor(sponsor, journal, user):
             ## Instituto Nacional de Estudos e Pesquisas Educacionais Anísio Teixeira
             ## Fundação Getulio Vargas/ Escola de Administração de Empresas de São Paulo
             ## CNPq - Conselho Nacional de Desenvolvimento Científico e Tecnológico (PIEB)
-            if name:
-                sponsor = Sponsor.create_or_update(
-                    inst_name=name,
-                    user=user,
-                    inst_acronym=None,
-                    level_1=None,
-                    level_2=None,
-                    level_3=None,
-                    location=None,
-                    official=None,
-                    is_official=None,
-                    url=None,
-                )
-                sponsor_history = SponsorHistory.get_or_create(
-                    institution=sponsor,
-                    user=user,
-                )
-                sponsor_history.journal = journal
-                sponsor_history.save()
+            if s:
+                result = standardize_acronym_and_name(original=s,)
+                for r in result:
+                    institution = Institution.create_or_update(
+                        inst_name=r.get("name"),
+                        inst_acronym=r.get("acronym"),
+                        level_1=r.get("level_1"),
+                        level_2=r.get("level_2"),
+                        level_3=r.get("level_3"),
+                        user=user,
+                        location=None,
+                        official=None,
+                        is_official=None,
+                        url=None,
+                    )
+                    sponsor, created = Sponsor.objects.get_or_create(
+                        institution=institution,
+                    )
+                    sponsor_history = SponsorHistory.get_or_create(
+                        institution=sponsor,
+                        user=user,
+                    )
+                    sponsor_history.journal = journal
+                    sponsor_history.save()
 
 
 def get_or_create_subject_descriptor(subject_descriptors, journal, user):
@@ -702,22 +712,31 @@ def get_or_create_copyright_holder(journal, copyright_holder_name, user):
         [{'_': 'Departamento de História da Universidade Federal Fluminense - UFF'}]
     """
     copyright_holder_name = extract_value(copyright_holder_name)
+    if isinstance(copyright_holder_name, str):
+        copyright_holder_name = re.split(r'\s*[-\/,]\s*', copyright_holder_name)
+
     if copyright_holder_name:
-        copyright_holder = CopyrightHolder.create_or_update(
-            inst_name=copyright_holder_name,
-            user=user,
-            inst_acronym=None,
-            level_1=None,
-            level_2=None,
-            level_3=None,
-            location=None,
-            official=None,
-            is_official=None,
-            url=None,
-        )
-        copyright_holder_history = CopyrightHolderHistory.get_or_create(
-            institution=copyright_holder,
-            user=user,
-        )
-        copyright_holder_history.journal = journal
-        copyright_holder_history.save()
+        for cp in copyright_holder_name:
+            result = standardize_acronym_and_name(original=cp, q_locations=1)
+            for r in result:
+                institution = Institution.create_or_update(
+                    inst_name=r.get("name"),
+                    inst_acronym=r.get("acronym"),
+                    level_1=r.get("level_1"),
+                    level_2=r.get("level_2"),
+                    level_3=r.get("level_3"),
+                    user=user,
+                    location=None,
+                    official=None,
+                    is_official=None,
+                    url=None,
+                )
+                copyright_holder, created = CopyrightHolder.objects.get_or_create(
+                    institution=institution,
+                )
+                copyright_holder_history = CopyrightHolderHistory.get_or_create(
+                    institution=copyright_holder,
+                    user=user,
+                )
+                copyright_holder_history.journal = journal
+                copyright_holder_history.save()

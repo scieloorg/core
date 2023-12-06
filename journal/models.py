@@ -25,10 +25,11 @@ from core.models import (
     FileWithLang,
 )
 from institution.models import (
-    CopyrightHolderHistoryItem,
-    OwnerHistoryItem,
-    PublisherHistoryItem,
-    SponsorHistoryItem,
+    Publisher,
+    CopyrightHolder,
+    Owner,
+    Sponsor,
+    BaseHistoryItem,
 )
 from journal.exceptions import (
     IndexedAtCreationOrUpdateError,
@@ -922,30 +923,54 @@ class Mission(Orderable, RichTextWithLanguage, CommonControlField):
         return obj
 
 
-class OwnerHistory(Orderable, OwnerHistoryItem):
+class OwnerHistory(Orderable, BaseHistoryItem):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="owner_history", null=True
     )
+    institution = models.ForeignKey(
+        Owner,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
 
 
-class PublisherHistory(Orderable, PublisherHistoryItem):
+class PublisherHistory(Orderable, BaseHistoryItem):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="publisher_history", null=True
     )
-
-
-class SponsorHistory(Orderable, SponsorHistoryItem):
-    journal = ParentalKey(
-        Journal, on_delete=models.SET_NULL, null=True, related_name="sponsor_history"
+    institution = models.ForeignKey(
+        Publisher,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
     )
 
 
-class CopyrightHolderHistory(Orderable, CopyrightHolderHistoryItem):
+class SponsorHistory(Orderable, BaseHistoryItem):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, null=True, related_name="sponsor_history"
+    )
+    institution = models.ForeignKey(
+        Sponsor,
+        on_delete=models.SET_NULL, 
+        null=True,
+        blank=True,
+    )
+
+
+class CopyrightHolderHistory(Orderable, BaseHistoryItem):
     journal = ParentalKey(
         Journal,
         on_delete=models.SET_NULL,
         null=True,
         related_name="copyright_holder_history",
+    )
+    institution = models.ForeignKey(
+        CopyrightHolder,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
     )
 
 
