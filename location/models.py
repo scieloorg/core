@@ -14,7 +14,7 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField, Language, TextWithLang
-from core.utils.standardizer import standardize_name, standardize_code_and_name
+from core.utils.standardizer import standardize_name, standardize_code_and_name, remove_extra_spaces
 
 
 class City(CommonControlField):
@@ -59,7 +59,7 @@ class City(CommonControlField):
 
     @classmethod
     def get_or_create(cls, user=None, name=None):
-        name = name and name.strip()
+        name = remove_extra_spaces(name)
         if not name:
             raise ValueError("City.get_or_create requires name")
         try:
@@ -152,8 +152,8 @@ class State(CommonControlField):
 
     @classmethod
     def get(cls, name=None, acronym=None):
-        name = name and name.strip()
-        acronym = acronym and acronym.strip()
+        name = remove_extra_spaces(name)
+        acronym = remove_extra_spaces(acronym)
         if not name and not acronym:
             raise ValueError("State.get requires name or acronym")
         if name and acronym:
@@ -179,8 +179,8 @@ class State(CommonControlField):
 
     @classmethod
     def create_or_update(cls, user, name=None, acronym=None):
-        name = name and name.strip()
-        acronym = acronym and acronym.strip()
+        name = remove_extra_spaces(name)
+        acronym = remove_extra_spaces(acronym)
         try:
             obj = cls.get(name=name, acronym=acronym)
             obj.updated_by = user
@@ -269,7 +269,7 @@ class CountryName(TextWithLang, Orderable):
 
     @classmethod
     def create_or_update(cls, user, country, language, text):
-        text = text and text.strip()
+        text = remove_extra_spaces(text)
         try:
             obj = cls.get(country, language)
             obj.updated_by = user
@@ -286,7 +286,7 @@ class CountryName(TextWithLang, Orderable):
 
     @classmethod
     def get_country(cls, name):
-        name = name and name.strip()
+        name = remove_extra_spaces(name)
         for item in CountryName.objects.filter(text=name).iterator():
             if item.country:
                 return item.country
@@ -374,9 +374,9 @@ class Country(CommonControlField, ClusterableModel):
         acronym=None,
         acron3=None,
     ):
-        name = name and name.strip()
-        acronym = acronym and acronym.strip()
-        acron3 = acron3 and acron3.strip()
+        name = remove_extra_spaces(name)
+        acronym = remove_extra_spaces(acronym)
+        acron3 = remove_extra_spaces(acron3)
 
         if acronym:
             return cls.objects.get(acronym=acronym)
@@ -402,10 +402,10 @@ class Country(CommonControlField, ClusterableModel):
         country_names=None,
         lang_code2=None,
     ):
-        name = name and name.strip()
-        acronym = acronym and acronym.strip()
-        acron3 = acron3 and acron3.strip()
-        lang_code2 = lang_code2 and lang_code2.strip()
+        name = remove_extra_spaces(name)
+        acronym = remove_extra_spaces(acronym)
+        acron3 = remove_extra_spaces(acron3)
+        lang_code2 = remove_extra_spaces(lang_code2)
 
         try:
             obj = cls.get(name, acronym, acron3)
