@@ -116,7 +116,7 @@
                             <i>{{ journal.short_title }}</i>
                           </li>
                           <li>
-                            <strong>{% trans 'Publicação de:' %}</strong> {% for publisher in journal.publisher_history.all %} <i>{{ publisher.institution.name }}</i>{% endfor %}
+                            <strong>{% trans 'Publicação de:' %}</strong> {% for publisher in journal.publisher_history.all %} <i>{{ publisher.institution.institution.name}}</i>{% endfor %}
                           </li>
                           <li>
                             <strong>{% trans 'Periodicidade:' %}</strong>
@@ -198,7 +198,7 @@
                         <h5 id="item-1-8">{% trans 'Patrocinadores e agências de Fomento' %}</h5>
                         <ul type="disc"> 
                           {% for sponsor in sponsor_history %} 
-                            <li>{{sponsor.institution.name}}</li> 
+                            <li>{{sponsor.institution.institution.name}}</li> 
                           {% endfor%} 
                         </ul>
                         <!-- InlinePanel Preservacao Digital -->
