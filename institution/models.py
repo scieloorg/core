@@ -268,79 +268,105 @@ class BaseHistoryItem(CommonControlField):
         abstract = True
 
 
-class Sponsor(Institution):
-    panels = Institution.panels
-
-    base_form_class = CoreAdminModelForm
-
-
-class SponsorHistoryItem(BaseHistoryItem):
+class Sponsor(CommonControlField):
     institution = models.ForeignKey(
-        Sponsor,
+        Institution,
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
     )
 
+    autocomplete_search_field = "institution__name"
+    
+    def autocomplete_label(self):
+        return str(self.institution)
+    
+    panels = [
+        AutocompletePanel("institution"),
+    ]
 
-class Publisher(Institution):
-    panels = Institution.panels
 
     base_form_class = CoreAdminModelForm
 
 
-class PublisherHistoryItem(BaseHistoryItem):
+class Publisher(CommonControlField):
     institution = models.ForeignKey(
-        Publisher,
+        Institution,
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
     )
+    
+    autocomplete_search_field = "institution__name"
 
-
-class CopyrightHolder(Institution):
-    panels = Institution.panels
+    def autocomplete_label(self):
+        return str(self.institution)
+    
+    panels = [
+        AutocompletePanel("institution"),
+    ]
 
     base_form_class = CoreAdminModelForm
 
 
-class CopyrightHolderHistoryItem(BaseHistoryItem):
+class CopyrightHolder(CommonControlField):
     institution = models.ForeignKey(
-        CopyrightHolder,
+        Institution,
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
     )
+    
+    autocomplete_search_field = "institution__name"
 
-
-class Owner(Institution):
-    panels = Institution.panels
+    def autocomplete_label(self):
+        return str(self.institution)
+    
+    panels = [
+        AutocompletePanel("institution"),
+    ]
 
     base_form_class = CoreAdminModelForm
 
 
-class OwnerHistoryItem(BaseHistoryItem):
+class Owner(CommonControlField):
     institution = models.ForeignKey(
-        Owner,
+        Institution,
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
     )
+    
+    autocomplete_search_field = "institution__name"
 
-
-class EditorialManager(Institution):
-    panels = Institution.panels
+    def autocomplete_label(self):
+        return str(self.institution)
+    
+    panels = [
+        AutocompletePanel("institution"),
+    ]
 
     base_form_class = CoreAdminModelForm
 
 
-class EditorialManagerHistoryItem(BaseHistoryItem):
+class EditorialManager(CommonControlField):
     institution = models.ForeignKey(
-        EditorialManager,
+        Institution,
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
     )
+    
+    autocomplete_search_field = "institution__name"
+
+    def autocomplete_label(self):
+        return str(self.institution)
+    
+    panels = [
+        AutocompletePanel("institution"),
+    ]
+
+    base_form_class = CoreAdminModelForm
 
 
 class Scimago(CommonControlField, ClusterableModel):
