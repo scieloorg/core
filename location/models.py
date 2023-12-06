@@ -48,12 +48,10 @@ class City(CommonControlField):
         return self.name
 
     @classmethod
-    def load(cls, user, city_data=None):
-        if not cls.objects.exists():
-            if not city_data:
-                with open("./location/fixtures/cities.csv", "r") as fp:
-                    city_data = fp.readlines()
-            for name in city_data:
+    def load(cls, user, file_path=None):
+        file_path = file_path or "./location/fixtures/cities.csv"
+        with open(file_path, "r") as fp:
+            for name in fp.readlines():
                 try:
                     cls.get_or_create(name=name, user=user)
                 except Exception as e:
@@ -134,20 +132,19 @@ class State(CommonControlField):
         return f"{self.acronym or self.name}"
 
     @classmethod
-    def load(cls, user, state_data=None):
-        if not cls.objects.exists():
-            if not state_data:
-                with open("./location/fixtures/states.csv", "r") as csvfile:
-                    state_data = csv.DictReader(
-                        csvfile, fieldnames=["name", "acronym", "region"], delimiter=";"
-                    )
-                    for row in state_data:
-                        logging.info(row)
-                        cls.get_or_create(
-                            name=row["name"],
-                            acronym=row["acronym"],
-                            user=user,
-                        )
+    def load(cls, user, file_path=None):
+        file_path = file_path or "./location/fixtures/states.csv"
+        with open(file_path, "r") as csvfile:
+            rows = csv.DictReader(
+                csvfile, fieldnames=["name", "acronym", "region"], delimiter=";"
+            )
+            for row in rows:
+                logging.info(row)
+                cls.get_or_create(
+                    name=row["name"],
+                    acronym=row["acronym"],
+                    user=user,
+                )
 
     @classmethod
     def get_or_create(cls, user=None, name=None, acronym=None):
@@ -355,20 +352,20 @@ class Country(CommonControlField, ClusterableModel):
         return self.name or self.acronym
 
     @classmethod
-    def load(cls, user):
+    def load(cls, user, file_path=None):
         # País (pt);País (en);Capital;Código ISO (3 letras);Código ISO (2 letras)
-        if cls.objects.count() == 0:
-            fieldnames = ["name_pt", "name_en", "Capital", "acron3", "acron2"]
-            with open("./location/fixtures/country.csv", newline="") as csvfile:
-                reader = csv.DictReader(csvfile, fieldnames=fieldnames, delimiter=";")
-                for row in reader:
-                    cls.create_or_update(
-                        user,
-                        name=row["name_en"],
-                        acronym=row["acron2"],
-                        acron3=row["acron3"],
-                        country_names={"pt": row["name_pt"], "en": row["name_en"]},
-                    )
+        fieldnames = ["name_pt", "name_en", "Capital", "acron3", "acron2"]
+        file_path = file_path or "./location/fixtures/country.csv"
+        with open(file_path, newline="") as csvfile:
+            reader = csv.DictReader(csvfile, fieldnames=fieldnames, delimiter=";")
+            for row in reader:
+                cls.create_or_update(
+                    user,
+                    name=row["name_en"],
+                    acronym=row["acron2"],
+                    acron3=row["acron3"],
+                    country_names={"pt": row["name_pt"], "en": row["name_en"]},
+                )
 
     @classmethod
     def get(
