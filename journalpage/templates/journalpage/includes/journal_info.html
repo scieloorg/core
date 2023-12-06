@@ -1,0 +1,109 @@
+{% load i18n %}
+{% load static compress %}
+{% load wagtailcore_tags wagtailimages_tags %}
+{% load wagtailroutablepage_tags %}
+
+<section class="d-none d-lg-block">
+  <div class="container">
+    <div class="row">
+
+      <div class="col-9 pt-4 pb-4">
+        <a href="#">
+        {% image journal.logo max-100x100%}
+          <!-- <img src="{{ journal.logo }}"
+               class="image" alt="Logomarca do periódico: {{ journal.title }}" /> -->
+          
+        </a>
+        <h1 class="h4" style="margin: 1rem auto">
+          <img src="{% static 'journal_about/img/logo-open-access.svg' %}" alt="Open-access" class="logo-open-access" data-bs-toggle="tooltip" data-bs-original-title="by 4.0 "> {{ journal.title }}
+        </h1>
+        <span class="publisher">
+          {% trans 'Publicação de' %}: <strong class="namePlublisher">{% for publisher in journal.publisher_history.all %}{{ publisher.institution.institution.name }}{% endfor %}</strong>
+        </span>
+        </br>
+        <span class="theme">
+          <span class="area">
+              {% trans 'Área' %}:
+          </span>
+          {% for study_area in journal.subject.all %}
+              {{ study_area }}
+          {% endfor %}
+        </span>
+        
+        <span class="issn">
+          {% if journal.official.issn_print %}
+          <br>
+          <span class="issnLabel">
+                {% trans 'Versão impressa ISSN' %}:
+            </span>
+                {{ journal.official.issn_print }}
+          {% endif %}
+          {% if journal.official.issn_electronic %}
+            <br>
+            <span class="issnLabel">
+                {% trans 'Versão on-line ISSN' %}:
+            </span>
+                {{ journal.official.issn_electronic }}
+          {% endif %}
+        </span>
+
+        <!-- Ini - Se houver um outro título-->
+        {% if journal.next_title %}
+          <span class="otherTitle">
+            <span>Novo título:</span>
+              {% if journal.url_next_journal %}
+                <a href="#" class="NewCollectionLink">
+                    {{ journal.next_title }}
+                </a>
+              {% else %}
+                <span class="NewCollectionLink">
+                  {{ journal.next_title }}
+                </span>
+              {% endif %}
+          </span>
+        {% endif %}
+        <!-- Fim - Se houver um outro título-->
+
+        <!-- Ini - Se houver um outro título antigo -->
+        {% if journal.previous_journal_ref %}
+          <span class="otherTitle">
+            <span>Título anterior:</span>
+              {% if journal.url_previous_journal %}
+                <a href="#" class="NewCollectionLink">
+                    {{ journal.previous_journal_ref }}
+                </a>
+              {% else %}
+                <span class="NewCollectionLink">
+                  {{ journal.previous_journal_ref }}
+                </span>
+              {% endif %}
+          </span>
+        {% endif %}
+         <!-- Fim - Se houver um outro título antigo-->
+      </div>
+      <div class="col-3 pt-5">
+        <div class="list-group">
+            {% if journal.online_submission_url and journal.current_status == 'current' %}
+              <a class="list-group-item" href="{{ journal.online_submission_url }}" target="_blank"><span class="material-icons-outlined">launch</span> Submissão de manuscritos</a>
+            {% endif %}
+              <a class="list-group-item" href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#item-1"><span class="material-icons-outlined">info</span> {% trans 'Sobre o periódico' %}</a>
+              <a class="list-group-item" href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#item-3"><span class="material-icons-outlined">people</span> {% trans 'Corpo Editorial' %}</a>
+              <a class="list-group-item" href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#item-4"><span class="material-icons-outlined">help_outline</span> {% trans 'Instruções aos autores' %}</a>
+              <a class="list-group-item" href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#item-2"><span class="material-icons-outlined">article</span> {% trans 'Política editorial' %}</a>
+            {% if journal.enable_contact %}
+                <a class="list-group-item" href="javascript:;" class="contact_modal_id" data-url="#">
+                  <span class="glyphBtn contact"></span> Contato
+                </a>
+            {% endif %}
+            {% if journal.social_networks %}
+                <a class="list-group-item" href="#followus">
+                  <span class="glyphBtn otherNetworks"></span>
+                  Siga-nos
+                </a>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

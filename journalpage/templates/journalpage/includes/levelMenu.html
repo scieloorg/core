@@ -1,0 +1,129 @@
+{% load i18n %}
+{% load static compress %}
+
+<section class="levelMenu mt-4 mb-3">
+
+  <!-- exibe apenas lg -->
+  <!-- exibe apenas lg -->
+  <div class="container d-none d-xl-block">
+    <div class="row">
+      <div class="col-md-2 col-sm-2">
+        <a href="#" class="btn scielo__btn-with-icon--left "><span class="material-icons-outlined">home</span>{% trans 'Home do periódico' %}</a>
+      </div>
+      <div class="col-md-7 col-sm-7">
+        
+        <div class="btn-group">
+          <a href="#" class="btn">
+            {% trans 'Todos os números' %}
+          </a>
+          <a title="{% trans 'número anterior' %}" href="#" class="btn">
+              « {% trans 'Número anterior' %}
+          </a>
+          <a title="{% trans 'número atual' %}" href="#" class="btn">
+              {% trans 'Número atual' %}
+          </a>
+          <a title="{% trans 'número seguinte' %}" href="#" class="btn disabled">
+              {% trans 'Número seguinte' %} »
+          </a>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-3 text-end">
+        <div class="btn-group" role="group" aria-label="Basic example">
+          <a href="http://search.scielo.org/?q=*&amp;lang=pt&amp;filter[ta_cluster][]=ABCD,%20arq.%20bras.%20cir.%20dig." class="btn scielo__btn-with-icon--left">
+            <span class="material-icons-outlined">search</span> {% trans 'Buscar' %}
+          </a>
+          <a target="_blank" href="http://analytics.scielo.org/?journal=0102-6720&amp;collection=scl" class="btn scielo__btn-with-icon--left">
+              <span class="material-icons-outlined">show_chart</span> {% trans 'Métricas' %}
+          </a>        
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <!-- exibe apenas lg -->
+
+   <!-- exibe apenas sm, md -->
+   <div class="container d-xl-none">
+
+    <style>
+      .btn-group .btn{
+        margin-bottom: 8px;
+      }
+    </style>
+
+    <div class="row">
+      <div class="col">
+        <div class="btn-group" style="width: 100%;">
+          <a href="http://0.0.0.0:8000/j/abcd/" class="btn btn-secondary scielo__btn-with-icon--only">
+            <span class="material-icons-outlined">home</span>
+          </a>
+          <a href="http://0.0.0.0:8000/j/abcd/grid" class="btn btn-secondary">
+              {% trans 'Todos' %}
+          </a>
+          <a href="http://search.scielo.org/?q=*&amp;lang=pt&amp;filter[ta_cluster][]=ABCD,%20arq.%20bras.%20cir.%20dig." class="btn btn-secondary">
+              {% trans 'Buscar' %}
+          </a>
+          <a target="_blank" href="http://analytics.scielo.org/?journal=0102-6720&amp;collection=scl" class="btn btn-secondary">
+              {% trans 'Métricas' %}
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <div class="btn-group" style="width: 100%;">
+          
+            <a href="http://0.0.0.0:8000/j/abcd/i/2021.v34n4/?goto=previous" class="btn btn-secondary scielo__btn-with-icon--only">
+              <span class="material-icons-outlined">navigate_before</span>
+            </a>
+            <a href="http://0.0.0.0:8000/j/abcd/i/2021.v34n4/" class="btn btn-secondary">
+              Atual
+            </a>
+          
+            <a href="http://0.0.0.0:8000/journal/abcd/about/#" class="btn btn-secondary scielo__btn-with-icon--only --disabled">
+              <span class="material-icons-outlined">navigate_next</span>
+            </a>
+          
+        </div>
+      </div>
+    </div>
+
+
+    <div class="row" style="display:none;">
+      <div class="col-md-1 col-sm-1">
+        <h2>&nbsp;</h2>
+        <a href="http://0.0.0.0:8000/j/abcd/" class="btn single "><span class="material-icons-outlined">home</span></a>
+      </div>
+      <div class="col-md-6 col-sm-6">
+        <h2>&nbsp;</h2>
+        <div class="btn-group">
+          <a href="http://0.0.0.0:8000/j/abcd/grid" class="btn no-ico-util ">
+            {% trans 'todos' %}
+          </a>
+  
+          <a href="http://0.0.0.0:8000/j/abcd/i/2021.v34n4/?goto=previous" class="btn">
+            « {% trans 'número anterior' %}
+          </a>
+          <a href="http://0.0.0.0:8000/j/abcd/i/2021.v34n4/" class="btn">
+            {% trans 'número atual' %}
+          </a>
+          <a href="http://0.0.0.0:8000/journal/abcd/about/#" class="btn single group disabled">
+            <span class="material-icons-outlined">navigate_next</span>
+          </a>
+        </div>
+      </div>
+      <div class="col-md-2 col-sm-2">
+        <h2>&nbsp;</h2>
+        <a href="http://search.scielo.org/?q=*&amp;lang=pt&amp;filter[ta_cluster][]=ABCD,%20arq.%20bras.%20cir.%20dig." class="btn single"><span class="material-icons-outlined">search</span>{% trans 'Buscar' %}</a>
+      </div>
+      <div class="col-md-2 col-sm-2">
+        <h2>&nbsp;</h2>
+        
+          <a target="_blank" href="http://analytics.scielo.org/?journal=0102-6720&amp;collection=scl" class="btn single"><span class="material-icons-outlined">show_chart</span> métricas</a>
+        
+      </div>
+    </div>
+  </div>
+  <!-- exibe apenas sm, md -->
+
+</section>

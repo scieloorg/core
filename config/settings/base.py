@@ -79,6 +79,7 @@ WAGTAIL = [
     "wagtail.api.v2",
     "wagtail.contrib.settings",
     "wagtail.contrib.styleguide",
+    "wagtail.contrib.routable_page",
     "modelcluster",
     "taggit",
 ]
@@ -135,6 +136,7 @@ LOCAL_APPS = [
     "search",
     "reference",
     "tracker",
+    "journalpage",
     "report",
 ]
 

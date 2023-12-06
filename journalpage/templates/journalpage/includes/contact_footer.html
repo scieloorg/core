@@ -1,0 +1,61 @@
+{% load static compress %}
+
+<section class="journalContacts pt-4 pb-4">
+    <div class="container">
+      <div class="row">
+        <div class="col-12 col-sm-8 text-center text-sm-start">
+          <div class="row">
+            <div class="col-md-1 col-sm-2">
+              <span class="material-icons-outlined">location_on</span>
+            </div>
+            <div class="col-md-10 col-sm-9">
+              <strong class="d-block">{{ journal.publisher_name }}</strong>
+              {% if journal.publisher_address %}
+                <span>{{ journal.publisher_address }}</span> - 
+              {% endif %}
+              {% if journal.publisher_city %}
+              <span>{{ journal.publisher_city }}</span> -
+              {% endif %}
+              {% if journal.publisher_state %}
+              <span>{{ journal.publisher_state }}</span> -
+              {% endif %}
+              {% if journal.publisher_country %}
+              <span>{{ journal.publisher_country }}</span> <br/>
+              {% endif %}
+              {% if journal.publisher_telephone %}
+              <span>Tel/Fax: {{ journal.publisher_telephone }}</span>
+              {% endif %}
+              {% if journal.editor_email %}
+                <strong>E-mail:</strong> {{ journal.editor_email }}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+  
+        <div class="col-12 col-sm-4 text-center text-sm-start pt-4 pt-sm-0">
+          <a href="http://0.0.0.0:8000/journal/abcd/feed/" data-toggle="tooltip" title="RSS do número mais recente do periódico" target="_blank"><span class="material-icons-outlined">rss_feed</span></a>
+          <span>
+            Acompanhe os números deste periódico no seu leitor de RSS
+          </span>
+            {% for sn in journal.social_networks %}
+                <a href="{{sn.account}}" data-toggle="tooltip" title="{{sn.network|title}}">
+                    <span
+                        {% if network == 'twitter' %}
+                        class="glyphBtn bigTwitter"
+                        {% elif network == 'facebook' %}
+                        class="glyphBtn bigFacebook"
+                        {% elif network == 'google+' or network == 'google' %}
+                        class="glyphBtn bigGooglePlus"
+                        {% else %}
+                        class="glyphBtn"
+                        {% endif %}
+                    >
+                    </span>
+                    {% if loop.last %}
+                        <span class="text">Siga este periódico nas redes sociais</span>
+                    {% endif %}
+            {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>

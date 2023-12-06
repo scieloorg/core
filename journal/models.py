@@ -579,6 +579,7 @@ class Journal(CommonControlField, ClusterableModel):
 
     panels_open_science = [
         FieldPanel("open_access"),
+        FieldPanel("url_oa"),
         InlinePanel(
             "file_oa", label=_("Open Science accordance form"), classname="collapsed"
         ),
@@ -589,8 +590,20 @@ class Journal(CommonControlField, ClusterableModel):
     ]
 
     panels_policy = [
-        InlinePanel("ecommittee", label=_("Ethics Committee"), classname="collapsed"),
-        InlinePanel("copyright", label=_("Copyright"), classname="collapsed"),
+        InlinePanel("ethics", 
+        label=_("Ethics"), 
+        classname="collapsed",
+        ),
+        InlinePanel(
+            "ecommittee", 
+            label=_("Ethics Committee"), 
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "copyright", 
+            label=_("Copyright"), 
+            classname="collapsed",
+        ),
         InlinePanel(
             "website_responsibility",
             label=_("Intellectual Property / Terms of use / Website responsibility"),
@@ -604,6 +617,11 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel(
             "policies",
             label=_("Retraction Policy | Ethics and Misconduct Policy"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "digital_preservation",
+            label=_("Digital Preservation"),
             classname="collapsed",
         ),
         InlinePanel(
@@ -628,6 +646,7 @@ class Journal(CommonControlField, ClusterableModel):
         ),
     ]
     panels_notes = [InlinePanel("annotation", label=_("Notes"), classname="collapsed")]
+    
 
     panels_legacy_compatibility_fields = [
         FieldPanel("alphabet"),
@@ -1362,6 +1381,17 @@ class AdditionalInformation(Orderable, RichTextWithLanguage, CommonControlField)
         help_text=_("""Free field for entering additional information or data."""),
     )
 
+
+class DigitalPreservation(ClusterableModel, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="digital_preservation", null=True
+    )
+
+
+class Ethics(ClusterableModel, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="ethics", null=True
+    )
 
 class ArticleSubmissionFormatCheckList(ClusterableModel, RichTextWithLanguage, CommonControlField):
     rich_text = RichTextField(
