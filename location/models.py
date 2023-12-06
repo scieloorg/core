@@ -490,7 +490,7 @@ class Location(CommonControlField):
         return Location.objects.filter(
             Q(city__name__icontains=search_term)
             | Q(state__name__icontains=search_term)
-            | Q(country__name__icontain=search_term)
+            | Q(country__name__icontains=search_term)
         )
 
     def autocomplete_label(self):
