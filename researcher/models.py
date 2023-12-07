@@ -1,6 +1,6 @@
 import os
 
-from django.db import models
+from django.db import models, IntegrityError
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -333,3 +333,86 @@ class PersonName(CommonControlField):
             return cls._get(given_names, last_name, suffix, fullname)
         except cls.DoesNotExist:
             return cls._create(user, given_names, last_name, suffix, fullname)
+
+
+class ResearcherIdentifier(CommonControlField, ClusterableModel):
+    """
+    Class that represent the Researcher with any id
+    """
+
+    identifier = models.CharField(_("ID"), max_length=64, blank=True, null=True)
+    source_name = models.CharField(
+        _("Source name"), max_length=64, blank=True, null=True
+    )
+
+    panels = [
+        FieldPanel("identifier"),
+        FieldPanel("source_name"),
+        # InlinePanel("researcher_also_known_as"),
+    ]
+
+    base_form_class = ResearcherForm
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(any_value):
+        return ResearcherIdentifier.objects.filter(identifier__icontains=any_value)
+
+    def autocomplete_label(self):
+        return f"{self.identifier} {self.source_name}"
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    "identifier",
+                ]
+            ),
+        ]
+
+    @classmethod
+    def _get(
+        cls,
+        identifier,
+        source_name,
+    ):
+        if source_name and identifier:
+            try:
+                return cls.objects.get(
+                    source_name=source_name,
+                    identifier=identifier,
+                )
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(
+                    source_name=source_name,
+                    identifier=identifier,
+                ).first()
+        raise ValueError("ResearcherIdentifier.get requires source_name and identifier")
+
+    @classmethod
+    def _create(
+        cls,
+        user,
+        identifier,
+        source_name,
+    ):
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.identifier = identifier
+            obj.source_name = source_name
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(identifier, source_name)
+
+    @classmethod
+    def get_or_create(
+        cls,
+        user,
+        identifier,
+        source_name,
+    ):
+        try:
+            return cls._get(identifier, source_name)
+        except cls.DoesNotExist:
+            return cls._create(user, identifier, source_name)
