@@ -1,3 +1,5 @@
+import csv
+import logging
 import os
 
 from django.db import models, IntegrityError
@@ -10,7 +12,7 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from core.utils.standardizer import remove_extra_spaces
-from location.models import Country, Location
+from location.models import Country, Location, State
 
 from . import choices
 from .forms import ScimagoForm
@@ -18,7 +20,7 @@ from .forms import ScimagoForm
 
 class Institution(CommonControlField, ClusterableModel):
     institution_identification = models.ForeignKey(
-        InstitutionIdentification, null=True, blank=True, on_delete=models.SET_NULL
+        "InstitutionIdentification", null=True, blank=True, on_delete=models.SET_NULL
     )
 
     institution_type = models.TextField(
@@ -298,6 +300,68 @@ class Institution(CommonControlField, ClusterableModel):
                 level_3=level_3,
                 location=location,
             )
+
+    @classmethod
+    def load(cls, user, file_path=None, column_labels=None, is_official=False):
+        """
+        Name;Acronym;State Acronym;Institution Type;Level_1;Level_2;Level_3
+
+        "name": "Name",
+        "acronym": "Acronym",
+        "state": "State Acronym",
+        "type": "Institution Type",
+        "level_1": "Level_1",
+        "level_2": "Level_2",
+        "level_3": "Level_3",
+        """
+        file_path = file_path or "./institution/fixtures/institutions_mec_2.csv"
+        if file_path == "./institution/fixtures/institutions_mec_2.csv":
+            is_official = True
+        column_labels = column_labels or {
+            "name": "Name",
+            "acronym": "Acronym",
+            "state": "State Acronym",
+            "type": "Institution Type",
+            "level_1": "Level_1",
+            "level_2": "Level_2",
+            "level_3": "Level_3",
+        }
+
+        with open(file_path, "r") as csvfile:
+            rows = csv.DictReader(
+                csvfile, delimiter=";", fieldnames=list(column_labels.values())
+            )
+            country = Country.create_or_update(user, acronym="BR")
+            for line, row in enumerate(rows):
+                logging.info(row)
+                name = row.get(column_labels["name"])
+                acronym = row.get(column_labels["acronym"])
+
+                if name == column_labels["name"]:
+                    continue
+
+                try:
+                    state_acronym = row.get(column_labels["state"])
+                    state = State.objects.get(acronym=state_acronym)
+                except State.DoesNotExist:
+                    continue
+
+                location = Location.create_or_update(
+                    user=user, country=country, state=state, city=None,
+                )
+                cls.create_or_update(
+                    user=user,
+                    name=name,
+                    acronym=acronym,
+                    level_1=None,
+                    level_2=None,
+                    level_3=None,
+                    location=location,
+                    official=None,
+                    is_official=is_official,
+                    url=None,
+                    institution_type=column_labels["type"],
+                )
 
 
 class InstitutionHistory(models.Model):
