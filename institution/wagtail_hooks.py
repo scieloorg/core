@@ -10,7 +10,7 @@ from wagtail.contrib.modeladmin.options import (
 from wagtail.contrib.modeladmin.views import CreateView
 
 from .button_helpers import ScimagoHelper
-from .models import Institution, Scimago, ScimagoFile, Sponsor
+from .models import Institution, Scimago, ScimagoFile, Sponsor, InstitutionIdentification
 from .views import import_file_scimago, validate_scimago
 
 
@@ -71,31 +71,25 @@ class InstitutionAdmin(ModelAdmin):
         False  # or True to exclude pages of this type from Wagtail's explorer view
     )
     list_display = (
-        "name",
+        "institution_identification",
         "institution_type",
-        "creator",
         "updated",
         "created",
-        "updated_by",
     )
     search_fields = (
-        "name",
+        "institution_identification",
         "institution_type",
-        "creator__username",
         "updated",
         "created",
-        "updated_by__username",
     )
     list_export = (
-        "name",
+        "institution_identification__name",
         "institution_type",
         "level_1",
         "level_2",
         "level_3",
-        "creator",
         "updated",
         "created",
-        "updated_by",
     )
     export_filename = "institutions"
 
@@ -118,25 +112,19 @@ class SponsorAdmin(ModelAdmin):
     )
     list_display = ("institution",)
     search_fields = (
-        "institution__name",
-        "institution__acronym",
+        "institution__institution_identification__name",
+        "institution__institution_identification__acronym",
         "institution__level_1",
         "institution__level_2",
         "institution__level_3",
-        # # "location",
-        # "institution__official",
-        "institution__is_official",
     )
     list_export = (
-        "institution",
-        "institution__name",
-        "institution__acronym",
+        "institution__institution_identification__name",
+        "institution__institution_identification__acronym",
         "institution__level_1",
         "institution__level_2",
         "institution__level_3",
         "location",
-        "official",
-        "institution__is_official",
     )
     export_filename = "sponsor"
 
