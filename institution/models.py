@@ -178,8 +178,15 @@ class Institution(CommonControlField, ClusterableModel):
         official,
         is_official,
         url,
+        institution_type,
         user,
     ):
+        name = remove_extra_spaces(name)
+        acronym = remove_extra_spaces(acronym)
+        level_1 = remove_extra_spaces(level_1)
+        level_2 = remove_extra_spaces(level_2)
+        level_3 = remove_extra_spaces(level_3)
+        institution_type = remove_extra_spaces(institution_type)
 
         try:
             institution = cls.get(
@@ -191,21 +198,26 @@ class Institution(CommonControlField, ClusterableModel):
                 location=location,
             )
             institution.updated_by = user
+            institution.institution_type = institution_type or institution.institution_type
+            institution.official = official or institution.official
+            institution.is_official = is_official or institution.is_official
+            institution.url = url or institution.url
+            institution.save()
+            return institution
         except cls.DoesNotExist:
-            institution = cls()
-            institution.creator = user
-
-        institution.name = name or institution.name
-        institution.acronym = acronym or institution.acronym
-        institution.level_1 = level_1 or institution.level_1
-        institution.level_2 = level_2 or institution.level_2
-        institution.level_3 = level_3 or institution.level_3
-        institution.location = location or institution.location
-        institution.official = official or institution.official
-        institution.is_official = is_official or institution.is_official
-        institution.url = url or institution.url
-        institution.save()
-        return institution
+            return cls.create(
+                user=user,
+                name=name,
+                acronym=acronym,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+                location=location,
+                official=official,
+                is_official=is_official,
+                url=url,
+                institution_type=institution_type,
+            )
 
     @classmethod
     def create(
@@ -220,6 +232,7 @@ class Institution(CommonControlField, ClusterableModel):
         official,
         is_official,
         url,
+        institution_type,
     ):
 
         try:
@@ -234,6 +247,7 @@ class Institution(CommonControlField, ClusterableModel):
             obj.official = official
             obj.is_official = is_official
             obj.url = url
+            obj.institution_type = institution_type
             obj.save()
             return obj
         except IntegrityError:
