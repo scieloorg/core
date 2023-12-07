@@ -629,7 +629,7 @@ class InstitutionIdentification(CommonControlField):
                 csvfile, delimiter=";", fieldnames=list(column_labels.values())
             )
             for line, row in enumerate(rows):
-                yield cls.create_or_update(
+                cls.create_or_update(
                     user=user,
                     name=row.get(column_labels["name"]),
                     acronym=row.get(column_labels["acronym"]),
