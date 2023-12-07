@@ -2,7 +2,7 @@ import csv
 import logging
 import os
 
-from django.db import models
+from django.db import models, IntegrityError
 from django.db.models import Q
 from django.utils.translation import gettext as _
 from modelcluster.fields import ParentalKey
@@ -112,6 +112,7 @@ class State(CommonControlField):
     class Meta:
         verbose_name = _("State")
         verbose_name_plural = _("States")
+        unique_together = [("name", "acronym")]
         indexes = [
             models.Index(
                 fields=[
@@ -154,28 +155,28 @@ class State(CommonControlField):
     def get(cls, name=None, acronym=None):
         name = remove_extra_spaces(name)
         acronym = remove_extra_spaces(acronym)
-        if not name and not acronym:
-            raise ValueError("State.get requires name or acronym")
-        if name and acronym:
-            # os valores fornecidos são name e acronym
-            # mas não necessariamente ambos estão registrados
+        if name or acronym:
             try:
-                # estão no mesmo registro
-                return cls.objects.get(
-                    Q(name__iexact=name) | Q(acronym__iexact=acronym)
-                )
+                return cls.objects.get(name__iexact=name, acronym__iexact=acronym)
             except cls.MultipleObjectsReturned:
-                try:
-                    # name e acron estão no mesmo registro
-                    return cls.objects.get(name__iexact=name, acronym__iexact=acronym)
-                except cls.DoesNotExist:
-                    # não encontrados juntos no mesmo registro
-                    pass
-        if acronym:
-            # prioridade para acronym
-            return cls.objects.get(acronym__iexact=acronym)
-        if name:
-            return cls.objects.get(name__iexact=name)
+                return cls.objects.filter(name__iexact=name, acronym__iexact=acronym).first()
+        raise ValueError("State.get requires name or acronym")
+
+    @classmethod
+    def create(cls, user, name=None, acronym=None):
+        name = remove_extra_spaces(name)
+        acronym = remove_extra_spaces(acronym)
+        if name or acronym:
+            try:
+                obj = cls()
+                obj.name = name
+                obj.acronym = acronym
+                obj.creator = user
+                obj.save()
+                return obj
+            except IntegrityError:
+                return cls.get(name, acronym)
+        raise ValueError("State.create requires name or acronym")
 
     @classmethod
     def create_or_update(cls, user, name=None, acronym=None):
@@ -184,14 +185,11 @@ class State(CommonControlField):
         try:
             obj = cls.get(name=name, acronym=acronym)
             obj.updated_by = user
+            obj.name = name or obj.name
+            obj.acronym = acronym or obj.acronym
+            obj.save()
         except cls.DoesNotExist:
-            obj = cls()
-            obj.creator = user
-
-        obj.name = name or obj.name
-        obj.acronym = acronym or obj.acronym
-        obj.save()
-
+            obj = cls.create(user, name, acronym)
         return obj
 
     @staticmethod
