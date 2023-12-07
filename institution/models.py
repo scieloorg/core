@@ -53,6 +53,7 @@ class Institution(CommonControlField, ClusterableModel):
     def autocomplete_label(self):
         return self.name
 
+    base_form_class = CoreAdminModelForm
     panels = [
         FieldPanel("name"),
         FieldPanel("acronym"),
@@ -206,7 +207,44 @@ class Institution(CommonControlField, ClusterableModel):
         institution.save()
         return institution
 
-    base_form_class = CoreAdminModelForm
+    @classmethod
+    def create(
+        cls,
+        user,
+        name,
+        acronym,
+        level_1,
+        level_2,
+        level_3,
+        location,
+        official,
+        is_official,
+        url,
+    ):
+
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.name = name
+            obj.acronym = acronym
+            obj.level_1 = level_1
+            obj.level_2 = level_2
+            obj.level_3 = level_3
+            obj.location = location
+            obj.official = official
+            obj.is_official = is_official
+            obj.url = url
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(
+                name=name,
+                acronym=acronym,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+                location=location,
+            )
 
 
 class InstitutionHistory(models.Model):
