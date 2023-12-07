@@ -51,7 +51,7 @@ class Institution(CommonControlField, ClusterableModel):
     autocomplete_search_field = "name"
 
     def autocomplete_label(self):
-        return self.name
+        return str(self)
 
     base_form_class = CoreAdminModelForm
     panels = [
