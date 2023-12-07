@@ -6,9 +6,13 @@ GENDER_IDENTIFICATION_STATUS = [
     ("MANUAL", _("Identificado por algun usuario")),
 ]
 
+EDITOR_IN_CHIEF = "editor-in-chief"
+EXECUTIVE_EDITOR = "executive editor"
+ASSOCIATE_EDITOR = "associate editor"
+TECHNICAL_TEAM = "technical team"
 ROLE = [
-    ("Editor-Chefe", _("Editor-Chefe")),
-    ("Editor(es) Executivo", _("Editor(es) Executivo")),
-    ("Editor(es) Associados ou de Seção", _("Editor(es) Associados ou de Seção")),
-    ("Equipe Técnica", _("Equipe Técnica")),
+    (EDITOR_IN_CHIEF, _("Editor-in-chief")),
+    (EXECUTIVE_EDITOR, _("Editor")),
+    (ASSOCIATE_EDITOR, _("Associate editor")),
+    (TECHNICAL_TEAM, _("Technical team")),
 ]
