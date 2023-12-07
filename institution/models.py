@@ -17,7 +17,10 @@ from .forms import ScimagoForm
 
 
 class Institution(CommonControlField, ClusterableModel):
-    name = models.TextField(_("Name"), null=True, blank=True)
+    institution_identification = models.ForeignKey(
+        InstitutionIdentification, null=True, blank=True, on_delete=models.SET_NULL
+    )
+
     institution_type = models.TextField(
         _("Institution Type"), choices=choices.inst_type, null=True, blank=True
     )
@@ -25,7 +28,6 @@ class Institution(CommonControlField, ClusterableModel):
         Location, null=True, blank=True, on_delete=models.SET_NULL
     )
 
-    acronym = models.TextField(_("Institution Acronym"), null=True, blank=True)
     level_1 = models.TextField(_("Organization Level 1"), null=True, blank=True)
     level_2 = models.TextField(_("Organization Level 2"), null=True, blank=True)
     level_3 = models.TextField(_("Organization Level 3"), null=True, blank=True)
@@ -33,30 +35,14 @@ class Institution(CommonControlField, ClusterableModel):
 
     logo = models.ImageField(_("Logo"), blank=True, null=True)
 
-    official = models.ForeignKey(
-        "Institution",
-        verbose_name=_("Institution"),
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-    )
-    is_official = models.CharField(
-        _("Is official"),
-        null=True,
-        blank=True,
-        choices=choices.is_official,
-        max_length=6,
-    )
-
-    autocomplete_search_field = "name"
+    autocomplete_search_field = "institution_identification"
 
     def autocomplete_label(self):
         return str(self)
 
     base_form_class = CoreAdminModelForm
     panels = [
-        FieldPanel("name"),
-        FieldPanel("acronym"),
+        FieldPanel("institution_identification"),
         FieldPanel("institution_type"),
         AutocompletePanel("location"),
         FieldPanel("level_1"),
@@ -64,28 +50,16 @@ class Institution(CommonControlField, ClusterableModel):
         FieldPanel("level_3"),
         FieldPanel("url"),
         FieldPanel("logo"),
-        AutocompletePanel("official"),
-        FieldPanel("is_official"),
     ]
 
     class Meta:
         unique_together = [
-            ("name", "acronym", "level_1", "level_2", "level_3", "location"),
+            ("institution_identification", "level_1", "level_2", "level_3", "location"),
         ]
         indexes = [
             models.Index(
                 fields=[
-                    "name",
-                ]
-            ),
-            models.Index(
-                fields=[
                     "institution_type",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "acronym",
                 ]
             ),
             models.Index(
@@ -97,8 +71,7 @@ class Institution(CommonControlField, ClusterableModel):
 
     def __unicode__(self):
         return "%s | %s | %s | %s | %s | %s" % (
-            self.name,
-            self.acronym,
+            self.institution_identification,
             self.level_1,
             self.level_2,
             self.level_3,
@@ -107,8 +80,7 @@ class Institution(CommonControlField, ClusterableModel):
 
     def __str__(self):
         return "%s | %s | %s | %s | %s | %s" % (
-            self.name,
-            self.acronym,
+            self.institution_identification,
             self.level_1,
             self.level_2,
             self.level_3,
@@ -117,14 +89,13 @@ class Institution(CommonControlField, ClusterableModel):
 
     @property
     def data(self):
-        _data = {
-            "institution__name": self.name,
-            "institution__acronym": self.acronym,
+        _data = self.institution_identification.data
+        _data.update({
             "institution__level_1": self.level_1,
             "institution__level_2": self.level_2,
             "institution__level_3": self.level_3,
             "institution__url": self.url,
-        }
+        })
         if self.official:
             _data.update(self.official.data)
         _data.update(
@@ -147,9 +118,15 @@ class Institution(CommonControlField, ClusterableModel):
     ):
         if name or acronym:
             try:
-                return cls.objects.get(
-                    name__iexact=name,
-                    acronym__iexact=acronym,
+                institution_identification = InstitutionIdentification.create_or_update(
+                    user,
+                    name,
+                    acronym,
+                    is_official=None,
+                    official=None,
+                )
+                return cls._get(
+                    institution_identification=institution_identification,
                     level_1__iexact=level_1,
                     level_2__iexact=level_2,
                     level_3__iexact=level_3,
@@ -157,8 +134,7 @@ class Institution(CommonControlField, ClusterableModel):
                 )
             except cls.MultipleObjectsReturned:
                 return cls.objects.filter(
-                    name__iexact=name,
-                    acronym__iexact=acronym,
+                    institution_identification=institution_identification,
                     level_1__iexact=level_1,
                     level_2__iexact=level_2,
                     level_3__iexact=level_3,
@@ -189,9 +165,15 @@ class Institution(CommonControlField, ClusterableModel):
         institution_type = remove_extra_spaces(institution_type)
 
         try:
-            institution = cls.get(
-                name=name,
-                acronym=acronym,
+            institution_identification = InstitutionIdentification.create_or_update(
+                user,
+                name,
+                acronym,
+                is_official=is_official,
+                official=official,
+            )
+            institution = cls._get(
+                institution_identification=institution_identification,
                 level_1=level_1,
                 level_2=level_2,
                 level_3=level_3,
@@ -199,22 +181,17 @@ class Institution(CommonControlField, ClusterableModel):
             )
             institution.updated_by = user
             institution.institution_type = institution_type or institution.institution_type
-            institution.official = official or institution.official
-            institution.is_official = is_official or institution.is_official
             institution.url = url or institution.url
             institution.save()
             return institution
         except cls.DoesNotExist:
-            return cls.create(
+            return cls._create(
                 user=user,
-                name=name,
-                acronym=acronym,
+                institution_identification=institution_identification,
                 level_1=level_1,
                 level_2=level_2,
                 level_3=level_3,
                 location=location,
-                official=official,
-                is_official=is_official,
                 url=url,
                 institution_type=institution_type,
             )
@@ -254,6 +231,68 @@ class Institution(CommonControlField, ClusterableModel):
             return cls.get(
                 name=name,
                 acronym=acronym,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+                location=location,
+            )
+
+    @classmethod
+    def _get(
+        cls,
+        institution_identification,
+        level_1,
+        level_2,
+        level_3,
+        location,
+    ):
+        if institution_identification:
+            try:
+                return cls.objects.get(
+                    institution_identification=institution_identification,
+                    level_1__iexact=level_1,
+                    level_2__iexact=level_2,
+                    level_3__iexact=level_3,
+                    location=location,
+                )
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(
+                    institution_identification=institution_identification,
+                    level_1__iexact=level_1,
+                    level_2__iexact=level_2,
+                    level_3__iexact=level_3,
+                    location=location,
+                ).first()
+        raise ValueError("Instition._get requires institution_identification")
+
+    @classmethod
+    def _create(
+        cls,
+        user,
+        institution_identification,
+        level_1,
+        level_2,
+        level_3,
+        location,
+        url,
+        institution_type,
+    ):
+
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.institution_identification = institution_identification
+            obj.level_1 = level_1
+            obj.level_2 = level_2
+            obj.level_3 = level_3
+            obj.location = location
+            obj.url = url
+            obj.institution_type = institution_type
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls._get(
+                institution_identification=institution_identification,
                 level_1=level_1,
                 level_2=level_2,
                 level_3=level_3,
