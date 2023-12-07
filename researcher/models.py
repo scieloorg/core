@@ -10,6 +10,7 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.choices import MONTHS
 from core.models import CommonControlField, Gender
+from core.utils.standardizer import remove_extra_spaces
 from institution.models import Institution, InstitutionHistory
 from journal.models import Journal
 
@@ -199,3 +200,136 @@ class FieldEmail(Orderable):
 
 class FieldAffiliation(Orderable, InstitutionHistory):
     page = ParentalKey(Researcher, on_delete=models.CASCADE, related_name="affiliation")
+
+
+class PersonName(CommonControlField):
+    """
+    Class that represent the PersonName
+    """
+
+    given_names = models.CharField(
+        _("Given names"), max_length=128, blank=True, null=True
+    )
+    last_name = models.CharField(_("Last name"), max_length=64, blank=True, null=True)
+    suffix = models.CharField(_("Suffix"), max_length=16, blank=True, null=True)
+    fullname = models.TextField(_("Full Name"), blank=True, null=True)
+
+    panels = [
+        FieldPanel("given_names"),
+        FieldPanel("last_name"),
+        FieldPanel("suffix"),
+        FieldPanel("fullname"),
+    ]
+    base_form_class = CoreAdminModelForm
+
+    class Meta:
+        unique_together = [
+            ("fullname", "last_name", "given_names", "suffix", ),
+        ]
+
+        indexes = [
+            models.Index(
+                fields=[
+                    "fullname",
+                ]
+            ),
+        ]
+
+    def __str__(self):
+        return self.fullname
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return PersonName.objects.filter(
+            fullname__icontains=search_term
+        )
+
+    def autocomplete_label(self):
+        return self.fullname
+
+    @staticmethod
+    def join_names(given_names, last_name, suffix):
+        return " ".join(
+            [
+                remove_extra_spaces(item)
+                for item in (given_names, last_name, suffix)
+                if remove_extra_spaces(item)
+            ]
+        )
+
+    @classmethod
+    def _get(
+        cls,
+        given_names,
+        last_name,
+        suffix,
+        fullname,
+    ):
+        if last_name or fullname:
+            try:
+                return cls.objects.get(
+                    fullname__iexact=fullname,
+                    last_name__iexact=last_name,
+                    given_names__iexact=given_names,
+                    suffix__iexact=suffix,
+                )
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(
+                    fullname__iexact=fullname,
+                    last_name__iexact=last_name,
+                    given_names__iexact=given_names,
+                    suffix__iexact=suffix,
+                ).first()
+        raise ValueError(
+            "PersonName.get requires fullname or last_names parameters"
+        )
+
+    @classmethod
+    def _create(
+        cls,
+        user,
+        given_names,
+        last_name,
+        suffix,
+        fullname,
+    ):
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.given_names = given_names
+            obj.last_name = last_name
+            obj.suffix = suffix
+            obj.fullname = fullname
+            obj.save()
+        except IntegrityError:
+            return cls._get(given_names, last_name, suffix, fullname)
+        except Exception as e:
+            data = dict(
+                given_names=given_names,
+                last_name=last_name,
+                suffix=suffix,
+                fullname=fullname,
+            )
+            raise PersonNameCreateError(
+                f"Unable to create PersonName {data} {e}"
+            )
+
+    @classmethod
+    def get_or_create(
+        cls,
+        user,
+        given_names,
+        last_name,
+        suffix,
+        fullname,
+    ):
+        given_names = remove_extra_spaces(given_names)
+        last_name = remove_extra_spaces(last_name)
+        suffix = remove_extra_spaces(suffix)
+        fullname = remove_extra_spaces(fullname)
+        fullname = fullname or PersonName.join_names(given_names, last_name, suffix)
+
+        try:
+            return cls._get(given_names, last_name, suffix, fullname)
+        except cls.DoesNotExist:
+            return cls._create(user, given_names, last_name, suffix, fullname)
