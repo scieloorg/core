@@ -76,9 +76,9 @@ def create_or_update_book(book, user=None):
     researchers = get_or_create_researchers(book.get("creator"))
     language = Language.get_or_create(code2=book.get("language"))
     institution = Institution.create_or_update(
-        inst_name=book.get("publisher"),
+        name=book.get("publisher"),
         url=None,
-        inst_acronym=None,
+        acronym=None,
         level_1=None,
         level_2=None,
         level_3=None,

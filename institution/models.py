@@ -133,35 +133,35 @@ class Institution(CommonControlField, ClusterableModel):
     @classmethod
     def get(
         cls,
-        inst_name,
-        inst_acronym,
+        name,
+        acronym,
         location,
     ):
-        if inst_name or inst_acronym:
+        if name or acronym:
             try:
-                if inst_name and inst_acronym:
+                if name and acronym:
                     return cls.objects.get(
-                        Q(name__iexact=inst_name) | Q(acronym__iexact=inst_acronym),
+                        Q(name__iexact=name) | Q(acronym__iexact=acronym),
                         location=location,
                     )
                 return cls.objects.get(
-                    name__iexact=inst_name,
-                    acronym__iexact=inst_acronym,
+                    name__iexact=name,
+                    acronym__iexact=acronym,
                     location=location,
                 )
             except cls.MultipleObjectsReturned:
                 return cls.objects.get(
-                    name__iexact=inst_name,
-                    acronym__iexact=inst_acronym,
+                    name__iexact=name,
+                    acronym__iexact=acronym,
                     location=location,
                 )
-        raise ValueError("Requires inst_name or inst_acronym parameters")
+        raise ValueError("Requires name or acronym parameters")
 
     @classmethod
     def create_or_update(
         cls,
-        inst_name,
-        inst_acronym,
+        name,
+        acronym,
         level_1,
         level_2,
         level_3,
@@ -174,15 +174,15 @@ class Institution(CommonControlField, ClusterableModel):
 
         try:
             institution = cls.get(
-                inst_name=inst_name, inst_acronym=inst_acronym, location=location
+                name=name, acronym=acronym, location=location
             )
             institution.updated_by = user
         except cls.DoesNotExist:
             institution = cls()
             institution.creator = user
 
-        institution.name = inst_name or institution.name
-        institution.acronym = inst_acronym or institution.acronym
+        institution.name = name or institution.name
+        institution.acronym = acronym or institution.acronym
         institution.level_1 = level_1 or institution.level_1
         institution.level_2 = level_2 or institution.level_2
         institution.level_3 = level_3 or institution.level_3

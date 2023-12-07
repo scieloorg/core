@@ -207,8 +207,8 @@ def update_panel_institution(
         for p in publisher:
             if p:
                 institution = Institution.create_or_update(
-                    inst_name=p,
-                    inst_acronym=None,
+                    name=p,
+                    acronym=None,
                     level_1=None,
                     level_2=None,
                     level_3=None,
@@ -450,8 +450,8 @@ def get_or_create_sponsor(sponsor, journal, user):
             ## CNPq - Conselho Nacional de Desenvolvimento Científico e Tecnológico (PIEB)
             if s:
                 institution = Institution.create_or_update(
-                    inst_name=s,
-                    inst_acronym=None,
+                    name=s,
+                    acronym=None,
                     level_1=None,
                     level_2=None,
                     level_3=None,
@@ -714,8 +714,8 @@ def get_or_create_copyright_holder(journal, copyright_holder_name, user):
         for cp in copyright_holder_name:
 
             institution = Institution.create_or_update(
-                inst_name=cp,
-                inst_acronym=None,
+                name=cp,
+                acronym=None,
                 level_1=None,
                 level_2=None,
                 level_3=None,
