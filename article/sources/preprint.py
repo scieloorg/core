@@ -211,7 +211,7 @@ def get_doi(identifier):
 
 def get_publisher(user, publisher):
     return Publisher.get_or_create(
-        user,
+        user=user,
         name=publisher[0]["text"],
         acronym=None,
         level_1=None,

@@ -36,7 +36,7 @@ class BookAdmin(ModelAdmin):
         "year",
         "language",
         "location",
-        "institution",
+        "publisher",
     )
     search_fields = ("doi", "title", "isbn", "eisbn", "synopsis")
 

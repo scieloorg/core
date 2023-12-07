@@ -21,6 +21,7 @@ from packtools.sps.models.kwd_group import KwdGroup
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article import models
+from institution.models import Sponsor
 from issue.models import TocSection
 from tracker.models import UnexpectedEvent
 
@@ -281,10 +282,10 @@ def get_or_create_main_language(xmltree, user):
 
 
 def create_or_update_sponsor(funding_name, user):
-    obj = models.Sponsor.create_or_update(
-        inst_name=funding_name,
+    return Sponsor.get_or_create(
         user=user,
-        inst_acronym=None,
+        name=funding_name,
+        acronym=None,
         level_1=None,
         level_2=None,
         level_3=None,
@@ -292,5 +293,5 @@ def create_or_update_sponsor(funding_name, user):
         official=None,
         is_official=None,
         url=None,
+        institution_type=None,
     )
-    return obj
