@@ -10,6 +10,7 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.choices import MONTHS
 from core.models import CommonControlField, Gender
+from core.forms import CoreAdminModelForm
 from core.utils.standardizer import remove_extra_spaces
 from institution.models import Institution, InstitutionHistory
 from journal.models import Journal
