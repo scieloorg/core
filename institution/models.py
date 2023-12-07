@@ -141,8 +141,7 @@ class Institution(CommonControlField, ClusterableModel):
             try:
                 if inst_name and inst_acronym:
                     return cls.objects.get(
-                        Q(name__iexact=inst_name) |
-                        Q(acronym__iexact=inst_acronym),
+                        Q(name__iexact=inst_name) | Q(acronym__iexact=inst_acronym),
                         location=location,
                     )
                 return cls.objects.get(
@@ -237,14 +236,19 @@ class BaseHistoryItem(CommonControlField):
     ]
 
     @classmethod
-    def get(cls,
+    def get(
+        cls,
         institution,
         initial_date,
-        final_date,        
+        final_date,
     ):
         if not institution:
-            raise ValueError("Requires institution and initial_date or final_dateparameters")
-        return cls.objects.get(institution=institution, initial_date=initial_date, final_date=final_date)
+            raise ValueError(
+                "Requires institution and initial_date or final_dateparameters"
+            )
+        return cls.objects.get(
+            institution=institution, initial_date=initial_date, final_date=final_date
+        )
 
     @classmethod
     def get_or_create(cls, institution, initial_date=None, final_date=None, user=None):
@@ -252,7 +256,11 @@ class BaseHistoryItem(CommonControlField):
             # consultar juntos por institution + initial_date + final_date
             # mesmo que initial_date ou final_date sejam None
             # caso contrário o retorno pode ser MultipleObjectReturned
-            return cls.get(institution=institution, initial_date=initial_date, final_date=final_date)
+            return cls.get(
+                institution=institution,
+                initial_date=initial_date,
+                final_date=final_date,
+            )
             history.updated_by = user
         except cls.DoesNotExist:
             history = cls()
@@ -277,14 +285,13 @@ class Sponsor(CommonControlField):
     )
 
     autocomplete_search_field = "institution__name"
-    
+
     def autocomplete_label(self):
         return str(self.institution)
-    
+
     panels = [
         AutocompletePanel("institution"),
     ]
-
 
     base_form_class = CoreAdminModelForm
 
@@ -296,12 +303,12 @@ class Publisher(CommonControlField):
         blank=True,
         null=True,
     )
-    
+
     autocomplete_search_field = "institution__name"
 
     def autocomplete_label(self):
         return str(self.institution)
-    
+
     panels = [
         AutocompletePanel("institution"),
     ]
@@ -316,12 +323,12 @@ class CopyrightHolder(CommonControlField):
         blank=True,
         null=True,
     )
-    
+
     autocomplete_search_field = "institution__name"
 
     def autocomplete_label(self):
         return str(self.institution)
-    
+
     panels = [
         AutocompletePanel("institution"),
     ]
@@ -336,12 +343,12 @@ class Owner(CommonControlField):
         blank=True,
         null=True,
     )
-    
+
     autocomplete_search_field = "institution__name"
 
     def autocomplete_label(self):
         return str(self.institution)
-    
+
     panels = [
         AutocompletePanel("institution"),
     ]
@@ -356,12 +363,12 @@ class EditorialManager(CommonControlField):
         blank=True,
         null=True,
     )
-    
+
     autocomplete_search_field = "institution__name"
 
     def autocomplete_label(self):
         return str(self.institution)
-    
+
     panels = [
         AutocompletePanel("institution"),
     ]

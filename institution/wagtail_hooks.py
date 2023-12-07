@@ -76,9 +76,7 @@ class SponsorAdmin(ModelAdmin):
     exclude_from_explorer = (
         False  # or True to exclude pages of this type from Wagtail's explorer view
     )
-    list_display = (
-        "institution",
-    )
+    list_display = ("institution",)
     search_fields = (
         "institution__name",
         "institution__acronym",
