@@ -1,6 +1,6 @@
 import os
 
-from django.db import models
+from django.db import models, IntegrityError
 from django.db.models import Q
 from django.utils.translation import gettext as _
 from modelcluster.models import ClusterableModel
@@ -141,8 +141,7 @@ class Institution(CommonControlField, ClusterableModel):
             try:
                 if inst_name and inst_acronym:
                     return cls.objects.get(
-                        Q(name__iexact=inst_name) |
-                        Q(acronym__iexact=inst_acronym),
+                        Q(name__iexact=inst_name) | Q(acronym__iexact=inst_acronym),
                         location=location,
                     )
                 return cls.objects.get(
@@ -237,14 +236,19 @@ class BaseHistoryItem(CommonControlField):
     ]
 
     @classmethod
-    def get(cls,
+    def get(
+        cls,
         institution,
         initial_date,
-        final_date,        
+        final_date,
     ):
         if not institution:
-            raise ValueError("Requires institution and initial_date or final_dateparameters")
-        return cls.objects.get(institution=institution, initial_date=initial_date, final_date=final_date)
+            raise ValueError(
+                "Requires institution and initial_date or final_dateparameters"
+            )
+        return cls.objects.get(
+            institution=institution, initial_date=initial_date, final_date=final_date
+        )
 
     @classmethod
     def get_or_create(cls, institution, initial_date=None, final_date=None, user=None):
@@ -252,7 +256,11 @@ class BaseHistoryItem(CommonControlField):
             # consultar juntos por institution + initial_date + final_date
             # mesmo que initial_date ou final_date sejam None
             # caso contrário o retorno pode ser MultipleObjectReturned
-            return cls.get(institution=institution, initial_date=initial_date, final_date=final_date)
+            return cls.get(
+                institution=institution,
+                initial_date=initial_date,
+                final_date=final_date,
+            )
             history.updated_by = user
         except cls.DoesNotExist:
             history = cls()
@@ -277,14 +285,13 @@ class Sponsor(CommonControlField):
     )
 
     autocomplete_search_field = "institution__name"
-    
+
     def autocomplete_label(self):
         return str(self.institution)
-    
+
     panels = [
         AutocompletePanel("institution"),
     ]
-
 
     base_form_class = CoreAdminModelForm
 
@@ -296,12 +303,12 @@ class Publisher(CommonControlField):
         blank=True,
         null=True,
     )
-    
+
     autocomplete_search_field = "institution__name"
 
     def autocomplete_label(self):
         return str(self.institution)
-    
+
     panels = [
         AutocompletePanel("institution"),
     ]
@@ -316,12 +323,12 @@ class CopyrightHolder(CommonControlField):
         blank=True,
         null=True,
     )
-    
+
     autocomplete_search_field = "institution__name"
 
     def autocomplete_label(self):
         return str(self.institution)
-    
+
     panels = [
         AutocompletePanel("institution"),
     ]
@@ -336,12 +343,12 @@ class Owner(CommonControlField):
         blank=True,
         null=True,
     )
-    
+
     autocomplete_search_field = "institution__name"
 
     def autocomplete_label(self):
         return str(self.institution)
-    
+
     panels = [
         AutocompletePanel("institution"),
     ]
@@ -356,12 +363,12 @@ class EditorialManager(CommonControlField):
         blank=True,
         null=True,
     )
-    
+
     autocomplete_search_field = "institution__name"
 
     def autocomplete_label(self):
         return str(self.institution)
-    
+
     panels = [
         AutocompletePanel("institution"),
     ]
@@ -458,3 +465,174 @@ class ScimagoFile(models.Model):
         return os.path.basename(self.attachment.name)
 
     panels = [FieldPanel("attachment")]
+
+
+class InstitutionIdentification(CommonControlField):
+    name = models.TextField(_("Name"), null=True, blank=True)
+    acronym = models.TextField(_("Institution Acronym"), null=True, blank=True)
+    is_official = models.BooleanField(
+        _("Is official"),
+        null=True,
+        blank=True,
+    )
+    official = models.ForeignKey(
+        "self",
+        verbose_name=_("Official name"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
+    autocomplete_search_field = "name"
+
+    def autocomplete_label(self):
+        official = self.is_official and " [official]" or ""
+        if self.acronym and self.name:
+            return f"{self.acronym} {self.name}{official}"
+        if self.acronym:
+            return f"{self.acronym}{official}"
+        return f"{self.name}{official}"
+
+    base_form_class = CoreAdminModelForm
+    panels = [
+        FieldPanel("name"),
+        FieldPanel("acronym"),
+        FieldPanel("is_official"),
+        FieldPanel("official"),
+    ]
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    "name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "is_official",
+                ]
+            ),
+        ]
+
+    def __str__(self):
+        official = self.is_official and " [official]" or ""
+        if self.acronym and self.name:
+            return f"{self.acronym} {self.name}{official}"
+        if self.acronym:
+            return f"{self.acronym}{official}"
+        return f"{self.name}{official}"
+
+    @property
+    def data(self):
+        _data = {
+            "institution__name": self.name,
+            "institution__acronym": self.acronym,
+            "institution__is_official": self.is_official,
+        }
+        return _data
+
+    @classmethod
+    def _get(cls, name=None, acronym=None):
+        if name or acronym:
+            try:
+                return cls.objects.get(
+                    name__iexact=name,
+                    acronym__iexact=acronym,
+                )
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(
+                    name__iexact=name,
+                    acronym__iexact=acronym,
+                ).first()
+        raise ValueError(
+            "InstitutionIdentification.get requires name or acronym parameters"
+        )
+
+    @classmethod
+    def _create(
+        cls,
+        user,
+        name,
+        acronym,
+        is_official,
+        official,
+    ):
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.name = name
+            obj.acronym = acronym
+            obj.is_official = is_official or obj.is_official
+            obj.official = official or obj.official
+            obj.save()
+        except IntegrityError:
+            return cls.get(name, acronym)
+        return obj
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        name,
+        acronym,
+        is_official,
+        official,
+    ):
+        name = remove_extra_spaces(name)
+        acronym = remove_extra_spaces(acronym)
+
+        try:
+            obj = cls._get(name=name, acronym=acronym)
+            obj.updated_by = user
+            obj.is_official = is_official or obj.is_official
+            obj.official = official or obj.official
+            obj.save()
+            return obj
+        except cls.DoesNotExist:
+            return cls._create(
+                user,
+                name,
+                acronym,
+                is_official,
+                official,
+            )
+
+    @classmethod
+    def load(cls, user, file_path=None, column_labels=None, is_official=False):
+        """
+        Name;Acronym;State Acronym;Institution Type;Level_1;Level_2;Level_3
+
+        "name": "Name",
+        "acronym": "Acronym",
+        "state": "State Acronym",
+        "type": "Institution Type",
+        "level_1": "Level_1",
+        "level_2": "Level_2",
+        "level_3": "Level_3",
+        """
+        file_path = file_path or "./institution/fixtures/institutions_mec_2.csv"
+        if file_path == "./institution/fixtures/institutions_mec_2.csv":
+            is_official = True
+        column_labels = column_labels or {
+            "name": "Name",
+            "acronym": "Acronym",
+            "state": "State Acronym",
+            "type": "Institution Type",
+            "level_1": "Level_1",
+            "level_2": "Level_2",
+            "level_3": "Level_3",
+        }
+
+        with open(file_path, "r") as csvfile:
+            rows = csv.DictReader(
+                csvfile, delimiter=";", fieldnames=list(column_labels.values())
+            )
+            for line, row in enumerate(rows):
+                cls.create_or_update(
+                    user=user,
+                    name=row.get(column_labels["name"]),
+                    acronym=row.get(column_labels["acronym"]),
+                    is_official=is_official,
+                    official=None,
+                )

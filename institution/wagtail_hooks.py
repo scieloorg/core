@@ -14,6 +14,46 @@ from .models import Institution, Scimago, ScimagoFile, Sponsor
 from .views import import_file_scimago, validate_scimago
 
 
+class InstitutionIdentificationCreateView(CreateView):
+    def form_valid(self, form):
+        self.object = form.save_all(self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class InstitutionIdentificationAdmin(ModelAdmin):
+    model = InstitutionIdentification
+    create_view_class = InstitutionIdentificationCreateView
+    menu_label = _("InstitutionIdentification")
+    menu_icon = "folder"
+    menu_order = 800
+    add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
+    exclude_from_explorer = (
+        False  # or True to exclude pages of this type from Wagtail's explorer view
+    )
+    list_display = (
+        "name",
+        "acronym",
+        "is_official",
+        "updated",
+        "created",
+    )
+    list_filter = ("is_official",)
+    search_fields = (
+        "name",
+        "acronym",
+    )
+    list_export = (
+        "name",
+        "acronym",
+        "is_official",
+        "updated",
+        "created",
+        "creator",
+        "updated_by",
+    )
+    export_filename = "institution_institution_identification"
+
+
 class InstitutionCreateView(CreateView):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
@@ -76,9 +116,7 @@ class SponsorAdmin(ModelAdmin):
     exclude_from_explorer = (
         False  # or True to exclude pages of this type from Wagtail's explorer view
     )
-    list_display = (
-        "institution",
-    )
+    list_display = ("institution",)
     search_fields = (
         "institution__name",
         "institution__acronym",
@@ -152,7 +190,13 @@ class InstitutionsAdminGroup(ModelAdminGroup):
     menu_label = _("Institutions")
     menu_icon = "folder-open-inverse"  # change as required
     menu_order = 7
-    items = (InstitutionAdmin, SponsorAdmin, ScimagoAdmin, ScimagoFileAdmin)
+    items = (
+        InstitutionIdentificationAdmin,
+        InstitutionAdmin,
+        SponsorAdmin,
+        ScimagoAdmin,
+        ScimagoFileAdmin,
+    )
 
 
 modeladmin_register(InstitutionsAdminGroup)
