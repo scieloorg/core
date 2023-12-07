@@ -9,6 +9,7 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
+from core.utils.standardizer import remove_extra_spaces
 from location.models import Country, Location
 
 from . import choices
@@ -67,6 +68,9 @@ class Institution(CommonControlField, ClusterableModel):
     ]
 
     class Meta:
+        unique_together = [
+            ("name", "acronym", "level_1", "level_2", "level_3", "location"),
+        ]
         indexes = [
             models.Index(
                 fields=[
@@ -135,26 +139,30 @@ class Institution(CommonControlField, ClusterableModel):
         cls,
         name,
         acronym,
+        level_1,
+        level_2,
+        level_3,
         location,
     ):
         if name or acronym:
             try:
-                if name and acronym:
-                    return cls.objects.get(
-                        Q(name__iexact=name) | Q(acronym__iexact=acronym),
-                        location=location,
-                    )
                 return cls.objects.get(
                     name__iexact=name,
                     acronym__iexact=acronym,
+                    level_1__iexact=level_1,
+                    level_2__iexact=level_2,
+                    level_3__iexact=level_3,
                     location=location,
                 )
             except cls.MultipleObjectsReturned:
-                return cls.objects.get(
+                return cls.objects.filter(
                     name__iexact=name,
                     acronym__iexact=acronym,
+                    level_1__iexact=level_1,
+                    level_2__iexact=level_2,
+                    level_3__iexact=level_3,
                     location=location,
-                )
+                ).first()
         raise ValueError("Requires name or acronym parameters")
 
     @classmethod
@@ -174,7 +182,12 @@ class Institution(CommonControlField, ClusterableModel):
 
         try:
             institution = cls.get(
-                name=name, acronym=acronym, location=location
+                name=name,
+                acronym=acronym,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+                location=location,
             )
             institution.updated_by = user
         except cls.DoesNotExist:
