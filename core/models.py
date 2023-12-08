@@ -1,7 +1,7 @@
 import os
 
 from django.contrib.auth import get_user_model
-from django.db import models
+from django.db import models, IntegrityError
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
 from wagtail.fields import RichTextField
@@ -43,11 +43,40 @@ class Gender(index.Indexed, models.Model):
         index.SearchField("gender", partial_match=True),
     ]
 
+    class Meta:
+        unique_together = [("code", "gender")]
+
     def __unicode__(self):
         return self.gender or self.code
 
     def __str__(self):
         return self.gender or self.code
+
+    @classmethod
+    def _get(cls, code=None, gender=None):
+        try:
+            return cls.objects.get(code=code, gender=gender)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(code=code, gender=gender).first()
+
+    @classmethod
+    def _create(cls, user, code=None, gender=None):
+        try:
+            obj = cls()
+            obj.gender = gender
+            obj.code = code
+            obj.creator = user
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls._get(code, gender)
+
+    @classmethod
+    def get_or_create(cls, user, code, gender=None):
+        try:
+            return cls._get(code, gender)
+        except cls.DoesNotExist:
+            return cls._create(code, gender)
 
 
 class CommonControlField(models.Model):
@@ -341,4 +370,3 @@ class FileWithLang(models.Model):
 
     class Meta:
         abstract = True
-        
