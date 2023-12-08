@@ -20,11 +20,20 @@ class ResearcherAdmin(ModelAdmin):
     menu_order = 9
     add_to_settings_menu = False
     exclude_from_explorer = False
+    list_display = (
+        "person_name",
+        "affiliation",
+        "year",
+        "created",
+        "updated",
+    )
+    list_filter = ("year",)
     search_fields = (
-        "given_names",
-        "last_name",
-        "declared_name",
-        "orcid",
+        "year",
+        "person_name__fullname",
+        "person_name__declared_name",
+        "affiliation__institution__name",
+        "affiliation__institution__acronym",
     )
 
 
