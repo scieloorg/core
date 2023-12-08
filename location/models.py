@@ -40,6 +40,7 @@ class City(CommonControlField):
         indexes = [
             models.Index(fields=["name"]),
         ]
+        unique_together = [("name",)]
 
     def __unicode__(self):
         return self.name
@@ -59,17 +60,34 @@ class City(CommonControlField):
 
     @classmethod
     def get_or_create(cls, user=None, name=None):
+        try:
+            return cls.get(name)
+        except cls.DoesNotExist:
+            return cls.create(user, name)
+
+    @classmethod
+    def get(cls, name):
         name = remove_extra_spaces(name)
         if not name:
             raise ValueError("City.get_or_create requires name")
         try:
             return cls.objects.get(name__iexact=name)
-        except cls.DoesNotExist:
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(name__iexact=name).first()
+
+    @classmethod
+    def create(cls, user=None, name=None):
+        name = remove_extra_spaces(name)
+        if not name:
+            raise ValueError("City.get_or_create requires name")
+        try:
             city = City()
             city.name = name
             city.creator = user
             city.save()
             return city
+        except IntegrityError:
+            return cls.get(name)
 
     @staticmethod
     def standardize(text, user=None):
