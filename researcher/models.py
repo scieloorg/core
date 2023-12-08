@@ -12,195 +12,215 @@ from core.choices import MONTHS
 from core.models import CommonControlField, Gender
 from core.forms import CoreAdminModelForm
 from core.utils.standardizer import remove_extra_spaces
-from institution.models import Institution, InstitutionHistory
+from institution.models import Institution
 from journal.models import Journal
 
 from . import choices
 from .forms import ResearcherForm
 
 
-class Researcher(ClusterableModel, CommonControlField):
+class Researcher(CommonControlField):
     """
     Class that represent the Researcher
     """
+    person_name = models.ForeignKey("PersonName", on_delete=models.SET_NULL, null=True, blank=True)
+    affiliation = models.ForeignKey("Affiliation", on_delete=models.SET_NULL, null=True, blank=True)
+    year = models.CharField(_("Year"), max_length=4, null=True, blank=True)
 
-    given_names = models.CharField(
-        _("Given names"), max_length=128, blank=True, null=True
-    )
-    last_name = models.CharField(_("Last name"), max_length=128, blank=True, null=True)
-    declared_name = models.CharField(
-        _("Declared Name"), max_length=255, blank=True, null=True
-    )
-    suffix = models.CharField(_("Suffix"), max_length=128, blank=True, null=True)
-    orcid = models.TextField(_("ORCID"), blank=True, null=True)
-    lattes = models.TextField(_("Lattes"), blank=True, null=True)
-    gender = models.ForeignKey(Gender, blank=True, null=True, on_delete=models.SET_NULL)
-    gender_identification_status = models.CharField(
-        _("Gender identification status"),
-        max_length=255,
-        choices=choices.GENDER_IDENTIFICATION_STATUS,
-        null=True,
-        blank=True,
-    )
-
-    autocomplete_search_field = "given_names"
+    autocomplete_search_field = "person_name"
 
     def autocomplete_label(self):
         return str(self)
 
+    base_form_class = ResearcherForm
     panels = [
-        FieldPanel("given_names"),
-        FieldPanel("last_name"),
-        FieldPanel("declared_name"),
-        FieldPanel("suffix"),
-        FieldPanel("orcid"),
-        FieldPanel("lattes"),
-        AutocompletePanel("gender"),
-        FieldPanel("gender_identification_status"),
+        AutocompletePanel("person_name"),
+        AutocompletePanel("affiliation"),
+        FieldPanel("year"),
     ]
 
     class Meta:
+        unique_together = [("person_name", "year", "affiliation")]
         indexes = [
             models.Index(
                 fields=[
-                    "given_names",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "last_name",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "orcid",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "lattes",
+                    "year",
                 ]
             ),
         ]
 
     @property
     def get_full_name(self):
-        return f"{self.last_name}, {self.given_names}"
-
-    def __unicode__(self):
-        return "%s%s, %s (%s)" % (
-            self.last_name,
-            self.suffix and f" {self.suffix}" or "",
-            self.given_names,
-            self.orcid,
-        )
+        return self.person_name.get_full_name
 
     def __str__(self):
-        return "%s%s, %s (%s)" % (
-            self.last_name,
-            self.suffix and f" {self.suffix}" or "",
-            self.given_names,
-            self.orcid,
-        )
+        return f"{self.person_name} | {self.affiliation} | {self.year}"
 
     @classmethod
     def get(
         cls,
-        given_names,
-        last_name,
-        orcid,
-        declared_name,
+        person_name,
+        affiliation,
+        year,
     ):
-        if orcid:
-            return cls.objects.get(orcid=orcid)
-        elif given_names or last_name:
+        year = remove_extra_spaces(year)
+        try:
             return cls.objects.get(
-                given_names__iexact=given_names,
-                last_name__iexact=last_name,
-                orcid__isnull=True,
+                person_name=person_name, affiliation=affiliation, year=year
             )
-        elif declared_name:
-            return cls.objects.get(declared_name=declared_name)
-        raise ValueError(
-            "Researcher.get requires orcid, given_names, last_names or declared_name parameters"
-        )
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(
+                person_name=person_name, affiliation=affiliation, year=year
+            ).first()
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        person_name,
+        affiliation,
+        year,
+    ):
+        year = remove_extra_spaces(year)
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.person_name = person_name
+            obj.affiliation = affiliation
+            obj.year = year
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(person_name, affiliation, year)
 
     @classmethod
     def create_or_update(
         cls,
-        given_names,
-        last_name,
-        declared_name,
-        suffix,
-        orcid,
-        lattes,
-        email,
-        institution_name,
+        user,
+        given_names=None,
+        last_name=None,
+        suffix=None,
+        declared_name=None,
+        affiliation=None,
+        year=None,
+        orcid=None,
+        lattes=None,
+        other_ids=None,
+        email=None,
         gender=None,
         gender_identification_status=None,
-        user=None,
     ):
-        try:
-            researcher = cls.get(
-                given_names=given_names,
-                last_name=last_name,
-                orcid=orcid,
-                declared_name=declared_name,
-            )
-            researcher.updated_by = user or researcher.updated_by
-        except cls.DoesNotExist:
-            researcher = cls()
-            researcher.creator = user
-            researcher.orcid = orcid
-
-        researcher.given_names = given_names or researcher.given_names
-        researcher.last_name = last_name or researcher.last_name
-        institution = None
-        if institution_name:
-            try:
-                institution = Institution.objects.get(name=institution_name)
-            except Institution.DoesNotExist:
-                pass
-
-        researcher.declared_name = declared_name or researcher.declared_name
-        researcher.suffix = suffix or researcher.suffix
-        researcher.lattes = lattes or researcher.lattes
-        ## TODO
-        ## Criar get_or_create para model gender e GenderIdentificationStatus
-        researcher.gender = gender or researcher.gender
-        researcher.gender_identification_status = (
-            gender_identification_status or researcher.gender_identification_status
+        person_name = PersonName.create_or_update(
+            user,
+            given_names=given_names,
+            last_name=last_name,
+            suffix=suffix,
+            declared_name=declared_name,
+            fullname=None,
+            gender=gender,
+            gender_identification_status=gender_identification_status,
         )
-        researcher.save()
 
-        if email:
-            FieldEmail.objects.create(page=researcher, email=email)
-        if institution:
-            FieldAffiliation.objects.create(page=researcher, institution=institution)
+        researcher = cls.get_or_create(
+            user=user,
+            person_name=person_name,
+            affiliation=affiliation,
+            year=year,
+        )
+
+        try:
+            ids = other_ids or []
+            if orcid:
+                orcid = orcid.split("/")[-1]
+                ids.append({"identifier": orcid, "source_name": "ORCID"})
+            if lattes:
+                lattes = lattes.split("/")[-1]
+                ids.append({"identifier": lattes, "source_name": "LATTES"})
+            if email:
+                for email_ in email.replace(",", ";").split(";"):
+                    ids.append({"identifier": email_, "source_name": "EMAIL"})
+
+            for id_ in ids:
+                # {"identifier": email_, "source_name": "EMAIL"}
+                ResearcherAKA.get_or_create(
+                    user=user,
+                    researcher_identifier=ResearcherIdentifier.get_or_create(
+                        user, **id_
+                    ),
+                    researcher=researcher,
+                )
+        except Exception as e:
+            logging.exception(
+                f"Unable to register researcher with ID {person_name} {affiliation} {year} {e}"
+            )
+
         return researcher
 
-    panels = [
-        FieldPanel("given_names"),
-        FieldPanel("last_name"),
-        FieldPanel("suffix"),
-        FieldPanel("orcid"),
-        FieldPanel("lattes"),
-        InlinePanel("page_email", label=_("Email")),
-        FieldPanel("gender"),
-        FieldPanel("gender_identification_status"),
-        InlinePanel("affiliation", label=_("Affiliation")),
-    ]
 
-    base_form_class = ResearcherForm
+class Affiliation(CommonControlField):
+    institution = models.ForeignKey(
+        Institution,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
 
+    class Meta:
+        unique_together = [("institution", )]
 
-class FieldEmail(Orderable):
-    page = ParentalKey(Researcher, on_delete=models.CASCADE, related_name="page_email")
-    email = models.EmailField(_("Email"), max_length=128, blank=True, null=True)
+    def autocomplete_label(self):
+        return str(self.institution)
 
+    @classmethod
+    def _get(cls, institution):
+        try:
+            return cls.objects.get(institution=institution)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(institution=institution).first()
 
-class FieldAffiliation(Orderable, InstitutionHistory):
-    page = ParentalKey(Researcher, on_delete=models.CASCADE, related_name="affiliation")
+    @classmethod
+    def _create(cls, user, institution):
+        try:
+            obj = cls()
+            obj.institution = institution
+            obj.creator = user
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls._get(institution)
+
+    @classmethod
+    def get_or_create(
+        cls,
+        user,
+        name,
+        acronym,
+        level_1,
+        level_2,
+        level_3,
+        location,
+        official,
+        is_official,
+        url,
+        institution_type,
+    ):
+        try:
+            institution = Institution.create_or_update(
+                user=user,
+                name=name,
+                acronym=acronym,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+                location=location,
+                official=official,
+                is_official=is_official,
+                url=url,
+                institution_type=institution_type,
+            )
+            return cls._get(institution=institution)
+        except cls.DoesNotExist:
+            return cls._create(user, institution)
 
 
 class PersonName(CommonControlField):
@@ -273,6 +293,11 @@ class PersonName(CommonControlField):
 
     def autocomplete_label(self):
         return str(self)
+
+    @property
+    def get_full_name(self):
+        suffix = self.suffix and f" {self.suffix}"
+        return f"{self.last_name}{suffix}, {self.given_names}"
 
     @staticmethod
     def join_names(given_names, last_name, suffix):
@@ -394,7 +419,7 @@ class ResearcherIdentifier(CommonControlField, ClusterableModel):
     panels = [
         FieldPanel("identifier"),
         FieldPanel("source_name"),
-        # InlinePanel("researcher_also_known_as"),
+        InlinePanel("researcher_also_known_as"),
     ]
 
     base_form_class = ResearcherForm
@@ -462,3 +487,82 @@ class ResearcherIdentifier(CommonControlField, ClusterableModel):
             return cls._get(identifier, source_name)
         except cls.DoesNotExist:
             return cls._create(user, identifier, source_name)
+
+
+class ResearcherAKA(CommonControlField, Orderable):
+    researcher_identifier = ParentalKey(
+        ResearcherIdentifier,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="researcher_also_known_as",
+    )
+    researcher = models.ForeignKey(
+        Researcher, blank=True, null=True, on_delete=models.SET_NULL
+    )
+
+    base_form_class = ResearcherForm
+
+    panels = [
+        AutocompletePanel("researcher"),
+    ]
+
+    @classmethod
+    def get(
+        cls,
+        researcher_identifier,
+        researcher,
+    ):
+        if researcher and researcher_identifier:
+            return cls.objects.get(
+                researcher=researcher,
+                researcher_identifier=researcher_identifier,
+            )
+        raise ValueError(
+            "ResearcherIdentifier.get requires researcher and researcher_identifier"
+        )
+
+    @classmethod
+    def get(
+        cls,
+        researcher_identifier,
+        researcher,
+    ):
+        try:
+            return cls.objects.get(researcher_identifier=researcher_identifier, researcher=researcher)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(
+                researcher_identifier=researcher_identifier,
+                researcher=researcher,
+            ).first()
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        researcher_identifier,
+        researcher,
+    ):
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.researcher_identifier = researcher_identifier
+            obj.researcher = researcher
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(researcher_identifier, researcher)
+
+    @classmethod
+    def get_or_create(
+        cls,
+        user,
+        researcher_identifier,
+        researcher,
+    ):
+        try:
+            return cls.get(researcher_identifier, researcher)
+        except cls.DoesNotExist:
+            return cls.create(
+                user, researcher_identifier, researcher
+            )
