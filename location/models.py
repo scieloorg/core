@@ -626,54 +626,6 @@ class Location(CommonControlField):
         except cls.DoesNotExist:
             return cls._create(user, country, state, city)
 
-    @staticmethod
-    def _standardize_parts(text_city, text_state, text_country, user=None):
-        cities = list(City.standardize(text_city, user))
-        if cities:
-            # {"city": City object} or {"city": 'city name'}
-            yield cities
-
-        states = list(State.standardize(text_state, user))
-        if states:
-            # {"state": State object} or
-            # {"state": {"name": 'state name', "code": "state code"}}
-            yield states
-
-        countries = list(Country.standardize(text_country, user))
-        if countries:
-            # {"country": Country object} or
-            # {"country": {"name": 'country name', "code": "country code"}}
-            yield countries
-
-    @staticmethod
-    def standardize_parts(text_city, text_state, text_country, user=None):
-        lists = Location._standardize_parts(
-            text_city, text_state, text_country, user)
-        for param_list in zip(*lists):
-            params = {}
-            for param in param_list:
-                params.update(param)
-            if params:
-                yield params
-
-    @staticmethod
-    def standardize(text_city, text_state, text_country, user=None):
-        """
-        Returns a dict generator which key is the name of the class and
-        which value is or the object of the class or name + code
-        Returns object if user is provided
-        """
-        items = Location.standardize_parts(text_city, text_state, text_country, user)
-        for params in items:
-            if user:
-                # Location object
-                item = Location.create_or_update(user, **params)
-            else:
-                # {"city": 'city name', "state": {"code": '', "name": ''},
-                # "country": {"code": '', "name": ''},}
-                item = params
-            yield {"location": item}
-
 
 class CountryFile(models.Model):
     attachment = models.ForeignKey(
