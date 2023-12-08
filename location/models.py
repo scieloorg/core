@@ -552,18 +552,43 @@ class Location(CommonControlField):
         cls,
         user,
         country=None,
+        country_name=None,
+        country_acron3=None,
+        country_acronym=None,
         state=None,
+        state_name=None,
+        state_acronym=None,
         city=None,
+        city_name=None,
+        lang=None,
     ):
-        # check if exists the location
         try:
-            location = cls._get(country, state, city)
-            location.updated_by = user
-            location.country = country or location.country
-            location.state = state or location.state
-            location.city = city or location.city
-            location.save()
-            return location
+            try:
+                country = country or Country.create_or_update(
+                    user,
+                    name=country_name,
+                    acronym=country_acronym,
+                    acron3=country_acron3,
+                    country_names=None,
+                    lang_code2=lang,
+                )
+            except Exception as e:
+                pass
+
+            try:
+                state = state or State.create_or_update(
+                    user, name=state_name, acronym=state_acronym)
+            except Exception as e:
+                pass
+
+            try:
+                city = city or City.get_or_create(
+                    user, city_name
+                )
+            except Exception as e:
+                pass
+
+            return cls._get(country, state, city)
         except cls.DoesNotExist:
             return cls._create(user, country, state, city)
 
