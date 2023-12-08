@@ -497,6 +497,7 @@ class Location(CommonControlField):
     class Meta:
         verbose_name = _("Location")
         verbose_name_plural = _("Locations")
+        unique_together = [("country", "state", "city")]
 
     def __unicode__(self):
         return f"{self.country} | {self.state} | {self.city}"
@@ -527,6 +528,26 @@ class Location(CommonControlField):
         raise ValueError("Location.get requires country or state or city parameters")
 
     @classmethod
+    def _create(
+        cls,
+        user,
+        country=None,
+        state=None,
+        city=None,
+    ):
+        # check if exists the location
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.country = country or obj.country
+            obj.state = state or obj.state
+            obj.city = city or obj.city
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls._get(country, state, city)
+
+    @classmethod
     def create_or_update(
         cls,
         user,
@@ -547,6 +568,8 @@ class Location(CommonControlField):
         location.city = city or location.city
         location.save()
         return location
+
+
 
     @staticmethod
     def _standardize_parts(text_city, text_state, text_country, user=None):
