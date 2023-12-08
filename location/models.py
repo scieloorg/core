@@ -245,6 +245,7 @@ class CountryName(TextWithLang, Orderable):
     class Meta:
         verbose_name = _("Country name")
         verbose_name_plural = _("Country names")
+        unique_together = [("country", "language")]
         indexes = [
             models.Index(
                 fields=[
@@ -281,7 +282,10 @@ class CountryName(TextWithLang, Orderable):
     def get(cls, country, language):
         if not country and not language:
             raise ValueError("CountryName.get requires country or language")
-        return cls.objects.get(country=country, language=language)
+        try:
+            return cls.objects.get(country=country, language=language)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(country=country, language=language).first()
 
     @classmethod
     def create_or_update(cls, user, country, language, text):
@@ -289,23 +293,35 @@ class CountryName(TextWithLang, Orderable):
         try:
             obj = cls.get(country, language)
             obj.updated_by = user
+            obj.country = country or obj.country
+            obj.language = language or obj.language
+            obj.text = text or obj.text
+            obj.save()
+            return obj
         except cls.DoesNotExist:
+            return cls.create(user, country, language, text)
+
+    @classmethod
+    def create(cls, user, country, language, text):
+        text = remove_extra_spaces(text)
+        try:
             obj = cls()
             obj.creator = user
-
-        obj.country = country or obj.country
-        obj.language = language or obj.language
-        obj.text = text or obj.text
-        obj.save()
-
-        return obj
+            obj.country = country or obj.country
+            obj.language = language or obj.language
+            obj.text = text or obj.text
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(country, language)
 
     @classmethod
     def get_country(cls, name):
         name = remove_extra_spaces(name)
-        for item in CountryName.objects.filter(text=name).iterator():
-            if item.country:
-                return item.country
+        if name:
+            for item in CountryName.objects.filter(text=name).iterator():
+                if item.country:
+                    return item.country
         raise cls.DoesNotExist(f"CountryName {name} does not exist")
 
 
