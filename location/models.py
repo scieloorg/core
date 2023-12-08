@@ -512,11 +512,18 @@ class Location(CommonControlField):
         city=None,
     ):
         if country or state or city:
-            return cls.objects.get(
-                country=country,
-                state=state,
-                city=city,
-            )
+            try:
+                return cls.objects.get(
+                    country=country,
+                    state=state,
+                    city=city,
+                )
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(
+                    country=country,
+                    state=state,
+                    city=city,
+                ).first()
         raise ValueError("Location.get requires country or state or city parameters")
 
     @classmethod
