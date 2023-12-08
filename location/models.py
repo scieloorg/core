@@ -40,6 +40,7 @@ class City(CommonControlField):
         indexes = [
             models.Index(fields=["name"]),
         ]
+        unique_together = [("name",)]
 
     def __unicode__(self):
         return self.name
@@ -59,17 +60,34 @@ class City(CommonControlField):
 
     @classmethod
     def get_or_create(cls, user=None, name=None):
+        try:
+            return cls.get(name)
+        except cls.DoesNotExist:
+            return cls.create(user, name)
+
+    @classmethod
+    def get(cls, name):
         name = remove_extra_spaces(name)
         if not name:
             raise ValueError("City.get_or_create requires name")
         try:
             return cls.objects.get(name__iexact=name)
-        except cls.DoesNotExist:
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(name__iexact=name).first()
+
+    @classmethod
+    def create(cls, user=None, name=None):
+        name = remove_extra_spaces(name)
+        if not name:
+            raise ValueError("City.get_or_create requires name")
+        try:
             city = City()
             city.name = name
             city.creator = user
             city.save()
             return city
+        except IntegrityError:
+            return cls.get(name)
 
     @staticmethod
     def standardize(text, user=None):
@@ -227,6 +245,7 @@ class CountryName(TextWithLang, Orderable):
     class Meta:
         verbose_name = _("Country name")
         verbose_name_plural = _("Country names")
+        unique_together = [("country", "language")]
         indexes = [
             models.Index(
                 fields=[
@@ -263,7 +282,10 @@ class CountryName(TextWithLang, Orderable):
     def get(cls, country, language):
         if not country and not language:
             raise ValueError("CountryName.get requires country or language")
-        return cls.objects.get(country=country, language=language)
+        try:
+            return cls.objects.get(country=country, language=language)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(country=country, language=language).first()
 
     @classmethod
     def create_or_update(cls, user, country, language, text):
@@ -271,23 +293,35 @@ class CountryName(TextWithLang, Orderable):
         try:
             obj = cls.get(country, language)
             obj.updated_by = user
+            obj.country = country or obj.country
+            obj.language = language or obj.language
+            obj.text = text or obj.text
+            obj.save()
+            return obj
         except cls.DoesNotExist:
+            return cls.create(user, country, language, text)
+
+    @classmethod
+    def create(cls, user, country, language, text):
+        text = remove_extra_spaces(text)
+        try:
             obj = cls()
             obj.creator = user
-
-        obj.country = country or obj.country
-        obj.language = language or obj.language
-        obj.text = text or obj.text
-        obj.save()
-
-        return obj
+            obj.country = country or obj.country
+            obj.language = language or obj.language
+            obj.text = text or obj.text
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(country, language)
 
     @classmethod
     def get_country(cls, name):
         name = remove_extra_spaces(name)
-        for item in CountryName.objects.filter(text=name).iterator():
-            if item.country:
-                return item.country
+        if name:
+            for item in CountryName.objects.filter(text=name).iterator():
+                if item.country:
+                    return item.country
         raise cls.DoesNotExist(f"CountryName {name} does not exist")
 
 
@@ -497,6 +531,7 @@ class Location(CommonControlField):
     class Meta:
         verbose_name = _("Location")
         verbose_name_plural = _("Locations")
+        unique_together = [("country", "state", "city")]
 
     def __unicode__(self):
         return f"{self.country} | {self.state} | {self.city}"
@@ -505,22 +540,29 @@ class Location(CommonControlField):
         return f"{self.country} | {self.state} | {self.city}"
 
     @classmethod
-    def get(
+    def _get(
         cls,
         country=None,
         state=None,
         city=None,
     ):
         if country or state or city:
-            return cls.objects.get(
-                country=country,
-                state=state,
-                city=city,
-            )
+            try:
+                return cls.objects.get(
+                    country=country,
+                    state=state,
+                    city=city,
+                )
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(
+                    country=country,
+                    state=state,
+                    city=city,
+                ).first()
         raise ValueError("Location.get requires country or state or city parameters")
 
     @classmethod
-    def create_or_update(
+    def _create(
         cls,
         user,
         country=None,
@@ -529,65 +571,60 @@ class Location(CommonControlField):
     ):
         # check if exists the location
         try:
-            location = cls.get(country, state, city)
-            location.updated_by = user
+            obj = cls()
+            obj.creator = user
+            obj.country = country or obj.country
+            obj.state = state or obj.state
+            obj.city = city or obj.city
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls._get(country, state, city)
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        country=None,
+        country_name=None,
+        country_acron3=None,
+        country_acronym=None,
+        state=None,
+        state_name=None,
+        state_acronym=None,
+        city=None,
+        city_name=None,
+        lang=None,
+    ):
+        try:
+            try:
+                country = country or Country.create_or_update(
+                    user,
+                    name=country_name,
+                    acronym=country_acronym,
+                    acron3=country_acron3,
+                    country_names=None,
+                    lang_code2=lang,
+                )
+            except Exception as e:
+                pass
+
+            try:
+                state = state or State.create_or_update(
+                    user, name=state_name, acronym=state_acronym)
+            except Exception as e:
+                pass
+
+            try:
+                city = city or City.get_or_create(
+                    user, city_name
+                )
+            except Exception as e:
+                pass
+
+            return cls._get(country, state, city)
         except cls.DoesNotExist:
-            location = cls()
-            location.creator = user
-
-        location.country = country or location.country
-        location.state = state or location.state
-        location.city = city or location.city
-        location.save()
-        return location
-
-    @staticmethod
-    def _standardize_parts(text_city, text_state, text_country, user=None):
-        cities = list(City.standardize(text_city, user))
-        if cities:
-            # {"city": City object} or {"city": 'city name'}
-            yield cities
-
-        states = list(State.standardize(text_state, user))
-        if states:
-            # {"state": State object} or
-            # {"state": {"name": 'state name', "code": "state code"}}
-            yield states
-
-        countries = list(Country.standardize(text_country, user))
-        if countries:
-            # {"country": Country object} or
-            # {"country": {"name": 'country name', "code": "country code"}}
-            yield countries
-
-    @staticmethod
-    def standardize_parts(text_city, text_state, text_country, user=None):
-        lists = Location._standardize_parts(
-            text_city, text_state, text_country, user)
-        for param_list in zip(*lists):
-            params = {}
-            for param in param_list:
-                params.update(param)
-            if params:
-                yield params
-
-    @staticmethod
-    def standardize(text_city, text_state, text_country, user=None):
-        """
-        Returns a dict generator which key is the name of the class and
-        which value is or the object of the class or name + code
-        Returns object if user is provided
-        """
-        items = Location.standardize_parts(text_city, text_state, text_country, user)
-        for params in items:
-            if user:
-                # Location object
-                item = Location.create_or_update(user, **params)
-            else:
-                # {"city": 'city name', "state": {"code": '', "name": ''},
-                # "country": {"code": '', "name": ''},}
-                item = params
-            yield {"location": item}
+            return cls._create(user, country, state, city)
 
 
 class CountryFile(models.Model):
