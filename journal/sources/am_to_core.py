@@ -11,6 +11,7 @@ from journal.models import (
     Collection,
     CopyrightHolderHistory,
     IndexedAt,
+    AdditionalIndexedAt,
     Journal,
     JournalEmail,
     JournalHistory,
@@ -600,23 +601,24 @@ def get_or_create_indexed_at(journal, indexed_at, user):
     indexed_at:
         [{'_': 'Index to Dental Literature'}, {'_': 'LILACS'}, {'_': 'Base de Dados BBO'}, {'_': "Ulrich's"}, {'_': 'Biological Abstracts'}, {'_': 'Medline'}]
     """
-    data = []
+    data_index = []
+    data_additional_indexed= []
     if indexed_at:
         indexed = extract_value(indexed_at)
         if isinstance(indexed, str):
             indexed = [indexed]
         for i in indexed:
-            obj = IndexedAt.objects.filter(
-                Q(name__icontains=i) | Q(acronym__icontains=i)
-            ).first()
-            if not obj:
-                obj = IndexedAt.create_or_update(
-                    name=i,
+            try:
+                obj_index = IndexedAt.objects.get(Q(name__iexact=i) | Q(acronym__iexact=i))
+            except IndexedAt.DoesNotExist:
+                obj_additional_index, created = AdditionalIndexedAt.objects.get_or_create(
+                    name__icontains=i,
                     user=user,
                 )
-            data.append(obj)
-        journal.indexed_at.set(data)
-
+                data_additional_indexed.append(obj_additional_index)
+            data_index.append(obj_index)
+        journal.indexed_at.set(data_index)
+        journal.additional_index_at.set(data_additional_indexed)
 
 def create_or_update_location(
     journal,
