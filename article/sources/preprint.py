@@ -38,10 +38,16 @@ def harvest_preprints(URL, user):
             article.titles.set(
                 get_or_create_titles(titles=article_info.get("title"), user=user)
             )
+
+            try:
+                year = article.issue.year
+            except AttributeError:
+                year = None
             article.researchers.set(
                 get_or_create_researches(
                     user,
                     authors=article_info.get("authors"),
+                    year=year
                 )
             )
             article.keywords.set(
@@ -220,19 +226,22 @@ def set_dates(article, date):
     article.set_date_pub(date)
 
 
-def get_or_create_researches(user, authors):
+def get_or_create_researches(user, authors, year):
     data = []
     for author in authors:
+        # em preprint, por enquanto existem apenas:
+        # given_names, surname, declared_name
         obj = models.Researcher.create_or_update(
             user=user,
             given_names=author.get("given_names"),
             last_name=author.get("surname"),
             declared_name=author.get("declared_name"),
-            email=None,
-            affiliation=None,
-            suffix=None,
-            orcid=None,
-            lattes=None,
+            email=author.get("email"),
+            affiliation=author.get("affiliation"),
+            suffix=author.get("suffix"),
+            orcid=author.get("orcid"),
+            lattes=author.get("lattes"),
+            year=year,
         )
         data.append(obj)
     return data
