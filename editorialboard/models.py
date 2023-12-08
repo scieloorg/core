@@ -1,6 +1,6 @@
 import os
 
-from django.db import models
+from django.db import models, IntegrityError
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -15,6 +15,96 @@ from journal.models import Journal
 from researcher.models import Researcher
 
 from . import choices
+
+
+class EditorialBoard(CommonControlField, ClusterableModel):
+    journal = models.ForeignKey(
+        Journal, null=True, blank=True, related_name="+", on_delete=models.SET_NULL
+    )
+    initial_year = models.CharField(max_length=4, blank=True, null=True)
+    final_year = models.CharField(max_length=4, blank=True, null=True)
+
+    class Meta:
+        unique_together = [["journal", "initial_year", "final_year"]]
+
+        indexes = [
+            models.Index(
+                fields=[
+                    "initial_year",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "final_year",
+                ]
+            ),
+        ]
+
+    panels = [
+        FieldPanel("initial_year"),
+        FieldPanel("final_year"),
+        # InlinePanel("editorial_board_member"),
+    ]
+    base_form_class = CoreAdminModelForm
+
+    def __str__(self):
+        return f"{self.journal.title} {self.initial_year}-{self.final_year}"
+
+    @classmethod
+    def get_or_create(
+        cls,
+        journal,
+        initial_year,
+        final_year,
+        user=None,
+    ):
+        try:
+            return cls.get(journal, initial_year, final_year)
+        except cls.DoesNotExist:
+            return cls.create(user, journal, initial_year, final_year)
+
+    @classmethod
+    def get(
+        cls,
+        journal,
+        initial_year,
+        final_year,
+    ):
+        try:
+            return cls.objects.get(
+                journal=journal,
+                initial_year=initial_year,
+                final_year=final_year,
+            )
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(
+                journal=journal,
+                initial_year=initial_year,
+                final_year=final_year,
+            ).first()
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        journal,
+        initial_year,
+        final_year,
+    ):
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.journal = journal
+            obj.initial_year = initial_year
+            obj.final_year = final_year
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.objects.get(
+                journal=journal,
+                initial_year=initial_year,
+                final_year=final_year,
+            )
 
 
 class EditorialBoardMember(models.Model):
