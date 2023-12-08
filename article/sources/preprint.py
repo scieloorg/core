@@ -8,6 +8,7 @@ from sickle import Sickle
 
 from article import models
 from article.utils.parse_name_author import parse_author_name
+from institution.models import Publisher
 
 namespaces = {
     "oai_dc": "http://www.openarchives.org/OAI/2.0/oai_dc/",
@@ -64,7 +65,7 @@ def harvest_preprints(URL, user):
             article.languages.add(
                 get_or_create_language(lang=article_info.get("language"), user=user)
             )
-            article.publisher = get_publisher(publisher=article_info.get("publisher"))
+            article.publisher = get_publisher(user, publisher=article_info.get("publisher"))
             article.save()
         except Exception as e:
             # TODO cria um registro das falhas de modo que fiquem
@@ -215,11 +216,20 @@ def get_doi(identifier):
     return data
 
 
-def get_publisher(publisher):
-    try:
-        return models.Institution.objects.get(name=publisher[0]["text"])
-    except (models.Institution.DoesNotExist, IndexError):
-        return None
+def get_publisher(user, publisher):
+    return Publisher.get_or_create(
+        user=user,
+        name=publisher[0]["text"],
+        acronym=None,
+        level_1=None,
+        level_2=None,
+        level_3=None,
+        location=None,
+        official=None,
+        is_official=None,
+        url=None,
+        institution_type=None,
+    )
 
 
 def set_dates(article, date):

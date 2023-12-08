@@ -6,7 +6,7 @@ from sickle import Sickle
 
 from lxml import etree
 
-from book.models import Book, Institution, RecRaw
+from book.models import Book, Publisher, RecRaw
 from book.utils.utils import parse_author_name
 from core.models import Language
 from researcher.models import Researcher
@@ -75,17 +75,18 @@ def get_book(rec):
 def create_or_update_book(book, user=None):
     researchers = get_or_create_researchers(user, book.get("creator"), book.get("date"))
     language = Language.get_or_create(code2=book.get("language"))
-    institution = Institution.create_or_update(
-        inst_name=book.get("publisher"),
-        url=None,
-        inst_acronym=None,
+    publisher = Publisher.create_or_update(
+        user=user,
+        name=book.get("publisher"),
+        acronym=None,
         level_1=None,
         level_2=None,
         level_3=None,
         location=None,
         official=None,
         is_official=None,
-        user=user,
+        url=None,
+        institution_type=None,
     )
     try:
         obj = Book.create_or_update(
@@ -94,7 +95,7 @@ def create_or_update_book(book, user=None):
             year=book.get("date"),
             identifier=book.get("identifier"),
             researchers=researchers,
-            institution=institution,
+            publisher=publisher,
             language=language,
             user=user,
             doi=None,

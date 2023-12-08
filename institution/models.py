@@ -1,3 +1,5 @@
+import csv
+import logging
 import os
 
 from django.db import models, IntegrityError
@@ -9,14 +11,18 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
-from location.models import Country, Location
+from core.utils.standardizer import remove_extra_spaces
+from location.models import Country, Location, State
 
 from . import choices
 from .forms import ScimagoForm
 
 
 class Institution(CommonControlField, ClusterableModel):
-    name = models.TextField(_("Name"), null=True, blank=True)
+    institution_identification = models.ForeignKey(
+        "InstitutionIdentification", null=True, blank=True, on_delete=models.SET_NULL
+    )
+
     institution_type = models.TextField(
         _("Institution Type"), choices=choices.inst_type, null=True, blank=True
     )
@@ -24,7 +30,6 @@ class Institution(CommonControlField, ClusterableModel):
         Location, null=True, blank=True, on_delete=models.SET_NULL
     )
 
-    acronym = models.TextField(_("Institution Acronym"), null=True, blank=True)
     level_1 = models.TextField(_("Organization Level 1"), null=True, blank=True)
     level_2 = models.TextField(_("Organization Level 2"), null=True, blank=True)
     level_3 = models.TextField(_("Organization Level 3"), null=True, blank=True)
@@ -32,29 +37,14 @@ class Institution(CommonControlField, ClusterableModel):
 
     logo = models.ImageField(_("Logo"), blank=True, null=True)
 
-    official = models.ForeignKey(
-        "Institution",
-        verbose_name=_("Institution"),
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-    )
-    is_official = models.CharField(
-        _("Is official"),
-        null=True,
-        blank=True,
-        choices=choices.is_official,
-        max_length=6,
-    )
-
-    autocomplete_search_field = "name"
+    autocomplete_search_field = "institution_identification"
 
     def autocomplete_label(self):
-        return self.name
+        return str(self)
 
+    base_form_class = CoreAdminModelForm
     panels = [
-        FieldPanel("name"),
-        FieldPanel("acronym"),
+        FieldPanel("institution_identification"),
         FieldPanel("institution_type"),
         AutocompletePanel("location"),
         FieldPanel("level_1"),
@@ -62,25 +52,16 @@ class Institution(CommonControlField, ClusterableModel):
         FieldPanel("level_3"),
         FieldPanel("url"),
         FieldPanel("logo"),
-        AutocompletePanel("official"),
-        FieldPanel("is_official"),
     ]
 
     class Meta:
+        unique_together = [
+            ("institution_identification", "level_1", "level_2", "level_3", "location"),
+        ]
         indexes = [
             models.Index(
                 fields=[
-                    "name",
-                ]
-            ),
-            models.Index(
-                fields=[
                     "institution_type",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "acronym",
                 ]
             ),
             models.Index(
@@ -92,8 +73,7 @@ class Institution(CommonControlField, ClusterableModel):
 
     def __unicode__(self):
         return "%s | %s | %s | %s | %s | %s" % (
-            self.name,
-            self.acronym,
+            self.institution_identification,
             self.level_1,
             self.level_2,
             self.level_3,
@@ -102,8 +82,7 @@ class Institution(CommonControlField, ClusterableModel):
 
     def __str__(self):
         return "%s | %s | %s | %s | %s | %s" % (
-            self.name,
-            self.acronym,
+            self.institution_identification,
             self.level_1,
             self.level_2,
             self.level_3,
@@ -112,14 +91,13 @@ class Institution(CommonControlField, ClusterableModel):
 
     @property
     def data(self):
-        _data = {
-            "institution__name": self.name,
-            "institution__acronym": self.acronym,
+        _data = self.institution_identification.data
+        _data.update({
             "institution__level_1": self.level_1,
             "institution__level_2": self.level_2,
             "institution__level_3": self.level_3,
             "institution__url": self.url,
-        }
+        })
         if self.official:
             _data.update(self.official.data)
         _data.update(
@@ -133,35 +111,44 @@ class Institution(CommonControlField, ClusterableModel):
     @classmethod
     def get(
         cls,
-        inst_name,
-        inst_acronym,
+        name,
+        acronym,
+        level_1,
+        level_2,
+        level_3,
         location,
     ):
-        if inst_name or inst_acronym:
+        if name or acronym:
             try:
-                if inst_name and inst_acronym:
-                    return cls.objects.get(
-                        Q(name__iexact=inst_name) | Q(acronym__iexact=inst_acronym),
-                        location=location,
-                    )
-                return cls.objects.get(
-                    name__iexact=inst_name,
-                    acronym__iexact=inst_acronym,
+                institution_identification = InstitutionIdentification.create_or_update(
+                    user,
+                    name,
+                    acronym,
+                    is_official=None,
+                    official=None,
+                )
+                return cls._get(
+                    institution_identification=institution_identification,
+                    level_1__iexact=level_1,
+                    level_2__iexact=level_2,
+                    level_3__iexact=level_3,
                     location=location,
                 )
             except cls.MultipleObjectsReturned:
-                return cls.objects.get(
-                    name__iexact=inst_name,
-                    acronym__iexact=inst_acronym,
+                return cls.objects.filter(
+                    institution_identification=institution_identification,
+                    level_1__iexact=level_1,
+                    level_2__iexact=level_2,
+                    level_3__iexact=level_3,
                     location=location,
-                )
-        raise ValueError("Requires inst_name or inst_acronym parameters")
+                ).first()
+        raise ValueError("Requires name or acronym parameters")
 
     @classmethod
     def create_or_update(
         cls,
-        inst_name,
-        inst_acronym,
+        name,
+        acronym,
         level_1,
         level_2,
         level_3,
@@ -169,31 +156,212 @@ class Institution(CommonControlField, ClusterableModel):
         official,
         is_official,
         url,
+        institution_type,
         user,
+    ):
+        name = remove_extra_spaces(name)
+        acronym = remove_extra_spaces(acronym)
+        level_1 = remove_extra_spaces(level_1)
+        level_2 = remove_extra_spaces(level_2)
+        level_3 = remove_extra_spaces(level_3)
+        institution_type = remove_extra_spaces(institution_type)
+
+        try:
+            institution_identification = InstitutionIdentification.create_or_update(
+                user,
+                name,
+                acronym,
+                is_official=is_official,
+                official=official,
+            )
+            institution = cls._get(
+                institution_identification=institution_identification,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+                location=location,
+            )
+            institution.updated_by = user
+            institution.institution_type = institution_type or institution.institution_type
+            institution.url = url or institution.url
+            institution.save()
+            return institution
+        except cls.DoesNotExist:
+            return cls._create(
+                user=user,
+                institution_identification=institution_identification,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+                location=location,
+                url=url,
+                institution_type=institution_type,
+            )
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        name,
+        acronym,
+        level_1,
+        level_2,
+        level_3,
+        location,
+        official,
+        is_official,
+        url,
+        institution_type,
     ):
 
         try:
-            institution = cls.get(
-                inst_name=inst_name, inst_acronym=inst_acronym, location=location
+            obj = cls()
+            obj.creator = user
+            obj.name = name
+            obj.acronym = acronym
+            obj.level_1 = level_1
+            obj.level_2 = level_2
+            obj.level_3 = level_3
+            obj.location = location
+            obj.official = official
+            obj.is_official = is_official
+            obj.url = url
+            obj.institution_type = institution_type
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(
+                name=name,
+                acronym=acronym,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+                location=location,
             )
-            institution.updated_by = user
-        except cls.DoesNotExist:
-            institution = cls()
-            institution.creator = user
 
-        institution.name = inst_name or institution.name
-        institution.acronym = inst_acronym or institution.acronym
-        institution.level_1 = level_1 or institution.level_1
-        institution.level_2 = level_2 or institution.level_2
-        institution.level_3 = level_3 or institution.level_3
-        institution.location = location or institution.location
-        institution.official = official or institution.official
-        institution.is_official = is_official or institution.is_official
-        institution.url = url or institution.url
-        institution.save()
-        return institution
+    @classmethod
+    def _get(
+        cls,
+        institution_identification,
+        level_1,
+        level_2,
+        level_3,
+        location,
+    ):
+        if institution_identification:
+            try:
+                return cls.objects.get(
+                    institution_identification=institution_identification,
+                    level_1__iexact=level_1,
+                    level_2__iexact=level_2,
+                    level_3__iexact=level_3,
+                    location=location,
+                )
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(
+                    institution_identification=institution_identification,
+                    level_1__iexact=level_1,
+                    level_2__iexact=level_2,
+                    level_3__iexact=level_3,
+                    location=location,
+                ).first()
+        raise ValueError("Instition._get requires institution_identification")
 
-    base_form_class = CoreAdminModelForm
+    @classmethod
+    def _create(
+        cls,
+        user,
+        institution_identification,
+        level_1,
+        level_2,
+        level_3,
+        location,
+        url,
+        institution_type,
+    ):
+
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.institution_identification = institution_identification
+            obj.level_1 = level_1
+            obj.level_2 = level_2
+            obj.level_3 = level_3
+            obj.location = location
+            obj.url = url
+            obj.institution_type = institution_type
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls._get(
+                institution_identification=institution_identification,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+                location=location,
+            )
+
+    @classmethod
+    def load(cls, user, file_path=None, column_labels=None, is_official=False):
+        """
+        Name;Acronym;State Acronym;Institution Type;Level_1;Level_2;Level_3
+
+        "name": "Name",
+        "acronym": "Acronym",
+        "state": "State Acronym",
+        "type": "Institution Type",
+        "level_1": "Level_1",
+        "level_2": "Level_2",
+        "level_3": "Level_3",
+        """
+        file_path = file_path or "./institution/fixtures/institutions_mec_2.csv"
+        if file_path == "./institution/fixtures/institutions_mec_2.csv":
+            is_official = True
+        column_labels = column_labels or {
+            "name": "Name",
+            "acronym": "Acronym",
+            "state": "State Acronym",
+            "type": "Institution Type",
+            "level_1": "Level_1",
+            "level_2": "Level_2",
+            "level_3": "Level_3",
+        }
+
+        with open(file_path, "r") as csvfile:
+            rows = csv.DictReader(
+                csvfile, delimiter=";", fieldnames=list(column_labels.values())
+            )
+            country = Country.create_or_update(user, acronym="BR")
+            for line, row in enumerate(rows):
+                logging.info(row)
+                name = row.get(column_labels["name"])
+                acronym = row.get(column_labels["acronym"])
+
+                if name == column_labels["name"]:
+                    continue
+
+                try:
+                    state_acronym = row.get(column_labels["state"])
+                    state = State.objects.get(acronym=state_acronym)
+                except State.DoesNotExist:
+                    continue
+
+                location = Location.create_or_update(
+                    user=user, country=country, state=state, city=None,
+                )
+                cls.create_or_update(
+                    user=user,
+                    name=name,
+                    acronym=acronym,
+                    level_1=None,
+                    level_2=None,
+                    level_3=None,
+                    location=location,
+                    official=None,
+                    is_official=is_official,
+                    url=None,
+                    institution_type=column_labels["type"],
+                )
 
 
 class InstitutionHistory(models.Model):
@@ -276,7 +444,7 @@ class BaseHistoryItem(CommonControlField):
         abstract = True
 
 
-class Sponsor(CommonControlField):
+class BaseInstitution(CommonControlField):
     institution = models.ForeignKey(
         Institution,
         on_delete=models.SET_NULL,
@@ -284,10 +452,66 @@ class Sponsor(CommonControlField):
         null=True,
     )
 
-    autocomplete_search_field = "institution__name"
+    class Meta:
+        abstract = True
+        unique_together = [("institution", )]
 
     def autocomplete_label(self):
         return str(self.institution)
+
+    @classmethod
+    def _get(cls, institution):
+        try:
+            return cls.objects.get(institution=institution)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(institution=institution).first()
+
+    @classmethod
+    def _create(cls, user, institution):
+        try:
+            obj = cls()
+            obj.institution = institution
+            obj.creator = user
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls._get(institution)
+
+    @classmethod
+    def get_or_create(
+        cls,
+        user,
+        name,
+        acronym,
+        level_1,
+        level_2,
+        level_3,
+        location,
+        official,
+        is_official,
+        url,
+        institution_type,
+    ):
+        try:
+            institution = Institution.create_or_update(
+                user=user,
+                name=name,
+                acronym=acronym,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+                location=location,
+                official=official,
+                is_official=is_official,
+                url=url,
+                institution_type=institution_type,
+            )
+            return cls._get(institution=institution)
+        except cls.DoesNotExist:
+            return cls._create(user, institution)
+
+
+class Sponsor(BaseInstitution):
 
     panels = [
         AutocompletePanel("institution"),
@@ -295,19 +519,14 @@ class Sponsor(CommonControlField):
 
     base_form_class = CoreAdminModelForm
 
+    @staticmethod
+    def autocomplete_custom_queryset_filter(any_value):
+        return Sponsor.objects.filter(
+            Q(institution__institution_name__icontains=any_value)
+        )
 
-class Publisher(CommonControlField):
-    institution = models.ForeignKey(
-        Institution,
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-    )
 
-    autocomplete_search_field = "institution__name"
-
-    def autocomplete_label(self):
-        return str(self.institution)
+class Publisher(BaseInstitution):
 
     panels = [
         AutocompletePanel("institution"),
@@ -315,65 +534,53 @@ class Publisher(CommonControlField):
 
     base_form_class = CoreAdminModelForm
 
+    @staticmethod
+    def autocomplete_custom_queryset_filter(any_value):
+        return Publisher.objects.filter(
+            Q(institution__institution_name__icontains=any_value)
+        )
 
-class CopyrightHolder(CommonControlField):
-    institution = models.ForeignKey(
-        Institution,
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-    )
 
-    autocomplete_search_field = "institution__name"
-
-    def autocomplete_label(self):
-        return str(self.institution)
-
+class CopyrightHolder(BaseInstitution):
     panels = [
         AutocompletePanel("institution"),
     ]
 
     base_form_class = CoreAdminModelForm
 
+    @staticmethod
+    def autocomplete_custom_queryset_filter(any_value):
+        return CopyrightHolder.objects.filter(
+            Q(institution__institution_name__icontains=any_value)
+        )
 
-class Owner(CommonControlField):
-    institution = models.ForeignKey(
-        Institution,
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-    )
 
-    autocomplete_search_field = "institution__name"
-
-    def autocomplete_label(self):
-        return str(self.institution)
-
+class Owner(BaseInstitution):
     panels = [
         AutocompletePanel("institution"),
     ]
 
     base_form_class = CoreAdminModelForm
 
+    @staticmethod
+    def autocomplete_custom_queryset_filter(any_value):
+        return Owner.objects.filter(
+            Q(institution__institution_name__icontains=any_value)
+        )
 
-class EditorialManager(CommonControlField):
-    institution = models.ForeignKey(
-        Institution,
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-    )
 
-    autocomplete_search_field = "institution__name"
-
-    def autocomplete_label(self):
-        return str(self.institution)
-
+class EditorialManager(BaseInstitution):
     panels = [
         AutocompletePanel("institution"),
     ]
 
     base_form_class = CoreAdminModelForm
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(any_value):
+        return EditorialManager.objects.filter(
+            Q(institution__institution_name__icontains=any_value)
+        )
 
 
 class Scimago(CommonControlField, ClusterableModel):

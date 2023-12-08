@@ -10,14 +10,17 @@ def load_financial_data(row, user):
     article_findings = []
     for institution in row.get("funding_source").split(","):
         sponsor = Sponsor.get_or_create(
-            inst_name=institution,
-            inst_acronym=None,
+            user=user,
+            name=institution,
+            acronym=None,
             level_1=None,
             level_2=None,
             level_3=None,
             location=None,
             official=None,
             is_official=None,
+            url=None,
+            institution_type=None,
         )
         article_findings.append(
             ArticleFunding.get_or_create(

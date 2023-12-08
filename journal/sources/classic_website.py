@@ -5,7 +5,7 @@ import requests
 import xmltodict
 
 from collection.models import Collection
-from institution.models import Institution, InstitutionHistory
+from institution.models import Publisher, PublisherHistory
 from journal.models import Journal, Mission, OfficialJournal, SciELOJournal
 from tracker.models import UnexpectedEvent
 
@@ -136,16 +136,21 @@ def create_journal(user, journal_xml, collection):
 
         institution_name = journal_xml["SERIAL"]["PUBLISHERS"]["PUBLISHER"]["NAME"]
         # the other parameters are not available in the XML file
-        institution = Institution.get_or_create(
-            inst_name=institution_name,
-            inst_acronym=None,
+        publisher = Publisher.get_or_create(
+            user=user,
+            name=institution_name,
+            acronym=None,
             level_1=None,
             level_2=None,
             level_3=None,
             location=None,
+            official=None,
+            is_official=None,
+            url=None,
+            institution_type=None,
         )
-        history = InstitutionHistory.get_or_create(
-            institution=institution, initial_date=None, final_date=None
+        history = PublisherHistory.get_or_create(
+            institution=publisher, initial_date=None, final_date=None
         )
         journal.panels_publisher.append(history)
         journal.creator = user

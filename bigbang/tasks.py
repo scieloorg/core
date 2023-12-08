@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from config import celery_app
 from collection.models import Collection
 from core.models import Language
-from institution.models import InstitutionIdentification
+from institution.models import Institution
 from location.models import Country, City, State
 from journal.models import Standard, Subject, WebOfKnowledge, WebOfKnowledgeSubjectCategory
 from vocabulary.models import Vocabulary
@@ -38,4 +38,4 @@ def task_start(
     City.load(user)
     ThematicArea.load(user)
     WebOfKnowledgeSubjectCategory.load(user)
-    InstitutionIdentification.load(user)
+    Institution.load(user)
