@@ -505,7 +505,7 @@ class Location(CommonControlField):
         return f"{self.country} | {self.state} | {self.city}"
 
     @classmethod
-    def get(
+    def _get(
         cls,
         country=None,
         state=None,
@@ -529,7 +529,7 @@ class Location(CommonControlField):
     ):
         # check if exists the location
         try:
-            location = cls.get(country, state, city)
+            location = cls._get(country, state, city)
             location.updated_by = user
         except cls.DoesNotExist:
             location = cls()
