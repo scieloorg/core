@@ -40,6 +40,7 @@ def harvest_preprints(URL, user):
             )
             article.researchers.set(
                 get_or_create_researches(
+                    user,
                     authors=article_info.get("authors"),
                 )
             )
@@ -219,15 +220,16 @@ def set_dates(article, date):
     article.set_date_pub(date)
 
 
-def get_or_create_researches(authors):
+def get_or_create_researches(user, authors):
     data = []
     for author in authors:
-        obj = models.Researcher.get_or_create(
+        obj = models.Researcher.create_or_update(
+            user=user,
             given_names=author.get("given_names"),
             last_name=author.get("surname"),
             declared_name=author.get("declared_name"),
             email=None,
-            institution_name=None,
+            affiliation=None,
             suffix=None,
             orcid=None,
             lattes=None,
