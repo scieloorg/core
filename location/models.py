@@ -559,17 +559,13 @@ class Location(CommonControlField):
         try:
             location = cls._get(country, state, city)
             location.updated_by = user
+            location.country = country or location.country
+            location.state = state or location.state
+            location.city = city or location.city
+            location.save()
+            return location
         except cls.DoesNotExist:
-            location = cls()
-            location.creator = user
-
-        location.country = country or location.country
-        location.state = state or location.state
-        location.city = city or location.city
-        location.save()
-        return location
-
-
+            return cls._create(user, country, state, city)
 
     @staticmethod
     def _standardize_parts(text_city, text_state, text_country, user=None):
