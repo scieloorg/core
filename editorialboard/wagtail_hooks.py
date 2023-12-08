@@ -78,12 +78,12 @@ class EditorialBoardMemberAdminGroup(ModelAdminGroup):
 def register_editorial_url():
     return [
         path(
-            "researcher/editorialboradmember/validate",
+            "editorialboard/editorialboradmember/validate",
             validate_ebm,
             name="validate_ebm",
         ),
         path(
-            "researcher/editorialboradmember/import_file",
+            "editorialboard/editorialboradmember/import_file",
             import_file_ebm,
             name="import_file_ebm",
         ),
