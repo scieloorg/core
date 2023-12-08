@@ -204,7 +204,7 @@ def create_or_update_researchers(xmltree, user):
             orcid=author.get("orcid"),
             suffix=author.get("suffix"),
             lattes=author.get("lattes"),
-            institution_name=None,
+            affiliation=None,
             user=user,
         )
         data.append(obj)
