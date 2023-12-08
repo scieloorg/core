@@ -140,3 +140,117 @@ class EditorialBoardMemberFile(models.Model):
         return os.path.basename(self.attachment.name)
 
     panels = [FieldPanel("attachment")]
+
+
+class RoleModel(CommonControlField):
+    std_role = models.CharField(
+        _("Role"), max_length=16, choices=choices.ROLE, null=True, blank=True
+    )
+    declared_role = models.CharField(
+        _("Declared Role"), max_length=128, null=True, blank=True
+    )
+
+    class Meta:
+        unique_together = ["declared_role", "std_role"]
+        indexes = [
+            models.Index(
+                fields=[
+                    "declared_role",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "std_role",
+                ]
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.std_role} | {self.declared_role}"
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(any_value):
+        return RoleModel.objects.filter(
+            Q(declared_role__icontains=any_value) | Q(std_role__icontains=any_value)
+        )
+
+    def autocomplete_label(self):
+        return f"{self.std_role} | {self.declared_role}"
+
+    @classmethod
+    def get_or_create(
+        cls,
+        user,
+        declared_role,
+        std_role,
+    ):
+        if declared_role or std_role:
+            try:
+                declared_role = remove_extra_spaces(declared_role)
+                std_role = remove_extra_spaces(std_role)
+                std_role = std_role or RoleModel.get_std_role(declared_role)
+                return cls._get(declared_role, std_role)
+            except cls.DoesNotExist:
+                return cls._create(user, declared_role, std_role)
+        raise ValueError(
+            "RoleModel.create_or_update requires declared_role or std_role"
+        )
+
+    @classmethod
+    def get(
+        cls,
+        declared_role,
+        std_role,
+    ):
+        if declared_role or std_role:
+            try:
+                return cls.objects.get(declared_role=declared_role, std_role=std_role)
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(declared_role=declared_role, std_role=std_role).first()
+        raise ValueError(
+            "RoleModel.get requires declared_role or std_role"
+        )
+
+    @classmethod
+    def _create(
+        cls,
+        user,
+        declared_role,
+        role,
+    ):
+        if declared_role or std_role:
+            try:
+                obj = cls()
+                obj.creator = user
+                obj.declared_role = declared_role
+                obj.std_role = std_role
+                obj.save()
+                return obj
+            except IntegrityError as e:
+                return cls.objects.get(declared_role=declared_role, std_role=std_role)
+
+        raise ValueError(
+            "RoleModel.create requires declared_role or std_role"
+        )
+
+    @staticmethod
+    def get_std_role(declared_role):
+        # EDITOR_IN_CHIEF = "in-chief"
+        # EXECUTIVE_EDITOR = "executive"
+        # ASSOCIATE_EDITOR = "associate"
+        # TECHNICAL_TEAM = "technical"
+        if not declared_role:
+            return None
+        declared_role = declared_role.lower()
+        if "chef" in declared_role:
+            return choices.EDITOR_IN_CHIEF
+        if len(declared_role.split()) == 1 or "exec" in declared_role:
+            return choices.EXECUTIVE_EDITOR
+        if (
+            "assoc" in declared_role
+            or "área" in declared_role
+            or "seç" in declared_role
+            or "cient" in declared_role
+            or "editor " in declared_role
+        ):
+            return choices.ASSOCIATE_EDITOR
