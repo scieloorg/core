@@ -1,3 +1,4 @@
+import csv
 import logging
 import re
 import os
@@ -431,6 +432,11 @@ class Journal(CommonControlField, ClusterableModel):
     )
     indexed_at = models.ManyToManyField(
         "IndexedAt",
+        verbose_name=_("Indexed At"),
+    )
+    additional_indexed_at = models.ManyToManyField(
+        "AdditionalIndexedAt",
+        verbose_name=_("Additional Index At"),
     )
     secs_code = models.TextField(
         _("Secs Code"),
@@ -544,6 +550,7 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
         InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
         AutocompletePanel("indexed_at"),
+        AutocompletePanel("additional_index_at"),
         AutocompletePanel("subject_descriptor"),
         FieldPanel("subject"),
         FieldPanel("wos_db"),
@@ -1769,6 +1776,25 @@ class IndexedAt(CommonControlField):
     class Meta:
         ordering = ["name"]
 
+
+    @classmethod
+    def load(cls, user):
+        if not cls.objects.exists():
+            with open("./journal/fixture/index_at.csv", "r") as csvfile:
+                indexed_at = csv.DictReader(
+                    csvfile, fieldnames=["name", "acronym", "url", "type", "description"], delimiter=","
+                )
+                for row in indexed_at:
+                    logging.info(row)
+                    cls.create_or_update(
+                        name=row["name"],
+                        acronym=row["acronym"],
+                        url=row["url"],
+                        type=row["type"],
+                        description=row["description"],
+                        user=user,
+                    )
+
     @classmethod
     def get(
         cls,
@@ -1803,7 +1829,7 @@ class IndexedAt(CommonControlField):
 
         obj.description = description or obj.description
         obj.url = url or obj.url
-        obj.type = type or obj.type
+        obj.type = dict(choices.TYPE).get(type) if type else obj.type
         obj.updated_by = user
         obj.save()
 
@@ -1827,6 +1853,18 @@ class IndexedAtFile(models.Model):
         return os.path.basename(self.attachment.name)
 
     panels = [FieldPanel("attachment")]
+
+
+class AdditionalIndexedAt(CommonControlField):
+    name = models.TextField(_("Name"), null=True, blank=False)
+
+    autocomplete_search_field = "name"
+
+    def autocomplete_label(self):
+        return str(self)
+
+    def __str__(self):
+        return self.name
 
 
 class Annotation(CommonControlField):
