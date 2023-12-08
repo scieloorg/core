@@ -214,18 +214,39 @@ class PersonName(CommonControlField):
     last_name = models.CharField(_("Last name"), max_length=64, blank=True, null=True)
     suffix = models.CharField(_("Suffix"), max_length=16, blank=True, null=True)
     fullname = models.TextField(_("Full Name"), blank=True, null=True)
+    # nome sem padrão definido
+    declared_name = models.CharField(
+        _("Declared Name"), max_length=255, blank=True, null=True
+    )
+    gender = models.ForeignKey(Gender, blank=True, null=True, on_delete=models.SET_NULL)
+    gender_identification_status = models.CharField(
+        _("Gender identification status"),
+        max_length=255,
+        choices=choices.GENDER_IDENTIFICATION_STATUS,
+        null=True,
+        blank=True,
+    )
 
     panels = [
+        FieldPanel("declared_name"),
         FieldPanel("given_names"),
         FieldPanel("last_name"),
         FieldPanel("suffix"),
         FieldPanel("fullname"),
+        FieldPanel("gender"),
+        FieldPanel("gender_identification_status"),
     ]
     base_form_class = CoreAdminModelForm
 
     class Meta:
         unique_together = [
-            ("fullname", "last_name", "given_names", "suffix", ),
+            (
+                "fullname",
+                "last_name",
+                "given_names",
+                "suffix",
+            ),
+            ("declared_name",),
         ]
 
         indexes = [
@@ -234,19 +255,24 @@ class PersonName(CommonControlField):
                     "fullname",
                 ]
             ),
+            models.Index(
+                fields=[
+                    "declared_name",
+                ]
+            ),
         ]
 
     def __str__(self):
-        return self.fullname
+        return self.fullname or self.declared_name
 
     @staticmethod
     def autocomplete_custom_queryset_filter(search_term):
         return PersonName.objects.filter(
-            fullname__icontains=search_term
+            Q(fullname__icontains=search_term) | Q(declared_name__icontains=search_term)
         )
 
     def autocomplete_label(self):
-        return self.fullname
+        return str(self)
 
     @staticmethod
     def join_names(given_names, last_name, suffix):
@@ -265,6 +291,7 @@ class PersonName(CommonControlField):
         last_name,
         suffix,
         fullname,
+        declared_name,
     ):
         if last_name or fullname:
             try:
@@ -273,6 +300,7 @@ class PersonName(CommonControlField):
                     last_name__iexact=last_name,
                     given_names__iexact=given_names,
                     suffix__iexact=suffix,
+                    declared_name__iexact=declared_name,
                 )
             except cls.MultipleObjectsReturned:
                 return cls.objects.filter(
@@ -280,10 +308,9 @@ class PersonName(CommonControlField):
                     last_name__iexact=last_name,
                     given_names__iexact=given_names,
                     suffix__iexact=suffix,
+                    declared_name__iexact=declared_name,
                 ).first()
-        raise ValueError(
-            "PersonName.get requires fullname or last_names parameters"
-        )
+        raise ValueError("PersonName.get requires fullname or last_names parameters")
 
     @classmethod
     def _create(
@@ -293,6 +320,9 @@ class PersonName(CommonControlField):
         last_name,
         suffix,
         fullname,
+        declared_name,
+        gender,
+        gender_identification_status,
     ):
         try:
             obj = cls()
@@ -301,19 +331,21 @@ class PersonName(CommonControlField):
             obj.last_name = last_name
             obj.suffix = suffix
             obj.fullname = fullname
+            obj.declared_name = declared_name
+            obj.gender = gender
+            obj.gender_identification_status = gender_identification_status
             obj.save()
         except IntegrityError:
-            return cls._get(given_names, last_name, suffix, fullname)
+            return cls._get(given_names, last_name, suffix, fullname, declared_name)
         except Exception as e:
             data = dict(
                 given_names=given_names,
                 last_name=last_name,
                 suffix=suffix,
                 fullname=fullname,
+                declared_name=declared_name,
             )
-            raise PersonNameCreateError(
-                f"Unable to create PersonName {data} {e}"
-            )
+            raise PersonNameCreateError(f"Unable to create PersonName {data} {e}")
 
     @classmethod
     def get_or_create(
@@ -323,7 +355,11 @@ class PersonName(CommonControlField):
         last_name,
         suffix,
         fullname,
+        declared_name,
+        gender,
+        gender_identification_status,
     ):
+        declared_name = remove_extra_spaces(declared_name)
         given_names = remove_extra_spaces(given_names)
         last_name = remove_extra_spaces(last_name)
         suffix = remove_extra_spaces(suffix)
@@ -331,9 +367,18 @@ class PersonName(CommonControlField):
         fullname = fullname or PersonName.join_names(given_names, last_name, suffix)
 
         try:
-            return cls._get(given_names, last_name, suffix, fullname)
+            return cls._get(given_names, last_name, suffix, fullname, declared_name)
         except cls.DoesNotExist:
-            return cls._create(user, given_names, last_name, suffix, fullname)
+            return cls._create(
+                user,
+                given_names,
+                last_name,
+                suffix,
+                fullname,
+                declared_name,
+                gender,
+                gender_identification_status,
+            )
 
 
 class ResearcherIdentifier(CommonControlField, ClusterableModel):

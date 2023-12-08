@@ -67,16 +67,14 @@ class PersonNameAdmin(ModelAdmin):
     add_to_settings_menu = False
     exclude_from_explorer = False
     list_display = (
+        "declared_name",
         "fullname",
-        "given_names",
-        "last_name",
-        "suffix",
-        "prefix",
+        "gender",
         "created",
         "updated",
     )
-    list_filter = ("suffix", "prefix", "gender")
-    search_fields = ("fullname",)
+    list_filter = ("suffix", "gender", "gender_identification_status")
+    search_fields = ("fullname", "declared_name")
 
 
 class ResearcherAdminGroup(ModelAdminGroup):
