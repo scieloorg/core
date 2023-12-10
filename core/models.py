@@ -72,11 +72,11 @@ class Gender(index.Indexed, models.Model):
             return cls._get(code, gender)
 
     @classmethod
-    def get_or_create(cls, user, code, gender=None):
+    def create_or_update(cls, user, code, gender=None):
         try:
             return cls._get(code, gender)
         except cls.DoesNotExist:
-            return cls._create(code, gender)
+            return cls._create(user, code, gender)
 
 
 class CommonControlField(models.Model):
