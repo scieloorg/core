@@ -19,6 +19,7 @@ from location.models import Location, City, State, Country
 from researcher.models import Researcher, Affiliation
 
 from . import choices
+from editorialboard.forms import EditorialboardForm, EditorialboardRoleForm
 
 
 class EditorialBoard(CommonControlField, ClusterableModel):
@@ -50,7 +51,7 @@ class EditorialBoard(CommonControlField, ClusterableModel):
         FieldPanel("final_year"),
         InlinePanel("editorial_board_role"),
     ]
-    base_form_class = CoreAdminModelForm
+    base_form_class = EditorialboardForm
 
     def __str__(self):
         return f"{self.journal.title} {self.initial_year}-{self.final_year}"
@@ -130,6 +131,9 @@ class EditorialBoardRole(CommonControlField, Orderable):
     role = models.ForeignKey(
         "RoleModel", null=True, blank=True, on_delete=models.SET_NULL
     )
+
+    # FIXME https://github.com/wagtail/django-modelcluster
+    # https://github.com/wagtail/wagtail/issues/5432
     members = models.ManyToManyField("EditorialBoardMember")
 
     class Meta:
@@ -157,7 +161,7 @@ class EditorialBoardRole(CommonControlField, Orderable):
         AutocompletePanel("role"),
         AutocompletePanel("members"),
     ]
-    base_form_class = CoreAdminModelForm
+    base_form_class = EditorialboardRoleForm
 
     @classmethod
     def _get(
