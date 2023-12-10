@@ -18,7 +18,6 @@ from core.models import (
 )
 from journal.models import Journal
 from location.models import City
-from researcher.models import Researcher
 
 from .exceptions import TocSectionGetError
 
@@ -304,29 +303,3 @@ class TocSection(TextLanguageMixin, CommonControlField):
 
     def __str__(self):
         return f"{self.plain_text} - {self.language}"
-
-
-class EditorialBoard(CommonControlField, ClusterableModel):
-    issue = models.ForeignKey(Issue, on_delete=models.SET_NULL, blank=True, null=True)
-
-    panels = [
-        AutocompletePanel("issue"),
-        InlinePanel("page_member", label=_("Member")),
-    ]
-
-
-class Member(Orderable, CommonControlField):
-    editorial_board = ParentalKey(
-        EditorialBoard, on_delete=models.CASCADE, related_name="page_member"
-    )
-
-    member = models.ForeignKey(
-        Researcher, null=True, blank=True, related_name="+", on_delete=models.SET_NULL
-    )
-    role = models.CharField(
-        _("Role"), max_length=255, choices=choices.ROLE, null=False, blank=False
-    )
-    panels = [
-        AutocompletePanel("member"),
-        FieldPanel("role"),
-    ]
