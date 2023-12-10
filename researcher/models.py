@@ -1,5 +1,7 @@
 import os
+import logging
 
+from django.db.models import Q
 from django.db import models, IntegrityError
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -23,11 +25,20 @@ class Researcher(CommonControlField):
     """
     Class that represent the Researcher
     """
-    person_name = models.ForeignKey("PersonName", on_delete=models.SET_NULL, null=True, blank=True)
-    affiliation = models.ForeignKey("Affiliation", on_delete=models.SET_NULL, null=True, blank=True)
+
+    person_name = models.ForeignKey(
+        "PersonName", on_delete=models.SET_NULL, null=True, blank=True
+    )
+    affiliation = models.ForeignKey(
+        "Affiliation", on_delete=models.SET_NULL, null=True, blank=True
+    )
     year = models.CharField(_("Year"), max_length=4, null=True, blank=True)
 
-    autocomplete_search_field = "person_name"
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return Researcher.objects.filter(
+            Q(person_name__fullname__icontains=search_term) | Q(person_name__declared_name__icontains=search_term)
+        )
 
     def autocomplete_label(self):
         return str(self)
@@ -94,6 +105,20 @@ class Researcher(CommonControlField):
             return cls.get(person_name, affiliation, year)
 
     @classmethod
+    def _create_or_update(
+        cls,
+        user,
+        person_name,
+        affiliation,
+        year,
+    ):
+        year = remove_extra_spaces(year)
+        try:
+            return cls.get(person_name, affiliation, year)
+        except cls.DoesNotExist:
+            return cls.create(user, person_name, affiliation, year)
+
+    @classmethod
     def create_or_update(
         cls,
         user,
@@ -121,7 +146,7 @@ class Researcher(CommonControlField):
             gender_identification_status=gender_identification_status,
         )
 
-        researcher = cls.get_or_create(
+        researcher = cls._create_or_update(
             user=user,
             person_name=person_name,
             affiliation=affiliation,
@@ -142,9 +167,10 @@ class Researcher(CommonControlField):
 
             for id_ in ids:
                 # {"identifier": email_, "source_name": "EMAIL"}
-                ResearcherAKA.get_or_create(
+                logging.info(id_)
+                ResearcherAKA.create_or_update(
                     user=user,
-                    researcher_identifier=ResearcherIdentifier.get_or_create(
+                    researcher_identifier=ResearcherIdentifier.create_or_update(
                         user, **id_
                     ),
                     researcher=researcher,
@@ -166,7 +192,7 @@ class Affiliation(CommonControlField):
     )
 
     class Meta:
-        unique_together = [("institution", )]
+        unique_together = [("institution",)]
 
     def autocomplete_label(self):
         return str(self.institution)
@@ -190,7 +216,7 @@ class Affiliation(CommonControlField):
             return cls._get(institution)
 
     @classmethod
-    def get_or_create(
+    def create_or_update(
         cls,
         user,
         name,
@@ -283,7 +309,7 @@ class PersonName(CommonControlField):
         ]
 
     def __str__(self):
-        return self.fullname or self.declared_name
+        return self.fullname or self.declared_name or self.last_name
 
     @staticmethod
     def autocomplete_custom_queryset_filter(search_term):
@@ -318,7 +344,7 @@ class PersonName(CommonControlField):
         fullname,
         declared_name,
     ):
-        if last_name or fullname:
+        if last_name or fullname or declared_name:
             try:
                 return cls.objects.get(
                     fullname__iexact=fullname,
@@ -335,7 +361,9 @@ class PersonName(CommonControlField):
                     suffix__iexact=suffix,
                     declared_name__iexact=declared_name,
                 ).first()
-        raise ValueError("PersonName.get requires fullname or last_names parameters")
+        raise ValueError(
+            "PersonName.get requires fullname or last_names or declared_name parameters"
+        )
 
     @classmethod
     def _create(
@@ -360,6 +388,7 @@ class PersonName(CommonControlField):
             obj.gender = gender
             obj.gender_identification_status = gender_identification_status
             obj.save()
+            return obj
         except IntegrityError:
             return cls._get(given_names, last_name, suffix, fullname, declared_name)
         except Exception as e:
@@ -373,7 +402,7 @@ class PersonName(CommonControlField):
             raise PersonNameCreateError(f"Unable to create PersonName {data} {e}")
 
     @classmethod
-    def get_or_create(
+    def create_or_update(
         cls,
         user,
         given_names,
@@ -477,7 +506,7 @@ class ResearcherIdentifier(CommonControlField, ClusterableModel):
             return cls.get(identifier, source_name)
 
     @classmethod
-    def get_or_create(
+    def create_or_update(
         cls,
         user,
         identifier,
@@ -513,23 +542,10 @@ class ResearcherAKA(CommonControlField, Orderable):
         researcher_identifier,
         researcher,
     ):
-        if researcher and researcher_identifier:
-            return cls.objects.get(
-                researcher=researcher,
-                researcher_identifier=researcher_identifier,
-            )
-        raise ValueError(
-            "ResearcherIdentifier.get requires researcher and researcher_identifier"
-        )
-
-    @classmethod
-    def get(
-        cls,
-        researcher_identifier,
-        researcher,
-    ):
         try:
-            return cls.objects.get(researcher_identifier=researcher_identifier, researcher=researcher)
+            return cls.objects.get(
+                researcher_identifier=researcher_identifier, researcher=researcher
+            )
         except cls.MultipleObjectsReturned:
             return cls.objects.filter(
                 researcher_identifier=researcher_identifier,
@@ -554,7 +570,7 @@ class ResearcherAKA(CommonControlField, Orderable):
             return cls.get(researcher_identifier, researcher)
 
     @classmethod
-    def get_or_create(
+    def create_or_update(
         cls,
         user,
         researcher_identifier,
@@ -563,6 +579,4 @@ class ResearcherAKA(CommonControlField, Orderable):
         try:
             return cls.get(researcher_identifier, researcher)
         except cls.DoesNotExist:
-            return cls.create(
-                user, researcher_identifier, researcher
-            )
+            return cls.create(user, researcher_identifier, researcher)
