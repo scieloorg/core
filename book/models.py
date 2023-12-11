@@ -9,7 +9,7 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 from book.forms import BookModelForm, ChapterModelForm
 from core.choices import LANGUAGE
 from core.models import CommonControlField, Language
-from institution.models import Institution
+from institution.models import Publisher
 from location.models import Location
 from researcher.models import Researcher
 
@@ -21,7 +21,7 @@ class Book(CommonControlField, ClusterableModel):
     Attributes
     ----------
     location = Country, State and City model
-    institution = the publisher that in general is a institution
+    publisher = the publisher that in general is a publisher
     isbn = the International Standard Book Number of the book
     eisbn = the electronic International Standard Book Number of the book
     language = the language with a closed list
@@ -66,8 +66,8 @@ class Book(CommonControlField, ClusterableModel):
         blank=True,
         on_delete=models.SET_NULL,
     )
-    institution = models.ForeignKey(
-        Institution,
+    publisher = models.ForeignKey(
+        Publisher,
         verbose_name=_("Publisher"),
         null=True,
         blank=True,
@@ -126,7 +126,7 @@ class Book(CommonControlField, ClusterableModel):
         FieldPanel("year"),
         AutocompletePanel("language"),
         AutocompletePanel("location"),
-        AutocompletePanel("institution"),
+        AutocompletePanel("publisher"),
         InlinePanel("rec_raws", label="Rec Raws"),
     ]
 
@@ -173,7 +173,7 @@ class Book(CommonControlField, ClusterableModel):
         researchers,
         language,
         location,
-        institution,
+        publisher,
     ):
         try:
             obj = cls.get(doi=doi, isbn=isbn, eisbn=eisbn, identifier=identifier)
@@ -190,7 +190,7 @@ class Book(CommonControlField, ClusterableModel):
         obj.year = year or obj.year
         obj.language = language or obj.language
         obj.location = location or obj.location
-        obj.institution = institution or obj.institution
+        obj.publisher = publisher or obj.publisher
         obj.save()
         if researchers:
             obj.researchers.set(researchers)

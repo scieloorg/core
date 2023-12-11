@@ -8,6 +8,7 @@ from sickle import Sickle
 
 from article import models
 from article.utils.parse_name_author import parse_author_name
+from institution.models import Publisher
 
 namespaces = {
     "oai_dc": "http://www.openarchives.org/OAI/2.0/oai_dc/",
@@ -38,9 +39,16 @@ def harvest_preprints(URL, user):
             article.titles.set(
                 get_or_create_titles(titles=article_info.get("title"), user=user)
             )
+
+            try:
+                year = article.issue.year
+            except AttributeError:
+                year = None
             article.researchers.set(
                 get_or_create_researches(
+                    user,
                     authors=article_info.get("authors"),
+                    year=year
                 )
             )
             article.keywords.set(
@@ -57,7 +65,7 @@ def harvest_preprints(URL, user):
             article.languages.add(
                 get_or_create_language(lang=article_info.get("language"), user=user)
             )
-            article.publisher = get_publisher(publisher=article_info.get("publisher"))
+            article.publisher = get_publisher(user, publisher=article_info.get("publisher"))
             article.save()
         except Exception as e:
             # TODO cria um registro das falhas de modo que fiquem
@@ -208,29 +216,42 @@ def get_doi(identifier):
     return data
 
 
-def get_publisher(publisher):
-    try:
-        return models.Institution.objects.get(name=publisher[0]["text"])
-    except (models.Institution.DoesNotExist, IndexError):
-        return None
+def get_publisher(user, publisher):
+    return Publisher.get_or_create(
+        user=user,
+        name=publisher[0]["text"],
+        acronym=None,
+        level_1=None,
+        level_2=None,
+        level_3=None,
+        location=None,
+        official=None,
+        is_official=None,
+        url=None,
+        institution_type=None,
+    )
 
 
 def set_dates(article, date):
     article.set_date_pub(date)
 
 
-def get_or_create_researches(authors):
+def get_or_create_researches(user, authors, year):
     data = []
     for author in authors:
-        obj = models.Researcher.get_or_create(
+        # em preprint, por enquanto existem apenas:
+        # given_names, surname, declared_name
+        obj = models.Researcher.create_or_update(
+            user=user,
             given_names=author.get("given_names"),
             last_name=author.get("surname"),
             declared_name=author.get("declared_name"),
-            email=None,
-            institution_name=None,
-            suffix=None,
-            orcid=None,
-            lattes=None,
+            email=author.get("email"),
+            affiliation=author.get("affiliation"),
+            suffix=author.get("suffix"),
+            orcid=author.get("orcid"),
+            lattes=author.get("lattes"),
+            year=year,
         )
         data.append(obj)
     return data

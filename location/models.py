@@ -2,7 +2,7 @@ import csv
 import logging
 import os
 
-from django.db import models
+from django.db import models, IntegrityError
 from django.db.models import Q
 from django.utils.translation import gettext as _
 from modelcluster.fields import ParentalKey
@@ -14,7 +14,7 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField, Language, TextWithLang
-from core.utils.standardizer import standardize_name, standardize_code_and_name
+from core.utils.standardizer import standardize_name, standardize_code_and_name, remove_extra_spaces
 
 
 class City(CommonControlField):
@@ -40,6 +40,7 @@ class City(CommonControlField):
         indexes = [
             models.Index(fields=["name"]),
         ]
+        unique_together = [("name",)]
 
     def __unicode__(self):
         return self.name
@@ -48,12 +49,10 @@ class City(CommonControlField):
         return self.name
 
     @classmethod
-    def load(cls, user, city_data=None):
-        if not cls.objects.exists():
-            if not city_data:
-                with open("./location/fixtures/cities.csv", "r") as fp:
-                    city_data = fp.readlines()
-            for name in city_data:
+    def load(cls, user, file_path=None):
+        file_path = file_path or "./location/fixtures/cities.csv"
+        with open(file_path, "r") as fp:
+            for name in fp.readlines():
                 try:
                     cls.get_or_create(name=name, user=user)
                 except Exception as e:
@@ -61,17 +60,34 @@ class City(CommonControlField):
 
     @classmethod
     def get_or_create(cls, user=None, name=None):
-        name = name and name.strip()
+        try:
+            return cls.get(name)
+        except cls.DoesNotExist:
+            return cls.create(user, name)
+
+    @classmethod
+    def get(cls, name):
+        name = remove_extra_spaces(name)
         if not name:
             raise ValueError("City.get_or_create requires name")
         try:
             return cls.objects.get(name__iexact=name)
-        except cls.DoesNotExist:
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(name__iexact=name).first()
+
+    @classmethod
+    def create(cls, user=None, name=None):
+        name = remove_extra_spaces(name)
+        if not name:
+            raise ValueError("City.get_or_create requires name")
+        try:
             city = City()
             city.name = name
             city.creator = user
             city.save()
             return city
+        except IntegrityError:
+            return cls.get(name)
 
     @staticmethod
     def standardize(text, user=None):
@@ -114,6 +130,7 @@ class State(CommonControlField):
     class Meta:
         verbose_name = _("State")
         verbose_name_plural = _("States")
+        unique_together = [("name", "acronym")]
         indexes = [
             models.Index(
                 fields=[
@@ -134,20 +151,19 @@ class State(CommonControlField):
         return f"{self.acronym or self.name}"
 
     @classmethod
-    def load(cls, user, state_data=None):
-        if not cls.objects.exists():
-            if not state_data:
-                with open("./location/fixtures/states.csv", "r") as csvfile:
-                    state_data = csv.DictReader(
-                        csvfile, fieldnames=["name", "acronym", "region"], delimiter=";"
-                    )
-                    for row in state_data:
-                        logging.info(row)
-                        cls.get_or_create(
-                            name=row["name"],
-                            acronym=row["acronym"],
-                            user=user,
-                        )
+    def load(cls, user, file_path=None):
+        file_path = file_path or "./location/fixtures/states.csv"
+        with open(file_path, "r") as csvfile:
+            rows = csv.DictReader(
+                csvfile, fieldnames=["name", "acronym", "region"], delimiter=";"
+            )
+            for row in rows:
+                logging.info(row)
+                cls.get_or_create(
+                    name=row["name"],
+                    acronym=row["acronym"],
+                    user=user,
+                )
 
     @classmethod
     def get_or_create(cls, user=None, name=None, acronym=None):
@@ -155,46 +171,43 @@ class State(CommonControlField):
 
     @classmethod
     def get(cls, name=None, acronym=None):
-        name = name and name.strip()
-        acronym = acronym and acronym.strip()
-        if not name and not acronym:
-            raise ValueError("State.get requires name or acronym")
-        if name and acronym:
-            # os valores fornecidos são name e acronym
-            # mas não necessariamente ambos estão registrados
+        name = remove_extra_spaces(name)
+        acronym = remove_extra_spaces(acronym)
+        if name or acronym:
             try:
-                # estão no mesmo registro
-                return cls.objects.get(
-                    Q(name__iexact=name) | Q(acronym__iexact=acronym)
-                )
+                return cls.objects.get(name__iexact=name, acronym__iexact=acronym)
             except cls.MultipleObjectsReturned:
-                try:
-                    # name e acron estão no mesmo registro
-                    return cls.objects.get(name__iexact=name, acronym__iexact=acronym)
-                except cls.DoesNotExist:
-                    # não encontrados juntos no mesmo registro
-                    pass
-        if acronym:
-            # prioridade para acronym
-            return cls.objects.get(acronym__iexact=acronym)
-        if name:
-            return cls.objects.get(name__iexact=name)
+                return cls.objects.filter(name__iexact=name, acronym__iexact=acronym).first()
+        raise ValueError("State.get requires name or acronym")
+
+    @classmethod
+    def create(cls, user, name=None, acronym=None):
+        name = remove_extra_spaces(name)
+        acronym = remove_extra_spaces(acronym)
+        if name or acronym:
+            try:
+                obj = cls()
+                obj.name = name
+                obj.acronym = acronym
+                obj.creator = user
+                obj.save()
+                return obj
+            except IntegrityError:
+                return cls.get(name, acronym)
+        raise ValueError("State.create requires name or acronym")
 
     @classmethod
     def create_or_update(cls, user, name=None, acronym=None):
-        name = name and name.strip()
-        acronym = acronym and acronym.strip()
+        name = remove_extra_spaces(name)
+        acronym = remove_extra_spaces(acronym)
         try:
             obj = cls.get(name=name, acronym=acronym)
             obj.updated_by = user
+            obj.name = name or obj.name
+            obj.acronym = acronym or obj.acronym
+            obj.save()
         except cls.DoesNotExist:
-            obj = cls()
-            obj.creator = user
-
-        obj.name = name or obj.name
-        obj.acronym = acronym or obj.acronym
-        obj.save()
-
+            obj = cls.create(user, name, acronym)
         return obj
 
     @staticmethod
@@ -232,6 +245,7 @@ class CountryName(TextWithLang, Orderable):
     class Meta:
         verbose_name = _("Country name")
         verbose_name_plural = _("Country names")
+        unique_together = [("country", "language")]
         indexes = [
             models.Index(
                 fields=[
@@ -268,31 +282,46 @@ class CountryName(TextWithLang, Orderable):
     def get(cls, country, language):
         if not country and not language:
             raise ValueError("CountryName.get requires country or language")
-        return cls.objects.get(country=country, language=language)
+        try:
+            return cls.objects.get(country=country, language=language)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(country=country, language=language).first()
 
     @classmethod
     def create_or_update(cls, user, country, language, text):
-        text = text and text.strip()
+        text = remove_extra_spaces(text)
         try:
             obj = cls.get(country, language)
             obj.updated_by = user
+            obj.country = country or obj.country
+            obj.language = language or obj.language
+            obj.text = text or obj.text
+            obj.save()
+            return obj
         except cls.DoesNotExist:
+            return cls.create(user, country, language, text)
+
+    @classmethod
+    def create(cls, user, country, language, text):
+        text = remove_extra_spaces(text)
+        try:
             obj = cls()
             obj.creator = user
-
-        obj.country = country or obj.country
-        obj.language = language or obj.language
-        obj.text = text or obj.text
-        obj.save()
-
-        return obj
+            obj.country = country or obj.country
+            obj.language = language or obj.language
+            obj.text = text or obj.text
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(country, language)
 
     @classmethod
     def get_country(cls, name):
-        name = name and name.strip()
-        for item in CountryName.objects.filter(text=name).iterator():
-            if item.country:
-                return item.country
+        name = remove_extra_spaces(name)
+        if name:
+            for item in CountryName.objects.filter(text=name).iterator():
+                if item.country:
+                    return item.country
         raise cls.DoesNotExist(f"CountryName {name} does not exist")
 
 
@@ -355,20 +384,20 @@ class Country(CommonControlField, ClusterableModel):
         return self.name or self.acronym
 
     @classmethod
-    def load(cls, user):
+    def load(cls, user, file_path=None):
         # País (pt);País (en);Capital;Código ISO (3 letras);Código ISO (2 letras)
-        if cls.objects.count() == 0:
-            fieldnames = ["name_pt", "name_en", "Capital", "acron3", "acron2"]
-            with open("./location/fixtures/country.csv", newline="") as csvfile:
-                reader = csv.DictReader(csvfile, fieldnames=fieldnames, delimiter=";")
-                for row in reader:
-                    cls.create_or_update(
-                        user,
-                        name=row["name_en"],
-                        acronym=row["acron2"],
-                        acron3=row["acron3"],
-                        country_names={"pt": row["name_pt"], "en": row["name_en"]},
-                    )
+        fieldnames = ["name_pt", "name_en", "Capital", "acron3", "acron2"]
+        file_path = file_path or "./location/fixtures/country.csv"
+        with open(file_path, newline="") as csvfile:
+            reader = csv.DictReader(csvfile, fieldnames=fieldnames, delimiter=";")
+            for row in reader:
+                cls.create_or_update(
+                    user,
+                    name=row["name_en"],
+                    acronym=row["acron2"],
+                    acron3=row["acron3"],
+                    country_names={"pt": row["name_pt"], "en": row["name_en"]},
+                )
 
     @classmethod
     def get(
@@ -377,9 +406,9 @@ class Country(CommonControlField, ClusterableModel):
         acronym=None,
         acron3=None,
     ):
-        name = name and name.strip()
-        acronym = acronym and acronym.strip()
-        acron3 = acron3 and acron3.strip()
+        name = remove_extra_spaces(name)
+        acronym = remove_extra_spaces(acronym)
+        acron3 = remove_extra_spaces(acron3)
 
         if acronym:
             return cls.objects.get(acronym=acronym)
@@ -405,10 +434,10 @@ class Country(CommonControlField, ClusterableModel):
         country_names=None,
         lang_code2=None,
     ):
-        name = name and name.strip()
-        acronym = acronym and acronym.strip()
-        acron3 = acron3 and acron3.strip()
-        lang_code2 = lang_code2 and lang_code2.strip()
+        name = remove_extra_spaces(name)
+        acronym = remove_extra_spaces(acronym)
+        acron3 = remove_extra_spaces(acron3)
+        lang_code2 = remove_extra_spaces(lang_code2)
 
         try:
             obj = cls.get(name, acronym, acron3)
@@ -493,7 +522,7 @@ class Location(CommonControlField):
         return Location.objects.filter(
             Q(city__name__icontains=search_term)
             | Q(state__name__icontains=search_term)
-            | Q(country__name__icontain=search_term)
+            | Q(country__name__icontains=search_term)
         )
 
     def autocomplete_label(self):
@@ -502,6 +531,7 @@ class Location(CommonControlField):
     class Meta:
         verbose_name = _("Location")
         verbose_name_plural = _("Locations")
+        unique_together = [("country", "state", "city")]
 
     def __unicode__(self):
         return f"{self.country} | {self.state} | {self.city}"
@@ -510,22 +540,29 @@ class Location(CommonControlField):
         return f"{self.country} | {self.state} | {self.city}"
 
     @classmethod
-    def get(
+    def _get(
         cls,
         country=None,
         state=None,
         city=None,
     ):
         if country or state or city:
-            return cls.objects.get(
-                country=country,
-                state=state,
-                city=city,
-            )
+            try:
+                return cls.objects.get(
+                    country=country,
+                    state=state,
+                    city=city,
+                )
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(
+                    country=country,
+                    state=state,
+                    city=city,
+                ).first()
         raise ValueError("Location.get requires country or state or city parameters")
 
     @classmethod
-    def create_or_update(
+    def _create(
         cls,
         user,
         country=None,
@@ -534,65 +571,60 @@ class Location(CommonControlField):
     ):
         # check if exists the location
         try:
-            location = cls.get(country, state, city)
-            location.updated_by = user
+            obj = cls()
+            obj.creator = user
+            obj.country = country or obj.country
+            obj.state = state or obj.state
+            obj.city = city or obj.city
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls._get(country, state, city)
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        country=None,
+        country_name=None,
+        country_acron3=None,
+        country_acronym=None,
+        state=None,
+        state_name=None,
+        state_acronym=None,
+        city=None,
+        city_name=None,
+        lang=None,
+    ):
+        try:
+            try:
+                country = country or Country.create_or_update(
+                    user,
+                    name=country_name,
+                    acronym=country_acronym,
+                    acron3=country_acron3,
+                    country_names=None,
+                    lang_code2=lang,
+                )
+            except Exception as e:
+                pass
+
+            try:
+                state = state or State.create_or_update(
+                    user, name=state_name, acronym=state_acronym)
+            except Exception as e:
+                pass
+
+            try:
+                city = city or City.get_or_create(
+                    user, city_name
+                )
+            except Exception as e:
+                pass
+
+            return cls._get(country, state, city)
         except cls.DoesNotExist:
-            location = cls()
-            location.creator = user
-
-        location.country = country or location.country
-        location.state = state or location.state
-        location.city = city or location.city
-        location.save()
-        return location
-
-    @staticmethod
-    def _standardize_parts(text_city, text_state, text_country, user=None):
-        cities = list(City.standardize(text_city, user))
-        if cities:
-            # {"city": City object} or {"city": 'city name'}
-            yield cities
-
-        states = list(State.standardize(text_state, user))
-        if states:
-            # {"state": State object} or
-            # {"state": {"name": 'state name', "code": "state code"}}
-            yield states
-
-        countries = list(Country.standardize(text_country, user))
-        if countries:
-            # {"country": Country object} or
-            # {"country": {"name": 'country name', "code": "country code"}}
-            yield countries
-
-    @staticmethod
-    def standardize_parts(text_city, text_state, text_country, user=None):
-        lists = Location._standardize_parts(
-            text_city, text_state, text_country, user)
-        for param_list in zip(*lists):
-            params = {}
-            for param in param_list:
-                params.update(param)
-            if params:
-                yield params
-
-    @staticmethod
-    def standardize(text_city, text_state, text_country, user=None):
-        """
-        Returns a dict generator which key is the name of the class and
-        which value is or the object of the class or name + code
-        Returns object if user is provided
-        """
-        items = Location.standardize_parts(text_city, text_state, text_country, user)
-        for params in items:
-            if user:
-                # Location object
-                item = Location.create_or_update(user, **params)
-            else:
-                # {"city": 'city name', "state": {"code": '', "name": ''},
-                # "country": {"code": '', "name": ''},}
-                item = params
-            yield {"location": item}
+            return cls._create(user, country, state, city)
 
 
 class CountryFile(models.Model):

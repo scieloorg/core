@@ -244,10 +244,10 @@ class ArticleFunding(CommonControlField):
             article_funding = cls()
             article_funding.award_id = award_id
             if funding_source:
-                article_funding.funding_source = Sponsor.create_or_update(
-                    inst_name=funding_source,
+                article_funding.funding_source = Sponsor.get_or_create(
                     user=user,
-                    inst_acronym=None,
+                    name=funding_source,
+                    acronym=None,
                     level_1=None,
                     level_2=None,
                     level_3=None,
@@ -255,6 +255,7 @@ class ArticleFunding(CommonControlField):
                     official=None,
                     is_official=None,
                     url=None,
+                    institution_type=None,
                 )
             article_funding.creator = user
             article_funding.save()
