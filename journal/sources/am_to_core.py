@@ -207,8 +207,7 @@ def update_panel_institution(
     if publisher:
         for p in publisher:
             if p:
-                journal.contact_name = p
-                created_publisher = Publisher.create_or_update(
+                created_publisher = Publisher.get_or_create(
                     name=p,
                     acronym=None,
                     level_1=None,
@@ -227,15 +226,26 @@ def update_panel_institution(
                 )
                 publisher_history.journal = journal
                 publisher_history.save()
-                owner, created = Owner.objects.get_or_create(
-                    institution=created_publisher.institution
+                created_owner = Owner.get_or_create(
+                    name=p,
+                    acronym=None,
+                    level_1=None,
+                    level_2=None,
+                    level_3=None,
+                    user=user,
+                    location=None,
+                    official=None,
+                    is_official=None,
+                    url=None,
+                    institution_type=None,
                 )
                 owner_history = OwnerHistory.get_or_create(
-                    institution=owner,
+                    institution=created_owner,
                     user=user,
                 )
                 owner_history.journal = journal
                 owner_history.save()
+                journal.contact_name = p
 
     get_or_create_copyright_holder(
         journal=journal, copyright_holder_name=copyright_holder, user=user
@@ -278,11 +288,11 @@ def update_panel_notes(
     if notes:
         try:
             creation_date = datetime.strptime(extract_value(creation_date), "%Y%m%d")
-        except ValueError:
+        except (ValueError, TypeError):
             creation_date = None
         try:
             update_date = datetime.strptime(extract_value(update_date), "%Y%m%d")
-        except ValueError:
+        except (ValueError, TypeError):
             update_date = None
 
         if isinstance(notes, str):
@@ -448,7 +458,7 @@ def get_or_create_sponsor(sponsor, journal, user):
             ## Fundação Getulio Vargas/ Escola de Administração de Empresas de São Paulo
             ## CNPq - Conselho Nacional de Desenvolvimento Científico e Tecnológico (PIEB)
             if s:
-                created_sponsor = Sponsor.create_or_update(
+                created_sponsor = Sponsor.get_or_create(
                     name=s,
                     acronym=None,
                     level_1=None,
@@ -571,8 +581,9 @@ def get_or_update_wos_areas(journal, wos_areas, user):
         for value in areas:
             try:
                 obj = WebOfKnowledgeSubjectCategory.objects.get(
-                    value=value,
+                    value__iexact=value,
                 )
+                data.append(obj)
             except WebOfKnowledgeSubjectCategory.DoesNotExist as e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 UnexpectedEvent.create(
@@ -583,7 +594,6 @@ def get_or_update_wos_areas(journal, wos_areas, user):
                         "wos_areas": value,
                     },
                 )
-            data.append(obj)
         journal.wos_area.set(data)
 
 
@@ -601,15 +611,15 @@ def get_or_create_indexed_at(journal, indexed_at, user):
         for i in indexed:
             try:
                 obj_index = IndexedAt.objects.get(Q(name__iexact=i) | Q(acronym__iexact=i))
+                data_index.append(obj_index)
             except IndexedAt.DoesNotExist:
                 obj_additional_index, created = AdditionalIndexedAt.objects.get_or_create(
                     name__icontains=i,
-                    user=user,
+                    creator=user,
                 )
                 data_additional_indexed.append(obj_additional_index)
-            data_index.append(obj_index)
         journal.indexed_at.set(data_index)
-        journal.additional_index_at.set(data_additional_indexed)
+        journal.additional_indexed_at.set(data_additional_indexed)
 
 def create_or_update_location(
     journal,
@@ -705,11 +715,10 @@ def get_or_create_copyright_holder(journal, copyright_holder_name, user):
     """
     copyright_holder_name = extract_value(copyright_holder_name)
     if isinstance(copyright_holder_name, str):
-        copyright_holder_name = re.split(r'\s*[-\/,]\s*', copyright_holder_name)
+        copyright_holder_name = [copyright_holder_name]
 
     if copyright_holder_name:
         for cp in copyright_holder_name:
-
             copyright_holder = CopyrightHolder.get_or_create(
                 name=cp,
                 acronym=None,
