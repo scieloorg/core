@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
                         auto_now=True, verbose_name="Last update date"
                     ),
                 ),
-                ("name", models.TextField(null=True, verbose_name="Name")),
+                ("name", models.TextField(null=False, blank=False, verbose_name="Name")),
                 (
                     "creator",
                     models.ForeignKey(
