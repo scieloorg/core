@@ -6,7 +6,7 @@ from collection.models import Collection
 from core.models import Language
 from institution.models import Institution
 from location.models import Country, City, State
-from journal.models import Standard, Subject, WebOfKnowledge, WebOfKnowledgeSubjectCategory
+from journal.models import Standard, Subject, WebOfKnowledge, WebOfKnowledgeSubjectCategory, IndexedAt
 from vocabulary.models import Vocabulary
 from thematic_areas.models import ThematicArea
 
@@ -38,4 +38,5 @@ def task_start(
     City.load(user)
     ThematicArea.load(user)
     WebOfKnowledgeSubjectCategory.load(user)
+    IndexedAt.load(user)
     Institution.load(user)
