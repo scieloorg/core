@@ -72,23 +72,11 @@ class Institution(CommonControlField, ClusterableModel):
         ]
 
     def __unicode__(self):
-        return "%s | %s | %s | %s | %s | %s" % (
-            self.institution_identification,
-            self.level_1,
-            self.level_2,
-            self.level_3,
-            self.location,
-        )
+        return f"{self.institution_identification} | {self.level_1} | {self.level_2} | {self.level_3} | {self.location}"
 
     def __str__(self):
-        return "%s | %s | %s | %s | %s | %s" % (
-            self.institution_identification,
-            self.level_1,
-            self.level_2,
-            self.level_3,
-            self.location,
-        )
-
+        return f"{self.institution_identification} | {self.level_1} | {self.level_2} | {self.level_3} | {self.location}"
+    
     @property
     def data(self):
         _data = self.institution_identification.data
@@ -117,6 +105,7 @@ class Institution(CommonControlField, ClusterableModel):
         level_2,
         level_3,
         location,
+        user,
     ):
         if name or acronym:
             try:
@@ -340,14 +329,9 @@ class Institution(CommonControlField, ClusterableModel):
                 if name == column_labels["name"]:
                     continue
 
-                try:
-                    state_acronym = row.get(column_labels["state"])
-                    state = State.objects.get(acronym=state_acronym)
-                except State.DoesNotExist:
-                    continue
 
                 location = Location.create_or_update(
-                    user=user, country=country, state=state, city=None,
+                    user=user, country=country, city=None,
                 )
                 cls.create_or_update(
                     user=user,
@@ -460,6 +444,12 @@ class BaseInstitution(CommonControlField):
         return str(self.institution)
 
     @classmethod
+    def autocomplete_custom_queryset_filter(cls, any_value):
+        return cls.objects.filter(
+            Q(institution__institution_identification__name__icontains=any_value)
+        )
+
+    @classmethod
     def _get(cls, institution):
         try:
             return cls.objects.get(institution=institution)
@@ -519,11 +509,6 @@ class Sponsor(BaseInstitution):
 
     base_form_class = CoreAdminModelForm
 
-    @staticmethod
-    def autocomplete_custom_queryset_filter(any_value):
-        return Sponsor.objects.filter(
-            Q(institution__institution_name__icontains=any_value)
-        )
 
 
 class Publisher(BaseInstitution):
@@ -534,11 +519,6 @@ class Publisher(BaseInstitution):
 
     base_form_class = CoreAdminModelForm
 
-    @staticmethod
-    def autocomplete_custom_queryset_filter(any_value):
-        return Publisher.objects.filter(
-            Q(institution__institution_name__icontains=any_value)
-        )
 
 
 class CopyrightHolder(BaseInstitution):
@@ -548,11 +528,6 @@ class CopyrightHolder(BaseInstitution):
 
     base_form_class = CoreAdminModelForm
 
-    @staticmethod
-    def autocomplete_custom_queryset_filter(any_value):
-        return CopyrightHolder.objects.filter(
-            Q(institution__institution_name__icontains=any_value)
-        )
 
 
 class Owner(BaseInstitution):
@@ -562,12 +537,6 @@ class Owner(BaseInstitution):
 
     base_form_class = CoreAdminModelForm
 
-    @staticmethod
-    def autocomplete_custom_queryset_filter(any_value):
-        return Owner.objects.filter(
-            Q(institution__institution_name__icontains=any_value)
-        )
-
 
 class EditorialManager(BaseInstitution):
     panels = [
@@ -576,11 +545,6 @@ class EditorialManager(BaseInstitution):
 
     base_form_class = CoreAdminModelForm
 
-    @staticmethod
-    def autocomplete_custom_queryset_filter(any_value):
-        return EditorialManager.objects.filter(
-            Q(institution__institution_name__icontains=any_value)
-        )
 
 
 class Scimago(CommonControlField, ClusterableModel):
