@@ -614,7 +614,7 @@ def get_or_create_indexed_at(journal, indexed_at, user):
                 data_index.append(obj_index)
             except IndexedAt.DoesNotExist:
                 obj_additional_index, created = AdditionalIndexedAt.objects.get_or_create(
-                    name__icontains=i,
+                    name=i,
                     creator=user,
                 )
                 data_additional_indexed.append(obj_additional_index)

@@ -1861,7 +1861,7 @@ class IndexedAtFile(models.Model):
 
 
 class AdditionalIndexedAt(CommonControlField):
-    name = models.TextField(_("Name"), null=True, blank=False)
+    name = models.TextField(_("Name"), null=False, blank=False)
 
     autocomplete_search_field = "name"
 
