@@ -5,6 +5,7 @@ import os
 
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models import Q
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -199,10 +200,14 @@ class OfficialJournal(CommonControlField):
 
     @classmethod
     def get(cls, issn_print=None, issn_electronic=None, issnl=None):
-        if issn_electronic:
-            return cls.objects.get(issn_electronic=issn_electronic)
+        filters = Q()
+
         if issn_print:
-            return cls.objects.get(issn_print=issn_print)
+            filters |= Q(issn_print=issn_print)
+        if issn_electronic:
+            filters |= Q(issn_electronic=issn_electronic)
+        if filters:
+            return cls.objects.get(filters)
         if issnl:
             return cls.objects.get(issnl=issnl)
         raise OfficialJournalGetError(
@@ -550,7 +555,7 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
         InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
         AutocompletePanel("indexed_at"),
-        AutocompletePanel("additional_index_at"),
+        AutocompletePanel("additional_indexed_at"),
         AutocompletePanel("subject_descriptor"),
         FieldPanel("subject"),
         FieldPanel("wos_db"),
@@ -1864,7 +1869,7 @@ class AdditionalIndexedAt(CommonControlField):
         return str(self)
 
     def __str__(self):
-        return self.name
+        return f"{self.name}"
 
 
 class Annotation(CommonControlField):
