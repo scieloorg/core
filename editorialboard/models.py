@@ -48,7 +48,7 @@ class EditorialBoard(CommonControlField, ClusterableModel):
         AutocompletePanel("journal"),
         FieldPanel("initial_year"),
         FieldPanel("final_year"),
-        InlinePanel("editorial_board_role"),
+        InlinePanel("editorial_board_role", label=_("Member")),
     ]
     base_form_class = CoreAdminModelForm
 
@@ -238,12 +238,17 @@ class EditorialBoardMember(CommonControlField, ClusterableModel):
     panels = [
         AutocompletePanel("researcher"),
         AutocompletePanel("journal"),
-        InlinePanel("editorial_board_member_activity"),
+        InlinePanel("editorial_board_member_activity", label=_("Activity")),
     ]
     base_form_class = CoreAdminModelForm
 
     def __str__(self):
-        return f"{self.researcher} | {self.journal}"
+        try:
+            if self.journal.title:
+                return f"{self.researcher.person_name} ({self.journal.title})"
+        except AttributeError:
+            pass
+        return str(self.researcher.person_name)
 
     @staticmethod
     def autocomplete_custom_queryset_filter(any_value):
@@ -253,7 +258,7 @@ class EditorialBoardMember(CommonControlField, ClusterableModel):
         )
 
     def autocomplete_label(self):
-        return f"{self.researcher} | {self.journal.title}"
+        return str(self)
 
     @classmethod
     def _get(

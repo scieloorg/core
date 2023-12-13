@@ -56,7 +56,9 @@ class Researcher(CommonControlField):
         return self.person_name.get_full_name
 
     def __str__(self):
-        return f"{self.person_name} | {self.affiliation} | {self.year}"
+        if self.affiliation:
+            return f"{self.person_name} ({self.affiliation})"
+        return f"{self.person_name}"
 
     @classmethod
     def get(

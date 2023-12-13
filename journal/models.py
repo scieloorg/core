@@ -182,10 +182,10 @@ class OfficialJournal(CommonControlField):
         return str(self)
 
     def __unicode__(self):
-        return f"{self.issn_electronic} {self.issn_print} {self.title}"
+        return self.title
 
     def __str__(self):
-        return f"{self.issn_electronic} {self.issn_print} {self.title}"
+        return self.title
 
     @property
     def data(self):
@@ -539,6 +539,12 @@ class Journal(CommonControlField, ClusterableModel):
         "ArticleSubmissionFormatCheckList",
         blank=True,
     )
+
+    autocomplete_search_field = "title"
+
+    def autocomplete_label(self):
+        return str(self)
+
     panels_titles = [
         AutocompletePanel("official"),
         FieldPanel("title"),
@@ -834,10 +840,10 @@ class Journal(CommonControlField, ClusterableModel):
         return obj
 
     def __unicode__(self):
-        return "%s" % self.official or ""
+        return self.title or self.official.title
 
     def __str__(self):
-        return "%s" % self.official or ""
+        return self.title or self.official.title
 
     base_form_class = CoreAdminModelForm
 
