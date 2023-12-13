@@ -131,11 +131,8 @@ class EditorialBoardRole(CommonControlField, Orderable):
     role = models.ForeignKey(
         "RoleModel", null=True, blank=True, on_delete=models.SET_NULL
     )
-
-    # FIXME https://github.com/wagtail/django-modelcluster
-    # https://github.com/wagtail/wagtail/issues/5432
-    members = models.ManyToManyField("EditorialBoardMember")
-
+    member = models.ForeignKey(
+        "EditorialBoardMember", null=True, blank=True, on_delete=models.SET_NULL)
     class Meta:
         unique_together = [
             (
@@ -159,7 +156,7 @@ class EditorialBoardRole(CommonControlField, Orderable):
     panels = [
         AutocompletePanel("editorial_board"),
         AutocompletePanel("role"),
-        AutocompletePanel("members"),
+        AutocompletePanel("member"),
     ]
     base_form_class = EditorialboardRoleForm
 
