@@ -19,7 +19,12 @@ from location.models import Location, City, State, Country
 from researcher.models import Researcher, Affiliation
 
 from . import choices
-from editorialboard.forms import EditorialboardForm, EditorialboardRoleForm
+from editorialboard.forms import (
+    EditorialBoardForm,
+    EditorialBoardMemberActivityForm,
+    EditorialBoardMemberForm,
+    EditorialBoardRoleForm,
+)
 
 
 class EditorialBoard(CommonControlField, ClusterableModel):
@@ -51,7 +56,7 @@ class EditorialBoard(CommonControlField, ClusterableModel):
         FieldPanel("final_year"),
         InlinePanel("editorial_board_role", label=_("Member")),
     ]
-    base_form_class = EditorialboardForm
+    base_form_class = EditorialBoardForm
 
     def __str__(self):
         return f"{self.journal.title} {self.initial_year}-{self.final_year}"
@@ -132,11 +137,14 @@ class EditorialBoardRole(CommonControlField, Orderable):
         "RoleModel", null=True, blank=True, on_delete=models.SET_NULL
     )
     member = models.ForeignKey(
-        "EditorialBoardMember", null=True, blank=True, on_delete=models.SET_NULL)
+        "EditorialBoardMember", null=True, blank=True, on_delete=models.SET_NULL
+    )
+
     class Meta:
         unique_together = [
             (
                 "editorial_board",
+                "member",
                 "role",
             )
         ]
@@ -158,32 +166,38 @@ class EditorialBoardRole(CommonControlField, Orderable):
         AutocompletePanel("role"),
         AutocompletePanel("member"),
     ]
-    base_form_class = EditorialboardRoleForm
+    base_form_class = EditorialBoardRoleForm
 
     @classmethod
     def _get(
         cls,
         editorial_board,
+        member,
         role,
     ):
-        if editorial_board and role:
+        if editorial_board and role and member:
             try:
                 return cls.objects.get(
                     editorial_board=editorial_board,
+                    member=member,
                     role=role,
                 )
             except cls.MultipleObjectsReturned:
                 return cls.objects.filter(
                     editorial_board=editorial_board,
+                    member=member,
                     role=role,
                 ).first()
-        raise ValueError("EditorialBoardRole.get requires editorial_board and role")
+        raise ValueError(
+            "EditorialBoardRole.get requires editorial_board and role and member"
+        )
 
     @classmethod
     def _create(
         cls,
         user,
         editorial_board,
+        member,
         role,
     ):
         try:
@@ -191,22 +205,18 @@ class EditorialBoardRole(CommonControlField, Orderable):
             obj.creator = user
             obj.editorial_board = editorial_board
             obj.role = role
+            obj.member = member
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(
-                editorial_board,
-                researcher,
-                role,
-                initial_month,
-                final_month,
-            )
+            return cls.get(editorial_board, member, role)
 
     @classmethod
     def create_or_update(
         cls,
         user,
         editorial_board,
+        member,
         role,
         declared_role=None,
         std_role=None,
@@ -217,9 +227,9 @@ class EditorialBoardRole(CommonControlField, Orderable):
             )
         if role and editorial_board:
             try:
-                return cls._get(editorial_board, role)
+                return cls._get(editorial_board, member, role)
             except cls.DoesNotExist:
-                return cls._create(user, editorial_board, role)
+                return cls._create(user, editorial_board, member, role)
         raise ValueError(
             "EditorialBoardRole.create_or_update requires editorial_board and role"
         )
@@ -241,7 +251,7 @@ class EditorialBoardMember(CommonControlField, ClusterableModel):
         AutocompletePanel("journal"),
         InlinePanel("editorial_board_member_activity", label=_("Activity")),
     ]
-    base_form_class = CoreAdminModelForm
+    base_form_class = EditorialBoardMemberForm
 
     def __str__(self):
         try:
@@ -260,6 +270,50 @@ class EditorialBoardMember(CommonControlField, ClusterableModel):
 
     def autocomplete_label(self):
         return str(self)
+
+    def update_editorial_board(self, user):
+        """
+        Ao salvar EditorialBoardMember(Form),
+        realizar o relacionamento entre EditorialBoard
+        """
+        logging.info("update_editorial_board")
+        for editorial_board in EditorialBoard.objects.filter(
+            journal=self.journal
+        ).iterator():
+            logging.info(editorial_board.initial_year)
+            logging.info(editorial_board.final_year)
+
+            editorial_board_initial_year = editorial_board.initial_year
+            editorial_board_final_year = editorial_board.final_year
+
+            if editorial_board_initial_year and final_year:
+                for activity in self.editorial_board_member_activity.filter(
+                    initial_year__lte=editorial_board_initial_year,
+                    final_year__gte=editorial_board_final_year,
+                ).iterator():
+
+                    logging.info(activity.initial_year)
+                    logging.info(activity.final_year)
+
+                    editorial_board_role = EditorialBoardRole.create_or_update(
+                        user,
+                        editorial_board,
+                        member=self,
+                        role=activity.role,
+                    )
+                    logging.info("done")
+
+            elif editorial_board_initial_year:
+                for activity in edm.editorial_board_member_activity.filter(
+                    Q(initial_year__lte=editorial_board_initial_year, final_year__gte=editorial_board_initial_year)
+                    | Q(initial_year__lte=editorial_board_initial_year, final_year__isnull=True),
+                ).iterator():
+                    editorial_board_role = EditorialBoardRole.create_or_update(
+                        user,
+                        editorial_board,
+                        member=self,
+                        role=activity.role,
+                    )
 
     @classmethod
     def _get(
@@ -557,6 +611,7 @@ class EditorialBoardMember(CommonControlField, ClusterableModel):
             final_year=member_activity_final_year,
             final_month=member_activity_final_month,
         )
+    base_form_class = EditorialBoardMemberForm
 
 
 class EditorialBoardMemberActivity(CommonControlField, Orderable):
@@ -580,7 +635,7 @@ class EditorialBoardMemberActivity(CommonControlField, Orderable):
     final_year = models.CharField(max_length=4, blank=True, null=True)
     final_month = models.CharField(max_length=2, blank=True, null=True, choices=MONTHS)
 
-    base_form_class = CoreAdminModelForm
+    base_form_class = EditorialBoardMemberActivityForm
 
     panels = [
         FieldPanel("member"),
