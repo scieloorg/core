@@ -55,6 +55,17 @@ class Researcher(CommonControlField):
     def get_full_name(self):
         return self.person_name.get_full_name
 
+    @property
+    def orcid(self):
+        try:
+            for item in ResearcherAKA.objects.filter(
+                researcher=self,
+                researcher_identifier__source_name="ORCID",
+            ):
+                return item.researcher_identifier.identifier
+        except Exception as e:
+            return None
+
     def __str__(self):
         return f"{self.person_name} | {self.affiliation} | {self.year}"
 
