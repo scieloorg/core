@@ -7,7 +7,7 @@ from core.models import Language
 from editorialboard.models import RoleModel
 from institution.models import Institution
 from location.models import Country, City, State
-from journal.models import Standard, Subject, WebOfKnowledge, WebOfKnowledgeSubjectCategory
+from journal.models import Standard, Subject, WebOfKnowledge, WebOfKnowledgeSubjectCategory, IndexedAt
 from vocabulary.models import Vocabulary
 from thematic_areas.models import ThematicArea
 
@@ -41,3 +41,5 @@ def task_start(
     WebOfKnowledgeSubjectCategory.load(user)
     Institution.load(user)
     RoleModel.load(user)
+    IndexedAt.load(user)
+    Institution.load(user)

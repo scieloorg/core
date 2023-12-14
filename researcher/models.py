@@ -1,12 +1,12 @@
 import os
 import logging
 
-from django.db.models import Q
 from django.db import models, IntegrityError
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
+from wagtail.admin.panels import FieldPanel, InlinePanel
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
@@ -15,9 +15,10 @@ from core.models import CommonControlField, Gender
 from core.forms import CoreAdminModelForm
 from core.utils.standardizer import remove_extra_spaces
 from institution.models import Institution
-from journal.models import Journal
+
 
 from . import choices
+from .exceptions import PersonNameCreateError
 from .forms import ResearcherForm
 
 
@@ -137,7 +138,7 @@ class Researcher(CommonControlField):
         gender=None,
         gender_identification_status=None,
     ):
-        person_name = PersonName.create_or_update(
+        person_name = PersonName.get_or_create(
             user,
             given_names=given_names,
             last_name=last_name,
