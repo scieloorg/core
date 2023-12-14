@@ -193,6 +193,11 @@ def create_or_create_abstract(xmltree, user):
 
 
 def create_or_update_researchers(xmltree, user):
+    try:
+        article_lang = ArticleAndSubArticles(xmltree=xmltree).main_lang
+    except Exception as e:
+        article_lang = None
+
     authors = Authors(xmltree=xmltree).contribs_with_affs
 
     # Falta gender e gender_identification_status

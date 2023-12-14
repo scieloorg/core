@@ -132,6 +132,7 @@ class Researcher(CommonControlField):
         aff_state_text=None,
         aff_state_acronym=None,
         aff_state_name=None,
+        lang=None,
         year=None,
         orcid=None,
         lattes=None,
@@ -166,7 +167,7 @@ class Researcher(CommonControlField):
                 state_text=aff_state_text,
                 city=None,
                 city_name=aff_city_name,
-                lang=None,
+                lang=lang,
             )
             affiliation = affiliation or Affiliation.create_or_update(
                 user,
