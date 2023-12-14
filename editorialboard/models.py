@@ -588,11 +588,10 @@ class EditorialBoardMember(CommonControlField, ClusterableModel):
         editorial_board_role = EditorialBoardRole.create_or_update(
             user,
             editorial_board,
+            self,
             role,
         )
-        editorial_board_role.members.add(self)
-        editorial_board_role.save()
-
+        
     def add_member_activity(
         self,
         user,
