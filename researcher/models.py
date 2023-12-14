@@ -107,6 +107,13 @@ class Researcher(CommonControlField):
             return cls.get(person_name, affiliation, year)
 
     @classmethod
+    def _create_or_update(cls, user, person_name, affiliation, year):
+        try:
+            return cls.get(person_name, affiliation, year)
+        except cls.DoesNotExist:
+            return cls.create(user, person_name, affiliation, year)
+
+    @classmethod
     def create_or_update(
         cls,
         user,
@@ -134,7 +141,7 @@ class Researcher(CommonControlField):
             gender_identification_status=gender_identification_status,
         )
 
-        researcher = cls.get_or_create(
+        researcher = cls._create_or_update(
             user=user,
             person_name=person_name,
             affiliation=affiliation,
