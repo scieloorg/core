@@ -122,13 +122,13 @@ class EditorialBoard(CommonControlField, ClusterableModel):
 
 class EditorialBoardMember(CommonControlField, Orderable):
     editorial_board = ParentalKey(
-        EditorialBoard, related_name="editorial_board_member", on_delete=models.SET_NULL
+        EditorialBoard, related_name="editorial_board_member"
     )
     researcher = models.ForeignKey(
         Researcher, null=True, blank=True, related_name="+", on_delete=models.SET_NULL
     )
     role = models.ForeignKey(
-        RoleModel, null=True, blank=True, related_name="+", on_delete=models.SET_NULL
+        "RoleModel", null=True, blank=True, related_name="+", on_delete=models.SET_NULL
     )
 
     class Meta:
