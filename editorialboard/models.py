@@ -48,7 +48,7 @@ class EditorialBoard(CommonControlField, ClusterableModel):
         AutocompletePanel("journal"),
         FieldPanel("initial_year"),
         FieldPanel("final_year"),
-        InlinePanel("editorial_board_role", label=_("Member")),
+        InlinePanel("editorial_board_member", label=_("Member")),
     ]
     base_form_class = CoreAdminModelForm
 
@@ -120,135 +120,28 @@ class EditorialBoard(CommonControlField, ClusterableModel):
             )
 
 
-class EditorialBoardRole(CommonControlField, Orderable):
+class EditorialBoardMember(CommonControlField, Orderable):
     editorial_board = ParentalKey(
-        EditorialBoard,
-        on_delete=models.SET_NULL,
-        related_name="editorial_board_role",
-        null=True,
-    )
-    role = models.ForeignKey(
-        "RoleModel", null=True, blank=True, on_delete=models.SET_NULL
-    )
-    members = models.ManyToManyField("EditorialBoardMember")
-
-    class Meta:
-        unique_together = [
-            (
-                "editorial_board",
-                "role",
-            )
-        ]
-        indexes = [
-            models.Index(
-                fields=[
-                    "editorial_board",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "role",
-                ]
-            ),
-        ]
-
-    panels = [
-        AutocompletePanel("editorial_board"),
-        AutocompletePanel("role"),
-        AutocompletePanel("members"),
-    ]
-    base_form_class = CoreAdminModelForm
-
-    @classmethod
-    def _get(
-        cls,
-        editorial_board,
-        role,
-    ):
-        if editorial_board and role:
-            try:
-                return cls.objects.get(
-                    editorial_board=editorial_board,
-                    role=role,
-                )
-            except cls.MultipleObjectsReturned:
-                return cls.objects.filter(
-                    editorial_board=editorial_board,
-                    role=role,
-                ).first()
-        raise ValueError("EditorialBoardRole.get requires editorial_board and role")
-
-    @classmethod
-    def _create(
-        cls,
-        user,
-        editorial_board,
-        role,
-    ):
-        try:
-            obj = cls()
-            obj.creator = user
-            obj.editorial_board = editorial_board
-            obj.role = role
-            obj.save()
-            return obj
-        except IntegrityError:
-            return cls.get(
-                editorial_board,
-                researcher,
-                role,
-                initial_month,
-                final_month,
-            )
-
-    @classmethod
-    def create_or_update(
-        cls,
-        user,
-        editorial_board,
-        role,
-        declared_role=None,
-        std_role=None,
-    ):
-        if not role and (std_role or declared_role):
-            role = RoleModel.create_or_update(
-                user, std_role=std_role, declared_role=declared_role
-            )
-        if role and editorial_board:
-            try:
-                return cls._get(editorial_board, role)
-            except cls.DoesNotExist:
-                return cls._create(user, editorial_board, role)
-        raise ValueError(
-            "EditorialBoardRole.create_or_update requires editorial_board and role"
-        )
-
-
-class EditorialBoardMember(CommonControlField, ClusterableModel):
-    journal = models.ForeignKey(
-        Journal, null=True, blank=True, related_name="+", on_delete=models.SET_NULL
+        EditorialBoard, related_name="editorial_board_member", on_delete=models.SET_NULL
     )
     researcher = models.ForeignKey(
         Researcher, null=True, blank=True, related_name="+", on_delete=models.SET_NULL
     )
+    role = models.ForeignKey(
+        RoleModel, null=True, blank=True, related_name="+", on_delete=models.SET_NULL
+    )
 
     class Meta:
-        unique_together = [("researcher", "journal")]
+        unique_together = [("editorial_board", "researcher", "role")]
 
     panels = [
         AutocompletePanel("researcher"),
-        AutocompletePanel("journal"),
-        InlinePanel("editorial_board_member_activity", label=_("Activity")),
+        AutocompletePanel("role"),
     ]
     base_form_class = CoreAdminModelForm
 
     def __str__(self):
-        try:
-            if self.journal.title:
-                return f"{self.researcher.person_name} ({self.journal.title})"
-        except AttributeError:
-            pass
-        return str(self.researcher.person_name)
+        return f"{self.researcher.person_name} ({self.role})"
 
     @staticmethod
     def autocomplete_custom_queryset_filter(any_value):
@@ -263,60 +156,57 @@ class EditorialBoardMember(CommonControlField, ClusterableModel):
     @classmethod
     def _get(
         cls,
+        editorial_board,
         researcher,
-        journal,
+        role,
     ):
-        logging.info(
-            dict(
-                researcher=researcher,
-                journal=journal,
-            )
+        params = dict(
+            editorial_board=editorial_board,
+            researcher=researcher,
+            role=role,
         )
-        if journal and researcher:
+        logging.info(params)
+        if role and researcher:
             try:
-                return cls.objects.get(
-                    researcher=researcher,
-                    journal=journal,
-                )
+                return cls.objects.get(**params)
             except cls.MultipleObjectsReturned:
-                return cls.objects.filter(
-                    researcher=researcher,
-                    journal=journal,
-                ).first()
-        raise ValueError("EditorialBoardMember._get requires researcher and journal")
+                return cls.objects.filter(*params).first()
+        raise ValueError("EditorialBoardMember._get requires editorial_board and researcher and role")
 
     @classmethod
     def _create(
         cls,
         user,
         researcher,
-        journal,
+        role,
     ):
-        if journal and researcher:
+        if role and researcher and editorial_board:
             try:
                 obj = cls()
                 obj.creator = user
+                obj.editorial_board = editorial_board
                 obj.researcher = researcher
-                obj.journal = journal
+                obj.role = role
                 obj.save()
                 return obj
             except IntegrityError:
-                return cls._get(researcher, journal)
-        raise ValueError("EditorialBoardMember._create requires researcher and journal")
+                return cls._get(editorial_board, researcher, role)
+        raise ValueError("EditorialBoardMember._create requires editorial_board and researcher and role")
 
     @classmethod
     def _create_or_update(
         cls,
         user,
+        editorial_board,
         researcher,
-        journal,
+        role,
     ):
-        if journal and researcher:
+        if role and researcher and ededitorial_board:
             try:
-                return cls._get(researcher, journal)
+                return cls._get(editorial_board, researcher, role)
             except cls.DoesNotExist:
-                return cls._create(user, researcher, journal)
-        raise ValueError("EditorialBoardMember._create requires researcher and journal")
+                return cls._create(user, editorial_board, researcher, role)
+        raise ValueError("EditorialBoardMember._create requires editorial_board and researcher and journal")
 
     @classmethod
     def create_or_update(
@@ -379,7 +269,12 @@ class EditorialBoardMember(CommonControlField, ClusterableModel):
         if not journal:
             journal = EditorialBoardMember._create_or_update_journal(journal_title)
 
-        member = cls._create_or_update(user, researcher, journal)
+        editorial_board = EditorialBoard.create_or_update(
+            user,
+            journal,
+            editorial_board_initial_year,
+            editorial_board_final_year,
+        )
 
         role = None
         if std_role or declared_role:
@@ -387,22 +282,7 @@ class EditorialBoardMember(CommonControlField, ClusterableModel):
                 user, std_role=std_role, declared_role=declared_role
             )
 
-        member.add_member_activity(
-            user,
-            role,
-            member_activity_initial_year=member_activity_initial_year,
-            member_activity_initial_month=member_activity_initial_month,
-            member_activity_final_year=member_activity_final_year,
-            member_activity_final_month=member_activity_final_month,
-        )
-
-        member.add_member_to_editorial_board(
-            user,
-            role,
-            editorial_board_initial_year,
-            editorial_board_final_year,
-        )
-        return member
+        return cls._create_or_update(user, editorial_board, researcher, role)
 
     @staticmethod
     def _create_or_update_researcher(
@@ -516,187 +396,6 @@ class EditorialBoardMember(CommonControlField, ClusterableModel):
             logging.info(f"EditorialBoard {journal_title} OK")
         except Journal.DoesNotExist as e:
             logging.info(f"EditorialBoard {journal_title} {e}")
-
-    def add_member_to_editorial_board(
-        self,
-        user,
-        role,
-        editorial_board_initial_year=None,
-        editorial_board_final_year=None,
-    ):
-        editorial_board = EditorialBoard.create_or_update(
-            user,
-            self.journal,
-            editorial_board_initial_year,
-            editorial_board_final_year,
-        )
-        editorial_board_role = EditorialBoardRole.create_or_update(
-            user,
-            editorial_board,
-            role,
-        )
-        editorial_board_role.members.add(self)
-        editorial_board_role.save()
-
-    def add_member_activity(
-        self,
-        user,
-        role,
-        member_activity_initial_year=None,
-        member_activity_initial_month=None,
-        member_activity_final_year=None,
-        member_activity_final_month=None,
-    ):
-        EditorialBoardMemberActivity.create_or_update(
-            user,
-            self,
-            role=role,
-            initial_year=member_activity_initial_year,
-            initial_month=member_activity_initial_month,
-            final_year=member_activity_final_year,
-            final_month=member_activity_final_month,
-        )
-
-
-class EditorialBoardMemberActivity(CommonControlField, Orderable):
-    member = ParentalKey(
-        EditorialBoardMember,
-        null=True,
-        blank=True,
-        related_name="editorial_board_member_activity",
-        on_delete=models.SET_NULL,
-    )
-    role = models.ForeignKey(
-        "RoleModel",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-    )
-    initial_year = models.CharField(max_length=4, blank=True, null=True)
-    initial_month = models.CharField(
-        max_length=2, blank=True, null=True, choices=MONTHS
-    )
-    final_year = models.CharField(max_length=4, blank=True, null=True)
-    final_month = models.CharField(max_length=2, blank=True, null=True, choices=MONTHS)
-
-    base_form_class = CoreAdminModelForm
-
-    panels = [
-        FieldPanel("member"),
-        AutocompletePanel("role"),
-        FieldPanel("initial_year"),
-        FieldPanel("initial_month"),
-        FieldPanel("final_year"),
-        FieldPanel("final_month"),
-    ]
-
-    class Meta:
-        indexes = [
-            models.Index(
-                fields=[
-                    "initial_year",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "initial_month",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "role",
-                ]
-            ),
-        ]
-
-    @classmethod
-    def _get(
-        cls,
-        member,
-        role,
-        initial_year,
-        initial_month,
-    ):
-        if member and initial_year and role and initial_month:
-            try:
-                return cls.objects.get(
-                    member=member,
-                    initial_year=initial_year,
-                    role=role,
-                    initial_month=initial_month,
-                )
-            except cls.MultipleObjectsReturned:
-                return cls.objects.filter(
-                    member=member,
-                    initial_year=initial_year,
-                    role=role,
-                    initial_month=initial_month,
-                ).first()
-        raise ValueError(
-            "EditorialBoardMember._get requires member and initial_year and initial_month and role"
-        )
-
-    @classmethod
-    def _create(
-        cls,
-        user,
-        member,
-        role,
-        initial_year,
-        initial_month,
-        final_year,
-        final_month,
-    ):
-        if member and initial_year and role and initial_month:
-            try:
-                obj = cls()
-                obj.creator = user
-                obj.member = member
-                obj.role = role
-                obj.initial_year = initial_year
-                obj.initial_month = initial_month or obj.initial_month
-                obj.final_year = final_year
-                obj.final_month = final_month or obj.final_month
-                obj.save()
-                return obj
-            except IntegrityError:
-                return cls.get(
-                    member,
-                    role,
-                    initial_year,
-                    initial_month,
-                )
-        raise ValueError(
-            "EditorialBoardMember._create requires member and initial_year and initial_month and role"
-        )
-
-    @classmethod
-    def create_or_update(
-        cls,
-        user,
-        member,
-        role,
-        initial_year,
-        initial_month,
-        final_year,
-        final_month,
-    ):
-        if member and initial_year and role and initial_month:
-            try:
-                return cls._get(member, role, initial_year, initial_month)
-            except cls.DoesNotExist:
-                return cls._create(
-                    user,
-                    member,
-                    role,
-                    initial_year,
-                    initial_month,
-                    final_year,
-                    final_month,
-                )
-        raise ValueError(
-            "EditorialBoardMember.create_or_update requires member and initial_year and initial_month and role"
-        )
 
 
 class EditorialBoardMemberFile(models.Model):
