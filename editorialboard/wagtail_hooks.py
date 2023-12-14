@@ -34,10 +34,12 @@ class EditorialBoardMemberAdmin(ModelAdmin):
     exclude_from_explorer = False
     list_display = (
         "researcher",
-        "journal",
+        "editorial_board",
+        "role",
         "created",
         "updated",
     )
+    list_filter = ("role", )
     search_fields = (
         "journal__title",
         "researcher__person_name__fullname",
