@@ -27,7 +27,6 @@ class Researcher(CommonControlField):
     """
     person_name = models.ForeignKey("PersonName", on_delete=models.SET_NULL, null=True, blank=True)
     affiliation = models.ForeignKey("Affiliation", on_delete=models.SET_NULL, null=True, blank=True)
-    year = models.CharField(_("Year"), max_length=4, null=True, blank=True)
 
     autocomplete_search_field = "person_name"
 
@@ -38,15 +37,14 @@ class Researcher(CommonControlField):
     panels = [
         AutocompletePanel("person_name"),
         AutocompletePanel("affiliation"),
-        FieldPanel("year"),
     ]
 
     class Meta:
-        unique_together = [("person_name", "year", "affiliation")]
+        unique_together = [("person_name", "affiliation")]
         indexes = [
             models.Index(
                 fields=[
-                    "year",
+                    "person_name",
                 ]
             ),
         ]
@@ -67,23 +65,24 @@ class Researcher(CommonControlField):
             return None
 
     def __str__(self):
-        return f"{self.person_name} | {self.affiliation} | {self.year}"
+        if self.affiliation:
+            return f"{self.person_name} ({self.affiliation})"
+        return f"{self.person_name}"
 
     @classmethod
     def get(
         cls,
         person_name,
         affiliation,
-        year,
     ):
         year = remove_extra_spaces(year)
         try:
             return cls.objects.get(
-                person_name=person_name, affiliation=affiliation, year=year
+                person_name=person_name, affiliation=affiliation,
             )
         except cls.MultipleObjectsReturned:
             return cls.objects.filter(
-                person_name=person_name, affiliation=affiliation, year=year
+                person_name=person_name, affiliation=affiliation,
             ).first()
 
     @classmethod
@@ -92,7 +91,6 @@ class Researcher(CommonControlField):
         user,
         person_name,
         affiliation,
-        year,
     ):
         year = remove_extra_spaces(year)
         try:
@@ -100,18 +98,17 @@ class Researcher(CommonControlField):
             obj.creator = user
             obj.person_name = person_name
             obj.affiliation = affiliation
-            obj.year = year
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(person_name, affiliation, year)
+            return cls.get(person_name, affiliation)
 
     @classmethod
-    def _create_or_update(cls, user, person_name, affiliation, year):
+    def _create_or_update(cls, user, person_name, affiliation):
         try:
-            return cls.get(person_name, affiliation, year)
+            return cls.get(person_name, affiliation)
         except cls.DoesNotExist:
-            return cls.create(user, person_name, affiliation, year)
+            return cls.create(user, person_name, affiliation)
 
     @classmethod
     def create_or_update(
@@ -145,7 +142,6 @@ class Researcher(CommonControlField):
             user=user,
             person_name=person_name,
             affiliation=affiliation,
-            year=year,
         )
 
         try:
