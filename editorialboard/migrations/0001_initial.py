@@ -3,20 +3,20 @@
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
-import wagtail.fields
-import wagtail.search.index
+import modelcluster.fields
 
 
 class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        ("wagtaildocs", "0012_uploadeddocument"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name="FlexibleDate",
+            name="EditorialBoard",
             fields=[
                 (
                     "id",
@@ -28,18 +28,23 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "year",
-                    models.IntegerField(blank=True, null=True, verbose_name="Year"),
+                    "created",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Creation date"
+                    ),
                 ),
                 (
-                    "month",
-                    models.IntegerField(blank=True, null=True, verbose_name="Month"),
+                    "updated",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Last update date"
+                    ),
                 ),
-                ("day", models.IntegerField(blank=True, null=True, verbose_name="Day")),
+                ("initial_year", models.CharField(blank=True, max_length=4, null=True)),
+                ("final_year", models.CharField(blank=True, max_length=4, null=True)),
             ],
         ),
         migrations.CreateModel(
-            name="Language",
+            name="RoleModel",
             fields=[
                 (
                     "id",
@@ -63,15 +68,27 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "name",
-                    models.TextField(
-                        blank=True, null=True, verbose_name="Language Name"
+                    "std_role",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("editor-in-chief", "Editor-in-chief"),
+                            ("executive editor", "Editor"),
+                            ("associate editor", "Associate editor"),
+                            ("technical team", "Technical team"),
+                        ],
+                        max_length=16,
+                        null=True,
+                        verbose_name="Role",
                     ),
                 ),
                 (
-                    "code2",
-                    models.TextField(
-                        blank=True, null=True, verbose_name="Language code 2"
+                    "declared_role",
+                    models.CharField(
+                        blank=True,
+                        max_length=128,
+                        null=True,
+                        verbose_name="Declared Role",
                     ),
                 ),
                 (
@@ -98,13 +115,9 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={
-                "verbose_name": "Idioma",
-                "verbose_name_plural": "Languages",
-            },
         ),
         migrations.CreateModel(
-            name="Gender",
+            name="EditorialBoardMemberFile",
             fields=[
                 (
                     "id",
@@ -116,25 +129,31 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "code",
-                    models.CharField(
-                        blank=True, max_length=5, null=True, verbose_name="Código"
+                    "is_valid",
+                    models.BooleanField(
+                        blank=True, default=False, null=True, verbose_name="Is valid?"
                     ),
                 ),
                 (
-                    "gender",
-                    models.CharField(
-                        blank=True, max_length=50, null=True, verbose_name="Sex"
+                    "line_count",
+                    models.IntegerField(
+                        blank=True, default=0, null=True, verbose_name="Number of lines"
+                    ),
+                ),
+                (
+                    "attachment",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to="wagtaildocs.document",
                     ),
                 ),
             ],
-            options={
-                "unique_together": {("code", "gender")},
-            },
-            bases=(wagtail.search.index.Indexed, models.Model),
         ),
         migrations.CreateModel(
-            name="License",
+            name="EditorialBoardMember",
             fields=[
                 (
                     "id",
@@ -144,6 +163,10 @@ class Migration(migrations.Migration):
                         serialize=False,
                         verbose_name="ID",
                     ),
+                ),
+                (
+                    "sort_order",
+                    models.IntegerField(blank=True, editable=False, null=True),
                 ),
                 (
                     "created",
@@ -157,12 +180,6 @@ class Migration(migrations.Migration):
                         auto_now=True, verbose_name="Last update date"
                     ),
                 ),
-                ("url", models.CharField(blank=True, max_length=255, null=True)),
-                ("license_p", wagtail.fields.RichTextField(blank=True, null=True)),
-                (
-                    "license_type",
-                    models.CharField(blank=True, max_length=255, null=True),
-                ),
                 (
                     "creator",
                     models.ForeignKey(
@@ -175,36 +192,13 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "language",
-                    models.ForeignKey(
-                        blank=True,
-                        null=True,
-                        on_delete=django.db.models.deletion.SET_NULL,
-                        to="core.language",
-                    ),
-                ),
-                (
-                    "updated_by",
-                    models.ForeignKey(
-                        blank=True,
-                        editable=False,
-                        null=True,
-                        on_delete=django.db.models.deletion.SET_NULL,
-                        related_name="%(class)s_last_mod_user",
-                        to=settings.AUTH_USER_MODEL,
-                        verbose_name="Updater",
+                    "editorial_board",
+                    modelcluster.fields.ParentalKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="editorial_board_member",
+                        to="editorialboard.editorialboard",
                     ),
                 ),
             ],
-            options={
-                "verbose_name": "License",
-                "verbose_name_plural": "Licenses",
-                "indexes": [
-                    models.Index(fields=["url"], name="core_licens_url_e7d241_idx"),
-                    models.Index(
-                        fields=["license_type"], name="core_licens_license_5d1905_idx"
-                    ),
-                ],
-            },
         ),
     ]
