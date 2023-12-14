@@ -193,22 +193,37 @@ def create_or_create_abstract(xmltree, user):
 
 
 def create_or_update_researchers(xmltree, user):
-    authors = Authors(xmltree=xmltree).
+    authors = Authors(xmltree=xmltree).contribs_with_affs
 
     # Falta gender e gender_identification_status
     data = []
     for author in authors:
         for aff in author.get("affs") or []:
             obj = models.Researcher.create_or_update(
+                user,
                 given_names=author.get("given_names"),
                 last_name=author.get("surname"),
-                declared_name=None,
-                email=None,
-                orcid=author.get("orcid"),
                 suffix=author.get("suffix"),
-                lattes=author.get("lattes"),
+                declared_name=None,
                 affiliation=None,
-                user=user,
+                aff_name=aff.get("orgname"),
+                aff_div1=aff.get("orgdiv1"),
+                aff_div2=aff.get("orgdiv2"),
+                aff_city_name=aff.get("city"),
+                aff_country_text=None,
+                aff_country_acronym=aff.get("country_code"),
+                aff_country_name=aff.get("country_name"),
+                aff_state_text=aff.get("state"),
+                aff_state_acronym=None,
+                aff_state_name=None,
+                lang=article_lang,
+                year=None,
+                orcid=author.get("orcid"),
+                lattes=author.get("lattes"),
+                other_ids=None,
+                email=author.get("email") or aff.get("email"),
+                gender=author.get("gender"),
+                gender_identification_status=author.get("gender_identification_status"),
             )
             data.append(obj)
     return data
