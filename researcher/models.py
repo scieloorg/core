@@ -13,12 +13,13 @@ from core.choices import MONTHS
 from core.models import CommonControlField, Gender
 from core.forms import CoreAdminModelForm
 from core.utils.standardizer import remove_extra_spaces
-from institution.models import Institution
+from institution.models import BaseInstitution
 
 
 from . import choices
 from .exceptions import PersonNameCreateError
 from .forms import ResearcherForm
+
 
 
 class Researcher(CommonControlField):
@@ -173,70 +174,12 @@ class Researcher(CommonControlField):
         return researcher
 
 
-class Affiliation(CommonControlField):
-    institution = models.ForeignKey(
-        Institution,
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-    )
+class Affiliation(BaseInstitution):
+    panels = [
+        AutocompletePanel("institution"),
+    ]
 
-    class Meta:
-        unique_together = [("institution", )]
-
-    def autocomplete_label(self):
-        return str(self.institution)
-
-    @classmethod
-    def _get(cls, institution):
-        try:
-            return cls.objects.get(institution=institution)
-        except cls.MultipleObjectsReturned:
-            return cls.objects.filter(institution=institution).first()
-
-    @classmethod
-    def _create(cls, user, institution):
-        try:
-            obj = cls()
-            obj.institution = institution
-            obj.creator = user
-            obj.save()
-            return obj
-        except IntegrityError:
-            return cls._get(institution)
-
-    @classmethod
-    def get_or_create(
-        cls,
-        user,
-        name,
-        acronym,
-        level_1,
-        level_2,
-        level_3,
-        location,
-        official,
-        is_official,
-        url,
-        institution_type,
-    ):
-        try:
-            institution = Institution.create_or_update(
-                user=user,
-                name=name,
-                acronym=acronym,
-                level_1=level_1,
-                level_2=level_2,
-                level_3=level_3,
-                location=location,
-                official=official,
-                is_official=is_official,
-                url=url,
-                institution_type=institution_type,
-            )
-            return cls._get(institution=institution)
-        except cls.DoesNotExist:
-            return cls._create(user, institution)
+    base_form_class = CoreAdminModelForm
 
 
 class PersonName(CommonControlField):

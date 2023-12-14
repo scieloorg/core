@@ -500,6 +500,8 @@ class BaseInstitution(CommonControlField):
         except cls.DoesNotExist:
             return cls._create(user, institution)
 
+    create_or_update = get_or_create
+
 
 class Sponsor(BaseInstitution):
 
