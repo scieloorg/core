@@ -4,7 +4,7 @@ import os
 from django.db import models, IntegrityError
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
-from modelcluster.fields import ParentalKey
+from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
 from wagtail.models import Orderable
@@ -49,7 +49,7 @@ class EditorialBoard(CommonControlField, ClusterableModel):
         AutocompletePanel("journal"),
         FieldPanel("initial_year"),
         FieldPanel("final_year"),
-        InlinePanel("editorial_board_role"),
+        InlinePanel("editorial_board_role", label=_("Editorial Board Role"), classname="collapsed",),
     ]
     base_form_class = EditorialboardForm
 
@@ -121,7 +121,7 @@ class EditorialBoard(CommonControlField, ClusterableModel):
             )
 
 
-class EditorialBoardRole(CommonControlField, Orderable):
+class EditorialBoardRole(Orderable, CommonControlField):
     editorial_board = ParentalKey(
         EditorialBoard,
         on_delete=models.SET_NULL,
@@ -134,7 +134,10 @@ class EditorialBoardRole(CommonControlField, Orderable):
 
     # FIXME https://github.com/wagtail/django-modelcluster
     # https://github.com/wagtail/wagtail/issues/5432
-    members = models.ManyToManyField("EditorialBoardMember")
+    members = ParentalManyToManyField(
+        "EditorialBoardMember",
+        blank=True,
+    )
 
     class Meta:
         unique_together = [
@@ -157,7 +160,7 @@ class EditorialBoardRole(CommonControlField, Orderable):
         ]
 
     panels = [
-        AutocompletePanel("editorial_board"),
+        # AutocompletePanel("editorial_board"),
         AutocompletePanel("role"),
         AutocompletePanel("members"),
     ]
@@ -199,10 +202,7 @@ class EditorialBoardRole(CommonControlField, Orderable):
         except IntegrityError:
             return cls.get(
                 editorial_board,
-                researcher,
                 role,
-                initial_month,
-                final_month,
             )
 
     @classmethod
@@ -242,7 +242,7 @@ class EditorialBoardMember(CommonControlField, ClusterableModel):
     panels = [
         AutocompletePanel("researcher"),
         AutocompletePanel("journal"),
-        InlinePanel("editorial_board_member_activity"),
+        InlinePanel("editorial_board_member_activity", label=_("Editorial Board Menber Activity")),
     ]
     base_form_class = CoreAdminModelForm
 
