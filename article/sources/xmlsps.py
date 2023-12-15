@@ -29,6 +29,8 @@ from tracker.models import UnexpectedEvent
 class XMLSPSArticleSaveError(Exception):
     ...
 
+class LicenseDoesNotExist(Exception):
+    ...
 
 def load_article(user, xml=None, file_path=None):
     if xml:
@@ -59,9 +61,9 @@ def load_article(user, xml=None, file_path=None):
         set_first_last_page(xmltree=xmltree, article=article)
         set_elocation_id(xmltree=xmltree, article=article)
         article.save()
-        article.abstracts.set(create_or_create_abstract(xmltree=xmltree, user=user))
+        article.abstracts.set(create_or_update_abstract(xmltree=xmltree, user=user))
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
-        article.license.set(create_or_create_licenses(xmltree=xmltree, user=user))
+        article.license.set(get_licenses(xmltree=xmltree, user=user))
         article.researchers.set(
             create_or_update_researchers(xmltree=xmltree, user=user)
         )
@@ -144,19 +146,18 @@ def get_or_create_toc_sections(xmltree, user):
     return data
 
 
-def create_or_create_licenses(xmltree, user):
+def get_licenses(xmltree, user):
     licenses = ArticleLicense(xmltree=xmltree).licenses
     data = []
     for license in licenses:
-        obj = models.License.create_or_update(
-            url=license.get("link"),
-            language=get_or_create_language(license.get("lang"), user=user),
-            license_p=license.get("license_p"),
-            ## TODO
-            # Faltando license_type (Alterar no packtools)
-            license_type=None,
-            user=user,
-        )
+        try:
+            obj = models.License.get(
+                url=license.get("link"),
+                license_type=None,
+                # user=user,
+            )
+        except models.License.DoesNotExist:
+            raise LicenseDoesNotExist()
         data.append(obj)
     return data
 
@@ -178,7 +179,7 @@ def get_or_create_keywords(xmltree, user):
     return data
 
 
-def create_or_create_abstract(xmltree, user):
+def create_or_update_abstract(xmltree, user):
     data = []
     if xmltree.find(".//abstract") is not None:
         abstract = Abstract(xmltree=xmltree).get_abstracts(style="inline")
