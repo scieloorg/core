@@ -243,20 +243,8 @@ class ArticleFunding(CommonControlField):
         except cls.DoesNotExist:
             article_funding = cls()
             article_funding.award_id = award_id
-            if funding_source:
-                article_funding.funding_source = Sponsor.get_or_create(
-                    user=user,
-                    name=funding_source,
-                    acronym=None,
-                    level_1=None,
-                    level_2=None,
-                    level_3=None,
-                    location=None,
-                    official=None,
-                    is_official=None,
-                    url=None,
-                    institution_type=None,
-                )
+            article_funding.funding_source = funding_source
+
             article_funding.creator = user
             article_funding.save()
 
