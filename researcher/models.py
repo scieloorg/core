@@ -137,7 +137,7 @@ class Researcher(CommonControlField):
         gender=None,
         gender_identification_status=None,
     ):
-        person_name = PersonName.get_or_create(
+        person_name = PersonName.create_or_update(
             user,
             given_names=given_names,
             last_name=last_name,
