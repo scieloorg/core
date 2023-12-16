@@ -304,8 +304,7 @@ class License(CommonControlField):
             filters['url__icontains'] = url
         if license_type:
             filters['license_type'] = license_type
-        # if language:
-        #     filters['language'] = language
+
         try:
             return cls.objects.get(**filters)
         except cls.MultipleObjectsReturned:
@@ -325,7 +324,6 @@ class License(CommonControlField):
             license = cls.get(
                 url=url,
                 license_type=license_type,
-                # language=language,
             )
             license.updated_by = user
         except cls.DoesNotExist:
@@ -334,7 +332,7 @@ class License(CommonControlField):
         license.url = url or license.url
         license.license_p = license_p or license.license_p
         license.license_type = license_type or license.license_type
-        # license.language = language or license.language
+        license.language = language or license.language
         license.save()
         
         return license
