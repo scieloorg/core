@@ -13,12 +13,13 @@ from core.choices import MONTHS
 from core.models import CommonControlField, Gender
 from core.forms import CoreAdminModelForm
 from core.utils.standardizer import remove_extra_spaces
-from institution.models import Institution
+from institution.models import BaseInstitution
 
 
 from . import choices
 from .exceptions import PersonNameCreateError
 from .forms import ResearcherForm
+
 
 
 class Researcher(CommonControlField):
@@ -27,7 +28,6 @@ class Researcher(CommonControlField):
     """
     person_name = models.ForeignKey("PersonName", on_delete=models.SET_NULL, null=True, blank=True)
     affiliation = models.ForeignKey("Affiliation", on_delete=models.SET_NULL, null=True, blank=True)
-    year = models.CharField(_("Year"), max_length=4, null=True, blank=True)
 
     autocomplete_search_field = "person_name"
 
@@ -38,15 +38,14 @@ class Researcher(CommonControlField):
     panels = [
         AutocompletePanel("person_name"),
         AutocompletePanel("affiliation"),
-        FieldPanel("year"),
     ]
 
     class Meta:
-        unique_together = [("person_name", "year", "affiliation")]
+        unique_together = [("person_name", "affiliation")]
         indexes = [
             models.Index(
                 fields=[
-                    "year",
+                    "person_name",
                 ]
             ),
         ]
@@ -67,23 +66,24 @@ class Researcher(CommonControlField):
             return None
 
     def __str__(self):
-        return f"{self.person_name} | {self.affiliation} | {self.year}"
+        if self.affiliation:
+            return f"{self.person_name} ({self.affiliation})"
+        return f"{self.person_name}"
 
     @classmethod
     def get(
         cls,
         person_name,
         affiliation,
-        year,
     ):
         year = remove_extra_spaces(year)
         try:
             return cls.objects.get(
-                person_name=person_name, affiliation=affiliation, year=year
+                person_name=person_name, affiliation=affiliation,
             )
         except cls.MultipleObjectsReturned:
             return cls.objects.filter(
-                person_name=person_name, affiliation=affiliation, year=year
+                person_name=person_name, affiliation=affiliation,
             ).first()
 
     @classmethod
@@ -92,7 +92,6 @@ class Researcher(CommonControlField):
         user,
         person_name,
         affiliation,
-        year,
     ):
         year = remove_extra_spaces(year)
         try:
@@ -100,18 +99,17 @@ class Researcher(CommonControlField):
             obj.creator = user
             obj.person_name = person_name
             obj.affiliation = affiliation
-            obj.year = year
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(person_name, affiliation, year)
+            return cls.get(person_name, affiliation)
 
     @classmethod
-    def _create_or_update(cls, user, person_name, affiliation, year):
+    def _create_or_update(cls, user, person_name, affiliation):
         try:
-            return cls.get(person_name, affiliation, year)
+            return cls.get(person_name, affiliation)
         except cls.DoesNotExist:
-            return cls.create(user, person_name, affiliation, year)
+            return cls.create(user, person_name, affiliation)
 
     @classmethod
     def create_or_update(
@@ -145,7 +143,6 @@ class Researcher(CommonControlField):
             user=user,
             person_name=person_name,
             affiliation=affiliation,
-            year=year,
         )
 
         try:
@@ -177,70 +174,12 @@ class Researcher(CommonControlField):
         return researcher
 
 
-class Affiliation(CommonControlField):
-    institution = models.ForeignKey(
-        Institution,
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-    )
+class Affiliation(BaseInstitution):
+    panels = [
+        AutocompletePanel("institution"),
+    ]
 
-    class Meta:
-        unique_together = [("institution", )]
-
-    def autocomplete_label(self):
-        return str(self.institution)
-
-    @classmethod
-    def _get(cls, institution):
-        try:
-            return cls.objects.get(institution=institution)
-        except cls.MultipleObjectsReturned:
-            return cls.objects.filter(institution=institution).first()
-
-    @classmethod
-    def _create(cls, user, institution):
-        try:
-            obj = cls()
-            obj.institution = institution
-            obj.creator = user
-            obj.save()
-            return obj
-        except IntegrityError:
-            return cls._get(institution)
-
-    @classmethod
-    def get_or_create(
-        cls,
-        user,
-        name,
-        acronym,
-        level_1,
-        level_2,
-        level_3,
-        location,
-        official,
-        is_official,
-        url,
-        institution_type,
-    ):
-        try:
-            institution = Institution.create_or_update(
-                user=user,
-                name=name,
-                acronym=acronym,
-                level_1=level_1,
-                level_2=level_2,
-                level_3=level_3,
-                location=location,
-                official=official,
-                is_official=is_official,
-                url=url,
-                institution_type=institution_type,
-            )
-            return cls._get(institution=institution)
-        except cls.DoesNotExist:
-            return cls._create(user, institution)
+    base_form_class = CoreAdminModelForm
 
 
 class PersonName(CommonControlField):
