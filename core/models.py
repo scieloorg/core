@@ -1,3 +1,4 @@
+import csv
 import os
 
 from django.contrib.auth import get_user_model
@@ -278,16 +279,36 @@ class License(CommonControlField):
     ]
 
     @classmethod
+    def load(cls, user, license_path=None):
+        # if not cls.objects.exists():
+            with open("./core/fixture/license.csv", "r") as csvfile:
+                license = csv.DictReader(csvfile, delimiter=",")
+                for row in license:
+                    cls.create_or_update(
+                        url=row["url"],
+                        license_type=row["license_type"],
+                        user=user,
+                    )
+
+    @classmethod
     def get(
         cls,
-        url,
-        license_type,
+        url=None,
+        license_type=None,
     ):
+        if not url and not license_type:
+            raise ValueError("License.get requires url or license_type parameters")
+        filters = {}
         if url:
-            return cls.objects.get(url=url)
+            filters['url__icontains'] = url
         if license_type:
-            return cls.objects.get(license_type=license_type)
-        raise ValueError("License.get requires url or license_type parameters")
+            filters['license_type'] = license_type
+
+        try:
+            return cls.objects.get(**filters)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(**filters).first()
+
 
     @classmethod
     def create_or_update(
@@ -302,6 +323,7 @@ class License(CommonControlField):
             license = cls.get(
                 url=url,
                 license_type=license_type,
+                # language=language,
             )
             license.updated_by = user
         except cls.DoesNotExist:
@@ -312,10 +334,11 @@ class License(CommonControlField):
         license.license_p = license_p or license.license_p
         license.license_type = license_type or license.license_type
         license.language = language or license.language
-        license.save()
+        license.save()     
         return license
 
     class Meta:
+        unique_together = [("url", "license_type")]
         verbose_name = _("License")
         verbose_name_plural = _("Licenses")
         indexes = [
