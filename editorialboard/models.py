@@ -179,6 +179,7 @@ class EditorialBoardMember(CommonControlField, Orderable):
         cls,
         user,
         researcher,
+        editorial_board,
         role,
     ):
         if role and researcher and editorial_board:
@@ -202,7 +203,7 @@ class EditorialBoardMember(CommonControlField, Orderable):
         researcher,
         role,
     ):
-        if role and researcher and ededitorial_board:
+        if role and researcher and editorial_board:
             try:
                 return cls._get(editorial_board, researcher, role)
             except cls.DoesNotExist:
