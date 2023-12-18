@@ -65,7 +65,7 @@ class OfficialJournal(CommonControlField):
     title = models.TextField(_("Official Title"), null=True, blank=True)
     iso_short_title = models.TextField(_("ISO Short Title"), null=True, blank=True)
     parallel_titles = models.ManyToManyField(
-        "JournalParallelTitles", null=True, blank=True
+        "JournalParallelTitles", blank=True
     )
     new_title = models.ForeignKey(
         "self",
@@ -75,7 +75,7 @@ class OfficialJournal(CommonControlField):
         blank=True,
         related_name="new_title_journal",
     )
-    old_title = models.ManyToManyField("self", null=True, blank=True)
+    old_title = models.ManyToManyField("self", blank=True)
 
     foundation_year = models.CharField(
         _("Foundation Year"), max_length=4, null=True, blank=True
@@ -304,7 +304,7 @@ class Journal(CommonControlField, ClusterableModel):
     )
     title = models.TextField(_("Journal Title"), null=True, blank=True)
     short_title = models.TextField(_("Short Title"), null=True, blank=True)
-    other_titles = models.ManyToManyField(JournalTitle, verbose_name=_("Other titles"))
+    other_titles = models.ManyToManyField(JournalTitle, verbose_name=_("Other titles"), blank=True)
     logo = models.ForeignKey(
         "wagtailimages.Image",
         on_delete=models.SET_NULL,
@@ -362,28 +362,34 @@ class Journal(CommonControlField, ClusterableModel):
     subject_descriptor = models.ManyToManyField(
         "SubjectDescriptor",
         verbose_name=_("Subject Descriptors"),
+        blank=True,
     )
     subject = models.ManyToManyField(
         "Subject",
         verbose_name=_("Study Areas"),
+        blank=True,
     )
     wos_db = models.ManyToManyField(
         "WebOfKnowledge",
         verbose_name=_("Web of Knowledge Databases"),
+        blank=True,
     )
     wos_area = models.ManyToManyField(
         "WebOfKnowledgeSubjectCategory",
         verbose_name=_("Web of Knowledge Subject Categories"),
+        blank=True,
     )
     text_language = models.ManyToManyField(
         Language,
         verbose_name=_("Text Languages"),
         related_name="text_language",
+        blank=True,
     )
     abstract_language = models.ManyToManyField(
         Language,
         verbose_name=_("Abstract Languages"),
         related_name="abstract_language",
+        blank=True,
     )
     standard = models.ForeignKey(
         "Standard",
@@ -438,10 +444,12 @@ class Journal(CommonControlField, ClusterableModel):
     indexed_at = models.ManyToManyField(
         "IndexedAt",
         verbose_name=_("Indexed At"),
+        blank=True,
     )
     additional_indexed_at = models.ManyToManyField(
         "AdditionalIndexedAt",
         verbose_name=_("Additional Index At"),
+        blank=True,
     )
     secs_code = models.TextField(
         _("Secs Code"),
