@@ -139,13 +139,10 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
         This function get the SciELOJournal.journal_acron to get the acronym to the journal.
         """
         if obj.journal:
-            sci_journal = SciELOJournal.objects.get(journal=obj.journal)
-            return sci_journal.journal_acron
+            sci_journals = SciELOJournal.objects.filter(journal=obj.journal, collection__is_active=True)
+            return [sci_journal.journal_acron for sci_journal in sci_journals]
 
     def prepare_year_cluster(self, obj):
-        """
-        This function get the SciELOJournal.journal_acron to get the acronym to the journal.
-        """
         return str(obj.pub_date_year)
 
     def prepare_collection(self, obj):
