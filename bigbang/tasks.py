@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from config import celery_app
 from collection.models import Collection
 from core.models import Language
+from editorialboard.models import RoleModel
 from institution.models import Institution
 from location.models import Country, City, State
 from journal.models import Standard, Subject, WebOfKnowledge, WebOfKnowledgeSubjectCategory, IndexedAt
@@ -40,3 +41,4 @@ def task_start(
     WebOfKnowledgeSubjectCategory.load(user)
     IndexedAt.load(user)
     Institution.load(user)
+    RoleModel.load(user)

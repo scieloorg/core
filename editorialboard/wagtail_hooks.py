@@ -10,30 +10,19 @@ from wagtail.contrib.modeladmin.options import (
 from wagtail.contrib.modeladmin.views import CreateView
 
 from .button_helper import EditorialBoardMemberHelper
-from .models import EditorialBoardMember, EditorialBoardMemberFile, Researcher
+from .models import (
+    EditorialBoard,
+    EditorialBoardMember,
+    EditorialBoardMemberFile,
+    RoleModel,
+)
 from .views import import_file_ebm, validate_ebm
 
 
-class ResearcherCreateView(CreateView):
+class EditorialBoardMemberCreateView(CreateView):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
-
-
-class ResearcherAdmin(ModelAdmin):
-    model = Researcher
-    create_view_class = ResearcherCreateView
-    menu_label = _("Researcher")
-    menu_icon = "folder"
-    menu_order = 9
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-    search_fields = (
-        "given_names",
-        "last_name",
-        "declared_name",
-        "orcid",
-    )
 
 
 class EditorialBoardMemberAdmin(ModelAdmin):
@@ -43,6 +32,18 @@ class EditorialBoardMemberAdmin(ModelAdmin):
     menu_order = 200
     add_to_settings_menu = False
     exclude_from_explorer = False
+    list_display = (
+        "researcher",
+        "editorial_board",
+        "role",
+        "created",
+        "updated",
+    )
+    list_filter = ("role", )
+    search_fields = (
+        "journal__title",
+        "researcher__person_name__fullname",
+    )
 
 
 class EditorialBoardMemberFileAdmin(ModelAdmin):
@@ -58,20 +59,67 @@ class EditorialBoardMemberFileAdmin(ModelAdmin):
     search_fields = ("attachment",)
 
 
-modeladmin_register(ResearcherAdmin)
+class RoleModelCreateView(CreateView):
+    def form_valid(self, form):
+        self.object = form.save_all(self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
 
 
-class EditorialBoardMemberAdminGroup(ModelAdminGroup):
+class RoleModelAdmin(ModelAdmin):
+    model = RoleModel
+    create_view_class = RoleModelCreateView
+    menu_label = _("RoleModel")
+    menu_icon = "folder"
+    menu_order = 9
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = ("declared_role", "std_role", "updated", "created")
+    list_filter = ("std_role",)
+    search_fields = ("declared_role",)
+
+
+class EditorialBoardCreateView(CreateView):
+    def form_valid(self, form):
+        self.object = form.save_all(self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class EditorialBoardAdmin(ModelAdmin):
+    model = EditorialBoard
+    create_view_class = EditorialBoardCreateView
+    menu_label = _("EditorialBoard")
+    menu_icon = "folder"
+    menu_order = 9
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "journal",
+        "initial_year",
+        "final_year",
+        "created",
+        "updated",
+    )
+    list_filter = ("initial_year", "final_year")
+    search_fields = (
+        "journal__title",
+        "initial_year",
+        "final_year",
+    )
+
+
+class EditorialBoardAdminGroup(ModelAdminGroup):
     menu_label = "Editorial Board Member"
     menu_icon = "folder-open-inverse"  # change as required
     menu_order = 200  # will put in 3rd place (000 being 1st, 100 2nd)
     items = (
+        RoleModelAdmin,
+        EditorialBoardAdmin,
         EditorialBoardMemberAdmin,
         EditorialBoardMemberFileAdmin,
     )
 
 
-# modeladmin_register(EditorialBoardMemberAdminGroup)
+modeladmin_register(EditorialBoardAdminGroup)
 
 
 @hooks.register("register_admin_urls")

@@ -9,10 +9,17 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+<<<<<<< HEAD
         ("institution", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ("article", "0001_initial"),
         ("doi", "0001_initial"),
+=======
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ("doi", "0001_initial"),
+        ("article", "0001_initial"),
+        ("institution", "0001_initial"),
+>>>>>>> f4728914844f253a39cb90499f76c3e31d461783
         ("core", "0001_initial"),
     ]
 
