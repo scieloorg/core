@@ -73,12 +73,6 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-<<<<<<< HEAD
-            options={
-                "abstract": False,
-            },
-=======
->>>>>>> f4728914844f253a39cb90499f76c3e31d461783
         ),
         migrations.CreateModel(
             name="PersonName",
@@ -214,15 +208,12 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-<<<<<<< HEAD
-=======
                     "year",
                     models.CharField(
                         blank=True, max_length=4, null=True, verbose_name="Year"
                     ),
                 ),
                 (
->>>>>>> f4728914844f253a39cb90499f76c3e31d461783
                     "affiliation",
                     models.ForeignKey(
                         blank=True,
@@ -418,19 +409,6 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name="personname",
             index=models.Index(
-<<<<<<< HEAD
-                fields=["person_name"], name="researcher__person__17eac0_idx"
-            ),
-        ),
-        migrations.AlterUniqueTogether(
-            name="researcher",
-            unique_together={("person_name", "affiliation")},
-        ),
-        migrations.AddIndex(
-            model_name="personname",
-            index=models.Index(
-=======
->>>>>>> f4728914844f253a39cb90499f76c3e31d461783
                 fields=["fullname"], name="researcher__fullnam_76d678_idx"
             ),
         ),
@@ -443,13 +421,8 @@ class Migration(migrations.Migration):
         migrations.AlterUniqueTogether(
             name="personname",
             unique_together={
-<<<<<<< HEAD
-                ("declared_name",),
-                ("fullname", "last_name", "given_names", "suffix"),
-=======
                 ("fullname", "last_name", "given_names", "suffix"),
                 ("declared_name",),
->>>>>>> f4728914844f253a39cb90499f76c3e31d461783
             },
         ),
         migrations.AlterUniqueTogether(
