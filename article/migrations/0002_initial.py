@@ -9,10 +9,10 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("institution", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("article", "0001_initial"),
         ("doi", "0001_initial"),
+        ("article", "0001_initial"),
+        ("institution", "0001_initial"),
         ("core", "0001_initial"),
     ]
 
