@@ -589,15 +589,21 @@ class Location(CommonControlField):
         country_name=None,
         country_acron3=None,
         country_acronym=None,
+        country_text=None,
         state=None,
         state_name=None,
         state_acronym=None,
+        state_text=None,
         city=None,
         city_name=None,
         lang=None,
     ):
+
         try:
             try:
+                if country_text:
+                    for item in Country.standardize(country_text, user):
+                        country = item.get("country")
                 country = country or Country.create_or_update(
                     user,
                     name=country_name,
@@ -610,6 +616,9 @@ class Location(CommonControlField):
                 pass
 
             try:
+                if state_text:
+                    for item in State.standardize(state_text, user):
+                        state = item.get("state")
                 state = state or State.create_or_update(
                     user, name=state_name, acronym=state_acronym)
             except Exception as e:

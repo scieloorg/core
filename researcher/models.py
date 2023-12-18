@@ -120,6 +120,17 @@ class Researcher(CommonControlField):
         suffix=None,
         declared_name=None,
         affiliation=None,
+        aff_name=None,
+        aff_div1=None,
+        aff_div2=None,
+        aff_city_name=None,
+        aff_country_text=None,
+        aff_country_acronym=None,
+        aff_country_name=None,
+        aff_state_text=None,
+        aff_state_acronym=None,
+        aff_state_name=None,
+        lang=None,
         year=None,
         orcid=None,
         lattes=None,
@@ -127,6 +138,7 @@ class Researcher(CommonControlField):
         email=None,
         gender=None,
         gender_identification_status=None,
+
     ):
         person_name = PersonName.get_or_create(
             user,
@@ -138,6 +150,36 @@ class Researcher(CommonControlField):
             gender=gender,
             gender_identification_status=gender_identification_status,
         )
+
+        if not affiliation:
+            location = location or Location.create_or_update(
+                user,
+                country=None,
+                country_name=aff_country_name,
+                country_acron3=None,
+                country_acronym=aff_country_acronym,
+                country_text=aff_country_text,
+                state=None,
+                state_name=aff_state_name,
+                state_acronym=aff_state_acronym,
+                state_text=aff_state_text,
+                city=None,
+                city_name=aff_city_name,
+                lang=lang,
+            )
+            affiliation = affiliation or Affiliation.create_or_update(
+                user,
+                name=aff_name,
+                acronym=None,
+                level_1=aff_div1,
+                level_2=aff_div2,
+                level_3=None,
+                location=location,
+                official=None,
+                is_official=None,
+                url=None,
+                institution_type=None,
+            )
 
         researcher = cls._create_or_update(
             user=user,
@@ -180,6 +222,8 @@ class Affiliation(BaseInstitution):
     ]
 
     base_form_class = CoreAdminModelForm
+
+    create_or_update = get_or_create
 
 
 class PersonName(CommonControlField):
