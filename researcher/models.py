@@ -14,7 +14,7 @@ from core.models import CommonControlField, Gender
 from core.forms import CoreAdminModelForm
 from core.utils.standardizer import remove_extra_spaces
 from institution.models import BaseInstitution
-
+from location.models import Location
 
 from . import choices
 from .exceptions import PersonNameCreateError
@@ -223,7 +223,7 @@ class Affiliation(BaseInstitution):
 
     base_form_class = CoreAdminModelForm
 
-    create_or_update = get_or_create
+    create_or_update = BaseInstitution.get_or_create
 
 
 class PersonName(CommonControlField):
