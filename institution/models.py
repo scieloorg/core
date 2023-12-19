@@ -37,7 +37,7 @@ class Institution(CommonControlField, ClusterableModel):
 
     logo = models.ImageField(_("Logo"), blank=True, null=True)
 
-    autocomplete_search_field = "institution_identification"
+    autocomplete_search_field = "institution_identification__name"
 
     def autocomplete_label(self):
         return str(self)
@@ -445,9 +445,7 @@ class BaseInstitution(CommonControlField):
 
     @classmethod
     def autocomplete_custom_queryset_filter(cls, any_value):
-        return cls.objects.filter(
-            Q(institution__institution_identification__name__icontains=any_value)
-        )
+        return cls.objects.filter(institution__institution_identification__name__icontains=any_value)
 
     @classmethod
     def _get(cls, institution):
