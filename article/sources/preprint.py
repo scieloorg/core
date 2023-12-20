@@ -54,7 +54,7 @@ def harvest_preprints(URL, user):
             article.keywords.set(
                 get_or_create_keyword(keywords=article_info.get("subject"), user=user)
             )
-            article.license.set(
+            article.license_statements.set(
                 get_or_create_license(rights=article_info.get("rights"), user=user)
             )
             article.abstracts.set(
@@ -66,6 +66,9 @@ def harvest_preprints(URL, user):
                 get_or_create_language(lang=article_info.get("language"), user=user)
             )
             article.publisher = get_publisher(user, publisher=article_info.get("publisher"))
+            for ls in article.license_statements.iterator():
+                article.license = ls.license
+                break
             article.save()
         except Exception as e:
             # TODO cria um registro das falhas de modo que fiquem
@@ -167,27 +170,46 @@ def get_or_create_license(rights, user):
     EX:'rights': [{'text': 'Copyright (c) 2020 Julio Croda, Wanderson Kleber de  Oliveira, Rodrigo Lins  Frutuoso, Luiz Henrique  Mandetta, Djane Clarys  Baia-da-Silva, José Diego  Brito-Sousa, Wuelton Marcelo  Monteiro, Marcus Vinícius Guimarães  Lacerda', 'lang': 'en-US'}, {'text': 'https://creativecommons.org/licenses/by/4.0', 'lang': 'en-US'}],
     """
     data = []
+
+    url = None
+    license = None
+    license_p = None
+    license_type = None
+    language = None
+
     for item in rights:
+        # item = {"text": url or license_p, "lang": ""}
+        language = language or item.get("lang")
         content = item.get("text")
         parsed_url = urlparse(content)
+
         if parsed_url.scheme in [
             "http",
             "https",
         ]:
             url = content
-            license_p = None
         else:
-            url = None
             license_p = content
 
-        obj = models.License.get_or_create(
+    if url:
+        url_data = models.LicenseStatement.parse_url(url)
+        license_type = url_data.get("license_type")
+
+        if license_type:
+            license = models.License.create_or_update(
+                user,
+                license_type=license_type,
+            )
+
+        license_statement = models.LicenseStatement.create_or_update(
+            user=user,
             url=url,
             license_p=license_p,
-            language=get_or_create_language(item.get("lang"), user=user),
-            license_type=None,
-            creator=user,
+            language=get_or_create_language(language, user=user),
+            license=license,
         )
-        data.append(obj)
+
+        data.append(license_statement)
     return data
 
 
