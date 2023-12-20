@@ -323,8 +323,29 @@
                         <p>
                             <strong>{% trans 'Área 1' %}</strong>
                         </p>
-                        
+
                         <ul type="disc">
+                          {% for editorial_member in editorial_board.editorial_board_member.all %}
+                            <li>
+                              {{editorial_member.researcher.person_name}}, {{editorial_member.researcher.affiliation.institution.institution_identification.name}}
+                              {% if editorial_member.researcher.affiliation.institution.location %} 
+                                {% if editorial_member.researcher.affiliation.institution.location.city %}
+                                  {{editorial_member.researcher.affiliation.institution.location.city}}  
+                                {% endif%}
+                                {% if editorial_member.researcher.affiliation.institution.location.state %}
+                                  , {{editorial_member.researcher.affiliation.institution.location.state.acronym}}
+                                {% endif %}
+                                {% if editorial_member.researcher.affiliation.institution.location.country %}
+                                  , {{editorial_member.researcher.affiliation.institution.location.country}}
+                                {% endif %}
+                              {% endif%}
+                              <br> 
+                              {% for researcher_identifier in editorial_member.researcher.researcheraka_set.all %}
+                                {% if researcher_identifier.researcher_identifier.source_name|lower == "orcid" %}Orcid <a href="https://orcid.org/{{ researcher_identifier.researcher_identifier.identifier }}">{{ researcher_identifier.researcher_identifier.identifier }}</a>{% elif researcher_identifier.researcher_identifier.source_name|lower == "lattes" %} | <a href="http://lattes.cnpq.br/{{ researcher_identifier.researcher_identifier.identifier }}">CV Lattes</a> | {% endif %}
+                              {% endfor %}
+                            </li>
+                          {% endfor %}
+                            
                           <li> Abel L Packer, Universidade de São Paulo (USP), São Paulo, SP, Brasil <br> Orcid <a href="https://orcid.org/0000-0001-9610-5728">0000-0001-9610-5728</a> | <a href="http://lattes.cnpq.br/6603329734556632">CV Lattes</a> | <a href="mailto:abel@scielo.org">abel@scielo.org</a>
                           </li>
                           <li> Abel L Packer, Universidade de São Paulo (USP), São Paulo, SP, Brasil <br> Orcid <a href="https://orcid.org/0000-0001-9610-5728">0000-0001-9610-5728</a> | <a href="http://lattes.cnpq.br/6603329734556632">CV Lattes</a> | <a href="mailto:abel@scielo.org">abel@scielo.org</a>

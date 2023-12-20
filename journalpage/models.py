@@ -6,6 +6,8 @@ from wagtail.contrib.routable_page.models import RoutablePageMixin, re_path
 
 from journal.models import Journal
 from core.models import Language
+from editorialboard.models import EditorialBoard
+
 
 class JournalPage(RoutablePageMixin, Page):
     def get_context(self, request, *args, **kwargs):
@@ -32,6 +34,11 @@ class JournalPage(RoutablePageMixin, Page):
         except Journal.DoesNotExist:
             return HttpResponseNotFound()
         
+        try:
+            editorial_board = EditorialBoard.objects.get(journal=journal)
+        except EditorialBoard.DoesNotExist:
+            editorial_board = None
+
         mission = journal.mission.get_object_in_preferred_language(language=language)
         brief_history = journal.history.get_object_in_preferred_language(language=language)
         focus_and_scope = journal.focus.get_object_in_preferred_language(language=language)
@@ -87,6 +94,7 @@ class JournalPage(RoutablePageMixin, Page):
             "ethics": ethics,
             "fee_charging": fee_charging,
             "sponsor_history": sponsor_history,
+            "editorial_board": editorial_board,
             # Current e available language 
             "language": str(self.locale),
             "translations": context["available_translations"],
