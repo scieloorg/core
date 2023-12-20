@@ -349,6 +349,7 @@ class LicenseStatement(CommonControlField):
         FieldPanel("url"),
         FieldPanel("license_p"),
         AutocompletePanel("language"),
+        AutocompletePanel("license"),
     ]
 
     class Meta:
