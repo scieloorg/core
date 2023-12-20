@@ -361,6 +361,103 @@ class License(CommonControlField):
         return self.license_type or self.url or self.license_p or ""
 
 
+class LicenseStatement(CommonControlField):
+    url = models.CharField(max_length=255, null=True, blank=True)
+    license_p = RichTextField(null=True, blank=True)
+    language = models.ForeignKey(
+        Language, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    license = models.ForeignKey(License, on_delete=models.SET_NULL, null=True, blank=True)
+
+    panels = [
+        FieldPanel("url"),
+        FieldPanel("license_p"),
+        AutocompletePanel("language"),
+    ]
+
+    class Meta:
+        unique_together = [("url", )]
+        verbose_name = _("License")
+        verbose_name_plural = _("Licenses")
+        indexes = [
+            models.Index(
+                fields=[
+                    "url",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "license_type",
+                ]
+            ),
+        ]
+
+    def __unicode__(self):
+        return self.url or ""
+
+    def __str__(self):
+        return self.url or ""
+
+    @classmethod
+    def get(
+        cls,
+        url=None,
+        license_p=None,
+        language=None,
+    ):
+        if not url:
+            raise ValueError("LicenseStatement.get requires url")
+        filters = dict(
+            url__iexact=url,
+            license_p__iexact=license_p,
+            language__iexact=language,
+        )
+        try:
+            return cls.objects.get(**filters)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(**filters).first()
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        url=None,
+        license_p=None,
+        language=None,
+    ):
+        if not url:
+            raise ValueError("LicenseStatement.get requires url")
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.url = url or obj.url
+            obj.license_p = license_p or obj.license_p
+            obj.language = language or obj.language
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(url, license_p, language)
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        url=None,
+        license_p=None,
+        language=None,
+    ):
+        try:
+            obj = cls.get(url, license_p, language)
+            obj.updated_by = user
+            obj.url = url or obj.url
+            obj.license_p = license_p or obj.license_p
+            obj.language = language or obj.language
+            obj.save()
+            return obj
+        except cls.DoesNotExist:
+            return cls.create(user, url, license_p, language)
+
+
 class FileWithLang(models.Model):
     file = models.ForeignKey(
         "wagtaildocs.Document",
