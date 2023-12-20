@@ -167,22 +167,23 @@ def get_or_create_license(rights, user):
     EX:'rights': [{'text': 'Copyright (c) 2020 Julio Croda, Wanderson Kleber de  Oliveira, Rodrigo Lins  Frutuoso, Luiz Henrique  Mandetta, Djane Clarys  Baia-da-Silva, José Diego  Brito-Sousa, Wuelton Marcelo  Monteiro, Marcus Vinícius Guimarães  Lacerda', 'lang': 'en-US'}, {'text': 'https://creativecommons.org/licenses/by/4.0', 'lang': 'en-US'}],
     """
     data = []
-    for license in rights:
-        parsed_url = urlparse(license.get("text"))
+    for item in rights:
+        content = item.get("text")
+        parsed_url = urlparse(content)
         if parsed_url.scheme in [
             "http",
             "https",
         ]:
-            url = license.get("text")
+            url = content
             license_p = None
         else:
             url = None
-            license_p = license.get("text")
+            license_p = content
 
         obj = models.License.get_or_create(
             url=url,
             license_p=license_p,
-            language=get_or_create_language(license.get("lang"), user=user),
+            language=get_or_create_language(item.get("lang"), user=user),
             license_type=None,
             creator=user,
         )
