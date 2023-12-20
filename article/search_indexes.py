@@ -348,8 +348,8 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         return dois + [obj.pid_v2, obj.pid_v3]
 
     def prepare_license(self, obj):
-        if obj.license:
-            return [license.license_type for license in obj.license.all()]
+        if obj.license and obj.license_type:
+            return [obj.license_type]
 
     def prepare_sources(self, obj):
         return [
