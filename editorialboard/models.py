@@ -28,6 +28,11 @@ class EditorialBoard(CommonControlField, ClusterableModel):
     initial_year = models.CharField(max_length=4, blank=True, null=True)
     final_year = models.CharField(max_length=4, blank=True, null=True)
 
+    autocomplete_search_field = "journal__title"
+
+    def autocomplete_label(self):
+        return str(self)
+
     class Meta:
         unique_together = [("journal", "initial_year", "final_year")]
 
