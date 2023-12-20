@@ -18,6 +18,10 @@ from core.search_site import views as search_views  # noqa isort:skip
 urlpatterns = [
     # path("", TemplateView.as_view(template_name="home/home_page.html"), name="home"),
     # Django Admin, use {% url "admin:index" %}
+    # Add Wagtail Autocomplete’s URL patterns to your project’s URL config, usually in urls.py.
+    # This should come before your wagtail_urls
+    # and if you are using the suggested pattern r'^admin/autocomplete/'
+    # it must also come before your admin urls:
     path("admin/autocomplete/", include(autocomplete_admin_urls)),
     path(settings.DJANGO_ADMIN_URL, admin.site.urls),
     # Wagtail Admin
