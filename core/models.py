@@ -428,6 +428,45 @@ class LicenseStatement(CommonControlField):
         except cls.DoesNotExist:
             return cls.create(user, url, license_p, language)
 
+    @staticmethod
+    def parse_url(url):
+        license_type = None
+        license_version = None
+        license_language = None
+
+        url = url.lower()
+        url_parts = url.split("/")
+        if not url_parts:
+            return {}
+
+        license_types = dict(choices.LICENSE_TYPES)
+        for lic_type in license_types.keys():
+            if lic_type in url_parts:
+                license_type = lic_type
+
+                try:
+                    version = url.split(f"/{license_type}/")
+                    version = version[-1].split("/")[0]
+                    isdigit = False
+                    for c in version.split("."):
+                        if c.isdigit():
+                            isdigit = True
+                            continue
+                        else:
+                            isdigit = False
+                            break
+                    if isdigit:
+                        license_version = version
+                except (AttributeError, TypeError, ValueError):
+                    pass
+                break
+
+        return dict(
+            license_type=license_type,
+            license_version=license_version,
+            license_language=license_language,
+        )
+
 
 class FileWithLang(models.Model):
     file = models.ForeignKey(
