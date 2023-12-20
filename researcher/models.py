@@ -29,7 +29,7 @@ class Researcher(CommonControlField):
     person_name = models.ForeignKey("PersonName", on_delete=models.SET_NULL, null=True, blank=True)
     affiliation = models.ForeignKey("Affiliation", on_delete=models.SET_NULL, null=True, blank=True)
 
-    autocomplete_search_field = "person_name"
+    autocomplete_search_field = "person_name__declared_name"
 
     def autocomplete_label(self):
         return str(self)
@@ -76,7 +76,6 @@ class Researcher(CommonControlField):
         person_name,
         affiliation,
     ):
-        year = remove_extra_spaces(year)
         try:
             return cls.objects.get(
                 person_name=person_name, affiliation=affiliation,
@@ -93,7 +92,6 @@ class Researcher(CommonControlField):
         person_name,
         affiliation,
     ):
-        year = remove_extra_spaces(year)
         try:
             obj = cls()
             obj.creator = user
@@ -131,7 +129,6 @@ class Researcher(CommonControlField):
         aff_state_acronym=None,
         aff_state_name=None,
         lang=None,
-        year=None,
         orcid=None,
         lattes=None,
         other_ids=None,
@@ -167,7 +164,7 @@ class Researcher(CommonControlField):
                 city_name=aff_city_name,
                 lang=lang,
             )
-            affiliation = affiliation or Affiliation.create_or_update(
+            affiliation = affiliation or Affiliation.get_or_create(
                 user,
                 name=aff_name,
                 acronym=None,
@@ -210,7 +207,7 @@ class Researcher(CommonControlField):
                 )
         except Exception as e:
             logging.exception(
-                f"Unable to register researcher with ID {person_name} {affiliation} {year} {e}"
+                f"Unable to register researcher with ID {person_name} {affiliation} {e}"
             )
 
         return researcher
