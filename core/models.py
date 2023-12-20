@@ -395,6 +395,7 @@ class LicenseStatement(CommonControlField):
         url=None,
         license_p=None,
         language=None,
+        license=None,
     ):
         if not url:
             raise ValueError("LicenseStatement.get requires url")
@@ -404,6 +405,8 @@ class LicenseStatement(CommonControlField):
             obj.url = url or obj.url
             obj.license_p = license_p or obj.license_p
             obj.language = language or obj.language
+            # instance of License
+            obj.license = license or obj.license
             obj.save()
             return obj
         except IntegrityError:
@@ -416,6 +419,7 @@ class LicenseStatement(CommonControlField):
         url=None,
         license_p=None,
         language=None,
+        license=None,
     ):
         try:
             obj = cls.get(url, license_p, language)
@@ -423,10 +427,12 @@ class LicenseStatement(CommonControlField):
             obj.url = url or obj.url
             obj.license_p = license_p or obj.license_p
             obj.language = language or obj.language
+            # instance of License
+            obj.license = license or obj.license
             obj.save()
             return obj
         except cls.DoesNotExist:
-            return cls.create(user, url, license_p, language)
+            return cls.create(user, url, license_p, language, license)
 
     @staticmethod
     def parse_url(url):
