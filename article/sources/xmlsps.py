@@ -65,7 +65,7 @@ def load_article(user, xml=None, file_path=None):
         article.save()
         article.abstracts.set(create_or_update_abstract(xmltree=xmltree, user=user))
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
-        article.license.set(get_licenses(xmltree=xmltree, user=user))
+        article.license_statements.set(get_licenses(xmltree=xmltree, user=user))
         article.researchers.set(
             create_or_update_researchers(xmltree=xmltree, user=user)
         )
@@ -74,6 +74,10 @@ def load_article(user, xml=None, file_path=None):
         article.toc_sections.set(get_or_create_toc_sections(xmltree=xmltree, user=user))
         article.fundings.set(get_or_create_fundings(xmltree=xmltree, user=user))
         article.titles.set(create_or_update_titles(xmltree=xmltree, user=user))
+        for ls in article.license_statements.iterator():
+            article.license = ls.license
+            article.save()
+            break
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
@@ -149,16 +153,26 @@ def get_or_create_toc_sections(xmltree, user):
 
 
 def get_licenses(xmltree, user):
-    licenses = ArticleLicense(xmltree=xmltree).licenses
+    xml_licenses = ArticleLicense(xmltree=xmltree).licenses
     data = []
-    for license in licenses:
-        try:
-            obj = models.License.get(
-                url=license.get("link"),
-                license_type=None,
-            )
-        except models.License.DoesNotExist:
-            raise LicenseDoesNotExist()
+    license = None
+    for xml_license in xml_licenses:
+
+        if not license and xml_license.get("link"):
+            url_data = models.LicenseStatement.parse_url(xml_license.get("link"))
+            license_type = url_data.get("license_type")
+            if license_type:
+                license = models.License.create_or_update(
+                    user=user,
+                    license_type=license_type,
+                )
+        obj = models.LicenseStatement.create_or_update(
+            user=user,
+            url=xml_license.get("link"),
+            language=Language.get_or_create(code2=xml_license.get("lang")),
+            license_p=xml_license.get("license_p") or xml_license.get("licence_p"),
+            license=license,
+        )
         data.append(obj)
     return data
 
