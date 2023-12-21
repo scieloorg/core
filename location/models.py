@@ -538,6 +538,20 @@ class Location(CommonControlField):
 
     def __str__(self):
         return f"{self.country} | {self.state} | {self.city}"
+    
+    @property
+    def formatted_location(self):
+        parts = []
+        if self.state:
+            parts.append(self.state.name)
+
+        if self.city and self.city.acronym:
+            parts.append(self.city.acronym)
+
+        if self.country:
+            parts.append(self.country.name)
+
+        return ', '.join(parts)
 
     @classmethod
     def _get(
