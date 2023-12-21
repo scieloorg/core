@@ -7,7 +7,7 @@ from wagtail.contrib.routable_page.models import RoutablePageMixin, re_path
 from journal.models import Journal
 from core.models import Language
 from editorialboard.models import EditorialBoard
-
+from editorialboard.choices import ROLE
 
 class JournalPage(RoutablePageMixin, Page):
     def get_context(self, request, *args, **kwargs):
@@ -95,6 +95,7 @@ class JournalPage(RoutablePageMixin, Page):
             "fee_charging": fee_charging,
             "sponsor_history": sponsor_history,
             "editorial_board": editorial_board,
+            "role_editorial_board": ROLE,
             # Current e available language 
             "language": str(self.locale),
             "translations": context["available_translations"],
