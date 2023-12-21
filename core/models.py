@@ -322,7 +322,7 @@ class License(CommonControlField):
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(license_type__iexact=license_type)
+            return cls.get(license_type=license_type)
 
     @classmethod
     def create_or_update(
@@ -331,7 +331,7 @@ class License(CommonControlField):
         license_type=None,
     ):
         try:
-            return cls.get(license_type__iexact=license_type)
+            return cls.get(license_type=license_type)
         except cls.DoesNotExist:
             return cls.create(user, license_type)
 
