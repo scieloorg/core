@@ -3,6 +3,7 @@ import os
 
 from django.contrib.auth import get_user_model
 from django.db import models, IntegrityError
+from django.db.models import Case, When, Value, IntegerField
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
 from wagtail.fields import RichTextField
@@ -220,6 +221,30 @@ class TextLanguageMixin(models.Model):
         abstract = True
 
 
+class LanguageFallbackManager(models.Manager):
+    def get_object_in_preferred_language(self, language):
+        mission = self.filter(language=language)
+        if mission:
+            return mission
+        
+        language_order = ['pt', 'es', 'en']
+        langs = self.all().values_list("language", flat=True)
+        languages = Language.objects.filter(id__in=langs)
+        
+        # Define a ordem baseado na lista language_order
+        order = [When(code2=lang, then=Value(i)) for i, lang in enumerate(language_order)]
+        ordered_languages = languages.annotate(
+            language_order=Case(*order, default=Value(len(language_order)), output_field=IntegerField())
+        ).order_by('language_order')
+
+
+        for lang in ordered_languages:
+            mission = self.filter(language=lang)
+            if mission:
+                return mission
+        return None
+
+
 class RichTextWithLanguage(models.Model):
     rich_text = RichTextField(_("Rich Text"), null=True, blank=True)
     language = models.ForeignKey(
@@ -234,6 +259,8 @@ class RichTextWithLanguage(models.Model):
         AutocompletePanel("language"),
         FieldPanel("rich_text"),
     ]
+    
+    objects = LanguageFallbackManager()
 
     class Meta:
         abstract = True

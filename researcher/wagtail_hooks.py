@@ -3,7 +3,7 @@ from django.utils.translation import gettext as _
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register, ModelAdminGroup
 from wagtail.contrib.modeladmin.views import CreateView
 
-from .models import Researcher, ResearcherIdentifier, PersonName
+from .models import Researcher, ResearcherIdentifier, PersonName, Affiliation
 
 
 class ResearcherCreateView(CreateView):
@@ -23,13 +23,10 @@ class ResearcherAdmin(ModelAdmin):
     list_display = (
         "person_name",
         "affiliation",
-        "year",
         "created",
         "updated",
     )
-    list_filter = ("year",)
     search_fields = (
-        "year",
         "person_name__fullname",
         "person_name__declared_name",
         "affiliation__institution__name",
@@ -59,6 +56,20 @@ class ResearcherIdentifierAdmin(ModelAdmin):
     )
     list_filter = ("source_name",)
     search_fields = ("identifier",)
+
+
+class AffiliationAdmin(ModelAdmin):
+    model = Affiliation
+    menu_label = _("Affiliation")
+    menu_icon = "folder"
+    menu_order = 9
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        # "institution",
+        "created",
+        "updated",
+    )
 
 
 class PersonNameCreateView(CreateView):
@@ -94,6 +105,7 @@ class ResearcherAdminGroup(ModelAdminGroup):
         ResearcherIdentifierAdmin,
         ResearcherAdmin,
         PersonNameAdmin,
+        AffiliationAdmin,
     )
 
 

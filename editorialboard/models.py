@@ -1,8 +1,8 @@
 import logging
 import os
-
+from itertools import cycle
 from django.db import models, IntegrityError
-from django.db.models import Q
+from django.db.models import Q, Case, When, Value, IntegerField
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -27,6 +27,11 @@ class EditorialBoard(CommonControlField, ClusterableModel):
     )
     initial_year = models.CharField(max_length=4, blank=True, null=True)
     final_year = models.CharField(max_length=4, blank=True, null=True)
+
+    autocomplete_search_field = "journal__title"
+
+    def autocomplete_label(self):
+        return str(self)
 
     class Meta:
         unique_together = [("journal", "initial_year", "final_year")]
@@ -54,6 +59,21 @@ class EditorialBoard(CommonControlField, ClusterableModel):
 
     def __str__(self):
         return f"{self.journal.title} {self.initial_year}-{self.final_year}"
+    
+    
+    @property
+    def order_by_role(self):
+        role_order = [role[0] for role in choices.ROLE]
+        order = [When(role__std_role=role, then=Value(i)) for i, role in enumerate(role_order)]
+
+        editorial_members = EditorialBoardMember.objects.filter(editorial_board=self)
+
+        ordered_editorial_board = editorial_members.annotate(
+            editorial_order=Case(*order, default=Value(len(role_order)), output_field=IntegerField())
+        ).order_by("editorial_order")
+
+        return ordered_editorial_board
+    
 
     @classmethod
     def create_or_update(
@@ -130,15 +150,16 @@ class EditorialBoardMember(CommonControlField, Orderable):
     role = models.ForeignKey(
         "RoleModel", null=True, blank=True, related_name="+", on_delete=models.SET_NULL
     )
-
+    area = models.TextField(null=True, blank=True)
     class Meta:
         unique_together = [("editorial_board", "researcher", "role")]
 
     panels = [
-        AutocompletePanel("researcher", read_only=True),
-        AutocompletePanel("role", read_only=True),
-        AutocompletePanel("editorial_board", read_only=True),
+        AutocompletePanel("researcher"),
+        AutocompletePanel("role"),
+        # AutocompletePanel("editorial_board", read_only=True),
     ]
+
     base_form_class = CoreAdminModelForm
 
     def __str__(self):

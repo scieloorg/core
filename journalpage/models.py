@@ -6,6 +6,8 @@ from wagtail.contrib.routable_page.models import RoutablePageMixin, re_path
 
 from journal.models import Journal
 from core.models import Language
+from editorialboard.models import EditorialBoard
+from editorialboard.choices import ROLE
 
 class JournalPage(RoutablePageMixin, Page):
     def get_context(self, request, *args, **kwargs):
@@ -32,31 +34,36 @@ class JournalPage(RoutablePageMixin, Page):
         except Journal.DoesNotExist:
             return HttpResponseNotFound()
         
-        mission = journal.mission.filter(language=language)
-        brief_history = journal.history.filter(language=language)
-        focus_and_scope = journal.focus.filter(language=language)
+        try:
+            editorial_board = EditorialBoard.objects.filter(journal=journal).latest("initial_year")
+        except EditorialBoard.DoesNotExist:
+            editorial_board = None
+
+        mission = journal.mission.get_object_in_preferred_language(language=language)
+        brief_history = journal.history.get_object_in_preferred_language(language=language)
+        focus_and_scope = journal.focus.get_object_in_preferred_language(language=language)
         social_network = journal.journalsocialnetwork.all()
-        preprint = journal.preprint.filter(language=language)
-        open_data = journal.open_data.filter(language=language)
-        review = journal.review.filter(language=language)
-        ecommittee = journal.ecommittee.filter(language=language)
-        copyright = journal.copyright.filter(language=language)
-        website_responsibility = journal.website_responsibility.filter(language=language)
-        author_responsibility = journal.author_responsibility.filter(language=language)
-        policies = journal.policies.filter(language=language)
-        conflict_policy = journal.conflict_policy.filter(language=language)
-        gender_issues = journal.gender_issues.filter(language=language)
-        accepted_documment_types = journal.accepted_documment_types.filter(language=language)
-        authors_contributions = journal.authors_contributions.filter(language=language)
-        digital_assets = journal.digital_assets.filter(language=language)
-        citations_and_references = journal.citations_and_references.filter(language=language)
-        supp_docs_submission = journal.supp_docs_submission.filter(language=language)
-        financing_statement = journal.financing_statement.filter(language=language)
-        acknowledgements = journal.acknowledgements.filter(language=language)
-        additional_information = journal.additional_information.filter(language=language)
-        digital_preservation = journal.digital_preservation.filter(language=language)
-        ethics = journal.ethics.filter(language=language)
-        fee_charging = journal.fee_charging.filter(language=language)
+        preprint = journal.preprint.get_object_in_preferred_language(language=language)
+        open_data = journal.open_data.get_object_in_preferred_language(language=language)
+        review = journal.review.get_object_in_preferred_language(language=language)
+        ecommittee = journal.ecommittee.get_object_in_preferred_language(language=language)
+        copyright = journal.copyright.get_object_in_preferred_language(language=language)
+        website_responsibility = journal.website_responsibility.get_object_in_preferred_language(language=language)
+        author_responsibility = journal.author_responsibility.get_object_in_preferred_language(language=language)
+        policies = journal.policies.get_object_in_preferred_language(language=language)
+        conflict_policy = journal.conflict_policy.get_object_in_preferred_language(language=language)
+        gender_issues = journal.gender_issues.get_object_in_preferred_language(language=language)
+        accepted_documment_types = journal.accepted_documment_types.get_object_in_preferred_language(language=language)
+        authors_contributions = journal.authors_contributions.get_object_in_preferred_language(language=language)
+        digital_assets = journal.digital_assets.get_object_in_preferred_language(language=language)
+        citations_and_references = journal.citations_and_references.get_object_in_preferred_language(language=language)
+        supp_docs_submission = journal.supp_docs_submission.get_object_in_preferred_language(language=language)
+        financing_statement = journal.financing_statement.get_object_in_preferred_language(language=language)
+        acknowledgements = journal.acknowledgements.get_object_in_preferred_language(language=language)
+        additional_information = journal.additional_information.get_object_in_preferred_language(language=language)
+        digital_preservation = journal.digital_preservation.get_object_in_preferred_language(language=language)
+        ethics = journal.ethics.get_object_in_preferred_language(language=language)
+        fee_charging = journal.fee_charging.get_object_in_preferred_language(language=language)
         sponsor_history = journal.sponsor_history.all()
 
         context = {
@@ -87,6 +94,8 @@ class JournalPage(RoutablePageMixin, Page):
             "ethics": ethics,
             "fee_charging": fee_charging,
             "sponsor_history": sponsor_history,
+            "editorial_board": editorial_board,
+            "role_editorial_board": ROLE,
             # Current e available language 
             "language": str(self.locale),
             "translations": context["available_translations"],
