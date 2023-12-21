@@ -29,7 +29,7 @@ class Researcher(CommonControlField):
     person_name = models.ForeignKey("PersonName", on_delete=models.SET_NULL, null=True, blank=True)
     affiliation = models.ForeignKey("Affiliation", on_delete=models.SET_NULL, null=True, blank=True)
 
-    autocomplete_search_field = "person_name__declared_name"
+    autocomplete_search_field = "person_name__full_name"
 
     def autocomplete_label(self):
         return str(self)
