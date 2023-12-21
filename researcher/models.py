@@ -31,7 +31,7 @@ class Researcher(CommonControlField):
 
     @staticmethod
     def autocomplete_custom_queryset_filter(search_term):
-        return PersonName.objects.filter(Q(fullname=search_term) | Q(declared_name=search_term))
+        return Researcher.objects.filter(Q(person_name__fullname__icontains=search_term) | Q(person_name___declared_name__icontains=search_term))
 
     def autocomplete_label(self):
         return str(self)
