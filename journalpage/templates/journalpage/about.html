@@ -338,7 +338,7 @@
                         <!-- Pode haver mais de um. Permitir adicionar novo -->
                         <ul type="disc">
                         {% for editorial_member in editorial_board.editorial_board_member.all %}
-                          {% if editorial_member.role.std_role == "Editor" %}
+                          {% if editorial_member.role.std_role == "executive editor" %}
                             <li>
                               {{editorial_member.researcher.person_name}}, {{editorial_member.researcher.affiliation.institution.institution_identification.name}}
                               {% if editorial_member.researcher.affiliation.institution.location %} 
@@ -365,7 +365,7 @@
                         <!-- Tirar duvida como obter por area -->
                         <ul type="disc">
                             {% for editorial_member in editorial_board.editorial_board_member.all %}
-                              {% if editorial_member.role.std_role == "Associate editor" %}
+                              {% if editorial_member.role.std_role == "associate editor" %}
                               <li>
                                 {{editorial_member.researcher.person_name}}, {{editorial_member.researcher.affiliation.institution.institution_identification.name}}
                                 {% if editorial_member.researcher.affiliation.institution.location %} 
@@ -392,8 +392,8 @@
                         </p>
                         <h5 id="item-3-4">{% trans 'Equipe técnica' %}</h5>
                         <ul type="disc">
-                          {% for editorial_member in editorial_board.editorial_board_member.all %}
-                          {% if editorial_member.role.std_role == "Technical team" %}
+                        {% for editorial_member in editorial_board.editorial_board_member.all %}
+                          {% if editorial_member.role.std_role == "technical team" %}
                           <li>
                             {{editorial_member.researcher.person_name}}, {{editorial_member.researcher.affiliation.institution.institution_identification.name}}
                             {% if editorial_member.researcher.affiliation.institution.location %} 
