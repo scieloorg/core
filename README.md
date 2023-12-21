@@ -3,9 +3,9 @@
 Usa como base de código: [Template SciELO](https://github.com/scieloorg/template-scms).
 Consulte seu [README.md](https://github.com/scieloorg/template-scms/blob/main/README.md).
 
-# Operações
+# Para uso em ambiente de desenvolvimento
 
-## Comandos de atalho
+## Comandos
 
 Estes comandos são atalhos no desenvolvimento. Não estarão disponíveis em produção.
 
