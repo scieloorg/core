@@ -12,6 +12,7 @@ from core.models import (
     FlexibleDate,
     Language,
     License,
+    LicenseStatement,
     TextLanguageMixin,
 )
 from doi.models import DOI
@@ -61,7 +62,8 @@ class Article(CommonControlField):
     )
     abstracts = models.ManyToManyField("DocumentAbstract", blank=True)
     toc_sections = models.ManyToManyField(TocSection, blank=True)
-    license = models.ManyToManyField(License, blank=True)
+    license_statements = models.ManyToManyField(LicenseStatement, blank=True)
+    license = models.ForeignKey(License, on_delete=models.SET_NULL, null=True, blank=True)
     issue = models.ForeignKey(Issue, on_delete=models.SET_NULL, null=True, blank=True)
     first_page = models.CharField(max_length=10, null=True, blank=True)
     last_page = models.CharField(max_length=10, null=True, blank=True)

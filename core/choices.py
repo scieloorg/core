@@ -209,3 +209,14 @@ MONTHS = [
     ("11", _("November")),
     ("12", _("December")),
 ]
+
+# https://creativecommons.org/share-your-work/cclicenses/
+# There are six different license types, listed from most to least permissive here:
+LICENSE_TYPES = [
+    ("by", _("by")),
+    ("by-sa", _("by-sa")),
+    ("by-nc", _("by-nc")),
+    ("by-nc-sa", _("by-nc-sa")),
+    ("by-nd", _("by-nd")),
+    ("by-nc-nd", _("by-nc-nd")),
+]
