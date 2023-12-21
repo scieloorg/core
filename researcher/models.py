@@ -29,7 +29,9 @@ class Researcher(CommonControlField):
     person_name = models.ForeignKey("PersonName", on_delete=models.SET_NULL, null=True, blank=True)
     affiliation = models.ForeignKey("Affiliation", on_delete=models.SET_NULL, null=True, blank=True)
 
-    autocomplete_search_field = "person_name__fullname"
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return PersonName.objects.filter(Q(fullname=search_term) | Q(declared_name=search_term))
 
     def autocomplete_label(self):
         return str(self)
