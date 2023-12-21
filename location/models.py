@@ -542,11 +542,12 @@ class Location(CommonControlField):
     @property
     def formatted_location(self):
         parts = []
-        if self.state:
-            parts.append(self.state.name)
 
-        if self.city and self.city.acronym:
-            parts.append(self.city.acronym)
+        if self.city:
+            parts.append(self.city.name)
+        
+        if self.state and self.state.acronym:
+            parts.append(self.state.acronym)
 
         if self.country:
             parts.append(self.country.name)
