@@ -140,10 +140,11 @@ class EditorialBoardMember(CommonControlField, Orderable):
         unique_together = [("editorial_board", "researcher", "role")]
 
     panels = [
-        AutocompletePanel("researcher", read_only=True),
-        AutocompletePanel("role", read_only=True),
-        AutocompletePanel("editorial_board", read_only=True),
+        AutocompletePanel("researcher"),
+        AutocompletePanel("role"),
+        # AutocompletePanel("editorial_board", read_only=True),
     ]
+
     base_form_class = CoreAdminModelForm
 
     def __str__(self):
