@@ -35,7 +35,7 @@ class JournalPage(RoutablePageMixin, Page):
             return HttpResponseNotFound()
         
         try:
-            editorial_board = EditorialBoard.objects.get(journal=journal)
+            editorial_board = EditorialBoard.objects.filter(journal=journal).latest("initial_year")
         except EditorialBoard.DoesNotExist:
             editorial_board = None
 
