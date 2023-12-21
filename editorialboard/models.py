@@ -1,8 +1,8 @@
 import logging
 import os
-
+from itertools import cycle
 from django.db import models, IntegrityError
-from django.db.models import Q
+from django.db.models import Q, Case, When, Value, IntegerField
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -59,6 +59,21 @@ class EditorialBoard(CommonControlField, ClusterableModel):
 
     def __str__(self):
         return f"{self.journal.title} {self.initial_year}-{self.final_year}"
+    
+    
+    @property
+    def order_by_role(self):
+        role_order = [role[0] for role in choices.ROLE]
+        order = [When(role__std_role=role, then=Value(i)) for i, role in enumerate(role_order)]
+
+        editorial_members = EditorialBoardMember.objects.filter(editorial_board=self)
+
+        ordered_editorial_board = editorial_members.annotate(
+            editorial_order=Case(*order, default=Value(len(role_order)), output_field=IntegerField())
+        ).order_by("editorial_order")
+
+        return ordered_editorial_board
+    
 
     @classmethod
     def create_or_update(
