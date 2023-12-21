@@ -325,9 +325,7 @@
                                   {% endif %}
                                 {% endif%}
                                 <br> 
-                                {% for researcher_identifier in editorial_member.researcher.researcheraka_set.all %}
-                                  {% if researcher_identifier.researcher_identifier.source_name|lower == "orcid" %}Orcid <a href="https://orcid.org/{{ researcher_identifier.researcher_identifier.identifier }}">{{ researcher_identifier.researcher_identifier.identifier }}</a>{% elif researcher_identifier.researcher_identifier.source_name|lower == "lattes" %} | <a href="http://lattes.cnpq.br/{{ researcher_identifier.researcher_identifier.identifier }}">CV Lattes</a> | {% endif %}
-                                {% endfor %}
+                                Orcid <a href="https://orcid.org/{{editorial_member.researcher.orcid}}">{{editorial_member.researcher.orcid}}</a> | <a href="http://lattes.cnpq.br/{{editorial_member.researcher.lattes}}">CV Lattes</a> |
                               </li>
                             {% endif %}
                           {% endfor%}
@@ -353,9 +351,7 @@
                                 {% endif %}
                               {% endif%}
                               <br> 
-                              {% for researcher_identifier in editorial_member.researcher.researcheraka_set.all %}
-                                {% if researcher_identifier.researcher_identifier.source_name|lower == "orcid" %}Orcid <a href="https://orcid.org/{{ researcher_identifier.researcher_identifier.identifier }}">{{ researcher_identifier.researcher_identifier.identifier }}</a>{% elif researcher_identifier.researcher_identifier.source_name|lower == "lattes" %} | <a href="http://lattes.cnpq.br/{{ researcher_identifier.researcher_identifier.identifier }}">CV Lattes</a> | {% endif %}
-                              {% endfor %}
+                                Orcid <a href="https://orcid.org/{{editorial_member.researcher.orcid}}">{{editorial_member.researcher.orcid}}</a> | <a href="http://lattes.cnpq.br/{{editorial_member.researcher.lattes}}">CV Lattes</a> |
                             </li>
                           {% endif %}
                         {% endfor%}
@@ -380,9 +376,7 @@
                                   {% endif %}
                                 {% endif%}
                                 <br> 
-                                {% for researcher_identifier in editorial_member.researcher.researcheraka_set.all %}
-                                  {% if researcher_identifier.researcher_identifier.source_name|lower == "orcid" %}Orcid <a href="https://orcid.org/{{ researcher_identifier.researcher_identifier.identifier }}">{{ researcher_identifier.researcher_identifier.identifier }}</a>{% elif researcher_identifier.researcher_identifier.source_name|lower == "lattes" %} | <a href="http://lattes.cnpq.br/{{ researcher_identifier.researcher_identifier.identifier }}">CV Lattes</a> | {% endif %}
-                                {% endfor %}
+                                Orcid <a href="https://orcid.org/{{editorial_member.researcher.orcid}}">{{editorial_member.researcher.orcid}}</a> | <a href="http://lattes.cnpq.br/{{editorial_member.researcher.lattes}}">CV Lattes</a> |
                               </li>
                               {% endif %}
                             {% endfor%}
@@ -408,9 +402,7 @@
                               {% endif %}
                             {% endif%}
                             <br> 
-                            {% for researcher_identifier in editorial_member.researcher.researcheraka_set.all %}
-                              {% if researcher_identifier.researcher_identifier.source_name|lower == "orcid" %}Orcid <a href="https://orcid.org/{{ researcher_identifier.researcher_identifier.identifier }}">{{ researcher_identifier.researcher_identifier.identifier }}</a>{% elif researcher_identifier.researcher_identifier.source_name|lower == "lattes" %} | <a href="http://lattes.cnpq.br/{{ researcher_identifier.researcher_identifier.identifier }}">CV Lattes</a> | {% endif %}
-                            {% endfor %}
+                            Orcid <a href="https://orcid.org/{{editorial_member.researcher.orcid}}">{{editorial_member.researcher.orcid}}</a> | <a href="http://lattes.cnpq.br/{{editorial_member.researcher.lattes}}">CV Lattes</a> |
                           </li>
                           {% endif %}
                         {% endfor%}

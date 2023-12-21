@@ -61,7 +61,18 @@ class Researcher(CommonControlField):
         try:
             for item in ResearcherAKA.objects.filter(
                 researcher=self,
-                researcher_identifier__source_name="ORCID",
+                researcher_identifier__source_name__iexact="ORCID",
+            ):
+                return item.researcher_identifier.identifier
+        except Exception as e:
+            return None
+
+    @property
+    def lattes(self):
+        try:
+            for item in ResearcherAKA.objects.filter(
+                researcher=self,
+                researcher_identifier__source_name__iexact="LATTES",
             ):
                 return item.researcher_identifier.identifier
         except Exception as e:
