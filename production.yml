@@ -11,6 +11,10 @@ services:
       - postgres
       - redis
       - solr
+      - pgbouncer
+    links:
+      - pgbouncer
+      - solr      
     env_file:
       - ./.envs/.production/.django
       - ./.envs/.production/.postgres
@@ -37,6 +41,8 @@ services:
     volumes:
       - ../scms_data/scielo_core/data_prod:/var/lib/postgresql/data:Z
       - ../scms_data/scielo_core/data_prod_backup:/backups:z
+    ports:
+      - "5432:5432"
     env_file:
       - ./.envs/.production/.postgres
   
@@ -67,15 +73,23 @@ services:
 
   redis:
     image: redis:6
+    ports:
+      - "6379:6379"
 
   celeryworker:
     <<: *django
     image: core_production_celeryworker
+    depends_on:
+      - redis
+      - postgres
     command: /start-celeryworker
 
   celerybeat:
     <<: *django
     image: core_production_celerybeat
+    depends_on:
+      - redis
+      - postgres
     command: /start-celerybeat
 
   flower:
