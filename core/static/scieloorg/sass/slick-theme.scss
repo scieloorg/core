@@ -1,0 +1,220 @@
+@import "_svg-uri";
+@charset "UTF-8";
+
+// Default Variables
+
+// Slick icon entity codes outputs the following
+// "\2190" outputs ascii character "←"
+// "\2192" outputs ascii character "→"
+// "\2022" outputs ascii character "•"
+
+$slick-font-path: "./fonts/" !default;
+$slick-font-family: "slick" !default;
+$slick-loader-path: "./" !default;
+$slick-arrow-color: white !default;
+$slick-dot-color: black !default;
+$slick-dot-color-active: $slick-dot-color !default;
+$slick-prev-character: "\2190" !default;
+$slick-next-character: "\2192" !default;
+$slick-dot-character: "\2022" !default;
+$slick-dot-size: 6px !default;
+$slick-opacity-default: 0.75 !default;
+$slick-opacity-on-hover: 1 !default;
+$slick-opacity-not-active: 0.25 !default;
+
+@function slick-image-url($url) {
+    @if function-exists(image-url) {
+        @return image-url($url);
+    }
+    @else {
+        @return url($slick-loader-path + $url);
+    }
+}
+
+@function slick-font-url($url) {
+    @if function-exists(font-url) {
+        @return font-url($url);
+    }
+    @else {
+        @return url($slick-font-path + $url);
+    }
+}
+
+/* Slider */
+
+.slick-list {
+    .slick-loading & {
+        background: #fff slick-image-url("ajax-loader.gif") center center no-repeat;
+    }
+}
+
+/* Icons */
+@if $slick-font-family == "slick" {
+    @font-face {
+        font-family: "slick";
+        src: slick-font-url("slick.eot");
+        src: slick-font-url("slick.eot?#iefix") format("embedded-opentype"), slick-font-url("slick.woff") format("woff"), slick-font-url("slick.ttf") format("truetype"), slick-font-url("slick.svg#slick") format("svg");
+        font-weight: normal;
+        font-style: normal;
+    }
+}
+
+/* Arrows */
+
+.slick-prev,
+.slick-next {
+    position: absolute;
+    display: block;
+    line-height: 0px;
+    font-size: 0px;
+    cursor: pointer;
+    color: transparent;
+    top: 50%;
+    -webkit-transform: translate(0, -50%);
+    -ms-transform: translate(0, -50%);
+    transform: translate(0, -50%);
+    padding: 0;
+    border: none;
+    outline: none;
+    background: rgba(103,137,211,1);
+    width:40px;
+    height:40px;
+    display: inline-block;
+    border-radius: 100px;
+
+    &:hover, &:focus {
+        outline: none;
+        background: rgba(103,137,211,1);
+        color: transparent;
+        &:before {
+            opacity: $slick-opacity-on-hover;
+        }
+    }
+    &.slick-disabled:before {
+        opacity: $slick-opacity-not-active;
+    }
+    &:before {
+        font-family: $slick-font-family;
+        font-size: 20px;
+        line-height: 1;
+        color: $slick-arrow-color;
+        opacity: $slick-opacity-default;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+.slick-prev {
+    z-index:99;
+    left: -15px;
+    [dir="rtl"] & {
+        left: auto;
+        right: -15px;
+    }
+    &:before {
+        /*
+        content: $slick-prev-character;
+        [dir="rtl"] & {
+            content: $slick-next-character;
+        */
+        content:"";
+        background-image: svg-uri('<svg width="13px" height="21px" viewBox="0 0 13 21" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"> <defs> <path d="M10.3443163,12.5051483 L2.31795717,4.47878913 C2.17957166,4.34040362 1.90280066,4.34040362 1.76441516,4.47878913 L0.103789127,6.13941516 C-0.0345963756,6.27780066 -0.0345963756,6.55457166 0.103789127,6.69295717 L10.2059308,16.6567133 C10.3443163,16.7950988 10.6210873,16.7950988 10.7594728,16.6567133 L20.8616145,6.69295717 C20.8616145,6.69295717 21,6.55457166 21,6.41618616 C21,6.27780066 21,6.27780066 20.8616145,6.13941516 L19.2009885,4.47878913 C19.062603,4.34040362 18.785832,4.34040362 18.6474465,4.47878913 L10.3443163,12.5051483 Z" id="path-1"></path> </defs> <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g id="Group-4" transform="translate(-14.000000, -10.000000)"> <g id="Icone" transform="translate(20.500000, 20.500000) rotate(-270.000000) translate(-20.500000, -20.500000) translate(10.000000, 10.000000)"> <g id="_Icone/UI-Arrow"> <mask id="mask-2" fill="white"> <use xlink:href="#path-1"></use> </mask> <use id="Shape" fill="#231F20" fill-rule="nonzero" xlink:href="#path-1"></use> <g id="_Icone/Cores/Branco" mask="url(#mask-2)" fill="#FFFFFF" fill-rule="evenodd"> <rect id="Rectangle" x="0" y="0" width="21" height="21"></rect> </g> </g> </g> </g> </g> </svg>');
+        background-size: 21px 21px;
+        background-position: center center;
+        background-repeat:no-repeat;
+        display:block;
+        width:21px;
+        height:21px;
+        margin-left:8px;
+    }
+}
+
+.slick-next {
+    z-index:99;
+    right: -15px;
+    [dir="rtl"] & {
+        left: -15px;
+        right: auto;
+    }
+    &:before {
+        /*
+        content: $slick-next-character;
+        [dir="rtl"] & {
+            content: $slick-prev-character;
+            */
+        content:"";
+        background-image: svg-uri('<svg width="13px" height="21px" viewBox="0 0 13 21" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"> <defs> <path d="M10.3443163,12.5051483 L2.31795717,4.47878913 C2.17957166,4.34040362 1.90280066,4.34040362 1.76441516,4.47878913 L0.103789127,6.13941516 C-0.0345963756,6.27780066 -0.0345963756,6.55457166 0.103789127,6.69295717 L10.2059308,16.6567133 C10.3443163,16.7950988 10.6210873,16.7950988 10.7594728,16.6567133 L20.8616145,6.69295717 C20.8616145,6.69295717 21,6.55457166 21,6.41618616 C21,6.27780066 21,6.27780066 20.8616145,6.13941516 L19.2009885,4.47878913 C19.062603,4.34040362 18.785832,4.34040362 18.6474465,4.47878913 L10.3443163,12.5051483 Z" id="path-1"></path> </defs> <g id="Symbols" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g id="_Carrossel/Arrow" transform="translate(-27.000000, -23.000000)"> <g id="Group-4" transform="translate(13.000000, 13.000000)"> <g id="Icone" transform="translate(20.500000, 20.500000) rotate(-90.000000) translate(-20.500000, -20.500000) translate(10.000000, 10.000000)"> <g id="_Icone/UI-Arrow"> <mask id="mask-2" fill="white"> <use xlink:href="#path-1"></use> </mask> <use id="Shape" fill="#231F20" fill-rule="nonzero" xlink:href="#path-1"></use> <g id="_Icone/Cores/Branco" mask="url(#mask-2)" fill="#FFFFFF" fill-rule="evenodd"> <rect id="Rectangle" x="0" y="0" width="21" height="21"></rect> </g> </g> </g> </g> </g> </g> </svg>');
+        background-size: 21px 21px;
+        background-position: center center;
+        background-repeat: no-repeat;
+        display:block;
+        width:21px;
+        height:21px;
+        margin-left:12px;
+    }
+}
+
+/* Dots */
+
+.slick-dotted.slick-slider {
+    margin-bottom: 30px;
+}
+
+.slick-dots {
+    position: absolute;
+    bottom: -25px;
+    list-style: none;
+    display: block;
+    text-align: center;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    li {
+        position: relative;
+        display: inline-block;
+        height: 20px;
+        width: 20px;
+        margin: 0 5px;
+        padding: 0;
+        cursor: pointer;
+        button {
+            border: 0;
+            background: transparent;
+            display: block;
+            height: 20px;
+            width: 20px;
+            outline: none;
+            line-height: 0px;
+            font-size: 0px;
+            color: transparent;
+            padding: 5px;
+            cursor: pointer;
+            &:hover, &:focus {
+                outline: none;
+                &:before {
+                    opacity: $slick-opacity-on-hover;
+                }
+            }
+            &:before {
+                position: absolute;
+                top: 0;
+                left: 0;
+                content: $slick-dot-character;
+                width: 20px;
+                height: 20px;
+                font-family: $slick-font-family;
+                font-size: $slick-dot-size;
+                line-height: 20px;
+                text-align: center;
+                color: $slick-dot-color;
+                opacity: $slick-opacity-not-active;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+        }
+        &.slick-active button:before {
+            color: $slick-dot-color-active;
+            opacity: $slick-opacity-default;
+        }
+    }
+}

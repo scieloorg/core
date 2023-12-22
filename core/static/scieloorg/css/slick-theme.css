@@ -1,0 +1,158 @@
+@charset "UTF-8";
+/* Slider */
+.slick-loading .slick-list {
+  background: #fff url("./ajax-loader.gif") center center no-repeat; }
+
+/* Icons */
+@font-face {
+  font-family: "slick";
+  src: url("./fonts/slick.eot");
+  src: url("./fonts/slick.eot?#iefix") format("embedded-opentype"), url("./fonts/slick.woff") format("woff"), url("./fonts/slick.ttf") format("truetype"), url("./fonts/slick.svg#slick") format("svg");
+  font-weight: normal;
+  font-style: normal; }
+
+/* Arrows */
+.slick-prev,
+.slick-next {
+  position: absolute;
+  display: block;
+  line-height: 0px;
+  font-size: 0px;
+  cursor: pointer;
+  color: transparent;
+  top: 50%;
+  -webkit-transform: translate(0, -50%);
+  -ms-transform: translate(0, -50%);
+  transform: translate(0, -50%);
+  padding: 0;
+  border: none;
+  outline: none;
+  background: #6789d3;
+  width: 40px;
+  height: 40px;
+  display: inline-block;
+  border-radius: 100px; }
+  .slick-prev:hover, .slick-prev:focus,
+  .slick-next:hover,
+  .slick-next:focus {
+    outline: none;
+    background: #6789d3;
+    color: transparent; }
+    .slick-prev:hover:before, .slick-prev:focus:before,
+    .slick-next:hover:before,
+    .slick-next:focus:before {
+      opacity: 1; }
+  .slick-prev.slick-disabled:before,
+  .slick-next.slick-disabled:before {
+    opacity: 0.25; }
+  .slick-prev:before,
+  .slick-next:before {
+    font-family: "slick";
+    font-size: 20px;
+    line-height: 1;
+    color: white;
+    opacity: 0.75;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale; }
+
+.slick-prev {
+  z-index: 99;
+  left: -15px; }
+  [dir="rtl"] .slick-prev {
+    left: auto;
+    right: -15px; }
+  .slick-prev:before {
+    /*
+        content: $slick-prev-character;
+        [dir="rtl"] & {
+            content: $slick-next-character;
+        */
+    content: "";
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg width='13px' height='21px' viewBox='0 0 13 21' version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'%3E %3Cdefs%3E %3Cpath d='M10.3443163,12.5051483 L2.31795717,4.47878913 C2.17957166,4.34040362 1.90280066,4.34040362 1.76441516,4.47878913 L0.103789127,6.13941516 C-0.0345963756,6.27780066 -0.0345963756,6.55457166 0.103789127,6.69295717 L10.2059308,16.6567133 C10.3443163,16.7950988 10.6210873,16.7950988 10.7594728,16.6567133 L20.8616145,6.69295717 C20.8616145,6.69295717 21,6.55457166 21,6.41618616 C21,6.27780066 21,6.27780066 20.8616145,6.13941516 L19.2009885,4.47878913 C19.062603,4.34040362 18.785832,4.34040362 18.6474465,4.47878913 L10.3443163,12.5051483 Z' id='path-1'%3E%3C/path%3E %3C/defs%3E %3Cg id='Page-1' stroke='none' stroke-width='1' fill='none' fill-rule='evenodd'%3E %3Cg id='Group-4' transform='translate(-14.000000, -10.000000)'%3E %3Cg id='Icone' transform='translate(20.500000, 20.500000) rotate(-270.000000) translate(-20.500000, -20.500000) translate(10.000000, 10.000000)'%3E %3Cg id='_Icone/UI-Arrow'%3E %3Cmask id='mask-2' fill='white'%3E %3Cuse xlink:href='%23path-1'%3E%3C/use%3E %3C/mask%3E %3Cuse id='Shape' fill='%23231F20' fill-rule='nonzero' xlink:href='%23path-1'%3E%3C/use%3E %3Cg id='_Icone/Cores/Branco' mask='url(%23mask-2)' fill='%23FFFFFF' fill-rule='evenodd'%3E %3Crect id='Rectangle' x='0' y='0' width='21' height='21'%3E%3C/rect%3E %3C/g%3E %3C/g%3E %3C/g%3E %3C/g%3E %3C/g%3E %3C/svg%3E");
+    background-size: 21px 21px;
+    background-position: center center;
+    background-repeat: no-repeat;
+    display: block;
+    width: 21px;
+    height: 21px;
+    margin-left: 8px; }
+
+.slick-next {
+  z-index: 99;
+  right: -15px; }
+  [dir="rtl"] .slick-next {
+    left: -15px;
+    right: auto; }
+  .slick-next:before {
+    /*
+        content: $slick-next-character;
+        [dir="rtl"] & {
+            content: $slick-prev-character;
+            */
+    content: "";
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg width='13px' height='21px' viewBox='0 0 13 21' version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'%3E %3Cdefs%3E %3Cpath d='M10.3443163,12.5051483 L2.31795717,4.47878913 C2.17957166,4.34040362 1.90280066,4.34040362 1.76441516,4.47878913 L0.103789127,6.13941516 C-0.0345963756,6.27780066 -0.0345963756,6.55457166 0.103789127,6.69295717 L10.2059308,16.6567133 C10.3443163,16.7950988 10.6210873,16.7950988 10.7594728,16.6567133 L20.8616145,6.69295717 C20.8616145,6.69295717 21,6.55457166 21,6.41618616 C21,6.27780066 21,6.27780066 20.8616145,6.13941516 L19.2009885,4.47878913 C19.062603,4.34040362 18.785832,4.34040362 18.6474465,4.47878913 L10.3443163,12.5051483 Z' id='path-1'%3E%3C/path%3E %3C/defs%3E %3Cg id='Symbols' stroke='none' stroke-width='1' fill='none' fill-rule='evenodd'%3E %3Cg id='_Carrossel/Arrow' transform='translate(-27.000000, -23.000000)'%3E %3Cg id='Group-4' transform='translate(13.000000, 13.000000)'%3E %3Cg id='Icone' transform='translate(20.500000, 20.500000) rotate(-90.000000) translate(-20.500000, -20.500000) translate(10.000000, 10.000000)'%3E %3Cg id='_Icone/UI-Arrow'%3E %3Cmask id='mask-2' fill='white'%3E %3Cuse xlink:href='%23path-1'%3E%3C/use%3E %3C/mask%3E %3Cuse id='Shape' fill='%23231F20' fill-rule='nonzero' xlink:href='%23path-1'%3E%3C/use%3E %3Cg id='_Icone/Cores/Branco' mask='url(%23mask-2)' fill='%23FFFFFF' fill-rule='evenodd'%3E %3Crect id='Rectangle' x='0' y='0' width='21' height='21'%3E%3C/rect%3E %3C/g%3E %3C/g%3E %3C/g%3E %3C/g%3E %3C/g%3E %3C/g%3E %3C/svg%3E");
+    background-size: 21px 21px;
+    background-position: center center;
+    background-repeat: no-repeat;
+    display: block;
+    width: 21px;
+    height: 21px;
+    margin-left: 12px; }
+
+/* Dots */
+.slick-dotted.slick-slider {
+  margin-bottom: 30px; }
+
+.slick-dots {
+  position: absolute;
+  bottom: -25px;
+  list-style: none;
+  display: block;
+  text-align: center;
+  padding: 0;
+  margin: 0;
+  width: 100%; }
+  .slick-dots li {
+    position: relative;
+    display: inline-block;
+    height: 20px;
+    width: 20px;
+    margin: 0 5px;
+    padding: 0;
+    cursor: pointer; }
+    .slick-dots li button {
+      border: 0;
+      background: transparent;
+      display: block;
+      height: 20px;
+      width: 20px;
+      outline: none;
+      line-height: 0px;
+      font-size: 0px;
+      color: transparent;
+      padding: 5px;
+      cursor: pointer; }
+      .slick-dots li button:hover, .slick-dots li button:focus {
+        outline: none; }
+        .slick-dots li button:hover:before, .slick-dots li button:focus:before {
+          opacity: 1; }
+      .slick-dots li button:before {
+        position: absolute;
+        top: 0;
+        left: 0;
+        content: "•";
+        width: 20px;
+        height: 20px;
+        font-family: "slick";
+        font-size: 6px;
+        line-height: 20px;
+        text-align: center;
+        color: black;
+        opacity: 0.25;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale; }
+    .slick-dots li.slick-active button:before {
+      color: black;
+      opacity: 0.75; }
+
+/*# sourceMappingURL=slick-theme.css.map */
