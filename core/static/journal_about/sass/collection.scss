@@ -1,0 +1,332 @@
+@import "global.scss";
+
+.collection {
+	ul {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	h2 {
+		/*
+		font-size: 1.3em;
+		//margin-bottom: 12px;
+		margin-bottom: 0;;
+		*/
+		span {
+			font-weight: normal;
+		}
+	}
+	.sectionTitle {
+		padding: 10px 15px 10px;
+		background: url(../img/dashline.png) bottom left repeat-x;
+
+		h1 {
+			margin: 0;
+			padding: 0;
+		//	font-size: 1.2em;
+		}
+	}
+	.share ul.dropdown-menu {
+		margin-top: 2px;
+	}
+	.levelMenu {
+		.container {
+			position: relative;
+		}
+
+		.onlineSubmission {
+			color: #7f7a71;
+			//font-size: @include 8em;
+			//font-size: .8em;
+			position: absolute;
+			right: 20px;
+			top: -45px;
+		}
+	}
+	.periodicals {
+
+	
+		>.levelMenu{
+
+			>ul{
+				>li{
+					width: 16.3%;
+
+					&.periodicals-search{
+						width: 65%;
+					}
+				}
+			}
+		}
+	}
+	.slide-item {
+		&.release,
+		&.perspective,
+		&.twitter {
+			width: 250px;
+			//font-size: 1em;
+			float: left; // aplicado apos adicionar design system
+
+			.col-md-12 {
+				min-height: 95px;
+			}
+
+			a {
+				//color: #6789d3;
+				font-weight: bold;
+			}
+		}
+	}
+
+	.perspective,
+	.twitter {
+		.slide-item {
+			.col-md-12 {
+
+ 			}
+			.slide-header{
+				height:140px;
+				width:100%;
+				margin-bottom:5px;
+				display: block;
+				background-size: cover;
+				background-position: center;
+			}
+		}
+	}
+
+ 	.twitter{
+		.slide-item{
+			.col-md-12{
+				height: 310px;
+			}
+		}
+	}
+
+ 	.last_issues{
+		.slide-item {
+			&.release {
+				.col-md-12 {
+					min-height: 120px;
+					//outline:1px solid blue;
+				}
+			}
+		}
+	}
+}
+.collectionNews {
+	//font-size: @include 9em;
+	//font-size: .9em;
+	.newsContainer {
+		margin: 0 50px;
+
+		.row {
+			margin: 40px 0;
+		}
+		img {
+			width: 100%;
+			border-radius: 5px;
+		}
+	}
+	a {
+		color: $Gray;
+	}
+	h2 {
+		color: $DarkBlue;
+		margin: 0 0 5px 0;
+		//font-size: 1.5em;
+	}
+	.newsHighlight h2 {
+		//font-size: 2em;
+	}
+	p {
+		margin: 0;
+	}
+	.fakeLink {
+		color: $Blue;
+		white-space: nowrap;
+	}
+	.pubDate {
+		//font-size: @include 8em;
+		//font-size: .8em;
+		color: #7f7a71;
+	}
+}
+.collectionSearch {
+	//font-size: 1em;
+	//margin-bottom: 50px;
+
+	.highlight {
+		background: none;
+		padding-top: 20px;
+		margin: 0 0 50px;
+	}
+	h2 {
+		color: $Gray;
+	}
+}
+
+
+.collectionListSearch .nav.nav-pills li a .lbl-corrente::before,
+.collectionListSearch .nav.nav-pills li a .lbl-nao-corrente::before,
+.collectionLink::before{
+	content       : '';
+	display       : inline-block;
+	vertical-align: middle;
+	border-radius : 99px;
+	width         : 7px;
+	height        : 7px;
+	margin-right  : 5px;
+	margin-top	  : -3px;
+}
+
+.collectionListSearch .nav.nav-pills li a .lbl-corrente::before,
+.collectionLink::before {
+	background: $__positive--light;
+}
+
+.collectionListSearch .nav.nav-pills li a .lbl-nao-corrente::before,
+.collectionLink.disabled::before {
+	background: $__negative--light;
+}
+
+.collectionList {
+	.collectionListSearch {
+		padding: 15px 0;
+	}
+
+	.collectionListTable {
+
+		table{
+			th, td{
+				.btn{
+					margin-bottom: 0;
+				}
+			}
+
+			td{
+				vertical-align: middle;
+
+				a{
+					text-decoration: none;
+				}
+
+				&.actions{
+					white-space: nowrap;
+				}
+			}
+		}
+
+		.collectionLink {
+
+			span {
+				white-space: nowrap;
+			}
+		}
+
+		
+		@media (max-width: 992px) {
+
+			tbody tr{
+				display: grid;
+				grid-template-columns: 1fr;
+				grid-template-rows: 1fr 60px;
+			}
+			td{
+				border-width: 0;
+				
+
+				&.actions{
+					border-bottom-width: 1px;
+				}
+			}
+
+			th.actions{
+				display: none;
+			}
+
+			.separator{
+				display: block;
+			}
+			.actions{
+				order: 2;
+				background-image: none;
+				width: 100% !important;
+			}
+		}
+	}
+	
+	.collectionListLoading {
+		background: url(../img/list.loading.gif) center center no-repeat !important;
+		height: 80px;
+	}
+}
+.collectionAbout {
+
+	p {
+		margin: 15px 0;
+	}
+
+	h2 {
+		//font-size: 1.3em;
+		color: $Gray;
+		padding-bottom: 10px;
+		background: url(../img/dashline.png) bottom left repeat-x;
+	}
+
+	.row {
+		margin-bottom: 20px;
+	}
+	.listMenu {
+		margin: 0;
+		padding: 0;
+
+		li {
+			margin: 10px 0;
+			padding-left: 30px;
+			position: relative;
+			list-style: none;
+			font-weight: bold;
+
+			&:before {
+				position: absolute;
+				content: '\00bb';
+				color: $Blue;
+				margin-left: -20px;
+			}
+		}
+		a {
+			color: $DarkBlue;
+
+			&:hover {
+				color: $Blue;
+			}
+		}
+
+		ul {
+			margin: 0 0 0 20px;
+			padding: 0;
+
+			li {
+				padding: 0;
+
+				&:before {
+					display: none;
+				}
+
+				a {
+					color: $Blue;
+				}
+			}
+		}
+	}
+
+	.about {
+		margin-bottom: 40px;
+	}
+}
+@media (max-width: 991px) {
+	.col-sm-mt-15{
+		margin-top:15px;
+	}
+}
