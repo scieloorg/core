@@ -3,7 +3,7 @@ import logging
 import sys
 from datetime import datetime
 
-from django.db import models
+from django.db import models, IntegrityError
 from django.db.models import Q
 from django.utils.translation import gettext as _
 from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
@@ -185,6 +185,7 @@ class PidRequest(CommonControlField):
         obj.times += 1
         obj.save()
         return obj
+
 
     @classmethod
     def register_failure(
@@ -1068,6 +1069,15 @@ class CollectionPidRequest(CommonControlField):
     )
     end_date = models.CharField(max_length=10, null=True, blank=True)
 
+    panels = [
+        FieldPanel("end_date"),
+    ]
+
+    base_form_class = CoreAdminModelForm
+
+    class Meta:
+        unique_together = [("collection", )]
+
     def __unicode__(self):
         return f"{self.collection}"
 
@@ -1080,8 +1090,33 @@ class CollectionPidRequest(CommonControlField):
         collection=None,
     ):
         if collection:
-            return cls.objects.get(collection=collection)
+            try:
+                return cls.objects.get(collection=collection)
+            except cls.MultipleObjectsReturned:
+                obj = cls.objects.filter(collection=collection).first()
+                for item in cls.objects.filter(collection=collection).iterator():
+                    if item is obj:
+                        continue
+                    item.delete()
+                return obj
         raise ValueError("PidRequest.get requires parameters")
+
+    @classmethod
+    def create(
+        cls,
+        user=None,
+        collection=None,
+        end_date=None,
+    ):
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.collection = collection
+            obj.end_date = end_date
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(collection)
 
     @classmethod
     def create_or_update(
@@ -1093,17 +1128,8 @@ class CollectionPidRequest(CommonControlField):
         try:
             obj = cls.get(collection=collection)
             obj.updated_by = user
+            obj.end_date = end_date or obj.end_date or "1900-01-01"
+            obj.save()
+            return obj
         except cls.DoesNotExist:
-            obj = cls()
-            obj.creator = user
-            obj.collection = collection
-
-        obj.end_date = end_date or obj.end_date
-        obj.save()
-        return obj
-
-    panels = [
-        FieldPanel("end_date"),
-    ]
-
-    base_form_class = CoreAdminModelForm
+            return cls.create(user, collection, end_date)
