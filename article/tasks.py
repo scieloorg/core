@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime
 
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
@@ -15,6 +16,16 @@ from . import controller
 User = get_user_model()
 
 
+def _get_user(request, username=None, user_id=None):
+    try:
+        return User.objects.get(pk=request.user.id)
+    except AttributeError:
+        if user_id:
+            return User.objects.get(pk=user_id)
+        if username:
+            return User.objects.get(username=username)
+
+
 @celery_app.task()
 def load_funding_data(user, file_path):
     user = User.objects.get(pk=user)
@@ -23,20 +34,47 @@ def load_funding_data(user, file_path):
 
 
 @celery_app.task(bind=True, name=_("load_article"))
-def load_article(self, user_id, file_path=None, xml=None):
-    user = User.objects.get(pk=user_id)
+def load_article(self, user_id=None, username=None, file_path=None, xml=None):
+    user = _get_user(self.request, username, user_id)
     xmlsps.load_article(user, file_path=file_path, xml=xml)
 
 
-@celery_app.task(bind=True, name=_("load_articles"))
-def load_articles(self, user_id=None):
-    try:
-        from_date = Article.last_created_date()
+def _items_to_load_article(from_date, force_update):
+    if from_date:
+        try:
+            from_date = datetime.strptime(from_date, "%Y-%m-%d")
+        except Exception:
+            from_date = None
+    if not from_date:
+        from_date = datetime(1900, 1, 1)
 
-        for item in PidProviderXML.public_items(from_date):
+    items = PidProviderXML.public_items(from_date)
+    if force_update:
+        return items
+
+    for item in items:
+        try:
+            article = Article.objects.get(pid_v3=item.v3)
+            article_date = article.updated or article.created
+            if article_date < (item.updated or item.created):
+                yield item
+        except Article.DoesNotExist:
+            yield item
+
+
+@celery_app.task(bind=True, name=_("load_articles"))
+def load_articles(self, user_id=None, username=None, from_date=None, force_update=False):
+    try:
+        user = _get_user(self.request, username, user_id)
+
+        for item in _items_to_load_article(from_date, force_update):
             try:
                 load_article.apply_async(
-                    args=(user_id,), kwargs={"xml": item.current_version.xml}
+                    kwargs={
+                        "xml": item.current_version.xml,
+                        "user_id": user.id,
+                        "username": user.username,
+                    }
                 )
             except Exception as exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
