@@ -2,6 +2,7 @@ from django.http import HttpResponseRedirect
 from django.urls import path
 from django.utils.translation import gettext as _
 from wagtail import hooks
+from wagtail.admin.panels import FieldPanel, ObjectList
 from wagtail.contrib.modeladmin.options import (
     ModelAdmin,
     ModelAdminGroup,
@@ -44,6 +45,11 @@ class EditorialBoardMemberAdmin(ModelAdmin):
         "journal__title",
         "researcher__person_name__fullname",
     )
+    custom_panels = [
+        FieldPanel("researcher", read_only=True),
+        FieldPanel("role", read_only=True),
+    ]
+    edit_handler = ObjectList(custom_panels)
 
 
 class EditorialBoardMemberFileAdmin(ModelAdmin):
