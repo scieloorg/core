@@ -380,7 +380,7 @@ class LicenseStatement(CommonControlField):
     ]
 
     class Meta:
-        unique_together = [("url", )]
+        unique_together = [("url", "license_p", "language")]
         verbose_name = _("License")
         verbose_name_plural = _("Licenses")
         indexes = [
@@ -404,17 +404,15 @@ class LicenseStatement(CommonControlField):
         license_p=None,
         language=None,
     ):
-        if not url:
-            raise ValueError("LicenseStatement.get requires url")
-        filters = dict(
-            url__iexact=url,
-            license_p__iexact=license_p,
-            language=language,
-        )
+        if not url and not license_p:
+            raise ValueError("LicenseStatement.get requires url or license_p")
         try:
-            return cls.objects.get(**filters)
+            return cls.objects.get(
+                url__iexact=url, license_p__iexact=license_p, language=language)
         except cls.MultipleObjectsReturned:
-            return cls.objects.filter(**filters).first()
+            return cls.objects.filter(
+                url__iexact=url, license_p__iexact=license_p, language=language
+            ).first()
 
     @classmethod
     def create(
@@ -425,8 +423,8 @@ class LicenseStatement(CommonControlField):
         language=None,
         license=None,
     ):
-        if not url:
-            raise ValueError("LicenseStatement.get requires url")
+        if not url and not license_p:
+            raise ValueError("LicenseStatement.create requires url or license_p")
         try:
             obj = cls()
             obj.creator = user
@@ -450,17 +448,25 @@ class LicenseStatement(CommonControlField):
         license=None,
     ):
         try:
-            obj = cls.get(url, license_p, language)
-            obj.updated_by = user
-            obj.url = url or obj.url
-            obj.license_p = license_p or obj.license_p
-            obj.language = language or obj.language
-            # instance of License
-            obj.license = license or obj.license
-            obj.save()
-            return obj
-        except cls.DoesNotExist:
-            return cls.create(user, url, license_p, language, license)
+            data = dict(
+                url=url,
+                license_p=license_p,
+                language=language and language.code2
+            )
+            try:
+                obj = cls.get(url, license_p, language)
+                obj.updated_by = user
+                obj.url = url or obj.url
+                obj.license_p = license_p or obj.license_p
+                obj.language = language or obj.language
+                # instance of License
+                obj.license = license or obj.license
+                obj.save()
+                return obj
+            except cls.DoesNotExist:
+                return cls.create(user, url, license_p, language, license)
+        except Exception as e:
+            raise ValueError(f"Unable to create or update LicenseStatement for {data}: {type(e)} {e}")
 
     @staticmethod
     def parse_url(url):
