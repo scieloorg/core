@@ -38,3 +38,8 @@ django-extensions==3.2.3  # https://github.com/django-extensions/django-extensio
 django-coverage-plugin==3.1.0  # https://github.com/nedbat/django_coverage_plugin
 pytest-django==4.7.0  # https://github.com/pytest-dev/pytest-django
 tornado>=6.3.3 # not directly required, pinned by Snyk to avoid a vulnerability
+django>=3.2.23 # not directly required, pinned by Snyk to avoid a vulnerability
+ipython>=7.16.3 # not directly required, pinned by Snyk to avoid a vulnerability
+pygments>=2.15.0 # not directly required, pinned by Snyk to avoid a vulnerability
+pylint>=2.7.0 # not directly required, pinned by Snyk to avoid a vulnerability
+sqlparse>=0.4.4 # not directly required, pinned by Snyk to avoid a vulnerability
