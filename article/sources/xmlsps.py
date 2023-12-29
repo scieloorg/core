@@ -239,7 +239,6 @@ def create_or_update_researchers(xmltree, user):
                 aff_state_acronym=None,
                 aff_state_name=None,
                 lang=article_lang,
-                year=None,
                 orcid=author.get("orcid"),
                 lattes=author.get("lattes"),
                 other_ids=None,
