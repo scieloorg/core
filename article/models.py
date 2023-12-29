@@ -3,6 +3,11 @@ from datetime import datetime
 from django.db import models, IntegrityError
 from django.db.models import Case, When
 from django.utils.translation import gettext as _
+from modelcluster.fields import ParentalKey
+from modelcluster.models import ClusterableModel
+from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
+from wagtail.fields import RichTextField
+from wagtail.models import Orderable
 from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
@@ -23,7 +28,7 @@ from researcher.models import Researcher
 from vocabulary.models import Keyword
 
 
-class Article(CommonControlField):
+class Article(CommonControlField, ClusterableModel):
     pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
     pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True)
     journal = models.ForeignKey(
@@ -60,7 +65,7 @@ class Article(CommonControlField):
     article_type = models.ForeignKey(
         "ArticleType", on_delete=models.SET_NULL, null=True, blank=True
     )
-    abstracts = models.ManyToManyField("DocumentAbstract", blank=True)
+    # abstracts = models.ManyToManyField("DocumentAbstract", blank=True)
     toc_sections = models.ManyToManyField(TocSection, blank=True)
     license_statements = models.ManyToManyField(LicenseStatement, blank=True)
     license = models.ForeignKey(License, on_delete=models.SET_NULL, null=True, blank=True)
@@ -90,7 +95,7 @@ class Article(CommonControlField):
         AutocompletePanel("titles"),
         AutocompletePanel("researchers"),
         FieldPanel("article_type"),
-        AutocompletePanel("abstracts"),
+        InlinePanel("abstracts", label=_("Abstract")),
         AutocompletePanel("toc_sections"),
         AutocompletePanel("license"),
         AutocompletePanel("issue"),
@@ -125,6 +130,10 @@ class Article(CommonControlField):
 
     def __str__(self):
         return "%s" % self.pid_v2
+
+    @property
+    def abstracts(self):
+        return DocumentAbstract.objects.filter(article=self)
 
     @property
     def collections(self):
@@ -297,8 +306,14 @@ class ArticleType(models.Model):
         return self.text
 
 
-class DocumentAbstract(TextLanguageMixin, CommonControlField):
-    article = models.ForeignKey(Article, on_delete=models.SET_NULL, null=True, blank=True)
+class DocumentAbstract(TextLanguageMixin, CommonControlField, Orderable):
+    article = ParentalKey(Article, on_delete=models.SET_NULL, null=True, blank=True, related_name="abstracts")
+
+    panels = [
+        AutocompletePanel("Language"),
+        FieldPanel("plain_text"),
+    ]
+    base_form_class = CoreAdminModelForm
 
     class Meta:
         unique_together = [("article", "language"), ]
@@ -309,11 +324,6 @@ class DocumentAbstract(TextLanguageMixin, CommonControlField):
                 ]
             ),
         ]
-
-    autocomplete_search_field = "plain_text"
-
-    def autocomplete_label(self):
-        return str(self)
 
     def __str__(self):
         return f"[{self.language}] {self.plain_text}"
