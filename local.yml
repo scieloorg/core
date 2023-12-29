@@ -22,7 +22,7 @@ services:
       - ./.envs/.local/.django
       - ./.envs/.local/.postgres
     ports:
-      - "8000:8000"
+      - "8009:8000"
     command: /start
 
   pgbouncer:
@@ -33,7 +33,7 @@ services:
       - DATABASE_URL=postgres://GVRFlLmcCNfGLhsFvSnCioYOPJPYpyfj:BQ4hSUL4rdj5WZLdR8ilDLRQMvCtzo0caMaXDO0olGsmycQjlcZlTVK9DepZR8kk@postgres/scielo_core
       - MAX_CLIENT_CONN=100
     ports:
-      - 6434:5432
+      - 6439:5432
     depends_on:
       - postgres
     links:
@@ -60,7 +60,7 @@ services:
       - ../scms_data/scielo_core/data_dev:/var/lib/postgresql/data:Z
       - ../scms_data/scielo_core/data_dev_backup:/backups:z
     ports:
-      - "5432:5432"
+      - "5439:5432"
     env_file:
       - ./.envs/.local/.postgres
 
@@ -68,35 +68,35 @@ services:
     image: adminer
     container_name: scielo_core_local_adminer
     ports:
-      - "8080:8080"
+      - "8089:8080"
 
-  docs:
-    image: scielo_core_local_docs
-    container_name: scielo_core_local_docs
-    build:
-      context: .
-      dockerfile: ./compose/local/docs/Dockerfile
-    env_file:
-      - ./.envs/.local/.django
-    volumes:
-      - ./docs:/docs:z
-      - ./config:/app/config:z
-      - ./core:/app/core:z
-    ports:
-      - "9000:9000"
-    command: /start-docs
+  # docs:
+  #   image: scielo_core_local_docs
+  #   container_name: scielo_core_local_docs
+  #   build:
+  #     context: .
+  #     dockerfile: ./compose/local/docs/Dockerfile
+  #   env_file:
+  #     - ./.envs/.local/.django
+  #   volumes:
+  #     - ./docs:/docs:z
+  #     - ./config:/app/config:z
+  #     - ./core:/app/core:z
+  #   ports:
+  #     - "9000:9000"
+  #   command: /start-docs
 
   mailhog:
     image: mailhog/mailhog:v1.0.0
     container_name: scielo_core_local_mailhog
     ports:
-      - "8025:8025"
+      - "8029:8025"
 
   redis:
     image: redis:6
     container_name: scielo_core_local_redis
     ports:
-      - "6379:6379"
+      - "6399:6379"
 
 
   celeryworker:
@@ -126,5 +126,5 @@ services:
     image: scielo_core_local_flower
     container_name: scielo_core_local_flower
     ports:
-      - "5555:5555"
+      - "5559:5555"
     command: /start-flower
