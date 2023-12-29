@@ -33,7 +33,8 @@ class PidRequestAdmin(ModelAdmin):
         "result_msg",
         "v3",
         "times",
-        "created_updated",
+        "created",
+        "updated",
     )
     list_filter = ("result_type",)
     search_fields = (
@@ -91,7 +92,8 @@ class PidProviderXMLAdmin(ModelAdmin):
         "aop_pid",
         "main_doi",
         "website_publication_date",
-        "created_updated",
+        "created",
+        "updated",
     )
     list_filter = ("article_pub_year", "pub_year")
     search_fields = (
@@ -127,7 +129,8 @@ class PidChangeAdmin(ModelAdmin):
         "pid_in_xml",
         "pid_assigned",
         "pid_type",
-        "created_updated",
+        "created",
+        "updated",
     )
     list_filter = ("pid_type",)
     search_fields = (
@@ -140,7 +143,7 @@ class PidProviderAdminGroup(ModelAdminGroup):
     menu_label = _("Pid Provider")
     menu_icon = "folder-open-inverse"  # change as required
     menu_order = 6
-    items = (PidProviderXMLAdmin, PidRequestAdmin, PidChangeAdmin)
+    items = (PidProviderXMLAdmin, PidRequestAdmin, PidChangeAdmin, CollectionPidRequestAdmin)
 
 
 modeladmin_register(PidProviderAdminGroup)

@@ -25,7 +25,6 @@ class UnexpectedEventModelAdmin(ModelAdmin):
         "exception_type",
         "exception_msg",
         "traceback",
-        "detail",
         "created",
     )
     list_filter = ("exception_type",)

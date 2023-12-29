@@ -21,6 +21,7 @@ from packtools.sps.models.kwd_group import KwdGroup
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article import models
+from core.models import Language
 from institution.models import Sponsor
 from issue.models import TocSection
 from tracker.models import UnexpectedEvent
