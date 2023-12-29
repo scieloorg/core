@@ -31,16 +31,9 @@ class ArticleAdmin(ModelAdmin):
         False  # or True to exclude pages of this type from Wagtail's explorer view
     )
 
-    def all_fundings(self, obj):
-        return " | ".join([str(c) for c in obj.fundings.all()])
-
-    def all_doi(self, obj):
-        return " | ".join([str(c.value) for c in obj.doi.all()])
-
     list_display = (
-        "all_doi",
         "pid_v2",
-        "all_fundings",
+        "pid_v3",
         "created",
         "updated",
     )

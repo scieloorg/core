@@ -59,6 +59,7 @@ def harvest_preprints(URL, user):
             )
             article.abstracts.set(
                 get_or_create_abstracts(
+                    article=article,
                     description=article_info.get("description"), user=user
                 )
             )
@@ -213,13 +214,14 @@ def get_or_create_license(rights, user):
     return data
 
 
-def get_or_create_abstracts(description, user):
+def get_or_create_abstracts(article, description, user):
     data = []
     for abstract in description:
-        obj, created = models.DocumentAbstract.objects.get_or_create(
-            plain_text=abstract.get("text"),
+        obj = models.DocumentAbstract.create_or_update(
+            article=article,
+            text=abstract.get("text"),
             language=get_or_create_language(abstract.get("lang"), user=user),
-            creator=user,
+            user=user,
         )
         data.append(obj)
     return data

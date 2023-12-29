@@ -54,7 +54,7 @@ class Researcher(CommonControlField):
 
     @property
     def get_full_name(self):
-        return self.person_name.get_full_name
+        return self.person_name.get_full_name if self.person_name is not None else None
 
     @property
     def orcid(self):
@@ -141,6 +141,7 @@ class Researcher(CommonControlField):
         aff_state_text=None,
         aff_state_acronym=None,
         aff_state_name=None,
+        location=None,
         lang=None,
         orcid=None,
         lattes=None,
