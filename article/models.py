@@ -1,8 +1,13 @@
 from datetime import datetime
 
-from django.db import models
+from django.db import models, IntegrityError
 from django.db.models import Case, When
 from django.utils.translation import gettext as _
+from modelcluster.fields import ParentalKey
+from modelcluster.models import ClusterableModel
+from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
+from wagtail.fields import RichTextField
+from wagtail.models import Orderable
 from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
@@ -23,7 +28,7 @@ from researcher.models import Researcher
 from vocabulary.models import Keyword
 
 
-class Article(CommonControlField):
+class Article(CommonControlField, ClusterableModel):
     pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
     pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True)
     journal = models.ForeignKey(
@@ -60,7 +65,7 @@ class Article(CommonControlField):
     article_type = models.ForeignKey(
         "ArticleType", on_delete=models.SET_NULL, null=True, blank=True
     )
-    abstracts = models.ManyToManyField("DocumentAbstract", blank=True)
+    # abstracts = models.ManyToManyField("DocumentAbstract", blank=True)
     toc_sections = models.ManyToManyField(TocSection, blank=True)
     license_statements = models.ManyToManyField(LicenseStatement, blank=True)
     license = models.ForeignKey(License, on_delete=models.SET_NULL, null=True, blank=True)
@@ -77,29 +82,44 @@ class Article(CommonControlField):
         on_delete=models.SET_NULL,
     )
 
-    panels = [
+    panels_ids = [
         FieldPanel("pid_v2"),
         FieldPanel("pid_v3"),
-        AutocompletePanel("journal"),
         AutocompletePanel("doi"),
+        AutocompletePanel("journal"),
+        AutocompletePanel("issue"),
         FieldPanel("pub_date_day"),
         FieldPanel("pub_date_month"),
         FieldPanel("pub_date_year"),
-        AutocompletePanel("fundings"),
-        AutocompletePanel("languages"),
-        AutocompletePanel("titles"),
-        AutocompletePanel("researchers"),
-        FieldPanel("article_type"),
-        AutocompletePanel("abstracts"),
-        AutocompletePanel("toc_sections"),
-        AutocompletePanel("license"),
-        AutocompletePanel("issue"),
         FieldPanel("first_page"),
         FieldPanel("last_page"),
         FieldPanel("elocation_id"),
-        AutocompletePanel("keywords"),
-        AutocompletePanel("publisher"),
     ]
+    panels_languages = [
+        FieldPanel("article_type"),
+        AutocompletePanel("toc_sections"),
+        AutocompletePanel("languages"),
+        AutocompletePanel("titles"),
+        InlinePanel("abstracts", label=_("Abstract")),
+        AutocompletePanel("keywords"),
+        AutocompletePanel("license"),
+    ]
+    panels_researchers = [
+        AutocompletePanel("researchers"),
+    ]
+    panels_institutions = [
+        AutocompletePanel("publisher"),
+        AutocompletePanel("fundings"),
+    ]
+
+    edit_handler = TabbedInterface(
+        [
+            ObjectList(panels_ids, heading=_("Identification")),
+            ObjectList(panels_languages, heading=_("Data with language")),
+            ObjectList(panels_researchers, heading=_("Researchers")),
+            ObjectList(panels_institutions, heading=_("Publisher and Sponsors")),
+        ]
+    )
 
     class Meta:
         indexes = [
@@ -125,6 +145,10 @@ class Article(CommonControlField):
 
     def __str__(self):
         return "%s" % self.pid_v2
+
+    @property
+    def abstracts(self):
+        return DocumentAbstract.objects.filter(article=self)
 
     @property
     def collections(self):
@@ -297,44 +321,78 @@ class ArticleType(models.Model):
         return self.text
 
 
-class DocumentAbstract(TextLanguageMixin, CommonControlField):
-    ...
+class DocumentAbstract(TextLanguageMixin, CommonControlField, Orderable):
+    article = ParentalKey(Article, on_delete=models.SET_NULL, null=True, blank=True, related_name="abstracts")
 
-    autocomplete_search_field = "plain_text"
+    panels = [
+        AutocompletePanel("Language"),
+        FieldPanel("plain_text"),
+    ]
+    base_form_class = CoreAdminModelForm
 
-    def autocomplete_label(self):
-        return str(self)
+    class Meta:
+        unique_together = [("article", "language"), ]
+        indexes = [
+            models.Index(
+                fields=[
+                    "language",
+                ]
+            ),
+        ]
 
     def __str__(self):
-        return f"{self.plain_text} - {self.language}"
+        return f"[{self.language}] {self.plain_text}"
 
     @classmethod
     def get(
         cls,
+        article,
+        language,
+    ):
+        if article:
+            try:
+                return cls.objects.get(article=article, language=language)
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(article=article, language=language).first()
+        raise ValueError("DocumentAbstract.get requires article parameter")
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        article,
+        language,
         text,
     ):
-        if text:
-            return cls.objects.get(plain_text=text)
-        raise ValueError("DocumentAbstract.get requires text parameter")
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.plain_text = text or obj.plain_text
+            obj.article = article or obj.article
+            obj.language = language or obj.language
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(article=article, language=language)
 
     @classmethod
     def create_or_update(
         cls,
-        text,
-        language,
         user,
+        article,
+        language,
+        text,
     ):
         try:
-            obj = cls.get(text=text)
+            obj = cls.get(article=article, language=language)
+            obj.plain_text = text or obj.plain_text
+            obj.article = article or obj.article
+            obj.language = language or obj.language
+            obj.updated_by = user
+            obj.save()
+            return obj
         except cls.DoesNotExist:
-            obj = cls()
-            obj.plain_text = text
-            obj.creator = user
-
-        obj.language = language or obj.language
-        obj.updated_by = user
-        obj.save()
-        return obj
+            return cls.create(user, article, language, text)
 
 
 class ArticleEventType(CommonControlField):
