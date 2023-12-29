@@ -82,29 +82,44 @@ class Article(CommonControlField, ClusterableModel):
         on_delete=models.SET_NULL,
     )
 
-    panels = [
+    panels_ids = [
         FieldPanel("pid_v2"),
         FieldPanel("pid_v3"),
-        AutocompletePanel("journal"),
         AutocompletePanel("doi"),
+        AutocompletePanel("journal"),
+        AutocompletePanel("issue"),
         FieldPanel("pub_date_day"),
         FieldPanel("pub_date_month"),
         FieldPanel("pub_date_year"),
-        AutocompletePanel("fundings"),
-        AutocompletePanel("languages"),
-        AutocompletePanel("titles"),
-        AutocompletePanel("researchers"),
-        FieldPanel("article_type"),
-        InlinePanel("abstracts", label=_("Abstract")),
-        AutocompletePanel("toc_sections"),
-        AutocompletePanel("license"),
-        AutocompletePanel("issue"),
         FieldPanel("first_page"),
         FieldPanel("last_page"),
         FieldPanel("elocation_id"),
-        AutocompletePanel("keywords"),
-        AutocompletePanel("publisher"),
     ]
+    panels_languages = [
+        FieldPanel("article_type"),
+        AutocompletePanel("toc_sections"),
+        AutocompletePanel("languages"),
+        AutocompletePanel("titles"),
+        InlinePanel("abstracts", label=_("Abstract")),
+        AutocompletePanel("keywords"),
+        AutocompletePanel("license"),
+    ]
+    panels_researchers = [
+        AutocompletePanel("researchers"),
+    ]
+    panels_institutions = [
+        AutocompletePanel("publisher"),
+        AutocompletePanel("fundings"),
+    ]
+
+    edit_handler = TabbedInterface(
+        [
+            ObjectList(panels_ids, heading=_("Identification")),
+            ObjectList(panels_languages, heading=_("Data with language")),
+            ObjectList(panels_researchers, heading=_("Researchers")),
+            ObjectList(panels_institutions, heading=_("Publisher and Sponsors")),
+        ]
+    )
 
     class Meta:
         indexes = [
