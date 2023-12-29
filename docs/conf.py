@@ -28,9 +28,9 @@ django.setup()
 
 # -- Project information -----------------------------------------------------
 
-project = "SciELO Content Manager "
-copyright = """2022, Jamil Atta Junior"""
-author = "Jamil Atta Junior"
+project = "SciELO Core"
+copyright = """2022, SciELO"""
+author = "SciELO"
 
 
 # -- General configuration ---------------------------------------------------
