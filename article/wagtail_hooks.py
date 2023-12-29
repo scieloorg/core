@@ -34,7 +34,6 @@ class ArticleAdmin(ModelAdmin):
     list_display = (
         "pid_v2",
         "pid_v3",
-        "all_fundings",
         "created",
         "updated",
     )
