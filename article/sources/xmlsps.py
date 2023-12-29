@@ -64,7 +64,8 @@ def load_article(user, xml=None, file_path=None):
         set_first_last_page(xmltree=xmltree, article=article)
         set_elocation_id(xmltree=xmltree, article=article)
         article.save()
-        article.abstracts.set(create_or_update_abstract(xmltree=xmltree, user=user))
+
+        article.abstracts.set(create_or_update_abstract(xmltree=xmltree, user=user, article=article))
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
         article.license_statements.set(get_licenses(xmltree=xmltree, user=user))
         article.researchers.set(
@@ -196,15 +197,16 @@ def get_or_create_keywords(xmltree, user):
     return data
 
 
-def create_or_update_abstract(xmltree, user):
+def create_or_update_abstract(xmltree, user, article):
     data = []
     if xmltree.find(".//abstract") is not None:
         abstract = Abstract(xmltree=xmltree).get_abstracts(style="inline")
         for ab in abstract:
             obj = models.DocumentAbstract.create_or_update(
-                text=ab.get("abstract"),
-                language=get_or_create_language(ab.get("lang"), user=user),
                 user=user,
+                article=article,
+                language=get_or_create_language(ab.get("lang"), user=user),
+                text=ab.get("abstract"),
             )
             data.append(obj)
     return data
