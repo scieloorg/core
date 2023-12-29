@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from django.db import models
+from django.db import models, IntegrityError
 from django.db.models import Case, When
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
@@ -298,7 +298,17 @@ class ArticleType(models.Model):
 
 
 class DocumentAbstract(TextLanguageMixin, CommonControlField):
-    ...
+    article = models.ForeignKey(Article, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        unique_together = [("article", "language"), ]
+        indexes = [
+            models.Index(
+                fields=[
+                    "language",
+                ]
+            ),
+        ]
 
     autocomplete_search_field = "plain_text"
 
@@ -306,35 +316,58 @@ class DocumentAbstract(TextLanguageMixin, CommonControlField):
         return str(self)
 
     def __str__(self):
-        return f"{self.plain_text} - {self.language}"
+        return f"[{self.language}] {self.plain_text}"
 
     @classmethod
     def get(
         cls,
+        article,
+        language,
+    ):
+        if article:
+            try:
+                return cls.objects.get(article=article, language=language)
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(article=article, language=language).first()
+        raise ValueError("DocumentAbstract.get requires article parameter")
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        article,
+        language,
         text,
     ):
-        if text:
-            return cls.objects.get(plain_text=text)
-        raise ValueError("DocumentAbstract.get requires text parameter")
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.plain_text = text or obj.plain_text
+            obj.article = article or obj.article
+            obj.language = language or obj.language
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(article=article, language=language)
 
     @classmethod
     def create_or_update(
         cls,
-        text,
-        language,
         user,
+        article,
+        language,
+        text,
     ):
         try:
-            obj = cls.get(text=text)
+            obj = cls.get(article=article, language=language)
+            obj.plain_text = text or obj.plain_text
+            obj.article = article or obj.article
+            obj.language = language or obj.language
+            obj.updated_by = user
+            obj.save()
+            return obj
         except cls.DoesNotExist:
-            obj = cls()
-            obj.plain_text = text
-            obj.creator = user
-
-        obj.language = language or obj.language
-        obj.updated_by = user
-        obj.save()
-        return obj
+            return cls.create(user, article, language, text)
 
 
 class ArticleEventType(CommonControlField):
