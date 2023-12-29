@@ -85,6 +85,7 @@ def load_article(user, xml=None, file_path=None):
             exception=e,
             exc_traceback=exc_traceback,
             detail=dict(
+                article=pids,
                 function="article.sources.xmlsps.load_article",
                 message=f"{xml_detail_error}",
             ),
