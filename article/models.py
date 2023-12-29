@@ -325,7 +325,7 @@ class DocumentAbstract(TextLanguageMixin, CommonControlField, Orderable):
     article = ParentalKey(Article, on_delete=models.SET_NULL, null=True, blank=True, related_name="abstracts")
 
     panels = [
-        AutocompletePanel("Language"),
+        AutocompletePanel("language"),
         FieldPanel("plain_text"),
     ]
     base_form_class = CoreAdminModelForm
