@@ -113,16 +113,6 @@ class PidRequest(CommonControlField):
                     "v3",
                 ]
             ),
-            models.Index(
-                fields=[
-                    "times",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "detail",
-                ]
-            ),
         ]
 
     @property
