@@ -443,7 +443,10 @@ HAYSTACK_ROUTERS = [
     "core.routers.UpdateEverythingRouter",
 ]
 
-HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.RealtimeSignalProcessor"
+USE_SOLR = env.bool("USE_SOLR", default=False)
+
+if USE_SOLR:
+    HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.RealtimeSignalProcessor"
 
 SEARCH_PAGINATION_ITEMS_PER_PAGE = 10
 
