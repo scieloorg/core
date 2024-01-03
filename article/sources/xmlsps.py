@@ -35,17 +35,31 @@ class LicenseDoesNotExist(Exception):
     ...
 
 
-def load_article(user, xml=None, file_path=None):
-    if xml:
-        xmltree = etree.fromstring(xml)
-    elif file_path:
-        for xml_with_pre in XMLWithPre.create(file_path):
-            xmltree = xml_with_pre.xmltree
-    else:
-        raise ValueError(
-            "article.sources.xmlsps.load_article requires xml or file_path"
+def load_article(user, xml=None, file_path=None, v3=None):
+    try:
+        if xml:
+            xmltree = etree.fromstring(xml)
+        elif file_path:
+            for xml_with_pre in XMLWithPre.create(file_path):
+                xmltree = xml_with_pre.xmltree
+        else:
+            raise ValueError(
+                "article.sources.xmlsps.load_article requires xml or file_path"
+            )
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail=dict(
+                function="article.sources.xmlsps.load_article",
+                xml=f"{xml}",
+                v3=v3,
+                file_path=file_path
+            ),
         )
-    
+        return
+
     xml_detail_error = etree.tostring(xmltree)
     pids = ArticleIds(xmltree=xmltree).data
     pid_v2 = pids.get("v2")
