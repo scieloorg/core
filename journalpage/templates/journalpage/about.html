@@ -116,7 +116,7 @@
                             <i>{{ journal.short_title }}</i>
                           </li>
                           <li>
-                            <strong>{% trans 'Publicação de:' %}</strong> {% for publisher in journal.publisher_history.all %} <i>{{ publisher.institution.institution.name}}</i>{% endfor %}
+                            <strong>{% trans 'Publicação de:' %}</strong> {% for publisher in journal.publisher_history.all %} <i>{{ publisher.institution.institution.institution_identification.name}}</i>{% endfor %}
                           </li>
                           <li>
                             <strong>{% trans 'Periodicidade:' %}</strong>
