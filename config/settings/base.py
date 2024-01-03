@@ -443,7 +443,7 @@ HAYSTACK_ROUTERS = [
     "core.routers.UpdateEverythingRouter",
 ]
 
-USE_SOLR = env.str("USE_SOLR", "True") == "True"
+USE_SOLR = env.bool("USE_SOLR", default=False)
 
 if USE_SOLR:
     HAYSTACK_SIGNAL_PROCESSOR = "haystack.signals.RealtimeSignalProcessor"
