@@ -25,26 +25,33 @@ class CollectionAdmin(ModelAdmin):
     )
     list_display = (
         "main_name",
+        "acron3",
+        "code",
+        "status",
         "collection_type",
-        "creator",
+        "is_active",
         "updated",
         "created",
-        "updated_by",
+    )
+    list_filter = (
+        "status",
+        "collection_type",
+        "is_active",
+        "has_analytics",
     )
     search_fields = (
+        "acron3",
+        "acron2",
+        "code",
+        "domain",
+        "name__text",
         "main_name",
-        "collection_type",
-        "created",
-        "updated",
-        "creator__username",
-        "updated_by__username",
     )
     list_export = (
         "acron3",
         "acron2",
         "code",
         "domain",
-        "name",
         "main_name",
         "status",
         "has_analytics",
