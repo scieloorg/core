@@ -30,7 +30,6 @@ class VocabularyAdmin(ModelAdmin):
         "name",
         "acronym",
     )
-    list_filter = ("name",)
     search_fields = (
         "name",
         "acronym",
@@ -58,7 +57,7 @@ class KeywordAdmin(ModelAdmin):
         "language",
         "vocabulary",
     )
-    list_filter = ("language",)
+    list_filter = ("language", "vocabulary",)
     search_fields = (
         "language__code2",
         "vocabulary__name",
