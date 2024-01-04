@@ -199,13 +199,11 @@ def get_or_create_keywords(xmltree, user):
 
     data = []
     for kwd in kwd_group:
-        obj = models.Keyword.get_or_create(
-            text=kwd.get("text"),
-            language=get_or_create_language(kwd.get("lang"), user=user),
-            ## TODO
-            ## Verificar relacao keyword com vocabulary
-            # vocabulary=None,
+        obj = models.Keyword.create_or_update(
             user=user,
+            vocabulary=None,
+            language=get_or_create_language(kwd.get("lang"), user=user),
+            text=kwd.get("text"),
         )
         data.append(obj)
     return data
