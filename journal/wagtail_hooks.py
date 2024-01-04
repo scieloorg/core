@@ -104,15 +104,18 @@ class SciELOJournalAdmin(ModelAdmin):
     exclude_from_explorer = False
 
     list_display = (
-        "collection",
+        "journal",
         "issn_scielo",
         "journal_acron",
-        "journal",
+        "collection",
+        "status",
         "created",
         "updated",
     )
+    list_filter = ("status", "collection", )
     search_fields = (
         "journal_acron",
+        "journal__title",
         "issn_scielo",
     )
 
