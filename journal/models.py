@@ -62,7 +62,7 @@ class OfficialJournal(CommonControlField):
     Class that represent the Official Journal
     """
 
-    title = models.TextField(_("Official Title"), null=True, blank=True)
+    title = models.TextField(_("ISSN Title"), null=True, blank=True)
     iso_short_title = models.TextField(_("ISO Short Title"), null=True, blank=True)
     parallel_titles = models.ManyToManyField(
         "JournalParallelTitles", blank=True
