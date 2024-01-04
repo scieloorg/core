@@ -41,6 +41,7 @@ class OfficialJournalAdmin(ModelAdmin):
     )
     list_filter = ("foundation_year",)
     search_fields = (
+        "title",
         "foundation_year",
         "issn_print",
         "issn_electronic",
