@@ -1484,6 +1484,8 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         return str(self)
 
     class Meta:
+        ordering = ["journal__title"]
+
         verbose_name = _("SciELO Journal")
         verbose_name_plural = _("SciELO Journals")
         indexes = [
