@@ -145,8 +145,8 @@ class OfficialJournal(CommonControlField):
     )
 
     class Meta:
-        verbose_name = _("Official Journal")
-        verbose_name_plural = _("Official Journals")
+        verbose_name = _("ISSN Journal")
+        verbose_name_plural = _("ISSN Journals")
         indexes = [
             models.Index(
                 fields=[
@@ -297,7 +297,7 @@ class Journal(CommonControlField, ClusterableModel):
 
     official = models.ForeignKey(
         OfficialJournal,
-        verbose_name=_("Official Journal"),
+        verbose_name=_("ISSN Journal"),
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
