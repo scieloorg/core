@@ -23,7 +23,7 @@ class OfficialJournalCreateView(CreateView):
 class OfficialJournalAdmin(ModelAdmin):
     model = models.OfficialJournal
     inspect_view_enabled = True
-    menu_label = _("Official Journals")
+    menu_label = _("ISSN Journals")
     create_view_class = OfficialJournalCreateView
     menu_icon = "folder"
     menu_order = 100
