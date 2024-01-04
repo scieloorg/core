@@ -157,10 +157,11 @@ def get_or_create_titles(titles, user):
 def get_or_create_keyword(keywords, user):
     data = []
     for kwd in keywords:
-        obj = models.Keyword.get_or_create(
-            text=kwd.get("text"),
-            language=get_or_create_language(kwd.get("lang"), user=user),
+        obj = models.Keyword.create_or_update(
             user=user,
+            vocabulary=None,
+            language=get_or_create_language(kwd.get("lang"), user=user),
+            text=kwd.get("text"),
         )
         data.append(obj)
     return data
