@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import IntegrityError, models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
@@ -13,18 +13,25 @@ class Vocabulary(CommonControlField):
         _("Vocabulary acronym"), max_length=10, null=True, blank=True
     )
 
+    panels = [
+        FieldPanel("name"),
+        FieldPanel("acronym"),
+    ]
+    base_form_class = CoreAdminModelForm
+
     autocomplete_search_field = "name"
 
     def autocomplete_label(self):
         return str(self)
 
     def __unicode__(self):
-        return "%s - %s" % (self.name, self.acronym) or ""
+        return self.acronym or self.name or ""
 
     def __str__(self):
-        return "%s - %s" % (self.name, self.acronym) or ""
+        return self.acronym or self.name or ""
 
     class Meta:
+        unique_together = [("acronym", "name")]
         indexes = [
             models.Index(
                 fields=[
@@ -37,11 +44,6 @@ class Vocabulary(CommonControlField):
                 ]
             ),
         ]
-
-    panels = [
-        FieldPanel("name"),
-        FieldPanel("acronym"),
-    ]
 
     @property
     def data(self):
@@ -62,24 +64,39 @@ class Vocabulary(CommonControlField):
                 cls.get_or_create(user, **item)
 
     @classmethod
-    def get(cls, acronym=None):
+    def get(cls, acronym, name=None):
         if not acronym:
-            raise ValueError("Vocabulary.get_or_create requires acronym")
-        return cls.objects.get(acronym=acronym)
+            raise ValueError("Vocabulary.get requires acronym")
+
+        if name:
+            try:
+                return cls.objects.get(acronym=acronym, name=name)
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(acronym=acronym, name=name).first()
+
+        try:
+            return cls.objects.get(acronym=acronym)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(acronym=acronym).first()
 
     @classmethod
-    def get_or_create(cls, user, name=None, acronym=None):
+    def create(cls, user, acronym=None, name=None):
         try:
-            return cls.get(acronym=acronym)
-        except cls.DoesNotExist:
-            vocabulary = cls()
-            vocabulary.name = name
-            vocabulary.acronym = acronym
-            vocabulary.creator = user
-            vocabulary.save()
-            return vocabulary
+            obj = cls()
+            obj.name = name
+            obj.acronym = acronym
+            obj.creator = user
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(acronym, name)
 
-    base_form_class = CoreAdminModelForm
+    @classmethod
+    def create_or_update(cls, user, acronym=None, name=None):
+        try:
+            return cls.get(acronym, name)
+        except cls.DoesNotExist:
+            return cls.create(user, acronym, name)
 
 
 class Keyword(CommonControlField, TextWithLang):
@@ -91,18 +108,15 @@ class Keyword(CommonControlField, TextWithLang):
         null=True,
     )
 
-    autocomplete_search_field = "text"
-
-    def autocomplete_label(self):
-        return str(self.text)
-
-    def __unicode__(self):
-        return "%s - %s" % (self.text, self.language) or ""
-
-    def __str__(self):
-        return "%s - %s" % (self.text, self.language) or ""
+    panels = [
+        FieldPanel("text"),
+        FieldPanel("language"),
+        AutocompletePanel("vocabulary"),
+    ]
+    base_form_class = CoreAdminModelForm
 
     class Meta:
+        unique_together = [("vocabulary", "language", "text")]
         indexes = [
             models.Index(
                 fields=[
@@ -121,11 +135,16 @@ class Keyword(CommonControlField, TextWithLang):
             ),
         ]
 
-    panels = [
-        FieldPanel("text"),
-        FieldPanel("language"),
-        AutocompletePanel("vocabulary"),
-    ]
+    autocomplete_search_field = "text"
+
+    def autocomplete_label(self):
+        return str(self.text)
+
+    def __unicode__(self):
+        return f"{self.vocabulary} {self.text} {self.language}"
+
+    def __str__(self):
+        return f"{self.vocabulary} {self.text} {self.language}"
 
     @property
     def data(self):
@@ -137,16 +156,35 @@ class Keyword(CommonControlField, TextWithLang):
         return d
 
     @classmethod
-    def get_or_create(cls, text, language, user):
+    def create_or_update(cls, user, vocabulary, language, text):
+        if not vocabulary:
+            vocabulary = Vocabulary.get(acronym="nd")
         try:
-            return cls.objects.get(text=text, language=language)
+            return cls.get(vocabulary=vocabulary, language=language, text=text)
         except cls.DoesNotExist:
-            keyword = cls()
-            keyword.text = text
-            keyword.language = language
-            # keyword.vocabulary = vocabulary
-            keyword.creator = user
-            keyword.save()
-            return keyword
+            return cls.create(user, vocabulary, language, text)
 
-    base_form_class = CoreAdminModelForm
+    @classmethod
+    def get(cls, vocabulary, language, text):
+        if vocabulary and language and text:
+            try:
+                return cls.objects.get(
+                    vocabulary=vocabulary, language=language, text=text
+                )
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(
+                    vocabulary=vocabulary, language=language, text=text
+                ).first()
+
+    @classmethod
+    def create(cls, user, vocabulary, language, text):
+        try:
+            obj = cls()
+            obj.text = text
+            obj.language = language
+            obj.vocabulary = vocabulary
+            obj.creator = user
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(vocabulary, language, text)
