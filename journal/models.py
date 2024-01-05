@@ -77,9 +77,6 @@ class OfficialJournal(CommonControlField, ClusterableModel):
     )
     old_title = models.ManyToManyField("self", blank=True)
 
-    foundation_year = models.CharField(
-        _("Foundation Year"), max_length=4, null=True, blank=True
-    )
     initial_year = models.CharField(
         _("Initial Year"), max_length=4, blank=True, null=True
     )
@@ -93,10 +90,10 @@ class OfficialJournal(CommonControlField, ClusterableModel):
         _("Initial Number"), max_length=32, null=True, blank=True
     )
     terminate_year = models.CharField(
-        _("Terminate year"), max_length=4, null=True, blank=True
+        _("Termination year"), max_length=4, null=True, blank=True
     )
     terminate_month = models.CharField(
-        _("Terminate month"), max_length=2, choices=MONTHS, null=True, blank=True
+        _("Termination month"), max_length=2, choices=MONTHS, null=True, blank=True
     )
     final_volume = models.CharField(
         _("Final Volume"), max_length=32, null=True, blank=True
@@ -119,7 +116,6 @@ class OfficialJournal(CommonControlField, ClusterableModel):
     ]
 
     panels_dates = [
-        FieldPanel("foundation_year"),
         FieldPanel("initial_year"),
         FieldPanel("initial_month"),
         FieldPanel("terminate_year"),
@@ -157,7 +153,7 @@ class OfficialJournal(CommonControlField, ClusterableModel):
             ),
             models.Index(
                 fields=[
-                    "foundation_year",
+                    "initial_year",
                 ]
             ),
             models.Index(
@@ -193,7 +189,7 @@ class OfficialJournal(CommonControlField, ClusterableModel):
     def data(self):
         d = {
             "official_journal__title": self.title,
-            "official_journal__foundation_year": self.foundation_year,
+            "official_journal__initial_year": self.initial_year,
             "official_journal__issn_print": self.issn_print,
             "official_journal__issn_electronic": self.issn_electronic,
             "official_journal__issnl": self.issnl,
@@ -224,7 +220,6 @@ class OfficialJournal(CommonControlField, ClusterableModel):
         issn_electronic=None,
         issnl=None,
         title=None,
-        foundation_year=None,
     ):
         try:
             obj = cls.get(
@@ -242,7 +237,6 @@ class OfficialJournal(CommonControlField, ClusterableModel):
         obj.issnl = issnl or obj.issnl
         obj.issn_electronic = issn_electronic or obj.issn_electronic
         obj.issn_print = issn_print or obj.issn_print
-        obj.foundation_year = foundation_year or obj.foundation_year
         obj.title = title or obj.title
         obj.save()
 
