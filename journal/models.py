@@ -1493,6 +1493,7 @@ class DigitalPreservationAgency(CommonControlField):
                 digital_pa = csv.DictReader(
                     csvfile, fieldnames=["name", "acronym", "url"], delimiter=";"
                 )
+                next(digital_pa)
                 for row in digital_pa:
                     logging.info(row)
                     cls.create_or_update(
