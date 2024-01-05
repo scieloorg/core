@@ -650,6 +650,7 @@ class Journal(CommonControlField, ClusterableModel):
             label=_("Retraction Policy | Ethics and Misconduct Policy"),
             classname="collapsed",
         ),
+        AutocompletePanel("digital_pa"),
         InlinePanel(
             "digital_preservation",
             label=_("Digital Preservation"),
