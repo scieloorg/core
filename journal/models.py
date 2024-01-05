@@ -57,7 +57,7 @@ from . import choices
 User = get_user_model()
 
 
-class OfficialJournal(CommonControlField):
+class OfficialJournal(CommonControlField, ClusterableModel):
     """
     Class that represent the Official Journal
     """
@@ -113,7 +113,7 @@ class OfficialJournal(CommonControlField):
     panels_titles = [
         FieldPanel("title"),
         FieldPanel("iso_short_title"),
-        InlinePanel("parallel_title"),
+        InlinePanel("parallel_title", label=_("Parallel titles")),
         AutocompletePanel("old_title"),
         FieldPanel("new_title"),
     ]
