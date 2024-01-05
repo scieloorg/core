@@ -4,7 +4,7 @@ import re
 import os
 
 from django.contrib.auth import get_user_model
-from django.db import models
+from django.db import models, IntegrityError
 from django.db.models import Q
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -546,6 +546,11 @@ class Journal(CommonControlField, ClusterableModel):
     format_check_list = models.ManyToManyField(
         "ArticleSubmissionFormatCheckList",
         blank=True,
+    )
+    digital_pa = models.ManyToManyField(
+        "DigitalPreservationAgency", 
+        blank=True,
+        verbose_name=_("DigitalPreservationAgency"),
     )
 
     autocomplete_search_field = "title"
@@ -1439,6 +1444,120 @@ class ThematicAreaJournal(Orderable, CommonControlField):
     thematic_area = models.ForeignKey(
         ThematicArea, on_delete=models.SET_NULL, blank=True, null=True
     )
+
+
+class DigitalPreservationAgency(CommonControlField):
+    name = models.TextField(
+        verbose_name=_("Name"),
+        blank=True,
+        null=True,
+    )
+    acronym = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        verbose_name=_("Acronym"),
+    )
+    url = models.URLField(
+        blank=True,
+        null=True,
+    )
+
+    autocomplete_search_field = "name"
+
+    def autocomplete_label(self):
+        return str(self)
+
+    class Meta:
+        verbose_name = "Digitial Preservation Agency"
+        verbose_name_plural = "Digital Preservation Agencies"
+        unique_together = [("name", "acronym", "url",)]
+        indexes = [
+            models.Index(
+                fields=[
+                    "name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "url",
+                ]
+            ),
+            
+        ]
+
+    @classmethod
+    def load(cls, user):
+        if not cls.objects.exists():
+            with open("./journal/fixture/digital_preservation_agencies.csv", "r") as csvfile:
+                digital_pa = csv.DictReader(
+                    csvfile, fieldnames=["name", "acronym", "url"], delimiter=";"
+                )
+                for row in digital_pa:
+                    logging.info(row)
+                    cls.create_or_update(
+                        name=row["name"],
+                        acronym=row["acronym"],
+                        url=row["url"],
+                        user=user,
+                    )
+    
+    @classmethod
+    def get(
+        cls,
+        name,
+        url,
+        ):
+
+        filters = {}
+        if name:
+            filters['name__iexact'] = name
+        if url:
+            filters['url'] = url
+
+        if not filters:
+            raise ValueError("DigitalPreservationAgency.get requires name or url parameter")
+        return cls.objects.get(**filters)
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        name,
+        acronym,
+        url,
+    ):
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.acronym = acronym or obj.acronym
+            obj.name = name or obj.name
+            obj.url = url or obj.url
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(name=name, url=url)
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        name,
+        acronym,
+        url,
+    ):
+        try:
+            obj = cls.get(name=name, url=url)
+            obj.name = name or obj.name
+            obj.acronym = acronym or obj.acronym
+            obj.url = url or obj.url
+            obj.save()
+            return obj
+        except cls.DoesNotExist:
+            return cls.create(user, name, acronym, url)
+
+    def __str__(self):
+        return f"{self.name} ({self.acronym}) | {self.url}"
 
 
 class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
