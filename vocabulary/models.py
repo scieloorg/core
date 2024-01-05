@@ -61,7 +61,7 @@ class Vocabulary(CommonControlField):
                 {"name": "Not defined", "acronym": "nd"},
             ]
             for item in items:
-                cls.get_or_create(user, **item)
+                cls.create_or_update(user, **item)
 
     @classmethod
     def get(cls, acronym, name=None):
