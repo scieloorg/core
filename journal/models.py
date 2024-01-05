@@ -1531,7 +1531,7 @@ class DigitalPreservationAgency(CommonControlField):
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(name=name, url=url)
+            return cls.get(name=name, url=url, acronym=acronym)
 
     @classmethod
     def create_or_update(
