@@ -64,9 +64,6 @@ class OfficialJournal(CommonControlField, ClusterableModel):
 
     title = models.TextField(_("ISSN Title"), null=True, blank=True)
     iso_short_title = models.TextField(_("ISO Short Title"), null=True, blank=True)
-    parallel_titles = models.ManyToManyField(
-        "JournalParallelTitle", blank=True
-    )
     new_title = models.ForeignKey(
         "self",
         verbose_name=_("New Title"),
@@ -265,6 +262,10 @@ class OfficialJournal(CommonControlField, ClusterableModel):
             new_title = OfficialJournal.objects.create(title=title, creator=user)
         self.new_title = new_title
         self.save()
+
+    @property
+    def parallel_titles(self):
+        return JournalParallelTitle.objects.filter(official_journal=self)
 
 
 class SocialNetwork(models.Model):
@@ -1614,7 +1615,6 @@ class JournalParallelTitle(TextWithLang):
         obj.text = text
         obj.language = language
         obj.save()
-        official_journal.parallel_titles.add(obj)
 
 
 class SubjectDescriptor(CommonControlField):
