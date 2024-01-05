@@ -15,7 +15,7 @@ from journal.models import (
     Journal,
     JournalEmail,
     JournalHistory,
-    JournalParallelTitles,
+    JournalParallelTitle,
     Mission,
     OfficialJournal,
     OwnerHistory,
@@ -678,17 +678,15 @@ def create_or_update_location(
 
 
 def get_or_update_parallel_titles(of_journal, parallel_titles):
-    data = []
     if parallel_titles:
         titles = extract_value(parallel_titles)
         if isinstance(titles, str):
             titles = [titles]
         for title in titles:
-            obj, created = JournalParallelTitles.objects.get_or_create(
+            JournalParallelTitle.create_or_update(
+                official_journal=of_journal,
                 text=title,
             )
-            data.append(obj)
-        of_journal.parallel_titles.set(data)
 
 
 def get_or_create_journal_history(scielo_journal, journal_history):
