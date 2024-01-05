@@ -1488,37 +1488,30 @@ class DigitalPreservationAgency(CommonControlField):
 
     @classmethod
     def load(cls, user):
-        if not cls.objects.exists():
-            with open("./journal/fixture/digital_preservation_agencies.csv", "r") as csvfile:
-                digital_pa = csv.DictReader(
-                    csvfile, fieldnames=["name", "acronym", "url"], delimiter=";"
+        with open("./journal/fixture/digital_preservation_agencies.csv", "r") as csvfile:
+            digital_pa = csv.DictReader(
+                csvfile, fieldnames=["name", "acronym", "url"], delimiter=";"
+            )
+            next(digital_pa)
+            for row in digital_pa:
+                logging.info(row)
+                cls.create_or_update(
+                    name=row["name"],
+                    acronym=row["acronym"],
+                    url=row["url"],
+                    user=user,
                 )
-                next(digital_pa)
-                for row in digital_pa:
-                    logging.info(row)
-                    cls.create_or_update(
-                        name=row["name"],
-                        acronym=row["acronym"],
-                        url=row["url"],
-                        user=user,
-                    )
     
     @classmethod
     def get(
         cls,
         name,
         url,
+        acronym,
         ):
-
-        filters = {}
-        if name:
-            filters['name__iexact'] = name
-        if url:
-            filters['url'] = url
-
-        if not filters:
+        if not name or not url:
             raise ValueError("DigitalPreservationAgency.get requires name or url parameter")
-        return cls.objects.get(**filters)
+        return cls.objects.get(name=name, url=url, acronym=acronym)
 
     @classmethod
     def create(
@@ -1548,12 +1541,7 @@ class DigitalPreservationAgency(CommonControlField):
         url,
     ):
         try:
-            obj = cls.get(name=name, url=url)
-            obj.name = name or obj.name
-            obj.acronym = acronym or obj.acronym
-            obj.url = url or obj.url
-            obj.save()
-            return obj
+            return cls.get(name=name, acronym=acronym, url=url)
         except cls.DoesNotExist:
             return cls.create(user, name, acronym, url)
 
