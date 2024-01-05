@@ -65,7 +65,7 @@ class OfficialJournal(CommonControlField):
     title = models.TextField(_("ISSN Title"), null=True, blank=True)
     iso_short_title = models.TextField(_("ISO Short Title"), null=True, blank=True)
     parallel_titles = models.ManyToManyField(
-        "JournalParallelTitles", blank=True
+        "JournalParallelTitle", blank=True
     )
     new_title = models.ForeignKey(
         "self",
@@ -113,7 +113,7 @@ class OfficialJournal(CommonControlField):
     panels_titles = [
         FieldPanel("title"),
         FieldPanel("iso_short_title"),
-        AutocompletePanel("parallel_titles"),
+        InlinePanel("parallel_title"),
         AutocompletePanel("old_title"),
         FieldPanel("new_title"),
     ]
@@ -1570,17 +1570,33 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         return obj
 
 
-class JournalParallelTitles(TextWithLang):
-    autocomplete_search_field = "text"
+class JournalParallelTitle(TextWithLang):
+    official_journal = ParentalKey(
+        OfficialJournal, null=True, blank=True, on_delete=models.SET_NULL, related_name="parallel_title")
 
-    def autocomplete_label(self):
-        return str(self)
+    panels = [
+        FieldPanel("text"),
+        AutocompletePanel("language"),
+    ]
 
     def __unicode__(self):
         return "%s (%s)" % (self.text, self.language)
 
     def __str__(self):
         return "%s (%s)" % (self.text, self.language)
+
+    @classmethod
+    def create_or_update(cls, official_journal, text, language=None):
+        if language:
+            for item in official_journal.parallel_titles.filter(language=language).iterator():
+                item.delete()
+                break
+        obj = cls()
+        obj.official_journal = official_journal
+        obj.text = text
+        obj.language = language
+        obj.save()
+        official_journal.parallel_titles.add(obj)
 
 
 class SubjectDescriptor(CommonControlField):
