@@ -7,7 +7,7 @@ from core.models import Language, License
 from editorialboard.models import RoleModel
 from institution.models import Institution
 from location.models import Country, City, State
-from journal.models import Standard, Subject, WebOfKnowledge, WebOfKnowledgeSubjectCategory, IndexedAt
+from journal.models import Standard, Subject, WebOfKnowledge, WebOfKnowledgeSubjectCategory, IndexedAt, DigitalPreservationAgency
 from vocabulary.models import Vocabulary
 from thematic_areas.models import ThematicArea
 
@@ -43,3 +43,4 @@ def task_start(
     Institution.load(user)
     RoleModel.load(user)
     License.load(user)
+    DigitalPreservationAgency.load(user)
