@@ -380,8 +380,9 @@ def create_or_update_official_journal(
     get_or_update_parallel_titles(
         of_journal=official_journal, parallel_titles=parallel_titles
     )
-    # official_journal.new_title = extract_value(new_title)
-    # official_journal.old_title = extract_value(old_title)
+    if new_title or old_title:
+        official_journal.add_new_title(user, extract_value(new_title))
+        official_journal.add_old_title(user, extract_value(old_title))
     official_journal.iso_short_title = extract_value(iso_short_title)
 
     initial_date = extract_value(initial_date)
