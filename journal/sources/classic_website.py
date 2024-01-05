@@ -67,7 +67,6 @@ def get_official_journal(user, journal_xml):
     try:
         title = journal_xml["SERIAL"]["TITLEGROUP"]["TITLE"]
         # this value are not available in the XML file
-        foundation_year = None
         issns = journal_xml["SERIAL"]["TITLE_ISSN"]
         issns_list = issns if type(issns) is list else [issns]
         issn_print = None
@@ -84,7 +83,6 @@ def get_official_journal(user, journal_xml):
             issn_print=issn_print,
             issn_electronic=issn_electronic,
             title=title,
-            foundation_year=foundation_year,
         )
 
         return official_journal

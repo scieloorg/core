@@ -349,7 +349,6 @@ def create_or_update_official_journal(
     iso_short_title,
     parallel_titles,
     user,
-    foundation_year=None,
 ):
     """
     Ex type_issn:
@@ -375,7 +374,6 @@ def create_or_update_official_journal(
         issn_electronic=issn_electronic,
         issnl=None,
         title=title,
-        foundation_year=foundation_year,
     )
     get_or_update_parallel_titles(
         of_journal=official_journal, parallel_titles=parallel_titles
