@@ -144,6 +144,8 @@ class OfficialJournal(CommonControlField):
         ]
     )
 
+    base_form_class = CoreAdminModelForm
+
     class Meta:
         verbose_name = _("ISSN Journal")
         verbose_name_plural = _("ISSN Journals")
@@ -246,7 +248,29 @@ class OfficialJournal(CommonControlField):
 
         return obj
 
-    base_form_class = CoreAdminModelForm
+    def add_old_title(self, user, title):
+        if not title:
+            return
+        old_title = None
+        for item in OfficialJournal.objects.filter(title=title).iterator():
+            old_title = item
+            break
+        if not old_title:
+            old_title = OfficialJournal.objects.create(title=title, creator=user)
+        self.old_title.add(old_title)
+        self.save()
+
+    def add_new_title(self, user, title):
+        if not title:
+            return
+        new_title = None
+        for item in OfficialJournal.objects.filter(title=title).iterator():
+            new_title = item
+            break
+        if not new_title:
+            new_title = OfficialJournal.objects.create(title=title, creator=user)
+        self.new_title = new_title
+        self.save()
 
 
 class SocialNetwork(models.Model):
