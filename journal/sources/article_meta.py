@@ -57,10 +57,12 @@ def _register_journal_data(user, collection_acron3):
     for journal_am in journals:
         try:
             journal_dict = rename_dictionary_keys(journal_am.data, correspondencia_journal)
+
+            # Criar new_title e old_title somente após carregar todos os journals
             official_journal = am_to_core.create_or_update_official_journal(
                 title=journal_dict.get("publication_title"),
-                new_title=journal_dict.get("new_title"),
-                old_title=journal_dict.get("old_title"),
+                new_title=None,
+                old_title=None,
                 issn_print_or_electronic=journal_dict.get("issn_print_or_electronic"),
                 issn_scielo=journal_dict.get("issn_id"),
                 type_issn=journal_dict.get("type_issn"),
@@ -169,6 +171,42 @@ def _register_journal_data(user, collection_acron3):
                 acronym_letters=journal_dict.get("acronym_letters"),
             )
             journal.save()
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "function": "journal.sources.article_meta._register_journal_data",
+                    "collection": collection_acron3,
+                    "issn": journal_am.scielo_issn,
+                    "data_journal": journal_am.data,
+                },
+            )
+
+    # Repete iteração em journals para criar new_title e old_title
+    # somente após carregar todos os journals
+    for journal_am in journals:
+        try:
+            journal_dict = rename_dictionary_keys(journal_am.data, correspondencia_journal)
+            official_journal = am_to_core.create_or_update_official_journal(
+                title=journal_dict.get("publication_title"),
+                new_title=journal_dict.get("new_title"),
+                old_title=journal_dict.get("old_title"),
+                issn_print_or_electronic=journal_dict.get("issn_print_or_electronic"),
+                issn_scielo=journal_dict.get("issn_id"),
+                type_issn=journal_dict.get("type_issn"),
+                current_issn=journal_dict.get("current_issn"),
+                initial_date=journal_dict.get("initial_date"),
+                terminate_date=journal_dict.get("terminate_date"),
+                initial_volume=journal_dict.get("initial_volume"),
+                initial_number=journal_dict.get("initial_number"),
+                final_volume=journal_dict.get("final_volume"),
+                final_number=journal_dict.get("final_number"),
+                iso_short_title=journal_dict.get("iso_short_title"),
+                parallel_titles=journal_dict.get("parallel_titles"),
+                user=user,
+            )
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(

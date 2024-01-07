@@ -127,7 +127,7 @@
                             <i>{{ journal.get_publishing_model_display }}</i>
                           </li>
                           <li>
-                            <strong>{% trans 'Ano de criação do periódico:' %}</strong> {% if journal.official.foundation_year %} <i>{{ journal.official.foundation_year }}</i> {% endif %}
+                            <strong>{% trans 'Ano de criação do periódico:' %}</strong> {% if journal.official.initial_year %} <i>{{ journal.official.initial_year }}</i> {% endif %}
                           </li>
                           <li>
                             <strong>{% trans 'Área:' %}</strong> {% for study_area in journal.subject.all %} <i>{{ study_area }}</i> {% endfor %}
