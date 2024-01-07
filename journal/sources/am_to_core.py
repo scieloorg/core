@@ -15,7 +15,7 @@ from journal.models import (
     Journal,
     JournalEmail,
     JournalHistory,
-    JournalParallelTitles,
+    JournalParallelTitle,
     Mission,
     OfficialJournal,
     OwnerHistory,
@@ -349,7 +349,6 @@ def create_or_update_official_journal(
     iso_short_title,
     parallel_titles,
     user,
-    foundation_year=None,
 ):
     """
     Ex type_issn:
@@ -375,13 +374,13 @@ def create_or_update_official_journal(
         issn_electronic=issn_electronic,
         issnl=None,
         title=title,
-        foundation_year=foundation_year,
     )
     get_or_update_parallel_titles(
         of_journal=official_journal, parallel_titles=parallel_titles
     )
-    # official_journal.new_title = extract_value(new_title)
-    # official_journal.old_title = extract_value(old_title)
+    if new_title or old_title:
+        official_journal.add_new_title(user, extract_value(new_title))
+        official_journal.add_old_title(user, extract_value(old_title))
     official_journal.iso_short_title = extract_value(iso_short_title)
 
     initial_date = extract_value(initial_date)
@@ -678,17 +677,15 @@ def create_or_update_location(
 
 
 def get_or_update_parallel_titles(of_journal, parallel_titles):
-    data = []
     if parallel_titles:
         titles = extract_value(parallel_titles)
         if isinstance(titles, str):
             titles = [titles]
         for title in titles:
-            obj, created = JournalParallelTitles.objects.get_or_create(
+            JournalParallelTitle.create_or_update(
+                official_journal=of_journal,
                 text=title,
             )
-            data.append(obj)
-        of_journal.parallel_titles.set(data)
 
 
 def get_or_create_journal_history(scielo_journal, journal_history):

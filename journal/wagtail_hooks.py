@@ -32,22 +32,21 @@ class OfficialJournalAdmin(ModelAdmin):
 
     list_display = (
         "title",
-        "foundation_year",
+        "initial_year",
+        "terminate_year",
         "issn_print",
         "issn_electronic",
         "issnl",
         "created",
         "updated",
     )
-    list_filter = ("foundation_year",)
+    list_filter = ("terminate_year", "initial_year",)
     search_fields = (
         "title",
-        "foundation_year",
+        "initial_year",
         "issn_print",
         "issn_electronic",
         "issnl",
-        "creator__username",
-        "updated_by__username",
     )
 
 

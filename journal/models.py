@@ -57,16 +57,13 @@ from . import choices
 User = get_user_model()
 
 
-class OfficialJournal(CommonControlField):
+class OfficialJournal(CommonControlField, ClusterableModel):
     """
     Class that represent the Official Journal
     """
 
     title = models.TextField(_("ISSN Title"), null=True, blank=True)
     iso_short_title = models.TextField(_("ISO Short Title"), null=True, blank=True)
-    parallel_titles = models.ManyToManyField(
-        "JournalParallelTitles", blank=True
-    )
     new_title = models.ForeignKey(
         "self",
         verbose_name=_("New Title"),
@@ -77,9 +74,6 @@ class OfficialJournal(CommonControlField):
     )
     old_title = models.ManyToManyField("self", blank=True)
 
-    foundation_year = models.CharField(
-        _("Foundation Year"), max_length=4, null=True, blank=True
-    )
     initial_year = models.CharField(
         _("Initial Year"), max_length=4, blank=True, null=True
     )
@@ -93,10 +87,10 @@ class OfficialJournal(CommonControlField):
         _("Initial Number"), max_length=32, null=True, blank=True
     )
     terminate_year = models.CharField(
-        _("Terminate year"), max_length=4, null=True, blank=True
+        _("Termination year"), max_length=4, null=True, blank=True
     )
     terminate_month = models.CharField(
-        _("Terminate month"), max_length=2, choices=MONTHS, null=True, blank=True
+        _("Termination month"), max_length=2, choices=MONTHS, null=True, blank=True
     )
     final_volume = models.CharField(
         _("Final Volume"), max_length=32, null=True, blank=True
@@ -113,13 +107,12 @@ class OfficialJournal(CommonControlField):
     panels_titles = [
         FieldPanel("title"),
         FieldPanel("iso_short_title"),
-        AutocompletePanel("parallel_titles"),
+        InlinePanel("parallel_title", label=_("Parallel titles")),
         AutocompletePanel("old_title"),
         FieldPanel("new_title"),
     ]
 
     panels_dates = [
-        FieldPanel("foundation_year"),
         FieldPanel("initial_year"),
         FieldPanel("initial_month"),
         FieldPanel("terminate_year"),
@@ -144,6 +137,8 @@ class OfficialJournal(CommonControlField):
         ]
     )
 
+    base_form_class = CoreAdminModelForm
+
     class Meta:
         verbose_name = _("ISSN Journal")
         verbose_name_plural = _("ISSN Journals")
@@ -155,7 +150,7 @@ class OfficialJournal(CommonControlField):
             ),
             models.Index(
                 fields=[
-                    "foundation_year",
+                    "initial_year",
                 ]
             ),
             models.Index(
@@ -191,7 +186,7 @@ class OfficialJournal(CommonControlField):
     def data(self):
         d = {
             "official_journal__title": self.title,
-            "official_journal__foundation_year": self.foundation_year,
+            "official_journal__initial_year": self.initial_year,
             "official_journal__issn_print": self.issn_print,
             "official_journal__issn_electronic": self.issn_electronic,
             "official_journal__issnl": self.issnl,
@@ -222,7 +217,6 @@ class OfficialJournal(CommonControlField):
         issn_electronic=None,
         issnl=None,
         title=None,
-        foundation_year=None,
     ):
         try:
             obj = cls.get(
@@ -240,13 +234,38 @@ class OfficialJournal(CommonControlField):
         obj.issnl = issnl or obj.issnl
         obj.issn_electronic = issn_electronic or obj.issn_electronic
         obj.issn_print = issn_print or obj.issn_print
-        obj.foundation_year = foundation_year or obj.foundation_year
         obj.title = title or obj.title
         obj.save()
 
         return obj
 
-    base_form_class = CoreAdminModelForm
+    def add_old_title(self, user, title):
+        if not title:
+            return
+        old_title = None
+        for item in OfficialJournal.objects.filter(title=title).iterator():
+            old_title = item
+            break
+        if not old_title:
+            old_title = OfficialJournal.objects.create(title=title, creator=user)
+        self.old_title.add(old_title)
+        self.save()
+
+    def add_new_title(self, user, title):
+        if not title:
+            return
+        new_title = None
+        for item in OfficialJournal.objects.filter(title=title).iterator():
+            new_title = item
+            break
+        if not new_title:
+            new_title = OfficialJournal.objects.create(title=title, creator=user)
+        self.new_title = new_title
+        self.save()
+
+    @property
+    def parallel_titles(self):
+        return JournalParallelTitle.objects.filter(official_journal=self)
 
 
 class SocialNetwork(models.Model):
@@ -1679,17 +1698,32 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         return obj
 
 
-class JournalParallelTitles(TextWithLang):
-    autocomplete_search_field = "text"
+class JournalParallelTitle(TextWithLang):
+    official_journal = ParentalKey(
+        OfficialJournal, null=True, blank=True, on_delete=models.SET_NULL, related_name="parallel_title")
 
-    def autocomplete_label(self):
-        return str(self)
+    panels = [
+        FieldPanel("text"),
+        AutocompletePanel("language"),
+    ]
 
     def __unicode__(self):
         return "%s (%s)" % (self.text, self.language)
 
     def __str__(self):
         return "%s (%s)" % (self.text, self.language)
+
+    @classmethod
+    def create_or_update(cls, official_journal, text, language=None):
+        if language:
+            for item in official_journal.parallel_titles.filter(language=language).iterator():
+                item.delete()
+                break
+        obj = cls()
+        obj.official_journal = official_journal
+        obj.text = text
+        obj.language = language
+        obj.save()
 
 
 class SubjectDescriptor(CommonControlField):
