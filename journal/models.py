@@ -46,6 +46,7 @@ from journal.exceptions import (
     StandardCreationOrUpdateError,
     SubjectCreationOrUpdateError,
     WosdbCreationOrUpdateError,
+    TitleInDatabaseCreationOrUpdateError,
 )
 from location.models import Location
 from reference.models import JournalTitle
@@ -2274,6 +2275,76 @@ class TitleInDatabase(Orderable, CommonControlField):
         null=True,
         blank=True,
     )
+
+    @classmethod
+    def get(cls,
+        journal,
+        indexed_at,
+        title,
+        identifier,
+    ):
+        if not journal:
+            raise TitleInDatabaseCreationOrUpdateError("TitleInDatabase.get requires journal parameter.")
+        filters = {}
+        if indexed_at:
+            filters["indexed_at"] = indexed_at
+        if title:
+            filters["title"] = title
+        if identifier:
+            filters["identifier"] = identifier
+        
+        if not filters:
+            raise TitleInDatabaseCreationOrUpdateError(
+                f"TitleInDatabase.get requires at least one additional parameter for journal '{journal}'. Provide indexed_at, title, or identifier.")
+        return cls.objects.get(journal=journal, **filters)
+
+    @classmethod
+    def create(
+        cls,
+        journal,
+        indexed_at=None,
+        title=None,
+        identifier=None,
+    ):
+        try:
+            obj = cls()
+            obj.journal = journal
+            obj.indexed_at = indexed_at or obj.indexed_at
+            obj.title = title or obj.title
+            obj.identifier = identifier or obj.identifier
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(journal,
+            indexed_at=indexed_at, 
+            title=title, 
+            identifier=identifier
+        )
+
+    @classmethod
+    def create_or_update(
+        cls,
+        journal,
+        indexed_at=None,
+        title=None,
+        identifier=None,
+    ):
+        try:
+            return cls.get(
+                journal=journal, 
+                indexed_at=indexed_at, 
+                title=title, 
+                identifier=identifier,
+            )
+        except cls.DoesNotExist:
+            return cls.create(
+                journal=journal, 
+                indexed_at=indexed_at, 
+                title=title, 
+                identifier=identifier,
+            )
+    def __str__(self) -> str:
+        return f"{self.journal} | {self.indexed_at} | {self.title} | {self.identifier}"
 
 
 class DataRepositoryURI(Orderable, CommonControlField):

@@ -56,3 +56,7 @@ class IndexedAtCreationOrUpdateError(Exception):
         super().__init__(
             f"Unable to create or update IndexedAt with name: {name} and acronym: {acronym}: {str(message)}"
         )
+
+
+class TitleInDatabaseCreationOrUpdateError(Exception):
+    ...
