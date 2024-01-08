@@ -359,10 +359,11 @@ class Journal(CommonControlField, ClusterableModel):
             )
         ),
     )
-    collection_main_url = models.URLField(
-        _("Collection Main Url"),
+    main_collection = models.ForeignKey(
+        verbose_name=_("Main Collection"),
         null=True,
         blank=True,
+        on_delete=models.SET_NULL,
     )
     frequency = models.CharField(
         _("Frequency"),
