@@ -588,9 +588,6 @@ class Journal(CommonControlField, ClusterableModel):
     ]
 
     panels_scope_and_about = [
-        InlinePanel("mission", label=_("Mission"), classname="collapsed"),
-        InlinePanel("history", label=_("Brief History"), classname="collapsed"),
-        InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
         InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
         AutocompletePanel("indexed_at"),
         AutocompletePanel("additional_indexed_at"),
@@ -598,6 +595,9 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("subject"),
         FieldPanel("wos_db"),
         AutocompletePanel("wos_area"),
+        InlinePanel("mission", label=_("Mission"), classname="collapsed"),
+        InlinePanel("history", label=_("Brief History"), classname="collapsed"),
+        InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
     ]
 
     panels_institutions = [
@@ -789,6 +789,7 @@ class Journal(CommonControlField, ClusterableModel):
     class Meta:
         verbose_name = _("Journal")
         verbose_name_plural = _("Journals")
+        ordering = ("title",)
         indexes = [
             models.Index(
                 fields=[
