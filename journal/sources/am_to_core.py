@@ -119,12 +119,8 @@ def update_panel_interoperation(
 ):
     get_or_create_indexed_at(journal, indexed_at=indexed_at, user=user)
     
-    secs_code = extract_value(secs_code)
-    create_or_update_title_in_database(journal=journal, identifier=secs_code)
-    
-    medline_code = extract_value(medline_code)
-    medline_short_title = extract_value(medline_short_title)
-    create_or_update_title_in_database(journal=journal, identifier=medline_code, title=medline_short_title)
+    update_title_in_database(journal=journal, code=secs_code, acronym="secs")
+    update_title_in_database(journal=journal, code=secs_code, acronym="medline", title=medline_short_title)
 
 
 def update_panel_information(
@@ -741,5 +737,15 @@ def get_or_create_copyright_holder(journal, copyright_holder_name, user):
             copyright_holder_history.journal = journal
             copyright_holder_history.save()
 
-def create_or_update_title_in_database(journal, title=None, identifier=None):
-    TitleInDatabase.create_or_update(journal=journal, title=title, identifier=identifier)
+def update_title_in_database(journal, code, acronym, title=None):
+    code = extract_value(code)
+    indexed_at = IndexedAt.get(name=None, acronym=acronym)
+    if not title:
+        title = journal.title
+    else:
+        title = extract_value(title)    
+    create_or_update_title_in_database(journal=journal, indexed_at=indexed_at, identifier=code, title=title)
+
+def create_or_update_title_in_database(journal, indexed_at, title, identifier=None):
+    TitleInDatabase.create_or_update(journal=journal, indexed_at=indexed_at, title=title, identifier=identifier)
+
