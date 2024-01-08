@@ -1930,21 +1930,20 @@ class IndexedAt(CommonControlField):
 
     @classmethod
     def load(cls, user):
-        if not cls.objects.exists():
-            with open("./journal/fixture/index_at.csv", "r") as csvfile:
-                indexed_at = csv.DictReader(
-                    csvfile, fieldnames=["name", "acronym", "url", "type", "description"], delimiter=","
+        with open("./journal/fixture/index_at.csv", "r") as csvfile:
+            indexed_at = csv.DictReader(
+                csvfile, fieldnames=["name", "acronym", "url", "type", "description"], delimiter=","
+            )
+            for row in indexed_at:
+                logging.info(row)
+                cls.create_or_update(
+                    name=row["name"],
+                    acronym=row["acronym"],
+                    url=row["url"],
+                    type=row["type"],
+                    description=row["description"],
+                    user=user,
                 )
-                for row in indexed_at:
-                    logging.info(row)
-                    cls.create_or_update(
-                        name=row["name"],
-                        acronym=row["acronym"],
-                        url=row["url"],
-                        type=row["type"],
-                        description=row["description"],
-                        user=user,
-                    )
 
     @classmethod
     def get(
@@ -1955,7 +1954,7 @@ class IndexedAt(CommonControlField):
         if name:
             return cls.objects.get(name=name)
         if acronym:
-            return cls.objects.get(acronym)
+            return cls.objects.get(acronym__iexact=acronym)
         raise Exception("IndexedAt.get requires name or acronym paramets")
 
     @classmethod
@@ -2283,20 +2282,9 @@ class TitleInDatabase(Orderable, CommonControlField):
         title,
         identifier,
     ):
-        if not journal:
-            raise TitleInDatabaseCreationOrUpdateError("TitleInDatabase.get requires journal parameter.")
-        filters = {}
-        if indexed_at:
-            filters["indexed_at"] = indexed_at
-        if title:
-            filters["title"] = title
-        if identifier:
-            filters["identifier"] = identifier
-        
-        if not filters:
-            raise TitleInDatabaseCreationOrUpdateError(
-                f"TitleInDatabase.get requires at least one additional parameter for journal '{journal}'. Provide indexed_at, title, or identifier.")
-        return cls.objects.get(journal=journal, **filters)
+        if not journal and not indexed_at and not title:
+            raise TitleInDatabaseCreationOrUpdateError("TitleInDatabase.get requires journal, indexed_at e title parameter.")
+        return cls.objects.get(journal=journal, indexed_at=indexed_at, title=title, identifier=identifier)
 
     @classmethod
     def create(
@@ -2325,8 +2313,8 @@ class TitleInDatabase(Orderable, CommonControlField):
     def create_or_update(
         cls,
         journal,
-        indexed_at=None,
-        title=None,
+        indexed_at,
+        title,
         identifier=None,
     ):
         try:
