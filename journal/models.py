@@ -360,6 +360,7 @@ class Journal(CommonControlField, ClusterableModel):
         ),
     )
     main_collection = models.ForeignKey(
+        Collection,
         verbose_name=_("Main Collection"),
         null=True,
         blank=True,
@@ -471,21 +472,6 @@ class Journal(CommonControlField, ClusterableModel):
         verbose_name=_("Additional Index At"),
         blank=True,
     )
-    secs_code = models.TextField(
-        _("Secs Code"),
-        null=True,
-        blank=True,
-    )
-    medline_code = models.TextField(
-        _("Medline Code"),
-        null=True,
-        blank=True,
-    )
-    medline_short_title = models.TextField(
-        _("Medline Title"),
-        null=True,
-        blank=True,
-    )  # (no xml é abbrev-journal-title do tipo nlm-title)
     journal_url = models.URLField(
         _("Journal URL"),
         null=True,
@@ -583,9 +569,6 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("title"),
         FieldPanel("short_title"),
         AutocompletePanel("other_titles"),
-        FieldPanel("secs_code"),
-        FieldPanel("medline_code"),
-        FieldPanel("medline_short_title"),
     ]
 
     panels_scope_and_about = [
@@ -620,7 +603,8 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("logo", heading=_("Logo")),
         FieldPanel("journal_url"),
         FieldPanel("submission_online_url"),
-        FieldPanel("collection_main_url"),
+        FieldPanel("main_collection"),
+        InlinePanel("title_in_database"),
         InlinePanel("journalsocialnetwork", label=_("Social Network")),
         FieldPanel("frequency"),
         FieldPanel("publishing_model"),
