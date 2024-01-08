@@ -2275,6 +2275,11 @@ class TitleInDatabase(Orderable, CommonControlField):
         blank=True,
     )
 
+    class Meta:
+        verbose_name = _("Title in Database")
+        verbose_name_plural = _("Title in databases")
+        unique_together = [( "journal", "indexed_at", "journal")]
+
     @classmethod
     def get(cls,
         journal,
