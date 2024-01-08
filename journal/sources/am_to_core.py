@@ -27,6 +27,7 @@ from journal.models import (
     SubjectDescriptor,
     WebOfKnowledge,
     WebOfKnowledgeSubjectCategory,
+    TitleInDatabase,
 )
 from location.models import City, CountryName, Location, State, Country
 from reference.models import JournalTitle
@@ -117,9 +118,13 @@ def update_panel_interoperation(
     journal, indexed_at, secs_code, medline_code, medline_short_title, user
 ):
     get_or_create_indexed_at(journal, indexed_at=indexed_at, user=user)
-    journal.secs_code = extract_value(secs_code)
-    journal.medline_code = extract_value(medline_code)
-    journal.medline_short_title = extract_value(medline_short_title)
+    
+    secs_code = extract_value(secs_code)
+    create_or_update_title_in_database(journal=journal, identifier=secs_code)
+    
+    medline_code = extract_value(medline_code)
+    medline_short_title = extract_value(medline_short_title)
+    create_or_update_title_in_database(journal=journal, identifier=medline_code, title=medline_short_title)
 
 
 def update_panel_information(
@@ -735,3 +740,6 @@ def get_or_create_copyright_holder(journal, copyright_holder_name, user):
             )
             copyright_holder_history.journal = journal
             copyright_holder_history.save()
+
+def create_or_update_title_in_database(journal, title=None, identifier=None):
+    TitleInDatabase.create_or_update(journal=journal, title=title, identifier=identifier)
