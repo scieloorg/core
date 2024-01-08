@@ -4,6 +4,7 @@ from datetime import datetime
 
 from django.db.models import Q
 
+from collection.exceptions import MainCollectionNotFoundError
 from core.models import Language, License
 from institution.models import CopyrightHolder, Owner, Publisher, Sponsor
 from journal.models import (
@@ -262,13 +263,13 @@ def update_panel_website(
     user,
 ):
     journal.journal_url = extract_value(url_of_the_journal)
-    journal.collection_main_url = extract_value(url_of_the_main_collection)
     journal.submission_online_url = extract_value(url_of_submission_online)
     license_type = extract_value(license_of_use)
     if license_type:
         license = License.create_or_update(license_type=license_type, user=user)
         journal.use_license = license
-
+    url_of_the_main_collection = extract_value(url_of_the_main_collection)
+    assign_journal_to_main_collection(journal=journal, url_of_the_main_collection=url_of_the_main_collection)
 
 def update_panel_notes(
     journal,
@@ -749,3 +750,11 @@ def update_title_in_database(journal, code, acronym, title=None):
 def create_or_update_title_in_database(journal, indexed_at, title, identifier=None):
     TitleInDatabase.create_or_update(journal=journal, indexed_at=indexed_at, title=title, identifier=identifier)
 
+def assign_journal_to_main_collection(journal, url_of_the_main_collection):
+    if url_of_the_main_collection:
+        try:
+            cleaned_domain_query = url_of_the_main_collection.replace("http://", "").replace("https://", "") 
+            collection = Collection.objects.get(domain=cleaned_domain_query)
+            journal.main_collection = collection
+        except (Collection.DoesNotExist, ValueError):
+            raise MainCollectionNotFoundError()
