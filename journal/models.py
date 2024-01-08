@@ -2288,3 +2288,14 @@ class TitleInDatabase(Orderable, CommonControlField):
         null=True,
         blank=True,
     )
+
+
+class DataRepositoryURI(Orderable, CommonControlField):
+    journal = ParentalKey(Journal,
+        on_delete=models.SET_NULL, related_name="data_repository_uri", null=True
+    )
+    uri = models.URLField(
+        blank=True,
+        null=True,
+        help_text=_("Enter the URI of the data repository.")
+    )
