@@ -2265,3 +2265,26 @@ class AMJournal(CommonControlField):
         obj.save()
 
         return obj
+
+
+class TitleInDatabase(Orderable, CommonControlField):
+    journal = ParentalKey(Journal,
+        on_delete=models.SET_NULL, related_name="title_in_database", null=True)
+    indexed_at = models.ForeignKey(
+        IndexedAt,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Indexed At"),
+        blank=True,
+        null=True,
+    )
+    title = models.TextField(
+        verbose_name=_("Title"),
+        null=True,
+        blank=True,
+    )
+    identifier = models.CharField(
+        max_length=64,
+        verbose_name=_("Identifier"),
+        null=True,
+        blank=True,
+    )
