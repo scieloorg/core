@@ -573,11 +573,11 @@ class Journal(CommonControlField, ClusterableModel):
     ]
 
     panels_scope_and_about = [
-        InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
         AutocompletePanel("indexed_at"),
         AutocompletePanel("additional_indexed_at"),
-        AutocompletePanel("subject_descriptor"),
         FieldPanel("subject"),
+        AutocompletePanel("subject_descriptor"),
+        InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
         FieldPanel("wos_db"),
         AutocompletePanel("wos_area"),
         InlinePanel("mission", label=_("Mission"), classname="collapsed"),
