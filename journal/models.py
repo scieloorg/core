@@ -2317,18 +2317,14 @@ class TitleInDatabase(Orderable, CommonControlField):
         cls,
         journal,
         indexed_at,
-        title,
-        identifier,
     ):
-        if not journal and not indexed_at and not title:
+        if not journal and not indexed_at:
             raise TitleInDatabaseCreationOrUpdateError(
                 "TitleInDatabase.get requires journal, indexed_at e title parameter."
             )
         return cls.objects.get(
             journal=journal,
             indexed_at=indexed_at,
-            title=title,
-            identifier=identifier,
         )
 
     @classmethod
@@ -2367,12 +2363,12 @@ class TitleInDatabase(Orderable, CommonControlField):
         identifier,
     ):
         try:
-            return cls.get(
-                journal=journal,
-                indexed_at=indexed_at,
-                title=title,
-                identifier=identifier,
-            )
+            obj = cls.get(journal=journal, indexed_at=indexed_at)
+            obj.title = title or obj.title
+            obj.identifier = identifier or obj.identifier
+            obj.updated_by = user
+            obj.save()
+            return obj
         except cls.DoesNotExist:
             return cls.create(
                 user=user,
@@ -2383,7 +2379,7 @@ class TitleInDatabase(Orderable, CommonControlField):
             )
 
     def __str__(self):
-        return f"{self.journal} | {self.indexed_at} | {self.title} | {self.identifier}"
+        return f"{self.indexed_at} | {self.title} | {self.identifier}"
 
 
 class DataRepository(Orderable, CommonControlField):
