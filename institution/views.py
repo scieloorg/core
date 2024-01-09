@@ -67,7 +67,7 @@ def import_file_scimago(request):
                 s.create_or_update(request.user, institution, acronym, url)
 
     except Exception as ex:
-        messages.error(request, _("Import error: %s, Line: %s") % (ex, str(line + 2)))
+        messages.error(request, _("Import error: %(exception)s, Line: %(line)s") % {'exception': ex, 'line': str(line + 2)})
     else:
         messages.success(request, _("File imported successfully!"))
 
