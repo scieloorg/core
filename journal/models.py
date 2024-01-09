@@ -2294,6 +2294,7 @@ class TitleInDatabase(Orderable, CommonControlField):
     @classmethod
     def create(
         cls,
+        user,
         journal,
         indexed_at=None,
         title=None,
@@ -2305,6 +2306,7 @@ class TitleInDatabase(Orderable, CommonControlField):
             obj.indexed_at = indexed_at or obj.indexed_at
             obj.title = title or obj.title
             obj.identifier = identifier or obj.identifier
+            obj.creator = user or obj.user
             obj.save()
             return obj
         except IntegrityError:
@@ -2317,6 +2319,7 @@ class TitleInDatabase(Orderable, CommonControlField):
     @classmethod
     def create_or_update(
         cls,
+        user,
         journal,
         indexed_at,
         title,
@@ -2331,6 +2334,7 @@ class TitleInDatabase(Orderable, CommonControlField):
             )
         except cls.DoesNotExist:
             return cls.create(
+                user=user,
                 journal=journal, 
                 indexed_at=indexed_at, 
                 title=title, 
@@ -2340,7 +2344,7 @@ class TitleInDatabase(Orderable, CommonControlField):
         return f"{self.journal} | {self.indexed_at} | {self.title} | {self.identifier}"
 
 
-class DataRepositoryURI(Orderable, CommonControlField):
+class DataRepository(Orderable, CommonControlField):
     journal = ParentalKey(Journal,
         on_delete=models.SET_NULL, related_name="data_repository_uri", null=True
     )

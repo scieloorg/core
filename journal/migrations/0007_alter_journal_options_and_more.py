@@ -136,7 +136,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name="DataRepositoryURI",
+            name="DataRepository",
             fields=[
                 (
                     "id",
