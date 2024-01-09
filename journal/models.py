@@ -2302,15 +2302,16 @@ class TitleInDatabase(Orderable, CommonControlField):
     ):
         try:
             obj = cls()
+            obj.creator = user
             obj.journal = journal
             obj.indexed_at = indexed_at or obj.indexed_at
             obj.title = title or obj.title
             obj.identifier = identifier or obj.identifier
-            obj.creator = user or obj.user
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(journal,
+            return cls.get(
+            journal=journal,
             indexed_at=indexed_at, 
             title=title, 
             identifier=identifier
@@ -2323,7 +2324,7 @@ class TitleInDatabase(Orderable, CommonControlField):
         journal,
         indexed_at,
         title,
-        identifier=None,
+        identifier,
     ):
         try:
             return cls.get(
@@ -2340,7 +2341,7 @@ class TitleInDatabase(Orderable, CommonControlField):
                 title=title, 
                 identifier=identifier,
             )
-    def __str__(self) -> str:
+    def __str__(self):
         return f"{self.journal} | {self.indexed_at} | {self.title} | {self.identifier}"
 
 
