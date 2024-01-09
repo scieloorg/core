@@ -4,6 +4,7 @@ from datetime import datetime
 
 from django.db.models import Q
 
+from collection.exceptions import MainCollectionNotFoundError
 from core.models import Language, License
 from institution.models import CopyrightHolder, Owner, Publisher, Sponsor
 from journal.models import (
@@ -27,6 +28,7 @@ from journal.models import (
     SubjectDescriptor,
     WebOfKnowledge,
     WebOfKnowledgeSubjectCategory,
+    TitleInDatabase,
 )
 from location.models import City, CountryName, Location, State, Country
 from reference.models import JournalTitle
@@ -117,9 +119,9 @@ def update_panel_interoperation(
     journal, indexed_at, secs_code, medline_code, medline_short_title, user
 ):
     get_or_create_indexed_at(journal, indexed_at=indexed_at, user=user)
-    journal.secs_code = extract_value(secs_code)
-    journal.medline_code = extract_value(medline_code)
-    journal.medline_short_title = extract_value(medline_short_title)
+    
+    update_title_in_database(user=user, journal=journal, code=secs_code, acronym="secs")
+    update_title_in_database(user=user, journal=journal, code=medline_code, acronym="medline", title=medline_short_title)
 
 
 def update_panel_information(
@@ -261,13 +263,13 @@ def update_panel_website(
     user,
 ):
     journal.journal_url = extract_value(url_of_the_journal)
-    journal.collection_main_url = extract_value(url_of_the_main_collection)
     journal.submission_online_url = extract_value(url_of_submission_online)
     license_type = extract_value(license_of_use)
     if license_type:
         license = License.create_or_update(license_type=license_type, user=user)
         journal.use_license = license
-
+    url_of_the_main_collection = extract_value(url_of_the_main_collection)
+    assign_journal_to_main_collection(journal=journal, url_of_the_main_collection=url_of_the_main_collection)
 
 def update_panel_notes(
     journal,
@@ -735,3 +737,24 @@ def get_or_create_copyright_holder(journal, copyright_holder_name, user):
             )
             copyright_holder_history.journal = journal
             copyright_holder_history.save()
+
+def update_title_in_database(user, journal, code, acronym, title=None):
+    code = extract_value(code)
+    indexed_at = IndexedAt.objects.get(acronym__iexact=acronym)
+    if not title:
+        title = journal.title
+    else:
+        title = extract_value(title)    
+    create_or_update_title_in_database(user=user, journal=journal, indexed_at=indexed_at, identifier=code, title=title)
+
+def create_or_update_title_in_database(user, journal, indexed_at, title, identifier):
+    TitleInDatabase.create_or_update(user=user, journal=journal, indexed_at=indexed_at, title=title, identifier=identifier)
+
+def assign_journal_to_main_collection(journal, url_of_the_main_collection):
+    if url_of_the_main_collection:
+        try:
+            cleaned_domain_query = url_of_the_main_collection.replace("http://", "").replace("https://", "") 
+            collection = Collection.objects.get(domain=cleaned_domain_query)
+            journal.main_collection = collection
+        except (Collection.DoesNotExist, ValueError):
+            raise MainCollectionNotFoundError()

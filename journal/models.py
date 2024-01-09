@@ -46,6 +46,7 @@ from journal.exceptions import (
     StandardCreationOrUpdateError,
     SubjectCreationOrUpdateError,
     WosdbCreationOrUpdateError,
+    TitleInDatabaseCreationOrUpdateError,
 )
 from location.models import Location
 from reference.models import JournalTitle
@@ -323,7 +324,9 @@ class Journal(CommonControlField, ClusterableModel):
     )
     title = models.TextField(_("Journal Title"), null=True, blank=True)
     short_title = models.TextField(_("Short Title"), null=True, blank=True)
-    other_titles = models.ManyToManyField(JournalTitle, verbose_name=_("Other titles"), blank=True)
+    other_titles = models.ManyToManyField(
+        JournalTitle, verbose_name=_("Other titles"), blank=True
+    )
     logo = models.ForeignKey(
         "wagtailimages.Image",
         on_delete=models.SET_NULL,
@@ -359,10 +362,12 @@ class Journal(CommonControlField, ClusterableModel):
             )
         ),
     )
-    collection_main_url = models.URLField(
-        _("Collection Main Url"),
+    main_collection = models.ForeignKey(
+        Collection,
+        verbose_name=_("Main Collection"),
         null=True,
         blank=True,
+        on_delete=models.SET_NULL,
     )
     frequency = models.CharField(
         _("Frequency"),
@@ -470,21 +475,6 @@ class Journal(CommonControlField, ClusterableModel):
         verbose_name=_("Additional Index At"),
         blank=True,
     )
-    secs_code = models.TextField(
-        _("Secs Code"),
-        null=True,
-        blank=True,
-    )
-    medline_code = models.TextField(
-        _("Medline Code"),
-        null=True,
-        blank=True,
-    )
-    medline_short_title = models.TextField(
-        _("Medline Title"),
-        null=True,
-        blank=True,
-    )  # (no xml é abbrev-journal-title do tipo nlm-title)
     journal_url = models.URLField(
         _("Journal URL"),
         null=True,
@@ -554,7 +544,6 @@ class Journal(CommonControlField, ClusterableModel):
         help_text=_(
             "For compound surnames, create clear identification [uppercase, bold, and/or hyphen]"
         ),
-        
     )
     manuscript_length = models.IntegerField(
         blank=True,
@@ -567,7 +556,7 @@ class Journal(CommonControlField, ClusterableModel):
         blank=True,
     )
     digital_pa = models.ManyToManyField(
-        "DigitalPreservationAgency", 
+        "DigitalPreservationAgency",
         blank=True,
         verbose_name=_("DigitalPreservationAgency"),
     )
@@ -582,22 +571,19 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("title"),
         FieldPanel("short_title"),
         AutocompletePanel("other_titles"),
-        FieldPanel("secs_code"),
-        FieldPanel("medline_code"),
-        FieldPanel("medline_short_title"),
     ]
 
     panels_scope_and_about = [
+        AutocompletePanel("indexed_at"),
+        AutocompletePanel("additional_indexed_at"),
+        FieldPanel("subject"),
+        AutocompletePanel("subject_descriptor"),
+        InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
+        FieldPanel("wos_db"),
+        AutocompletePanel("wos_area"),
         InlinePanel("mission", label=_("Mission"), classname="collapsed"),
         InlinePanel("history", label=_("Brief History"), classname="collapsed"),
         InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
-        InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
-        AutocompletePanel("indexed_at"),
-        AutocompletePanel("additional_indexed_at"),
-        AutocompletePanel("subject_descriptor"),
-        FieldPanel("subject"),
-        FieldPanel("wos_db"),
-        AutocompletePanel("wos_area"),
     ]
 
     panels_institutions = [
@@ -619,7 +605,8 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("logo", heading=_("Logo")),
         FieldPanel("journal_url"),
         FieldPanel("submission_online_url"),
-        FieldPanel("collection_main_url"),
+        FieldPanel("main_collection"),
+        InlinePanel("title_in_database"),
         InlinePanel("journalsocialnetwork", label=_("Social Network")),
         FieldPanel("frequency"),
         FieldPanel("publishing_model"),
@@ -640,18 +627,19 @@ class Journal(CommonControlField, ClusterableModel):
     ]
 
     panels_policy = [
-        InlinePanel("ethics", 
-        label=_("Ethics"), 
-        classname="collapsed",
-        ),
         InlinePanel(
-            "ecommittee", 
-            label=_("Ethics Committee"), 
+            "ethics",
+            label=_("Ethics"),
             classname="collapsed",
         ),
         InlinePanel(
-            "copyright", 
-            label=_("Copyright"), 
+            "ecommittee",
+            label=_("Ethics Committee"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "copyright",
+            label=_("Copyright"),
             classname="collapsed",
         ),
         InlinePanel(
@@ -697,7 +685,6 @@ class Journal(CommonControlField, ClusterableModel):
         ),
     ]
     panels_notes = [InlinePanel("annotation", label=_("Notes"), classname="collapsed")]
-    
 
     panels_legacy_compatibility_fields = [
         FieldPanel("alphabet"),
@@ -782,13 +769,16 @@ class Journal(CommonControlField, ClusterableModel):
             ObjectList(
                 panels_legacy_compatibility_fields, heading=_("Legacy Compatibility")
             ),
-            ObjectList(panels_instructions_for_authors, heading=_("Instructions for Authors")),
+            ObjectList(
+                panels_instructions_for_authors, heading=_("Instructions for Authors")
+            ),
         ]
     )
 
     class Meta:
         verbose_name = _("Journal")
         verbose_name_plural = _("Journals")
+        ordering = ("title",)
         indexes = [
             models.Index(
                 fields=[
@@ -1004,7 +994,7 @@ class SponsorHistory(Orderable, BaseHistoryItem):
     )
     institution = models.ForeignKey(
         Sponsor,
-        on_delete=models.SET_NULL, 
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
@@ -1435,7 +1425,10 @@ class AdditionalInformation(Orderable, RichTextWithLanguage, CommonControlField)
 
 class DigitalPreservation(ClusterableModel, RichTextWithLanguage, CommonControlField):
     journal = ParentalKey(
-        Journal, on_delete=models.SET_NULL, related_name="digital_preservation", null=True
+        Journal,
+        on_delete=models.SET_NULL,
+        related_name="digital_preservation",
+        null=True,
     )
 
 
@@ -1444,17 +1437,20 @@ class Ethics(ClusterableModel, RichTextWithLanguage, CommonControlField):
         Journal, on_delete=models.SET_NULL, related_name="ethics", null=True
     )
 
-class ArticleSubmissionFormatCheckList(ClusterableModel, RichTextWithLanguage, CommonControlField):
+
+class ArticleSubmissionFormatCheckList(
+    ClusterableModel, RichTextWithLanguage, CommonControlField
+):
     rich_text = RichTextField(
-        _("Rich Text"), 
-        null=True, 
+        _("Rich Text"),
+        null=True,
         blank=True,
-        help_text=_("Descreva o teim do check list")
+        help_text=_("Descreva o teim do check list"),
     )
 
     def __str__(self):
-        remove_tags = re.compile('<.*?>')
-        return re.sub(remove_tags, '', self.rich_text)
+        remove_tags = re.compile("<.*?>")
+        return re.sub(remove_tags, "", self.rich_text)
 
 
 class ThematicAreaJournal(Orderable, CommonControlField):
@@ -1491,7 +1487,13 @@ class DigitalPreservationAgency(CommonControlField):
     class Meta:
         verbose_name = "Digitial Preservation Agency"
         verbose_name_plural = "Digital Preservation Agencies"
-        unique_together = [("name", "acronym", "url",)]
+        unique_together = [
+            (
+                "name",
+                "acronym",
+                "url",
+            )
+        ]
         indexes = [
             models.Index(
                 fields=[
@@ -1503,12 +1505,13 @@ class DigitalPreservationAgency(CommonControlField):
                     "url",
                 ]
             ),
-            
         ]
 
     @classmethod
     def load(cls, user):
-        with open("./journal/fixture/digital_preservation_agencies.csv", "r") as csvfile:
+        with open(
+            "./journal/fixture/digital_preservation_agencies.csv", "r"
+        ) as csvfile:
             digital_pa = csv.DictReader(
                 csvfile, fieldnames=["name", "acronym", "url"], delimiter=";"
             )
@@ -1521,16 +1524,18 @@ class DigitalPreservationAgency(CommonControlField):
                     url=row["url"],
                     user=user,
                 )
-    
+
     @classmethod
     def get(
         cls,
         name,
         url,
         acronym,
-        ):
+    ):
         if not name or not url:
-            raise ValueError("DigitalPreservationAgency.get requires name or url parameter")
+            raise ValueError(
+                "DigitalPreservationAgency.get requires name or url parameter"
+            )
         return cls.objects.get(name=name, url=url, acronym=acronym)
 
     @classmethod
@@ -1700,7 +1705,12 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
 
 class JournalParallelTitle(TextWithLang):
     official_journal = ParentalKey(
-        OfficialJournal, null=True, blank=True, on_delete=models.SET_NULL, related_name="parallel_title")
+        OfficialJournal,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="parallel_title",
+    )
 
     panels = [
         FieldPanel("text"),
@@ -1716,7 +1726,9 @@ class JournalParallelTitle(TextWithLang):
     @classmethod
     def create_or_update(cls, official_journal, text, language=None):
         if language:
-            for item in official_journal.parallel_titles.filter(language=language).iterator():
+            for item in official_journal.parallel_titles.filter(
+                language=language
+            ).iterator():
                 item.delete()
                 break
         obj = cls()
@@ -1940,24 +1952,24 @@ class IndexedAt(CommonControlField):
     class Meta:
         ordering = ["name"]
 
-
     @classmethod
     def load(cls, user):
-        if not cls.objects.exists():
-            with open("./journal/fixture/index_at.csv", "r") as csvfile:
-                indexed_at = csv.DictReader(
-                    csvfile, fieldnames=["name", "acronym", "url", "type", "description"], delimiter=","
+        with open("./journal/fixture/index_at.csv", "r") as csvfile:
+            indexed_at = csv.DictReader(
+                csvfile,
+                fieldnames=["name", "acronym", "url", "type", "description"],
+                delimiter=",",
+            )
+            for row in indexed_at:
+                logging.info(row)
+                cls.create_or_update(
+                    name=row["name"],
+                    acronym=row["acronym"],
+                    url=row["url"],
+                    type=row["type"],
+                    description=row["description"],
+                    user=user,
                 )
-                for row in indexed_at:
-                    logging.info(row)
-                    cls.create_or_update(
-                        name=row["name"],
-                        acronym=row["acronym"],
-                        url=row["url"],
-                        type=row["type"],
-                        description=row["description"],
-                        user=user,
-                    )
 
     @classmethod
     def get(
@@ -1968,7 +1980,7 @@ class IndexedAt(CommonControlField):
         if name:
             return cls.objects.get(name=name)
         if acronym:
-            return cls.objects.get(acronym)
+            return cls.objects.get(acronym__iexact=acronym)
         raise Exception("IndexedAt.get requires name or acronym paramets")
 
     @classmethod
@@ -2265,3 +2277,120 @@ class AMJournal(CommonControlField):
         obj.save()
 
         return obj
+
+
+class TitleInDatabase(Orderable, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="title_in_database", null=True
+    )
+    indexed_at = models.ForeignKey(
+        IndexedAt,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Indexed At"),
+        blank=True,
+        null=True,
+    )
+    title = models.TextField(
+        verbose_name=_("Title"),
+        null=True,
+        blank=True,
+    )
+    identifier = models.CharField(
+        max_length=64,
+        verbose_name=_("Identifier"),
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = _("Title in Database")
+        verbose_name_plural = _("Title in databases")
+        unique_together = [
+            (
+                "journal",
+                "indexed_at",
+            )
+        ]
+
+    @classmethod
+    def get(
+        cls,
+        journal,
+        indexed_at,
+    ):
+        if not journal and not indexed_at:
+            raise TitleInDatabaseCreationOrUpdateError(
+                "TitleInDatabase.get requires journal, indexed_at e title parameter."
+            )
+        return cls.objects.get(
+            journal=journal,
+            indexed_at=indexed_at,
+        )
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        journal,
+        indexed_at=None,
+        title=None,
+        identifier=None,
+    ):
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.journal = journal
+            obj.indexed_at = indexed_at or obj.indexed_at
+            obj.title = title or obj.title
+            obj.identifier = identifier or obj.identifier
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(
+                journal=journal,
+                indexed_at=indexed_at,
+                title=title,
+                identifier=identifier,
+            )
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        journal,
+        indexed_at,
+        title,
+        identifier,
+    ):
+        try:
+            obj = cls.get(journal=journal, indexed_at=indexed_at)
+            obj.title = title or obj.title
+            obj.identifier = identifier or obj.identifier
+            obj.updated_by = user
+            obj.save()
+            return obj
+        except cls.DoesNotExist:
+            return cls.create(
+                user=user,
+                journal=journal,
+                indexed_at=indexed_at,
+                title=title,
+                identifier=identifier,
+            )
+
+    def __str__(self):
+        return f"{self.indexed_at} | {self.title} | {self.identifier}"
+
+
+class DataRepository(Orderable, CommonControlField):
+    journal = ParentalKey(
+        Journal,
+        on_delete=models.SET_NULL,
+        related_name="data_repository_uri",
+        null=True,
+    )
+    uri = models.URLField(
+        blank=True,
+        null=True,
+        help_text=_("Enter the URI of the data repository."),
+    )

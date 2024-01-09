@@ -77,6 +77,7 @@ class JournalAdmin(ModelAdmin):
         "use_license",
         "publishing_model",
         "subject",
+        "main_collection",
     )
     search_fields = (
         "title",
