@@ -18,6 +18,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterUniqueTogether(
             name="titleindatabase",
-            unique_together={("journal", "indexed_at", "journal")},
+            unique_together={("journal", "indexed_at",)},
         ),
     ]
