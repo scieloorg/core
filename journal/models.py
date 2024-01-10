@@ -1650,7 +1650,7 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         FieldPanel("issn_scielo"),
         FieldPanel("status"),
         AutocompletePanel("collection"),
-        InlinePanel("journal_history"),
+        InlinePanel("journal_history", label=_("Journal History"), classname="collapsed"),
     ]
 
     @classmethod
