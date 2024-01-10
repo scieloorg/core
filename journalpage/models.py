@@ -22,15 +22,15 @@ class JournalPage(RoutablePageMixin, Page):
         context['current_language_name'] = language_info['name']
         return context
 
-    @re_path(r"^(?P<acron>[\w-]+)/$", name="bibliographic")
-    def journal_bibliographic_info_page(self, request, acron):
+    @re_path(r"^(?P<collection_acron3>[\w-]+)/(?P<acron>[\w-]+)/$", name="bibliographic")
+    def journal_bibliographic_info_page(self, request, collection_acron3, acron):
         language = request.LANGUAGE_CODE
         context = self.get_context(request)
         page = context['self']
         language = Language.get_or_create(code2=language)
 
         try:
-            journal = Journal.objects.get(scielojournal__journal_acron=acron)
+            journal = Journal.objects.get(scielojournal__journal_acron=acron, scielojournal__collection__acron3=collection_acron3)
         except Journal.DoesNotExist:
             return HttpResponseNotFound()
         
