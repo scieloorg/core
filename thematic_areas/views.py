@@ -93,9 +93,7 @@ def generic_import_file(request):
                 the_area.creator = request.user
                 the_area.save()
             except Exception as ex:
-                messages.error(
-                    request, _("Import error: %s, Line: %s") % (ex, str(line + 2))
-                )
+                messages.error(request, _("Import error: %(exception)s, Line: %(line)s") % {'exception': ex, 'line': str(line + 2)})
         else:
             messages.success(request, _("File imported successfully!"))
 
@@ -192,7 +190,7 @@ def import_file(request):
                 ta.save()
 
     except Exception as ex:
-        messages.error(request, _("Import error: %s, Line: %s") % (ex, str(line + 2)))
+        messages.error(request, _("Import error: %(exception)s, Line: %(line)s") % {'exception': ex, 'line': str(line + 2)})
     else:
         messages.success(request, _("File imported successfully!"))
 

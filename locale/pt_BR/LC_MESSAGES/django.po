@@ -1,0 +1,5292 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-09 19:06+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: altmetric/choices.py:4 article/wagtail_hooks.py:26
+msgid "Article"
+msgstr ""
+
+#: altmetric/choices.py:5 article/models.py:36 issue/models.py:32
+#: journal/models.py:779 journal/models.py:1601
+msgid "Journal"
+msgstr ""
+
+#: altmetric/models.py:10 journal/models.py:1608
+msgid "ISSN SciELO"
+msgstr ""
+
+#: altmetric/models.py:13
+msgid "Extraction Date"
+msgstr ""
+
+#: altmetric/models.py:16
+msgid "Resource Type"
+msgstr ""
+
+#: altmetric/models.py:22 journal/models.py:2247 report/models.py:46
+msgid "JSON File"
+msgstr ""
+
+#: altmetric/wagtail_hooks.py:13
+msgid "Altmetric"
+msgstr ""
+
+#: article/models.py:32
+msgid "PID V2"
+msgstr ""
+
+#: article/models.py:33
+msgid "PID V3"
+msgstr ""
+
+#: article/models.py:43
+msgid "pub date day"
+msgstr ""
+
+#: article/models.py:50
+msgid "pub date month"
+msgstr ""
+
+#: article/models.py:60
+msgid "Fundings"
+msgstr ""
+
+#: article/models.py:79 book/models.py:71 journal/models.py:591
+msgid "Publisher"
+msgstr ""
+
+#: article/models.py:103
+msgid "Abstract"
+msgstr ""
+
+#: article/models.py:117 book/models.py:139
+msgid "Identification"
+msgstr ""
+
+#: article/models.py:118
+msgid "Data with language"
+msgstr ""
+
+#: article/models.py:119 researcher/wagtail_hooks.py:101
+msgid "Researchers"
+msgstr ""
+
+#: article/models.py:120
+msgid "Publisher and Sponsors"
+msgstr ""
+
+#: article/models.py:220
+msgid "Award ID"
+msgstr ""
+
+#: article/models.py:318 core/models.py:188
+msgid "Text"
+msgstr ""
+
+#: article/models.py:399 article/models.py:475 collection/models.py:57
+#: core/models.py:29
+msgid "Code"
+msgstr ""
+
+#: article/models.py:513
+msgid "Count"
+msgstr ""
+
+#: article/models.py:517 book/models.py:57 book/models.py:225
+#: core/models.py:144 core/models.py:192 core/models.py:209 core/models.py:253
+#: core/models.py:525 doi/models.py:18 thematic_areas/models.py:19
+msgid "Language"
+msgstr ""
+
+#: article/models.py:570 article/wagtail_hooks.py:45
+msgid "SubArticle"
+msgstr ""
+
+#: article/models.py:571
+msgid "SubArticles"
+msgstr ""
+
+#: article/tasks.py:36
+msgid "load_article"
+msgstr ""
+
+#: article/tasks.py:65
+msgid "load_articles"
+msgstr ""
+
+#: article/tasks.py:101
+msgid "load_preprints"
+msgstr ""
+
+#: article/wagtail_hooks.py:69
+msgid "Article Funding"
+msgstr ""
+
+#: article/wagtail_hooks.py:86
+msgid "Articles"
+msgstr ""
+
+#: book/models.py:45 book/models.py:219 journal/models.py:2294
+#: report/models.py:34
+msgid "Title"
+msgstr ""
+
+#: book/models.py:46
+msgid "Synopsis"
+msgstr ""
+
+#: book/models.py:48
+msgid "Electronic ISBN"
+msgstr ""
+
+#: book/models.py:50 core/models.py:270
+msgid "Year"
+msgstr ""
+
+#: book/models.py:53
+msgid "Authors"
+msgstr ""
+
+#: book/models.py:64
+msgid "Localization"
+msgstr ""
+
+#: book/models.py:78
+msgid "SciELO Book"
+msgstr ""
+
+#: book/models.py:79
+msgid "SciELO Books"
+msgstr ""
+
+#: book/models.py:134 book/models.py:238
+msgid "Chapter"
+msgstr ""
+
+#: book/models.py:140 book/models.py:239
+msgid "Chapters"
+msgstr ""
+
+#: book/models.py:221
+msgid "Data de publicação"
+msgstr ""
+
+#: book/wagtail_hooks.py:22 book/wagtail_hooks.py:45 collection/choices.py:14
+msgid "Books"
+msgstr ""
+
+#: collection/choices.py:4
+msgid "Certified"
+msgstr ""
+
+#: collection/choices.py:5
+msgid "Development"
+msgstr ""
+
+#: collection/choices.py:6
+msgid "Diffusion"
+msgstr ""
+
+#: collection/choices.py:7
+msgid "Independent"
+msgstr ""
+
+#: collection/choices.py:11 journal/models.py:780 journal/wagtail_hooks.py:62
+#: journal/wagtail_hooks.py:124
+msgid "Journals"
+msgstr ""
+
+#: collection/choices.py:12
+msgid "Preprints"
+msgstr ""
+
+#: collection/choices.py:13
+msgid "Repositories"
+msgstr ""
+
+#: collection/choices.py:15
+msgid "Data repository"
+msgstr ""
+
+#: collection/models.py:52
+msgid "Acronym with 3 chars"
+msgstr ""
+
+#: collection/models.py:55
+msgid "Acronym with 2 chars"
+msgstr ""
+
+#: collection/models.py:58
+msgid "Domain"
+msgstr ""
+
+#: collection/models.py:62
+msgid "Main name"
+msgstr ""
+
+#: collection/models.py:64 doi/models.py:80 journal/models.py:1611
+msgid "Status"
+msgstr ""
+
+#: collection/models.py:66
+msgid "Has analytics"
+msgstr ""
+
+#: collection/models.py:69
+msgid "Collection Type"
+msgstr ""
+
+#: collection/models.py:71
+msgid "Is active"
+msgstr ""
+
+#: collection/models.py:72
+msgid "Foundation data"
+msgstr ""
+
+#: collection/models.py:94 collection/wagtail_hooks.py:19
+#: journal/models.py:1593 journal/models.py:2234
+msgid "Collection"
+msgstr ""
+
+#: collection/models.py:95
+msgid "Collections"
+msgstr ""
+
+#: core/choices.py:192
+msgid "Editor-Chefe"
+msgstr ""
+
+#: core/choices.py:193
+msgid "Editor(es) Executivo"
+msgstr ""
+
+#: core/choices.py:194
+msgid "Editor(es) Associados ou de Seção"
+msgstr ""
+
+#: core/choices.py:195
+msgid "Equipe Técnica"
+msgstr ""
+
+#: core/choices.py:199
+msgid "January"
+msgstr ""
+
+#: core/choices.py:200
+msgid "February"
+msgstr ""
+
+#: core/choices.py:201
+msgid "March"
+msgstr ""
+
+#: core/choices.py:202
+msgid "April"
+msgstr ""
+
+#: core/choices.py:203
+msgid "May"
+msgstr ""
+
+#: core/choices.py:204
+msgid "June"
+msgstr ""
+
+#: core/choices.py:205
+msgid "July"
+msgstr ""
+
+#: core/choices.py:206
+msgid "August"
+msgstr ""
+
+#: core/choices.py:207
+msgid "September"
+msgstr ""
+
+#: core/choices.py:208
+msgid "October"
+msgstr ""
+
+#: core/choices.py:209
+msgid "November"
+msgstr ""
+
+#: core/choices.py:210
+msgid "December"
+msgstr ""
+
+#: core/choices.py:216
+msgid "by"
+msgstr ""
+
+#: core/choices.py:217
+msgid "by-sa"
+msgstr ""
+
+#: core/choices.py:218
+msgid "by-nc"
+msgstr ""
+
+#: core/choices.py:219
+msgid "by-nc-sa"
+msgstr ""
+
+#: core/choices.py:220
+msgid "by-nd"
+msgstr ""
+
+#: core/choices.py:221
+msgid "by-nc-nd"
+msgstr ""
+
+#: core/models.py:31
+msgid "Sex"
+msgstr ""
+
+#: core/models.py:96 tracker/models.py:51
+msgid "Creation date"
+msgstr ""
+
+#: core/models.py:99
+msgid "Last update date"
+msgstr ""
+
+#: core/models.py:104
+msgid "Creator"
+msgstr ""
+
+#: core/models.py:114
+msgid "Updater"
+msgstr ""
+
+#: core/models.py:135
+msgid "Language Name"
+msgstr ""
+
+#: core/models.py:136
+msgid "Language code 2"
+msgstr ""
+
+#: core/models.py:145
+msgid "Languages"
+msgstr ""
+
+#: core/models.py:204 core/models.py:249 journal/models.py:1445
+msgid "Rich Text"
+msgstr ""
+
+#: core/models.py:205
+msgid "Plain Text"
+msgstr ""
+
+#: core/models.py:271
+msgid "Month"
+msgstr ""
+
+#: core/models.py:272
+msgid "Day"
+msgstr ""
+
+#: core/models.py:303 core/models.py:384 issue/models.py:91
+msgid "License"
+msgstr ""
+
+#: core/models.py:304 core/models.py:385
+msgid "Licenses"
+msgstr ""
+
+#: core/models.py:517 journal/models.py:883 report/models.py:42
+#: src/packtools/packtools/webapp/forms.py:11
+msgid "File"
+msgstr ""
+
+#: core/templates/account/account_inactive.html:5
+#: core/templates/account/account_inactive.html:8
+msgid "Account Inactive"
+msgstr ""
+
+#: core/templates/account/account_inactive.html:10
+msgid "This account is inactive."
+msgstr ""
+
+#: core/templates/account/email.html:7
+msgid "Account"
+msgstr ""
+
+#: core/templates/account/email.html:10
+msgid "E-mail Addresses"
+msgstr ""
+
+#: core/templates/account/email.html:13
+msgid "The following e-mail addresses are associated with your account:"
+msgstr ""
+
+#: core/templates/account/email.html:27
+msgid "Verified"
+msgstr ""
+
+#: core/templates/account/email.html:29
+msgid "Unverified"
+msgstr ""
+
+#: core/templates/account/email.html:31
+msgid "Primary"
+msgstr ""
+
+#: core/templates/account/email.html:37
+msgid "Make Primary"
+msgstr ""
+
+#: core/templates/account/email.html:38
+msgid "Re-send Verification"
+msgstr ""
+
+#: core/templates/account/email.html:39
+msgid "Remove"
+msgstr ""
+
+#: core/templates/account/email.html:46
+msgid "Warning:"
+msgstr ""
+
+#: core/templates/account/email.html:46
+msgid ""
+"You currently do not have any e-mail address set up. You should really add "
+"an e-mail address so you can receive notifications, reset your password, etc."
+msgstr ""
+
+#: core/templates/account/email.html:51
+msgid "Add E-mail Address"
+msgstr ""
+
+#: core/templates/account/email.html:56
+msgid "Add E-mail"
+msgstr ""
+
+#: core/templates/account/email.html:66
+msgid "Do you really want to remove the selected e-mail address?"
+msgstr ""
+
+#: core/templates/account/email_confirm.html:6
+#: core/templates/account/email_confirm.html:10
+msgid "Confirm E-mail Address"
+msgstr ""
+
+#: core/templates/account/email_confirm.html:16
+#, python-format
+msgid ""
+"Please confirm that <a href=\"mailto:%(email)s\">%(email)s</a> is an e-mail "
+"address for user %(user_display)s."
+msgstr ""
+
+#: core/templates/account/email_confirm.html:20
+msgid "Confirm"
+msgstr ""
+
+#: core/templates/account/email_confirm.html:27
+#, python-format
+msgid ""
+"This e-mail confirmation link expired or is invalid. Please <a href="
+"\"%(email_url)s\">issue a new e-mail confirmation request</a>."
+msgstr ""
+
+#: core/templates/account/login.html:7 core/templates/account/login.html:11
+#: core/templates/account/login.html:56
+msgid "Sign In"
+msgstr ""
+
+#: core/templates/account/login.html:17
+msgid "Please sign in with one of your existing third party accounts:"
+msgstr ""
+
+#: core/templates/account/login.html:19
+#, python-format
+msgid ""
+"Or, <a href=\"%(signup_url)s\">sign up</a> for a %(site_name)s account and "
+"sign in below:"
+msgstr ""
+
+#: core/templates/account/login.html:32
+msgid "or"
+msgstr ""
+
+#: core/templates/account/login.html:41
+#, python-format
+msgid ""
+"If you have not created an account yet, then please <a href=\"%(signup_url)s"
+"\">sign up</a> first."
+msgstr ""
+
+#: core/templates/account/login.html:55
+msgid "Forgot Password?"
+msgstr ""
+
+#: core/templates/account/logout.html:5 core/templates/account/logout.html:8
+#: core/templates/account/logout.html:17
+msgid "Sign Out"
+msgstr ""
+
+#: core/templates/account/logout.html:10
+msgid "Are you sure you want to sign out?"
+msgstr ""
+
+#: core/templates/account/password_change.html:6
+#: core/templates/account/password_change.html:9
+#: core/templates/account/password_change.html:14
+#: core/templates/account/password_reset_from_key.html:5
+#: core/templates/account/password_reset_from_key.html:8
+#: core/templates/account/password_reset_from_key_done.html:4
+#: core/templates/account/password_reset_from_key_done.html:7
+msgid "Change Password"
+msgstr ""
+
+#: core/templates/account/password_reset.html:7
+#: core/templates/account/password_reset.html:11
+#: core/templates/account/password_reset_done.html:6
+#: core/templates/account/password_reset_done.html:9
+msgid "Password Reset"
+msgstr ""
+
+#: core/templates/account/password_reset.html:16
+msgid ""
+"Forgotten your password? Enter your e-mail address below, and we'll send you "
+"an e-mail allowing you to reset it."
+msgstr ""
+
+#: core/templates/account/password_reset.html:21
+msgid "Reset My Password"
+msgstr ""
+
+#: core/templates/account/password_reset.html:24
+msgid "Please contact us if you have any trouble resetting your password."
+msgstr ""
+
+#: core/templates/account/password_reset_done.html:15
+msgid ""
+"We have sent you an e-mail. Please contact us if you do not receive it "
+"within a few minutes."
+msgstr ""
+
+#: core/templates/account/password_reset_from_key.html:8
+msgid "Bad Token"
+msgstr ""
+
+#: core/templates/account/password_reset_from_key.html:12
+#, python-format
+msgid ""
+"The password reset link was invalid, possibly because it has already been "
+"used.  Please request a <a href=\"%(passwd_reset_url)s\">new password reset</"
+"a>."
+msgstr ""
+
+#: core/templates/account/password_reset_from_key.html:18
+msgid "change password"
+msgstr ""
+
+#: core/templates/account/password_reset_from_key.html:21
+#: core/templates/account/password_reset_from_key_done.html:8
+msgid "Your password is now changed."
+msgstr ""
+
+#: core/templates/account/password_set.html:6
+#: core/templates/account/password_set.html:9
+#: core/templates/account/password_set.html:14
+msgid "Set Password"
+msgstr ""
+
+#: core/templates/account/signup.html:6
+msgid "Signup"
+msgstr ""
+
+#: core/templates/account/signup.html:9 core/templates/account/signup.html:19
+msgid "Sign Up"
+msgstr ""
+
+#: core/templates/account/signup.html:11
+#, python-format
+msgid ""
+"Already have an account? Then please <a href=\"%(login_url)s\">sign in</a>."
+msgstr ""
+
+#: core/templates/account/signup_closed.html:5
+#: core/templates/account/signup_closed.html:8
+msgid "Sign Up Closed"
+msgstr ""
+
+#: core/templates/account/signup_closed.html:10
+msgid "We are sorry, but the sign up is currently closed."
+msgstr ""
+
+#: core/templates/account/verification_sent.html:5
+#: core/templates/account/verification_sent.html:8
+#: core/templates/account/verified_email_required.html:5
+#: core/templates/account/verified_email_required.html:8
+msgid "Verify Your E-mail Address"
+msgstr ""
+
+#: core/templates/account/verification_sent.html:10
+msgid ""
+"We have sent an e-mail to you for verification. Follow the link provided to "
+"finalize the signup process. Please contact us if you do not receive it "
+"within a few minutes."
+msgstr ""
+
+#: core/templates/account/verified_email_required.html:12
+msgid ""
+"This part of the site requires us to verify that\n"
+"you are who you claim to be. For this purpose, we require that you\n"
+"verify ownership of your e-mail address. "
+msgstr ""
+
+#: core/templates/account/verified_email_required.html:16
+msgid ""
+"We have sent an e-mail to you for\n"
+"verification. Please click on the link inside this e-mail. Please\n"
+"contact us if you do not receive it within a few minutes."
+msgstr ""
+
+#: core/templates/account/verified_email_required.html:20
+#, python-format
+msgid ""
+"<strong>Note:</strong> you can still <a href=\"%(email_url)s\">change your e-"
+"mail address</a>."
+msgstr ""
+
+#: core/templates/home/welcome_page.html:53
+#: core/templates/home/welcome_page.html:56
+msgid "View the release notes"
+msgstr ""
+
+#: core/templates/home/welcome_page.html:68
+msgid "Welcome to your SciELO Content Manager"
+msgstr ""
+
+#: core/templates/home/welcome_page.html:69
+msgid ""
+"Please feel free to <a href=\"https://github.com/wagtail/wagtail/wiki/Slack"
+"\">join our community on Slack</a>, or get started with one of the links "
+"below."
+msgstr ""
+
+#: core/templates/home/welcome_page.html:77
+msgid "Wagtail Documentation"
+msgstr ""
+
+#: core/templates/home/welcome_page.html:78
+msgid "Topics, references, & how-tos"
+msgstr ""
+
+#: core/templates/home/welcome_page.html:85
+msgid "Tutorial"
+msgstr ""
+
+#: core/templates/home/welcome_page.html:86
+msgid "Build your first Wagtail site"
+msgstr ""
+
+#: core/templates/home/welcome_page.html:93
+msgid "Admin Interface"
+msgstr ""
+
+#: core/templates/home/welcome_page.html:94
+msgid "Create your superuser first!"
+msgstr ""
+
+#: core/templates/wagtailadmin/home.html:7
+msgid "Welcome to the administrative area of "
+msgstr ""
+
+#: core/templates/wagtailadmin/login.html:7
+msgid "Administrative area of "
+msgstr ""
+
+#: core/templates/wagtailadmin/summary_items/article_summary_item.html:6
+#, python-format
+msgid ""
+"<span>%(total_article)s</span> Article <span class=\"visuallyhidden"
+"\">created in %(site_name)s</span>"
+msgid_plural ""
+"<span>%(total_article)s</span> Articles <span class=\"visuallyhidden"
+"\">created in %(site_name)s</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#: core/templates/wagtailadmin/summary_items/collection_summary_item.html:6
+#, python-format
+msgid ""
+"<span>%(total_collection)s</span> Collection <span class=\"visuallyhidden"
+"\">created in %(site_name)s</span>"
+msgid_plural ""
+"<span>%(total_collection)s</span> Collections <span class=\"visuallyhidden"
+"\">created in %(site_name)s</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#: core/templates/wagtailadmin/summary_items/journal_summary_item.html:6
+#, python-format
+msgid ""
+"<span>%(total_journal)s</span> Journal <span class=\"visuallyhidden"
+"\">created in %(site_name)s</span>"
+msgid_plural ""
+"<span>%(total_journal)s</span> Journals <span class=\"visuallyhidden"
+"\">created in %(site_name)s</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#: core/users/admin.py:17
+msgid "Personal info"
+msgstr ""
+
+#: core/users/admin.py:19
+msgid "Permissions"
+msgstr ""
+
+#: core/users/admin.py:30
+msgid "Important dates"
+msgstr ""
+
+#: core/users/apps.py:7
+msgid "Users"
+msgstr ""
+
+#: core/users/forms.py:25 core/users/tests/test_forms.py:39
+msgid "This username has already been taken."
+msgstr ""
+
+#: core/users/models.py:15
+msgid "Name of User"
+msgstr ""
+
+#: core/users/views.py:23
+msgid "Information successfully updated"
+msgstr ""
+
+#: core/utils/scheduler.py:61
+msgid "Scheduled task: {}"
+msgstr ""
+
+#: core_settings/models.py:18 core_settings/models.py:19
+msgid "Configuração do site"
+msgstr ""
+
+#: core_settings/models.py:66
+msgid "Site settings"
+msgstr ""
+
+#: core_settings/models.py:67
+msgid "Admin settings"
+msgstr ""
+
+#: doi/choices.py:4
+msgid "DATA_CREATED"
+msgstr ""
+
+#: doi/choices.py:5
+msgid "SUBMITTED"
+msgstr ""
+
+#: doi/choices.py:6
+msgid "QUEUED"
+msgstr ""
+
+#: doi/choices.py:7
+msgid "DEPOSITED"
+msgstr ""
+
+#: doi/models.py:14
+msgid "Value"
+msgstr ""
+
+#: doi/models.py:77
+msgid "Submission Date"
+msgstr ""
+
+#: editorialboard/button_helper.py:19 institution/button_helpers.py:17
+#: journal/button_helper.py:19 location/button_helpers.py:17
+#: thematic_areas/button_helpers.py:19 thematic_areas/button_helpers.py:69
+msgid "Validate"
+msgstr ""
+
+#: editorialboard/button_helper.py:31 institution/button_helpers.py:26
+#: journal/button_helper.py:31 location/button_helpers.py:29
+#: thematic_areas/button_helpers.py:30 thematic_areas/button_helpers.py:79
+msgid "Import"
+msgstr ""
+
+#: editorialboard/choices.py:4 researcher/choices.py:4
+msgid "Declarado por el investigador"
+msgstr ""
+
+#: editorialboard/choices.py:5 researcher/choices.py:5
+msgid "Identificado automáticamente por programa de computador"
+msgstr ""
+
+#: editorialboard/choices.py:6 researcher/choices.py:6
+msgid "Identificado por algun usuario"
+msgstr ""
+
+#: editorialboard/choices.py:14
+msgid "Editor-in-chief"
+msgstr ""
+
+#: editorialboard/choices.py:15
+msgid "Editor"
+msgstr ""
+
+#: editorialboard/choices.py:16
+msgid "Associate editor"
+msgstr ""
+
+#: editorialboard/choices.py:17
+msgid "Technical team"
+msgstr ""
+
+#: editorialboard/models.py:56
+msgid "Member"
+msgstr ""
+
+#: editorialboard/models.py:432 institution/models.py:630
+#: journal/models.py:2023 location/models.py:662 thematic_areas/models.py:97
+#: thematic_areas/models.py:223
+msgid "Is valid?"
+msgstr ""
+
+#: editorialboard/models.py:434 institution/models.py:632
+#: journal/models.py:2025 location/models.py:664 thematic_areas/models.py:103
+#: thematic_areas/models.py:225
+msgid "Number of lines"
+msgstr ""
+
+#: editorialboard/models.py:445
+msgid "Role"
+msgstr ""
+
+#: editorialboard/models.py:448
+msgid "Declared Role"
+msgstr ""
+
+#: editorialboard/views.py:43 institution/views.py:36 journal/views.py:43
+#: location/views.py:36 thematic_areas/views.py:48 thematic_areas/views.py:148
+msgid "Validation error"
+msgstr ""
+
+#: editorialboard/views.py:50 institution/views.py:43 journal/views.py:50
+#: location/views.py:43 thematic_areas/views.py:55 thematic_areas/views.py:155
+#, python-format
+msgid "Validation error: %s"
+msgstr ""
+
+#: editorialboard/views.py:52 institution/views.py:45 journal/views.py:52
+#: location/views.py:45 thematic_areas/views.py:57 thematic_areas/views.py:157
+msgid "File successfully validated!"
+msgstr ""
+
+#: editorialboard/views.py:128
+#, python-format
+msgid "Import error: %s, Line: %s"
+msgstr ""
+
+#: editorialboard/views.py:130 institution/views.py:72 journal/views.py:86
+#: location/views.py:73 thematic_areas/views.py:98 thematic_areas/views.py:195
+msgid "File imported successfully!"
+msgstr ""
+
+#: editorialboard/wagtail_hooks.py:31
+msgid "Editorial Board Member"
+msgstr ""
+
+#: editorialboard/wagtail_hooks.py:77
+msgid "RoleModel"
+msgstr ""
+
+#: editorialboard/wagtail_hooks.py:96
+msgid "EditorialBoard"
+msgstr ""
+
+#: files_storage/controller.py:29 files_storage/controller.py:50
+msgid "Unable to get MinioStorage {} {} {}"
+msgstr ""
+
+#: files_storage/controller.py:82
+msgid "Unable to push file {} {} {} {}"
+msgstr ""
+
+#: files_storage/controller.py:114
+msgid "Unable to push xml content {} {} {} {}"
+msgstr ""
+
+#: files_storage/models.py:14 institution/models.py:642 journal/models.py:274
+#: journal/models.py:1467 journal/models.py:1928 journal/models.py:2035
+msgid "Name"
+msgstr ""
+
+#: files_storage/models.py:15
+msgid "Host"
+msgstr ""
+
+#: files_storage/models.py:16
+msgid "Bucket root"
+msgstr ""
+
+#: files_storage/models.py:17
+msgid "Bucket app subdir"
+msgstr ""
+
+#: files_storage/models.py:18
+msgid "Access key"
+msgstr ""
+
+#: files_storage/models.py:19
+msgid "Secret key"
+msgstr ""
+
+#: files_storage/models.py:21
+msgid "Secure"
+msgstr ""
+
+#: files_storage/models.py:77
+msgid "Basename"
+msgstr ""
+
+#: files_storage/models.py:78
+msgid "URI"
+msgstr ""
+
+#: files_storage/wagtail_hooks.py:18
+msgid "Minio Configuration"
+msgstr ""
+
+#: institution/choices.py:5
+msgid "agência de apoio à pesquisa"
+msgstr ""
+
+#: institution/choices.py:8
+msgid "universidade e instâncias ligadas à universidades"
+msgstr ""
+
+#: institution/choices.py:12
+msgid "empresa ou instituto ligadas ao governo"
+msgstr ""
+
+#: institution/choices.py:14
+msgid "organização privada"
+msgstr ""
+
+#: institution/choices.py:15
+msgid "organização sem fins de lucros"
+msgstr ""
+
+#: institution/choices.py:18
+msgid "sociedade científica, associação pós-graduação, associação profissional"
+msgstr ""
+
+#: institution/choices.py:20
+msgid "outros"
+msgstr ""
+
+#: institution/choices.py:24
+msgid "yes"
+msgstr ""
+
+#: institution/choices.py:25
+msgid "no"
+msgstr ""
+
+#: institution/choices.py:26
+msgid "unknow"
+msgstr ""
+
+#: institution/models.py:27
+msgid "Institution Type"
+msgstr ""
+
+#: institution/models.py:33
+msgid "Organization Level 1"
+msgstr ""
+
+#: institution/models.py:34
+msgid "Organization Level 2"
+msgstr ""
+
+#: institution/models.py:35
+msgid "Organization Level 3"
+msgstr ""
+
+#: institution/models.py:38 journal/models.py:605
+msgid "Logo"
+msgstr ""
+
+#: institution/models.py:355 institution/models.py:381
+msgid "Initial Date"
+msgstr ""
+
+#: institution/models.py:356 institution/models.py:382
+msgid "Final Date"
+msgstr ""
+
+#: institution/models.py:359 institution/models.py:551
+#: institution/wagtail_hooks.py:66
+msgid "Institution"
+msgstr ""
+
+#: institution/models.py:559 location/models.py:365 location/models.py:505
+#: location/wagtail_hooks.py:94
+msgid "Country"
+msgstr ""
+
+#: institution/models.py:643
+msgid "Institution Acronym"
+msgstr ""
+
+#: institution/models.py:645
+msgid "Is official"
+msgstr ""
+
+#: institution/models.py:651
+msgid "Official name"
+msgstr ""
+
+#: institution/views.py:70 journal/views.py:84 location/views.py:71
+#: thematic_areas/views.py:96 thematic_areas/views.py:193
+#, python-format
+msgid "Import error: %(exception)s, Line: %(line)s"
+msgstr ""
+
+#: institution/wagtail_hooks.py:26
+msgid "InstitutionIdentification"
+msgstr ""
+
+#: institution/wagtail_hooks.py:106 journal/models.py:592
+msgid "Sponsor"
+msgstr ""
+
+#: institution/wagtail_hooks.py:141
+msgid "Scimago"
+msgstr ""
+
+#: institution/wagtail_hooks.py:178 journal/models.py:764
+msgid "Institutions"
+msgstr ""
+
+#: issue/models.py:40
+msgid "Issue number"
+msgstr ""
+
+#: issue/models.py:41
+msgid "Issue volume"
+msgstr ""
+
+#: issue/models.py:43
+msgid "Issue season"
+msgstr ""
+
+#: issue/models.py:49
+msgid "Issue year"
+msgstr ""
+
+#: issue/models.py:50
+msgid "Issue month"
+msgstr ""
+
+#: issue/models.py:51
+msgid "Supplement"
+msgstr ""
+
+#: issue/models.py:70
+msgid "Issue title"
+msgstr ""
+
+#: issue/models.py:87 issue/models.py:96
+msgid "Issue"
+msgstr ""
+
+#: issue/models.py:88 journal/models.py:135 journal/models.py:762
+msgid "Titles"
+msgstr ""
+
+#: issue/models.py:89 journal/models.py:513
+msgid "Subtitle"
+msgstr ""
+
+#: issue/models.py:90
+msgid "Summary"
+msgstr ""
+
+#: issue/models.py:97 issue/wagtail_hooks.py:22 issue/wagtail_hooks.py:54
+msgid "Issues"
+msgstr ""
+
+#: issue/models.py:223
+msgid "Issue Title"
+msgstr ""
+
+#: issue/models.py:262
+msgid "TocSection"
+msgstr ""
+
+#: issue/models.py:263
+msgid "TocSections"
+msgstr ""
+
+#: journal/choices.py:19
+msgid "Unknow"
+msgstr ""
+
+#: journal/choices.py:20
+msgid "Current"
+msgstr ""
+
+#: journal/choices.py:21
+msgid "Ceased"
+msgstr ""
+
+#: journal/choices.py:22
+msgid "Reports only"
+msgstr ""
+
+#: journal/choices.py:23
+msgid "Suspended"
+msgstr ""
+
+#: journal/choices.py:27
+msgid "Continuous"
+msgstr ""
+
+#: journal/choices.py:28
+msgid "Undefined"
+msgstr ""
+
+#: journal/choices.py:32
+msgid "Unknown"
+msgstr ""
+
+#: journal/choices.py:33
+msgid "Annual"
+msgstr ""
+
+#: journal/choices.py:34
+msgid "Bimonthly (every two months)"
+msgstr ""
+
+#: journal/choices.py:35
+msgid "Semiweekly (twice a week)"
+msgstr ""
+
+#: journal/choices.py:36
+msgid "Daily"
+msgstr ""
+
+#: journal/choices.py:37
+msgid "Biweekly (every two weeks)"
+msgstr ""
+
+#: journal/choices.py:38
+msgid "Semiannual (twice a year)"
+msgstr ""
+
+#: journal/choices.py:39
+msgid "Biennial (every two years)"
+msgstr ""
+
+#: journal/choices.py:40
+msgid "Triennial (every three years)"
+msgstr ""
+
+#: journal/choices.py:41
+msgid "Three times a week"
+msgstr ""
+
+#: journal/choices.py:42
+msgid "Three times a month"
+msgstr ""
+
+#: journal/choices.py:43
+msgid "Irregular (known to be so)"
+msgstr ""
+
+#: journal/choices.py:44
+msgid "Monthly"
+msgstr ""
+
+#: journal/choices.py:45
+msgid "Quarterly"
+msgstr ""
+
+#: journal/choices.py:46
+msgid "Semimonthly (twice a month)"
+msgstr ""
+
+#: journal/choices.py:47
+msgid "Three times a year"
+msgstr ""
+
+#: journal/choices.py:48
+msgid "Weekly"
+msgstr ""
+
+#: journal/choices.py:49
+msgid "Other frequencies"
+msgstr ""
+
+#: journal/choices.py:53
+msgid "Basic Roman"
+msgstr ""
+
+#: journal/choices.py:54
+msgid "Extensive Roman"
+msgstr ""
+
+#: journal/choices.py:55
+msgid "Cirillic"
+msgstr ""
+
+#: journal/choices.py:56
+msgid "Japanese"
+msgstr ""
+
+#: journal/choices.py:57
+msgid "Chinese"
+msgstr ""
+
+#: journal/choices.py:58
+msgid "Korean"
+msgstr ""
+
+#: journal/choices.py:59
+msgid "Another alphabet"
+msgstr ""
+
+#: journal/choices.py:63
+msgid "American Psychological Association"
+msgstr ""
+
+#: journal/choices.py:64
+msgid "iso 690/87 - international standard organization"
+msgstr ""
+
+#: journal/choices.py:65
+msgid "nbr 6023/89 - associação nacional de normas técnicas"
+msgstr ""
+
+#: journal/choices.py:66
+msgid "other standard"
+msgstr ""
+
+#: journal/choices.py:70
+msgid ""
+"the vancouver group - uniform requirements for manuscripts submitted to "
+"biomedical journals"
+msgstr ""
+
+#: journal/choices.py:76
+msgid "Conference"
+msgstr ""
+
+#: journal/choices.py:77
+msgid "Monograph"
+msgstr ""
+
+#: journal/choices.py:78
+msgid "Conference papers as Monograph"
+msgstr ""
+
+#: journal/choices.py:79
+msgid "Project papers as Monograph"
+msgstr ""
+
+#: journal/choices.py:80
+msgid "Project and Conference papers as monograph"
+msgstr ""
+
+#: journal/choices.py:81
+msgid "Monograph Series"
+msgstr ""
+
+#: journal/choices.py:82
+msgid "Conference papers as Monograph Series"
+msgstr ""
+
+#: journal/choices.py:83
+msgid "Project papers as Monograph Series"
+msgstr ""
+
+#: journal/choices.py:84
+msgid "Document in a non conventional form"
+msgstr ""
+
+#: journal/choices.py:85
+msgid "Conference papers in a non conventional form"
+msgstr ""
+
+#: journal/choices.py:86
+msgid "Project papers in a non conventional form"
+msgstr ""
+
+#: journal/choices.py:87
+msgid "Project"
+msgstr ""
+
+#: journal/choices.py:88
+msgid "Serial"
+msgstr ""
+
+#: journal/choices.py:89
+msgid "Conference papers as Periodical Series"
+msgstr ""
+
+#: journal/choices.py:90
+msgid "Conference and Project papers as periodical series"
+msgstr ""
+
+#: journal/choices.py:91
+msgid "Project papers as Periodical Series"
+msgstr ""
+
+#: journal/choices.py:92
+msgid "Thesis and Dissertation"
+msgstr ""
+
+#: journal/choices.py:93
+msgid "Thesis Series"
+msgstr ""
+
+#: journal/choices.py:97
+msgid "Scientific/technical"
+msgstr ""
+
+#: journal/choices.py:98
+msgid "Divulgation"
+msgstr ""
+
+#: journal/choices.py:103
+msgid "Analytical of a monograph"
+msgstr ""
+
+#: journal/choices.py:104
+msgid "Analytical of a monograph in a collection"
+msgstr ""
+
+#: journal/choices.py:105
+msgid "Analytical of a monograph in a serial"
+msgstr ""
+
+#: journal/choices.py:106
+msgid "Analytical of a serial"
+msgstr ""
+
+#: journal/choices.py:107
+msgid "Collective level"
+msgstr ""
+
+#: journal/choices.py:108
+msgid "Monographic level"
+msgstr ""
+
+#: journal/choices.py:109
+msgid "Monographic in a collection"
+msgstr ""
+
+#: journal/choices.py:110
+msgid "Monographic series level"
+msgstr ""
+
+#: journal/choices.py:114
+msgid "DATABASE"
+msgstr ""
+
+#: journal/choices.py:115
+msgid "DIRECTORY"
+msgstr ""
+
+#: journal/choices.py:116
+msgid "OTHER"
+msgstr ""
+
+#: journal/choices.py:120
+msgid "Agricultural Sciences"
+msgstr ""
+
+#: journal/choices.py:121
+msgid "Applied Social Sciences"
+msgstr ""
+
+#: journal/choices.py:122
+msgid "Biological Sciences"
+msgstr ""
+
+#: journal/choices.py:123
+msgid "Engineering"
+msgstr ""
+
+#: journal/choices.py:124
+msgid "Exact and Earth Sciences"
+msgstr ""
+
+#: journal/choices.py:125
+msgid "Health Sciences"
+msgstr ""
+
+#: journal/choices.py:126
+msgid "Human Sciences"
+msgstr ""
+
+#: journal/choices.py:127
+msgid "Linguistic, Literature and Arts"
+msgstr ""
+
+#: journal/choices.py:128
+msgid "Psicanalise"
+msgstr ""
+
+#: journal/choices.py:132
+msgid "Science Citation Index Expanded"
+msgstr ""
+
+#: journal/choices.py:133
+msgid "Social Sciences Citation Index"
+msgstr ""
+
+#: journal/choices.py:134
+msgid "Arts Humanities Citation Index"
+msgstr ""
+
+#: journal/choices.py:143
+msgid "Admitted to the collection"
+msgstr ""
+
+#: journal/choices.py:144
+msgid "Indexing interrupted"
+msgstr ""
+
+#: journal/choices.py:153
+msgid "Ceased journal"
+msgstr ""
+
+#: journal/choices.py:154
+msgid "Not open access"
+msgstr ""
+
+#: journal/choices.py:155
+msgid "by the committee"
+msgstr ""
+
+#: journal/choices.py:156
+msgid "by the editor"
+msgstr ""
+
+#: journal/models.py:66
+msgid "ISSN Title"
+msgstr ""
+
+#: journal/models.py:67
+msgid "ISO Short Title"
+msgstr ""
+
+#: journal/models.py:70
+msgid "New Title"
+msgstr ""
+
+#: journal/models.py:79
+msgid "Initial Year"
+msgstr ""
+
+#: journal/models.py:82
+msgid "Month Year"
+msgstr ""
+
+#: journal/models.py:85
+msgid "Initial Volume"
+msgstr ""
+
+#: journal/models.py:88
+msgid "Initial Number"
+msgstr ""
+
+#: journal/models.py:91
+msgid "Termination year"
+msgstr ""
+
+#: journal/models.py:94
+msgid "Termination month"
+msgstr ""
+
+#: journal/models.py:97
+msgid "Final Volume"
+msgstr ""
+
+#: journal/models.py:100
+msgid "Final Number"
+msgstr ""
+
+#: journal/models.py:102
+msgid "ISSN Print"
+msgstr ""
+
+#: journal/models.py:104
+msgid "ISSN Eletronic"
+msgstr ""
+
+#: journal/models.py:106
+msgid "ISSNL"
+msgstr ""
+
+#: journal/models.py:111
+msgid "Parallel titles"
+msgstr ""
+
+#: journal/models.py:136
+msgid "Dates"
+msgstr ""
+
+#: journal/models.py:137
+msgid "Issns"
+msgstr ""
+
+#: journal/models.py:144 journal/models.py:320
+msgid "ISSN Journal"
+msgstr ""
+
+#: journal/models.py:145 journal/wagtail_hooks.py:26
+msgid "ISSN Journals"
+msgstr ""
+
+#: journal/models.py:232
+msgid "Unable to create or update official journal {}"
+msgstr ""
+
+#: journal/models.py:276 journal/models.py:1930
+msgid "URL"
+msgstr ""
+
+#: journal/models.py:281 journal/models.py:610
+msgid "Social Network"
+msgstr ""
+
+#: journal/models.py:282
+msgid "Social Networks"
+msgstr ""
+
+#: journal/models.py:325
+msgid "Journal Title"
+msgstr ""
+
+#: journal/models.py:326
+msgid "Short Title"
+msgstr ""
+
+#: journal/models.py:328
+msgid "Other titles"
+msgstr ""
+
+#: journal/models.py:338
+msgid "Submission online URL"
+msgstr ""
+
+#: journal/models.py:342
+msgid "Address"
+msgstr ""
+
+#: journal/models.py:348
+msgid "Open Access status"
+msgstr ""
+
+#: journal/models.py:356 journal/models.py:621
+msgid "Open Science accordance form"
+msgstr ""
+
+#: journal/models.py:361 journal/models.py:886
+msgid ""
+"Suggested form: <a target='_blank' href='https://wp.scielo.org/wp-content/"
+"uploads/Formulario-de-Conformidade-Ciencia-Aberta.docx'>https://wp.scielo."
+"org/wp-content/uploads/Formulario-de-Conformidade-Ciencia-Aberta.docx</a>"
+msgstr ""
+
+#: journal/models.py:367
+msgid "Main Collection"
+msgstr ""
+
+#: journal/models.py:373
+msgid "Frequency"
+msgstr ""
+
+#: journal/models.py:380
+msgid "Publishing Model"
+msgstr ""
+
+#: journal/models.py:388
+msgid "Subject Descriptors"
+msgstr ""
+
+#: journal/models.py:393
+msgid "Study Areas"
+msgstr ""
+
+#: journal/models.py:398
+msgid "Web of Knowledge Databases"
+msgstr ""
+
+#: journal/models.py:403
+msgid "Web of Knowledge Subject Categories"
+msgstr ""
+
+#: journal/models.py:408
+msgid "Text Languages"
+msgstr ""
+
+#: journal/models.py:414
+msgid "Abstract Languages"
+msgstr ""
+
+#: journal/models.py:425
+msgid "Alphabet"
+msgstr ""
+
+#: journal/models.py:432
+msgid "Type of Literature"
+msgstr ""
+
+#: journal/models.py:439
+msgid "Treatment Level"
+msgstr ""
+
+#: journal/models.py:446
+msgid "Level of Publication"
+msgstr ""
+
+#: journal/models.py:453
+msgid "National Code"
+msgstr ""
+
+#: journal/models.py:458
+msgid "Classification"
+msgstr ""
+
+#: journal/models.py:470 journal/models.py:2289
+msgid "Indexed At"
+msgstr ""
+
+#: journal/models.py:475
+msgid "Additional Index At"
+msgstr ""
+
+#: journal/models.py:479
+msgid "Journal URL"
+msgstr ""
+
+#: journal/models.py:490
+msgid "Center code"
+msgstr ""
+
+#: journal/models.py:495
+msgid "Identification Number"
+msgstr ""
+
+#: journal/models.py:501
+msgid "Ftp"
+msgstr ""
+
+#: journal/models.py:507
+msgid "User Subscription"
+msgstr ""
+
+#: journal/models.py:518
+msgid "Section"
+msgstr ""
+
+#: journal/models.py:524
+msgid "Has Supplement"
+msgstr ""
+
+#: journal/models.py:529
+msgid "Is supplement"
+msgstr ""
+
+#: journal/models.py:535
+msgid "Acronym Letters"
+msgstr ""
+
+#: journal/models.py:543
+msgid "Authors names"
+msgstr ""
+
+#: journal/models.py:545
+msgid ""
+"For compound surnames, create clear identification [uppercase, bold, and/or "
+"hyphen]"
+msgstr ""
+
+#: journal/models.py:551
+msgid "Manuscript Length"
+msgstr ""
+
+#: journal/models.py:552
+msgid "Manuscript Length (consider spacing)"
+msgstr ""
+
+#: journal/models.py:561
+msgid "DigitalPreservationAgency"
+msgstr ""
+
+#: journal/models.py:581 thematic_areas/models.py:158
+#: thematic_areas/wagtail_hooks.py:196
+msgid "Thematic Areas"
+msgstr ""
+
+#: journal/models.py:584
+msgid "Mission"
+msgstr ""
+
+#: journal/models.py:585
+msgid "Brief History"
+msgstr ""
+
+#: journal/models.py:586
+msgid "Focus and Scope"
+msgstr ""
+
+#: journal/models.py:590
+msgid "Owner"
+msgstr ""
+
+#: journal/models.py:595
+msgid "Copyright Holder"
+msgstr ""
+
+#: journal/models.py:604
+msgid "Contact e-mail"
+msgstr ""
+
+#: journal/models.py:624
+msgid "Open data"
+msgstr ""
+
+#: journal/models.py:625 journalpage/templates/journalpage/about.html:227
+#: journalpage/templates/journalpage/about.html:421
+msgid "Preprint"
+msgstr ""
+
+#: journal/models.py:626
+msgid "Peer review"
+msgstr ""
+
+#: journal/models.py:632
+msgid "Ethics"
+msgstr ""
+
+#: journal/models.py:637
+msgid "Ethics Committee"
+msgstr ""
+
+#: journal/models.py:642
+msgid "Copyright"
+msgstr ""
+
+#: journal/models.py:647
+msgid "Intellectual Property / Terms of use / Website responsibility"
+msgstr ""
+
+#: journal/models.py:652
+msgid "Intellectual Property / Terms of use / Author responsibility"
+msgstr ""
+
+#: journal/models.py:657
+msgid "Retraction Policy | Ethics and Misconduct Policy"
+msgstr ""
+
+#: journal/models.py:663
+msgid "Digital Preservation"
+msgstr ""
+
+#: journal/models.py:668
+msgid "Conflict of interest policy"
+msgstr ""
+
+#: journal/models.py:673
+msgid "Similarity Verification Software Adoption"
+msgstr ""
+
+#: journal/models.py:678
+msgid "Gender Issues"
+msgstr ""
+
+#: journal/models.py:683
+msgid "Fee Charging"
+msgstr ""
+
+#: journal/models.py:687 journal/models.py:768 journal/models.py:2050
+msgid "Notes"
+msgstr ""
+
+#: journal/models.py:710
+msgid "Accepted Document Types"
+msgstr ""
+
+#: journal/models.py:715
+msgid "Authors Contributions"
+msgstr ""
+
+#: journal/models.py:720
+msgid "Preparing Manuscript"
+msgstr ""
+
+#: journal/models.py:725
+msgid "Digital Assets"
+msgstr ""
+
+#: journal/models.py:730
+msgid "Citations and References"
+msgstr ""
+
+#: journal/models.py:735
+msgid "Supplementary Documents Required for Submission"
+msgstr ""
+
+#: journal/models.py:740
+msgid "Financing Statement"
+msgstr ""
+
+#: journal/models.py:745
+msgid "Acknowledgements"
+msgstr ""
+
+#: journal/models.py:750
+msgid "Additional Information"
+msgstr ""
+
+#: journal/models.py:763
+msgid "Scope and about"
+msgstr ""
+
+#: journal/models.py:765
+msgid "Website"
+msgstr ""
+
+#: journal/models.py:766
+msgid "Open Science"
+msgstr ""
+
+#: journal/models.py:767
+msgid "Journal Policy"
+msgstr ""
+
+#: journal/models.py:770
+msgid "Legacy Compatibility"
+msgstr ""
+
+#: journal/models.py:773
+msgid "Instructions for Authors"
+msgstr ""
+
+#: journal/models.py:850 journal/models.py:958
+msgid "Unable to create or update journal {}"
+msgstr ""
+
+#: journal/models.py:1033
+msgid ""
+"Refers to sharing data, codes, methods and other materials used and \n"
+"            resulting from research that are usually the basis of the texts "
+"of articles published by journals. \n"
+"            Guide: <a target='_blank' href='https://wp.scielo.org/wp-content/"
+"uploads/Guia_TOP_pt.pdf'>https://wp.scielo.org/wp-content/uploads/"
+"Guia_TOP_pt.pdf</a>"
+msgstr ""
+
+#: journal/models.py:1049
+msgid ""
+"A preprint is defined as a manuscript ready for submission to a journal that "
+"is deposited \n"
+"            with trusted preprint servers before or in parallel with "
+"submission to a journal. \n"
+"            This practice joins that of continuous publication as mechanisms "
+"to speed up research communication. \n"
+"            Preprints share with journals the originality in the publication "
+"of articles and inhibit the use of \n"
+"            the double-blind procedure in the evaluation of manuscripts. \n"
+"            The use of preprints is an option and choice of the authors and "
+"it is up to the journals to adapt \n"
+"            their policies to accept the submission of manuscripts "
+"previously deposited in a preprints server \n"
+"            recognized by the journal."
+msgstr ""
+
+#: journal/models.py:1069
+msgid ""
+"Insert here a brief history with events and milestones in the trajectory of "
+"the journal"
+msgstr ""
+
+#: journal/models.py:1081
+msgid "Insert here the focus and scope of the journal"
+msgstr ""
+
+#: journal/models.py:1090
+msgid "Brief description of the review flow"
+msgstr ""
+
+#: journal/models.py:1102
+msgid ""
+"Authors must attach a statement of approval from the ethics committee of \n"
+"            the institution responsible for approving the research"
+msgstr ""
+
+#: journal/models.py:1116
+msgid ""
+"Describe the policy used by the journal on copyright issues. \n"
+"            We recommend that this section be in accordance with the "
+"recommendations of the SciELO criteria, \n"
+"            item 5.2.10.1.2. - Copyright"
+msgstr ""
+
+#: journal/models.py:1131
+msgid ""
+"EX. DOAJ: Copyright terms applied to posted content must be clearly stated "
+"and separate \n"
+"            from copyright terms applied to the website"
+msgstr ""
+
+#: journal/models.py:1148
+msgid ""
+"The author's declaration of responsibility for the content published in \n"
+"            the journal that owns the copyright Ex. DOAJ: The terms of "
+"copyright must not contradict \n"
+"            the terms of the license or the terms of the open access policy. "
+"\"All rights reserved\" is \n"
+"            never appropriate for open access content"
+msgstr ""
+
+#: journal/models.py:1168
+msgid ""
+"Describe here how the journal will deal with ethical issues and/or \n"
+"            issues that may damage the journal's reputation. What is the "
+"journal's position regarding \n"
+"            the retraction policy that the journal will adopt in cases of "
+"misconduct. \n"
+"            Best practice guide: <a target='_blank' \n"
+"            href='https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-"
+"Praticas-para-o-Fortalecimento-da-Etica-na-Publicacao-Cientifica.pdf'>\n"
+"            https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-Praticas-"
+"para-o-Fortalecimento-da-Etica-na-Publicacao-Cientifica.pdf</a>"
+msgstr ""
+
+#: journal/models.py:1202
+msgid ""
+"Please describe here if the journal uses any similarity verification "
+"software. Describe the policy. What cases are checked?\n"
+"            At what stage in the workflow are manuscripts verified?"
+msgstr ""
+
+#: journal/models.py:1205
+msgid "Similarity erification software"
+msgstr ""
+
+#: journal/models.py:1211
+msgid ""
+"Describe the policy. Which cases are verified? At what point in the workflow "
+"are the manuscripts checked?"
+msgstr ""
+
+#: journal/models.py:1215
+msgid "Write the name of the software used."
+msgstr ""
+
+#: journal/models.py:1218
+msgid "Write the link of the software used."
+msgstr ""
+
+#: journal/models.py:1238
+msgid ""
+"Describe how your journal considers gender diversity in the group of "
+"authors, editorial board, and reviewers."
+msgstr ""
+
+#: journal/models.py:1260
+msgid "Concepts"
+msgstr ""
+
+#: journal/models.py:1265
+msgid ""
+"Please describe any charges to authors related to the submission or "
+"publication of works.\n"
+"        For article publication: Clearly state when no fees are charged.\n"
+"        Under what circumstances are charges applicable? Are there any "
+"discounts?\n"
+"        SciELO Statement on Financial Sustainability: <a target='_blank' \n"
+"            href='https://mailchi.mp/scielo/declaracao-sobre-"
+"sustentabilidade'>\n"
+"            https://mailchi.mp/scielo/declaracao-sobre-sustentabilidade</a>\n"
+"        "
+msgstr ""
+
+#: journal/models.py:1294
+msgid ""
+"Describe the types of documents that can be submitted to the journal.\n"
+"                    Provide information regarding the positioning related to "
+"preprint submissions.\n"
+"                    Examples: Original Article, Review Article, Preprints "
+"and etc."
+msgstr ""
+
+#: journal/models.py:1313
+msgid ""
+"Description of how authors contributions should be specified.\n"
+"        Does it use any taxonomy? If yes, which one?\n"
+"        Does the article text explicitly state the authors contributions?\n"
+"        Preferably, use the CREDiT taxonomy structure: <a target='_blank' \n"
+"            href='https://casrai.org/credit/'>https://casrai.org/credit/</"
+"a>\n"
+"        "
+msgstr ""
+
+#: journal/models.py:1335
+msgid ""
+"Specify how authors should present their research and explain why the work "
+"is suitable for publication in the journal."
+msgstr ""
+
+#: journal/models.py:1348
+msgid ""
+"Please describe how tables, charts, figures, illustrations, maps, diagrams, "
+"and other digital assets in the documents should be presented for "
+"publication in the journal. It is important to specify technical details "
+"such as format, resolution, size, etc."
+msgstr ""
+
+#: journal/models.py:1364
+msgid ""
+"Describe the citation and referencing style used by the journal. Provide "
+"examples of document types according to the style."
+msgstr ""
+
+#: journal/models.py:1382
+msgid ""
+"Describe any supplementary documents requested from authors during "
+"manuscript submission. Examples may include Open Science Compliance Form, "
+"authors' agreement statement, ethics committee approval form, etc."
+msgstr ""
+
+#: journal/models.py:1399
+msgid "???"
+msgstr ""
+
+#: journal/models.py:1408
+msgid "Describe the acknowledgments."
+msgstr ""
+
+#: journal/models.py:1422
+msgid "Free field for entering additional information or data."
+msgstr ""
+
+#: journal/models.py:1448
+msgid "Descreva o teim do check list"
+msgstr ""
+
+#: journal/models.py:1475 journal/models.py:1929
+msgid "Acronym"
+msgstr ""
+
+#: journal/models.py:1606
+msgid "Journal Acronym"
+msgstr ""
+
+#: journal/models.py:1622
+msgid "SciELO Journal"
+msgstr ""
+
+#: journal/models.py:1623 journal/wagtail_hooks.py:99
+msgid "SciELO Journals"
+msgstr ""
+
+#: journal/models.py:1695
+msgid "Unable to create or update SciELO journal {}"
+msgstr ""
+
+#: journal/models.py:1931
+msgid "Description"
+msgstr ""
+
+#: journal/models.py:1933
+msgid "Type"
+msgstr ""
+
+#: journal/models.py:2051
+msgid "Creation Date"
+msgstr ""
+
+#: journal/models.py:2052
+msgid "Update Date"
+msgstr ""
+
+#: journal/models.py:2105
+msgid "Event year"
+msgstr ""
+
+#: journal/models.py:2107
+msgid "Event month"
+msgstr ""
+
+#: journal/models.py:2113
+msgid "Event day"
+msgstr ""
+
+#: journal/models.py:2116
+msgid "Event type"
+msgstr ""
+
+#: journal/models.py:2123
+msgid "Indexing interruption reason"
+msgstr ""
+
+#: journal/models.py:2141
+msgid "Event"
+msgstr ""
+
+#: journal/models.py:2142
+msgid "Events"
+msgstr ""
+
+#: journal/models.py:2241
+msgid "Scielo Issn"
+msgstr ""
+
+#: journal/models.py:2300
+msgid "Identifier"
+msgstr ""
+
+#: journal/models.py:2306
+msgid "Title in Database"
+msgstr ""
+
+#: journal/models.py:2307
+msgid "Title in databases"
+msgstr ""
+
+#: journal/models.py:2395
+msgid "Enter the URI of the data repository."
+msgstr ""
+
+#: journal/wagtail_hooks.py:245
+msgid "Article Submission Format Check List"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:139 Brasil.html:181
+msgid "Lista alfabética de periódicos"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:144
+msgid "Lista temática de periódicos"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:149 Brasil.html:191
+msgid "Busca"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:154 Brasil.html:196
+#: Brasil.html:438 Brasil.html:469
+#: journalpage/templates/journalpage/includes/levelMenu.html:36
+#: journalpage/templates/journalpage/includes/levelMenu.html:67
+msgid "Métricas"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:159
+msgid "Sobre o SciELO Brasil"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:164 Brasil.html:211
+msgid "Contatos"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:169
+msgid "Reportar erro"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:176
+msgid "Coleções nacionais e temáticas"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:186
+msgid "Lista de periódicos por assunto"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:201
+msgid "Acesso OAI e RSS"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:206
+msgid "Sobre a Rede SciELO"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:220
+msgid "Blog SciELO em Perspectiva"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:250 Brasil.html:314
+#: Brasil.html:395
+msgid "Submissão de manuscritos"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:254 Brasil.html:318
+#: Brasil.html:397 Brasil.html:618
+#: journalpage/templates/journalpage/about.html:80
+#: journalpage/templates/journalpage/about.html:380
+#: journalpage/templates/journalpage/includes/journal_info.html:89
+msgid "Sobre o periódico"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:257 Brasil.html:321
+#: Brasil.html:398
+#: journalpage/templates/journalpage/includes/journal_info.html:90
+msgid "Corpo Editorial"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:260 Brasil.html:324
+#: Brasil.html:399
+#: journalpage/templates/journalpage/includes/journal_info.html:91
+msgid "Instruções aos autores"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:263 Brasil.html:327
+#: Brasil.html:400 journalpage/templates/journalpage/about.html:213
+#: journalpage/templates/journalpage/about.html:412
+#: journalpage/templates/journalpage/includes/journal_info.html:92
+msgid "Política editorial"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:266 Brasil.html:330
+#: Brasil.html:728 journalpage/templates/journalpage/about.html:160
+#: journalpage/templates/journalpage/about.html:395
+msgid "Contato"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:357
+#: journalpage/templates/journalpage/includes/journal_info.html:21
+msgid "Publicação de"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:362
+#: journalpage/templates/journalpage/includes/journal_info.html:26
+msgid "Área"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:370
+#: journalpage/templates/journalpage/includes/journal_info.html:37
+msgid "Versão impressa ISSN"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:377
+#: journalpage/templates/journalpage/includes/journal_info.html:44
+msgid "Versão on-line ISSN"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:419
+#: journalpage/templates/journalpage/includes/levelMenu.html:17
+msgid "Todos os números"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:421
+#: journalpage/templates/journalpage/includes/levelMenu.html:19
+#: journalpage/templates/journalpage/includes/levelMenu.html:105
+msgid "número anterior"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:422
+#: journalpage/templates/journalpage/includes/levelMenu.html:20
+msgid "Número anterior"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:424
+#: journalpage/templates/journalpage/includes/levelMenu.html:22
+#: journalpage/templates/journalpage/includes/levelMenu.html:108
+msgid "número atual"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:425
+#: journalpage/templates/journalpage/includes/levelMenu.html:23
+msgid "Número atual"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:427
+#: journalpage/templates/journalpage/includes/levelMenu.html:25
+msgid "número seguinte"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:428
+#: journalpage/templates/journalpage/includes/levelMenu.html:26
+msgid "Número seguinte"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:435 Brasil.html:466
+#: journalpage/templates/journalpage/includes/levelMenu.html:33
+#: journalpage/templates/journalpage/includes/levelMenu.html:64
+#: journalpage/templates/journalpage/includes/levelMenu.html:117
+#: search/templates/search.html:43
+msgid "Buscar"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:463
+#: journalpage/templates/journalpage/includes/levelMenu.html:61
+msgid "Todos"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:590
+msgid "Imprimir"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:616
+#: journalpage/templates/journalpage/about.html:78
+msgid "Periódicos"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:669
+#: journalpage/templates/journalpage/about.html:111
+msgid "Título do periódico conforme registro do ISSN:"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:673
+#: journalpage/templates/journalpage/about.html:115
+msgid "Título abreviado:"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:677
+#: journalpage/templates/journalpage/about.html:119
+msgid "Publicação de:"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:681
+#: journalpage/templates/journalpage/about.html:122
+msgid "Periodicidade:"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:685
+#: journalpage/templates/journalpage/about.html:126
+msgid "Modalidade de publicação:"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:689
+#: journalpage/templates/journalpage/about.html:130
+msgid "Ano de criação do periódico:"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:695
+#: journalpage/templates/journalpage/about.html:133
+msgid "Área:"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:701
+#: journalpage/templates/journalpage/about.html:137
+msgid "Versão impressa:"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:707
+#: journalpage/templates/journalpage/about.html:143
+msgid "Versão on-line ISSN:"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:713
+#: journalpage/templates/journalpage/about.html:148
+#: journalpage/templates/journalpage/about.html:386
+msgid "Missão"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:718
+#: journalpage/templates/journalpage/about.html:152
+#: journalpage/templates/journalpage/about.html:389
+msgid "Breve Histórico"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:723
+#: journalpage/templates/journalpage/about.html:156
+#: journalpage/templates/journalpage/about.html:392
+msgid "Foco e escopo"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:732
+#: journalpage/templates/journalpage/about.html:164
+msgid "Endereço completo da unidade / instituição responsável pelo periódico:"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:736
+#: journalpage/templates/journalpage/about.html:168
+msgid "Cidade:"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:737
+msgid "Inserir cidade aqui"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:740
+#: journalpage/templates/journalpage/about.html:172
+msgid "Estado:"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:741
+msgid "Inserir estado aqui"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:744
+#: journalpage/templates/journalpage/about.html:176
+msgid "País:"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:745
+msgid "Inserir país aqui"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:748
+#: journalpage/templates/journalpage/about.html:180
+msgid "E-mail:"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:752
+#: journalpage/templates/journalpage/about.html:184
+#: journalpage/templates/journalpage/about.html:398
+msgid "Websites e Mídias Sociais"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:760
+#: journalpage/templates/journalpage/about.html:192
+#: journalpage/templates/journalpage/about.html:401
+msgid "Fontes de indexação"
+msgstr ""
+
+#: journalpage/templates/journalpage/SciELO - Brasil.html:766
+#: journalpage/templates/journalpage/about.html:198
+#: journalpage/templates/journalpage/about.html:404
+msgid "Patrocinadores e agências de Fomento"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:206
+#: journalpage/templates/journalpage/about.html:407
+msgid "Preservação digital"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:215
+#: journalpage/templates/journalpage/about.html:415
+msgid "Conformidade com a Ciência Aberta"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:221
+#: journalpage/templates/journalpage/about.html:418
+msgid "Dados abertos"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:233
+#: journalpage/templates/journalpage/about.html:424
+msgid "Peer review informado"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:242
+#: journalpage/templates/journalpage/about.html:427
+#: thematic_areas/choices.py:272
+msgid "Ética"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:248
+#: journalpage/templates/journalpage/about.html:429
+msgid "Comitê de Ética"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:252
+#: journalpage/templates/journalpage/about.html:432
+msgid "Direitos Autorais"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:256
+#: journalpage/templates/journalpage/about.html:435
+msgid "Propriedade Intelectual"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:260
+msgid "Responsabilidade do site:"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:265
+msgid "Responsabilidade do autor:"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:269
+#: journalpage/templates/journalpage/about.html:438
+msgid "Política de Ética e Más condutas"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:271
+msgid "Política de retratação:"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:278
+#: journalpage/templates/journalpage/about.html:441
+msgid "Política sobre Conflito de Interesses"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:284
+#: journalpage/templates/journalpage/about.html:444
+msgid "Questões de gênero"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:290
+msgid "Licença"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:294
+msgid "licença:"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:297
+msgid "Cobrança de taxas"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:301
+msgid "Moeda:"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:301
+msgid "Valor:"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:305
+msgid "CORPO EDITORIAL"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:324
+msgid "INSTRUÇÕES PARA OS AUTORES"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:326
+msgid "Tipos de documentos aceitos"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:333
+#: journalpage/templates/journalpage/about.html:472
+msgid "Contribuição dos Autores"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:338
+msgid "Formato de envio dos artigos"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:344
+msgid "Ativos digitais"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:348
+msgid "Citações e referências"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:352
+#: journalpage/templates/journalpage/about.html:484
+msgid "Documentos Suplementares Necessários para Submissão"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:356
+#: journalpage/templates/journalpage/about.html:487
+msgid "Declaração de Financiamento"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:360
+#: journalpage/templates/journalpage/about.html:490
+msgid "Agradecimentos"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:364
+msgid "Informações adicionais"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:369
+msgid "*dados precisam estar disponíveis em alfabeto romano"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:383
+msgid "Ficha Bibliográfica"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:449
+msgid "Corpo editorial"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:452
+msgid "Editor-chefe"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:455
+msgid "Editor-executivo"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:458
+msgid "Editor(es) Associados ou de Seção / Área"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:461
+msgid "Equipe técnica"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:466
+msgid "Instruções para os Autores"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:469
+msgid "Tipos de Documentos Aceitos"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:475
+msgid "Formato de Envio dos Artigos"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:478
+msgid "Ativos Digitais"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:481
+msgid "Citações e Referências"
+msgstr ""
+
+#: journalpage/templates/journalpage/about.html:493
+msgid "Informações Adicionais"
+msgstr ""
+
+#: journalpage/templates/journalpage/includes/levelMenu.html:11
+msgid "Home do periódico"
+msgstr ""
+
+#: journalpage/templates/journalpage/includes/levelMenu.html:101
+msgid "todos"
+msgstr ""
+
+#: location/models.py:28
+msgid "Name of the city"
+msgstr ""
+
+#: location/models.py:38 location/models.py:491 location/wagtail_hooks.py:57
+msgid "City"
+msgstr ""
+
+#: location/models.py:39
+msgid "Cities"
+msgstr ""
+
+#: location/models.py:115
+msgid "State name"
+msgstr ""
+
+#: location/models.py:116
+msgid "State Acronym"
+msgstr ""
+
+#: location/models.py:131 location/models.py:498 location/wagtail_hooks.py:71
+msgid "State"
+msgstr ""
+
+#: location/models.py:132
+msgid "States"
+msgstr ""
+
+#: location/models.py:246
+msgid "Country name"
+msgstr ""
+
+#: location/models.py:247 location/models.py:350
+msgid "Country names"
+msgstr ""
+
+#: location/models.py:337
+msgid "Country Name"
+msgstr ""
+
+#: location/models.py:339
+msgid "Country Acronym (2 char)"
+msgstr ""
+
+#: location/models.py:342
+msgid "Country Acronym (3 char)"
+msgstr ""
+
+#: location/models.py:366
+msgid "Countries"
+msgstr ""
+
+#: location/models.py:532 location/wagtail_hooks.py:26
+#: location/wagtail_hooks.py:132
+msgid "Location"
+msgstr ""
+
+#: location/models.py:533
+msgid "Locations"
+msgstr ""
+
+#: pid_provider/models.py:40
+msgid "XML Post URI"
+msgstr ""
+
+#: pid_provider/models.py:43
+msgid "Get Token URI"
+msgstr ""
+
+#: pid_provider/models.py:45
+msgid "Timeout"
+msgstr ""
+
+#: pid_provider/models.py:46
+msgid "API Username"
+msgstr ""
+
+#: pid_provider/models.py:47
+msgid "API Password"
+msgstr ""
+
+#: pid_provider/models.py:90
+msgid "Request origin"
+msgstr ""
+
+#: pid_provider/models.py:92
+msgid "Result type"
+msgstr ""
+
+#: pid_provider/models.py:93
+msgid "Result message"
+msgstr ""
+
+#: pid_provider/models.py:97
+msgid "Detail"
+msgstr ""
+
+#: pid_provider/models.py:99 pid_provider/models.py:348
+msgid "Origin date"
+msgstr ""
+
+#: pid_provider/models.py:101 xmlsps/models.py:43
+msgid "PID v3"
+msgstr ""
+
+#: pid_provider/models.py:247 pid_provider/models.py:322
+msgid "Package name"
+msgstr ""
+
+#: pid_provider/models.py:248
+msgid "PID type"
+msgstr ""
+
+#: pid_provider/models.py:250
+msgid "PID pid_in_xml"
+msgstr ""
+
+#: pid_provider/models.py:253
+msgid "PID assigned"
+msgstr ""
+
+#: pid_provider/models.py:310
+msgid "issn_epub"
+msgstr ""
+
+#: pid_provider/models.py:312
+msgid "issn_ppub"
+msgstr ""
+
+#: pid_provider/models.py:313
+msgid "pub_year"
+msgstr ""
+
+#: pid_provider/models.py:314
+msgid "volume"
+msgstr ""
+
+#: pid_provider/models.py:315
+msgid "number"
+msgstr ""
+
+#: pid_provider/models.py:316
+msgid "suppl"
+msgstr ""
+
+#: pid_provider/models.py:323
+msgid "v3"
+msgstr ""
+
+#: pid_provider/models.py:324
+msgid "v2"
+msgstr ""
+
+#: pid_provider/models.py:325
+msgid "AOP PID"
+msgstr ""
+
+#: pid_provider/models.py:327
+msgid "elocation id"
+msgstr ""
+
+#: pid_provider/models.py:328
+msgid "fpage"
+msgstr ""
+
+#: pid_provider/models.py:329
+msgid "fpage_seq"
+msgstr ""
+
+#: pid_provider/models.py:330
+msgid "lpage"
+msgstr ""
+
+#: pid_provider/models.py:332
+msgid "Document Publication Year"
+msgstr ""
+
+#: pid_provider/models.py:334
+msgid "main_toc_section"
+msgstr ""
+
+#: pid_provider/models.py:335
+msgid "DOI"
+msgstr ""
+
+#: pid_provider/models.py:338
+msgid "article_titles_texts"
+msgstr ""
+
+#: pid_provider/models.py:340
+msgid "surnames"
+msgstr ""
+
+#: pid_provider/models.py:341
+msgid "collab"
+msgstr ""
+
+#: pid_provider/models.py:342
+msgid "links"
+msgstr ""
+
+#: pid_provider/models.py:344
+msgid "partial_body"
+msgstr ""
+
+#: pid_provider/models.py:353
+msgid "Website publication date"
+msgstr ""
+
+#: pid_provider/models.py:557
+msgid "Found {} records for {}"
+msgstr ""
+
+#: pid_provider/models.py:647
+msgid ""
+"The XML content is an ahead of print version but the document {} is already "
+"published in an issue"
+msgstr ""
+
+#: pid_provider/models.py:1015 pid_provider/models.py:1027
+#: pid_provider/models.py:1050
+msgid "No attribute enough for disambiguations {}"
+msgstr ""
+
+#: pid_provider/scripts/schedule_pid_provider_for_opac_xmls.py:10
+msgid "Registra XML do site www.scielo.br no pid provider"
+msgstr ""
+
+#: pid_provider/scripts/schedule_pid_provider_for_opac_xmls.py:19
+msgid ""
+"Executa diariamente às 23h UTC a carga de XML atualizados de 30 anteriores "
+"até hoje"
+msgstr ""
+
+#: pid_provider/wagtail_hooks.py:23
+msgid "Pid Requests"
+msgstr ""
+
+#: pid_provider/wagtail_hooks.py:51
+msgid "Collection Pid Requests"
+msgstr ""
+
+#: pid_provider/wagtail_hooks.py:81
+msgid "Pid Provider XMLs"
+msgstr ""
+
+#: pid_provider/wagtail_hooks.py:120
+msgid "Pid Changes"
+msgstr ""
+
+#: pid_provider/wagtail_hooks.py:143
+msgid "Pid Provider"
+msgstr ""
+
+#: report/models.py:37
+msgid "Complete with the type of report"
+msgstr ""
+
+#: report/models.py:51
+msgid "Publication Year"
+msgstr ""
+
+#: report/wagtail_hooks.py:12
+msgid "Report CSV"
+msgstr ""
+
+#: researcher/models.py:246
+msgid "Given names"
+msgstr ""
+
+#: researcher/models.py:248
+msgid "Last name"
+msgstr ""
+
+#: researcher/models.py:249
+msgid "Suffix"
+msgstr ""
+
+#: researcher/models.py:250
+msgid "Full Name"
+msgstr ""
+
+#: researcher/models.py:253
+msgid "Declared Name"
+msgstr ""
+
+#: researcher/models.py:257
+msgid "Gender identification status"
+msgstr ""
+
+#: researcher/models.py:428
+msgid "ID"
+msgstr ""
+
+#: researcher/models.py:430
+msgid "Source name"
+msgstr ""
+
+#: researcher/wagtail_hooks.py:18
+msgid "Researcher"
+msgstr ""
+
+#: researcher/wagtail_hooks.py:46
+msgid "Researcher Identifier"
+msgstr ""
+
+#: researcher/wagtail_hooks.py:63
+msgid "Affiliation"
+msgstr ""
+
+#: researcher/wagtail_hooks.py:84
+msgid "PersonName"
+msgstr ""
+
+#: search/choices.py:4
+msgid "Periódico"
+msgstr ""
+
+#: search/choices.py:5
+msgid "Ano de publicação"
+msgstr ""
+
+#: search/choices.py:6
+msgid "Tipo de Literatura"
+msgstr ""
+
+#: search/choices.py:7 search/choices.py:10
+msgid "Coleções"
+msgstr ""
+
+#: search/choices.py:8
+msgid "Ano"
+msgstr ""
+
+#: search/choices.py:9
+msgid "Idioma"
+msgstr ""
+
+#: search/choices.py:11
+msgid "Argentina"
+msgstr ""
+
+#: search/choices.py:12
+msgid "Brasil"
+msgstr ""
+
+#: search/choices.py:13
+msgid "Bolívia"
+msgstr ""
+
+#: search/choices.py:14
+msgid "Chile"
+msgstr ""
+
+#: search/choices.py:15
+msgid "Colômbia"
+msgstr ""
+
+#: search/choices.py:16
+msgid "Costa Rica"
+msgstr ""
+
+#: search/choices.py:17
+msgid "Cuba"
+msgstr ""
+
+#: search/choices.py:18
+msgid "Espanha"
+msgstr ""
+
+#: search/choices.py:19
+msgid "México"
+msgstr ""
+
+#: search/choices.py:20
+msgid "Portugal"
+msgstr ""
+
+#: search/choices.py:21
+msgid "Venezuela"
+msgstr ""
+
+#: search/choices.py:22 thematic_areas/choices.py:510
+msgid "Saúde Pública"
+msgstr ""
+
+#: search/choices.py:23
+msgid "Social Sciences"
+msgstr ""
+
+#: search/choices.py:24
+msgid "África do Sul"
+msgstr ""
+
+#: search/choices.py:25
+msgid "Peru"
+msgstr ""
+
+#: search/choices.py:26
+msgid "Uruguai"
+msgstr ""
+
+#: search/choices.py:27
+msgid "Ecuador"
+msgstr ""
+
+#: search/choices.py:28
+msgid "Paraguai"
+msgstr ""
+
+#: search/choices.py:29
+msgid "Índias Ocidentais"
+msgstr ""
+
+#: search/choices.py:30 thematic_areas/choices.py:593
+msgid "Português"
+msgstr ""
+
+#: search/choices.py:31 thematic_areas/choices.py:580
+msgid "Espanhol"
+msgstr ""
+
+#: search/choices.py:32 thematic_areas/choices.py:588
+msgid "Inglês"
+msgstr ""
+
+#: search/choices.py:33
+msgid "Africaner"
+msgstr ""
+
+#: search/choices.py:34 thematic_areas/choices.py:582
+msgid "Francês"
+msgstr ""
+
+#: search/choices.py:35 thematic_areas/choices.py:589
+msgid "Italiano"
+msgstr ""
+
+#: search/choices.py:36 thematic_areas/choices.py:572
+msgid "Alemão"
+msgstr ""
+
+#: search/choices.py:37 thematic_areas/choices.py:573
+msgid "Árabe"
+msgstr ""
+
+#: search/choices.py:38 thematic_areas/choices.py:576
+msgid "Coreano"
+msgstr ""
+
+#: search/choices.py:39 thematic_areas/choices.py:590
+msgid "Japonês"
+msgstr ""
+
+#: search/choices.py:40
+msgid "Búlgaro"
+msgstr ""
+
+#: search/choices.py:41
+msgid "Bósnio"
+msgstr ""
+
+#: search/choices.py:42 search/choices.py:43
+msgid "Catalão"
+msgstr ""
+
+#: search/choices.py:44 thematic_areas/choices.py:595
+msgid "Russo"
+msgstr ""
+
+#: search/choices.py:45 thematic_areas/choices.py:594
+msgid "Romeno"
+msgstr ""
+
+#: search/choices.py:46
+msgid "Ucraniano"
+msgstr ""
+
+#: search/choices.py:47 thematic_areas/choices.py:600
+msgid "Turco"
+msgstr ""
+
+#: search/choices.py:48 thematic_areas/choices.py:597
+msgid "Sueco"
+msgstr ""
+
+#: search/choices.py:49 thematic_areas/choices.py:596
+msgid "Sérvio"
+msgstr ""
+
+#: search/choices.py:50 thematic_areas/choices.py:578
+msgid "Eslovaco"
+msgstr ""
+
+#: search/choices.py:51 thematic_areas/choices.py:579
+msgid "Esloveno"
+msgstr ""
+
+#: search/choices.py:52 thematic_areas/choices.py:592
+msgid "Polonês"
+msgstr ""
+
+#: search/choices.py:53 search/choices.py:54 thematic_areas/choices.py:584
+msgid "Holandês"
+msgstr ""
+
+#: search/choices.py:55
+msgid "Letão"
+msgstr ""
+
+#: search/choices.py:56
+msgid "Lituano"
+msgstr ""
+
+#: search/choices.py:57
+msgid "Islandês"
+msgstr ""
+
+#: search/choices.py:58 thematic_areas/choices.py:585
+msgid "Húngaro"
+msgstr ""
+
+#: search/choices.py:59
+msgid "Croata"
+msgstr ""
+
+#: search/choices.py:60
+msgid "Hebraico"
+msgstr ""
+
+#: search/choices.py:61 thematic_areas/choices.py:581
+msgid "Finlandês"
+msgstr ""
+
+#: search/choices.py:62 thematic_areas/choices.py:575
+msgid "Chinês"
+msgstr ""
+
+#: search/choices.py:63
+msgid "Artigo"
+msgstr ""
+
+#: search/choices.py:64
+msgid "Editorial"
+msgstr ""
+
+#: search/choices.py:65
+msgid "Resenha de livro"
+msgstr ""
+
+#: search/choices.py:66
+msgid "Relato de caso"
+msgstr ""
+
+#: search/choices.py:67
+msgid "Comunicação rápida"
+msgstr ""
+
+#: search/choices.py:68
+msgid "Artigo de revisão"
+msgstr ""
+
+#: search/choices.py:69
+msgid "Relato breve"
+msgstr ""
+
+#: search/choices.py:70
+msgid "Carta"
+msgstr ""
+
+#: search/choices.py:71
+msgid "Artigo de comentário"
+msgstr ""
+
+#: search/choices.py:72 search/choices.py:73
+msgid "Outros"
+msgstr ""
+
+#: search/choices.py:74 search/templates/include/result_doc_actions.html:7
+msgid "Resumo"
+msgstr ""
+
+#: search/choices.py:75
+msgid "Addendum"
+msgstr ""
+
+#: search/choices.py:76
+msgid "Comunicado de imprensa"
+msgstr ""
+
+#: search/choices.py:77
+msgid "Notícia"
+msgstr ""
+
+#: search/choices.py:78
+msgid "Correção"
+msgstr ""
+
+#: search/choices.py:79
+msgid "Discussão"
+msgstr ""
+
+#: search/choices.py:80
+msgid "Obituário"
+msgstr ""
+
+#: search/choices.py:81
+msgid "Em resumo"
+msgstr ""
+
+#: search/templates/cluster.html:10
+msgid "Filtros"
+msgstr ""
+
+#: search/templates/include/result_doc.html:34
+msgid "Volume"
+msgstr ""
+
+#: search/templates/include/result_doc_actions.html:13
+msgid "Texto"
+msgstr ""
+
+#: search/templates/include/search_pagination.html:8
+msgid "Página"
+msgstr ""
+
+#: search/templates/search.html:9
+msgid "Pesquisa | SciELO"
+msgstr ""
+
+#: search/templates/search.html:38
+msgid "Digite sua pesquisa..."
+msgstr ""
+
+#: search/templates/search.html:45
+msgid "Help"
+msgstr ""
+
+#: search/templates/search.html:65
+msgid "registros encontrados para o termo"
+msgstr ""
+
+#: search/templates/search.html:69
+msgid "Tempo da pesquisa"
+msgstr ""
+
+#: search/templates/search.html:69
+msgid "milisegundos"
+msgstr ""
+
+#: search/templates/search.html:72
+msgid "0 registros encontrados para o termo"
+msgstr ""
+
+#: search/templates/search.html:100
+msgid "Ordenar por"
+msgstr ""
+
+#: search/templates/search.html:102
+msgid "Publicação - Mais novos primeiros"
+msgstr ""
+
+#: search/templates/search.html:103
+msgid "Publicação - Mais antigos primeiros"
+msgstr ""
+
+#: search/templates/search.html:104
+msgid "Ordem descrecente de criação"
+msgstr ""
+
+#: search/templates/search.html:105
+msgid "Relevância"
+msgstr ""
+
+#: search/templates/search.html:110
+msgid "Visualizar"
+msgstr ""
+
+#: search/templates/search.html:118
+msgid "Itens por página"
+msgstr ""
+
+#: search/templates/search.html:289
+msgid ""
+"O valor do campo página não pode ser maior que a quantidade atual de páginas."
+msgstr ""
+
+#: search/templates/search.html:297
+msgid "O valor do campo página deve ser maior que 0."
+msgstr ""
+
+#: src/packtools/packtools/sps/pid_provider/xml_sps_lib.py:77
+msgid "{} must be xml file or zip file containing xml"
+msgstr ""
+
+#: src/packtools/packtools/sps/pid_provider/xml_sps_lib.py:84
+msgid "Unable to get xml items from {}: {} {}"
+msgstr ""
+
+#: src/packtools/packtools/sps/pid_provider/xml_sps_lib.py:121
+msgid "Unable to get xml items from zip file {}: {} {}"
+msgstr ""
+
+#: src/packtools/packtools/sps/pid_provider/xml_sps_lib.py:186
+msgid "Unable to get xml from {}"
+msgstr ""
+
+#: src/packtools/packtools/sps/pid_provider/xml_sps_lib.py:656
+msgid "Unable to get XMLWithPre.article_publication_date {} {} {}"
+msgstr ""
+
+#: src/packtools/packtools/webapp/forms.py:10
+msgid "URL to statics files"
+msgstr ""
+
+#: src/packtools/packtools/webapp/forms.py:18
+msgid "This type of file is not allowed! Please select another file."
+msgstr ""
+
+#: thematic_areas/choices.py:5 thematic_areas/choices.py:21
+#: thematic_areas/choices.py:118
+msgid "ALL"
+msgstr ""
+
+#: thematic_areas/choices.py:6 thematic_areas/choices.py:22
+#: thematic_areas/choices.py:119 thematic_areas/choices.py:571
+#: thematic_areas/choices.py:605
+msgid "UNDEFINED"
+msgstr ""
+
+#: thematic_areas/choices.py:7 thematic_areas/choices.py:23
+#: thematic_areas/choices.py:120
+msgid "NOT APPLICABLE"
+msgstr ""
+
+#: thematic_areas/choices.py:8
+msgid "Ciências Agrárias"
+msgstr ""
+
+#: thematic_areas/choices.py:9
+msgid "Ciências Biológicas"
+msgstr ""
+
+#: thematic_areas/choices.py:10
+msgid "Ciências da Saúde"
+msgstr ""
+
+#: thematic_areas/choices.py:11
+msgid "Ciências Exatas e da Terra"
+msgstr ""
+
+#: thematic_areas/choices.py:12
+msgid "Ciências Humanas"
+msgstr ""
+
+#: thematic_areas/choices.py:13
+msgid "Ciências Sociais Aplicadas"
+msgstr ""
+
+#: thematic_areas/choices.py:14
+msgid "Engenharias"
+msgstr ""
+
+#: thematic_areas/choices.py:15
+msgid "Linguística, Letras e Artes"
+msgstr ""
+
+#: thematic_areas/choices.py:16
+msgid "Multidisciplinar"
+msgstr ""
+
+#: thematic_areas/choices.py:24
+msgid "Administração"
+msgstr ""
+
+#: thematic_areas/choices.py:25
+msgid "Agronomia"
+msgstr ""
+
+#: thematic_areas/choices.py:26
+msgid "Antropologia"
+msgstr ""
+
+#: thematic_areas/choices.py:27
+msgid "Arqueologia"
+msgstr ""
+
+#: thematic_areas/choices.py:28
+msgid "Arquitetura e urbanismo"
+msgstr ""
+
+#: thematic_areas/choices.py:29
+msgid "Artes"
+msgstr ""
+
+#: thematic_areas/choices.py:30
+msgid "Astronomia"
+msgstr ""
+
+#: thematic_areas/choices.py:31
+msgid "Biofísica"
+msgstr ""
+
+#: thematic_areas/choices.py:32
+msgid "Biologia geral"
+msgstr ""
+
+#: thematic_areas/choices.py:33
+msgid "Bioquímica"
+msgstr ""
+
+#: thematic_areas/choices.py:34
+msgid "Biotecnologia"
+msgstr ""
+
+#: thematic_areas/choices.py:35
+msgid "Botânica"
+msgstr ""
+
+#: thematic_areas/choices.py:36
+msgid "Ciência da computação"
+msgstr ""
+
+#: thematic_areas/choices.py:37
+msgid "Ciência da informação"
+msgstr ""
+
+#: thematic_areas/choices.py:38
+msgid "Ciência e tecnologia de alimentos"
+msgstr ""
+
+#: thematic_areas/choices.py:39
+msgid "Ciência política"
+msgstr ""
+
+#: thematic_areas/choices.py:40
+msgid "Ciências Ambientais"
+msgstr ""
+
+#: thematic_areas/choices.py:41
+msgid "Comunicação"
+msgstr ""
+
+#: thematic_areas/choices.py:42
+msgid "Demografia"
+msgstr ""
+
+#: thematic_areas/choices.py:43
+msgid "Desenho industrial"
+msgstr ""
+
+#: thematic_areas/choices.py:44
+msgid "Direito"
+msgstr ""
+
+#: thematic_areas/choices.py:45
+msgid "Ecologia"
+msgstr ""
+
+#: thematic_areas/choices.py:46
+msgid "Economia"
+msgstr ""
+
+#: thematic_areas/choices.py:47
+msgid "Economia doméstica"
+msgstr ""
+
+#: thematic_areas/choices.py:48
+msgid "Educação"
+msgstr ""
+
+#: thematic_areas/choices.py:49
+msgid "Educação física"
+msgstr ""
+
+#: thematic_areas/choices.py:50
+msgid "Enfermagem"
+msgstr ""
+
+#: thematic_areas/choices.py:51
+msgid "Engenharia aeroespacial"
+msgstr ""
+
+#: thematic_areas/choices.py:52
+msgid "Engenharia agrícola"
+msgstr ""
+
+#: thematic_areas/choices.py:53
+msgid "Engenharia biomédica"
+msgstr ""
+
+#: thematic_areas/choices.py:54
+msgid "Engenharia civil"
+msgstr ""
+
+#: thematic_areas/choices.py:57
+msgid "Engenharia de materiais e metalúrgica"
+msgstr ""
+
+#: thematic_areas/choices.py:59
+msgid "Engenharia de minas"
+msgstr ""
+
+#: thematic_areas/choices.py:60
+msgid "Engenharia de produção"
+msgstr ""
+
+#: thematic_areas/choices.py:61
+msgid "Engenharia de transportes"
+msgstr ""
+
+#: thematic_areas/choices.py:62
+msgid "Engenharia elétrica"
+msgstr ""
+
+#: thematic_areas/choices.py:63
+msgid "Engenharia mecânica"
+msgstr ""
+
+#: thematic_areas/choices.py:64
+msgid "Engenharia naval e oceânica"
+msgstr ""
+
+#: thematic_areas/choices.py:65
+msgid "Engenharia nuclear"
+msgstr ""
+
+#: thematic_areas/choices.py:66
+msgid "Engenharia química"
+msgstr ""
+
+#: thematic_areas/choices.py:67
+msgid "Engenharia sanitária"
+msgstr ""
+
+#: thematic_areas/choices.py:68
+msgid "Ensino"
+msgstr ""
+
+#: thematic_areas/choices.py:69
+msgid "Farmácia"
+msgstr ""
+
+#: thematic_areas/choices.py:70
+msgid "Farmacologia"
+msgstr ""
+
+#: thematic_areas/choices.py:71
+msgid "Filosofia"
+msgstr ""
+
+#: thematic_areas/choices.py:72
+msgid "Física"
+msgstr ""
+
+#: thematic_areas/choices.py:73
+msgid "Fisiologia"
+msgstr ""
+
+#: thematic_areas/choices.py:74
+msgid "Fisioterapia e terapia ocupacional"
+msgstr ""
+
+#: thematic_areas/choices.py:75
+msgid "Fonoaudiologia"
+msgstr ""
+
+#: thematic_areas/choices.py:76
+msgid "Genética"
+msgstr ""
+
+#: thematic_areas/choices.py:77
+msgid "Geociências"
+msgstr ""
+
+#: thematic_areas/choices.py:78
+msgid "Geografia"
+msgstr ""
+
+#: thematic_areas/choices.py:79
+msgid "História"
+msgstr ""
+
+#: thematic_areas/choices.py:80
+msgid "Imunologia"
+msgstr ""
+
+#: thematic_areas/choices.py:81
+msgid "Interdisciplinar"
+msgstr ""
+
+#: thematic_areas/choices.py:82
+msgid "Letras"
+msgstr ""
+
+#: thematic_areas/choices.py:83
+msgid "Linguística"
+msgstr ""
+
+#: thematic_areas/choices.py:84
+msgid "Matemática"
+msgstr ""
+
+#: thematic_areas/choices.py:85
+msgid "Materiais "
+msgstr ""
+
+#: thematic_areas/choices.py:86
+msgid "Medicina"
+msgstr ""
+
+#: thematic_areas/choices.py:87
+msgid "Medicina veterinária"
+msgstr ""
+
+#: thematic_areas/choices.py:88
+msgid "Microbiologia"
+msgstr ""
+
+#: thematic_areas/choices.py:89
+msgid "Morfologia"
+msgstr ""
+
+#: thematic_areas/choices.py:90
+msgid "Museologia"
+msgstr ""
+
+#: thematic_areas/choices.py:91
+msgid "Nutrição"
+msgstr ""
+
+#: thematic_areas/choices.py:92
+msgid "Oceanografia"
+msgstr ""
+
+#: thematic_areas/choices.py:93
+msgid "Odontologia"
+msgstr ""
+
+#: thematic_areas/choices.py:94
+msgid "Parasitologia"
+msgstr ""
+
+#: thematic_areas/choices.py:95
+msgid "Planejamento urbano e regional"
+msgstr ""
+
+#: thematic_areas/choices.py:96
+msgid "Probabilidade e estatística"
+msgstr ""
+
+#: thematic_areas/choices.py:97
+msgid "Psicologia"
+msgstr ""
+
+#: thematic_areas/choices.py:98
+msgid "Química"
+msgstr ""
+
+#: thematic_areas/choices.py:101
+msgid "Recursos florestais e engenharia florestal"
+msgstr ""
+
+#: thematic_areas/choices.py:105
+msgid "Recursos pesqueiros e engenharia de pesca"
+msgstr ""
+
+#: thematic_areas/choices.py:107
+msgid "Saúde coletiva"
+msgstr ""
+
+#: thematic_areas/choices.py:108
+msgid "Serviço social"
+msgstr ""
+
+#: thematic_areas/choices.py:109
+msgid "Sociologia"
+msgstr ""
+
+#: thematic_areas/choices.py:110
+msgid "Teologia"
+msgstr ""
+
+#: thematic_areas/choices.py:111
+msgid "Turismo"
+msgstr ""
+
+#: thematic_areas/choices.py:112
+msgid "Zoologia"
+msgstr ""
+
+#: thematic_areas/choices.py:113
+msgid "Zootecnia"
+msgstr ""
+
+#: thematic_areas/choices.py:121
+msgid "Administraçao de Empresas"
+msgstr ""
+
+#: thematic_areas/choices.py:122
+msgid "Administração de Setores Específicos"
+msgstr ""
+
+#: thematic_areas/choices.py:123
+msgid "Administração Educacional"
+msgstr ""
+
+#: thematic_areas/choices.py:124
+msgid "Administração Pública"
+msgstr ""
+
+#: thematic_areas/choices.py:125
+msgid "Aerodinâmica"
+msgstr ""
+
+#: thematic_areas/choices.py:126
+msgid "Agrometeorologia"
+msgstr ""
+
+#: thematic_areas/choices.py:127
+msgid "Álgebra"
+msgstr ""
+
+#: thematic_areas/choices.py:128
+msgid "Análise"
+msgstr ""
+
+#: thematic_areas/choices.py:129
+msgid "Análise e Controle de Medicamentos"
+msgstr ""
+
+#: thematic_areas/choices.py:130
+msgid "Análise Nutricional de População"
+msgstr ""
+
+#: thematic_areas/choices.py:131
+msgid "Análise Toxicológica"
+msgstr ""
+
+#: thematic_areas/choices.py:132
+msgid "Anatomia"
+msgstr ""
+
+#: thematic_areas/choices.py:135
+msgid "Anatomia Patológica e Patologia Clínica"
+msgstr ""
+
+#: thematic_areas/choices.py:139
+msgid "Antropologia das Populações Afro-Brasileiras"
+msgstr ""
+
+#: thematic_areas/choices.py:141
+msgid "Antropologia Rural"
+msgstr ""
+
+#: thematic_areas/choices.py:142
+msgid "Antropologia Urbana"
+msgstr ""
+
+#: thematic_areas/choices.py:143
+msgid "Aplicações de Radioisótopos"
+msgstr ""
+
+#: thematic_areas/choices.py:144
+msgid "Aquicultura"
+msgstr ""
+
+#: thematic_areas/choices.py:147
+msgid "Áreas Clássicas de Fenomenologia e suas Aplicações"
+msgstr ""
+
+#: thematic_areas/choices.py:149
+msgid "Arqueologia Histórica"
+msgstr ""
+
+#: thematic_areas/choices.py:150
+msgid "Arqueologia Pré-Histórica"
+msgstr ""
+
+#: thematic_areas/choices.py:151
+msgid "Arquivologia"
+msgstr ""
+
+#: thematic_areas/choices.py:152
+msgid "Artes do Vídeo"
+msgstr ""
+
+#: thematic_areas/choices.py:153
+msgid "Artes Plásticas"
+msgstr ""
+
+#: thematic_areas/choices.py:154
+msgid "Astrofísica do Meio Interestelar"
+msgstr ""
+
+#: thematic_areas/choices.py:155
+msgid "Astrofísica do Sistema Solar"
+msgstr ""
+
+#: thematic_areas/choices.py:156
+msgid "Astrofísica Estelar"
+msgstr ""
+
+#: thematic_areas/choices.py:157
+msgid "Astrofísica Extragaláctica"
+msgstr ""
+
+#: thematic_areas/choices.py:160
+msgid "Astronomia de Posição e Mecânica Celeste"
+msgstr ""
+
+#: thematic_areas/choices.py:162
+msgid "Biblioteconomia"
+msgstr ""
+
+#: thematic_areas/choices.py:163
+msgid "Bioengenharia"
+msgstr ""
+
+#: thematic_areas/choices.py:164
+msgid "Biofísica Celular"
+msgstr ""
+
+#: thematic_areas/choices.py:165
+msgid "Biofísica de Processos e Sistemas"
+msgstr ""
+
+#: thematic_areas/choices.py:166
+msgid "Biofísica Molecular"
+msgstr ""
+
+#: thematic_areas/choices.py:169
+msgid "Biologia e Fisiologia dos Mircroorganismos"
+msgstr ""
+
+#: thematic_areas/choices.py:171
+msgid "Biologia Molecular"
+msgstr ""
+
+#: thematic_areas/choices.py:172
+msgid "Bioquímica da Nutrição"
+msgstr ""
+
+#: thematic_areas/choices.py:173
+msgid "Bioquímica de Microorganismos"
+msgstr ""
+
+#: thematic_areas/choices.py:174
+msgid "Botânica Aplicada"
+msgstr ""
+
+#: thematic_areas/choices.py:175
+msgid "Bromatologia"
+msgstr ""
+
+#: thematic_areas/choices.py:176
+msgid "Ciência de Alimentos"
+msgstr ""
+
+#: thematic_areas/choices.py:177
+msgid "Ciência do Solo"
+msgstr ""
+
+#: thematic_areas/choices.py:178
+msgid "Ciências Contábeis"
+msgstr ""
+
+#: thematic_areas/choices.py:179
+msgid "Cinema"
+msgstr ""
+
+#: thematic_areas/choices.py:182
+msgid "Circuitos Elétricos, Magnéticos e Eletrônicos"
+msgstr ""
+
+#: thematic_areas/choices.py:184
+msgid "Cirurgia"
+msgstr ""
+
+#: thematic_areas/choices.py:185
+msgid "Cirurgia Buco-Maxilo-Facial"
+msgstr ""
+
+#: thematic_areas/choices.py:186
+msgid "Citologia e Biologia Celular"
+msgstr ""
+
+#: thematic_areas/choices.py:187
+msgid "Clínica e Cirurgia Animal"
+msgstr ""
+
+#: thematic_areas/choices.py:188
+msgid "Clínica Médica"
+msgstr ""
+
+#: thematic_areas/choices.py:189
+msgid "Clínica Odontológica"
+msgstr ""
+
+#: thematic_areas/choices.py:190
+msgid "Combustível Nuclear"
+msgstr ""
+
+#: thematic_areas/choices.py:191
+msgid "Componentes da Dinâmica Demográfica"
+msgstr ""
+
+#: thematic_areas/choices.py:192
+msgid "Comportamento Animal"
+msgstr ""
+
+#: thematic_areas/choices.py:193
+msgid "Comportamento Político"
+msgstr ""
+
+#: thematic_areas/choices.py:194
+msgid "Comunicação Visual"
+msgstr ""
+
+#: thematic_areas/choices.py:195
+msgid "Conservação da Natureza"
+msgstr ""
+
+#: thematic_areas/choices.py:196
+msgid "Construção Civil"
+msgstr ""
+
+#: thematic_areas/choices.py:197
+msgid "Construções Rurais e Ambiência"
+msgstr ""
+
+#: thematic_areas/choices.py:200
+msgid "Crescimento, Flutuações e Planejamento Econômico"
+msgstr ""
+
+#: thematic_areas/choices.py:202
+msgid "Currículo"
+msgstr ""
+
+#: thematic_areas/choices.py:203
+msgid "Dança"
+msgstr ""
+
+#: thematic_areas/choices.py:204
+msgid "Demografia Histórica"
+msgstr ""
+
+#: thematic_areas/choices.py:205
+msgid "Desenho de Produto"
+msgstr ""
+
+#: thematic_areas/choices.py:208
+msgid "Desnutrição e Desenvolvimento Fisiológico"
+msgstr ""
+
+#: thematic_areas/choices.py:210
+msgid "Dietética"
+msgstr ""
+
+#: thematic_areas/choices.py:211
+msgid "Dinâmica de Vôo"
+msgstr ""
+
+#: thematic_areas/choices.py:212
+msgid "Direito Privado"
+msgstr ""
+
+#: thematic_areas/choices.py:213
+msgid "Direito Público"
+msgstr ""
+
+#: thematic_areas/choices.py:214
+msgid "Direitos Especiais"
+msgstr ""
+
+#: thematic_areas/choices.py:215
+msgid "Ecologia Aplicada"
+msgstr ""
+
+#: thematic_areas/choices.py:216
+msgid "Ecologia de Ecossistemas"
+msgstr ""
+
+#: thematic_areas/choices.py:219
+msgid "Ecologia dos Animais Domésticos e Etologia"
+msgstr ""
+
+#: thematic_areas/choices.py:221
+msgid "Ecologia Teórica"
+msgstr ""
+
+#: thematic_areas/choices.py:224
+msgid "Economia Agrária e dos Recursos Naturais"
+msgstr ""
+
+#: thematic_areas/choices.py:226
+msgid "Economia de Recursos Humanos"
+msgstr ""
+
+#: thematic_areas/choices.py:227
+msgid "Economia do Bem-Estar Social"
+msgstr ""
+
+#: thematic_areas/choices.py:228
+msgid "Economia Industrial"
+msgstr ""
+
+#: thematic_areas/choices.py:229
+msgid "Economia Internacional"
+msgstr ""
+
+#: thematic_areas/choices.py:230
+msgid "Economia Monetária e Fiscal"
+msgstr ""
+
+#: thematic_areas/choices.py:231
+msgid "Economia Regional e Urbana"
+msgstr ""
+
+#: thematic_areas/choices.py:232
+msgid "Educação Artística"
+msgstr ""
+
+#: thematic_areas/choices.py:235
+msgid "Eletrônica Industrial, Sistemas e Controles Eletrônicos"
+msgstr ""
+
+#: thematic_areas/choices.py:237
+msgid "Embriologia"
+msgstr ""
+
+#: thematic_areas/choices.py:238
+msgid "Endodontia"
+msgstr ""
+
+#: thematic_areas/choices.py:239
+msgid "Energia de Biomassa Florestal"
+msgstr ""
+
+#: thematic_areas/choices.py:240
+msgid "Energização Rural"
+msgstr ""
+
+#: thematic_areas/choices.py:241
+msgid "Enfermagem de Doenças Contagiosas"
+msgstr ""
+
+#: thematic_areas/choices.py:242
+msgid "Enfermagem de Saúde Pública"
+msgstr ""
+
+#: thematic_areas/choices.py:243
+msgid "Enfermagem Médico-Cirúrgica"
+msgstr ""
+
+#: thematic_areas/choices.py:244
+msgid "Enfermagem Obstétrica"
+msgstr ""
+
+#: thematic_areas/choices.py:245
+msgid "Enfermagem Pediátrica"
+msgstr ""
+
+#: thematic_areas/choices.py:246
+msgid "Enfermagem Psiquiátrica"
+msgstr ""
+
+#: thematic_areas/choices.py:247
+msgid "Engenharia de Água e Solo"
+msgstr ""
+
+#: thematic_areas/choices.py:248
+msgid "Engenharia de Alimentos"
+msgstr ""
+
+#: thematic_areas/choices.py:249
+msgid "Engenharia de Pesca"
+msgstr ""
+
+#: thematic_areas/choices.py:252
+msgid "Engenharia de Processamento de Produtos Agrícolas"
+msgstr ""
+
+#: thematic_areas/choices.py:254
+msgid "Engenharia do Produto"
+msgstr ""
+
+#: thematic_areas/choices.py:255
+msgid "Engenharia Econômica"
+msgstr ""
+
+#: thematic_areas/choices.py:256
+msgid "Engenharia Hidráulica"
+msgstr ""
+
+#: thematic_areas/choices.py:257
+msgid "Engenharia Médica"
+msgstr ""
+
+#: thematic_areas/choices.py:258
+msgid "Engenharia Térmica"
+msgstr ""
+
+#: thematic_areas/choices.py:259
+msgid "Ensino-Aprendizagem"
+msgstr ""
+
+#: thematic_areas/choices.py:262
+msgid "Entomologia e Malacologia de Parasitos e Vetores"
+msgstr ""
+
+#: thematic_areas/choices.py:264
+msgid "Enzimologia"
+msgstr ""
+
+#: thematic_areas/choices.py:265
+msgid "Epidemiologia"
+msgstr ""
+
+#: thematic_areas/choices.py:266
+msgid "Epistemologia"
+msgstr ""
+
+#: thematic_areas/choices.py:267
+msgid "Estado e Governo"
+msgstr ""
+
+#: thematic_areas/choices.py:268
+msgid "Estatística"
+msgstr ""
+
+#: thematic_areas/choices.py:269
+msgid "Estruturas"
+msgstr ""
+
+#: thematic_areas/choices.py:270
+msgid "Estruturas Aeroespaciais"
+msgstr ""
+
+#: thematic_areas/choices.py:271
+msgid "Estruturas Navais e Oceânicas"
+msgstr ""
+
+#: thematic_areas/choices.py:273
+msgid "Etnofarmacologia"
+msgstr ""
+
+#: thematic_areas/choices.py:274
+msgid "Etnologia Indígena"
+msgstr ""
+
+#: thematic_areas/choices.py:275
+msgid "Extensão Rural"
+msgstr ""
+
+#: thematic_areas/choices.py:276
+msgid "Farmacognosia"
+msgstr ""
+
+#: thematic_areas/choices.py:277
+msgid "Farmacologia Autonômica"
+msgstr ""
+
+#: thematic_areas/choices.py:278
+msgid "Farmacologia Bioquímica e Molecular"
+msgstr ""
+
+#: thematic_areas/choices.py:279
+msgid "Farmacologia Cardiorenal"
+msgstr ""
+
+#: thematic_areas/choices.py:280
+msgid "Farmacologia Clínica"
+msgstr ""
+
+#: thematic_areas/choices.py:281
+msgid "Farmacologia Geral"
+msgstr ""
+
+#: thematic_areas/choices.py:282
+msgid "Farmacotecnia"
+msgstr ""
+
+#: thematic_areas/choices.py:283
+msgid "Fenômenos de Transporte"
+msgstr ""
+
+#: thematic_areas/choices.py:284
+msgid "Filosofia Brasileira"
+msgstr ""
+
+#: thematic_areas/choices.py:285
+msgid "Filosofia da Linguagem"
+msgstr ""
+
+#: thematic_areas/choices.py:286
+msgid "Física Atômica e Molecular"
+msgstr ""
+
+#: thematic_areas/choices.py:287
+msgid "Física da Matéria Condensada"
+msgstr ""
+
+#: thematic_areas/choices.py:290
+msgid "Física das Partículas Elementares e Campos"
+msgstr ""
+
+#: thematic_areas/choices.py:294
+msgid "Física dos Fluídos, Física de Plasmas e Descargas Elétricas"
+msgstr ""
+
+#: thematic_areas/choices.py:296
+msgid "Física Geral"
+msgstr ""
+
+#: thematic_areas/choices.py:297
+msgid "Física Nuclear"
+msgstr ""
+
+#: thematic_areas/choices.py:298
+msgid "Físico-Química"
+msgstr ""
+
+#: thematic_areas/choices.py:299
+msgid "Fisiologia Comparada"
+msgstr ""
+
+#: thematic_areas/choices.py:300
+msgid "Fisiologia de Orgãos e Sistemas"
+msgstr ""
+
+#: thematic_areas/choices.py:301
+msgid "Fisiologia do Esforço"
+msgstr ""
+
+#: thematic_areas/choices.py:302
+msgid "Fisiologia dos Grupos Recentes"
+msgstr ""
+
+#: thematic_areas/choices.py:303
+msgid "Fisiologia Geral"
+msgstr ""
+
+#: thematic_areas/choices.py:304
+msgid "Fisiologia Vegetal"
+msgstr ""
+
+#: thematic_areas/choices.py:305
+msgid "Fitogeografia"
+msgstr ""
+
+#: thematic_areas/choices.py:306
+msgid "Fitossanidade"
+msgstr ""
+
+#: thematic_areas/choices.py:307
+msgid "Fitotecnia"
+msgstr ""
+
+#: thematic_areas/choices.py:308
+msgid "Floricultura, Parques e Jardins"
+msgstr ""
+
+#: thematic_areas/choices.py:309
+msgid "Fontes de Dados Demográficos"
+msgstr ""
+
+#: thematic_areas/choices.py:310
+msgid "Fotografia"
+msgstr ""
+
+#: thematic_areas/choices.py:311
+msgid "Fundamentos da Educação"
+msgstr ""
+
+#: thematic_areas/choices.py:312
+msgid "Fundamentos da Sociologia"
+msgstr ""
+
+#: thematic_areas/choices.py:315
+msgid "Fundamentos de Arquitetura e Urbanismo"
+msgstr ""
+
+#: thematic_areas/choices.py:319
+msgid "Fundamentos do Planejamento Urbano e Regional"
+msgstr ""
+
+#: thematic_areas/choices.py:321
+msgid "Fundamentos do Serviço Social"
+msgstr ""
+
+#: thematic_areas/choices.py:322
+msgid "Fundamentos e Críticas das Artes"
+msgstr ""
+
+#: thematic_areas/choices.py:323
+msgid "Fundamentos e Medidas da Psicologia"
+msgstr ""
+
+#: thematic_areas/choices.py:324
+msgid "Fusão Controlada"
+msgstr ""
+
+#: thematic_areas/choices.py:325
+msgid "Genética Animal"
+msgstr ""
+
+#: thematic_areas/choices.py:328
+msgid "Genética e Melhoramento dos Animais Domésticos"
+msgstr ""
+
+#: thematic_areas/choices.py:330
+msgid "Genética Humana e Médica"
+msgstr ""
+
+#: thematic_areas/choices.py:333
+msgid "Genética Molecular e de Microorganismos"
+msgstr ""
+
+#: thematic_areas/choices.py:335
+msgid "Genética Quantitativa"
+msgstr ""
+
+#: thematic_areas/choices.py:336
+msgid "Genética Vegetal"
+msgstr ""
+
+#: thematic_areas/choices.py:337
+msgid "Geodésia"
+msgstr ""
+
+#: thematic_areas/choices.py:338
+msgid "Geofísica"
+msgstr ""
+
+#: thematic_areas/choices.py:339
+msgid "Geografia Física"
+msgstr ""
+
+#: thematic_areas/choices.py:340
+msgid "Geografia Humana"
+msgstr ""
+
+#: thematic_areas/choices.py:341
+msgid "Geografia Regional"
+msgstr ""
+
+#: thematic_areas/choices.py:342
+msgid "Geologia"
+msgstr ""
+
+#: thematic_areas/choices.py:343
+msgid "Geometria e Topologia"
+msgstr ""
+
+#: thematic_areas/choices.py:344
+msgid "Geotécnica"
+msgstr ""
+
+#: thematic_areas/choices.py:345
+msgid "Gerência de Produção"
+msgstr ""
+
+#: thematic_areas/choices.py:346
+msgid "Helmintologia de Parasitos"
+msgstr ""
+
+#: thematic_areas/choices.py:349
+msgid "Hidrodinâmica de Navios e Sistemas Oceânicos"
+msgstr ""
+
+#: thematic_areas/choices.py:351
+msgid "Histologia"
+msgstr ""
+
+#: thematic_areas/choices.py:352
+msgid "História Antiga e Medieval"
+msgstr ""
+
+#: thematic_areas/choices.py:353
+msgid "História da América"
+msgstr ""
+
+#: thematic_areas/choices.py:354
+msgid "História da Filosofia"
+msgstr ""
+
+#: thematic_areas/choices.py:355
+msgid "História da Teologia"
+msgstr ""
+
+#: thematic_areas/choices.py:356
+msgid "História das Ciências"
+msgstr ""
+
+#: thematic_areas/choices.py:357
+msgid "História do Brasil"
+msgstr ""
+
+#: thematic_areas/choices.py:358
+msgid "História Moderna e Contemporânea"
+msgstr ""
+
+#: thematic_areas/choices.py:359
+msgid "Imunogenética"
+msgstr ""
+
+#: thematic_areas/choices.py:360
+msgid "Imunologia Aplicada"
+msgstr ""
+
+#: thematic_areas/choices.py:361
+msgid "Imunologia Celular"
+msgstr ""
+
+#: thematic_areas/choices.py:362
+msgid "Imunoquímica"
+msgstr ""
+
+#: thematic_areas/choices.py:363
+msgid "Infra-Estrutura de Transportes"
+msgstr ""
+
+#: thematic_areas/choices.py:366
+msgid "Inspeção de Produtos de Origem Animal"
+msgstr ""
+
+#: thematic_areas/choices.py:370
+msgid "Instalações e Equipamentos Metalúrgicos"
+msgstr ""
+
+#: thematic_areas/choices.py:372
+msgid "Instrumentação Astronômica"
+msgstr ""
+
+#: thematic_areas/choices.py:373
+msgid "Jornalismo e Editoração"
+msgstr ""
+
+#: thematic_areas/choices.py:374
+msgid "Lavra"
+msgstr ""
+
+#: thematic_areas/choices.py:375
+msgid "Língua Portuguesa"
+msgstr ""
+
+#: thematic_areas/choices.py:376
+msgid "Línguas Clássicas"
+msgstr ""
+
+#: thematic_areas/choices.py:377
+msgid "Línguas Estrangeiras Modernas"
+msgstr ""
+
+#: thematic_areas/choices.py:378
+msgid "Línguas Indígenas"
+msgstr ""
+
+#: thematic_areas/choices.py:379
+msgid "Linguística Aplicada"
+msgstr ""
+
+#: thematic_areas/choices.py:380
+msgid "Linguística Histórica"
+msgstr ""
+
+#: thematic_areas/choices.py:381
+msgid "Literatura Brasileira"
+msgstr ""
+
+#: thematic_areas/choices.py:382
+msgid "Literatura Comparada"
+msgstr ""
+
+#: thematic_areas/choices.py:383
+msgid "Literaturas Clássicas"
+msgstr ""
+
+#: thematic_areas/choices.py:384
+msgid "Literaturas Estrangeiras Modernas"
+msgstr ""
+
+#: thematic_areas/choices.py:385
+msgid "Lógica"
+msgstr ""
+
+#: thematic_areas/choices.py:386
+msgid "Manejo Florestal"
+msgstr ""
+
+#: thematic_areas/choices.py:387
+msgid "Máquinas e Implementos Agrícolas"
+msgstr ""
+
+#: thematic_areas/choices.py:388
+msgid "Máquinas Marítimas"
+msgstr ""
+
+#: thematic_areas/choices.py:389
+msgid "Matemática Aplicada"
+msgstr ""
+
+#: thematic_areas/choices.py:390
+msgid "Matemática da Computação"
+msgstr ""
+
+#: thematic_areas/choices.py:393
+msgid "Materiais e Processos para Engenharia Aeronáutica e Aeroespacial"
+msgstr ""
+
+#: thematic_areas/choices.py:395
+msgid "Materiais Elétricos"
+msgstr ""
+
+#: thematic_areas/choices.py:396
+msgid "Materiais não-Metálicos"
+msgstr ""
+
+#: thematic_areas/choices.py:397
+msgid "Materiais Odontológicos"
+msgstr ""
+
+#: thematic_areas/choices.py:398
+msgid "Mecânica dos Sólidos"
+msgstr ""
+
+#: thematic_areas/choices.py:399
+msgid "Medicina Legal e Deontologia"
+msgstr ""
+
+#: thematic_areas/choices.py:400
+msgid "Medicina Preventiva"
+msgstr ""
+
+#: thematic_areas/choices.py:401
+msgid "Medicina Veterinária Preventiva"
+msgstr ""
+
+#: thematic_areas/choices.py:404
+msgid "Medidas Elétricas, Magnéticas e Eletrônicas; Instrumentação"
+msgstr ""
+
+#: thematic_areas/choices.py:406
+msgid "Metabolismo e Bioenergética"
+msgstr ""
+
+#: thematic_areas/choices.py:407
+msgid "Metafísica"
+msgstr ""
+
+#: thematic_areas/choices.py:408
+msgid "Metalurgia de Transformação"
+msgstr ""
+
+#: thematic_areas/choices.py:409
+msgid "Metalurgia Extrativa"
+msgstr ""
+
+#: thematic_areas/choices.py:410
+msgid "Metalurgia Física"
+msgstr ""
+
+#: thematic_areas/choices.py:411
+msgid "Meteorologia"
+msgstr ""
+
+#: thematic_areas/choices.py:412
+msgid "Metodologia e Técnicas da Computação"
+msgstr ""
+
+#: thematic_areas/choices.py:415
+msgid "Metodos e Técnicas do Planejamento Urbano e Regional"
+msgstr ""
+
+#: thematic_areas/choices.py:417
+msgid "Métodos Quantitativos em Economia"
+msgstr ""
+
+#: thematic_areas/choices.py:418
+msgid "Microbiologia Aplicada"
+msgstr ""
+
+#: thematic_areas/choices.py:419
+msgid "Morfologia dos Grupos Recentes"
+msgstr ""
+
+#: thematic_areas/choices.py:420
+msgid "Morfologia Vegetal"
+msgstr ""
+
+#: thematic_areas/choices.py:421
+msgid "Música"
+msgstr ""
+
+#: thematic_areas/choices.py:422
+msgid "Mutagênese"
+msgstr ""
+
+#: thematic_areas/choices.py:423
+msgid "Neuropsicofarmacologia"
+msgstr ""
+
+#: thematic_areas/choices.py:424
+msgid "Nupcialidade e Família"
+msgstr ""
+
+#: thematic_areas/choices.py:425
+msgid "Nutrição e Alimentação Animal"
+msgstr ""
+
+#: thematic_areas/choices.py:426
+msgid "Oceanografia Biológica"
+msgstr ""
+
+#: thematic_areas/choices.py:427
+msgid "Oceanografia Física"
+msgstr ""
+
+#: thematic_areas/choices.py:428
+msgid "Oceanografia Geológica"
+msgstr ""
+
+#: thematic_areas/choices.py:429
+msgid "Oceanografia Química"
+msgstr ""
+
+#: thematic_areas/choices.py:430
+msgid "Odontologia Social e Preventiva"
+msgstr ""
+
+#: thematic_areas/choices.py:431
+msgid "Odontopediatria"
+msgstr ""
+
+#: thematic_areas/choices.py:432
+msgid "Ópera"
+msgstr ""
+
+#: thematic_areas/choices.py:433
+msgid "Operações de Transportes"
+msgstr ""
+
+#: thematic_areas/choices.py:436
+msgid "Operações Industriais e Equipamentos para Engenharia Química"
+msgstr ""
+
+#: thematic_areas/choices.py:438
+msgid "Orientação e Aconselhamento"
+msgstr ""
+
+#: thematic_areas/choices.py:439
+msgid "Ortodontia"
+msgstr ""
+
+#: thematic_areas/choices.py:440
+msgid "Outras Literaturas Vernáculas"
+msgstr ""
+
+#: thematic_areas/choices.py:441
+msgid "Outras Sociologias Específicas"
+msgstr ""
+
+#: thematic_areas/choices.py:442
+msgid "Paisagismo"
+msgstr ""
+
+#: thematic_areas/choices.py:443
+msgid "Paleobotânica"
+msgstr ""
+
+#: thematic_areas/choices.py:444
+msgid "Paleozoologia"
+msgstr ""
+
+#: thematic_areas/choices.py:445
+msgid "Pastagem e Forragicultura"
+msgstr ""
+
+#: thematic_areas/choices.py:446
+msgid "Patologia Animal"
+msgstr ""
+
+#: thematic_areas/choices.py:447
+msgid "Periodontia"
+msgstr ""
+
+#: thematic_areas/choices.py:448
+msgid "Pesquisa Mineral"
+msgstr ""
+
+#: thematic_areas/choices.py:449
+msgid "Pesquisa Operacional"
+msgstr ""
+
+#: thematic_areas/choices.py:450
+msgid "Planejamento de Transportes"
+msgstr ""
+
+#: thematic_areas/choices.py:451
+msgid "Planejamento e Avaliação Educacional"
+msgstr ""
+
+#: thematic_areas/choices.py:452
+msgid "Política Internacional"
+msgstr ""
+
+#: thematic_areas/choices.py:453
+msgid "Política Pública e População"
+msgstr ""
+
+#: thematic_areas/choices.py:454
+msgid "Políticas Públicas"
+msgstr ""
+
+#: thematic_areas/choices.py:455
+msgid "Probabilidade"
+msgstr ""
+
+#: thematic_areas/choices.py:458
+msgid "Probabilidade e Estatística Aplicadas"
+msgstr ""
+
+#: thematic_areas/choices.py:460
+msgid "Processos de Fabricação"
+msgstr ""
+
+#: thematic_areas/choices.py:463
+msgid "Processos Industriais de Engenharia Química"
+msgstr ""
+
+#: thematic_areas/choices.py:465
+msgid "Produção Animal"
+msgstr ""
+
+#: thematic_areas/choices.py:466
+msgid "Programação Visual"
+msgstr ""
+
+#: thematic_areas/choices.py:467
+msgid "Projetos de Arquitetura e Urbanismo"
+msgstr ""
+
+#: thematic_areas/choices.py:468
+msgid "Projetos de Máquinas"
+msgstr ""
+
+#: thematic_areas/choices.py:471
+msgid "Projetos de Navios e de Sistemas Oceânicos"
+msgstr ""
+
+#: thematic_areas/choices.py:473
+msgid "Propulsão Aeroespacial"
+msgstr ""
+
+#: thematic_areas/choices.py:474
+msgid "Protozoologia de Parasitos"
+msgstr ""
+
+#: thematic_areas/choices.py:475
+msgid "Psicolinguística"
+msgstr ""
+
+#: thematic_areas/choices.py:476
+msgid "Psicologia Cognitiva"
+msgstr ""
+
+#: thematic_areas/choices.py:477
+msgid "Psicologia Comparativa"
+msgstr ""
+
+#: thematic_areas/choices.py:478
+msgid "Psicologia do Desenvolvimento Humano"
+msgstr ""
+
+#: thematic_areas/choices.py:481
+msgid "Psicologia do Ensino e da Aprendizagem"
+msgstr ""
+
+#: thematic_areas/choices.py:485
+msgid "Psicologia do Trabalho e Organizacional"
+msgstr ""
+
+#: thematic_areas/choices.py:487
+msgid "Psicologia Experimental"
+msgstr ""
+
+#: thematic_areas/choices.py:488
+msgid "Psicologia Fisiológica"
+msgstr ""
+
+#: thematic_areas/choices.py:489
+msgid "Psicologia Social"
+msgstr ""
+
+#: thematic_areas/choices.py:490
+msgid "Psiquiatria"
+msgstr ""
+
+#: thematic_areas/choices.py:491
+msgid "Química Analítica"
+msgstr ""
+
+#: thematic_areas/choices.py:492
+msgid "Química de Macromoléculas"
+msgstr ""
+
+#: thematic_areas/choices.py:493
+msgid "Química Inorgânica"
+msgstr ""
+
+#: thematic_areas/choices.py:494
+msgid "Química Orgânica"
+msgstr ""
+
+#: thematic_areas/choices.py:495
+msgid "Rádio e Televisão"
+msgstr ""
+
+#: thematic_areas/choices.py:496
+msgid "Radiologia e Fotobiologia"
+msgstr ""
+
+#: thematic_areas/choices.py:497
+msgid "Radiologia Médica"
+msgstr ""
+
+#: thematic_areas/choices.py:498
+msgid "Radiologia Odontológica"
+msgstr ""
+
+#: thematic_areas/choices.py:499
+msgid "Recursos Hídricos"
+msgstr ""
+
+#: thematic_areas/choices.py:502
+msgid "Recursos Pesqueiros de Águas Interiores"
+msgstr ""
+
+#: thematic_areas/choices.py:504
+msgid "Recursos Pesqueiros Marinhos"
+msgstr ""
+
+#: thematic_areas/choices.py:505
+msgid "Relações Públicas e Propaganda"
+msgstr ""
+
+#: thematic_areas/choices.py:506
+msgid "Reprodução Animal"
+msgstr ""
+
+#: thematic_areas/choices.py:507
+msgid "Saneamento Ambiental"
+msgstr ""
+
+#: thematic_areas/choices.py:508
+msgid "Saneamento Básico"
+msgstr ""
+
+#: thematic_areas/choices.py:509
+msgid "Saúde Materno-Infantil"
+msgstr ""
+
+#: thematic_areas/choices.py:511
+msgid "Serviço Social Aplicado"
+msgstr ""
+
+#: thematic_areas/choices.py:512
+msgid "Serviços Urbanos e Regionais"
+msgstr ""
+
+#: thematic_areas/choices.py:513
+msgid "Silvicultura"
+msgstr ""
+
+#: thematic_areas/choices.py:514
+msgid "Sistemas Aeroespaciais"
+msgstr ""
+
+#: thematic_areas/choices.py:515
+msgid "Sistemas de Computação"
+msgstr ""
+
+#: thematic_areas/choices.py:516
+msgid "Sistemas Elétricos de Potência"
+msgstr ""
+
+#: thematic_areas/choices.py:517
+msgid "Sociolinguística e Dialetologia"
+msgstr ""
+
+#: thematic_areas/choices.py:518
+msgid "Sociologia da Saúde"
+msgstr ""
+
+#: thematic_areas/choices.py:519
+msgid "Sociologia do Conhecimento"
+msgstr ""
+
+#: thematic_areas/choices.py:520
+msgid "Sociologia do Desenvolvimento"
+msgstr ""
+
+#: thematic_areas/choices.py:521
+msgid "Sociologia Rural"
+msgstr ""
+
+#: thematic_areas/choices.py:522
+msgid "Sociologia Urbana"
+msgstr ""
+
+#: thematic_areas/choices.py:523
+msgid "Taxonomia dos Grupos Recentes"
+msgstr ""
+
+#: thematic_areas/choices.py:524
+msgid "Taxonomia Vegetal"
+msgstr ""
+
+#: thematic_areas/choices.py:525
+msgid "Teatro"
+msgstr ""
+
+#: thematic_areas/choices.py:526
+msgid "Técnicas e Operações Florestais"
+msgstr ""
+
+#: thematic_areas/choices.py:527
+msgid "Tecnologia de Alimentos"
+msgstr ""
+
+#: thematic_areas/choices.py:530
+msgid "Tecnologia de Arquitetura e Urbanismo"
+msgstr ""
+
+#: thematic_areas/choices.py:534
+msgid "Tecnologia de Construção Naval e de Sistemas Oceânicos"
+msgstr ""
+
+#: thematic_areas/choices.py:536
+msgid "Tecnologia de Reatores"
+msgstr ""
+
+#: thematic_areas/choices.py:539
+msgid "Tecnologia e Utilização de Produtos Florestais"
+msgstr ""
+
+#: thematic_areas/choices.py:541
+msgid "Tecnologia Química"
+msgstr ""
+
+#: thematic_areas/choices.py:542
+msgid "Telecomunicações"
+msgstr ""
+
+#: thematic_areas/choices.py:543
+msgid "Teologia Moral"
+msgstr ""
+
+#: thematic_areas/choices.py:544
+msgid "Teologia Pastoral"
+msgstr ""
+
+#: thematic_areas/choices.py:545
+msgid "Teologia Sistemática"
+msgstr ""
+
+#: thematic_areas/choices.py:546
+msgid "Teoria Antropológica"
+msgstr ""
+
+#: thematic_areas/choices.py:547
+msgid "Teoria da Computação"
+msgstr ""
+
+#: thematic_areas/choices.py:548
+msgid "Teoria da Comunicação"
+msgstr ""
+
+#: thematic_areas/choices.py:549
+msgid "Teoria da Informação"
+msgstr ""
+
+#: thematic_areas/choices.py:550
+msgid "Teoria do Direito"
+msgstr ""
+
+#: thematic_areas/choices.py:551
+msgid "Teoria e Análise Linguística"
+msgstr ""
+
+#: thematic_areas/choices.py:552
+msgid "Teoria e Filosofia da História"
+msgstr ""
+
+#: thematic_areas/choices.py:553
+msgid "Teoria e Método em Arqueologia"
+msgstr ""
+
+#: thematic_areas/choices.py:554
+msgid "Teoria Econômica"
+msgstr ""
+
+#: thematic_areas/choices.py:555
+msgid "Teoria Literária"
+msgstr ""
+
+#: thematic_areas/choices.py:556
+msgid "Teoria Política"
+msgstr ""
+
+#: thematic_areas/choices.py:557
+msgid "Tópicos Específicos de Educação"
+msgstr ""
+
+#: thematic_areas/choices.py:558
+msgid "Toxicologia"
+msgstr ""
+
+#: thematic_areas/choices.py:561
+msgid "Tratamento de Águas de Abastecimento e Residuárias"
+msgstr ""
+
+#: thematic_areas/choices.py:563
+msgid "Tratamento de Minérios"
+msgstr ""
+
+#: thematic_areas/choices.py:564
+msgid "Tratamento e Prevenção Psicológica"
+msgstr ""
+
+#: thematic_areas/choices.py:565
+msgid "Veículos e Equipamentos de Controle"
+msgstr ""
+
+#: thematic_areas/choices.py:566
+msgid "Zoologia Aplicada"
+msgstr ""
+
+#: thematic_areas/choices.py:574
+msgid "Bengali"
+msgstr ""
+
+#: thematic_areas/choices.py:577
+msgid "Dinamarquês"
+msgstr ""
+
+#: thematic_areas/choices.py:583
+msgid "Grego"
+msgstr ""
+
+#: thematic_areas/choices.py:586
+msgid "Indiano"
+msgstr ""
+
+#: thematic_areas/choices.py:587
+msgid "Indonésio"
+msgstr ""
+
+#: thematic_areas/choices.py:591
+msgid "Norueguês"
+msgstr ""
+
+#: thematic_areas/choices.py:598
+msgid "Tailandês"
+msgstr ""
+
+#: thematic_areas/choices.py:599
+msgid "Tcheco"
+msgstr ""
+
+#: thematic_areas/choices.py:606 thematic_areas/models.py:130
+msgid "Level 0"
+msgstr ""
+
+#: thematic_areas/choices.py:607 thematic_areas/models.py:139
+msgid "Level 1"
+msgstr ""
+
+#: thematic_areas/choices.py:608 thematic_areas/models.py:148
+msgid "Level 2"
+msgstr ""
+
+#: thematic_areas/choices.py:609
+msgid "Level 3"
+msgstr ""
+
+#: thematic_areas/models.py:15 thematic_areas/models.py:157
+#: thematic_areas/wagtail_hooks.py:142
+msgid "Thematic Area"
+msgstr ""
+
+#: thematic_areas/models.py:23
+msgid "Origin Data Base"
+msgstr ""
+
+#: thematic_areas/models.py:25
+msgid "Level"
+msgstr ""
+
+#: thematic_areas/models.py:36 thematic_areas/wagtail_hooks.py:42
+msgid "Generic Thematic Area"
+msgstr ""
+
+#: thematic_areas/models.py:37 thematic_areas/wagtail_hooks.py:99
+msgid "Generic Thematic Areas"
+msgstr ""
+
+#: thematic_areas/models.py:90 thematic_areas/models.py:217
+msgid "Attachment"
+msgstr ""
+
+#: thematic_areas/models.py:110 thematic_areas/wagtail_hooks.py:81
+msgid "Generic Thematic Areas Upload"
+msgstr ""
+
+#: thematic_areas/models.py:134 thematic_areas/models.py:143
+#: thematic_areas/models.py:152
+msgid ""
+"Here the thematic colleges of CAPES must be registered, more about these "
+"areas access: https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-"
+"programas/avaliacao/sobre-a-avaliacao/areas-avaliacao/sobre-as-areas-de-"
+"avaliacao/sobre-as-areas-de-avaliacao"
+msgstr ""
+
+#: thematic_areas/models.py:229 thematic_areas/wagtail_hooks.py:178
+msgid "Thematic Areas Upload"
+msgstr ""
+
+#: thematic_areas/templates/modeladmin/generic_thematic_areas/generic_thematic_areas_file/index.html:6
+#: thematic_areas/templates/modeladmin/thematic_areas/thematic_areas_file/index.html:6
+msgid "Download CSV Example"
+msgstr ""
+
+#: tracker/choices.py:9
+msgid "error"
+msgstr ""
+
+#: tracker/choices.py:10
+msgid "warning"
+msgstr ""
+
+#: tracker/choices.py:11
+msgid "info"
+msgstr ""
+
+#: tracker/choices.py:12
+msgid "exception"
+msgstr ""
+
+#: tracker/choices.py:24
+msgid "To reprocess"
+msgstr ""
+
+#: tracker/choices.py:25
+msgid "To do"
+msgstr ""
+
+#: tracker/choices.py:26
+msgid "Done"
+msgstr ""
+
+#: tracker/choices.py:27
+msgid "Doing"
+msgstr ""
+
+#: tracker/choices.py:28
+msgid "Pending"
+msgstr ""
+
+#: tracker/choices.py:29
+msgid "ignored"
+msgstr ""
+
+#: tracker/models.py:52
+msgid "Exception Type"
+msgstr ""
+
+#: tracker/models.py:53
+msgid "Exception Msg"
+msgstr ""
+
+#: tracker/models.py:102
+msgid "Message"
+msgstr ""
+
+#: tracker/models.py:104
+msgid "Message type"
+msgstr ""
+
+#: tracker/wagtail_hooks.py:18
+msgid "Unexpected Events"
+msgstr ""
+
+#: tracker/wagtail_hooks.py:46
+msgid "Unexpected errors"
+msgstr ""
+
+#: vocabulary/models.py:11
+msgid "Vocabulary name"
+msgstr ""
+
+#: vocabulary/models.py:13
+msgid "Vocabulary acronym"
+msgstr ""
+
+#: vocabulary/models.py:105 vocabulary/wagtail_hooks.py:22
+#: vocabulary/wagtail_hooks.py:68
+msgid "Vocabulary"
+msgstr ""
+
+#: vocabulary/wagtail_hooks.py:48
+msgid "Keyword"
+msgstr ""
+
+#: xmlsps/models.py:96
+msgid "Unable to get xml with pre (XMLVersion) {}: {} {}"
+msgstr ""
+
+#: xmlsps/wagtail_hooks.py:19
+msgid "XMLVersion"
+msgstr ""
