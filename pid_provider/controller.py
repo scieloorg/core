@@ -11,10 +11,7 @@ LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 
 
-class PidProvider:
-    """
-    Recebe XML para validar ou atribuir o ID do tipo v3
-    """
+class BasePidProvider:
 
     def __init__(self):
         pass
@@ -118,32 +115,6 @@ class PidProvider:
                 origin=xml_uri,
             )
 
-    def provide_pid_for_xml_with_pre(
-        self,
-        xml_with_pre,
-        name,
-        user,
-        origin_date=None,
-        force_update=None,
-        is_published=None,
-        origin=None,
-    ):
-        """
-        Fornece / Valida PID para o XML no formato de objeto de XMLWithPre
-        """
-        registered = PidProviderXML.register(
-            xml_with_pre,
-            name,
-            user,
-            origin_date=origin_date,
-            force_update=force_update,
-            is_published=is_published,
-            origin=origin,
-        )
-        logging.info("")
-        logging.info(f"provide pid for {origin} result: {registered}")
-        return registered
-
     @classmethod
     def is_registered_xml_with_pre(cls, xml_with_pre, origin):
         """
@@ -235,17 +206,84 @@ class PidProvider:
                 "error_type": str(type(e)),
             }
 
-    # @classmethod
-    # def get_xml_uri(cls, v3):
-    #     """
-    #     Retorna XML URI ou None
-    #     """
-    #     try:
-    #         # NAO EXISTE
-    #         return PidProviderXML.get_xml_uri(v3)
-    #     except Exception as e:
-    #         logging.exception(e)
-    #         return {
-    #             "error_msg": f"Unable to get xml uri for {v3} {e}",
-    #             "error_type": str(type(e)),
-    #         }
+    def provide_pid_for_xml_with_pre(
+        self,
+        xml_with_pre,
+        name,
+        user,
+        origin_date=None,
+        force_update=None,
+        is_published=None,
+        origin=None,
+    ):
+        """
+        Recebe um xml_with_pre para solicitar o PID da versão 3
+        para o Pid Provider
+
+        Se o xml_with_pre já está registrado local e remotamente,
+        apenas retorna os dados registrados
+        {
+            'registered': {...},
+            'required_local_registration': False,
+            'required_remote_registration': False,
+        }
+
+        Caso contrário, solicita PID versão 3 para o Pid Provider e
+        armazena o resultado
+        """
+        v3 = xml_with_pre.v3
+        response = self.pre_registration(xml_with_pre, name)
+        if response.get("required_local_registration"):
+            registered = PidProviderXML.register(
+                xml_with_pre,
+                name,
+                user,
+                origin_date=origin_date,
+                force_update=force_update,
+                is_published=is_published,
+                origin=origin,
+            )
+        else:
+            registered = response.get("registered")
+
+        # registered["xml_changed"] = v3 != xml_with_pre.v3
+        # registered["xml_uri"] = response.get("xml_uri")
+        logging.info(f"PidProvider.provide_pid_for_xml_with_pre: registered={registered}")
+
+        response.update(registered)
+        return response
+
+
+class PidProvider(BasePidProvider):
+    """
+    Recebe XML para validar ou atribuir o ID do tipo v3
+    """
+
+    def __init__(self):
+        pass
+
+    def provide_pid_for_xml_with_pre(
+        self,
+        xml_with_pre,
+        name,
+        user,
+        origin_date=None,
+        force_update=None,
+        is_published=None,
+        origin=None,
+    ):
+        """
+        Fornece / Valida PID para o XML no formato de objeto de XMLWithPre
+        """
+        registered = PidProviderXML.register(
+            xml_with_pre,
+            name,
+            user,
+            origin_date=origin_date,
+            force_update=force_update,
+            is_published=is_published,
+            origin=origin,
+        )
+        logging.info("")
+        logging.info(f"provide pid for {origin} result: {registered}")
+        return registered
