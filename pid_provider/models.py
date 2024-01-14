@@ -176,7 +176,6 @@ class PidRequest(CommonControlField):
         obj.save()
         return obj
 
-
     @classmethod
     def register_failure(
         cls,
@@ -206,6 +205,8 @@ class PidRequest(CommonControlField):
     def cancel_failure(
         cls, user=None, origin=None, v3=None, detail=None, origin_date=None
     ):
+        if not origin:
+            return
         try:
             PidRequest.get(origin)
         except cls.DoesNotExist:
@@ -602,9 +603,13 @@ class PidProviderXML(CommonControlField):
             registered.created = utcnow()
 
         # evita que artigos WIP fique disponíveis antes de estarem públicos
-        registered.website_publication_date = (
-            xml_adapter.xml_with_pre.article_publication_date or origin_date
-        )
+        try:
+            registered.website_publication_date = (
+                xml_adapter.xml_with_pre.article_publication_date
+            )
+        except Exception as e:
+            # packtools error
+            registered.website_publication_date = origin_date
 
         registered.origin_date = origin_date
         registered._add_data(xml_adapter, user)
@@ -693,6 +698,8 @@ class PidProviderXML(CommonControlField):
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
             registered = cls._query_document(xml_adapter)
             return registered.data
+        except cls.DoesNotExist:
+            return {"filename": xml_with_pre.filename, "registered": False}
         except Exception as e:
             # except (
             #     exceptions.NotEnoughParametersToGetDocumentRecordError,
@@ -766,6 +773,7 @@ class PidProviderXML(CommonControlField):
                 raise exceptions.QueryDocumentMultipleObjectsReturnedError(
                     str({"params": adapted_params, "items": items})
                 )
+        raise cls.DoesNotExist
 
     def _add_data(self, xml_adapter, user):
         self.pkg_name = xml_adapter.sps_pkg_name
@@ -1067,7 +1075,7 @@ class CollectionPidRequest(CommonControlField):
     base_form_class = CoreAdminModelForm
 
     class Meta:
-        unique_together = [("collection", )]
+        unique_together = [("collection",)]
 
     def __unicode__(self):
         return f"{self.collection}"
