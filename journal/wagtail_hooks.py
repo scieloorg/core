@@ -85,15 +85,7 @@ class JournalAdmin(ModelAdmin):
         "official__issn_electronic",
         "contact_location__country__name",
     )
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        user_groups = request.user.groups.values_list('name', flat=True)
-        if 'Equipe de Coordenação da Coleção' in user_groups:
-            return qs.filter(scielojournal__collection__in=request.user.collection.all())
-        elif 'Equipe Editorial do Periódico' in user_groups:
-            return qs.filter(id=request.user.journal.id)
-        return qs
-    
+
 
 class SciELOJournalCreateView(CreateView):
     def form_valid(self, form):
@@ -126,14 +118,6 @@ class SciELOJournalAdmin(ModelAdmin):
         "journal__title",
         "issn_scielo",
     )
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        user_groups = request.user.groups.values_list('name', flat=True)
-        if 'Equipe de Coordenação da Coleção' in user_groups:
-            return qs.filter(collection__in=request.user.collection.all())
-        elif 'Equipe Editorial do Periódico' in user_groups:
-            return qs.filter(journal=request.user.journal)
-        return qs
 
 
 class JournalAdminGroup(ModelAdminGroup):
