@@ -1,5 +1,5 @@
 from django.contrib.auth.models import AbstractUser
-from django.db import models
+from django.db.models import CharField
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
@@ -12,12 +12,10 @@ class User(AbstractUser):
     """
 
     #: First and last name do not cover name patterns around the globe
-    name = models.CharField(_("Name of User"), blank=True, max_length=255)
-    first_name = models.CharField(max_length=150, blank=True, verbose_name="first name")
-    last_name = models.CharField(max_length=150, blank=True, verbose_name="last name")
-    journal = models.ManyToManyField("journal.Journal", verbose_name=_("Journal"), blank=True)
-    collection = models.ManyToManyField("collection.Collection", verbose_name=_("Collection"), blank=True)
-    
+    name = CharField(_("Name of User"), blank=True, max_length=255)
+    first_name = CharField(max_length=150, blank=True, verbose_name="first name")
+    last_name = CharField(max_length=150, blank=True, verbose_name="last name")
+
     def get_absolute_url(self):
         """Get url for user's detail view.
 
