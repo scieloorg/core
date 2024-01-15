@@ -4,9 +4,6 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView, RedirectView, UpdateView
-from django.http import JsonResponse
-from journal.models import Journal
-
 
 User = get_user_model()
 
@@ -46,14 +43,3 @@ class UserRedirectView(LoginRequiredMixin, RedirectView):
 
 
 user_redirect_view = UserRedirectView.as_view()
-
-
-def filter_journals(request):
-    collection_ids = request.GET.getlist('collections[]')
-    print(collection_ids)
-    if not collection_ids or collection_ids[0]:
-        journals = Journal.objects.filter(scielojournal__collection__id__in=collection_ids).distinct()
-    else:
-        journals = Journal.objects.all()
-    journal_list = [{'id': journal.id, 'name': journal.title} for journal in journals]
-    return JsonResponse(journal_list, safe=False)
