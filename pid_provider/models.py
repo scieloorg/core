@@ -372,7 +372,7 @@ class PidProviderXML(CommonControlField):
         FieldPanel("fpage", read_only=True),
         FieldPanel("fpage_seq", read_only=True),
         FieldPanel("lpage", read_only=True),
-        FieldPanel("website_publication_date", read_only=True),
+        FieldPanel("available_since", read_only=True),
         FieldPanel("main_toc_section", read_only=True),
         # FieldPanel("z_article_titles_texts", read_only=True),
         # FieldPanel("z_surnames", read_only=True),
@@ -413,7 +413,7 @@ class PidProviderXML(CommonControlField):
     def public_items(cls, from_date):
         now = datetime.utcnow().isoformat()[:10]
         return cls.objects.filter(
-            Q(website_publication_date__lte=now)
+            Q(available_since__lte=now)
             & (Q(created__gte=from_date) | Q(updated__gte=from_date)),
             current_version__pid_v3__isnull=False,
         ).iterator()
@@ -459,7 +459,7 @@ class PidProviderXML(CommonControlField):
         origin_date=None,
         force_update=None,
         is_published=False,
-        website_publication_date=None,
+        available_since=None,
         origin=None,
     ):
         """
@@ -528,11 +528,8 @@ class PidProviderXML(CommonControlField):
 
             # cria ou atualiza registro
             registered = cls._save(
-                registered, xml_adapter, user, changed_pids, origin_date
+                registered, xml_adapter, user, changed_pids, origin_date, available_since
             )
-
-            # TODO substituir is_published por website_publication_date
-            # preencher self.website_publication_date = website_publication_date
 
             # data to return
             data = registered.data.copy()
@@ -594,6 +591,7 @@ class PidProviderXML(CommonControlField):
         user,
         changed_pids,
         origin_date=None,
+        available_since=None,
     ):
         if registered:
             registered.updated_by = user
@@ -605,12 +603,12 @@ class PidProviderXML(CommonControlField):
 
         # evita que artigos WIP fique disponíveis antes de estarem públicos
         try:
-            registered.website_publication_date = (
+            registered.available_since = available_since or (
                 xml_adapter.xml_with_pre.article_publication_date
             )
         except Exception as e:
             # packtools error
-            registered.website_publication_date = origin_date
+            registered.available_since = origin_date
 
         registered.origin_date = origin_date
         registered._add_data(xml_adapter, user)

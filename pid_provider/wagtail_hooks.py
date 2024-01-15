@@ -91,7 +91,7 @@ class PidProviderXMLAdmin(ModelAdmin):
         "v2",
         "aop_pid",
         "main_doi",
-        "website_publication_date",
+        "available_since",
         "created",
         "updated",
     )
@@ -103,7 +103,7 @@ class PidProviderXMLAdmin(ModelAdmin):
         "aop_pid",
         "main_doi",
         "article_pub_year",
-        "website_publication_date",
+        "available_since",
     )
 
 
