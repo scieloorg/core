@@ -7,6 +7,11 @@ from django.db import models, IntegrityError
 from django.db.models import Q
 from django.utils.translation import gettext as _
 from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
+from modelcluster.fields import ParentalKey
+from modelcluster.models import ClusterableModel
+from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
+from wagtail.fields import RichTextField
+from wagtail.models import Orderable
 from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
@@ -244,54 +249,57 @@ class PidRequest(CommonControlField):
     base_form_class = CoreAdminModelForm
 
 
-class PidChange(CommonControlField):
-    pkg_name = models.TextField(_("Package name"), null=True, blank=True)
-    pid_type = models.CharField(_("PID type"), max_length=23, null=True, blank=True)
+class OtherPid(CommonControlField):
+    """
+    Registro de PIDs (associados a um PidProviderXML) cujo valor difere do valor atribuído
+    """
+    pid_provider_xml = ParentalKey(
+        "PidProviderXML",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="pid_changes",
+    )
+    pid_type = models.CharField(_("PID type"), max_length=7, null=True, blank=True)
     pid_in_xml = models.CharField(
         _("PID pid_in_xml"), max_length=23, null=True, blank=True
-    )
-    pid_assigned = models.CharField(
-        _("PID assigned"), max_length=23, null=True, blank=True
     )
     version = models.ForeignKey(
         XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
     )
 
     panels = [
-        # FieldPanel("pkg_name", read_only=True),
+        # FieldPanel("pid_provider_xml", read_only=True),
         FieldPanel("pid_type", read_only=True),
         FieldPanel("pid_in_xml", read_only=True),
-        FieldPanel("pid_assigned", read_only=True),
         AutocompletePanel("version", read_only=True),
     ]
 
     class Meta:
         indexes = [
             models.Index(fields=["pid_in_xml"]),
-            models.Index(fields=["pid_assigned"]),
             models.Index(fields=["pid_type"]),
             models.Index(fields=["version"]),
         ]
 
     def __str__(self):
-        return f"{self.pid_type} {self.pid_in_xml} -> {self.pid_assigned}"
+        return f"{self.pid_type} {self.pid_in_xml} {self.created}"
 
     @classmethod
-    def get_or_create(cls, pid_type, pid_in_xml, pid_assigned, version, user, pkg_name):
+    def get_or_create(cls, pid_type, pid_in_xml, version, user, pid_provider_xml):
         try:
             return cls.objects.get(
+                pid_provider_xml=pid_provider_xml,
                 pid_type=pid_type,
                 pid_in_xml=pid_in_xml,
-                pid_assigned=pid_assigned,
                 version=version,
             )
         except cls.DoesNotExist:
             obj = cls()
             obj.creator = user
-            obj.pkg_name = pkg_name
+            obj.pid_provider_xml = pid_provider_xml
             obj.pid_type = pid_type
             obj.pid_in_xml = pid_in_xml
-            obj.pid_assigned = pid_assigned
             obj.version = version
             obj.save()
             return obj
@@ -301,7 +309,7 @@ class PidChange(CommonControlField):
         return self.updated or self.created
 
 
-class PidProviderXML(CommonControlField):
+class PidProviderXML(CommonControlField, ClusterableModel):
     """
     Tem responsabilidade de garantir a atribuição do PID da versão 3,
     armazenando dados chaves que garantem a identificação do XML
@@ -353,10 +361,11 @@ class PidProviderXML(CommonControlField):
     available_since = models.CharField(
         _("Available since"), max_length=10, null=True, blank=True
     )
+    other_pid_count = models.PositiveIntegerField(default=0)
 
     base_form_class = CoreAdminModelForm
 
-    panels = [
+    panel_a = [
         FieldPanel("issn_electronic", read_only=True),
         FieldPanel("issn_print", read_only=True),
         FieldPanel("pub_year", read_only=True),
@@ -379,8 +388,18 @@ class PidProviderXML(CommonControlField):
         # FieldPanel("z_collab", read_only=True),
         # FieldPanel("z_links", read_only=True),
         # FieldPanel("z_partial_body", read_only=True),
-        AutocompletePanel("current_version", read_only=True),
     ]
+    panel_b = [
+        AutocompletePanel("current_version", read_only=True),
+        InlinePanel("pid_changes", label=_("pid changes")),
+    ]
+
+    edit_handler = TabbedInterface(
+        [
+            ObjectList(panel_a, heading=_("Identification")),
+            ObjectList(panel_b, heading=_("PID changes")),
+        ]
+    )
 
     class Meta:
         indexes = [
@@ -404,6 +423,7 @@ class PidProviderXML(CommonControlField):
             models.Index(fields=["z_links"]),
             models.Index(fields=["z_partial_body"]),
             models.Index(fields=["z_journal_title"]),
+            models.Index(fields=["other_pid_count"]),
         ]
 
     def __str__(self):
@@ -822,8 +842,10 @@ class PidProviderXML(CommonControlField):
                 # somente registra as mudanças de um pid_in_xml não vazio
                 change_args["user"] = user
                 change_args["version"] = self.current_version
-                change_args["pkg_name"] = self.pkg_name
-                PidChange.get_or_create(**change_args)
+                change_args["pid_provider_xml"] = self
+                OtherPid.get_or_create(**change_args)
+                self.other_pid_count = OtherPid.objects.filter(pid_provider_xml=self).count()
+                self.save()
 
     @classmethod
     def _get_unique_v3(cls):
@@ -837,7 +859,10 @@ class PidProviderXML(CommonControlField):
         while True:
             generated = v3_gen.generates()
             if not cls._is_registered_pid(v3=generated):
-                return generated
+                try:
+                    OtherPid.objects.get(pid_type="pid_v3", pid_in_xml=generated)
+                except OtherPid.DoesNotExist:
+                    return generated
 
     @classmethod
     def _is_registered_pid(cls, v2=None, v3=None, aop_pid=None):
