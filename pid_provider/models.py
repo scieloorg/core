@@ -307,15 +307,14 @@ class PidProviderXML(CommonControlField):
     armazenando dados chaves que garantem a identificação do XML
     """
     z_journal_title = models.CharField(_("journal title"), max_length=64, null=True, blank=True)
-
     issn_electronic = models.CharField(
-        _("issn_epub"), max_length=9, null=True, blank=True
+        _("issn_epub"), max_length=10, null=True, blank=True
     )
-    issn_print = models.CharField(_("issn_ppub"), max_length=9, null=True, blank=True)
+    issn_print = models.CharField(_("issn_ppub"), max_length=10, null=True, blank=True)
     pub_year = models.CharField(_("pub_year"), max_length=4, null=True, blank=True)
-    volume = models.CharField(_("volume"), max_length=10, null=True, blank=True)
-    number = models.CharField(_("number"), max_length=10, null=True, blank=True)
-    suppl = models.CharField(_("suppl"), max_length=10, null=True, blank=True)
+    volume = models.CharField(_("volume"), max_length=16, null=True, blank=True)
+    number = models.CharField(_("number"), max_length=16, null=True, blank=True)
+    suppl = models.CharField(_("suppl"), max_length=16, null=True, blank=True)
 
     current_version = models.ForeignKey(
         XMLVersion, on_delete=models.SET_NULL, null=True, blank=True
@@ -323,13 +322,13 @@ class PidProviderXML(CommonControlField):
 
     pkg_name = models.TextField(_("Package name"), null=True, blank=True)
     v3 = models.CharField(_("v3"), max_length=23, null=True, blank=True)
-    v2 = models.CharField(_("v2"), max_length=23, null=True, blank=True)
-    aop_pid = models.CharField(_("AOP PID"), max_length=23, null=True, blank=True)
+    v2 = models.CharField(_("v2"), max_length=24, null=True, blank=True)
+    aop_pid = models.CharField(_("AOP PID"), max_length=64, null=True, blank=True)
 
-    elocation_id = models.TextField(_("elocation id"), null=True, blank=True)
-    fpage = models.CharField(_("fpage"), max_length=10, null=True, blank=True)
-    fpage_seq = models.CharField(_("fpage_seq"), max_length=10, null=True, blank=True)
-    lpage = models.CharField(_("lpage"), max_length=10, null=True, blank=True)
+    elocation_id = models.CharField(_("elocation id"), max_length=20, null=True, blank=True)
+    fpage = models.CharField(_("fpage"), max_length=20, null=True, blank=True)
+    fpage_seq = models.CharField(_("fpage_seq"), max_length=8, null=True, blank=True)
+    lpage = models.CharField(_("lpage"), max_length=20, null=True, blank=True)
     article_pub_year = models.CharField(
         _("Document Publication Year"), max_length=4, null=True, blank=True
     )
@@ -351,8 +350,8 @@ class PidProviderXML(CommonControlField):
     )
     # data de primeira publicação no site
     # evita que artigos WIP fique disponíveis antes de estarem públicos
-    website_publication_date = models.CharField(
-        _("Website publication date"), max_length=10, null=True, blank=True
+    available_since = models.CharField(
+        _("Available since"), max_length=10, null=True, blank=True
     )
 
     base_form_class = CoreAdminModelForm
