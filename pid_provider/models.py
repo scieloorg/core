@@ -306,6 +306,7 @@ class PidProviderXML(CommonControlField):
     Tem responsabilidade de garantir a atribuição do PID da versão 3,
     armazenando dados chaves que garantem a identificação do XML
     """
+    z_journal_title = models.CharField(_("journal title"), max_length=64, null=True, blank=True)
 
     issn_electronic = models.CharField(
         _("issn_epub"), max_length=9, null=True, blank=True
@@ -403,6 +404,7 @@ class PidProviderXML(CommonControlField):
             models.Index(fields=["z_collab"]),
             models.Index(fields=["z_links"]),
             models.Index(fields=["z_partial_body"]),
+            models.Index(fields=["z_journal_title"]),
         ]
 
     def __str__(self):
@@ -797,6 +799,7 @@ class PidProviderXML(CommonControlField):
         self.z_partial_body = xml_adapter.z_partial_body
 
     def _add_journal(self, xml_adapter):
+        self.z_journal_title = xml_adapter.z_journal_title
         self.issn_electronic = xml_adapter.journal_issn_electronic
         self.issn_print = xml_adapter.journal_issn_print
 
@@ -1017,6 +1020,7 @@ class PidProviderXML(CommonControlField):
             [
                 _params.get("journal__issn_print"),
                 _params.get("journal__issn_electronic"),
+                _params.get("z_journal_title"),
             ]
         ):
             raise exceptions.NotEnoughParametersToGetDocumentRecordError(
