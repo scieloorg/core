@@ -288,7 +288,7 @@ class OtherPid(CommonControlField):
     @classmethod
     def get_or_create(cls, pid_type, pid_in_xml, version, user, pid_provider_xml):
         try:
-            return cls.objects.get(
+            obj = cls.objects.get(
                 pid_provider_xml=pid_provider_xml,
                 pid_type=pid_type,
                 pid_in_xml=pid_in_xml,
@@ -302,7 +302,24 @@ class OtherPid(CommonControlField):
             obj.pid_in_xml = pid_in_xml
             obj.version = version
             obj.save()
-            return obj
+
+        if pid_type == "pid_v3":
+            try:
+                found = PidProviderXML.objects.get(v3=pid_in_xml)
+                if found is not pid_provider_xml:
+                    PidConflict.create_or_update(
+                        user=user,
+                        v3=pid_in_xml,
+                        pid_provider_xml=pid_provider_xml,
+                    )
+                    PidConflict.create_or_update(
+                        user=user,
+                        v3=pid_in_xml,
+                        pid_provider_xml=found,
+                    )
+            except cls.DoesNotExist:
+                pass
+        return obj
 
     @property
     def created_updated(self):
@@ -716,6 +733,8 @@ class PidProviderXML(CommonControlField, ClusterableModel):
         try:
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
             registered = cls._query_document(xml_adapter)
+            if not registered:
+                raise cls.DoesNotExist
             return registered.data
         except cls.DoesNotExist:
             return {"filename": xml_with_pre.filename, "registered": False}
@@ -755,7 +774,6 @@ class PidProviderXML(CommonControlField, ClusterableModel):
         exceptions.QueryDocumentMultipleObjectsReturnedError
         exceptions.NotEnoughParametersToGetDocumentRecordError
         """
-        LOGGER.info("_query_document")
         items = xml_adapter.query_list
         for params in items:
             cls.validate_query_params(params)
@@ -792,7 +810,6 @@ class PidProviderXML(CommonControlField, ClusterableModel):
                 raise exceptions.QueryDocumentMultipleObjectsReturnedError(
                     str({"params": adapted_params, "items": items})
                 )
-        raise cls.DoesNotExist
 
     def _add_data(self, xml_adapter, user):
         self.pkg_name = xml_adapter.sps_pkg_name
@@ -1158,3 +1175,158 @@ class CollectionPidRequest(CommonControlField):
             return obj
         except cls.DoesNotExist:
             return cls.create(user, collection, end_date)
+
+
+class PidConflict(CommonControlField, ClusterableModel):
+    v3 = models.CharField(_("PID v3"), max_length=23, null=True, blank=True)
+    conflict_count = models.PositiveIntegerField(default=0)
+
+    panels = [
+        InlinePanel("owners", _("PID")),
+    ]
+
+    base_form_class = CoreAdminModelForm
+
+    class Meta:
+        unique_together = [("v3",)]
+        indexes = [
+            models.Index(
+                fields=[
+                    "v3",
+                ]
+            ),
+        ]
+
+    def __unicode__(self):
+        return f"{self.v3}"
+
+    def __str__(self):
+        return f"{self.v3}"
+
+    @classmethod
+    def get(
+        cls,
+        v3=None,
+    ):
+        if v3:
+            try:
+                return cls.objects.get(v3=v3)
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(v3=v3).first()
+        raise ValueError("PidConflict.get requires parameters")
+
+    @classmethod
+    def create(
+        cls,
+        user=None,
+        v3=None,
+        pid_provider_xml=None,
+    ):
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.v3 = v3
+            obj.pid_provider_xml = pid_provider_xml
+            obj.save()
+            MatchedPid.create_or_update(user, obj, pid_provider_xml)
+            obj.conflict_count = MatchedPid.objects.filter(pid_conflict=obj).count()
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(v3)
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user=None,
+        v3=None,
+        pid_provider_xml=None,
+    ):
+        try:
+            return cls.get(v3=v3)
+        except cls.DoesNotExist:
+            return cls.create(user, v3, pid_provider_xml)
+
+
+class MatchedPid(CommonControlField):
+    """
+    Registro de PIDs (associados a um PidProviderXML) cujo valor difere do valor atribuído
+    """
+    pid_conflict = ParentalKey(
+        PidConflict,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="owners",
+    )
+    pid_provider_xml = models.ForeignKey(
+        "PidProviderXML",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+
+    panels = [
+        AutocompletePanel("pid_provider_xml", read_only=True),
+    ]
+
+    class Meta:
+        unique_together = [("pid_conflict", "pid_provider_xml")]
+        indexes = [
+            models.Index(fields=["pid_conflict"]),
+            models.Index(fields=["pid_provider_xml"]),
+        ]
+
+    def __str__(self):
+        return f"{self.pid_provider_xml} {self.created}"
+
+    @classmethod
+    def get(
+        cls,
+        pid_conflict=None,
+        pid_provider=None,
+    ):
+        if pid_conflict:
+            try:
+                return cls.objects.get(
+                    pid_conflict=pid_conflict,
+                    pid_provider_xml=pid_provider_xml,
+                )
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(
+                    pid_conflict=pid_conflict,
+                    pid_provider_xml=pid_provider_xml,
+                ).first()
+        raise ValueError("PidConflict.get requires parameters")
+
+    @classmethod
+    def create(
+        cls,
+        user=None,
+        pid_conflict=None,
+        pid_provider_xml=None,
+    ):
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.pid_conflict = pid_conflict
+            obj.pid_provider_xml = pid_provider_xml
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(pid_conflict, pid_provider_xml)
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user=None,
+        pid_conflict=None,
+        pid_provider_xml=None,
+    ):
+        try:
+            return cls.get(
+                pid_conflict=pid_conflict,
+                pid_provider_xml=pid_provider_xml,
+            )
+        except cls.DoesNotExist:
+            return cls.create(user, pid_conflict, pid_provider_xml)

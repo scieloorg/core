@@ -7,7 +7,7 @@ from wagtail.contrib.modeladmin.options import (
 )
 from wagtail.contrib.modeladmin.views import CreateView
 
-from .models import CollectionPidRequest, OtherPid, PidProviderXML, PidRequest
+from .models import CollectionPidRequest, OtherPid, PidProviderXML, PidRequest, PidConflict
 
 
 class PidRequestCreateView(CreateView):
@@ -92,10 +92,11 @@ class PidProviderXMLAdmin(ModelAdmin):
         "aop_pid",
         "main_doi",
         "available_since",
+        "other_pid_count",
         "created",
         "updated",
     )
-    list_filter = ("article_pub_year", "pub_year")
+    list_filter = ("article_pub_year", "pub_year", "other_pid_count",)
     search_fields = (
         "pkg_name",
         "v3",
@@ -131,10 +132,39 @@ class OtherPidAdmin(ModelAdmin):
         "created",
         "updated",
     )
-    list_filter = ("pid_type",)
+    list_filter = ("pid_type", )
     search_fields = (
         "pid_in_xml",
         "pid_provider_xml__v3",
+    )
+
+
+class PidConflictAdminCreateView(CreateView):
+    def form_valid(self, form):
+        self.object = form.save_all(self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class PidConflictAdmin(ModelAdmin):
+    list_per_page = 10
+    model = PidConflict
+    inspect_view_enabled = True
+    menu_label = _("Pid Conflicts")
+    create_view_class = PidConflictAdminCreateView
+    menu_icon = "folder"
+    menu_order = 300
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+
+    list_display = (
+        "v3",
+        "conflict_count",
+        "created",
+        "updated",
+    )
+    list_filter = ("conflict_count", )
+    search_fields = (
+        "v3",
     )
 
 
@@ -142,7 +172,7 @@ class PidProviderAdminGroup(ModelAdminGroup):
     menu_label = _("Pid Provider")
     menu_icon = "folder-open-inverse"  # change as required
     menu_order = 6
-    items = (PidProviderXMLAdmin, PidRequestAdmin, OtherPidAdmin, CollectionPidRequestAdmin)
+    items = (PidProviderXMLAdmin, PidRequestAdmin, OtherPidAdmin, CollectionPidRequestAdmin, PidConflictAdmin)
 
 
 modeladmin_register(PidProviderAdminGroup)
