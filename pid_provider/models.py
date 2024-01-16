@@ -1104,6 +1104,31 @@ class PidProviderXML(CommonControlField, ClusterableModel):
             )
         return True
 
+    @classmethod
+    def is_registered(cls, xml_with_pre):
+        """
+        Verifica se há necessidade de registrar, se está registrado e é igual
+
+        Parameters
+        ----------
+        xml_with_pre : XMLWithPre
+
+        """
+        logging.info("PidProviderXML.check_registration_demand")
+        xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
+
+        try:
+            registered = cls._query_document(xml_adapter)
+            if registered and registered.is_equal_to(xml_adapter):
+                return {"registered": registered.data}
+        except (
+            exceptions.NotEnoughParametersToGetDocumentRecordError,
+            exceptions.QueryDocumentMultipleObjectsReturnedError,
+        ) as e:
+            logging.exception(e)
+            return {"error_msg": str(e), "error_type": str(type(e))}
+        return {}
+
 
 class CollectionPidRequest(CommonControlField):
     collection = models.ForeignKey(
