@@ -91,7 +91,7 @@ class JournalAdmin(ModelAdmin):
         if 'Equipe de Coordenação da Coleção' in user_groups:
             return qs.filter(scielojournal__collection__in=request.user.collection.all())
         elif 'Equipe Editorial do Periódico' in user_groups:
-            return qs.filter(id=request.user.journal.id)
+            return qs.filter(id__in=request.user.journal.all().values_list("id", flat=True))
         return qs
     
 
@@ -132,7 +132,7 @@ class SciELOJournalAdmin(ModelAdmin):
         if 'Equipe de Coordenação da Coleção' in user_groups:
             return qs.filter(collection__in=request.user.collection.all())
         elif 'Equipe Editorial do Periódico' in user_groups:
-            return qs.filter(journal=request.user.journal)
+            return qs.filter(id__in=request.user.journal.all().values_list("id", flat=True))
         return qs
 
 
