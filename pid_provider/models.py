@@ -1120,7 +1120,7 @@ class PidProviderXML(CommonControlField, ClusterableModel):
         try:
             registered = cls._query_document(xml_adapter)
             if registered and registered.is_equal_to(xml_adapter):
-                return {"registered": registered.data}
+                return registered.data
         except (
             exceptions.NotEnoughParametersToGetDocumentRecordError,
             exceptions.QueryDocumentMultipleObjectsReturnedError,

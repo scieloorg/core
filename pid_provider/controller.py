@@ -206,53 +206,6 @@ class BasePidProvider:
                 "error_type": str(type(e)),
             }
 
-    def provide_pid_for_xml_with_pre(
-        self,
-        xml_with_pre,
-        name,
-        user,
-        origin_date=None,
-        force_update=None,
-        is_published=None,
-        origin=None,
-    ):
-        """
-        Recebe um xml_with_pre para solicitar o PID da versão 3
-        para o Pid Provider
-
-        Se o xml_with_pre já está registrado local e remotamente,
-        apenas retorna os dados registrados
-        {
-            'registered': {...},
-            'required_local_registration': False,
-            'required_remote_registration': False,
-        }
-
-        Caso contrário, solicita PID versão 3 para o Pid Provider e
-        armazena o resultado
-        """
-        v3 = xml_with_pre.v3
-        response = self.pre_registration(xml_with_pre, name)
-        if response.get("required_local_registration"):
-            registered = PidProviderXML.register(
-                xml_with_pre,
-                name,
-                user,
-                origin_date=origin_date,
-                force_update=force_update,
-                is_published=is_published,
-                origin=origin,
-            )
-        else:
-            registered = response.get("registered")
-
-        # registered["xml_changed"] = v3 != xml_with_pre.v3
-        # registered["xml_uri"] = response.get("xml_uri")
-        logging.info(f"PidProvider.provide_pid_for_xml_with_pre: registered={registered}")
-
-        response.update(registered)
-        return response
-
 
 class PidProvider(BasePidProvider):
     """
