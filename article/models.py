@@ -1,12 +1,14 @@
+import sys
+
 from datetime import datetime
 
 from django.db import models, IntegrityError
-from django.db.models import Case, When
+# from django.db.models import Case, When
+from django.db.utils import DataError
 from django.utils.translation import gettext as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
-from wagtail.fields import RichTextField
 from wagtail.models import Orderable
 from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
@@ -26,6 +28,11 @@ from issue.models import Issue, TocSection
 from journal.models import Journal, SciELOJournal
 from researcher.models import Researcher
 from vocabulary.models import Keyword
+from tracker.models import UnexpectedEvent
+
+
+class AwardIdSaveError(Exception):
+    ...
 
 
 class Article(CommonControlField, ClusterableModel):
@@ -62,17 +69,15 @@ class Article(CommonControlField, ClusterableModel):
     languages = models.ManyToManyField(Language, blank=True)
     titles = models.ManyToManyField("DocumentTitle", blank=True)
     researchers = models.ManyToManyField(Researcher, blank=True)
-    article_type = models.ForeignKey(
-        "ArticleType", on_delete=models.SET_NULL, null=True, blank=True
-    )
+    article_type = models.CharField(max_length=50, null=True, blank=True)
     # abstracts = models.ManyToManyField("DocumentAbstract", blank=True)
     toc_sections = models.ManyToManyField(TocSection, blank=True)
     license_statements = models.ManyToManyField(LicenseStatement, blank=True)
     license = models.ForeignKey(License, on_delete=models.SET_NULL, null=True, blank=True)
     issue = models.ForeignKey(Issue, on_delete=models.SET_NULL, null=True, blank=True)
-    first_page = models.CharField(max_length=10, null=True, blank=True)
-    last_page = models.CharField(max_length=10, null=True, blank=True)
-    elocation_id = models.CharField(max_length=20, null=True, blank=True)
+    first_page = models.CharField(max_length=20, null=True, blank=True)
+    last_page = models.CharField(max_length=20, null=True, blank=True)
+    elocation_id = models.CharField(max_length=64, null=True, blank=True)
     keywords = models.ManyToManyField(Keyword, blank=True)
     publisher = models.ForeignKey(
         Institution,
@@ -81,6 +86,7 @@ class Article(CommonControlField, ClusterableModel):
         blank=True,
         on_delete=models.SET_NULL,
     )
+    validate = models.BooleanField(default=False, blank=True, null=True)
 
     panels_ids = [
         FieldPanel("pid_v2"),
@@ -267,12 +273,22 @@ class ArticleFunding(CommonControlField):
         try:
             return cls.objects.get(award_id=award_id, funding_source=funding_source)
         except cls.DoesNotExist:
-            article_funding = cls()
-            article_funding.award_id = award_id
-            article_funding.funding_source = funding_source
-            article_funding.creator = user
-            article_funding.save()
-
+            try:
+                article_funding = cls()
+                article_funding.award_id = award_id
+                article_funding.funding_source = funding_source
+                article_funding.creator = user
+                article_funding.save()
+            except DataError as e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=AwardIdSaveError,
+                    exc_traceback=exc_traceback,
+                    detail=dict(
+                        function="article.models.ArticleFunding.get_or_create",
+                        award_id=award_id,
+                    ),
+                )                      
             return article_funding
 
     base_form_class = CoreAdminModelForm
