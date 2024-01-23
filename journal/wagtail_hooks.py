@@ -13,6 +13,9 @@ from . import models
 from .button_helper import IndexedAtHelper
 from .views import import_file, validate
 
+COLLECTION_TEAM = "Collection Team"
+JOURNAL_TEAM = "Journal Team"
+
 
 class OfficialJournalCreateView(CreateView):
     def form_valid(self, form):
@@ -88,9 +91,9 @@ class JournalAdmin(ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         user_groups = request.user.groups.values_list('name', flat=True)
-        if 'Equipe de Coordenação da Coleção' in user_groups:
+        if COLLECTION_TEAM in user_groups:
             return qs.filter(scielojournal__collection__in=request.user.collection.all())
-        elif 'Equipe Editorial do Periódico' in user_groups:
+        elif JOURNAL_TEAM in user_groups:
             return qs.filter(id__in=request.user.journal.all().values_list("id", flat=True))
         return qs
     
@@ -129,9 +132,9 @@ class SciELOJournalAdmin(ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         user_groups = request.user.groups.values_list('name', flat=True)
-        if 'Equipe de Coordenação da Coleção' in user_groups:
+        if COLLECTION_TEAM in user_groups:
             return qs.filter(collection__in=request.user.collection.all())
-        elif 'Equipe Editorial do Periódico' in user_groups:
+        elif JOURNAL_TEAM in user_groups:
             return qs.filter(id__in=request.user.journal.all().values_list("id", flat=True))
         return qs
 
