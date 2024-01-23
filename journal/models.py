@@ -600,7 +600,7 @@ class Journal(CommonControlField, ClusterableModel):
     panels_website = [
         FieldPanel("contact_name"),
         FieldPanel("contact_address"),
-        FieldPanel("contact_location"),
+        AutocompletePanel("contact_location"),
         InlinePanel("journal_email", label=_("Contact e-mail")),
         FieldPanel("logo", heading=_("Logo")),
         FieldPanel("journal_url"),
