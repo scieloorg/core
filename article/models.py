@@ -86,7 +86,7 @@ class Article(CommonControlField, ClusterableModel):
         blank=True,
         on_delete=models.SET_NULL,
     )
-    validate = models.BooleanField(default=False, blank=True, null=True)
+    valid = models.BooleanField(default=False, blank=True, null=True)
 
     panels_ids = [
         FieldPanel("pid_v2"),

@@ -94,7 +94,7 @@ def load_article(user, xml=None, file_path=None, v3=None):
             article.license = ls.license
             article.save()
             break
-        article.validate = True
+        article.valid= True
         article.save()
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()

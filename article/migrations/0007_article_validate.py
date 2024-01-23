@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="article",
-            name="validate",
+            name="valid",
             field=models.BooleanField(blank=True, default=False, null=True),
         ),
     ]
