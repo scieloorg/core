@@ -31,10 +31,6 @@ from vocabulary.models import Keyword
 from tracker.models import UnexpectedEvent
 
 
-class AwardIdSaveError(Exception):
-    ...
-
-
 class Article(CommonControlField, ClusterableModel):
     pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
     pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True)
@@ -282,7 +278,7 @@ class ArticleFunding(CommonControlField):
             except DataError as e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 UnexpectedEvent.create(
-                    exception=AwardIdSaveError,
+                    exception=e,
                     exc_traceback=exc_traceback,
                     detail=dict(
                         function="article.models.ArticleFunding.get_or_create",
