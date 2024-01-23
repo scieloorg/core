@@ -462,3 +462,7 @@ SEARCH_FACET_LIST = [
     "wok_citation_index",
     "type",
 ]
+
+WAGTAIL_USER_EDIT_FORM = 'core.users.forms.CustomUserEditForm'
+WAGTAIL_USER_CREATION_FORM = 'core.users.forms.CustomUserCreationForm'
+WAGTAIL_USER_CUSTOM_FIELDS = ['collection', 'journal']
