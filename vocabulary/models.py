@@ -159,11 +159,13 @@ class Keyword(CommonControlField, TextWithLang):
     def create_or_update(cls, user, vocabulary, language, text):
         if not vocabulary:
             vocabulary = Vocabulary.get(acronym="nd")
-        try:
-            return cls.get(vocabulary=vocabulary, language=language, text=text)
-        except cls.DoesNotExist:
-            return cls.create(user, vocabulary, language, text)
-
+        if language and text:
+            try:
+                return cls.get(vocabulary=vocabulary, language=language, text=text)
+            except cls.DoesNotExist:
+                return cls.create(user, vocabulary, language, text)
+        raise ValueError("Keyword.get requires language and text paramenters")
+    
     @classmethod
     def get(cls, vocabulary, language, text):
         if vocabulary and language and text:
