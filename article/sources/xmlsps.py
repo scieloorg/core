@@ -124,8 +124,9 @@ def get_or_create_doi(xmltree, user):
 
 def get_journal(xmltree):
     journal_title = Journal(xmltree=xmltree).journal_title
-    journal_issn_epub = ISSN(xmltree=xmltree).epub
-    journal_issn_ppub = ISSN(xmltree=xmltree).ppub
+    issn = ISSN(xmltree=xmltree)
+    journal_issn_epub = issn.epub
+    journal_issn_ppub = issn.ppub
     try:
         return models.Journal.objects.get(title=journal_title, official__issn_print=journal_issn_ppub, official__issn_electronic=journal_issn_epub)
     except models.Journal.DoesNotExist:
@@ -157,7 +158,7 @@ def get_or_create_fundings(xmltree, user):
                             user=user,
                         )
                         data.append(obj)
-                    except ValueError as e:
+                    except Exception as e:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         UnexpectedEvent.create(
                             exception=e,
@@ -224,7 +225,7 @@ def get_or_create_keywords(xmltree, user):
                 text=kwd.get("text"),
             )
             data.append(obj)
-        except ValueError as e:
+        except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
                 exception=e,
@@ -304,7 +305,7 @@ def create_or_update_researchers(xmltree, user):
                     gender_identification_status=author.get("gender_identification_status"),
                 )
                 data.append(obj)
-            except (ValueError, AttributeError, PersonNameCreateError) as e:
+            except Exception as e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 UnexpectedEvent.create(
                     exception=e,
@@ -416,7 +417,7 @@ def create_or_update_sponsor(funding_name, user):
             url=None,
             institution_type=None,
         )
-    except ValueError as e:
+    except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
             exception=e,
