@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, IntegrityError
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -261,6 +261,7 @@ class TocSection(TextLanguageMixin, CommonControlField):
     class Meta:
         verbose_name = _("TocSection")
         verbose_name_plural = _("TocSections")
+        unique_together = [("plain_text", "language")]
         indexes = [
             models.Index(
                 fields=[
@@ -276,10 +277,30 @@ class TocSection(TextLanguageMixin, CommonControlField):
         language,
     ):
         if value and language:
-            return cls.objects.get(plain_text=value, language=language)
+            try:
+                return cls.objects.get(plain_text=value, language=language)
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(plain_text=value, language=language).first()
         raise TocSectionGetError(
             "TocSection.get requires value and language parameters"
         )
+
+    @classmethod
+    def create(
+        cls,
+        value, 
+        language,
+        user,
+    ):
+        try:
+            obj = cls()
+            obj.plain_text = value
+            obj.language = language
+            obj.creator = user
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(value=value, language=language)
 
     @classmethod
     def get_or_create(
@@ -291,12 +312,7 @@ class TocSection(TextLanguageMixin, CommonControlField):
         try:
             return cls.get(value=value, language=language)
         except cls.DoesNotExist:
-            obj = cls()
-            obj.plain_text = value
-            obj.language = language
-            obj.creator = user
-            obj.save()
-            return obj
+            return cls.create(value=value, language=language, user=user)
 
     def __unicode__(self):
         return f"{self.plain_text} - {self.language}"
