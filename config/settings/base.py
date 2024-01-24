@@ -134,7 +134,6 @@ LOCAL_APPS = [
     "researcher",
     "thematic_areas",
     "vocabulary",
-    "xmlsps",
     "search",
     "reference",
     "tracker",

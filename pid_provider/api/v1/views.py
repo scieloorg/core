@@ -1,6 +1,7 @@
+import os
 import logging
+from tempfile import TemporaryDirectory
 
-from django.core.files.storage import FileSystemStorage
 from rest_framework import status
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.parsers import FileUploadParser
@@ -8,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from pid_provider import controller
+from pid_provider.provider import PidProvider
 
 
 class PidProviderViewSet(
@@ -24,7 +25,7 @@ class PidProviderViewSet(
     @property
     def pid_provider(self):
         if not hasattr(self, "_pid_provider") or not self._pid_provider:
-            self._pid_provider = controller.PidProvider()
+            self._pid_provider = PidProvider()
         return self._pid_provider
 
     def create(self, request, format="zip"):
@@ -69,34 +70,29 @@ class PidProviderViewSet(
         logging.info("Receiving data %s" % request.data)
 
         uploaded_file = request.FILES["file"]
-        logging.info("Receiving file name %s" % uploaded_file.name)
-
-        fs = FileSystemStorage()
-        downloaded_file = fs.save(uploaded_file.name, uploaded_file)
-        downloaded_file_path = fs.path(downloaded_file)
-
-        logging.info("Receiving temp %s" % downloaded_file_path)
         try:
-            results = self.pid_provider.provide_pid_for_xml_zip(
-                zip_xml_file_path=downloaded_file_path,
-                user=request.user,
-            )
-            results = list(results)
-            resp_status = None
-            for item in results:
-                logging.info(item)
-                try:
-                    xml_with_pre = item.pop("xml_with_pre")
-                    if item.get("xml_changed"):
-                        item["xml"] = xml_with_pre.tostring()
-                except KeyError:
-                    resp_status = status.HTTP_400_BAD_REQUEST
-                else:
+            with TemporaryDirectory() as output_folder:
+                downloaded_file_path = os.path.join(output_folder, uploaded_file.name)
+                with open(downloaded_file_path, "wb") as fp:
+                    fp.write(uploaded_file.read())
+                results = self.pid_provider.provide_pid_for_xml_zip(
+                    zip_xml_file_path=downloaded_file_path,
+                    user=request.user,
+                )
+                results = list(results)
+                resp_status = None
+                for item in results:
                     if item.get("record_status") == "created":
                         resp_status = resp_status or status.HTTP_201_CREATED
-                    else:
+                    elif item.get("record_status") == "updated":
                         resp_status = resp_status or status.HTTP_200_OK
-            return Response(results, status=resp_status)
+                    else:
+                        resp_status = status.HTTP_400_BAD_REQUEST
+                    try:
+                        item.pop("xml_with_pre")
+                    except KeyError:
+                        pass
+                return Response(results, status=resp_status)
         except Exception as e:
             logging.exception(e)
             return Response(

@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 # from django.utils.translation import gettext as _
 
 from collection.models import Collection
-from pid_provider.controller import PidProvider
+from pid_provider.provider import PidProvider
 from pid_provider.models import CollectionPidRequest, PidProviderXML
 from tracker.models import UnexpectedEvent
 
