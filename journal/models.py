@@ -111,7 +111,7 @@ class OfficialJournal(CommonControlField, ClusterableModel):
         FieldPanel("iso_short_title"),
         InlinePanel("parallel_title", label=_("Parallel titles")),
         AutocompletePanel("old_title"),
-        FieldPanel("new_title"),
+        AutocompletePanel("new_title"),
         FieldPanel("previous_journal_titles"),
         FieldPanel("next_journal_title"),
     ]
