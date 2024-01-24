@@ -275,7 +275,7 @@ class ArticleFunding(CommonControlField):
                 article_funding.funding_source = funding_source
                 article_funding.creator = user
                 article_funding.save()
-            except DataError as e:
+            except Exception as e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 UnexpectedEvent.create(
                     exception=e,
