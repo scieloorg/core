@@ -3,9 +3,11 @@ import logging
 import sys
 from datetime import datetime
 
+from django.core.files.base import ContentFile
 from django.db import models, IntegrityError
 from django.db.models import Q
 from django.utils.translation import gettext as _
+from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -20,10 +22,21 @@ from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from pid_provider import exceptions
 from tracker.models import UnexpectedEvent
-from xmlsps.models import XMLVersion
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+
+
+class XMLVersionXmlWithPreError(Exception):
+    ...
+
+
+class XMLVersionLatestError(Exception):
+    ...
+
+
+class XMLVersionGetError(Exception):
+    ...
 
 
 def utcnow():
@@ -31,9 +44,108 @@ def utcnow():
     # return datetime.utcnow().isoformat().replace("T", " ") + "Z"
 
 
-def xml_directory_path(instance, subdir):
-    # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
-    return f"xml_pid_provider/{subdir}/{instance.pid_v3[0]}/{instance.pid_v3[-1]}/{instance.pid_v3}/{instance.finger_print}"
+def xml_directory_path(instance, filename):
+    sps_pkg_name = instance.pid_provider_xml.pkg_name
+    subdirs = sps_pkg_name.split("-")
+    subdir_sps_pkg_name = "/".join(subdirs)
+    return (
+        f"pid_provider/{subdir_sps_pkg_name}/{filename}"
+    )
+
+
+class XMLVersion(CommonControlField):
+    """
+    Tem função de guardar a versão do XML
+    """
+    pid_provider_xml = models.ForeignKey(
+        "PidProviderXML", null=True, blank=True, on_delete=models.SET_NULL
+    )
+    file = models.FileField(upload_to=xml_directory_path, null=True, blank=True)
+    finger_print = models.CharField(max_length=64, null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["finger_print"]),
+            models.Index(fields=["pid_provider_xml"]),
+        ]
+
+    def __str__(self):
+        return self.pid_provider_xml.v3
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        pid_provider_xml,
+        xml_with_pre,
+    ):
+        try:
+            obj = cls()
+            obj.pid_provider_xml = pid_provider_xml
+            obj.finger_print = xml_with_pre.finger_print
+            obj.creator = user
+            obj.save()
+            obj.save_file(f"{pid_provider_xml.v3}.xml", xml_with_pre.tostring())
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(pid_provider_xml, xml_with_pre.finger_print)
+
+    def save_file(self, filename, content):
+        self.file.save(filename, ContentFile(content))
+
+    @property
+    def xml_with_pre(self):
+        try:
+            for item in XMLWithPre.create(path=self.file.path):
+                return item
+        except Exception as e:
+            raise XMLVersionXmlWithPreError(
+                _("Unable to get xml with pre (XMLVersion) {}: {} {}").format(
+                    self.pid_provider_xml.v3, type(e), e
+                )
+            )
+
+    @property
+    def xml(self):
+        try:
+            return self.xml_with_pre.tostring()
+        except XMLVersionXmlWithPreError as e:
+            return str(e)
+
+    @classmethod
+    def latest(cls, pid_provider_xml):
+        if pid_provider_xml:
+            return cls.objects.filter(pid_provider_xml=pid_provider_xml).latest("created")
+        raise XMLVersionLatestError(
+            "XMLVersion.get requires pid_provider_xml and xml_with_pre parameters"
+        )
+
+    @classmethod
+    def get(cls, pid_provider_xml, finger_print):
+        """
+        Retorna última versão se finger_print corresponde
+        """
+        if not pid_provider_xml and not finger_print:
+            raise XMLVersionGetError(
+                "XMLVersion.get requires pid_provider_xml and xml_with_pre parameters"
+            )
+
+        latest = cls.latest(pid_provider_xml)
+        if latest.finger_print == finger_print:
+            return latest
+        raise cls.DoesNotExist(f"{pid_provider_xml} {finger_print}")
+
+    @classmethod
+    def get_or_create(cls, user, pid_provider_xml, xml_with_pre):
+        try:
+            return cls.get(pid_provider_xml, xml_with_pre.finger_print)
+        except cls.DoesNotExist:
+            return cls.create(
+                user=user,
+                pid_provider_xml=pid_provider_xml,
+                xml_with_pre=xml_with_pre,
+            )
 
 
 class PidProviderConfig(CommonControlField):
@@ -253,16 +365,17 @@ class OtherPid(CommonControlField):
     """
     Registro de PIDs (associados a um PidProviderXML) cujo valor difere do valor atribuído
     """
+
     pid_provider_xml = ParentalKey(
         "PidProviderXML",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name="pid_changes",
+        related_name="other_pid",
     )
     pid_type = models.CharField(_("PID type"), max_length=7, null=True, blank=True)
     pid_in_xml = models.CharField(
-        _("PID pid_in_xml"), max_length=23, null=True, blank=True
+        _("PID pid_in_xml"), max_length=64, null=True, blank=True
     )
     version = models.ForeignKey(
         XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
@@ -287,39 +400,24 @@ class OtherPid(CommonControlField):
 
     @classmethod
     def get_or_create(cls, pid_type, pid_in_xml, version, user, pid_provider_xml):
-        try:
-            obj = cls.objects.get(
-                pid_provider_xml=pid_provider_xml,
-                pid_type=pid_type,
-                pid_in_xml=pid_in_xml,
-                version=version,
-            )
-        except cls.DoesNotExist:
-            obj = cls()
-            obj.creator = user
-            obj.pid_provider_xml = pid_provider_xml
-            obj.pid_type = pid_type
-            obj.pid_in_xml = pid_in_xml
-            obj.version = version
-            obj.save()
-
-        if pid_type == "pid_v3":
+        if pid_in_xml and pid_type and version and user and pid_provider_xml:
             try:
-                found = PidProviderXML.objects.get(v3=pid_in_xml)
-                if found is not pid_provider_xml:
-                    PidConflict.create_or_update(
-                        user=user,
-                        v3=pid_in_xml,
-                        pid_provider_xml=pid_provider_xml,
-                    )
-                    PidConflict.create_or_update(
-                        user=user,
-                        v3=pid_in_xml,
-                        pid_provider_xml=found,
-                    )
+                obj = cls.objects.get(
+                    pid_provider_xml=pid_provider_xml,
+                    pid_type=pid_type,
+                    pid_in_xml=pid_in_xml,
+                    version=version,
+                )
             except cls.DoesNotExist:
-                pass
-        return obj
+                obj = cls()
+                obj.creator = user
+                obj.pid_provider_xml = pid_provider_xml
+                obj.pid_type = pid_type
+                obj.pid_in_xml = pid_in_xml
+                obj.version = version
+                obj.save()
+
+            return obj
 
     @property
     def created_updated(self):
@@ -331,7 +429,10 @@ class PidProviderXML(CommonControlField, ClusterableModel):
     Tem responsabilidade de garantir a atribuição do PID da versão 3,
     armazenando dados chaves que garantem a identificação do XML
     """
-    z_journal_title = models.CharField(_("journal title"), max_length=64, null=True, blank=True)
+
+    z_journal_title = models.CharField(
+        _("journal title"), max_length=64, null=True, blank=True
+    )
     issn_electronic = models.CharField(
         _("issn_epub"), max_length=10, null=True, blank=True
     )
@@ -350,7 +451,9 @@ class PidProviderXML(CommonControlField, ClusterableModel):
     v2 = models.CharField(_("v2"), max_length=24, null=True, blank=True)
     aop_pid = models.CharField(_("AOP PID"), max_length=64, null=True, blank=True)
 
-    elocation_id = models.CharField(_("elocation id"), max_length=20, null=True, blank=True)
+    elocation_id = models.CharField(
+        _("elocation id"), max_length=64, null=True, blank=True
+    )
     fpage = models.CharField(_("fpage"), max_length=20, null=True, blank=True)
     fpage_seq = models.CharField(_("fpage_seq"), max_length=8, null=True, blank=True)
     lpage = models.CharField(_("lpage"), max_length=20, null=True, blank=True)
@@ -379,10 +482,12 @@ class PidProviderXML(CommonControlField, ClusterableModel):
         _("Available since"), max_length=10, null=True, blank=True
     )
     other_pid_count = models.PositiveIntegerField(default=0)
+    registered_in_core = models.BooleanField(default=False, null=True, blank=True)
 
     base_form_class = CoreAdminModelForm
 
     panel_a = [
+        FieldPanel("registered_in_core", read_only=True),
         FieldPanel("issn_electronic", read_only=True),
         FieldPanel("issn_print", read_only=True),
         FieldPanel("pub_year", read_only=True),
@@ -408,13 +513,13 @@ class PidProviderXML(CommonControlField, ClusterableModel):
     ]
     panel_b = [
         AutocompletePanel("current_version", read_only=True),
-        InlinePanel("pid_changes", label=_("pid changes")),
+        InlinePanel("other_pid", label=_("Other PID")),
     ]
 
     edit_handler = TabbedInterface(
         [
             ObjectList(panel_a, heading=_("Identification")),
-            ObjectList(panel_b, heading=_("PID changes")),
+            ObjectList(panel_b, heading=_("Other PIDs")),
         ]
     )
 
@@ -441,6 +546,7 @@ class PidProviderXML(CommonControlField, ClusterableModel):
             models.Index(fields=["z_partial_body"]),
             models.Index(fields=["z_journal_title"]),
             models.Index(fields=["other_pid_count"]),
+            models.Index(fields=["registered_in_core"]),
         ]
 
     def __str__(self):
@@ -469,6 +575,7 @@ class PidProviderXML(CommonControlField, ClusterableModel):
             "created": self.created and self.created.isoformat(),
             "updated": self.updated and self.updated.isoformat(),
             "record_status": "updated" if self.updated else "created",
+            "registered_in_core": self.registered_in_core,
         }
         return _data
 
@@ -498,6 +605,7 @@ class PidProviderXML(CommonControlField, ClusterableModel):
         is_published=False,
         available_since=None,
         origin=None,
+        registered_in_core=None,
     ):
         """
         Evaluate the XML data and returns corresponding PID v3, v2, aop_pid
@@ -553,6 +661,7 @@ class PidProviderXML(CommonControlField, ClusterableModel):
 
             # verfica os PIDs encontrados no XML / atualiza-os se necessário
             changed_pids = cls._complete_pids(xml_adapter, registered)
+
             if not xml_adapter.v3:
                 raise exceptions.InvalidPidError(
                     f"Unable to register {filename}, because v3 is invalid"
@@ -563,14 +672,24 @@ class PidProviderXML(CommonControlField, ClusterableModel):
                     f"Unable to register {filename}, because v2 is invalid"
                 )
 
+            xml_changed = {
+                change["pid_type"]: change["pid_assigned"] for change in changed_pids
+            }
+
             # cria ou atualiza registro
             registered = cls._save(
-                registered, xml_adapter, user, changed_pids, origin_date, available_since
+                registered,
+                xml_adapter,
+                user,
+                changed_pids,
+                origin_date,
+                available_since,
+                registered_in_core,
             )
 
             # data to return
             data = registered.data.copy()
-            data["xml_changed"] = bool(changed_pids)
+            data["xml_changed"] = xml_changed
 
             pid_request = PidRequest.cancel_failure(
                 user=user,
@@ -603,18 +722,12 @@ class PidProviderXML(CommonControlField, ClusterableModel):
             # exceptions.NotEnoughParametersToGetDocumentRecordError,
             # exceptions.InvalidPidError,
             # outras
-            try:
-                detail = {}
-                if ":" not in origin:
-                    detail["xml"] = xml_adapter.tostring()
-            except Exception as x:
-                pass
             pid_request = PidRequest.register_failure(
                 e,
                 user=user,
                 origin_date=origin_date,
                 origin=origin,
-                detail=detail,
+                detail={},
             )
             response = input_data
             response.update(pid_request.data)
@@ -629,6 +742,7 @@ class PidProviderXML(CommonControlField, ClusterableModel):
         changed_pids,
         origin_date=None,
         available_since=None,
+        registered_in_core=None,
     ):
         if registered:
             registered.updated_by = user
@@ -647,15 +761,18 @@ class PidProviderXML(CommonControlField, ClusterableModel):
             # packtools error
             registered.available_since = origin_date
 
+        registered.registered_in_core = registered_in_core
         registered.origin_date = origin_date
         registered._add_data(xml_adapter, user)
         registered._add_journal(xml_adapter)
         registered._add_issue(xml_adapter)
+
+        registered.save()
         registered._add_current_version(xml_adapter, user)
 
         registered.save()
 
-        registered._add_pid_changes(changed_pids, user)
+        registered._add_other_pid(changed_pids, user)
 
         return registered
 
@@ -667,8 +784,6 @@ class PidProviderXML(CommonControlField, ClusterableModel):
         então, recusar o registro,
         pois está tentando registrar uma versão desatualizada
         """
-        logging.info("PidProviderXML.skip_registration")
-
         if force_update:
             return
 
@@ -844,15 +959,15 @@ class PidProviderXML(CommonControlField, ClusterableModel):
         self.pub_year = xml_adapter.pub_year
 
     def _add_current_version(self, xml_adapter, user):
-        self.current_version = XMLVersion.get_or_create(user, xml_adapter.xml_with_pre)
+        self.current_version = XMLVersion.get_or_create(user, self, xml_adapter.xml_with_pre)
 
-    def _add_pid_changes(self, changed_pids, user):
+    def _add_other_pid(self, changed_pids, user):
         # requires registered.current_version is set
         if not changed_pids:
             return
         if not self.current_version:
             raise ValueError(
-                "PidProviderXML._add_pid_changes requires current_version is set"
+                "PidProviderXML._add_other_pid requires current_version is set"
             )
         for change_args in changed_pids:
             if change_args["pid_in_xml"]:
@@ -860,8 +975,11 @@ class PidProviderXML(CommonControlField, ClusterableModel):
                 change_args["user"] = user
                 change_args["version"] = self.current_version
                 change_args["pid_provider_xml"] = self
+                change_args.pop("pid_assigned")
                 OtherPid.get_or_create(**change_args)
-                self.other_pid_count = OtherPid.objects.filter(pid_provider_xml=self).count()
+                self.other_pid_count = OtherPid.objects.filter(
+                    pid_provider_xml=self
+                ).count()
                 self.save()
 
     @classmethod
@@ -945,11 +1063,7 @@ class PidProviderXML(CommonControlField, ClusterableModel):
         bool
 
         """
-        before = dict(
-            pid_v3=xml_adapter.v3,
-            pid_v2=xml_adapter.v2,
-            aop_pid=xml_adapter.aop_pid,
-        )
+        before = (xml_adapter.v3, xml_adapter.v2, xml_adapter.aop_pid)
 
         # garante que não há espaços extras
         if xml_adapter.v3:
@@ -964,25 +1078,22 @@ class PidProviderXML(CommonControlField, ClusterableModel):
         cls._add_pid_v2(xml_adapter, registered)
         cls._add_aop_pid(xml_adapter, registered)
 
-        after = dict(
-            pid_v3=xml_adapter.v3,
-            pid_v2=xml_adapter.v2,
-            aop_pid=xml_adapter.aop_pid,
-        )
-
-        LOGGER.info("%s %s" % (before, after))
+        after = (xml_adapter.v3, xml_adapter.v2, xml_adapter.aop_pid)
 
         # verifica se houve mudança nos PIDs do XML
         changes = []
-        for k, v in before.items():
-            if v and v != after[k]:
+        for label, bef, aft in zip(("pid_v3", "pid_v2", "aop_pid"), before, after):
+            if bef != aft:
                 changes.append(
                     dict(
-                        pid_type=k,
-                        pid_in_xml=v,
-                        pid_assigned=after[k],
+                        pid_type=label,
+                        pid_in_xml=bef,
+                        pid_assigned=aft,
                     )
                 )
+        if changes:
+            LOGGER.info(f"changes: {changes}")
+
         return changes
 
     @classmethod
@@ -1200,158 +1311,3 @@ class CollectionPidRequest(CommonControlField):
             return obj
         except cls.DoesNotExist:
             return cls.create(user, collection, end_date)
-
-
-class PidConflict(CommonControlField, ClusterableModel):
-    v3 = models.CharField(_("PID v3"), max_length=23, null=True, blank=True)
-    conflict_count = models.PositiveIntegerField(default=0)
-
-    panels = [
-        InlinePanel("owners", _("PID")),
-    ]
-
-    base_form_class = CoreAdminModelForm
-
-    class Meta:
-        unique_together = [("v3",)]
-        indexes = [
-            models.Index(
-                fields=[
-                    "v3",
-                ]
-            ),
-        ]
-
-    def __unicode__(self):
-        return f"{self.v3}"
-
-    def __str__(self):
-        return f"{self.v3}"
-
-    @classmethod
-    def get(
-        cls,
-        v3=None,
-    ):
-        if v3:
-            try:
-                return cls.objects.get(v3=v3)
-            except cls.MultipleObjectsReturned:
-                return cls.objects.filter(v3=v3).first()
-        raise ValueError("PidConflict.get requires parameters")
-
-    @classmethod
-    def create(
-        cls,
-        user=None,
-        v3=None,
-        pid_provider_xml=None,
-    ):
-        try:
-            obj = cls()
-            obj.creator = user
-            obj.v3 = v3
-            obj.pid_provider_xml = pid_provider_xml
-            obj.save()
-            MatchedPid.create_or_update(user, obj, pid_provider_xml)
-            obj.conflict_count = MatchedPid.objects.filter(pid_conflict=obj).count()
-            obj.save()
-            return obj
-        except IntegrityError:
-            return cls.get(v3)
-
-    @classmethod
-    def create_or_update(
-        cls,
-        user=None,
-        v3=None,
-        pid_provider_xml=None,
-    ):
-        try:
-            return cls.get(v3=v3)
-        except cls.DoesNotExist:
-            return cls.create(user, v3, pid_provider_xml)
-
-
-class MatchedPid(CommonControlField):
-    """
-    Registro de PIDs (associados a um PidProviderXML) cujo valor difere do valor atribuído
-    """
-    pid_conflict = ParentalKey(
-        PidConflict,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="owners",
-    )
-    pid_provider_xml = models.ForeignKey(
-        "PidProviderXML",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-    )
-
-    panels = [
-        AutocompletePanel("pid_provider_xml", read_only=True),
-    ]
-
-    class Meta:
-        unique_together = [("pid_conflict", "pid_provider_xml")]
-        indexes = [
-            models.Index(fields=["pid_conflict"]),
-            models.Index(fields=["pid_provider_xml"]),
-        ]
-
-    def __str__(self):
-        return f"{self.pid_provider_xml} {self.created}"
-
-    @classmethod
-    def get(
-        cls,
-        pid_conflict=None,
-        pid_provider=None,
-    ):
-        if pid_conflict:
-            try:
-                return cls.objects.get(
-                    pid_conflict=pid_conflict,
-                    pid_provider_xml=pid_provider_xml,
-                )
-            except cls.MultipleObjectsReturned:
-                return cls.objects.filter(
-                    pid_conflict=pid_conflict,
-                    pid_provider_xml=pid_provider_xml,
-                ).first()
-        raise ValueError("PidConflict.get requires parameters")
-
-    @classmethod
-    def create(
-        cls,
-        user=None,
-        pid_conflict=None,
-        pid_provider_xml=None,
-    ):
-        try:
-            obj = cls()
-            obj.creator = user
-            obj.pid_conflict = pid_conflict
-            obj.pid_provider_xml = pid_provider_xml
-            obj.save()
-            return obj
-        except IntegrityError:
-            return cls.get(pid_conflict, pid_provider_xml)
-
-    @classmethod
-    def create_or_update(
-        cls,
-        user=None,
-        pid_conflict=None,
-        pid_provider_xml=None,
-    ):
-        try:
-            return cls.get(
-                pid_conflict=pid_conflict,
-                pid_provider_xml=pid_provider_xml,
-            )
-        except cls.DoesNotExist:
-            return cls.create(user, pid_conflict, pid_provider_xml)
