@@ -104,6 +104,7 @@ class OfficialJournal(CommonControlField, ClusterableModel):
     issn_electronic = models.CharField(
         _("ISSN Eletronic"), max_length=9, null=True, blank=True
     )
+    issn_print_status = models.BooleanField(default=False)
     issnl = models.CharField(_("ISSNL"), max_length=9, null=True, blank=True)
 
     panels_titles = [
