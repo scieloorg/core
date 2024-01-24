@@ -357,6 +357,9 @@ def create_or_update_official_journal(
         [{"_": "ONLIN"}]
     Ex current_issn:
         [{"_": "1676-5648"}]
+    Ex old_title:
+        Ex 1: [{'_': 'Pesquisa Agropecuária Brasileira. Série Agronômica'}, {'_': 'Pesquisa Agropecuária Brasileira. Série Veterinária'}, {'_': 'Pesquisa Agropecuária Brasileira. Série Zootecnia'}]
+        Ex 2: [{'_': 'Informe Epidemiológico do SUS'}]
     """
     title = extract_value(title)
     issn_scielo = extract_value(issn_scielo)
@@ -384,6 +387,8 @@ def create_or_update_official_journal(
         official_journal.add_new_title(user, extract_value(new_title))
         official_journal.add_old_title(user, extract_value(old_title))
     official_journal.iso_short_title = extract_value(iso_short_title)
+    official_journal.previous_journal_titles = extract_value(old_title)
+    official_journal.next_journal_title = extract_value(new_title)
 
     initial_date = extract_value(initial_date)
     terminate_date = extract_value(terminate_date)

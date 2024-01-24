@@ -74,7 +74,8 @@ class OfficialJournal(CommonControlField, ClusterableModel):
         related_name="new_title_journal",
     )
     old_title = models.ManyToManyField("self", blank=True)
-
+    previous_journal_titles = models.TextField(_("Previous Journal titles"),null=True, blank=True)
+    next_journal_title = models.TextField(_("Next Journal Title"), null=True, blank=True)
     initial_year = models.CharField(
         _("Initial Year"), max_length=4, blank=True, null=True
     )
@@ -110,7 +111,9 @@ class OfficialJournal(CommonControlField, ClusterableModel):
         FieldPanel("iso_short_title"),
         InlinePanel("parallel_title", label=_("Parallel titles")),
         AutocompletePanel("old_title"),
-        FieldPanel("new_title"),
+        AutocompletePanel("new_title"),
+        FieldPanel("previous_journal_titles"),
+        FieldPanel("next_journal_title"),
     ]
 
     panels_dates = [
