@@ -74,7 +74,8 @@ class OfficialJournal(CommonControlField, ClusterableModel):
         related_name="new_title_journal",
     )
     old_title = models.ManyToManyField("self", blank=True)
-
+    previous_journal_titles = models.TextField(_("Previous Journal titles"),null=True, blank=True)
+    next_journal_title = models.TextField(_("Next Journal Title"), null=True, blank=True)
     initial_year = models.CharField(
         _("Initial Year"), max_length=4, blank=True, null=True
     )
