@@ -16,7 +16,7 @@
             {% for translation in page.get_translations.live %}  
               {% get_language_info for translation.locale.language_code as lang %}
                 <li>
-                  <a class="dropdown-item" href="{% routablepageurl translation 'bibliographic' journal.scielojournal_set.all.0.collection.acron3 journal.scielojournal_set.all.0.journal_acron %}" lang="{{ lang.code }}">{{ lang.name_local }}</a>
+                  <a class="dropdown-item" href="{% routablepageurl translation 'bibliographic' acron_collection acron_journal %}" lang="{{ lang.code }}">{{ lang.name_local }}</a>
                 </li>  
             {% endfor%}
             <!-- <li><a class="dropdown-item" href="http://0.0.0.0:8000/{{code}}/journal/{{journal.scielojournal_set.all.0.journal_acron}}" lang="es">{{lang}}</a></li> -->
