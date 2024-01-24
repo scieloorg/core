@@ -112,6 +112,8 @@ class OfficialJournal(CommonControlField, ClusterableModel):
         InlinePanel("parallel_title", label=_("Parallel titles")),
         AutocompletePanel("old_title"),
         FieldPanel("new_title"),
+        FieldPanel("previous_journal_titles"),
+        FieldPanel("next_journal_title"),
     ]
 
     panels_dates = [
