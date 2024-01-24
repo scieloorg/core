@@ -97,6 +97,7 @@ class BasePidProvider:
         origin_date=None,
         force_update=None,
         is_published=None,
+        registered_in_core=None,
     ):
         """
         Fornece / Valida PID de um XML disponível por um URI
