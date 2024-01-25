@@ -272,6 +272,10 @@ class OfficialJournal(CommonControlField, ClusterableModel):
     def parallel_titles(self):
         return JournalParallelTitle.objects.filter(official_journal=self)
 
+    def save(self, *args, **kwargs):
+        self.issn_print_status = bool(self.issn_print)
+        super().save(*args, **kwargs)
+
 
 class SocialNetwork(models.Model):
     name = models.TextField(
