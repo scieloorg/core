@@ -84,7 +84,9 @@ class XMLVersion(CommonControlField):
             obj.finger_print = xml_with_pre.finger_print
             obj.creator = user
             obj.save()
-            obj.save_file(f"{pid_provider_xml.v3}.xml", xml_with_pre.tostring())
+            obj.save_file(
+                f"{pid_provider_xml.v3}.xml", xml_with_pre.tostring(pretty_print=True)
+            )
             obj.save()
             return obj
         except IntegrityError:
@@ -108,7 +110,7 @@ class XMLVersion(CommonControlField):
     @property
     def xml(self):
         try:
-            return self.xml_with_pre.tostring()
+            return self.xml_with_pre.tostring(pretty_print=True)
         except XMLVersionXmlWithPreError as e:
             return str(e)
 
@@ -1228,7 +1230,6 @@ class PidProviderXML(CommonControlField, ClusterableModel):
         xml_with_pre : XMLWithPre
 
         """
-        logging.info("PidProviderXML.check_registration_demand")
         xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
 
         try:
