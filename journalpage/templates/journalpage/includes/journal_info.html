@@ -86,10 +86,10 @@
             {% if journal.online_submission_url and journal.current_status == 'current' %}
               <a class="list-group-item" href="{{ journal.online_submission_url }}" target="_blank"><span class="material-icons-outlined">launch</span> Submissão de manuscritos</a>
             {% endif %}
-              <a class="list-group-item" href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#item-1"><span class="material-icons-outlined">info</span> {% trans 'Sobre o periódico' %}</a>
-              <a class="list-group-item" href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#item-3"><span class="material-icons-outlined">people</span> {% trans 'Corpo Editorial' %}</a>
-              <a class="list-group-item" href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#item-4"><span class="material-icons-outlined">help_outline</span> {% trans 'Instruções aos autores' %}</a>
-              <a class="list-group-item" href="{% routablepageurl page 'bibliographic' journal.scielojournal_set.all.0.journal_acron %}#item-2"><span class="material-icons-outlined">article</span> {% trans 'Política editorial' %}</a>
+              <a class="list-group-item" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-1"><span class="material-icons-outlined">info</span> {% trans 'Sobre o periódico' %}</a>
+              <a class="list-group-item" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-3"><span class="material-icons-outlined">people</span> {% trans 'Corpo Editorial' %}</a>
+              <a class="list-group-item" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-4"><span class="material-icons-outlined">help_outline</span> {% trans 'Instruções aos autores' %}</a>
+              <a class="list-group-item" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-2"><span class="material-icons-outlined">article</span> {% trans 'Política editorial' %}</a>
             {% if journal.enable_contact %}
                 <a class="list-group-item" href="javascript:;" class="contact_modal_id" data-url="#">
                   <span class="glyphBtn contact"></span> Contato
