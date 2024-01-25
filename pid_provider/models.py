@@ -48,15 +48,14 @@ def xml_directory_path(instance, filename):
     sps_pkg_name = instance.pid_provider_xml.pkg_name
     subdirs = sps_pkg_name.split("-")
     subdir_sps_pkg_name = "/".join(subdirs)
-    return (
-        f"pid_provider/{subdir_sps_pkg_name}/{filename}"
-    )
+    return f"pid_provider/{subdir_sps_pkg_name}/{filename}"
 
 
 class XMLVersion(CommonControlField):
     """
     Tem função de guardar a versão do XML
     """
+
     pid_provider_xml = models.ForeignKey(
         "PidProviderXML", null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -85,7 +84,9 @@ class XMLVersion(CommonControlField):
             obj.finger_print = xml_with_pre.finger_print
             obj.creator = user
             obj.save()
-            obj.save_file(f"{pid_provider_xml.v3}.xml", xml_with_pre.tostring())
+            obj.save_file(
+                f"{pid_provider_xml.v3}.xml", xml_with_pre.tostring(pretty_print=True)
+            )
             obj.save()
             return obj
         except IntegrityError:
@@ -109,14 +110,16 @@ class XMLVersion(CommonControlField):
     @property
     def xml(self):
         try:
-            return self.xml_with_pre.tostring()
+            return self.xml_with_pre.tostring(pretty_print=True)
         except XMLVersionXmlWithPreError as e:
             return str(e)
 
     @classmethod
     def latest(cls, pid_provider_xml):
         if pid_provider_xml:
-            return cls.objects.filter(pid_provider_xml=pid_provider_xml).latest("created")
+            return cls.objects.filter(pid_provider_xml=pid_provider_xml).latest(
+                "created"
+            )
         raise XMLVersionLatestError(
             "XMLVersion.get requires pid_provider_xml and xml_with_pre parameters"
         )
@@ -959,7 +962,9 @@ class PidProviderXML(CommonControlField, ClusterableModel):
         self.pub_year = xml_adapter.pub_year
 
     def _add_current_version(self, xml_adapter, user):
-        self.current_version = XMLVersion.get_or_create(user, self, xml_adapter.xml_with_pre)
+        self.current_version = XMLVersion.get_or_create(
+            user, self, xml_adapter.xml_with_pre
+        )
 
     def _add_other_pid(self, changed_pids, user):
         # requires registered.current_version is set
@@ -1225,7 +1230,6 @@ class PidProviderXML(CommonControlField, ClusterableModel):
         xml_with_pre : XMLWithPre
 
         """
-        logging.info("PidProviderXML.check_registration_demand")
         xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
 
         try:
