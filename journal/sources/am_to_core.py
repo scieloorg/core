@@ -346,12 +346,12 @@ def update_panel_legacy_compatibility_fields(
 
 def set_ftp(journal, ftp):
     accept_ftp_strings = {'art', 'na', 'iss'}
-    if ftp.lower() in accept_ftp_strings:
-        journal.ftp = extract_value(ftp)
+    if ftp and ftp.lower() in accept_ftp_strings:
+        journal.ftp = ftp
 
 def set_user_subscription(journal, user_subs):
     accept_user_subscription_string = {'sub', 'reg', 'na'}
-    if user_subs.lower() in accept_user_subscription_string:
+    if user_subs and user_subs.lower() in accept_user_subscription_string:
         journal.user_subscription = user_subs
 
 def create_or_update_official_journal(
