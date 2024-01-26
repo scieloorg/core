@@ -507,7 +507,7 @@ class Journal(CommonControlField, ClusterableModel):
     )
     ftp = models.CharField(
         _("Ftp"),
-        max_length=50,
+        max_length=3,
         blank=True,
         null=True,
     )
@@ -568,6 +568,7 @@ class Journal(CommonControlField, ClusterableModel):
         blank=True,
         verbose_name=_("DigitalPreservationAgency"),
     )
+    valid = models.BooleanField(default=False, null=True, blank=True)
 
     autocomplete_search_field = "title"
 
@@ -2040,7 +2041,42 @@ class IndexedAtFile(models.Model):
 
 
 class AdditionalIndexedAt(CommonControlField):
-    name = models.TextField(_("Name"), null=False, blank=False)
+    name = models.TextField(_("Name"), null=True, blank=True)
+
+    @classmethod
+    def get(
+        cls,
+        name
+        ):
+        if name:
+            try:
+                return cls.objects.get(name=name)
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(name=name).first()
+        raise ValueError("AdditionalIndexedAt.get requires name paramenter")
+
+    @classmethod
+    def create(
+        cls,
+        name,
+        user,
+    ):
+        obj = cls()
+        obj.name = name
+        obj.creator = user
+        obj.save()
+        return obj
+        
+    @classmethod
+    def get_or_create(
+        cls,
+        name,
+        user,
+    ):
+        try:
+            return cls.get(name=name)
+        except cls.DoesNotExist:
+            return cls.create(name=name, user=user)
 
     autocomplete_search_field = "name"
 
