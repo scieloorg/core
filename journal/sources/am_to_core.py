@@ -334,18 +334,25 @@ def update_panel_legacy_compatibility_fields(
     is_supplement,
     acronym_letters,
 ):
-    user_subs = extract_value(user_subscription)
-    if user_subs and 2 <= len(user_subs) <= 3:
-        journal.user_subscription = user_subs
     journal.center_code = extract_value(center_code)
     journal.identification_number = extract_value(identification_number)
-    journal.ftp = extract_value(ftp)
     journal.subtitle = extract_value(subtitle)
     journal.section = extract_value(section)
     journal.has_supplement = extract_value(has_supplement)
     journal.is_supplement = extract_value(is_supplement)
     journal.acronym_letters = extract_value(acronym_letters)
+    set_ftp(journal, extract_value(ftp))
+    set_user_subscription(journal, extract_value(user_subscription))
 
+def set_ftp(journal, ftp):
+    accept_ftp_strings = {'art', 'na', 'iss'}
+    if ftp.lower() in accept_ftp_strings:
+        journal.ftp = extract_value(ftp)
+
+def set_user_subscription(journal, user_subs):
+    accept_user_subscription_string = {'sub', 'reg', 'na'}
+    if user_subs.lower() in accept_user_subscription_string:
+        journal.user_subscription = user_subs
 
 def create_or_update_official_journal(
     title,
