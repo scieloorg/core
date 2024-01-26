@@ -765,25 +765,38 @@ def get_or_create_copyright_holder(journal, copyright_holder_name, user):
 
     if copyright_holder_name:
         for cp in copyright_holder_name:
-            copyright_holder = CopyrightHolder.get_or_create(
-                name=cp,
-                acronym=None,
-                level_1=None,
-                level_2=None,
-                level_3=None,
-                user=user,
-                location=None,
-                official=None,
-                is_official=None,
-                url=None,
-                institution_type=None,
-            )
-            copyright_holder_history = CopyrightHolderHistory.get_or_create(
-                institution=copyright_holder,
-                user=user,
-            )
-            copyright_holder_history.journal = journal
-            copyright_holder_history.save()
+            try:
+                copyright_holder = CopyrightHolder.get_or_create(
+                    name=cp,
+                    acronym=None,
+                    level_1=None,
+                    level_2=None,
+                    level_3=None,
+                    user=user,
+                    location=None,
+                    official=None,
+                    is_official=None,
+                    url=None,
+                    institution_type=None,
+                )
+                copyright_holder_history = CopyrightHolderHistory.get_or_create(
+                    institution=copyright_holder,
+                    user=user,
+                )
+                copyright_holder_history.journal = journal
+                copyright_holder_history.save()
+            except Exception as e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "function": "journal.sources.am_to_core.assign_journal_to_main_collection",
+                        "journal_id": journal.id,
+                        "copyright_holder_name": copyright_holder_name
+                    },
+                )
+
 
 def update_title_in_database(user, journal, code, acronym, title=None):
     code = extract_value(code)
