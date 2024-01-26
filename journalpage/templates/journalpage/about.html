@@ -166,19 +166,21 @@
                           </li>
                           <li>
                             <strong>{% trans 'Cidade:' %}</strong>
-                            <i>Inserir cidade aqui</i>
+                            <i>{{journal.contact_location.city}}</i>
                           </li>
                           <li>
                             <strong>{% trans 'Estado:' %}</strong>
-                            <i>Inserir estado aqui</i>
+                            <i>{{journal.contact_location.state}}</i>
                           </li>
                           <li>
                             <strong>{% trans 'País:' %}</strong>
-                            <i>Inserir país aqui</i>
+                            <i>{{journal.contact_location.country}}</i>
                           </li>
                           <li>
                             <strong>{% trans 'E-mail:' %}</strong>
-                            <i>{{ journal.journal_email }}</i>
+                            {% for email in journal.journal_email.all %}
+                              <i>{{email.email}}</i>
+                            {% endfor%}
                           </li>
                         </ul>
                         <h5 id="item-1-6">{% trans 'Websites e Mídias Sociais' %}</h5>
@@ -194,11 +196,14 @@
                           {% for indexed_at in journal.indexed_at.all %} 
                             <li>{{ indexed_at.name }}</li> 
                           {% endfor %} 
+                          {% for additional_indexed in journal.additional_indexed_at.all %}
+                            <li>{{additional_indexed.name}}</li>
+                          {% endfor%}
                         </ul>
                         <h5 id="item-1-8">{% trans 'Patrocinadores e agências de Fomento' %}</h5>
                         <ul type="disc"> 
                           {% for sponsor in sponsor_history %} 
-                            <li>{{sponsor.institution.institution.name}}</li> 
+                            <li>{{sponsor.institution.institution.institution_identification.name}}</li> 
                           {% endfor%} 
                         </ul>
                         <!-- InlinePanel Preservacao Digital -->
