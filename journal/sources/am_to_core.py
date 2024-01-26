@@ -193,13 +193,13 @@ def update_panel_institution(
     electronic_address = extract_value(electronic_address)
     if isinstance(electronic_address, str):
         electronic_address = [electronic_address]
-
-    for item in electronic_address:
-        try:
-            item = item and item.strip().lower()
-            JournalEmail.objects.get(journal=journal, email=item)
-        except JournalEmail.DoesNotExist:
-            JournalEmail.objects.create(journal=journal, email=item)
+    if electronic_address:
+        for item in electronic_address:
+            try:
+                item = item and item.strip().lower()
+                JournalEmail.objects.get(journal=journal, email=item)
+            except JournalEmail.DoesNotExist:
+                JournalEmail.objects.create(journal=journal, email=item)
 
     publisher = extract_value(publisher)
 
