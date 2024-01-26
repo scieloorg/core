@@ -681,24 +681,10 @@ def create_or_update_location(
         [{'_': 'Rua Felizardo, 750 Jardim Botânico'}, {'_': 'CEP: 90690-200'}, {'_': 'RS - Porto Alegre'}, {'_': '(51) 3308 5814'}]
     """
 
-    #O valor publisher_country pode fornecer tanto 
-    #o nome completo do país quanto o acrônimo do país.
-    country_value = extract_value(publisher_country)
-    country = None
-    for item in Country.standardize(country_value, user=user):
-        country = item.get("country")
+    country = standardize_location(extract_value(publisher_city), Country, user=user)
+    city = standardize_location(extract_value(publisher_city), City, user=user)
+    state = standardize_location(extract_value(publisher_state), State, user=user)
 
-    name_city = extract_value(publisher_city)
-    city = None
-    for item in City.standardize(name_city, user=user):
-        city = item.get("city")
-
-    #O valor publisher_state pode fornecer tanto 
-    #o nome completo do estado quanto o acrônimo do estado.
-    state_value = extract_value(publisher_state)
-    state = None
-    for item in State.standardize(state_value, user=user):
-        state = item.get("state")
     try:
         location = Location.create_or_update(
             user=user,
@@ -728,6 +714,15 @@ def create_or_update_location(
     journal.contact_address = address
 
     return location
+
+
+def standardize_location(value_location, ObjectLocation, user):
+    standardized_value = None
+    for item in ObjectLocation.standardize(value_location, user):
+        standardized_value = next(iter(item.values()))
+        if standardized_value:
+            break
+    return standardized_value
 
 
 def get_or_update_parallel_titles(of_journal, parallel_titles):
