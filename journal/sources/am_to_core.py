@@ -651,10 +651,14 @@ def get_or_create_indexed_at(journal, indexed_at, user):
                 obj_index = IndexedAt.objects.get(Q(name__iexact=i) | Q(acronym__iexact=i))
                 data_index.append(obj_index)
             except IndexedAt.DoesNotExist:
-                obj_additional_index, created = AdditionalIndexedAt.objects.get_or_create(
-                    name=i,
-                    creator=user,
-                )
+                try:
+                    obj_additional_index = AdditionalIndexedAt.get_or_create(
+                        name=i,
+                        user=user,
+                    )
+                except Exception as e:
+                    # Nao registra error caso valor de i seja None
+                    continue
                 data_additional_indexed.append(obj_additional_index)
         journal.indexed_at.set(data_index)
         journal.additional_indexed_at.set(data_additional_indexed)
