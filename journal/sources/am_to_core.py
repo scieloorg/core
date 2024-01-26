@@ -699,13 +699,24 @@ def create_or_update_location(
     state = None
     for item in State.standardize(state_value, user=user):
         state = item.get("state")
-
-    location = Location.create_or_update(
-        user=user,
-        country=country,
-        state=state,
-        city=city,
-    )
+    try:
+        location = Location.create_or_update(
+            user=user,
+            country=country,
+            state=state,
+            city=city,
+        )
+    except Exception as e:
+        location = None
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "function": "journal.sources.article_meta.create_or_update_location",
+                "journal_id": journal.id,
+            },
+        )          
     journal.contact_location = location
 
     address = extract_value(address)
