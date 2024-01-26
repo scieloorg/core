@@ -300,14 +300,27 @@ def update_panel_notes(
         if isinstance(notes, str):
             notes = [notes]
         n = "\n".join(notes)
-        obj = Annotation.create_or_update(
-            journal=journal,
-            notes=n,
-            creation_date=creation_date,
-            update_date=update_date,
-            user=user,
-        )
-
+        try:
+            obj = Annotation.create_or_update(
+                journal=journal,
+                notes=n,
+                creation_date=creation_date,
+                update_date=update_date,
+                user=user,
+            )
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "function": "journal.sources.article_meta.update_panel_notes",
+                    "journal_id": journal.id,
+                    "notes": n,
+                    "creation_date": f"{creation_date}",
+                    "update_date": f"{update_date}",
+                },
+            )    
 
 def update_panel_legacy_compatibility_fields(
     journal,
