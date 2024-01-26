@@ -816,5 +816,14 @@ def assign_journal_to_main_collection(journal, url_of_the_main_collection):
             cleaned_domain_query = url_of_the_main_collection.replace("http://", "").replace("https://", "") 
             collection = Collection.objects.get(domain=cleaned_domain_query)
             journal.main_collection = collection
-        except (Collection.DoesNotExist, ValueError):
-            raise MainCollectionNotFoundError()
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "function": "journal.sources.am_to_core.assign_journal_to_main_collection",
+                    "journal_id": journal.id,
+                    "cleaned_domain_query": cleaned_domain_query
+                },
+            )
