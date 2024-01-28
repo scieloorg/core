@@ -1,3 +1,32 @@
+import logging
+
+
+def get_issns(
+    issn_print_or_electronic,
+    issn_scielo,
+    type_issn,
+    current_issn,
+):
+    if issn_print_or_electronic:
+        return extract_issn_print_electronic(issn_print_or_electronic)
+
+    type_ = None
+    if type_issn:
+        for item in type_issn:
+            try:
+                type_ = item.pop("_")
+            except KeyError:
+                pass
+    if type_:
+        if current_issn:
+            issn = extract_value(current_issn)
+        elif issn_scielo:
+            issn = issn_scielo
+        logging.info((current_issn, issn_scielo, type_issn, type_, issn))
+        return extract_issn_print_electronic([{'t': type_, '_': issn}])
+    return None, None
+
+
 def extract_issn_print_electronic(issn_print_or_electronic):
     """
     issn_print_or_electronic:
