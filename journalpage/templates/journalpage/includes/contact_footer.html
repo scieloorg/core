@@ -9,24 +9,14 @@
               <span class="material-icons-outlined">location_on</span>
             </div>
             <div class="col-md-10 col-sm-9">
-              <strong class="d-block">{{ journal.publisher_name }}</strong>
-              {% if journal.publisher_address %}
-                <span>{{ journal.publisher_address }}</span> - 
+              <strong class="d-block">{{ journal.contact_name }}</strong>
+              {% if journal.contact_address %}
+                <span>{{ journal.contact_address }}</span> - 
               {% endif %}
-              {% if journal.publisher_city %}
-              <span>{{ journal.publisher_city }}</span> -
-              {% endif %}
-              {% if journal.publisher_state %}
-              <span>{{ journal.publisher_state }}</span> -
-              {% endif %}
-              {% if journal.publisher_country %}
-              <span>{{ journal.publisher_country }}</span> <br/>
-              {% endif %}
-              {% if journal.publisher_telephone %}
-              <span>Tel/Fax: {{ journal.publisher_telephone }}</span>
-              {% endif %}
-              {% if journal.editor_email %}
-                <strong>E-mail:</strong> {{ journal.editor_email }}
+              {% if journal.journal_email.all %}
+                {% for email in journal.journal_email.all %}
+                  <strong>E-mail:</strong> {{ email.email }}
+                {% endfor%}
               {% endif %}
             </div>
           </div>
