@@ -657,7 +657,7 @@ class PidProviderXML(CommonControlField, ClusterableModel):
 
             # analisa se aceita ou rejeita registro
             updated_data = cls.skip_registration(
-                xml_adapter, registered, force_update, origin_date
+                xml_adapter, registered, force_update, origin_date, registered_in_core,
             )
             if updated_data:
                 return updated_data
@@ -679,6 +679,18 @@ class PidProviderXML(CommonControlField, ClusterableModel):
                 change["pid_type"]: change["pid_assigned"] for change in changed_pids
             }
 
+            # compara de novo, após completar pids
+            updated_data = cls.skip_registration(
+                xml_adapter, registered, force_update, origin_date, registered_in_core,
+            )
+            if updated_data:
+                # XML da entrada e registrado divergem: não tem e tem pids,
+                # no entanto, após completar com pids, ficam idênticos
+                updated_data["xml_changed"] = xml_changed
+                updated_data.update(input_data)
+                if xml_with_pre.v3 == registered.v3:
+                    logging.info("skip_registration second")
+                    return updated_data
             # cria ou atualiza registro
             registered = cls._save(
                 registered,
@@ -780,7 +792,7 @@ class PidProviderXML(CommonControlField, ClusterableModel):
         return registered
 
     @classmethod
-    def skip_registration(cls, xml_adapter, registered, force_update, origin_date):
+    def skip_registration(cls, xml_adapter, registered, force_update, origin_date, registered_in_core):
         """
         XML é versão AOP, mas
         documento está registrado com versão VoR (fascículo),
@@ -788,9 +800,15 @@ class PidProviderXML(CommonControlField, ClusterableModel):
         pois está tentando registrar uma versão desatualizada
         """
         if force_update:
+            logging.info(f"Do not skip update: force_update")
             return
 
         if not registered:
+            logging.info(f"Do not skip update: not registered")
+            return
+
+        if registered_in_core and not registered.registered_in_core:
+            logging.info(f"Do not skip update: registered_in_core")
             return
 
         # verifica se é necessário atualizar
