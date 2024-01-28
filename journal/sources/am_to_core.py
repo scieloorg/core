@@ -1,3 +1,4 @@
+import logging
 import re
 import sys
 from datetime import datetime
@@ -35,6 +36,7 @@ from reference.models import JournalTitle
 from vocabulary.models import Vocabulary
 
 from .am_data_extraction import (
+    get_issns,
     extract_issn_print_electronic,
     extract_value,
     extract_value_from_journal_history,
@@ -354,6 +356,27 @@ def set_user_subscription(journal, user_subs):
     if user_subs and user_subs.lower() in accept_user_subscription_string:
         journal.user_subscription = user_subs
 
+
+def get_issns_from_scielo_journal(issn_scielo, title, issn_print, issn_electronic):
+    if bool(issn_print) ^ bool(issn_electronic):
+        # caso um dos ISSN esteja ausente, tenta recuperar o ISSN ausente de
+        # um OfficialJournal anteriormente cadastrado se aplicável (#573)
+        try:
+            sj = SciELOJournal.objects.get(
+                journal__title=title,
+                issn_scielo=issn_scielo,
+            )
+            official_journal = sj.journal.official
+            issn_print = issn_print or official_journal.issn_print
+            issn_electronic = issn_electronic or official_journal.issn_electronic
+        except (
+            SciELOJournal.DoesNotExist,
+            SciELOJournal.MultipleObjectsReturned,
+        ):
+            pass
+    return issn_print, issn_electronic
+
+
 def create_or_update_official_journal(
     title,
     new_title,
@@ -384,14 +407,14 @@ def create_or_update_official_journal(
     title = extract_value(title)
     issn_scielo = extract_value(issn_scielo)
 
-    if type_issn and current_issn:
-        for item in type_issn:
-            item["t"] = item.pop("_")
-        type_issn[0].update(current_issn[0])
-    issn = issn_print_or_electronic or type_issn
-    issn_print, issn_electronic = extract_issn_print_electronic(
-        issn_print_or_electronic=issn
+    issn_print, issn_electronic = get_issns(
+        issn_print_or_electronic,
+        issn_scielo,
+        type_issn,
+        current_issn,
     )
+    issn_print, issn_electronic = get_issns_from_scielo_journal(
+        issn_scielo, title, issn_print, issn_electronic)
 
     official_journal = OfficialJournal.create_or_update(
         user=user,
@@ -400,6 +423,7 @@ def create_or_update_official_journal(
         issnl=None,
         title=title,
     )
+
     get_or_update_parallel_titles(
         of_journal=official_journal, parallel_titles=parallel_titles
     )
