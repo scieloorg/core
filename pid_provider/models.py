@@ -561,7 +561,7 @@ class PidProviderXML(CommonControlField, ClusterableModel):
         return cls.objects.filter(
             Q(available_since__lte=now)
             & (Q(created__gte=from_date) | Q(updated__gte=from_date)),
-            current_version__pid_v3__isnull=False,
+            current_version__pid_provider_xml__v3__isnull=False,
         ).iterator()
 
     @property

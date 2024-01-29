@@ -163,21 +163,26 @@ class Researcher(CommonControlField):
         )
 
         if not affiliation:
-            location = location or Location.create_or_update(
-                user,
-                country=None,
-                country_name=aff_country_name,
-                country_acron3=None,
-                country_acronym=aff_country_acronym,
-                country_text=aff_country_text,
-                state=None,
-                state_name=aff_state_name,
-                state_acronym=aff_state_acronym,
-                state_text=aff_state_text,
-                city=None,
-                city_name=aff_city_name,
-                lang=lang,
-            )
+            try:
+                location = location or Location.create_or_update(
+                    user,
+                    country=None,
+                    country_name=aff_country_name,
+                    country_acron3=None,
+                    country_acronym=aff_country_acronym,
+                    country_text=aff_country_text,
+                    state=None,
+                    state_name=aff_state_name,
+                    state_acronym=aff_state_acronym,
+                    state_text=aff_state_text,
+                    city=None,
+                    city_name=aff_city_name,
+                    lang=lang,
+                )
+            except Exception as e:
+                location = None
+
+        if not affiliation and aff_name:
             affiliation = affiliation or Affiliation.get_or_create(
                 user,
                 name=aff_name,

@@ -123,13 +123,20 @@ def get_or_create_doi(xmltree, user):
 
 
 def get_journal(xmltree):
-    journal_title = Journal(xmltree=xmltree).journal_title
+    try:
+        return models.Journal.objects.get(title=Journal(xmltree=xmltree).journal_title)
+    except (models.Journal.DoesNotExist, models.Journal.MultipleObjectsReturned):
+        pass
+
     issn = ISSN(xmltree=xmltree)
     journal_issn_epub = issn.epub
     journal_issn_ppub = issn.ppub
     try:
-        return models.Journal.objects.get(title=journal_title, official__issn_print=journal_issn_ppub, official__issn_electronic=journal_issn_epub)
-    except models.Journal.DoesNotExist:
+        official_journal = models.OfficialJournal.get(
+            issn_print=journal_issn_ppub, issn_electronic=journal_issn_epub
+        )
+        return models.Journal.objects.get(official=official_journal)
+    except (models.OfficialJournal.DoesNotExist, models.Journal.DoesNotExist):
         return None
 
 

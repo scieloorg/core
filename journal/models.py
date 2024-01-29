@@ -104,7 +104,7 @@ class OfficialJournal(CommonControlField, ClusterableModel):
     issn_electronic = models.CharField(
         _("ISSN Eletronic"), max_length=9, null=True, blank=True
     )
-    issn_print_status = models.BooleanField(default=False)
+    issn_print_is_active = models.BooleanField(verbose_name=_("ISSN Print is active"), default=False)
     issnl = models.CharField(_("ISSNL"), max_length=9, null=True, blank=True)
 
     panels_titles = [
@@ -130,6 +130,7 @@ class OfficialJournal(CommonControlField, ClusterableModel):
 
     panels_issns = [
         FieldPanel("issn_print"),
+        FieldPanel("issn_print_is_active"),
         FieldPanel("issn_electronic"),
         FieldPanel("issnl"),
     ]
@@ -222,6 +223,7 @@ class OfficialJournal(CommonControlField, ClusterableModel):
         issn_electronic=None,
         issnl=None,
         title=None,
+        issn_print_is_active=None,
     ):
         try:
             obj = cls.get(
@@ -240,6 +242,7 @@ class OfficialJournal(CommonControlField, ClusterableModel):
         obj.issn_electronic = issn_electronic or obj.issn_electronic
         obj.issn_print = issn_print or obj.issn_print
         obj.title = title or obj.title
+        obj.issn_print_is_active = issn_print_is_active or obj.issn_print_is_active
         obj.save()
 
         return obj
@@ -271,10 +274,6 @@ class OfficialJournal(CommonControlField, ClusterableModel):
     @property
     def parallel_titles(self):
         return JournalParallelTitle.objects.filter(official_journal=self)
-
-    def save(self, *args, **kwargs):
-        self.issn_print_status = bool(self.issn_print)
-        super().save(*args, **kwargs)
 
 
 class SocialNetwork(models.Model):
