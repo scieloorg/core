@@ -422,6 +422,7 @@ def create_or_update_official_journal(
         issn_electronic=issn_electronic,
         issnl=None,
         title=title,
+        issn_print_is_active=bool(issn_print),
     )
 
     get_or_update_parallel_titles(
