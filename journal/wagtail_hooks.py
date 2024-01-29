@@ -38,12 +38,12 @@ class OfficialJournalAdmin(ModelAdmin):
         "initial_year",
         "terminate_year",
         "issn_print",
+        "issn_print_is_active",
         "issn_electronic",
-        "issnl",
         "created",
         "updated",
     )
-    list_filter = ("terminate_year", "initial_year",)
+    list_filter = ("issn_print_is_active", "terminate_year", "initial_year", )
     search_fields = (
         "title",
         "initial_year",
