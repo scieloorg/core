@@ -35,3 +35,17 @@ def get_editorial_board(journal):
 def verify_journal_is_latest(journal):
     most_recent_journal = find_most_recent_journal(journal=journal)
     assert journal == most_recent_journal
+
+
+def render_journal_page_with_latest_context(self, request, journal, page, context):
+    most_recent_journal = find_most_recent_journal(journal=journal)
+    context = {
+        "journal": journal,
+        "most_recent_journal": most_recent_journal,
+        "acron_collection": most_recent_journal.scielojournal_set.all()[0].collection.acron3,
+        "acron_journal": most_recent_journal.scielojournal_set.all()[0].journal_acron,
+        "page": page,
+        "translation": context["available_translations"],
+        "language": str(self.locale),
+    }
+    return render(request, "journalpage/next_journal.html", context)
