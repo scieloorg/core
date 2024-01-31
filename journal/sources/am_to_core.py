@@ -372,6 +372,7 @@ def get_issns_from_scielo_journal(issn_scielo, title, issn_print, issn_electroni
         except (
             SciELOJournal.DoesNotExist,
             SciELOJournal.MultipleObjectsReturned,
+            AttributeError,
         ):
             pass
     return issn_print, issn_electronic
