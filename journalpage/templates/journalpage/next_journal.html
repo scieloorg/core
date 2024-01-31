@@ -1,0 +1,104 @@
+{% extends "journalpage/base.html" %}
+{% load static compress %}
+{% load i18n %}
+{% load wagtailroutablepage_tags %}
+{% load wagtailcore_tags %}
+{% block body_class %}journal about{% endblock %}
+{% block content %}
+  {% include "journalpage/includes/header.html" %}
+  {% include "journalpage/includes/journal_info.html" %}
+  {% include "journalpage/includes/levelMenu.html" %}
+
+  {% block main_content %}
+  <style>
+    ul.scielo__menu-contexto,
+    ul.scielo__menu-contexto ul{
+      list-style: none;
+    }
+    ul.scielo__menu-contexto ul{
+      margin-bottom: 1rem;
+    }
+    ul.scielo__menu-contexto .nav-link{
+      padding:0;
+      color: gray;
+    }
+    ul.scielo__menu-contexto .nav-link.active{
+      color:#3867ce;
+    }
+    .sticky-top{
+      top: 80px;
+    }
+
+    .bd-example h5,
+    .bd-example h4{
+      margin-top: 3rem;
+    }
+    .bd-example hr{
+      margin-top: 3rem;
+    }
+    .bd-example ul{
+      margin-bottom: 3rem;
+    }
+    a{
+      word-wrap: break-word;
+    }
+  </style>
+
+    <!-- Only on mobile -->
+    <section class="d-flex d-sm-none breadcrumb mt-3 mb-5 py-0 py-1">
+      <div class="container px-0">
+        <div class="row">
+          <div class="col">
+
+            <ol class=" breadcrumb mb-0 ps-0">
+              <li class="breadcrumb-item"><a href=""><span class="material-icons-outlined">navigate_before</span> {{ journal.title }}</a></li>
+            </ol>
+
+          </div>
+          <div class="col-3 pt-3">
+        
+            <!-- share --> 
+            {% include "journalpage/includes/share.html" %}
+          
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Only on Desktop -->
+    <section class="d-none d-md-flex breadcrumb mt-3 mb-5 py-0 py-1">
+      <div class="container">
+        <div class="row">
+          <div class="col">
+
+          <ol class="breadcrumb mb-0 ps-0">
+            <li class="breadcrumb-item"><a href="#" alt="Home"><span class="material-icons-outlined">home</span></a></li>
+            <li class="breadcrumb-item"><a href="#">{% trans 'Periódicos' %}</a></li>
+            <li class="breadcrumb-item"><a href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}">{{journal.title}}</a></li>
+            <li class="breadcrumb-item">{% trans 'Sobre o periódico' %}</li>
+          </ol>
+            
+          </div>
+          <div class="col-3 pt-3">
+        
+            <!-- share --> 
+            {% include "journalpage/includes/share.html" %}
+          
+          </div>
+        </div>
+      </div>
+    </section>
+
+  <section class="journalContent">
+    <div class="container">
+       <p>{% trans 'Esta revista mudou de título por favor consulte: ' %} <a href="https://www.scielo.br/journal/{{acron_collection}}/{{acron_journal}}/">{{most_recent_journal.title}}</a> </p>
+    </div>
+  </section>
+
+  {% endblock %}
+  
+  {% include "journalpage/includes/contact_footer.html" %}
+
+  {% include "journalpage/includes/footer.html" %}
+
+{% endblock %}
