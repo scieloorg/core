@@ -2,6 +2,7 @@ import logging
 import re
 import sys
 from datetime import datetime
+from urllib.parse import urlparse
 
 from django.db.models import Q
 
@@ -817,7 +818,7 @@ def get_or_create_copyright_holder(journal, copyright_holder_name, user):
                     exception=e,
                     exc_traceback=exc_traceback,
                     detail={
-                        "function": "journal.sources.am_to_core.assign_journal_to_main_collection",
+                        "function": "journal.sources.am_to_core.get_or_create_copyright_holder",
                         "journal_id": journal.id,
                         "copyright_holder_name": copyright_holder_name
                     },
@@ -839,8 +840,8 @@ def create_or_update_title_in_database(user, journal, indexed_at, title, identif
 def assign_journal_to_main_collection(journal, url_of_the_main_collection):
     if url_of_the_main_collection:
         try:
-            cleaned_domain_query = url_of_the_main_collection.replace("http://", "").replace("https://", "") 
-            collection = Collection.objects.get(domain=cleaned_domain_query)
+            o = urlparse(url_of_the_main_collection)
+            collection = Collection.objects.get(domain__icontains=o.hostname)
             journal.main_collection = collection
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
