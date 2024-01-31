@@ -60,13 +60,13 @@ class Collection(CommonControlField):
         CollectionName, verbose_name="Collection Name", blank=True
     )
     main_name = models.TextField(_("Main name"), null=True, blank=True)
-    status = models.TextField(
-        _("Status"), choices=choices.STATUS, null=True, blank=True
+    status = models.CharField(
+        _("Status"), choices=choices.STATUS, max_length=20, null=True, blank=True
     )
     has_analytics = models.BooleanField(_("Has analytics"), null=True, blank=True)
     # Antes era type
-    collection_type = models.TextField(
-        _("Collection Type"), choices=choices.TYPE, null=True, blank=True
+    collection_type = models.CharField(
+        _("Collection Type"), choices=choices.TYPE, max_length=20, null=True, blank=True
     )
     is_active = models.BooleanField(_("Is active"), null=True, blank=True)
     foundation_date = models.DateField(_("Foundation data"), null=True, blank=True)

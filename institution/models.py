@@ -23,8 +23,8 @@ class Institution(CommonControlField, ClusterableModel):
         "InstitutionIdentification", null=True, blank=True, on_delete=models.SET_NULL
     )
 
-    institution_type = models.TextField(
-        _("Institution Type"), choices=choices.inst_type, null=True, blank=True
+    institution_type = models.CharField(
+        _("Institution Type"), choices=choices.inst_type, max_length=100, null=True, blank=True
     )
     location = models.ForeignKey(
         Location, null=True, blank=True, on_delete=models.SET_NULL

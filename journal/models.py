@@ -277,8 +277,8 @@ class OfficialJournal(CommonControlField, ClusterableModel):
 
 
 class SocialNetwork(models.Model):
-    name = models.TextField(
-        _("Name"), choices=choices.SOCIAL_NETWORK_NAMES, null=True, blank=True
+    name = models.CharField(
+        _("Name"), choices=choices.SOCIAL_NETWORK_NAMES, max_length=20, null=True, blank=True
     )
     url = models.URLField(_("URL"), null=True, blank=True)
 
