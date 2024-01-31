@@ -20,3 +20,13 @@ def find_most_recent_journal(journal):
         except Journal.DoesNotExist:
             break
     return journal
+
+
+def get_editorial_board(journal):
+    try:
+        editorial_board = EditorialBoard.objects.filter(journal=journal).latest(
+            "initial_year"
+        )
+    except EditorialBoard.DoesNotExist:
+        editorial_board = None
+    return editorial_board
