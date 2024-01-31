@@ -30,3 +30,8 @@ def get_editorial_board(journal):
     except EditorialBoard.DoesNotExist:
         editorial_board = None
     return editorial_board
+
+
+def verify_journal_is_latest(journal):
+    most_recent_journal = find_most_recent_journal(journal=journal)
+    assert journal == most_recent_journal
