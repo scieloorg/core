@@ -1760,6 +1760,45 @@ class SubjectDescriptor(CommonControlField):
     class Meta:
         ordering = ["value"]
 
+    @classmethod
+    def get(
+        cls,
+        value,
+        ):
+        if not value:
+            return None
+        try:
+            return cls.objects.get(value=value)
+        except cls.MultipleObjectsReturned:
+            duplicates = cls.objects.filter(value=value)
+            for duplicate in duplicates[1:]:
+                duplicate.delete()
+            return duplicates.first()
+
+    @classmethod
+    def create(
+        cls,
+        value,
+        user,
+    ):
+        obj = cls(
+            value=value,
+            creator=user
+        )
+        obj.save()
+        return obj
+
+    @classmethod
+    def get_or_create(
+        cls,
+        value,
+        user,
+        ):
+        try:
+            return cls.get(value=value)
+        except cls.DoesNotExist:
+            return cls.create(value=value, user=user)
+        
 
 class Subject(CommonControlField):
     code = models.CharField(max_length=30, null=True, blank=True)
