@@ -73,10 +73,12 @@ class JournalAdmin(ModelAdmin):
     list_display = (
         "title",
         "contact_location",
+        "valid",
         "created",
         "updated",
     )
     list_filter = (
+        "valid",
         "use_license",
         "publishing_model",
         "subject",
