@@ -10,3 +10,9 @@ def parse_author_name(name):
         return {"given_names": match.group(2), "surname": match.group(1)}
     else:
         return {"declared_name": name}
+
+
+def get_safe_value(dictionary, key):
+    if dictionary:
+        return dictionary.get(key)
+    return None

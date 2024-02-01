@@ -14,7 +14,7 @@ def get_issns(
     if type_issn:
         for item in type_issn:
             try:
-                type_ = item.pop("_")
+                type_ = item.get("_")
             except KeyError:
                 pass
     if type_:

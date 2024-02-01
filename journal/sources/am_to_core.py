@@ -2,6 +2,7 @@ import logging
 import re
 import sys
 from datetime import datetime
+from urllib.parse import urlparse
 
 from django.db.models import Q
 
@@ -121,9 +122,15 @@ def update_panel_interoperation(
     journal, indexed_at, secs_code, medline_code, medline_short_title, user
 ):
     get_or_create_indexed_at(journal, indexed_at=indexed_at, user=user)
-    
+
     update_title_in_database(user=user, journal=journal, code=secs_code, acronym="secs")
-    update_title_in_database(user=user, journal=journal, code=medline_code, acronym="medline", title=medline_short_title)
+    update_title_in_database(
+        user=user,
+        journal=journal,
+        code=medline_code,
+        acronym="medline",
+        title=medline_short_title,
+    )
 
 
 def update_panel_information(
@@ -181,7 +188,7 @@ def update_panel_institution(
     """
     Ex eletronic_addrees:
         [{"_": "maritzal@telcel.net.ve"}, {"_": " fbengoanutricion@cantv.net"}]
-        [{"_": "info@asppr.net"}] 
+        [{"_": "info@asppr.net"}]
         [{"_": "CLEIejEditor@fing.edu.uy"}]
     """
     location = create_or_update_location(
@@ -206,7 +213,7 @@ def update_panel_institution(
     publisher = extract_value(publisher)
 
     if isinstance(publisher, str):
-        publisher = re.split(r'\s*[-\/,]\s*', publisher)
+        publisher = re.split(r"\s*[-\/,]\s*", publisher)
 
     if publisher:
         for p in publisher:
@@ -271,7 +278,10 @@ def update_panel_website(
         license = License.create_or_update(license_type=license_type, user=user)
         journal.use_license = license
     url_of_the_main_collection = extract_value(url_of_the_main_collection)
-    assign_journal_to_main_collection(journal=journal, url_of_the_main_collection=url_of_the_main_collection)
+    assign_journal_to_main_collection(
+        journal=journal, url_of_the_main_collection=url_of_the_main_collection
+    )
+
 
 def update_panel_notes(
     journal,
@@ -322,7 +332,8 @@ def update_panel_notes(
                     "creation_date": f"{creation_date}",
                     "update_date": f"{update_date}",
                 },
-            )    
+            )
+
 
 def update_panel_legacy_compatibility_fields(
     journal,
@@ -346,13 +357,15 @@ def update_panel_legacy_compatibility_fields(
     set_ftp(journal, extract_value(ftp))
     set_user_subscription(journal, extract_value(user_subscription))
 
+
 def set_ftp(journal, ftp):
-    accept_ftp_strings = ('art', 'na', 'iss')
+    accept_ftp_strings = ("art", "na", "iss")
     if ftp and ftp.lower() in accept_ftp_strings:
         journal.ftp = ftp
 
+
 def set_user_subscription(journal, user_subs):
-    accept_user_subscription_string = ('sub', 'reg', 'na')
+    accept_user_subscription_string = ("sub", "reg", "na")
     if user_subs and user_subs.lower() in accept_user_subscription_string:
         journal.user_subscription = user_subs
 
@@ -372,6 +385,7 @@ def get_issns_from_scielo_journal(issn_scielo, title, issn_print, issn_electroni
         except (
             SciELOJournal.DoesNotExist,
             SciELOJournal.MultipleObjectsReturned,
+            AttributeError,
         ):
             pass
     return issn_print, issn_electronic
@@ -414,7 +428,8 @@ def create_or_update_official_journal(
         current_issn,
     )
     issn_print, issn_electronic = get_issns_from_scielo_journal(
-        issn_scielo, title, issn_print, issn_electronic)
+        issn_scielo, title, issn_print, issn_electronic
+    )
 
     official_journal = OfficialJournal.create_or_update(
         user=user,
@@ -498,7 +513,7 @@ def get_or_create_sponsor(sponsor, journal, user):
     """
     sponsor = extract_value(sponsor)
     if isinstance(sponsor, str):
-        sponsor = re.split(r'\s*[-\/,]\s*', sponsor)
+        sponsor = re.split(r"\s*[-\/,]\s*", sponsor)
     if sponsor:
         for s in sponsor:
             ## FIXME
@@ -563,7 +578,7 @@ def get_or_create_subject_descriptor(subject_descriptors, journal, user):
                                 "journal_id": journal.id,
                                 "subject": s,
                             },
-                        )                        
+                        )
         journal.subject_descriptor.set(data)
 
 
@@ -574,7 +589,9 @@ def create_or_update_subject(subject, journal, user):
         if isinstance(sub, str):
             sub = [sub]
         for s in sub:
-            obj = Subject.get(code=s,)
+            obj = Subject.get(
+                code=s,
+            )
             data.append(obj)
         journal.subject.set(data)
 
@@ -666,14 +683,16 @@ def get_or_create_indexed_at(journal, indexed_at, user):
         [{'_': 'Index to Dental Literature'}, {'_': 'LILACS'}, {'_': 'Base de Dados BBO'}, {'_': "Ulrich's"}, {'_': 'Biological Abstracts'}, {'_': 'Medline'}]
     """
     data_index = []
-    data_additional_indexed= []
+    data_additional_indexed = []
     if indexed_at:
         indexed = extract_value(indexed_at)
         if isinstance(indexed, str):
             indexed = [indexed]
         for i in indexed:
             try:
-                obj_index = IndexedAt.objects.get(Q(name__iexact=i) | Q(acronym__iexact=i))
+                obj_index = IndexedAt.objects.get(
+                    Q(name__iexact=i) | Q(acronym__iexact=i)
+                )
                 data_index.append(obj_index)
             except IndexedAt.DoesNotExist:
                 try:
@@ -687,6 +706,7 @@ def get_or_create_indexed_at(journal, indexed_at, user):
                 data_additional_indexed.append(obj_additional_index)
         journal.indexed_at.set(data_index)
         journal.additional_indexed_at.set(data_additional_indexed)
+
 
 def create_or_update_location(
     journal,
@@ -727,7 +747,7 @@ def create_or_update_location(
                 "function": "journal.sources.article_meta.create_or_update_location",
                 "journal_id": journal.id,
             },
-        )          
+        )
     journal.contact_location = location
 
     address = extract_value(address)
@@ -816,9 +836,9 @@ def get_or_create_copyright_holder(journal, copyright_holder_name, user):
                     exception=e,
                     exc_traceback=exc_traceback,
                     detail={
-                        "function": "journal.sources.am_to_core.assign_journal_to_main_collection",
+                        "function": "journal.sources.am_to_core.get_or_create_copyright_holder",
                         "journal_id": journal.id,
-                        "copyright_holder_name": copyright_holder_name
+                        "copyright_holder_name": copyright_holder_name,
                     },
                 )
 
@@ -829,17 +849,30 @@ def update_title_in_database(user, journal, code, acronym, title=None):
     if not title:
         title = journal.title
     else:
-        title = extract_value(title)    
-    create_or_update_title_in_database(user=user, journal=journal, indexed_at=indexed_at, identifier=code, title=title)
+        title = extract_value(title)
+    create_or_update_title_in_database(
+        user=user, journal=journal, indexed_at=indexed_at, identifier=code, title=title
+    )
+
 
 def create_or_update_title_in_database(user, journal, indexed_at, title, identifier):
-    TitleInDatabase.create_or_update(user=user, journal=journal, indexed_at=indexed_at, title=title, identifier=identifier)
+    TitleInDatabase.create_or_update(
+        user=user,
+        journal=journal,
+        indexed_at=indexed_at,
+        title=title,
+        identifier=identifier,
+    )
+
 
 def assign_journal_to_main_collection(journal, url_of_the_main_collection):
     if url_of_the_main_collection:
         try:
-            cleaned_domain_query = url_of_the_main_collection.replace("http://", "").replace("https://", "") 
-            collection = Collection.objects.get(domain=cleaned_domain_query)
+            url_parse = urlparse(url_of_the_main_collection)
+            if not url_parse.scheme:
+                url_parse_scheme = "https://" + url_of_the_main_collection
+                url_parse = urlparse(url_parse_scheme)
+            collection = Collection.objects.get(domain__icontains=url_parse.hostname)
             journal.main_collection = collection
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -847,8 +880,9 @@ def assign_journal_to_main_collection(journal, url_of_the_main_collection):
                 exception=e,
                 exc_traceback=exc_traceback,
                 detail={
-                    "function": "journal.sources.am_to_core.assign_journal_to_main_collection",
+                    "function": "journal.sources.am_to_core.assign_jo urnal_to_main_collection",
                     "journal_id": journal.id,
-                    "cleaned_domain_query": cleaned_domain_query
+                    "url_of_the_main_collection": url_of_the_main_collection,
+                    "cleaned_domain_query": url_parse,
                 },
             )

@@ -1,9 +1,10 @@
-import json
 import logging
 
 from django.db import models
 from django.utils.translation import gettext as _
-from wagtail.admin.panels import FieldPanel
+from modelcluster.fields import ParentalKey
+from modelcluster.models import ClusterableModel
+from wagtail.admin.panels import FieldPanel, InlinePanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
@@ -14,10 +15,18 @@ from . import choices
 
 
 class CollectionName(TextWithLang):
-    autocomplete_search_filter = "text"
+    collection = ParentalKey(
+        "Collection",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="collection_name",
+    )
 
-    def autocomplete_label(self):
-        return str(self)
+    panels = [
+        AutocompletePanel("language"),
+        FieldPanel("text"),
+    ]
 
     @property
     def data(self):
@@ -29,17 +38,18 @@ class CollectionName(TextWithLang):
         return d
 
     def __unicode__(self):
-        return "%s (%s)" % (self.text, self.language)
+        return self.text
 
     def __str__(self):
-        return "%s (%s)" % (self.text, self.language)
+        return self.text
 
     @classmethod
-    def get_or_create(cls, lang, name, user=None):
+    def get_or_create(cls, collection, lang, name, user=None):
         try:
-            obj = cls.objects.get(language=lang, text=name)
+            obj = cls.objects.get(collection=collection, language=lang, text=name)
         except cls.DoesNotExist:
             obj = cls()
+            obj.collection = collection
             obj.language = lang
             obj.text = name
             obj.creator = user
@@ -47,7 +57,7 @@ class CollectionName(TextWithLang):
         return obj
 
 
-class Collection(CommonControlField):
+class Collection(CommonControlField, ClusterableModel):
     acron3 = models.CharField(
         _("Acronym with 3 chars"), max_length=10, null=True, blank=True
     )
@@ -56,9 +66,6 @@ class Collection(CommonControlField):
     )
     code = models.CharField(_("Code"), max_length=10, null=True, blank=True)
     domain = models.URLField(_("Domain"), null=True, blank=True)
-    name = models.ManyToManyField(
-        CollectionName, verbose_name="Collection Name", blank=True
-    )
     main_name = models.TextField(_("Main name"), null=True, blank=True)
     status = models.CharField(
         _("Status"), choices=choices.STATUS, max_length=20, null=True, blank=True
@@ -81,7 +88,7 @@ class Collection(CommonControlField):
         FieldPanel("acron2"),
         FieldPanel("code"),
         FieldPanel("domain"),
-        AutocompletePanel("name"),
+        InlinePanel("collection_name", label=_("Translated names")),
         FieldPanel("main_name"),
         FieldPanel("status"),
         FieldPanel("has_analytics"),
@@ -218,7 +225,11 @@ class Collection(CommonControlField):
         obj.save()
         for language in names:
             lang = Language.get_or_create(code2=language, creator=user)
-            obj.name.add(CollectionName.get_or_create(lang, names.get(language), user))
+            CollectionName.get_or_create(obj, lang, names.get(language), user)
         obj.save()
         logging.info(acron3)
         return obj
+
+    @property
+    def name(self):
+        return CollectionName.objects.filter(collection=self).iterator()
