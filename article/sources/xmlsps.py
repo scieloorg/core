@@ -21,6 +21,7 @@ from packtools.sps.models.kwd_group import KwdGroup
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article import models
+from article.utils.parse_name_author import get_safe_value
 from core.models import Language
 from institution.models import Sponsor
 from issue.models import TocSection
@@ -293,14 +294,14 @@ def create_or_update_researchers(xmltree, user):
                     suffix=author.get("suffix"),
                     declared_name=None,
                     affiliation=None,
-                    aff_name=aff.get("orgname"),
-                    aff_div1=aff.get("orgdiv1"),
-                    aff_div2=aff.get("orgdiv2"),
-                    aff_city_name=aff.get("city"),
+                    aff_name=get_safe_value(aff, "orgname"),
+                    aff_div1=get_safe_value(aff, "orgdiv1"),
+                    aff_div2=get_safe_value(aff, "orgdiv2"),
+                    aff_city_name=get_safe_value(aff, "city"),
                     aff_country_text=None,
-                    aff_country_acronym=aff.get("country_code"),
-                    aff_country_name=aff.get("country_name"),
-                    aff_state_text=aff.get("state"),
+                    aff_country_acronym=get_safe_value(aff, "country_code"),
+                    aff_country_name=get_safe_value(aff, "country_name"),
+                    aff_state_text=get_safe_value(aff, "state"),
                     aff_state_acronym=None,
                     aff_state_name=None,
                     lang=article_lang,
