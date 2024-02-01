@@ -870,8 +870,8 @@ def assign_journal_to_main_collection(journal, url_of_the_main_collection):
         try:
             url_parse = urlparse(url_of_the_main_collection)
             if not url_parse.scheme:
-                url_of_the_main_collection = "https://" + url_of_the_main_collection
-                url_parse = urlparse(url_of_the_main_collection)
+                url_parse_scheme = "https://" + url_of_the_main_collection
+                url_parse = urlparse(url_parse_scheme)
             collection = Collection.objects.get(domain__icontains=url_parse.hostname)
             journal.main_collection = collection
         except Exception as e:
