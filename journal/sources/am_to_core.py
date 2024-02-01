@@ -868,8 +868,11 @@ def create_or_update_title_in_database(user, journal, indexed_at, title, identif
 def assign_journal_to_main_collection(journal, url_of_the_main_collection):
     if url_of_the_main_collection:
         try:
-            o = urlparse(url_of_the_main_collection)
-            collection = Collection.objects.get(domain__icontains=o.hostname)
+            url_parse = urlparse(url_of_the_main_collection)
+            if not url_parse.scheme:
+                url_of_the_main_collection = "https://" + url_of_the_main_collection
+                url_parse = urlparse(url_of_the_main_collection)
+            collection = Collection.objects.get(domain__icontains=url_parse.hostname)
             journal.main_collection = collection
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -877,9 +880,9 @@ def assign_journal_to_main_collection(journal, url_of_the_main_collection):
                 exception=e,
                 exc_traceback=exc_traceback,
                 detail={
-                    "function": "journal.sources.am_to_core.assign_journal_to_main_collection",
+                    "function": "journal.sources.am_to_core.assign_jo urnal_to_main_collection",
                     "journal_id": journal.id,
                     "url_of_the_main_collection": url_of_the_main_collection,
-                    "cleaned_domain_query": cleaned_domain_query,
+                    "cleaned_domain_query": url_parse,
                 },
             )
