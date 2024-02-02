@@ -5,8 +5,8 @@ from wagtail.models import Page
 from wagtail.contrib.routable_page.models import RoutablePageMixin, re_path
 
 from journal.models import Journal
+from journalpage.utils.utils import get_journal_by_acronyms, get_editorial_board, render_journal_page_with_latest_context, verify_journal_is_latest
 from core.models import Language
-from editorialboard.models import EditorialBoard
 from editorialboard.choices import ROLE
 
 class JournalPage(RoutablePageMixin, Page):
@@ -30,16 +30,18 @@ class JournalPage(RoutablePageMixin, Page):
         language = Language.get_or_create(code2=language)
 
         try:
-            journal = Journal.objects.get(scielojournal__journal_acron=acron, scielojournal__collection__acron3=collection_acron3)
+            journal = get_journal_by_acronyms(acron_collection=collection_acron3, journal_acron=acron)
         except Journal.DoesNotExist:
-            return HttpResponseNotFound()
-        acron_collection = journal.scielojournal_set.all()[0].collection.acron3
-        acron_journal = journal.scielojournal_set.all()[0].journal_acron
+            return HttpResponseNotFound("Journal not found")
         
         try:
-            editorial_board = EditorialBoard.objects.filter(journal=journal).latest("initial_year")
-        except EditorialBoard.DoesNotExist:
-            editorial_board = None
+            verify_journal_is_latest(journal=journal)
+        except AssertionError:
+            return render_journal_page_with_latest_context(self, request, journal=journal, page=page, context=context)
+
+        acron_journal = journal.scielojournal_set.all()[0].journal_acron
+        acron_collection = journal.scielojournal_set.all()[0].collection.acron3        
+        editorial_board = get_editorial_board(journal=journal)
 
         mission = journal.mission.get_object_in_preferred_language(language=language)
         brief_history = journal.history.get_object_in_preferred_language(language=language)

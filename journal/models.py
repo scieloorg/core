@@ -1747,7 +1747,7 @@ class JournalParallelTitle(TextWithLang):
 
 
 class SubjectDescriptor(CommonControlField):
-    value = models.CharField(max_length=255, null=True, blank=True)
+    value = models.CharField(max_length=255, null=True, blank=True, unique=True)
 
     autocomplete_search_field = "value"
 
@@ -1760,6 +1760,45 @@ class SubjectDescriptor(CommonControlField):
     class Meta:
         ordering = ["value"]
 
+    @classmethod
+    def get(
+        cls,
+        value,
+        ):
+        if not value:
+            return None
+        try:
+            return cls.objects.get(value=value)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(value=value).first()
+
+    @classmethod
+    def create(
+        cls,
+        value,
+        user,
+    ):
+        try:
+            obj = cls(
+                value=value,
+                creator=user
+            )
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(value=value)
+
+    @classmethod
+    def get_or_create(
+        cls,
+        value,
+        user,
+        ):
+        try:
+            return cls.get(value=value)
+        except cls.DoesNotExist:
+            return cls.create(value=value, user=user)
+        
 
 class Subject(CommonControlField):
     code = models.CharField(max_length=30, null=True, blank=True)

@@ -563,11 +563,12 @@ def get_or_create_subject_descriptor(subject_descriptors, journal, user):
                 for word in re.split(",|;", s):
                     word = word.strip()
                     try:
-                        obj, created = SubjectDescriptor.objects.get_or_create(
+                        obj = SubjectDescriptor.get_or_create(
                             value=word,
-                            creator=user,
+                            user=user,
                         )
-                        data.append(obj)
+                        if obj:
+                            data.append(obj)
                     except Exception as e:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         UnexpectedEvent.create(
