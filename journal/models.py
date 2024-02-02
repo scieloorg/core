@@ -1770,10 +1770,7 @@ class SubjectDescriptor(CommonControlField):
         try:
             return cls.objects.get(value=value)
         except cls.MultipleObjectsReturned:
-            duplicates = cls.objects.filter(value=value)
-            for duplicate in duplicates[1:]:
-                duplicate.delete()
-            return duplicates.first()
+            return cls.objects.filter(value=value).first()
 
     @classmethod
     def create(
@@ -1781,12 +1778,15 @@ class SubjectDescriptor(CommonControlField):
         value,
         user,
     ):
-        obj = cls(
-            value=value,
-            creator=user
-        )
-        obj.save()
-        return obj
+        try:
+            obj = cls(
+                value=value,
+                creator=user
+            )
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(value=value)
 
     @classmethod
     def get_or_create(
