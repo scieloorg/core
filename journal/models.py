@@ -1747,7 +1747,7 @@ class JournalParallelTitle(TextWithLang):
 
 
 class SubjectDescriptor(CommonControlField):
-    value = models.CharField(max_length=255, null=True, blank=True)
+    value = models.CharField(max_length=255, null=True, blank=True, unique=True)
 
     autocomplete_search_field = "value"
 
