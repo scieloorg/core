@@ -571,27 +571,3 @@ class ArticleCount(CommonControlField):
             article_count__count=self.count,
             article_count__language=self.language,
         )
-
-
-class SubArticle(models.Model):
-    titles = models.ManyToManyField("DocumentTitle", blank=True)
-    # lang = models.CharField(max_length=2, null=True, blank=True)
-    article = models.ForeignKey(
-        Article, on_delete=models.SET_NULL, null=True, blank=True
-    )
-    article_type = models.ForeignKey(
-        "ArticleType", on_delete=models.SET_NULL, null=True, blank=True
-    )
-
-    panels = [
-        AutocompletePanel("titles"),
-        AutocompletePanel("article"),
-        AutocompletePanel("article_type"),
-    ]
-
-    class Meta:
-        verbose_name = _("SubArticle")
-        verbose_name_plural = _("SubArticles")
-
-    def __str__(self):
-        return f"{self.title}"
