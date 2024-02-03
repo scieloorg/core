@@ -46,9 +46,7 @@ def harvest_preprints(URL, user):
                 year = None
             article.researchers.set(
                 get_or_create_researches(
-                    user,
-                    authors=article_info.get("authors"),
-                    year=year
+                    user, authors=article_info.get("authors"), year=year
                 )
             )
             article.keywords.set(
@@ -60,13 +58,16 @@ def harvest_preprints(URL, user):
             article.abstracts.set(
                 get_or_create_abstracts(
                     article=article,
-                    description=article_info.get("description"), user=user
+                    description=article_info.get("description"),
+                    user=user,
                 )
             )
             article.languages.add(
                 get_or_create_language(lang=article_info.get("language"), user=user)
             )
-            article.publisher = get_publisher(user, publisher=article_info.get("publisher"))
+            article.publisher = get_publisher(
+                user, publisher=article_info.get("publisher")
+            )
             for ls in article.license_statements.iterator():
                 article.license = ls.license
                 break

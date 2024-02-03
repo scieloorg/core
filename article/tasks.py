@@ -63,7 +63,9 @@ def _items_to_load_article(from_date, force_update):
 
 
 @celery_app.task(bind=True, name=_("load_articles"))
-def load_articles(self, user_id=None, username=None, from_date=None, force_update=False):
+def load_articles(
+    self, user_id=None, username=None, from_date=None, force_update=False
+):
     try:
         user = _get_user(self.request, username, user_id)
 

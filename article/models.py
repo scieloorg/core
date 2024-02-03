@@ -3,6 +3,7 @@ import sys
 from datetime import datetime
 
 from django.db import models, IntegrityError
+
 # from django.db.models import Case, When
 from django.db.utils import DataError
 from django.utils.translation import gettext as _
@@ -69,7 +70,9 @@ class Article(CommonControlField, ClusterableModel):
     # abstracts = models.ManyToManyField("DocumentAbstract", blank=True)
     toc_sections = models.ManyToManyField(TocSection, blank=True)
     license_statements = models.ManyToManyField(LicenseStatement, blank=True)
-    license = models.ForeignKey(License, on_delete=models.SET_NULL, null=True, blank=True)
+    license = models.ForeignKey(
+        License, on_delete=models.SET_NULL, null=True, blank=True
+    )
     issue = models.ForeignKey(Issue, on_delete=models.SET_NULL, null=True, blank=True)
     first_page = models.CharField(max_length=20, null=True, blank=True)
     last_page = models.CharField(max_length=20, null=True, blank=True)
@@ -284,7 +287,7 @@ class ArticleFunding(CommonControlField):
                         function="article.models.ArticleFunding.get_or_create",
                         award_id=award_id,
                     ),
-                )                      
+                )
             return article_funding
 
     base_form_class = CoreAdminModelForm
@@ -334,7 +337,13 @@ class ArticleType(models.Model):
 
 
 class DocumentAbstract(TextLanguageMixin, CommonControlField, Orderable):
-    article = ParentalKey(Article, on_delete=models.SET_NULL, null=True, blank=True, related_name="abstracts")
+    article = ParentalKey(
+        Article,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="abstracts",
+    )
 
     panels = [
         AutocompletePanel("language"),
@@ -343,7 +352,9 @@ class DocumentAbstract(TextLanguageMixin, CommonControlField, Orderable):
     base_form_class = CoreAdminModelForm
 
     class Meta:
-        unique_together = [("article", "language"), ]
+        unique_together = [
+            ("article", "language"),
+        ]
         indexes = [
             models.Index(
                 fields=[
