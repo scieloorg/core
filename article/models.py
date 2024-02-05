@@ -162,10 +162,10 @@ class Article(CommonControlField, ClusterableModel):
         ]
 
     def __unicode__(self):
-        return self.sps_pkg_name or self.pid_v3 or f"{self.doi.first()}"
+        return self.sps_pkg_name or self.pid_v3 or f"{self.doi.first()}" or self.title
 
     def __str__(self):
-        return self.sps_pkg_name or self.pid_v3 or f"{self.doi.first()}"
+        return self.sps_pkg_name or self.pid_v3 or f"{self.doi.first()}" or self.title
 
     @property
     def xmltree(self):
