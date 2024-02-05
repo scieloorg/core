@@ -208,6 +208,9 @@ class Article(CommonControlField, ClusterableModel):
         self.pid_v3 = pids.get("v3")
         self.save()
 
+    def is_indexed_at(self, db_acronym):
+        return bool(self.journal) and self.journal.is_indexed_at(db_acronym)
+
     # @property
     # def get_abstracts_order_by_lang_pt(self):
     #     return self.abstracts.all().order_by(
