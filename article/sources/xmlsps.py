@@ -72,6 +72,8 @@ def load_article(user, xml=None, file_path=None, v3=None):
     except models.Article.DoesNotExist:
         article = models.Article()
     try:
+        xml_with_pre = XMLWithPre("", xmltree)
+        article.sps_pkg_name = xml_with_pre.sps_pkg_name
         set_pids(xmltree=xmltree, article=article)
         article.journal = get_journal(xmltree=xmltree)
         set_date_pub(xmltree=xmltree, article=article)
