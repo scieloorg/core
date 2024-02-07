@@ -1,0 +1,37 @@
+# General
+# ------------------------------------------------------------------------------
+USE_DOCKER=yes
+IPYTHONDIR=/app/.ipython
+# Redis
+# ------------------------------------------------------------------------------
+REDIS_URL=redis://redis:6379/0
+
+# Celery
+# ------------------------------------------------------------------------------
+
+# Flower
+CELERY_FLOWER_USER=PhFRdLexbrsBvrrbSXxjcMMOcVOavCrZ
+CELERY_FLOWER_PASSWORD=QgScyefPrYhHgO6onW61u0nazc5xdBuP4sM7jMRrBBFuA2RjsFhZLp7xbVYZbrwR
+
+# Django
+# ------------------------------------------------------------------------------
+DJANGO_SETTINGS_MODULE=config.settings.production
+DJANGO_SECRET_KEY=FMiraeekXCSl3zHfg7D4oHx7ufT46HRnwnsawKgTCC53BYajVkVzb8HhOvBOHakR"
+DJANGO_ADMIN_URL=django-admin/
+DJANGO_ALLOWED_HOSTS=*
+
+
+# Wagtail
+# ------------------------------------------------------------------------------
+WAGTAIL_ADMIN_URL=admin/
+
+
+# Sentry
+# ------------------------------------------------------------------------------
+SENTRY_DSN=
+
+
+# Group and Permissions
+# ------------------------------------------------------------------------------
+COLLECTION_TEAM="Collection Team"
+JOURNAL_TEAM="Journal Team"
