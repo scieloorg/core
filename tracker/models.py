@@ -84,9 +84,14 @@ class UnexpectedEvent(models.Model):
                 logging.exception(exception)
 
             obj = cls()
-            obj.exception_msg = exception
-            obj.exception_type = type(exception)
-            obj.detail = detail
+            obj.exception_msg = str(exception)
+            obj.exception_type = str(type(exception))
+            try:
+                json.dumps(detail)
+                obj.detail = detail
+            except Exception as e:
+                obj.detail = str(detail)
+
             if exc_traceback:
                 obj.traceback = traceback.format_tb(exc_traceback)
             obj.save()
@@ -215,107 +220,57 @@ class EventReport(CommonControlField):
                 f"Unable to create EventReport. Exception: {e}"
             )
 
+class Hello(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    status = models.BooleanField(null=True, blank=True, default=None)
+    created = models.DateTimeField(verbose_name=_("Creation date"), auto_now_add=True)
+    exception_type = models.TextField(_("Exception Type"), null=True, blank=True)
+    exception_msg = models.TextField(_("Exception Msg"), null=True, blank=True)
+    traceback = models.JSONField(null=True, blank=True)
+    detail = models.JSONField(null=True, blank=True)
 
-# class EventLogger:
+    class Meta:
+        indexes = [
+            models.Index(fields=["status"]),
+            models.Index(fields=["exception_type"]),
+        ]
 
-#     def archive_report(self, user, ext=None):
-#         events = ProcEvent.objects.filter(proc_event_logger=self).iterator()
-#         try:
-#             obj = ProcEventReport.archive(user, events, ext)
-#             obj.proc_event_logger = self
-#             obj.save()
-#         except Exception as e:
-#             raise ArchiveProcEventReportError(
-#                 f"Unable to archive events {self}. Exception: {e}"
-#             )
-#         return obj
+    def __str__(self):
+        return f"{self.status or self.exception_type} {self.created.isoformat()}"
 
-#     def create_event(
-#         self,
-#         user,
-#         message_type,
-#         message=None,
-#         e=None,
-#         exc_traceback=None,
-#         detail=None,
-#     ):
-#         try:
-#             obj = ProcEvent.create(
-#                 creator=user,
-#                 message=message,
-#                 message_type=message_type,
-#                 detail=detail,
-#                 exception=e,
-#                 exc_traceback=exc_traceback,
-#             )
-#             obj.proc_event_logger = self
-#             obj.save()
-#         except Exception as exc:
-#             raise ProcEventCreateError(
-#                 f"Unable to create ProcEvent ({proc_event_logger} {message} {e}). EXCEPTION: {exc}")
-#         return obj
+    @property
+    def data(self):
+        return dict(
+            status=self.status,
+            created=self.created.isoformat(),
+            exception_type=self.exception_type,
+            exception_msg=self.exception_msg,
+            traceback=json.dumps(self.traceback),
+            detail=json.dumps(self.detail),
+        )
 
+    @classmethod
+    def create(
+        cls,
+        exception=None,
+        exc_traceback=None,
+        detail=None,
+        status=None
+    ):
+        if exception:
+            logging.exception(exception)
 
-# class ProcEventReport(EventReport, Orderable):
-#     proc_event_logger = ParentalKey(
-#         EventLogger, on_delete=models.SET_NULL, related_name="proc_event_file",
-#         null=True, blank=True,
-#     )
+        obj = cls()
+        obj.status = status or not exception and not exc_traceback
+        obj.exception_msg = str(exception)
+        obj.exception_type = str(type(exception))
+        try:
+            json.dumps(detail)
+            obj.detail = detail
+        except Exception as e:
+            obj.detail = str(detail)
 
-#     base_form_class = CoreAdminModelForm
-
-#     panels = [
-#         # FieldPanel("created"),
-#         FieldPanel("file"),
-#     ]
-
-#     # @classmethod
-#     # def archive_with_parent(cls, user, proc_event_logger, events, ext=None):
-#     #     obj = cls.archive(user, events, ext)
-#     #     obj.proc_event_logger = proc_event_logger
-#     #     obj.save()
-#     #     return obj
-
-
-# class ProcEvent(Event, Orderable):
-#     event_parent = ParentalKey(
-#         EventLogger, on_delete=models.SET_NULL, related_name="proc_event",
-#         null=True, blank=True,
-#     )
-
-#     base_form_class = CoreAdminModelForm
-
-#     panels = [
-#         # FieldPanel("created"),
-#         FieldPanel("message"),
-#         FieldPanel("message_type"),
-#         FieldPanel("detail"),
-#         FieldPanel("unexpected_event"),
-#     ]
-
-#     # @classmethod
-#     # def create_with_parent(
-#     #     cls,
-#     #     user,
-#     #     proc_event_logger,
-#     #     message_type,
-#     #     message=None,
-#     #     e=None,
-#     #     exc_traceback=None,
-#     #     detail=None,
-#     # ):
-#     #     try:
-#     #         obj = cls.create(
-#     #             creator=user,
-#     #             message=message,
-#     #             message_type=message_type,
-#     #             detail=detail,
-#     #             exception=e,
-#     #             exc_traceback=exc_traceback,
-#     #         )
-#     #         obj.proc_event_logger = proc_event_logger
-#     #         obj.save()
-#     #     except Exception as exc:
-#     #         raise ProcEventCreateError(
-#     #             f"Unable to create Event ({proc_event_logger} {message} {e}). EXCEPTION: {exc}")
-#     #     return obj
+        if exc_traceback:
+            obj.traceback = traceback.format_tb(exc_traceback)
+        obj.save()
+        return obj
