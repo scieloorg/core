@@ -1,14 +1,16 @@
+import logging
 import sys
 from datetime import datetime
 
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 
-from article.models import Article
+from article.models import Article, ArticleFormat
 from article.sources import xmlsps
 from article.sources.preprint import harvest_preprints
 from config import celery_app
 from pid_provider.models import PidProviderXML
+from pid_provider.provider import PidProvider
 from tracker.models import UnexpectedEvent
 
 from . import controller
@@ -63,7 +65,9 @@ def _items_to_load_article(from_date, force_update):
 
 
 @celery_app.task(bind=True, name=_("load_articles"))
-def load_articles(self, user_id=None, username=None, from_date=None, force_update=False):
+def load_articles(
+    self, user_id=None, username=None, from_date=None, force_update=False
+):
     try:
         user = _get_user(self.request, username, user_id)
 
@@ -103,3 +107,119 @@ def load_preprint(self, user_id, oai_pmh_preprint_uri):
     user = User.objects.get(pk=user_id)
     ## fazer filtro para não coletar tudo sempre
     harvest_preprints(oai_pmh_preprint_uri, user)
+
+
+@celery_app.task(bind=True)
+def task_convert_xml_to_other_formats_for_articles(
+    self, user_id=None, username=None, from_date=None, force_update=False
+):
+    try:
+        user = _get_user(self.request, username, user_id)
+
+        for item in Article.objects.filter(sps_pkg_name__isnull=False).iterator():
+            logging.info(item.pid_v3)
+            try:
+                convert_xml_to_other_formats.apply_async(
+                    kwargs={
+                        "user_id": user.id,
+                        "username": user.username,
+                        "item_id": item.id,
+                        "force_update": force_update,
+                    }
+                )
+            except Exception as exception:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=exception,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "task": "article.tasks.task_convert_xml_to_other_formats_for_articles",
+                        "item": str(item),
+                    },
+                )
+    except Exception as exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=exception,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "article.tasks.task_convert_xml_to_other_formats_for_articles",
+            },
+        )
+
+
+@celery_app.task(bind=True)
+def convert_xml_to_other_formats(
+    self, user_id=None, username=None, item_id=None, force_update=None
+):
+    user = _get_user(self.request, username, user_id)
+
+    try:
+        article = Article.objects.get(pk=item_id)
+    except Article.DoesNotExist:
+        logging.info(f"Not found {item_id}")
+        return
+
+    done = False
+    try:
+        article_format = ArticleFormat.objects.get(article=article)
+        done = True
+    except ArticleFormat.MultipleObjectsReturned:
+        done = True
+    except ArticleFormat.DoesNotExist:
+        done = False
+    logging.info(f"Done {done}")
+
+    if not done or force_update:
+        ArticleFormat.generate_formats(user, article=article)
+
+
+@celery_app.task(bind=True)
+def task_articles_complete_data(
+    self, user_id=None, username=None, from_date=None, force_update=False
+):
+    try:
+        user = _get_user(self.request, username, user_id)
+
+        for item in Article.objects.iterator():
+            try:
+                article_complete_data.apply_async(
+                    kwargs={
+                        "user_id": user.id,
+                        "username": user.username,
+                        "item_id": item.id,
+                    }
+                )
+            except Exception as exception:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=exception,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "task": "article.tasks.task_articles_complete_data",
+                        "item": str(item),
+                    },
+                )
+    except Exception as exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=exception,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "article.tasks.task_articles_complete_data",
+            },
+        )
+
+
+@celery_app.task(bind=True)
+def article_complete_data(
+    self, user_id=None, username=None, item_id=None, force_update=None
+):
+    user = _get_user(self.request, username, user_id)
+    try:
+        item = Article.objects.get(pk=item_id)
+        if item.pid_v3 and not item.sps_pkg_name:
+            item.sps_pkg_name = PidProvider.get_sps_pkg_name(item.pid_v3)
+            item.save()
+    except Article.DoesNotExist:
+        pass

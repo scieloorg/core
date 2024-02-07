@@ -1,11 +1,14 @@
+import os
 import sys
 
 from datetime import datetime
 
+from django.core.files.base import ContentFile
 from django.db import models, IntegrityError
-# from django.db.models import Case, When
 from django.db.utils import DataError
 from django.utils.translation import gettext as _
+from packtools.sps.formats import pubmed, pmc, crossref
+from packtools.sps.pid_provider.xml_sps_lib import generate_finger_print
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
@@ -22,10 +25,11 @@ from core.models import (
     LicenseStatement,
     TextLanguageMixin,
 )
-from doi.models import DOI
+from doi.models import DOI, CrossRefConfiguration
 from institution.models import Institution, Sponsor
 from issue.models import Issue, TocSection
 from journal.models import Journal, SciELOJournal
+from pid_provider.provider import PidProvider
 from researcher.models import Researcher
 from vocabulary.models import Keyword
 from tracker.models import UnexpectedEvent
@@ -34,6 +38,9 @@ from tracker.models import UnexpectedEvent
 class Article(CommonControlField, ClusterableModel):
     pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
     pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True)
+    sps_pkg_name = models.CharField(
+        _("Package name"), max_length=64, null=True, blank=True
+    )
     journal = models.ForeignKey(
         Journal,
         verbose_name=_("Journal"),
@@ -69,7 +76,9 @@ class Article(CommonControlField, ClusterableModel):
     # abstracts = models.ManyToManyField("DocumentAbstract", blank=True)
     toc_sections = models.ManyToManyField(TocSection, blank=True)
     license_statements = models.ManyToManyField(LicenseStatement, blank=True)
-    license = models.ForeignKey(License, on_delete=models.SET_NULL, null=True, blank=True)
+    license = models.ForeignKey(
+        License, on_delete=models.SET_NULL, null=True, blank=True
+    )
     issue = models.ForeignKey(Issue, on_delete=models.SET_NULL, null=True, blank=True)
     first_page = models.CharField(max_length=20, null=True, blank=True)
     last_page = models.CharField(max_length=20, null=True, blank=True)
@@ -114,6 +123,11 @@ class Article(CommonControlField, ClusterableModel):
         AutocompletePanel("fundings"),
     ]
 
+    panels_formats = [
+        AutocompletePanel("publisher"),
+        AutocompletePanel("fundings"),
+    ]
+
     edit_handler = TabbedInterface(
         [
             ObjectList(panels_ids, heading=_("Identification")),
@@ -132,6 +146,11 @@ class Article(CommonControlField, ClusterableModel):
             ),
             models.Index(
                 fields=[
+                    "sps_pkg_name",
+                ]
+            ),
+            models.Index(
+                fields=[
                     "pid_v3",
                 ]
             ),
@@ -143,10 +162,14 @@ class Article(CommonControlField, ClusterableModel):
         ]
 
     def __unicode__(self):
-        return "%s" % self.pid_v2
+        return self.sps_pkg_name or self.pid_v3 or f"{self.doi.first()}" or self.title
 
     def __str__(self):
-        return "%s" % self.pid_v2
+        return self.sps_pkg_name or self.pid_v3 or f"{self.doi.first()}" or self.title
+
+    @property
+    def xmltree(self):
+        return PidProvider.get_xmltree(self.pid_v3)
 
     @property
     def abstracts(self):
@@ -204,6 +227,9 @@ class Article(CommonControlField, ClusterableModel):
         self.pid_v2 = pids.get("v2")
         self.pid_v3 = pids.get("v3")
         self.save()
+
+    def is_indexed_at(self, db_acronym):
+        return bool(self.journal) and self.journal.is_indexed_at(db_acronym)
 
     # @property
     # def get_abstracts_order_by_lang_pt(self):
@@ -284,7 +310,7 @@ class ArticleFunding(CommonControlField):
                         function="article.models.ArticleFunding.get_or_create",
                         award_id=award_id,
                     ),
-                )                      
+                )
             return article_funding
 
     base_form_class = CoreAdminModelForm
@@ -334,7 +360,13 @@ class ArticleType(models.Model):
 
 
 class DocumentAbstract(TextLanguageMixin, CommonControlField, Orderable):
-    article = ParentalKey(Article, on_delete=models.SET_NULL, null=True, blank=True, related_name="abstracts")
+    article = ParentalKey(
+        Article,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="abstracts",
+    )
 
     panels = [
         AutocompletePanel("language"),
@@ -343,7 +375,9 @@ class DocumentAbstract(TextLanguageMixin, CommonControlField, Orderable):
     base_form_class = CoreAdminModelForm
 
     class Meta:
-        unique_together = [("article", "language"), ]
+        unique_together = [
+            ("article", "language"),
+        ]
         indexes = [
             models.Index(
                 fields=[
@@ -562,25 +596,204 @@ class ArticleCount(CommonControlField):
         )
 
 
-class SubArticle(models.Model):
-    titles = models.ManyToManyField("DocumentTitle", blank=True)
-    # lang = models.CharField(max_length=2, null=True, blank=True)
-    article = models.ForeignKey(
-        Article, on_delete=models.SET_NULL, null=True, blank=True
-    )
-    article_type = models.ForeignKey(
-        "ArticleType", on_delete=models.SET_NULL, null=True, blank=True
-    )
+def article_directory_path(instance, filename):
+    try:
+        return os.path.join(
+            *instance.article.sps_pkg_name.split("-"), instance.format_name, filename
+        )
+    except AttributeError:
+        return os.path.join(instance.article.pid_v3, instance.format_name, filename)
 
+
+class ArticleFormat(CommonControlField):
+
+    article = ParentalKey(
+        Article,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="format",
+    )
+    format_name = models.CharField(
+        _("Article Format"), max_length=20, null=True, blank=True
+    )
+    version = models.PositiveIntegerField(null=True, blank=True)
+    file = models.FileField(
+        null=True,
+        blank=True,
+        verbose_name=_("File"),
+        upload_to=article_directory_path,
+    )
+    report = models.JSONField(null=True, blank=True)
+    valid = models.BooleanField(default=None, null=True, blank=True)
+    finger_print = models.CharField(max_length=64, null=True, blank=True)
+
+    base_form_class = CoreAdminModelForm
     panels = [
-        AutocompletePanel("titles"),
-        AutocompletePanel("article"),
-        AutocompletePanel("article_type"),
+        FieldPanel("file"),
+        FieldPanel("format_name"),
+        FieldPanel("version"),
+        FieldPanel("report"),
     ]
 
     class Meta:
-        verbose_name = _("SubArticle")
-        verbose_name_plural = _("SubArticles")
+        verbose_name = _("Article Format")
+        verbose_name_plural = _("Article Formats")
+        unique_together = [("article", "format_name", "version")]
+        indexes = [
+            models.Index(
+                fields=[
+                    "article",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "format_name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "version",
+                ]
+            ),
+        ]
+
+    def __unicode__(self):
+        return f"{self.article} {self.format_name} {self.created.isoformat()}"
 
     def __str__(self):
-        return f"{self.title}"
+        return f"{self.article} {self.format_name} {self.created.isoformat()}"
+
+    @classmethod
+    def get(cls, article, format_name=None, version=None):
+        if article and format_name and version:
+            try:
+                return cls.objects.get(
+                    article=article, format_name=format_name, version=version
+                )
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(
+                    article=article, format_name=format_name, version=version
+                ).last()
+        raise ValueError(
+            "ArticleFormat.get requires article and format_name and version"
+        )
+
+    @classmethod
+    def create(cls, user, article, format_name=None, version=None):
+        if article or format_name or version:
+            try:
+                obj = cls()
+                obj.article = article
+                obj.format_name = format_name
+                obj.version = version
+                obj.creator = user
+                obj.save()
+                return obj
+            except IntegrityError:
+                return cls.get(article, format_name, version)
+        raise ValueError(
+            "ArticleFormat.create requires article and format_name and version"
+        )
+
+    @classmethod
+    def create_or_update(cls, user, article, format_name=None, version=None):
+        try:
+            obj = cls.get(article, format_name=format_name, version=version)
+            obj.updated_by = user
+            obj.format_name = format_name or obj.format_name
+            obj.version = version or obj.version
+            obj.save()
+        except cls.DoesNotExist:
+            obj = cls.create(user, article, format_name, version)
+        return obj
+
+    def save_file(self, filename, content):
+        finger_print = generate_finger_print(content)
+        if finger_print != self.finger_print:
+            try:
+                self.file.delete()
+            except Exception as e:
+                pass
+            self.file.save(filename, ContentFile(content))
+            self.finger_print = finger_print
+            self.save()
+
+    @classmethod
+    def generate(
+        cls,
+        user,
+        article,
+        format_name,
+        filename,
+        function_generate_format,
+        indexed_check=False,
+        data=None,
+        version=None,
+    ):
+        if indexed_check and not article.is_indexed_at(format_name):
+            return
+        try:
+            version = version or 1
+            obj = None
+            obj = cls.create_or_update(user, article, format_name, version)
+            xmltree = article.xmltree
+            if data is not None:
+                content = function_generate_format(xmltree, data=data)
+            else:
+                content = function_generate_format(xmltree)
+            obj.save_file(filename, content)
+            obj.report = None
+            obj.save()
+            return obj
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            unexpected_event = UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail=dict(
+                    function="article.models.ArticleFormat.generate",
+                    format_name=format_name,
+                    article_pid_v3=article.pid_v3,
+                    sps_pkg_name=article.sps_pkg_name,
+                ),
+            )
+            if obj:
+                obj.report = unexpected_event.data
+                obj.valid = False
+                obj.save()
+
+    @classmethod
+    def generate_formats(cls, user, article):
+        for doi in article.doi.all():
+            if not doi.value:
+                break
+            try:
+                prefix = doi.value.split("/")[0]
+                crossref_data = CrossRefConfiguration.get_data(prefix)
+                cls.generate(
+                    user,
+                    article,
+                    "crossref",
+                    article.sps_pkg_name + ".xml",
+                    crossref.pipeline_crossref,
+                    data=crossref_data,
+                )
+            except CrossRefConfiguration.DoesNotExist:
+                break
+        cls.generate(
+            user,
+            article,
+            "pubmed",
+            article.sps_pkg_name + ".xml",
+            pubmed.pipeline_pubmed,
+            indexed_check=False,
+        )
+        cls.generate(
+            user,
+            article,
+            "pmc",
+            article.sps_pkg_name + ".xml",
+            pmc.pipeline_pmc,
+            indexed_check=False,
+        )

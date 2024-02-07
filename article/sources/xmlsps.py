@@ -28,6 +28,7 @@ from issue.models import TocSection
 from tracker.models import UnexpectedEvent
 from researcher.exceptions import PersonNameCreateError
 
+
 class XMLSPSArticleSaveError(Exception):
     ...
 
@@ -56,7 +57,7 @@ def load_article(user, xml=None, file_path=None, v3=None):
                 function="article.sources.xmlsps.load_article",
                 xml=f"{xml}",
                 v3=v3,
-                file_path=file_path
+                file_path=file_path,
             ),
         )
         return
@@ -71,6 +72,8 @@ def load_article(user, xml=None, file_path=None, v3=None):
     except models.Article.DoesNotExist:
         article = models.Article()
     try:
+        xml_with_pre = XMLWithPre("", xmltree)
+        article.sps_pkg_name = xml_with_pre.sps_pkg_name
         set_pids(xmltree=xmltree, article=article)
         article.journal = get_journal(xmltree=xmltree)
         set_date_pub(xmltree=xmltree, article=article)
@@ -80,7 +83,9 @@ def load_article(user, xml=None, file_path=None, v3=None):
         set_elocation_id(xmltree=xmltree, article=article)
         article.save()
 
-        article.abstracts.set(create_or_update_abstract(xmltree=xmltree, user=user, article=article))
+        article.abstracts.set(
+            create_or_update_abstract(xmltree=xmltree, user=user, article=article)
+        )
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
         article.license_statements.set(get_licenses(xmltree=xmltree, user=user))
         article.researchers.set(
@@ -95,7 +100,7 @@ def load_article(user, xml=None, file_path=None, v3=None):
             article.license = ls.license
             article.save()
             break
-        article.valid= True
+        article.valid = True
         article.save()
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -177,7 +182,7 @@ def get_or_create_fundings(xmltree, user):
                                 funding_source=fs,
                                 award_id=award_id,
                             ),
-                        )                            
+                        )
     return data
 
 
@@ -243,7 +248,7 @@ def get_or_create_keywords(xmltree, user):
                     function="article.xmlsps.get_or_create_keywords",
                     keyword=kwd,
                 ),
-            )                      
+            )
     return data
 
 
@@ -268,9 +273,9 @@ def create_or_update_abstract(xmltree, user, article):
                 detail=dict(
                     xmltree=f"{etree.tostring(xmltree)}",
                     function="article.xmlsps.create_or_update_abstract",
-                    abstract=ab
+                    abstract=ab,
                 ),
-            )                
+            )
     return data
 
 
@@ -310,7 +315,9 @@ def create_or_update_researchers(xmltree, user):
                     other_ids=None,
                     email=author.get("email") or aff.get("email"),
                     gender=author.get("gender"),
-                    gender_identification_status=author.get("gender_identification_status"),
+                    gender_identification_status=author.get(
+                        "gender_identification_status"
+                    ),
                 )
                 data.append(obj)
             except Exception as e:
@@ -395,8 +402,7 @@ def get_or_create_issues(xmltree, user):
                 function="article.xmlsps.get_or_create_issues",
                 issue=issue_data,
             ),
-        )                         
-
+        )
 
 
 def get_or_create_language(lang, user):
@@ -434,4 +440,4 @@ def create_or_update_sponsor(funding_name, user):
                 function="article.xmlsps.create_or_update_sponsor",
                 funding_name=funding_name,
             ),
-        )                 
+        )
