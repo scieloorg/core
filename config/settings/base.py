@@ -131,6 +131,7 @@ LOCAL_APPS = [
     "location",
     "pid_provider",
     "doi",
+    "doi_manager",
     "researcher",
     "thematic_areas",
     "vocabulary",

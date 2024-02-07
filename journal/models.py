@@ -810,6 +810,14 @@ class Journal(CommonControlField, ClusterableModel):
             ),
         ]
 
+    def is_indexed_at(self, db_acronym):
+        if not db_acronym:
+            raise ValueError("Journal.is_indexed_at requires db_acronym")
+        try:
+            return bool(self.indexed_at.get(acronym=db_acronym))
+        except IndexedAt.DoesNotExist:
+            return False
+
     @property
     def data(self):
         d = {}
