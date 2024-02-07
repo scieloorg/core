@@ -44,7 +44,7 @@ def delete_unexpected_events(self, exception_type, start_date=None, end_date=Non
 
 
 @celery_app.task(bind=True)
-def hello(self):
+def hello(self, user_id=None):
     """
     Register Hello records
     """
