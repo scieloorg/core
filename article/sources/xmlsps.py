@@ -4,7 +4,6 @@ import sys
 from django.db.models import Q
 from django.db.utils import DataError
 from lxml import etree
-
 from packtools.sps.models.article_abstract import Abstract
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_authors import Authors
@@ -16,17 +15,22 @@ from packtools.sps.models.article_toc_sections import ArticleTocSections
 from packtools.sps.models.dates import ArticleDates
 from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
 from packtools.sps.models.funding_group import FundingGroup
-from packtools.sps.models.journal_meta import ISSN, Title as Journal
+from packtools.sps.models.journal_meta import ISSN, Title
 from packtools.sps.models.kwd_group import KwdGroup
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
-from article import models
+from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle
 from article.utils.parse_name_author import get_safe_value
-from core.models import Language
+from core.forms import CoreAdminModelForm
+from core.models import Language, License, LicenseStatement
+from doi.models import DOI
 from institution.models import Sponsor
-from issue.models import TocSection
-from tracker.models import UnexpectedEvent
+from issue.models import Issue, TocSection
+from journal.models import Journal, OfficialJournal
 from researcher.exceptions import PersonNameCreateError
+from researcher.models import Researcher
+from tracker.models import UnexpectedEvent
+from vocabulary.models import Keyword
 
 
 class XMLSPSArticleSaveError(Exception):
@@ -68,9 +72,9 @@ def load_article(user, xml=None, file_path=None, v3=None):
     pid_v3 = pids.get("v3")
 
     try:
-        article = models.Article.objects.get(Q(pid_v2=pid_v2) | Q(pid_v3=pid_v3))
-    except models.Article.DoesNotExist:
-        article = models.Article()
+        article = Article.objects.get(Q(pid_v2=pid_v2) | Q(pid_v3=pid_v3))
+    except Article.DoesNotExist:
+        article = Article()
     try:
         xml_with_pre = XMLWithPre("", xmltree)
         article.sps_pkg_name = xml_with_pre.sps_pkg_name
@@ -119,7 +123,7 @@ def get_or_create_doi(xmltree, user):
     doi_with_lang = DoiWithLang(xmltree=xmltree).data
     data = []
     for doi in doi_with_lang:
-        obj = models.DOI.get_or_create(
+        obj = DOI.get_or_create(
             value=doi.get("value"),
             language=get_or_create_language(doi.get("lang"), user=user),
             creator=user,
@@ -130,19 +134,19 @@ def get_or_create_doi(xmltree, user):
 
 def get_journal(xmltree):
     try:
-        return models.Journal.objects.get(title=Journal(xmltree=xmltree).journal_title)
-    except (models.Journal.DoesNotExist, models.Journal.MultipleObjectsReturned):
+        return Journal.objects.get(title=Title(xmltree=xmltree).journal_title)
+    except (Journal.DoesNotExist, Journal.MultipleObjectsReturned):
         pass
 
     issn = ISSN(xmltree=xmltree)
     journal_issn_epub = issn.epub
     journal_issn_ppub = issn.ppub
     try:
-        official_journal = models.OfficialJournal.get(
+        official_journal = OfficialJournal.get(
             issn_print=journal_issn_ppub, issn_electronic=journal_issn_epub
         )
-        return models.Journal.objects.get(official=official_journal)
-    except (models.OfficialJournal.DoesNotExist, models.Journal.DoesNotExist):
+        return Journal.objects.get(official=official_journal)
+    except (OfficialJournal.DoesNotExist, Journal.DoesNotExist):
         return None
 
 
@@ -163,7 +167,7 @@ def get_or_create_fundings(xmltree, user):
             for fs in funding_source:
                 for award_id in award_ids:
                     try:
-                        obj = models.ArticleFunding.get_or_create(
+                        obj = ArticleFunding.get_or_create(
                             award_id=award_id,
                             funding_source=create_or_update_sponsor(
                                 funding_name=fs, user=user
@@ -207,14 +211,14 @@ def get_licenses(xmltree, user):
     for xml_license in xml_licenses:
 
         if not license and xml_license.get("link"):
-            url_data = models.LicenseStatement.parse_url(xml_license.get("link"))
+            url_data = LicenseStatement.parse_url(xml_license.get("link"))
             license_type = url_data.get("license_type")
             if license_type:
-                license = models.License.create_or_update(
+                license = License.create_or_update(
                     user=user,
                     license_type=license_type,
                 )
-        obj = models.LicenseStatement.create_or_update(
+        obj = LicenseStatement.create_or_update(
             user=user,
             url=xml_license.get("link"),
             language=Language.get_or_create(code2=xml_license.get("lang")),
@@ -231,7 +235,7 @@ def get_or_create_keywords(xmltree, user):
     data = []
     for kwd in kwd_group:
         try:
-            obj = models.Keyword.create_or_update(
+            obj = Keyword.create_or_update(
                 user=user,
                 vocabulary=None,
                 language=get_or_create_language(kwd.get("lang"), user=user),
@@ -258,7 +262,7 @@ def create_or_update_abstract(xmltree, user, article):
         try:
             abstract = Abstract(xmltree=xmltree).get_abstracts(style="inline")
             for ab in abstract:
-                obj = models.DocumentAbstract.create_or_update(
+                obj = DocumentAbstract.create_or_update(
                     user=user,
                     article=article,
                     language=get_or_create_language(ab.get("lang"), user=user),
@@ -292,7 +296,7 @@ def create_or_update_researchers(xmltree, user):
     for author in authors:
         for aff in author.get("affs") or []:
             try:
-                obj = models.Researcher.create_or_update(
+                obj = Researcher.create_or_update(
                     user,
                     given_names=author.get("given_names"),
                     last_name=author.get("surname"),
@@ -362,7 +366,7 @@ def create_or_update_titles(xmltree, user):
         title_text = title.get("text") or ""
         format_title = " ".join(title_text.split())
         if format_title:
-            obj = models.DocumentTitle.create_or_update(
+            obj = DocumentTitle.create_or_update(
                 title=format_title,
                 title_rich=title.get("text"),
                 language=get_or_create_language(title.get("lang"), user=user),
@@ -381,7 +385,7 @@ def get_or_create_issues(xmltree, user):
     issue_data = ArticleMetaIssue(xmltree=xmltree).data
     collection_date = ArticleDates(xmltree=xmltree).collection_date
     try:
-        obj = models.Issue.get_or_create(
+        obj = Issue.get_or_create(
             journal=get_journal(xmltree=xmltree),
             number=issue_data.get("number"),
             volume=issue_data.get("volume"),
@@ -406,7 +410,7 @@ def get_or_create_issues(xmltree, user):
 
 
 def get_or_create_language(lang, user):
-    obj = models.Language.get_or_create(code2=lang, creator=user)
+    obj = Language.get_or_create(code2=lang, creator=user)
     return obj
 
 
