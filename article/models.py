@@ -25,7 +25,8 @@ from core.models import (
     LicenseStatement,
     TextLanguageMixin,
 )
-from doi.models import DOI, CrossRefConfiguration
+from doi.models import DOI
+from doi_manager.models import CrossRefConfiguration
 from institution.models import Institution, Sponsor
 from issue.models import Issue, TocSection
 from journal.models import Journal, SciELOJournal
