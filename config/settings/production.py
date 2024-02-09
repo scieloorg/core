@@ -73,10 +73,29 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # https://docs.djangoproject.com/en/dev/ref/settings/#default-from-email
 DEFAULT_FROM_EMAIL = env(
     "DJANGO_DEFAULT_FROM_EMAIL",
-    default="SciELO Content Manager  <noreply@example.com>",
+    default="SciELO Content Manager  <suporte.aplicacao@scielo.org>",
 )
+
 # https://docs.djangoproject.com/en/dev/ref/settings/#server-email
 SERVER_EMAIL = env("DJANGO_SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
+
+# https://docs.djangoproject.com/en/dev/ref/settings/#std-setting-EMAIL_HOST
+EMAIL_HOST = env.str("DJANGO_EMAIL_HOST", default="mailrelay.scielo.org")
+
+# https://docs.djangoproject.com/en/dev/ref/settings/#email-port
+EMAIL_PORT = env.int("DJANGO_EMAIL_PORT", default=25)
+
+# https://docs.djangoproject.com/en/dev/ref/settings/#email-host-user
+EMAIL_HOST_USER = env.str("DJANGO_EMAIL_HOST_USER", default="suporte.aplicacao@scielo.org")
+
+# https://docs.djangoproject.com/en/dev/ref/settings/#std-setting-EMAIL_HOST_PASSWORD
+EMAIL_HOST_PASSWORD = env.str("DJANGO_EMAIL_HOST_PASSWORD", default="")
+
+# https://docs.djangoproject.com/en/dev/ref/settings/#email-use-tls
+EMAIL_USE_TLS = env.bool("DJANGO_EMAIL_USE_TLS", default=False)
+
+# https://docs.djangoproject.com/en/dev/ref/settings/#email-use-ssl
+EMAIL_USE_SSL = env.bool("DJANGO_EMAIL_USE_SSL", default=False)
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-subject-prefix
 EMAIL_SUBJECT_PREFIX = env(
     "DJANGO_EMAIL_SUBJECT_PREFIX",
