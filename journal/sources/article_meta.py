@@ -170,6 +170,11 @@ def _register_journal_data(user, collection_acron3):
                 is_supplement=journal_dict.get("is_supplement"),
                 acronym_letters=journal_dict.get("acronym_letters"),
             )
+            am_to_core.update_logo(
+                collection = collection_acron3,
+                journal=journal,
+                journal_acron=journal_dict.get("acronym"),
+            )
             journal.valid = True
             journal.save()
         except Exception as e:
