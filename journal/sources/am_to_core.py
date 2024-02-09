@@ -3,8 +3,11 @@ import re
 import sys
 from datetime import datetime
 from urllib.parse import urlparse
+import requests
 
 from django.db.models import Q
+from django.core.files.base import ContentFile
+from wagtail.images.models import Image
 
 from collection.exceptions import MainCollectionNotFoundError
 from core.models import Language, License
@@ -389,6 +392,27 @@ def get_issns_from_scielo_journal(issn_scielo, title, issn_print, issn_electroni
         ):
             pass
     return issn_print, issn_electronic
+
+
+def update_logo(
+    collection,
+    journal,
+    journal_acron,
+):
+    domain = Collection.objects.get(acron3=collection).domain
+    journal_acron = extract_value(journal_acron)
+    if collection == 'scl':
+        url_logo = f"http://{domain}/media/images/{journal_acron}_glogo.gif"
+    else:
+        url_logo = f"http://{domain}/img/revistas/{journal_acron}/glogo.gif"
+
+    response = requests.get(url_logo)
+
+    if response.status_code == 200:
+        logo_data = response.content
+        img_wagtail = Image(title=journal_acron)
+        img_wagtail.file.save(f"{journal_acron}_glogo.gif", ContentFile(logo_data))
+        journal.logo = img_wagtail
 
 
 def create_or_update_official_journal(
