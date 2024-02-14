@@ -12,9 +12,7 @@ from wagtail.contrib.modeladmin.views import CreateView
 from . import models
 from .button_helper import IndexedAtHelper
 from .views import import_file, validate
-
-COLLECTION_TEAM = "Collection Team"
-JOURNAL_TEAM = "Journal Team"
+from config.settings.base import COLLECTION_TEAM, JOURNAL_TEAM
 
 
 class OfficialJournalCreateView(CreateView):
