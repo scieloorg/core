@@ -466,3 +466,6 @@ SEARCH_FACET_LIST = [
 WAGTAIL_USER_EDIT_FORM = 'core.users.forms.CustomUserEditForm'
 WAGTAIL_USER_CREATION_FORM = 'core.users.forms.CustomUserCreationForm'
 WAGTAIL_USER_CUSTOM_FIELDS = ['collection', 'journal']
+
+REDIS_HOST = env('DJANGO_REDIS_HOST', default="")
+REDIS_PORT = env('DJANGO_REDIS_PORT', default="")
