@@ -37,6 +37,7 @@ urlpatterns = [
     # API V1 endpoint to custom models
     path("api/v1/", include("config.api_router")),
     path('filter_journals/', filter_journals, name='filter_journals'),
+    path('', include('core.urls'))
     # Your stuff: custom urls includes go here
     # For anything not caught by a more specific rule above, hand over to
     # Wagtail’s page serving mechanism. This should be the last pattern in
