@@ -2,9 +2,12 @@
 
 from django.templatetags.static import static
 from django.utils.html import format_html
+from django.urls import reverse
+
 from wagtail import hooks
 from wagtail.admin.navigation import get_site_for_user
 from wagtail.admin.site_summary import SummaryItem
+from wagtail.admin.menu import AdminOnlyMenuItem
 
 from article.models import Article
 from collection.models import Collection
@@ -82,3 +85,8 @@ def add_items_summary_items(request, items):
     items.append(CollectionSummaryItem(request))
     items.append(JournalSummaryItem(request))
     items.append(ArticleSummaryItem(request))
+
+
+@hooks.register('register_admin_menu_item')
+def clean_database_redis():
+    return AdminOnlyMenuItem('Clean db redis', reverse('confirm_clean_database_redis'), icon_name='error', order=1500)
