@@ -105,46 +105,46 @@ def provide_pid_for_opac_xml(
     username=None,
     user_id=None,
     collection_acron=None,
-    documents=None,
+    pid_v3=None,
+    article=None,
     force_update=None,
 ):
-    for pid_v3, article in documents.items():
-        try:
-            logging.info(article)
-            acron = article["journal_acronym"]
-            uri = f"https://www.scielo.br/j/{acron}/a/{pid_v3}/?format=xml"
-            origin_date = datetime.strptime(
-                article.get("update") or article.get("create"),
-                "%a, %d %b %Y %H:%M:%S %Z",
-            ).isoformat()[:10]
-            year = article["publication_date"][:4]
+    try:
+        logging.info(article)
+        acron = article["journal_acronym"]
+        uri = f"https://www.scielo.br/j/{acron}/a/{pid_v3}/?format=xml"
+        origin_date = datetime.strptime(
+            article.get("update") or article.get("create"),
+            "%a, %d %b %Y %H:%M:%S %Z",
+        ).isoformat()[:10]
+        year = article["publication_date"][:4]
 
-        except Exception as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail={
-                    "task": "provide_pid_for_opac_xml",
-                    "pid_v3": pid_v3,
-                    "article": article,
-                },
-            )
-        else:
-            task_provide_pid_for_opac_and_am_xml.apply_async(
-                kwargs={
-                    "uri": uri,
-                    "username": username,
-                    "user_id": user_id,
-                    "pid_v2": None,
-                    "pid_v3": pid_v3,
-                    "collection_acron": collection_acron,
-                    "journal_acron": acron,
-                    "year": year,
-                    "origin_date": origin_date,
-                    "force_update": force_update,
-                }
-            )
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "provide_pid_for_opac_xml",
+                "pid_v3": pid_v3,
+                "article": article,
+            },
+        )
+    else:
+        task_provide_pid_for_opac_and_am_xml.apply_async(
+            kwargs={
+                "uri": uri,
+                "username": username,
+                "user_id": user_id,
+                "pid_v2": None,
+                "pid_v3": pid_v3,
+                "collection_acron": collection_acron,
+                "journal_acron": acron,
+                "year": year,
+                "origin_date": origin_date,
+                "force_update": force_update,
+            }
+        )
 
 
 @celery_app.task(bind=True, name="provide_pid_for_opac_xmls")
@@ -189,16 +189,31 @@ def provide_pid_for_opac_xmls(
                     "uri": uri,
                 },
             )
+
         else:
-            provide_pid_for_opac_xml.apply_async(
-                kwargs={
-                    "username": username,
-                    "user_id": user_id,
-                    "collection_acron": collection_acron,
-                    "documents": documents,
-                    "force_update": force_update,
-                }
-            )
+            for pid_v3, article in documents.items():
+                try:
+                    provide_pid_for_opac_xml.apply_async(
+                        kwargs={
+                            "username": username,
+                            "user_id": user_id,
+                            "collection_acron": collection_acron,
+                            "pid_v3": pid_v3,
+                            "article": article,
+                            "force_update": force_update,
+                        }
+                    )
+                except Exception as e:
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    UnexpectedEvent.create(
+                        exception=e,
+                        exc_traceback=exc_traceback,
+                        detail={
+                            "task": "provide_pid_for_opac_xmls",
+                            "pid_v3": pid_v3,
+                            "article": article,
+                        },
+                    )
 
         finally:
             page += 1
@@ -338,6 +353,7 @@ def task_provide_pid_for_am_collection(
                 },
             )
         else:
+            # FIXME
             provide_pid_for_am_xml_uri_list.apply_async(
                 kwargs={
                     "username": username,
