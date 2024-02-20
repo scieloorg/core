@@ -36,9 +36,9 @@ def load_funding_data(user, file_path):
 
 
 @celery_app.task(bind=True, name=_("load_article"))
-def load_article(self, user_id=None, username=None, file_path=None, xml=None, v3=None):
+def load_article(self, user_id=None, username=None, file_path=None, v3=None):
     user = _get_user(self.request, username, user_id)
-    xmlsps.load_article(user, file_path=file_path, xml=xml, v3=v3)
+    xmlsps.load_article(user, file_path=file_path, v3=v3)
 
 
 def _items_to_load_article(from_date, force_update):
@@ -57,6 +57,8 @@ def _items_to_load_article(from_date, force_update):
     for item in items:
         try:
             article = Article.objects.get(pid_v3=item.v3)
+            if not article.valid:
+                yield item
             article_date = article.updated or article.created
             if article_date < (item.updated or item.created):
                 yield item
@@ -75,7 +77,7 @@ def load_articles(
             try:
                 load_article.apply_async(
                     kwargs={
-                        "xml": item.current_version.xml,
+                        "file_path": item.current_version.file.path,
                         "user_id": user.id,
                         "username": user.username,
                         "v3": item.v3,
