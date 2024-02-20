@@ -99,52 +99,52 @@ def _get_begin_date(user, collection_acron):
 """
 
 
-@celery_app.task(bind=True, name="provide_pid_for_opac_xml")
-def provide_pid_for_opac_xml(
+@celery_app.task(bind=True, name="provide_pid_for_opac_article")
+def provide_pid_for_opac_article(
     self,
     username=None,
     user_id=None,
     collection_acron=None,
-    documents=None,
+    pid_v3=None,
+    article=None,
     force_update=None,
 ):
-    for pid_v3, article in documents.items():
-        try:
-            logging.info(article)
-            acron = article["journal_acronym"]
-            uri = f"https://www.scielo.br/j/{acron}/a/{pid_v3}/?format=xml"
-            origin_date = datetime.strptime(
-                article.get("update") or article.get("create"),
-                "%a, %d %b %Y %H:%M:%S %Z",
-            ).isoformat()[:10]
-            year = article["publication_date"][:4]
+    try:
+        logging.info(article)
+        acron = article["journal_acronym"]
+        uri = f"https://www.scielo.br/j/{acron}/a/{pid_v3}/?format=xml"
+        origin_date = datetime.strptime(
+            article.get("update") or article.get("create"),
+            "%a, %d %b %Y %H:%M:%S %Z",
+        ).isoformat()[:10]
+        year = article["publication_date"][:4]
 
-        except Exception as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail={
-                    "task": "provide_pid_for_opac_xml",
-                    "pid_v3": pid_v3,
-                    "article": article,
-                },
-            )
-        else:
-            task_provide_pid_for_opac_and_am_xml.apply_async(
-                kwargs={
-                    "uri": uri,
-                    "username": username,
-                    "user_id": user_id,
-                    "pid_v2": None,
-                    "pid_v3": pid_v3,
-                    "collection_acron": collection_acron,
-                    "journal_acron": acron,
-                    "year": year,
-                    "origin_date": origin_date,
-                    "force_update": force_update,
-                }
-            )
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "provide_pid_for_opac_article",
+                "pid_v3": pid_v3,
+                "article": article,
+            },
+        )
+    else:
+        task_provide_pid_for_xml_uri.apply_async(
+            kwargs={
+                "uri": uri,
+                "username": username,
+                "user_id": user_id,
+                "pid_v2": None,
+                "pid_v3": pid_v3,
+                "collection_acron": collection_acron,
+                "journal_acron": acron,
+                "year": year,
+                "origin_date": origin_date,
+                "force_update": force_update,
+            }
+        )
 
 
 @celery_app.task(bind=True, name="provide_pid_for_opac_xmls")
@@ -189,16 +189,31 @@ def provide_pid_for_opac_xmls(
                     "uri": uri,
                 },
             )
+
         else:
-            provide_pid_for_opac_xml.apply_async(
-                kwargs={
-                    "username": username,
-                    "user_id": user_id,
-                    "collection_acron": collection_acron,
-                    "documents": documents,
-                    "force_update": force_update,
-                }
-            )
+            for pid_v3, article in documents.items():
+                try:
+                    provide_pid_for_opac_article.apply_async(
+                        kwargs={
+                            "username": username,
+                            "user_id": user_id,
+                            "collection_acron": collection_acron,
+                            "pid_v3": pid_v3,
+                            "article": article,
+                            "force_update": force_update,
+                        }
+                    )
+                except Exception as e:
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    UnexpectedEvent.create(
+                        exception=e,
+                        exc_traceback=exc_traceback,
+                        detail={
+                            "task": "provide_pid_for_opac_xmls",
+                            "pid_v3": pid_v3,
+                            "article": article,
+                        },
+                    )
 
         finally:
             page += 1
@@ -206,53 +221,49 @@ def provide_pid_for_opac_xmls(
                 break
 
 
-@celery_app.task(bind=True, name="provide_pid_for_am_xml_uri_list")
-def provide_pid_for_am_xml_uri_list(
+@celery_app.task(bind=True, name="provide_pid_for_am_article")
+def provide_pid_for_am_article(
     self,
     username=None,
     user_id=None,
-    items=None,
+    item=None,
     force_update=None,
 ):
-    if not items:
-        raise ValueError("provide_pid_for_am_xml_uri_list requires pids")
-
-    for item in items:
-        try:
-            uri = None
-            collection_acron = item["collection_acron"]
-            pid_v2 = item["pid_v2"]
-            origin_date = item["processing_date"]
-            uri = (
-                f"https://articlemeta.scielo.org/api/v1/article/?"
-                f"collection={collection_acron}&code={pid_v2}&format=xmlrsps"
-            )
-        except Exception as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail={
-                    "task": "provide_pid_for_am_xml_uri_list",
-                    "uri": uri,
-                    "item": item,
-                },
-            )
-        else:
-            task_provide_pid_for_opac_and_am_xml.apply_async(
-                kwargs={
-                    "uri": uri,
-                    "username": username,
-                    "user_id": user_id,
-                    "pid_v2": pid_v2,
-                    "pid_v3": None,
-                    "collection_acron": collection_acron,
-                    "journal_acron": None,
-                    "year": None,
-                    "origin_date": origin_date,
-                    "force_update": force_update,
-                }
-            )
+    try:
+        uri = None
+        collection_acron = item["collection_acron"]
+        pid_v2 = item["pid_v2"]
+        origin_date = item["processing_date"]
+        uri = (
+            f"https://articlemeta.scielo.org/api/v1/article/?"
+            f"collection={collection_acron}&code={pid_v2}&format=xmlrsps"
+        )
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "provide_pid_for_am_article",
+                "uri": uri,
+                "item": item,
+            },
+        )
+    else:
+        task_provide_pid_for_xml_uri.apply_async(
+            kwargs={
+                "uri": uri,
+                "username": username,
+                "user_id": user_id,
+                "pid_v2": pid_v2,
+                "pid_v3": None,
+                "collection_acron": collection_acron,
+                "journal_acron": None,
+                "year": None,
+                "origin_date": origin_date,
+                "force_update": force_update,
+            }
+        )
 
 
 @celery_app.task(bind=True, name="provide_pid_for_am_xmls")
@@ -338,14 +349,15 @@ def task_provide_pid_for_am_collection(
                 },
             )
         else:
-            provide_pid_for_am_xml_uri_list.apply_async(
-                kwargs={
-                    "username": username,
-                    "user_id": user_id,
-                    "items": items,
-                    "force_update": force_update,
-                }
-            )
+            for item in items:
+                provide_pid_for_am_article.apply_async(
+                    kwargs={
+                        "username": username,
+                        "user_id": user_id,
+                        "item": item,
+                        "force_update": force_update,
+                    }
+                )
 
 
 @celery_app.task(bind=True)
@@ -383,7 +395,7 @@ def retry_to_provide_pid_for_failed_uris(
                 },
             )
         else:
-            task_provide_pid_for_opac_and_am_xml.apply_async(
+            task_provide_pid_for_xml_uri.apply_async(
                 kwargs={
                     "uri": uri,
                     "username": username,
@@ -399,7 +411,7 @@ def retry_to_provide_pid_for_failed_uris(
 
 
 @celery_app.task(bind=True)
-def task_provide_pid_for_opac_and_am_xml(
+def task_provide_pid_for_xml_uri(
     self,
     uri,
     username=None,
@@ -431,7 +443,7 @@ def task_provide_pid_for_opac_and_am_xml(
             exception=e,
             exc_traceback=exc_traceback,
             detail={
-                "task": "task_provide_pid_for_opac_and_am_xml",
+                "task": "task_provide_pid_for_xml_uri",
                 "detail": dict(
                     pid_v2=pid_v2,
                     pid_v3=pid_v3,
