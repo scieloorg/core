@@ -99,8 +99,8 @@ def _get_begin_date(user, collection_acron):
 """
 
 
-@celery_app.task(bind=True, name="provide_pid_for_opac_xml")
-def provide_pid_for_opac_xml(
+@celery_app.task(bind=True, name="provide_pid_for_opac_article")
+def provide_pid_for_opac_article(
     self,
     username=None,
     user_id=None,
@@ -125,13 +125,13 @@ def provide_pid_for_opac_xml(
             exception=e,
             exc_traceback=exc_traceback,
             detail={
-                "task": "provide_pid_for_opac_xml",
+                "task": "provide_pid_for_opac_article",
                 "pid_v3": pid_v3,
                 "article": article,
             },
         )
     else:
-        task_provide_pid_for_opac_and_am_xml.apply_async(
+        task_provide_pid_for_xml_uri.apply_async(
             kwargs={
                 "uri": uri,
                 "username": username,
@@ -193,7 +193,7 @@ def provide_pid_for_opac_xmls(
         else:
             for pid_v3, article in documents.items():
                 try:
-                    provide_pid_for_opac_xml.apply_async(
+                    provide_pid_for_opac_article.apply_async(
                         kwargs={
                             "username": username,
                             "user_id": user_id,
@@ -221,8 +221,8 @@ def provide_pid_for_opac_xmls(
                 break
 
 
-@celery_app.task(bind=True, name="provide_pid_for_am_xml_uri_list")
-def provide_pid_for_am_xml_uri_list(
+@celery_app.task(bind=True, name="provide_pid_for_am_article")
+def provide_pid_for_am_article(
     self,
     username=None,
     user_id=None,
@@ -244,13 +244,13 @@ def provide_pid_for_am_xml_uri_list(
             exception=e,
             exc_traceback=exc_traceback,
             detail={
-                "task": "provide_pid_for_am_xml_uri_list",
+                "task": "provide_pid_for_am_article",
                 "uri": uri,
                 "item": item,
             },
         )
     else:
-        task_provide_pid_for_opac_and_am_xml.apply_async(
+        task_provide_pid_for_xml_uri.apply_async(
             kwargs={
                 "uri": uri,
                 "username": username,
@@ -350,7 +350,7 @@ def task_provide_pid_for_am_collection(
             )
         else:
             for item in items:
-                provide_pid_for_am_xml_uri_list.apply_async(
+                provide_pid_for_am_article.apply_async(
                     kwargs={
                         "username": username,
                         "user_id": user_id,
@@ -395,7 +395,7 @@ def retry_to_provide_pid_for_failed_uris(
                 },
             )
         else:
-            task_provide_pid_for_opac_and_am_xml.apply_async(
+            task_provide_pid_for_xml_uri.apply_async(
                 kwargs={
                     "uri": uri,
                     "username": username,
@@ -411,7 +411,7 @@ def retry_to_provide_pid_for_failed_uris(
 
 
 @celery_app.task(bind=True)
-def task_provide_pid_for_opac_and_am_xml(
+def task_provide_pid_for_xml_uri(
     self,
     uri,
     username=None,
@@ -443,7 +443,7 @@ def task_provide_pid_for_opac_and_am_xml(
             exception=e,
             exc_traceback=exc_traceback,
             detail={
-                "task": "task_provide_pid_for_opac_and_am_xml",
+                "task": "task_provide_pid_for_xml_uri",
                 "detail": dict(
                     pid_v2=pid_v2,
                     pid_v3=pid_v3,
