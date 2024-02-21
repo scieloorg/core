@@ -302,6 +302,7 @@ class ArticleFunding(CommonControlField):
                 article_funding.funding_source = funding_source
                 article_funding.creator = user
                 article_funding.save()
+                return article_funding
             except Exception as e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 UnexpectedEvent.create(
@@ -312,7 +313,6 @@ class ArticleFunding(CommonControlField):
                         award_id=award_id,
                     ),
                 )
-            return article_funding
 
     base_form_class = CoreAdminModelForm
 

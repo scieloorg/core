@@ -161,8 +161,8 @@ def get_or_create_fundings(xmltree, user):
     data = []
     if fundings_group:
         for funding in fundings_group:
-            funding_source = funding.get("funding-source", [])
-            award_ids = funding.get("award-id", [])
+            funding_source = funding.get("funding-source") or []
+            award_ids = funding.get("award-id") or []
 
             for fs in funding_source:
                 for award_id in award_ids:
@@ -294,6 +294,39 @@ def create_or_update_researchers(xmltree, user):
     # Falta gender e gender_identification_status
     data = []
     for author in authors:
+        if not author.get("affs"):
+            try:
+                # {'surname': 'Reyes-Oviedo', 'given_names': 'Emma', 'aff_rids': None, 'contrib-type': 'author'}
+                obj = Researcher.create_or_update(
+                    user,
+                    given_names=author.get("given_names"),
+                    last_name=author.get("surname"),
+                    suffix=author.get("suffix"),
+                    declared_name=None,
+                    affiliation=None,
+                    lang=article_lang,
+                    orcid=author.get("orcid"),
+                    lattes=author.get("lattes"),
+                    other_ids=None,
+                    email=author.get("email") or aff.get("email"),
+                    gender=author.get("gender"),
+                    gender_identification_status=author.get(
+                        "gender_identification_status"
+                    ),
+                )
+                data.append(obj)
+            except Exception as e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail=dict(
+                        xmltree=f"{etree.tostring(xmltree)}",
+                        function="article.xmlsps.create_or_update_researchers",
+                        author=author,
+                    ),
+                )
+
         for aff in author.get("affs") or []:
             try:
                 obj = Researcher.create_or_update(
