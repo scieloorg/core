@@ -275,7 +275,7 @@ def update_logo(
     domain = Collection.objects.get(acron3=collection).domain
     journal_acron = extract_value(journal_acron)
     if collection == 'scl':
-        url_logo = f"http://{domain}/media/images/{journal_acron}_glogo.gif"
+        url_logo = f"https://{domain}/media/images/{journal_acron}_glogo.gif"
     else:
         url_logo = f"http://{domain}/img/revistas/{journal_acron}/glogo.gif"
 
