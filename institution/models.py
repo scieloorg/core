@@ -440,6 +440,9 @@ class BaseInstitution(CommonControlField):
         abstract = True
         unique_together = [("institution", )]
 
+    def __str__(self):
+        return str(self.institution)
+
     def autocomplete_label(self):
         return str(self.institution)
 
