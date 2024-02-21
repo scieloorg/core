@@ -559,7 +559,7 @@ class PidProviderXML(CommonControlField, ClusterableModel):
     def public_items(cls, from_date):
         now = datetime.utcnow().isoformat()[:10]
         return cls.objects.filter(
-            Q(available_since__lte=now)
+            (Q(available_since__isnull=True) | Q(available_since__lte=now))
             & (Q(created__gte=from_date) | Q(updated__gte=from_date)),
             current_version__pid_provider_xml__v3__isnull=False,
         ).iterator()
