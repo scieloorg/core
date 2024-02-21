@@ -308,7 +308,7 @@ def create_or_update_researchers(xmltree, user):
                     orcid=author.get("orcid"),
                     lattes=author.get("lattes"),
                     other_ids=None,
-                    email=author.get("email") or aff.get("email"),
+                    email=author.get("email"),
                     gender=author.get("gender"),
                     gender_identification_status=author.get(
                         "gender_identification_status"
