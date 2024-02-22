@@ -4,7 +4,9 @@ from django.templatetags.static import static
 from django.utils.html import format_html
 from wagtail import hooks
 from wagtail.admin.navigation import get_site_for_user
+from wagtail.admin.panels import FieldPanel, InlinePanel
 from wagtail.admin.site_summary import SummaryItem
+from wagtail.contrib.modeladmin.views import EditView
 
 from article.models import Article
 from collection.models import Collection
@@ -82,3 +84,20 @@ def add_items_summary_items(request, items):
     items.append(CollectionSummaryItem(request))
     items.append(JournalSummaryItem(request))
     items.append(ArticleSummaryItem(request))
+
+
+class BaseEditView(EditView):
+    readonly_fields = []  
+
+    def get_edit_handler(self):
+        edit_handler = super().get_edit_handler()
+        if self.request.user.is_superuser:
+            for object_list in edit_handler.children:
+                for field in object_list.children:
+                    if isinstance(field, FieldPanel) and field.field_name in self.readonly_fields:
+                        field.__setattr__('read_only', True)
+                    elif isinstance(field, InlinePanel) and field.relation_name in self.readonly_fields:
+                        field.classname = field.classname + ' read-only-inline-panel'
+                        for inline_field in field.panel_definitions:
+                            inline_field.__setattr__('read_only', True)
+        return edit_handler
