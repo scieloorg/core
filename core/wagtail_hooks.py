@@ -91,7 +91,7 @@ class BaseEditView(EditView):
 
     def get_edit_handler(self):
         edit_handler = super().get_edit_handler()
-        if self.request.user.is_superuser:
+        if not self.request.user.is_superuser:
             for object_list in edit_handler.children:
                 for field in object_list.children:
                     if isinstance(field, FieldPanel) and field.field_name in self.readonly_fields:
