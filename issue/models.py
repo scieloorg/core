@@ -71,7 +71,7 @@ class Issue(CommonControlField, ClusterableModel):
     ]
 
     panels_subtitle = [
-        InlinePanel("bibliographic_strip"),
+        InlinePanel("bibliographic_strip", classname="collapsed", label=_("Bibliographic strip")),
     ]
 
     panels_summary = [
