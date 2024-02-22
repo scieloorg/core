@@ -4,12 +4,6 @@
     --color-primary-dark: #4c77d5;
 }
 
-.myReadonlyInput input[type="text"]{
-    background-color: rgb(239 239 239);
-    color: rgb(99 99 99);
-    pointer-events:none;
-    cursor:text;
-}
 
 /* Classe para ocultar elementos relacionados ao campo de escolher arquivo (models.FileField)*/
 .hide-file-section input[type="checkbox"][name="file-clear"],
