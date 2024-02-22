@@ -10,15 +10,16 @@ from wagtail.contrib.modeladmin.views import CreateView
 from .models import Issue
 from core.wagtail_hooks import BaseEditView
 
+
 class IssueCreateView(CreateView):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
 
+
 class IssueEditView(BaseEditView):
-    readonly_fields = [
-        "journal"
-    ]
+    readonly_fields = ["journal"]
+
 
 class IssueAdmin(ModelAdmin):
     model = Issue
@@ -59,7 +60,7 @@ class IssueAdminGroup(ModelAdminGroup):
     menu_label = _("Issues")
     menu_icon = "folder-open-inverse"
     menu_order = 100
-    items = (IssueAdmin, )
+    items = (IssueAdmin,)
 
 
 modeladmin_register(IssueAdminGroup)
