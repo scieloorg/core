@@ -12,6 +12,8 @@ from wagtail.contrib.modeladmin.views import CreateView
 from . import models
 from .button_helper import IndexedAtHelper
 from .views import import_file, validate
+from core.wagtail_hooks import BaseEditView
+
 
 COLLECTION_TEAM = "Collection Team"
 JOURNAL_TEAM = "Journal Team"
@@ -23,11 +25,24 @@ class OfficialJournalCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
+class OfficialJournalEditView(BaseEditView):
+    readonly_fields = [
+        "title",
+        "iso_short_title",
+        "issn_print",
+        "issn_electronic",
+        "issnl"
+        "issnl",
+        "parallel_title",
+    ]
+
+
 class OfficialJournalAdmin(ModelAdmin):
     model = models.OfficialJournal
     inspect_view_enabled = True
     menu_label = _("ISSN Journals")
     create_view_class = OfficialJournalCreateView
+    edit_view_class = OfficialJournalEditView
     menu_icon = "folder"
     menu_order = 100
     add_to_settings_menu = False
@@ -59,11 +74,27 @@ class JournalCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
+class JournalEditView(BaseEditView):
+    readonly_fields = [
+        "official",
+        'title',
+        'indexed_at', 
+        'additional_indexed_at', 
+        'wos_db', 
+        'short_title', 
+        'digital_pa', 
+        'official', 
+        'publisher_history',
+        'title_in_database',
+    ]
+    
+
 class JournalAdmin(ModelAdmin):
     model = models.Journal
     inspect_view_enabled = True
     menu_label = _("Journals")
     create_view_class = JournalCreateView
+    edit_view_class = JournalEditView
     menu_icon = "folder"
     menu_order = 200
     add_to_settings_menu = False
@@ -90,6 +121,7 @@ class JournalAdmin(ModelAdmin):
         "official__issn_electronic",
         "contact_location__country__name",
     )
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         user_groups = request.user.groups.values_list('name', flat=True)
@@ -106,11 +138,20 @@ class SciELOJournalCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
+class SciELOJournalEditView(BaseEditView):
+    readonly_fields = [
+        "collection",
+        "journal",
+        "journal_acron",
+        "issn_scielo",
+    ]
+
 class SciELOJournalAdmin(ModelAdmin):
     model = models.SciELOJournal
     inspect_view_enabled = True
     menu_label = _("SciELO Journals")
     create_view_class = SciELOJournalCreateView
+    edit_view_class = SciELOJournalEditView
     menu_icon = "folder"
     menu_order = 200
     add_to_settings_menu = False
