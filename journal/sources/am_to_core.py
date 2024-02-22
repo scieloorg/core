@@ -4,7 +4,6 @@ import sys
 from datetime import datetime
 from urllib.parse import urlparse
 from core.utils.utils import fetch_data
-import requests
 
 from django.db.models import Q
 from django.core.files.base import ContentFile
@@ -268,16 +267,17 @@ def update_panel_institution(
 
 
 def update_logo(
-    collection,
     journal,
-    journal_acron,
 ):
-    domain = Collection.objects.get(acron3=collection).domain
-    journal_acron = extract_value(journal_acron)
-    if collection == 'scl':
-        url_logo = f"https://{domain}/media/images/{journal_acron}_glogo.gif"
-    else:
-        url_logo = f"http://{domain}/img/revistas/{journal_acron}/glogo.gif"
+    for scielo_journal in SciELOJournal.objects.filter(journal=journal).iterator():
+        collection = scielo_journal.collection
+        domain = collection.domain
+        journal_acron = scielo_journal.journal_acron
+        if collection.acron3 == 'scl':
+            url_logo = f"https://{domain}/media/images/{journal_acron}_glogo.gif"
+        else:
+            url_logo = f"http://{domain}/img/revistas/{journal_acron}/glogo.gif"
+        break
 
     response = fetch_data(url_logo, json=False, timeout=30, verify=True)
 
@@ -293,8 +293,6 @@ def update_panel_website(
     url_of_submission_online,
     url_of_the_main_collection,
     license_of_use,
-    collection,
-    journal_acron,
     user,
 ):
     journal.journal_url = extract_value(url_of_the_journal)
@@ -307,7 +305,7 @@ def update_panel_website(
     assign_journal_to_main_collection(
         journal=journal, url_of_the_main_collection=url_of_the_main_collection
     )
-    update_logo(collection, journal, journal_acron)
+    update_logo(journal)
 
 
 def update_panel_notes(

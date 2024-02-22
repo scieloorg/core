@@ -149,8 +149,6 @@ def _register_journal_data(user, collection_acron3):
                 url_of_submission_online=journal_dict.get("url_of_submission_online"),
                 url_of_the_main_collection=journal_dict.get("url_of_the_main_collection"),
                 license_of_use=journal_dict.get("license_of_use"),
-                collection = collection_acron3,
-                journal_acron=journal_dict.get("acronym"),
                 user=user,
             )
             am_to_core.update_panel_notes(
