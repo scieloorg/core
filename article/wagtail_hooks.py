@@ -12,6 +12,7 @@ from article.models import (  # AbstractModel,; Category,; Title,
     ArticleFormat,
     ArticleFunding,
 )
+from core.wagtail_hooks import BaseEditView
 
 
 class ArticleCreateView(CreateView):
@@ -20,9 +21,20 @@ class ArticleCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
+class ArticleEditView(BaseEditView):
+    readonly_fields = [
+        "pid_v2",
+        "pid_v3",
+        "journal",
+        "doi",
+        "publisher",
+    ]
+
+
 class ArticleAdmin(ModelAdmin):
     model = Article
     create_view_class = ArticleCreateView
+    edit_view_class = ArticleEditView
     menu_label = _("Article")
     menu_icon = "folder"
     menu_order = 100
