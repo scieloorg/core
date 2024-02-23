@@ -87,9 +87,18 @@ def add_items_summary_items(request, items):
 
 
 class BaseEditView(EditView):
+    """
+    Uma subclasse de EditView que personaliza o comportamento de campos na interface administrativa de edição.
+    """
     readonly_fields = []  
 
     def get_edit_handler(self):
+        """
+        Sobrescreve o método 'get_edit_handler' de EditView.
+        Se o usuário atual não for um superusuário, os campos especificados em
+        'readonly_fields' serão configurados como somente leitura. Isso é aplicado para 'FieldPanel', 'AutocompletePanel'
+        e 'InlinePanel'.
+        """
         edit_handler = super().get_edit_handler()
         if not self.request.user.is_superuser:
             for object_list in edit_handler.children:
