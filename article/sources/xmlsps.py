@@ -28,7 +28,7 @@ from institution.models import Sponsor
 from issue.models import Issue, TocSection
 from journal.models import Journal, OfficialJournal
 from researcher.exceptions import PersonNameCreateError
-from researcher.models import Researcher
+from researcher.models import Researcher, InstitutionalAuthor
 from tracker.models import UnexpectedEvent
 from vocabulary.models import Keyword
 
@@ -294,81 +294,51 @@ def create_or_update_researchers(xmltree, user):
     # Falta gender e gender_identification_status
     data = []
     for author in authors:
-        if not author.get("affs"):
-            try:
-                # {'surname': 'Reyes-Oviedo', 'given_names': 'Emma', 'aff_rids': None, 'contrib-type': 'author'}
-                obj = Researcher.create_or_update(
-                    user,
-                    given_names=author.get("given_names"),
-                    last_name=author.get("surname"),
-                    suffix=author.get("suffix"),
-                    declared_name=None,
-                    affiliation=None,
-                    lang=article_lang,
-                    orcid=author.get("orcid"),
-                    lattes=author.get("lattes"),
-                    other_ids=None,
-                    email=author.get("email"),
-                    gender=author.get("gender"),
-                    gender_identification_status=author.get(
-                        "gender_identification_status"
-                    ),
-                )
-                data.append(obj)
-            except Exception as e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                UnexpectedEvent.create(
-                    exception=e,
-                    exc_traceback=exc_traceback,
-                    detail=dict(
-                        xmltree=f"{etree.tostring(xmltree)}",
-                        function="article.xmlsps.create_or_update_researchers",
-                        author=author,
-                    ),
-                )
+        try:
+            researcher_data = {
+                'user': user,
+                'given_names': author.get("given_names"),
+                'last_name': author.get("surname"),
+                'suffix': author.get("suffix"),
+                'lang': article_lang,
+                'orcid': author.get("orcid"),
+                'lattes': author.get("lattes"),
+                'email': author.get("email"),
+                'gender': author.get("gender"),
+                'gender_identification_status': author.get("gender_identification_status"),
+            }
 
-        for aff in author.get("affs") or []:
-            try:
-                obj = Researcher.create_or_update(
-                    user,
-                    given_names=author.get("given_names"),
-                    last_name=author.get("surname"),
-                    suffix=author.get("suffix"),
-                    declared_name=None,
-                    affiliation=None,
-                    aff_name=get_safe_value(aff, "orgname"),
-                    aff_div1=get_safe_value(aff, "orgdiv1"),
-                    aff_div2=get_safe_value(aff, "orgdiv2"),
-                    aff_city_name=get_safe_value(aff, "city"),
-                    aff_country_text=None,
-                    aff_country_acronym=get_safe_value(aff, "country_code"),
-                    aff_country_name=get_safe_value(aff, "country_name"),
-                    aff_state_text=get_safe_value(aff, "state"),
-                    aff_state_acronym=None,
-                    aff_state_name=None,
-                    lang=article_lang,
-                    orcid=author.get("orcid"),
-                    lattes=author.get("lattes"),
-                    other_ids=None,
-                    email=author.get("email") or aff.get("email"),
-                    gender=author.get("gender"),
-                    gender_identification_status=author.get(
-                        "gender_identification_status"
-                    ),
-                )
+            affs = author.get("affs", [])
+            if not affs:
+                obj = Researcher.create_or_update(**researcher_data, affiliation=None)
                 data.append(obj)
-            except Exception as e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                UnexpectedEvent.create(
-                    exception=e,
-                    exc_traceback=exc_traceback,
-                    detail=dict(
-                        xmltree=f"{etree.tostring(xmltree)}",
-                        function="article.xmlsps.create_or_update_researchers",
-                        author=author,
-                        affiliation=aff,
-                    ),
-                )
+            else:
+                for aff in affs:
+                    aff_data = {
+                        **researcher_data,
+                        'aff_name': get_safe_value(aff, "orgname"),
+                        'aff_div1': get_safe_value(aff, "orgdiv1"),
+                        'aff_div2': get_safe_value(aff, "orgdiv2"),
+                        'aff_city_name': get_safe_value(aff, "city"),
+                        'aff_country_acronym': get_safe_value(aff, "country_code"),
+                        'aff_country_name': get_safe_value(aff, "country_name"),
+                        'aff_state_text': get_safe_value(aff, "state"),
+                        'email': aff.get("email"),
+                    }
+                    obj = Researcher.create_or_update(**aff_data)
+                    data.append(obj)
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail=dict(
+                    xmltree=f"{etree.tostring(xmltree)}",
+                    function="article.xmlsps.create_or_update_researchers",
+                    author=author,
+                    affiliation=aff,
+                ),
+            )
     return data
 
 
