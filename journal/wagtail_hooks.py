@@ -32,7 +32,6 @@ class OfficialJournalEditView(BaseEditView):
         "issn_print",
         "issn_electronic",
         "issnl",
-        "issnl",
         "parallel_title",
     ]
 
