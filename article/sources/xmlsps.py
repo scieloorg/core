@@ -95,6 +95,7 @@ def load_article(user, xml=None, file_path=None, v3=None):
         article.researchers.set(
             create_or_update_researchers(xmltree=xmltree, user=user)
         )
+        article.collab.set(get_or_create_institution_authors(xmltree=xmltree, user=user))
         article.languages.add(get_or_create_main_language(xmltree=xmltree, user=user))
         article.keywords.set(get_or_create_keywords(xmltree=xmltree, user=user))
         article.toc_sections.set(get_or_create_toc_sections(xmltree=xmltree, user=user))
@@ -337,6 +338,30 @@ def create_or_update_researchers(xmltree, user):
                     function="article.xmlsps.create_or_update_researchers",
                     author=author,
                     affiliation=aff,
+                ),
+            )
+    return data
+
+
+def get_or_create_institution_authors(xmltree, user):
+    data = []
+    authors = Authors(xmltree=xmltree).contribs_with_affs
+    for author in authors:
+        try:
+            if author.get("collab"):
+                obj = InstitutionalAuthor.get_or_create(
+                    name=author.get("collab"),
+                    user=user
+                )
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail=dict(
+                    xmltree=f"{etree.tostring(xmltree)}",
+                    function="article.xmlsps.get_or_create_institution_authors",
+                    author=author,
                 ),
             )
     return data
