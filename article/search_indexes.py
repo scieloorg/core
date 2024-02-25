@@ -25,6 +25,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     la_abstract = indexes.MultiValueField(null=True)
     orcid = indexes.MultiValueField(null=True)
     au_orcid = indexes.MultiValueField(null=True)
+    collab = indexes.MultiValueField(null=True)
 
     collection = indexes.MultiValueField(index_fieldname="in", null=True)
     journal_title = indexes.CharField(null=True)
@@ -172,6 +173,10 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_au_orcid(self, obj):
         if obj.researchers:
             return [f"{research.orcid}" for research in obj.researchers.all()]
+
+    def prepare_collab(self, obj):
+        if obj.collab:
+            return [collab.institution_author for collab in obj.collab.all()]
 
     def prepare_au(self, obj):
         if obj.researchers:

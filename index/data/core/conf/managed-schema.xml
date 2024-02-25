@@ -234,6 +234,9 @@
    <!-- Auxiliar Digital Object Identifier DOI -->
    <field name="au_orcid" type="string" indexed="true" stored="true" multiValued="true" />
 
+    <!-- collab authors -->
+    <field name="collab" type="string" indexed="true" stored="true" multiValued="true" />
+
     <!-- Publication date at SciELO: Full ISO Date YYYY-MM-DD -->
     <field name="scielo_publication_date" type="string" indexed="true" stored="true" multiValued="false"/>
 
