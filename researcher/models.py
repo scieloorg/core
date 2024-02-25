@@ -585,3 +585,51 @@ class ResearcherAKA(CommonControlField, Orderable):
             return cls.create(
                 user, researcher_identifier, researcher
             )
+
+
+class InstitutionalAuthor(CommonControlField):
+    institutional_authorship = models.TextField(_("Institutional Authorship"), blank=True, null=True, unique=True)
+
+    autocomplete_search_field = "institutional_authorship"
+
+    def autocomplete_label(self):
+        return str(self)
+
+    @classmethod
+    def get(
+        cls,
+        name,
+    ):
+        if not name:
+            raise ValueError("InstitutionalAuthor.get requires name paramenter")
+        return cls.objects.get(institutional_authorship__iexact=name)
+    
+    @classmethod
+    def create(
+        cls,
+        name,
+        user,
+    ):
+        try:
+            obj = cls(
+                institutional_authorship=name,
+                creator=user,
+            )
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(name=name)
+    
+    @classmethod
+    def get_or_create(
+        cls,
+        name,
+        user,
+    ):
+        try:
+            return cls.get(name=name)
+        except cls.DoesNotExist:
+            return cls.create(name=name, user=user)
+    
+    def __str__(self):
+        return f"{self.institutional_authorship}"
