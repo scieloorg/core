@@ -311,7 +311,7 @@ def create_or_update_researchers(xmltree, user):
 
             affs = author.get("affs", [])
             if not affs:
-                obj = Researcher.create_or_update(**researcher_data, affiliation=None)
+                obj = Researcher.create_or_update(**researcher_data)
                 data.append(obj)
             else:
                 for aff in affs:
@@ -337,7 +337,7 @@ def create_or_update_researchers(xmltree, user):
                     xmltree=f"{etree.tostring(xmltree)}",
                     function="article.xmlsps.create_or_update_researchers",
                     author=author,
-                    affiliation=aff,
+                    affiliation=affs,
                 ),
             )
     return data
