@@ -166,16 +166,16 @@ def get_or_create_fundings(xmltree, user):
             award_ids = funding.get("award-id") or []
 
             for fs in funding_source:
+                sponsor = create_or_update_sponsor(funding_name=fs, user=user)
                 for award_id in award_ids:
                     try:
                         obj = ArticleFunding.get_or_create(
                             award_id=award_id,
-                            funding_source=create_or_update_sponsor(
-                                funding_name=fs, user=user
-                            ),
+                            funding_source=sponsor,
                             user=user,
                         )
-                        data.append(obj)
+                        if obj:
+                            data.append(obj)
                     except Exception as e:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         UnexpectedEvent.create(
@@ -183,7 +183,7 @@ def get_or_create_fundings(xmltree, user):
                             exc_traceback=exc_traceback,
                             detail=dict(
                                 xmltree=f"{etree.tostring(xmltree)}",
-                                function="article.xmlsps.get_or_create_keywords",
+                                function="article.xmlsps.sources.get_or_create_fundings",
                                 funding_source=fs,
                                 award_id=award_id,
                             ),
