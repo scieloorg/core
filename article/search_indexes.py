@@ -22,7 +22,6 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     kw = indexes.MultiValueField(null=True)
     # toc_sections = indexes.MultiValueField(null=True)
     ab = indexes.MultiValueField(null=True)
-    la_abstract = indexes.MultiValueField(null=True)
     orcid = indexes.MultiValueField(null=True)
     au_orcid = indexes.MultiValueField(null=True)
     collab = indexes.MultiValueField(null=True)
@@ -61,6 +60,13 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
                 data[f"ti_{title.language.code2}"] = title.plain_text
             else:
                 data["ti_"] = title.plain_text
+
+        # prepare abstracts
+        for ab in obj.abstracts.all():
+            if ab.language:
+                data[f"ab_{ab.language.code2}"] = ab.plain_text
+            else:
+                data["ab_"] = ab.plain_text
 
         if obj.journal:
             collections = obj.collections
@@ -206,10 +212,6 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
             pass
 
     def prepare_ab(self, obj):
-        if obj.abstracts:
-            return [abstract.plain_text for abstract in obj.abstracts.all()]
-
-    def prepare_la_abstract(self, obj):
         if obj.abstracts:
             return [abstract.plain_text for abstract in obj.abstracts.all()]
 

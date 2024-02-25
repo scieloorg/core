@@ -147,7 +147,7 @@
     <field name="ti" type="text" indexed="true" stored="true" multiValued="true"/>
 
     <!-- Abstract **from:ab to:abstract** -->
-    <field name="ab" type="text" indexed="true" stored="false" multiValued="true"/>
+    <field name="ab" type="text" indexed="true" stored="true" multiValued="true"/>
 
     <!-- Language **from:la to:languages** list of languages -->
     <field name="la" type="lowercase" indexed="true" stored="true" multiValued="true"/>
@@ -227,9 +227,6 @@
 
     <!-- Digital Object Identifier DOI -->
     <field name="doi" type="text" indexed="true" stored="true" multiValued="true"/>
-    
-    <!-- Abstract **from:ab to:abstract_language** -->
-    <field name="la_abstract" type="lowercase" indexed="true" stored="true" multiValued="true" />
 
     <!-- Digital Object Identifier DOI -->
     <field name="orcid" type="text" indexed="true" stored="true" multiValued="true"/>
