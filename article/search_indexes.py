@@ -57,7 +57,10 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
 
         # prepare the titles ti_*
         for title in obj.titles.all():
-            data["ti_%s" % title.language.code2] = title.plain_text
+            if title.language:
+                data[f"ti_{title.language.code2}"] = title.plain_text
+            else:
+                data["ti_"] = title.plain_text
 
         if obj.journal:
             collections = obj.collections
@@ -208,7 +211,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
 
     def prepare_la_abstract(self, obj):
         if obj.abstracts:
-            return [abstract.language for abstract in obj.abstracts.all()]
+            return [abstract.plain_text for abstract in obj.abstracts.all()]
 
     def prepare_domain(self, obj):
         collections = obj.collections
