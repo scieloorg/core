@@ -260,27 +260,28 @@ def get_or_create_keywords(xmltree, user):
 def create_or_update_abstract(xmltree, user, article):
     data = []
     if xmltree.find(".//abstract") is not None:
-        try:
-            abstract = Abstract(xmltree=xmltree).get_abstracts(style="inline")
-            for ab in abstract:
-                obj = DocumentAbstract.create_or_update(
-                    user=user,
-                    article=article,
-                    language=get_or_create_language(ab.get("lang"), user=user),
-                    text=ab.get("abstract"),
-                )
-                data.append(obj)
-        except AttributeError as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail=dict(
-                    xmltree=f"{etree.tostring(xmltree)}",
-                    function="article.xmlsps.create_or_update_abstract",
-                    abstract=ab,
-                ),
-            )
+        abstract = Abstract(xmltree=xmltree).get_abstracts(style="inline")
+        for ab in abstract:
+            if ab:
+                try:
+                    obj = DocumentAbstract.create_or_update(
+                        user=user,
+                        article=article,
+                        language=get_or_create_language(ab.get("lang"), user=user),
+                        text=ab.get("abstract"),
+                    )
+                    data.append(obj)
+                except AttributeError as e:
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    UnexpectedEvent.create(
+                        exception=e,
+                        exc_traceback=exc_traceback,
+                        detail=dict(
+                            xmltree=f"{etree.tostring(xmltree)}",
+                            function="article.xmlsps.sources.create_or_update_abstract",
+                            abstract=ab,
+                        ),
+                    )
     return data
 
 
