@@ -280,6 +280,7 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     publishers = indexes.MultiValueField(index_fieldname="item.communities", null=True)
     titles = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.title")
     creator = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.creator")
+    collab = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.collab")
     kw = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.subject")
     description = indexes.MultiValueField(index_fieldname="metadata.dc.description")
     dates = indexes.MultiValueField(index_fieldname="metadata.dc.date")
@@ -331,6 +332,10 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_creator(self, obj):
         if obj.researchers:
             return [researcher for researcher in obj.researchers.all()]
+
+    def prepare_collab(self, obj):
+        if obj.collab:
+            return [collab.institution_author for collab in obj.collab.all()]
 
     def prepare_kw(self, obj):
         if obj.keywords:
