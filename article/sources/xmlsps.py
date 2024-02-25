@@ -395,13 +395,27 @@ def create_or_update_titles(xmltree, user):
         title_text = title.get("text") or ""
         format_title = " ".join(title_text.split())
         if format_title:
-            obj = DocumentTitle.create_or_update(
-                title=format_title,
-                title_rich=title.get("text"),
-                language=get_or_create_language(title.get("lang"), user=user),
-                user=user,
-            )
-            data.append(obj)
+            try:
+                lang = get_or_create_language(title.get("lang"), user=user)
+                obj = DocumentTitle.create_or_update(
+                    title=format_title,
+                    title_rich=title.get("text"),
+                    language=lang,
+                    user=user,
+                )
+                data.append(obj)
+            except Exception as e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail=dict(
+                        xmltree=f"{xmltree}",
+                        function="article.xmlsps.create_or_update_titles",
+                        title=format_title,
+                        language=lang
+                    ),
+                )
     return data
 
 

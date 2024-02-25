@@ -336,7 +336,10 @@ class DocumentTitle(TextLanguageMixin, CommonControlField):
         title,
     ):
         if title:
-            return cls.objects.get(plain_text=title)
+            try:
+                return cls.objects.get(plain_text=title)
+            except cls.MultipleObjectsReturned:
+                return cls.objects.first(plain_text=title)
         raise ValueError("DocumentTitle requires title parameter")
 
     @classmethod
