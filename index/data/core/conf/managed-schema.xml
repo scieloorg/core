@@ -226,7 +226,10 @@
     <field name="publisher" type="string" indexed="false" stored="true" multiValued="false"/>
 
     <!-- Digital Object Identifier DOI -->
-    <field name="doi" type="text" indexed="true" stored="true" multiValued="false"/>
+    <field name="doi" type="text" indexed="true" stored="true" multiValued="true"/>
+    
+    <!-- Abstract **from:ab to:abstract_language** -->
+    <field name="la_abstract" type="lowercase" indexed="true" stored="true" multiValued="true" />
 
     <!-- Digital Object Identifier DOI -->
     <field name="orcid" type="text" indexed="true" stored="true" multiValued="true"/>
@@ -269,7 +272,7 @@
     <dynamicField name="ti_*"  type="text" indexed="false" stored="true"  multiValued="true"/>
 
     <!-- Field to journal CNPQ subject areas -->
-    <field name="subject_area"  type="string" indexed="true" stored="true"  multiValued="true"/>
+    <field name="subject_areas"  type="text" indexed="true" stored="true"  multiValued="true"/>
 
     <!-- Dynamic Field to Article Keywords in any languages -->
     <dynamicField name="keyword_*"  type="text" indexed="false" stored="true"  multiValued="true"/>
