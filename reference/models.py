@@ -1,12 +1,56 @@
-from django.db import models
+from django.db import models, IntegrityError
+from modelcluster.fields import ParentalKey
 
 from core.models import CommonControlField
 
+from journal.models import Journal
 # Create your models here.
 
 
 class JournalTitle(CommonControlField):
-    title = models.TextField(null=True, blank=True)
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="other_titles", null=True
+    )
+    title = models.TextField(null=True, blank=True, unique=True)
 
+    @classmethod
+    def get(
+        cls,
+        title,
+    ):
+        if not title:
+            raise ValueError("JournalTitle.get requires title paramenter")
+        return cls.objects.get(title=title)
+        
+    @classmethod
+    def create(
+        cls,
+        title,
+        journal,
+        user,
+    ):
+        try:
+            obj = cls(
+                title=title,
+                journal=journal,
+                creator=user,
+            )
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(title=title)
+
+    @classmethod
+    def create_or_update(
+        cls,
+        title,
+        journal,
+        user,
+    ):
+        try:
+            return cls.get(title=title)
+        except cls.DoesNotExist:
+            return cls.create(title=title, journal=journal, user=user)
+    
     def __str__(self):
         return f"{self.title}"

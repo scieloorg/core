@@ -59,16 +59,16 @@ def create_or_update_journal(
     user,
 ):
     title = extract_value(title)
-    other_titles = get_or_create_other_titles(other_titles=other_titles, user=user)
 
     journal = Journal.create_or_update(
         user=user,
         official_journal=official_journal,
         title=title,
         short_title=extract_value(short_title),
-        other_titles=other_titles,
         submission_online_url=extract_value(submission_online_url),
     )
+    get_or_create_other_titles(journal=journal, other_titles=other_titles, user=user)
+
     return journal
 
 
@@ -500,20 +500,18 @@ def get_collection(collection):
         return None
 
 
-def get_or_create_other_titles(other_titles, user):
-    data = []
+def get_or_create_other_titles(journal, other_titles, user):
     if other_titles:
         ot = extract_value(other_titles)
         if isinstance(ot, str):
             ot = [ot]
         for t in ot:
-            obj, created = JournalTitle.objects.get_or_create(
-                title=t,
-                creator=user,
-            )
-            data.append(obj)
-        # journal.other_titles.set(data)
-        return data
+            if t:
+                obj = JournalTitle.create_or_update(
+                    title=t,
+                    journal=journal,
+                    user=user,
+                )
 
 
 def get_or_create_mission(mission, journal, user):
