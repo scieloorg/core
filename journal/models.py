@@ -2493,3 +2493,48 @@ class JournalLogo(CommonControlField):
             null=True,
             blank=True,
     )
+
+    class Meta:
+        unique_together = [("journal", "logo")]
+
+    
+    @classmethod
+    def get(
+        cls,
+        journal,
+        logo,
+    ):
+        if not journal and not logo:
+            raise ValueError("JournalLogo.get requires journal and logo paramenters")
+        return cls.objects.get(journal=journal, logo=logo)
+    
+
+    @classmethod
+    def create(
+        cls,
+        journal,
+        logo,
+        user,
+    ):
+        try:
+            obj = cls(
+                journal=journal,
+                logo=logo,
+                creator=user,
+            )
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(journal=journal, logo=logo)
+        
+    @classmethod
+    def create_or_update(
+        cls,
+        journal,
+        logo,
+        user,
+    ):
+        try:
+            return cls.get(journal=journal, logo=logo)
+        except cls.DoesNotExist:
+            return cls.create(journal=journal, logo=logo, user=user)
