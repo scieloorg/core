@@ -1,9 +1,13 @@
 import sys
 
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
+from wagtail.images.models import Image
 
+from core.utils.utils import fetch_data
 from collection.models import Collection
 from config import celery_app
+from journal.models import SciELOJournal, JournalLogo, Journal
 from journal.sources import classic_website
 from journal.sources.article_meta import process_journal_article_meta, _register_journal_data
 from tracker.models import UnexpectedEvent
@@ -85,5 +89,48 @@ def load_journal_from_article_meta_for_one_collection(
             detail={
                 "task": "journal.tasks.load_journal_from_article_meta_for_one_collection",
                 "collection_acron": collection_acron,
+            },
+        )
+
+
+@celery_app.task(bind=True)
+def load_journal_logo(self, user_id=None, username=None):
+    for scielo_journal in SciELOJournal.objects.all():
+        collection = scielo_journal.collection
+        domain = collection.domain
+        collection_acron3 = collection.acron3
+        journal_acron = scielo_journal.journal_acron
+        journal_id = scielo_journal.journal.id
+        fetch_and_process_journal_logo.apply_async(kwargs=dict(collection_acron3=collection_acron3, domain=domain, journal_acron=journal_acron, journal_id=journal_id, username=username))
+
+        
+@celery_app.task(bind=True)
+def fetch_and_process_journal_logo(self, collection_acron3, domain, journal_acron, journal_id, user_id=None, username=None):
+    user = _get_user(self.request, username=username, user_id=user_id)
+    if collection_acron3 == 'scl':
+        url_logo = f"https://{domain}/media/images/{journal_acron}_glogo.gif"
+    else:
+        url_logo = f"http://{domain}/img/revistas/{journal_acron}/glogo.gif"
+    
+    try:
+        response = fetch_data(url_logo, json=False, timeout=2, verify=True)
+        logo_data = response
+        img_wagtail = Image(title=journal_acron)
+        img_wagtail.file.save(f"{journal_acron}_glogo.gif", ContentFile(logo_data))
+        journal = Journal.objects.get(id=journal_id)
+        JournalLogo.create_or_update(
+            journal=journal,
+            logo=img_wagtail,
+            user=user
+        )
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "function": "journal.tasks.fetch_and_process_logo_journal",
+                "journal_id": journal_id,
+                "domain": domain,
             },
         )
