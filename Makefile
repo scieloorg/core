@@ -128,3 +128,7 @@ clean_migrations: ## Remove all migrations
 	@find . -path "*/migrations/*.py" -not -name "__init__.py" -not -path "./django_celery_beat/migrations*" -not -path "./core_settings/migrations*" -not -path "./core/contrib/sites/migrations*" -not -path "./core/users/migrations*" -delete
 	@find . -path "*/migrations/*.pyc" -delete
 	@echo "Migrations cleaned successfully."
+
+clean_celery_logs:
+	@sudo truncate -s 0 $$(docker inspect --format='{{.LogPath}}' scielo_core_local_celeryworker)
+	
