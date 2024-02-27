@@ -34,6 +34,7 @@ from journal.models import (
     WebOfKnowledge,
     WebOfKnowledgeSubjectCategory,
     TitleInDatabase,
+    JournalLogo,
 )
 from location.models import City, CountryName, Location, State, Country
 from reference.models import JournalTitle
@@ -269,23 +270,21 @@ def update_panel_institution(
 def update_logo(
     journal,
 ):
-    for scielo_journal in SciELOJournal.objects.filter(journal=journal).iterator():
-        collection = scielo_journal.collection
-        domain = collection.domain
-        journal_acron = scielo_journal.journal_acron
-        if collection.acron3 == 'scl':
-            url_logo = f"https://{domain}/media/images/{journal_acron}_glogo.gif"
-        else:
-            url_logo = f"http://{domain}/img/revistas/{journal_acron}/glogo.gif"
-        break
-
-    response = fetch_data(url_logo, json=False, timeout=30, verify=True)
-
-    logo_data = response
-    img_wagtail = Image(title=journal_acron)
-    img_wagtail.file.save(f"{journal_acron}_glogo.gif", ContentFile(logo_data))
-    journal.logo = img_wagtail
-
+    try:
+        if journal_logo := JournalLogo.objects.filter(journal=journal).first():
+            journal.logo = journal_logo.logo
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "function": "journal.sources.article_meta.update_logo",
+                "journal_id": journal.id,
+                "journal_title": journal.title,
+            },
+        )
+    
 
 def update_panel_website(
     journal,
