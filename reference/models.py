@@ -13,14 +13,20 @@ class JournalTitle(CommonControlField):
     )
     title = models.TextField(null=True, blank=True, unique=True)
 
+
+    class Meta:
+        unique_together = [("journal", "title")]
+
+
     @classmethod
     def get(
         cls,
         title,
+        journal,
     ):
-        if not title:
+        if not title and not journal:
             raise ValueError("JournalTitle.get requires title paramenter")
-        return cls.objects.get(title=title)
+        return cls.objects.get(journal=journal, title=title)
         
     @classmethod
     def create(
@@ -38,7 +44,7 @@ class JournalTitle(CommonControlField):
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(title=title)
+            return cls.get(title=title, journal=journal)
 
     @classmethod
     def create_or_update(
@@ -48,7 +54,7 @@ class JournalTitle(CommonControlField):
         user,
     ):
         try:
-            return cls.get(title=title)
+            return cls.get(title=title, journal=journal)
         except cls.DoesNotExist:
             return cls.create(title=title, journal=journal, user=user)
     
