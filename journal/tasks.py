@@ -134,3 +134,19 @@ def fetch_and_process_journal_logo(self, collection_acron3, domain, journal_acro
                 "domain": domain,
             },
         )
+
+
+@celery_app.task(bind=True)
+def assign_logo_to_all_journals(self, user_id=None, username=None):
+    for journal in Journal.objects.all():
+        update_journal_logo_if_exists.apply_async(kwargs=dict(
+            journal_id=journal.id,
+        ))
+
+@celery_app.task(bind=True)
+def update_journal_logo_if_exists(self, journal_id, user_i=None, username=None):
+    journal = Journal.objects.get(id=journal_id)
+    if journal_logo := JournalLogo.objects.filter(journal=journal).first():
+        journal.logo = journal_logo.logo
+        journal.save()
+        
