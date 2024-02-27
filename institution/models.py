@@ -44,7 +44,7 @@ class Institution(CommonControlField, ClusterableModel):
 
     base_form_class = CoreAdminModelForm
     panels = [
-        FieldPanel("institution_identification"),
+        AutocompletePanel("institution_identification"),
         FieldPanel("institution_type"),
         AutocompletePanel("location"),
         FieldPanel("level_1"),
@@ -672,7 +672,7 @@ class InstitutionIdentification(CommonControlField):
         FieldPanel("name"),
         FieldPanel("acronym"),
         FieldPanel("is_official"),
-        FieldPanel("official"),
+        AutocompletePanel("official"),
     ]
 
     class Meta:
