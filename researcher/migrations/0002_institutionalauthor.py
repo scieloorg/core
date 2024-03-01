@@ -37,12 +37,12 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "institutional_author",
+                    "collab",
                     models.TextField(
                         blank=True,
                         null=True,
                         unique=True,
-                        verbose_name="Institutional Author",
+                        verbose_name="Collab",
                     ),
                 ),
                 (
