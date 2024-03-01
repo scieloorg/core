@@ -28,9 +28,10 @@ from institution.models import Sponsor
 from issue.models import Issue, TocSection
 from journal.models import Journal, OfficialJournal
 from researcher.exceptions import PersonNameCreateError
-from researcher.models import Researcher, InstitutionalAuthor
+from researcher.models import Researcher, InstitutionalAuthor, Affiliation
 from tracker.models import UnexpectedEvent
 from vocabulary.models import Keyword
+from location.models import Location
 
 
 class XMLSPSArticleSaveError(Exception):
@@ -347,12 +348,29 @@ def create_or_update_researchers(xmltree, user):
 def get_or_create_institution_authors(xmltree, user):
     data = []
     authors = Authors(xmltree=xmltree).contribs_with_affs
+    affiliation = None
     for author in authors:
         try:
-            if author.get("collab"):
+            if collab := author.get("collab"):
+                if affs := author.get("affs"):
+                    for aff in affs:
+                        location = Location.create_or_update(
+                            user=user,
+                            country_name=aff.get("country_name"),
+                            state_name=aff.get("state"),
+                            city_name=aff.get("city")
+                        )
+                        affiliation = Affiliation.create_or_update(
+                            name=aff.get("orgname"),
+                            level_1=aff.get("orgdiv1"),
+                            level_2=aff.get("orgdiv2"),
+                            location=location,
+                            user=user,
+                        )
                 obj = InstitutionalAuthor.get_or_create(
-                    name=author.get("collab"),
-                    user=user
+                    collab=collab,
+                    affiliation=affiliation,
+                    user=user,
                 )
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
