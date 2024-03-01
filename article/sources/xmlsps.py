@@ -326,7 +326,6 @@ def create_or_update_researchers(xmltree, user):
                         'aff_country_acronym': get_safe_value(aff, "country_code"),
                         'aff_country_name': get_safe_value(aff, "country_name"),
                         'aff_state_text': get_safe_value(aff, "state"),
-                        'email': aff.get("email"),
                     }
                     obj = Researcher.create_or_update(**aff_data)
                     data.append(obj)
