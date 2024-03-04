@@ -11,7 +11,7 @@ class JournalTitle(CommonControlField):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="other_titles", null=True
     )
-    title = models.TextField(null=True, blank=True, unique=True)
+    title = models.TextField(null=True, blank=True)
 
 
     class Meta:
