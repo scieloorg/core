@@ -36,6 +36,7 @@ from journal.models import (
     TitleInDatabase,
     JournalLogo,
 )
+from journal import tasks
 from location.models import City, CountryName, Location, State, Country
 from reference.models import JournalTitle
 from vocabulary.models import Vocabulary
@@ -273,6 +274,8 @@ def update_logo(
     try:
         if journal_logo := JournalLogo.objects.filter(journal=journal).first():
             journal.logo = journal_logo.logo
+        else:
+            tasks.fetch_and_process_journal_logo.apply_async(kwargs=dict(journal_id=journal.id))
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
