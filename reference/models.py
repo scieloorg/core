@@ -26,7 +26,7 @@ class JournalTitle(CommonControlField):
     ):
         if not title and not journal:
             raise ValueError("JournalTitle.get requires title paramenter")
-        return cls.objects.get(journal=journal, title=title)
+        return journal.other_titles.get(title=title)
         
     @classmethod
     def create(
