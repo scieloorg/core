@@ -44,7 +44,6 @@ class CollectionAdmin(ModelAdmin):
         "acron2",
         "code",
         "domain",
-        "name__text",
         "main_name",
     )
     list_export = (
