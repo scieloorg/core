@@ -605,8 +605,8 @@ class InstitutionalAuthor(CommonControlField):
         collab,
         affiliation,
     ):
-        if not collab and not affiliation:
-            raise ValueError("InstitutionalAuthor.get requires collab and affiliation paramenters")
+        if not collab:
+            raise ValueError("InstitutionalAuthor.get requires collab paramenter")
         return cls.objects.get(collab__iexact=collab, affiliation=affiliation)
     
     @classmethod
