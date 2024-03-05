@@ -41,7 +41,6 @@ class Migration(migrations.Migration):
                     models.TextField(
                         blank=True,
                         null=True,
-                        unique=True,
                         verbose_name="Collab",
                     ),
                 ),
