@@ -317,6 +317,7 @@ def create_or_update_researchers(xmltree, user):
                 data.append(obj)
             else:
                 for aff in affs:
+                    email = author.get("email") or aff.get("email")
                     aff_data = {
                         **researcher_data,
                         'aff_name': get_safe_value(aff, "orgname"),
@@ -326,6 +327,7 @@ def create_or_update_researchers(xmltree, user):
                         'aff_country_acronym': get_safe_value(aff, "country_code"),
                         'aff_country_name': get_safe_value(aff, "country_name"),
                         'aff_state_text': get_safe_value(aff, "state"),
+                        'email': email,
                     }
                     obj = Researcher.create_or_update(**aff_data)
                     data.append(obj)
@@ -347,9 +349,10 @@ def create_or_update_researchers(xmltree, user):
 def get_or_create_institution_authors(xmltree, user):
     data = []
     authors = Authors(xmltree=xmltree).contribs_with_affs
-    affiliation = None
+
     for author in authors:
         try:
+            affiliation = None
             if collab := author.get("collab"):
                 if affs := author.get("affs"):
                     for aff in affs:
