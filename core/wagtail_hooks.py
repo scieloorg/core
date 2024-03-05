@@ -11,7 +11,7 @@ from wagtail.contrib.modeladmin.views import EditView
 from article.models import Article
 from collection.models import Collection
 from journal.models import Journal
-
+from config.settings.base import ADMIN_SCIELO
 
 @hooks.register("insert_global_admin_css", order=100)
 def global_admin_css():
@@ -100,7 +100,7 @@ class BaseEditView(EditView):
         e 'InlinePanel'.
         """
         edit_handler = super().get_edit_handler()
-        if not self.request.user.is_superuser:
+        if not self.request.user.groups.filter(name=ADMIN_SCIELO).exists():
             for object_list in edit_handler.children:
                 for field in object_list.children:
                     if isinstance(field, FieldPanel) and field.field_name in self.readonly_fields:
