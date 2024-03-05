@@ -588,7 +588,7 @@ class ResearcherAKA(CommonControlField, Orderable):
 
 
 class InstitutionalAuthor(CommonControlField):
-    collab = models.TextField(_("Collab"), blank=True, null=True, unique=True)
+    collab = models.TextField(_("Collab"), blank=True, null=True)
     affiliation = models.ForeignKey("Affiliation", on_delete=models.SET_NULL, null=True, blank=True)
 
     autocomplete_search_field = "collab"
