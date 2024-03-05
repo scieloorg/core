@@ -588,48 +588,59 @@ class ResearcherAKA(CommonControlField, Orderable):
 
 
 class InstitutionalAuthor(CommonControlField):
-    institutional_author = models.TextField(_("Institutional Author"), blank=True, null=True, unique=True)
+    collab = models.TextField(_("Collab"), blank=True, null=True)
+    affiliation = models.ForeignKey("Affiliation", on_delete=models.SET_NULL, null=True, blank=True)
 
-    autocomplete_search_field = "institutional_author"
+    autocomplete_search_field = "collab"
 
     def autocomplete_label(self):
         return str(self)
 
+
+    class Meta:
+        unique_together = [("collab", "affiliation")]
+
     @classmethod
     def get(
         cls,
-        name,
+        collab,
+        affiliation,
     ):
-        if not name:
-            raise ValueError("InstitutionalAuthor.get requires name paramenter")
-        return cls.objects.get(institutional_author__iexact=name)
+        if not collab:
+            raise ValueError("InstitutionalAuthor.get requires collab paramenter")
+        return cls.objects.get(collab__iexact=collab, affiliation=affiliation)
+
     
     @classmethod
     def create(
         cls,
-        name,
+        collab,
+        affiliation,
         user,
     ):
         try:
             obj = cls(
-                institutional_author=name,
+                collab=collab,
+                affiliation=affiliation,
                 creator=user,
             )
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(name=name)
+            return cls.get(collab=collab, affiliation=affiliation)
+
     
     @classmethod
     def get_or_create(
         cls,
-        name,
+        collab,
+        affiliation,
         user,
     ):
         try:
-            return cls.get(name=name)
+            return cls.get(collab=collab, affiliation=affiliation)
         except cls.DoesNotExist:
-            return cls.create(name=name, user=user)
+            return cls.create(collab=collab, affiliation=affiliation, user=user)
     
     def __str__(self):
-        return f"{self.institutional_author}"
+        return f"{self.collab}"

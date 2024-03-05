@@ -3,8 +3,11 @@ import re
 import sys
 from datetime import datetime
 from urllib.parse import urlparse
+from core.utils.utils import fetch_data
 
 from django.db.models import Q
+from django.core.files.base import ContentFile
+from wagtail.images.models import Image
 
 from collection.exceptions import MainCollectionNotFoundError
 from core.models import Language, License
@@ -263,6 +266,27 @@ def update_panel_institution(
     )
 
 
+def update_logo(
+    journal,
+):
+    for scielo_journal in SciELOJournal.objects.filter(journal=journal).iterator():
+        collection = scielo_journal.collection
+        domain = collection.domain
+        journal_acron = scielo_journal.journal_acron
+        if collection.acron3 == 'scl':
+            url_logo = f"https://{domain}/media/images/{journal_acron}_glogo.gif"
+        else:
+            url_logo = f"http://{domain}/img/revistas/{journal_acron}/glogo.gif"
+        break
+
+    response = fetch_data(url_logo, json=False, timeout=30, verify=True)
+
+    logo_data = response
+    img_wagtail = Image(title=journal_acron)
+    img_wagtail.file.save(f"{journal_acron}_glogo.gif", ContentFile(logo_data))
+    journal.logo = img_wagtail
+
+
 def update_panel_website(
     journal,
     url_of_the_journal,
@@ -281,6 +305,7 @@ def update_panel_website(
     assign_journal_to_main_collection(
         journal=journal, url_of_the_main_collection=url_of_the_main_collection
     )
+    update_logo(journal)
 
 
 def update_panel_notes(

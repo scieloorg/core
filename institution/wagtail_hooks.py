@@ -72,15 +72,17 @@ class InstitutionAdmin(ModelAdmin):
     )
     list_display = (
         "institution_identification",
+        "location",
         "institution_type",
         "updated",
         "created",
     )
     search_fields = (
-        "institution_identification",
+        "institution_identification__name",
         "institution_type",
-        "updated",
-        "created",
+        "location__country__name",
+        "location__state__name",
+        "location__city__name",
     )
     list_export = (
         "institution_identification__name",
