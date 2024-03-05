@@ -585,3 +585,59 @@ class ResearcherAKA(CommonControlField, Orderable):
             return cls.create(
                 user, researcher_identifier, researcher
             )
+
+
+class InstitutionalAuthor(CommonControlField):
+    collab = models.TextField(_("Collab"), blank=True, null=True)
+    affiliation = models.ForeignKey("Affiliation", on_delete=models.SET_NULL, null=True, blank=True)
+
+    autocomplete_search_field = "collab"
+
+    def autocomplete_label(self):
+        return str(self)
+
+    class Meta:
+        unique_together = [("collab", "affiliation")]
+
+    @classmethod
+    def get(
+        cls,
+        collab,
+        affiliation,
+    ):
+        if not collab:
+            raise ValueError("InstitutionalAuthor.get requires collab paramenter")
+        return cls.objects.get(collab__iexact=collab, affiliation=affiliation)
+    
+    @classmethod
+    def create(
+        cls,
+        collab,
+        affiliation,
+        user,
+    ):
+        try:
+            obj = cls(
+                collab=collab,
+                affiliation=affiliation,
+                creator=user,
+            )
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(collab=collab, affiliation=affiliation)
+    
+    @classmethod
+    def get_or_create(
+        cls,
+        collab,
+        affiliation,
+        user,
+    ):
+        try:
+            return cls.get(collab=collab, affiliation=affiliation)
+        except cls.DoesNotExist:
+            return cls.create(collab=collab, affiliation=affiliation, user=user)
+    
+    def __str__(self):
+        return f"{self.collab}"

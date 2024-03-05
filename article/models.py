@@ -31,7 +31,7 @@ from institution.models import Institution, Sponsor
 from issue.models import Issue, TocSection
 from journal.models import Journal, SciELOJournal
 from pid_provider.provider import PidProvider
-from researcher.models import Researcher
+from researcher.models import Researcher, InstitutionalAuthor
 from vocabulary.models import Keyword
 from tracker.models import UnexpectedEvent
 
@@ -73,6 +73,7 @@ class Article(CommonControlField, ClusterableModel):
     languages = models.ManyToManyField(Language, blank=True)
     titles = models.ManyToManyField("DocumentTitle", blank=True)
     researchers = models.ManyToManyField(Researcher, blank=True)
+    collab = models.ManyToManyField(InstitutionalAuthor, blank=True)
     article_type = models.CharField(max_length=50, null=True, blank=True)
     # abstracts = models.ManyToManyField("DocumentAbstract", blank=True)
     toc_sections = models.ManyToManyField(TocSection, blank=True)
@@ -118,6 +119,7 @@ class Article(CommonControlField, ClusterableModel):
     ]
     panels_researchers = [
         AutocompletePanel("researchers"),
+        AutocompletePanel("collab"),
     ]
     panels_institutions = [
         AutocompletePanel("publisher"),
@@ -334,7 +336,10 @@ class DocumentTitle(TextLanguageMixin, CommonControlField):
         title,
     ):
         if title:
-            return cls.objects.get(plain_text=title)
+            try:
+                return cls.objects.get(plain_text=title)
+            except cls.MultipleObjectsReturned:
+                return cls.objects.first(plain_text=title)
         raise ValueError("DocumentTitle requires title parameter")
 
     @classmethod

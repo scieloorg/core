@@ -457,7 +457,7 @@ SEARCH_FACET_LIST = [
     "journal_title",
     "la",
     "year_cluster",
-    "subject_area",
+    "subject_areas",
     "wok_subject_categories",
     "wok_citation_index",
     "type",

@@ -175,7 +175,7 @@ def provide_pid_for_opac_xmls(
                 f"https://www.scielo.br/api/v1/counter_dict?end_date={end_date}"
                 f"&begin_date={begin_date}&limit={limit}&page={page}"
             )
-            response = fetch_data(uri, json=True, timeout=30, verify=True)
+            response = fetch_data(uri, json=True, timeout=2, verify=True)
             pages = pages or response["pages"]
             documents = response["documents"]
 

@@ -28,9 +28,10 @@ from institution.models import Sponsor
 from issue.models import Issue, TocSection
 from journal.models import Journal, OfficialJournal
 from researcher.exceptions import PersonNameCreateError
-from researcher.models import Researcher
+from researcher.models import Researcher, InstitutionalAuthor, Affiliation
 from tracker.models import UnexpectedEvent
 from vocabulary.models import Keyword
+from location.models import Location
 
 
 class XMLSPSArticleSaveError(Exception):
@@ -95,6 +96,7 @@ def load_article(user, xml=None, file_path=None, v3=None):
         article.researchers.set(
             create_or_update_researchers(xmltree=xmltree, user=user)
         )
+        article.collab.set(get_or_create_institution_authors(xmltree=xmltree, user=user))
         article.languages.add(get_or_create_main_language(xmltree=xmltree, user=user))
         article.keywords.set(get_or_create_keywords(xmltree=xmltree, user=user))
         article.toc_sections.set(get_or_create_toc_sections(xmltree=xmltree, user=user))
@@ -165,16 +167,16 @@ def get_or_create_fundings(xmltree, user):
             award_ids = funding.get("award-id") or []
 
             for fs in funding_source:
+                sponsor = create_or_update_sponsor(funding_name=fs, user=user)
                 for award_id in award_ids:
                     try:
                         obj = ArticleFunding.get_or_create(
                             award_id=award_id,
-                            funding_source=create_or_update_sponsor(
-                                funding_name=fs, user=user
-                            ),
+                            funding_source=sponsor,
                             user=user,
                         )
-                        data.append(obj)
+                        if obj:
+                            data.append(obj)
                     except Exception as e:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
                         UnexpectedEvent.create(
@@ -182,7 +184,7 @@ def get_or_create_fundings(xmltree, user):
                             exc_traceback=exc_traceback,
                             detail=dict(
                                 xmltree=f"{etree.tostring(xmltree)}",
-                                function="article.xmlsps.get_or_create_keywords",
+                                function="article.xmlsps.sources.get_or_create_fundings",
                                 funding_source=fs,
                                 award_id=award_id,
                             ),
@@ -259,27 +261,28 @@ def get_or_create_keywords(xmltree, user):
 def create_or_update_abstract(xmltree, user, article):
     data = []
     if xmltree.find(".//abstract") is not None:
-        try:
-            abstract = Abstract(xmltree=xmltree).get_abstracts(style="inline")
-            for ab in abstract:
-                obj = DocumentAbstract.create_or_update(
-                    user=user,
-                    article=article,
-                    language=get_or_create_language(ab.get("lang"), user=user),
-                    text=ab.get("abstract"),
-                )
-                data.append(obj)
-        except AttributeError as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail=dict(
-                    xmltree=f"{etree.tostring(xmltree)}",
-                    function="article.xmlsps.create_or_update_abstract",
-                    abstract=ab,
-                ),
-            )
+        abstract = Abstract(xmltree=xmltree).get_abstracts(style="inline")
+        for ab in abstract:
+            if ab:
+                try:
+                    obj = DocumentAbstract.create_or_update(
+                        user=user,
+                        article=article,
+                        language=get_or_create_language(ab.get("lang"), user=user),
+                        text=ab.get("abstract"),
+                    )
+                    data.append(obj)
+                except AttributeError as e:
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    UnexpectedEvent.create(
+                        exception=e,
+                        exc_traceback=exc_traceback,
+                        detail=dict(
+                            xmltree=f"{etree.tostring(xmltree)}",
+                            function="article.xmlsps.sources.create_or_update_abstract",
+                            abstract=ab,
+                        ),
+                    )
     return data
 
 
@@ -294,81 +297,94 @@ def create_or_update_researchers(xmltree, user):
     # Falta gender e gender_identification_status
     data = []
     for author in authors:
-        if not author.get("affs"):
-            try:
-                # {'surname': 'Reyes-Oviedo', 'given_names': 'Emma', 'aff_rids': None, 'contrib-type': 'author'}
-                obj = Researcher.create_or_update(
-                    user,
-                    given_names=author.get("given_names"),
-                    last_name=author.get("surname"),
-                    suffix=author.get("suffix"),
-                    declared_name=None,
-                    affiliation=None,
-                    lang=article_lang,
-                    orcid=author.get("orcid"),
-                    lattes=author.get("lattes"),
-                    other_ids=None,
-                    email=author.get("email"),
-                    gender=author.get("gender"),
-                    gender_identification_status=author.get(
-                        "gender_identification_status"
-                    ),
-                )
-                data.append(obj)
-            except Exception as e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                UnexpectedEvent.create(
-                    exception=e,
-                    exc_traceback=exc_traceback,
-                    detail=dict(
-                        xmltree=f"{etree.tostring(xmltree)}",
-                        function="article.xmlsps.create_or_update_researchers",
-                        author=author,
-                    ),
-                )
+        try:
+            researcher_data = {
+                'user': user,
+                'given_names': author.get("given_names"),
+                'last_name': author.get("surname"),
+                'suffix': author.get("suffix"),
+                'lang': article_lang,
+                'orcid': author.get("orcid"),
+                'lattes': author.get("lattes"),
+                'email': author.get("email"),
+                'gender': author.get("gender"),
+                'gender_identification_status': author.get("gender_identification_status"),
+            }
 
-        for aff in author.get("affs") or []:
-            try:
-                obj = Researcher.create_or_update(
-                    user,
-                    given_names=author.get("given_names"),
-                    last_name=author.get("surname"),
-                    suffix=author.get("suffix"),
-                    declared_name=None,
-                    affiliation=None,
-                    aff_name=get_safe_value(aff, "orgname"),
-                    aff_div1=get_safe_value(aff, "orgdiv1"),
-                    aff_div2=get_safe_value(aff, "orgdiv2"),
-                    aff_city_name=get_safe_value(aff, "city"),
-                    aff_country_text=None,
-                    aff_country_acronym=get_safe_value(aff, "country_code"),
-                    aff_country_name=get_safe_value(aff, "country_name"),
-                    aff_state_text=get_safe_value(aff, "state"),
-                    aff_state_acronym=None,
-                    aff_state_name=None,
-                    lang=article_lang,
-                    orcid=author.get("orcid"),
-                    lattes=author.get("lattes"),
-                    other_ids=None,
-                    email=author.get("email") or aff.get("email"),
-                    gender=author.get("gender"),
-                    gender_identification_status=author.get(
-                        "gender_identification_status"
-                    ),
-                )
+            affs = author.get("affs", [])
+            if not affs:
+                obj = Researcher.create_or_update(**researcher_data)
                 data.append(obj)
-            except Exception as e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                UnexpectedEvent.create(
-                    exception=e,
-                    exc_traceback=exc_traceback,
-                    detail=dict(
-                        xmltree=f"{etree.tostring(xmltree)}",
-                        function="article.xmlsps.create_or_update_researchers",
-                        author=author,
-                        affiliation=aff,
-                    ),
+            else:
+                for aff in affs:
+                    email = author.get("email") or aff.get("email")
+                    aff_data = {
+                        **researcher_data,
+                        'aff_name': get_safe_value(aff, "orgname"),
+                        'aff_div1': get_safe_value(aff, "orgdiv1"),
+                        'aff_div2': get_safe_value(aff, "orgdiv2"),
+                        'aff_city_name': get_safe_value(aff, "city"),
+                        'aff_country_acronym': get_safe_value(aff, "country_code"),
+                        'aff_country_name': get_safe_value(aff, "country_name"),
+                        'aff_state_text': get_safe_value(aff, "state"),
+                        'email': email,
+                    }
+                    obj = Researcher.create_or_update(**aff_data)
+                    data.append(obj)
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail=dict(
+                    xmltree=f"{etree.tostring(xmltree)}",
+                    function="article.xmlsps.create_or_update_researchers",
+                    author=author,
+                    affiliation=affs,
+                ),
+            )
+    return data
+
+
+def get_or_create_institution_authors(xmltree, user):
+    data = []
+    authors = Authors(xmltree=xmltree).contribs_with_affs
+
+    for author in authors:
+        try:
+            affiliation = None
+            if collab := author.get("collab"):
+                if affs := author.get("affs"):
+                    for aff in affs:
+                        location = Location.create_or_update(
+                            user=user,
+                            country_name=aff.get("country_name"),
+                            state_name=aff.get("state"),
+                            city_name=aff.get("city")
+                        )
+                        affiliation = Affiliation.create_or_update(
+                            name=aff.get("orgname"),
+                            level_1=aff.get("orgdiv1"),
+                            level_2=aff.get("orgdiv2"),
+                            location=location,
+                            user=user,
+                        )
+                obj = InstitutionalAuthor.get_or_create(
+                    collab=collab,
+                    affiliation=affiliation,
+                    user=user,
                 )
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail=dict(
+                    xmltree=f"{etree.tostring(xmltree)}",
+                    function="article.xmlsps.get_or_create_institution_authors",
+                    author=author,
+                ),
+            )
     return data
 
 
@@ -399,13 +415,27 @@ def create_or_update_titles(xmltree, user):
         title_text = title.get("text") or ""
         format_title = " ".join(title_text.split())
         if format_title:
-            obj = DocumentTitle.create_or_update(
-                title=format_title,
-                title_rich=title.get("text"),
-                language=get_or_create_language(title.get("lang"), user=user),
-                user=user,
-            )
-            data.append(obj)
+            try:
+                lang = get_or_create_language(title.get("lang"), user=user)
+                obj = DocumentTitle.create_or_update(
+                    title=format_title,
+                    title_rich=title.get("text"),
+                    language=lang,
+                    user=user,
+                )
+                data.append(obj)
+            except Exception as e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail=dict(
+                        xmltree=f"{xmltree}",
+                        function="article.xmlsps.create_or_update_titles",
+                        title=format_title,
+                        language=lang
+                    ),
+                )
     return data
 
 
