@@ -49,7 +49,6 @@ from journal.exceptions import (
     TitleInDatabaseCreationOrUpdateError,
 )
 from location.models import Location
-from reference.models import JournalTitle
 from vocabulary.models import Vocabulary
 from thematic_areas.models import ThematicArea
 
@@ -331,9 +330,6 @@ class Journal(CommonControlField, ClusterableModel):
     )
     title = models.TextField(_("Journal Title"), null=True, blank=True)
     short_title = models.TextField(_("Short Title"), null=True, blank=True)
-    other_titles = models.ManyToManyField(
-        JournalTitle, verbose_name=_("Other titles"), blank=True
-    )
     logo = models.ForeignKey(
         "wagtailimages.Image",
         on_delete=models.SET_NULL,
@@ -578,7 +574,7 @@ class Journal(CommonControlField, ClusterableModel):
         AutocompletePanel("official"),
         FieldPanel("title"),
         FieldPanel("short_title"),
-        AutocompletePanel("other_titles"),
+        InlinePanel("other_titles", label=_("Other titles"), classname="collapsed"),
     ]
 
     panels_scope_and_about = [
@@ -851,7 +847,6 @@ class Journal(CommonControlField, ClusterableModel):
         official_journal,
         title=None,
         short_title=None,
-        other_titles=None,
         submission_online_url=None,
         open_access=None,
     ):
@@ -873,8 +868,6 @@ class Journal(CommonControlField, ClusterableModel):
         obj.open_access = open_access or obj.open_access
         obj.save()
 
-        if other_titles:
-            obj.other_titles.set(other_titles)
 
         return obj
 
@@ -2484,3 +2477,119 @@ class DataRepository(Orderable, CommonControlField):
         null=True,
         help_text=_("Enter the URI of the data repository."),
     )
+
+
+class JournalLogo(CommonControlField):
+    journal = models.ForeignKey(
+        Journal,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+    logo = models.ForeignKey(
+            "wagtailimages.Image",
+            on_delete=models.SET_NULL,
+            related_name="+",
+            null=True,
+            blank=True,
+    )
+
+    class Meta:
+        unique_together = [("journal", "logo")]
+
+    
+    @classmethod
+    def get(
+        cls,
+        journal,
+        logo,
+    ):
+        if not journal and not logo:
+            raise ValueError("JournalLogo.get requires journal and logo paramenters")
+        return cls.objects.get(journal=journal, logo=logo)
+    
+
+    @classmethod
+    def create(
+        cls,
+        journal,
+        logo,
+        user,
+    ):
+        try:
+            obj = cls(
+                journal=journal,
+                logo=logo,
+                creator=user,
+            )
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(journal=journal, logo=logo)
+        
+    @classmethod
+    def create_or_update(
+        cls,
+        journal,
+        logo,
+        user,
+    ):
+        try:
+            return cls.get(journal=journal, logo=logo)
+        except cls.DoesNotExist:
+            return cls.create(journal=journal, logo=logo, user=user)
+        
+
+class JournalOtherTitle(CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="other_titles", null=True
+    )
+    title = models.TextField(null=True, blank=True)
+
+
+    class Meta:
+        unique_together = [("journal", "title")]
+
+
+    @classmethod
+    def get(
+        cls,
+        title,
+        journal,
+    ):
+        if not title and not journal:
+            raise ValueError("JournalTitle.get requires title paramenter")
+        return journal.other_titles.get(title=title)
+        
+    @classmethod
+    def create(
+        cls,
+        title,
+        journal,
+        user,
+    ):
+        try:
+            obj = cls(
+                title=title,
+                journal=journal,
+                creator=user,
+            )
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(title=title, journal=journal)
+
+    @classmethod
+    def create_or_update(
+        cls,
+        title,
+        journal,
+        user,
+    ):
+        try:
+            return cls.get(title=title, journal=journal)
+        except cls.DoesNotExist:
+            return cls.create(title=title, journal=journal, user=user)
+    
+    def __str__(self):
+        return f"{self.title}"

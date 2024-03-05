@@ -34,9 +34,11 @@ from journal.models import (
     WebOfKnowledge,
     WebOfKnowledgeSubjectCategory,
     TitleInDatabase,
+    JournalLogo,
+    JournalOtherTitle,
 )
+from journal import tasks
 from location.models import City, CountryName, Location, State, Country
-from reference.models import JournalTitle
 from vocabulary.models import Vocabulary
 
 from .am_data_extraction import (
@@ -59,16 +61,16 @@ def create_or_update_journal(
     user,
 ):
     title = extract_value(title)
-    other_titles = get_or_create_other_titles(other_titles=other_titles, user=user)
 
     journal = Journal.create_or_update(
         user=user,
         official_journal=official_journal,
         title=title,
         short_title=extract_value(short_title),
-        other_titles=other_titles,
         submission_online_url=extract_value(submission_online_url),
     )
+    get_or_create_other_titles(journal=journal, other_titles=other_titles, user=user)
+
     return journal
 
 
@@ -269,23 +271,24 @@ def update_panel_institution(
 def update_logo(
     journal,
 ):
-    for scielo_journal in SciELOJournal.objects.filter(journal=journal).iterator():
-        collection = scielo_journal.collection
-        domain = collection.domain
-        journal_acron = scielo_journal.journal_acron
-        if collection.acron3 == 'scl':
-            url_logo = f"https://{domain}/media/images/{journal_acron}_glogo.gif"
+    try:
+        if journal_logo := JournalLogo.objects.filter(journal=journal).first():
+            journal.logo = journal_logo.logo
         else:
-            url_logo = f"http://{domain}/img/revistas/{journal_acron}/glogo.gif"
-        break
-
-    response = fetch_data(url_logo, json=False, timeout=30, verify=True)
-
-    logo_data = response
-    img_wagtail = Image(title=journal_acron)
-    img_wagtail.file.save(f"{journal_acron}_glogo.gif", ContentFile(logo_data))
-    journal.logo = img_wagtail
-
+            # tasks.fetch_and_process_journal_logo.apply_async(kwargs=dict(journal_id=journal.id))
+            pass
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "function": "journal.sources.article_meta.update_logo",
+                "journal_id": journal.id,
+                "journal_title": journal.title,
+            },
+        )
+    
 
 def update_panel_website(
     journal,
@@ -500,20 +503,18 @@ def get_collection(collection):
         return None
 
 
-def get_or_create_other_titles(other_titles, user):
-    data = []
+def get_or_create_other_titles(journal, other_titles, user):
     if other_titles:
         ot = extract_value(other_titles)
         if isinstance(ot, str):
             ot = [ot]
         for t in ot:
-            obj, created = JournalTitle.objects.get_or_create(
-                title=t,
-                creator=user,
-            )
-            data.append(obj)
-        # journal.other_titles.set(data)
-        return data
+            if t:
+                obj = JournalOtherTitle.create_or_update(
+                    title=t,
+                    journal=journal,
+                    user=user,
+                )
 
 
 def get_or_create_mission(mission, journal, user):
