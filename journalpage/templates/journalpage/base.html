@@ -15,11 +15,7 @@
     {% block extra_meta %}{% endblock %}
 
     <link rel="icon" href="{% static 'journal_about/img/favicon.ico' %}">
-    <!--
-    <link rel="stylesheet" href="/static/css/scielo-bundle.css?v=">
-    <link rel="stylesheet" href="/static/css/scielo-bundle-print.css?v=" media="print">
-    -->
-    <link rel="stylesheet" href="{% static 'journal_about/css/bootstrap.css' %}">
+    <link rel="stylesheet" href="https://ds.scielo.org/css/bootstrap.css">
     
     
 
@@ -30,7 +26,7 @@
 
 
   {% block extra_css %}{% endblock %}
-  <link rel="stylesheet" href="{% static 'journal_about/css/toolbar.css' %}" type="text/css"><meta id="bbafmabaelnnkondpfpjmdklbmfnbmol"></head>
+  <link rel="stylesheet" href="https://ds.scielo.org/css/bootstrap.css" type="text/css"><meta id="bbafmabaelnnkondpfpjmdklbmfnbmol"></head>
   </head>
   <body class="journal about" data-bs-spy="scroll" data-bs-target=".navbar" data-bs-offset="0">
     <a name="top"></a>
@@ -118,58 +114,6 @@
       $("#date").text(moment().format("L HH:mm:ss ZZ"));
 
     </script>
-
-      <style type="text/css">
-
-        .bugherd {
-          position: fixed;
-          bottom: 0;
-          width: 15%;
-          height: 40px;
-          right: 0;
-          z-index:999999;
-        }
-        .bugherd-container {
-          width: auto;
-          max-width: 680px;
-          padding: 0 15px;
-        }
-        .bugherd-btn-danger {
-          color: #fff;
-          background-color: #d9534f;
-          border-color: #d43f3a;
-        }
-        .bugherd-btn-danger:focus,
-        .bugherd-btn-danger.focus {
-          color: #fff;
-          background-color: #c9302c;
-          border-color: #761c19;
-        }
-        .bugherd-btn-danger:hover {
-          color: #fff;
-          background-color: #c9302c;
-          border-color: #ac2925;
-        }
-
-        .floatingBtnError {
-          position: fixed;
-          padding: 12px;
-          writing-mode: vertical-rl;
-          right: 8px;
-          top: 45%;
-          transform: rotate(-180deg);
-          line-height: 1rem;
-          height: 160px;
-          transition: none !important;
-          display:none;
-
-          @media (min-width: 1024px){ 
-            display: block;
-          }
-        }
-
-      </style>
-
       <div class="bugherd" style="display:none;">
         <div class="bugherd=container">
           <div class="btn-group" role="group" aria-label="...">
