@@ -872,10 +872,10 @@ class Journal(CommonControlField, ClusterableModel):
         return obj
 
     def __unicode__(self):
-        return f"{self.title}" or f"{self.official.title}"
+        return f"{self.title}" or f"{self.official and self.official.title or ''}"
 
     def __str__(self):
-        return f"{self.title}" or f"{self.official.title}"
+        return f"{self.title}" or f"{self.official and self.official.title or ''}"
 
     base_form_class = CoreAdminModelForm
 
