@@ -349,7 +349,6 @@ def create_or_update_researchers(xmltree, user):
 def get_or_create_institution_authors(xmltree, user):
     data = []
     authors = Authors(xmltree=xmltree).contribs_with_affs
-
     for author in authors:
         try:
             affiliation = None
