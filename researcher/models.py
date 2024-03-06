@@ -596,6 +596,7 @@ class InstitutionalAuthor(CommonControlField):
     def autocomplete_label(self):
         return str(self)
 
+
     class Meta:
         unique_together = [("collab", "affiliation")]
 
@@ -608,6 +609,7 @@ class InstitutionalAuthor(CommonControlField):
         if not collab:
             raise ValueError("InstitutionalAuthor.get requires collab paramenter")
         return cls.objects.get(collab__iexact=collab, affiliation=affiliation)
+
     
     @classmethod
     def create(
@@ -626,6 +628,7 @@ class InstitutionalAuthor(CommonControlField):
             return obj
         except IntegrityError:
             return cls.get(collab=collab, affiliation=affiliation)
+
     
     @classmethod
     def get_or_create(
