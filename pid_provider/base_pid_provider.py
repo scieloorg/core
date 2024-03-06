@@ -117,7 +117,7 @@ class BasePidProvider:
                     "operation": "PidProvider.provide_pid_for_xml_uri",
                     "input": dict(
                         xml_uri=xml_uri,
-                        user=user.username,
+                        user=user.username if user else "None",
                         name=name,
                         origin_date=origin_date,
                         force_update=force_update,
