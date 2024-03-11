@@ -466,3 +466,7 @@ SEARCH_FACET_LIST = [
 WAGTAIL_USER_EDIT_FORM = 'core.users.forms.CustomUserEditForm'
 WAGTAIL_USER_CREATION_FORM = 'core.users.forms.CustomUserCreationForm'
 WAGTAIL_USER_CUSTOM_FIELDS = ['collection', 'journal']
+
+# Name of Groups
+COLLECTION_TEAM = "Collection Team"
+JOURNAL_TEAM = "Journal Team"
