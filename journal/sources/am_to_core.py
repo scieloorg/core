@@ -753,7 +753,7 @@ def create_or_update_location(
         [{'_': 'Rua Felizardo, 750 Jardim Botânico'}, {'_': 'CEP: 90690-200'}, {'_': 'RS - Porto Alegre'}, {'_': '(51) 3308 5814'}]
     """
 
-    country = standardize_location(extract_value(publisher_city), Country, user=user)
+    country = standardize_location(extract_value(publisher_country), Country, user=user)
     city = standardize_location(extract_value(publisher_city), City, user=user)
     state = standardize_location(extract_value(publisher_state), State, user=user)
 
