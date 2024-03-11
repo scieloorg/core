@@ -484,7 +484,7 @@ class Journal(CommonControlField, ClusterableModel):
         blank=True,
     )
     use_license = models.ForeignKey(
-        License,
+        "JournalLicense",
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
@@ -2593,3 +2593,80 @@ class JournalOtherTitle(CommonControlField):
     
     def __str__(self):
         return f"{self.title}"
+
+
+class JournalLicense(CommonControlField):
+    license_type = models.CharField(max_length=255, null=True, blank=True)
+
+    autocomplete_search_field = "license_type"
+
+    def autocomplete_label(self):
+        return str(self)
+
+    panels = [
+        FieldPanel("license_type"),
+    ]
+
+    class Meta:
+        unique_together = [("license_type", )]
+        verbose_name = _("License")
+        verbose_name_plural = _("Licenses")
+        indexes = [
+            models.Index(
+                fields=[
+                    "license_type",
+                ]
+            ),
+        ]
+
+    def __unicode__(self):
+        return self.license_type or ""
+
+    def __str__(self):
+        return self.license_type or ""
+
+    @classmethod
+    def load(cls, user):
+        for license_type, v in choices.LICENSE_TYPES:
+            cls.create_or_update(user, license_type)
+
+    @classmethod
+    def get(
+        cls,
+        license_type,
+    ):
+        if not license_type:
+            raise ValueError("License.get requires license_type parameters")
+        filters = dict(
+            license_type__iexact=license_type
+        )
+        try:
+            return cls.objects.get(**filters)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(**filters).first()
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        license_type=None,
+    ):
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.license_type = license_type or obj.license_type
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(license_type=license_type)
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        license_type=None,
+    ):
+        try:
+            return cls.get(license_type=license_type)
+        except cls.DoesNotExist:
+            return cls.create(user, license_type)
