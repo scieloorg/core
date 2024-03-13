@@ -381,12 +381,6 @@ class BaseHistoryItem(CommonControlField):
     initial_date = models.DateField(_("Initial Date"), null=True, blank=True)
     final_date = models.DateField(_("Final Date"), null=True, blank=True)
 
-    panels = [
-        AutocompletePanel("institution"),
-        FieldPanel("initial_date"),
-        FieldPanel("final_date"),
-    ]
-
     @classmethod
     def get(
         cls,
@@ -503,6 +497,8 @@ class BaseInstitution(CommonControlField):
 
     create_or_update = get_or_create
 
+    def __str__(self) -> str:
+        return f"{self.institution}"
 
 class Sponsor(BaseInstitution):
 

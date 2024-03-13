@@ -50,7 +50,6 @@ user_redirect_view = UserRedirectView.as_view()
 
 def filter_journals(request):
     collection_ids = request.GET.getlist('collections[]')
-    print(collection_ids)
     if not collection_ids or collection_ids[0]:
         journals = Journal.objects.filter(scielojournal__collection__id__in=collection_ids).distinct()
     else:

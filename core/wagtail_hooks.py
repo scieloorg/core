@@ -4,12 +4,14 @@ from django.templatetags.static import static
 from django.utils.html import format_html
 from wagtail import hooks
 from wagtail.admin.navigation import get_site_for_user
+from wagtail.admin.panels import FieldPanel, InlinePanel
 from wagtail.admin.site_summary import SummaryItem
+from wagtail.contrib.modeladmin.views import EditView
 
 from article.models import Article
 from collection.models import Collection
 from journal.models import Journal
-
+from config.settings.base import ADMIN_SCIELO
 
 @hooks.register("insert_global_admin_css", order=100)
 def global_admin_css():
@@ -82,3 +84,29 @@ def add_items_summary_items(request, items):
     items.append(CollectionSummaryItem(request))
     items.append(JournalSummaryItem(request))
     items.append(ArticleSummaryItem(request))
+
+
+class BaseEditView(EditView):
+    """
+    Uma subclasse de EditView que personaliza o comportamento de campos na interface administrativa de edição.
+    """
+    readonly_fields = []  
+
+    def get_edit_handler(self):
+        """
+        Sobrescreve o método 'get_edit_handler' de EditView.
+        Se o usuário atual não for um superusuário, os campos especificados em
+        'readonly_fields' serão configurados como somente leitura. Isso é aplicado para 'FieldPanel', 'AutocompletePanel'
+        e 'InlinePanel'.
+        """
+        edit_handler = super().get_edit_handler()
+        if not self.request.user.is_superuser and not self.request.user.groups.filter(name=ADMIN_SCIELO).exists():
+            for object_list in edit_handler.children:
+                for field in object_list.children:
+                    if isinstance(field, FieldPanel) and field.field_name in self.readonly_fields:
+                        field.__setattr__('read_only', True)
+                    elif isinstance(field, InlinePanel) and field.relation_name in self.readonly_fields:
+                        field.classname = field.classname + ' read-only-inline-panel'
+                        for inline_field in field.panel_definitions:
+                            inline_field.__setattr__('read_only', True)
+        return edit_handler

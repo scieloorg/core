@@ -12,6 +12,8 @@ from wagtail.contrib.modeladmin.views import CreateView
 from . import models
 from .button_helper import IndexedAtHelper
 from .views import import_file, validate
+from core.wagtail_hooks import BaseEditView
+
 
 COLLECTION_TEAM = "Collection Team"
 JOURNAL_TEAM = "Journal Team"
@@ -23,11 +25,23 @@ class OfficialJournalCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
+class OfficialJournalEditView(BaseEditView):
+    readonly_fields = [
+        "title",
+        "iso_short_title",
+        "issn_print",
+        "issn_electronic",
+        "issnl",
+        "parallel_title",
+    ]
+
+
 class OfficialJournalAdmin(ModelAdmin):
     model = models.OfficialJournal
     inspect_view_enabled = True
     menu_label = _("ISSN Journals")
     create_view_class = OfficialJournalCreateView
+    edit_view_class = OfficialJournalEditView
     menu_icon = "folder"
     menu_order = 100
     add_to_settings_menu = False
@@ -43,7 +57,11 @@ class OfficialJournalAdmin(ModelAdmin):
         "created",
         "updated",
     )
-    list_filter = ("issn_print_is_active", "terminate_year", "initial_year", )
+    list_filter = (
+        "issn_print_is_active",
+        "terminate_year",
+        "initial_year",
+    )
     search_fields = (
         "title",
         "initial_year",
@@ -59,11 +77,27 @@ class JournalCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
+class JournalEditView(BaseEditView):
+    readonly_fields = [
+        "official",
+        "title",
+        "indexed_at",
+        "additional_indexed_at",
+        "wos_db",
+        "short_title",
+        "digital_pa",
+        "official",
+        "publisher_history",
+        "title_in_database",
+    ]
+
+
 class JournalAdmin(ModelAdmin):
     model = models.Journal
     inspect_view_enabled = True
     menu_label = _("Journals")
     create_view_class = JournalCreateView
+    edit_view_class = JournalEditView
     menu_icon = "folder"
     menu_order = 200
     add_to_settings_menu = False
@@ -90,15 +124,20 @@ class JournalAdmin(ModelAdmin):
         "official__issn_electronic",
         "contact_location__country__name",
     )
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        user_groups = request.user.groups.values_list('name', flat=True)
+        user_groups = request.user.groups.values_list("name", flat=True)
         if COLLECTION_TEAM in user_groups:
-            return qs.filter(scielojournal__collection__in=request.user.collection.all())
+            return qs.filter(
+                scielojournal__collection__in=request.user.collection.all()
+            )
         elif JOURNAL_TEAM in user_groups:
-            return qs.filter(id__in=request.user.journal.all().values_list("id", flat=True))
+            return qs.filter(
+                id__in=request.user.journal.all().values_list("id", flat=True)
+            )
         return qs
-    
+
 
 class SciELOJournalCreateView(CreateView):
     def form_valid(self, form):
@@ -106,11 +145,21 @@ class SciELOJournalCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
+class SciELOJournalEditView(BaseEditView):
+    readonly_fields = [
+        "collection",
+        "journal",
+        "journal_acron",
+        "issn_scielo",
+    ]
+
+
 class SciELOJournalAdmin(ModelAdmin):
     model = models.SciELOJournal
     inspect_view_enabled = True
     menu_label = _("SciELO Journals")
     create_view_class = SciELOJournalCreateView
+    edit_view_class = SciELOJournalEditView
     menu_icon = "folder"
     menu_order = 200
     add_to_settings_menu = False
@@ -125,19 +174,25 @@ class SciELOJournalAdmin(ModelAdmin):
         "created",
         "updated",
     )
-    list_filter = ("status", "collection", )
+    list_filter = (
+        "status",
+        "collection",
+    )
     search_fields = (
         "journal_acron",
         "journal__title",
         "issn_scielo",
     )
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        user_groups = request.user.groups.values_list('name', flat=True)
+        user_groups = request.user.groups.values_list("name", flat=True)
         if COLLECTION_TEAM in user_groups:
             return qs.filter(collection__in=request.user.collection.all())
         elif JOURNAL_TEAM in user_groups:
-            return qs.filter(id__in=request.user.journal.all().values_list("id", flat=True))
+            return qs.filter(
+                id__in=request.user.journal.all().values_list("id", flat=True)
+            )
         return qs
 
 
@@ -190,6 +245,7 @@ class IndexedAtAdminGroup(ModelAdminGroup):
 
 # modeladmin_register(IndexedAtAdminGroup)
 
+
 class WebOfKnowledgeAdmin(ModelAdmin):
     model = models.WebOfKnowledge
     menu_icon = "folder"
@@ -230,12 +286,9 @@ class WosAreaAdmin(ModelAdmin):
     menu_order = 400
     add_to_settings_menu = False
     exclude_from_explorer = False
-    list_display = (
-        "value",
-    )
-    search_fields = (
-        "value",
-    )    
+    list_display = ("value",)
+    search_fields = ("value",)
+
 
 class ListCodesAdminGroup(ModelAdminGroup):
     menu_label = "List of codes"
@@ -247,25 +300,29 @@ class ListCodesAdminGroup(ModelAdminGroup):
         WosAreaAdmin,
     )
 
+
 modeladmin_register(ListCodesAdminGroup)
 
+
 # TODO
-# Futuramente mudar para JournalAdminGroup 
+# Futuramente mudar para JournalAdminGroup
 # com permissoes de visualizacao restrita
 class AMJournalAdmin(ModelAdmin):
     model = models.AMJournal
     menu_label = "AM Journal"
     menu_icon = "folder"
     menu_order = 1200
-    list_display = ("scielo_issn", "collection") 
+    list_display = ("scielo_issn", "collection")
     list_filter = ("collection",)
     search_fields = ("scielo_issn",)
+
 
 class ArticleSubmissionFormatCheckListAdmin(ModelAdmin):
     model = models.ArticleSubmissionFormatCheckList
     menu_label = _("Article Submission Format Check List")
     menu_icon = "folder"
     menu_order = 1200
+
 
 modeladmin_register(AMJournalAdmin)
 modeladmin_register(ArticleSubmissionFormatCheckListAdmin)

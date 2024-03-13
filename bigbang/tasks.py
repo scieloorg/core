@@ -13,6 +13,9 @@ from vocabulary.models import Vocabulary
 from thematic_areas.models import ThematicArea
 from bigbang.utils.scheduler import schedule_task
 from tracker.models import UnexpectedEvent
+from .groups import load_group
+from config.settings.base import ADMIN_SCIELO
+from .permissions import permission_collection_team
 
 
 User = get_user_model()
@@ -49,6 +52,7 @@ def task_start(
         RoleModel.load(user)
         License.load(user)
         DigitalPreservationAgency.load(user)
+        load_group(group_name=ADMIN_SCIELO, permissions=permission_collection_team)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(

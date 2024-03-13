@@ -610,7 +610,7 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("journal_url"),
         FieldPanel("submission_online_url"),
         FieldPanel("main_collection"),
-        InlinePanel("title_in_database"),
+        InlinePanel("title_in_database", classname='collapsed', label=_("Title in database")),
         InlinePanel("journalsocialnetwork", label=_("Social Network")),
         FieldPanel("frequency"),
         FieldPanel("publishing_model"),
@@ -984,6 +984,12 @@ class OwnerHistory(Orderable, BaseHistoryItem):
         null=True,
     )
 
+    panels = [
+        AutocompletePanel("institution"),
+        FieldPanel("initial_date"),
+        FieldPanel("final_date"),
+    ]
+
 
 class PublisherHistory(Orderable, BaseHistoryItem):
     journal = ParentalKey(
@@ -996,6 +1002,12 @@ class PublisherHistory(Orderable, BaseHistoryItem):
         null=True,
     )
 
+    panels = [
+        AutocompletePanel("institution"),
+        FieldPanel("initial_date"),
+        FieldPanel("final_date"),
+    ]
+
 
 class SponsorHistory(Orderable, BaseHistoryItem):
     journal = ParentalKey(
@@ -1007,6 +1019,12 @@ class SponsorHistory(Orderable, BaseHistoryItem):
         null=True,
         blank=True,
     )
+    
+    panels = [
+        AutocompletePanel("institution"),
+        FieldPanel("initial_date"),
+        FieldPanel("final_date"),
+    ]
 
 
 class CopyrightHolderHistory(Orderable, BaseHistoryItem):
@@ -1022,6 +1040,12 @@ class CopyrightHolderHistory(Orderable, BaseHistoryItem):
         blank=True,
         null=True,
     )
+    
+    panels = [
+        AutocompletePanel("institution"),
+        FieldPanel("initial_date"),
+        FieldPanel("final_date"),
+    ]
 
 
 class JournalSocialNetwork(Orderable, SocialNetwork):
@@ -1621,7 +1645,7 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
     )
 
     autocomplete_search_field = "journal_acron"
-
+    
     def autocomplete_label(self):
         return str(self)
 
@@ -1661,6 +1685,12 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         AutocompletePanel("collection"),
         InlinePanel("journal_history", label=_("Journal History"), classname="collapsed"),
     ]
+    
+    edit_handler = TabbedInterface( 
+        [
+            ObjectList(panels, heading="SciELO Journal"),
+        ]
+    )
 
     @classmethod
     def get(
@@ -2139,8 +2169,8 @@ class Annotation(CommonControlField):
 
     panels = [
         FieldPanel("notes"),
-        FieldPanel("creation_date", classname="myReadonlyInput"),
-        FieldPanel("update_date", classname="myReadonlyInput"),
+        FieldPanel("creation_date", read_only=True),
+        FieldPanel("update_date", read_only=True),
     ]
 
     @classmethod

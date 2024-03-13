@@ -51,7 +51,27 @@ class CustomUserEditForm(UserEditForm):
     journal = forms.ModelMultipleChoiceField(queryset=Journal.objects.all(), required=False, label=_("Journal"))
     collection = forms.ModelMultipleChoiceField(queryset=Collection.objects.filter(is_active=True), required=True, label=_("Collection"))
 
+    def clean(self):
+        cleaned_data = super().clean() 
+
+        if self.cleaned_data.get('is_superuser'):
+            self.fields['collection'].required = False
+            if 'collection' in self._errors:
+                del self._errors['collection']
+
+        return cleaned_data
+
 
 class CustomUserCreationForm(UserCreationForm):
     journal = forms.ModelMultipleChoiceField(queryset=Journal.objects.all(), required=False, label=_("Journal"))
     collection = forms.ModelMultipleChoiceField(queryset=Collection.objects.filter(is_active=True), required=True, label=_("Collection"))
+
+    def clean(self):
+        cleaned_data = super().clean() 
+
+        if self.cleaned_data.get('is_superuser'):
+            self.fields['collection'].required = False
+            if 'collection' in self._errors:
+                del self._errors['collection']
+
+        return cleaned_data
