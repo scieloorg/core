@@ -17,70 +17,6 @@ from .utils.utils import language_iso
 User = get_user_model()
 
 
-@register_snippet
-class Gender(index.Indexed, models.Model):
-    """
-    Class of gender
-
-    Fields:
-        sex: physical state of being either male, female, or intersex
-    """
-
-    code = models.CharField(_("Code"), max_length=5, null=True, blank=True)
-
-    gender = models.CharField(_("Sex"), max_length=50, null=True, blank=True)
-
-    autocomplete_search_filter = "code"
-
-    def autocomplete_label(self):
-        return str(self)
-
-    panels = [
-        FieldPanel("code"),
-        FieldPanel("gender"),
-    ]
-
-    search_fields = [
-        index.SearchField("code", partial_match=True),
-        index.SearchField("gender", partial_match=True),
-    ]
-
-    class Meta:
-        unique_together = [("code", "gender")]
-
-    def __unicode__(self):
-        return self.gender or self.code
-
-    def __str__(self):
-        return self.gender or self.code
-
-    @classmethod
-    def _get(cls, code=None, gender=None):
-        try:
-            return cls.objects.get(code=code, gender=gender)
-        except cls.MultipleObjectsReturned:
-            return cls.objects.filter(code=code, gender=gender).first()
-
-    @classmethod
-    def _create(cls, user, code=None, gender=None):
-        try:
-            obj = cls()
-            obj.gender = gender
-            obj.code = code
-            obj.creator = user
-            obj.save()
-            return obj
-        except IntegrityError:
-            return cls._get(code, gender)
-
-    @classmethod
-    def create_or_update(cls, user, code, gender=None):
-        try:
-            return cls._get(code, gender)
-        except cls.DoesNotExist:
-            return cls._create(user, code, gender)
-
-
 class CommonControlField(models.Model):
     """
     Class with common control fields.
@@ -121,6 +57,72 @@ class CommonControlField(models.Model):
 
     class Meta:
         abstract = True
+
+
+class Gender(CommonControlField):
+    """
+    Class of gender
+
+    Fields:
+        sex: physical state of being either male, female, or intersex
+    """
+
+    code = models.CharField(_("Code"), max_length=5, null=True, blank=True)
+
+    gender = models.CharField(_("Sex"), max_length=50, null=True, blank=True)
+
+    autocomplete_search_filter = "code"
+
+    def autocomplete_label(self):
+        return str(self)
+
+    panels = [
+        FieldPanel("code"),
+        FieldPanel("gender"),
+    ]
+
+
+    class Meta:
+        unique_together = [("code", "gender")]
+
+
+    def __unicode__(self):
+        return self.gender or self.code
+
+    def __str__(self):
+        return self.gender or self.code
+
+    @classmethod
+    def load(cls, user):
+        for item in choices.GENDER_CHOICES:
+            code, value = item
+            cls.create_or_update(user, code=code, gender=value)
+
+    @classmethod
+    def _get(cls, code=None, gender=None):
+        try:
+            return cls.objects.get(code=code, gender=gender)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(code=code, gender=gender).first()
+
+    @classmethod
+    def _create(cls, user, code=None, gender=None):
+        try:
+            obj = cls()
+            obj.gender = gender
+            obj.code = code
+            obj.creator = user
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls._get(code, gender)
+
+    @classmethod
+    def create_or_update(cls, user, code, gender=None):
+        try:
+            return cls._get(code, gender)
+        except cls.DoesNotExist:
+            return cls._create(user, code, gender)
 
 
 class Language(CommonControlField):

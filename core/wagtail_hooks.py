@@ -5,11 +5,16 @@ from django.utils.html import format_html
 from wagtail import hooks
 from wagtail.admin.navigation import get_site_for_user
 from wagtail.admin.site_summary import SummaryItem
+from wagtail.contrib.modeladmin.options import (
+    ModelAdmin,
+    ModelAdminGroup,
+    modeladmin_register,
+)
 
 from article.models import Article
 from collection.models import Collection
-from journal.models import Journal
-
+from core.models import Gender
+from journal import models
 
 @hooks.register("insert_global_admin_css", order=100)
 def global_admin_css():
@@ -54,7 +59,7 @@ class JournalSummaryItem(SummaryItem):
 
     def get_context_data(self, parent_context):
         site_details = get_site_for_user(self.request.user)
-        total_journal = Journal.objects.all().count()
+        total_journal = models.Journal.objects.all().count()
         return {
             "total_journal": total_journal,
             "site_name": site_details["site_name"],
@@ -82,3 +87,99 @@ def add_items_summary_items(request, items):
     items.append(CollectionSummaryItem(request))
     items.append(JournalSummaryItem(request))
     items.append(ArticleSummaryItem(request))
+
+
+class WebOfKnowledgeAdmin(ModelAdmin):
+    model = models.WebOfKnowledge
+    menu_icon = "folder"
+    menu_order = 100
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "code",
+        "value",
+    )
+
+    search_fields = (
+        "code",
+        "value",
+    )
+
+
+class SubjectAdmin(ModelAdmin):
+    model = models.Subject
+    menu_icon = "folder"
+    menu_order = 300
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "code",
+        "value",
+    )
+
+    search_fields = (
+        "code",
+        "value",
+    )
+
+
+class WosAreaAdmin(ModelAdmin):
+    model = models.WebOfKnowledgeSubjectCategory
+    menu_icon = "folder"
+    menu_order = 400
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "value",
+    )
+    search_fields = (
+        "value",
+    )
+
+
+class StandardAdmin(ModelAdmin):
+    model = models.Standard
+    menu_icon = "folder"
+    menu_order = 500
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "code",
+        "value",
+    )
+
+    search_fields = (
+        "code",
+        "value",
+    )
+
+
+class GenderAdmin(ModelAdmin):
+    model = Gender
+    menu_icon = "folder"
+    menu_order = 600
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "code",
+        "gender",
+    )
+
+    search_fields = (
+        "code",
+        "gender",
+    )
+
+class ListCodesAdminGroup(ModelAdminGroup):
+    menu_label = "List of codes"
+    menu_icon = "folder-open-inverse"
+    menu_order = 1100
+    items = (
+        SubjectAdmin,
+        WebOfKnowledgeAdmin,
+        WosAreaAdmin,
+        StandardAdmin,
+        GenderAdmin,
+    )
+
+modeladmin_register(ListCodesAdminGroup)
