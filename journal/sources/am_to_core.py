@@ -10,7 +10,7 @@ from django.core.files.base import ContentFile
 from wagtail.images.models import Image
 
 from collection.exceptions import MainCollectionNotFoundError
-from core.models import Language, License
+from core.models import Language
 from institution.models import CopyrightHolder, Owner, Publisher, Sponsor
 from journal.models import (
     Annotation,
@@ -36,6 +36,7 @@ from journal.models import (
     TitleInDatabase,
     JournalLogo,
     JournalOtherTitle,
+    JournalLicense,
 )
 from journal import tasks
 from location.models import City, CountryName, Location, State, Country
@@ -302,7 +303,8 @@ def update_panel_website(
     journal.submission_online_url = extract_value(url_of_submission_online)
     license_type = extract_value(license_of_use)
     if license_type:
-        license = License.create_or_update(license_type=license_type, user=user)
+        license = license_type.split("/")
+        license = JournalLicense.create_or_update(license_type=license[0], user=user)
         journal.use_license = license
     url_of_the_main_collection = extract_value(url_of_the_main_collection)
     assign_journal_to_main_collection(
