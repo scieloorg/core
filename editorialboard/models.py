@@ -58,7 +58,7 @@ class EditorialBoard(CommonControlField, ClusterableModel):
     base_form_class = CoreAdminModelForm
 
     def __str__(self):
-        return f"{self.journal.title} {self.initial_year}-{self.final_year}"
+        return f"{self.journal} {self.initial_year}-{self.final_year}"
     
     
     @property
