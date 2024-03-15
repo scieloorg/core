@@ -65,7 +65,9 @@ class CollectionAdmin(ModelAdmin):
     )
     export_filename = "collections"
     inspect_view_fields_exclude = {
-        "id"
+        "id",
+        "creator",
+        "updated_by"
     }
 
 
