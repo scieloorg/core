@@ -165,6 +165,21 @@ class IndexedAtAdmin(ModelAdmin):
     export_filename = "indexed_at"
 
 
+class AdditionalIndexedAtAdmin(ModelAdmin):
+    model = models.AdditionalIndexedAt
+    menu_label = "Additional Indexed At"
+    menu_icon = "folder"
+    menu_order = 110
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "name",
+    )
+    search_fields = (
+        "name",
+    )
+
+
 class IndexedAtFileAdmin(ModelAdmin):
     model = models.IndexedAtFile
     button_helper_class = IndexedAtHelper
@@ -184,11 +199,13 @@ class IndexedAtAdminGroup(ModelAdminGroup):
     menu_order = 200
     items = (
         IndexedAtAdmin,
+        AdditionalIndexedAtAdmin,
         IndexedAtFileAdmin,
     )
 
 
-# modeladmin_register(IndexedAtAdminGroup)
+modeladmin_register(IndexedAtAdminGroup)
+
 
 class WebOfKnowledgeAdmin(ModelAdmin):
     model = models.WebOfKnowledge
