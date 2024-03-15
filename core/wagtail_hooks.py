@@ -154,6 +154,22 @@ class StandardAdmin(ModelAdmin):
     )
 
 
+class GenderAdmin(ModelAdmin):
+    model = Gender
+    menu_icon = "folder"
+    menu_order = 600
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "code",
+        "gender",
+    )
+
+    search_fields = (
+        "code",
+        "gender",
+    )
+
 class ListCodesAdminGroup(ModelAdminGroup):
     menu_label = "List of codes"
     menu_icon = "folder-open-inverse"
@@ -163,6 +179,7 @@ class ListCodesAdminGroup(ModelAdminGroup):
         WebOfKnowledgeAdmin,
         WosAreaAdmin,
         StandardAdmin,
+        GenderAdmin,
     )
 
 modeladmin_register(ListCodesAdminGroup)
