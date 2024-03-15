@@ -150,6 +150,14 @@ class EditorialBoardMember(CommonControlField, Orderable):
     role = models.ForeignKey(
         "RoleModel", null=True, blank=True, related_name="+", on_delete=models.SET_NULL
     )
+    image = models.ForeignKey(
+        "wagtailimages.Image", 
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        help_text=_("Upload a profile photo of the editorial board member."),
+    )
     area = models.TextField(null=True, blank=True)
     class Meta:
         unique_together = [("editorial_board", "researcher", "role")]
@@ -157,6 +165,7 @@ class EditorialBoardMember(CommonControlField, Orderable):
     panels = [
         AutocompletePanel("researcher"),
         AutocompletePanel("role"),
+        FieldPanel("image"),
         # AutocompletePanel("editorial_board", read_only=True),
     ]
 
