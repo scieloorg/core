@@ -235,7 +235,24 @@ class WosAreaAdmin(ModelAdmin):
     )
     search_fields = (
         "value",
-    )    
+    )
+
+class StandardAdmin(ModelAdmin):
+    model = models.Standard
+    menu_icon = "folder"
+    menu_order = 500
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "code",
+        "value",
+    )
+
+    search_fields = (
+        "code",
+        "value",
+    )
+
 
 class ListCodesAdminGroup(ModelAdminGroup):
     menu_label = "List of codes"
@@ -245,6 +262,7 @@ class ListCodesAdminGroup(ModelAdminGroup):
         SubjectAdmin,
         WebOfKnowledgeAdmin,
         WosAreaAdmin,
+        StandardAdmin,
     )
 
 modeladmin_register(ListCodesAdminGroup)
