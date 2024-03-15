@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "license_type",
-                    models.CharField(blank=True, max_length=255, null=True),
+                    models.CharField(blank=True, max_length=16, null=True),
                 ),
                 (
                     "creator",

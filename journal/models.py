@@ -2596,7 +2596,7 @@ class JournalOtherTitle(CommonControlField):
 
 
 class JournalLicense(CommonControlField):
-    license_type = models.CharField(max_length=255, null=True, blank=True)
+    license_type = models.CharField(max_length=16, null=True, blank=True)
 
     autocomplete_search_field = "license_type"
 
