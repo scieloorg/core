@@ -220,3 +220,8 @@ LICENSE_TYPES = [
     ("by-nd", _("by-nd")),
     ("by-nc-nd", _("by-nc-nd")),
 ]
+
+GENDER_CHOICES = [
+    ('M', _('Male')),
+    ('F', _('Female')),
+]
