@@ -1,0 +1,12 @@
+{% extends "modeladmin/inspect.html" %}
+{% load i18n modeladmin_tags wagtailadmin_tags wagtailcore_tags %}
+
+{% block fields_output %}
+    {% if fields %}
+    <ul>
+        {% for field in fields %}
+            <li><strong class="inspect-label-scielo">{{ field.label }}</strong>: {{ field.value }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+{% endblock %}
