@@ -24,11 +24,11 @@ class Institution(CommonControlField, ClusterableModel):
     )
 
     institution_type = models.CharField(
-        _("Institution Type"), choices=choices.inst_type, max_length=100, null=True, blank=True
+        _("Institution Type (MEC)"), choices=choices.inst_type, max_length=100, null=True, blank=True
     )
-    institution_type_mec = models.ManyToManyField(
+    institution_type_scielo = models.ManyToManyField(
         "InstitutionType",
-        verbose_name=_("Institution Type (MEC)"),
+        verbose_name=_("Institution Type (SciELO)"),
         blank=True,
     )
     location = models.ForeignKey(
