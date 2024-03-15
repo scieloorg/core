@@ -16,7 +16,7 @@ from location.models import Country, Location, State
 
 from . import choices
 from .forms import ScimagoForm
-
+from .exceptions import InstitutionTypeGetError
 
 class Institution(CommonControlField, ClusterableModel):
     institution_identification = models.ForeignKey(
@@ -25,6 +25,11 @@ class Institution(CommonControlField, ClusterableModel):
 
     institution_type = models.CharField(
         _("Institution Type"), choices=choices.inst_type, max_length=100, null=True, blank=True
+    )
+    institution_type_mec = models.ManyToManyField(
+        "InstitutionType",
+        verbose_name=_("Institution Type (MEC)"),
+        blank=True,
     )
     location = models.ForeignKey(
         Location, null=True, blank=True, on_delete=models.SET_NULL
@@ -810,3 +815,62 @@ class InstitutionIdentification(CommonControlField):
                     is_official=is_official,
                     official=None,
                 )
+
+
+class InstitutionType(CommonControlField):
+    name = models.TextField(verbose_name=_("Institution Type"), null=True, blank=True, unique=True,)
+
+    autocomplete_search_field = "name"
+
+    def autocomplete_label(self):
+        return str(self)
+
+    panels = [
+        AutocompletePanel("name")
+    ]
+
+    @classmethod
+    def load(cls, user, file_path=None):
+        file_path = file_path or "./institution/fixtures/institution_type.csv"
+        with open(file_path, "r") as file:
+            name = csv.reader(file)
+            for n in name:
+                cls.create_or_update(
+                    name=n[0],
+                    user=user,
+                )
+
+    @classmethod
+    def get(cls, name):
+        if not name:
+            raise InstitutionTypeGetError("InstitutionType.get requires name paramenter")
+        return cls.objects.get(name=name)
+
+    @classmethod
+    def create(cls, 
+        name, 
+        user,
+    ):
+        try:
+            obj = cls(
+                name=name,
+                creator=user,
+            )
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(name=name)
+
+    @classmethod
+    def create_or_update(
+        cls,
+        name,
+        user,
+    ):
+        try:
+            return cls.get(name=name)
+        except cls.DoesNotExist:
+            return cls.create(name=name, user=user)
+        
+    def __str__(self):
+        return f"{self.name}"
