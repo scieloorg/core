@@ -62,7 +62,7 @@ ALPHABET_OF_TITLE = [
 STANDARD = [
     ("apa", _("American Psychological Association")),
     ("iso690", _("iso 690/87 - international standard organization")),
-    ("nbr6023", _("nbr 6023/89 - associação nacional de normas técnicas")),
+    ("nbr6023", _("nbr 6023/89 - Associação Brasileira de Normas Técnicas")),
     ("other", _("other standard")),
     (
         "vancouv",

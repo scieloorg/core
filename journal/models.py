@@ -1932,10 +1932,9 @@ class Standard(CommonControlField):
 
     @classmethod
     def load(cls, user):
-        if cls.objects.count() == 0:
-            for item in choices.STANDARD:
-                code, value = item
-                cls.create_or_update(user, code=code, value=value)
+        for item in choices.STANDARD:
+            code, value = item
+            cls.create_or_update(user, code=code, value=value)
 
     @classmethod
     def get(cls, code):
