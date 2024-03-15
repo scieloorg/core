@@ -59,8 +59,7 @@ class CommonControlField(models.Model):
         abstract = True
 
 
-@register_snippet
-class Gender(index.Indexed, models.Model):
+class Gender(CommonControlField):
     """
     Class of gender
 
@@ -82,19 +81,22 @@ class Gender(index.Indexed, models.Model):
         FieldPanel("gender"),
     ]
 
-    search_fields = [
-        index.SearchField("code", partial_match=True),
-        index.SearchField("gender", partial_match=True),
-    ]
 
     class Meta:
         unique_together = [("code", "gender")]
+
 
     def __unicode__(self):
         return self.gender or self.code
 
     def __str__(self):
         return self.gender or self.code
+
+    @classmethod
+    def load(cls, user):
+        for item in choices.GENDER_CHOICES:
+            code, value = item
+            cls.create_or_update(user, code=code, gender=value)
 
     @classmethod
     def _get(cls, code=None, gender=None):
