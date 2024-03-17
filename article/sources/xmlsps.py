@@ -86,19 +86,20 @@ def load_article(user, xml=None, file_path=None, v3=None):
         set_first_last_page_elocation_id(xmltree=xmltree, article=article)
         article.save()
 
+        article.titles.set(create_or_update_titles(xmltree=xmltree, user=user))
         article.abstracts.set(
             create_or_update_abstract(xmltree=xmltree, user=user, article=article)
         )
-        article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
         article.researchers.set(
             create_or_update_researchers(xmltree=xmltree, user=user)
         )
         article.collab.set(get_or_create_institution_authors(xmltree=xmltree, user=user))
-        article.languages.add(get_or_create_main_language(xmltree=xmltree, user=user))
         article.keywords.set(get_or_create_keywords(xmltree=xmltree, user=user))
+
+        article.languages.add(get_or_create_main_language(xmltree=xmltree, user=user))
         article.toc_sections.set(get_or_create_toc_sections(xmltree=xmltree, user=user))
         article.fundings.set(get_or_create_fundings(xmltree=xmltree, user=user))
-        article.titles.set(create_or_update_titles(xmltree=xmltree, user=user))
+        article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
 
         article.license_statements.set(get_licenses(xmltree=xmltree, user=user))
         for ls in article.license_statements.iterator():
