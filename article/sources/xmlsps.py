@@ -88,19 +88,29 @@ def load_article(user, xml=None, file_path=None, v3=None):
         set_first_last_page_elocation_id(xmltree=xmltree, article=article)
         article.save()
 
-        article.titles.set(create_or_update_titles(xmltree=xmltree, user=user, item=pid_v3))
+        article.titles.set(
+            create_or_update_titles(xmltree=xmltree, user=user, item=pid_v3)
+        )
         article.abstracts.set(
-            create_or_update_abstract(xmltree=xmltree, user=user, article=article, item=pid_v3)
+            create_or_update_abstract(
+                xmltree=xmltree, user=user, article=article, item=pid_v3
+            )
         )
         article.researchers.set(
             create_or_update_researchers(xmltree=xmltree, user=user, item=pid_v3)
         )
-        article.collab.set(get_or_create_institution_authors(xmltree=xmltree, user=user, item=pid_v3))
-        article.keywords.set(get_or_create_keywords(xmltree=xmltree, user=user, item=pid_v3))
+        article.collab.set(
+            get_or_create_institution_authors(xmltree=xmltree, user=user, item=pid_v3)
+        )
+        article.keywords.set(
+            get_or_create_keywords(xmltree=xmltree, user=user, item=pid_v3)
+        )
 
         article.languages.add(get_or_create_main_language(xmltree=xmltree, user=user))
         article.toc_sections.set(get_or_create_toc_sections(xmltree=xmltree, user=user))
-        article.fundings.set(get_or_create_fundings(xmltree=xmltree, user=user, item=pid_v3))
+        article.fundings.set(
+            get_or_create_fundings(xmltree=xmltree, user=user, item=pid_v3)
+        )
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
 
         article.license_statements.set(get_licenses(xmltree=xmltree, user=user))
@@ -172,7 +182,9 @@ def get_or_create_fundings(xmltree, user, item):
             award_ids = funding.get("award-id") or []
 
             for fs in funding_source:
-                sponsor = create_or_update_sponsor(funding_name=fs, user=user, item=item)
+                sponsor = create_or_update_sponsor(
+                    funding_name=fs, user=user, item=item
+                )
                 for award_id in award_ids:
                     try:
                         obj = ArticleFunding.get_or_create(
@@ -310,16 +322,18 @@ def create_or_update_researchers(xmltree, user, item):
     for author in authors:
         try:
             researcher_data = {
-                'user': user,
-                'given_names': author.get("given_names"),
-                'last_name': author.get("surname"),
-                'suffix': author.get("suffix"),
-                'lang': article_lang,
-                'orcid': author.get("orcid"),
-                'lattes': author.get("lattes"),
-                'email': author.get("email"),
-                'gender': author.get("gender"),
-                'gender_identification_status': author.get("gender_identification_status"),
+                "user": user,
+                "given_names": author.get("given_names"),
+                "last_name": author.get("surname"),
+                "suffix": author.get("suffix"),
+                "lang": article_lang,
+                "orcid": author.get("orcid"),
+                "lattes": author.get("lattes"),
+                "email": author.get("email"),
+                "gender": author.get("gender"),
+                "gender_identification_status": author.get(
+                    "gender_identification_status"
+                ),
             }
 
             affs = author.get("affs", [])
@@ -331,14 +345,14 @@ def create_or_update_researchers(xmltree, user, item):
                     email = author.get("email") or aff.get("email")
                     aff_data = {
                         **researcher_data,
-                        'aff_name': get_safe_value(aff, "orgname"),
-                        'aff_div1': get_safe_value(aff, "orgdiv1"),
-                        'aff_div2': get_safe_value(aff, "orgdiv2"),
-                        'aff_city_name': get_safe_value(aff, "city"),
-                        'aff_country_acronym': get_safe_value(aff, "country_code"),
-                        'aff_country_name': get_safe_value(aff, "country_name"),
-                        'aff_state_text': get_safe_value(aff, "state"),
-                        'email': email,
+                        "aff_name": get_safe_value(aff, "orgname"),
+                        "aff_div1": get_safe_value(aff, "orgdiv1"),
+                        "aff_div2": get_safe_value(aff, "orgdiv2"),
+                        "aff_city_name": get_safe_value(aff, "city"),
+                        "aff_country_acronym": get_safe_value(aff, "country_code"),
+                        "aff_country_name": get_safe_value(aff, "country_name"),
+                        "aff_state_text": get_safe_value(aff, "state"),
+                        "email": email,
                     }
                     obj = Researcher.create_or_update(**aff_data)
                     data.append(obj)
@@ -372,7 +386,7 @@ def get_or_create_institution_authors(xmltree, user, item):
                             user=user,
                             country_name=aff.get("country_name"),
                             state_name=aff.get("state"),
-                            city_name=aff.get("city")
+                            city_name=aff.get("city"),
                         )
                         affiliation = Affiliation.create_or_update(
                             name=aff.get("orgname"),
@@ -447,7 +461,7 @@ def create_or_update_titles(xmltree, user, item):
                         xmltree=f"{xmltree}",
                         function="article.xmlsps.create_or_update_titles",
                         title=format_title,
-                        language=lang
+                        language=lang,
                     ),
                 )
     return data
