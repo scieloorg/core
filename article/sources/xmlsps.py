@@ -68,7 +68,6 @@ def load_article(user, xml=None, file_path=None, v3=None):
         )
         return
 
-    xml_detail_error = etree.tostring(xmltree)
     pids = ArticleIds(xmltree=xmltree).data
     pid_v2 = pids.get("v2")
     pid_v3 = pids.get("v3")
@@ -111,6 +110,7 @@ def load_article(user, xml=None, file_path=None, v3=None):
         article.save()
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
+        xml_detail_error = etree.tostring(xmltree)
         UnexpectedEvent.create(
             exception=e,
             exc_traceback=exc_traceback,
