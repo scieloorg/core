@@ -484,6 +484,12 @@ class Journal(CommonControlField, ClusterableModel):
         blank=True,
     )
     use_license = models.ForeignKey(
+        License,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
+    journal_use_license = models.ForeignKey(
         "JournalLicense",
         on_delete=models.SET_NULL,
         blank=True,
@@ -624,7 +630,7 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel(
             "file_oa", label=_("Open Science accordance form"), classname="collapsed"
         ),
-        FieldPanel("use_license"),
+        FieldPanel("journal_use_license"),
         InlinePanel("open_data", label=_("Open data"), classname="collapsed"),
         InlinePanel("preprint", label=_("Preprint"), classname="collapsed"),
         InlinePanel("review", label=_("Peer review"), classname="collapsed"),
