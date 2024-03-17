@@ -91,6 +91,7 @@ class PidProviderXMLAdmin(ModelAdmin):
     add_to_settings_menu = False
     exclude_from_explorer = False
 
+    list_per_page = 20
     list_display = (
         "pkg_name",
         "v3",
@@ -175,7 +176,7 @@ class PidProviderConfigAdmin(ModelAdmin):
 class PidProviderAdminGroup(ModelAdminGroup):
     menu_label = _("Pid Provider")
     menu_icon = "folder-open-inverse"  # change as required
-    menu_order = 6
+    menu_order = 900
     items = (
         PidProviderConfigAdmin,
         PidProviderXMLAdmin,

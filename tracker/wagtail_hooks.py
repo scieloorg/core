@@ -20,19 +20,25 @@ class UnexpectedEventModelAdmin(ModelAdmin):
     menu_order = 200
     add_to_settings_menu = False
     exclude_from_explorer = False
+    list_per_page = 10
 
     list_display = (
+        "item",
+        "action",
         "exception_type",
         "exception_msg",
-        "traceback",
         "created",
     )
-    list_filter = ("exception_type",)
+    list_filter = ("action", "exception_type", )
     search_fields = (
         "exception_msg",
         "detail",
+        "action",
+        "item",
     )
     inspect_view_fields = (
+        "action",
+        "item",
         "exception_type",
         "exception_msg",
         "traceback",
@@ -49,6 +55,7 @@ class HelloModelAdmin(ModelAdmin):
     menu_order = 200
     add_to_settings_menu = False
     exclude_from_explorer = False
+    list_per_page = 10
 
     list_display = (
         "status",
@@ -75,7 +82,7 @@ class UnexpectedEventModelAdminGroup(ModelAdminGroup):
     menu_icon = "folder"
     menu_label = _("Unexpected errors")
     # menu_order = get_menu_order("journal")
-    menu_order = 200
+    menu_order = 950
     items = (UnexpectedEventModelAdmin, HelloModelAdmin)
     menu_order = get_menu_order("unexpected-error")
 

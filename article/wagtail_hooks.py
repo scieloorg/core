@@ -30,7 +30,7 @@ class ArticleAdmin(ModelAdmin):
     exclude_from_explorer = (
         False  # or True to exclude pages of this type from Wagtail's explorer view
     )
-
+    list_per_page = 20
     list_display = (
         "sps_pkg_name",
         "doi",
@@ -111,7 +111,7 @@ class ArticleFundingAdmin(ModelAdmin):
 class ArticleAdminGroup(ModelAdminGroup):
     menu_label = _("Articles")
     menu_icon = "folder-open-inverse"  # change as required
-    menu_order = 4  # will put in 3rd place (000 being 1st, 100 2nd)
+    menu_order = 110  # will put in 3rd place (000 being 1st, 100 2nd)
     items = (ArticleAdmin, ArticleFormatAdmin, ArticleFundingAdmin)
 
 
