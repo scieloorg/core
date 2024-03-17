@@ -44,11 +44,12 @@ class LicenseDoesNotExist(Exception):
 
 def load_article(user, xml=None, file_path=None, v3=None):
     try:
-        if xml:
-            xmltree = etree.fromstring(xml)
-        elif file_path:
+        if file_path:
             for xml_with_pre in XMLWithPre.create(file_path):
                 xmltree = xml_with_pre.xmltree
+                break
+        elif xml:
+            xmltree = etree.fromstring(xml)
         else:
             raise ValueError(
                 "article.sources.xmlsps.load_article requires xml or file_path"
