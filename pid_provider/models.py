@@ -527,6 +527,7 @@ class PidProviderXML(CommonControlField, ClusterableModel):
     )
 
     class Meta:
+        ordering = ["-updated", "-created", "pkg_name"]
         indexes = [
             models.Index(fields=["pkg_name"]),
             models.Index(fields=["v3"]),

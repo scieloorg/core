@@ -72,6 +72,7 @@ class UnexpectedEvent(models.Model):
             models.Index(fields=["item"]),
             models.Index(fields=["action"]),
         ]
+        ordering = ["-created"]
 
     def __str__(self):
         if self.item or self.action:
@@ -242,6 +243,7 @@ class EventReport(CommonControlField):
                 f"Unable to create EventReport. Exception: {e}"
             )
 
+
 class Hello(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     status = models.BooleanField(null=True, blank=True, default=None)
@@ -252,6 +254,7 @@ class Hello(models.Model):
     detail = models.JSONField(null=True, blank=True)
 
     class Meta:
+        ordering = ["-created"]
         indexes = [
             models.Index(fields=["status"]),
             models.Index(fields=["exception_type"]),

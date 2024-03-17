@@ -141,6 +141,7 @@ class Article(CommonControlField, ClusterableModel):
     )
 
     class Meta:
+        ordering = ["-updated", "-created", "sps_pkg_name"]
         indexes = [
             models.Index(
                 fields=[
