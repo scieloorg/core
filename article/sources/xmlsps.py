@@ -49,7 +49,7 @@ def load_article(user, xml=None, file_path=None, v3=None):
                 xmltree = xml_with_pre.xmltree
                 break
         elif xml:
-            xmltree = etree.fromstring(xml)
+            xml_with_pre = XMLWithPre("", etree.fromstring(xml))
         else:
             raise ValueError(
                 "article.sources.xmlsps.load_article requires xml or file_path"
@@ -68,31 +68,28 @@ def load_article(user, xml=None, file_path=None, v3=None):
         )
         return
 
-    pids = ArticleIds(xmltree=xmltree).data
-    pid_v2 = pids.get("v2")
-    pid_v3 = pids.get("v3")
+    pid_v3 = v3 or xml_with_pre.v3
 
     try:
-        article = Article.objects.get(Q(pid_v2=pid_v2) | Q(pid_v3=pid_v3))
+        article = Article.objects.get(pid_v3=pid_v3)
     except Article.DoesNotExist:
         article = Article()
     try:
-        xml_with_pre = XMLWithPre("", xmltree)
+        xmltree = xml_with_pre.xmltree
+        article.valid = False
         article.sps_pkg_name = xml_with_pre.sps_pkg_name
         set_pids(xmltree=xmltree, article=article)
         article.journal = get_journal(xmltree=xmltree)
         set_date_pub(xmltree=xmltree, article=article)
         article.article_type = get_or_create_article_type(xmltree=xmltree, user=user)
         article.issue = get_or_create_issues(xmltree=xmltree, user=user)
-        set_first_last_page(xmltree=xmltree, article=article)
-        set_elocation_id(xmltree=xmltree, article=article)
+        set_first_last_page_elocation_id(xmltree=xmltree, article=article)
         article.save()
 
         article.abstracts.set(
             create_or_update_abstract(xmltree=xmltree, user=user, article=article)
         )
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
-        article.license_statements.set(get_licenses(xmltree=xmltree, user=user))
         article.researchers.set(
             create_or_update_researchers(xmltree=xmltree, user=user)
         )
@@ -102,6 +99,8 @@ def load_article(user, xml=None, file_path=None, v3=None):
         article.toc_sections.set(get_or_create_toc_sections(xmltree=xmltree, user=user))
         article.fundings.set(get_or_create_fundings(xmltree=xmltree, user=user))
         article.titles.set(create_or_update_titles(xmltree=xmltree, user=user))
+
+        article.license_statements.set(get_licenses(xmltree=xmltree, user=user))
         for ls in article.license_statements.iterator():
             article.license = ls.license
             article.save()
@@ -399,13 +398,11 @@ def set_date_pub(xmltree, article):
     article.set_date_pub(dates)
 
 
-def set_first_last_page(xmltree, article):
-    article.first_page = ArticleMetaIssue(xmltree=xmltree).fpage
-    article.last_page = ArticleMetaIssue(xmltree=xmltree).lpage
-
-
-def set_elocation_id(xmltree, article):
-    article.elocation_id = ArticleMetaIssue(xmltree=xmltree).elocation_id
+def set_first_last_page_elocation_id(xmltree, article):
+    xml = ArticleMetaIssue(xmltree=xmltree)
+    article.first_page = xml.fpage
+    article.last_page = xml.lpage
+    article.elocation_id = xml.elocation_id
 
 
 def create_or_update_titles(xmltree, user):
