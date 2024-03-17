@@ -53,19 +53,37 @@ class UnexpectedEvent(models.Model):
     exception_msg = models.TextField(_("Exception Msg"), null=True, blank=True)
     traceback = models.JSONField(null=True, blank=True)
     detail = models.JSONField(null=True, blank=True)
+    item = models.CharField(
+        _("Item"),
+        max_length=256,
+        null=True,
+        blank=True,
+    )
+    action = models.CharField(
+        _("Action"),
+        max_length=256,
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         indexes = [
             models.Index(fields=["exception_type"]),
+            models.Index(fields=["item"]),
+            models.Index(fields=["action"]),
         ]
 
     def __str__(self):
+        if self.item or self.action:
+            return f"{self.action} {self.item} {self.exception_msg}"
         return f"{self.exception_msg}"
 
     @property
     def data(self):
         return dict(
             created=self.created.isoformat(),
+            item=self.item,
+            action=self.action,
             exception_type=self.exception_type,
             exception_msg=self.exception_msg,
             traceback=json.dumps(self.traceback),
@@ -77,6 +95,8 @@ class UnexpectedEvent(models.Model):
         cls,
         exception=None,
         exc_traceback=None,
+        item=None,
+        action=None,
         detail=None,
     ):
         try:
@@ -84,6 +104,8 @@ class UnexpectedEvent(models.Model):
                 logging.exception(exception)
 
             obj = cls()
+            obj.item = item
+            obj.action = action
             obj.exception_msg = str(exception)
             obj.exception_type = str(type(exception))
             try:
