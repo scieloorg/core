@@ -7,6 +7,7 @@ from wagtail.contrib.modeladmin.options import (
 )
 from wagtail.contrib.modeladmin.views import CreateView
 
+from config.menu import get_menu_order
 from .models import (
     PidProviderConfig,
     CollectionPidRequest,
@@ -29,7 +30,6 @@ class PidRequestAdmin(ModelAdmin):
     menu_label = _("Pid Requests")
     create_view_class = PidRequestCreateView
     menu_icon = "folder"
-    menu_order = 300
     add_to_settings_menu = False
     exclude_from_explorer = False
 
@@ -57,7 +57,6 @@ class CollectionPidRequestAdmin(ModelAdmin):
     menu_label = _("Collection Pid Requests")
     create_view_class = PidRequestCreateView
     menu_icon = "folder"
-    menu_order = 300
     add_to_settings_menu = False
     exclude_from_explorer = False
 
@@ -87,7 +86,6 @@ class PidProviderXMLAdmin(ModelAdmin):
     menu_label = _("Pid Provider XMLs")
     create_view_class = PidProviderXMLAdminCreateView
     menu_icon = "folder"
-    menu_order = 300
     add_to_settings_menu = False
     exclude_from_explorer = False
 
@@ -131,7 +129,6 @@ class OtherPidAdmin(ModelAdmin):
     menu_label = _("Pid Changes")
     create_view_class = OtherPidAdminCreateView
     menu_icon = "folder"
-    menu_order = 300
     add_to_settings_menu = False
     exclude_from_explorer = False
 
@@ -162,7 +159,6 @@ class PidProviderConfigAdmin(ModelAdmin):
     menu_label = _("Pid Provider Config")
     create_view_class = PidProviderConfigCreateView
     menu_icon = "folder"
-    menu_order = 300
     add_to_settings_menu = False
     exclude_from_explorer = False
 
@@ -175,7 +171,7 @@ class PidProviderConfigAdmin(ModelAdmin):
 class PidProviderAdminGroup(ModelAdminGroup):
     menu_label = _("Pid Provider")
     menu_icon = "folder-open-inverse"  # change as required
-    menu_order = 6
+    menu_order = get_menu_order("pid_provider")
     items = (
         PidProviderConfigAdmin,
         PidProviderXMLAdmin,

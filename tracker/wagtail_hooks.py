@@ -74,10 +74,8 @@ class HelloModelAdmin(ModelAdmin):
 class UnexpectedEventModelAdminGroup(ModelAdminGroup):
     menu_icon = "folder"
     menu_label = _("Unexpected errors")
-    # menu_order = get_menu_order("journal")
-    menu_order = 200
+    menu_order = get_menu_order("tracker")
     items = (UnexpectedEventModelAdmin, HelloModelAdmin)
-    menu_order = get_menu_order("unexpected-error")
 
 
 modeladmin_register(UnexpectedEventModelAdminGroup)

@@ -9,6 +9,7 @@ from wagtail.contrib.modeladmin.options import (
 )
 from wagtail.contrib.modeladmin.views import CreateView
 
+from config.menu import get_menu_order
 from .button_helpers import ScimagoHelper
 from .models import Institution, Scimago, ScimagoFile, Sponsor, InstitutionIdentification
 from .views import import_file_scimago, validate_scimago
@@ -179,7 +180,7 @@ class ScimagoFileAdmin(ModelAdmin):
 class InstitutionsAdminGroup(ModelAdminGroup):
     menu_label = _("Institutions")
     menu_icon = "folder-open-inverse"  # change as required
-    menu_order = 7
+    menu_order = get_menu_order("institution")
     items = (
         InstitutionIdentificationAdmin,
         InstitutionAdmin,

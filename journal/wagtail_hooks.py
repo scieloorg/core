@@ -12,6 +12,7 @@ from wagtail.contrib.modeladmin.views import CreateView
 from . import models
 from .button_helper import IndexedAtHelper
 from .views import import_file, validate
+from config.menu import get_menu_order
 
 COLLECTION_TEAM = "Collection Team"
 JOURNAL_TEAM = "Journal Team"
@@ -65,7 +66,7 @@ class JournalAdmin(ModelAdmin):
     menu_label = _("Journals")
     create_view_class = JournalCreateView
     menu_icon = "folder"
-    menu_order = 200
+    menu_order = get_menu_order("journal")
     add_to_settings_menu = False
     exclude_from_explorer = False
     list_per_page = 20
@@ -141,14 +142,6 @@ class SciELOJournalAdmin(ModelAdmin):
         return qs
 
 
-class JournalAdminGroup(ModelAdminGroup):
-    menu_label = _("Journals")
-    menu_icon = "folder-open-inverse"  # change as required
-    menu_order = 2
-    items = (JournalAdmin, OfficialJournalAdmin, SciELOJournalAdmin)
-
-
-modeladmin_register(JournalAdminGroup)
 
 
 class IndexedAtAdmin(ModelAdmin):
@@ -193,20 +186,6 @@ class IndexedAtFileAdmin(ModelAdmin):
     search_fields = ("attachment",)
 
 
-class IndexedAtAdminGroup(ModelAdminGroup):
-    menu_label = "Indexed At"
-    menu_icon = "folder-open-inverse"
-    menu_order = 200
-    items = (
-        IndexedAtAdmin,
-        AdditionalIndexedAtAdmin,
-        IndexedAtFileAdmin,
-    )
-
-
-modeladmin_register(IndexedAtAdminGroup)
-
-
 # TODO
 # Futuramente mudar para JournalAdminGroup 
 # com permissoes de visualizacao restrita
@@ -214,7 +193,7 @@ class AMJournalAdmin(ModelAdmin):
     model = models.AMJournal
     menu_label = "AM Journal"
     menu_icon = "folder"
-    menu_order = 1200
+    menu_order = get_menu_order("amjournal")
     list_display = ("scielo_issn", "collection") 
     list_filter = ("collection",)
     search_fields = ("scielo_issn",)
@@ -223,10 +202,20 @@ class ArticleSubmissionFormatCheckListAdmin(ModelAdmin):
     model = models.ArticleSubmissionFormatCheckList
     menu_label = _("Article Submission Format Check List")
     menu_icon = "folder"
-    menu_order = 1200
+    menu_order = get_menu_order("article_subm")
 
-modeladmin_register(AMJournalAdmin)
-modeladmin_register(ArticleSubmissionFormatCheckListAdmin)
+# modeladmin_register(AMJournalAdmin)
+# modeladmin_register(ArticleSubmissionFormatCheckListAdmin)
+
+
+class JournalAdminGroup(ModelAdminGroup):
+    menu_label = _("Journals")
+    menu_icon = "folder-open-inverse"  # change as required
+    menu_order = get_menu_order("journal")
+    items = (JournalAdmin, OfficialJournalAdmin, SciELOJournalAdmin, AMJournalAdmin)
+
+
+modeladmin_register(JournalAdminGroup)
 
 
 @hooks.register("register_admin_urls")

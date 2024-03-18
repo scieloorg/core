@@ -4,6 +4,7 @@ from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
 from wagtail.contrib.modeladmin.views import CreateView
 
 from .models import Collection
+from config.menu import get_menu_order
 
 
 class CollectionCreateView(CreateView):
@@ -18,7 +19,7 @@ class CollectionAdmin(ModelAdmin):
     inspect_view_enabled = True
     menu_label = _("Collection")
     menu_icon = "folder-open-inverse"
-    menu_order = 1
+    menu_order = get_menu_order("collection")
     add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
     exclude_from_explorer = (
         False  # or True to exclude pages of this type from Wagtail's explorer view
