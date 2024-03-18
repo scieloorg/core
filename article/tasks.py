@@ -2,6 +2,7 @@ import logging
 import sys
 from datetime import datetime
 
+from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 
@@ -48,19 +49,33 @@ def _items_to_load_article(from_date, force_update):
         except Exception:
             from_date = None
     if not from_date:
+        # obtém a última atualização de Article
+        try:
+            article = Article.objects.filter(
+                ~Q(valid=True)
+            ).order_by("-updated").first()
+            if not article:
+                article = Article.objects.filter(valid=True).order_by("-updated").first()
+            from_date = article.updated
+        except Article.DoesNotExist:
+            from_date = datetime(1900, 1, 1)
+
+    if not from_date:
         from_date = datetime(1900, 1, 1)
 
     items = PidProviderXML.public_items(from_date)
     if force_update:
-        return items
+        yield from items
 
     for item in items:
         try:
-            article = Article.objects.get(pid_v3=item.v3)
-            if not article.valid:
-                yield item
-            article_date = article.updated or article.created
-            if article_date < (item.updated or item.created):
+            article = Article.objects.get(
+                ~Q(valid=True),
+                pid_v3=item.v3,
+                updated__lt=item.updated,
+                created__lt=item.created,
+            )
+            if article:
                 yield item
         except Article.DoesNotExist:
             yield item
