@@ -93,6 +93,10 @@ class XMLVersion(CommonControlField):
             return cls.get(pid_provider_xml, xml_with_pre.finger_print)
 
     def save_file(self, filename, content):
+        try:
+            self.file.delete(save=True)
+        except Exception as e:
+            pass
         self.file.save(filename, ContentFile(content))
 
     @property
@@ -1262,6 +1266,24 @@ class PidProviderXML(CommonControlField, ClusterableModel):
             logging.exception(e)
             return {"error_msg": str(e), "error_type": str(type(e))}
         return {}
+
+    def fix_pid_v2(self, user, correct_pid_v2):
+        try:
+            if correct_pid_v2 == self.v2:
+                return self.data
+            xml_with_pre = self.current_version.xml_with_pre
+            try:
+                self.current_version.delete()
+            except Exception as e:
+                pass
+            xml_with_pre.v2 = correct_pid_v2
+            self.current_version = XMLVersion.get_or_create(user, self, xml_with_pre)
+            self.v2 = correct_pid_v2
+            self.save()
+            return self.data
+        except Exception as e:
+            raise exceptions.PidProviderXMLFixPidV2Error(
+                f"Unable to fix pid v2 for {self.v3} {e} {type(e)}")
 
 
 class CollectionPidRequest(CommonControlField):
