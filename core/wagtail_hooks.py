@@ -15,6 +15,16 @@ from article.models import Article
 from collection.models import Collection
 from core.models import Gender
 from journal import models
+from config.menu import get_menu_order
+from journal.wagtail_hooks import (
+    IndexedAtAdmin,
+    AdditionalIndexedAtAdmin,
+    IndexedAtFileAdmin,
+    ArticleSubmissionFormatCheckListAdmin,
+)
+from thematic_areas.wagtail_hooks import ThematicAreaAdmin, ThematicAreaFileAdmin
+from vocabulary.wagtail_hooks import VocabularyAdmin, KeywordAdmin
+
 
 @hooks.register("insert_global_admin_css", order=100)
 def global_admin_css():
@@ -173,13 +183,20 @@ class GenderAdmin(ModelAdmin):
 class ListCodesAdminGroup(ModelAdminGroup):
     menu_label = "List of codes"
     menu_icon = "folder-open-inverse"
-    menu_order = 1100
+    menu_order = get_menu_order("core")
     items = (
+        IndexedAtAdmin,
+        AdditionalIndexedAtAdmin,
+        IndexedAtFileAdmin,
         SubjectAdmin,
         WebOfKnowledgeAdmin,
         WosAreaAdmin,
         StandardAdmin,
         GenderAdmin,
+        VocabularyAdmin, KeywordAdmin,
+        ThematicAreaAdmin,
+        ThematicAreaFileAdmin,
+        ArticleSubmissionFormatCheckListAdmin,
     )
 
 modeladmin_register(ListCodesAdminGroup)

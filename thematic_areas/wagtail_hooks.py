@@ -9,6 +9,7 @@ from wagtail.contrib.modeladmin.options import (
 )
 from wagtail.contrib.modeladmin.views import CreateView, EditView
 
+from config.menu import get_menu_order
 from .button_helpers import GenericThematicAreaHelper, ThematicAreaHelper
 from .models import (
     GenericThematicArea,
@@ -195,14 +196,14 @@ class ThematicAreaFileAdmin(ModelAdmin):
 class ThematicAreaAdminGroup(ModelAdminGroup):
     menu_label = _("Thematic Areas")
     menu_icon = "folder-open-inverse"
-    menu_order = 10
+    menu_order = get_menu_order("thematic_areas")
     items = (
         ThematicAreaAdmin,
         ThematicAreaFileAdmin,
     )
 
 
-modeladmin_register(ThematicAreaAdminGroup)
+# modeladmin_register(ThematicAreaAdminGroup)
 
 
 @hooks.register("register_admin_urls")

@@ -1,18 +1,37 @@
-WAGTAIL_MENU_APPS_ORDER = {
-    "files_storage": 100,
-    "collection": 400,
-    "journal": 500,
-    "issue": 510,
-    "article": 520,
-    # 'upload': 700,
-    "migration": 710,
-    "location": 800,
-    "institution": 810,
-}
+WAGTAIL_MENU_APPS_ORDER = [
+    "x",
+    "collection",
+    "journal",
+    "editorialboard",
+    "issue",
+    "article",
+
+    "book",
+
+    "location",
+    "institution",
+    "researcher",
+
+    "thematic_areas",
+    "vocabulary",
+    "core",
+
+    "altmetric",
+    "report",
+
+    "amjournal",
+
+    "article_subm",
+
+    "pid_provider",
+    "django_celery_beat",
+    "tracker",
+    "files_storage",
+]
 
 
 def get_menu_order(app_name):
     try:
-        return WAGTAIL_MENU_APPS_ORDER[app_name]
+        return WAGTAIL_MENU_APPS_ORDER.index(app_name)
     except:
-        return 900
+        return 9000

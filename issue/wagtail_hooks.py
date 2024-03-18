@@ -8,6 +8,7 @@ from wagtail.contrib.modeladmin.options import (
 from wagtail.contrib.modeladmin.views import CreateView
 
 from .models import Issue
+from config.menu import get_menu_order
 
 
 class IssueCreateView(CreateView):
@@ -22,7 +23,7 @@ class IssueAdmin(ModelAdmin):
     menu_label = _("Issues")
     create_view_class = IssueCreateView
     menu_icon = "folder-open-inverse"
-    menu_order = 3
+    menu_order = 150
     add_to_settings_menu = False
     exclude_from_explorer = False
 
@@ -53,7 +54,7 @@ class IssueAdmin(ModelAdmin):
 class IssueAdminGroup(ModelAdminGroup):
     menu_label = _("Issues")
     menu_icon = "folder-open-inverse"
-    menu_order = 100
+    menu_order = get_menu_order("issue")
     items = (IssueAdmin, )
 
 

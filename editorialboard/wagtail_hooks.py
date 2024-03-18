@@ -18,6 +18,7 @@ from .models import (
     RoleModel,
 )
 from .views import import_file_ebm, validate_ebm
+from config.menu import get_menu_order
 
 
 class EditorialBoardMemberCreateView(CreateView):
@@ -116,7 +117,7 @@ class EditorialBoardAdmin(ModelAdmin):
 class EditorialBoardAdminGroup(ModelAdminGroup):
     menu_label = "Editorial Board Member"
     menu_icon = "folder-open-inverse"  # change as required
-    menu_order = 200  # will put in 3rd place (000 being 1st, 100 2nd)
+    menu_order = get_menu_order("editorialboard")  # will put in 3rd place (000 being 1st, 100 2nd)
     items = (
         RoleModelAdmin,
         EditorialBoardAdmin,

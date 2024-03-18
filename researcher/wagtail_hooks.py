@@ -3,6 +3,7 @@ from django.utils.translation import gettext as _
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register, ModelAdminGroup
 from wagtail.contrib.modeladmin.views import CreateView
 
+from config.menu import get_menu_order
 from .models import Researcher, ResearcherIdentifier, PersonName, Affiliation
 
 
@@ -100,7 +101,7 @@ class PersonNameAdmin(ModelAdmin):
 class ResearcherAdminGroup(ModelAdminGroup):
     menu_label = _("Researchers")
     menu_icon = "folder-open-inverse"  # change as required
-    menu_order = 7
+    menu_order = get_menu_order("researcher")
     items = (
         ResearcherIdentifierAdmin,
         ResearcherAdmin,
