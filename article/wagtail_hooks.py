@@ -31,7 +31,7 @@ class ArticleAdmin(ModelAdmin):
     exclude_from_explorer = (
         False  # or True to exclude pages of this type from Wagtail's explorer view
     )
-
+    list_per_page = 20
     list_display = (
         "sps_pkg_name",
         "doi",

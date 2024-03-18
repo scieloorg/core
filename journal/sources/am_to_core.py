@@ -305,7 +305,7 @@ def update_panel_website(
     if license_type:
         license = license_type.split("/")
         license = JournalLicense.create_or_update(license_type=license[0], user=user)
-        journal.use_license = license
+        journal.journal_use_license = license
     url_of_the_main_collection = extract_value(url_of_the_main_collection)
     assign_journal_to_main_collection(
         journal=journal, url_of_the_main_collection=url_of_the_main_collection

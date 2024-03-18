@@ -89,6 +89,7 @@ class PidProviderXMLAdmin(ModelAdmin):
     add_to_settings_menu = False
     exclude_from_explorer = False
 
+    list_per_page = 20
     list_display = (
         "pkg_name",
         "v3",
