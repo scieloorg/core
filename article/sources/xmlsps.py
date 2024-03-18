@@ -238,14 +238,21 @@ def get_licenses(xmltree, user):
                     user=user,
                     license_type=license_type,
                 )
-        obj = LicenseStatement.create_or_update(
-            user=user,
-            url=xml_license.get("link"),
-            language=Language.get_or_create(code2=xml_license.get("lang")),
-            license_p=xml_license.get("license_p") or xml_license.get("licence_p"),
-            license=license,
-        )
-        data.append(obj)
+        if license or xml_license.get("license_p"):
+            try:
+                license_p = xml_license.get("license_p")
+                license_p = license_p["html_text"]
+            except (ValueError, TypeError, KeyError):
+                pass
+
+            obj = LicenseStatement.create_or_update(
+                user=user,
+                url=xml_license.get("link"),
+                language=Language.get_or_create(code2=xml_license.get("lang")),
+                license_p=license_p,
+                license=license,
+            )
+            data.append(obj)
     return data
 
 
