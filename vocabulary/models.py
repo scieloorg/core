@@ -1,6 +1,7 @@
 from django.db import IntegrityError, models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
+from wagtail.fields import RichTextField
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
@@ -100,6 +101,7 @@ class Vocabulary(CommonControlField):
 
 
 class Keyword(CommonControlField, TextWithLang):
+    html_text = RichTextField(_("Rich Text"), null=True, blank=True)
     vocabulary = models.ForeignKey(
         Vocabulary,
         verbose_name=_("Vocabulary"),
