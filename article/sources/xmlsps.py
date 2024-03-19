@@ -43,6 +43,7 @@ class LicenseDoesNotExist(Exception):
 
 
 def load_article(user, xml=None, file_path=None, v3=None):
+    logging.info(f"load article {file_path} {v3}")
     try:
         if file_path:
             for xml_with_pre in XMLWithPre.create(file_path):

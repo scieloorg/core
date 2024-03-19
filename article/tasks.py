@@ -56,7 +56,8 @@ def _items_to_load_article(from_date, force_update):
             ).order_by("-updated").first()
             if not article:
                 article = Article.objects.filter(valid=True).order_by("-updated").first()
-            from_date = article.updated
+                if article:
+                    from_date = article.updated
         except Article.DoesNotExist:
             from_date = datetime(1900, 1, 1)
 
