@@ -204,7 +204,6 @@ class ArticleSubmissionFormatCheckListAdmin(ModelAdmin):
     menu_icon = "folder"
     menu_order = get_menu_order("article_subm")
 
-modeladmin_register(AMJournalAdmin)
 # modeladmin_register(ArticleSubmissionFormatCheckListAdmin)
 
 
