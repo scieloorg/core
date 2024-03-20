@@ -207,7 +207,6 @@ modeladmin_register(ListCodesAdminGroup)
 @hooks.register('construct_main_menu')
 def reorder_menu_items(request, menu_items):
     for item in menu_items:
-        print(item.label)
         if item.label in WAGTAIL_MENU_APPS_ORDER:
             item.order = get_menu_order(item.label)
 
