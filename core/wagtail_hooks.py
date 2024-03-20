@@ -22,6 +22,10 @@ from journal.wagtail_hooks import (
     AdditionalIndexedAtAdmin,
     IndexedAtFileAdmin,
     ArticleSubmissionFormatCheckListAdmin,
+    SubjectAdmin,
+    WebOfKnowledgeAdmin,
+    WosAreaAdmin,
+    StandardAdmin,
 )
 from thematic_areas.wagtail_hooks import ThematicAreaAdmin, ThematicAreaFileAdmin
 from vocabulary.wagtail_hooks import VocabularyAdmin, KeywordAdmin
@@ -98,71 +102,6 @@ def add_items_summary_items(request, items):
     items.append(CollectionSummaryItem(request))
     items.append(JournalSummaryItem(request))
     items.append(ArticleSummaryItem(request))
-
-
-class WebOfKnowledgeAdmin(ModelAdmin):
-    model = models.WebOfKnowledge
-    menu_icon = "folder"
-    menu_order = 100
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-    list_display = (
-        "code",
-        "value",
-    )
-
-    search_fields = (
-        "code",
-        "value",
-    )
-
-
-class SubjectAdmin(ModelAdmin):
-    model = models.Subject
-    menu_icon = "folder"
-    menu_order = 300
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-    list_display = (
-        "code",
-        "value",
-    )
-
-    search_fields = (
-        "code",
-        "value",
-    )
-
-
-class WosAreaAdmin(ModelAdmin):
-    model = models.WebOfKnowledgeSubjectCategory
-    menu_icon = "folder"
-    menu_order = 400
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-    list_display = (
-        "value",
-    )
-    search_fields = (
-        "value",
-    )
-
-
-class StandardAdmin(ModelAdmin):
-    model = models.Standard
-    menu_icon = "folder"
-    menu_order = 500
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-    list_display = (
-        "code",
-        "value",
-    )
-
-    search_fields = (
-        "code",
-        "value",
-    )
 
 
 class GenderAdmin(ModelAdmin):

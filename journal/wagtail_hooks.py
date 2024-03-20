@@ -186,6 +186,71 @@ class IndexedAtFileAdmin(ModelAdmin):
     search_fields = ("attachment",)
 
 
+class WebOfKnowledgeAdmin(ModelAdmin):
+    model = models.WebOfKnowledge
+    menu_icon = "folder"
+    menu_order = 100
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "code",
+        "value",
+    )
+
+    search_fields = (
+        "code",
+        "value",
+    )
+
+
+class SubjectAdmin(ModelAdmin):
+    model = models.Subject
+    menu_icon = "folder"
+    menu_order = 300
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "code",
+        "value",
+    )
+
+    search_fields = (
+        "code",
+        "value",
+    )
+
+
+class WosAreaAdmin(ModelAdmin):
+    model = models.WebOfKnowledgeSubjectCategory
+    menu_icon = "folder"
+    menu_order = 400
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "value",
+    )
+    search_fields = (
+        "value",
+    )
+
+
+class StandardAdmin(ModelAdmin):
+    model = models.Standard
+    menu_icon = "folder"
+    menu_order = 500
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "code",
+        "value",
+    )
+
+    search_fields = (
+        "code",
+        "value",
+    )
+
+
 # TODO
 # Futuramente mudar para JournalAdminGroup 
 # com permissoes de visualizacao restrita
