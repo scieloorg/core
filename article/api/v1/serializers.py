@@ -5,7 +5,7 @@ from core.api.v1.serializers import LanguageSerializer, LicenseSerializer
 from doi.api.v1.serializers import DoiSerializer
 from institution.api.v1.serializers import SponsorSerializer
 from issue.api.v1.serializers import IssueSerializer, TocSectionsSerializer
-from journal.api.v1.serializers import JournalSerialiazer
+from journal.api.v1.serializers import JournalSerializer
 from researcher.api.v1.serializers import ResearcherSerializer
 from vocabulary.api.v1.serializers import KeywordSerializer
 
@@ -60,7 +60,7 @@ class TocSectionsSerializer(serializers.ModelSerializer):
 
 
 class ArticleSerializer(serializers.ModelSerializer):
-    journal = JournalSerialiazer(many=False, read_only=True)
+    journal = JournalSerializer(many=False, read_only=True)
     publisher = SponsorSerializer(many=True, read_only=True)
     titles = TitleSerializer(many=True, read_only=True)
     doi = DoiSerializer(many=True, read_only=True)
