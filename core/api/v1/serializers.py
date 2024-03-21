@@ -8,6 +8,7 @@ class LanguageSerializer(serializers.ModelSerializer):
         model = Language
         fields = [
             "code2",
+            "name",
         ]
         datatables_always_serialize = ("id",)
 
