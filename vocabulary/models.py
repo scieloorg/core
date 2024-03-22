@@ -112,6 +112,7 @@ class Keyword(CommonControlField, TextWithLang):
 
     panels = [
         FieldPanel("text"),
+        FieldPanel("html_text"),
         FieldPanel("language"),
         AutocompletePanel("vocabulary"),
     ]
