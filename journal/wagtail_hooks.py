@@ -204,7 +204,6 @@ class ArticleSubmissionFormatCheckListAdmin(ModelAdmin):
     menu_icon = "folder"
     menu_order = get_menu_order("article_subm")
 
-# modeladmin_register(AMJournalAdmin)
 # modeladmin_register(ArticleSubmissionFormatCheckListAdmin)
 
 
@@ -216,6 +215,90 @@ class JournalAdminGroup(ModelAdminGroup):
 
 
 modeladmin_register(JournalAdminGroup)
+
+
+class OwnerAdmin(ModelAdmin):
+    model = models.Owner
+    menu_icon = "folder"
+    menu_order = 300
+    menu_label = _("Owner")
+    add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
+    exclude_from_explorer = (
+        False  # or True to exclude pages of this type from Wagtail's explorer view
+    )
+    list_display = ("institution",)
+    search_fields = (
+        "institution__institution_identification__name",
+        "institution__institution_identification__acronym",
+        "institution__level_1",
+        "institution__level_2",
+        "institution__level_3",
+    )
+    list_export = (
+        "institution__institution_identification__name",
+        "institution__institution_identification__acronym",
+        "institution__level_1",
+        "institution__level_2",
+        "institution__level_3",
+        "location",
+    )
+    export_filename = "owner"
+
+
+class CopyrightholderAdmin(ModelAdmin):
+    model = models.CopyrightHolder
+    menu_icon = "folder"
+    menu_order = 400
+    menu_label = _("Copyrightholder")
+    add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
+    exclude_from_explorer = (
+        False  # or True to exclude pages of this type from Wagtail's explorer view
+    )
+    list_display = ("institution",)
+    search_fields = (
+        "institution__institution_identification__name",
+        "institution__institution_identification__acronym",
+        "institution__level_1",
+        "institution__level_2",
+        "institution__level_3",
+    )
+    list_export = (
+        "institution__institution_identification__name",
+        "institution__institution_identification__acronym",
+        "institution__level_1",
+        "institution__level_2",
+        "institution__level_3",
+        "location",
+    )
+    export_filename = "copyrightholder"
+
+
+class PublisherAdmin(ModelAdmin):
+    model = models.Publisher
+    menu_icon = "folder"
+    menu_order = 500
+    menu_label = _("Publisher")
+    add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
+    exclude_from_explorer = (
+        False  # or True to exclude pages of this type from Wagtail's explorer view
+    )
+    list_display = ("institution",)
+    search_fields = (
+        "institution__institution_identification__name",
+        "institution__institution_identification__acronym",
+        "institution__level_1",
+        "institution__level_2",
+        "institution__level_3",
+    )
+    list_export = (
+        "institution__institution_identification__name",
+        "institution__institution_identification__acronym",
+        "institution__level_1",
+        "institution__level_2",
+        "institution__level_3",
+        "location",
+    )
+    export_filename = "Publisher"
 
 
 @hooks.register("register_admin_urls")

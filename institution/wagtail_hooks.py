@@ -13,7 +13,7 @@ from config.menu import get_menu_order
 from .button_helpers import ScimagoHelper
 from .models import Institution, Scimago, ScimagoFile, Sponsor, InstitutionIdentification
 from .views import import_file_scimago, validate_scimago
-
+from journal.wagtail_hooks import OwnerAdmin, CopyrightholderAdmin, PublisherAdmin
 
 class InstitutionIdentificationCreateView(CreateView):
     def form_valid(self, form):
@@ -185,6 +185,9 @@ class InstitutionsAdminGroup(ModelAdminGroup):
         InstitutionIdentificationAdmin,
         InstitutionAdmin,
         SponsorAdmin,
+        OwnerAdmin, 
+        CopyrightholderAdmin, 
+        PublisherAdmin,
         ScimagoAdmin,
         ScimagoFileAdmin,
     )
