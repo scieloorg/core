@@ -1,7 +1,5 @@
 pytz==2023.3.post1  # https://github.com/stub42/pytz
-python-slugify==8.0.1  # https://github.com/un33k/python-slugify
 Pillow==10.2.0  # https://github.com/python-pillow/Pillow
-rcssmin==1.1.1  # https://github.com/ndparker/rcssmin
 argon2-cffi==23.1.0  # https://github.com/hynek/argon2_cffi
 whitenoise==6.6.0  # https://github.com/evansd/whitenoise
 redis==5.0.1  # https://github.com/redis/redis-py
@@ -14,28 +12,28 @@ xmltodict==0.13.0  # https://github.com/martinblech/xmltodict.git
 # Django
 # ------------------------------------------------------------------------------
 # django==4.1.8  # pyup: < 4.0  # https://www.djangoproject.com/
-django==4.2.7
+django==5.0.3
 django-environ==0.11.2  # https://github.com/joke2k/django-environ
-django-model-utils==4.3.1  # https://github.com/jazzband/django-model-utils
-django-allauth==0.59.0  # https://github.com/pennersr/django-allauth
+django-model-utils==4.4.0  # https://github.com/jazzband/django-model-utils
+django-allauth==0.61.1  # https://github.com/pennersr/django-allauth
 django-crispy-forms==2.1  # https://github.com/django-crispy-forms/django-crispy-forms
-crispy-bootstrap5==0.7  # https://github.com/django-crispy-forms/crispy-bootstrap5
+crispy-bootstrap5==2024.2 # https://github.com/django-crispy-forms/crispy-bootstrap5
 django-compressor==4.4  # https://github.com/django-compressor/django-compressor
 django-redis==5.4.0  # https://github.com/jazzband/django-redis4
 
 # Django REST
-djangorestframework==3.14.0
-djangorestframework-simplejwt==5.3.0  # https://django-rest-framework-simplejwt.readthedocs.io/en/latest/
+djangorestframework==3.15.0
+djangorestframework-simplejwt==5.3.1  # https://django-rest-framework-simplejwt.readthedocs.io/en/latest/
 
 # Wagtail
 # ------------------------------------------------------------------------------
-wagtail==5.2.2  # https://github.com/wagtail/wagtail
+wagtail==5.2.3  # https://github.com/wagtail/wagtail
 
 
 # Wagtail Recaptcha
 # ------------------------------------------------------------------------------
-django-recaptcha==3.0.0
-wagtail-django-recaptcha==1.0
+# django-recaptcha==4.0.0
+wagtail-django-recaptcha==2.1.1
 
 # Wagtail Menu
 # ------------------------------------------------------------------------------
@@ -43,7 +41,7 @@ wagtailmenus==3.1.9
 
 # Wagtail Localize
 # ------------------------------------------------------------------------------
-wagtail-localize==1.7
+wagtail-localize==1.8.2
 
 #Wagtail Admin
 # ------------------------------------------------------------------------------
@@ -51,7 +49,7 @@ wagtail-modeladmin==1.0.0
 
 # Django celery
 # ------------------------------------------------------------------------------
-django-celery-beat==2.5.0  # https://github.com/celery/django-celery-beat
+django-celery-beat==2.6.0  # https://github.com/celery/django-celery-beat
 django_celery_results==2.5.1
 
 # Wagtail-Autocomplete
