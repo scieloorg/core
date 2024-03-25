@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+
+
+{% block content %}
+<style type="text/css">
+  .msg { margin-top: 25% }
+  .msg img {
+    display: block;
+    margin: 0 auto;
+  }
+  .center-block {
+    display: block;
+    margin: 0 auto;
+    text-align: center;
+  }
+</style>
+  <div class="container">
+    <div class="row-fluid">
+      <div class="col">
+        <div class="msg clearfix">
+          <div class="center-block">
+            <img class="img-responsive" class="image" src="{% static 'images/logos/logo-scielo-signature.png' %}">
+            <h2 class="text-center">
+              {% block error_message %}
+                {% trans 'Site em manutenção' %}
+              {% endblock %}
+            </h2>
+            <p>{% trans 'Qualquer dúvida, por favor entre em contato com o administrador.' %}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
