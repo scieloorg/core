@@ -65,7 +65,7 @@ minio==7.2.5
 # ------------------------------------------------------------------------------
 lxml==4.9.4 # https://github.com/lxml/lxml
 tornado>=6.3.3 # not directly required, pinned by Snyk to avoid a vulnerability
--e git+https://git@github.com/scieloorg/packtools@3.3.4#egg=packtools
+-e git+https://git@github.com/scieloorg/packtools@4.0.0#egg=packtools
 # packtools@https://github.com/scieloorg/packtools/archive/refs/tags/3.3.3.zip
 #-e git+https://github.com/scieloorg/packtools#egg=packtools
 
