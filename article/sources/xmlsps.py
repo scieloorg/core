@@ -16,7 +16,7 @@ from packtools.sps.models.dates import ArticleDates
 from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
 from packtools.sps.models.funding_group import FundingGroup
 from packtools.sps.models.journal_meta import ISSN, Title
-from packtools.sps.models.kwd_group import KwdGroup
+from packtools.sps.models.kwd_group import ArticleKeywords
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle
@@ -45,6 +45,7 @@ class LicenseDoesNotExist(Exception):
 def load_article(user, xml=None, file_path=None, v3=None):
     logging.info(f"load article {file_path} {v3}")
     try:
+        file_path = file_path or "article/fixtures/test_xml_kwd_abstract_articletitle.xml"
         if file_path:
             for xml_with_pre in XMLWithPre.create(file_path):
                 xmltree = xml_with_pre.xmltree
@@ -104,7 +105,7 @@ def load_article(user, xml=None, file_path=None, v3=None):
             get_or_create_institution_authors(xmltree=xmltree, user=user, item=pid_v3)
         )
         article.keywords.set(
-            get_or_create_keywords(xmltree=xmltree, user=user, item=pid_v3)
+            create_or_update_keywords(xmltree=xmltree, user=user, item=pid_v3)
         )
 
         article.languages.add(get_or_create_main_language(xmltree=xmltree, user=user))
@@ -257,17 +258,18 @@ def get_licenses(xmltree, user):
     return data
 
 
-def get_or_create_keywords(xmltree, user, item):
-    kwd_group = KwdGroup(xmltree=xmltree).extract_kwd_data_with_lang_text(subtag=False)
-
+def create_or_update_keywords(xmltree, user, item):
+    article_keywords = ArticleKeywords(xmltree=xmltree)
+    article_keywords.configure(tags_to_convert_to_html={'bold': 'b'})
     data = []
-    for kwd in kwd_group:
+    for kwd in article_keywords.items:
         try:
             obj = Keyword.create_or_update(
                 user=user,
                 vocabulary=None,
                 language=get_or_create_language(kwd.get("lang"), user=user),
-                text=kwd.get("text"),
+                text=kwd.get("plain_text"),
+                html_text=kwd.get("html_text"),
             )
             data.append(obj)
         except Exception as e:
@@ -442,35 +444,32 @@ def set_first_last_page_elocation_id(xmltree, article):
 
 
 def create_or_update_titles(xmltree, user, item):
-    titles = ArticleTitles(xmltree=xmltree).article_title_list
+    titles = ArticleTitles(xmltree=xmltree,  tags_to_convert_to_html={'bold': 'b'}).article_title_list
     data = []
     for title in titles:
-        title_text = title.get("text") or ""
-        format_title = " ".join(title_text.split())
-        if format_title:
-            try:
-                lang = get_or_create_language(title.get("lang"), user=user)
-                obj = DocumentTitle.create_or_update(
-                    title=format_title,
-                    title_rich=title.get("text"),
+        try:
+            lang = get_or_create_language(title.get("lang"), user=user)
+            obj = DocumentTitle.create_or_update(
+                title=title.get("plain_text"),
+                rich_text=title.get("html_text"),
+                language=lang,
+                user=user,
+            )
+            data.append(obj)
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                item=item,
+                action="article.sources.xmlsps.create_or_update_titles",
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail=dict(
+                    xmltree=f"{xmltree}",
+                    function="article.sources.xmlsps.create_or_update_titles",
+                    title=title.get("plain_text"),
                     language=lang,
-                    user=user,
-                )
-                data.append(obj)
-            except Exception as e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                UnexpectedEvent.create(
-                    item=item,
-                    action="article.xmlsps.create_or_update_titles",
-                    exception=e,
-                    exc_traceback=exc_traceback,
-                    detail=dict(
-                        xmltree=f"{xmltree}",
-                        function="article.xmlsps.create_or_update_titles",
-                        title=format_title,
-                        language=lang,
-                    ),
-                )
+                ),
+            )
     return data
 
 
