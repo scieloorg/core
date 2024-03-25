@@ -111,6 +111,7 @@ THIRD_PARTY_APPS = [
     "wagtailmenus",
     "rest_framework",
     "haystack",
+    "maintenance_mode",
 ]
 
 LOCAL_APPS = [
@@ -200,6 +201,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "maintenance_mode.middleware.MaintenanceModeMiddleware",
 ]
 
 # STATIC
