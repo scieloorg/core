@@ -51,6 +51,16 @@ class PublisherSerializer(serializers.ModelSerializer):
         ]
 
 
+class OwnerSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='institution.institution.institution_identification.name')
+    
+    class Meta:
+        model = models.OwnerHistory
+        fields = [
+            "name",
+        ]
+
+
 class JournalSerializer(serializers.ModelSerializer):
     # Serializadores para campos de relacionamento, como 'official', devem corresponder aos campos do modelo.
     official = OfficialJournalSerializer(many=False, read_only=True)
@@ -59,6 +69,7 @@ class JournalSerializer(serializers.ModelSerializer):
     text_language = LanguageSerializer(many=True, read_only=True)
     journal_use_license = JournalUseLicenseSerializer(many=False, read_only=True)
     publisher = PublisherSerializer(many=True, read_only=True, source="publisher_history")
+    owner = OwnerSerializer(many=True, read_only=True, source="owner_history")
     acronym = serializers.SerializerMethodField()
     
     def get_acronym(self, obj):
@@ -74,6 +85,7 @@ class JournalSerializer(serializers.ModelSerializer):
             "acronym",
             "journal_use_license",
             "publisher",
+            "owner",
             "subject_descriptor",
             "subject",
             "text_language",
