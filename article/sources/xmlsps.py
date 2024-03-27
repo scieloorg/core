@@ -465,7 +465,7 @@ def create_or_update_titles(xmltree, user, item):
                 exception=e,
                 exc_traceback=exc_traceback,
                 detail=dict(
-                    xmltree=f"{xmltree}",
+                    xmltree=f"{etree.tostring(xmltree)}",
                     function="article.sources.xmlsps.create_or_update_titles",
                     title=title.get("plain_text"),
                     language=lang,
@@ -502,7 +502,7 @@ def get_or_create_issues(xmltree, user, item):
             exception=e,
             exc_traceback=exc_traceback,
             detail=dict(
-                xmltree=f"{xmltree}",
+                xmltree=f"{etree.tostring(xmltree)}",
                 function="article.xmlsps.get_or_create_issues",
                 issue=issue_data,
             ),
