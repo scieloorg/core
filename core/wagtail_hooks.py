@@ -14,6 +14,7 @@ from wagtail.contrib.modeladmin.options import (
 from article.models import Article
 from collection.models import Collection
 from core.models import Gender
+from config.menu import get_menu_order, WAGTAIL_MENU_APPS_ORDER
 from journal import models
 from config.menu import get_menu_order
 from journal.wagtail_hooks import (
@@ -21,6 +22,10 @@ from journal.wagtail_hooks import (
     AdditionalIndexedAtAdmin,
     IndexedAtFileAdmin,
     ArticleSubmissionFormatCheckListAdmin,
+    SubjectAdmin,
+    WebOfKnowledgeAdmin,
+    WosAreaAdmin,
+    StandardAdmin,
 )
 from thematic_areas.wagtail_hooks import ThematicAreaAdmin, ThematicAreaFileAdmin
 from vocabulary.wagtail_hooks import VocabularyAdmin, KeywordAdmin
@@ -99,71 +104,6 @@ def add_items_summary_items(request, items):
     items.append(ArticleSummaryItem(request))
 
 
-class WebOfKnowledgeAdmin(ModelAdmin):
-    model = models.WebOfKnowledge
-    menu_icon = "folder"
-    menu_order = 100
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-    list_display = (
-        "code",
-        "value",
-    )
-
-    search_fields = (
-        "code",
-        "value",
-    )
-
-
-class SubjectAdmin(ModelAdmin):
-    model = models.Subject
-    menu_icon = "folder"
-    menu_order = 300
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-    list_display = (
-        "code",
-        "value",
-    )
-
-    search_fields = (
-        "code",
-        "value",
-    )
-
-
-class WosAreaAdmin(ModelAdmin):
-    model = models.WebOfKnowledgeSubjectCategory
-    menu_icon = "folder"
-    menu_order = 400
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-    list_display = (
-        "value",
-    )
-    search_fields = (
-        "value",
-    )
-
-
-class StandardAdmin(ModelAdmin):
-    model = models.Standard
-    menu_icon = "folder"
-    menu_order = 500
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-    list_display = (
-        "code",
-        "value",
-    )
-
-    search_fields = (
-        "code",
-        "value",
-    )
-
-
 class GenderAdmin(ModelAdmin):
     model = Gender
     menu_icon = "folder"
@@ -193,10 +133,24 @@ class ListCodesAdminGroup(ModelAdminGroup):
         WosAreaAdmin,
         StandardAdmin,
         GenderAdmin,
-        VocabularyAdmin, KeywordAdmin,
+        VocabularyAdmin, 
+        KeywordAdmin,
         ThematicAreaAdmin,
         ThematicAreaFileAdmin,
         ArticleSubmissionFormatCheckListAdmin,
     )
 
 modeladmin_register(ListCodesAdminGroup)
+
+
+@hooks.register('construct_main_menu')
+def reorder_menu_items(request, menu_items):
+    for item in menu_items:
+        if item.label in WAGTAIL_MENU_APPS_ORDER:
+            item.order = get_menu_order(item.label)
+
+
+@hooks.register('construct_main_menu')
+def remove_menu_items(request, menu_items):
+    if not request.user.is_superuser:
+        menu_items[:] = [item for item in menu_items if item.name not in ['documents', 'explorer', 'reports']]

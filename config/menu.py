@@ -27,6 +27,12 @@ WAGTAIL_MENU_APPS_ORDER = [
     "django_celery_beat",
     "tracker",
     "files_storage",
+    "Configurações",
+    "Páginas",
+    "Relatórios",
+    "Ajuda",
+    "Images",
+    "Documentos",
 ]
 
 
