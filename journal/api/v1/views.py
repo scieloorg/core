@@ -15,8 +15,7 @@ class GenericJournalViewSet(viewsets.ModelViewSet):
 class JournalViewSet(GenericJournalViewSet):
     def get_queryset(self):
         issn = self.request.query_params.get("issn")
-        validate_issn(issn)
-        validate_params(self.request, "issn")
+        validate_params(self.request, "issn", "")
 
         queryset = super().get_queryset()
 
@@ -32,4 +31,4 @@ class JournalViewSet(GenericJournalViewSet):
                 Q(official__issnl=issn)
     
         queryset = queryset.filter(query)
-        return queryset if queryset.exists() else queryset.none()
+        return queryset if queryset.exists() else queryset
