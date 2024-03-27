@@ -18,8 +18,8 @@ router.register("article", ArticleViewSet, basename="Article")
 router.register("issue", IssueViewSet, basename="Issue")
 router.register("pid_provider", PidProviderViewSet, basename="pid_provider")
 router.register("fix_pid_v2", FixPidV2ViewSet, basename="fix_pid_v2")
-router.register("journals", GenericJournalViewSet, basename="journal")
-router.register(r"journal/identifier", JournalViewSet, basename='journal_identifier')
+router.register("journal", JournalViewSet, basename="journal")
+
 
 
 urlpatterns = router.urls
