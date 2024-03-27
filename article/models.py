@@ -435,11 +435,13 @@ class DocumentAbstract(TextLanguageMixin, CommonControlField, Orderable):
         article,
         language,
         text,
+        rich_text,
     ):
         try:
             obj = cls.get(article=article, language=language)
             obj.plain_text = text or obj.plain_text
             obj.article = article or obj.article
+            obj.rich_text = rich_text or obj.rich_text
             obj.language = language or obj.language
             obj.updated_by = user
             obj.save()
