@@ -4,7 +4,7 @@ import sys
 from django.db.models import Q
 from django.db.utils import DataError
 from lxml import etree
-from packtools.sps.models.article_abstract import Abstract
+from packtools.sps.models.article_abstract import ArticleAbstract
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_authors import Authors
 from packtools.sps.models.article_doi_with_lang import DoiWithLang
@@ -45,7 +45,6 @@ class LicenseDoesNotExist(Exception):
 def load_article(user, xml=None, file_path=None, v3=None):
     logging.info(f"load article {file_path} {v3}")
     try:
-        file_path = file_path or "article/fixtures/test_xml_kwd_abstract_articletitle.xml"
         if file_path:
             for xml_with_pre in XMLWithPre.create(file_path):
                 xmltree = xml_with_pre.xmltree
@@ -290,31 +289,33 @@ def create_or_update_keywords(xmltree, user, item):
 
 def create_or_update_abstract(xmltree, user, article, item):
     data = []
+    abstract = ArticleAbstract(xmltree=xmltree)
+    abstract.configure(tags_to_convert_to_html={'bold': 'b', 'italic': 'i'})
+
     if xmltree.find(".//abstract") is not None:
-        abstract = Abstract(xmltree=xmltree).get_abstracts(style="inline")
-        for ab in abstract:
-            if ab:
-                try:
+        try:
+            for ab in abstract.get_abstracts():
+                if ab:
                     obj = DocumentAbstract.create_or_update(
                         user=user,
                         article=article,
                         language=get_or_create_language(ab.get("lang"), user=user),
-                        text=ab.get("abstract"),
+                        text=ab.get("plain_text"),
+                        rich_text=ab.get("rich_text"),
                     )
                     data.append(obj)
-                except AttributeError as e:
-                    exc_type, exc_value, exc_traceback = sys.exc_info()
-                    UnexpectedEvent.create(
-                        item=item,
-                        action="article.xmlsps.sources.create_or_update_abstract",
-                        exception=e,
-                        exc_traceback=exc_traceback,
-                        detail=dict(
-                            xmltree=f"{etree.tostring(xmltree)}",
-                            function="article.xmlsps.sources.create_or_update_abstract",
-                            abstract=ab,
-                        ),
-                    )
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                item=item,
+                action="article.xmlsps.sources.create_or_update_abstract",
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail=dict(
+                    xmltree=f"{etree.tostring(xmltree)}",
+                    function="article.xmlsps.sources.create_or_update_abstract",
+                ),
+            )
     return data
 
 
