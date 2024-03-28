@@ -344,7 +344,7 @@ class DocumentTitle(TextLanguageMixin, CommonControlField):
         raise ValueError("DocumentTitle requires title parameter")
 
     @classmethod
-    def create_or_update(cls, title, title_rich, language, user):
+    def create_or_update(cls, title, rich_text, language, user):
         try:
             obj = cls.get(title=title)
             obj.updated_by = user
@@ -354,7 +354,7 @@ class DocumentTitle(TextLanguageMixin, CommonControlField):
             obj.creator = user
 
         obj.language = language or obj.language
-        obj.rich_text = title_rich or obj.title_rich
+        obj.rich_text = rich_text or obj.rich_text
         obj.save()
         return obj
 
@@ -435,11 +435,13 @@ class DocumentAbstract(TextLanguageMixin, CommonControlField, Orderable):
         article,
         language,
         text,
+        rich_text,
     ):
         try:
             obj = cls.get(article=article, language=language)
             obj.plain_text = text or obj.plain_text
             obj.article = article or obj.article
+            obj.rich_text = rich_text or obj.rich_text
             obj.language = language or obj.language
             obj.updated_by = user
             obj.save()
