@@ -2,9 +2,7 @@ from rest_framework import serializers
 
 from core.api.v1.serializers import LicenseSerializer
 from issue import models
-from journal.api.v1.serializers import JournalSerializer
-from location.api.v1.serializers import CitySerializer
-
+from journal.models import SciELOJournal
 
 class TocSectionsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,10 +13,9 @@ class TocSectionsSerializer(serializers.ModelSerializer):
 
 
 class IssueSerializer(serializers.ModelSerializer):
-    journal = JournalSerializer(many=False, read_only=True)
+    journal = serializers.SerializerMethodField()
     sections = TocSectionsSerializer(many=True, read_only=True)
     license = LicenseSerializer(many=True, read_only=True)
-    city = CitySerializer(many=False, read_only=True)
 
     class Meta:
         model = models.Issue
@@ -32,5 +29,18 @@ class IssueSerializer(serializers.ModelSerializer):
             "year",
             "month",
             "supplement",
-            "city",
         ]
+
+    def get_journal(self, obj):
+        if obj.journal:
+            scielo_journal = SciELOJournal.objects.get(journal=obj.journal).issn_scielo
+            return {
+                "title": obj.journal.title,
+                "short_title": obj.journal.short_title,
+                "issn_print": obj.journal.official.issn_print,
+                "issn_electronic": obj.journal.official.issn_electronic,
+                "issnl": obj.journal.official.issnl,
+                "scielo_journal": scielo_journal,
+            }
+        else:
+            return None
