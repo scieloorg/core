@@ -467,6 +467,7 @@ class Journal(CommonControlField, ClusterableModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=_("As palavras-chave devem ser extraídas de thesaurus,dicionários temáticos ou listas controladas nos idiomas que o periódico pública."),
     )
     indexed_at = models.ManyToManyField(
         "IndexedAt",
