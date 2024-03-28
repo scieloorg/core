@@ -85,3 +85,7 @@ pysolr==3.9.0
 # Tenacity
 # ------------------------------------------------------------------------------
 tenacity==8.2.3  # https://pypi.org/project/tenacity/
+
+#Django Maintenance Mode
+# ------------------------------------------------------------------------------
+django-maintenance-mode==0.21.1

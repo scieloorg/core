@@ -35,3 +35,9 @@ SENTRY_DSN=
 # ------------------------------------------------------------------------------
 COLLECTION_TEAM="Collection Team"
 JOURNAL_TEAM="Journal Team"
+
+# MAINTENANCE
+# ------------------------------------------------------------------------------
+MAINTENANCE_MODE=False
+MAINTENANCE_MODE_IGNORE_SUPERUSER=True
+MAINTENANCE_MODE_IGNORE_ADMIN_SITE=False
