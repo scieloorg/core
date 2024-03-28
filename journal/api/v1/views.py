@@ -30,5 +30,5 @@ class JournalViewSet(GenericJournalViewSet):
                 Q(official__issn_print=issn) | \
                 Q(official__issnl=issn)
     
-        queryset = queryset.filter(query)
-        return queryset if queryset.exists() else queryset
+        custom_queryset = queryset.filter(query)
+        return custom_queryset if custom_queryset.exists() else queryset
