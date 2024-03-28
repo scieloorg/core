@@ -123,7 +123,9 @@
 
     <field name="django_ct" type="string" indexed="true" stored="true" multiValued="false"/>
     <!-- <field name="django_id" type="string" indexed="true" stored="true" multiValued="false"/> -->
-
+    
+    <field name="text" type="text" indexed="true" stored="true"/>
+    
     <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false" />
 
     <field name="ids" type="string" indexed="true" stored="true" required="true" multiValued="true" />    
@@ -454,7 +456,7 @@
    <dynamicField name="*"  type="text" indexed="true" stored="true"  multiValued="false"/>
    <!-- <dynamicField name="*" type="ignored" /> -->
 
-    <!-- <fieldtype name="text" class="solr.TextField" positionIncrementGap="100">
+    <fieldtype name="text" class="solr.TextField" positionIncrementGap="100">
       <analyzer type="index">
         <tokenizer class="solr.WhitespaceTokenizerFactory"/>
         <filter class="solr.ASCIIFoldingFilterFactory"/>
@@ -467,7 +469,7 @@
         <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0"/>
         <filter class="solr.LowerCaseFilterFactory"/>
       </analyzer>
-    </fieldtype> -->
+    </fieldtype>
 
     <copyField source="text" dest="tw"/>
     <copyField source="_text_" dest="tw"/>
@@ -634,11 +636,11 @@
 
     <!-- A text field that only splits on whitespace for exact matching of words -->
     <dynamicField name="*_ws" type="text"  indexed="true"  stored="true"/>
-    <fieldType name="text" class="solr.TextField" positionIncrementGap="100">
+    <!-- <fieldType name="text" class="solr.TextField" positionIncrementGap="100">
       <analyzer>
         <tokenizer name="whitespace"/>
       </analyzer>
-    </fieldType>
+    </fieldType> -->
 
     <!-- A general text field that has reasonable, generic
          cross-language defaults: it tokenizes with StandardTokenizer,
