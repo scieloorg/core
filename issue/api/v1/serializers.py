@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from core.api.v1.serializers import LicenseSerializer
+from core.api.v1.serializers import LicenseStatementSerializer
 from issue import models
 from journal.models import SciELOJournal
 
@@ -15,7 +15,7 @@ class TocSectionsSerializer(serializers.ModelSerializer):
 class IssueSerializer(serializers.ModelSerializer):
     journal = serializers.SerializerMethodField()
     sections = TocSectionsSerializer(many=True, read_only=True)
-    license = LicenseSerializer(many=True, read_only=True)
+    license = LicenseStatementSerializer(many=True, read_only=True)
 
     class Meta:
         model = models.Issue
@@ -32,8 +32,12 @@ class IssueSerializer(serializers.ModelSerializer):
         ]
 
     def get_journal(self, obj):
+        collection_acron3 = self.context.get("request").query_params.get("collection")
         if obj.journal:
-            scielo_journal = SciELOJournal.objects.get(journal=obj.journal).issn_scielo
+            try:
+                scielo_journal = obj.journal.scielojournal_set.get(collection__acron3=collection_acron3).issn_scielo
+            except SciELOJournal.DoesNotExist:
+                scielo_journal = None
             return {
                 "title": obj.journal.title,
                 "short_title": obj.journal.short_title,
@@ -42,5 +46,3 @@ class IssueSerializer(serializers.ModelSerializer):
                 "issnl": obj.journal.official.issnl,
                 "scielo_journal": scielo_journal,
             }
-        else:
-            return None
