@@ -1,3 +1,5 @@
+from rest_framework.exceptions import ValidationError
+
 from django.db.models import Q
 from rest_framework import viewsets
 
@@ -18,6 +20,9 @@ class IssueViewSet(GenericIssueViewSet):
         collection = self.request.query_params.get("collection")
         from_date = self.request.query_params.get("from_date")
         until_date = self.request.query_params.get("until_date")
+        if not collection:
+            raise ValidationError("Collection is a required query parameter")
+
         validate_params(self.request, "collection", "from_date", "until_date")
 
         params = {}
