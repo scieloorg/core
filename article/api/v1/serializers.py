@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from article import models
-from core.api.v1.serializers import LanguageSerializer, LicenseSerializer
+from core.api.v1.serializers import LanguageSerializer, LicenseStatementSerializer
 from doi.api.v1.serializers import DoiSerializer
 from institution.api.v1.serializers import SponsorSerializer
 from issue.api.v1.serializers import IssueSerializer, TocSectionsSerializer
@@ -70,7 +70,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     fundings = FundingsSerializer(many=True, read_only=True)
     article_type = ArticleTypeSerializer(many=False, read_only=True)
     toc_sections = TocSectionsSerializer(many=True, read_only=True)
-    license = LicenseSerializer(many=True, read_only=True)
+    license = LicenseStatementSerializer(many=True, read_only=True)
     issue = IssueSerializer(many=False, read_only=True)
     keywords = KeywordSerializer(many=True, read_only=True)
 

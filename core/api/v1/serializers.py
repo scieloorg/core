@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from core.models import Language, License
+from core.models import Language, LicenseStatement
 
 
 class LanguageSerializer(serializers.ModelSerializer):
@@ -13,11 +13,11 @@ class LanguageSerializer(serializers.ModelSerializer):
         datatables_always_serialize = ("id",)
 
 
-class LicenseSerializer(serializers.ModelSerializer):
+class LicenseStatementSerializer(serializers.ModelSerializer):
     language = LanguageSerializer(many=False, read_only=True)
 
     class Meta:
-        model = License
+        model = LicenseStatement
         fields = [
             "url",
             "license_p",
