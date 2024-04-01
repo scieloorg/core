@@ -64,6 +64,11 @@ class CollectionAdmin(ModelAdmin):
         "updated_by",
     )
     export_filename = "collections"
+    inspect_view_fields_exclude = {
+        "id",
+        "creator",
+        "updated_by"
+    }
 
 
 modeladmin_register(CollectionAdmin)

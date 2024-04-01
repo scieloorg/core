@@ -22,10 +22,14 @@ class BasePidProvider:
         is_published=None,
         origin=None,
         registered_in_core=None,
+        caller=None,
     ):
         """
         Fornece / Valida PID para o XML no formato de objeto de XMLWithPre
         """
+        # Completa os valores ausentes de pid com recuperados ou com inéditos
+        xml_changed = PidProviderXML.complete_pids(xml_with_pre)
+
         registered = PidProviderXML.register(
             xml_with_pre,
             name,
@@ -36,6 +40,11 @@ class BasePidProvider:
             origin=origin,
             registered_in_core=registered_in_core,
         )
+        if xml_changed:
+            registered["xml_changed"] = xml_changed
+            # indica que Upload precisa aplicar as mudanças no xml_with_pre
+            registered["apply_xml_changes"] = caller == "core"
+
         return registered
 
     def provide_pid_for_xml_zip(
@@ -47,6 +56,7 @@ class BasePidProvider:
         force_update=None,
         is_published=None,
         registered_in_core=None,
+        caller=None,
     ):
         """
         Fornece / Valida PID para o XML em um arquivo compactado
@@ -66,6 +76,7 @@ class BasePidProvider:
                     is_published=is_published,
                     origin=zip_xml_file_path,
                     registered_in_core=registered_in_core,
+                    caller=caller,
                 )
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()

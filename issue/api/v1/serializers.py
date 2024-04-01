@@ -1,10 +1,10 @@
 from rest_framework import serializers
 
-from core.api.v1.serializers import LicenseSerializer
+from core.api.v1.serializers import LicenseStatementSerializer
 from issue import models
-from journal.api.v1.serializers import JournalSerialiazer
+from journal.models import SciELOJournal
+from journal.api.v1.serializers import JournalSerializer
 from location.api.v1.serializers import CitySerializer
-
 
 class TocSectionsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,10 +15,9 @@ class TocSectionsSerializer(serializers.ModelSerializer):
 
 
 class IssueSerializer(serializers.ModelSerializer):
-    journal = JournalSerialiazer(many=False, read_only=True)
+    journal = serializers.SerializerMethodField()
     sections = TocSectionsSerializer(many=True, read_only=True)
-    license = LicenseSerializer(many=True, read_only=True)
-    city = CitySerializer(many=False, read_only=True)
+    license = LicenseStatementSerializer(many=True, read_only=True)
 
     class Meta:
         model = models.Issue
@@ -32,5 +31,20 @@ class IssueSerializer(serializers.ModelSerializer):
             "year",
             "month",
             "supplement",
-            "city",
         ]
+
+    def get_journal(self, obj):
+        collection_acron3 = self.context.get("request").query_params.get("collection")
+        if obj.journal:
+            try:
+                scielo_journal = obj.journal.scielojournal_set.get(collection__acron3=collection_acron3).issn_scielo
+            except SciELOJournal.DoesNotExist:
+                scielo_journal = None
+            return {
+                "title": obj.journal.title,
+                "short_title": obj.journal.short_title,
+                "issn_print": obj.journal.official.issn_print,
+                "issn_electronic": obj.journal.official.issn_electronic,
+                "issnl": obj.journal.official.issnl,
+                "scielo_journal": scielo_journal,
+            }
