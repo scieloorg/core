@@ -21,3 +21,7 @@
 .hide-file-section .w-field__input a {
     font-weight: bold;
 }
+
+.inspect-label-scielo {
+    color: var(--w-color-text-label);
+}
