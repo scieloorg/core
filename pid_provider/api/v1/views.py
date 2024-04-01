@@ -78,6 +78,7 @@ class PidProviderViewSet(
                 results = self.pid_provider.provide_pid_for_xml_zip(
                     zip_xml_file_path=downloaded_file_path,
                     user=request.user,
+                    caller="core",
                 )
                 results = list(results)
                 resp_status = None

@@ -14,6 +14,7 @@ from .models import (
     OtherPid,
     PidProviderXML,
     PidRequest,
+    FixPidV2,
 )
 
 
@@ -30,6 +31,7 @@ class PidRequestAdmin(ModelAdmin):
     menu_label = _("Pid Requests")
     create_view_class = PidRequestCreateView
     menu_icon = "folder"
+    menu_order = 300
     add_to_settings_menu = False
     exclude_from_explorer = False
 
@@ -57,6 +59,7 @@ class CollectionPidRequestAdmin(ModelAdmin):
     menu_label = _("Collection Pid Requests")
     create_view_class = PidRequestCreateView
     menu_icon = "folder"
+    menu_order = 300
     add_to_settings_menu = False
     exclude_from_explorer = False
 
@@ -86,10 +89,10 @@ class PidProviderXMLAdmin(ModelAdmin):
     menu_label = _("Pid Provider XMLs")
     create_view_class = PidProviderXMLAdminCreateView
     menu_icon = "folder"
+    menu_order = 300
     add_to_settings_menu = False
     exclude_from_explorer = False
 
-    list_per_page = 20
     list_display = (
         "pkg_name",
         "v3",
@@ -105,6 +108,7 @@ class PidProviderXMLAdmin(ModelAdmin):
         "article_pub_year",
         "pub_year",
         "other_pid_count",
+        "registered_in_core",
     )
     search_fields = (
         "pkg_name",
@@ -130,6 +134,7 @@ class OtherPidAdmin(ModelAdmin):
     menu_label = _("Pid Changes")
     create_view_class = OtherPidAdminCreateView
     menu_icon = "folder"
+    menu_order = 300
     add_to_settings_menu = False
     exclude_from_explorer = False
 
@@ -160,12 +165,45 @@ class PidProviderConfigAdmin(ModelAdmin):
     menu_label = _("Pid Provider Config")
     create_view_class = PidProviderConfigCreateView
     menu_icon = "folder"
+    menu_order = 300
     add_to_settings_menu = False
     exclude_from_explorer = False
 
     list_display = (
         "pid_provider_api_post_xml",
         "pid_provider_api_get_token",
+    )
+
+
+class FixPidV2CreateView(CreateView):
+    def form_valid(self, form):
+        self.object = form.save_all(self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class FixPidV2Admin(ModelAdmin):
+    list_per_page = 10
+    model = FixPidV2
+    inspect_view_enabled = True
+    menu_label = _("Fix pid v2")
+    create_view_class = FixPidV2CreateView
+    menu_icon = "folder"
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+
+    list_display = (
+        "pid_provider_xml",
+        "correct_pid_v2",
+        "fixed_in_core",
+        "fixed_in_upload",
+        "created",
+        "updated",
+    )
+    list_filter = ("fixed_in_core", "fixed_in_upload")
+    search_fields = (
+        "correct_pid_v2",
+        "pid_provider_xml__v3",
+        "pid_provider_xml__pkg_name",
     )
 
 
@@ -179,6 +217,7 @@ class PidProviderAdminGroup(ModelAdminGroup):
         PidRequestAdmin,
         OtherPidAdmin,
         CollectionPidRequestAdmin,
+        FixPidV2Admin,
     )
 
 
