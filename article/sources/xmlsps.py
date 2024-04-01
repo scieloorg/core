@@ -301,7 +301,7 @@ def create_or_update_abstract(xmltree, user, article, item):
                         article=article,
                         language=get_or_create_language(ab.get("lang"), user=user),
                         text=ab.get("plain_text"),
-                        rich_text=ab.get("rich_text"),
+                        rich_text=ab.get("html_text"),
                     )
                     data.append(obj)
         except Exception as e:
