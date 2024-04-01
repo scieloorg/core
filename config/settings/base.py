@@ -111,6 +111,7 @@ THIRD_PARTY_APPS = [
     "wagtailmenus",
     "rest_framework",
     "haystack",
+    "maintenance_mode",
 ]
 
 LOCAL_APPS = [
@@ -200,6 +201,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "maintenance_mode.middleware.MaintenanceModeMiddleware",
 ]
 
 # STATIC
@@ -466,3 +468,20 @@ SEARCH_FACET_LIST = [
 WAGTAIL_USER_EDIT_FORM = 'core.users.forms.CustomUserEditForm'
 WAGTAIL_USER_CREATION_FORM = 'core.users.forms.CustomUserCreationForm'
 WAGTAIL_USER_CUSTOM_FIELDS = ['collection', 'journal']
+
+# django maintenance mode
+# ------------------------------------------------------------------------------
+
+MAINTENANCE_MODE = env.bool("MAINTENANCE_MODE", default=False)
+# if True the superuser will not see the maintenance-mode page
+MAINTENANCE_MODE_IGNORE_SUPERUSER = env.bool("MAINTENANCE_MODE_IGNORE_SUPERUSER", default=True)
+
+# if True admin site will not be affected by the maintenance-mode page
+MAINTENANCE_MODE_IGNORE_ADMIN_SITE = env.bool("MAINTENANCE_MODE_IGNORE_ADMIN_SITE", default=False)
+
+# the template that will be shown by the maintenance-mode page
+MAINTENANCE_MODE_TEMPLATE = "503.html"
+
+# by default, a file named "maintenance_mode_state.txt" will be created in the settings.py directory
+# you can customize the state file path in case the default one is not writable
+MAINTENANCE_MODE_STATE_FILE_PATH = "maintenance_mode_state.txt"
