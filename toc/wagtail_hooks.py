@@ -29,4 +29,17 @@ class JournalTOCAdmin(ModelAdmin):
     search_fields = ("journal",)
 
 
+class IssueTOCAdmin(ModelAdmin):
+    model = models.IssueTOC
+    menu_label = _("IssueTOC")
+    menu_icon = "folder"
+    menu_order = 200
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+
+    list_display = ("issue",)
+    search_fields = ("issue",)
+
+
 modeladmin_register(JournalTOCAdmin)
+modeladmin_register(IssueTOCAdmin)
