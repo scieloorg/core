@@ -10,6 +10,7 @@ from wagtail.models import Orderable
 from wagtail.admin.panels import InlinePanel, FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 from journal.models import Journal
+from issue.models import Issue
 
 
 class JournalTOC(CommonControlField, ClusterableModel):
@@ -71,3 +72,25 @@ class JournalSection(Orderable, CommonControlField):
     )
 
     section = models.TextField(_("Section"), null=True, blank=True)
+
+
+class IssueTOC(CommonControlField):
+    issue = models.ForeignKey(
+        Issue,
+        verbose_name=_("Issue"),
+        on_delete=models.SET_NULL,
+        related_name="+",
+        null=True,
+        blank=True,
+    )
+
+    journal_section_code = models.ManyToManyField(
+        "JournalSectionCode",
+        verbose_name=_("Journal Section Code"),
+        blank=True,
+    )
+
+    panels = [
+        AutocompletePanel("issue"),
+        AutocompletePanel("journal_section_code"),
+    ]
