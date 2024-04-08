@@ -25,6 +25,7 @@ WAGTAIL_MENU_APPS_ORDER = [
 
     "pid_provider",
     "django_celery_beat",
+    "xml_validation",
     "tracker",
     "files_storage",
     "Configurações",
