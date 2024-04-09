@@ -6,7 +6,7 @@ from .serializers import ValidationConfigurationSerializer
 from xml_validation.models import ValidationConfiguration
 
 
-class GenericJournalViewSet(viewsets.ModelViewSet):
+class GenericValidationConfigViewSet(viewsets.ModelViewSet):
     serializer_class = ValidationConfigurationSerializer
     http_method_names = ["get"]
     queryset = ValidationConfiguration.objects.all()
