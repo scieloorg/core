@@ -4,9 +4,9 @@ import sys
 from django.contrib.auth import get_user_model
 from config import celery_app
 from collection.models import Collection
-from core.models import Language, License
+from core.models import Language, License, Gender
 from editorialboard.models import RoleModel
-from institution.models import Institution
+from institution.models import Institution, InstitutionType
 from location.models import Country, City, State
 from journal.models import Standard, Subject, WebOfKnowledge, WebOfKnowledgeSubjectCategory, IndexedAt, DigitalPreservationAgency
 from vocabulary.models import Vocabulary
@@ -49,6 +49,8 @@ def task_start(
         RoleModel.load(user)
         License.load(user)
         DigitalPreservationAgency.load(user)
+        InstitutionType.load(user)
+        Gender.load(user)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(

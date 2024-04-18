@@ -5,13 +5,13 @@ from wagtail.contrib.modeladmin.options import (
 from django.utils.translation import gettext as _
 
 from .models import ReportCSV
-
+from config.menu import get_menu_order
 
 class ReportCSVAdmin(ModelAdmin):
     model = ReportCSV
     menu_label = _("Report CSV")
     menu_icon = "folder"
-    menu_order = 100
+    menu_order = get_menu_order("report")
     add_to_settings_menu = False
     exclude_from_explorer = False
     list_display = (

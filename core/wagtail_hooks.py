@@ -5,10 +5,30 @@ from django.utils.html import format_html
 from wagtail import hooks
 from wagtail.admin.navigation import get_site_for_user
 from wagtail.admin.site_summary import SummaryItem
+from wagtail.contrib.modeladmin.options import (
+    ModelAdmin,
+    ModelAdminGroup,
+    modeladmin_register,
+)
 
 from article.models import Article
 from collection.models import Collection
-from journal.models import Journal
+from core.models import Gender
+from config.menu import get_menu_order, WAGTAIL_MENU_APPS_ORDER
+from journal import models
+from config.menu import get_menu_order
+from journal.wagtail_hooks import (
+    IndexedAtAdmin,
+    AdditionalIndexedAtAdmin,
+    IndexedAtFileAdmin,
+    ArticleSubmissionFormatCheckListAdmin,
+    SubjectAdmin,
+    WebOfKnowledgeAdmin,
+    WosAreaAdmin,
+    StandardAdmin,
+)
+from thematic_areas.wagtail_hooks import ThematicAreaAdmin, ThematicAreaFileAdmin
+from vocabulary.wagtail_hooks import VocabularyAdmin, KeywordAdmin
 
 
 @hooks.register("insert_global_admin_css", order=100)
@@ -54,7 +74,7 @@ class JournalSummaryItem(SummaryItem):
 
     def get_context_data(self, parent_context):
         site_details = get_site_for_user(self.request.user)
-        total_journal = Journal.objects.all().count()
+        total_journal = models.Journal.objects.all().count()
         return {
             "total_journal": total_journal,
             "site_name": site_details["site_name"],
@@ -82,3 +102,55 @@ def add_items_summary_items(request, items):
     items.append(CollectionSummaryItem(request))
     items.append(JournalSummaryItem(request))
     items.append(ArticleSummaryItem(request))
+
+
+class GenderAdmin(ModelAdmin):
+    model = Gender
+    menu_icon = "folder"
+    menu_order = 600
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "code",
+        "gender",
+    )
+
+    search_fields = (
+        "code",
+        "gender",
+    )
+
+class ListCodesAdminGroup(ModelAdminGroup):
+    menu_label = "List of codes"
+    menu_icon = "folder-open-inverse"
+    menu_order = get_menu_order("core")
+    items = (
+        IndexedAtAdmin,
+        AdditionalIndexedAtAdmin,
+        IndexedAtFileAdmin,
+        SubjectAdmin,
+        WebOfKnowledgeAdmin,
+        WosAreaAdmin,
+        StandardAdmin,
+        GenderAdmin,
+        VocabularyAdmin, 
+        KeywordAdmin,
+        ThematicAreaAdmin,
+        ThematicAreaFileAdmin,
+        ArticleSubmissionFormatCheckListAdmin,
+    )
+
+modeladmin_register(ListCodesAdminGroup)
+
+
+@hooks.register('construct_main_menu')
+def reorder_menu_items(request, menu_items):
+    for item in menu_items:
+        if item.label in WAGTAIL_MENU_APPS_ORDER:
+            item.order = get_menu_order(item.label)
+
+
+@hooks.register('construct_main_menu')
+def remove_menu_items(request, menu_items):
+    if not request.user.is_superuser:
+        menu_items[:] = [item for item in menu_items if item.name not in ['documents', 'explorer', 'reports']]

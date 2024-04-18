@@ -53,13 +53,13 @@ class Issue(CommonControlField, ClusterableModel):
     autocomplete_search_field = "journal__title"
 
     def autocomplete_label(self):
-        return f"{self.journal} {self.volume}, {self.number} {self.supplement}"
+        return str(self)
 
     panels_issue = [
         AutocompletePanel("journal"),
         FieldPanel("volume"),
-        FieldPanel("supplement"),
         FieldPanel("number"),
+        FieldPanel("supplement"),
         AutocompletePanel("city"),
         FieldPanel("year"),
         FieldPanel("season"),
@@ -87,7 +87,7 @@ class Issue(CommonControlField, ClusterableModel):
             ObjectList(panels_issue, heading=_("Issue")),
             ObjectList(panels_title, heading=_("Titles")),
             ObjectList(panels_subtitle, heading=_("Subtitle")),
-            ObjectList(panels_summary, heading=_("Summary")),
+            ObjectList(panels_summary, heading=_("Sections")),
             ObjectList(panels_license, heading=_("License")),
         ]
     )
@@ -196,18 +196,19 @@ class Issue(CommonControlField, ClusterableModel):
         return issue
 
     def __unicode__(self):
-        return (
-            "%s - (%s %s %s %s)"
-            % (self.journal, self.number, self.volume, self.year, self.supplement)
-            or ""
-        )
+        values= (self.volume, self.number, self.supplement)
+        labels = ("volume", "number", "suppl")
+        issue_info = ", ".join([f"{label}: {value}" for label, value in zip(labels, values) if value])
+
+        return "%s, %s, %s" % (self.journal, issue_info, self.year)
 
     def __str__(self):
-        return (
-            "%s - (%s %s %s %s)"
-            % (self.journal, self.number, self.volume, self.year, self.supplement)
-            or ""
-        )
+        values= (self.volume, self.number, self.supplement)
+        labels = ("volume", "number", "suppl")
+        issue_info = ", ".join([f"{label}: {value}" for label, value in zip(labels, values) if value])
+
+        return "%s, %s, %s" % (self.journal, issue_info, self.year)
+
 
     base_form_class = CoreAdminModelForm
 

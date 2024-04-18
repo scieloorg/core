@@ -316,10 +316,9 @@
                             {% for editorial_member in editorial_board.order_by_role %}
                               {% if editorial_member.role.std_role == role %}  
                                 <li>
-                                  {{editorial_member.researcher.person_name}}, {{editorial_member.researcher.affiliation.institution.institution_identification.name}}, 
-                                  {{editorial_member.researcher.affiliation.institution.location.representation}} 
+                                  {{editorial_member.researcher.person_name}}{% if editorial_member.researcher.affiliation.institution.institution_identification.name %}, {{editorial_member.researcher.affiliation.institution.institution_identification.name}}{% endif %}{% if editorial_member.researcher.affiliation.institution.location.representation %}, {{editorial_member.researcher.affiliation.institution.location.representation}} {% endif %}
                                   <br> 
-                                  Orcid <a href="https://orcid.org/{{editorial_member.researcher.orcid}}">{{editorial_member.researcher.orcid}}</a> | <a href="http://lattes.cnpq.br/{{editorial_member.researcher.lattes}}">CV Lattes</a> |
+                                  ORCID <a href="https://orcid.org/{{editorial_member.researcher.orcid}}">{{editorial_member.researcher.orcid}}</a> | <a href="http://lattes.cnpq.br/{{editorial_member.researcher.lattes}}">CV Lattes</a>
                                 </li>
                               {% endif %}
                             {% endfor %}

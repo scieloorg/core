@@ -8,6 +8,7 @@ from wagtail.contrib.modeladmin.options import (
 from wagtail.contrib.modeladmin.views import CreateView
 
 from book.models import Book
+from config.menu import get_menu_order
 
 
 class BookCreateView(CreateView):
@@ -44,7 +45,7 @@ class BookAdmin(ModelAdmin):
 class BookAdminGroup(ModelAdminGroup):
     menu_label = _("Books")
     menu_icon = "folder-open-inverse"  # change as required
-    menu_order = 5  # will put in 3rd place (000 being 1st, 100 2nd)
+    menu_order = get_menu_order("book")  # will put in 3rd place (000 being 1st, 100 2nd)
     items = (BookAdmin,)
 
 

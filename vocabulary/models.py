@@ -1,6 +1,7 @@
 from django.db import IntegrityError, models
 from django.utils.translation import gettext as _
 from wagtail.admin.panels import FieldPanel
+from wagtail.fields import RichTextField
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
@@ -100,6 +101,7 @@ class Vocabulary(CommonControlField):
 
 
 class Keyword(CommonControlField, TextWithLang):
+    html_text = RichTextField(_("Rich Text"), null=True, blank=True)
     vocabulary = models.ForeignKey(
         Vocabulary,
         verbose_name=_("Vocabulary"),
@@ -110,6 +112,7 @@ class Keyword(CommonControlField, TextWithLang):
 
     panels = [
         FieldPanel("text"),
+        FieldPanel("html_text"),
         FieldPanel("language"),
         AutocompletePanel("vocabulary"),
     ]
@@ -156,14 +159,15 @@ class Keyword(CommonControlField, TextWithLang):
         return d
 
     @classmethod
-    def create_or_update(cls, user, vocabulary, language, text):
+    def create_or_update(cls, user, vocabulary, language, text, html_text):
         if not vocabulary:
             vocabulary = Vocabulary.get(acronym="nd")
         if language and text:
             try:
-                return cls.get(vocabulary=vocabulary, language=language, text=text)
+                obj = cls.get(vocabulary=vocabulary, language=language, text=text)
+                return obj.update(user, html_text)
             except cls.DoesNotExist:
-                return cls.create(user, vocabulary, language, text)
+                return cls.create(user, vocabulary, language, text, html_text)
         raise ValueError("Keyword.get requires language and text paramenters")
     
     @classmethod
@@ -179,10 +183,11 @@ class Keyword(CommonControlField, TextWithLang):
                 ).first()
 
     @classmethod
-    def create(cls, user, vocabulary, language, text):
+    def create(cls, user, vocabulary, language, text, html_text):
         try:
             obj = cls()
             obj.text = text
+            obj.html_text = html_text
             obj.language = language
             obj.vocabulary = vocabulary
             obj.creator = user
@@ -190,3 +195,9 @@ class Keyword(CommonControlField, TextWithLang):
             return obj
         except IntegrityError:
             return cls.get(vocabulary, language, text)
+
+    def update(self, user, html_text):
+        self.html_text = html_text
+        self.update_by = user
+        self.save()
+        return self

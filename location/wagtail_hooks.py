@@ -12,6 +12,7 @@ from wagtail.contrib.modeladmin.views import CreateView
 from .button_helpers import CountryHelper
 from .models import City, Country, CountryFile, Location, State
 from .views import import_file_country, validate_country
+from config.menu import get_menu_order
 
 
 class LocationCreateView(CreateView):
@@ -131,7 +132,7 @@ class CountryFileAdmin(ModelAdmin):
 class LocationAdminGroup(ModelAdminGroup):
     menu_label = _("Location")
     menu_icon = "folder-open-inverse"
-    menu_order = 8
+    menu_order = get_menu_order("location")
     items = (
         LocationAdmin,
         CityAdmin,

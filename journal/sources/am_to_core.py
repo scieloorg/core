@@ -10,7 +10,7 @@ from django.core.files.base import ContentFile
 from wagtail.images.models import Image
 
 from collection.exceptions import MainCollectionNotFoundError
-from core.models import Language, License
+from core.models import Language
 from institution.models import CopyrightHolder, Owner, Publisher, Sponsor
 from journal.models import (
     Annotation,
@@ -36,6 +36,7 @@ from journal.models import (
     TitleInDatabase,
     JournalLogo,
     JournalOtherTitle,
+    JournalLicense,
 )
 from journal import tasks
 from location.models import City, CountryName, Location, State, Country
@@ -275,8 +276,8 @@ def update_logo(
         if journal_logo := JournalLogo.objects.filter(journal=journal).first():
             journal.logo = journal_logo.logo
         else:
-            # tasks.fetch_and_process_journal_logo.apply_async(kwargs=dict(journal_id=journal.id))
-            pass
+            tasks.fetch_and_process_journal_logo.apply_async(kwargs=dict(journal_id=journal.id))
+
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
@@ -302,8 +303,9 @@ def update_panel_website(
     journal.submission_online_url = extract_value(url_of_submission_online)
     license_type = extract_value(license_of_use)
     if license_type:
-        license = License.create_or_update(license_type=license_type, user=user)
-        journal.use_license = license
+        license = license_type.split("/")
+        license = JournalLicense.create_or_update(license_type=license[0], user=user)
+        journal.journal_use_license = license
     url_of_the_main_collection = extract_value(url_of_the_main_collection)
     assign_journal_to_main_collection(
         journal=journal, url_of_the_main_collection=url_of_the_main_collection
@@ -753,7 +755,7 @@ def create_or_update_location(
         [{'_': 'Rua Felizardo, 750 Jardim Botânico'}, {'_': 'CEP: 90690-200'}, {'_': 'RS - Porto Alegre'}, {'_': '(51) 3308 5814'}]
     """
 
-    country = standardize_location(extract_value(publisher_city), Country, user=user)
+    country = standardize_location(extract_value(publisher_country), Country, user=user)
     city = standardize_location(extract_value(publisher_city), City, user=user)
     state = standardize_location(extract_value(publisher_state), State, user=user)
 

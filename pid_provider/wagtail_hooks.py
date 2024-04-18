@@ -7,12 +7,14 @@ from wagtail.contrib.modeladmin.options import (
 )
 from wagtail.contrib.modeladmin.views import CreateView
 
+from config.menu import get_menu_order
 from .models import (
     PidProviderConfig,
     CollectionPidRequest,
     OtherPid,
     PidProviderXML,
     PidRequest,
+    FixPidV2,
 )
 
 
@@ -106,6 +108,7 @@ class PidProviderXMLAdmin(ModelAdmin):
         "article_pub_year",
         "pub_year",
         "other_pid_count",
+        "registered_in_core",
     )
     search_fields = (
         "pkg_name",
@@ -172,16 +175,49 @@ class PidProviderConfigAdmin(ModelAdmin):
     )
 
 
+class FixPidV2CreateView(CreateView):
+    def form_valid(self, form):
+        self.object = form.save_all(self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class FixPidV2Admin(ModelAdmin):
+    list_per_page = 10
+    model = FixPidV2
+    inspect_view_enabled = True
+    menu_label = _("Fix pid v2")
+    create_view_class = FixPidV2CreateView
+    menu_icon = "folder"
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+
+    list_display = (
+        "pid_provider_xml",
+        "correct_pid_v2",
+        "fixed_in_core",
+        "fixed_in_upload",
+        "created",
+        "updated",
+    )
+    list_filter = ("fixed_in_core", "fixed_in_upload")
+    search_fields = (
+        "correct_pid_v2",
+        "pid_provider_xml__v3",
+        "pid_provider_xml__pkg_name",
+    )
+
+
 class PidProviderAdminGroup(ModelAdminGroup):
     menu_label = _("Pid Provider")
     menu_icon = "folder-open-inverse"  # change as required
-    menu_order = 6
+    menu_order = get_menu_order("pid_provider")
     items = (
         PidProviderConfigAdmin,
         PidProviderXMLAdmin,
         PidRequestAdmin,
         OtherPidAdmin,
         CollectionPidRequestAdmin,
+        FixPidV2Admin,
     )
 
 

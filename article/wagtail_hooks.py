@@ -12,6 +12,7 @@ from article.models import (  # AbstractModel,; Category,; Title,
     ArticleFormat,
     ArticleFunding,
 )
+from config.menu import get_menu_order
 
 
 class ArticleCreateView(CreateView):
@@ -25,12 +26,12 @@ class ArticleAdmin(ModelAdmin):
     create_view_class = ArticleCreateView
     menu_label = _("Article")
     menu_icon = "folder"
-    menu_order = 100
+    menu_order = 1
     add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
     exclude_from_explorer = (
         False  # or True to exclude pages of this type from Wagtail's explorer view
     )
-
+    list_per_page = 20
     list_display = (
         "sps_pkg_name",
         "doi",
@@ -61,7 +62,7 @@ class ArticleFormatAdmin(ModelAdmin):
     create_view_class = ArticleFormatCreateView
     menu_label = _("Article Format")
     menu_icon = "folder"
-    menu_order = 200
+    menu_order = 500
     add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
     exclude_from_explorer = (
         False  # or True to exclude pages of this type from Wagtail's explorer view
@@ -111,7 +112,7 @@ class ArticleFundingAdmin(ModelAdmin):
 class ArticleAdminGroup(ModelAdminGroup):
     menu_label = _("Articles")
     menu_icon = "folder-open-inverse"  # change as required
-    menu_order = 4  # will put in 3rd place (000 being 1st, 100 2nd)
+    menu_order = get_menu_order("article")  # will put in 3rd place (000 being 1st, 100 2nd)
     items = (ArticleAdmin, ArticleFormatAdmin, ArticleFundingAdmin)
 
 

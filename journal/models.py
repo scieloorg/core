@@ -467,6 +467,7 @@ class Journal(CommonControlField, ClusterableModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=_("As palavras-chave devem ser extraídas de thesaurus,dicionários temáticos ou listas controladas nos idiomas que o periódico pública."),
     )
     indexed_at = models.ManyToManyField(
         "IndexedAt",
@@ -485,6 +486,12 @@ class Journal(CommonControlField, ClusterableModel):
     )
     use_license = models.ForeignKey(
         License,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
+    journal_use_license = models.ForeignKey(
+        "JournalLicense",
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
@@ -624,7 +631,7 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel(
             "file_oa", label=_("Open Science accordance form"), classname="collapsed"
         ),
-        FieldPanel("use_license"),
+        FieldPanel("journal_use_license"),
         InlinePanel("open_data", label=_("Open data"), classname="collapsed"),
         InlinePanel("preprint", label=_("Preprint"), classname="collapsed"),
         InlinePanel("review", label=_("Peer review"), classname="collapsed"),
@@ -872,10 +879,10 @@ class Journal(CommonControlField, ClusterableModel):
         return obj
 
     def __unicode__(self):
-        return f"{self.title}" or f"{self.official.title}"
+        return f"{self.title}" or f"{self.official}"
 
     def __str__(self):
-        return f"{self.title}" or f"{self.official.title}"
+        return f"{self.title}" or f"{self.official}"
 
     base_form_class = CoreAdminModelForm
 
@@ -1932,10 +1939,9 @@ class Standard(CommonControlField):
 
     @classmethod
     def load(cls, user):
-        if cls.objects.count() == 0:
-            for item in choices.STANDARD:
-                code, value = item
-                cls.create_or_update(user, code=code, value=value)
+        for item in choices.STANDARD:
+            code, value = item
+            cls.create_or_update(user, code=code, value=value)
 
     @classmethod
     def get(cls, code):
@@ -2593,3 +2599,80 @@ class JournalOtherTitle(CommonControlField):
     
     def __str__(self):
         return f"{self.title}"
+
+
+class JournalLicense(CommonControlField):
+    license_type = models.CharField(max_length=16, null=True, blank=True)
+
+    autocomplete_search_field = "license_type"
+
+    def autocomplete_label(self):
+        return str(self)
+
+    panels = [
+        FieldPanel("license_type"),
+    ]
+
+    class Meta:
+        unique_together = [("license_type", )]
+        verbose_name = _("License")
+        verbose_name_plural = _("Licenses")
+        indexes = [
+            models.Index(
+                fields=[
+                    "license_type",
+                ]
+            ),
+        ]
+
+    def __unicode__(self):
+        return self.license_type or ""
+
+    def __str__(self):
+        return self.license_type or ""
+
+    @classmethod
+    def load(cls, user):
+        for license_type, v in choices.LICENSE_TYPES:
+            cls.create_or_update(user, license_type)
+
+    @classmethod
+    def get(
+        cls,
+        license_type,
+    ):
+        if not license_type:
+            raise ValueError("License.get requires license_type parameters")
+        filters = dict(
+            license_type__iexact=license_type
+        )
+        try:
+            return cls.objects.get(**filters)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(**filters).first()
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        license_type=None,
+    ):
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.license_type = license_type or obj.license_type
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(license_type=license_type)
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        license_type=None,
+    ):
+        try:
+            return cls.get(license_type=license_type)
+        except cls.DoesNotExist:
+            return cls.create(user, license_type)

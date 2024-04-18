@@ -534,10 +534,10 @@ class Location(CommonControlField):
         unique_together = [("country", "state", "city")]
 
     def __unicode__(self):
-        return f"{self.country} | {self.state} | {self.city}"
+        return f"{self.city}, {self.state}, {self.country}"
 
     def __str__(self):
-        return f"{self.country} | {self.state} | {self.city}"
+        return f"{_('Country')}: {self.country}, {_('State')}: {self.state}, {_('City')}: {self.city}"
     
     @property
     def formatted_location(self):
