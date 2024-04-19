@@ -25,7 +25,7 @@ class VersionSPS(CommonControlField):
 
 
 class ValidationConfiguration(CommonControlField):
-    version = models.ForeignKey(VersionSPS, 
+    sps_version  = models.ForeignKey(VersionSPS, 
         on_delete=models.CASCADE,
         blank=False, 
         null=False
@@ -42,7 +42,7 @@ class ValidationConfiguration(CommonControlField):
         verbose_name_plural = _("Validation Configurations")
 
     panels = [
-        AutocompletePanel("version"),
+        AutocompletePanel("sps_version"),
         FieldPanel("key"),
         FieldPanel("value"),
     ]
