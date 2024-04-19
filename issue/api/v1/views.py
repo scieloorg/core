@@ -20,10 +20,26 @@ class IssueViewSet(GenericIssueViewSet):
         collection = self.request.query_params.get("collection")
         from_date = self.request.query_params.get("from_date")
         until_date = self.request.query_params.get("until_date")
-        if not collection:
-            raise ValidationError("Collection is a required query parameter")
-
-        validate_params(self.request, "collection", "from_date", "until_date")
+        issn_print = self.request.query_params.get("issn_print")
+        issn_electronic = self.request.query_params.get("issn_electronic")
+        volume = self.request.query_params.get("volume")
+        season = self.request.query_params.get("season")
+        number = self.request.query_params.get("number")
+        supplement = self.request.query_params.get("supplement")
+        
+        validate_params(
+            self.request, 
+            "collection", 
+            "from_date",
+            "until_date", 
+            "issn_print",
+            "issn_electronic",  
+            "volume", 
+            "season", 
+            "number",
+            "supplement",
+            "page",
+        )
 
         params = {}
         if collection:
@@ -32,7 +48,18 @@ class IssueViewSet(GenericIssueViewSet):
             params["created__gte"] = from_date.replace("/", "-")
         if until_date:
             params["created__lte"] = until_date.replace("/", "-")
-
+        if issn_print:
+            params["journal__official__issn_print"] = issn_print
+        if issn_electronic:
+            params["journal__official__issn_electronic"] = issn_electronic
+        if volume:
+            params["volume"] = volume
+        if season:
+            params["season"] = season
+        if number:
+            params["number"] = number                
+        if supplement:
+            params["supplement"] = supplement
         if params:
             queryset = queryset.filter(**params)
         return queryset 
