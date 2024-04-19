@@ -62,7 +62,7 @@ class JournalSectionTitle(Orderable, TextWithLang, CommonControlField):
     )
 
 
-class JournalSection(Orderable, CommonControlField):
+class JournalSection(Orderable, TextWithLang, CommonControlField):
     journal_section = ParentalKey(
         JournalTOC,
         null=True,
@@ -70,8 +70,6 @@ class JournalSection(Orderable, CommonControlField):
         on_delete=models.SET_NULL,
         related_name="journal_section",
     )
-
-    section = models.TextField(_("Section"), null=True, blank=True)
 
 
 class IssueTOC(CommonControlField):
