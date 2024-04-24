@@ -16,6 +16,7 @@ from packtools.sps.models.dates import ArticleDates
 from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
 from packtools.sps.models.funding_group import FundingGroup
 from packtools.sps.models.journal_meta import ISSN, Title
+from packtools.sps.models import journal_meta
 from packtools.sps.models.kwd_group import ArticleKeywords
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
@@ -24,7 +25,7 @@ from article.utils.parse_name_author import get_safe_value
 from core.forms import CoreAdminModelForm
 from core.models import Language, License, LicenseStatement
 from doi.models import DOI
-from institution.models import Sponsor
+from institution.models import Sponsor, Publisher
 from issue.models import Issue, TocSection
 from journal.models import Journal, OfficialJournal
 from researcher.exceptions import PersonNameCreateError
@@ -119,6 +120,7 @@ def load_article(user, xml=None, file_path=None, v3=None):
             article.license = ls.license
             article.save()
             break
+        article.publisher = get_or_create_publisher(xmltree=xmltree, user=user, item=pid_v3)
         article.valid = True
         article.save()
     except Exception as e:
@@ -165,6 +167,37 @@ def get_journal(xmltree):
         return Journal.objects.get(official=official_journal)
     except (OfficialJournal.DoesNotExist, Journal.DoesNotExist):
         return None
+
+
+def get_or_create_publisher(xmltree, user, item):
+    try:
+        publisher_names = journal_meta.Publisher(xmltree=xmltree).publishers_names
+        if publisher_names:
+            return Publisher.get_or_create(
+                user=user,
+                name=publisher_names[0],
+                acronym=None,
+                level_1=None,
+                level_2=None,
+                level_3=None,
+                location=None,
+                official=None,
+                is_official=None,
+                url=None,
+                institution_type=None,
+            )
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            item=item,
+            action="article.xmlsps.get_or_create_publisher",
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail=dict(
+                function="article.xmlsps.get_or_create_publisher",
+                publisher_name=publisher_names,
+            ),
+        )
 
 
 def get_or_create_fundings(xmltree, user, item):
