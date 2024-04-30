@@ -16,7 +16,7 @@
         <element name="creator">
             <element name="none">
             {% for research in object.researchers.all %}
-                <field name="value">{{research.given_names}} {{research.last_name}}</field>
+                <field name="value">{{research.person_name}}</field>
             {% endfor %}
             </element>
         </element>
