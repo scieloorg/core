@@ -336,7 +336,8 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
     def prepare_creator(self, obj):
         if obj.researchers:
-            return [researcher for researcher in obj.researchers.all()]
+            researchers = obj.researchers.select_related('person_name').filter(person_name__isnull=False)
+            return [str(researcher) for researcher in researchers]
 
     def prepare_collab(self, obj):
         if obj.collab:
