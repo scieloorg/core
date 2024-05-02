@@ -162,74 +162,75 @@ class Researcher(CommonControlField):
             gender_identification_status=gender_identification_status,
         )
 
-        if not affiliation:
-            try:
-                location = location or Location.create_or_update(
+        if person_name:
+            if not affiliation:
+                try:
+                    location = location or Location.create_or_update(
+                        user,
+                        country=None,
+                        country_name=aff_country_name,
+                        country_acron3=None,
+                        country_acronym=aff_country_acronym,
+                        country_text=aff_country_text,
+                        state=None,
+                        state_name=aff_state_name,
+                        state_acronym=aff_state_acronym,
+                        state_text=aff_state_text,
+                        city=None,
+                        city_name=aff_city_name,
+                        lang=lang,
+                    )
+                except Exception as e:
+                    location = None
+
+            if not affiliation and aff_name:
+                affiliation = affiliation or Affiliation.get_or_create(
                     user,
-                    country=None,
-                    country_name=aff_country_name,
-                    country_acron3=None,
-                    country_acronym=aff_country_acronym,
-                    country_text=aff_country_text,
-                    state=None,
-                    state_name=aff_state_name,
-                    state_acronym=aff_state_acronym,
-                    state_text=aff_state_text,
-                    city=None,
-                    city_name=aff_city_name,
-                    lang=lang,
+                    name=aff_name,
+                    acronym=None,
+                    level_1=aff_div1,
+                    level_2=aff_div2,
+                    level_3=None,
+                    location=location,
+                    official=None,
+                    is_official=None,
+                    url=None,
+                    institution_type=None,
                 )
+            
+            researcher = cls._create_or_update(
+                user=user,
+                person_name=person_name,
+                affiliation=affiliation,
+            )
+
+            try:
+                ids = other_ids or []
+                if orcid:
+                    orcid = orcid.split("/")[-1]
+                    ids.append({"identifier": orcid, "source_name": "ORCID"})
+                if lattes:
+                    lattes = lattes.split("/")[-1]
+                    ids.append({"identifier": lattes, "source_name": "LATTES"})
+                if email:
+                    for email_ in email.replace(",", ";").split(";"):
+                        ids.append({"identifier": email_, "source_name": "EMAIL"})
+
+                for id_ in ids:
+                    # {"identifier": email_, "source_name": "EMAIL"}
+                    ResearcherAKA.get_or_create(
+                        user=user,
+                        researcher_identifier=ResearcherIdentifier.get_or_create(
+                            user, **id_
+                        ),
+                        researcher=researcher,
+                    )
             except Exception as e:
-                location = None
-
-        if not affiliation and aff_name:
-            affiliation = affiliation or Affiliation.get_or_create(
-                user,
-                name=aff_name,
-                acronym=None,
-                level_1=aff_div1,
-                level_2=aff_div2,
-                level_3=None,
-                location=location,
-                official=None,
-                is_official=None,
-                url=None,
-                institution_type=None,
-            )
-
-        researcher = cls._create_or_update(
-            user=user,
-            person_name=person_name,
-            affiliation=affiliation,
-        )
-
-        try:
-            ids = other_ids or []
-            if orcid:
-                orcid = orcid.split("/")[-1]
-                ids.append({"identifier": orcid, "source_name": "ORCID"})
-            if lattes:
-                lattes = lattes.split("/")[-1]
-                ids.append({"identifier": lattes, "source_name": "LATTES"})
-            if email:
-                for email_ in email.replace(",", ";").split(";"):
-                    ids.append({"identifier": email_, "source_name": "EMAIL"})
-
-            for id_ in ids:
-                # {"identifier": email_, "source_name": "EMAIL"}
-                ResearcherAKA.get_or_create(
-                    user=user,
-                    researcher_identifier=ResearcherIdentifier.get_or_create(
-                        user, **id_
-                    ),
-                    researcher=researcher,
+                logging.exception(
+                    f"Unable to register researcher with ID {person_name} {affiliation} {e}"
                 )
-        except Exception as e:
-            logging.exception(
-                f"Unable to register researcher with ID {person_name} {affiliation} {e}"
-            )
 
-        return researcher
+            return researcher
 
 
 class Affiliation(BaseInstitution):
