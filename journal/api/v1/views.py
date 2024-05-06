@@ -21,9 +21,18 @@ class JournalViewSet(GenericJournalViewSet):
         issn_print = self.request.query_params.get("issn_print")
         issn_electronic = self.request.query_params.get("issn_electronic")
         issnl = self.request.query_params.get("issnl")
-        
+        thematic_areas = self.request.query_params.get("thematic_areas")
+
         # funcao para permitir apenas estes paramentros
-        validate_params(self.request, "issn_print", "issn_electronic", "issnl", "title", "")
+        validate_params(
+            self.request, 
+            "issn_print", 
+            "issn_electronic", 
+            "issnl", 
+            "title", 
+            "thematic_areas", 
+            "",
+        )
 
         queryset = super().get_queryset()
 
@@ -38,5 +47,7 @@ class JournalViewSet(GenericJournalViewSet):
             params['official__issnl'] = issnl
         if title:
             params['title'] = title
+        if thematic_areas:
+            params['subject__value__in'] = thematic_areas.split(",")
 
         return queryset.filter(**params)
