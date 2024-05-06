@@ -18,8 +18,6 @@ class IssueViewSet(GenericIssueViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         collection = self.request.query_params.get("collection")
-        from_date = self.request.query_params.get("from_date")
-        until_date = self.request.query_params.get("until_date")
         from_publication_date = self.request.query_params.get("from_publication_date")
         until_publication_date = self.request.query_params.get("until_publication_date")
         issn_print = self.request.query_params.get("issn_print")
@@ -30,9 +28,7 @@ class IssueViewSet(GenericIssueViewSet):
         
         validate_params(
             self.request, 
-            "collection", 
-            "from_date",
-            "until_date",
+            "collection",
             "from_publication_year",
             "until_publication_year",
             "issn_print",
@@ -45,10 +41,6 @@ class IssueViewSet(GenericIssueViewSet):
         params = {}
         if collection:
             params["journal__scielojournal__collection__acron3"] = collection
-        if from_date:
-            params["created__gte"] = from_date.replace("/", "-")
-        if until_date:
-            params["created__lte"] = until_date.replace("/", "-")
         if from_publication_date:
             params["year__gte"] = from_date.replace("/", "-")
         if until_publication_date:
