@@ -20,6 +20,8 @@ class IssueViewSet(GenericIssueViewSet):
         collection = self.request.query_params.get("collection")
         from_date = self.request.query_params.get("from_date")
         until_date = self.request.query_params.get("until_date")
+        from_publication_date = self.request.query_params.get("from_publication_date")
+        until_publication_date = self.request.query_params.get("until_publication_date")
         issn_print = self.request.query_params.get("issn_print")
         issn_electronic = self.request.query_params.get("issn_electronic")
         volume = self.request.query_params.get("volume")
@@ -31,7 +33,9 @@ class IssueViewSet(GenericIssueViewSet):
             self.request, 
             "collection", 
             "from_date",
-            "until_date", 
+            "until_date",
+            "from_publication_year",
+            "until_publication_year",
             "issn_print",
             "issn_electronic",  
             "volume", 
@@ -48,6 +52,10 @@ class IssueViewSet(GenericIssueViewSet):
             params["created__gte"] = from_date.replace("/", "-")
         if until_date:
             params["created__lte"] = until_date.replace("/", "-")
+        if from_publication_date:
+            params["year__gte"] = from_date.replace("/", "-")
+        if until_publication_date:
+            params["year__lte"] = until_date.replace("/", "-")
         if issn_print:
             params["journal__official__issn_print"] = issn_print
         if issn_electronic:
