@@ -30,8 +30,8 @@ class ResearcherAdmin(ModelAdmin):
     search_fields = (
         "person_name__fullname",
         "person_name__declared_name",
-        "affiliation__institution__name",
-        "affiliation__institution__acronym",
+        "affiliation__institution__institution_identification__name",
+        "affiliation__institution__institution_identification__acronym",
     )
 
 

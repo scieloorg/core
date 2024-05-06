@@ -9,4 +9,4 @@ def run(user_id=None, file_path=None):
     # Xml usado para testes.
     file_path = file_path or "article/fixtures/0034-7094-rba-69-03-0227.xml"
 
-    load_article.apply_async(args=(user_id, file_path))
+    load_article.apply_async(kwargs=dict(user_id=user_id, file_path=file_path))
