@@ -25,7 +25,6 @@ class IssueViewSet(GenericIssueViewSet):
         issn_print = self.request.query_params.get("issn_print")
         issn_electronic = self.request.query_params.get("issn_electronic")
         volume = self.request.query_params.get("volume")
-        season = self.request.query_params.get("season")
         number = self.request.query_params.get("number")
         supplement = self.request.query_params.get("supplement")
         
@@ -39,7 +38,6 @@ class IssueViewSet(GenericIssueViewSet):
             "issn_print",
             "issn_electronic",  
             "volume", 
-            "season", 
             "number",
             "supplement",
             "page",
@@ -62,8 +60,6 @@ class IssueViewSet(GenericIssueViewSet):
             params["journal__official__issn_electronic"] = issn_electronic
         if volume:
             params["volume"] = volume
-        if season:
-            params["season"] = season
         if number:
             params["number"] = number                
         if supplement:
