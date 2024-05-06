@@ -40,7 +40,6 @@ class IssueViewSet(GenericIssueViewSet):
             "volume", 
             "number",
             "supplement",
-            "page",
         )
 
         params = {}
