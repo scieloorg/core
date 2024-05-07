@@ -16,6 +16,14 @@ class GenericIssueViewSet(viewsets.ModelViewSet):
 
 class IssueViewSet(GenericIssueViewSet):
     def get_queryset(self):
+        """
+        from_publication_date e until_publication_date:
+            parâmetros que recuperam registros baseados no ano de publicação do periódico.
+
+        from_date e until_date:
+            parâmetros que recuperam registros a partir da data de atualização do periódico. 
+            Importante para recuperar registros mais recentes.
+        """
         queryset = super().get_queryset()
         collection = self.request.query_params.get("collection")
         from_publication_date = self.request.query_params.get("from_publication_date")
