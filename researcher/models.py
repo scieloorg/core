@@ -162,42 +162,42 @@ class Researcher(CommonControlField):
             gender_identification_status=gender_identification_status,
         )
 
-        if person_name:
-            if not affiliation:
-                try:
-                    location = location or Location.create_or_update(
-                        user,
-                        country=None,
-                        country_name=aff_country_name,
-                        country_acron3=None,
-                        country_acronym=aff_country_acronym,
-                        country_text=aff_country_text,
-                        state=None,
-                        state_name=aff_state_name,
-                        state_acronym=aff_state_acronym,
-                        state_text=aff_state_text,
-                        city=None,
-                        city_name=aff_city_name,
-                        lang=lang,
-                    )
-                except Exception as e:
-                    location = None
-
-            if not affiliation and aff_name:
-                affiliation = affiliation or Affiliation.get_or_create(
+        if not affiliation:
+            try:
+                location = location or Location.create_or_update(
                     user,
-                    name=aff_name,
-                    acronym=None,
-                    level_1=aff_div1,
-                    level_2=aff_div2,
-                    level_3=None,
-                    location=location,
-                    official=None,
-                    is_official=None,
-                    url=None,
-                    institution_type=None,
+                    country=None,
+                    country_name=aff_country_name,
+                    country_acron3=None,
+                    country_acronym=aff_country_acronym,
+                    country_text=aff_country_text,
+                    state=None,
+                    state_name=aff_state_name,
+                    state_acronym=aff_state_acronym,
+                    state_text=aff_state_text,
+                    city=None,
+                    city_name=aff_city_name,
+                    lang=lang,
                 )
+            except Exception as e:
+                location = None
+
+        if not affiliation and aff_name:
+            affiliation = affiliation or Affiliation.get_or_create(
+                user,
+                name=aff_name,
+                acronym=None,
+                level_1=aff_div1,
+                level_2=aff_div2,
+                level_3=None,
+                location=location,
+                official=None,
+                is_official=None,
+                url=None,
+                institution_type=None,
+            )
             
+        if person_name:
             researcher = cls._create_or_update(
                 user=user,
                 person_name=person_name,
