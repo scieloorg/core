@@ -48,9 +48,9 @@ class IssueViewSet(GenericIssueViewSet):
         if until_publication_date:
             params["year__lte"] = until_publication_date.replace("/", "-")
         if from_date:
-            params["created__gte"] = from_date.replace("/", "-")
+            params["updated__gte"] = from_date.replace("/", "-")
         if until_date:
-            params["created__lte"] = until_date.replace("/", "-")            
+            params["updated__lte"] = until_date.replace("/", "-")            
         if issn_print:
             params["journal__official__issn_print"] = issn_print
         if issn_electronic:
