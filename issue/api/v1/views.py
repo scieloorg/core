@@ -44,9 +44,9 @@ class IssueViewSet(GenericIssueViewSet):
         if collection:
             params["journal__scielojournal__collection__acron3"] = collection
         if from_publication_date:
-            params["year__gte"] = from_date.replace("/", "-")
+            params["year__gte"] = from_publication_date.replace("/", "-")
         if until_publication_date:
-            params["year__lte"] = until_date.replace("/", "-")
+            params["year__lte"] = until_publication_date.replace("/", "-")
         if from_date:
             params["created__gte"] = from_date.replace("/", "-")
         if until_date:
