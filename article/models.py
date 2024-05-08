@@ -27,7 +27,7 @@ from core.models import (
 )
 from doi.models import DOI
 from doi_manager.models import CrossRefConfiguration
-from institution.models import Institution, Sponsor
+from institution.models import Sponsor, Publisher
 from issue.models import Issue, TocSection
 from journal.models import Journal, SciELOJournal
 from pid_provider.provider import PidProvider
@@ -87,7 +87,7 @@ class Article(CommonControlField, ClusterableModel):
     elocation_id = models.CharField(max_length=64, null=True, blank=True)
     keywords = models.ManyToManyField(Keyword, blank=True)
     publisher = models.ForeignKey(
-        Institution,
+        Publisher,
         verbose_name=_("Publisher"),
         null=True,
         blank=True,
