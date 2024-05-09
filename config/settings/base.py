@@ -141,6 +141,7 @@ LOCAL_APPS = [
     "tracker",
     "journalpage",
     "report",
+    "xml_validation",
 ]
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
