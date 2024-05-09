@@ -99,9 +99,9 @@ class OfficialJournal(CommonControlField, ClusterableModel):
     final_number = models.CharField(
         _("Final Number"), max_length=32, null=True, blank=True
     )
-    issn_print = models.CharField(_("ISSN Print"), max_length=9, null=True, blank=True)
+    issn_print = models.CharField(_("Print ISSN"), max_length=9, null=True, blank=True)
     issn_electronic = models.CharField(
-        _("ISSN Eletronic"), max_length=9, null=True, blank=True
+        _("Electronic ISSN"), max_length=9, null=True, blank=True
     )
     issn_print_is_active = models.BooleanField(verbose_name=_("ISSN Print is active"), default=False)
     issnl = models.CharField(_("ISSNL"), max_length=9, null=True, blank=True)

@@ -7,4 +7,4 @@ def validate_params(request, *filters):
     """
     other_params = set(request.query_params.keys()) - {*filters}
     if other_params:
-        raise ValidationError(f"Only {filters} parameters are allowed")
+        raise ValidationError(f"Only {filters} parameters are allowed. Filters invalid: {other_params}")

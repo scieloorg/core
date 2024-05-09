@@ -341,7 +341,7 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
     def prepare_collab(self, obj):
         if obj.collab:
-            return [collab.institution_author for collab in obj.collab.all()]
+            return [collab.collab for collab in obj.collab.all()]
 
     def prepare_kw(self, obj):
         if obj.keywords:

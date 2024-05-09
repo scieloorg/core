@@ -77,7 +77,8 @@ Sickle==0.7.0
 # Solr
 # ------------------------------------------------------------------------------
 # django-haystack==3.2.1
--e git+https://git@github.com/django-haystack/django-haystack#egg=django-haystack
+git+https://github.com/django-haystack/django-haystack.git
+
 
 # PySolr
 # ------------------------------------------------------------------------------

@@ -17,21 +17,37 @@ class GenericJournalViewSet(viewsets.ModelViewSet):
 class JournalViewSet(GenericJournalViewSet):
     def get_queryset(self):
         issn = self.request.query_params.get("issn")
-        validate_params(self.request, "issn", "")
+        title = self.request.query_params.get("title")
+        issn_print = self.request.query_params.get("issn_print")
+        issn_electronic = self.request.query_params.get("issn_electronic")
+        issnl = self.request.query_params.get("issnl")
+        thematic_areas = self.request.query_params.get("thematic_areas")
+
+        # funcao para permitir apenas estes paramentros
+        validate_params(
+            self.request, 
+            "issn_print", 
+            "issn_electronic", 
+            "issnl", 
+            "title", 
+            "thematic_areas", 
+            "",
+        )
 
         queryset = super().get_queryset()
 
         params = {}
-        params['scielojournal__issn_scielo'] = issn
-        params['official__issn_electronic'] = issn
-        params['official__issn_print'] = issn
-        params['official__issnl'] = issn
+        if issn:
+            params['scielojournal__issn_scielo'] = issn
+        if issn_electronic:
+            params['official__issn_electronic'] = issn_electronic
+        if issn_print:
+            params['official__issn_print'] = issn_print
+        if issnl:
+            params['official__issnl'] = issnl
+        if title:
+            params['title'] = title
+        if thematic_areas:
+            params['subject__value__in'] = thematic_areas.split(",")
 
-        query = Q(scielojournal__issn_scielo=issn) | \
-                Q(official__issn_electronic=issn) | \
-                Q(official__issn_print=issn) | \
-                Q(official__issnl=issn)
-    
-
-        custom_queryset = queryset.filter(query)
-        return custom_queryset if custom_queryset.exists() else queryset
+        return queryset.filter(**params)
