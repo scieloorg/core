@@ -196,40 +196,41 @@ class Researcher(CommonControlField):
                 url=None,
                 institution_type=None,
             )
-
-        researcher = cls._create_or_update(
-            user=user,
-            person_name=person_name,
-            affiliation=affiliation,
-        )
-
-        try:
-            ids = other_ids or []
-            if orcid:
-                orcid = orcid.split("/")[-1]
-                ids.append({"identifier": orcid, "source_name": "ORCID"})
-            if lattes:
-                lattes = lattes.split("/")[-1]
-                ids.append({"identifier": lattes, "source_name": "LATTES"})
-            if email:
-                for email_ in email.replace(",", ";").split(";"):
-                    ids.append({"identifier": email_, "source_name": "EMAIL"})
-
-            for id_ in ids:
-                # {"identifier": email_, "source_name": "EMAIL"}
-                ResearcherAKA.get_or_create(
-                    user=user,
-                    researcher_identifier=ResearcherIdentifier.get_or_create(
-                        user, **id_
-                    ),
-                    researcher=researcher,
-                )
-        except Exception as e:
-            logging.exception(
-                f"Unable to register researcher with ID {person_name} {affiliation} {e}"
+            
+        if person_name:
+            researcher = cls._create_or_update(
+                user=user,
+                person_name=person_name,
+                affiliation=affiliation,
             )
 
-        return researcher
+            try:
+                ids = other_ids or []
+                if orcid:
+                    orcid = orcid.split("/")[-1]
+                    ids.append({"identifier": orcid, "source_name": "ORCID"})
+                if lattes:
+                    lattes = lattes.split("/")[-1]
+                    ids.append({"identifier": lattes, "source_name": "LATTES"})
+                if email:
+                    for email_ in email.replace(",", ";").split(";"):
+                        ids.append({"identifier": email_, "source_name": "EMAIL"})
+
+                for id_ in ids:
+                    # {"identifier": email_, "source_name": "EMAIL"}
+                    ResearcherAKA.get_or_create(
+                        user=user,
+                        researcher_identifier=ResearcherIdentifier.get_or_create(
+                            user, **id_
+                        ),
+                        researcher=researcher,
+                    )
+            except Exception as e:
+                logging.exception(
+                    f"Unable to register researcher with ID {person_name} {affiliation} {e}"
+                )
+
+            return researcher
 
 
 class Affiliation(BaseInstitution):

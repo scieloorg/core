@@ -433,9 +433,15 @@ def get_or_create_institution_authors(xmltree, user, item):
                         )
                         affiliation = Affiliation.create_or_update(
                             name=aff.get("orgname"),
+                            acronym=None,
                             level_1=aff.get("orgdiv1"),
                             level_2=aff.get("orgdiv2"),
+                            level_3=None,
                             location=location,
+                            official=None,
+                            is_official=None,
+                            url=None,
+                            institution_type=None,
                             user=user,
                         )
                 obj = InstitutionalAuthor.get_or_create(
