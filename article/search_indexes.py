@@ -273,8 +273,8 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     """
 
     text = indexes.CharField(document=True, use_template=True)
-    id = indexes.CharField(model_attr="id", index_fieldname="item.handle", null=True)
-    item_id = indexes.CharField(model_attr="id", index_fieldname="item.id", null=True)
+    id = indexes.CharField(index_fieldname="item.handle", null=True)
+    item_id = indexes.CharField(index_fieldname="item.id", null=True)
     updated = indexes.CharField(index_fieldname="item.lastmodified", null=True)
     submitter = indexes.CharField(
         model_attr="creator", index_fieldname="item.submitter", null=True
@@ -301,6 +301,12 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     compile = indexes.CharField(
         null=True, index_fieldname="item.compile", use_template=True
     )
+
+    def prepare_id(self, obj):
+        return obj.pid_v3 or obj.doi
+    
+    def prepare_item_id(self, obj):
+        return obj.pid_v3 or obj.doi
 
     def prepare_doi(self, obj):
         if obj.doi:
