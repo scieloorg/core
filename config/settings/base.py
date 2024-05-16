@@ -486,3 +486,7 @@ MAINTENANCE_MODE_TEMPLATE = "503.html"
 # by default, a file named "maintenance_mode_state.txt" will be created in the settings.py directory
 # you can customize the state file path in case the default one is not writable
 MAINTENANCE_MODE_STATE_FILE_PATH = "maintenance_mode_state.txt"
+
+
+# Timeout function fetch_data
+FETCH_DATA_TIMEOUT = env.str("FETCH_DATA_TIMEOUT", default=10)

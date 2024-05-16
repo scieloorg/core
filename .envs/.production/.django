@@ -41,3 +41,7 @@ JOURNAL_TEAM="Journal Team"
 MAINTENANCE_MODE=False
 MAINTENANCE_MODE_IGNORE_SUPERUSER=True
 MAINTENANCE_MODE_IGNORE_ADMIN_SITE=False
+
+# Timeout fetch_data
+# ------------------------------------------------------------------------------
+FETCH_DATA_TIMEOUT=10
