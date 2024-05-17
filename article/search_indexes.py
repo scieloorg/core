@@ -240,7 +240,8 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     The format of the data:
 
         "item.id":1,
-        "item.handle":"oai:redi.anii.org.uy:20.500.12381/2671",
+        "item.handle":"54v7n5FBfdfC3KYFbbGWZYP",
+        "item.id":"54v7n5FBfdfC3KYFbbGWZYP",
         "item.lastmodified":"2022-12-20T15:18:22Z",
         "item.submitter":"submitter",
         "item.deleted":false,
