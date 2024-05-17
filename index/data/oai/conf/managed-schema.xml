@@ -129,7 +129,7 @@
    <field name="django_id" type="string" indexed="false" stored="false" multiValued="false"/>
 
    <!-- Item always present information -->
-   <field name="item.id" type="pint" indexed="true" stored="true" multiValued="false" />
+   <field name="item.id" type="string" indexed="true" stored="true" multiValued="false" />
    <field name="item.public" type="boolean" indexed="true" stored="true" multiValued="false" />
    <field name="item.handle" type="string" indexed="true" stored="true" multiValued="false" />
    <field name="item.collections" type="string" indexed="true" stored="true" multiValued="true" />

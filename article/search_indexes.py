@@ -240,7 +240,8 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     The format of the data:
 
         "item.id":1,
-        "item.handle":"oai:redi.anii.org.uy:20.500.12381/2671",
+        "item.handle":"54v7n5FBfdfC3KYFbbGWZYP",
+        "item.id":"54v7n5FBfdfC3KYFbbGWZYP",
         "item.lastmodified":"2022-12-20T15:18:22Z",
         "item.submitter":"submitter",
         "item.deleted":false,
@@ -273,8 +274,8 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     """
 
     text = indexes.CharField(document=True, use_template=True)
-    id = indexes.CharField(model_attr="id", index_fieldname="item.handle", null=True)
-    item_id = indexes.CharField(model_attr="id", index_fieldname="item.id", null=True)
+    id = indexes.CharField(index_fieldname="item.handle", null=True)
+    item_id = indexes.CharField(index_fieldname="item.id", null=True)
     updated = indexes.CharField(index_fieldname="item.lastmodified", null=True)
     submitter = indexes.CharField(
         model_attr="creator", index_fieldname="item.submitter", null=True
@@ -301,6 +302,12 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     compile = indexes.CharField(
         null=True, index_fieldname="item.compile", use_template=True
     )
+
+    def prepare_id(self, obj):
+        return obj.pid_v3 or obj.doi
+    
+    def prepare_item_id(self, obj):
+        return obj.pid_v3 or obj.doi
 
     def prepare_doi(self, obj):
         if obj.doi:
