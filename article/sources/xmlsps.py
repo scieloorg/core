@@ -449,6 +449,7 @@ def get_or_create_institution_authors(xmltree, user, item):
                     affiliation=affiliation,
                     user=user,
                 )
+                data.append(obj)
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
