@@ -123,6 +123,7 @@ def load_article(user, xml=None, file_path=None, v3=None):
         article.publisher = get_or_create_publisher(xmltree=xmltree, user=user, item=pid_v3)
         article.valid = True
         article.save()
+        logging.info(f"The article {pid_v3} has been processed")
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         xml_detail_error = etree.tostring(xmltree)
