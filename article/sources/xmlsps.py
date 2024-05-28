@@ -115,7 +115,7 @@ def load_article(user, xml=None, file_path=None, v3=None):
         )
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
 
-        article.license_statements.set(get_licenses(xmltree=xmltree, user=user))
+        article.license_statements.set(set_license(xmltree=xmltree, article=article, user=user))
         for ls in article.license_statements.iterator():
             article.license = ls.license
             article.save()
@@ -259,36 +259,43 @@ def get_or_create_toc_sections(xmltree, user):
     return data
 
 
-def get_licenses(xmltree, user):
+def set_license(xmltree, article, user):
     xml_licenses = ArticleLicense(xmltree=xmltree).licenses
-    data = []
-    license = None
     for xml_license in xml_licenses:
+        if license := xml_license.get("link"):
+            article.article_license = license
 
-        if not license and xml_license.get("link"):
-            url_data = LicenseStatement.parse_url(xml_license.get("link"))
-            license_type = url_data.get("license_type")
-            if license_type:
-                license = License.create_or_update(
-                    user=user,
-                    license_type=license_type,
-                )
-        if license or xml_license.get("license_p"):
-            try:
-                license_p = xml_license.get("license_p")
-                license_p = license_p["html_text"]
-            except (ValueError, TypeError, KeyError):
-                pass
 
-            obj = LicenseStatement.create_or_update(
-                user=user,
-                url=xml_license.get("link"),
-                language=Language.get_or_create(code2=xml_license.get("lang")),
-                license_p=license_p,
-                license=license,
-            )
-            data.append(obj)
-    return data
+# def get_licenses(xmltree, user):
+#     xml_licenses = ArticleLicense(xmltree=xmltree).licenses
+#     data = []
+#     license = None
+#     for xml_license in xml_licenses:
+
+#         if not license and xml_license.get("link"):
+#             url_data = LicenseStatement.parse_url(xml_license.get("link"))
+#             license_type = url_data.get("license_type")
+#             if license_type:
+#                 license = License.create_or_update(
+#                     user=user,
+#                     license_type=license_type,
+#                 )
+#         if license or xml_license.get("license_p"):
+#             try:
+#                 license_p = xml_license.get("license_p")
+#                 license_p = license_p["html_text"]
+#             except (ValueError, TypeError, KeyError):
+#                 pass
+
+#             obj = LicenseStatement.create_or_update(
+#                 user=user,
+#                 url=xml_license.get("link"),
+#                 language=Language.get_or_create(code2=xml_license.get("lang")),
+#                 license_p=license_p,
+#                 license=license,
+#             )
+#             data.append(obj)
+#     return data
 
 
 def create_or_update_keywords(xmltree, user, item):
