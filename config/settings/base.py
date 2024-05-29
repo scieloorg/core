@@ -489,4 +489,4 @@ MAINTENANCE_MODE_STATE_FILE_PATH = "maintenance_mode_state.txt"
 
 
 # Timeout function fetch_data
-FETCH_DATA_TIMEOUT = env.str("FETCH_DATA_TIMEOUT", default=10)
+FETCH_DATA_TIMEOUT = env.int("FETCH_DATA_TIMEOUT", default=10)
