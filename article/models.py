@@ -31,7 +31,7 @@ from institution.models import Sponsor, Publisher
 from issue.models import Issue, TocSection
 from journal.models import Journal, SciELOJournal
 from pid_provider.provider import PidProvider
-from researcher.models import Researcher, InstitutionalAuthor
+from researcher.models import Researcher, InstitutionalAuthor, RawResearcher
 from vocabulary.models import Keyword
 from tracker.models import UnexpectedEvent
 
@@ -73,6 +73,7 @@ class Article(CommonControlField, ClusterableModel):
     languages = models.ManyToManyField(Language, blank=True)
     titles = models.ManyToManyField("DocumentTitle", blank=True)
     researchers = models.ManyToManyField(Researcher, blank=True)
+    article_researchers = models.ManyToManyField(RawResearcher, blank=True, related_name='raw_researcher')
     collab = models.ManyToManyField(InstitutionalAuthor, blank=True)
     article_type = models.CharField(max_length=50, null=True, blank=True)
     # abstracts = models.ManyToManyField("DocumentAbstract", blank=True)
@@ -118,7 +119,7 @@ class Article(CommonControlField, ClusterableModel):
         AutocompletePanel("license"),
     ]
     panels_researchers = [
-        AutocompletePanel("researchers"),
+        AutocompletePanel("article_researchers"),
         AutocompletePanel("collab"),
     ]
     panels_institutions = [
