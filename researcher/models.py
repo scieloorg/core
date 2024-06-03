@@ -1,5 +1,6 @@
 import logging
 
+from django.apps import apps
 from django.db import models, IntegrityError
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
@@ -240,7 +241,7 @@ class Affiliation(BaseInstitution):
 
     base_form_class = CoreAdminModelForm
 
-    create_or_update = BaseInstitution.get_or_create
+    # create_or_update = BaseInstitution.get_or_create
 
 
 class PersonName(CommonControlField):
@@ -645,3 +646,101 @@ class InstitutionalAuthor(CommonControlField):
     
     def __str__(self):
         return f"{self.collab}"
+
+
+class RawResearcher(CommonControlField):
+    orcid = models.CharField(max_length=30, blank=True, null=True)
+    person_name = models.ForeignKey(PersonName, on_delete=models.SET_NULL, null=True, blank=True)
+    affiliation = models.ManyToManyField(Affiliation, blank=True)
+    
+    panels = [
+        FieldPanel("orcid"),
+        AutocompletePanel("person_name"),
+        AutocompletePanel("affiliation"),
+    ]
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return Researcher.objects.filter(Q(person_name__fullname__icontains=search_term) | Q(person_name__declared_name__icontains=search_term))
+
+    def autocomplete_label(self):
+        return str(self)
+
+    class Meta:
+        verbose_name = _("Researcher")
+        verbose_name_plural = _("Researchers")
+        indexes = [
+            models.Index(
+                fields=[
+                    "person_name",
+                ]
+            ),
+        ]
+        unique_together = [("orcid", "person_name")]
+
+    def __str__(self) -> str:
+        affiliations = self.affiliation.all()
+        affiliations_str = ' - '.join([f"Contrib {x+1}: {affiliation.institution}" for x, affiliation in enumerate(affiliations)])
+        return f"{self.person_name} ({affiliations_str})"
+
+    @classmethod
+    def get(
+        cls,
+        orcid,
+        person_name,
+        related_object,
+    ):
+        """
+        related_object:
+            procura no objeto relacionado se ha um researcher com o mesmo nome. (Book ou Article)
+        """
+        if orcid:
+            return cls.objects.get(orcid=orcid)
+        elif person_name and isinstance(related_object, apps.get_model('article', 'Article')):
+            try:
+                return related_object.article_researchers.get(person_name=person_name)
+            except cls.MultipleObjectsReturned:
+                return related_object.article_researchers.filter(person_name=person_name).first()
+        # elif person_name and isinstance(related_object, apps.get_model('article', 'Article')):
+        #     return related_object.book_researcher.filter(person_name=person_name)
+        raise cls.DoesNotExist
+
+    @classmethod
+    def create(
+        cls,
+        orcid,
+        affiliation,
+        person_name,
+        user,
+    ):
+        try:
+            obj = cls()
+            obj.orcid = orcid
+            obj.person_name = person_name
+            obj.creator = user
+            obj.save()
+            affiliation = affiliation if isinstance(affiliation, list) else [affiliation]
+            obj.affiliation.set(affiliation)
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(orcid=orcid)
+        
+
+    @classmethod
+    def get_or_create(
+        cls,
+        orcid,
+        affiliation,
+        person_name,
+        related_object,
+        user,
+    ):
+        try:
+            return cls.get(orcid=orcid, person_name=person_name, related_object=related_object)
+        except cls.DoesNotExist:
+            return cls.create(
+            orcid=orcid,
+            affiliation=affiliation,
+            person_name=person_name,
+            user=user,
+        )
