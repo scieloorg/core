@@ -116,10 +116,6 @@ def load_article(user, xml=None, file_path=None, v3=None):
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
 
         article.license_statements.set(set_license(xmltree=xmltree, article=article, user=user))
-        for ls in article.license_statements.iterator():
-            article.license = ls.license
-            article.save()
-            break
         article.publisher = get_or_create_publisher(xmltree=xmltree, user=user, item=pid_v3)
         article.valid = True
         article.save()
