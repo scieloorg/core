@@ -4,6 +4,8 @@ from journal.models import SciELOJournal
 
 from .models import Article
 
+from legendarium.formatter import descriptive_format
+
 
 class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
@@ -75,12 +77,13 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
             # Article languages nao tem a mesma correpondencia de languages PDF
             for collection in collections:
                 for lang in obj.languages.all():
-                    data[
-                        "fulltext_pdf_%s" % (lang.code2)
-                    ] = "http://%s/scielo.php?script=sci_pdf&pid=%s&tlng=%s" % (
-                        collection.domain,
-                        obj.pid_v2,
-                        lang.code2,
+                    data["fulltext_pdf_%s" % (lang.code2)] = (
+                        "http://%s/scielo.php?script=sci_pdf&pid=%s&tlng=%s"
+                        % (
+                            collection.domain,
+                            obj.pid_v2,
+                            lang.code2,
+                        )
                     )
 
             # prepara the fulltext_html_*
@@ -88,12 +91,13 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
             # Article languages nao tem a mesma correpondencia de languages HTML
             for collection in collections:
                 for lang in obj.languages.all():
-                    data[
-                        "fulltext_html_%s" % (lang.code2)
-                    ] = "http://%s/scielo.php?script=sci_arttext&pid=%s&tlng=%s" % (
-                        collection.domain,
-                        obj.pid_v2,
-                        lang.code2,
+                    data["fulltext_html_%s" % (lang.code2)] = (
+                        "http://%s/scielo.php?script=sci_arttext&pid=%s&tlng=%s"
+                        % (
+                            collection.domain,
+                            obj.pid_v2,
+                            lang.code2,
+                        )
                     )
 
         return data
@@ -283,7 +287,7 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     deleted = indexes.CharField(index_fieldname="item.deleted", null=True)
     public = indexes.CharField(index_fieldname="item.public", null=True)
     collections = indexes.MultiValueField(index_fieldname="item.collections", null=True)
-    publishers = indexes.MultiValueField(index_fieldname="item.communities", null=True)
+    communities = indexes.MultiValueField(index_fieldname="item.communities", null=True)
     titles = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.title")
     creator = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.creator")
     collab = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.collab")
@@ -304,82 +308,166 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     )
 
     def prepare_id(self, obj):
-        return obj.pid_v3 or obj.doi
-    
-    def prepare_item_id(self, obj):
-        return obj.pid_v3 or obj.doi
+        """This field is the identifier of the record
+        The OAI persistent identifier prefix for SciELO is ``oai:scielo:``
+        We are giving preference to pid_v2 then pid-v3 and finally DOI
+        """
+        return "oai:scielo:%s" % obj.pid_v2 or obj.doi or obj.pid_v3
 
-    def prepare_doi(self, obj):
-        if obj.doi:
-            return "".join([doi.value for doi in obj.doi.all()])
+    def prepare_item_id(self, obj):
+        """This field is the identifier of the record
+        The OAI persistent identifier prefix for SciELO is ``oai:scielo:``
+        We are giving preference to pid_v2 then pid-v3 and finally DOI
+        """
+        return "oai:scielo:%s" % obj.pid_v2 or obj.doi or obj.pid_v3
 
     def prepare_updated(self, obj):
         """
-        2022-12-20T15:18:22Z
+        This is the lastmodified to the OAI-PMH protocol.
+        The format of the date must be something like: 2024-03-06 15:48:25.
+        The strftime: 2022-12-20T15:18:22Z
+        The param ``from`` and ``until`` considers this field as filtering.
         """
         return obj.updated.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     def prepare_deleted(self, obj):
+        """This is a soft delete on the index, so in the application which handle
+        the data must flag as deleted to the index, by now we are set as ``False``
+        """
         return False
 
     def prepare_public(self, obj):
+        """Until now we dont have a field on data set as public,
+        by now we are set as ``False``
+        """
         return True
 
     def prepare_collections(self, obj):
-        return [
-            "SciELO",
-        ]
+        """The collection field is multi-value, so may contain N collection.
+        IMPORTANT: the attribute of the ``obj`` is a property with a query which
+        can return no record that is very weak.
+        """
+        if obj.collections:
+            if obj.collections:
+                return [col for col in obj.collections]
 
-    def prepare_publishers(self, obj):
-        if not obj.publisher:
+    def prepare_communities(self, obj):
+        """The ISSN is on SciELO Journal models.SciELOJournal.objects.filter(journal=j)[0].issn_scielo"""
+        # set com os issns
+        if obj.journal:
             return [
-                " ",
+                j.issn_scielo for j in SciELOJournal.objects.filter(journal=obj.journal)
             ]
-        return [obj.publisher]
 
     def prepare_titles(self, obj):
+        """The list of titles."""
         if obj.titles:
             return [title.plain_text for title in obj.titles.all()]
 
     def prepare_creator(self, obj):
+        """The list of authors is the researchers on the models that related with
+        class PersonName, so we used ``select_related`` to ensure that
+        person_name is not null.
+        """
         if obj.researchers:
-            researchers = obj.researchers.select_related('person_name').filter(person_name__isnull=False)
-            return [str(researcher) for researcher in researchers]
+            researchers = obj.researchers.select_related("person_name").filter(
+                person_name__isnull=False
+            )
+            return [str(researcher.person_name) for researcher in researchers]
 
     def prepare_collab(self, obj):
+        """This is the instituional author."""
         if obj.collab:
             return [collab.collab for collab in obj.collab.all()]
 
     def prepare_kw(self, obj):
+        """The keywords of the article."""
         if obj.keywords:
             return [keyword.text for keyword in obj.keywords.all()]
 
     def prepare_description(self, obj):
+        """The abstracts of the articles
+        This is a property that filter by article ``DocumentAbstract.objects.filter(article=self)``
+        """
         if obj.abstracts:
             return [abs.plain_text for abs in obj.abstracts.all()]
 
     def prepare_dates(self, obj):
+        """This the publication date, that is format by YYYY-MM-DD
+        In the model this field is seperated into pub_date_day, pub_date_month and pub_date_year
+        """
         return [
-            " ",
+            "-".join(
+                [
+                    obj.pub_date_year or "",
+                    obj.pub_date_month or "",
+                    obj.pub_date_day or "",
+                ]
+            ),
         ]
 
     def prepare_la(self, obj):
+        """The language of the article."""
         if obj.languages:
             return [language.code2 for language in obj.languages.all()]
 
     def prepare_identifier(self, obj):
+        """Add the all identifier to the article:
+        PID v2
+        PID v3
+        DOI
+        URL old format:
+            Example: https://www.scielo.br/scielo.php?script=sci_arttext&pid=S0102-311X2019000104001&lang=pt
+        """
+        idents = []
+
+        if obj.journal:
+            collections = obj.collections
+            for collection in collections:
+                for lang in obj.languages.all():
+                    idents.append(
+                        "http://%s/scielo.php?script=sci_arttext&pid=%s&tlng=%s"
+                        % (
+                            collection.domain,
+                            obj.pid_v2,
+                            lang.code2,
+                        )
+                    )
+
         if obj.doi:
-            dois = [doi.value for doi in obj.doi.all()]
-        return dois + [obj.pid_v2, obj.pid_v3]
+            idents.extend([doi.value for doi in obj.doi.all()])
+
+        if obj.pid_v2:
+            idents.append(obj.pid_v2)
+
+        if obj.pid_v3:
+            idents.append(obj.pid_v3)
+
+        return idents
 
     def prepare_license(self, obj):
         if obj.license and obj.license.license_type:
             return [obj.license.license_type]
 
     def prepare_sources(self, obj):
-        return [
-            " ",
-        ]
+        # property no article.
+        # Acta Cirúrgica Brasileira, Volume: 37, Issue: 7, Article number: e370704, Published: 10 OCT 2022
+
+        titles = [title.plain_text for title in obj.titles.all()]
+
+        leg_dict = {
+            "title": titles[0],
+            "pubdate": str(obj.pub_date_year),
+            "volume": obj.issue.volume,
+            "number": obj.issue.number,
+            "fpage": obj.first_page,
+            "lpage": obj.last_page,
+            "elocation": obj.elocation_id,
+        }
+
+        leg = descriptive_format(**leg_dict)
+        
+        return [leg]
 
     def get_model(self):
         return Article
