@@ -452,22 +452,7 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_sources(self, obj):
         # property no article.
         # Acta Cirúrgica Brasileira, Volume: 37, Issue: 7, Article number: e370704, Published: 10 OCT 2022
-
-        titles = [title.plain_text for title in obj.titles.all()]
-
-        leg_dict = {
-            "title": titles[0],
-            "pubdate": str(obj.pub_date_year),
-            "volume": obj.issue.volume,
-            "number": obj.issue.number,
-            "fpage": obj.first_page,
-            "lpage": obj.last_page,
-            "elocation": obj.elocation_id,
-        }
-
-        leg = descriptive_format(**leg_dict)
-        
-        return [leg]
+        return obj.source
 
     def get_model(self):
         return Article

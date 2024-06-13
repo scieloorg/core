@@ -1,19 +1,18 @@
 import os
 import sys
-
 from datetime import datetime
 
 from django.core.files.base import ContentFile
-from django.db import models, IntegrityError
+from django.db import IntegrityError, models
 from django.db.utils import DataError
 from django.utils.translation import gettext as _
-from packtools.sps.formats import pubmed, pmc, crossref
-from packtools.sps.pid_provider.xml_sps_lib import generate_finger_print
+from legendarium.formatter import descriptive_format
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
+from packtools.sps.formats import crossref, pmc, pubmed
+from packtools.sps.pid_provider.xml_sps_lib import generate_finger_print
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 from wagtail.models import Orderable
-from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
@@ -27,13 +26,13 @@ from core.models import (
 )
 from doi.models import DOI
 from doi_manager.models import CrossRefConfiguration
-from institution.models import Sponsor, Publisher
+from institution.models import Publisher, Sponsor
 from issue.models import Issue, TocSection
 from journal.models import Journal, SciELOJournal
 from pid_provider.provider import PidProvider
-from researcher.models import Researcher, InstitutionalAuthor
-from vocabulary.models import Keyword
+from researcher.models import InstitutionalAuthor, Researcher
 from tracker.models import UnexpectedEvent
+from vocabulary.models import Keyword
 
 
 class Article(CommonControlField, ClusterableModel):
@@ -204,6 +203,23 @@ class Article(CommonControlField, ClusterableModel):
         }
 
         return _data
+
+    @property
+    def source(self):
+        """
+        Return the format: Acta Cirúrgica Brasileira, Volume: 37, Issue: 7, Article number: e370704, Published: 10 OCT 2022
+        """
+        leg_dict = {
+            "title": self.journal.title,
+            "pubdate": str(self.pub_date_year),
+            "volume": self.issue.volume,
+            "number": self.issue.number,
+            "fpage": self.first_page,
+            "lpage": self.last_page,
+            "elocation": self.elocation_id,
+        }
+
+        return descriptive_format(**leg_dict)
 
     @classmethod
     def get_or_create(cls, doi, pid_v2, fundings, user):
