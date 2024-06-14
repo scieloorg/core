@@ -212,8 +212,8 @@ class Article(CommonControlField, ClusterableModel):
         leg_dict = {
             "title": self.journal.title,
             "pubdate": str(self.pub_date_year),
-            "volume": self.issue.volume,
-            "number": self.issue.number,
+            "volume": self.issue.volume if self.issue else "",
+            "number": self.issue.number if self.issue else "",
             "fpage": self.first_page,
             "lpage": self.last_page,
             "elocation": self.elocation_id,
