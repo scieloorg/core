@@ -452,7 +452,10 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_sources(self, obj):
         # property no article.
         # Acta Cirúrgica Brasileira, Volume: 37, Issue: 7, Article number: e370704, Published: 10 OCT 2022
-        return obj.source
+        try: 
+            return obj.source
+        except Exception as ex:
+            return ""
 
     def get_model(self):
         return Article
