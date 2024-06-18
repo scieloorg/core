@@ -27,6 +27,7 @@ urlpatterns = [
     path(settings.DJANGO_ADMIN_URL, admin.site.urls),
     # Wagtail Admin
     path(settings.WAGTAIL_ADMIN_URL, include(wagtailadmin_urls)),
+    path('', include('django_prometheus.urls')),
     re_path(r"^documents/", include(wagtaildocs_urls)),
     path("api/v2/pid/", include("config.api_router", namespace="pid_provider")),
     # JWT
