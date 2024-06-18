@@ -7,6 +7,7 @@ from django.core.files.base import ContentFile
 from django.db import models, IntegrityError
 from django.db.utils import DataError
 from django.utils.translation import gettext as _
+from django_prometheus.models import ExportModelOperationsMixin
 from packtools.sps.formats import pubmed, pmc, crossref
 from packtools.sps.pid_provider.xml_sps_lib import generate_finger_print
 from modelcluster.fields import ParentalKey
@@ -36,7 +37,7 @@ from vocabulary.models import Keyword
 from tracker.models import UnexpectedEvent
 
 
-class Article(CommonControlField, ClusterableModel):
+class Article(ExportModelOperationsMixin('article'), CommonControlField, ClusterableModel):
     pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
     pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True)
     sps_pkg_name = models.CharField(
