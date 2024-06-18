@@ -97,6 +97,12 @@ django-maintenance-mode==0.21.1
 certifi>=2023.7.22 # not directly required, pinned by Snyk to avoid a vulnerability
 requests>=2.31.0 # not directly required, pinned by Snyk to avoid a vulnerability
 
+
 #Django prometheus
 # ------------------------------------------------------------------------------
 django-prometheus==2.3.1
+
+
+# SciELO Legendarium
+-e git+https://github.com/scieloorg/legendarium#egg=legendarium  # https://github.com/scieloorg/legendarium
+
