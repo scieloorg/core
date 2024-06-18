@@ -44,6 +44,7 @@ LOCALE_PATHS = [str(ROOT_DIR / "locale")]
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
 DATABASES = {"default": env.db("DATABASE_URL")}
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
+DATABASES["default"]["ENGINE"] = 'django_prometheus.db.backends.postgresql'
 # https://docs.djangoproject.com/en/stable/ref/settings/#std:setting-DEFAULT_AUTO_FIELD
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -112,6 +113,7 @@ THIRD_PARTY_APPS = [
     "rest_framework",
     "haystack",
     "maintenance_mode",
+    'django_prometheus',
 ]
 
 LOCAL_APPS = [
@@ -190,6 +192,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#middleware
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -203,6 +206,7 @@ MIDDLEWARE = [
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "maintenance_mode.middleware.MaintenanceModeMiddleware",
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
 # STATIC
@@ -322,7 +326,7 @@ LOGGING = {
     },
     "root": {"level": "INFO", "handlers": ["console"]},
 }
-
+PROMETHEUS_LATENCY_BUCKETS = (.1, .2, .5, .6, .8, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.5, 9.0, 12.0, 15.0, 20.0, 30.0, float("inf"))
 # Celery
 # ------------------------------------------------------------------------------
 if USE_TZ:
@@ -348,7 +352,12 @@ CELERY_TASK_SOFT_TIME_LIMIT = 36000
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html
 DJANGO_CELERY_BEAT_TZ_AWARE = False
-
+#CELERY PROMETHEUS DASHBOARD
+# https://docs.celeryq.dev/en/stable/userguide/configuration.html#worker-send-task-events
+CELERY_WORKER_SEND_TASK_EVENTS = True
+# https://docs.celeryq.dev/en/stable/userguide/configuration.html#std-setting-task_send_sent_event
+CELERY_TASK_SEND_SENT_EVENT = True
+CE_BUCKETS=1,2.5,5,10,30,60,300,600,900,1800
 # Celery Results
 # ------------------------------------------------------------------------------
 # https: // django-celery-results.readthedocs.io/en/latest/getting_started.html

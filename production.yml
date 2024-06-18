@@ -96,3 +96,20 @@ services:
     <<: *django
     image: core_production_flower
     command: /start-flower
+
+  celery-exporter:
+    image: danihodovic/celery-exporter
+    restart: always
+    ports:
+     - 9808:9808
+    command: ["--broker-url=redis://redis:6379/0"]
+    depends_on:
+     - redis
+
+  victoriametrics:
+    image: victoriametrics/victoria-metrics
+    restart: always
+    ports:
+      - 8428:8428
+    depends_on:
+     - prometheus

@@ -16,6 +16,7 @@ from wagtail.fields import RichTextField
 from wagtail.models import Orderable
 from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
+from django_prometheus.models import ExportModelOperationsMixin
 
 from collection.models import Collection
 from core.forms import CoreAdminModelForm
@@ -470,7 +471,7 @@ class OtherPid(CommonControlField):
         return self.updated or self.created
 
 
-class PidProviderXML(CommonControlField, ClusterableModel):
+class PidProviderXML(ExportModelOperationsMixin('pidproviderxml'), CommonControlField, ClusterableModel):
     """
     Tem responsabilidade de garantir a atribuição do PID da versão 3,
     armazenando dados chaves que garantem a identificação do XML

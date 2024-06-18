@@ -1,0 +1,22 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+  external_labels:
+    monitor: django-monitor
+
+scrape_configs:
+- job_name: "core-local-django"
+  static_configs:
+  # mudar para gateway do docker
+  # docker inspect scielo_core_local_django
+    - targets: ["172.18.0.1:8009"]
+- job_name: "core-local-celery-worker"
+  static_configs:    
+    - targets: ['celery-exporter:9808']
+
+remote_write:
+  - url: "http://172.18.0.1:8428/api/v1/write"
+
+remote_read:
+  - url: "http://172.18.0.1:8428/api/v1/read"
