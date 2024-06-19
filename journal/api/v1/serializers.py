@@ -72,15 +72,42 @@ class JournalSerializer(serializers.ModelSerializer):
     publisher = PublisherSerializer(many=True, read_only=True, source="publisher_history")
     owner = OwnerSerializer(many=True, read_only=True, source="owner_history")
     acronym = serializers.SerializerMethodField()
-    
+    scielo_journal = serializers.SerializerMethodField()
+
     def get_acronym(self, obj):
         scielo_journal = obj.scielojournal_set.first()
         return scielo_journal.journal_acron if scielo_journal else None
+
+
+    def get_scielo_journal(self, obj):
+        scielo_journals = obj.scielojournal_set.prefetch_related('journal_history').values(
+                'journal_acron', 
+                'issn_scielo', 
+                'journal_history__day', 
+                'journal_history__month', 
+                'journal_history__year', 
+                'journal_history__event_type', 
+                'journal_history__interruption_reason'
+            )
+        renamed_results = [
+            {
+                "journal_acron": item["journal_acron"],
+                "issn_scielo": item["issn_scielo"],
+                "day": item["journal_history__day"],
+                "month": item["journal_history__month"],
+                "year": item["journal_history__year"],
+                "event_type": item["journal_history__event_type"],
+                "interruption_reason": item["journal_history__interruption_reason"],
+            } 
+            for item in scielo_journals
+        ]
+        return renamed_results
 
     class Meta:
         model = models.Journal
         fields = [
             "official",
+            "scielo_journal",
             "title",
             "short_title",
             "acronym",
@@ -90,5 +117,4 @@ class JournalSerializer(serializers.ModelSerializer):
             "subject_descriptor",
             "subject",
             "text_language",
-        
         ]
