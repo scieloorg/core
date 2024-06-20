@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from collections import defaultdict
 
 from core.api.v1.serializers import LanguageSerializer
 from journal import models
@@ -84,30 +85,39 @@ class JournalSerializer(serializers.ModelSerializer):
         return scielo_journal.journal_acron if scielo_journal else None
 
     def get_scielo_journal(self, obj):
-        scielo_journals = obj.scielojournal_set.prefetch_related(
-            "journal_history"
-        ).values(
-            "journal_acron",
-            "issn_scielo",
+        results = obj.scielojournal_set.prefetch_related("journal_history").values(
+            "issn_scielo", 
+            "journal_acron",  
             "journal_history__day",
             "journal_history__month",
             "journal_history__year",
             "journal_history__event_type",
             "journal_history__interruption_reason",
         )
-        renamed_results = [
-            {
-                "journal_acron": item["journal_acron"],
-                "issn_scielo": item["issn_scielo"],
-                "day": item["journal_history__day"],
-                "month": item["journal_history__month"],
-                "year": item["journal_history__year"],
-                "event_type": item["journal_history__event_type"],
-                "interruption_reason": item["journal_history__interruption_reason"],
-            }
-            for item in scielo_journals
-        ]
-        return renamed_results
+        
+        journal_dict = {}
+
+        for item in results:
+            journal_acron = item["journal_acron"]
+            issn_scielo = item["issn_scielo"]
+
+            journal_history = dict(day=item["journal_history__day"],
+            month=item["journal_history__month"],
+            year=item["journal_history__year"],
+            event_type=item["journal_history__event_type"],
+            interruption_reason=item["journal_history__interruption_reason"])
+
+            if journal_acron not in journal_dict:
+                journal_dict[journal_acron] = {
+                    "issn_scielo": issn_scielo,
+                    "journal_acron": journal_acron,
+                    "journal_history": []
+                }
+
+            journal_dict[journal_acron]["journal_history"].append(journal_history)
+        
+        return list(journal_dict.values())
+
 
     class Meta:
         model = models.Journal
