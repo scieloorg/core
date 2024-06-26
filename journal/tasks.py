@@ -1,3 +1,4 @@
+import logging
 import sys
 
 from django.contrib.auth import get_user_model
@@ -18,6 +19,7 @@ from tracker.models import UnexpectedEvent
 
 User = get_user_model()
 
+logger = logging.getLogger(__name__)
 
 def _get_user(request, username=None, user_id=None):
     try:
@@ -142,3 +144,18 @@ def fetch_and_process_journal_logo(
                 "domain": domain,
             },
         )
+
+
+@celery_app.task(bind=True)
+def update_journal_valid_field(self, journal_acron=None, acron_collection=None):
+    """
+    Atualiza o campo 'valid' para False nos objetos Journal.
+    """
+    if journal_acron and acron_collection:
+        num_updated = Journal.objects.filter(scielojournal__journal_acron=journal_acron,
+        scielojournal__collection__acron3=acron_collection).update(valid=False)
+    else:
+        num_updated = Journal.objects.all().update(valid=False)
+    logging.info(f"Updated {num_updated} journals to valid=False.")
+    
+
