@@ -355,14 +355,14 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         """The ISSN is on SciELO Journal models.SciELOJournal.objects.filter(journal=j)[0].issn_scielo"""
         # set com os issns
         if obj.journal:
-            return [
-                j.issn_scielo for j in SciELOJournal.objects.filter(journal=obj.journal)
-            ]
+            return set([
+                "com_%s" % j.issn_scielo for j in SciELOJournal.objects.filter(journal=obj.journal)
+            ])
 
     def prepare_titles(self, obj):
         """The list of titles."""
         if obj.titles:
-            return [title.plain_text for title in obj.titles.all()]
+            return set([title.plain_text for title in obj.titles.all()])
 
     def prepare_creator(self, obj):
         """The list of authors is the researchers on the models that related with
@@ -373,24 +373,24 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             researchers = obj.researchers.select_related("person_name").filter(
                 person_name__isnull=False
             )
-            return [str(researcher.person_name) for researcher in researchers]
+            return set([str(researcher.person_name) for researcher in researchers])
 
     def prepare_collab(self, obj):
         """This is the instituional author."""
         if obj.collab:
-            return [collab.collab for collab in obj.collab.all()]
+            return set([collab.collab for collab in obj.collab.all()])
 
     def prepare_kw(self, obj):
         """The keywords of the article."""
         if obj.keywords:
-            return [keyword.text for keyword in obj.keywords.all()]
+            return set([keyword.text for keyword in obj.keywords.all()])
 
     def prepare_description(self, obj):
         """The abstracts of the articles
         This is a property that filter by article ``DocumentAbstract.objects.filter(article=self)``
         """
         if obj.abstracts:
-            return [abs.plain_text for abs in obj.abstracts.all()]
+            return set([abs.plain_text for abs in obj.abstracts.all()])
 
     def prepare_dates(self, obj):
         """This the publication date, that is format by YYYY-MM-DD
@@ -409,7 +409,7 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_la(self, obj):
         """The language of the article."""
         if obj.languages:
-            return [language.code2 for language in obj.languages.all()]
+            return set([language.code2 for language in obj.languages.all()])
 
     def prepare_identifier(self, obj):
         """Add the all identifier to the article:
@@ -419,13 +419,13 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         URL old format:
             Example: https://www.scielo.br/scielo.php?script=sci_arttext&pid=S0102-311X2019000104001&lang=pt
         """
-        idents = []
+        idents = set()
 
         if obj.journal:
             collections = obj.collections
             for collection in collections:
                 for lang in obj.languages.all():
-                    idents.append(
+                    idents.add(
                         "http://%s/scielo.php?script=sci_arttext&pid=%s&tlng=%s"
                         % (
                             collection.domain,
@@ -435,13 +435,13 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
                     )
 
         if obj.doi:
-            idents.extend([doi.value for doi in obj.doi.all()])
+            idents.update([doi.value for doi in obj.doi.all()])
 
         if obj.pid_v2:
-            idents.append(obj.pid_v2)
+            idents.add(obj.pid_v2)
 
         if obj.pid_v3:
-            idents.append(obj.pid_v3)
+            idents.add(obj.pid_v3)
 
         return idents
 
