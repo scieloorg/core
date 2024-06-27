@@ -16,7 +16,11 @@
         <element name="creator">
             <element name="none">
             {% for research in object.researchers.all %}
-                <field name="value">{{research.person_name}}</field>
+                {% if research.orcid %}
+                    <field name="value" orcid="{{research.orcid}}">{{research.person_name}}</field>
+                {% else %}
+                    <field name="value">{{research.person_name}}</field>
+                {% endif %}
             {% endfor %}
             </element>
         </element>
@@ -47,9 +51,20 @@
       </element>
       <element name="identifier">
          <element name="none">
+
             {% for doi in object.doi.all %}
                 <field name="value">{{ doi.value }}</field>
             {% endfor %}
+
+                <field name="value">{{ object.pid_v2 }}</field>
+                <field name="value">{{ object.pid_v3 }}</field>
+
+            {% for collection in object.collections %}
+                {% for lang in object.languages.all %}
+                    <field name="value">http://{{collection.domain}}/scielo.php?script=sci_arttext&amp;pid={{object.pid_v2}}&amp;tlng={{lang.code2}}</field>
+                {% endfor %}
+            {% endfor %}
+                    
          </element>
       </element>
       <element name="language">
@@ -74,7 +89,7 @@
     <element name="bundles"/>
     <element name="others">
         <field name="handle"/>
-        <field name="identifier">{{ object.id }}</field>
+        <field name="identifier">{{ object.pid_v2 }}</field>
         <field name="lastModifyDate">{{ object.updated|date:"c" }}</field>
     </element>
     <element name="repository">
