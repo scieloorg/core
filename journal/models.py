@@ -587,10 +587,10 @@ class Journal(CommonControlField, ClusterableModel):
     panels_scope_and_about = [
         AutocompletePanel("indexed_at"),
         AutocompletePanel("additional_indexed_at"),
-        FieldPanel("subject"),
+        AutocompletePanel("subject"),
         AutocompletePanel("subject_descriptor"),
         InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
-        FieldPanel("wos_db"),
+        AutocompletePanel("wos_db"),
         AutocompletePanel("wos_area"),
         InlinePanel("mission", label=_("Mission"), classname="collapsed"),
         InlinePanel("history", label=_("Brief History"), classname="collapsed"),
@@ -636,6 +636,7 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel("open_data", label=_("Open data"), classname="collapsed"),
         InlinePanel("preprint", label=_("Preprint"), classname="collapsed"),
         InlinePanel("review", label=_("Peer review"), classname="collapsed"),
+        InlinePanel("open_science_compliance", label=_("Open Science Compliance"), classname="collapsed"),
     ]
 
     panels_policy = [
@@ -693,6 +694,11 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel(
             "fee_charging",
             label=_("Fee Charging"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "editorial_policy",
+            label=_("Editorial Policy"),
             classname="collapsed",
         ),
     ]
@@ -1812,6 +1818,11 @@ class SubjectDescriptor(CommonControlField):
 class Subject(CommonControlField):
     code = models.CharField(max_length=30, null=True, blank=True)
     value = models.CharField(max_length=100, null=True, blank=True)
+    
+    autocomplete_search_field = "value"
+
+    def autocomplete_label(self):
+        return str(self)
 
     def __str__(self):
         return f"{self.value}"
@@ -1856,6 +1867,11 @@ class Subject(CommonControlField):
 class WebOfKnowledge(CommonControlField):
     code = models.CharField(max_length=8, null=True, blank=True)
     value = models.CharField(max_length=100, null=True, blank=True)
+
+    autocomplete_search_field = "value"
+
+    def autocomplete_label(self):
+        return str(self)
 
     def __str__(self):
         return f"{self.code} - {self.value}"
@@ -2687,4 +2703,16 @@ class JournalURL(CommonControlField):
         null=True, 
         blank=True,
         help_text=_("If the journal is published in another site, enter in this field the other site location"),
+    )
+
+
+class EditorialPolicy(Orderable, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="editorial_policy", null=True
+    )
+
+
+class OpenScienceCompliance(Orderable, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="open_science_compliance", null=True
     )
