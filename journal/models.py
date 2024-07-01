@@ -636,6 +636,7 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel("open_data", label=_("Open data"), classname="collapsed"),
         InlinePanel("preprint", label=_("Preprint"), classname="collapsed"),
         InlinePanel("review", label=_("Peer review"), classname="collapsed"),
+        InlinePanel("open_science_compliance", label=_("Open Science Compliance"), classname="collapsed"),
     ]
 
     panels_policy = [
@@ -693,6 +694,11 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel(
             "fee_charging",
             label=_("Fee Charging"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "editorial_policy",
+            label=_("Editorial Policy"),
             classname="collapsed",
         ),
     ]
@@ -2697,4 +2703,16 @@ class JournalURL(CommonControlField):
         null=True, 
         blank=True,
         help_text=_("If the journal is published in another site, enter in this field the other site location"),
+    )
+
+
+class EditorialPolicy(Orderable, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="editorial_policy", null=True
+    )
+
+
+class OpenScienceCompliance(Orderable, RichTextWithLanguage, CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="open_science_compliance", null=True
     )
