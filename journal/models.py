@@ -614,7 +614,8 @@ class Journal(CommonControlField, ClusterableModel):
         AutocompletePanel("contact_location"),
         InlinePanel("journal_email", label=_("Contact e-mail")),
         FieldPanel("logo", heading=_("Logo")),
-        FieldPanel("journal_url"),
+        # FieldPanel("journal_url"),
+        InlinePanel("related_journal_urls", label=_("Journal Urls"), classname="collapsed"),
         FieldPanel("submission_online_url"),
         FieldPanel("main_collection"),
         InlinePanel("title_in_database"),
@@ -2676,3 +2677,14 @@ class JournalLicense(CommonControlField):
             return cls.get(license_type=license_type)
         except cls.DoesNotExist:
             return cls.create(user, license_type)
+        
+
+class JournalURL(CommonControlField):
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="related_journal_urls", null=True
+    )
+    url = models.URLField(
+        null=True, 
+        blank=True,
+        help_text=_("If the journal is published in another site, enter in this field the other site location"),
+    )
