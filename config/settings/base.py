@@ -327,6 +327,7 @@ LOGGING = {
     "root": {"level": "INFO", "handlers": ["console"]},
 }
 PROMETHEUS_LATENCY_BUCKETS = (.1, .2, .5, .6, .8, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.5, 9.0, 12.0, 15.0, 20.0, 30.0, float("inf"))
+PROMETHEUS_EXPORT_MIGRATIONS = env.bool("PROMETHEUS_EXPORT_MIGRATIONS", True)
 # Celery
 # ------------------------------------------------------------------------------
 if USE_TZ:
@@ -356,7 +357,8 @@ DJANGO_CELERY_BEAT_TZ_AWARE = False
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#worker-send-task-events
 CELERY_WORKER_SEND_TASK_EVENTS = True
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std-setting-task_send_sent_event
-CELERY_TASK_SEND_SENT_EVENT = True
+CELERY_SEND_TASK_SENT_EVENT = True
+CELERYD_SEND_EVENTS = True
 CE_BUCKETS=1,2.5,5,10,30,60,300,600,900,1800
 # Celery Results
 # ------------------------------------------------------------------------------

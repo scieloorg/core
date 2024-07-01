@@ -175,14 +175,14 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--web.enable-lifecycle'
     volumes:
-      - ./docker_compose_dashboard/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      # - ./docker_compose_dashboard/prometheus/django.rules:/etc/prometheus/django.rules
+      - ./monitoring_stack/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      # - ./monitoring_stack/prometheus/django.rules:/etc/prometheus/django.rules
       - prometheus_data:/var/lib/grafana
 
   grafana:
     # image: grafana/grafana:latest
     build:
-      context: ./docker_compose_dashboard/grafana/
+      context: ./monitoring_stack/grafana/
       dockerfile: Dockerfile
     restart: always
     depends_on:

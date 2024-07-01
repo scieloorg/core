@@ -231,7 +231,7 @@ def update_panel_institution(
                     level_2=None,
                     level_3=None,
                     user=user,
-                    location=None,
+                    location=location,
                     official=None,
                     is_official=None,
                     url=None,
@@ -250,7 +250,7 @@ def update_panel_institution(
                     level_2=None,
                     level_3=None,
                     user=user,
-                    location=None,
+                    location=location,
                     official=None,
                     is_official=None,
                     url=None,
@@ -275,8 +275,8 @@ def update_logo(
     try:
         if journal_logo := JournalLogo.objects.filter(journal=journal).first():
             journal.logo = journal_logo.logo
-        else:
-            tasks.fetch_and_process_journal_logo.apply_async(kwargs=dict(journal_id=journal.id))
+        # else:
+        #     tasks.fetch_and_process_journal_logo.apply_async(kwargs=dict(journal_id=journal.id))
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
