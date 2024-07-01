@@ -614,7 +614,7 @@ class Journal(CommonControlField, ClusterableModel):
         AutocompletePanel("contact_location"),
         InlinePanel("journal_email", label=_("Contact e-mail")),
         FieldPanel("logo", heading=_("Logo")),
-        FieldPanel("journal_url"),
+        # FieldPanel("journal_url"),
         InlinePanel("related_journal_urls", label=_("Journal Urls"), classname="collapsed"),
         FieldPanel("submission_online_url"),
         FieldPanel("main_collection"),
