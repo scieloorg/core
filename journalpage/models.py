@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.utils import translation
-from django.http import HttpResponseNotFound
+from django.http import HttpResponseNotFound, JsonResponse
 from wagtail.models import Page
 from wagtail.contrib.routable_page.models import RoutablePageMixin, re_path
 
@@ -8,6 +8,11 @@ from journal.models import Journal
 from journalpage.utils.utils import get_journal_by_acronyms, get_editorial_board, render_journal_page_with_latest_context, verify_journal_is_latest
 from core.models import Language
 from editorialboard.choices import ROLE
+
+
+class PageNotVisibleError(Exception):
+    pass
+
 
 class JournalPage(RoutablePageMixin, Page):
     def get_context(self, request, *args, **kwargs):
@@ -34,6 +39,10 @@ class JournalPage(RoutablePageMixin, Page):
         except Journal.DoesNotExist:
             return HttpResponseNotFound("Journal not found")
         
+        if not journal.valid:
+            response_data = {"error": type(PageNotVisibleError()).__name__}
+            return JsonResponse(response_data)
+
         try:
             verify_journal_is_latest(journal=journal)
         except AssertionError:

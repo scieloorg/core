@@ -774,6 +774,9 @@ class Journal(CommonControlField, ClusterableModel):
         AutocompletePanel("text_language"),
         AutocompletePanel("abstract_language"),
     ]
+    panels_publication = [
+        FieldPanel("valid")
+    ]
 
     edit_handler = TabbedInterface(
         [
@@ -790,6 +793,7 @@ class Journal(CommonControlField, ClusterableModel):
             ObjectList(
                 panels_instructions_for_authors, heading=_("Instructions for Authors")
             ),
+            ObjectList(panels_publication, heading=_("Publication About Journal")),
         ]
     )
 
