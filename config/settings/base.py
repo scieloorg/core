@@ -357,7 +357,8 @@ DJANGO_CELERY_BEAT_TZ_AWARE = False
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#worker-send-task-events
 CELERY_WORKER_SEND_TASK_EVENTS = True
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std-setting-task_send_sent_event
-CELERY_TASK_SEND_SENT_EVENT = True
+CELERY_SEND_TASK_SENT_EVENT = True
+CELERYD_SEND_EVENTS = True
 CE_BUCKETS=1,2.5,5,10,30,60,300,600,900,1800
 # Celery Results
 # ------------------------------------------------------------------------------
