@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, SimpleTestCase
 
 # Create your tests here.
 from core.utils import standardizer
@@ -65,3 +65,23 @@ class StandardizerStandardizeNameTest(TestCase):
         for i, item in enumerate(result):
             with self.subTest(i):
                 self.assertEqual({"name": expected[i]}, item)
+
+
+class StandardizerRemoveSpaceExtraTest(SimpleTestCase):
+    
+    def test_remove_extra_spaces(self):
+        test_cases = [
+            ("  Palavra1", "Palavra1"),
+            ("    Palavra1      Palavra2   ", "Palavra1 Palavra2"),
+            ("", ""),
+            ("   ", ""),
+            (" Palavra1   Palavra2 Palavra3 ", "Palavra1 Palavra2 Palavra3"),
+            ("   Multiple   spaces   between  words   ", "Multiple spaces between words"),
+            ("\tTabs\tand\nnewlines\n", "Tabs and newlines"),
+        ]
+        
+        for text, expected in test_cases:
+            with self.subTest(text=text, expected=expected):
+                result = standardizer.remove_extra_spaces(text=text)
+                self.assertEqual(expected, result)
+

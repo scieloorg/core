@@ -457,7 +457,6 @@ class Country(CommonControlField, ClusterableModel):
             country_names[lang_code2] = name
 
         for lang_code2, text in country_names.items():
-            logging.info(f"{lang_code2} {text}")
             language = Language.get_or_create(code2=lang_code2)
             CountryName.create_or_update(
                 country=obj, language=language, text=text, user=user

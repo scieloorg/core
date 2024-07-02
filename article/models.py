@@ -84,6 +84,7 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
     license = models.ForeignKey(
         License, on_delete=models.SET_NULL, null=True, blank=True
     )
+    article_license = models.CharField(max_length=255, null=True, blank=True)
     issue = models.ForeignKey(Issue, on_delete=models.SET_NULL, null=True, blank=True)
     first_page = models.CharField(max_length=20, null=True, blank=True)
     last_page = models.CharField(max_length=20, null=True, blank=True)

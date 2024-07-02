@@ -322,11 +322,7 @@ class PersonName(CommonControlField):
     @staticmethod
     def join_names(given_names, last_name, suffix):
         return " ".join(
-            [
-                remove_extra_spaces(item)
-                for item in (given_names, last_name, suffix)
-                if remove_extra_spaces(item)
-            ]
+            filter(None, [given_names, last_name, suffix])
         )
 
     @classmethod
@@ -380,6 +376,7 @@ class PersonName(CommonControlField):
             obj.gender = gender
             obj.gender_identification_status = gender_identification_status
             obj.save()
+            return obj
         except IntegrityError:
             return cls._get(given_names, last_name, suffix, fullname, declared_name)
         except Exception as e:
@@ -408,8 +405,7 @@ class PersonName(CommonControlField):
         given_names = remove_extra_spaces(given_names)
         last_name = remove_extra_spaces(last_name)
         suffix = remove_extra_spaces(suffix)
-        fullname = remove_extra_spaces(fullname)
-        fullname = fullname or PersonName.join_names(given_names, last_name, suffix)
+        fullname = remove_extra_spaces(fullname) or PersonName.join_names(given_names, last_name, suffix)
 
         try:
             return cls._get(given_names, last_name, suffix, fullname, declared_name)
