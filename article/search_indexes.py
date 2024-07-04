@@ -343,21 +343,21 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         return True
 
     def prepare_collections(self, obj):
+        """The ISSN is on SciELO Journal models.SciELOJournal.objects.filter(journal=j)[0].issn_scielo"""
+        # set com os issns
+        if obj.journal:
+            return set([
+                j.issn_scielo for j in SciELOJournal.objects.filter(journal=obj.journal)
+            ])
+
+    def prepare_communities(self, obj):
         """The collection field is multi-value, so may contain N collection.
         IMPORTANT: the attribute of the ``obj`` is a property with a query which
         can return no record that is very weak.
         """
         if obj.collections:
             if obj.collections:
-                return [col for col in obj.collections]
-
-    def prepare_communities(self, obj):
-        """The ISSN is on SciELO Journal models.SciELOJournal.objects.filter(journal=j)[0].issn_scielo"""
-        # set com os issns
-        if obj.journal:
-            return set([
-                "com_%s" % j.issn_scielo for j in SciELOJournal.objects.filter(journal=obj.journal)
-            ])
+                return ["col_%s" % col for col in obj.collections]
 
     def prepare_titles(self, obj):
         """The list of titles."""
