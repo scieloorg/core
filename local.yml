@@ -11,10 +11,8 @@ services:
       - redis
       - postgres
       - mailhog
-      - pgbouncer
       - solr
     links:
-      - pgbouncer
       - solr
     volumes:
       - .:/app:z
@@ -24,20 +22,6 @@ services:
     ports:
       - "8009:8000"
     command: /start
-
-  pgbouncer:
-    image: edoburu/pgbouncer:1.14.0
-    restart: always
-    container_name: scielo_core_local_pgbouncer
-    environment:
-      - DATABASE_URL=postgres://GVRFlLmcCNfGLhsFvSnCioYOPJPYpyfj:BQ4hSUL4rdj5WZLdR8ilDLRQMvCtzo0caMaXDO0olGsmycQjlcZlTVK9DepZR8kk@postgres/scielo_core
-      - MAX_CLIENT_CONN=100
-    ports:
-      - 6439:5432
-    depends_on:
-      - postgres
-    links:
-      - postgres
 
   solr:
     image: solr:9.3
