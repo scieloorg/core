@@ -28,11 +28,10 @@ def delete_unexpected_events(self, exception_type, start_date=None, end_date=Non
     Delete UnexpectedEvent records based on exception type and optional date range.
     """
 
-    if exception_type == '__all__':
-        UnexpectedEvent.objects.all().delete()
-        return
+    filters = {}
+    if exception_type:
+        filters['exception_type__icontains'] =  exception_type
 
-    filters = {'exception_type__icontains': exception_type}
     if start_date:
         start_date = datetime.fromisoformat(start_date)
         filters['created__gte'] = start_date
