@@ -9,11 +9,10 @@ PARTS_SEP_FOR_CITY = []
 
 
 def remove_extra_spaces(text):
-    text = text and text.strip()
     if not text:
         return text
-    # padroniza a quantidade de espaços
-    return " ".join([item.strip() for item in text.split() if item.strip()])
+    # Padroniza a quantidade de espaços
+    return " ".join(text.split())
 
 
 def standardize_code_and_name(original):

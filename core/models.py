@@ -145,6 +145,13 @@ class Language(CommonControlField):
     class Meta:
         verbose_name = _("Language")
         verbose_name_plural = _("Languages")
+        indexes = [
+            models.Index(
+                fields=[
+                    "code2",
+                ]
+            ),
+        ]
 
     def __unicode__(self):
         if self.name or self.code2:
