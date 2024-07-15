@@ -11,27 +11,12 @@ services:
       - postgres
       - redis
       - solr
-      - pgbouncer
     links:
-      - pgbouncer
       - solr      
     env_file:
       - ./.envs/.production/.django
       - ./.envs/.production/.postgres
     command: /start
-
-  pgbouncer:
-    image: edoburu/pgbouncer:1.14.0
-    restart: always
-    environment:
-      - DATABASE_URL=postgres://GVRFlLmcCNfGLhsFvSnCioYOPJPYpyfj:DAkWfpsnPHcAxMeQk2QmPOIZuz4BXG5qGFWi2hCCQE6kvndJHTuzz8SjnxOJY5qj@postgres/core
-      - MAX_CLIENT_CONN=100
-    ports:
-      - 6434:5432
-    depends_on:
-      - postgres
-    links:
-      - postgres
 
   postgres:
     build:
@@ -111,5 +96,3 @@ services:
     restart: always
     ports:
       - 8428:8428
-    depends_on:
-     - prometheus
