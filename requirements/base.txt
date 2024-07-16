@@ -106,3 +106,4 @@ django-prometheus==2.3.1
 # SciELO Legendarium
 -e git+https://github.com/scieloorg/legendarium#egg=legendarium  # https://github.com/scieloorg/legendarium
 
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
