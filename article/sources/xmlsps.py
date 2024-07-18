@@ -75,10 +75,7 @@ def load_article(user, xml=None, file_path=None, v3=None):
     pid_v3 = v3 or xml_with_pre.v3
 
     try:
-        article = Article.objects.get(pid_v3=pid_v3)
-    except Article.DoesNotExist:
-        article = Article()
-    try:
+        article = Article.get_or_create(pid_v3=pid_v3, user=user)
         xmltree = xml_with_pre.xmltree
         article.valid = False
         article.sps_pkg_name = xml_with_pre.sps_pkg_name
