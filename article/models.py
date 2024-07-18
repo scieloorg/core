@@ -41,7 +41,7 @@ from vocabulary.models import Keyword
 
 class Article(ExportModelOperationsMixin('article'), CommonControlField, ClusterableModel):
     pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
-    pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True)
+    pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True, unique=True)
     sps_pkg_name = models.CharField(
         _("Package name"), max_length=64, null=True, blank=True
     )
@@ -226,19 +226,68 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
         return descriptive_format(**leg_dict)
 
     @classmethod
-    def get_or_create(cls, doi, pid_v2, fundings, user):
+    def get(
+        cls,
+        doi,
+        pid_v3,
+    ):
+        filters = {}
+        if pid_v3:
+            filters['pid_v3'] = pid_v3
+        if doi:
+            filters['doi__in'] = doi
+        if filters:
+            return cls.objects.get(**filters)
+        raise ValueError("Article requires doi and pid_v3")
+
+    @classmethod
+    def create(
+        cls,
+        pid_v3,
+        user,        
+        doi=None,        
+        fundings=None,
+    ):
         try:
-            return cls.objects.get(doi__in=doi, pid_v2=pid_v2)
-        except cls.DoesNotExist:
-            article = cls()
-            article.pid_v2 = pid_v2
-            article.creator = user
-            article.save()
-            article.doi.set(doi)
+            obj = cls()
+            obj.pid_v3 = pid_v3
+            obj.creator = user
+            obj.save()
+            if doi:
+                obj.doi.set(doi)
             if fundings:
-                for funding in fundings:
-                    article.fundings.add(funding)
-            return article
+                obj.fundings.set(fundings)
+            return obj
+        except IntegrityError:
+            return cls.get(doi, pid_v3)
+
+    @classmethod
+    def get_or_create(
+        cls,
+        pid_v3,
+        user,        
+        doi=None,        
+        fundings=None,
+    ):
+        try:
+            return cls.get(doi=doi, pid_v3=pid_v3)
+        except cls.DoesNotExist:
+            return cls.create(doi=doi, pid_v3=pid_v3, fundings=fundings, user=user)
+
+    # @classmethod
+    # def get_or_create(cls, doi, pid_v2, fundings, user):
+    #     try:
+    #         return cls.objects.get(doi__in=doi, pid_v2=pid_v2)
+    #     except cls.DoesNotExist:
+    #         article = cls()
+    #         article.pid_v2 = pid_v2
+    #         article.creator = user
+    #         article.save()
+    #         article.doi.set(doi)
+    #         if fundings:
+    #             for funding in fundings:
+    #                 article.fundings.add(funding)
+    #         return article
 
     def set_date_pub(self, dates):
         if dates:
