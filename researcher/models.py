@@ -380,6 +380,7 @@ class PersonName(CommonControlField):
             obj.gender = gender
             obj.gender_identification_status = gender_identification_status
             obj.save()
+            return obj
         except IntegrityError:
             return cls._get(given_names, last_name, suffix, fullname, declared_name)
         except Exception as e:
