@@ -106,3 +106,7 @@ django-prometheus==2.3.1
 # SciELO Legendarium
 -e git+https://github.com/scieloorg/legendarium#egg=legendarium  # https://github.com/scieloorg/legendarium
 
+
+# freezegun
+# ------------------------------------------------------------------------------
+freezegun==1.5.1
