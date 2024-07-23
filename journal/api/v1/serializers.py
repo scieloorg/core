@@ -87,21 +87,23 @@ class JournalSerializer(serializers.ModelSerializer):
     def get_scielo_journal(self, obj):
         results = obj.scielojournal_set.prefetch_related("journal_history").values(
             "issn_scielo", 
-            "journal_acron",  
+            "journal_acron",
+            "collection__acron3",
             "journal_history__day",
             "journal_history__month",
             "journal_history__year",
             "journal_history__event_type",
             "journal_history__interruption_reason",
         )
-        
         journal_dict = {}
 
         for item in results:
             journal_acron = item["journal_acron"]
             issn_scielo = item["issn_scielo"]
 
-            journal_history = dict(day=item["journal_history__day"],
+            journal_history = dict(
+            collection_acron=item["collection__acron3"],
+            day=item["journal_history__day"],
             month=item["journal_history__month"],
             year=item["journal_history__year"],
             event_type=item["journal_history__event_type"],
