@@ -1,3 +1,5 @@
+from django.core.exceptions import PermissionDenied
+from django.db.models import Count
 from django.http import HttpResponseRedirect
 from django.utils.translation import gettext as _
 from wagtail.contrib.modeladmin.options import (
@@ -6,6 +8,8 @@ from wagtail.contrib.modeladmin.options import (
     modeladmin_register,
 )
 from wagtail.contrib.modeladmin.views import CreateView
+from wagtail.snippets.views.snippets import SnippetViewSet
+from wagtail.snippets.models import register_snippet
 
 from article.models import (  # AbstractModel,; Category,; Title,
     Article,
@@ -34,7 +38,6 @@ class ArticleAdmin(ModelAdmin):
     list_per_page = 20
     list_display = (
         "sps_pkg_name",
-        "doi",
         "pid_v3",
         "pid_v2",
         "valid",
@@ -117,3 +120,28 @@ class ArticleAdminGroup(ModelAdminGroup):
 
 
 modeladmin_register(ArticleAdminGroup)
+
+
+class DuplicateArticlesViewSet(SnippetViewSet):
+    model = Article
+    icon = 'folder'
+    list_display = ["pid_v3", "updated", "created"]
+
+    def get_queryset(self, request):
+        if not request.user.is_superuser:
+            raise PermissionDenied
+        ids_duplicates = []
+        duplicates = Article.objects.all().values("pid_v3").annotate(pid_v3_count=Count("pid_v3")).filter(pid_v3_count__gt=1)
+        
+        for duplicate in duplicates:
+            article_ids = Article.objects.filter(
+                pid_v3=duplicate['pid_v3']
+            ).order_by("created")[1:].values_list("id", flat=True)
+            ids_duplicates.extend(article_ids)
+        
+        if ids_duplicates:
+            return Article.objects.filter(id__in=ids_duplicates)
+        else:
+            return Article.objects.none()
+
+register_snippet(DuplicateArticlesViewSet)

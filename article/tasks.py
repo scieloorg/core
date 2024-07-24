@@ -2,7 +2,7 @@ import logging
 import sys
 from datetime import datetime
 
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 
@@ -241,3 +241,33 @@ def article_complete_data(
             item.save()
     except Article.DoesNotExist:
         pass
+
+
+def remove_duplicate_articles(pid_v3=None):
+    ids_to_exclude = []
+    try:
+        if pid_v3:
+            duplicates = Article.objects.filter(pid_v3=pid_v3).values("pid_v3").annotate(pid_v3_count=Count("pid_v3")).filter(pid_v3_count__gt=1)
+        else:
+            duplicates = Article.objects.values("pid_v3").annotate(pid_v3_count=Count("pid_v3")).filter(pid_v3_count__gt=1)
+        for duplicate in duplicates:
+            article_ids = Article.objects.filter(
+                pid_v3=duplicate["pid_v3"]
+            ).order_by("created")[1:].values_list("id", flat=True)
+            ids_to_exclude.extend(article_ids)
+        
+        if ids_to_exclude:
+            Article.objects.filter(id__in=ids_to_exclude).delete()
+    except Exception as exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=exception,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "article.tasks.remove_duplicates_articles",
+            },
+        )
+
+@celery_app.task(bind=True)
+def remove_duplicate_articles_task(self, user_id=None, username=None, pid_v3=None):
+    remove_duplicate_articles(pid_v3)
