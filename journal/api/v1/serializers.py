@@ -85,40 +85,26 @@ class JournalSerializer(serializers.ModelSerializer):
         return scielo_journal.journal_acron if scielo_journal else None
 
     def get_scielo_journal(self, obj):
-        results = obj.scielojournal_set.prefetch_related("journal_history").values(
-            "issn_scielo", 
-            "journal_acron",
-            "collection__acron3",
-            "journal_history__day",
-            "journal_history__month",
-            "journal_history__year",
-            "journal_history__event_type",
-            "journal_history__interruption_reason",
-        )
-        journal_dict = {}
-
+        results = models.SciELOJournal.objects.filter(journal=obj).prefetch_related("journal_history")
+        journals = []
         for item in results:
-            journal_acron = item["journal_acron"]
-            issn_scielo = item["issn_scielo"]
-
-            journal_history = dict(
-            collection_acron=item["collection__acron3"],
-            day=item["journal_history__day"],
-            month=item["journal_history__month"],
-            year=item["journal_history__year"],
-            event_type=item["journal_history__event_type"],
-            interruption_reason=item["journal_history__interruption_reason"])
-
-            if journal_acron not in journal_dict:
-                journal_dict[journal_acron] = {
-                    "issn_scielo": issn_scielo,
-                    "journal_acron": journal_acron,
-                    "journal_history": []
-                }
-
-            journal_dict[journal_acron]["journal_history"].append(journal_history)
-        
-        return list(journal_dict.values())
+            journal_dict = {
+                'collection_acron': item.collection.acron3,
+                'issn_scielo': item.issn_scielo,
+                'journal_acron': item.journal_acron,
+                'journal_history': [
+                    {
+                        'day': history.day,
+                        'month': history.month,
+                        'year': history.year,
+                        'event_type': history.event_type,
+                        'interruption_reason': history.interruption_reason,
+                    } for history in item.journal_history.all()
+                ],
+            }
+            journals.append(journal_dict)
+            
+        return journals
 
 
     class Meta:
