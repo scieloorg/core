@@ -18,7 +18,7 @@ class IssueSerializer(serializers.ModelSerializer):
     journal = serializers.SerializerMethodField()
     sections = TocSectionsSerializer(many=True, read_only=True)
     license = LicenseStatementSerializer(many=True, read_only=True)
-
+    
     class Meta:
         model = models.Issue
         fields = [
@@ -47,4 +47,5 @@ class IssueSerializer(serializers.ModelSerializer):
                 "issn_electronic": obj.journal.official.issn_electronic,
                 "issnl": obj.journal.official.issnl,
                 "scielo_journal": scielo_journal,
+                "collection_acron": obj.journal.scielojournal_set.first().collection.acron3,
             }

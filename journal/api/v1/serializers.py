@@ -1,8 +1,8 @@
 from rest_framework import serializers
+from collections import defaultdict
 
 from core.api.v1.serializers import LanguageSerializer
 from journal import models
-
 
 
 class OfficialJournalSerializer(serializers.ModelSerializer):
@@ -43,7 +43,9 @@ class JournalUseLicenseSerializer(serializers.ModelSerializer):
 
 
 class PublisherSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source='institution.institution.institution_identification.name')
+    name = serializers.CharField(
+        source="institution.institution.institution_identification.name"
+    )
 
     class Meta:
         model = models.PublisherHistory
@@ -53,8 +55,10 @@ class PublisherSerializer(serializers.ModelSerializer):
 
 
 class OwnerSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source='institution.institution.institution_identification.name')
-    
+    name = serializers.CharField(
+        source="institution.institution.institution_identification.name"
+    )
+
     class Meta:
         model = models.OwnerHistory
         fields = [
@@ -69,18 +73,45 @@ class JournalSerializer(serializers.ModelSerializer):
     subject = SubjectSerializer(many=True, read_only=True)
     text_language = LanguageSerializer(many=True, read_only=True)
     journal_use_license = JournalUseLicenseSerializer(many=False, read_only=True)
-    publisher = PublisherSerializer(many=True, read_only=True, source="publisher_history")
+    publisher = PublisherSerializer(
+        many=True, read_only=True, source="publisher_history"
+    )
     owner = OwnerSerializer(many=True, read_only=True, source="owner_history")
     acronym = serializers.SerializerMethodField()
-    
+    scielo_journal = serializers.SerializerMethodField()
+
     def get_acronym(self, obj):
         scielo_journal = obj.scielojournal_set.first()
         return scielo_journal.journal_acron if scielo_journal else None
+
+    def get_scielo_journal(self, obj):
+        results = models.SciELOJournal.objects.filter(journal=obj).prefetch_related("journal_history")
+        journals = []
+        for item in results:
+            journal_dict = {
+                'collection_acron': item.collection.acron3,
+                'issn_scielo': item.issn_scielo,
+                'journal_acron': item.journal_acron,
+                'journal_history': [
+                    {
+                        'day': history.day,
+                        'month': history.month,
+                        'year': history.year,
+                        'event_type': history.event_type,
+                        'interruption_reason': history.interruption_reason,
+                    } for history in item.journal_history.all()
+                ],
+            }
+            journals.append(journal_dict)
+            
+        return journals
+
 
     class Meta:
         model = models.Journal
         fields = [
             "official",
+            "scielo_journal",
             "title",
             "short_title",
             "acronym",
@@ -90,5 +121,4 @@ class JournalSerializer(serializers.ModelSerializer):
             "subject_descriptor",
             "subject",
             "text_language",
-        
         ]
