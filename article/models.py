@@ -111,6 +111,7 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
         FieldPanel("first_page"),
         FieldPanel("last_page"),
         FieldPanel("elocation_id"),
+        FieldPanel("article_license"),
     ]
     panels_languages = [
         FieldPanel("article_type"),
