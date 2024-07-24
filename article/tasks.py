@@ -241,3 +241,25 @@ def article_complete_data(
             item.save()
     except Article.DoesNotExist:
         pass
+
+
+@celery_app.task(bind=True)
+def transfer_license_statements_fk_to_article_license(self, user_id=None, username=None):
+    user = _get_user(self.request, username, user_id)
+    articles_to_update = []
+    for instance in Article.objects.filter(article_license__isnull=True):
+
+        new_license = None
+        if instance.license_statements.exists() and instance.license_statements.first().url:
+            new_license = instance.license_statements.first().url
+        elif instance.license and instance.license.license_type:
+            new_license = instance.license.license_type
+        
+        if new_license:
+            instance.article_license = new_license
+            instance.updated_by = user
+            articles_to_update.append(instance)
+
+    if articles_to_update:
+        Article.objects.bulk_update(articles_to_update, ['article_license', 'updated_by'])
+        logging.info("The article_license of model Articles have been updated")
