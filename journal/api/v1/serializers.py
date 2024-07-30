@@ -79,6 +79,7 @@ class JournalSerializer(serializers.ModelSerializer):
     owner = OwnerSerializer(many=True, read_only=True, source="owner_history")
     acronym = serializers.SerializerMethodField()
     scielo_journal = serializers.SerializerMethodField()
+    title_in_database = serializers.SerializerMethodField()
 
     def get_acronym(self, obj):
         scielo_journal = obj.scielojournal_set.first()
@@ -106,6 +107,17 @@ class JournalSerializer(serializers.ModelSerializer):
             
         return journals
 
+    def get_title_in_database(self, obj):
+        title_in_database = obj.title_in_database.all()
+        title_in_db = []
+        for item in title_in_database:
+            title_in_db_dict = {
+                'name': item.indexed_at.name,
+                'acronym': item.indexed_at.acronym,
+                'url': item.indexed_at.url,
+            }
+            title_in_db.append(title_in_db_dict)
+        return title_in_db
 
     class Meta:
         model = models.Journal
@@ -121,4 +133,5 @@ class JournalSerializer(serializers.ModelSerializer):
             "subject_descriptor",
             "subject",
             "text_language",
+            "title_in_database",
         ]
