@@ -867,6 +867,5 @@ class FileArticleFormatPubmedPmc(CommonControlField):
     status = models.CharField(
         blank=True,
         null=True,
-        choices=NIHMS_STEPS,
         max_length=5,
     )
