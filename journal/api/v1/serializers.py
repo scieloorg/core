@@ -121,4 +121,5 @@ class JournalSerializer(serializers.ModelSerializer):
             "subject_descriptor",
             "subject",
             "text_language",
+            "doi_prefix",
         ]
