@@ -127,17 +127,21 @@ def update_panel_scope_and_about(
 def update_panel_interoperation(
     journal, indexed_at, secs_code, medline_code, medline_short_title, user
 ):
+    titles_in_db = []
     get_or_create_indexed_at(journal, indexed_at=indexed_at, user=user)
-
-    update_title_in_database(user=user, journal=journal, code=secs_code, acronym="secs")
-    update_title_in_database(
-        user=user,
-        journal=journal,
-        code=medline_code,
-        acronym="medline",
-        title=medline_short_title,
-    )
-
+    if secs_code:
+        obj = update_title_in_database(user=user, journal=journal, code=secs_code, acronym="secs")
+        titles_in_db.append(obj)
+    if medline_code:
+        obj = update_title_in_database(
+            user=user,
+            journal=journal,
+            code=medline_code,
+            acronym="medline",
+            title=medline_short_title,
+        )
+        titles_in_db.append(obj)
+    journal.title_in_database.set(titles_in_db)
 
 def update_panel_information(
     journal,
@@ -879,13 +883,13 @@ def update_title_in_database(user, journal, code, acronym, title=None):
         title = journal.title
     else:
         title = extract_value(title)
-    create_or_update_title_in_database(
+    return create_or_update_title_in_database(
         user=user, journal=journal, indexed_at=indexed_at, identifier=code, title=title
     )
 
 
 def create_or_update_title_in_database(user, journal, indexed_at, title, identifier):
-    TitleInDatabase.create_or_update(
+    return TitleInDatabase.create_or_update(
         user=user,
         journal=journal,
         indexed_at=indexed_at,
