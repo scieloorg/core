@@ -19,7 +19,6 @@ from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInte
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
-from article.choices import NIHMS_STEPS
 from core.forms import CoreAdminModelForm
 from core.models import (
     CommonControlField,
