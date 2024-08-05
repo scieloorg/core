@@ -79,6 +79,7 @@ class JournalSerializer(serializers.ModelSerializer):
     owner = OwnerSerializer(many=True, read_only=True, source="owner_history")
     acronym = serializers.SerializerMethodField()
     scielo_journal = serializers.SerializerMethodField()
+    url_logo = serializers.SerializerMethodField()
 
     def get_acronym(self, obj):
         scielo_journal = obj.scielojournal_set.first()
@@ -106,6 +107,14 @@ class JournalSerializer(serializers.ModelSerializer):
             
         return journals
 
+    def get_url_logo(self, obj):
+        try:
+            return models.JournalLogo.objects.get(journal=obj).url_logo
+
+        except models.JournalLogo.DoesNotExist:
+            return None
+        except models.JournalLogo.MultipleObjectsReturned:
+            return obj.title
 
     class Meta:
         model = models.Journal
@@ -121,4 +130,5 @@ class JournalSerializer(serializers.ModelSerializer):
             "subject_descriptor",
             "subject",
             "text_language",
+            "url_logo",
         ]
