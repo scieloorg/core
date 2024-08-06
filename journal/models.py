@@ -2446,9 +2446,9 @@ class TitleInDatabase(Orderable, CommonControlField):
             obj = cls()
             obj.creator = user
             obj.journal = journal
-            obj.indexed_at = indexed_at or obj.indexed_at
-            obj.title = title or obj.title
-            obj.identifier = identifier or obj.identifier
+            obj.indexed_at = indexed_at 
+            obj.title = title 
+            obj.identifier = identifier
             obj.save()
             return obj
         except IntegrityError:

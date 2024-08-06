@@ -828,3 +828,43 @@ class ArticleFormat(CommonControlField):
             pmc.pipeline_pmc,
             indexed_check=False,
         )
+
+
+class ArticleStatusSubmission(Article):
+    class Meta:
+        proxy = True
+
+    panels = [
+        InlinePanel("article_pubmed_pmc"),
+        InlinePanel("article_pubmed"),
+    ]
+
+
+def article_directory_path_pubmed_pmc(instance, filename):
+    try:
+        return os.path.join(
+            *instance.article.sps_pkg_name.split("-"), instance.format_name, filename
+        )
+    except AttributeError:
+        return os.path.join(instance.article.pid_v3, instance.format_name, filename)
+
+
+class FileArticleFormatPubmedPmc(CommonControlField):
+    Article = ParentalKey(
+        Article,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="article_pubmed_pmc",
+    )
+    file = models.FileField(
+        null=True,
+        blank=True,
+        verbose_name=_("File"),
+        upload_to=article_directory_path_pubmed_pmc,
+    )
+    status = models.CharField(
+        blank=True,
+        null=True,
+        max_length=5,
+    )

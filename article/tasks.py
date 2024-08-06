@@ -5,8 +5,10 @@ from datetime import datetime
 from django.db.models import Q, Count
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
+from packtools.sps.formats import pmc
 
-from article.models import Article, ArticleFormat
+
+from article.models import Article, ArticleFormat, Journal
 from article.sources import xmlsps
 from article.sources.preprint import harvest_preprints
 from config import celery_app
@@ -295,3 +297,8 @@ def remove_duplicate_articles(pid_v3=None):
 def remove_duplicate_articles_task(self, user_id=None, username=None, pid_v3=None):
     remove_duplicate_articles(pid_v3)
 
+@celery_app.task(bind=True)
+def create_files_articles_pubmed_pmc(self, user_id=None, username=None):
+    pipeline = pmc.pipeline_pmc
+    journals = Journal.objects.filter(Q(indexed_at__name="Pubmed") | Q(indexed_at__acronym="pmc"))
+    articles = Article.objects.filter(journal__in=journals)
