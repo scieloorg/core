@@ -86,6 +86,7 @@ class JournalSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
     acronym = serializers.SerializerMethodField()
     scielo_journal = serializers.SerializerMethodField()
+    title_in_database = serializers.SerializerMethodField()
     mission = MissionSerializer(many=True, read_only=True)
     issn_print = serializers.CharField(source="official.issn_print")
     issn_electronic = serializers.CharField(source="official.issn_electronic")
@@ -115,6 +116,7 @@ class JournalSerializer(serializers.ModelSerializer):
     def get_copyright(self, obj):
         return self.get_institution_data(obj.copyright_holder_history)
 
+
     def get_acronym(self, obj):
         scielo_journal = obj.scielojournal_set.first()
         return scielo_journal.journal_acron if scielo_journal else None
@@ -141,6 +143,18 @@ class JournalSerializer(serializers.ModelSerializer):
             
         return journals
 
+    def get_title_in_database(self, obj):
+        title_in_database = obj.title_in_database.all()
+        title_in_db = []
+        for item in title_in_database:
+            title_in_db_dict = {
+                'name': item.indexed_at.name,
+                'acronym': item.indexed_at.acronym,
+                'url': item.indexed_at.url,
+            }
+            title_in_db.append(title_in_db_dict)
+        return title_in_db
+
     def get_email(self, obj):
         if obj.journal_email.all():
             return [email.email for email in obj.journal_email.all()]
@@ -150,7 +164,7 @@ class JournalSerializer(serializers.ModelSerializer):
         if obj.other_titles.all():
             return [other_title.title for other_title in obj.other_titles.all()]
         return None
-    
+
 
     class Meta:
         model = models.Journal
@@ -174,6 +188,7 @@ class JournalSerializer(serializers.ModelSerializer):
             "email",
             "contact_address",
             "text_language",
+            "title_in_database",
             "mission",
             "sponsor",
             "copyright",

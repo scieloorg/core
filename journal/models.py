@@ -618,7 +618,7 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel("related_journal_urls", label=_("Journal Urls"), classname="collapsed"),
         FieldPanel("submission_online_url"),
         FieldPanel("main_collection"),
-        InlinePanel("title_in_database"),
+        InlinePanel("title_in_database", label=_("Title in Database"), classname="collapsed"),
         InlinePanel("journalsocialnetwork", label=_("Social Network")),
         FieldPanel("frequency"),
         FieldPanel("publishing_model"),
