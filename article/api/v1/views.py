@@ -10,10 +10,9 @@ class ArticleViewSet(viewsets.ModelViewSet):
     http_method_names = ["get"]
     queryset = models.Article.objects.all()
 
-    # def get_queryset(self):
-    #     """
-    #     This view should return a list of all published Education.
-    #     """
-    #     # user = self.request.user
-
-    #     return models.Article.objects.all()
+    def get_queryset(self):
+        queryset = models.Article.objects.all()
+        doi_prefix = self.request.query_params.get('doi_prefix', None)
+        if doi_prefix is not None:
+            queryset = queryset.filter(journal__doi_prefix=doi_prefix)
+        return queryset
