@@ -127,7 +127,7 @@ def fetch_and_process_journal_logo(
         img_wagtail = Image(title=journal_acron)
         img_wagtail.file.save(f"{journal_acron}_glogo.gif", ContentFile(logo_data))
         
-        journal_logo = JournalLogo.create_or_update(journal=journal, url=url_logo, logo=img_wagtail, user=user)
+        journal_logo = JournalLogo.create_or_update(journal=journal, logo=img_wagtail, user=user)
         journal.logo = journal_logo.logo
         journal.save()
     except Exception as e:

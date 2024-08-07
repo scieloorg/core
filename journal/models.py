@@ -2516,10 +2516,6 @@ class JournalLogo(CommonControlField):
             null=True,
             blank=True,
     )
-    url_logo = models.URLField(
-        blank=True,
-        null=True,
-    )
 
     class Meta:
         unique_together = [("journal", "logo")]
@@ -2541,14 +2537,12 @@ class JournalLogo(CommonControlField):
         cls,
         journal,
         logo,
-        url,
         user,
     ):
         try:
             obj = cls(
                 journal=journal,
                 logo=logo,
-                url_logo=url,
                 creator=user,
             )
             obj.save()
@@ -2561,16 +2555,14 @@ class JournalLogo(CommonControlField):
         cls,
         journal,
         logo,
-        url,
         user,
     ):
         try:
             obj = cls.get(journal=journal, logo=logo)
-            obj.url_logo = url
             obj.save()
             return obj
         except cls.DoesNotExist:
-            return cls.create(journal=journal, url=url, logo=logo, user=user)
+            return cls.create(journal=journal, logo=logo, user=user)
         
 
 class JournalOtherTitle(CommonControlField):
