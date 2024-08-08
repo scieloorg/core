@@ -68,7 +68,7 @@ class OwnerSerializer(serializers.ModelSerializer):
 
 class MissionSerializer(serializers.ModelSerializer):
     code2 = serializers.CharField(source="language.code2")
-    
+
     class Meta:
         model = models.Mission
         fields = [
@@ -99,7 +99,6 @@ class JournalSerializer(serializers.ModelSerializer):
     next_journal_title = serializers.SerializerMethodField()
     previous_journal_titles = serializers.SerializerMethodField()
 
-    
     def get_publisher(self, obj):
         if queryset := obj.publisher_history.all():
             return [{"name": str(item)} for item in queryset]
@@ -110,36 +109,39 @@ class JournalSerializer(serializers.ModelSerializer):
 
     def get_sponsor(self, obj):
         if queryset := obj.sponsor_history.all():
-            return [{"name": str(item)} for item in queryset]        
+            return [{"name": str(item)} for item in queryset]
 
     def get_copyright(self, obj):
         if queryset := obj.copyright_holder_history.all():
-            return [{"name": str(item)} for item in queryset]        
+            return [{"name": str(item)} for item in queryset]
 
     def get_acronym(self, obj):
         scielo_journal = obj.scielojournal_set.first()
         return scielo_journal.journal_acron if scielo_journal else None
 
     def get_scielo_journal(self, obj):
-        results = models.SciELOJournal.objects.filter(journal=obj).prefetch_related("journal_history")
+        results = models.SciELOJournal.objects.filter(journal=obj).prefetch_related(
+            "journal_history"
+        )
         journals = []
         for item in results:
             journal_dict = {
-                'collection_acron': item.collection.acron3,
-                'issn_scielo': item.issn_scielo,
-                'journal_acron': item.journal_acron,
-                'journal_history': [
+                "collection_acron": item.collection.acron3,
+                "issn_scielo": item.issn_scielo,
+                "journal_acron": item.journal_acron,
+                "journal_history": [
                     {
-                        'day': history.day,
-                        'month': history.month,
-                        'year': history.year,
-                        'event_type': history.event_type,
-                        'interruption_reason': history.interruption_reason,
-                    } for history in item.journal_history.all()
+                        "day": history.day,
+                        "month": history.month,
+                        "year": history.year,
+                        "event_type": history.event_type,
+                        "interruption_reason": history.interruption_reason,
+                    }
+                    for history in item.journal_history.all()
                 ],
             }
             journals.append(journal_dict)
-            
+
         return journals
 
     def get_url_logo(self, obj):
@@ -158,7 +160,7 @@ class JournalSerializer(serializers.ModelSerializer):
         if obj.other_titles.all():
             return [other_title.title for other_title in obj.other_titles.all()]
         return None
-    
+
     def get_next_journal_title(self, obj):
         if obj.official.next_journal_title:
             return {
@@ -170,21 +172,24 @@ class JournalSerializer(serializers.ModelSerializer):
     def get_previous_journal_titles(self, obj):
         if obj.official.previous_journal_titles:
             try:
-                old_issn_print = obj.official.old_title.get(title__icontains=obj.official.previous_journal_titles).issn_print
+                old_issn_print = obj.official.old_title.get(
+                    title__icontains=obj.official.previous_journal_titles
+                ).issn_print
             except models.OfficialJournal.DoesNotExist:
                 old_issn_print = None
 
             try:
-                old_issn_electronic = obj.official.old_title.get(title__icontains=obj.official.previous_journal_titles).issn_electronic
+                old_issn_electronic = obj.official.old_title.get(
+                    title__icontains=obj.official.previous_journal_titles
+                ).issn_electronic
             except models.OfficialJournal.DoesNotExist:
-                old_issn_electronic = None                
-            
+                old_issn_electronic = None
+
             return {
                 "previous_journal_title": obj.official.previous_journal_titles,
                 "issn_print": old_issn_print,
                 "issn_electronic": old_issn_electronic,
             }
-
 
     class Meta:
         model = models.Journal
