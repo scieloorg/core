@@ -432,6 +432,9 @@ class BaseHistoryItem(CommonControlField):
     class Meta:
         abstract = True
 
+    def __str__(self):
+        if self.institution.institution:
+            return self.institution.institution.institution_identification.name
 
 class BaseInstitution(CommonControlField):
     institution = models.ForeignKey(

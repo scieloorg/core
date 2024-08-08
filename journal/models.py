@@ -2558,7 +2558,9 @@ class JournalLogo(CommonControlField):
         user,
     ):
         try:
-            return cls.get(journal=journal, logo=logo)
+            obj = cls.get(journal=journal, logo=logo)
+            obj.save()
+            return obj
         except cls.DoesNotExist:
             return cls.create(journal=journal, logo=logo, user=user)
         
