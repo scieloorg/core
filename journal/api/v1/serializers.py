@@ -163,25 +163,25 @@ class JournalSerializer(serializers.ModelSerializer):
 
     def get_next_journal_title(self, obj):
         if obj.official.next_journal_title:
+            journal_new_title = obj.filter(title__icontains=obj.official.next_journal_title)
             return {
                 "next_journal_title": obj.official.next_journal_title,
-                "issn_print": obj.official.new_title.issn_print,
-                "issn_electronic": obj.official.new_title.issn_electronic,
+                "issn_print": journal_new_title.official.issn_print,
+                "issn_electronic": journal_new_title.official.issn_electronic,
             }
 
     def get_previous_journal_titles(self, obj):
         if obj.official.previous_journal_titles:
-            try:
-                old_issn_print = obj.official.old_title.get(
+            old_journal = obj.official.old_title.get(
                     title__icontains=obj.official.previous_journal_titles
-                ).issn_print
+                )
+            try:
+                old_issn_print = old_journal.issn_print
             except models.OfficialJournal.DoesNotExist:
                 old_issn_print = None
 
             try:
-                old_issn_electronic = obj.official.old_title.get(
-                    title__icontains=obj.official.previous_journal_titles
-                ).issn_electronic
+                old_issn_electronic = old_journal.issn_electronic
             except models.OfficialJournal.DoesNotExist:
                 old_issn_electronic = None
 
