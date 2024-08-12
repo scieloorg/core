@@ -147,7 +147,7 @@ class JournalSerializer(serializers.ModelSerializer):
     def get_url_logo(self, obj):
         if obj.logo:
             domain = Site.objects.get(is_default_site=True).hostname
-            domain = f"https://{domain}"
+            domain = f"http://{domain}"
             return f"{domain}{obj.logo.file.url}"
         return None
 
