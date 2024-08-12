@@ -228,51 +228,37 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
     @classmethod
     def get(
         cls,
-        doi,
         pid_v3,
     ):
-        filters = {}
         if pid_v3:
-            filters['pid_v3'] = pid_v3
-        if doi:
-            filters['doi__in'] = doi
-        if filters:
-            return cls.objects.get(**filters)
-        raise ValueError("Article requires doi and pid_v3")
+            return cls.objects.get(pid_v3=pid_v3)
+        raise ValueError("Article requires pid_v3")
 
     @classmethod
     def create(
         cls,
         pid_v3,
         user,        
-        doi=None,        
-        fundings=None,
     ):
         try:
             obj = cls()
             obj.pid_v3 = pid_v3
             obj.creator = user
             obj.save()
-            if doi:
-                obj.doi.set(doi)
-            if fundings:
-                obj.fundings.set(fundings)
             return obj
         except IntegrityError:
-            return cls.get(doi, pid_v3)
+            return cls.get(pid_v3=pid_v3)
 
     @classmethod
     def get_or_create(
         cls,
         pid_v3,
         user,        
-        doi=None,        
-        fundings=None,
     ):
         try:
-            return cls.get(doi=doi, pid_v3=pid_v3)
+            return cls.get(pid_v3=pid_v3)
         except cls.DoesNotExist:
-            return cls.create(doi=doi, pid_v3=pid_v3, fundings=fundings, user=user)
+            return cls.create(pid_v3=pid_v3, user=user)
 
     # @classmethod
     # def get_or_create(cls, doi, pid_v2, fundings, user):
