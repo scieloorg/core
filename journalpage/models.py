@@ -65,7 +65,7 @@ class JournalPage(RoutablePageMixin, Page):
         financing_statement = journal.financing_statement.get_object_in_preferred_language(language=language)
         acknowledgements = journal.acknowledgements.get_object_in_preferred_language(language=language)
         additional_information = journal.additional_information.get_object_in_preferred_language(language=language)
-        digital_preservation = journal.digital_preservation.get_object_in_preferred_language(language=language)
+        digital_preservation = journal.digital_pa.all()
         ethics = journal.ethics.get_object_in_preferred_language(language=language)
         fee_charging = journal.fee_charging.get_object_in_preferred_language(language=language)
         sponsor_history = journal.sponsor_history.all()
