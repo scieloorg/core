@@ -14,5 +14,5 @@ class ArticleViewSet(viewsets.ModelViewSet):
         queryset = models.Article.objects.all()
         doi_prefix = self.request.query_params.get('doi_prefix', None)
         if doi_prefix is not None:
-            queryset = queryset.filter(journal__doi_prefix=doi_prefix)
+            queryset = queryset.filter(doi__value__startswith=doi_prefix)
         return queryset
