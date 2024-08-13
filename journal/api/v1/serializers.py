@@ -112,6 +112,8 @@ class JournalSerializer(serializers.ModelSerializer):
         title_in_db = []
         for item in title_in_database:
             title_in_db_dict = {
+                'title': item.title,
+                'identifier': item.identifier,
                 'name': item.indexed_at.name,
                 'acronym': item.indexed_at.acronym,
                 'url': item.indexed_at.url,
