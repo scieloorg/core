@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from collections import defaultdict
 
 from core.api.v1.serializers import LanguageSerializer
 from journal import models
@@ -66,6 +65,16 @@ class OwnerSerializer(serializers.ModelSerializer):
         ]
 
 
+class MissionSerializer(serializers.ModelSerializer):
+    code2 = serializers.CharField(source="language.code2")
+    class Meta:
+        model = models.Mission
+        fields = [
+            "rich_text",
+            "code2",
+        ]
+
+
 class JournalSerializer(serializers.ModelSerializer):
     # Serializadores para campos de relacionamento, como 'official', devem corresponder aos campos do modelo.
     official = OfficialJournalSerializer(many=False, read_only=True)
@@ -73,13 +82,39 @@ class JournalSerializer(serializers.ModelSerializer):
     subject = SubjectSerializer(many=True, read_only=True)
     text_language = LanguageSerializer(many=True, read_only=True)
     journal_use_license = JournalUseLicenseSerializer(many=False, read_only=True)
-    publisher = PublisherSerializer(
-        many=True, read_only=True, source="publisher_history"
-    )
-    owner = OwnerSerializer(many=True, read_only=True, source="owner_history")
+    publisher = serializers.SerializerMethodField()
+    owner = serializers.SerializerMethodField()
     acronym = serializers.SerializerMethodField()
     scielo_journal = serializers.SerializerMethodField()
     title_in_database = serializers.SerializerMethodField()
+    mission = MissionSerializer(many=True, read_only=True)
+    issn_print = serializers.CharField(source="official.issn_print")
+    issn_electronic = serializers.CharField(source="official.issn_electronic")
+    next_journal_title = serializers.CharField(source="official.next_journal_title")
+    previous_journal_titles = serializers.CharField(source="official.previous_journal_titles")
+    other_titles = serializers.SerializerMethodField()
+    sponsor = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    copyright = serializers.SerializerMethodField()
+
+    def get_institution_data(self, history):
+        data = []
+        for record in history.all():
+            if record.institution:
+                data.append({"name": record.institution.institution.institution_identification.name})
+        return data if data else None
+    
+    def get_publisher(self, obj):
+       return self.get_institution_data(obj.publisher_history)
+
+    def get_owner(self, obj):
+        return self.get_institution_data(obj.owner_history)
+
+    def get_sponsor(self, obj):
+        return self.get_institution_data(obj.sponsor_history)
+
+    def get_copyright(self, obj):
+        return self.get_institution_data(obj.copyright_holder_history)
 
     def get_acronym(self, obj):
         scielo_journal = obj.scielojournal_set.first()
@@ -107,6 +142,7 @@ class JournalSerializer(serializers.ModelSerializer):
             
         return journals
 
+
     def get_title_in_database(self, obj):
         title_in_database = obj.title_in_database.all()
         title_in_db = []
@@ -121,6 +157,17 @@ class JournalSerializer(serializers.ModelSerializer):
             title_in_db.append(title_in_db_dict)
         return title_in_db
 
+    def get_email(self, obj):
+        if obj.journal_email.all():
+            return [email.email for email in obj.journal_email.all()]
+        return None
+
+    def get_other_titles(self, obj):
+        if obj.other_titles.all():
+            return [other_title.title for other_title in obj.other_titles.all()]
+        return None
+
+
     class Meta:
         model = models.Journal
         fields = [
@@ -128,12 +175,23 @@ class JournalSerializer(serializers.ModelSerializer):
             "scielo_journal",
             "title",
             "short_title",
+            "next_journal_title",
+            "previous_journal_titles",
+            "other_titles",
             "acronym",
+            "issn_print",
+            "issn_electronic",
             "journal_use_license",
             "publisher",
             "owner",
             "subject_descriptor",
             "subject",
+            "submission_online_url",
+            "email",
+            "contact_address",
             "text_language",
             "title_in_database",
+            "mission",
+            "sponsor",
+            "copyright",
         ]
