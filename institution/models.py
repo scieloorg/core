@@ -433,8 +433,10 @@ class BaseHistoryItem(CommonControlField):
         abstract = True
 
     def __str__(self):
-        if self.institution.institution:
-            return getattr(self.institution.institution.institution_identification, 'name', '')
+        try:
+            return self.institution.institution.institution_identification.name
+        except AttributeError:
+            return ''
 
 class BaseInstitution(CommonControlField):
     institution = models.ForeignKey(
