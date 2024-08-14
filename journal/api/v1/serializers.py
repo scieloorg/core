@@ -97,7 +97,7 @@ class JournalSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
     copyright = serializers.SerializerMethodField()
     next_journal_title = serializers.SerializerMethodField()
-    previous_journal_titles = serializers.SerializerMethodField()
+    previous_journal_title = serializers.SerializerMethodField()
 
     def get_publisher(self, obj):
         if queryset := obj.publisher_history.all():
@@ -163,26 +163,29 @@ class JournalSerializer(serializers.ModelSerializer):
 
     def get_next_journal_title(self, obj):
         if obj.official.next_journal_title:
-            journal_new_title = obj.filter(title__icontains=obj.official.next_journal_title)
+            try:
+                journal_new_title = models.Journal.objects.get(title__icontains=obj.official.next_journal_title)
+                issn_print = journal_new_title.official.issn_print
+                issn_electronic = journal_new_title.official.issn_electronic
+            except models.Journal.DoesNotExist:
+                issn_print = None
+                issn_electronic = None
             return {
                 "next_journal_title": obj.official.next_journal_title,
-                "issn_print": journal_new_title.official.issn_print,
-                "issn_electronic": journal_new_title.official.issn_electronic,
+                "issn_print": issn_print,
+                "issn_electronic": issn_electronic,
             }
 
-    def get_previous_journal_titles(self, obj):
+    def get_previous_journal_title(self, obj):
         if obj.official.previous_journal_titles:
-            old_journal = obj.official.old_title.get(
+            try:
+                old_journal = obj.official.old_title.get(
                     title__icontains=obj.official.previous_journal_titles
                 )
-            try:
                 old_issn_print = old_journal.issn_print
-            except models.OfficialJournal.DoesNotExist:
-                old_issn_print = None
-
-            try:
                 old_issn_electronic = old_journal.issn_electronic
             except models.OfficialJournal.DoesNotExist:
+                old_issn_print = None
                 old_issn_electronic = None
 
             return {
@@ -199,7 +202,7 @@ class JournalSerializer(serializers.ModelSerializer):
             "title",
             "short_title",
             "next_journal_title",
-            "previous_journal_titles",
+            "previous_journal_title",
             "other_titles",
             "acronym",
             "issn_print",
