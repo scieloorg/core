@@ -998,6 +998,9 @@ class OwnerHistory(Orderable, BaseHistoryItem):
         null=True,
     )
 
+    panels = BaseHistoryItem.panels +[
+        AutocompletePanel("institution")
+    ]
 
 class PublisherHistory(Orderable, BaseHistoryItem):
     journal = ParentalKey(
@@ -1010,6 +1013,9 @@ class PublisherHistory(Orderable, BaseHistoryItem):
         null=True,
     )
 
+    panels = BaseHistoryItem.panels +[
+        AutocompletePanel("institution")
+    ]
 
 class SponsorHistory(Orderable, BaseHistoryItem):
     journal = ParentalKey(
@@ -1022,6 +1028,9 @@ class SponsorHistory(Orderable, BaseHistoryItem):
         blank=True,
     )
 
+    panels = BaseHistoryItem.panels +[
+        AutocompletePanel("institution")
+    ]
 
 class CopyrightHolderHistory(Orderable, BaseHistoryItem):
     journal = ParentalKey(
@@ -1036,7 +1045,10 @@ class CopyrightHolderHistory(Orderable, BaseHistoryItem):
         blank=True,
         null=True,
     )
-
+    
+    panels = BaseHistoryItem.panels +[
+        AutocompletePanel("institution")
+    ]
 
 class JournalSocialNetwork(Orderable, SocialNetwork):
     page = ParentalKey(

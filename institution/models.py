@@ -387,7 +387,6 @@ class BaseHistoryItem(CommonControlField):
     final_date = models.DateField(_("Final Date"), null=True, blank=True)
 
     panels = [
-        AutocompletePanel("institution"),
         FieldPanel("initial_date"),
         FieldPanel("final_date"),
     ]
