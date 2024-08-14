@@ -2,12 +2,12 @@ from django.http import HttpResponseRedirect
 from django.urls import include, path
 from django.utils.translation import gettext as _
 from wagtail import hooks
-from wagtail.contrib.modeladmin.options import (
+from wagtail_modeladmin.options import (
     ModelAdmin,
     ModelAdminGroup,
     modeladmin_register,
 )
-from wagtail.contrib.modeladmin.views import CreateView, EditView
+from wagtail_modeladmin.views import CreateView, EditView
 
 from config.menu import get_menu_order
 from .button_helpers import GenericThematicAreaHelper, ThematicAreaHelper

@@ -2,12 +2,12 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Count
 from django.http import HttpResponseRedirect
 from django.utils.translation import gettext as _
-from wagtail.contrib.modeladmin.options import (
+from wagtail_modeladmin.options import (
     ModelAdmin,
     ModelAdminGroup,
     modeladmin_register,
 )
-from wagtail.contrib.modeladmin.views import CreateView
+from wagtail_modeladmin.views import CreateView
 from wagtail.snippets.views.snippets import SnippetViewSet
 from wagtail.snippets.models import register_snippet
 
