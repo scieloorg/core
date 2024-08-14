@@ -4,9 +4,9 @@
     {% icon name="folder-inverse" %}
     <a href="{% url 'journal_journal_modeladmin_index' %}">
         {% blocktrans trimmed count counter=total_journal with total_journal|intcomma as total %}
-            <span>{{ total_journal }}</span> Journal <span class="visuallyhidden">created in {{ site_name }}</span>
+            <span>{{ total_journal }}</span> Journal 
         {% plural %}
-            <span>{{ total_journal }}</span> Journals <span class="visuallyhidden">created in {{ site_name }}</span>
+            <span>{{ total_journal }}</span> Journals 
         {% endblocktrans %}
     </a>
 </li>
