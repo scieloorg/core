@@ -63,7 +63,6 @@ WAGTAIL = [
     "core.search_site",
     "wagtail.contrib.forms",
     "wagtail.contrib.redirects",
-    "wagtail.contrib.modeladmin", # This module will be removed in a future release.
     "wagtail_modeladmin",
     "wagtail.contrib.simple_translation",
     "wagtail_localize",
@@ -82,6 +81,7 @@ WAGTAIL = [
     "wagtail.contrib.settings",
     "wagtail.contrib.styleguide",
     "wagtail.contrib.routable_page",
+    "wagtail.contrib.search_promotions",
     "modelcluster",
     "taggit",
 ]
