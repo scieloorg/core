@@ -22,12 +22,12 @@ django-compressor==4.4  # https://github.com/django-compressor/django-compressor
 django-redis==5.4.0  # https://github.com/jazzband/django-redis4
 
 # Django REST
-djangorestframework==3.15.0
+djangorestframework==3.15.2
 djangorestframework-simplejwt==5.3.1  # https://django-rest-framework-simplejwt.readthedocs.io/en/latest/
 
 # Wagtail
 # ------------------------------------------------------------------------------
-wagtail==5.2.3  # https://github.com/wagtail/wagtail
+wagtail==6.2  # https://github.com/wagtail/wagtail
 
 
 # Wagtail Recaptcha
@@ -45,7 +45,7 @@ wagtail-localize==1.8.2
 
 #Wagtail Admin
 # ------------------------------------------------------------------------------
-wagtail-modeladmin==1.0.0
+wagtail-modeladmin==2.0.0
 
 # Django celery
 # ------------------------------------------------------------------------------
