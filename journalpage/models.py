@@ -95,6 +95,7 @@ class JournalPage(RoutablePageMixin, Page):
             "acknowledgements": acknowledgements,
             "additional_information": additional_information,
             "digital_preservation": digital_preservation,
+            "digital_preservation_clockss": digital_preservation.filter(acronym="CLOCKSS"),
             "ethics": ethics,
             "fee_charging": fee_charging,
             "sponsor_history": sponsor_history,
