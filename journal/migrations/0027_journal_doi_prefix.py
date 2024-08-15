@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="journal",
             name="doi_prefix",
-            field=models.CharField(blank=True, max_length=100, null=True),
+            field=models.CharField(blank=True, max_length=20, null=True),
         ),
     ]
