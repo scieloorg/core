@@ -28,7 +28,7 @@ def harvest_preprints(URL, user):
         identifier = get_doi(article_info["identifier"])
         doi = get_or_create_doi(doi=identifier, user=user)
 
-        article = models.Article.create(
+        article = models.Article.objects.create(
             doi=doi,
             creator=user,
         )
