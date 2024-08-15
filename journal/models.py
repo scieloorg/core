@@ -570,7 +570,7 @@ class Journal(CommonControlField, ClusterableModel):
         blank=True,
         verbose_name=_("DigitalPreservationAgency"),
     )
-    doi_prefix = models.CharField(max_length=100, blank=True, null=True)
+    doi_prefix = models.CharField(max_length=20, blank=True, null=True)
     valid = models.BooleanField(default=False, null=True, blank=True)
 
     autocomplete_search_field = "title"
