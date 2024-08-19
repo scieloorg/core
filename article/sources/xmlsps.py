@@ -1,18 +1,17 @@
 import logging
 import sys
+from itertools import product
 
-from django.db.models import Q
-from django.db.utils import DataError
 from lxml import etree
 from packtools.sps.models.article_abstract import ArticleAbstract
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
-from packtools.sps.models.article_authors import Authors
+from packtools.sps.models.article_contribs import ArticleContribs
 from packtools.sps.models.article_doi_with_lang import DoiWithLang
 from packtools.sps.models.article_ids import ArticleIds
 from packtools.sps.models.article_license import ArticleLicense
 from packtools.sps.models.article_titles import ArticleTitles
-from packtools.sps.models.article_toc_sections import ArticleTocSections
-from packtools.sps.models.dates import ArticleDates
+from packtools.sps.models.v2.article_toc_sections import ArticleTocSections
+from packtools.sps.models.article_dates import HistoryDates
 from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
 from packtools.sps.models.funding_group import FundingGroup
 from packtools.sps.models.journal_meta import ISSN, Title
@@ -21,14 +20,11 @@ from packtools.sps.models.kwd_group import ArticleKeywords
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle
-from article.utils.parse_name_author import get_safe_value
-from core.forms import CoreAdminModelForm
-from core.models import Language, License, LicenseStatement
+from core.models import Language
 from doi.models import DOI
 from institution.models import Sponsor, Publisher
 from issue.models import Issue, TocSection
 from journal.models import Journal, OfficialJournal
-from researcher.exceptions import PersonNameCreateError
 from researcher.models import Researcher, InstitutionalAuthor, Affiliation
 from tracker.models import UnexpectedEvent
 from vocabulary.models import Keyword
@@ -85,6 +81,7 @@ def load_article(user, xml=None, file_path=None, v3=None):
         set_pids(xmltree=xmltree, article=article)
         article.journal = get_journal(xmltree=xmltree)
         set_date_pub(xmltree=xmltree, article=article)
+        set_license(xmltree=xmltree, article=article)
         article.article_type = get_or_create_article_type(xmltree=xmltree, user=user)
         article.issue = get_or_create_issues(xmltree=xmltree, user=user, item=pid_v3)
         set_first_last_page_elocation_id(xmltree=xmltree, article=article)
@@ -114,8 +111,6 @@ def load_article(user, xml=None, file_path=None, v3=None):
             get_or_create_fundings(xmltree=xmltree, user=user, item=pid_v3)
         )
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
-
-        article.license_statements.set(set_license(xmltree=xmltree, article=article, user=user))
         article.publisher = get_or_create_publisher(xmltree=xmltree, user=user, item=pid_v3)
         article.valid = True
         article.save()
@@ -199,63 +194,99 @@ def get_or_create_publisher(xmltree, user, item):
 
 def get_or_create_fundings(xmltree, user, item):
     """
-    Ex fundings_group:
-    [{'funding-source': ['CNPQ'], 'award-id': ['12345', '67890']},
-        {'funding-source': ['FAPESP'], 'award-id': ['23456', '56789']},]
+    Ex fundings_award_group:
+        [{
+        'funding-source': ['São Paulo Research Foundation', 'CAPES', 'CNPq'], 
+        'award-id': ['2009/53363-8, 2009/52807-0, 2009/51766-8]}]
     """
-
-    fundings_group = FundingGroup(xmltree=xmltree).award_groups
+    fundings_award_group = FundingGroup(xmltree=xmltree).award_groups
+    
+    try:
+        results = product(fundings_award_group[0].get("funding-source", []), fundings_award_group[0].get("award-id", []))
+    except IndexError:
+        results = None
+    
     data = []
-    if fundings_group:
-        for funding in fundings_group:
-            funding_source = funding.get("funding-source") or []
-            award_ids = funding.get("award-id") or []
-
-            for fs in funding_source:
+    if results:
+        for result in results:
+            try:
+                fs = result[0]
                 sponsor = create_or_update_sponsor(
                     funding_name=fs, user=user, item=item
                 )
-                for award_id in award_ids:
-                    try:
-                        obj = ArticleFunding.get_or_create(
-                            award_id=award_id,
-                            funding_source=sponsor,
-                            user=user,
-                        )
-                        if obj:
-                            data.append(obj)
-                    except Exception as e:
-                        exc_type, exc_value, exc_traceback = sys.exc_info()
-                        UnexpectedEvent.create(
-                            item=item,
-                            action="article.xmlsps.sources.get_or_create_fundings",
-                            exception=e,
-                            exc_traceback=exc_traceback,
-                            detail=dict(
-                                xmltree=f"{etree.tostring(xmltree)}",
-                                function="article.xmlsps.sources.get_or_create_fundings",
-                                funding_source=fs,
-                                award_id=award_id,
-                            ),
-                        )
+                award_id = result[1]
+                obj = ArticleFunding.get_or_create(
+                    award_id=award_id,
+                    funding_source=sponsor,
+                    user=user,
+                )
+                if obj:
+                    data.append(obj)
+            except Exception as e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    item=item,
+                    action="article.xmlsps.sources.get_or_create_fundings",
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail=dict(
+                        xmltree=f"{etree.tostring(xmltree)}",
+                        function="article.xmlsps.sources.get_or_create_fundings",
+                        funding_source=fs,
+                        award_id=award_id,
+                    ),
+                )    
     return data
+    # data = []
+    # if fundings_group:
+    #     for funding in fundings_group:
+    #         funding_source = funding.get("funding-source") or []
+    #         award_ids = funding.get("award-id") or []
+
+    #         for fs in funding_source:
+    #             sponsor = create_or_update_sponsor(
+    #                 funding_name=fs, user=user, item=item
+    #             )
+    #             for award_id in award_ids:
+    #                 try:
+    #                     obj = ArticleFunding.get_or_create(
+    #                         award_id=award_id,
+    #                         funding_source=sponsor,
+    #                         user=user,
+    #                     )
+    #                     if obj:
+    #                         data.append(obj)
+    #                 except Exception as e:
+    #                     exc_type, exc_value, exc_traceback = sys.exc_info()
+    #                     UnexpectedEvent.create(
+    #                         item=item,
+    #                         action="article.xmlsps.sources.get_or_create_fundings",
+    #                         exception=e,
+    #                         exc_traceback=exc_traceback,
+    #                         detail=dict(
+    #                             xmltree=f"{etree.tostring(xmltree)}",
+    #                             function="article.xmlsps.sources.get_or_create_fundings",
+    #                             funding_source=fs,
+    #                             award_id=award_id,
+    #                         ),
+    #                     )
+    # return data
 
 
 def get_or_create_toc_sections(xmltree, user):
-    toc_sections = ArticleTocSections(xmltree=xmltree).all_section_dict
+    toc_sections = ArticleTocSections(xmltree=xmltree).sections
     data = []
-    for key, value in toc_sections.items():
-        if key and value:
-            obj = TocSection.get_or_create(
-                value=value,
-                language=get_or_create_language(key, user=user),
-                user=user,
-            )
-            data.append(obj)
+    for item in toc_sections:
+        obj = TocSection.get_or_create(
+            value=item.get("text"),
+            language=get_or_create_language(item.get("parent_lang"), user=user),
+            user=user,
+        )
+        data.append(obj)
     return data
 
 
-def set_license(xmltree, article, user):
+def set_license(xmltree, article):
     xml_licenses = ArticleLicense(xmltree=xmltree).licenses
     for xml_license in xml_licenses:
         if license := xml_license.get("link"):
@@ -362,21 +393,39 @@ def create_or_update_researchers(xmltree, user, item):
     except Exception as e:
         article_lang = None
 
-    authors = Authors(xmltree=xmltree).contribs_with_affs
+    authors = ArticleContribs(xmltree=xmltree).contribs
 
     # Falta gender e gender_identification_status
     data = []
     for author in authors:
         try:
+            contrib_name = author.get("contrib_name", None)
+            if contrib_name is not None:
+                given_names = contrib_name.get("given-names")
+                surname = contrib_name.get("surname")
+                suffix = contrib_name.get("suffix")
+            else:
+                surname = None
+                suffix = None
+                given_names = None
+
+            contrib_ids = author.get("contrib_ids", None)
+            if contrib_ids is not None:
+                orcid = contrib_ids.get("orcid")
+                lattes = contrib_ids.get("lattes")
+            else:
+                orcid = None
+                lattes = None
+
             researcher_data = {
                 "user": user,
-                "given_names": author.get("given_names"),
-                "last_name": author.get("surname"),
-                "suffix": author.get("suffix"),
+                "given_names": given_names,
+                "last_name": surname,
+                "suffix": suffix,
                 "lang": article_lang,
-                "orcid": author.get("orcid"),
-                "lattes": author.get("lattes"),
-                "email": author.get("email"),
+                "orcid": orcid,
+                "lattes": lattes,
+                # "email": author.get("email"),
                 "gender": author.get("gender"),
                 "gender_identification_status": author.get(
                     "gender_identification_status"
@@ -392,13 +441,13 @@ def create_or_update_researchers(xmltree, user, item):
                     email = author.get("email") or aff.get("email")
                     aff_data = {
                         **researcher_data,
-                        "aff_name": get_safe_value(aff, "orgname"),
-                        "aff_div1": get_safe_value(aff, "orgdiv1"),
-                        "aff_div2": get_safe_value(aff, "orgdiv2"),
-                        "aff_city_name": get_safe_value(aff, "city"),
-                        "aff_country_acronym": get_safe_value(aff, "country_code"),
-                        "aff_country_name": get_safe_value(aff, "country_name"),
-                        "aff_state_text": get_safe_value(aff, "state"),
+                        "aff_name": aff.get("orgname"),
+                        "aff_div1": aff.get("orgdiv1"),
+                        "aff_div2": aff.get("orgdiv2"),
+                        "aff_city_name": aff.get("city"),
+                        "aff_country_acronym": aff.get("country_code"),
+                        "aff_country_name": aff.get("country_name"),
+                        "aff_state_text": aff.get("state"),
                         "email": email,
                     }
                     obj = Researcher.create_or_update(**aff_data)
@@ -422,7 +471,7 @@ def create_or_update_researchers(xmltree, user, item):
 
 def get_or_create_institution_authors(xmltree, user, item):
     data = []
-    authors = Authors(xmltree=xmltree).contribs_with_affs
+    authors = ArticleContribs(xmltree=xmltree).contribs
     for author in authors:
         try:
             affiliation = None
@@ -477,7 +526,7 @@ def set_pids(xmltree, article):
 
 
 def set_date_pub(xmltree, article):
-    dates = ArticleDates(xmltree=xmltree).article_date
+    dates = HistoryDates(xmltree=xmltree).article_date
     article.set_date_pub(dates)
 
 
@@ -525,7 +574,7 @@ def get_or_create_article_type(xmltree, user):
 
 def get_or_create_issues(xmltree, user, item):
     issue_data = ArticleMetaIssue(xmltree=xmltree).data
-    collection_date = ArticleDates(xmltree=xmltree).collection_date
+    collection_date = HistoryDates(xmltree=xmltree).collection_date
     try:
         obj = Issue.get_or_create(
             journal=get_journal(xmltree=xmltree),
