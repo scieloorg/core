@@ -199,44 +199,42 @@ def get_or_create_fundings(xmltree, user, item):
         'funding-source': ['São Paulo Research Foundation', 'CAPES', 'CNPq'], 
         'award-id': ['2009/53363-8, 2009/52807-0, 2009/51766-8]}]
     """
+    data = []
     fundings_award_group = FundingGroup(xmltree=xmltree).award_groups
     
-    try:
-        results = product(fundings_award_group[0].get("funding-source", []), fundings_award_group[0].get("award-id", []))
-    except IndexError:
-        results = None
-    
-    data = []
-    if results:
-        for result in results:
-            try:
-                fs = result[0]
-                sponsor = create_or_update_sponsor(
-                    funding_name=fs, user=user, item=item
-                )
-                award_id = result[1]
-                obj = ArticleFunding.get_or_create(
-                    award_id=award_id,
-                    funding_source=sponsor,
-                    user=user,
-                )
-                if obj:
-                    data.append(obj)
-            except Exception as e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                UnexpectedEvent.create(
-                    item=item,
-                    action="article.xmlsps.sources.get_or_create_fundings",
-                    exception=e,
-                    exc_traceback=exc_traceback,
-                    detail=dict(
-                        xmltree=f"{etree.tostring(xmltree)}",
-                        function="article.xmlsps.sources.get_or_create_fundings",
-                        funding_source=fs,
+    if fundings_award_group:
+        for fundings_award in fundings_award_group:
+            results = product(fundings_award.get("funding-source", []), fundings_award.get("award-id", []))
+            for result in results:
+                try:
+                    fs = result[0]
+                    sponsor = create_or_update_sponsor(
+                        funding_name=fs, user=user, item=item
+                    )
+                    award_id = result[1]
+                    obj = ArticleFunding.get_or_create(
                         award_id=award_id,
-                    ),
-                )    
-    return data
+                        funding_source=sponsor,
+                        user=user,
+                    )
+                    if obj:
+                        data.append(obj)
+                except Exception as e:
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    UnexpectedEvent.create(
+                        item=item,
+                        action="article.xmlsps.sources.get_or_create_fundings",
+                        exception=e,
+                        exc_traceback=exc_traceback,
+                        detail=dict(
+                            xmltree=f"{etree.tostring(xmltree)}",
+                            function="article.xmlsps.sources.get_or_create_fundings",
+                            funding_source=fs,
+                            award_id=award_id,
+                        ),
+                    )    
+    return data    
+
     # data = []
     # if fundings_group:
     #     for funding in fundings_group:
@@ -484,7 +482,7 @@ def get_or_create_institution_authors(xmltree, user, item):
                             state_name=aff.get("state"),
                             city_name=aff.get("city"),
                         )
-                        affiliation = Affiliation.create_or_update(
+                        affiliation = Affiliation.get_or_create(
                             name=aff.get("orgname"),
                             acronym=None,
                             level_1=aff.get("orgdiv1"),
