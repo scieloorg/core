@@ -275,12 +275,25 @@ def get_or_create_toc_sections(xmltree, user):
     toc_sections = ArticleTocSections(xmltree=xmltree).sections
     data = []
     for item in toc_sections:
-        obj = TocSection.get_or_create(
-            value=item.get("text"),
-            language=get_or_create_language(item.get("parent_lang"), user=user),
-            user=user,
-        )
-        data.append(obj)
+        try:
+            obj = TocSection.get_or_create(
+                value=item.get("text"),
+                language=get_or_create_language(item.get("parent_lang"), user=user),
+                user=user,
+            )
+            data.append(obj)
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                action="article.xmlsps.sources.get_or_create_toc_sections",
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail=dict(
+                    xmltree=f"{etree.tostring(xmltree)}",
+                    function="article.xmlsps.sources.get_or_create_toc_sections",
+                    toc_sections=item,
+                ),
+            )            
     return data
 
 
