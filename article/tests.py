@@ -7,7 +7,7 @@ from django.utils.timezone import make_aware
 from unittest.mock import patch, PropertyMock
 
 from article.models import Article, ArticleFormat
-from article.tasks import remove_duplicate_articles, convert_xml_to_other_formats
+from article.tasks import remove_duplicate_articles, convert_xml_to_pubmed_or_pmc_formats, convert_xml_to_crossref_format
 from core.users.models import User
 from doi.models import DOI
 from doi_manager.models import CrossRefConfiguration
@@ -204,7 +204,7 @@ class TasksConvertXmlFormatsTest(TestCase):
         mock_property_xmltree.return_value = self.input_xml
         mock_pipeline_pmc.return_value = self.modified_xml
 
-        convert_xml_to_other_formats(pid_v3=self.article.pid_v3, format_name="pmc", username="admin")
+        convert_xml_to_pubmed_or_pmc_formats(pid_v3=self.article.pid_v3, format_name="pmc", username="admin")
         mock_pipeline_pmc.assert_called_once_with(mock_property_xmltree.return_value)
         self.verify_article_format(status="S", version=1)
 
@@ -215,7 +215,7 @@ class TasksConvertXmlFormatsTest(TestCase):
         mock_property_xmltree.return_value = self.input_xml
         mock_pipeline_pubmed.return_value = self.modified_xml
 
-        convert_xml_to_other_formats(pid_v3=self.article.pid_v3, format_name="pubmed", username="admin")
+        convert_xml_to_pubmed_or_pmc_formats(pid_v3=self.article.pid_v3, format_name="pubmed", username="admin")
         mock_pipeline_pubmed.assert_called_once_with(mock_property_xmltree.return_value)
         self.verify_article_format(status="S", version=1)
 
@@ -228,12 +228,12 @@ class TasksConvertXmlFormatsTest(TestCase):
         mock_property_xmltree.return_value = self.input_xml
         mock_pipeline_crossref.return_value = self.modified_xml
 
-        convert_xml_to_other_formats(pid_v3=self.article.pid_v3, format_name="crossref", username="admin")
+        convert_xml_to_crossref_format(pid_v3=self.article.pid_v3, format_name="crossref", username="admin")
         self.verify_article_format(status="S", version=1)
 
 
     def test_convert_xml_to_crossref_formats_without_doi(self):
-        convert_xml_to_other_formats(pid_v3=self.article.pid_v3, format_name="crossref", username="admin")
+        convert_xml_to_crossref_format(pid_v3=self.article.pid_v3, format_name="crossref", username="admin")
         expected_msg = {"exception_msg": f"Unable to format because the article {self.article.pid_v3} has no DOI associated with it"}
         self.verify_article_format(status="E", version=1, file_exists=False, report=expected_msg)
 
@@ -242,7 +242,7 @@ class TasksConvertXmlFormatsTest(TestCase):
     def test_convert_xml_to_crossref_formats_missing_crossref_configuration(self, mock_get_data):
         self.article.doi.add(self.doi)
         mock_get_data.side_effect = CrossRefConfiguration.DoesNotExist
-        convert_xml_to_other_formats(pid_v3=self.article.pid_v3, format_name="crossref", username="admin")
+        convert_xml_to_crossref_format(pid_v3=self.article.pid_v3, format_name="crossref", username="admin")
         expected_prefix = '10.1000.10'
         mock_get_data.assert_called_once_with(expected_prefix)
 
