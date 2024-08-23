@@ -216,7 +216,7 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
         Return the format: Acta Cirúrgica Brasileira, Volume: 37, Issue: 7, Article number: e370704, Published: 10 OCT 2022
         """
         leg_dict = {
-            "title": self.journal.title,
+            "title": self.journal.title if self.journal else "",
             "pubdate": str(self.pub_date_year),
             "volume": self.issue.volume if self.issue else "",
             "number": self.issue.number if self.issue else "",
