@@ -86,11 +86,19 @@ class ArticleFormatModelTest(TestCase):
             status="S",
         )
 
+    def verify_fields_model_article_format(self, article_format, version, format_name=None, status=None, file=None):
+        self.assertEqual(article_format.article,  self.article)
+        if format_name:
+            self.assertEqual(article_format.format_name, format_name)
+        self.assertEqual(article_format.version, version)
+        self.assertEqual(article_format.report, None)
+        if status:
+            self.assertEqual(article_format.status, status)
+    
+
     def test_get_method(self):
         article_format = ArticleFormat.get(self.article, format_name='pmc', version=1)
-        self.assertEqual(article_format.article,  self.article)
-        self.assertEqual(article_format.format_name, 'pmc')
-        self.assertEqual(article_format.version, 1)
+        self.verify_fields_model_article_format(article_format=article_format, format_name='pmc', version=1)
 
     def test_create_classmethod(self):
         article_format = ArticleFormat.create(
@@ -99,9 +107,7 @@ class ArticleFormatModelTest(TestCase):
             format_name='pubmed',
             version=1
         )
-        self.assertEqual(article_format.article,  self.article)
-        self.assertEqual(article_format.format_name, 'pubmed')
-        self.assertEqual(article_format.version, 1)
+        self.verify_fields_model_article_format(article_format=article_format, format_name='pubmed', version=1)
 
     def test_get_method_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
@@ -116,9 +122,7 @@ class ArticleFormatModelTest(TestCase):
             format_name="pmc",
             version=1,
         )
-        self.assertEqual(article_format.article,  self.article)
-        self.assertEqual(article_format.format_name, 'pmc')
-        self.assertEqual(article_format.version, 1)
+        self.verify_fields_model_article_format(article_format=article_format, format_name='pmc', version=1)
 
     def test_save_file_method(self):
         filename = "0034-7094-rba-69-03-0227.xml"
@@ -156,15 +160,12 @@ class ArticleFormatModelTest(TestCase):
         input_xml = "<article><element>Original</element></article>"
         
         filename = article_format.article.sps_pkg_name + ".xml"
-        article_format.save_format_xml(format_xml=input_xml, filename=filename)
+        article_format.save_format_xml(format_xml=input_xml, filename=filename, status="S")
         with article_format.file.open('rb') as f:
             saved_content = f.read()
         self.assertEqual(saved_content, input_xml.encode('utf-8'))
 
-        self.assertEqual(article_format.status, "S")
-        self.assertEqual(article_format.report, None)
-        self.assertEqual(article_format.version, 1)
-
+        self.verify_fields_model_article_format(article_format=article_format, status="S", version=1)
 
 class TasksConvertXmlFormatsTest(TestCase):
     def setUp(self):
