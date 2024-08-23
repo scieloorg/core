@@ -30,7 +30,5 @@ class CrossRefConfiguration(CommonControlField):
 
     @classmethod
     def get_data(cls, prefix):
-        try:
-            return cls.objects.get(prefix=prefix).data
-        except cls.DoesNotExist:
-            return cls().data
+        return cls.objects.get(prefix=prefix).data
+
