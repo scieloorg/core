@@ -130,6 +130,42 @@ def load_preprint(self, user_id, oai_pmh_preprint_uri):
     harvest_preprints(oai_pmh_preprint_uri, user)
 
 
+def get_function_format_xml(format_name):
+    dict_functions_formats = {
+        "pmc": pmc.pipeline_pmc,
+        "pubmed": pubmed.pipeline_pubmed,
+        "crossref": crossref.pipeline_crossref,
+    }
+    return dict_functions_formats.get(format_name)
+
+
+def handler_formatting_error(article_format, message):
+    article_format.save_format_xml(
+        filename=None,
+        format_xml=None,
+        status="E",
+        report={"exception_msg": message}
+    )
+
+def get_article_format(user, pid_v3, format_name):
+    try:
+        article = Article.objects.get(pid_v3=pid_v3)
+    except Article.DoesNotExist:
+        logging.info(f"Unable to convert article {pid_v3} to the specified format")
+        return
+
+    try:
+        article_format = ArticleFormat.objects.get(article=article, format_name="pmc")
+    except ArticleFormat.DoesNotExist:
+        article_format = ArticleFormat.create_or_update(
+            user=user,
+            article=article,
+            format_name=format_name,
+            version=1
+        )
+    return article_format
+
+
 @celery_app.task(bind=True)
 def task_convert_xml_to_other_formats_for_articles(self, format_name, user_id=None, username=None, force_update=False):
     journals = Journal.objects.filter(indexed_at__acronym=format_name)
@@ -175,41 +211,6 @@ def task_convert_xml_to_other_formats_for_articles(self, format_name, user_id=No
                 },
             )
 
-
-def get_function_format_xml(format_name):
-    dict_functions_formats = {
-        "pmc": pmc.pipeline_pmc,
-        "pubmed": pubmed.pipeline_pubmed,
-        "crossref": crossref.pipeline_crossref,
-    }
-    return dict_functions_formats.get(format_name)
-
-
-def handler_formatting_error(article_format, message):
-    article_format.save_format_xml(
-        filename=None,
-        format_xml=None,
-        status="E",
-        report={"exception_msg": message}
-    )
-
-def get_article_format(user, pid_v3, format_name):
-    try:
-        article = Article.objects.get(pid_v3=pid_v3)
-    except Article.DoesNotExist:
-        logging.info(f"Unable to convert article {pid_v3} to the specified format")
-        return
-
-    try:
-        article_format = ArticleFormat.objects.get(article=article, format_name="pmc")
-    except ArticleFormat.DoesNotExist:
-        article_format = ArticleFormat.create_or_update(
-            user=user,
-            article=article,
-            format_name=format_name,
-            version=1
-        )
-    return article_format
 
 @celery_app.task(bind=True)
 def convert_xml_to_pubmed_or_pmc_formats(self, pid_v3, format_name, user_id=None, username=None):
