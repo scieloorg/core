@@ -173,8 +173,8 @@ class TasksConvertXmlFormatsTest(TestCase):
             username="admin",
         )
 
-        self.input_xml = "<article><element>Original PMC</element></article>"
-        self.modified_xml = "<article><element>Modified PMC</element></article>"
+        self.input_xml = etree.fromstring("<article><element>Original PMC</element></article>")
+        self.modified_xml = etree.fromstring("<article><element>Modified PMC</element></article>")
     
     def verify_article_format(self, status, version, pid_v3=None, report=None, file_exists=True):
         self.assertEqual(ArticleFormat.objects.count(), 1)
@@ -187,7 +187,7 @@ class TasksConvertXmlFormatsTest(TestCase):
         if file_exists:
             with article_format.file.open('rb') as f:
                 content = f.read()
-            self.assertEqual(content, self.modified_xml.encode('utf-8'))
+            self.assertEqual(content, etree.tostring(self.modified_xml, encoding="utf-8"))
         else:
             self.assertFalse(article_format.file)
     
