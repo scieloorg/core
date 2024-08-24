@@ -1,3 +1,4 @@
+from lxml import etree
 from freezegun import freeze_time
 from django.test import TestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -75,8 +76,8 @@ class ArticleFormatModelTest(TestCase):
             sps_pkg_name="0001-3714-rm-30-04-299",
         )
 
-        self.test_file = SimpleUploadedFile("test_file.xml", b"<root><element>Test</element></root>", content_type="application/xml")
-        self.test_file2 = SimpleUploadedFile("test_file.xml", b"<root><element>Test2</element></root>", content_type="application/xml")
+        self.test_file = SimpleUploadedFile("test_file.xml", b"<article><element>Test</element></article>", content_type="application/xml")
+        self.test_file2 = SimpleUploadedFile("test_file2.xml", b"<article><element>Test2</element></article>", content_type="application/xml")
         self.article_format = ArticleFormat.objects.create(
             article=self.article,
             format_name='pmc',
@@ -95,7 +96,6 @@ class ArticleFormatModelTest(TestCase):
         if status:
             self.assertEqual(article_format.status, status)
     
-
     def test_get_method(self):
         article_format = ArticleFormat.get(self.article, format_name='pmc', version=1)
         self.verify_fields_model_article_format(article_format=article_format, format_name='pmc', version=1)
@@ -123,48 +123,41 @@ class ArticleFormatModelTest(TestCase):
             version=1,
         )
         self.verify_fields_model_article_format(article_format=article_format, format_name='pmc', version=1)
+    
+    def convert_and_compare_xml(self, article_format, filename, xml_content):
+        article_format.save_file(filename=filename, content=xml_content)
+        with article_format.file.open("rb") as f:
+            saved_content = f.read()
+        self.assertEqual(etree.tostring(etree.fromstring(saved_content), encoding="utf-8"),
+                         etree.tostring(xml_content, encoding="utf-8"))
 
     def test_save_file_method(self):
         filename = "0034-7094-rba-69-03-0227.xml"
-        content = self.test_file
-        content.seek(0)
-        content_bytes = content.read()
         article_format = ArticleFormat.get(self.article, format_name='pmc', version=1)
-        article_format.save_file(filename=filename, content=content_bytes)
-        
-        with article_format.file.open('rb') as f:
-            saved_content = f.read()
-        
-        self.assertEqual(saved_content, content_bytes)
+        self.test_file.seek(0)
+        input_xml = etree.fromstring(self.test_file.read())
+        self.convert_and_compare_xml(article_format=article_format, filename=filename, xml_content=input_xml)
 
     def test_update_xml_in_save_file_method(self):
         filename = "0034-7094-rba-69-03-0227.xml"
-        content = self.test_file
-        content_update = self.test_file2
-        content.seek(0)
-        content_bytes = content.read()
+        self.test_file.seek(0)
+        input_xml = etree.fromstring(self.test_file.read())
+
         article_format = ArticleFormat.get(self.article, format_name='pmc', version=1)
-        article_format.save_file(filename=filename, content=content_bytes)
+        self.convert_and_compare_xml(article_format=article_format, filename=filename, xml_content=input_xml)
 
-        content_update.seek(0)
-        content_update_bytes = content_update.read()
-        article_format.save_file(filename=filename, content=content_update_bytes)
-
-        with article_format.file.open('rb') as f:
-            saved_content = f.read()
-
-        self.assertEqual(saved_content, content_update_bytes)
+        self.test_file2.seek(0)
+        update_xml = etree.fromstring(self.test_file2.read())
+        self.convert_and_compare_xml(article_format=article_format, filename=filename, xml_content=update_xml)
 
     def test_save_format_xml_method(self):
         article_format = ArticleFormat.get(self.article, format_name='pmc', version=1)
-        input_xml = "<article><element>Original</element></article>"
-        
+        input_xml = etree.fromstring("<article><element>Test</element></article>")
         filename = article_format.article.sps_pkg_name + ".xml"
         article_format.save_format_xml(format_xml=input_xml, filename=filename, status="S")
         with article_format.file.open('rb') as f:
             saved_content = f.read()
-        self.assertEqual(saved_content, input_xml.encode('utf-8'))
-
+        self.assertEqual(saved_content, etree.tostring(input_xml, encoding="utf-8"))
         self.verify_fields_model_article_format(article_format=article_format, status="S", version=1)
 
 class TasksConvertXmlFormatsTest(TestCase):

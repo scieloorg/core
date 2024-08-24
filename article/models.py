@@ -1,7 +1,7 @@
 import os
 import sys
 from datetime import datetime
-
+from lxml import etree
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
 from django.db.utils import DataError
@@ -754,6 +754,7 @@ class ArticleFormat(CommonControlField):
         return obj
 
     def save_file(self, filename, content):
+        content = etree.tostring(content)
         finger_print = generate_finger_print(content)
         if finger_print != self.finger_print:
             try:
@@ -776,7 +777,7 @@ class ArticleFormat(CommonControlField):
         if indexed_check and not self.article.is_indexed_at(self.format_name):
             return 
         try:
-            if filename and format_xml:
+            if filename and len(format_xml):
                 self.save_file(filename=filename, content=format_xml)
             self.version = version or 1
             self.report = report
