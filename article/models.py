@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 from datetime import datetime
 
 from django.core.files.base import ContentFile
@@ -217,7 +218,7 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
         """
         leg_dict = {
             "title": self.journal.title if self.journal else "",
-            "pubdate": str(self.pub_date_year),
+            "pubdate": str(self.pub_date_year) if self.pub_date_year else "",
             "volume": self.issue.volume if self.issue else "",
             "number": self.issue.number if self.issue else "",
             "fpage": self.first_page,
@@ -225,7 +226,11 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
             "elocation": self.elocation_id,
         }
 
-        return descriptive_format(**leg_dict)
+        try:
+            return descriptive_format(**leg_dict)
+        except Exception as ex: 
+            logging.exception("Erro on article %s, error: %s" % (self.pid_v2, ex)) 
+            return ""
 
     @classmethod
     def get_or_create(cls, doi, pid_v2, fundings, user):
