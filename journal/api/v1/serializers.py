@@ -88,6 +88,7 @@ class JournalSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
     acronym = serializers.SerializerMethodField()
     scielo_journal = serializers.SerializerMethodField()
+    title_in_database = serializers.SerializerMethodField()
     url_logo = serializers.SerializerMethodField()
     mission = MissionSerializer(many=True, read_only=True)
     issn_print = serializers.CharField(source="official.issn_print")
@@ -144,12 +145,27 @@ class JournalSerializer(serializers.ModelSerializer):
 
         return journals
 
+    def get_title_in_database(self, obj):
+        title_in_database = obj.title_in_database.all()
+        title_in_db = []
+        for item in title_in_database:
+            title_in_db_dict = {
+                'title': item.title,
+                'identifier': item.identifier,
+                'name': item.indexed_at.name,
+                'acronym': item.indexed_at.acronym,
+                'url': item.indexed_at.url,
+            }
+            title_in_db.append(title_in_db_dict)
+        return title_in_db
+
     def get_url_logo(self, obj):
         if obj.logo:
             domain = Site.objects.get(is_default_site=True).hostname
             domain = f"http://{domain}"
             return f"{domain}{obj.logo.file.url}"
         return None
+
 
     def get_email(self, obj):
         if obj.journal_email.all():
@@ -216,6 +232,7 @@ class JournalSerializer(serializers.ModelSerializer):
             "email",
             "contact_address",
             "text_language",
+            "title_in_database",
             "url_logo",
             "mission",
             "sponsor",
