@@ -218,7 +218,7 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
         """
         leg_dict = {
             "title": self.journal.title if self.journal else "",
-            "pubdate": str(self.pub_date_year) if self.pub_date_year else "",
+            "pubdate": self.issue.year if self.issue else "",
             "volume": self.issue.volume if self.issue else "",
             "number": self.issue.number if self.issue else "",
             "fpage": self.first_page,
