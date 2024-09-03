@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 from datetime import datetime
 
 from django.core.files.base import ContentFile
@@ -216,8 +217,8 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
         Return the format: Acta Cirúrgica Brasileira, Volume: 37, Issue: 7, Article number: e370704, Published: 10 OCT 2022
         """
         leg_dict = {
-            "title": self.journal.title,
-            "pubdate": str(self.pub_date_year),
+            "title": self.journal.title if self.journal else "",
+            "pubdate": str(self.pub_date_year) if self.pub_date_year else "",
             "volume": self.issue.volume if self.issue else "",
             "number": self.issue.number if self.issue else "",
             "fpage": self.first_page,
@@ -225,7 +226,11 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
             "elocation": self.elocation_id,
         }
 
-        return descriptive_format(**leg_dict)
+        try:
+            return descriptive_format(**leg_dict)
+        except Exception as ex: 
+            logging.exception("Erro on article %s, error: %s" % (self.pid_v2, ex)) 
+            return ""
 
     @classmethod
     def get_or_create(cls, doi, pid_v2, fundings, user):

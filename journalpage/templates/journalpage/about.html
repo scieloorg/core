@@ -209,10 +209,20 @@
                         <!-- InlinePanel Preservacao Digital -->
                         <!-- Panel Policy -->
                         <h5 id="item-1-9">{% trans 'Preservação digital' %}</h5>
-                        <ul type="disc">
-                            {% for dp in digital_preservation %}
-                                <li>{{ dp.rich_text|richtext }}</li>
-                            {% endfor %}
+                          {% if digital_preservation_clockss %}
+                            <!-- CLOCKSS system has permission to ingest, preserve, and serve this Archival Unit -->
+                            <div class="widget widget-Lockss widget-instance-IssueBrowseByYear_Lockss">
+
+                              <input class="at-locks-messaging" type="hidden" value="LOCKSS system has permission to collect, preserve, and serve this Archival Unit" />
+                            
+                              <input class="at-clockss-messaging" type="hidden" value="CLOCKSS system has permission to ingest, preserve, and serve this Archival Unit" />
+                            
+                            </div>
+                          {% endif%} 
+                        <ul type="disc">                                 
+                          {% for dp in digital_preservation %}
+                              <li>{{ dp.name }}</li>
+                          {% endfor %}
                         </ul>
                         <hr>
                         <h4 id="item-2">{% trans 'Política editorial' %}</h4>

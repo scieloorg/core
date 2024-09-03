@@ -387,7 +387,6 @@ class BaseHistoryItem(CommonControlField):
     final_date = models.DateField(_("Final Date"), null=True, blank=True)
 
     panels = [
-        AutocompletePanel("institution"),
         FieldPanel("initial_date"),
         FieldPanel("final_date"),
     ]
@@ -432,6 +431,11 @@ class BaseHistoryItem(CommonControlField):
     class Meta:
         abstract = True
 
+    def __str__(self):
+        try:
+            return self.institution.institution.institution_identification.name
+        except AttributeError:
+            return ''
 
 class BaseInstitution(CommonControlField):
     institution = models.ForeignKey(

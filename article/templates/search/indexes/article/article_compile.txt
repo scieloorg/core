@@ -69,13 +69,9 @@
       </element>
       <element name="language">
          <element name="none">
-            <element name="none">
-               <element name="none">
-                    {% for lang in object.languages.all %}
-                        <field name="value">{{ lang }}</field>
-                    {% endfor %}
-               </element>
-            </element>
+            {% for lang in object.languages.all %}
+                <field name="value">{{ lang.code2 }}</field>
+            {% endfor %}
          </element>
       </element>
       <element name="rights">
@@ -83,6 +79,22 @@
             {% for lic in object.license.all %}
                 <field name="value">{{ lic }}</field>
             {% endfor %}
+         </element>
+      </element>
+      <element name="source">
+         <element name="none">
+            <field name="value">{{ object.source }}</field>
+         </element>
+      </element>
+    
+      <element name="publisher">
+         <element name="none">
+            <field name="value">{{ object.publisher.institution.institution_identification.name }}</field>
+         </element>
+      </element>
+      <element name="format">
+         <element name="none">
+            <field name="value">text/html</field>
          </element>
       </element>
     </element>

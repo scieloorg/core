@@ -357,7 +357,7 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         """
         if obj.collections:
             if obj.collections:
-                return ["col_%s" % col for col in obj.collections]
+                return ["com_%s" % col for col in obj.collections]
 
     def prepare_titles(self, obj):
         """The list of titles."""
