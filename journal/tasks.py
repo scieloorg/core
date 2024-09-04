@@ -142,3 +142,19 @@ def fetch_and_process_journal_logo(
                 "domain": domain,
             },
         )
+
+
+@celery_app.task(bind=True)
+def fetch_and_process_journal_logos_in_collection(self, collection_acron3=None, user_id=None,username=None):
+    if collection_acron3:
+        collection = Collection.objects.get(acron3=collection_acron3)
+        journals = Journal.objects.filter(scielojournal__collection=collection)
+    else:
+        journals = Journal.objects.all()
+
+    for journal in journals:
+        fetch_and_process_journal_logo(
+                journal_id=journal.id,
+                user_id=user_id,
+                username=username,
+            )

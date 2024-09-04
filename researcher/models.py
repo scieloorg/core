@@ -240,7 +240,6 @@ class Affiliation(BaseInstitution):
 
     base_form_class = CoreAdminModelForm
 
-    create_or_update = BaseInstitution.get_or_create
 
 
 class PersonName(CommonControlField):

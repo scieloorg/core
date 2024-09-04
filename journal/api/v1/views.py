@@ -31,7 +31,7 @@ class JournalViewSet(GenericJournalViewSet):
             "issnl", 
             "title", 
             "thematic_areas", 
-            "pages",
+            "page",
             "",
         )
 

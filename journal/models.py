@@ -619,7 +619,7 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel("related_journal_urls", label=_("Journal Urls"), classname="collapsed"),
         FieldPanel("submission_online_url"),
         FieldPanel("main_collection"),
-        InlinePanel("title_in_database"),
+        InlinePanel("title_in_database", label=_("Title in Database"), classname="collapsed"),
         InlinePanel("journalsocialnetwork", label=_("Social Network")),
         FieldPanel("frequency"),
         FieldPanel("publishing_model"),
@@ -999,6 +999,9 @@ class OwnerHistory(Orderable, BaseHistoryItem):
         null=True,
     )
 
+    panels = BaseHistoryItem.panels +[
+        AutocompletePanel("institution")
+    ]
 
 class PublisherHistory(Orderable, BaseHistoryItem):
     journal = ParentalKey(
@@ -1011,6 +1014,9 @@ class PublisherHistory(Orderable, BaseHistoryItem):
         null=True,
     )
 
+    panels = BaseHistoryItem.panels +[
+        AutocompletePanel("institution")
+    ]
 
 class SponsorHistory(Orderable, BaseHistoryItem):
     journal = ParentalKey(
@@ -1023,6 +1029,9 @@ class SponsorHistory(Orderable, BaseHistoryItem):
         blank=True,
     )
 
+    panels = BaseHistoryItem.panels +[
+        AutocompletePanel("institution")
+    ]
 
 class CopyrightHolderHistory(Orderable, BaseHistoryItem):
     journal = ParentalKey(
@@ -1037,7 +1046,10 @@ class CopyrightHolderHistory(Orderable, BaseHistoryItem):
         blank=True,
         null=True,
     )
-
+    
+    panels = BaseHistoryItem.panels +[
+        AutocompletePanel("institution")
+    ]
 
 class JournalSocialNetwork(Orderable, SocialNetwork):
     page = ParentalKey(
@@ -2559,7 +2571,9 @@ class JournalLogo(CommonControlField):
         user,
     ):
         try:
-            return cls.get(journal=journal, logo=logo)
+            obj = cls.get(journal=journal, logo=logo)
+            obj.save()
+            return obj
         except cls.DoesNotExist:
             return cls.create(journal=journal, logo=logo, user=user)
         
