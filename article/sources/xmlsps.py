@@ -585,16 +585,22 @@ def get_or_create_article_type(xmltree, user):
 
 def get_or_create_issues(xmltree, user, item):
     issue_data = ArticleMetaIssue(xmltree=xmltree).data
-    collection_date = HistoryDates(xmltree=xmltree).collection_date
+    history_dates = HistoryDates(xmltree=xmltree)
+    collection_date = history_dates.collection_date or {}
+
+    season = collection_date.get("season")
+    year = collection_date.get("year")
+    month = collection_date.get("month")
+    suppl = collection_date.get("suppl")
     try:
         obj = Issue.get_or_create(
             journal=get_journal(xmltree=xmltree),
             number=issue_data.get("number"),
             volume=issue_data.get("volume"),
-            season=collection_date.get("season"),
-            year=collection_date.get("year"),
-            month=collection_date.get("month"),
-            supplement=collection_date.get("suppl"),
+            season=season,
+            year=year,
+            month=month,
+            supplement=suppl,
             user=user,
         )
         return obj
