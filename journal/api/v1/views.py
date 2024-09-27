@@ -22,7 +22,11 @@ class JournalViewSet(GenericJournalViewSet):
         issn_electronic = self.request.query_params.get("issn_electronic")
         issnl = self.request.query_params.get("issnl")
         thematic_areas = self.request.query_params.get("thematic_areas")
-
+        from_date_created = self.request.query_params.get("from_date_created")
+        until_date_created = self.request.query_params.get("until_date_created")
+        from_date_updated = self.request.query_params.get("from_date_updated")
+        until_date_updated = self.request.query_params.get("until_date_updated")
+        
         # funcao para permitir apenas estes paramentros
         validate_params(
             self.request, 
@@ -32,6 +36,10 @@ class JournalViewSet(GenericJournalViewSet):
             "title", 
             "thematic_areas", 
             "page",
+            "from_date_created",
+            "until_date_created",
+            "from_date_updated",
+            "until_date_updated",
             "",
         )
 
@@ -50,5 +58,13 @@ class JournalViewSet(GenericJournalViewSet):
             params['title'] = title
         if thematic_areas:
             params['subject__value__in'] = thematic_areas.split(",")
+        if from_date_created:
+            params["created__gte"] = from_date_created.replace("/", "-")
+        if until_date_created:
+            params["created__lte"] = until_date_created.replace("/", "-")
+        if from_date_updated:
+            params["updated__gte"] = from_date_updated.replace("/", "-")
+        if until_date_updated:
+            params["updated__lte"] = until_date_updated.replace("/", "-")
 
         return queryset.filter(**params)
