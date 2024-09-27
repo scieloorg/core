@@ -26,10 +26,12 @@ class IssueViewSet(GenericIssueViewSet):
         """
         queryset = super().get_queryset()
         collection = self.request.query_params.get("collection")
-        from_publication_date = self.request.query_params.get("from_publication_date")
-        until_publication_date = self.request.query_params.get("until_publication_date")
-        from_date = self.request.query_params.get("from_date")
-        until_date = self.request.query_params.get("until_date")        
+        from_publication_year = self.request.query_params.get("from_publication_year")
+        until_publication_year = self.request.query_params.get("until_publication_year")
+        from_date_created = self.request.query_params.get("from_date_created")
+        until_date_created = self.request.query_params.get("until_date_created")
+        from_date_updated = self.request.query_params.get("from_date_updated")
+        until_date_updated = self.request.query_params.get("until_date_updated")
         issn_print = self.request.query_params.get("issn_print")
         issn_electronic = self.request.query_params.get("issn_electronic")
         volume = self.request.query_params.get("volume")
@@ -41,6 +43,10 @@ class IssueViewSet(GenericIssueViewSet):
             "collection",
             "from_publication_year",
             "until_publication_year",
+            "from_date_created",
+            "until_date_created",
+            "from_date_updated",
+            "until_date_updated",
             "issn_print",
             "issn_electronic",  
             "volume", 
@@ -53,14 +59,18 @@ class IssueViewSet(GenericIssueViewSet):
         params = {}
         if collection:
             params["journal__scielojournal__collection__acron3"] = collection
-        if from_publication_date:
-            params["year__gte"] = from_publication_date.replace("/", "-")
-        if until_publication_date:
-            params["year__lte"] = until_publication_date.replace("/", "-")
-        if from_date:
-            params["updated__gte"] = from_date.replace("/", "-")
-        if until_date:
-            params["updated__lte"] = until_date.replace("/", "-")            
+        if from_publication_year:
+            params["year__gte"] = from_publication_year
+        if until_publication_year:
+            params["year__lte"] = until_publication_year
+        if from_date_created:
+            params["created__gte"] = from_date_created.replace("/", "-")
+        if until_date_created:
+            params["created__lte"] = until_date_created.replace("/", "-")
+        if from_date_updated:
+            params["updated__gte"] = from_date_updated.replace("/", "-")
+        if until_date_updated:
+            params["updated__lte"] = until_date_updated.replace("/", "-")
         if issn_print:
             params["journal__official__issn_print"] = issn_print
         if issn_electronic:
