@@ -587,9 +587,10 @@ def get_or_create_issues(xmltree, user, item):
     issue_data = ArticleMetaIssue(xmltree=xmltree).data
     history_dates = HistoryDates(xmltree=xmltree)
     collection_date = history_dates.collection_date or {}
+    article_date = history_dates.article_date or {}
 
     season = collection_date.get("season")
-    year = collection_date.get("year")
+    year = collection_date.get("year") or article_date.get("year")
     month = collection_date.get("month")
     suppl = collection_date.get("suppl")
     try:
