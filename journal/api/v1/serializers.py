@@ -234,6 +234,7 @@ class JournalSerializer(serializers.ModelSerializer):
             "email",
             "contact_address",
             "text_language",
+            "doi_prefix",
             "title_in_database",
             "url_logo",
             "mission",
