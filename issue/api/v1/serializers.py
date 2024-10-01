@@ -3,14 +3,15 @@ from rest_framework import serializers
 from core.api.v1.serializers import LicenseStatementSerializer
 from issue import models
 from journal.models import SciELOJournal
-from journal.api.v1.serializers import JournalSerializer
-from location.api.v1.serializers import CitySerializer
 
 class TocSectionsSerializer(serializers.ModelSerializer):
+    language = serializers.CharField(source="language.code2")
+
     class Meta:
         model = models.TocSection
         fields = [
             "plain_text",
+            "language",
         ]
 
 

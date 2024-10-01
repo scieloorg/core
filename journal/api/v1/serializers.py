@@ -67,13 +67,13 @@ class OwnerSerializer(serializers.ModelSerializer):
 
 
 class MissionSerializer(serializers.ModelSerializer):
-    code2 = serializers.CharField(source="language.code2")
+    language = serializers.CharField(source="language.code2")
 
     class Meta:
         model = models.Mission
         fields = [
             "rich_text",
-            "code2",
+            "language",
         ]
 
 
