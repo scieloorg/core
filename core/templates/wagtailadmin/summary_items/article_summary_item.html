@@ -4,9 +4,9 @@
     {% icon name="doc-full" %}
     <a href="{% url 'article_article_modeladmin_index' %}">
         {% blocktrans trimmed count counter=total_article with total_article|intcomma as total %}
-            <span>{{ total_article }}</span> Article <span class="visuallyhidden">created in {{ site_name }}</span>
+            <span>{{ total_article }}</span> Article
         {% plural %}
-            <span>{{ total_article }}</span> Articles <span class="visuallyhidden">created in {{ site_name }}</span>
+            <span>{{ total_article }}</span> Articles
         {% endblocktrans %}
     </a>
 </li>

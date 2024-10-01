@@ -7,7 +7,7 @@ from django.urls import include, path
 from django.utils.translation import gettext_lazy as _
 from kombu.utils.json import loads
 from wagtail import hooks
-from wagtail.contrib.modeladmin.options import (
+from wagtail_modeladmin.options import (
     ModelAdmin,
     ModelAdminGroup,
     modeladmin_register,

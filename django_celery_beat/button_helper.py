@@ -1,6 +1,6 @@
 from django.urls import reverse
 from django.utils.translation import gettext as _
-from wagtail.contrib.modeladmin.helpers import ButtonHelper
+from wagtail_modeladmin.helpers import ButtonHelper
 
 
 class PeriodicTaskHelper(ButtonHelper):

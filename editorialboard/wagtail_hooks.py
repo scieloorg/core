@@ -3,12 +3,12 @@ from django.urls import path
 from django.utils.translation import gettext as _
 from wagtail import hooks
 from wagtail.admin.panels import FieldPanel, ObjectList
-from wagtail.contrib.modeladmin.options import (
+from wagtail_modeladmin.options import (
     ModelAdmin,
     ModelAdminGroup,
     modeladmin_register,
 )
-from wagtail.contrib.modeladmin.views import CreateView
+from wagtail_modeladmin.views import CreateView
 
 from .button_helper import EditorialBoardMemberHelper
 from .models import (
