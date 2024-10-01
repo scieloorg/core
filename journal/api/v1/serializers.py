@@ -213,6 +213,8 @@ class JournalSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Journal
         fields = [
+            "created",
+            "updated",
             "official",
             "scielo_journal",
             "title",

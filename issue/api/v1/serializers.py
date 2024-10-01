@@ -22,6 +22,8 @@ class IssueSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Issue
         fields = [
+            "created",
+            "updated",            
             "journal",
             "sections",
             "license",
