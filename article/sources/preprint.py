@@ -28,11 +28,9 @@ def harvest_preprints(URL, user):
         identifier = get_doi(article_info["identifier"])
         doi = get_or_create_doi(doi=identifier, user=user)
 
-        article = models.Article.get_or_create(
+        article = models.Article.objects.create(
             doi=doi,
-            pid_v2=None,
-            user=user,
-            fundings=None,
+            creator=user,
         )
         try:
             set_dates(article=article, date=article_info.get("date"))

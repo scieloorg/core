@@ -42,7 +42,7 @@ from vocabulary.models import Keyword
 
 class Article(ExportModelOperationsMixin('article'), CommonControlField, ClusterableModel):
     pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
-    pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True)
+    pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True, unique=True)
     sps_pkg_name = models.CharField(
         _("Package name"), max_length=64, null=True, blank=True
     )
@@ -233,19 +233,54 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
             return ""
 
     @classmethod
-    def get_or_create(cls, doi, pid_v2, fundings, user):
+    def get(
+        cls,
+        pid_v3,
+    ):
+        if pid_v3:
+            return cls.objects.get(pid_v3=pid_v3)
+        raise ValueError("Article requires pid_v3")
+
+    @classmethod
+    def create(
+        cls,
+        pid_v3,
+        user,        
+    ):
         try:
-            return cls.objects.get(doi__in=doi, pid_v2=pid_v2)
+            obj = cls()
+            obj.pid_v3 = pid_v3
+            obj.creator = user
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(pid_v3=pid_v3)
+
+    @classmethod
+    def get_or_create(
+        cls,
+        pid_v3,
+        user,        
+    ):
+        try:
+            return cls.get(pid_v3=pid_v3)
         except cls.DoesNotExist:
-            article = cls()
-            article.pid_v2 = pid_v2
-            article.creator = user
-            article.save()
-            article.doi.set(doi)
-            if fundings:
-                for funding in fundings:
-                    article.fundings.add(funding)
-            return article
+            return cls.create(pid_v3=pid_v3, user=user)
+
+    # @classmethod
+    # def get_or_create(cls, doi, pid_v2, fundings, user):
+    #     try:
+    #         return cls.objects.get(doi__in=doi, pid_v2=pid_v2)
+    #     except cls.DoesNotExist:
+    #         article = cls()
+    #         article.pid_v2 = pid_v2
+    #         article.creator = user
+    #         article.save()
+    #         article.doi.set(doi)
+    #         if fundings:
+    #             for funding in fundings:
+    #                 article.fundings.add(funding)
+    #         return article
 
     def set_date_pub(self, dates):
         if dates:
