@@ -2731,3 +2731,37 @@ class OpenScienceCompliance(Orderable, RichTextWithLanguage, CommonControlField)
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="open_science_compliance", null=True
     )
+
+
+class JournalTocSection(Orderable, CommonControlField, ClusterableModel):
+    journal = models.ForeignKey(
+        Journal,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )        
+    panels = [
+        AutocompletePanel("journal"),
+        InlinePanel("toc_items", label="Table of Contents items"),
+    ]
+    
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return JournalTocSection.objects.filter(toc_items__text__icontains=search_term).distinct()
+    
+    def autocomplete_label(self):
+        return str(self)
+
+    def __str__(self):
+        related_values = self.toc_items.all()
+        value_list = [f"{toc_section.text} ({toc_section.language.code2})" for toc_section in related_values]
+        return f" | ".join(value_list)
+
+
+class TOC(Orderable, TextWithLang, CommonControlField):
+    journal_toc_section = ParentalKey(
+        JournalTocSection, on_delete=models.SET_NULL, related_name="toc_items", null=True
+    )
+
+    def __str__(self):
+        return f"{self.text} | {self.language}"
