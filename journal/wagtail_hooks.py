@@ -142,6 +142,23 @@ class SciELOJournalAdmin(ModelAdmin):
         return qs
 
 
+class TOCSectionAdmin(ModelAdmin):
+    model = models.JournalTocSection
+    menu_label = "Table of Contents"
+    menu_icon = "folder"
+    menu_order = 500
+    search_fields = (
+        "journal__title",
+        "journal__official__issn_print",
+        "journal__official__issn_electronic",
+        "journal__contact_location__country__name",
+    )
+    list_display = ("journal", "column_toc")
+
+    def column_toc(self, obj):
+        return str(obj)
+
+    column_toc.short_description = "Table of Contents"
 
 
 class IndexedAtAdmin(ModelAdmin):
@@ -276,7 +293,7 @@ class JournalAdminGroup(ModelAdminGroup):
     menu_label = _("Journals")
     menu_icon = "folder-open-inverse"  # change as required
     menu_order = get_menu_order("journal")
-    items = (JournalAdmin, OfficialJournalAdmin, SciELOJournalAdmin, AMJournalAdmin)
+    items = (JournalAdmin, OfficialJournalAdmin, SciELOJournalAdmin, AMJournalAdmin, TOCSectionAdmin)
 
 
 modeladmin_register(JournalAdminGroup)
