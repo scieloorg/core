@@ -232,41 +232,6 @@ def get_or_create_fundings(xmltree, user, item):
                     )    
     return data    
 
-    # data = []
-    # if fundings_group:
-    #     for funding in fundings_group:
-    #         funding_source = funding.get("funding-source") or []
-    #         award_ids = funding.get("award-id") or []
-
-    #         for fs in funding_source:
-    #             sponsor = create_or_update_sponsor(
-    #                 funding_name=fs, user=user, item=item
-    #             )
-    #             for award_id in award_ids:
-    #                 try:
-    #                     obj = ArticleFunding.get_or_create(
-    #                         award_id=award_id,
-    #                         funding_source=sponsor,
-    #                         user=user,
-    #                     )
-    #                     if obj:
-    #                         data.append(obj)
-    #                 except Exception as e:
-    #                     exc_type, exc_value, exc_traceback = sys.exc_info()
-    #                     UnexpectedEvent.create(
-    #                         item=item,
-    #                         action="article.xmlsps.sources.get_or_create_fundings",
-    #                         exception=e,
-    #                         exc_traceback=exc_traceback,
-    #                         detail=dict(
-    #                             xmltree=f"{etree.tostring(xmltree)}",
-    #                             function="article.xmlsps.sources.get_or_create_fundings",
-    #                             funding_source=fs,
-    #                             award_id=award_id,
-    #                         ),
-    #                     )
-    # return data
-
 
 def get_or_create_toc_sections(xmltree, user):
     toc_sections = ArticleTocSections(xmltree=xmltree).sections
@@ -299,38 +264,6 @@ def set_license(xmltree, article):
     for xml_license in xml_licenses:
         if license := xml_license.get("link"):
             article.article_license = license
-
-
-# def get_licenses(xmltree, user):
-#     xml_licenses = ArticleLicense(xmltree=xmltree).licenses
-#     data = []
-#     license = None
-#     for xml_license in xml_licenses:
-
-#         if not license and xml_license.get("link"):
-#             url_data = LicenseStatement.parse_url(xml_license.get("link"))
-#             license_type = url_data.get("license_type")
-#             if license_type:
-#                 license = License.create_or_update(
-#                     user=user,
-#                     license_type=license_type,
-#                 )
-#         if license or xml_license.get("license_p"):
-#             try:
-#                 license_p = xml_license.get("license_p")
-#                 license_p = license_p["html_text"]
-#             except (ValueError, TypeError, KeyError):
-#                 pass
-
-#             obj = LicenseStatement.create_or_update(
-#                 user=user,
-#                 url=xml_license.get("link"),
-#                 language=Language.get_or_create(code2=xml_license.get("lang")),
-#                 license_p=license_p,
-#                 license=license,
-#             )
-#             data.append(obj)
-#     return data
 
 
 def create_or_update_keywords(xmltree, user, item):
