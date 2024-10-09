@@ -2758,7 +2758,7 @@ class JournalTocSection(Orderable, CommonControlField, ClusterableModel):
         return f" | ".join(value_list)
 
 
-class TOC(Orderable, TextWithLang, CommonControlField):
+class TocItem(Orderable, TextWithLang, CommonControlField):
     journal_toc_section = ParentalKey(
         JournalTocSection, on_delete=models.SET_NULL, related_name="toc_items", null=True
     )
