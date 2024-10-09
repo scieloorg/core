@@ -99,22 +99,23 @@ class JournalSerializer(serializers.ModelSerializer):
     copyright = serializers.SerializerMethodField()
     next_journal_title = serializers.SerializerMethodField()
     previous_journal_title = serializers.SerializerMethodField()
+    toc_items = serializers.SerializerMethodField()
+
+    def get_institution_history(self, institution_history):
+        if queryset := institution_history.all():
+            return [{"name": str(item)} for item in queryset]
 
     def get_publisher(self, obj):
-        if queryset := obj.publisher_history.all():
-            return [{"name": str(item)} for item in queryset]
+        return self.get_institution_history(obj.publisher_history)
 
     def get_owner(self, obj):
-        if queryset := obj.owner_history.all():
-            return [{"name": str(item)} for item in queryset]
+        return self.get_institution_history(obj.owner_history)
 
     def get_sponsor(self, obj):
-        if queryset := obj.sponsor_history.all():
-            return [{"name": str(item)} for item in queryset]
+        return self.get_institution_history(obj.sponsor_history)
 
     def get_copyright(self, obj):
-        if queryset := obj.copyright_holder_history.all():
-            return [{"name": str(item)} for item in queryset]
+        return self.get_institution_history(obj.copyright_holder_history)
 
     def get_acronym(self, obj):
         scielo_journal = obj.scielojournal_set.first()
@@ -210,6 +211,18 @@ class JournalSerializer(serializers.ModelSerializer):
                 "issn_electronic": old_issn_electronic,
             }
 
+    def get_toc_items(self, obj):
+        if queryset := obj.journaltocsection_set.all():
+            data = []
+            for item in queryset:
+                for section in item.toc_items.all():
+                    data.append({
+                        "value": section.text,
+                        "language": section.language.code2 if section.language else None
+                    })
+            return data
+        
+
     class Meta:
         model = models.Journal
         fields = [
@@ -228,8 +241,11 @@ class JournalSerializer(serializers.ModelSerializer):
             "journal_use_license",
             "publisher",
             "owner",
+            "sponsor",
+            "copyright",            
             "subject_descriptor",
             "subject",
+            "toc_items",
             "submission_online_url",
             "email",
             "contact_address",
@@ -238,6 +254,5 @@ class JournalSerializer(serializers.ModelSerializer):
             "title_in_database",
             "url_logo",
             "mission",
-            "sponsor",
-            "copyright",
+            
         ]
