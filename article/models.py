@@ -2,7 +2,7 @@ import os
 import sys
 import logging
 from datetime import datetime
-
+from lxml import etree
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
 from django.db.utils import DataError
@@ -675,18 +675,29 @@ def article_directory_path(instance, filename):
     except AttributeError:
         return os.path.join(instance.article.pid_v3, instance.format_name, filename)
 
+STATUS_EXPORT_FILE = [
+    ("E", "Error occurred during export format creation"),
+    ("S", "Export format created successfully"),
+    ("A", "Export format available on external site"),
+]
+
+TYPE_OF_FORMAT = [
+    ("crossref", "Crossref"),
+    ("pubmed", "PubMed"),
+    ("pmc", "PubMed PMC"),
+    ("doaj", "DOAJ"),
+]
 
 class ArticleFormat(CommonControlField):
-
     article = ParentalKey(
         Article,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name="format",
+        related_name="article_format",
     )
     format_name = models.CharField(
-        _("Article Format"), max_length=20, null=True, blank=True
+        _("Article Format"), max_length=20, null=True, blank=True, choices=TYPE_OF_FORMAT
     )
     version = models.PositiveIntegerField(null=True, blank=True)
     file = models.FileField(
@@ -697,6 +708,12 @@ class ArticleFormat(CommonControlField):
     )
     report = models.JSONField(null=True, blank=True)
     valid = models.BooleanField(default=None, null=True, blank=True)
+    status = models.CharField(
+        blank=True,
+        null=True,
+        max_length=1,
+        choices=STATUS_EXPORT_FILE
+    )
     finger_print = models.CharField(max_length=64, null=True, blank=True)
 
     base_form_class = CoreAdminModelForm
@@ -704,6 +721,7 @@ class ArticleFormat(CommonControlField):
         FieldPanel("file"),
         FieldPanel("format_name"),
         FieldPanel("version"),
+        FieldPanel("status"),
         FieldPanel("report"),
     ]
 
@@ -752,7 +770,7 @@ class ArticleFormat(CommonControlField):
 
     @classmethod
     def create(cls, user, article, format_name=None, version=None):
-        if article or format_name or version:
+        if article and format_name or version:
             try:
                 obj = cls()
                 obj.article = article
@@ -771,15 +789,12 @@ class ArticleFormat(CommonControlField):
     def create_or_update(cls, user, article, format_name=None, version=None):
         try:
             obj = cls.get(article, format_name=format_name, version=version)
-            obj.updated_by = user
-            obj.format_name = format_name or obj.format_name
-            obj.version = version or obj.version
-            obj.save()
         except cls.DoesNotExist:
             obj = cls.create(user, article, format_name, version)
         return obj
 
     def save_file(self, filename, content):
+        content = etree.tostring(content)
         finger_print = generate_finger_print(content)
         if finger_print != self.finger_print:
             try:
@@ -790,33 +805,24 @@ class ArticleFormat(CommonControlField):
             self.finger_print = finger_print
             self.save()
 
-    @classmethod
-    def generate(
-        cls,
-        user,
-        article,
-        format_name,
+    def save_format_xml(
+        self,
+        format_xml,
         filename,
-        function_generate_format,
+        status,
+        report=None,
         indexed_check=False,
-        data=None,
         version=None,
     ):
-        if indexed_check and not article.is_indexed_at(format_name):
-            return
+        if indexed_check and not self.article.is_indexed_at(self.format_name):
+            return 
         try:
-            version = version or 1
-            obj = None
-            obj = cls.create_or_update(user, article, format_name, version)
-            xmltree = article.xmltree
-            if data is not None:
-                content = function_generate_format(xmltree, data=data)
-            else:
-                content = function_generate_format(xmltree)
-            obj.save_file(filename, content)
-            obj.report = None
-            obj.save()
-            return obj
+            if filename and len(format_xml):
+                self.save_file(filename=filename, content=format_xml)
+            self.version = version or 1
+            self.report = report
+            self.status = status
+            self.save()
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             unexpected_event = UnexpectedEvent.create(
@@ -824,47 +830,9 @@ class ArticleFormat(CommonControlField):
                 exc_traceback=exc_traceback,
                 detail=dict(
                     function="article.models.ArticleFormat.generate",
-                    format_name=format_name,
-                    article_pid_v3=article.pid_v3,
-                    sps_pkg_name=article.sps_pkg_name,
+                    format_name=self.format_name,
+                    article_pid_v3=self.article.pid_v3,
+                    sps_pkg_name=self.article.sps_pkg_name,
                 ),
             )
-            if obj:
-                obj.report = unexpected_event.data
-                obj.valid = False
-                obj.save()
 
-    @classmethod
-    def generate_formats(cls, user, article):
-        for doi in article.doi.all():
-            if not doi.value:
-                break
-            try:
-                prefix = doi.value.split("/")[0]
-                crossref_data = CrossRefConfiguration.get_data(prefix)
-                cls.generate(
-                    user,
-                    article,
-                    "crossref",
-                    article.sps_pkg_name + ".xml",
-                    crossref.pipeline_crossref,
-                    data=crossref_data,
-                )
-            except CrossRefConfiguration.DoesNotExist:
-                break
-        cls.generate(
-            user,
-            article,
-            "pubmed",
-            article.sps_pkg_name + ".xml",
-            pubmed.pipeline_pubmed,
-            indexed_check=False,
-        )
-        cls.generate(
-            user,
-            article,
-            "pmc",
-            article.sps_pkg_name + ".xml",
-            pmc.pipeline_pmc,
-            indexed_check=False,
-        )
