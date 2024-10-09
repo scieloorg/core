@@ -22,6 +22,7 @@ class JournalViewSet(GenericJournalViewSet):
         issn_electronic = self.request.query_params.get("issn_electronic")
         issnl = self.request.query_params.get("issnl")
         thematic_areas = self.request.query_params.get("thematic_areas")
+        toc_item = self.request.query_params.get("toc_item")
         from_date_created = self.request.query_params.get("from_date_created")
         until_date_created = self.request.query_params.get("until_date_created")
         from_date_updated = self.request.query_params.get("from_date_updated")
@@ -35,6 +36,7 @@ class JournalViewSet(GenericJournalViewSet):
             "issnl", 
             "title", 
             "thematic_areas", 
+            "toc_item",
             "page",
             "from_date_created",
             "until_date_created",
@@ -56,6 +58,8 @@ class JournalViewSet(GenericJournalViewSet):
             params['official__issnl'] = issnl
         if title:
             params['title'] = title
+        if toc_item:
+            params['journaltocsection__toc_items__text'] = toc_item    
         if thematic_areas:
             params['subject__value__in'] = thematic_areas.split(",")
         if from_date_created:
