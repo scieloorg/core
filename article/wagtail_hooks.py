@@ -1,5 +1,7 @@
+from typing import Any
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count
+from django.db.models.query import QuerySet
 from django.http import HttpResponseRedirect
 from django.utils.translation import gettext as _
 from wagtail_modeladmin.options import (
@@ -10,6 +12,7 @@ from wagtail_modeladmin.options import (
 from wagtail_modeladmin.views import CreateView
 from wagtail.snippets.views.snippets import SnippetViewSet
 from wagtail.snippets.models import register_snippet
+from django.contrib.admin import SimpleListFilter
 
 from article.models import (  # AbstractModel,; Category,; Title,
     Article,
@@ -17,6 +20,19 @@ from article.models import (  # AbstractModel,; Category,; Title,
     ArticleFunding,
 )
 from config.menu import get_menu_order
+
+
+class CollectionFilter(SimpleListFilter):
+    title = _("Collection")
+    parameter_name = "collection"
+
+    def lookups(self, request, model_admin):
+        articles = Article.objects.all()
+        return [(collection.id, collection.main_name) for article in articles for collection in article.collections if collection.is_active]
+    
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(journal__scielojournal__collection__id=self.value())
 
 
 class ArticleCreateView(CreateView):
@@ -44,7 +60,7 @@ class ArticleAdmin(ModelAdmin):
         "created",
         "updated",
     )
-    list_filter = ("valid",)
+    list_filter = ("valid", CollectionFilter)
     search_fields = (
         "titles__plain_text",
         "pid_v2",
