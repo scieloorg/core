@@ -42,44 +42,21 @@ def load_article(self, user_id=None, username=None, file_path=None, v3=None):
     xmlsps.load_article(user, file_path=file_path, v3=v3)
 
 
-def _items_to_load_article(from_date, force_update):
+def _items_to_load_article(from_date):
     if from_date:
         try:
             from_date = datetime.strptime(from_date, "%Y-%m-%d")
-        except Exception:
+        except ValueError:
             from_date = None
     if not from_date:
-        # obtém a última atualização de Article
-        try:
-            article = Article.objects.filter(
-                ~Q(valid=True)
-            ).order_by("-updated").first()
-            if not article:
-                article = Article.objects.filter(valid=True).order_by("-updated").first()
-                if article:
-                    from_date = article.updated
-        except Article.DoesNotExist:
-            from_date = datetime(1900, 1, 1)
-
-    if not from_date:
-        from_date = datetime(1900, 1, 1)
+        # Obtém a data do último artigo válido
+        last_valid_article = Article.objects.all().order_by("-updated").first()
+        from_date = last_valid_article.updated
 
     items = PidProviderXML.public_items(from_date)
-    if force_update:
-        yield from items
 
     for item in items:
-        try:
-            article = Article.objects.get(
-                ~Q(valid=True),
-                pid_v3=item.v3,
-                updated__lt=item.updated,
-                created__lt=item.created,
-            )
-            if article:
-                yield item
-        except Article.DoesNotExist:
-            yield item
+        yield item
 
 
 @celery_app.task(bind=True, name=_("load_articles"))
@@ -89,7 +66,7 @@ def load_articles(
     try:
         user = _get_user(self.request, username, user_id)
 
-        for item in _items_to_load_article(from_date, force_update):
+        for item in _items_to_load_article(from_date):
             try:
                 load_article.apply_async(
                     kwargs={
