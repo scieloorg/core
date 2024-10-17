@@ -47,12 +47,15 @@ def _items_to_load_article(from_date):
     if from_date:
         try:
             from_date = datetime.strptime(from_date, "%Y-%m-%d")
-        except ValueError:
+        except Exception:
             from_date = None
     if not from_date:
         # Obtém a data do último artigo válido
         last_valid_article = Article.objects.all().order_by("-updated").first()
-        from_date = last_valid_article.updated
+        if last_valid_article:
+            from_date = last_valid_article.updated 
+        else:
+            from_date = datetime(1900, 1, 1)
 
     items = PidProviderXML.public_items(from_date)
 
@@ -70,14 +73,15 @@ def items_to_load_article_with_valid_false():
 
 @celery_app.task(bind=True, name=_("load_articles"))
 def load_articles(
-    self, user_id=None, username=None, from_date=None, load_invalid_articles=True, force_update=False
+    self, user_id=None, username=None, from_date=None, load_invalid_articles=False, force_update=False
 ):
     try:
         user = _get_user(self.request, username, user_id)
         if load_invalid_articles:
-            generator_articles = _items_to_load_article(from_date)
-        else:
             generator_articles = items_to_load_article_with_valid_false()
+        else:
+            generator_articles = _items_to_load_article(from_date)
+            
         for item in generator_articles:
             try:
                 load_article.apply_async(
