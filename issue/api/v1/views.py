@@ -56,33 +56,23 @@ class IssueViewSet(GenericIssueViewSet):
             "",
         )
 
-        params = {}
-        if collection:
-            params["journal__scielojournal__collection__acron3"] = collection
-        if from_publication_year:
-            params["year__gte"] = from_publication_year
-        if until_publication_year:
-            params["year__lte"] = until_publication_year
-        if from_date_created:
-            params["created__gte"] = from_date_created.replace("/", "-")
-        if until_date_created:
-            params["created__lte"] = until_date_created.replace("/", "-")
-        if from_date_updated:
-            params["updated__gte"] = from_date_updated.replace("/", "-")
-        if until_date_updated:
-            params["updated__lte"] = until_date_updated.replace("/", "-")
-        if issn_print:
-            params["journal__official__issn_print"] = issn_print
-        if issn_electronic:
-            params["journal__official__issn_electronic"] = issn_electronic
-        if volume:
-            params["volume"] = volume
-        if number:
-            params["number"] = number                
-        if supplement:
-            params["supplement"] = supplement
-        if params:
-            queryset = queryset.filter(**params)
+        params = params_api(
+            scielojournal__issn_scielo=issn,
+            official__issn_electronic=issn_electronic,
+            official__issn_print=issn_print,
+            official__issnl=issnl,
+            title=title,
+            journaltocsection__toc_items__text=toc_item,
+            subject__value__in=thematic_areas.split(",") if thematic_areas else None,
+            acron2=acron2,
+            acron3=acron3,
+            main_name=main_name,
+            created__gte=from_date_created.replace("/", "-") if from_date_created else None,
+            created__lte=until_date_created.replace("/", "-") if until_date_created else None,
+            updated__gte=from_date_updated.replace("/", "-") if from_date_updated else None,
+            updated__lte=until_date_updated.replace("/", "-") if until_date_updated else None
+        )
+
         return queryset 
 
     
