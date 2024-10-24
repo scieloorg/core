@@ -9,17 +9,30 @@
         {% if page %}
           <button id="btnGroupDrop1" type="button" class="btn btn-sm btn-secondary scielo__btn-with-icon--left dropdown-toggle mb-0 float-end mt-1" data-bs-toggle="dropdown" aria-expanded="false">
             <span class="material-icons-outlined">language</span>
-              <span class="d-lg-none">PT</span>
-              <span class="d-none d-lg-block">{{language}}</span>
+              <span class="d-lg-none">{{request.LANGUAGE_CODE|upper}}</span>
+              <span class="d-none d-lg-block">
+                {% get_language_info for LANGUAGE_CODE as lang %}
+                {{ lang.name_local }}
+            </span>
           </button>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btnGroupDrop1">
-            {% for translation in page.get_translations.live %}  
-              {% get_language_info for translation.locale.language_code as lang %}
+            <!-- Exibe o idioma original -->
+            {% get_language_info for page.locale.language_code as lang %}
+            <li>
+              <a class="dropdown-item {% if page.locale.language_code == request.LANGUAGE_CODE %}active{% endif %}" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}" lang="{{ lang.code }}">
+                {{ lang.name_local }}
+              </a>
+            </li>
+
+            <!-- Exibe as traduções -->
+            {% for translation in page.get_translations.live %}
+                {% get_language_info for translation.locale.language_code as lang %}
                 <li>
-                  <a class="dropdown-item" href="{% routablepageurl translation 'bibliographic' acron_collection acron_journal %}" lang="{{ lang.code }}">{{ lang.name_local }}</a>
-                </li>  
-            {% endfor%}
-            <!-- <li><a class="dropdown-item" href="http://0.0.0.0:8000/{{code}}/journal/{{journal.scielojournal_set.all.0.journal_acron}}" lang="es">{{lang}}</a></li> -->
+                  <a class="dropdown-item {% if translation.locale.language_code == request.LANGUAGE_CODE %}active{% endif %}" href="{% routablepageurl translation 'bibliographic' acron_collection acron_journal %}" lang="{{ lang.code }}">
+                      {{ lang.name_local }}
+                  </a>
+                </li>
+            {% endfor %}
           </ul>
         {% endif%}
     </div>
