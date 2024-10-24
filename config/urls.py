@@ -61,6 +61,7 @@ urlpatterns += i18n_patterns(
     path("i18n/", include("django.conf.urls.i18n")),
     path("", include("allauth.urls")),
     path("", include(wagtail_urls)),
+    path('rosetta/', include('rosetta.urls')),
 )
 
 if settings.DEBUG:
