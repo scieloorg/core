@@ -38,7 +38,7 @@ def get_scielo_journal(issn_scielo):
         issn_scielo = extract_value(issn_scielo)
         return SciELOJournal.objects.get(issn_scielo=issn_scielo)
     except SciELOJournal.DoesNotExist:
-        logging.exception(f"SciELOJournal {issn_scielo}")
+        logging.exception(f"Nenhum SciELOJournal encontrado com ISSN: {issn_scielo}")
         return None
     except SciELOJournal.MultipleObjectsReturned:
         return SciELOJournal.objects.filter(issn_scielo=issn_scielo).first()
