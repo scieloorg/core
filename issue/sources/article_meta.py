@@ -15,15 +15,9 @@ def process_issue_article_meta(collection, limit, user):
             code = issue["code"]
             url_issue = f"https://articlemeta.scielo.org/api/v1/issue/?code={code}"
             data_issue = utils.fetch_data(url_issue, json=True, timeout=30, verify=True)
-
-            try:
-                issue_dict = rename_issue_dictionary_keys(
-                    [data_issue["issue"]], correspondencia_issue
-                )
-            except Exception as e:
-                logging.exception(e)
-                logging.info(data_issue["issue"], correspondencia_issue)
-                continue
+            issue_dict = rename_issue_dictionary_keys(
+                [data_issue["issue"]], correspondencia_issue
+            )
             try:
                 get_or_create_issue(
                     issn_scielo=issue_dict.get("scielo_issn"),
@@ -36,7 +30,7 @@ def process_issue_article_meta(collection, limit, user):
                     user=user,
                 )
             except Exception as exc:
-                logging.exception(f"{code} {exc}")
+                logging.exception(f"Error ao criar isssue com code: {code}. Exception: {exc}")
         offset += 100
         data = request_issue_article_meta(
             collection=collection, limit=limit, offset=offset
