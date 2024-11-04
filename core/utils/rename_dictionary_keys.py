@@ -29,16 +29,14 @@ def rename_issue_dictionary_keys(list_dictionary, corresp):
     Returns:
         dict: Um novo dicionário com as chaves atualizadas de acordo com o dicionário de correspondência.
     """
-    logging.info(corresp)
-    logging.info(list_dictionary)
     
     d = {}
     for dictionary in list_dictionary:
         for key in dictionary:
             try:
-                k = corresp.get(key) or key
+                k = corresp.get(key, key)
                 d[k] = dictionary[key]
             except Exception as e:
-                logging.exception(e)
-                logging.info(key)
+                logging.exception(f"Erro ao renomear a chave '{key}': {e}")
+                logging.info(f"Chave problemática: '{key}' com valor '{dictionary[key]}'.")
     return d
