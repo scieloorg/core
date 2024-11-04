@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-09 19:02+0000\n"
+"POT-Creation-Date: 2024-10-16 18:02+0000\n"
 "PO-Revision-Date: 2021-04-03 22:36-0300\n"
 "Last-Translator: Luis Saavedra <luis94855510@gmail.com>\n"
 "Language-Team: \n"
@@ -42,40 +42,40 @@ msgstr ""
 msgid "Unable to parse JSON: %s"
 msgstr "Incapaz de parsear el JSON: %s"
 
-#: django_celery_beat/admin.py:207 django_celery_beat/wagtail_hooks.py:69
+#: django_celery_beat/admin.py:207 django_celery_beat/wagtail_hooks.py:70
 #, python-brace-format
 msgid "{0} task{1} {2} successfully {3}"
 msgstr "{0} tarea{1} {2} correctamente {3}"
 
 #: django_celery_beat/admin.py:210 django_celery_beat/admin.py:283
-#: django_celery_beat/wagtail_hooks.py:72
-#: django_celery_beat/wagtail_hooks.py:153
+#: django_celery_beat/wagtail_hooks.py:73
+#: django_celery_beat/wagtail_hooks.py:154
 msgid "was,were"
 msgstr "fue,fueron"
 
-#: django_celery_beat/admin.py:220 django_celery_beat/wagtail_hooks.py:82
+#: django_celery_beat/admin.py:220 django_celery_beat/wagtail_hooks.py:83
 msgid "Enable selected tasks"
 msgstr "Habilitar tareas seleccionadas"
 
-#: django_celery_beat/admin.py:227 django_celery_beat/wagtail_hooks.py:89
+#: django_celery_beat/admin.py:227 django_celery_beat/wagtail_hooks.py:90
 msgid "Disable selected tasks"
 msgstr "Deshabilitar tareas seleccionadas"
 
-#: django_celery_beat/admin.py:242 django_celery_beat/wagtail_hooks.py:104
+#: django_celery_beat/admin.py:242 django_celery_beat/wagtail_hooks.py:105
 msgid "Toggle activity of selected tasks"
 msgstr "Conmutar actividad de las tareas seleccionadas"
 
-#: django_celery_beat/admin.py:266 django_celery_beat/wagtail_hooks.py:129
+#: django_celery_beat/admin.py:266 django_celery_beat/wagtail_hooks.py:130
 #, python-brace-format
 msgid "task \"{0}\" not found"
 msgstr "tarea \"{0}\" no encontrada"
 
-#: django_celery_beat/admin.py:280 django_celery_beat/wagtail_hooks.py:150
+#: django_celery_beat/admin.py:280 django_celery_beat/wagtail_hooks.py:151
 #, python-brace-format
 msgid "{0} task{1} {2} successfully run"
 msgstr "{0} tarea{1} {2} correctamente ejecutadas"
 
-#: django_celery_beat/admin.py:287 django_celery_beat/wagtail_hooks.py:157
+#: django_celery_beat/admin.py:287 django_celery_beat/wagtail_hooks.py:158
 msgid "Run selected tasks"
 msgstr "Ejecutar tareas seleccionadas"
 
@@ -554,6 +554,6 @@ msgstr "Inicio"
 msgid "Task {0} was successfully run"
 msgstr "{0} tarea{1} {2} correctamente ejecutadas"
 
-#: django_celery_beat/wagtail_hooks.py:192
+#: django_celery_beat/wagtail_hooks.py:193
 msgid "Tasks"
 msgstr ""
