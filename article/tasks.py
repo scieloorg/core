@@ -5,11 +5,14 @@ from datetime import datetime
 from django.db.models import Q, Count
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
+from packtools.sps.formats import pubmed, pmc, crossref
 
 from article.models import Article, ArticleFormat
 from article.sources import xmlsps
 from article.sources.preprint import harvest_preprints
 from config import celery_app
+from doi_manager.models import CrossRefConfiguration
+from journal.models import Journal
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
 from tracker.models import UnexpectedEvent
@@ -51,11 +54,13 @@ def _items_to_load_article(from_date, force_update):
     if not from_date:
         # obtém a última atualização de Article
         try:
-            article = Article.objects.filter(
-                ~Q(valid=True)
-            ).order_by("-updated").first()
+            article = (
+                Article.objects.filter(~Q(valid=True)).order_by("-updated").first()
+            )
             if not article:
-                article = Article.objects.filter(valid=True).order_by("-updated").first()
+                article = (
+                    Article.objects.filter(valid=True).order_by("-updated").first()
+                )
                 if article:
                     from_date = article.updated
         except Article.DoesNotExist:
@@ -127,34 +132,54 @@ def load_preprint(self, user_id, oai_pmh_preprint_uri):
     harvest_preprints(oai_pmh_preprint_uri, user)
 
 
+def get_function_format_xml(format_name):
+    dict_functions_formats = {
+        "pmc": pmc.pipeline_pmc,
+        "pubmed": pubmed.pipeline_pubmed,
+        "crossref": crossref.pipeline_crossref,
+    }
+    return dict_functions_formats.get(format_name)
+
+
+def handler_formatting_error(article_format, message):
+    article_format.save_format_xml(
+        filename=None, format_xml=None, status="E", report={"exception_msg": message}
+    )
+
+
+def get_article_format(user, pid_v3, format_name):
+    try:
+        article = Article.objects.get(pid_v3=pid_v3)
+    except Article.DoesNotExist:
+        logging.info(f"Unable to convert article {pid_v3} to the specified format")
+        return
+
+    try:
+        article_format = ArticleFormat.objects.get(article=article, format_name="pmc")
+    except ArticleFormat.DoesNotExist:
+        article_format = ArticleFormat.create_or_update(
+            user=user, article=article, format_name=format_name, version=1
+        )
+    return article_format
+
+
 @celery_app.task(bind=True)
 def task_convert_xml_to_other_formats_for_articles(
-    self, user_id=None, username=None, from_date=None, force_update=False
+    self, format_name, user_id=None, username=None, force_update=False
 ):
-    try:
-        user = _get_user(self.request, username, user_id)
+    journals = Journal.objects.filter(indexed_at__acronym=format_name)
+    articles = Article.objects.filter(journal__in=journals)
 
-        for item in Article.objects.filter(sps_pkg_name__isnull=False).iterator():
-            logging.info(item.pid_v3)
-            try:
-                convert_xml_to_other_formats.apply_async(
-                    kwargs={
-                        "user_id": user.id,
-                        "username": user.username,
-                        "item_id": item.id,
-                        "force_update": force_update,
-                    }
-                )
-            except Exception as exception:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                UnexpectedEvent.create(
-                    exception=exception,
-                    exc_traceback=exc_traceback,
-                    detail={
-                        "task": "article.tasks.task_convert_xml_to_other_formats_for_articles",
-                        "item": str(item),
-                    },
-                )
+    if not force_update:
+        articles = articles.filter(article_format__isnull=True)
+
+    try:
+        task_function_dict = {
+            "pubmed": convert_xml_to_pubmed_or_pmc_formats,
+            "pmc": convert_xml_to_pubmed_or_pmc_formats,
+            "crossref": convert_xml_to_crossref_format,
+        }
+        task_function = task_function_dict[format_name]
     except Exception as exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
@@ -162,34 +187,85 @@ def task_convert_xml_to_other_formats_for_articles(
             exc_traceback=exc_traceback,
             detail={
                 "task": "article.tasks.task_convert_xml_to_other_formats_for_articles",
+                "item": str(article),
             },
         )
+        return
+
+    for article in articles:
+        try:
+            task_function.apply_async(
+                user_id=user_id,
+                username=username,
+                format_name=format_name,
+            )
+        except Exception as exception:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=exception,
+                exc_traceback=exc_traceback,
+                detail={
+                    "task": "article.tasks.task_convert_xml_to_other_formats_for_articles",
+                    "item": str(article),
+                },
+            )
 
 
 @celery_app.task(bind=True)
-def convert_xml_to_other_formats(
-    self, user_id=None, username=None, item_id=None, force_update=None
+def convert_xml_to_pubmed_or_pmc_formats(
+    self, pid_v3, format_name, user_id=None, username=None
 ):
-    user = _get_user(self.request, username, user_id)
+    user = _get_user(request=self.request, username=username, user_id=user_id)
 
-    try:
-        article = Article.objects.get(pk=item_id)
-    except Article.DoesNotExist:
-        logging.info(f"Not found {item_id}")
+    article_format = get_article_format(
+        pid_v3=pid_v3, format_name=format_name, user=user
+    )
+
+    function_format = get_function_format_xml(format_name=format_name)
+
+    content = function_format(article_format.article.xmltree)
+    article_format.save_format_xml(
+        format_xml=content,
+        filename=article_format.article.sps_pkg_name + ".xml",
+        status="S",
+    )
+
+
+@celery_app.task(bind=True)
+def convert_xml_to_crossref_format(
+    self, pid_v3, format_name, user_id=None, username=None
+):
+    user = _get_user(request=self.request, username=username, user_id=user_id)
+
+    article_format = get_article_format(
+        pid_v3=pid_v3, format_name=format_name, user=user
+    )
+
+    doi = article_format.article.doi.first()
+    if not doi:
+        handler_formatting_error(
+            article_format=article_format,
+            message=f"Unable to format because the article {pid_v3} has no DOI associated with it",
+        )
         return
 
-    done = False
+    prefix = doi.value.split("/")[0]
     try:
-        article_format = ArticleFormat.objects.get(article=article)
-        done = True
-    except ArticleFormat.MultipleObjectsReturned:
-        done = True
-    except ArticleFormat.DoesNotExist:
-        done = False
-    logging.info(f"Done {done}")
+        data = CrossRefConfiguration.get_data(prefix)
+    except CrossRefConfiguration.DoesNotExist:
+        handler_formatting_error(
+            article_format=article_format,
+            message=f"Unable to convert article {pid_v3} to crossref format. CrossrefConfiguration missing",
+        )
+        return
 
-    if not done or force_update:
-        ArticleFormat.generate_formats(user, article=article)
+    function_format = get_function_format_xml(format_name=format_name)
+    content = function_format(article_format.article.xmltree, data)
+    article_format.save_format_xml(
+        format_xml=content,
+        filename=article_format.article.sps_pkg_name + ".xml",
+        status="S",
+    )
 
 
 @celery_app.task(bind=True)
@@ -243,26 +319,32 @@ def article_complete_data(
         pass
 
 
-
 @celery_app.task(bind=True)
-def transfer_license_statements_fk_to_article_license(self, user_id=None, username=None):
+def transfer_license_statements_fk_to_article_license(
+    self, user_id=None, username=None
+):
     user = _get_user(self.request, username, user_id)
     articles_to_update = []
     for instance in Article.objects.filter(article_license__isnull=True):
 
         new_license = None
-        if instance.license_statements.exists() and instance.license_statements.first().url:
+        if (
+            instance.license_statements.exists()
+            and instance.license_statements.first().url
+        ):
             new_license = instance.license_statements.first().url
         elif instance.license and instance.license.license_type:
             new_license = instance.license.license_type
-        
+
         if new_license:
             instance.article_license = new_license
             instance.updated_by = user
             articles_to_update.append(instance)
 
     if articles_to_update:
-        Article.objects.bulk_update(articles_to_update, ['article_license', 'updated_by'])
+        Article.objects.bulk_update(
+            articles_to_update, ["article_license", "updated_by"]
+        )
         logging.info("The article_license of model Articles have been updated")
 
 
@@ -270,15 +352,26 @@ def remove_duplicate_articles(pid_v3=None):
     ids_to_exclude = []
     try:
         if pid_v3:
-            duplicates = Article.objects.filter(pid_v3=pid_v3).values("pid_v3").annotate(pid_v3_count=Count("pid_v3")).filter(pid_v3_count__gt=1)
+            duplicates = (
+                Article.objects.filter(pid_v3=pid_v3)
+                .values("pid_v3")
+                .annotate(pid_v3_count=Count("pid_v3"))
+                .filter(pid_v3_count__gt=1)
+            )
         else:
-            duplicates = Article.objects.values("pid_v3").annotate(pid_v3_count=Count("pid_v3")).filter(pid_v3_count__gt=1)
+            duplicates = (
+                Article.objects.values("pid_v3")
+                .annotate(pid_v3_count=Count("pid_v3"))
+                .filter(pid_v3_count__gt=1)
+            )
         for duplicate in duplicates:
-            article_ids = Article.objects.filter(
-                pid_v3=duplicate["pid_v3"]
-            ).order_by("created")[1:].values_list("id", flat=True)
+            article_ids = (
+                Article.objects.filter(pid_v3=duplicate["pid_v3"])
+                .order_by("created")[1:]
+                .values_list("id", flat=True)
+            )
             ids_to_exclude.extend(article_ids)
-        
+
         if ids_to_exclude:
             Article.objects.filter(id__in=ids_to_exclude).delete()
     except Exception as exception:
@@ -291,7 +384,7 @@ def remove_duplicate_articles(pid_v3=None):
             },
         )
 
+
 @celery_app.task(bind=True)
 def remove_duplicate_articles_task(self, user_id=None, username=None, pid_v3=None):
     remove_duplicate_articles(pid_v3)
-
