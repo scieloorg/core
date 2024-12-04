@@ -3,12 +3,13 @@ from rest_framework import serializers
 from article import models
 from core.api.v1.serializers import LanguageSerializer, LicenseStatementSerializer
 from doi.api.v1.serializers import DoiSerializer
-from institution.api.v1.serializers import SponsorSerializer
+from institution.api.v1.serializers import SponsorSerializer, PublisherSerializer
 from issue.api.v1.serializers import IssueSerializer, TocSectionsSerializer
 from journal.api.v1.serializers import JournalSerializer
+from journal.models import SciELOJournal
 from researcher.api.v1.serializers import ResearcherSerializer
 from vocabulary.api.v1.serializers import KeywordSerializer
-
+from pid_provider.models import PidProviderXML
 
 class FundingsSerializer(serializers.ModelSerializer):
     funding_source = SponsorSerializer(many=False, read_only=True)
@@ -60,8 +61,8 @@ class TocSectionsSerializer(serializers.ModelSerializer):
 
 
 class ArticleSerializer(serializers.ModelSerializer):
-    journal = JournalSerializer(many=False, read_only=True)
-    publisher = SponsorSerializer(many=True, read_only=True)
+    journal = serializers.SerializerMethodField() 
+    publisher = PublisherSerializer(many=False, read_only=True)
     titles = TitleSerializer(many=True, read_only=True)
     doi = DoiSerializer(many=True, read_only=True)
     abstracts = DocumentAbstractSerializer(many=True, read_only=True)
@@ -73,6 +74,30 @@ class ArticleSerializer(serializers.ModelSerializer):
     license = LicenseStatementSerializer(many=True, read_only=True)
     issue = IssueSerializer(many=False, read_only=True)
     keywords = KeywordSerializer(many=True, read_only=True)
+    xml_link = serializers.SerializerMethodField()
+
+
+    def get_journal(self, obj):
+        if obj.journal:
+            scielo_journal = SciELOJournal.objects.get(journal=obj.journal).issn_scielo
+            return {
+                "title": obj.journal.title,
+                "short_title": obj.journal.short_title,
+                "issn_print": obj.journal.official.issn_print,
+                "issn_electronic": obj.journal.official.issn_electronic,
+                "issnl":  obj.journal.official.issnl,
+                "journal_acron": scielo_journal.journal_acron,
+            }
+        else:
+            return None
+            
+
+    def get_xml_link(self, obj):
+        if obj:
+            pid_provider = PidProviderXML.objects.get(v3=obj.pid_v3)
+            # TODO
+            # Adicionar dominio no link?
+            return {"xml_link": pid_provider.current_version.file.url}
 
     class Meta:
         model = models.Article
@@ -99,4 +124,3 @@ class ArticleSerializer(serializers.ModelSerializer):
             "elocation_id",
             "keywords",
         ]
-        datatables_always_serialize = ("id",)
