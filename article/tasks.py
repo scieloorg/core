@@ -51,9 +51,10 @@ def _items_to_load_article(from_date):
             from_date = None
     if not from_date:
         # Obtém a data do último artigo válido
-        last_valid_article = Article.objects.all().order_by("-updated").first()
-        if last_valid_article:
-            from_date = last_valid_article.updated 
+        last_created_article = Article.objects.all().order_by("-created").first()
+        if last_created_article:
+            pid_v3 = last_created_article.pid_v3
+            from_date = PidProviderXML.objects.filter(v3=pid_v3).order_by("created").first().created
         else:
             from_date = datetime(1900, 1, 1)
 
