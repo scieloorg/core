@@ -104,7 +104,7 @@
                     <div class="col-12 col-sm-9">
                       <div data-bs-spy="scroll" data-bs-target="#navbar-example3" data-bs-offset="-200" class="" tabindex="0">
                         <a name="about"></a>
-                        <h1 class="h4 pt-1" id="item-1">Sobre o periódico</h1>
+                        <h1 class="h4 pt-1" id="about">Sobre o periódico</h1>
                         <h5 id="item-1-1">Ficha Bibliográfica</h5>
                         <ul class="mb-4">
                           <li>
@@ -317,7 +317,7 @@
                             {% endfor %}
                         </ul>
                         <hr>
-                        <h4 id="item-3">{% trans 'CORPO EDITORIAL' %}</h4>
+                        <h4 id="editors">{% trans 'CORPO EDITORIAL' %}</h4>
                         <!-- Usar: instituição (mais sigla se houver), cidade, estado e país, orcid, Lattes (opcional para estrangeiros) e e-mail (divulgação opcional).
                                                         Considerar os papéis descritos abaixo:-->
                         {% for role, role_display in role_editorial_board %}
@@ -335,7 +335,7 @@
                           </ul>
                         {% endfor %}
                         <hr>
-                        <h4 id="item-4">{% trans 'INSTRUÇÕES PARA OS AUTORES' %}</h4>
+                        <h4 id="instructions">{% trans 'INSTRUÇÕES PARA OS AUTORES' %}</h4>
                         <!-- O texto e o formato das instruções é livre e pode variar de acordo com o periódico ou com a área temática, entretanto, é necessário que sejam abordados os seguintes elementos:-->
                         <h5 id="item-4-1">{% trans 'Tipos de documentos aceitos' %}</h5>
                         <!-- Pode haver mais de um. Permitir adicionar novo -->
