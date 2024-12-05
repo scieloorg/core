@@ -1,4 +1,4 @@
-from django.core.exceptions import ObjectDoesNotExist
+import logging
 
 from core.models import Language
 from journal.models import SciELOJournal
@@ -37,8 +37,11 @@ def get_scielo_journal(issn_scielo):
     try:
         issn_scielo = extract_value(issn_scielo)
         return SciELOJournal.objects.get(issn_scielo=issn_scielo)
-    except ObjectDoesNotExist:
+    except SciELOJournal.DoesNotExist:
+        logging.exception(f"Nenhum SciELOJournal encontrado com ISSN: {issn_scielo}")
         return None
+    except SciELOJournal.MultipleObjectsReturned:
+        return SciELOJournal.objects.filter(issn_scielo=issn_scielo).first()
 
 
 def extract_date(date):

@@ -114,6 +114,7 @@ THIRD_PARTY_APPS = [
     "haystack",
     "maintenance_mode",
     'django_prometheus',
+    'rosetta',
 ]
 
 LOCAL_APPS = [
@@ -501,3 +502,5 @@ MAINTENANCE_MODE_STATE_FILE_PATH = "maintenance_mode_state.txt"
 
 # Timeout function fetch_data
 FETCH_DATA_TIMEOUT = env.int("FETCH_DATA_TIMEOUT", default=10)
+
+ROSETTA_AUTO_COMPILE = True

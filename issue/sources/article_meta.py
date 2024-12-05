@@ -1,5 +1,7 @@
+import logging
+
 from core.utils import utils
-from core.utils.rename_dictionary_keys import rename_dictionary_keys
+from core.utils.rename_dictionary_keys import rename_issue_dictionary_keys
 from issue.utils.correspondencia import correspondencia_issue
 from issue.utils.issue_utils import get_or_create_issue
 
@@ -13,19 +15,22 @@ def process_issue_article_meta(collection, limit, user):
             code = issue["code"]
             url_issue = f"https://articlemeta.scielo.org/api/v1/issue/?code={code}"
             data_issue = utils.fetch_data(url_issue, json=True, timeout=30, verify=True)
-            issue_dict = rename_dictionary_keys(
-                data_issue["issue"], correspondencia_issue
+            issue_dict = rename_issue_dictionary_keys(
+                [data_issue["issue"]], correspondencia_issue
             )
-            get_or_create_issue(
-                issn_scielo=issue_dict.get("scielo_issn"),
-                volume=issue_dict.get("volume"),
-                number=issue_dict.get("number"),
-                supplement_volume=issue_dict.get("suplement_volume"),
-                supplement_number=issue_dict.get("suplement_number"),
-                data_iso=issue_dict.get("date_iso"),
-                sections_data=issue_dict.get("sections_data"),
-                user=user,
-            )
+            try:
+                get_or_create_issue(
+                    issn_scielo=issue_dict.get("scielo_issn"),
+                    volume=issue_dict.get("volume"),
+                    number=issue_dict.get("number"),
+                    supplement_volume=issue_dict.get("suplement_volume"),
+                    supplement_number=issue_dict.get("suplement_number"),
+                    data_iso=issue_dict.get("date_iso"),
+                    sections_data=issue_dict.get("sections_data"),
+                    user=user,
+                )
+            except Exception as exc:
+                logging.exception(f"Error ao criar isssue com code: {code}. Exception: {exc}")
         offset += 100
         data = request_issue_article_meta(
             collection=collection, limit=limit, offset=offset

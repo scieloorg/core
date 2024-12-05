@@ -29,10 +29,10 @@ class IssueAdmin(ModelAdmin):
 
     list_display = (
         "journal",
+        "year",        
+        "volume",        
         "number",
-        "volume",
-        "year",
-        "month",
+        "supplement",
         "created",
         "updated",
     )
@@ -48,6 +48,7 @@ class IssueAdmin(ModelAdmin):
         "volume",
         "year",
         "month",
+        "supplement",
     )
 
 
