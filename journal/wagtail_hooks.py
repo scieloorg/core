@@ -118,7 +118,7 @@ class SciELOJournalAdmin(ModelAdmin):
     exclude_from_explorer = False
 
     list_display = (
-        "journal",
+        "custom_journal",
         "issn_scielo",
         "journal_acron",
         "collection",
@@ -132,6 +132,7 @@ class SciELOJournalAdmin(ModelAdmin):
         "journal__title",
         "issn_scielo",
     )
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         user_groups = request.user.groups.values_list('name', flat=True)
@@ -140,6 +141,13 @@ class SciELOJournalAdmin(ModelAdmin):
         elif JOURNAL_TEAM in user_groups:
             return qs.filter(id__in=request.user.journal.all().values_list("id", flat=True))
         return qs
+
+    def custom_journal(self, obj):
+        return f"{obj.journal.title}" or f"{obj.journal.official}"
+    custom_journal.short_description = "Journal"
+    custom_journal.admin_order_field = "journal"
+
+
 
 
 class TOCSectionAdmin(ModelAdmin):
