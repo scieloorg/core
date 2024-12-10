@@ -84,22 +84,22 @@ class NormalizeEmailResearcherIdentifierTest(TestCase):
         ResearcherIdentifier.objects.bulk_create([ResearcherIdentifier(identifier=orcid, source_name="ORCID") for orcid in self.orcids])
 
     def test_normalize_stored_email(self):
-            unnormalized_identifiers = get_researcher_identifier_unnormalized()
-            self.assertEqual(5, unnormalized_identifiers.count())
+        unnormalized_identifiers = get_researcher_identifier_unnormalized()
+        self.assertEqual(5, unnormalized_identifiers.count())
 
-            normalize_stored_email()
+        normalize_stored_email()
 
-            normalized_emails = [
-                'jgarrido@ucv.cl',
-                'gagopa39@hotmail.com',
-                'herbet@ufs.br',
-                'pilosaperez@gmail.com',
-                'cortes-camarillo@hotmail.com',
-            ]
+        normalized_emails = [
+            'jgarrido@ucv.cl',
+            'gagopa39@hotmail.com',
+            'herbet@ufs.br',
+            'pilosaperez@gmail.com',
+            'cortes-camarillo@hotmail.com',
+        ]
 
-            for email in normalized_emails:
-                with self.subTest(email=email):
-                    self.assertTrue(
-                        ResearcherIdentifier.objects.filter(identifier=email).exists(),
-                        f"E-mail '{email}' unnormalized"
-                    )
+        for email in normalized_emails:
+            with self.subTest(email=email):
+                self.assertTrue(
+                    ResearcherIdentifier.objects.filter(identifier=email).exists(),
+                    f"E-mail '{email}' unnormalized"
+                )
