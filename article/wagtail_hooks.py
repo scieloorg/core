@@ -19,6 +19,7 @@ from article.models import (  # AbstractModel,; Category,; Title,
     ArticleFormat,
     ArticleFunding,
 )
+from collection.models import Collection
 from config.menu import get_menu_order
 
 
@@ -27,8 +28,8 @@ class CollectionFilter(SimpleListFilter):
     parameter_name = "collection"
 
     def lookups(self, request, model_admin):
-        articles = Article.objects.all()
-        return [(collection.id, collection.main_name) for article in articles for collection in article.collections if collection.is_active]
+        collections = Collection.objects.filter(is_active=True)
+        return [(collection.id, collection.main_name) for collection in collections]
     
     def queryset(self, request, queryset):
         if self.value():
