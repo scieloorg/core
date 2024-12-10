@@ -9,6 +9,7 @@ from django.utils.translation import gettext as _
 
 from article.models import Article, ArticleFormat
 from article.sources import xmlsps
+from article.utils.extracts_normalized_email import extracts_normalized_email
 from article.sources.preprint import harvest_preprints
 from config import celery_app
 from researcher.models import ResearcherIdentifier
@@ -307,9 +308,9 @@ def normalize_stored_email(self,):
     re_identifiers = get_researcher_identifier_unnormalized()
     
     for re_identifier in re_identifiers:
-        email_match = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" ,re_identifier.identifier.replace(" ", ""))
-        if email_match:
-            re_identifier.identifier = email_match.group()
+        email = extracts_normalized_email(raw_email=re_identifier.identifier)
+        if email:
+            re_identifier.identifier = email
             updated_list.append(re_identifier)
 
     ResearcherIdentifier.objects.bulk_update(updated_list, ['identifier'])
