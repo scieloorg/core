@@ -1,3 +1,4 @@
+import re
 import logging
 import sys
 from datetime import datetime
@@ -10,6 +11,7 @@ from article.models import Article, ArticleFormat
 from article.sources import xmlsps
 from article.sources.preprint import harvest_preprints
 from config import celery_app
+from researcher.models import ResearcherIdentifier
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
 from tracker.models import UnexpectedEvent
@@ -295,3 +297,19 @@ def remove_duplicate_articles(pid_v3=None):
 def remove_duplicate_articles_task(self, user_id=None, username=None, pid_v3=None):
     remove_duplicate_articles(pid_v3)
 
+
+def get_researcher_identifier_unnormalized():
+    return ResearcherIdentifier.objects.filter(source_name="EMAIL").exclude(identifier__regex=r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+
+@celery_app.task(bind=True)
+def normalize_stored_email(self,):
+    updated_list = []
+    re_identifiers = get_researcher_identifier_unnormalized()
+    
+    for re_identifier in re_identifiers:
+        email_match = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" ,re_identifier.identifier.replace(" ", ""))
+        if email_match:
+            re_identifier.identifier = email_match.group()
+            updated_list.append(re_identifier)
+
+    ResearcherIdentifier.objects.bulk_update(updated_list, ['identifier'])
