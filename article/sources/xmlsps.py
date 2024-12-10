@@ -20,7 +20,7 @@ from packtools.sps.models.kwd_group import ArticleKeywords
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle
-from article.utils.extract_email import extract_email
+from article.utils.extracts_normalized_email import extracts_normalized_email
 from core.models import Language
 from doi.models import DOI
 from institution.models import Sponsor, Publisher
@@ -380,7 +380,7 @@ def create_or_update_researchers(xmltree, user, item):
                 data.append(obj)
             else:
                 for aff in affs:
-                    email = extract_email(author=author.get("email"), aff=aff.get("email"))
+                    email = extracts_normalized_email(author=author.get("email"), aff=aff.get("email"))
                     aff_data = {
                         **researcher_data,
                         "aff_name": aff.get("orgname"),
