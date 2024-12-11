@@ -23,6 +23,8 @@ def extracts_normalized_email(raw_email):
         'user@example.com'
         >>> extracts_normalized_email('invalid-email.com')
         None
+        >>> extracts_normalized_email('lto:user@example.com">user@example.com</a>')
+        'user@example.com'        
     """    
     if raw_email:
         email_match = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", raw_email.replace(" ", ""))
