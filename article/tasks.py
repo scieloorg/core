@@ -9,7 +9,7 @@ from django.utils.translation import gettext as _
 
 from article.models import Article, ArticleFormat
 from article.sources import xmlsps
-from article.utils.extracts_normalized_email import extracts_normalized_email
+from core.utils.extracts_normalized_email import extracts_normalized_email
 from article.sources.preprint import harvest_preprints
 from config import celery_app
 from researcher.models import ResearcherIdentifier

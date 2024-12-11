@@ -20,7 +20,7 @@ from packtools.sps.models.kwd_group import ArticleKeywords
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle
-from article.utils.extracts_normalized_email import extracts_normalized_email
+from core.utils.extracts_normalized_email import extracts_normalized_email
 from core.models import Language
 from doi.models import DOI
 from institution.models import Sponsor, Publisher

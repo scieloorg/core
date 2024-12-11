@@ -72,6 +72,7 @@ class NormalizeEmailResearcherIdentifierTest(TestCase):
             'ulrikekeyser@upn162-zamora.edu.mx',
             'cortescamarillo@hotmail.com',
             'candelariasgro@yahoo.com',
+            'mailto:user@hotmail.com">gagopa39@hotmail.com</a>',
         ]
 
         self.orcids = [
@@ -85,7 +86,7 @@ class NormalizeEmailResearcherIdentifierTest(TestCase):
 
     def test_normalize_stored_email(self):
         unnormalized_identifiers = get_researcher_identifier_unnormalized()
-        self.assertEqual(5, unnormalized_identifiers.count())
+        self.assertEqual(6, unnormalized_identifiers.count())
 
         normalize_stored_email()
 
@@ -95,6 +96,7 @@ class NormalizeEmailResearcherIdentifierTest(TestCase):
             'herbet@ufs.br',
             'pilosaperez@gmail.com',
             'cortes-camarillo@hotmail.com',
+            'user@hotmail.com',
         ]
 
         for email in normalized_emails:
