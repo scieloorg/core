@@ -5,7 +5,8 @@ from datetime import datetime
 from django.utils.timezone import make_aware
 
 from article.models import Article
-from article.tasks import remove_duplicate_articles
+from article.tasks import remove_duplicate_articles, normalize_stored_email, get_researcher_identifier_unnormalized
+from researcher.models import ResearcherIdentifier
 
 
 class TestArticleMigration(TestCase):
@@ -58,3 +59,49 @@ class RemoveDuplicateArticlesTest(TestCase):
         self.assertEqual(Article.objects.filter(pid_v3="pid3").count(), 1)
         self.assertEqual(Article.objects.get(pid_v3="pid2").created, make_aware(datetime(2022, 6, 3)))
         self.assertEqual(Article.objects.get(pid_v3="pid3").created, make_aware(datetime(2022, 6, 14)))
+
+
+class NormalizeEmailResearcherIdentifierTest(TestCase):
+    def setUp(self):
+        self.emails = [
+            '<a href="mailto:jgarrido@ucv.cl">jgarrido@ucv.cl</a>',
+            '<a href="mailto:gagopa39@hotmail.com">gagopa39@hotmail.com</a>',
+            ' herbet@ufs.br',
+            'pilosaperez@gmail.com.',
+            'cortes- camarillo@hotmail.com',
+            'ulrikekeyser@upn162-zamora.edu.mx',
+            'cortescamarillo@hotmail.com',
+            'candelariasgro@yahoo.com',
+            'mailto:user@hotmail.com">gagopa39@hotmail.com</a>',
+        ]
+
+        self.orcids = [
+            '0000-0002-9147-0547',
+            '0000-0003-3622-3428',
+            '0000-0002-4842-3331',
+            '0000-0003-1314-4073',
+        ]
+        ResearcherIdentifier.objects.bulk_create([ResearcherIdentifier(identifier=email, source_name="EMAIL") for email in self.emails])
+        ResearcherIdentifier.objects.bulk_create([ResearcherIdentifier(identifier=orcid, source_name="ORCID") for orcid in self.orcids])
+
+    def test_normalize_stored_email(self):
+        unnormalized_identifiers = get_researcher_identifier_unnormalized()
+        self.assertEqual(6, unnormalized_identifiers.count())
+
+        normalize_stored_email()
+
+        normalized_emails = [
+            'jgarrido@ucv.cl',
+            'gagopa39@hotmail.com',
+            'herbet@ufs.br',
+            'pilosaperez@gmail.com',
+            'cortes-camarillo@hotmail.com',
+            'user@hotmail.com',
+        ]
+
+        for email in normalized_emails:
+            with self.subTest(email=email):
+                self.assertTrue(
+                    ResearcherIdentifier.objects.filter(identifier=email).exists(),
+                    f"E-mail '{email}' unnormalized"
+                )

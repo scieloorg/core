@@ -151,6 +151,11 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
         indexes = [
             models.Index(
                 fields=[
+                    "id",
+                ]
+            ),
+            models.Index(
+                fields=[
                     "pid_v2",
                 ]
             ),

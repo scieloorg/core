@@ -90,7 +90,7 @@ class ArticleSummaryItem(SummaryItem):
 
     def get_context_data(self, parent_context):
         site_details = get_site_for_user(self.request.user)
-        total_article = Article.objects.all().count()
+        total_article = Article.objects.count()
         return {
             "total_article": total_article,
             "site_name": site_details["site_name"],
