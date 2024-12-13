@@ -50,10 +50,11 @@ def _items_to_load_article(from_date):
         except Exception:
             from_date = None
     if not from_date:
+        now = datetime.utcnow().isoformat()[:10]
         # Obtém os PidProvider que não estão em Article
         # E os PidProvider em que a diferença entre created e updated é maior/igual 1 day (Atualizações de artigos)
         articles = Article.objects.values_list("pid_v3", flat=True)
-        return PidProviderXML.objects.filter(~Q(v3__in=articles) | Q(updated__gte=F("created") + timedelta(days=1))).iterator()
+        return PidProviderXML.objects.filter(Q(available_since__isnull=True) | Q(available_since__lte=now)).filter(~Q(v3__in=articles) | Q(updated__gte=F("created") + timedelta(days=5))).iterator()
     return PidProviderXML.public_items(from_date)
 
 
