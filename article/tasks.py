@@ -1,8 +1,8 @@
 import logging
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from django.db.models import Q, Count
+from django.db.models import Q, Count, F
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 from django.db.models import Subquery
@@ -50,18 +50,11 @@ def _items_to_load_article(from_date):
         except Exception:
             from_date = None
     if not from_date:
-        # Obtém a data do último artigo válido
-        last_created_article = Article.objects.all().order_by("-created").first()
-        if last_created_article:
-            pid_v3 = last_created_article.pid_v3
-            from_date = PidProviderXML.objects.filter(v3=pid_v3).order_by("created").first().created
-        else:
-            from_date = datetime(1900, 1, 1)
-
-    items = PidProviderXML.public_items(from_date)
-
-    for item in items:
-        yield item
+        # Obtém os PidProvider que não estão em Article
+        # E os PidProvider em que a diferença entre created e updated é maior/igual 1 day (Atualizações de artigos)
+        articles = Article.objects.values_list("pid_v3", flat=True)
+        return PidProviderXML.objects.filter(~Q(v3__in=articles) | Q(updated__gte=F("created") + timedelta(days=1))).iterator()
+    return PidProviderXML.public_items(from_date)
 
 
 def items_to_load_article_with_valid_false():
