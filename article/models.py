@@ -272,21 +272,6 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
         except cls.DoesNotExist:
             return cls.create(pid_v3=pid_v3, user=user)
 
-    # @classmethod
-    # def get_or_create(cls, doi, pid_v2, fundings, user):
-    #     try:
-    #         return cls.objects.get(doi__in=doi, pid_v2=pid_v2)
-    #     except cls.DoesNotExist:
-    #         article = cls()
-    #         article.pid_v2 = pid_v2
-    #         article.creator = user
-    #         article.save()
-    #         article.doi.set(doi)
-    #         if fundings:
-    #             for funding in fundings:
-    #                 article.fundings.add(funding)
-    #         return article
-
     def set_date_pub(self, dates):
         if dates:
             self.pub_date_day = dates.get("day")

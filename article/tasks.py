@@ -1,11 +1,12 @@
 import re
 import logging
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from django.db.models import Q, Count
+from django.db.models import Q, Count, F
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
+from django.db.models import Subquery
 
 from article.models import Article, ArticleFormat
 from article.sources import xmlsps
@@ -45,54 +46,41 @@ def load_article(self, user_id=None, username=None, file_path=None, v3=None):
     xmlsps.load_article(user, file_path=file_path, v3=v3)
 
 
-def _items_to_load_article(from_date, force_update):
+def _items_to_load_article(from_date):
     if from_date:
         try:
             from_date = datetime.strptime(from_date, "%Y-%m-%d")
         except Exception:
             from_date = None
     if not from_date:
-        # obtém a última atualização de Article
-        try:
-            article = Article.objects.filter(
-                ~Q(valid=True)
-            ).order_by("-updated").first()
-            if not article:
-                article = Article.objects.filter(valid=True).order_by("-updated").first()
-                if article:
-                    from_date = article.updated
-        except Article.DoesNotExist:
-            from_date = datetime(1900, 1, 1)
+        now = datetime.utcnow().isoformat()[:10]
+        # Obtém os PidProvider que não estão em Article
+        # E os PidProvider em que a diferença entre created e updated é maior/igual 1 day (Atualizações de artigos)
+        articles = Article.objects.values_list("pid_v3", flat=True)
+        return PidProviderXML.objects.filter(Q(available_since__isnull=True) | Q(available_since__lte=now)).filter(~Q(v3__in=articles) | Q(updated__gte=F("created") + timedelta(days=1))).iterator()
+    return PidProviderXML.public_items(from_date)
 
-    if not from_date:
-        from_date = datetime(1900, 1, 1)
 
-    items = PidProviderXML.public_items(from_date)
-    if force_update:
-        yield from items
-
+def items_to_load_article_with_valid_false():
+    # Obtém os objetos PidProviderXMl onde o campo pid_v3 de article e v3 possuem o mesmo valor
+    articles = Article.objects.filter(valid=False).values("pid_v3")
+    items = PidProviderXML.objects.filter(v3__in=Subquery(articles))
     for item in items:
-        try:
-            article = Article.objects.get(
-                ~Q(valid=True),
-                pid_v3=item.v3,
-                updated__lt=item.updated,
-                created__lt=item.created,
-            )
-            if article:
-                yield item
-        except Article.DoesNotExist:
-            yield item
+        yield item
 
 
 @celery_app.task(bind=True, name=_("load_articles"))
 def load_articles(
-    self, user_id=None, username=None, from_date=None, force_update=False
+    self, user_id=None, username=None, from_date=None, load_invalid_articles=False, force_update=False
 ):
     try:
         user = _get_user(self.request, username, user_id)
-
-        for item in _items_to_load_article(from_date, force_update):
+        if load_invalid_articles:
+            generator_articles = items_to_load_article_with_valid_false()
+        else:
+            generator_articles = _items_to_load_article(from_date)
+            
+        for item in generator_articles:
             try:
                 load_article.apply_async(
                     kwargs={
@@ -273,9 +261,9 @@ def remove_duplicate_articles(pid_v3=None):
     ids_to_exclude = []
     try:
         if pid_v3:
-            duplicates = Article.objects.filter(pid_v3=pid_v3).values("pid_v3").annotate(pid_v3_count=Count("pid_v3")).filter(pid_v3_count__gt=1)
+            duplicates = Article.objects.filter(pid_v3=pid_v3).values("pid_v3").annotate(pid_v3_count=Count("pid_v3")).filter(pid_v3_count__gt=1, valid=False)
         else:
-            duplicates = Article.objects.values("pid_v3").annotate(pid_v3_count=Count("pid_v3")).filter(pid_v3_count__gt=1)
+            duplicates = Article.objects.values("pid_v3").annotate(pid_v3_count=Count("pid_v3")).filter(pid_v3_count__gt=1, valid=False)
         for duplicate in duplicates:
             article_ids = Article.objects.filter(
                 pid_v3=duplicate["pid_v3"]
