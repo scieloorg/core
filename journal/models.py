@@ -894,9 +894,9 @@ class Journal(CommonControlField, ClusterableModel):
         collection_acronym = ", ".join(col.collection.acron3 for col in active_collection)
 
         issns = []
-        if self.official.issn_print:
+        if self.official and self.official.issn_print:
             issns.append(f"Issn Print: {self.official.issn_print}")
-        if self.official.issn_electronic:
+        if self.official and self.official.issn_electronic:
             issns.append(f"Issn Electronic: {self.official.issn_electronic}")
         issns = " - ".join(issns)
         
