@@ -381,7 +381,7 @@ def create_or_update_researchers(xmltree, user, item):
             else:
                 for aff in affs:
                     raw_email = author.get("email") or aff.get("email")
-                    email = extracts_normalized_email(data=raw_email)
+                    email = extracts_normalized_email(raw_email=raw_email)
                     aff_data = {
                         **researcher_data,
                         "aff_name": aff.get("orgname"),
