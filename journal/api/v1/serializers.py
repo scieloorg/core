@@ -100,6 +100,7 @@ class JournalSerializer(serializers.ModelSerializer):
     next_journal_title = serializers.SerializerMethodField()
     previous_journal_title = serializers.SerializerMethodField()
     toc_items = serializers.SerializerMethodField()
+    wos_areas = serializers.SerializerMethodField()
 
     def get_institution_history(self, institution_history):
         if queryset := institution_history.all():
@@ -179,7 +180,7 @@ class JournalSerializer(serializers.ModelSerializer):
         return None
 
     def get_next_journal_title(self, obj):
-        if obj.official.next_journal_title:
+        if obj.official and obj.official.next_journal_title:
             try:
                 journal_new_title = models.Journal.objects.get(title__icontains=obj.official.next_journal_title)
                 issn_print = journal_new_title.official.issn_print
@@ -194,7 +195,7 @@ class JournalSerializer(serializers.ModelSerializer):
             }
 
     def get_previous_journal_title(self, obj):
-        if obj.official.previous_journal_titles:
+        if obj.official and obj.official.previous_journal_titles:
             try:
                 old_journal = obj.official.old_title.get(
                     title__icontains=obj.official.previous_journal_titles
@@ -222,6 +223,11 @@ class JournalSerializer(serializers.ModelSerializer):
                     })
             return data
         
+    def get_wos_areas(self, obj):
+        if obj.wos_area.all():
+            return [wos_area.value for wos_area in obj.wos_area.all()]
+        return None
+
 
     class Meta:
         model = models.Journal
@@ -254,5 +260,5 @@ class JournalSerializer(serializers.ModelSerializer):
             "title_in_database",
             "url_logo",
             "mission",
-            
+            "wos_areas",
         ]
