@@ -1,6 +1,6 @@
 from journal.models import SciELOJournal, TitleInDatabase
 
-def get_article_meta(obj):
+def get_articlemeta_format(obj):
     result = {}
     scielo_journal = SciELOJournal.objects.filter(journal=obj, collection__is_active=True).first()
     publisher_exists = obj.publisher_history.exists()
