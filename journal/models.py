@@ -903,6 +903,10 @@ class Journal(CommonControlField, ClusterableModel):
         title = self.title or str(self.official)
         return f"{title} ({collection_acronym}) | ({issns})"
 
+    def articlemeta_format(self):
+        from journal.sources.api_article_meta import get_article_meta
+        return get_article_meta(self)
+
     base_form_class = CoreAdminModelForm
 
 
