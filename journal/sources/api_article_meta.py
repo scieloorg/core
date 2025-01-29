@@ -16,7 +16,7 @@ def get_article_meta(obj):
     add_to_result("v30", [{"_": obj.identification_number}] if obj.identification_number else None)
 
     secs_code = TitleInDatabase.objects.filter(journal=obj, indexed_at__acronym__iexact="secs")
-    add_to_result("v37", [{"_": sc.identifier} for sc in secs_code] if secs_code.exists() else None)
+    add_to_result("v37", [{"_": sc.identifier} for sc in secs_code if sc.identifier] if secs_code.exists() else None)
 
     add_to_result("v50", [{"_": scielo_journal.status}] if scielo_journal and scielo_journal.status else None)
     add_to_result("v62", [{"_": ch.institution.institution.institution_identification.name} 
@@ -42,14 +42,21 @@ def get_article_meta(obj):
     add_to_result("v301", [{"_": obj.official.initial_year}] if obj.official and obj.official.initial_year else None)
     add_to_result("v302", [{"_": obj.official.initial_volume}] if obj.official and obj.official.initial_volume else None)
     add_to_result("v303", [{"_": obj.official.initial_number}] if obj.official and obj.official.initial_number else None)
-    add_to_result("v304", [{"_": obj.official.terminate_year + obj.official.terminate_month}] if obj.official and obj.official.terminate_year else None)
+    if obj.official:
+        year = obj.official.terminate_year
+        month = obj.official.terminate_month
+        if year and month:
+            add_to_result("v304", [{"_": year + month}])
+        elif year:
+            add_to_result("v304", [{"_": year}])
+
     add_to_result("v305", [{"_": obj.official.final_volume}] if obj.official and obj.official.final_volume else None)
     add_to_result("v306", [{"_": obj.official.final_number}] if obj.official and obj.official.final_number else None)
 
     if publisher_exists:
-        add_to_result("v310", [{"_": publisher.institution.institution.location.country.name} 
+        add_to_result("v310", [{"_": publisher.institution.institution.location.country.name or publisher.institution.institution.location.country.acronym} 
                                 for publisher in obj.publisher_history.all() if publisher.institution and publisher.institution.institution.location and publisher.institution.institution.location.country])
-        add_to_result("v320", [{"_": publisher.institution.institution.location.state.name} 
+        add_to_result("v320", [{"_": publisher.institution.institution.location.state.acronym or publisher.institution.institution.location.state.name} 
                                 for publisher in obj.publisher_history.all() if publisher.institution and publisher.institution.institution.location and publisher.institution.institution.location.state])
         add_to_result("v480", [{"_": publisher.institution.institution.institution_identification.name}
                                 for publisher in obj.publisher_history.all() if publisher.institution and publisher.institution.institution.location and publisher.institution.institution.location.country])
