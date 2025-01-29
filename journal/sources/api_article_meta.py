@@ -9,6 +9,7 @@ def get_article_meta(obj):
         if value:
             result[key] = value
 
+    add_to_result("collection", scielo_journal.collection.acron3 if scielo_journal else None)
     add_to_result("v5", [{"_": obj.type_of_literature}] if obj.type_of_literature else None)
     add_to_result("v6", [{"_": obj.treatment_level}] if obj.treatment_level else None)
     add_to_result("v10", [{"_": obj.center_code}] if obj.center_code else None)
@@ -103,9 +104,6 @@ def get_article_meta(obj):
 
     result["v940"] = [{"_": obj.created}]
     result["v941"] = [{"_": obj.updated}]
-
-    if scielo_journal:
-        result["collection"] = scielo_journal.collection.acron3
     
     # Ordena o dicionário por chave
     result = dict(sorted(result.items()))
