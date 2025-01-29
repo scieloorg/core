@@ -12,7 +12,7 @@ class ArticleMetaFormatSerializer(serializers.ModelSerializer):
         model = models.Journal
 
     def to_representation(self, instance):
-        return instance.articlemeta_format()
+        return instance.articlemeta_format
 
 class GenericJournalViewSet(viewsets.ModelViewSet):
     serializer_class = JournalSerializer
