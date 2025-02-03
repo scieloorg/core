@@ -1,6 +1,5 @@
 from django.db.models import Q
 from rest_framework import viewsets, serializers
-from rest_framework.response import Response
 
 from journal import models
 from .serializers import JournalSerializer
