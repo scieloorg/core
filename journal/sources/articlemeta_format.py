@@ -1,6 +1,6 @@
 from journal.models import SciELOJournal, TitleInDatabase
 
-def get_articlemeta_format(obj):
+def get_articlemeta_format_title(obj):
     result = {}
     scielo_journal = SciELOJournal.objects.filter(journal=obj, collection__is_active=True).first()
     publisher_exists = obj.publisher_history.exists()
@@ -60,7 +60,7 @@ def get_articlemeta_format(obj):
         add_to_result("v320", [{"_": publisher.institution.institution.location.state.acronym or publisher.institution.institution.location.state.name} 
                                 for publisher in obj.publisher_history.all() if publisher.institution and publisher.institution.institution.location and publisher.institution.institution.location.state])
         add_to_result("v480", [{"_": publisher.institution.institution.institution_identification.name}
-                                for publisher in obj.publisher_history.all() if publisher.institution and publisher.institution.institution.location and publisher.institution.institution.location.country])
+                                for publisher in obj.publisher_history.all() if publisher.institution and publisher.institution.institution.institution_identification])
         add_to_result("v490", [{"_": publisher.institution.institution.location.city.name} 
                                 for publisher in obj.publisher_history.all() if publisher.institution and publisher.institution.institution.location and publisher.institution.institution.location.city])
 
@@ -106,5 +106,4 @@ def get_articlemeta_format(obj):
     result["v941"] = [{"_": obj.updated}]
     
     # Ordena o dicionário por chave
-    result = dict(sorted(result.items()))
     return result

@@ -905,8 +905,8 @@ class Journal(CommonControlField, ClusterableModel):
 
     @property
     def articlemeta_format(self):
-        from journal.sources.api_article_meta import get_articlemeta_format
-        return get_articlemeta_format(self)
+        from core.journal.sources.articlemeta_format import get_articlemeta_format_title
+        return get_articlemeta_format_title(self)
 
     base_form_class = CoreAdminModelForm
 
