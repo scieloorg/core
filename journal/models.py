@@ -1657,8 +1657,8 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         blank=True,
         validators=[
             RegexValidator(
-                regex=r"^[a-zA-Z]+$",  # Permite letras maiúsculas e minúsculas sem acentos
-                message=_("Only letters are allowed"),
+                regex=r"^[a-z]+$",  # Permite letras minúsculas sem acentos
+                message=_("Only lowercase letters are allowed"),
                 code="invalid_journal_acron",
             )
         ]
