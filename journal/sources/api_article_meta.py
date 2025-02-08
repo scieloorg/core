@@ -71,10 +71,10 @@ def get_articlemeta_format(obj):
             add_to_result("v710", obj.official.new_title.title)
 
     if publisher_history:
-        add_to_result("v310",  [{"_": publisher.get_institution_country_name} for publisher in publisher_history if publisher.get_institution_country_name])
-        add_to_result("v320",  [{"_": publisher.get_instition_state_acronym} for publisher in publisher_history if publisher.get_instition_state_acronym])
-        add_to_result("v480",  [{"_": publisher.get_institution_name} for publisher in publisher_history if publisher.get_institution_name])
-        add_to_result("v490",  [{"_": publisher.get_institution_city_name} for publisher in publisher_history])
+        add_items("v310",  [publisher.get_institution_country_name for publisher in publisher_history])
+        add_items("v320",  [publisher.get_instition_state_acronym for publisher in publisher_history])
+        add_items("v480",  [publisher.get_institution_name for publisher in publisher_history])
+        add_items("v490",  [publisher.get_institution_city_name for publisher in publisher_history])
 
     add_to_result("v330", obj.level_of_publication if obj.level_of_publication else None)
     add_to_result("v340", obj.alphabet if obj.alphabet else None)
@@ -83,9 +83,8 @@ def get_articlemeta_format(obj):
     add_to_result("v380", obj.frequency if obj.frequency else None)
 
     medline_titles = TitleInDatabase.objects.filter(journal=obj, indexed_at__acronym__iexact="medline")
-    if medline_titles.exists():
-        add_items("v420", [medline.identifier for medline in medline_titles])
-        add_to_result("v421", [{"_": medline.title} for medline in medline_titles])
+    add_items("v420", [medline.identifier for medline in medline_titles])
+    add_items("v421", [medline.title for medline in medline_titles])
     add_to_result("v430", obj.classification)
 
     add_items("v440", [descriptor.value for descriptor in obj.subject_descriptor.all()])
