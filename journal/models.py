@@ -4,6 +4,7 @@ import re
 import os
 
 from django.contrib.auth import get_user_model
+from django.core.validators import RegexValidator
 from django.db import models, IntegrityError
 from django.db.models import Q
 from django.utils.safestring import mark_safe
@@ -1650,7 +1651,18 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         blank=True,
         on_delete=models.SET_NULL,
     )
-    journal_acron = models.TextField(_("Journal Acronym"), null=True, blank=True)
+    journal_acron = models.TextField(
+        _("Journal Acronym"), 
+        null=True, 
+        blank=True,
+        validators=[
+            RegexValidator(
+                regex=r"^[a-z]+$",  # Permite letras minúsculas sem acentos
+                message=_("Only lowercase letters are allowed"),
+                code="invalid_journal_acron",
+            )
+        ]
+    )
     issn_scielo = models.CharField(
         _("ISSN SciELO"), max_length=9, null=True, blank=True
     )
