@@ -1,38 +1,32 @@
 from journal.models import SciELOJournal, TitleInDatabase
+from core.utils.api_articlemeta_format import add_to_result, add_items
 
 def get_articlemeta_format_issue(obj):
     result = {}
-    scielo_issn = SciELOJournal.objects.get(journal=obj.journal).issn_scielo
 
-    def add_to_result(key, value):
-        if value:
-            result[key] = value
+    scielo_issn = SciELOJournal.objects.filter(journal=obj.journal).first().issn_scielo
 
-    add_to_result("v30", obj.journal.short_title if obj.journal.short_title else None)
-    add_to_result("v31", obj.volume if obj.volume else None)
-    add_to_result("v32", obj.number if obj.number else None)
-    add_to_result("v35", scielo_issn if scielo_issn else None)
-    add_to_result("v62", [{"_": ch.institution.institution.institution_identification.name} 
-                            for ch in obj.journal.copyright_holder_history.all() if ch.institution] if obj.journal.copyright_holder_history.exists() else None)
+    add_to_result("v30", obj.journal.short_title, result)
+    add_to_result("v31", obj.volume, result)
+    add_to_result("v32", obj.number, result)
+    add_to_result("v35", scielo_issn, result)
+    add_items("v62", [ch.get_institution_name for ch in obj.journal.copyright_holder_history.all()], result)
+
     # Data de publicação do fascículo
     year = obj.year
     month = obj.month
     if year and month:
-        add_to_result("v64", [{"_": year + month}])
+        add_to_result("v64", year + month, result)
     elif year:
-        add_to_result("v64", [{"_": year}])
-    add_to_result("v117", [{"_": obj.journal.standard.code}] if obj.journal.standard and obj.journal.standard.code else None)
-    add_to_result("v130", obj.journal.title if obj.journal.title else None)
-    add_to_result("v140", [{"_": sponsor.institution.institution.institution_identification.name} 
-                            for sponsor in obj.journal.sponsor_history.all() if sponsor.institution] if obj.journal.sponsor_history.exists() else None)    
-    add_to_result("v151", obj.journal.official.iso_short_title if obj.journal.official and obj.journal.official.iso_short_title else None)
-    parallel_titles = [{"_": pt.text} for pt in obj.journal.official.parallel_titles if pt.text]
-    add_to_result("v230", parallel_titles if parallel_titles else None)
+        add_to_result("v64", year, result)
+    add_to_result("v117", obj.journal.standard.code if obj.journal.standard else None, result)
+    add_to_result("v130", obj.journal.title if obj.journal.title else None, result)
+    add_items("v140", [sponsor.get_institution_name for sponsor in obj.journal.sponsor_history.all()], result)
+    add_to_result("v151", obj.journal.official.iso_short_title if obj.journal.official and obj.journal.official.iso_short_title else None, result)
+    add_items("v230", [pt.text for pt in obj.journal.official.parallel_titles if obj.journal.official and pt.text], result)
     medline_titles = TitleInDatabase.objects.filter(journal=obj.journal, indexed_at__acronym__iexact="medline")
-    if medline_titles.exists():
-        add_to_result("v421", [{"_": medline.title} for medline in medline_titles])
+    add_items("v421", [medline.title for medline in medline_titles], result)
     
-    add_to_result("v480", [{"_": publisher.institution.institution.institution_identification.name}
-                                for publisher in obj.journal.publisher_history.all() if publisher.institution and publisher.institution.institution.institution_identification])
+    add_items("v480", [publisher.get_institution_name for publisher in obj.journal.publisher_history.all()], result)
     
     return result
