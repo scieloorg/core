@@ -225,7 +225,7 @@ class JournalSerializer(serializers.ModelSerializer):
                         "language": section.language.code2 if section.language else None
                     })
             return data
-
+        
     def get_wos_areas(self, obj):
         if obj.wos_area.all():
             return [wos_area.value for wos_area in obj.wos_area.all()]

@@ -85,7 +85,6 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
     license = models.ForeignKey(
         License, on_delete=models.SET_NULL, null=True, blank=True
     )
-    article_license = models.CharField(max_length=255, null=True, blank=True)
     issue = models.ForeignKey(Issue, on_delete=models.SET_NULL, null=True, blank=True)
     first_page = models.CharField(max_length=20, null=True, blank=True)
     last_page = models.CharField(max_length=20, null=True, blank=True)
@@ -112,7 +111,6 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
         FieldPanel("first_page"),
         FieldPanel("last_page"),
         FieldPanel("elocation_id"),
-        FieldPanel("article_license"),
     ]
     panels_languages = [
         FieldPanel("article_type"),
@@ -122,17 +120,13 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
         InlinePanel("abstracts", label=_("Abstract")),
         AutocompletePanel("keywords"),
         AutocompletePanel("license"),
+        AutocompletePanel("license_statements"),
     ]
     panels_researchers = [
         AutocompletePanel("researchers"),
         AutocompletePanel("collab"),
     ]
     panels_institutions = [
-        AutocompletePanel("publisher"),
-        AutocompletePanel("fundings"),
-    ]
-
-    panels_formats = [
         AutocompletePanel("publisher"),
         AutocompletePanel("fundings"),
     ]
