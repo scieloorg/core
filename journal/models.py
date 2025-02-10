@@ -52,6 +52,7 @@ from location.models import Location
 from vocabulary.models import Vocabulary
 from thematic_areas.models import ThematicArea
 
+from .sources.articlemeta_format import get_articlemeta_format_title
 from . import choices
 
 User = get_user_model()
@@ -905,7 +906,6 @@ class Journal(CommonControlField, ClusterableModel):
 
     @property
     def articlemeta_format(self):
-        from core.journal.sources.articlemeta_format import get_articlemeta_format_title
         return get_articlemeta_format_title(self)
 
     base_form_class = CoreAdminModelForm
