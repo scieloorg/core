@@ -95,7 +95,7 @@ django-maintenance-mode==0.21.1
 # Snky
 # ------------------------------------------------------------------------------
 certifi>=2023.7.22 # not directly required, pinned by Snyk to avoid a vulnerability
-requests>=2.31.0 # not directly required, pinned by Snyk to avoid a vulnerability
+requests>=2.32.2 # not directly required, pinned by Snyk to avoid a vulnerability
 
 
 #Django prometheus
@@ -114,3 +114,5 @@ freezegun==1.5.1
 # django-rosetta
 # ------------------------------------------------------------------------------
 django-rosetta==0.10.1
+sqlparse>=0.5.0 # not directly required, pinned by Snyk to avoid a vulnerability
+urllib3>=2.2.2 # not directly required, pinned by Snyk to avoid a vulnerability
