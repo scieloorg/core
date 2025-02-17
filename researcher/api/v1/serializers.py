@@ -7,11 +7,8 @@ class ResearcherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Researcher
         fields = [
-            "given_names",
-            "last_name",
-            "suffix",
-            "orcid",
-            "lattes",
+            "person_name",
+            "affiliation",
             # "gender",
             # "gender_identification_status",
         ]

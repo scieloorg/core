@@ -5,7 +5,7 @@ from journal import models
 from .serializers import JournalSerializer
 
 from core.validators import validate_params
-
+from core.utils.utils import params_api
 
 
 class GenericJournalViewSet(viewsets.ModelViewSet):
@@ -47,28 +47,18 @@ class JournalViewSet(GenericJournalViewSet):
 
         queryset = super().get_queryset()
 
-        params = {}
-        if issn:
-            params['scielojournal__issn_scielo'] = issn
-        if issn_electronic:
-            params['official__issn_electronic'] = issn_electronic
-        if issn_print:
-            params['official__issn_print'] = issn_print
-        if issnl:
-            params['official__issnl'] = issnl
-        if title:
-            params['title'] = title
-        if toc_item:
-            params['journaltocsection__toc_items__text'] = toc_item    
-        if thematic_areas:
-            params['subject__value__in'] = thematic_areas.split(",")
-        if from_date_created:
-            params["created__gte"] = from_date_created.replace("/", "-")
-        if until_date_created:
-            params["created__lte"] = until_date_created.replace("/", "-")
-        if from_date_updated:
-            params["updated__gte"] = from_date_updated.replace("/", "-")
-        if until_date_updated:
-            params["updated__lte"] = until_date_updated.replace("/", "-")
+        params = params_api(
+            scielojournal__issn_scielo=issn,
+            official__issn_electronic= issn_electronic,
+            official__issn_print=issn_print,
+            official__issnl=issnl,
+            title=title,
+            journaltocsection__toc_items__text=toc_item,
+            subject__value__in=thematic_areas.split(",") if thematic_areas else None,
+            created__gte=from_date_created.replace("/", "-") if from_date_created else None,
+            created__lte=until_date_created.replace("/", "-") if until_date_created else None,
+            updated__gte=from_date_updated.replace("/", "-") if from_date_updated else None,
+            updated__lte=until_date_updated.replace("/", "-") if until_date_updated else None
+        )
 
         return queryset.filter(**params)
