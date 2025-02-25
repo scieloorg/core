@@ -91,8 +91,6 @@ class JournalSerializer(serializers.ModelSerializer):
     title_in_database = serializers.SerializerMethodField()
     url_logo = serializers.SerializerMethodField()
     mission = MissionSerializer(many=True, read_only=True)
-    issn_print = serializers.CharField(source="official.issn_print")
-    issn_electronic = serializers.CharField(source="official.issn_electronic")
     other_titles = serializers.SerializerMethodField()
     sponsor = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
@@ -242,8 +240,6 @@ class JournalSerializer(serializers.ModelSerializer):
             "previous_journal_title",
             "other_titles",
             "acronym",
-            "issn_print",
-            "issn_electronic",
             "journal_use_license",
             "publisher",
             "owner",
