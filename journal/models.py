@@ -53,6 +53,7 @@ from location.models import Location
 from vocabulary.models import Vocabulary
 from thematic_areas.models import ThematicArea
 
+from .sources.api_article_meta import get_articlemeta_format
 from . import choices
 
 User = get_user_model()
@@ -903,6 +904,10 @@ class Journal(CommonControlField, ClusterableModel):
         
         title = self.title or str(self.official)
         return f"{title} ({collection_acronym}) | ({issns})"
+
+    @property
+    def articlemeta_format(self):
+        return get_articlemeta_format(self)
 
     base_form_class = CoreAdminModelForm
 
