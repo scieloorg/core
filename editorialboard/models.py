@@ -265,10 +265,6 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
         institution_state_name=None,
         declared_role=None,
         std_role=None,
-        member_activity_initial_year=None,
-        member_activity_final_year=None,
-        member_activity_initial_month=None,
-        member_activity_final_month=None,
         editorial_board_initial_year=None,
         editorial_board_final_year=None,
     ):
