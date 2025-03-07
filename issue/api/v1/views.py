@@ -1,11 +1,18 @@
 from rest_framework.exceptions import ValidationError
 
 from django.db.models import Q
-from rest_framework import viewsets
+from rest_framework import viewsets, serializers
 
 from article import models
 from core.validators import validate_params
 from .serializers import IssueSerializer
+
+class ArticleMetaFormatIssueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Issue
+    
+    def to_representation(self, instance):
+        return instance.articlemeta_format
 
 
 class GenericIssueViewSet(viewsets.ModelViewSet):
@@ -53,6 +60,7 @@ class IssueViewSet(GenericIssueViewSet):
             "number",
             "supplement",
             "page",
+            "formats",
             "",
         )
 
@@ -85,4 +93,8 @@ class IssueViewSet(GenericIssueViewSet):
             queryset = queryset.filter(**params)
         return queryset 
 
-    
+    def get_serializer_class(self):
+        format_param = self.request.query_params.get("formats")
+        if format_param == "articlemeta":
+            return ArticleMetaFormatIssueSerializer
+        return IssueSerializer
