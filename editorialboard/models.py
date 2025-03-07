@@ -184,58 +184,49 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
     @classmethod
     def _get(
         cls,
-        editorial_board,
+        journal,
         researcher,
-        role,
     ):
         params = dict(
-            editorial_board=editorial_board,
+            journal=journal,
             researcher=researcher,
-            role_editorial_board__role=role,
         )
-        logging.info(params)
-        if role and researcher:
-            try:
+        if researcher and journal:
                 return cls.objects.get(**params)
-            except cls.MultipleObjectsReturned:
-                return cls.objects.filter(*params).first()
-        raise ValueError("EditorialBoardMember._get requires editorial_board and researcher and role")
+        raise ValueError("EditorialBoardMember._get requires journal and researcher and role")
 
     @classmethod
     def _create(
         cls,
         user,
+        journal,
         researcher,
-        editorial_board,
-        role,
     ):
-        if role and researcher and editorial_board:
+        if researcher and journal:
             try:
                 obj = cls()
                 obj.creator = user
-                obj.editorial_board = editorial_board
+                obj.journal = journal
                 obj.researcher = researcher
-                obj.role = role
                 obj.save()
                 return obj
             except IntegrityError:
-                return cls._get(editorial_board, researcher, role)
-        raise ValueError("EditorialBoardMember._create requires editorial_board and researcher and role")
+                return cls._get(journal, researcher)
+        raise ValueError("EditorialBoardMember._create requires journal and researcher and role")
 
     @classmethod
     def _create_or_update(
         cls,
         user,
-        editorial_board,
-        researcher,
-        role,
+        journal,
+        researcher, 
     ):
-        if role and researcher and editorial_board:
+        if researcher and journal:
             try:
-                return cls._get(editorial_board, researcher, role)
+                return cls._get(journal, researcher)
             except cls.DoesNotExist:
-                return cls._create(user, editorial_board, researcher, role)
-        raise ValueError("EditorialBoardMember._create requires editorial_board and researcher and journal")
+                return cls._create(user, journal, researcher)
+        raise ValueError("EditorialBoardMember._create requires journal and researcher and journal")
 
     @classmethod
     def create_or_update(
@@ -243,77 +234,36 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
         user,
         researcher=None,
         journal=None,
-        journal_title=None,
-        given_names=None,
-        last_name=None,
-        suffix=None,
-        declared_person_name=None,
-        lattes=None,
-        orcid=None,
-        email=None,
-        gender_code=None,
-        gender_identification_status=None,
-        institution_name=None,
-        institution_div1=None,
-        institution_div2=None,
-        institution_city_name=None,
-        institution_country_text=None,
-        institution_country_acronym=None,
-        institution_country_name=None,
-        institution_state_text=None,
-        institution_state_acronym=None,
-        institution_state_name=None,
         declared_role=None,
         std_role=None,
         editorial_board_initial_year=None,
         editorial_board_final_year=None,
     ):
-        if not researcher:
-            researcher = Researcher.create_or_update(
-                user=user,
-                given_names=given_names,
-                last_name=last_name,
-                declared_name=declared_person_name,
-                suffix=suffix,
-                lattes=lattes,
-                orcid=orcid,
-                email=email,
-                aff_name=institution_name,
-                aff_div1=institution_div1,
-                aff_div2=institution_div2,
-                aff_city_name=institution_city_name,
-                aff_country_text=institution_country_text,
-                aff_country_acronym=institution_country_acronym,
-                aff_country_name=institution_country_name,
-                aff_state_text=institution_state_text,
-                aff_state_acronym=institution_state_acronym,
-                aff_state_name=institution_state_name,
-                gender=gender_code,
-                gender_identification_status=gender_identification_status,
-            )
-        if not journal:
-            journal = EditorialBoardMember._get_journal(journal_title=journal_title)
-
-        editorial_board = EditorialBoard.create_or_update(
-            user,
-            journal,
-            editorial_board_initial_year,
-            editorial_board_final_year,
-        )
-
+        
         role = None
         if std_role or declared_role:
             role = RoleModel.create_or_update(
                 user, std_role=std_role, declared_role=declared_role
             )
+        editorial_board_member = EditorialBoardMember._create_or_update(
+            user,
+            journal,
+            researcher,
+        )
 
-        return cls._create_or_update(user, editorial_board, researcher, role)
+        role_editorial_board = RoleEditorialBoard.create_or_update(
+            editorial_board_member,
+            role,
+            editorial_board_initial_year,
+            editorial_board_final_year,
+        )
+        return editorial_board_member
 
-    @classmethod
-    def _get_journal(cls, journal_title):
+    @staticmethod
+    def _get_journal(journal_title):
         try:
             journal_title = journal_title and journal_title.strip()
-            return cls.objects.get(
+            return Journal.objects.get(
                 Q(title__icontains=journal_title)
                 | Q(official__title__icontains=journal_title)
             )
@@ -336,6 +286,54 @@ class RoleEditorialBoard(CommonControlField, Orderable):
         FieldPanel("initial_year"),
         FieldPanel("final_year"),
     ]
+
+    @classmethod
+    def get(
+        cls,
+        editorial_board_member,
+        role,
+        initial_year,
+        final_year,
+        ):
+        params = dict(
+            editorial_board=editorial_board_member,
+            role=role,
+            initial_year=initial_year,
+            final_year=final_year,
+        )
+        if editorial_board_member and role:
+            return cls.objects.get(**params)
+        raise ValueError("RoleEditorialBoard.get requires editorial_board_member and role")
+    
+    @classmethod
+    def create(
+        cls,
+        editorial_board_member,
+        role,
+        initial_year,
+        final_year,
+        ):
+        obj = cls()
+        obj.editorial_board = editorial_board_member
+        obj.role = role
+        obj.initial_year = initial_year
+        obj.final_year = final_year
+        obj.save()
+        return obj
+
+    @classmethod
+    def create_or_update(
+        cls,
+        editorial_board_member,
+        role,
+        initial_year,
+        final_year,
+        ):
+        try:
+            return cls.get(editorial_board_member, role, initial_year, final_year)
+        except cls.DoesNotExist:
+            return cls.create(editorial_board_member, role, initial_year, final_year)
+
 
 class EditorialBoardMemberFile(models.Model):
     attachment = models.ForeignKey(
