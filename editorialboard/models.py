@@ -140,15 +140,12 @@ class EditorialBoard(CommonControlField, ClusterableModel):
             )
 
 
-class EditorialBoardMember(CommonControlField, Orderable):
-    editorial_board = ParentalKey(
-        EditorialBoard, related_name="editorial_board_member"
+class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
+    journal = ParentalKey(
+        Journal, related_name="editorial_board_member_journal", null=True
     )
     researcher = models.ForeignKey(
         Researcher, null=True, blank=True, related_name="+", on_delete=models.SET_NULL
-    )
-    role = models.ForeignKey(
-        "RoleModel", null=True, blank=True, related_name="+", on_delete=models.SET_NULL
     )
     image = models.ForeignKey(
         "wagtailimages.Image", 
@@ -159,14 +156,14 @@ class EditorialBoardMember(CommonControlField, Orderable):
         help_text=_("Upload a profile photo of the editorial board member."),
     )
     area = models.TextField(null=True, blank=True)
+    
     class Meta:
-        unique_together = [("editorial_board", "researcher", "role")]
+        unique_together = [("journal", "researcher")]
 
     panels = [
         AutocompletePanel("researcher"),
-        AutocompletePanel("role"),
         FieldPanel("image"),
-        # AutocompletePanel("editorial_board", read_only=True),
+        InlinePanel("role_editorial_board", label=_("Role")),
     ]
 
     base_form_class = CoreAdminModelForm
@@ -429,6 +426,22 @@ class EditorialBoardMember(CommonControlField, Orderable):
         except Journal.DoesNotExist as e:
             logging.info(f"EditorialBoard {journal_title} {e}")
 
+
+class RoleEditorialBoard(CommonControlField, Orderable):
+    editorial_board = ParentalKey(
+        EditorialBoardMember, related_name="role_editorial_board"
+    )
+    role = models.ForeignKey(
+        "RoleModel", null=True, blank=True, related_name="+", on_delete=models.SET_NULL
+    )
+    initial_year = models.CharField(max_length=4, blank=True, null=True)
+    final_year = models.CharField(max_length=4, blank=True, null=True)
+
+    panels = [
+        AutocompletePanel("role"),
+        FieldPanel("initial_year"),
+        FieldPanel("final_year"),
+    ]
 
 class EditorialBoardMemberFile(models.Model):
     attachment = models.ForeignKey(
