@@ -191,7 +191,7 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
         params = dict(
             editorial_board=editorial_board,
             researcher=researcher,
-            role=role,
+            role_editorial_board__role=role,
         )
         logging.info(params)
         if role and researcher:
@@ -273,30 +273,30 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
         editorial_board_final_year=None,
     ):
         if not researcher:
-            researcher = EditorialBoardMember._create_or_update_researcher(
-                user,
-                given_names,
-                last_name,
-                suffix,
-                declared_person_name,
-                lattes,
-                orcid,
-                email,
-                gender_code,
-                gender_identification_status,
-                institution_name,
-                institution_div1,
-                institution_div2,
-                institution_city_name,
-                institution_country_text,
-                institution_country_acronym,
-                institution_country_name,
-                institution_state_text,
-                institution_state_acronym,
-                institution_state_name,
+            researcher = Researcher.create_or_update(
+                user=user,
+                given_names=given_names,
+                last_name=last_name,
+                declared_name=declared_person_name,
+                suffix=suffix,
+                lattes=lattes,
+                orcid=orcid,
+                email=email,
+                aff_name=institution_name,
+                aff_div1=institution_div1,
+                aff_div2=institution_div2,
+                aff_city_name=institution_city_name,
+                aff_country_text=institution_country_text,
+                aff_country_acronym=institution_country_acronym,
+                aff_country_name=institution_country_name,
+                aff_state_text=institution_state_text,
+                aff_state_acronym=institution_state_acronym,
+                aff_state_name=institution_state_name,
+                gender=gender_code,
+                gender_identification_status=gender_identification_status,
             )
         if not journal:
-            journal = EditorialBoardMember._create_or_update_journal(journal_title)
+            journal = EditorialBoardMember._get_journal(journal_title=journal_title)
 
         editorial_board = EditorialBoard.create_or_update(
             user,
@@ -414,15 +414,14 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
             logging.exception(e)
             return
 
-    @staticmethod
-    def _create_or_update_journal(journal_title):
+    @classmethod
+    def _get_journal(cls, journal_title):
         try:
             journal_title = journal_title and journal_title.strip()
-            return Journal.objects.get(
+            return cls.objects.get(
                 Q(title__icontains=journal_title)
                 | Q(official__title__icontains=journal_title)
             )
-            logging.info(f"EditorialBoard {journal_title} OK")
         except Journal.DoesNotExist as e:
             logging.info(f"EditorialBoard {journal_title} {e}")
 
