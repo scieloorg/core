@@ -16,10 +16,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterUniqueTogether(
-            name="editorialboardmember",
-            unique_together={("journal", "researcher")},
-        ),
         migrations.AddField(
             model_name="editorialboardmember",
             name="journal",
@@ -29,6 +25,10 @@ class Migration(migrations.Migration):
                 related_name="editorial_board_member_journal",
                 to="journal.journal",
             ),
+        ),
+        migrations.AlterUniqueTogether(
+            name="editorialboardmember",
+            unique_together={("journal", "researcher")},
         ),
         migrations.CreateModel(
             name="RoleEditorialBoard",
