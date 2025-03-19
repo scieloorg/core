@@ -7,8 +7,8 @@ from wagtail_modeladmin.options import (
     ModelAdminGroup,
     modeladmin_register,
 )
-from wagtail_modeladmin.views import CreateView
-
+from wagtail_modeladmin.views import CreateView, EditView
+from wagtail.admin.panels import FieldPanel, InlinePanel
 from . import models
 from .button_helper import IndexedAtHelper
 from .views import import_file, validate
@@ -59,12 +59,42 @@ class JournalCreateView(CreateView):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
 
+from wagtail.admin.panels import FieldPanel, InlinePanel
+
+
+class JournalEditView(EditView):
+    readonly_fields = ['official', 'mission']
+    def form_valid(self, form):
+        self.object = form.save_all(self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_edit_handler(self):
+        """
+        Sobrescreve o método 'get_edit_handler' de EditView.
+        Verifica se o usuário tem permissão para editar o campo. Caso não tenha, os campos que não possuem a permissão
+        'journal.can_edit_{field_name}' no 'user_permissions' serão configurados como somente leitura.
+        Isso é aplicado para 'FieldPanel', 'AutocompletePanel'
+        e 'InlinePanel'.
+        """
+        edit_handler = super().get_edit_handler()
+        user_permissions = self.request.user.get_all_permissions()
+        for object_list in edit_handler.children:
+            for field in object_list.children:
+                if isinstance(field, FieldPanel) and f"journal.can_edit_{field.field_name}" not in user_permissions:
+                    field.__setattr__('read_only', True)
+                elif isinstance(field, InlinePanel) and f"journal.can_edit_{field.relation_name}" not in user_permissions:
+                    field.classname = field.classname + ' read-only-inline-panel'
+                    for inline_field in field.panel_definitions:
+                        inline_field.__setattr__('read_only', True)
+        return edit_handler
+
 
 class JournalAdmin(ModelAdmin):
     model = models.Journal
     inspect_view_enabled = True
     menu_label = _("Journals")
     create_view_class = JournalCreateView
+    edit_view_class = JournalEditView
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
     add_to_settings_menu = False
