@@ -777,6 +777,10 @@ class Journal(CommonControlField, ClusterableModel):
         AutocompletePanel("abstract_language"),
     ]
 
+    panels_editorial_board = [
+        InlinePanel("editorial_board_member_journal", label=_("Editorial Board")),
+    ]
+
     edit_handler = TabbedInterface(
         [
             ObjectList(panels_titles, heading=_("Titles")),
@@ -792,6 +796,7 @@ class Journal(CommonControlField, ClusterableModel):
             ObjectList(
                 panels_instructions_for_authors, heading=_("Instructions for Authors")
             ),
+            ObjectList(panels_editorial_board, heading=_("Editorial Board")),
         ]
     )
 
