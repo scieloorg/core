@@ -140,6 +140,7 @@ class JournalSerializer(serializers.ModelSerializer):
                     }
                     for history in item.journal_history.all()
                 ],
+                "status": item.status,
             }
             journals.append(journal_dict)
 
