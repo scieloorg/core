@@ -122,7 +122,7 @@ def fetch_and_process_journal_logo(
         else:
             url_logo = f"http://{domain}/img/revistas/{journal_acron}/glogo.gif"
 
-        response = fetch_data(url_logo, json=False, timeout=1, verify=True)
+        response = fetch_data(url_logo, json=False, timeout=1, verify=False)
         logo_data = response
         img_wagtail = Image(title=journal_acron)
         img_wagtail.file.save(f"{journal_acron}_glogo.gif", ContentFile(logo_data))
