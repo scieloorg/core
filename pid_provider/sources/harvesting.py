@@ -27,7 +27,7 @@ def provide_pid_for_opac_and_am_xml(
     origin_date=None,
     force_update=None,
 ):
-
+    name = None
     if not force_update:
         # skip update
         try:
