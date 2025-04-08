@@ -141,8 +141,6 @@ class BasePidProvider:
                 "error_type": str(type(e)),
             }
         else:
-            if name is None:
-                name = xml_with_pre.data.get("filename")
             return self.provide_pid_for_xml_with_pre(
                 xml_with_pre,
                 name,

@@ -27,34 +27,23 @@ def provide_pid_for_opac_and_am_xml(
     origin_date=None,
     force_update=None,
 ):
-    name = None
-    if not force_update:
-        # skip update
-        try:
-            if pid_v3:
-                name = pid_v3 + ".xml"
-                return PidProviderXML.objects.get(v3=pid_v3).data
-            if pid_v2:
-                name = pid_v2 + ".xml"
-                return PidProviderXML.objects.get(v2=pid_v2).data
-            return ValueError(
-                "pid_provider.provide_pid_for_opac_and_am_xml "
-                "requires pid_v2 or pid_v3"
-            )
-        except PidProviderXML.DoesNotExist:
-            pass
 
     try:
-        detail = {
-            "pid_v2": pid_v2,
-            "pid_v3": pid_v3,
-            "collection_acron": collection_acron,
-            "journal_acron": journal_acron,
-            "year": year,
-        }
-        for k, v in list(detail.items()):
-            if not v:
-                detail.pop(k)
+        if not (pid_v3 or pid_v2):
+            raise ValueError("Either 'pid_v2' or 'pid_v3' must be provided.")
+
+        name = f"{pid_v3 or pid_v2}.xml"
+
+        if not force_update:
+            try:
+                if pid_v3:
+                    pid_xml = PidProviderXML.objects.get(v3=pid_v3)
+                if pid_v2:
+                    pid_xml = PidProviderXML.objects.get(v2=pid_v2)
+                return pid_xml.data
+            except PidProviderXML.DoesNotExist:
+                pass
+
 
         pp = PidProvider()
         response = pp.provide_pid_for_xml_uri(
