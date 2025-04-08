@@ -268,13 +268,16 @@ class OrganizationCopyrightHolder(BaseOrganization):
 
 
 class OrganizationAffiliation(BaseOrganization):
-    pass
+    @classmethod
+    def get_org_level_model(cls):
+        return OrgLevelAffiliation
 
 
 OrgLevelPublisher = create_org_level_class("OrganizationPublisher")
 OrgLevelOwner = create_org_level_class("OrganizationOwner")
 OrgLevelSponsor = create_org_level_class("OrganizationSponsor")
 OrgLevelCopyright = create_org_level_class("OrganizationCopyrightHolder")
+OrgLevelAffiliation = create_org_level_class("OrganizationAffiliation")
 
 
 class OrganizationInstitutionType(CommonControlField):
