@@ -19,28 +19,8 @@ from location.models import Location
 class BaseOrganization(CommonControlField, ClusterableModel):
     name = models.TextField(_("Name"), null=True, blank=True)
     acronym = models.TextField(_("Institution Acronym"), null=True, blank=True)
-    url = models.URLField("url", blank=True, null=True)
-    logo = models.ImageField(_("Logo"), blank=True, null=True)
-    institution_type_mec = models.CharField(
-        _("Institution Type (MEC)"),
-        choices=choices.inst_type,
-        max_length=100,
-        null=True,
-        blank=True,
-    )
-    institution_type_scielo = models.ManyToManyField(
-        "OrganizationInstitutionType",
-        verbose_name=_("Institution Type (SciELO)"),
-        null=True,
-        blank=True,
-    )
     location = models.ForeignKey(
         Location, on_delete=models.SET_NULL, null=True, blank=True
-    )
-    is_official = models.BooleanField(
-        _("Is official"),
-        null=True,
-        blank=True,
     )
     panels = [
         FieldPanel("name"),
@@ -50,14 +30,11 @@ class BaseOrganization(CommonControlField, ClusterableModel):
         FieldPanel("institution_type_mec"),
         AutocompletePanel("location"),
         AutocompletePanel("institution_type_scielo"),
-        InlinePanel("org_level", max_num=1, label="Organization Level"),
         FieldPanel("is_official"),
     ]
     autocomplete_search_field = "name"
 
     def __str__(self):
-        if self.org_level.exists():
-            return f"{self.name} | {str(self.org_level.first())}"
         return f"{self.name}"
 
     def autocomplete_label(self):
@@ -119,9 +96,6 @@ class BaseOrganization(CommonControlField, ClusterableModel):
         institution_type_scielo,
         location,
         is_official,
-        level_1,
-        level_2,
-        level_3,
         user,
     ):
         try:
@@ -139,14 +113,6 @@ class BaseOrganization(CommonControlField, ClusterableModel):
             if institution_type_scielo:
                 obj.institution_type_scielo.add(institution_type_scielo)
     
-            if level_1 or level_2 or level_3:
-                org_level_model = cls.get_org_level_model()
-                org_level_model.objects.create(
-                    organization=obj,
-                    level_1=level_1,
-                    level_2=level_2,
-                    level_3=level_3,
-                )
             return obj
         except IntegrityError:
             return cls.get(name=name, acronym=acronym, location=location)
@@ -159,9 +125,6 @@ class BaseOrganization(CommonControlField, ClusterableModel):
         location=None,
         url=None,
         logo=None,
-        level_1=None,
-        level_2=None,
-        level_3=None,
         institution_type_mec=None,
         institution_type_scielo=None,
         is_official=None,
@@ -169,9 +132,6 @@ class BaseOrganization(CommonControlField, ClusterableModel):
     ):
         name = remove_extra_spaces(name)
         acronym = remove_extra_spaces(acronym)
-        level_1 = remove_extra_spaces(level_1)
-        level_2 = remove_extra_spaces(level_2)
-        level_3 = remove_extra_spaces(level_3)
         institution_type_mec = remove_extra_spaces(institution_type_mec)
         try:
             return cls.get(name=name, acronym=acronym, location=location)
@@ -185,11 +145,31 @@ class BaseOrganization(CommonControlField, ClusterableModel):
                 institution_type_scielo=institution_type_scielo,
                 location=location,
                 is_official=is_official,
-                level_1=level_1,
-                level_2=level_2,
-                level_3=level_3,
                 user=user,
             )
+
+
+class Organization(BaseOrganization):
+    url = models.URLField("url", blank=True, null=True)
+    logo = models.ImageField(_("Logo"), blank=True, null=True)
+    institution_type_mec = models.CharField(
+        _("Institution Type (MEC)"),
+        choices=choices.inst_type,
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+    institution_type_scielo = models.ManyToManyField(
+        "OrganizationInstitutionType",
+        verbose_name=_("Institution Type (SciELO)"),
+        null=True,
+        blank=True,
+    )
+    is_official = models.BooleanField(
+        _("Is official"),
+        null=True,
+        blank=True,
+    )
 
 
 # Dynamic OrgLevel class creation
@@ -241,43 +221,6 @@ class BaseOrgLevel(CommonControlField):
     def __str__(self):
         data = [level for level in [self.level_1, self.level_2, self.level_3] if level]
         return " | ".join(data)
-
-
-class OrganizationPublisher(BaseOrganization):
-    @classmethod
-    def get_org_level_model(cls):
-        return OrgLevelPublisher
-
-
-class OrganizationOwner(BaseOrganization):
-    @classmethod
-    def get_org_level_model(cls):
-        return OrgLevelOwner
-
-
-class OrganizationSponsor(BaseOrganization):
-    @classmethod
-    def get_org_level_model(cls):
-        return OrgLevelSponsor
-
-
-class OrganizationCopyrightHolder(BaseOrganization):
-    @classmethod
-    def get_org_level_model(cls):
-        return OrgLevelCopyright
-
-
-class OrganizationAffiliation(BaseOrganization):
-    @classmethod
-    def get_org_level_model(cls):
-        return OrgLevelAffiliation
-
-
-OrgLevelPublisher = create_org_level_class("OrganizationPublisher")
-OrgLevelOwner = create_org_level_class("OrganizationOwner")
-OrgLevelSponsor = create_org_level_class("OrganizationSponsor")
-OrgLevelCopyright = create_org_level_class("OrganizationCopyrightHolder")
-OrgLevelAffiliation = create_org_level_class("OrganizationAffiliation")
 
 
 class OrganizationInstitutionType(CommonControlField):
