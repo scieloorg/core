@@ -9,7 +9,7 @@ from wagtail.admin.panels import FieldPanel, InlinePanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from . import choices
-from .exceptions import OrganizationTypeGetError
+from .exceptions import OrganizationTypeGetError, OrganizationGetError
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from core.utils.standardizer import remove_extra_spaces
@@ -25,17 +25,13 @@ class BaseOrganization(CommonControlField, ClusterableModel):
     panels = [
         FieldPanel("name"),
         FieldPanel("acronym"),
-        FieldPanel("url"),
-        FieldPanel("logo"),
-        FieldPanel("institution_type_mec"),
         AutocompletePanel("location"),
-        AutocompletePanel("institution_type_scielo"),
         FieldPanel("is_official"),
     ]
     autocomplete_search_field = "name"
 
     def __str__(self):
-        return f"{self.name}"
+        return f"{self.name} | {self.location}"
 
     def autocomplete_label(self):
         return str(self)
@@ -72,9 +68,12 @@ class BaseOrganization(CommonControlField, ClusterableModel):
         acronym,
         location,
     ):
+        if not name:
+            raise OrganizationGetError("Organization.get requires name")
+
         params = {}
-        if name:
-            params["name__iexact"] = name
+        params["name__iexact"] = name
+
         if acronym:
             params["acronym__iexact"] = acronym
         if location:
@@ -90,29 +89,17 @@ class BaseOrganization(CommonControlField, ClusterableModel):
         cls,
         name,
         acronym,
-        url,
-        logo,
-        institution_type_mec,
-        institution_type_scielo,
         location,
-        is_official,
         user,
     ):
         try:
             obj = cls(
                 name=name,
                 acronym=acronym,
-                url=url,
-                logo=logo,
-                institution_type_mec=institution_type_mec,
                 location=location,
-                is_official=is_official,
                 creator=user,
             )
             obj.save()
-            if institution_type_scielo:
-                obj.institution_type_scielo.add(institution_type_scielo)
-    
             return obj
         except IntegrityError:
             return cls.get(name=name, acronym=acronym, location=location)
@@ -123,28 +110,18 @@ class BaseOrganization(CommonControlField, ClusterableModel):
         name,
         acronym=None,
         location=None,
-        url=None,
-        logo=None,
-        institution_type_mec=None,
-        institution_type_scielo=None,
-        is_official=None,
         user=None,
     ):
         name = remove_extra_spaces(name)
         acronym = remove_extra_spaces(acronym)
-        institution_type_mec = remove_extra_spaces(institution_type_mec)
+
         try:
             return cls.get(name=name, acronym=acronym, location=location)
         except cls.DoesNotExist:
             return cls.create(
                 name=name,
                 acronym=acronym,
-                url=url,
-                logo=logo,
-                institution_type_mec=institution_type_mec,
-                institution_type_scielo=institution_type_scielo,
                 location=location,
-                is_official=is_official,
                 user=user,
             )
 
@@ -170,6 +147,41 @@ class Organization(BaseOrganization):
         null=True,
         blank=True,
     )
+
+    panels = BaseOrganization.panels + [
+        FieldPanel("url"),
+        FieldPanel("logo"),
+        FieldPanel("institution_type_mec"),
+        AutocompletePanel("institution_type_scielo"),
+    ]
+
+    @classmethod
+    def create_or_update(
+        cls,
+        name,
+        acronym=None,
+        location=None,
+        url=None,
+        logo=None,
+        institution_type_mec=None,
+        institution_type_scielo=None,
+        is_official=None,
+        user=None,
+    ):
+        institution_type_mec = remove_extra_spaces(institution_type_mec)
+        obj = super().create_or_update(
+            name,
+            acronym,
+            location,
+            user,
+        )
+        obj.url = url
+        obj.logo = logo
+        obj.institution_type_mec = institution_type_mec
+        obj.is_official = is_official
+        obj.save()
+        obj.institution_type_scielo.add(institution_type_scielo)
+        return obj
 
 
 # Dynamic OrgLevel class creation
