@@ -26,7 +26,6 @@ class BaseOrganization(CommonControlField, ClusterableModel):
         FieldPanel("name"),
         FieldPanel("acronym"),
         AutocompletePanel("location"),
-        FieldPanel("is_official"),
     ]
     autocomplete_search_field = "name"
 
@@ -68,21 +67,20 @@ class BaseOrganization(CommonControlField, ClusterableModel):
         acronym,
         location,
     ):
-        if not name:
-            raise OrganizationGetError("Organization.get requires name")
+        if not name and not location:
+            raise OrganizationGetError("Organization.get requires name and location")
 
         params = {}
         params["name__iexact"] = name
+        params["location"] = location
 
         if acronym:
             params["acronym__iexact"] = acronym
-        if location:
-            params["location"] = location
-        if params:
-            try:
-                return cls.objects.get(**params)
-            except cls.MultipleObjectsReturned:
-                return cls.objects.filter(**params).first()
+
+        try:
+            return cls.objects.get(**params)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(**params).first()
 
     @classmethod
     def create(
@@ -153,6 +151,7 @@ class Organization(BaseOrganization):
         FieldPanel("logo"),
         FieldPanel("institution_type_mec"),
         AutocompletePanel("institution_type_scielo"),
+        FieldPanel("is_official"),
     ]
 
     @classmethod
