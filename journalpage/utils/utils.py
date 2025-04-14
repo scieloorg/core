@@ -1,5 +1,5 @@
 from journal.models import Journal
-from editorialboard.models import EditorialBoard
+from editorialboard.models import EditorialBoardMember
 from editorialboard.choices import ROLE
 from django.shortcuts import render
 
@@ -24,10 +24,10 @@ def find_most_recent_journal(journal):
 
 def get_editorial_board(journal):
     try:
-        editorial_board = EditorialBoard.objects.filter(journal=journal).latest(
+        editorial_board = EditorialBoardMember.objects.filter(journal=journal).latest(
             "initial_year"
         )
-    except EditorialBoard.DoesNotExist:
+    except EditorialBoardMember.DoesNotExist:
         editorial_board = None
     return editorial_board
 
