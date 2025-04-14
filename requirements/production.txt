@@ -3,7 +3,7 @@
 -r base.txt
 
 gevent==24.2.1  # http://www.gevent.org/
-gunicorn==21.2.0 # https://github.com/benoitc/gunicorn
+gunicorn==22.0.0 # https://github.com/benoitc/gunicorn
 psycopg2-binary==2.9.9  # https://github.com/psycopg/psycopg2
 sentry-sdk[django]==2.5.1  # https://github.com/getsentry/sentry-python
 
@@ -16,3 +16,5 @@ setuptools>=68.2.2 # not directly required, pinned by Snyk to avoid a vulnerabil
 # Elastic-APM  # https://pypi.org/project/elastic-apm/
 # ------------------------------------------------------------------------------
 elastic-apm==6.21.4.post8347027212
+sqlparse>=0.5.0 # not directly required, pinned by Snyk to avoid a vulnerability
+urllib3>=2.2.2 # not directly required, pinned by Snyk to avoid a vulnerability
