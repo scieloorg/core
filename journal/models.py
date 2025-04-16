@@ -55,6 +55,9 @@ from thematic_areas.models import ThematicArea
 
 from . import choices
 from .permissions import journal_permissions
+from organization.dynamic_models import OrgLevelPublisher, OrgLevelOwner, OrgLevelCopyrightHolder, OrgLevelSponsor
+from organization.models import Organization
+
 User = get_user_model()
 
 
@@ -1001,7 +1004,7 @@ class Mission(Orderable, RichTextWithLanguage, CommonControlField):
         return obj
 
 
-class OwnerHistory(Orderable, BaseHistoryItem):
+class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="owner_history", null=True
     )
@@ -1011,12 +1014,25 @@ class OwnerHistory(Orderable, BaseHistoryItem):
         blank=True,
         null=True,
     )
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
     panels = BaseHistoryItem.panels +[
-        AutocompletePanel("institution")
+        AutocompletePanel("institution"),
+        AutocompletePanel("organization"),
+        InlinePanel("journal_ownerhistory", max_num=1, label=_("Level Owner"), classname="collapsed"),
     ]
 
-class PublisherHistory(Orderable, BaseHistoryItem):
+    @classmethod
+    def get_org_level_model(cls):
+        return OrgLevelOwner
+
+
+class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="publisher_history", null=True
     )
@@ -1026,12 +1042,25 @@ class PublisherHistory(Orderable, BaseHistoryItem):
         blank=True,
         null=True,
     )
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
     panels = BaseHistoryItem.panels +[
-        AutocompletePanel("institution")
+        AutocompletePanel("institution"),
+        AutocompletePanel("organization"),
+        InlinePanel("journal_publisherhistory", max_num=1, label=_("Level Publisher"), classname="collapsed"),
     ]
 
-class SponsorHistory(Orderable, BaseHistoryItem):
+    @classmethod
+    def get_org_level_model(cls):
+        return OrgLevelPublisher
+
+
+class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, null=True, related_name="sponsor_history"
     )
@@ -1041,12 +1070,25 @@ class SponsorHistory(Orderable, BaseHistoryItem):
         null=True,
         blank=True,
     )
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
     panels = BaseHistoryItem.panels +[
-        AutocompletePanel("institution")
+        AutocompletePanel("institution"),
+        AutocompletePanel("organization"),
+        InlinePanel("journal_sponsorhistory", max_num=1, label=_("Level Sponsor"), classname="collapsed"),  
     ]
 
-class CopyrightHolderHistory(Orderable, BaseHistoryItem):
+    @classmethod
+    def get_org_level_model(cls):
+        return OrgLevelSponsor
+
+
+class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem):
     journal = ParentalKey(
         Journal,
         on_delete=models.SET_NULL,
@@ -1059,10 +1101,23 @@ class CopyrightHolderHistory(Orderable, BaseHistoryItem):
         blank=True,
         null=True,
     )
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
     
     panels = BaseHistoryItem.panels +[
-        AutocompletePanel("institution")
+        AutocompletePanel("institution"),
+        AutocompletePanel("organization"),
+        InlinePanel("journal_copyrightholderhistory", max_num=1, label=_("Level Copyright"), classname="collapsed"),
     ]
+
+    @classmethod
+    def get_org_level_model(cls):
+        return OrgLevelCopyrightHolder
+
 
 class JournalSocialNetwork(Orderable, SocialNetwork):
     page = ParentalKey(
