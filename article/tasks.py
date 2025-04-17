@@ -1,4 +1,3 @@
-import re
 import logging
 import sys
 from datetime import datetime, timedelta
@@ -10,9 +9,11 @@ from django.db.models import Subquery
 
 from article.models import Article, ArticleFormat
 from article.sources import xmlsps
-from core.utils.extracts_normalized_email import extracts_normalized_email
 from article.sources.preprint import harvest_preprints
+from collection.models import Collection
+from core.utils.extracts_normalized_email import extracts_normalized_email
 from config import celery_app
+from journal.models import SciELOJournal
 from researcher.models import ResearcherIdentifier
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
@@ -306,3 +307,18 @@ def normalize_stored_email(self,):
             updated_list.append(re_identifier)
 
     ResearcherIdentifier.objects.bulk_update(updated_list, ['identifier'])
+
+
+@celery_app.task
+def migrate_path_xml_pid_provider_to_pid_provider(user_id=None, username=None, collection_acron3=None):
+    import os
+    base_path = "/app/core/media/xml_pid_provider"
+    collection = Collection.objects.filter(acron3=collection_acron3)
+    issns = list(SciELOJournal.objects.filter(collection=collection, status="C").values_list("journal__official__issn_print", "journal__official__issn_electronic"))
+    flat_issns = [item for issn in issns for item in issn if item]
+
+    matched_dirs = []
+    for d in os.listdir(base_path):
+        if d in flat_issns and os.path.isdir(os.path.join(base_path, d)):
+            matched_dirs.append(os.path.join(base_path, d))
+

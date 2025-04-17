@@ -1,12 +1,21 @@
+import os
+import tempfile
+import pytest
+
+
 from freezegun import freeze_time
 from django.test import TestCase
-from django_test_migrations.migrator import Migrator
 from datetime import datetime
 from django.utils.timezone import make_aware
+from unittest.mock import patch, MagicMock
 
 from article.models import Article
-from article.tasks import remove_duplicate_articles, normalize_stored_email, get_researcher_identifier_unnormalized
+from article.tasks import remove_duplicate_articles, normalize_stored_email, get_researcher_identifier_unnormalized, migrate_path_xml_pid_provider_to_pid_provider
 from researcher.models import ResearcherIdentifier
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 
 
 class RemoveDuplicateArticlesTest(TestCase):
@@ -86,3 +95,37 @@ class NormalizeEmailResearcherIdentifierTest(TestCase):
                     ResearcherIdentifier.objects.filter(identifier=email).exists(),
                     f"E-mail '{email}' unnormalized"
                 )
+
+
+class MigratePathXmlPidProviderToPidProviderTest(TestCase):
+    def setUp(self):
+        # f"xml_pid_provider/{subdir}/{instance.pid_v3[0]}/{instance.pid_v3[-1]}/{instance.pid_v3}/{instance.finger_print}"
+        self.base_path = "app/core/media/xml_pid_provider"
+        # self.base_path_article_1 = f"{self.base_path}/1111/1111"
+        self.user = User.objects.create_user(username="test", password="test")
+        os.makedirs(self.base_path, exist_ok=True)
+        self.files_created = []
+
+    def tearDown(self):
+        # Remove all files created during the test
+        for file in self.files_created:
+            if os.path.exists(file):
+                os.remove(file)
+        if os.path.exists(self.base_path) and not os.listdir(self.base_path):
+            os.rmdir(self.base_path)
+
+    @patch("article.tasks.migrate_path_xml_pid_provider_to_pid_provider.os.listdir")
+    @patch("article.tasks.SciELOJournal.objects.filter")
+    @patch('article.tasks.Collection.objects.filter')
+    def test_migrate_path_xml_pid_provider_to_pid_provider(self, mock_collection_filter, mock_scielo_filter, mock_listdir):
+        mock_collection = MagicMock()
+        mock_collection_filter.return_value = mock_collection
+
+        mock_scielo_qs = MagicMock()
+        mock_scielo_filter.return_value = mock_scielo_qs
+        mock_scielo_qs.values_list.return_value = [
+            ("1111-1111", "2222-2222"),
+            ("3333-3333", None),
+        ]
+        
+        migrate_path_xml_pid_provider_to_pid_provider(username="test")
