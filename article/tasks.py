@@ -309,16 +309,3 @@ def normalize_stored_email(self,):
     ResearcherIdentifier.objects.bulk_update(updated_list, ['identifier'])
 
 
-@celery_app.task
-def migrate_path_xml_pid_provider_to_pid_provider(user_id=None, username=None, collection_acron3=None):
-    import os
-    base_path = "/app/core/media/xml_pid_provider"
-    collection = Collection.objects.filter(acron3=collection_acron3)
-    issns = list(SciELOJournal.objects.filter(collection=collection, status="C").values_list("journal__official__issn_print", "journal__official__issn_electronic"))
-    flat_issns = [item for issn in issns for item in issn if item]
-
-    matched_dirs = []
-    for d in os.listdir(base_path):
-        if d in flat_issns and os.path.isdir(os.path.join(base_path, d)):
-            matched_dirs.append(os.path.join(base_path, d))
-
