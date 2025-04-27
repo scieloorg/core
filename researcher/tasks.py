@@ -25,7 +25,13 @@ def migrate_old_researcher_to_new_researcher(username=None, user_id=None):
         "affiliation__institution__institution_identification",
     )
     for old_researcher in old_researchers:
-        orcid = old_researcher.researcheraka_set.filter(researcher_identifier__source_name__iexact="ORCID").first().researcher_identifier.identifier
+        orcid = (
+            old_researcher.researcheraka_set.filter(
+                researcher_identifier__source_name__iexact="ORCID"
+            )
+            .first()
+            .researcher_identifier.identifier
+        )
         data = dict(
             given_names=old_researcher.person_name.given_names,
             last_name=old_researcher.person_name.last_name,
@@ -78,4 +84,3 @@ def children_migrate_old_researcher_to_new_researcher(
         researcher_identifier=researcher_identifier,
         affiliation=affiliation,
     )
-

@@ -7,7 +7,13 @@ from core.users.models import User
 from institution.models import Institution
 from location.models import Location
 from organization.models import Organization
-from researcher.models import NewResearcher, PersonName, Researcher, ResearcherIds, Affiliation
+from researcher.models import (
+    NewResearcher,
+    PersonName,
+    Researcher,
+    ResearcherIds,
+    Affiliation,
+)
 
 from .tasks import (
     children_migrate_old_researcher_to_new_researcher,
@@ -172,7 +178,9 @@ class MigrationResearcherTest(TestCase):
             affiliation=self.affiliation,
         )
 
-    def get_args(self,):
+    def get_args(
+        self,
+    ):
         return dict(
             username=self.user.username,
             user_id=None,
@@ -191,7 +199,6 @@ class MigrationResearcherTest(TestCase):
                 location_id=self.researcher.affiliation.institution.location.id,
             ),
         )
-
 
     @patch(
         "researcher.tasks.children_migrate_old_researcher_to_new_researcher.apply_async"
@@ -224,7 +231,10 @@ class MigrationResearcherTest(TestCase):
         )
         self.assertEqual(new_researcher[0].affiliation.acronym, "UFSC")
         self.assertEqual(new_researcher[0].affiliation.is_official, True)
-        self.assertEqual(new_researcher[0].affiliation.institution_type_mec, "agência de apoio à pesquisa")
+        self.assertEqual(
+            new_researcher[0].affiliation.institution_type_mec,
+            "agência de apoio à pesquisa",
+        )
         self.assertEqual(new_researcher[0].affiliation.url, "www.teste.com.br")
 
         organization = Organization.objects.all()
@@ -253,7 +263,10 @@ class MigrationResearcherTest(TestCase):
         )
         self.assertEqual(new_researcher[0].affiliation.acronym, "UFSC")
         self.assertEqual(new_researcher[0].affiliation.is_official, True)
-        self.assertEqual(new_researcher[0].affiliation.institution_type_mec, "agência de apoio à pesquisa")
+        self.assertEqual(
+            new_researcher[0].affiliation.institution_type_mec,
+            "agência de apoio à pesquisa",
+        )
         self.assertEqual(new_researcher[0].affiliation.url, "www.teste.com.br")
 
         organization = Organization.objects.all()

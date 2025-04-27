@@ -128,7 +128,10 @@ class NewResearcherAdminViewSet(SnippetViewSet):
     menu_label = _("New Researcher")
     menu_order = get_menu_order("new_researcher")
     list_display = ["__str__", "affiliation"]
-    search_fields = ["person_name__fullname", "affiliation__institution__institution_identification__name"]
+    search_fields = [
+        "person_name__fullname",
+        "affiliation__institution__institution_identification__name",
+    ]
     list_filter = ["affiliation"]
     inspect_view_enabled = True
     add_to_admin_menu = True
