@@ -12,7 +12,7 @@ from wagtail_modeladmin.views import CreateView
 
 from .button_helper import EditorialBoardMemberHelper
 from .models import (
-    EditorialBoard,
+    # EditorialBoard,
     EditorialBoardMember,
     EditorialBoardMemberFile,
     RoleModel,
@@ -46,11 +46,6 @@ class EditorialBoardMemberAdmin(ModelAdmin):
         "journal__title",
         "researcher__person_name__fullname",
     )
-    custom_panels = [
-        FieldPanel("researcher", read_only=True),
-        FieldPanel("role", read_only=True),
-    ]
-    edit_handler = ObjectList(custom_panels)
 
 
 class EditorialBoardMemberFileAdmin(ModelAdmin):
@@ -91,27 +86,27 @@ class EditorialBoardCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class EditorialBoardAdmin(ModelAdmin):
-    model = EditorialBoard
-    create_view_class = EditorialBoardCreateView
-    menu_label = _("EditorialBoard")
-    menu_icon = "folder"
-    menu_order = 9
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-    list_display = (
-        "journal",
-        "initial_year",
-        "final_year",
-        "created",
-        "updated",
-    )
-    list_filter = ("initial_year", "final_year")
-    search_fields = (
-        "journal__title",
-        "initial_year",
-        "final_year",
-    )
+# class EditorialBoardAdmin(ModelAdmin):
+#     model = EditorialBoard
+#     create_view_class = EditorialBoardCreateView
+#     menu_label = _("EditorialBoard")
+#     menu_icon = "folder"
+#     menu_order = 9
+#     add_to_settings_menu = False
+#     exclude_from_explorer = False
+#     list_display = (
+#         "journal",
+#         "initial_year",
+#         "final_year",
+#         "created",
+#         "updated",
+#     )
+#     list_filter = ("initial_year", "final_year")
+#     search_fields = (
+#         "journal__title",
+#         "initial_year",
+#         "final_year",
+#     )
 
 
 class EditorialBoardAdminGroup(ModelAdminGroup):
@@ -120,7 +115,7 @@ class EditorialBoardAdminGroup(ModelAdminGroup):
     menu_order = get_menu_order("editorialboard")  # will put in 3rd place (000 being 1st, 100 2nd)
     items = (
         RoleModelAdmin,
-        EditorialBoardAdmin,
+        # EditorialBoardAdmin,
         EditorialBoardMemberAdmin,
         EditorialBoardMemberFileAdmin,
     )
