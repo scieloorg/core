@@ -12,6 +12,7 @@ WAGTAIL_MENU_APPS_ORDER = [
     "institution",
     "organization",
     "researcher",
+    "new_researcher",
 
     "thematic_areas",
     "vocabulary",

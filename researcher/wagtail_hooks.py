@@ -1,10 +1,19 @@
 from django.http import HttpResponseRedirect
 from django.utils.translation import gettext as _
-from wagtail_modeladmin.options import ModelAdmin, modeladmin_register, ModelAdminGroup
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import SnippetViewSet
+from wagtail_modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
 from wagtail_modeladmin.views import CreateView
 
 from config.menu import get_menu_order
-from .models import Researcher, ResearcherIdentifier, PersonName, Affiliation
+
+from .models import (
+    Affiliation,
+    NewResearcher,
+    PersonName,
+    Researcher,
+    ResearcherIdentifier,
+)
 
 
 class ResearcherCreateView(CreateView):
@@ -111,3 +120,18 @@ class ResearcherAdminGroup(ModelAdminGroup):
 
 
 modeladmin_register(ResearcherAdminGroup)
+
+
+class NewResearcherAdminViewSet(SnippetViewSet):
+    model = NewResearcher
+    menu_icon = "folder"
+    menu_label = _("New Researcher")
+    menu_order = get_menu_order("new_researcher")
+    list_display = ["__str__", "affiliation"]
+    search_fields = ["person_name__fullname", "affiliation__institution__institution_identification__name"]
+    list_filter = ["affiliation"]
+    inspect_view_enabled = True
+    add_to_admin_menu = True
+
+
+register_snippet(NewResearcherAdminViewSet)
