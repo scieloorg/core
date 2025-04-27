@@ -1,22 +1,20 @@
 import logging
 import os
-from itertools import cycle
-from django.db import models, IntegrityError
-from django.db.models import Q, Case, When, Value, IntegerField
+
+from django.db import IntegrityError, models
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
+from wagtail.admin.panels import FieldPanel, InlinePanel
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
-from core.choices import MONTHS
-from core.models import CommonControlField, Gender
 from core.forms import CoreAdminModelForm
+from core.models import CommonControlField
 from core.utils.standardizer import remove_extra_spaces
 from journal.models import Journal
-from location.models import Location, City, State, Country
-from researcher.models import Researcher, Affiliation
+from researcher.models import Researcher
 
 from . import choices
 
