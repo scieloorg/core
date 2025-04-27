@@ -776,7 +776,8 @@ class NewResearcher(BaseResearcher):
             )
             obj.save()
             if researcher_identifier:
-                obj.researcher_ids.set([researcher_identifier])
+                obj.researcher_ids.add(researcher_identifier) 
+                obj.save()
             return obj
         except IntegrityError:
             return cls.get(
@@ -841,7 +842,7 @@ class ResearcherIds(CommonControlField):
     Class that represent any id of a researcher
     """
 
-    reseracher = ParentalManyToManyField(
+    researcher = ParentalKey(
         NewResearcher, related_name="researcher_ids", null=True, blank=True
     )
     identifier = models.CharField(_("ID"), max_length=64, blank=True, null=True)
