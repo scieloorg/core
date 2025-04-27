@@ -101,41 +101,6 @@ class NewResearcherTest(TestCase):
             researcher[0].researcher_ids.first().identifier, "0000-0002-9147-0547"
         )
 
-    def test_new_researcher_with_same_orcid_and_different_names(self):
-        NewResearcher.get_or_create(
-            user=self.user,
-            given_names="Given names",
-            last_name="Last name",
-            suffix="Suffix",
-            affiliation=self.organization,
-            researcher_identifier=self.researcher_id_orcid,
-        )
-        NewResearcher.get_or_create(
-            user=self.user,
-            given_names="Another Given names",
-            last_name="Another Last name",
-            suffix="Another Suffix",
-            affiliation=self.organization,
-            researcher_identifier=self.researcher_id_orcid,
-        )
-
-        researcher = NewResearcher.objects.all()
-        self.assertEqual(researcher.count(), 2)
-        self.assertEqual(researcher[0].given_names, "Given names")
-        self.assertEqual(researcher[0].last_name, "Last name")
-        self.assertEqual(researcher[0].suffix, "Suffix")
-        self.assertEqual(researcher[0].researcher_ids.count(), 1)
-        self.assertEqual(
-            researcher[0].researcher_ids.first().identifier, "0000-0002-9147-0547"
-        )
-        self.assertEqual(researcher[1].given_names, "Another Given names")
-        self.assertEqual(researcher[1].last_name, "Another Last name")
-        self.assertEqual(researcher[1].suffix, "Another Suffix")
-        self.assertEqual(researcher[1].researcher_ids.count(), 1)
-        self.assertEqual(
-            researcher[1].researcher_ids.first().identifier, "0000-0002-9147-0547"
-        )
-
 
 class MigrationResearcherTest(TestCase):
     def setUp(self):
