@@ -14,7 +14,7 @@ from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from core.utils.standardizer import remove_extra_spaces
 from journal.models import Journal
-from researcher.models import Researcher
+from researcher.models import NewResearcher
 
 from . import choices
 
@@ -24,7 +24,7 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
         Journal, related_name="editorial_board_member_journal", null=True
     )
     researcher = models.ForeignKey(
-        Researcher, null=True, blank=True, related_name="+", on_delete=models.SET_NULL
+        NewResearcher, null=True, blank=True, related_name="+", on_delete=models.SET_NULL
     )
     image = models.ForeignKey(
         "wagtailimages.Image", 
@@ -157,8 +157,8 @@ class RoleEditorialBoard(CommonControlField, Orderable):
     role = models.ForeignKey(
         "RoleModel", null=True, blank=True, related_name="+", on_delete=models.SET_NULL
     )
-    initial_year = models.CharField(max_length=4, blank=True, null=True)
-    final_year = models.CharField(max_length=4, blank=True, null=True)
+    initial_year = models.DateField(blank=True, null=True)
+    final_year = models.DateField(blank=True, null=True)
 
     panels = [
         AutocompletePanel("role"),

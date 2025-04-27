@@ -46,11 +46,6 @@ class EditorialBoardMemberAdmin(ModelAdmin):
         "journal__title",
         "researcher__person_name__fullname",
     )
-    custom_panels = [
-        FieldPanel("researcher", read_only=True),
-        FieldPanel("role", read_only=True),
-    ]
-    edit_handler = ObjectList(custom_panels)
 
 
 class EditorialBoardMemberFileAdmin(ModelAdmin):
