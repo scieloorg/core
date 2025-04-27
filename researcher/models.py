@@ -747,9 +747,12 @@ class NewResearcher(BaseResearcher):
                 "Researcher.get requires given_names, last_name parameters"
             )
         fullname = cls.join_names(given_names, last_name, suffix)
-        if researcher_identifier:
-            qs = cls.get_by_orcid(researcher_identifier)
-            return qs.get(fullname__iexact=fullname)
+        if researcher_identifier and researcher_identifier.source_name == "ORCID":
+            try:
+                qs = cls.get_by_orcid(researcher_identifier)
+                return qs.get(fullname__iexact=fullname)
+            except cls.DoesNotExist:
+                pass
         return cls.objects.get(fullname__iexact=fullname)
 
     @classmethod
@@ -775,9 +778,6 @@ class NewResearcher(BaseResearcher):
                 affiliation=affiliation,
             )
             obj.save()
-            if researcher_identifier:
-                obj.researcher_ids.add(researcher_identifier) 
-                obj.save()
             return obj
         except IntegrityError:
             return cls.get(
@@ -800,14 +800,14 @@ class NewResearcher(BaseResearcher):
         gender_identification_status=None,
     ):
         try:
-            return cls.get(
+            obj = cls.get(
                 given_names=given_names,
                 last_name=last_name,
                 suffix=suffix,
                 researcher_identifier=researcher_identifier,
             )
         except cls.DoesNotExist:
-            return cls.create(
+            obj = cls.create(
                 user=user,
                 given_names=given_names,
                 last_name=last_name,
@@ -817,7 +817,6 @@ class NewResearcher(BaseResearcher):
                 gender=gender,
                 gender_identification_status=gender_identification_status,
             )
-
         except (InvalidOrcidError, ValueError) as e:
             data = dict(
                 given_names=given_names,
@@ -835,7 +834,11 @@ class NewResearcher(BaseResearcher):
                     "data": data,
                 },
             )
-
+        finally:
+            if researcher_identifier:
+                obj.researcher_ids.add(researcher_identifier)
+                obj.save()
+            return obj
 
 class ResearcherIds(CommonControlField):
     """
