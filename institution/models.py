@@ -90,14 +90,22 @@ class Institution(CommonControlField, ClusterableModel):
             "institution__level_2": self.level_2,
             "institution__level_3": self.level_3,
             "institution__url": self.url,
+            "institution__type": self.institution_type,
         })
-        if self.official:
+        if self.institution_identification.official:
             _data.update(self.official.data)
         _data.update(
             {
-                "institution__is_official": self.is_official,
+                "institution__is_official": self.institution_identification.is_official,
             }
         )
+        if self.institution_type_scielo:
+            _data.update(
+                {
+                    "institution__type_scielo": self.institution_type_scielo.name
+                }
+            )
+
 
         return _data
 

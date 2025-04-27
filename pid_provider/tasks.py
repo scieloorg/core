@@ -1,5 +1,8 @@
 import logging
 import sys
+import pytz
+import re
+import os
 from datetime import datetime
 
 from django.contrib.auth import get_user_model
@@ -7,7 +10,7 @@ from django.contrib.auth import get_user_model
 from collection.models import Collection
 from config import celery_app
 from core.utils.utils import fetch_data
-from pid_provider.models import CollectionPidRequest, PidRequest
+from pid_provider.models import CollectionPidRequest, PidRequest, PidProviderXML
 from pid_provider.sources import am
 from pid_provider.sources.harvesting import provide_pid_for_opac_and_am_xml
 from tracker.models import UnexpectedEvent
@@ -453,5 +456,50 @@ def task_provide_pid_for_xml_uri(
                     origin_date=origin_date,
                     force_update=force_update,
                 ),
+            },
+        )
+
+@celery_app.task
+def load_file_xml_version(username, collection_acron="scl", user_id=None):
+    try:
+        items = PidProviderXML.objects.all().select_related(
+            "current_version",
+        )
+        for item in items:
+            path = item.current_version.file.path
+            if item.current_version and not os.path.isfile(path):
+                match = re.search(r'/pid_provider/\d+/\d+/([^/]+)/', path)
+                if match:
+                    acronym = match.group(1)
+                else:
+                    raise Exception(f"Unable to get acronym from path: {path}")
+
+                dt = datetime.strptime(item.origin_date, "%Y-%m-%d")
+                dt = dt.replace(tzinfo=pytz.UTC)
+                formatted_date = dt.strftime("%a, %d %b %Y %H:%M:%S %Z")
+
+                article = {
+                    "journal_acronym": acronym,
+                    "update": formatted_date,
+                    "publication_date": item.pub_year, # don't used in processing
+                }
+                provide_pid_for_opac_article.apply_async(
+                    kwargs={
+                        "username": username,
+                        "user_id": user_id,
+                        "collection_acron": collection_acron,
+                        "pid_v3": item.v3,
+                        "article": article,
+                        "force_update": True,
+                    }
+                )
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "load_file_xml_version",
+                "pid_v3": item.v3,
             },
         )

@@ -1,4 +1,3 @@
-import re
 import logging
 import sys
 from datetime import datetime, timedelta
@@ -10,9 +9,11 @@ from django.db.models import Subquery
 
 from article.models import Article, ArticleFormat
 from article.sources import xmlsps
-from core.utils.extracts_normalized_email import extracts_normalized_email
 from article.sources.preprint import harvest_preprints
+from collection.models import Collection
+from core.utils.extracts_normalized_email import extracts_normalized_email
 from config import celery_app
+from journal.models import SciELOJournal
 from researcher.models import ResearcherIdentifier
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
@@ -306,3 +307,5 @@ def normalize_stored_email(self,):
             updated_list.append(re_identifier)
 
     ResearcherIdentifier.objects.bulk_update(updated_list, ['identifier'])
+
+

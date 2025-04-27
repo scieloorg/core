@@ -1,12 +1,21 @@
+import os
+import tempfile
+import pytest
+
+
 from freezegun import freeze_time
 from django.test import TestCase
-from django_test_migrations.migrator import Migrator
 from datetime import datetime
 from django.utils.timezone import make_aware
+from unittest.mock import patch, MagicMock
 
 from article.models import Article
-from article.tasks import remove_duplicate_articles, normalize_stored_email, get_researcher_identifier_unnormalized
+from article.tasks import remove_duplicate_articles, normalize_stored_email, get_researcher_identifier_unnormalized, migrate_path_xml_pid_provider_to_pid_provider
 from researcher.models import ResearcherIdentifier
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 
 
 class RemoveDuplicateArticlesTest(TestCase):
