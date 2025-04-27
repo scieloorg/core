@@ -14,7 +14,8 @@ from editorialboard.models import (
     EditorialBoardMemberFile,
 )
 from editorialboard.views import import_file_ebm
-from researcher.models import ResearcherAKA, Researcher
+from researcher.models import NewResearcher, ResearcherIds
+from organization.models import Organization
 from journal.models import Journal
 
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -26,44 +27,74 @@ class EditorialBoardMemberTest(TestCase):
         self.user = User.objects.create(username="user")
         self.journal = Journal.objects.create(title="Revista XXXX")
         self.gender = Gender.create_or_update(user=self.user, code="F", gender="F")
-        self.researcher = Researcher.create_or_update(
+        self.location = Location.create_or_update(
             self.user,
-            given_names=None,
+            city_name="São Paulo",
+            country_text="Brasil",
+            country_acronym="BR",
+            country_name=None,
+            state_name="São Paulo",
+            state_acronym="SP",
+        )
+        self.organization = Organization.create_or_update(
+            user=self.user,
+            name="Name of institution",
+            acronym="Acronym of institution",
+            url="www.teste.com.br",
+            location=self.location,
+            institution_type_mec="outros",
+            is_official=True,
+        )
+        self.researcher_identifier_orcid = ResearcherIds.get_or_create(
+            user=self.user,
+            identifier="0000-0002-9147-0547",
+            source_name="ORCID",
+        )
+        self.researcher_identifier_lattes = ResearcherIds.get_or_create(
+            user=self.user,
+            identifier="qwertpoiuytkdiekd",
+            source_name="LATTES",
+        )
+        self.researcher_identifier_email = ResearcherIds.get_or_create(
+            user=self.user,
+            identifier="user@dom.org",
+            source_name="EMAIL",
+        )
+        self.researcher = NewResearcher.get_or_create(
+            self.user,
+            given_names="Anna",
             last_name="Taomeaome",
-            suffix=None,
-            declared_name="Anna Taomeaome",
-            lattes="qwertpoiuytkdiekd",
-            orcid="1234-1234-0987-0987",
-            email="user@dom.org",
+            suffix="Jr.",
+            researcher_identifier=self.researcher_identifier_orcid,
+            affiliation=self.organization,
             gender=self.gender,
             gender_identification_status="DECLARED",
-            aff_name="Universidade Federal de São Carlos",
-            aff_div1=None,
-            aff_div2=None,
-            aff_city_name="São Carlos",
-            aff_country_text="Brasil",
-            aff_country_acronym=None,
-            aff_country_name=None,
-            aff_state_text="São Paulo",
-            aff_state_acronym=None,
-            aff_state_name=None,
+        )
+        self.researcher = NewResearcher.get_or_create(
+            self.user,
+            given_names="Anna",
+            last_name="Taomeaome",
+            suffix="Jr.",
+            researcher_identifier=self.researcher_identifier_email,
+            affiliation=self.organization,
+            gender=self.gender,
+            gender_identification_status="DECLARED",
+        )
+        self.researcher = NewResearcher.get_or_create(
+            self.user,
+            given_names="Anna",
+            last_name="Taomeaome",
+            suffix="Jr.",
+            researcher_identifier=self.researcher_identifier_lattes,
+            affiliation=self.organization,
+            gender=self.gender,
+            gender_identification_status="DECLARED",
         )
 
     def test_create_or_update_location(self):
-
-        location = Location.create_or_update(
-            self.user,
-            city_name="Campinas",
-            country_text="Brasil",
-            country_acronym=None,
-            country_name=None,
-            state_text="SP",
-            state_acronym=None,
-            state_name=None,
-        )
-        self.assertEqual("Brasil", location.country.name)
-        self.assertEqual("Campinas", location.city.name)
-        self.assertEqual("SP", location.state.acronym)
+        self.assertEqual("Brasil", self.location.country.name)
+        self.assertEqual("São Paulo", self.location.city.name)
+        self.assertEqual("SP", self.location.state.acronym)
 
     def test_create_or_update_researcher(self):
         editorial_board_member = EditorialBoardMember.create_or_update(
@@ -72,46 +103,41 @@ class EditorialBoardMemberTest(TestCase):
             journal=self.journal,
             declared_role="editor de seção",
             std_role=None,
-            editorial_board_initial_year="2010",
-            editorial_board_final_year="2012",
+            editorial_board_initial_year="2010-03-01",
+            editorial_board_final_year="2012-03-01",
         )
         self.assertEqual(
-            "São Paulo", editorial_board_member.researcher.affiliation.institution.location.state.name
+            "São Paulo", editorial_board_member.researcher.affiliation.location.state.name
         )
         self.assertEqual(
-            "São Carlos", editorial_board_member.researcher.affiliation.institution.location.city.name
+            "São Paulo", editorial_board_member.researcher.affiliation.location.city.name
         )
         self.assertEqual(
-            "Brasil", editorial_board_member.researcher.affiliation.institution.location.country.name
+            "Brasil", editorial_board_member.researcher.affiliation.location.country.name
         )
         self.assertEqual(
-            "Universidade Federal de São Carlos",
-            editorial_board_member.researcher.affiliation.institution.institution_identification.name,
+            "Name of institution",
+            editorial_board_member.researcher.affiliation.name,
         )
-        self.assertEqual("F", editorial_board_member.researcher.person_name.gender.code)
-        self.assertEqual("F", editorial_board_member.researcher.person_name.gender.gender)
+        self.assertEqual("F", editorial_board_member.researcher.gender.code)
+        self.assertEqual("F", editorial_board_member.researcher.gender.gender)
         self.assertEqual(
-            "DECLARED", editorial_board_member.researcher.person_name.gender_identification_status
+            "DECLARED", editorial_board_member.researcher.gender_identification_status
         )
-        self.assertEqual("Anna Taomeaome", editorial_board_member.researcher.person_name.declared_name)
+        self.assertEqual("Anna Taomeaome Jr.", editorial_board_member.researcher.fullname)
+
         self.assertEqual(
             "qwertpoiuytkdiekd",
-            ResearcherAKA.objects.get(
-                researcher=editorial_board_member.researcher, researcher_identifier__source_name="LATTES"
-            ).researcher_identifier.identifier,
+            editorial_board_member.researcher.researcher_ids.filter(source_name="LATTES").first().identifier,
         )
 
         self.assertEqual(
-            "1234-1234-0987-0987",
-            ResearcherAKA.objects.get(
-                researcher=editorial_board_member.researcher, researcher_identifier__source_name="ORCID"
-            ).researcher_identifier.identifier,
+            "0000-0002-9147-0547",
+            editorial_board_member.researcher.researcher_ids.filter(source_name="ORCID").first().identifier,
         )
         self.assertEqual(
             "user@dom.org",
-            ResearcherAKA.objects.get(
-                researcher=editorial_board_member.researcher, researcher_identifier__source_name="EMAIL"
-            ).researcher_identifier.identifier,
+            editorial_board_member.researcher.researcher_ids.filter(source_name="EMAIL").first().identifier,
         )
 
     def test_editorial_board_member_create_or_update(self):
@@ -120,8 +146,8 @@ class EditorialBoardMemberTest(TestCase):
             journal=self.journal,
             researcher=self.researcher,
             declared_role="editor de seção",
-            editorial_board_initial_year="2010",
-            editorial_board_final_year="2012",
+            editorial_board_initial_year="2010-01-01",
+            editorial_board_final_year="2012-01-01",
         )
         self.assertEqual(self.researcher, editorial_board.researcher)
         self.assertEqual("Revista XXXX", editorial_board.journal.title)
