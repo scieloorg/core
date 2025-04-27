@@ -841,7 +841,7 @@ class ResearcherIds(CommonControlField):
     Class that represent any id of a researcher
     """
 
-    reseracher = ParentalManyToManyField(
+    researcher = ParentalManyToManyField(
         NewResearcher, related_name="researcher_ids", null=True, blank=True
     )
     identifier = models.CharField(_("ID"), max_length=64, blank=True, null=True)
