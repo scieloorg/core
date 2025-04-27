@@ -179,7 +179,8 @@ class Organization(BaseOrganization):
         obj.institution_type_mec = institution_type_mec
         obj.is_official = is_official
         obj.save()
-        obj.institution_type_scielo.add(institution_type_scielo)
+        if institution_type_scielo:
+            obj.institution_type_scielo.add(institution_type_scielo)
         return obj
 
 
