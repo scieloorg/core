@@ -1024,7 +1024,7 @@ class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
     panels = BaseHistoryItem.panels +[
         AutocompletePanel("institution"),
         AutocompletePanel("organization"),
-        InlinePanel("journal_ownerhistory", max_num=1, label=_("Level Owner"), classname="collapsed"),
+        InlinePanel("org_level", max_num=1, label=_("Level Owner"), classname="collapsed"),
     ]
 
     @classmethod
@@ -1052,7 +1052,7 @@ class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
     panels = BaseHistoryItem.panels +[
         AutocompletePanel("institution"),
         AutocompletePanel("organization"),
-        InlinePanel("journal_publisherhistory", max_num=1, label=_("Level Publisher"), classname="collapsed"),
+        InlinePanel("org_level", max_num=1, label=_("Level Publisher"), classname="collapsed"),
     ]
 
     @classmethod
@@ -1080,7 +1080,7 @@ class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
     panels = BaseHistoryItem.panels +[
         AutocompletePanel("institution"),
         AutocompletePanel("organization"),
-        InlinePanel("journal_sponsorhistory", max_num=1, label=_("Level Sponsor"), classname="collapsed"),  
+        InlinePanel("org_level", max_num=1, label=_("Level Sponsor"), classname="collapsed"),  
     ]
 
     @classmethod
@@ -1111,7 +1111,7 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem):
     panels = BaseHistoryItem.panels +[
         AutocompletePanel("institution"),
         AutocompletePanel("organization"),
-        InlinePanel("journal_copyrightholderhistory", max_num=1, label=_("Level Copyright"), classname="collapsed"),
+        InlinePanel("org_level", max_num=1, label=_("Level Copyright"), classname="collapsed"),
     ]
 
     @classmethod
