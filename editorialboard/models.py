@@ -50,12 +50,6 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
     def __str__(self):
         return f"{self.researcher.person_name} ({self.role})"
 
-    @staticmethod
-    def autocomplete_custom_queryset_filter(any_value):
-        return EditorialBoardMember.objects.filter(
-            Q(researcher__person_name__fullname__icontains=any_value)
-            | Q(researcher__person_name__declared_name__icontains=any_value)
-        )
 
     def autocomplete_label(self):
         return str(self)

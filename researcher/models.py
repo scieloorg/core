@@ -683,7 +683,12 @@ class BaseResearcher(CommonControlField, ClusterableModel):
         FieldPanel("gender_identification_status"),
     ]
     base_form_class = CoreAdminModelForm
+    
+    autocomplete_search_field = "fullname"
 
+    def autocomplete_label(self):
+        return str(self)
+            
     class Meta:
         abstract = True
         unique_together = [
