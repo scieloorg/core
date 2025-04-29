@@ -94,3 +94,7 @@ def _get_user(request, username=None, user_id=None):
             return User.objects.get(pk=user_id)
         if username:
             return User.objects.get(username=username)
+
+        
+def params_api(**kwargs):
+    return {key: value for key, value in kwargs.items() if value}
