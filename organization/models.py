@@ -10,11 +10,11 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from . import choices
 from .exceptions import (
-    OrganizationTypeGetError, 
-    OrganizationCreateOrUpdateError, 
-    OrganizationLevelGetError, 
-    OrganizationGetError
-) 
+    OrganizationTypeGetError,
+    OrganizationCreateOrUpdateError,
+    OrganizationLevelGetError,
+    OrganizationGetError,
+)
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from core.utils.standardizer import remove_extra_spaces
@@ -116,7 +116,9 @@ class BaseOrganization(CommonControlField, ClusterableModel):
         user=None,
     ):
         if not name or not location:
-            raise OrganizationCreateOrUpdateError("Organization requires name and location")
+            raise OrganizationCreateOrUpdateError(
+                "Organization requires name and location"
+            )
 
         name = remove_extra_spaces(name)
         acronym = remove_extra_spaces(acronym)
@@ -208,7 +210,9 @@ class BaseOrgLevel(CommonControlField):
         level_3,
     ):
         if not organization:
-            raise OrganizationLevelGetError("OrganizationLevel.get requires organization parameter")
+            raise OrganizationLevelGetError(
+                "OrganizationLevel.get requires organization parameter"
+            )
 
         params = {}
         params["organization"] = organization
@@ -257,7 +261,12 @@ class BaseOrgLevel(CommonControlField):
         level_3 = remove_extra_spaces(level_3)
 
         try:
-            return cls.get(organization=organization, level_1=level_1, level_2=level_2, level_3=level_3)
+            return cls.get(
+                organization=organization,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+            )
         except cls.DoesNotExist:
             return cls.create(
                 organization=organization,
@@ -273,6 +282,7 @@ class BaseOrgLevel(CommonControlField):
         Function to create a dynamic class for Organization Levels.
         """
         model = apps.get_model(app_name, class_name)
+
         class Meta:
             pass
 
