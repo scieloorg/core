@@ -1018,12 +1018,14 @@ class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
+        help_text=_("Field containing non-standardized institution names from the Institution model."),
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=("Field containing standardized institution names selected from the Organization model.")
     )
 
     panels = BaseHistoryItem.panels +[
@@ -1046,12 +1048,14 @@ class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
+        help_text=_("Field containing non-standardized institution names from the Institution model."),
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=("Field containing standardized institution names selected from the Organization model.")
     )
 
     panels = BaseHistoryItem.panels +[
@@ -1074,12 +1078,14 @@ class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=_("Field containing non-standardized institution names from the Institution model."),
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=("Field containing standardized institution names selected from the Organization model.")
     )
 
     panels = BaseHistoryItem.panels +[
@@ -1105,12 +1111,14 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
+        help_text=_("Field containing non-standardized institution names from the Institution model."),
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=("Field containing standardized institution names selected from the Organization model.")
     )
     
     panels = BaseHistoryItem.panels +[
