@@ -467,8 +467,13 @@ def load_file_xml_version(username, collection_acron="scl", user_id=None):
         )
         logging.info(f"Total items: {items.count()}")
         for item in items:
-            path = getattr(item.current_version.file, 'path', None)
-            if not path and not os.path.isfile(path):
+            if item.current_version.file:
+                path = item.current_version.file.path
+            else:
+                raise ValueError(f"Missing path for item: {item.v3}")
+            
+            if path and not os.path.isfile(path):
+                # get acronym from path
                 match = re.search(r'/pid_provider/\d+/\d+/([^/]+)/', path)
                 if match:
                     acronym = match.group(1)
@@ -484,7 +489,6 @@ def load_file_xml_version(username, collection_acron="scl", user_id=None):
                     formatted_date = dt.strftime("%a, %d %b %Y %H:%M:%S %Z")
                 except ValueError as ve:
                     raise ValueError(f"Invalid date format for item {item.v3}: {item.origin_date}") 
-
 
                 article = {
                     "journal_acronym": acronym,
