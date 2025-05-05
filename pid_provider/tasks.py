@@ -482,16 +482,14 @@ def load_file_xml_version(username, collection_acron="scl", user_id=None):
                         raise Exception(f"Unable to get acronym from path: {path}")
 
                     if not item.origin_date:
-                        origin_date = "Mon, 01 Jan 1900 00:00:00 UTC"                             
+                        formatted_date = "Mon, 01 Jan 1900 00:00:00 UTC"                             
                     else:
-                        origin_date = item.origin_date
-
-                    try:
-                        dt = datetime.strptime(origin_date, "%Y-%m-%d")
-                        dt = dt.replace(tzinfo=pytz.UTC)
-                        formatted_date = dt.strftime("%a, %d %b %Y %H:%M:%S %Z")
-                    except ValueError as ve:
-                        raise ValueError(f"Invalid date format for item {item.v3}: {origin_date}") 
+                        try:
+                            dt = datetime.strptime(item.origin_date, "%Y-%m-%d")
+                            dt = dt.replace(tzinfo=pytz.UTC)
+                            formatted_date = dt.strftime("%a, %d %b %Y %H:%M:%S %Z")
+                        except ValueError as ve:
+                            raise ValueError(f"Invalid date format for item {item.v3}: {item.origin_date}") 
 
                     article = {
                         "journal_acronym": acronym,
