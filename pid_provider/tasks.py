@@ -462,27 +462,36 @@ def task_provide_pid_for_xml_uri(
 @celery_app.task
 def load_file_xml_version(username, collection_acron="scl", user_id=None):
     try:
-        items = PidProviderXML.objects.all().select_related(
+        items = PidProviderXML.objects.filter(current_version__isnull=False).select_related(
             "current_version",
         )
+        logging.info(f"Total items: {items.count()}")
         for item in items:
-            path = item.current_version.file.path
-            if item.current_version and not os.path.isfile(path):
+            path = getattr(item.current_version.file, 'path', None)
+            if not path and not os.path.isfile(path):
                 match = re.search(r'/pid_provider/\d+/\d+/([^/]+)/', path)
                 if match:
                     acronym = match.group(1)
                 else:
                     raise Exception(f"Unable to get acronym from path: {path}")
 
-                dt = datetime.strptime(item.origin_date, "%Y-%m-%d")
-                dt = dt.replace(tzinfo=pytz.UTC)
-                formatted_date = dt.strftime("%a, %d %b %Y %H:%M:%S %Z")
+                if not item.origin_date:
+                    raise ValueError(f"Missing origin_date for item: {item.v3}")
+
+                try:
+                    dt = datetime.strptime(item.origin_date, "%Y-%m-%d")
+                    dt = dt.replace(tzinfo=pytz.UTC)
+                    formatted_date = dt.strftime("%a, %d %b %Y %H:%M:%S %Z")
+                except ValueError as ve:
+                    raise ValueError(f"Invalid date format for item {item.v3}: {item.origin_date}") 
+
 
                 article = {
                     "journal_acronym": acronym,
                     "update": formatted_date,
                     "publication_date": item.pub_year, # don't used in processing
                 }
+                logging.info(f"Processing item: {item.v3}")
                 provide_pid_for_opac_article.apply_async(
                     kwargs={
                         "username": username,
@@ -498,6 +507,7 @@ def load_file_xml_version(username, collection_acron="scl", user_id=None):
         UnexpectedEvent.create(
             exception=e,
             exc_traceback=exc_traceback,
+            item="load_file_xml_version",
             detail={
                 "task": "load_file_xml_version",
                 "pid_v3": item.v3,
