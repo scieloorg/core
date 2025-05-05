@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
             name="indexed_at",
             field=models.ManyToManyField(
                 blank=True,
-                help_text="Standardized values from recognized scientific databases, such as: Dimensions, DOAJ, Google Scholar, Latindex, MedLine, etc.",
+                help_text="Standardized values from recognized scientific databases, such as: Dimensions, DOAJ, Google Scholar, Latindex, MEDLINE, SCImago, etc.",
                 to="journal.indexedat",
                 verbose_name="Indexed At",
             ),
