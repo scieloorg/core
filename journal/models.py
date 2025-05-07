@@ -477,12 +477,18 @@ class Journal(CommonControlField, ClusterableModel):
         "IndexedAt",
         verbose_name=_("Indexed At"),
         blank=True,
-    )
+        help_text=_(
+            "Standardized values from recognized scientific databases, such as: Dimensions, DOAJ, Google Scholar, Latindex, MEDLINE, SCImago, etc."
+            )
+        )
     additional_indexed_at = models.ManyToManyField(
         "AdditionalIndexedAt",
         verbose_name=_("Additional Index At"),
         blank=True,
-    )
+        help_text=_(
+            "Values from additional scientific databases that are not standardized."
+            )
+        )
     journal_url = models.URLField(
         _("Journal URL"),
         null=True,
