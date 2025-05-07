@@ -1018,16 +1018,18 @@ class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
+        help_text=_("Field containing non-standardized institution names from the Institution model."),
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=("Field containing standardized institution names selected from the Organization model.")
     )
 
     panels = BaseHistoryItem.panels +[
-        AutocompletePanel("institution"),
+        AutocompletePanel("institution",  read_only=True),
         AutocompletePanel("organization"),
         InlinePanel("org_level", max_num=1, label=_("Level Owner"), classname="collapsed"),
     ]
@@ -1046,16 +1048,18 @@ class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
+        help_text=_("Field containing non-standardized institution names from the Institution model."),
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=("Field containing standardized institution names selected from the Organization model.")
     )
 
     panels = BaseHistoryItem.panels +[
-        AutocompletePanel("institution"),
+        AutocompletePanel("institution",  read_only=True),
         AutocompletePanel("organization"),
         InlinePanel("org_level", max_num=1, label=_("Level Publisher"), classname="collapsed"),
     ]
@@ -1074,16 +1078,18 @@ class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=_("Field containing non-standardized institution names from the Institution model."),
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=("Field containing standardized institution names selected from the Organization model.")
     )
 
     panels = BaseHistoryItem.panels +[
-        AutocompletePanel("institution"),
+        AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
         InlinePanel("org_level", max_num=1, label=_("Level Sponsor"), classname="collapsed"),  
     ]
@@ -1105,16 +1111,18 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
+        help_text=_("Field containing non-standardized institution names from the Institution model."),
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=("Field containing standardized institution names selected from the Organization model.")
     )
     
     panels = BaseHistoryItem.panels +[
-        AutocompletePanel("institution"),
+        AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
         InlinePanel("org_level", max_num=1, label=_("Level Copyright"), classname="collapsed"),
     ]
