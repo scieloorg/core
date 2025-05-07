@@ -7,4 +7,5 @@ class OrganizationConfig(AppConfig):
 
     def ready(self):
         from . import dynamic_models
+
         dynamic_models.create_all()
