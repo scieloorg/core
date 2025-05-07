@@ -86,4 +86,7 @@ journal_permissions = [
     ("can_edit_acknowledgements", _("Can edit Acknowledgements")),
     ("can_edit_additional_information", _("Can edit Additional Information")),
     ("can_edit_text_language", _("Can edit Text Language")),
+    ("can_edit_logo", _("Can edit logo")),
+    ("can_edit_title_in_database", _("Can edit title in database")),
+    ("can_edit_copyright", _("Can edit copyright")),
 ]
