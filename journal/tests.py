@@ -53,7 +53,7 @@ class MigrationTestCase(TestCase):
 class TestLoadLicenseOfUseInJournal(TestCase):
     def setUp(self):
         self.user = User.objects.create(username="teste", password="teste")
-        self.collection = Collection.objects.create(creator=self.user, acron3="scl")
+        self.collection = Collection.objects.create(creator=self.user, acron3="scl", is_active=True)
         self.journal = Journal.objects.create(creator=self.user, title="Test Journal")
         self.am_journal = AMJournal.objects.create(
             collection=self.collection,
