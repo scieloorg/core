@@ -13,6 +13,7 @@ from researcher.models import (
     Researcher,
     ResearcherIds,
     Affiliation,
+    ResearcherOrcid,
 )
 
 from .tasks import (
@@ -33,6 +34,51 @@ class PersonNameJoinNameTest(SimpleTestCase):
             with self.subTest(text=text, excepted=expected):
                 result = PersonName.join_names(*text)
                 self.assertEqual(expected, result)
+
+
+class ResearcherOrcidTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create(username="teste", password="teste")
+
+    def test_researcher_orcid_create(self):
+        ResearcherOrcid.get_or_create(
+            user=self.user,
+            orcid="0000-0002-9147-0547",
+        )
+        researcher_orcid = ResearcherOrcid.objects.all()
+        self.assertEqual(researcher_orcid.count(), 1)
+        self.assertEqual(researcher_orcid.first().orcid, "0000-0002-9147-0547")
+
+    def test_researcher_orcid_create_two_times(self):
+        ResearcherOrcid.get_or_create(
+            user=self.user,
+            orcid="0000-0002-9147-0547",
+        )
+        ResearcherOrcid.get_or_create(
+            user=self.user,
+            orcid="0000-0002-9147-0547",
+        )
+        researcher_orcid = ResearcherOrcid.objects.all()
+        self.assertEqual(researcher_orcid.count(), 1)
+        self.assertEqual(researcher_orcid.first().orcid, "0000-0002-9147-0547")
+
+    def test_researcher_orcid_create_wrong_orcid_https(self):
+        ResearcherOrcid.get_or_create(
+            user=self.user,
+            orcid="https://orcid.org/0000-0002-9147-0547",
+        )
+        researcher_orcid = ResearcherOrcid.objects.all()
+        self.assertEqual(researcher_orcid.count(), 1)
+        self.assertEqual(researcher_orcid.first().orcid, "0000-0002-9147-0547")
+
+    def test_researcher_orcid_create_wrong_orcid_http(self):
+        ResearcherOrcid.get_or_create(
+            user=self.user,
+            orcid="http://orcid.org/0000-0002-9147-0547",
+        )
+        researcher_orcid = ResearcherOrcid.objects.all()
+        self.assertEqual(researcher_orcid.count(), 1)
+        self.assertEqual(researcher_orcid.first().orcid, "0000-0002-9147-0547")
 
 
 class NewResearcherTest(TestCase):
