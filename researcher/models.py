@@ -26,6 +26,7 @@ from . import choices
 from .exceptions import InvalidOrcidError, PersonNameCreateError
 from .forms import ResearcherForm
 
+ORCID_REGEX = re.compile(r'\b(?:https?://)?(?:orcid\.org/)?(\d{4}-\d{4}-\d{4}-\d{4})\b')
 
 class Researcher(CommonControlField):
     """
@@ -715,7 +716,110 @@ class BaseResearcher(CommonControlField, ClusterableModel):
         return " ".join(filter(None, [given_names, last_name, suffix]))
 
 
+class ResearcherOrcid(CommonControlField, ClusterableModel):
+    orcid = models.CharField(max_length=64, unique=True, null=True)
+
+    panels = [ 
+        FieldPanel("orcid"),
+        InlinePanel("researcher_orcid", label="Researcher", classname="collapsed"),
+    ]
+
+    def __str__(self):
+        return f" {self.researcher_orcid.first()} ({self.orcid})"
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    "orcid",
+                ]
+            ),
+        ]
+
+    @classmethod
+    def get_by_orcid(cls, orcid):
+        """
+        Try to find the researcher by the ORCID identifier.
+        """
+        if not orcid:
+            raise ValueError(
+                "Researcher.get_by_orcid requires orcid parameter"
+            )
+
+        return cls.objects.get(orcid=orcid)
+
+    def clean(self):
+        if self.orcid:
+            self.validate_orcid(self.orcid)
+        return super().clean()
+
+    def save(self, **kwargs):
+        self.orcid = self.extract_orcid_number(self.orcid)
+        super().save(**kwargs)
+
+    @classmethod
+    def get(
+        cls,
+        orcid,
+    ):
+        return cls.get_by_orcid(orcid)
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        orcid,
+    ):
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.orcid = orcid
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get_by_orcid(orcid)
+
+    @classmethod
+    def get_or_create(
+        cls,
+        user,
+        orcid,
+    ):
+        try:
+            return cls.get_by_orcid(orcid)
+        except cls.DoesNotExist:
+            return cls.create(user, orcid)
+
+    @staticmethod
+    def validate_orcid(orcid):
+        # TODO
+        # Request to api to validate the orcid
+        # https://pub.orcid.org/v3.0/{orcid}/record
+        
+        # Regex catch the orcid when
+        # https://orcid.org/0000-0002-1825-0097
+        # orcid.org/0000-0002-1825-0097
+        # 0000-0002-1825-0097
+        valid_orcid = ORCID_REGEX.match(orcid)
+        if not valid_orcid:
+            raise ValidationError({"orcid": f"ORCID {orcid} is not valid"})
+        return True
+
+    @staticmethod
+    def extract_orcid_number(orcid):
+        """
+        Extract the ORCID number from orcid url.
+        """
+        return ORCID_REGEX.match(orcid).group(1)
+
+
 class NewResearcher(BaseResearcher):
+    orcid = ParentalKey(
+        ResearcherOrcid,
+        related_name="researcher_orcid",
+        on_delete=models.CASCADE,
+        null=True,
+    )
     affiliation = models.ForeignKey(
         Organization, on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -844,6 +948,7 @@ class NewResearcher(BaseResearcher):
                 obj.researcher_ids.add(researcher_identifier)
                 obj.save()
             return obj
+
 
 class ResearcherIds(CommonControlField):
     """
