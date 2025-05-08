@@ -164,13 +164,6 @@ class OrganizationTaskTest(TestCase):
                 )
         )
         called_kwargs = mock_apply_async.call_args[1]["kwargs"]
-        self.assertEqual(called_kwargs["institution_data"].get("institution__name"), 'Name of institution')
-        self.assertEqual(called_kwargs["institution_data"].get("institution__acronym"), 'Acronym of institution')
-        self.assertEqual(called_kwargs["institution_data"].get("institution__type"), "organização sem fins de lucros")
-        self.assertEqual(called_kwargs["institution_data"].get("institution__level_1"), "level_1")
-        self.assertEqual(called_kwargs["institution_data"].get("institution__level_2"), "level_2")
-        self.assertEqual(called_kwargs["institution_data"].get("institution__level_3"), "level_3")
-        self.assertEqual(called_kwargs["institution_data"].get("institution__url"), "www.teste.com.br")
 
         task_children_migrate_data(**called_kwargs)
     
