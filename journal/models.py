@@ -906,18 +906,24 @@ class Journal(CommonControlField, ClusterableModel):
         return f"{self.title}" or f"{self.official}"
 
     def __str__(self):
-        active_collection = SciELOJournal.objects.filter(journal=self, collection__is_active=True)
+        active_collection = getattr(self, "active_collections", [])
+        if not active_collection:
+            active_collection = SciELOJournal.objects.filter(
+                journal=self, 
+                collection__is_active=True
+            ).select_related("collection", "journal")
         collection_acronym = ", ".join(col.collection.acron3 for col in active_collection)
-
+        official = self.official
         issns = []
-        if self.official and self.official.issn_print:
-            issns.append(f"Issn Print: {self.official.issn_print}")
-        if self.official and self.official.issn_electronic:
-            issns.append(f"Issn Electronic: {self.official.issn_electronic}")
-        issns = " - ".join(issns)
+        if official:
+            if official.issn_print:
+                issns.append(f"Issn Print: {official.issn_print}")
+            if official.issn_electronic:
+                issns.append(f"Issn Electronic: {official.issn_electronic}")
         
-        title = self.title or str(self.official)
-        return f"{title} ({collection_acronym}) | ({issns})"
+        issns_str = " - ".join(issns)
+        title = self.title 
+        return f"{title} ({collection_acronym}) | ({issns_str})"
 
     base_form_class = CoreAdminModelForm
 
