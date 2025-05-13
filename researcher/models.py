@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import IntegrityError, models
 from django.db.models import Q
+from django.core.exceptions import NON_FIELD_ERRORS
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from modelcluster.models import ClusterableModel
@@ -765,6 +766,15 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
     def clean(self):
         if self.orcid:
             self.validate_orcid(self.orcid)
+
+        if not self.pk or self.researcher_orcid.count() == 0:
+            raise ValidationError(
+                {
+                    NON_FIELD_ERRORS: [
+                        "You must add at least one researcher to the ORCID."
+                    ]
+                }
+            )
         return super().clean()
 
     def save(self, **kwargs):
@@ -804,6 +814,19 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
             return cls.get_by_orcid(orcid)
         except cls.DoesNotExist:
             return cls.create(user, orcid)
+        except (InvalidOrcidError, ValueError) as e:
+            data = dict(
+                orcid=orcid,
+            )
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "task": "researcher.models.ResearcherOrcid.get_or_create",
+                    "data": data,
+                },
+            )
 
     @staticmethod
     def validate_orcid(orcid):
@@ -818,7 +841,6 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
         valid_orcid = ORCID_REGEX.match(orcid)
         if not valid_orcid:
             raise ValidationError({"orcid": f"ORCID {orcid} is not valid"})
-        return True
 
     @staticmethod
     def extract_orcid_number(orcid):
@@ -836,7 +858,7 @@ class NewResearcher(BaseResearcher):
         null=True,
     )
     affiliation = models.ForeignKey(
-        Organization, on_delete=models.SET_NULL, null=True, blank=True
+        Organization, on_delete=models.SET_NULL, null=True
     )
 
     panels = BaseResearcher.panels + [
@@ -960,7 +982,7 @@ class NewResearcher(BaseResearcher):
                 gender_identification_status=gender_identification_status,
             )
             return obj
-        except (InvalidOrcidError, ValueError) as e:
+        except ValueError as e:
             data = dict(
                 given_names=given_names,
                 last_name=last_name,
