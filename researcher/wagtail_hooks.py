@@ -13,6 +13,7 @@ from .models import (
     PersonName,
     Researcher,
     ResearcherIdentifier,
+    ResearcherOrcid,
 )
 
 
@@ -119,22 +120,14 @@ class ResearcherAdminGroup(ModelAdminGroup):
     )
 
 
-modeladmin_register(ResearcherAdminGroup)
-
-
-class NewResearcherAdminViewSet(SnippetViewSet):
-    model = NewResearcher
+class ResearcherOrganizationAdminViewSet(SnippetViewSet):
+    model = ResearcherOrcid
     menu_icon = "folder"
     menu_label = _("New Researcher")
     menu_order = get_menu_order("new_researcher")
-    list_display = ["__str__", "affiliation"]
-    search_fields = [
-        "person_name__fullname",
-        "affiliation__institution__institution_identification__name",
-    ]
-    list_filter = ["affiliation"]
+    list_display = ["__str__", "get_fullname_researcher"]
     inspect_view_enabled = True
     add_to_admin_menu = True
 
+register_snippet(ResearcherOrganizationAdminViewSet)
 
-register_snippet(NewResearcherAdminViewSet)
