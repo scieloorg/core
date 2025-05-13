@@ -662,12 +662,12 @@ class BaseResearcher(CommonControlField, ClusterableModel):
     """
 
     given_names = models.CharField(
-        _("Given names"), max_length=128, blank=True, null=True
+        _("Given names"), max_length=128, blank=False, null=True
     )
-    last_name = models.CharField(_("Last name"), max_length=64, blank=True, null=True)
-    suffix = models.CharField(_("Suffix"), max_length=16, blank=True, null=True)
+    last_name = models.CharField(_("Last name"), max_length=64, blank=False, null=True)
+    suffix = models.CharField(_("Suffix"), max_length=16, blank=False, null=True)
     # nome sem padrão definido ou nome completo
-    fullname = models.TextField(_("Full Name"), blank=True, null=True)
+    fullname = models.TextField(_("Full Name"), blank=False, null=True)
     gender = models.ForeignKey(Gender, blank=True, null=True, on_delete=models.SET_NULL)
     gender_identification_status = models.CharField(
         _("Gender identification status"),
@@ -726,7 +726,20 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
     ]
 
     def __str__(self):
-        return f" {self.researcher_orcid.first()} ({self.orcid})"
+        return f"{self.orcid}"
+    
+    def get_fullname_researcher(self):
+        """
+        Function to display the researcher name(s) in the admin interface.
+        """
+        if self.researcher_orcid.count() == 1:
+            return str(self.researcher_orcid.all().first())
+        elif self.researcher_orcid.count() > 1:
+            researcher_names = ", ".join(str(researcher) for researcher in self.researcher_orcid.all())
+            return f"({researcher_names})"
+        return None
+
+    get_fullname_researcher.short_description = "Researcher Name"
 
     class Meta:
         indexes = [
@@ -962,7 +975,6 @@ class NewResearcher(BaseResearcher):
                     "data": data,
                 },
             )
-
 
 
 class ResearcherIds(CommonControlField):
