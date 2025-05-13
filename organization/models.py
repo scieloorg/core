@@ -22,10 +22,10 @@ from location.models import Location
 
 
 class BaseOrganization(CommonControlField, ClusterableModel):
-    name = models.TextField(_("Name"), null=True, blank=True)
-    acronym = models.TextField(_("Institution Acronym"), null=True, blank=True)
+    name = models.TextField(_("Name"), null=True, blank=False)
+    acronym = models.TextField(_("Institution Acronym"), null=True, blank=False)
     location = models.ForeignKey(
-        Location, on_delete=models.SET_NULL, null=True, blank=True
+        Location, on_delete=models.SET_NULL, null=True, blank=False
     )
     panels = [
         FieldPanel("name"),
@@ -159,7 +159,6 @@ class Organization(BaseOrganization):
         FieldPanel("logo"),
         FieldPanel("institution_type_mec"),
         AutocompletePanel("institution_type_scielo"),
-        FieldPanel("is_official"),
     ]
 
     @classmethod
