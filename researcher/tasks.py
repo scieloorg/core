@@ -63,12 +63,8 @@ def children_migrate_old_researcher_to_new_researcher(
 ):
     user = _get_user(request=None, username=username, user_id=user_id)
     location = Location.objects.get(id=data.get("location_id"))
-    researcher_identifier = ResearcherIds.get_or_create(
-        source_name=data.get("source_name"),
-        identifier=data.get("orcid"),
-        user=user,
-    )
     affiliation = Organization.create_or_update(
+        user=user,
         name=data.get("affiliation_name"),
         acronym=data.get("affiliation_acronym"),
         is_official=data.get("affiliation_is_official"),
@@ -76,11 +72,16 @@ def children_migrate_old_researcher_to_new_researcher(
         url=data.get("institution_url"),
         location=location,
     )
-    NewResearcher.get_or_create(
+    researcher = NewResearcher.get_or_create(
         user=user,
         given_names=data.get("given_names"),
         last_name=data.get("last_name"),
         suffix=data.get("suffix"),
-        researcher_identifier=researcher_identifier,
         affiliation=affiliation,
+    )
+    researcher_identifier = ResearcherIds.get_or_create(
+        researcher=researcher,
+        source_name=data.get("source_name"),
+        identifier=data.get("orcid"),
+        user=user,
     )
