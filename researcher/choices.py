@@ -8,7 +8,6 @@ GENDER_IDENTIFICATION_STATUS = [
 
 
 IDENTIFIER_TYPE = [
-    ("ORCID", _("ORCID")),
     ("LATTES", _("LATTES")),
     ("EMAIL", _("Email")),
 ]
