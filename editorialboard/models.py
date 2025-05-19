@@ -40,6 +40,7 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
         unique_together = [("journal", "researcher")]
 
     panels = [
+        FieldPanel("journal", read_only=True),
         AutocompletePanel("researcher"),
         FieldPanel("image"),
         InlinePanel("role_editorial_board", label=_("Role")),
@@ -48,7 +49,7 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
     base_form_class = CoreAdminModelForm
 
     def __str__(self):
-        return f"{self.researcher.person_name} ({self.role})"
+        return f"{self.researcher.fullname} ({self.role_editorial_board.all()})"
 
 
     def autocomplete_label(self):
@@ -159,6 +160,9 @@ class RoleEditorialBoard(CommonControlField, Orderable):
         FieldPanel("initial_year"),
         FieldPanel("final_year"),
     ]
+
+    def __str__(self):
+        return f"{self.role}"
 
     @classmethod
     def get(
