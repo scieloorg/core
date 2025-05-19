@@ -15,6 +15,7 @@ from core.api.wagtail.api import api_router
 
 from core.search_site import views as search_views  # noqa isort:skip
 from core.users.views import filter_journals
+from core_settings.views import import_csv
 
 urlpatterns = [
     # path("", TemplateView.as_view(template_name="home/home_page.html"), name="home"),
@@ -38,6 +39,7 @@ urlpatterns = [
     # API V1 endpoint to custom models
     path("api/v1/", include("config.api_router")),
     path('filter_journals/', filter_journals, name='filter_journals'),
+    path('import-csv/', import_csv, name='import_csv'), 
     # Your stuff: custom urls includes go here
     # For anything not caught by a more specific rule above, hand over to
     # Wagtail’s page serving mechanism. This should be the last pattern in
