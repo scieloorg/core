@@ -666,7 +666,7 @@ class BaseResearcher(CommonControlField, ClusterableModel):
         _("Given names"), max_length=128, blank=False, null=True
     )
     last_name = models.CharField(_("Last name"), max_length=64, blank=False, null=True)
-    suffix = models.CharField(_("Suffix"), max_length=16, blank=False, null=True)
+    suffix = models.CharField(_("Suffix"), max_length=16, blank=True, null=True)
     # nome sem padrão definido ou nome completo
     fullname = models.TextField(_("Full Name"), blank=False, null=True)
     gender = models.ForeignKey(Gender, blank=True, null=True, on_delete=models.SET_NULL)
