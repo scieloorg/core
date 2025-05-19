@@ -48,16 +48,56 @@ Revista XXXX;Universidade Federal de São Carlos;BR;São Paulo;SP;0000-0002-9147
     @patch("core_settings.tasks.importar_csv_task.apply_async")
     def test_import_csv_organization_with_required_columns(self, mock_apply_async):
         mock_apply_async.return_value = None
-        temp_file = tempfile.NamedTemporaryFile(
-            suffix=".csv", mode="w+", encoding="utf-8"
-        )
-        temp_file.write(self.csv_content_organization)
-        temp_file.seek(0)
+        temp_file = self.create_temp_file(self.csv_content_organization)
         response = self.client.post(
             reverse("import_csv"),
             {
                 "csv_file": temp_file,
                 "type_csv": "organization",
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(
+            response.content,
+            {
+                "status": True,
+                "message": "CSV importado com sucesso! Realizando importação...",
+            },
+        )
+    
+    @patch("core_settings.tasks.importar_csv_task.apply_async")
+    def test_import_csv_newresearcher_with_required_columns(self, mock_apply_async):
+        mock_apply_async.return_value = None
+        temp_file = self.create_temp_file(self.csv_content_newresearcher)
+        response = self.client.post(
+            reverse("import_csv"),
+            {
+                "csv_file": temp_file,
+                "type_csv": "researcherorcid",
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(
+            response.content,
+            {
+                "status": True,
+                "message": "CSV importado com sucesso! Realizando importação...",
+            },
+        )
+
+    @patch("core_settings.tasks.importar_csv_task.apply_async")
+    def test_import_csv_editorialboardmember_with_required_columns(self, mock_apply_async):
+        mock_apply_async.return_value = None
+        temp_file = self.create_temp_file(self.csv_content_editorialboardmember)
+        response = self.client.post(
+            reverse("import_csv"),
+            {
+                "csv_file": temp_file,
+                "type_csv": "editorialboardmember",
             },
             format="multipart",
         )
