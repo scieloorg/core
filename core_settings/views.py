@@ -8,37 +8,9 @@ from config.settings.base import MODEL_TO_IMPORT_CSV
 
 from .tasks import importar_csv_task
 
-REQUIRED_COLUMNS = {
-    "organization": {'organization_name', 'country_code', 'city', 'state'},
-    "newresearcher": {
-        "orcid",
-        "given_names",
-        "last_name",
-        "suffix",
-        "affiliation",
-        "country_code",
-        "city",
-        "state",
-    },
-    "editorialboardmember": {
-        "title_journal",
-        "researcher",
-        "affiliation",
-        "country_code",
-        "city",
-        "state",
-        "given_names",
-        "last_name",
-        "role",
-        "std_role",
-        "initial_year",
-        "final_year",
-    },
-}
-
 
 def validate_columns_csv(columns, type_csv):
-    required = REQUIRED_COLUMNS.get(type_csv)
+    required = MODEL_TO_IMPORT_CSV.get(type_csv)
     if not required.issubset(columns):
         return JsonResponse(
             {

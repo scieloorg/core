@@ -507,7 +507,28 @@ FETCH_DATA_TIMEOUT = env.int("FETCH_DATA_TIMEOUT", default=10)
 ROSETTA_AUTO_COMPILE = True
 
 MODEL_TO_IMPORT_CSV = {
-    'organization',
-    'researcherorcid',
-    'editorialboardmember',
+    "organization": {'organization_name', 'country_code', 'city', 'state'},
+    "researcherorcid": {
+        "orcid",
+        "given_names",
+        "last_name",
+        "suffix",
+        "affiliation",
+        "country_code",
+        "city",
+        "state",
+    },
+    "editorialboardmember": {
+        "title_journal",
+        "affiliation",
+        "country_code",
+        "city",
+        "state",
+        "given_names",
+        "last_name",
+        "declared_role",
+        "std_role",
+        "initial_year",
+        "final_year",
+    },
 }
