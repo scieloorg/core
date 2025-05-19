@@ -505,3 +505,9 @@ MAINTENANCE_MODE_STATE_FILE_PATH = "maintenance_mode_state.txt"
 FETCH_DATA_TIMEOUT = env.int("FETCH_DATA_TIMEOUT", default=10)
 
 ROSETTA_AUTO_COMPILE = True
+
+MODEL_TO_IMPORT_CSV = {
+    'organization',
+    'researcherorcid',
+    'editorialboardmember',
+}
