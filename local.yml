@@ -16,6 +16,7 @@ services:
       - solr
     volumes:
       - .:/app:z
+      - tmp_csv_data:/tmp
     env_file:
       - ./.envs/.local/.django
       - ./.envs/.local/.postgres
@@ -112,3 +113,6 @@ services:
     ports:
       - "5559:5555"
     command: /start-flower
+
+volumes:
+  tmp_csv_data:
