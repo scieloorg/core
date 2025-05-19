@@ -30,16 +30,13 @@ LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 
 
-class XMLVersionXmlWithPreError(Exception):
-    ...
+class XMLVersionXmlWithPreError(Exception): ...
 
 
-class XMLVersionLatestError(Exception):
-    ...
+class XMLVersionLatestError(Exception): ...
 
 
-class XMLVersionGetError(Exception):
-    ...
+class XMLVersionGetError(Exception): ...
 
 
 def utcnow():
@@ -152,7 +149,8 @@ class XMLVersion(CommonControlField):
             latest = cls.get(pid_provider_xml, xml_with_pre.finger_print)
             if not os.path.isfile(latest.file.path):
                 latest.save_file(
-                    f"{pid_provider_xml.v3}.xml", xml_with_pre.tostring(pretty_print=True)
+                    f"{pid_provider_xml.v3}.xml",
+                    xml_with_pre.tostring(pretty_print=True),
                 )
                 latest.save()
             return latest
@@ -231,10 +229,14 @@ class PidProviderEndpoint(CommonControlField):
         on_delete=models.SET_NULL,
         related_name="endpoint",
     )
-    name = models.CharField(_("Endpoint name"), max_length=16, null=True, blank=True, choices=choices.ENDPOINTS)
-    url = models.URLField(
-        _("Endpoint URL"), max_length=128, null=True, blank=True
+    name = models.CharField(
+        _("Endpoint name"),
+        max_length=16,
+        null=True,
+        blank=True,
+        choices=choices.ENDPOINTS,
     )
+    url = models.URLField(_("Endpoint URL"), max_length=128, null=True, blank=True)
     enabled = models.BooleanField(default=False)
 
     panels = [
@@ -478,7 +480,9 @@ class OtherPid(CommonControlField):
         return self.updated or self.created
 
 
-class PidProviderXML(ExportModelOperationsMixin('pidproviderxml'), CommonControlField, ClusterableModel):
+class PidProviderXML(
+    ExportModelOperationsMixin("pidproviderxml"), CommonControlField, ClusterableModel
+):
     """
     Tem responsabilidade de garantir a atribuição do PID da versão 3,
     armazenando dados chaves que garantem a identificação do XML
@@ -1456,7 +1460,9 @@ class PidProviderXML(ExportModelOperationsMixin('pidproviderxml'), CommonControl
 
                     # verifica se houve mudança nos PIDs do XML
                     after = (xml_with_pre.v3, xml_with_pre.v2, xml_with_pre.aop_pid)
-                    for label, bef, aft in zip(("pid_v3", "pid_v2", "aop_pid"), before, after):
+                    for label, bef, aft in zip(
+                        ("pid_v3", "pid_v2", "aop_pid"), before, after
+                    ):
                         if bef != aft:
                             xml_changed[label] = aft
                 except KeyError:
