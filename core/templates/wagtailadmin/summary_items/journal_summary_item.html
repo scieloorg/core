@@ -2,7 +2,7 @@
 
 <li>
     {% icon name="folder-inverse" %}
-    <a href="{% url 'journal_journal_modeladmin_index' %}">
+    <a href="{% url 'wagtailsnippets_journal_journal:list' %}">
         {% blocktrans trimmed count counter=total_journal with total_journal|intcomma as total %}
             <span>{{ total_journal }}</span> Journal 
         {% plural %}

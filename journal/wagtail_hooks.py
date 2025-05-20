@@ -2,38 +2,40 @@ from django.http import HttpResponseRedirect
 from django.urls import path
 from django.utils.translation import gettext as _
 from wagtail import hooks
-from wagtail_modeladmin.options import (
-    ModelAdmin,
-    ModelAdminGroup,
-    modeladmin_register,
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import (
+    CreateView,
+    SnippetViewSet,
+    SnippetViewSetGroup,
 )
+from wagtail_modeladmin.options import ModelAdmin
 from wagtail_modeladmin.views import CreateView, EditView
-from wagtail.admin.panels import FieldPanel, InlinePanel
+
+from config.menu import get_menu_order
+
 from . import models
 from .button_helper import IndexedAtHelper
 from .views import import_file, validate
-from config.menu import get_menu_order
 
 COLLECTION_TEAM = "Collection Team"
 JOURNAL_TEAM = "Journal Team"
 
 
-class OfficialJournalCreateView(CreateView):
+class OfficialJournalCreateViewSnippet(CreateView):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
 
 
-class OfficialJournalAdmin(ModelAdmin):
+class OfficialJournalSnippetViewSet(SnippetViewSet):
     model = models.OfficialJournal
-    inspect_view_enabled = True
     menu_label = _("ISSN Journals")
-    create_view_class = OfficialJournalCreateView
+    add_view_class = OfficialJournalCreateViewSnippet
     menu_icon = "folder"
     menu_order = 100
     add_to_settings_menu = False
     exclude_from_explorer = False
-
+    add_to_admin_menu = True
     list_display = (
         "title",
         "initial_year",
@@ -53,49 +55,43 @@ class OfficialJournalAdmin(ModelAdmin):
         "issnl",
     )
 
+# class JournalEditViewSnippet(SnippetEditView):
+#     def form_valid(self, form):
+#         self.object = form.save_all(self.request.user)
+#         return HttpResponseRedirect(self.get_success_url())
 
+#     def get_edit_handler(self):
+#         """
+#         Sobrescreve o método 'get_edit_handler' de EditView.
+#         Verifica se o usuário tem permissão para editar o campo. Caso não tenha, os campos que não possuem a permissão
+#         'journal.can_edit_{field_name}' no 'user_permissions' serão configurados como somente leitura.
+#         Isso é aplicado para 'FieldPanel', 'AutocompletePanel'
+#         e 'InlinePanel'.
+#         """
+#         edit_handler = super().get_edit_handler()
+#         user_permissions = self.request.user.get_all_permissions()
+#         if not self.request.user.is_superuser:
+#             for object_list in edit_handler.children:
+#                 for field in object_list.children:
+#                     if isinstance(field, FieldPanel) and f"journal.can_edit_{field.field_name}" not in user_permissions:
+#                         field.__setattr__('read_only', True)
+#                     elif isinstance(field, InlinePanel) and f"journal.can_edit_{field.relation_name}" not in user_permissions:
+#                         field.classname = field.classname + ' read-only-inline-panel'
+#                         for inline_field in field.panel_definitions:
+#                             inline_field.__setattr__('read_only', True)
+#         return edit_handler
+    
 class JournalCreateView(CreateView):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
 
-from wagtail.admin.panels import FieldPanel, InlinePanel
 
-
-class JournalEditView(EditView):
-    readonly_fields = ['official', 'mission']
-    def form_valid(self, form):
-        self.object = form.save_all(self.request.user)
-        return HttpResponseRedirect(self.get_success_url())
-
-    def get_edit_handler(self):
-        """
-        Sobrescreve o método 'get_edit_handler' de EditView.
-        Verifica se o usuário tem permissão para editar o campo. Caso não tenha, os campos que não possuem a permissão
-        'journal.can_edit_{field_name}' no 'user_permissions' serão configurados como somente leitura.
-        Isso é aplicado para 'FieldPanel', 'AutocompletePanel'
-        e 'InlinePanel'.
-        """
-        edit_handler = super().get_edit_handler()
-        user_permissions = self.request.user.get_all_permissions()
-        if not self.request.user.is_superuser:
-            for object_list in edit_handler.children:
-                for field in object_list.children:
-                    if isinstance(field, FieldPanel) and f"journal.can_edit_{field.field_name}" not in user_permissions:
-                        field.__setattr__('read_only', True)
-                    elif isinstance(field, InlinePanel) and f"journal.can_edit_{field.relation_name}" not in user_permissions:
-                        field.classname = field.classname + ' read-only-inline-panel'
-                        for inline_field in field.panel_definitions:
-                            inline_field.__setattr__('read_only', True)
-        return edit_handler
-
-
-class JournalAdmin(ModelAdmin):
+class JournalAdminSnippetViewSet(SnippetViewSet):
     model = models.Journal
     inspect_view_enabled = True
     menu_label = _("Journals")
-    create_view_class = JournalCreateView
-    edit_view_class = JournalEditView
+    add_view_class = JournalCreateView
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
     add_to_settings_menu = False
@@ -105,13 +101,11 @@ class JournalAdmin(ModelAdmin):
     list_display = (
         "title",
         "contact_location",
-        "valid",
         "created",
         "updated",
     )
     list_filter = (
-        "valid",
-        "use_license",
+        "journal_use_license",
         "publishing_model",
         "subject",
         "main_collection",
@@ -123,33 +117,32 @@ class JournalAdmin(ModelAdmin):
         "contact_location__country__name",
     )
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
+        qs = models.Journal.objects.all().select_related("contact_location").prefetch_related("scielojournal_set")
         user_groups = request.user.groups.values_list('name', flat=True)
         if COLLECTION_TEAM in user_groups:
             return qs.filter(scielojournal__collection__in=request.user.collection.all())
         elif JOURNAL_TEAM in user_groups:
             return qs.filter(id__in=request.user.journal.all().values_list("id", flat=True))
         return qs
-    
+
 
 class SciELOJournalCreateView(CreateView):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
 
-
-class SciELOJournalAdmin(ModelAdmin):
+class SciELOJournalAdminViewSet(SnippetViewSet):
     model = models.SciELOJournal
     inspect_view_enabled = True
     menu_label = _("SciELO Journals")
-    create_view_class = SciELOJournalCreateView
+    add_view_class = SciELOJournalCreateView
     menu_icon = "folder"
     menu_order = 200
     add_to_settings_menu = False
     exclude_from_explorer = False
 
     list_display = (
-        "custom_journal",
+        "journal",
         "issn_scielo",
         "journal_acron",
         "collection",
@@ -165,7 +158,7 @@ class SciELOJournalAdmin(ModelAdmin):
     )
 
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
+        qs = models.SciELOJournal.objects.all().select_related("journal", "collection")
         user_groups = request.user.groups.values_list('name', flat=True)
         if COLLECTION_TEAM in user_groups:
             return qs.filter(collection__in=request.user.collection.all())
@@ -173,12 +166,13 @@ class SciELOJournalAdmin(ModelAdmin):
             return qs.filter(id__in=request.user.journal.all().values_list("id", flat=True))
         return qs
 
-    def custom_journal(self, obj):
-        return f"{obj.journal.title}" or f"{obj.journal.official}"
-    custom_journal.short_description = "Journal"
-    custom_journal.admin_order_field = "journal"
+class JournalSnippetViewSetGroup(SnippetViewSetGroup):
+    menu_label = _("Journals")
+    menu_icon = "folder-open-inverse"
+    menu_order = get_menu_order("journal")
+    items = (JournalAdminSnippetViewSet, OfficialJournalSnippetViewSet, SciELOJournalAdminViewSet)
 
-
+register_snippet(JournalSnippetViewSetGroup)
 
 
 class TOCSectionAdmin(ModelAdmin):
@@ -326,100 +320,6 @@ class ArticleSubmissionFormatCheckListAdmin(ModelAdmin):
     menu_order = get_menu_order("article_subm")
 
 # modeladmin_register(ArticleSubmissionFormatCheckListAdmin)
-
-
-class JournalAdminGroup(ModelAdminGroup):
-    menu_label = _("Journals")
-    menu_icon = "folder-open-inverse"  # change as required
-    menu_order = get_menu_order("journal")
-    items = (JournalAdmin, OfficialJournalAdmin, SciELOJournalAdmin, AMJournalAdmin, TOCSectionAdmin)
-
-
-modeladmin_register(JournalAdminGroup)
-
-
-class OwnerAdmin(ModelAdmin):
-    model = models.Owner
-    menu_icon = "folder"
-    menu_order = 300
-    menu_label = _("Owner")
-    add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
-    exclude_from_explorer = (
-        False  # or True to exclude pages of this type from Wagtail's explorer view
-    )
-    list_display = ("institution",)
-    search_fields = (
-        "institution__institution_identification__name",
-        "institution__institution_identification__acronym",
-        "institution__level_1",
-        "institution__level_2",
-        "institution__level_3",
-    )
-    list_export = (
-        "institution__institution_identification__name",
-        "institution__institution_identification__acronym",
-        "institution__level_1",
-        "institution__level_2",
-        "institution__level_3",
-        "location",
-    )
-    export_filename = "owner"
-
-
-class CopyrightholderAdmin(ModelAdmin):
-    model = models.CopyrightHolder
-    menu_icon = "folder"
-    menu_order = 400
-    menu_label = _("Copyrightholder")
-    add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
-    exclude_from_explorer = (
-        False  # or True to exclude pages of this type from Wagtail's explorer view
-    )
-    list_display = ("institution",)
-    search_fields = (
-        "institution__institution_identification__name",
-        "institution__institution_identification__acronym",
-        "institution__level_1",
-        "institution__level_2",
-        "institution__level_3",
-    )
-    list_export = (
-        "institution__institution_identification__name",
-        "institution__institution_identification__acronym",
-        "institution__level_1",
-        "institution__level_2",
-        "institution__level_3",
-        "location",
-    )
-    export_filename = "copyrightholder"
-
-
-class PublisherAdmin(ModelAdmin):
-    model = models.Publisher
-    menu_icon = "folder"
-    menu_order = 500
-    menu_label = _("Publisher")
-    add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
-    exclude_from_explorer = (
-        False  # or True to exclude pages of this type from Wagtail's explorer view
-    )
-    list_display = ("institution",)
-    search_fields = (
-        "institution__institution_identification__name",
-        "institution__institution_identification__acronym",
-        "institution__level_1",
-        "institution__level_2",
-        "institution__level_3",
-    )
-    list_export = (
-        "institution__institution_identification__name",
-        "institution__institution_identification__acronym",
-        "institution__level_1",
-        "institution__level_2",
-        "institution__level_3",
-        "location",
-    )
-    export_filename = "Publisher"
 
 
 @hooks.register("register_admin_urls")
