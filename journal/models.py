@@ -58,6 +58,9 @@ from .permissions import journal_permissions
 from organization.dynamic_models import OrgLevelPublisher, OrgLevelOwner, OrgLevelCopyrightHolder, OrgLevelSponsor
 from organization.models import Organization
 
+HELP_TEXT_INSTITUTION = _("Institution data originally provided. This field is for reference only.")
+HELP_TEXT_ORGANIZATION = _("Select the standardized institution corresponding to the original data.")
+
 User = get_user_model()
 
 
@@ -477,12 +480,18 @@ class Journal(CommonControlField, ClusterableModel):
         "IndexedAt",
         verbose_name=_("Indexed At"),
         blank=True,
-    )
+        help_text=_(
+            "Standardized values from recognized scientific databases, such as: Dimensions, DOAJ, Google Scholar, Latindex, MEDLINE, SCImago, etc."
+            )
+        )
     additional_indexed_at = models.ManyToManyField(
         "AdditionalIndexedAt",
         verbose_name=_("Additional Index At"),
         blank=True,
-    )
+        help_text=_(
+            "Values from additional scientific databases that are not standardized."
+            )
+        )
     journal_url = models.URLField(
         _("Journal URL"),
         null=True,
@@ -900,18 +909,24 @@ class Journal(CommonControlField, ClusterableModel):
         return f"{self.title}" or f"{self.official}"
 
     def __str__(self):
-        active_collection = SciELOJournal.objects.filter(journal=self, collection__is_active=True)
+        active_collection = getattr(self, "active_collections", [])
+        if not active_collection:
+            active_collection = SciELOJournal.objects.filter(
+                journal=self, 
+                collection__is_active=True
+            ).select_related("collection", "journal")
         collection_acronym = ", ".join(col.collection.acron3 for col in active_collection)
-
+        official = self.official
         issns = []
-        if self.official and self.official.issn_print:
-            issns.append(f"Issn Print: {self.official.issn_print}")
-        if self.official and self.official.issn_electronic:
-            issns.append(f"Issn Electronic: {self.official.issn_electronic}")
-        issns = " - ".join(issns)
+        if official:
+            if official.issn_print:
+                issns.append(f"Issn Print: {official.issn_print}")
+            if official.issn_electronic:
+                issns.append(f"Issn Electronic: {official.issn_electronic}")
         
-        title = self.title or str(self.official)
-        return f"{title} ({collection_acronym}) | ({issns})"
+        issns_str = " - ".join(issns)
+        title = self.title 
+        return f"{title} ({collection_acronym}) | ({issns_str})"
 
     base_form_class = CoreAdminModelForm
 
@@ -1018,16 +1033,18 @@ class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
+        help_text=HELP_TEXT_INSTITUTION,
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=HELP_TEXT_ORGANIZATION
     )
 
     panels = BaseHistoryItem.panels +[
-        AutocompletePanel("institution"),
+        AutocompletePanel("institution",  read_only=True),
         AutocompletePanel("organization"),
         InlinePanel("org_level", max_num=1, label=_("Level Owner"), classname="collapsed"),
     ]
@@ -1046,16 +1063,18 @@ class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
+        help_text=HELP_TEXT_INSTITUTION,
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=HELP_TEXT_ORGANIZATION
     )
 
     panels = BaseHistoryItem.panels +[
-        AutocompletePanel("institution"),
+        AutocompletePanel("institution",  read_only=True),
         AutocompletePanel("organization"),
         InlinePanel("org_level", max_num=1, label=_("Level Publisher"), classname="collapsed"),
     ]
@@ -1074,16 +1093,18 @@ class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=HELP_TEXT_INSTITUTION,
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=HELP_TEXT_ORGANIZATION
     )
 
     panels = BaseHistoryItem.panels +[
-        AutocompletePanel("institution"),
+        AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
         InlinePanel("org_level", max_num=1, label=_("Level Sponsor"), classname="collapsed"),  
     ]
@@ -1105,16 +1126,18 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
+        help_text=HELP_TEXT_INSTITUTION,
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=HELP_TEXT_ORGANIZATION
     )
     
     panels = BaseHistoryItem.panels +[
-        AutocompletePanel("institution"),
+        AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
         InlinePanel("org_level", max_num=1, label=_("Level Copyright"), classname="collapsed"),
     ]
