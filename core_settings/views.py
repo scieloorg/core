@@ -11,6 +11,7 @@ from .tasks import importar_csv_task
 
 def validate_columns_csv(columns, type_csv):
     required = MODEL_TO_IMPORT_CSV.get(type_csv)
+    columns = {item.strip().lower() for item in columns}
     if not required.issubset(columns):
         return JsonResponse(
             {

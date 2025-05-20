@@ -108,7 +108,7 @@ def read_csv(tmp_path, delimiter=";"):
 
 
 def clean_row(row):
-    return {k: (v.strip() if isinstance(v, str) else v) for k, v in row.items()}
+    return {k.strip().lower(): (v.strip() if isinstance(v, str) else v) for k, v in row.items()}
 
 
 @celery_app.task()
@@ -121,8 +121,8 @@ def importar_csv_task_organization(tmp_path, username):
             row = clean_row(row)
             location = Location.objects.get(
                 country__acronym=row.get("country_code"),
-                city__name=row.get("city"),
-                state__name=row.get("state"),
+                city__name=row.get("city_name"),
+                state__name=row.get("state_name"),
             )
             organization = Organization.create_or_update(
                 user=user,
@@ -157,8 +157,8 @@ def importar_csv_task_newresearcher(tmp_path, username):
             create_or_update_researcher(
                 username=username,
                 country_code=row.get("country_code"),
-                city=row.get("city"),
-                state=row.get("state"),
+                city=row.get("city_name"),
+                state=row.get("state_name"),
                 organization_name=row.get("affiliation"),
                 acronym=row.get("acronym"),
                 url=row.get("url"),
@@ -198,14 +198,14 @@ def importar_csv_task_editorialboardmember(tmp_path, username):
         try:
             row = clean_row(row)
             if row.get("issn_scielo"):
-                journal = Journal.objects.get(Q(issn_scielo=row.get("issn_scielo")) | Q(title__icontains=row.get("title_journal")))
+                journal = Journal.objects.get(Q(official__issn_print=row.get("issn_scielo")) | Q(official__issn_electronic=row.get("issn_scielo")))
             else:
                 journal = Journal.objects.get(title__icontains=row.get("title_journal"))
             researcher = create_or_update_researcher(
                 username=username,
                 country_code=row.get("country_code"),
-                city=row.get("city"),
-                state=row.get("state"),
+                city=row.get("city_name"),
+                state=row.get("state_name"),
                 organization_name=row.get("affiliation"),
                 acronym=row.get("acronym"),
                 url=row.get("url"),
