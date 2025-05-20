@@ -58,6 +58,9 @@ from .permissions import journal_permissions
 from organization.dynamic_models import OrgLevelPublisher, OrgLevelOwner, OrgLevelCopyrightHolder, OrgLevelSponsor
 from organization.models import Organization
 
+HELP_TEXT_INSTITUTION = _("Institution data originally provided. This field is for reference only.")
+HELP_TEXT_ORGANIZATION = _("Select the standardized institution corresponding to the original data.")
+
 User = get_user_model()
 
 
@@ -1030,16 +1033,18 @@ class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
+        help_text=HELP_TEXT_INSTITUTION,
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=HELP_TEXT_ORGANIZATION
     )
 
     panels = BaseHistoryItem.panels +[
-        AutocompletePanel("institution"),
+        AutocompletePanel("institution",  read_only=True),
         AutocompletePanel("organization"),
         InlinePanel("org_level", max_num=1, label=_("Level Owner"), classname="collapsed"),
     ]
@@ -1058,16 +1063,18 @@ class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
+        help_text=HELP_TEXT_INSTITUTION,
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=HELP_TEXT_ORGANIZATION
     )
 
     panels = BaseHistoryItem.panels +[
-        AutocompletePanel("institution"),
+        AutocompletePanel("institution",  read_only=True),
         AutocompletePanel("organization"),
         InlinePanel("org_level", max_num=1, label=_("Level Publisher"), classname="collapsed"),
     ]
@@ -1086,16 +1093,18 @@ class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=HELP_TEXT_INSTITUTION,
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=HELP_TEXT_ORGANIZATION
     )
 
     panels = BaseHistoryItem.panels +[
-        AutocompletePanel("institution"),
+        AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
         InlinePanel("org_level", max_num=1, label=_("Level Sponsor"), classname="collapsed"),  
     ]
@@ -1117,16 +1126,18 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
+        help_text=HELP_TEXT_INSTITUTION,
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        help_text=HELP_TEXT_ORGANIZATION
     )
     
     panels = BaseHistoryItem.panels +[
-        AutocompletePanel("institution"),
+        AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
         InlinePanel("org_level", max_num=1, label=_("Level Copyright"), classname="collapsed"),
     ]
