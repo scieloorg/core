@@ -58,6 +58,9 @@ from .permissions import journal_permissions
 from organization.dynamic_models import OrgLevelPublisher, OrgLevelOwner, OrgLevelCopyrightHolder, OrgLevelSponsor
 from organization.models import Organization
 
+HELP_TEXT_INSTITUTION = _("Institution data originally provided. This field is for reference only.")
+HELP_TEXT_ORGANIZATION = _("Select the standardized institution corresponding to the original data.")
+
 User = get_user_model()
 
 
@@ -1018,14 +1021,14 @@ class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
-        help_text=_("Field containing non-standardized institution names from the Institution model."),
+        help_text=HELP_TEXT_INSTITUTION,
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text=("Field containing standardized institution names selected from the Organization model.")
+        help_text=HELP_TEXT_ORGANIZATION
     )
 
     panels = BaseHistoryItem.panels +[
@@ -1048,14 +1051,14 @@ class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
-        help_text=_("Field containing non-standardized institution names from the Institution model."),
+        help_text=HELP_TEXT_INSTITUTION,
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text=("Field containing standardized institution names selected from the Organization model.")
+        help_text=HELP_TEXT_ORGANIZATION
     )
 
     panels = BaseHistoryItem.panels +[
@@ -1078,14 +1081,14 @@ class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text=_("Field containing non-standardized institution names from the Institution model."),
+        help_text=HELP_TEXT_INSTITUTION,
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text=("Field containing standardized institution names selected from the Organization model.")
+        help_text=HELP_TEXT_ORGANIZATION
     )
 
     panels = BaseHistoryItem.panels +[
@@ -1111,14 +1114,14 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
-        help_text=_("Field containing non-standardized institution names from the Institution model."),
+        help_text=HELP_TEXT_INSTITUTION,
     )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text=("Field containing standardized institution names selected from the Organization model.")
+        help_text=HELP_TEXT_ORGANIZATION
     )
     
     panels = BaseHistoryItem.panels +[
