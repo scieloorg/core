@@ -3,11 +3,12 @@ from allauth.socialaccount.forms import SignupForm as SocialSignupForm
 from django import forms
 from django.contrib.auth import forms as admin_forms
 from django.contrib.auth import get_user_model
+from django.db.models import Prefetch
 from django.utils.translation import gettext_lazy as _
 from wagtail.users.forms import UserCreationForm, UserEditForm
 
 from collection.models import Collection
-from journal.models import Journal
+from journal.models import Journal, SciELOJournal
 
 User = get_user_model()
 
@@ -48,10 +49,24 @@ class UserSocialSignupForm(SocialSignupForm):
 
 
 class CustomUserEditForm(UserEditForm):
-    journal = forms.ModelMultipleChoiceField(queryset=Journal.objects.all(), required=False, label=_("Journal"))
+    qs = Journal.objects.select_related("official").prefetch_related(
+        Prefetch(
+            "scielojournal_set", 
+            queryset=SciELOJournal.objects.select_related("collection").filter(collection__is_active=True),
+            to_attr="active_collections"
+        )
+    )
+    journal = forms.ModelMultipleChoiceField(queryset=qs, required=False, label=_("Journal"))
     collection = forms.ModelMultipleChoiceField(queryset=Collection.objects.filter(is_active=True), required=True, label=_("Collection"))
 
 
 class CustomUserCreationForm(UserCreationForm):
-    journal = forms.ModelMultipleChoiceField(queryset=Journal.objects.all(), required=False, label=_("Journal"))
+    qs = Journal.objects.select_related("official").prefetch_related(
+        Prefetch(
+            "scielojournal_set", 
+            queryset=SciELOJournal.objects.select_related("collection").filter(collection__is_active=True),
+            to_attr="active_collections",
+        )
+    )
+    journal = forms.ModelMultipleChoiceField(queryset=qs, required=False, label=_("Journal"))
     collection = forms.ModelMultipleChoiceField(queryset=Collection.objects.filter(is_active=True), required=True, label=_("Collection"))
