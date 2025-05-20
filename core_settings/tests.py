@@ -29,11 +29,11 @@ class ImportCSVTest(TestCase):
             state_acronym="SP",
             state_name=None,
         )
-        self.csv_content_organization = """organization_name;country_code;city;state;acronym;url;institution_type_mec
+        self.csv_content_organization = """organization_name;country_code;city_name;state_name;acronym;url;institution_type_mec
 Organization 1;BR;São Paulo;São Paulo;ORG1;www.org1.com.br;organização sem fins de lucros"""
-        self.csv_content_newresearcher = """orcid;given_names;last_name;suffix;affiliation;country_code;city;state;email
+        self.csv_content_newresearcher = """orcid;given_names;last_name;suffix;affiliation;country_code;city_name;state_name;email
 0000-0002-9147-0547;Anna;Taomeaome;Jr.;Universidade Federal de São Carlos;BR;São Paulo;SP;anna.taomeaome@ufsc.br"""
-        self.csv_content_editorialboardmember = """title_journal;affiliation;country_code;city;state;orcid;given_names;last_name;suffix;std_role;declared_role;initial_year;final_year
+        self.csv_content_editorialboardmember = """title_journal;affiliation;country_code;city_name;state_name;orcid;given_names;last_name;suffix;std_role;declared_role;initial_year;final_year
 Revista XXXX;Universidade Federal de São Carlos;BR;São Paulo;SP;0000-0002-9147-0547;Anna;Taomeaome;Jr.;editor-in-chief;editor;2020;2022"""
 
     @staticmethod
@@ -131,7 +131,7 @@ Organization 1;São Paulo;São Paulo;ORG1;www.org1.com.br;organização sem fins
             response.content,
             {
                 "status": False,
-                "message": f"Colunas faltando. Colunas requeridas: {sorted({'organization_name', 'country_code', 'city', 'state'})}. (Delimitador ;)",
+                "message": f"Colunas faltando. Colunas requeridas: {sorted({'organization_name', 'country_code', 'city_name', 'state_name'})}. (Delimitador ;)",
             },
         )
 
