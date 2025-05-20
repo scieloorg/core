@@ -3,10 +3,18 @@ from django.test import TestCase
 
 from .exceptions import OrganizationCreateOrUpdateError
 from .models import Organization, OrganizationInstitutionType
-from .tasks import task_children_migrate_data, task_migrate_date_institution_to_organization_publisher
+from .tasks import (
+    task_children_migrate_data,
+    task_migrate_date_institution_to_organization_publisher,
+)
 from core.users.models import User
 from journal.models import PublisherHistory, CopyrightHolderHistory
-from institution.models import Institution, InstitutionIdentification, Publisher, CopyrightHolder
+from institution.models import (
+    Institution,
+    InstitutionIdentification,
+    Publisher,
+    CopyrightHolder,
+)
 from location.models import Location
 
 
@@ -65,10 +73,13 @@ class OrganizationTest(TestCase):
         self.assertEqual(self.organization.acronym, "Acronym of institution")
         self.assertEqual(self.organization.url, "www.teste.com.br")
         self.assertEqual(self.organization.institution_type_mec, "institution_type_mec")
-        self.assertEqual(self.organization.institution_type_scielo.first(), self.institution_type_scielo)
+        self.assertEqual(
+            self.organization.institution_type_scielo.first(),
+            self.institution_type_scielo,
+        )
         self.assertEqual(self.organization.location.country.name, "Brasil")
-        self.assertEqual(self.organization.is_official, True)  
-        
+        self.assertEqual(self.organization.is_official, True)
+
     def test_create_or_update_organization_fail(self):
         with self.assertRaises(OrganizationCreateOrUpdateError):
             self.organization = Organization.create_or_update(
@@ -81,7 +92,6 @@ class OrganizationTest(TestCase):
                 institution_type_mec="institution_type_mec",
                 is_official=True,
             )
-
 
 
 class OrganizationTaskTest(TestCase):
@@ -131,60 +141,81 @@ class OrganizationTaskTest(TestCase):
             institution=self.coyright,
         )
 
-
     @patch("organization.tasks.task_children_migrate_data.apply_async")
-    def test_migration_data_institution_publisher_to_organization(self, mock_apply_async):
+    def test_migration_data_institution_publisher_to_organization(
+        self, mock_apply_async
+    ):
         result = task_migrate_date_institution_to_organization_publisher(
-            user_id=None, 
-            username="teste", 
-            model="PublisherHistory", 
-            collection=None, 
+            user_id=None,
+            username="teste",
+            model="PublisherHistory",
+            collection=None,
             journal=None,
         )
         print(self.publisher_history.id)
         mock_apply_async.assert_called_once_with(
-            kwargs=
-                dict(
-                    user_id=None,
-                    username="teste",
-                    model_institutition="PublisherHistory",
-                    model_institutition_id=self.publisher_history.id,
-                    institution_data={
-                        'institution__name': 'Name of institution', 
-                        'institution__acronym': 'Acronym of institution', 
-                        'institution__is_official': True, 
-                        'institution__level_1': 'level_1', 
-                        'institution__level_2': 'level_2', 
-                        'institution__level_3': 'level_3', 
-                        'institution__url': 'www.teste.com.br', 
-                        'institution__type': "organização sem fins de lucros", 
-                        'institution__type_scielo': None,
-                        "location_id": self.location.id
-                    }
-                )
+            kwargs=dict(
+                user_id=None,
+                username="teste",
+                model_institutition="PublisherHistory",
+                model_institutition_id=self.publisher_history.id,
+                institution_data={
+                    "institution__name": "Name of institution",
+                    "institution__acronym": "Acronym of institution",
+                    "institution__is_official": True,
+                    "institution__level_1": "level_1",
+                    "institution__level_2": "level_2",
+                    "institution__level_3": "level_3",
+                    "institution__url": "www.teste.com.br",
+                    "institution__type": "organização sem fins de lucros",
+                    "institution__type_scielo": None,
+                    "location_id": self.location.id,
+                },
+            )
         )
         called_kwargs = mock_apply_async.call_args[1]["kwargs"]
-        self.assertEqual(called_kwargs["institution_data"].get("institution__name"), 'Name of institution')
-        self.assertEqual(called_kwargs["institution_data"].get("institution__acronym"), 'Acronym of institution')
-        self.assertEqual(called_kwargs["institution_data"].get("institution__type"), "organização sem fins de lucros")
-        self.assertEqual(called_kwargs["institution_data"].get("institution__level_1"), "level_1")
-        self.assertEqual(called_kwargs["institution_data"].get("institution__level_2"), "level_2")
-        self.assertEqual(called_kwargs["institution_data"].get("institution__level_3"), "level_3")
-        self.assertEqual(called_kwargs["institution_data"].get("institution__url"), "www.teste.com.br")
+
+        self.assertEqual(
+            called_kwargs["institution_data"].get("institution__name"),
+            "Name of institution",
+        )
+        self.assertEqual(
+            called_kwargs["institution_data"].get("institution__acronym"),
+            "Acronym of institution",
+        )
+        self.assertEqual(
+            called_kwargs["institution_data"].get("institution__type"),
+            "organização sem fins de lucros",
+        )
+        self.assertEqual(
+            called_kwargs["institution_data"].get("institution__level_1"), "level_1"
+        )
+        self.assertEqual(
+            called_kwargs["institution_data"].get("institution__level_2"), "level_2"
+        )
+        self.assertEqual(
+            called_kwargs["institution_data"].get("institution__level_3"), "level_3"
+        )
+        self.assertEqual(
+            called_kwargs["institution_data"].get("institution__url"),
+            "www.teste.com.br",
+        )
 
         task_children_migrate_data(**called_kwargs)
-    
+
         organization = Organization.objects.first()
         org_level = self.publisher_history.org_level.first()
 
         self.assertEqual(organization.name, "Name of institution")
         self.assertEqual(organization.acronym, "Acronym of institution")
-        self.assertEqual(organization.institution_type_mec, "organização sem fins de lucros")
-        self.assertEqual(organization.url, "www.teste.com.br")        
+        self.assertEqual(
+            organization.institution_type_mec, "organização sem fins de lucros"
+        )
+        self.assertEqual(organization.url, "www.teste.com.br")
         self.assertEqual(org_level.level_1, "level_1")
         self.assertEqual(org_level.level_2, "level_2")
         self.assertEqual(org_level.level_3, "level_3")
-        
+
         self.publisher_history.refresh_from_db()
         self.assertEqual(self.publisher_history.organization, organization)
 
@@ -195,17 +226,17 @@ class OrganizationTaskTest(TestCase):
             model_institutition="PublisherHistory",
             model_institutition_id=self.publisher_history.id,
             institution_data={
-                'institution__name': 'Name of institution', 
-                'institution__acronym': 'Acronym of institution', 
-                'institution__is_official': True, 
-                'institution__level_1': 'level_1', 
-                'institution__level_2': 'level_2', 
-                'institution__level_3': 'level_3', 
-                'institution__url': 'www.teste.com.br', 
-                'institution__type': "organização sem fins de lucros", 
-                'institution__type_scielo': None,
-                'location_id': self.location.id
-            }
+                "institution__name": "Name of institution",
+                "institution__acronym": "Acronym of institution",
+                "institution__is_official": True,
+                "institution__level_1": "level_1",
+                "institution__level_2": "level_2",
+                "institution__level_3": "level_3",
+                "institution__url": "www.teste.com.br",
+                "institution__type": "organização sem fins de lucros",
+                "institution__type_scielo": None,
+                "location_id": self.location.id,
+            },
         )
         task_children_migrate_data(**args)
         task_children_migrate_data(**args)

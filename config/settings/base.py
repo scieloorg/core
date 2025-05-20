@@ -69,7 +69,8 @@ WAGTAIL = [
     "wagtail_localize.modeladmin",
     "wagtail.embeds",
     "wagtail.sites",
-    "wagtail.users",
+    "core.users.apps.CustomUsersAppConfig",
+    # "wagtail.users",
     "wagtail.snippets",
     "wagtail.documents",
     "wagtail.images",
@@ -479,9 +480,6 @@ SEARCH_FACET_LIST = [
     "type",
 ]
 
-WAGTAIL_USER_EDIT_FORM = 'core.users.forms.CustomUserEditForm'
-WAGTAIL_USER_CREATION_FORM = 'core.users.forms.CustomUserCreationForm'
-WAGTAIL_USER_CUSTOM_FIELDS = ['collection', 'journal']
 
 # django maintenance mode
 # ------------------------------------------------------------------------------
