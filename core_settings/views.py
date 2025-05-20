@@ -37,7 +37,10 @@ def validate_type_csv(csv_file):
 
 
 def import_csv(request):
-    if not request.user and not request.user.is_superuser:  
+    if (
+        not request.user.is_authenticated or
+        not (request.user.is_superuser or request.user.groups.filter(name="Collection Team").exists())
+    ):
         return JsonResponse(
             {
                 "status": False,
