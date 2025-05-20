@@ -1,9 +1,10 @@
 import csv
 import logging
 import sys
-
 from datetime import date
+
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 
 from config import celery_app
 from core.models import Gender
@@ -196,7 +197,10 @@ def importar_csv_task_editorialboardmember(tmp_path, username):
     for i, row in enumerate(rows):
         try:
             row = clean_row(row)
-            journal = Journal.objects.get(title__icontains=row.get("title_journal"))
+            if row.get("issn_scielo"):
+                journal = Journal.objects.get(Q(issn_scielo=row.get("issn_scielo")) | Q(title__icontains=row.get("title_journal")))
+            else:
+                journal = Journal.objects.get(title__icontains=row.get("title_journal"))
             researcher = create_or_update_researcher(
                 username=username,
                 country_code=row.get("country_code"),
@@ -240,3 +244,56 @@ def importar_csv_task_editorialboardmember(tmp_path, username):
                     "row": row,
                 },
             )
+
+# TODO
+# @celery_app.task()
+# def importar_csv_task_institution(tmp_path, username):
+#     logging.info(f"[importar_csv_task_institution] Importing CSV file: {tmp_path}")
+#     user = _get_user(request=None, user_id=None, username=username)
+#     rows = read_csv(tmp_path)
+#     for i, row in enumerate(rows):
+#         try:
+#             row = clean_row(row)
+#             if row.get("issn_scielo"):
+#                 journal = Journal.objects.get(Q(official__issn_print=row.get("issn_scielo")) | Q(official__issn_electronic=row.get("issn_scielo")) | Q(title__icontains=row.get("title_journal")))
+#             else:
+#                 journal = Journal.objects.get(title__icontains=row.get("title_journal"))            
+#             location = Location.create_or_update(
+#                 user=user,
+#                 city_name=row.get("city_name"),
+#                 state_text=row.get("state_name"),
+#                 state_acronym=row.get("state_acronym"),
+#                 country_name=row.get("country_name"),
+#             )
+#             organization = Organization.create_or_update(
+#                 user=user,
+#                 name=row.get("organization_name"),
+#                 acronym=row.get("organization_acronym"),
+#                 location=location,
+#                 url=row.get("organization_url"),
+#                 institution_type_mec=row.get("institution_type_mec"),
+#             )
+#             if row.get("type_organization") == "Owner":
+#                 org_level_owner = OwnerHistory.get_org_level_model()
+#                 org_level_owner = org_level_owner.create_or_update(
+#                     user=user,
+#                     organization=organization,
+#                     level_1=row.get("level_1"),
+#                     level_2=row.get("level_2"),
+#                     level_3=row.get("level_3"),
+#                 )
+
+#                 journal.owner_history.add(org_level_owner)
+#         except Exception as e:
+#             logging.exception(f"Linhs {i} com error: {e}")
+#             exc_type, exc_value, exc_traceback = sys.exc_info()
+#             UnexpectedEvent.create(
+#                 exception=e,
+#                 action="importar_csv_task_editorialboardmember",
+#                 exc_traceback=exc_traceback,
+#                 detail={
+#                     "task": "organization.tasks.importar_csv_task_editorialboardmember",
+#                     "line": i,
+#                     "row": row,
+#                 },
+#             )
