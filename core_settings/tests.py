@@ -131,7 +131,7 @@ Organization 1;São Paulo;São Paulo;ORG1;www.org1.com.br;organização sem fins
             response.content,
             {
                 "status": False,
-                "message": f"Colunas faltando. Colunas requeridas: {sorted({'organization_name', 'country_code', 'city', 'state'})}.",
+                "message": f"Colunas faltando. Colunas requeridas: {sorted({'organization_name', 'country_code', 'city', 'state'})}. (Delimitador ;)",
             },
         )
 

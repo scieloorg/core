@@ -15,7 +15,7 @@ def validate_columns_csv(columns, type_csv):
         return JsonResponse(
             {
                 "status": False,
-                "message": _("Colunas faltando. Colunas requeridas") + f": {sorted(required)}.",  
+                "message": _("Colunas faltando. Colunas requeridas") + f": {sorted(required)}. (Delimitador ;)",  
             }
         )
 
