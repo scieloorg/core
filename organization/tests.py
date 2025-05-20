@@ -174,6 +174,7 @@ class OrganizationTaskTest(TestCase):
             )
         )
         called_kwargs = mock_apply_async.call_args[1]["kwargs"]
+
         self.assertEqual(
             called_kwargs["institution_data"].get("institution__name"),
             "Name of institution",
