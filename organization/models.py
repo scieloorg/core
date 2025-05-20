@@ -25,7 +25,7 @@ class BaseOrganization(CommonControlField, ClusterableModel):
     name = models.TextField(_("Name"), null=False, blank=False)
     acronym = models.TextField(_("Institution Acronym"), null=True, blank=True)
     location = models.ForeignKey(
-        Location, on_delete=models.CASCADE, null=False, blank=False
+        Location, on_delete=models.SET_NULL, null=True, blank=False
     )
     panels = [
         FieldPanel("name"),
