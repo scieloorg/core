@@ -816,7 +816,18 @@ class PidProviderXML(
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
 
             # consulta se documento já está registrado
-            registered = cls._query_document(xml_adapter)
+            try:
+                registered = cls._query_record(xml_adapter)
+            except cls.DoesNotExist as exc:
+                registered = None
+            except cls.MultipleObjectsReturned as exc:
+                raise exceptions.QueryDocumentMultipleObjectsReturnedError(exc)
+            except exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError as exc:
+                raise exc
+            except exceptions.RequiredISSNErrorToGetPidProviderXMLError as exc:
+                raise exc
+            except exceptions.NotEnoughParametersToGetPidProviderXMLError as exc:
+                raise exc
 
             # analisa se aceita ou rejeita registro
             updated_data = cls.skip_registration(
@@ -997,21 +1008,55 @@ class PidProviderXML(
         ------
         DoesNotExist
         MultipleObjectsReturned
-        RequiredPublicationYearErrorToGetPidProviderXMLError: Se o ano de publicação requerido não estiver disponível.
-        RequiredISSNErrorToGetPidProviderXMLError: Se nem o ISSN eletrônico nem o impresso estiverem disponíveis.
-        NotEnoughParametersToGetPidProviderXMLError: Se os parâmetros disponíveis forem insuficientes para desambiguação.
+        RequiredPublicationYearErrorToGetPidProviderXMLError
+            Se o ano de publicação requerido não estiver disponível.
+        RequiredISSNErrorToGetPidProviderXMLError
+            Se nem o ISSN eletrônico nem o impresso estiverem disponíveis.
+        NotEnoughParametersToGetPidProviderXMLError
+            Se os parâmetros disponíveis forem insuficientes para desambiguação.
 
         """
         data = get_xml_adapter_data(xml_adapter)
         q, query_list = get_valid_query_parameters(xml_adapter)
 
         try:
+            # versão VoR (version of record)
             return cls.objects.get(q, **query_list[0])
         except cls.DoesNotExist:
             try:
+                # versão aop (ahead of print)
                 return cls.objects.get(q, **query_list[1])
             except IndexError:
                 raise cls.DoesNotExist
+
+    @classmethod
+    def _get_records(cls, xml_adapter):
+        """
+        Get record
+
+        Arguments
+        ---------
+        xml_adapter : PidProviderXMLAdapter
+
+        Returns
+        -------
+        PidProviderXML generator
+
+        Raises
+        ------
+        RequiredPublicationYearErrorToGetPidProviderXMLError
+            Se o ano de publicação requerido não estiver disponível.
+        RequiredISSNErrorToGetPidProviderXMLError
+            Se nem o ISSN eletrônico nem o impresso estiverem disponíveis.
+        NotEnoughParametersToGetPidProviderXMLError
+            Se os parâmetros disponíveis forem insuficientes para desambiguação.
+
+        """
+        data = get_xml_adapter_data(xml_adapter)
+        q, query_list = get_valid_query_parameters(xml_adapter)
+        yield from cls.objects.filter(q, **query_list[0])
+        if len(query_list) > 1:
+            yield from cls.objects.filter(q, **query_list[1])
 
     @classmethod
     def get_registered(cls, xml_with_pre, origin=None):
@@ -1038,16 +1083,22 @@ class PidProviderXML(
             or
             {"error_msg": str(e), "error_type": str(type(e))}
         """
-        try:
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
-            registered = cls._query_document(xml_adapter)
-            if not registered:
-                raise cls.DoesNotExist
-            response = registered.data.copy()
-            response["registered"] = True
-            return response
-        except cls.DoesNotExist:
-            return {"filename": xml_with_pre.filename, "registered": False}
+            try:
+                registered = cls._query_record(xml_adapter)
+                response = registered.data.copy()
+                response["registered"] = True
+                return response
+            except cls.DoesNotExist as exc:
+                return {"filename": xml_with_pre.filename, "registered": False}
+            except cls.MultipleObjectsReturned as exc:
+                raise exc
+            except exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError as exc:
+                raise exc
+            except exceptions.RequiredISSNErrorToGetPidProviderXMLError as exc:
+                raise exc
+            except exceptions.NotEnoughParametersToGetPidProviderXMLError as exc:
+                raise exc
         except Exception as e:
             # except (
             #     exceptions.NotEnoughParametersToGetDocumentRecordError,
@@ -1270,7 +1321,18 @@ class PidProviderXML(
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
 
             # consulta se documento já está registrado
-            registered = cls._query_document(xml_adapter)
+            try:
+                registered = cls._query_record(xml_adapter)
+            except cls.DoesNotExist as exc:
+                registered = None
+            except cls.MultipleObjectsReturned as exc:
+                raise exceptions.QueryDocumentMultipleObjectsReturnedError(exc)
+            except exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError as exc:
+                raise exc
+            except exceptions.RequiredISSNErrorToGetPidProviderXMLError as exc:
+                raise exc
+            except exceptions.NotEnoughParametersToGetPidProviderXMLError as exc:
+                raise exc
 
             # verfica os PIDs encontrados no XML / atualiza-os se necessário
             changed_pids = cls._complete_pids(xml_adapter, registered)
@@ -1491,7 +1553,18 @@ class PidProviderXML(
         xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
 
         try:
-            registered = cls._query_document(xml_adapter)
+            try:
+                registered = cls._query_record(xml_adapter)
+            except cls.DoesNotExist as exc:
+                registered = None
+            except cls.MultipleObjectsReturned as exc:
+                raise exceptions.QueryDocumentMultipleObjectsReturnedError(exc)
+            except exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError as exc:
+                raise exc
+            except exceptions.RequiredISSNErrorToGetPidProviderXMLError as exc:
+                raise exc
+            except exceptions.NotEnoughParametersToGetPidProviderXMLError as exc:
+                raise exc
             if registered:
                 data = registered.data
 
