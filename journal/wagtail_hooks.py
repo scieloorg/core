@@ -55,32 +55,7 @@ class OfficialJournalSnippetViewSet(SnippetViewSet):
         "issnl",
     )
 
-# class JournalEditViewSnippet(SnippetEditView):
-#     def form_valid(self, form):
-#         self.object = form.save_all(self.request.user)
-#         return HttpResponseRedirect(self.get_success_url())
 
-#     def get_edit_handler(self):
-#         """
-#         Sobrescreve o método 'get_edit_handler' de EditView.
-#         Verifica se o usuário tem permissão para editar o campo. Caso não tenha, os campos que não possuem a permissão
-#         'journal.can_edit_{field_name}' no 'user_permissions' serão configurados como somente leitura.
-#         Isso é aplicado para 'FieldPanel', 'AutocompletePanel'
-#         e 'InlinePanel'.
-#         """
-#         edit_handler = super().get_edit_handler()
-#         user_permissions = self.request.user.get_all_permissions()
-#         if not self.request.user.is_superuser:
-#             for object_list in edit_handler.children:
-#                 for field in object_list.children:
-#                     if isinstance(field, FieldPanel) and f"journal.can_edit_{field.field_name}" not in user_permissions:
-#                         field.__setattr__('read_only', True)
-#                     elif isinstance(field, InlinePanel) and f"journal.can_edit_{field.relation_name}" not in user_permissions:
-#                         field.classname = field.classname + ' read-only-inline-panel'
-#                         for inline_field in field.panel_definitions:
-#                             inline_field.__setattr__('read_only', True)
-#         return edit_handler
-    
 class JournalCreateView(CreateView):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
