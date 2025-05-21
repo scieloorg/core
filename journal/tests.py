@@ -15,25 +15,27 @@ from journal.tasks import (
 
 class MigrationTestCase(TestCase):
     def test_migration_adding_journal_urls(self):
-        migrator = Migrator(database='default')
-        old_state = migrator.apply_initial_migration(('journal', '0024_alter_officialjournal_issn_electronic_and_more'))
-        Journal = old_state.apps.get_model('journal', 'Journal')
-        JournalURL = old_state.apps.get_model('journal', 'JournalURL')
+        migrator = Migrator(database="default")
+        old_state = migrator.apply_initial_migration(
+            ("journal", "0024_alter_officialjournal_issn_electronic_and_more")
+        )
+        Journal = old_state.apps.get_model("journal", "Journal")
+        JournalURL = old_state.apps.get_model("journal", "JournalURL")
 
         journal = Journal.objects.create(journal_url="https://www.teste.com.br")
 
-        new_state = migrator.apply_tested_migration(('journal', '0025_journalurl'))
-        JournalURL = new_state.apps.get_model('journal', 'JournalURL')
+        new_state = migrator.apply_tested_migration(("journal", "0025_journalurl"))
+        JournalURL = new_state.apps.get_model("journal", "JournalURL")
 
         journal_url = JournalURL.objects.filter(journal=journal).first()
         self.assertIsNotNone(journal_url)
         self.assertEqual(journal_url.url, "https://www.teste.com.br")
 
     def test_reverse_migration_deleting_journal_urls(self):
-        migrator = Migrator(database='default')
-        new_state = migrator.apply_initial_migration(('journal', '0025_journalurl'))
-        JournalURL = new_state.apps.get_model('journal', 'JournalURL')
-        Journal = new_state.apps.get_model('journal', 'Journal')
+        migrator = Migrator(database="default")
+        new_state = migrator.apply_initial_migration(("journal", "0025_journalurl"))
+        JournalURL = new_state.apps.get_model("journal", "JournalURL")
+        Journal = new_state.apps.get_model("journal", "Journal")
 
         journal = Journal.objects.create(name="Test Journal")
         JournalURL.objects.create(journal=journal, url="http://example.com")
@@ -41,8 +43,10 @@ class MigrationTestCase(TestCase):
         journal_url = JournalURL.objects.filter(journal=journal).first()
         self.assertIsNotNone(journal_url)
 
-        old_state = migrator.apply_tested_migration(('journal', '0024_alter_officialjournal_issn_electronic_and_more'))
-        JournalURL = old_state.apps.get_model('journal', 'JournalURL')
+        old_state = migrator.apply_tested_migration(
+            ("journal", "0024_alter_officialjournal_issn_electronic_and_more")
+        )
+        JournalURL = old_state.apps.get_model("journal", "JournalURL")
 
         journal_url = JournalURL.objects.filter(journal=journal).first()
         self.assertIsNone(journal_url)
@@ -53,19 +57,18 @@ class MigrationTestCase(TestCase):
 class TestLoadLicenseOfUseInJournal(TestCase):
     def setUp(self):
         self.user = User.objects.create(username="teste", password="teste")
-        self.collection = Collection.objects.create(creator=self.user, acron3="scl", is_active=True)
+        self.collection = Collection.objects.create(
+            creator=self.user, acron3="scl", is_active=True
+        )
         self.journal = Journal.objects.create(creator=self.user, title="Test Journal")
         self.am_journal = AMJournal.objects.create(
             collection=self.collection,
             scielo_issn="1516-635X",
-            data=[{
-                "v541":[
-                    {
-                        "_":"BY"
-                    }
-                ],
-            }]
-
+            data=[
+                {
+                    "v541": [{"_": "BY"}],
+                }
+            ],
         )
         self.scielo_journal = SciELOJournal.objects.create(
             issn_scielo="1516-635X",
@@ -73,7 +76,6 @@ class TestLoadLicenseOfUseInJournal(TestCase):
             journal=self.journal,
             journal_acron="abdc",
         )
-
 
     @patch("journal.tasks.child_load_license_of_use_in_journal.apply_async")
     def test_load_license_of_use_in_journal(self, mock_apply_async):
@@ -92,18 +94,17 @@ class TestLoadLicenseOfUseInJournal(TestCase):
         )
 
     @patch("journal.tasks.child_load_license_of_use_in_journal.apply_async")
-    def test_load_license_of_use_in_journal_with_none_scielo_issn(self, mock_apply_async):
+    def test_load_license_of_use_in_journal_with_none_scielo_issn(
+        self, mock_apply_async
+    ):
         self.am_journal_2 = AMJournal.objects.create(
             collection=self.collection,
             scielo_issn=None,
-            data=[{
-                "v541":[
-                    {
-                        "_":"BY"
-                    }
-                ],
-            }]
-
+            data=[
+                {
+                    "v541": [{"_": "BY"}],
+                }
+            ],
         )
         load_license_of_use_in_journal(
             username=self.user.username,
@@ -141,5 +142,3 @@ class TestLoadLicenseOfUseInJournal(TestCase):
         journal_license = JournalLicense.objects.all()
         self.assertEqual(journal_license.count(), 0)
         self.assertEqual(self.journal.journal_use_license, None)
-
-

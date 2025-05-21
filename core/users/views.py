@@ -50,8 +50,10 @@ user_redirect_view = UserRedirectView.as_view()
 
 
 def filter_journals(request):
-    collection_ids = request.GET.getlist('collections[]')
-    if collection_ids or collection_ids[0]:
+    # Filtra apenas valores numéricos não vazios
+    raw_ids = request.GET.getlist('collections[]')
+    collection_ids = [int(cid) for cid in raw_ids if cid.isdigit()]
+    if collection_ids:
         journals = Journal.objects.filter(
             scielojournal__collection__id__in=collection_ids,
             scielojournal__collection__is_active=True

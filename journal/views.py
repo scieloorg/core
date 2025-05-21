@@ -81,7 +81,11 @@ def import_file(request):
                     user=request.user,
                 )
     except Exception as ex:
-        messages.error(request, _("Import error: %(exception)s, Line: %(line)s") % {'exception': ex, 'line': str(line + 2)})
+        messages.error(
+            request,
+            _("Import error: %(exception)s, Line: %(line)s")
+            % {"exception": ex, "line": str(line + 2)},
+        )
     else:
         messages.success(request, _("File imported successfully!"))
 

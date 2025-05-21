@@ -135,8 +135,10 @@ def fetch_and_process_journal_logo(
         logo_data = response
         img_wagtail = Image(title=journal_acron)
         img_wagtail.file.save(f"{journal_acron}_glogo.gif", ContentFile(logo_data))
-        
-        journal_logo = JournalLogo.create_or_update(journal=journal, logo=img_wagtail, user=user)
+
+        journal_logo = JournalLogo.create_or_update(
+            journal=journal, logo=img_wagtail, user=user
+        )
         journal.logo = journal_logo.logo
         journal.save()
     except Exception as e:
@@ -154,7 +156,9 @@ def fetch_and_process_journal_logo(
 
 
 @celery_app.task(bind=True)
-def fetch_and_process_journal_logos_in_collection(self, collection_acron3=None, user_id=None,username=None):
+def fetch_and_process_journal_logos_in_collection(
+    self, collection_acron3=None, user_id=None, username=None
+):
     if collection_acron3:
         collection = Collection.objects.get(acron3=collection_acron3)
         journals = Journal.objects.filter(scielojournal__collection=collection)
@@ -163,30 +167,32 @@ def fetch_and_process_journal_logos_in_collection(self, collection_acron3=None, 
 
     for journal in journals:
         fetch_and_process_journal_logo(
-                journal_id=journal.id,
-                user_id=user_id,
-                username=username,
-            )
-        
+            journal_id=journal.id,
+            user_id=user_id,
+            username=username,
+        )
+
 
 @celery_app.task
-def load_license_of_use_in_journal(issn_scielo=None, collection_acron3=None, user_id=None, username=None):
+def load_license_of_use_in_journal(
+    issn_scielo=None, collection_acron3=None, user_id=None, username=None
+):
     params = {}
     if collection_acron3:
         collection = Collection.objects.get(acron3=collection_acron3)
         params["collection"] = collection
     if issn_scielo:
         params["scielo_issn"] = issn_scielo
-    
+
     journals = AMJournal.objects.filter(**params)
     for journal in journals:
         if scielo_issn := journal.scielo_issn:
             if journal.data:
                 license_data = extract_value(
-                    rename_dictionary_keys(
-                        journal.data, 
-                        correspondencia_journal
-                    ).get("license_of_use"))
+                    rename_dictionary_keys(journal.data, correspondencia_journal).get(
+                        "license_of_use"
+                    )
+                )
                 child_load_license_of_use_in_journal.apply_async(
                     kwargs=dict(
                         journal_issn=scielo_issn,
@@ -196,20 +202,25 @@ def load_license_of_use_in_journal(issn_scielo=None, collection_acron3=None, use
                     )
                 )
 
+
 @celery_app.task
 def child_load_license_of_use_in_journal(
     journal_issn, license_data, user_id=None, username=None
 ):
     user = _get_user(request=None, username=username, user_id=user_id)
-    journal = Journal.objects.filter(
-        scielojournal__issn_scielo=journal_issn, 
-        scielojournal__collection__is_active=True
-        ).prefetch_related(
-            "scielojournal_set"
-        ).distinct()
+    journal = (
+        Journal.objects.filter(
+            scielojournal__issn_scielo=journal_issn,
+            scielojournal__collection__is_active=True,
+        )
+        .prefetch_related("scielojournal_set")
+        .distinct()
+    )
     if license_data:
         for item in journal:
             license_type = license_data.split("/")
-            license = JournalLicense.create_or_update(license_type=license_type[0], user=user)
+            license = JournalLicense.create_or_update(
+                license_type=license_type[0], user=user
+            )
             item.journal_use_license = license
             item.save()
