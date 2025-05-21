@@ -56,7 +56,9 @@ def _register_journal_data(user, collection_acron3):
     journals = AMJournal.objects.filter(collection__acron3=collection_acron3)
     for journal_am in journals:
         try:
-            journal_dict = rename_dictionary_keys(journal_am.data, correspondencia_journal)
+            journal_dict = rename_dictionary_keys(
+                journal_am.data, correspondencia_journal
+            )
 
             # Criar new_title e old_title somente após carregar todos os journals
             official_journal = am_to_core.create_or_update_official_journal(
@@ -147,7 +149,9 @@ def _register_journal_data(user, collection_acron3):
                 journal=journal,
                 url_of_the_journal=journal_dict.get("url_of_the_journal"),
                 url_of_submission_online=journal_dict.get("url_of_submission_online"),
-                url_of_the_main_collection=journal_dict.get("url_of_the_main_collection"),
+                url_of_the_main_collection=journal_dict.get(
+                    "url_of_the_main_collection"
+                ),
                 license_of_use=journal_dict.get("license_of_use"),
                 user=user,
             )
@@ -189,7 +193,9 @@ def _register_journal_data(user, collection_acron3):
     # somente após carregar todos os journals
     for journal_am in journals:
         try:
-            journal_dict = rename_dictionary_keys(journal_am.data, correspondencia_journal)
+            journal_dict = rename_dictionary_keys(
+                journal_am.data, correspondencia_journal
+            )
             official_journal = am_to_core.create_or_update_official_journal(
                 title=journal_dict.get("publication_title"),
                 new_title=journal_dict.get("new_title"),

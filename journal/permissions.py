@@ -81,7 +81,10 @@ journal_permissions = [
     ("can_edit_preparing_manuscript", _("Can edit Preparing Manuscript")),
     ("can_edit_digital_assets", _("Can edit Digital Assets")),
     ("can_edit_citations_and_references", _("Can edit Citations and References")),
-    ("can_edit_supp_docs_submission", _("Can edit Supplementary Documents Required for Submission")),
+    (
+        "can_edit_supp_docs_submission",
+        _("Can edit Supplementary Documents Required for Submission"),
+    ),
     ("can_edit_financing_statement", _("Can edit Financing Statement")),
     ("can_edit_acknowledgements", _("Can edit Acknowledgements")),
     ("can_edit_additional_information", _("Can edit Additional Information")),

@@ -46,7 +46,11 @@ class OfficialJournalSnippetViewSet(SnippetViewSet):
         "created",
         "updated",
     )
-    list_filter = ("issn_print_is_active", "terminate_year", "initial_year", )
+    list_filter = (
+        "issn_print_is_active",
+        "terminate_year",
+        "initial_year",
+    )
     search_fields = (
         "title",
         "initial_year",
@@ -91,13 +95,22 @@ class JournalAdminSnippetViewSet(SnippetViewSet):
         "official__issn_electronic",
         "contact_location__country__name",
     )
+
     def get_queryset(self, request):
-        qs = models.Journal.objects.all().select_related("contact_location").prefetch_related("scielojournal_set")
-        user_groups = request.user.groups.values_list('name', flat=True)
+        qs = (
+            models.Journal.objects.all()
+            .select_related("contact_location")
+            .prefetch_related("scielojournal_set")
+        )
+        user_groups = request.user.groups.values_list("name", flat=True)
         if COLLECTION_TEAM in user_groups:
-            return qs.filter(scielojournal__collection__in=request.user.collection.all())
+            return qs.filter(
+                scielojournal__collection__in=request.user.collection.all()
+            )
         elif JOURNAL_TEAM in user_groups:
-            return qs.filter(id__in=request.user.journal.all().values_list("id", flat=True))
+            return qs.filter(
+                id__in=request.user.journal.all().values_list("id", flat=True)
+            )
         return qs
 
 
@@ -105,6 +118,7 @@ class SciELOJournalCreateView(CreateView):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
+
 
 class SciELOJournalAdminViewSet(SnippetViewSet):
     model = models.SciELOJournal
@@ -125,7 +139,10 @@ class SciELOJournalAdminViewSet(SnippetViewSet):
         "created",
         "updated",
     )
-    list_filter = ("status", "collection", )
+    list_filter = (
+        "status",
+        "collection",
+    )
     search_fields = (
         "journal_acron",
         "journal__title",
@@ -134,18 +151,26 @@ class SciELOJournalAdminViewSet(SnippetViewSet):
 
     def get_queryset(self, request):
         qs = models.SciELOJournal.objects.all().select_related("journal", "collection")
-        user_groups = request.user.groups.values_list('name', flat=True)
+        user_groups = request.user.groups.values_list("name", flat=True)
         if COLLECTION_TEAM in user_groups:
             return qs.filter(collection__in=request.user.collection.all())
         elif JOURNAL_TEAM in user_groups:
-            return qs.filter(id__in=request.user.journal.all().values_list("id", flat=True))
+            return qs.filter(
+                id__in=request.user.journal.all().values_list("id", flat=True)
+            )
         return qs
+
 
 class JournalSnippetViewSetGroup(SnippetViewSetGroup):
     menu_label = _("Journals")
     menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("journal")
-    items = (JournalAdminSnippetViewSet, OfficialJournalSnippetViewSet, SciELOJournalAdminViewSet)
+    items = (
+        JournalAdminSnippetViewSet,
+        OfficialJournalSnippetViewSet,
+        SciELOJournalAdminViewSet,
+    )
+
 
 register_snippet(JournalSnippetViewSetGroup)
 
@@ -190,12 +215,8 @@ class AdditionalIndexedAtAdmin(ModelAdmin):
     menu_order = 110
     add_to_settings_menu = False
     exclude_from_explorer = False
-    list_display = (
-        "name",
-    )
-    search_fields = (
-        "name",
-    )
+    list_display = ("name",)
+    search_fields = ("name",)
 
 
 class IndexedAtFileAdmin(ModelAdmin):
@@ -251,12 +272,8 @@ class WosAreaAdmin(ModelAdmin):
     menu_order = 400
     add_to_settings_menu = False
     exclude_from_explorer = False
-    list_display = (
-        "value",
-    )
-    search_fields = (
-        "value",
-    )
+    list_display = ("value",)
+    search_fields = ("value",)
 
 
 class StandardAdmin(ModelAdmin):
@@ -277,22 +294,24 @@ class StandardAdmin(ModelAdmin):
 
 
 # TODO
-# Futuramente mudar para JournalAdminGroup 
+# Futuramente mudar para JournalAdminGroup
 # com permissoes de visualizacao restrita
 class AMJournalAdmin(ModelAdmin):
     model = models.AMJournal
     menu_label = "AM Journal"
     menu_icon = "folder"
     menu_order = get_menu_order("amjournal")
-    list_display = ("scielo_issn", "collection") 
+    list_display = ("scielo_issn", "collection")
     list_filter = ("collection",)
     search_fields = ("scielo_issn",)
+
 
 class ArticleSubmissionFormatCheckListAdmin(ModelAdmin):
     model = models.ArticleSubmissionFormatCheckList
     menu_label = _("Article Submission Format Check List")
     menu_icon = "folder"
     menu_order = get_menu_order("article_subm")
+
 
 # modeladmin_register(ArticleSubmissionFormatCheckListAdmin)
 
