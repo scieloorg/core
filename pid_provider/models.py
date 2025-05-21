@@ -95,13 +95,22 @@ class XMLVersion(CommonControlField):
 
     def save_file(self, filename, content):
         try:
-            self.file.delete(save=True)
+            self.file.delete(save=False)
         except Exception as e:
-            pass
+            logging.exception(e)
         self.file.save(filename, ContentFile(content))
+
+    def is_equal_to(self, xml_adapter):
+        return os.path.isfile(self.file.path) and (
+            self.finger_print == xml_adapter.finger_print
+        )
 
     @property
     def xml_with_pre(self):
+        if not os.path.isfile(self.file.path):
+            raise FileNotFoundError(
+                _("Unable to read XML {} {}").format(self.file.path, self)
+            )
         try:
             for item in XMLWithPre.create(path=self.file.path):
                 return item
@@ -118,15 +127,20 @@ class XMLVersion(CommonControlField):
             return self.xml_with_pre.tostring(pretty_print=True)
         except XMLVersionXmlWithPreError as e:
             return str(e)
+        except FileNotFoundError as e:
+            return None
 
     @classmethod
     def latest(cls, pid_provider_xml):
         if pid_provider_xml:
-            return cls.objects.filter(pid_provider_xml=pid_provider_xml).latest(
+            item = cls.objects.filter(pid_provider_xml=pid_provider_xml).latest(
                 "created"
             )
+            if item and os.path.isfile(item.file.path):
+                return item
+            raise cls.DoesNotExist(f"{pid_provider_xml}")
         raise XMLVersionLatestError(
-            "XMLVersion.get requires pid_provider_xml and xml_with_pre parameters"
+            "XMLVersion.latest: unable to get {}".format(pid_provider_xml)
         )
 
     @classmethod
@@ -138,7 +152,6 @@ class XMLVersion(CommonControlField):
             raise XMLVersionGetError(
                 "XMLVersion.get requires pid_provider_xml and xml_with_pre parameters"
             )
-
         latest = cls.latest(pid_provider_xml)
         if latest.finger_print == finger_print:
             return latest
@@ -964,8 +977,7 @@ class PidProviderXML(
 
     def is_equal_to(self, xml_adapter):
         return bool(
-            self.current_version
-            and self.current_version.finger_print == xml_adapter.finger_print
+            self.current_version and self.current_version.is_equal_to(self, xml_adapter)
         )
 
     @classmethod
