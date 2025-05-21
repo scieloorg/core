@@ -14,6 +14,18 @@ class NotEnoughParametersToGetDocumentRecordError(Exception):
     ...
 
 
+class RequiredISSNErrorToGetPidProviderXMLError(Exception):
+    ...
+
+
+class RequiredPublicationYearErrorToGetPidProviderXMLError(Exception):
+    ...
+
+
+class RequiredAuthorErrorToGetPidProviderXMLError(Exception):
+    ...
+
+
 class QueryDocumentMultipleObjectsReturnedError(Exception):
     ...
 
