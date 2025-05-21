@@ -472,29 +472,31 @@ def load_file_xml_version(username, collection_acron="scl", user_id=None):
                 path = item.current_version.file.path
             else:
                 raise ValueError(f"Missing path for item: {item.v3}")
-            
+
             if path and not os.path.isfile(path):
                 # get acronym from path
-                match = re.search(r'/pid_provider/\w+/\w+/([^/]+)/', path)
+                match = re.search(r"/pid_provider/\w+/\w+/([^/]+)/", path)
                 if match:
                     acronym = match.group(1)
                 else:
                     raise Exception(f"Unable to get acronym from path: {path}")
 
                 if not item.origin_date:
-                    formatted_date = "Mon, 01 Jan 1900 00:00:00 UTC"                             
+                    formatted_date = "Mon, 01 Jan 1900 00:00:00 UTC"
                 else:
                     try:
                         dt = datetime.strptime(item.origin_date, "%Y-%m-%d")
                         dt = dt.replace(tzinfo=pytz.UTC)
                         formatted_date = dt.strftime("%a, %d %b %Y %H:%M:%S %Z")
                     except ValueError as ve:
-                        raise ValueError(f"Invalid date format for item {item.v3}: {item.origin_date}") 
+                        raise ValueError(
+                            f"Invalid date format for item {item.v3}: {item.origin_date}"
+                        )
 
                 article = {
                     "journal_acronym": acronym,
                     "update": formatted_date,
-                    "publication_date": item.pub_year, # don't used in processing
+                    "publication_date": item.pub_year,  # don't used in processing
                 }
                 logging.info(f"Processing item: {item.v3}")
                 provide_pid_for_opac_article.apply_async(

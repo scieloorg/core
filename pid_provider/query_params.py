@@ -6,19 +6,19 @@ from pid_provider import exceptions
 def get_valid_query_parameters(xml_adapter):
     """
     Obtém parâmetros válidos para consulta com base em um adaptador XML.
-    
+
     Esta função determina os parâmetros de consulta válidos para localizar documentos
-    relacionados a um artigo científico, usando diferentes estratégias dependendo 
+    relacionados a um artigo científico, usando diferentes estratégias dependendo
     se o artigo é um 'ahead of print' (AOP) ou um artigo regular.
-    
+
     Args:
         xml_adapter: Um objeto adaptador XML contendo metadados do artigo.
-    
+
     Returns:
         tuple: Uma tupla contendo (expressão_q, lista_de_parâmetros_válidos)
               onde expressão_q é um objeto Q para filtrar por ISSN e
               lista_de_parâmetros_válidos é uma lista de dicionários com parâmetros válidos.
-    
+
     Raises:
         RequiredPublicationYearErrorToGetPidProviderXMLError: Se o ano de publicação requerido não estiver disponível.
         RequiredISSNErrorToGetPidProviderXMLError: Se nem o ISSN eletrônico nem o impresso estiverem disponíveis.
@@ -32,15 +32,15 @@ def get_valid_query_parameters(xml_adapter):
 
     basic_params = get_basic_params(xml_adapter)
     if xml_adapter.is_aop:
-        kwargs = [
-            _get_valid_params(xml_adapter, basic_params)
-        ]
+        kwargs = [_get_valid_params(xml_adapter, basic_params)]
     else:
         kwargs = [
             _get_valid_params(
-                add_issue_params(xml_adapter, basic_params, filter_by_issue=True)),
+                add_issue_params(xml_adapter, basic_params, filter_by_issue=True)
+            ),
             _get_valid_params(
-                add_issue_params(xml_adapter, basic_params, aop_version=True)),
+                add_issue_params(xml_adapter, basic_params, aop_version=True)
+            ),
         ]
     return q, kwargs
 
@@ -48,13 +48,13 @@ def get_valid_query_parameters(xml_adapter):
 def add_issue_params(xml_adapter, basic_params, filter_by_issue=None, aop_version=None):
     """
     Adiciona parâmetros relacionados à edição aos parâmetros básicos.
-    
+
     Args:
         xml_adapter: Um objeto adaptador XML contendo metadados do artigo.
         basic_params (dict): Dicionário com parâmetros básicos.
         filter_by_issue (bool, optional): Se True, filtra por edição específica. Padrão é None.
         aop_version (bool, optional): Se True, configura parâmetros para versão "ahead of print". Padrão é None.
-    
+
     Returns:
         dict: Dicionário combinado de parâmetros básicos e parâmetros da edição.
     """
@@ -66,17 +66,17 @@ def add_issue_params(xml_adapter, basic_params, filter_by_issue=None, aop_versio
 def _get_valid_params(xml_adapter, params):
     """
     Valida e complementa os parâmetros fornecidos com parâmetros de desambiguação, se necessário.
-    
-    Esta função interna tenta validar os parâmetros fornecidos e, se houver falta de 
+
+    Esta função interna tenta validar os parâmetros fornecidos e, se houver falta de
     informações sobre autores, tenta adicionar parâmetros de desambiguação.
-    
+
     Args:
         xml_adapter: Um objeto adaptador XML contendo metadados do artigo.
         params (dict): Dicionário com parâmetros a serem validados.
-    
+
     Returns:
         dict: Dicionário de parâmetros validados e complementados, se necessário.
-    
+
     Raises:
         NotEnoughParametersToGetPidProviderXMLError: Se não houver parâmetros suficientes para desambiguação.
         RequiredPublicationYearErrorToGetPidProviderXMLError: Se o ano de publicação requerido não estiver disponível.
@@ -99,13 +99,13 @@ def _get_valid_params(xml_adapter, params):
 def get_journal_q_expression(xml_adapter):
     """
     Cria uma expressão Q para filtrar por ISSN eletrônico ou impresso.
-    
+
     Args:
         xml_adapter: Um objeto adaptador XML contendo metadados do artigo.
-    
+
     Returns:
         Q: Um objeto Q para filtrar por ISSN eletrônico ou impresso.
-    
+
     Raises:
         RequiredISSNErrorToGetPidProviderXMLError: Se nem o ISSN eletrônico nem o impresso estiverem disponíveis.
     """
@@ -126,13 +126,13 @@ def get_journal_q_expression(xml_adapter):
 def get_basic_params(xml_adapter):
     """
     Obtém parâmetros básicos do artigo a partir do adaptador XML.
-    
-    Extrai informações como sobrenomes de autores, colaboradores, DOI, 
+
+    Extrai informações como sobrenomes de autores, colaboradores, DOI,
     ID de localização eletrônica e ano de publicação do artigo.
-    
+
     Args:
         xml_adapter: Um objeto adaptador XML contendo metadados do artigo.
-    
+
     Returns:
         dict: Dicionário contendo parâmetros básicos do artigo.
     """
@@ -150,17 +150,17 @@ def get_basic_params(xml_adapter):
 def get_issue_params(xml_adapter, filter_by_issue=False, aop_version=False):
     """
     Obtém parâmetros relacionados à edição a partir do adaptador XML.
-    
-    Dependendo dos flags, configura parâmetros para filtrar por edição específica 
+
+    Dependendo dos flags, configura parâmetros para filtrar por edição específica
     ou para configurar uma consulta para versão "ahead of print".
-    
+
     Args:
         xml_adapter: Um objeto adaptador XML contendo metadados do artigo.
-        filter_by_issue (bool, optional): Se True, incluir parâmetros para filtrar 
+        filter_by_issue (bool, optional): Se True, incluir parâmetros para filtrar
                                          por edição específica. Padrão é False.
-        aop_version (bool, optional): Se True, configurar parâmetros para versão 
+        aop_version (bool, optional): Se True, configurar parâmetros para versão
                                      "ahead of print". Padrão é False.
-    
+
     Returns:
         dict: Dicionário contendo parâmetros relacionados à edição.
     """
@@ -183,18 +183,18 @@ def get_issue_params(xml_adapter, filter_by_issue=False, aop_version=False):
 def get_disambiguation_params(xml_adapter):
     """
     Obtém parâmetros adicionais para desambiguação.
-    
-    Quando os parâmetros básicos não são suficientes para identificar 
+
+    Quando os parâmetros básicos não são suficientes para identificar
     unicamente um artigo, essa função fornece parâmetros adicionais para desambiguação.
-    
+
     Args:
         xml_adapter: Um objeto adaptador XML contendo metadados do artigo.
-    
+
     Returns:
         dict: Dicionário contendo parâmetros de desambiguação.
-    
+
     Raises:
-        NotEnoughParametersToGetPidProviderXMLError: Se não houver parâmetros 
+        NotEnoughParametersToGetPidProviderXMLError: Se não houver parâmetros
                                                     suficientes para desambiguação.
     """
     _params = {}
@@ -208,26 +208,26 @@ def get_disambiguation_params(xml_adapter):
                 _params,
             )
         )
-    return _params  
+    return _params
 
 
 def validate_query_params(query_params):
     """
     Valida se os parâmetros de consulta contêm informações suficientes.
-    
-    Verifica se os parâmetros de consulta contêm ano de publicação e 
-    pelo menos um identificador único (DOI, página inicial ou ID de localização eletrônica) 
+
+    Verifica se os parâmetros de consulta contêm ano de publicação e
+    pelo menos um identificador único (DOI, página inicial ou ID de localização eletrônica)
     ou informações de autor.
-    
+
     Args:
         query_params (dict): Dicionário contendo parâmetros de consulta.
-    
+
     Returns:
         bool: True se os parâmetros forem válidos.
-    
+
     Raises:
         RequiredPublicationYearErrorToGetPidProviderXMLError: Se o ano de publicação não estiver disponível.
-        RequiredAuthorErrorToGetPidProviderXMLError: Se não houver informações de autor e 
+        RequiredAuthorErrorToGetPidProviderXMLError: Se não houver informações de autor e
                                                    nenhum identificador único disponível.
     """
     _params = query_params
@@ -269,13 +269,13 @@ def validate_query_params(query_params):
 def get_xml_adapter_data(xml_adapter):
     """
     Extrai todos os dados relevantes de um adaptador XML em um dicionário.
-    
-    Esta função tenta acessar o atributo 'data' do adaptador XML e, se não estiver 
+
+    Esta função tenta acessar o atributo 'data' do adaptador XML e, se não estiver
     disponível, cria um dicionário com todos os atributos relevantes manualmente.
-    
+
     Args:
         xml_adapter: Um objeto adaptador XML contendo metadados do artigo.
-    
+
     Returns:
         dict: Dicionário contendo todos os metadados do artigo extraídos do adaptador XML.
     """
