@@ -24,6 +24,7 @@ from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from pid_provider import exceptions
 from pid_provider import choices
+from pid_provider.query_params import get_valid_query_parameters, get_xml_adapter_data
 from tracker.models import UnexpectedEvent
 
 LOGGER = logging.getLogger(__name__)
@@ -966,6 +967,39 @@ class PidProviderXML(
             self.current_version
             and self.current_version.finger_print == xml_adapter.finger_print
         )
+
+    @classmethod
+    def _get_record(cls, xml_adapter):
+        """
+        Get record
+
+        Arguments
+        ---------
+        xml_adapter : PidProviderXMLAdapter
+
+        Returns
+        -------
+        PidProviderXML
+
+        Raises
+        ------
+        DoesNotExist
+        MultipleObjectsReturned
+        RequiredPublicationYearErrorToGetPidProviderXMLError: Se o ano de publicação requerido não estiver disponível.
+        RequiredISSNErrorToGetPidProviderXMLError: Se nem o ISSN eletrônico nem o impresso estiverem disponíveis.
+        NotEnoughParametersToGetPidProviderXMLError: Se os parâmetros disponíveis forem insuficientes para desambiguação.
+
+        """
+        data = get_xml_adapter_data(xml_adapter)
+        q, query_list = get_valid_query_parameters(xml_adapter)
+
+        try:
+            return cls.objects.get(q, **query_list[0])
+        except cls.DoesNotExist:
+            try:
+                return cls.objects.get(q, **query_list[1])
+            except IndexError:
+                raise cls.DoesNotExist
 
     @classmethod
     def get_registered(cls, xml_with_pre, origin=None):
