@@ -717,7 +717,6 @@ class PidProviderXML(
                     "registered": registered.v3,
                 }
                 registered.v3 = xml_adapter.v3
-                registered._add_other_pid([item.copy()], user)
                 changed_pids.append(item)
 
         if xml_adapter.v2 and xml_adapter.v2 not in pids:
@@ -736,7 +735,6 @@ class PidProviderXML(
                     "registered": registered.v2,
                 }
                 registered.v2 = xml_adapter.v2
-                registered._add_other_pid([item.copy()], user)
                 changed_pids.append(item)
 
         if xml_adapter.aop_pid and xml_adapter.aop_pid not in pids:
@@ -755,8 +753,8 @@ class PidProviderXML(
                     "registered": registered.aop_pid,
                 }
                 registered.aop_pid = xml_adapter.aop_pid
-                registered._add_other_pid([item.copy()], user)
                 changed_pids.append(item)
+        registered._add_other_pid(changed_pids, user)
         return changed_pids
 
     @classmethod
