@@ -751,6 +751,32 @@ class PidProviderXML(
         return changed_pids
 
     @classmethod
+    def _check_pid(
+        cls,
+        xml_pid_value,
+        pid_name,
+        pid_type,
+        ConflictException,
+        registered,
+        registered_pid,
+    ):
+        # pid no xml é novo
+        param = {pid_name: xml_pid_value}
+        owner = cls._is_registered_pid(**param)
+        if owner:
+            # e está registrado para outro XML
+            raise ConflictException(
+                f"PID {xml_pid_value} is already registered for {owner}"
+            )
+        elif registered:
+            # indica a mudança do pid
+            return {
+                "pid_type": pid_type,
+                "pid_in_xml": xml_pid_value,
+                "registered": registered_pid,
+            }
+
+    @classmethod
     def register(
         cls,
         xml_with_pre,
