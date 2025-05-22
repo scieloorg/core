@@ -702,58 +702,44 @@ class PidProviderXML(
             pids = registered.get_pids()
 
         if xml_adapter.v3 and xml_adapter.v3 not in pids:
-            # pid no xml é novo
-            owner = cls._is_registered_pid(v3=xml_adapter.v3)
-            if owner:
-                # e está registrado para outro XML
-                raise PidProviderXMLPidV3ConflictError(
-                    f"PID {xml_adapter.v3} is already registered for {owner}"
-                )
-            elif registered:
-                # indica a mudança do pid
-                item = {
-                    "pid_type": "pid_v3",
-                    "pid_in_xml": xml_adapter.v3,
-                    "registered": registered.v3,
-                }
+            item = cls._check_pid(
+                xml_pid_value=xml_adapter.v3,
+                pid_name="v3",
+                pid_type="pid_v3",
+                ConflictException=PidProviderXMLPidV3ConflictError,
+                registered=registered,
+                registered_pid=registered and registered.v3,
+            )
+            if item:
                 registered.v3 = xml_adapter.v3
                 changed_pids.append(item)
 
         if xml_adapter.v2 and xml_adapter.v2 not in pids:
-            # pid no xml é novo
-            owner = cls._is_registered_pid(v2=xml_adapter.v2)
-            if owner:
-                # e está registrado para outro XML
-                raise PidProviderXMLPidV2ConflictError(
-                    f"PID {xml_adapter.v2} is already registered for {owner}"
-                )
-            elif registered:
-                # indica a mudança do pid
-                item = {
-                    "pid_type": "pid_v2",
-                    "pid_in_xml": xml_adapter.v2,
-                    "registered": registered.v2,
-                }
+            item = cls._check_pid(
+                xml_pid_value=xml_adapter.v2,
+                pid_name="v2",
+                pid_type="pid_v2",
+                ConflictException=PidProviderXMLPidV2ConflictError,
+                registered=registered,
+                registered_pid=registered and registered.v2,
+            )
+            if item:
                 registered.v2 = xml_adapter.v2
                 changed_pids.append(item)
 
         if xml_adapter.aop_pid and xml_adapter.aop_pid not in pids:
-            # pid no xml é novo
-            owner = cls._is_registered_pid(aop_pid=xml_adapter.aop_pid)
-            if owner:
-                # e está registrado para outro XML
-                raise PidProviderXMLPidAOPConflictError(
-                    f"PID {xml_adapter.aop_pid} is already registered for {owner}"
-                )
-            elif registered:
-                # indica a mudança do pid
-                item = {
-                    "pid_type": "aop_pid",
-                    "pid_in_xml": xml_adapter.aop_pid,
-                    "registered": registered.aop_pid,
-                }
+            item = cls._check_pid(
+                xml_pid_value=xml_adapter.aop_pid,
+                pid_name="aop_pid",
+                pid_type="aop_pid",
+                ConflictException=PidProviderXMLPidAOPConflictError,
+                registered=registered,
+                registered_pid=registered and registered.aop_pid,
+            )
+            if item:
                 registered.aop_pid = xml_adapter.aop_pid
                 changed_pids.append(item)
+
         registered._add_other_pid(changed_pids, user)
         return changed_pids
 
@@ -773,7 +759,7 @@ class PidProviderXML(
         if owner:
             # e está registrado para outro XML
             raise ConflictException(
-                f"PID {xml_pid_value} is already registered for {owner}"
+                f"PID {xml_pid_value} belongs to {owner} ({owner.get_pids()})"
             )
         elif registered:
             # indica a mudança do pid
