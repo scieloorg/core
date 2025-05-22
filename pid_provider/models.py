@@ -41,6 +41,15 @@ class XMLVersionLatestError(Exception): ...
 class XMLVersionGetError(Exception): ...
 
 
+class PidProviderXMLPidV3ConflictError(Exception): ...
+
+
+class PidProviderXMLPidV2ConflictError(Exception): ...
+
+
+class PidProviderXMLPidAOPConflictError(Exception): ...
+
+
 def utcnow():
     return datetime.utcnow()
     # return datetime.utcnow().isoformat().replace("T", " ") + "Z"
@@ -697,7 +706,7 @@ class PidProviderXML(
             owner = cls._is_registered_pid(v3=xml_adapter.v3)
             if owner:
                 # e está registrado para outro XML
-                raise ValueError(
+                raise PidProviderXMLPidV3ConflictError(
                     f"PID {xml_adapter.v3} is already registered for {owner}"
                 )
             elif registered:
@@ -716,7 +725,7 @@ class PidProviderXML(
             owner = cls._is_registered_pid(v2=xml_adapter.v2)
             if owner:
                 # e está registrado para outro XML
-                raise ValueError(
+                raise PidProviderXMLPidV2ConflictError(
                     f"PID {xml_adapter.v2} is already registered for {owner}"
                 )
             elif registered:
@@ -735,7 +744,7 @@ class PidProviderXML(
             owner = cls._is_registered_pid(aop_pid=xml_adapter.aop_pid)
             if owner:
                 # e está registrado para outro XML
-                raise ValueError(
+                raise PidProviderXMLPidAOPConflictError(
                     f"PID {xml_adapter.aop_pid} is already registered for {owner}"
                 )
             elif registered:
