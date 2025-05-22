@@ -697,11 +697,11 @@ class PidProviderXML(
 
         """
         changed_pids = []
-        pids = {"pid_v3": [], "pid_v2": [], "aop_pid": []}
+        pids = []
         if registered:
             pids = registered.get_pids()
 
-        if xml_adapter.v3 not in pids["pid_v3"]:
+        if xml_adapter.v3 and xml_adapter.v3 not in pids:
             # pid no xml é novo
             owner = cls._is_registered_pid(v3=xml_adapter.v3)
             if owner:
@@ -720,7 +720,7 @@ class PidProviderXML(
                 registered._add_other_pid([item.copy()], user)
                 changed_pids.append(item)
 
-        if xml_adapter.v2 not in pids["pid_v2"]:
+        if xml_adapter.v2 and xml_adapter.v2 not in pids:
             # pid no xml é novo
             owner = cls._is_registered_pid(v2=xml_adapter.v2)
             if owner:
@@ -739,7 +739,7 @@ class PidProviderXML(
                 registered._add_other_pid([item.copy()], user)
                 changed_pids.append(item)
 
-        if xml_adapter.aop_pid and xml_adapter.aop_pid not in pids["aop_pid"]:
+        if xml_adapter.aop_pid and xml_adapter.aop_pid not in pids:
             # pid no xml é novo
             owner = cls._is_registered_pid(aop_pid=xml_adapter.aop_pid)
             if owner:
@@ -1316,25 +1316,21 @@ class PidProviderXML(
     @classmethod
     def _is_registered_pid(cls, v2=None, v3=None, aop_pid=None):
         if v3:
-            kwargs = {"v3": v3}
+            items = cls.objects.filter(v3=v3)
         elif v2:
-            kwargs = {"v2": v2}
+            items = cls.objects.filter(v2=v2)
         elif aop_pid:
-            kwargs = {"aop_pid": aop_pid}
-
-        if kwargs:
+            items = cls.objects.filter(Q(v2=aop_pid) | Q(aop_pid=aop_pid))
+        else:
+            return None
+        try:
+            return items[0]
+        except IndexError:
             try:
-                found = cls.objects.filter(**kwargs)[0]
-            except IndexError:
-                try:
-                    obj = OtherPid.objects.get(pid_in_xml=v3 or v2 or aop_pid)
-                    return obj.pid_provider_xml
-                except OtherPid.DoesNotExist:
-                    return None
-                except OtherPid.MultipleObjectsReturned:
-                    return obj.pid_provider_xml
-            else:
-                return found
+                obj = OtherPid.objects.get(pid_in_xml=v3 or v2 or aop_pid)
+                return obj.pid_provider_xml
+            except OtherPid.DoesNotExist:
+                return None
 
     @classmethod
     def _v2_generates(cls, xml_adapter):
@@ -1484,14 +1480,14 @@ class PidProviderXML(
         return bool(value and len(value) == 23)
 
     def get_pids(self):
-        d = {}
-        d["pid_v3"] = [self.v3]
-        d["pid_v2"] = [self.v2]
-        d["aop_pid"] = [self.aop_pid]
-
+        pids = [self.v3]
+        if self.v2:
+            pids.append(self.v2)
+        if self.aop_pid:
+            pids.append(self.aop_pid)
         for item in OtherPid.objects.filter(pid_provider_xml=self).iterator():
-            d[item.pid_type].append(item.pid_in_xml)
-        return d
+            pids.append(item.pid_in_xml)
+        return pids
 
     @classmethod
     def _add_pid_v3(cls, xml_adapter, registered):
