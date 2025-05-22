@@ -6,6 +6,8 @@ from wagtail_modeladmin.options import (
     modeladmin_register,
 )
 from wagtail_modeladmin.views import CreateView
+from wagtail.snippets.views.snippets import SnippetViewSet
+from wagtail.snippets.models import register_snippet
 
 from config.menu import get_menu_order
 from .models import (
@@ -15,6 +17,7 @@ from .models import (
     PidProviderXML,
     PidRequest,
     FixPidV2,
+    PidProviderXMLTimeline,
 )
 
 
@@ -222,3 +225,38 @@ class PidProviderAdminGroup(ModelAdminGroup):
 
 
 modeladmin_register(PidProviderAdminGroup)
+
+
+class PidProviderXMLTimelineSnippetViewSet(SnippetViewSet):
+    model = PidProviderXMLTimeline
+    icon = "folder-open-inverse"
+    menu_name = "PidProviderXMLTimeline"
+    menu_label = _("Pid Provider XML Timeline")
+    menu_order = get_menu_order("Pid Provider XML Timeline")
+    add_to_admin_menu = True
+
+    list_display = (
+        "pkg_name",
+        "v3",
+        "v2",
+        "aop_pid",
+        "updated",
+    )
+    search_fields = (
+        "issn_electronic",
+        "issn_print",
+        "pkg_name",
+        "v3",
+        "v2",
+        "aop_pid",
+        "main_toc_section",
+        "main_doi",
+    )
+    list_filter = (
+        "pub_year",
+        "article_pub_year",
+        "registered_in_core",
+    )
+
+
+register_snippet(PidProviderXMLTimelineSnippetViewSet)
