@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import sys
+import traceback
 from datetime import datetime
 
 from django.core.files.base import ContentFile
@@ -25,7 +26,7 @@ from core.models import CommonControlField
 from pid_provider import exceptions
 from pid_provider import choices
 from pid_provider.query_params import get_valid_query_parameters, get_xml_adapter_data
-from tracker.models import UnexpectedEvent
+from tracker.models import UnexpectedEvent, BaseEvent
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -797,6 +798,8 @@ class PidProviderXML(
             detail = xml_with_pre.data
             logging.info(f"PidProviderXML.register: {detail}")
 
+            self.add_event(name="start registration", detail=xml_with_pre.data)
+
             input_data = {}
             input_data["xml_with_pre"] = xml_with_pre
             input_data["filename"] = filename
@@ -822,7 +825,9 @@ class PidProviderXML(
                 registered = None
             except cls.MultipleObjectsReturned as exc:
                 raise exceptions.QueryDocumentMultipleObjectsReturnedError(exc)
-            except exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError as exc:
+            except (
+                exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError
+            ) as exc:
                 raise exc
             except exceptions.RequiredISSNErrorToGetPidProviderXMLError as exc:
                 raise exc
@@ -838,13 +843,20 @@ class PidProviderXML(
                 registered_in_core,
             )
             if updated_data:
+                self.add_event(
+                    name="finish registration",
+                    detail="xml was already up-to-date"
+                )
                 return updated_data
 
             # valida os PIDs do XML
             # - não podem ter conflito com outros registros
             # - identifica mudança
             changed_pids = cls._check_pids(user, xml_adapter, registered)
-
+            self.add_event(
+                name="check pids",
+                detail=changed_pids,
+            )
             # cria ou atualiza registro
             registered = cls._save(
                 registered,
@@ -857,6 +869,10 @@ class PidProviderXML(
 
             # data to return
             data = registered.data.copy()
+            self.add_event(
+                name="registered",
+                detail=registered.data,
+            )
             data["changed_pids"] = changed_pids
 
             pid_request = PidRequest.cancel_failure(
@@ -871,6 +887,15 @@ class PidProviderXML(
             return response
 
         except (exceptions.QueryDocumentMultipleObjectsReturnedError,) as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            self.add_event(
+                name="finish registration",
+                exception=e,
+                exc_type=exc_type,
+                exc_value=exc_value,
+                exc_traceback=exc_traceback,
+            )
+
             data = json.loads(str(e))
             pid_request = PidRequest.create_or_update(
                 user=user,
@@ -886,6 +911,15 @@ class PidProviderXML(
             response.update(pid_request.data)
             return response
         except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            self.add_event(
+                name="finish registration",
+                exception=e,
+                exc_type=exc_type,
+                exc_value=exc_value,
+                exc_traceback=exc_traceback,
+            )
+
             # exceptions.ForbiddenPidProviderXMLRegistrationError,
             # exceptions.NotEnoughParametersToGetDocumentRecordError,
             # exceptions.InvalidPidError,
@@ -1083,6 +1117,7 @@ class PidProviderXML(
             or
             {"error_msg": str(e), "error_type": str(type(e))}
         """
+        try:
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
             try:
                 registered = cls._query_record(xml_adapter)
@@ -1828,3 +1863,67 @@ class FixPidV2(CommonControlField):
                 fixed_in_core=None,
                 fixed_in_upload=None,
             )
+
+
+class PidProviderXMLTimeline(PidProviderXML):
+    class Meta:
+        proxy = True
+
+    panel_id = [
+        FieldPanel("pkg_name"),
+        FieldPanel("v3"),
+        FieldPanel("v2"),
+        FieldPanel("aop_pid"),
+    ]
+    panel_event = [
+        InlinePanel("event"),
+    ]
+    edit_handler = TabbedInterface(
+        [
+            ObjectList(panel_id, heading=_("Identification")),
+            ObjectList(panel_event, heading=_("Events")),
+        ]
+    )
+
+    def add_event(
+        self,
+        name,
+        detail=None,
+        exception=None,
+        exc_type=None,
+        exc_value=None,
+        exc_traceback=None,
+    ):
+        data = detail or {}
+        if exception:
+            data.update(
+                dict(
+                    exception=str(exception),
+                    exc_type=str(exc_type),
+                    exc_value=str(exc_value),
+                    exc_traceback=str(exc_traceback),
+                )
+            )
+        self.event.add(PidProviderXMLEvent(ppx_timeline=self, name=name, detail=data))
+
+
+class PidProviderXMLEvent(BaseEvent):
+    ppx_timeline = ParentalKey(
+        "PidProviderXMLTimeline",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="event",
+    )
+    panels = [
+        FieldPanel("name", read_only=True),
+        FieldPanel("detail", read_only=True),
+        FieldPanel("created", read_only=True),
+    ]
+
+    class Meta:
+        # isso faz com que em InlinePanel mostre do mais recente para o mais antigo
+        ordering = ["-created"]
+        indexes = [
+            models.Index(fields=["ppx_timeline"]),
+        ]
