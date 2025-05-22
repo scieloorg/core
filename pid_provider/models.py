@@ -844,8 +844,7 @@ class PidProviderXML(
             )
             if updated_data:
                 self.add_event(
-                    name="finish registration",
-                    detail="xml was already up-to-date"
+                    name="finish registration", detail="xml was already up-to-date"
                 )
                 return updated_data
 
@@ -1128,7 +1127,9 @@ class PidProviderXML(
                 return {"filename": xml_with_pre.filename, "registered": False}
             except cls.MultipleObjectsReturned as exc:
                 raise exc
-            except exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError as exc:
+            except (
+                exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError
+            ) as exc:
                 raise exc
             except exceptions.RequiredISSNErrorToGetPidProviderXMLError as exc:
                 raise exc
@@ -1362,7 +1363,9 @@ class PidProviderXML(
                 registered = None
             except cls.MultipleObjectsReturned as exc:
                 raise exceptions.QueryDocumentMultipleObjectsReturnedError(exc)
-            except exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError as exc:
+            except (
+                exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError
+            ) as exc:
                 raise exc
             except exceptions.RequiredISSNErrorToGetPidProviderXMLError as exc:
                 raise exc
@@ -1594,7 +1597,9 @@ class PidProviderXML(
                 registered = None
             except cls.MultipleObjectsReturned as exc:
                 raise exceptions.QueryDocumentMultipleObjectsReturnedError(exc)
-            except exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError as exc:
+            except (
+                exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError
+            ) as exc:
                 raise exc
             except exceptions.RequiredISSNErrorToGetPidProviderXMLError as exc:
                 raise exc
