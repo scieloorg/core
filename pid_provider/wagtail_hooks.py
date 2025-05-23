@@ -152,6 +152,7 @@ class OtherPidAdmin(ModelAdmin):
     search_fields = (
         "pid_in_xml",
         "pid_provider_xml__v3",
+        "pid_provider_xml__pkg_name"
     )
 
 
