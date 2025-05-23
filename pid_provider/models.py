@@ -143,8 +143,11 @@ class XMLVersion(CommonControlField):
     @classmethod
     def latest(cls, pid_provider_xml):
         if pid_provider_xml:
-            item = cls.objects.filter(pid_provider_xml=pid_provider_xml).latest(
-                "created"
+            # Adicionar select_related para evitar query extra ao acessar pid_provider_xml
+            item = (
+                cls.objects.select_related("pid_provider_xml")
+                .filter(pid_provider_xml=pid_provider_xml)
+                .latest("created")
             )
             if item and os.path.isfile(item.file.path):
                 return item
@@ -170,7 +173,9 @@ class XMLVersion(CommonControlField):
     @classmethod
     def get_or_create(cls, user, pid_provider_xml, xml_with_pre):
         try:
-            latest = cls.get(pid_provider_xml, xml_with_pre.finger_print)
+            latest = cls.select_related("pid_provider_xml").get(
+                pid_provider_xml, xml_with_pre.finger_print
+            )
             if not os.path.isfile(latest.file.path):
                 latest.save_file(
                     f"{pid_provider_xml.v3}.xml",
@@ -423,8 +428,12 @@ class PidRequest(CommonControlField):
 
     @classmethod
     def items_to_retry(cls):
-        # retorna os itens em que result_type é diferente de OK e a origem é URI
-        return cls.objects.filter(~Q(result_type="OK"), origin__contains=":").iterator()
+        # Adicionar select_related se for acessar xml_version posteriormente
+        return (
+            cls.objects.select_related("xml_version", "xml_version__pid_provider_xml")
+            .filter(~Q(result_type="OK"), origin__contains=":")
+            .iterator()
+        )
 
     panels = [
         # FieldPanel("origin", read_only=True),
@@ -608,28 +617,25 @@ class PidProviderXML(
     class Meta:
         ordering = ["-updated", "-created", "pkg_name"]
         indexes = [
+            # === Essenciais ===
             models.Index(fields=["pkg_name"]),
             models.Index(fields=["v3"]),
+            models.Index(fields=["v2"]),
             models.Index(fields=["issn_electronic"]),
             models.Index(fields=["issn_print"]),
             models.Index(fields=["pub_year"]),
-            models.Index(fields=["volume"]),
-            models.Index(fields=["number"]),
-            models.Index(fields=["suppl"]),
-            models.Index(fields=["elocation_id"]),
-            models.Index(fields=["fpage"]),
-            models.Index(fields=["fpage_seq"]),
-            models.Index(fields=["lpage"]),
             models.Index(fields=["article_pub_year"]),
             models.Index(fields=["main_doi"]),
-            models.Index(fields=["z_article_titles_texts"]),
-            models.Index(fields=["z_surnames"]),
-            models.Index(fields=["z_collab"]),
-            models.Index(fields=["z_links"]),
-            models.Index(fields=["z_partial_body"]),
-            models.Index(fields=["z_journal_title"]),
-            models.Index(fields=["other_pid_count"]),
             models.Index(fields=["registered_in_core"]),
+            # === Compostos ===
+            models.Index(fields=["issn_electronic", "article_pub_year"]),
+            models.Index(fields=["issn_print", "article_pub_year"]),
+            models.Index(fields=["pub_year", "volume", "number", "suppl"]),
+            models.Index(fields=["issn_electronic", "main_doi"]),
+            models.Index(fields=["issn_print", "main_doi"]),
+            models.Index(fields=["issn_electronic", "elocation_id"]),
+            models.Index(fields=["z_surnames", "article_pub_year"]),
+            models.Index(fields=["z_collab", "article_pub_year"]),
         ]
 
     def __str__(self):
@@ -665,8 +671,12 @@ class PidProviderXML(
     @classmethod
     def get_xml_with_pre(cls, v3):
         try:
-            return cls.objects.get(v3=v3).xml_with_pre
-        except:
+            # Usar select_related para evitar query extra ao acessar current_version
+            obj = cls.objects.select_related("current_version").get(v3=v3)
+            return obj.xml_with_pre
+        except cls.DoesNotExist:
+            return None
+        except Exception:
             return None
 
     @property
@@ -839,7 +849,7 @@ class PidProviderXML(
 
             # consulta se documento já está registrado
             try:
-                registered = cls._query_record(xml_adapter)
+                registered = cls._get_record(xml_adapter)
             except cls.DoesNotExist as exc:
                 registered = None
             except cls.MultipleObjectsReturned as exc:
@@ -1071,13 +1081,16 @@ class PidProviderXML(
         data = get_xml_adapter_data(xml_adapter)
         q, query_list = get_valid_query_parameters(xml_adapter)
 
+        # Usar select_related para otimizar acesso futuro a current_version
+        queryset = cls.objects.select_related("current_version")
+
         try:
             # versão VoR (version of record)
-            return cls.objects.get(q, **query_list[0])
+            return queryset.get(q, **query_list[0])
         except cls.DoesNotExist:
             try:
                 # versão aop (ahead of print)
-                return cls.objects.get(q, **query_list[1])
+                return queryset.get(q, **query_list[1])
             except IndexError:
                 raise cls.DoesNotExist
 
@@ -1106,9 +1119,13 @@ class PidProviderXML(
         """
         data = get_xml_adapter_data(xml_adapter)
         q, query_list = get_valid_query_parameters(xml_adapter)
-        yield from cls.objects.filter(q, **query_list[0])
+        yield from cls.objects.select_related("current_version").filter(
+            q, **query_list[0]
+        )
         if len(query_list) > 1:
-            yield from cls.objects.filter(q, **query_list[1])
+            yield from cls.objects.select_related("current_version").filter(
+                q, **query_list[1]
+            )
 
     @classmethod
     def get_registered(cls, xml_with_pre, origin=None):
@@ -1138,7 +1155,7 @@ class PidProviderXML(
         try:
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
             try:
-                registered = cls._query_record(xml_adapter)
+                registered = cls._get_record(xml_adapter)
                 response = registered.data.copy()
                 response["registered"] = True
                 return response
@@ -1373,7 +1390,7 @@ class PidProviderXML(
 
             # consulta se documento já está registrado
             try:
-                registered = cls._query_record(xml_adapter)
+                registered = cls._get_record(xml_adapter)
             except cls.DoesNotExist as exc:
                 registered = None
             except cls.MultipleObjectsReturned as exc:
@@ -1607,7 +1624,7 @@ class PidProviderXML(
 
         try:
             try:
-                registered = cls._query_record(xml_adapter)
+                registered = cls._get_record(xml_adapter)
             except cls.DoesNotExist as exc:
                 registered = None
             except cls.MultipleObjectsReturned as exc:
