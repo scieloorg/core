@@ -57,7 +57,6 @@ def _get_xml_adapter_with_issue_data():
     xml_adapter.aop_pid = "12345678901234567890aop"
 
     xml_adapter.main_doi = "data-main_doi"
-    xml_adapter.main_toc_section = "data-main_toc_section"
     xml_adapter.elocation_id = "data-elocation_id"
     return xml_adapter
 
@@ -676,9 +675,6 @@ class PidProviderXMLAddDataForRegularArticleTest(TestCase):
 
     def test_main_doi(self):
         self.assertEqual("10.1590/S1413-4152202020180029", self.registered.main_doi)
-
-    def test_main_toc_section(self):
-        self.assertEqual("Artigo Técnico", self.registered.main_toc_section)
 
     def test_fpage(self):
         self.assertEqual("627", self.registered.fpage)

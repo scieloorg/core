@@ -250,7 +250,6 @@ class PidProviderXMLTimelineSnippetViewSet(SnippetViewSet):
         "v3",
         "v2",
         "aop_pid",
-        "main_toc_section",
         "main_doi",
     )
     list_filter = (

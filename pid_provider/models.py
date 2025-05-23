@@ -547,7 +547,6 @@ class PidProviderXML(
     article_pub_year = models.CharField(
         _("Document Publication Year"), max_length=4, null=True, blank=True
     )
-    main_toc_section = models.TextField(_("main_toc_section"), null=True, blank=True)
     main_doi = models.CharField(_("DOI"), max_length=255, null=True, blank=True)
 
     z_article_titles_texts = models.CharField(
@@ -574,7 +573,7 @@ class PidProviderXML(
     base_form_class = CoreAdminModelForm
 
     panel_a = [
-        FieldPanel("registered_in_core"),
+        FieldPanel("registered_in_core", read_only=True),
         FieldPanel("issn_electronic", read_only=True),
         FieldPanel("issn_print", read_only=True),
         FieldPanel("pub_year", read_only=True),
@@ -591,7 +590,6 @@ class PidProviderXML(
         FieldPanel("fpage_seq", read_only=True),
         FieldPanel("lpage", read_only=True),
         FieldPanel("available_since", read_only=True),
-        FieldPanel("main_toc_section", read_only=True),
         # FieldPanel("z_article_titles_texts", read_only=True),
         # FieldPanel("z_surnames", read_only=True),
         # FieldPanel("z_collab", read_only=True),
@@ -1252,7 +1250,6 @@ class PidProviderXML(
         self.lpage = xml_adapter.lpage
 
         self.main_doi = xml_adapter.main_doi
-        self.main_toc_section = xml_adapter.main_toc_section
         self.elocation_id = xml_adapter.elocation_id
 
         self.z_article_titles_texts = xml_adapter.z_article_titles_texts
