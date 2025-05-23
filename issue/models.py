@@ -209,6 +209,10 @@ class Issue(CommonControlField, ClusterableModel):
 
         return "%s, %s, %s" % (self.journal, issue_info, self.year)
 
+    @property
+    def articlemeta_format(self):
+        from .sources.articlemeta_format import get_articlemeta_format_issue
+        return get_articlemeta_format_issue(self)
 
     base_form_class = CoreAdminModelForm
 
