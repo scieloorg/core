@@ -196,15 +196,11 @@ class PidProviderConfig(CommonControlField, ClusterableModel):
     Tem função de guardar XML que falhou no registro
     """
 
-    pid_provider_api_post_xml = models.TextField(
-        _("XML Post URI"), null=True, blank=True
-    )
-    pid_provider_api_get_token = models.TextField(
-        _("Get Token URI"), null=True, blank=True
-    )
+    pid_provider_api_post_xml = models.CharField(_("XML Post URI"), max_length=2048, null=True, blank=True)
+    pid_provider_api_get_token = models.CharField(_("Get Token URI"), max_length=2048, null=True, blank=True)
     timeout = models.IntegerField(_("Timeout"), null=True, blank=True)
-    api_username = models.TextField(_("API Username"), null=True, blank=True)
-    api_password = models.TextField(_("API Password"), null=True, blank=True)
+    api_username = models.CharField(_("API Username"), max_length=150, null=True, blank=True)
+    api_password = models.CharField(_("API Password"), max_length=255, null=True, blank=True)
 
     def __unicode__(self):
         return f"{self.pid_provider_api_post_xml}"
@@ -288,7 +284,7 @@ class PidRequest(CommonControlField):
     origin = models.CharField(
         _("Request origin"), max_length=124, null=True, blank=True
     )
-    result_type = models.TextField(_("Result type"), null=True, blank=True)
+    result_type = models.CharField(_("Result type"), max_length=100, null=True, blank=True)
     result_msg = models.TextField(_("Result message"), null=True, blank=True)
     xml_version = models.ForeignKey(
         XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
@@ -537,7 +533,7 @@ class PidProviderXML(
         XMLVersion, on_delete=models.SET_NULL, null=True, blank=True
     )
 
-    pkg_name = models.TextField(_("Package name"), null=True, blank=True)
+    pkg_name = models.CharField(_("Package name"), max_length=100, null=True, blank=True)
     v3 = models.CharField(_("v3"), max_length=23, null=True, blank=True)
     v2 = models.CharField(_("v2"), max_length=24, null=True, blank=True)
     aop_pid = models.CharField(_("AOP PID"), max_length=64, null=True, blank=True)
@@ -552,7 +548,7 @@ class PidProviderXML(
         _("Document Publication Year"), max_length=4, null=True, blank=True
     )
     main_toc_section = models.TextField(_("main_toc_section"), null=True, blank=True)
-    main_doi = models.TextField(_("DOI"), null=True, blank=True)
+    main_doi = models.CharField(_("DOI"), max_length=255, null=True, blank=True)
 
     z_article_titles_texts = models.CharField(
         _("article_titles_texts"), max_length=64, null=True, blank=True
@@ -573,7 +569,7 @@ class PidProviderXML(
         _("Available since"), max_length=10, null=True, blank=True
     )
     other_pid_count = models.PositiveIntegerField(default=0)
-    registered_in_core = models.BooleanField(default=False, null=True, blank=True)
+    registered_in_core = models.BooleanField(default=False)
 
     base_form_class = CoreAdminModelForm
 
