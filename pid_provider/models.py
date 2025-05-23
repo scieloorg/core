@@ -196,11 +196,19 @@ class PidProviderConfig(CommonControlField, ClusterableModel):
     Tem função de guardar XML que falhou no registro
     """
 
-    pid_provider_api_post_xml = models.CharField(_("XML Post URI"), max_length=2048, null=True, blank=True)
-    pid_provider_api_get_token = models.CharField(_("Get Token URI"), max_length=2048, null=True, blank=True)
+    pid_provider_api_post_xml = models.CharField(
+        _("XML Post URI"), max_length=2048, null=True, blank=True
+    )
+    pid_provider_api_get_token = models.CharField(
+        _("Get Token URI"), max_length=2048, null=True, blank=True
+    )
     timeout = models.IntegerField(_("Timeout"), null=True, blank=True)
-    api_username = models.CharField(_("API Username"), max_length=150, null=True, blank=True)
-    api_password = models.CharField(_("API Password"), max_length=255, null=True, blank=True)
+    api_username = models.CharField(
+        _("API Username"), max_length=150, null=True, blank=True
+    )
+    api_password = models.CharField(
+        _("API Password"), max_length=255, null=True, blank=True
+    )
 
     def __unicode__(self):
         return f"{self.pid_provider_api_post_xml}"
@@ -284,7 +292,9 @@ class PidRequest(CommonControlField):
     origin = models.CharField(
         _("Request origin"), max_length=124, null=True, blank=True
     )
-    result_type = models.CharField(_("Result type"), max_length=100, null=True, blank=True)
+    result_type = models.CharField(
+        _("Result type"), max_length=100, null=True, blank=True
+    )
     result_msg = models.TextField(_("Result message"), null=True, blank=True)
     xml_version = models.ForeignKey(
         XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
@@ -533,7 +543,9 @@ class PidProviderXML(
         XMLVersion, on_delete=models.SET_NULL, null=True, blank=True
     )
 
-    pkg_name = models.CharField(_("Package name"), max_length=100, null=True, blank=True)
+    pkg_name = models.CharField(
+        _("Package name"), max_length=100, null=True, blank=True
+    )
     v3 = models.CharField(_("v3"), max_length=23, null=True, blank=True)
     v2 = models.CharField(_("v2"), max_length=24, null=True, blank=True)
     aop_pid = models.CharField(_("AOP PID"), max_length=64, null=True, blank=True)
@@ -992,7 +1004,7 @@ class PidProviderXML(
 
         registered.save()
 
-        registered._add_current_version(xml_adapter, user)
+        registered._add_current_version(xml_adapter.xml_with_pre, user)
 
         return registered
 
@@ -1269,10 +1281,14 @@ class PidProviderXML(
         self.suppl = xml_adapter.suppl
         self.pub_year = xml_adapter.pub_year
 
-    def _add_current_version(self, xml_adapter, user):
-        self.current_version = XMLVersion.get_or_create(
-            user, self, xml_adapter.xml_with_pre
-        )
+    def _add_current_version(self, xml_with_pre, user, delete=Fase):
+        if delete:
+            try:
+                self.current_version.delete()
+            except Exception as e:
+                pass
+
+        self.current_version = XMLVersion.get_or_create(user, self, xml_with_pre)
         self.save()
 
     def _add_other_pid(self, changed_pids, user):
@@ -1662,23 +1678,25 @@ class PidProviderXML(
             return {"error_msg": str(e), "error_type": str(type(e))}
         return {}
 
-    def fix_pid_v2(self, user, correct_pid_v2):
+    @classmethod
+    def fix_pid_v2(cls, user, pid_v3, correct_pid_v2):
         try:
-            if correct_pid_v2 == self.v2:
-                return self.data
-            xml_with_pre = self.current_version.xml_with_pre
-            try:
-                self.current_version.delete()
-            except Exception as e:
-                pass
+            item = cls.objects.select_related("current_version").get(v3=pid_v3)
+        except cls.DoesNotExist as e:
+            raise cls.DoesNotExist(f"{e}: {pid_v3}")
+
+        try:
+            if correct_pid_v2 == item.v2:
+                return item.data
+            xml_with_pre = item.current_version.xml_with_pre
             xml_with_pre.v2 = correct_pid_v2
-            self.current_version = XMLVersion.get_or_create(user, self, xml_with_pre)
-            self.v2 = correct_pid_v2
-            self.save()
-            return self.data
+            item._add_current_version(xml_with_pre, user, delete=True)
+            item.v2 = correct_pid_v2
+            item.save()
+            return item.data
         except Exception as e:
             raise exceptions.PidProviderXMLFixPidV2Error(
-                f"Unable to fix pid v2 for {self.v3} {e} {type(e)}"
+                f"Unable to fix pid v2 for {item.v3} {e} {type(e)}"
             )
 
 
