@@ -300,6 +300,4 @@ def get_xml_adapter_data(xml_adapter):
             z_collab=xml_adapter.z_collab or None,
             z_links=xml_adapter.z_links,
             z_partial_body=xml_adapter.z_partial_body,
-            z_journal_title=xml_adapter.z_journal_title,
-            z_article_titles_texts=xml_adapter.z_article_titles_texts,
         )

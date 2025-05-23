@@ -527,9 +527,6 @@ class PidProviderXML(
     armazenando dados chaves que garantem a identificação do XML
     """
 
-    z_journal_title = models.CharField(
-        _("journal title"), max_length=64, null=True, blank=True
-    )
     issn_electronic = models.CharField(
         _("issn_epub"), max_length=10, null=True, blank=True
     )
@@ -561,9 +558,6 @@ class PidProviderXML(
     )
     main_doi = models.CharField(_("DOI"), max_length=255, null=True, blank=True)
 
-    z_article_titles_texts = models.CharField(
-        _("article_titles_texts"), max_length=64, null=True, blank=True
-    )
     z_surnames = models.CharField(_("surnames"), max_length=64, null=True, blank=True)
     z_collab = models.CharField(_("collab"), max_length=64, null=True, blank=True)
     z_links = models.CharField(_("links"), max_length=64, null=True, blank=True)
@@ -602,7 +596,6 @@ class PidProviderXML(
         FieldPanel("fpage_seq", read_only=True),
         FieldPanel("lpage", read_only=True),
         FieldPanel("available_since", read_only=True),
-        # FieldPanel("z_article_titles_texts", read_only=True),
         # FieldPanel("z_surnames", read_only=True),
         # FieldPanel("z_collab", read_only=True),
         # FieldPanel("z_links", read_only=True),
@@ -1264,14 +1257,12 @@ class PidProviderXML(
         self.main_doi = xml_adapter.main_doi
         self.elocation_id = xml_adapter.elocation_id
 
-        self.z_article_titles_texts = xml_adapter.z_article_titles_texts
         self.z_surnames = xml_adapter.z_surnames
         self.z_collab = xml_adapter.z_collab
         self.z_links = xml_adapter.z_links
         self.z_partial_body = xml_adapter.z_partial_body
 
     def _add_journal(self, xml_adapter):
-        self.z_journal_title = xml_adapter.z_journal_title
         self.issn_electronic = xml_adapter.journal_issn_electronic
         self.issn_print = xml_adapter.journal_issn_print
 
@@ -1574,7 +1565,6 @@ class PidProviderXML(
             [
                 _params.get("journal__issn_print"),
                 _params.get("journal__issn_electronic"),
-                _params.get("z_journal_title"),
             ]
         ):
             raise exceptions.NotEnoughParametersToGetDocumentRecordError(

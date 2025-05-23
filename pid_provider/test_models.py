@@ -64,7 +64,6 @@ def _get_xml_adapter_with_issue_data():
 class PidProviderXMLValidateQueryParamsTest(TestCase):
     def setUp(self):
         self.article_params = {
-            "z_article_titles_texts": "TITLES",
             "z_collab": "VALUE",
             "z_links": "Links",
             "z_partial_body": "Body",
@@ -691,12 +690,6 @@ class PidProviderXMLAddDataForRegularArticleTest(TestCase):
     def test_article_pub_year(self):
         self.assertEqual("2020", self.registered.article_pub_year)
 
-    def test_z_article_titles_texts(self):
-        self.assertEqual(
-            "faeeb3be97ee2232a2f370f4e5e2460a10232df854a438b0490c9a5604666655",
-            self.registered.z_article_titles_texts,
-        )
-
     def test_z_surnames(self):
         self.assertEqual(
             "544700df348a47fdd7c55713054e12663a0c530e60e7a166395a496f77de9d36",
@@ -739,7 +732,7 @@ class PidProviderXMLRegisterTest(TestCase):
     ):
         expected = {
             "result_type": "<class 'pid_provider.exceptions.NotEnoughParametersToGetDocumentRecordError'>",
-            "result_message": "No attribute enough for disambiguations {'z_surnames': None, 'z_collab': None, 'main_doi': None, 'z_links': None, 'z_partial_body': None, 'pkg_name': None, 'elocation_id': None, 'journal__issn_print': None, 'journal__issn_electronic': None, 'article_pub_year': None, 'z_article_titles_texts': None}",
+            "result_message": "No attribute enough for disambiguations {'z_surnames': None, 'z_collab': None, 'main_doi': None, 'z_links': None, 'z_partial_body': None, 'pkg_name': None, 'elocation_id': None, 'journal__issn_print': None, 'journal__issn_electronic': None, 'article_pub_year': None}",
             "origin": "filename.xml",
             "xml": "<article/>",
         }
@@ -786,7 +779,7 @@ class PidProviderXMLRegisterTest(TestCase):
     ):
         expected = {
             "result_type": "<class 'pid_provider.exceptions.NotEnoughParametersToGetDocumentRecordError'>",
-            "result_message": "No attribute enough for disambiguations {'z_surnames': None, 'z_collab': None, 'main_doi': None, 'z_links': None, 'z_partial_body': None, 'pkg_name': None, 'elocation_id': None, 'journal__issn_print': None, 'journal__issn_electronic': None, 'article_pub_year': None, 'z_article_titles_texts': None}",
+            "result_message": "No attribute enough for disambiguations {'z_surnames': None, 'z_collab': None, 'main_doi': None, 'z_links': None, 'z_partial_body': None, 'pkg_name': None, 'elocation_id': None, 'journal__issn_print': None, 'journal__issn_electronic': None, 'article_pub_year': None}",
             "origin": "filename.xml",
             "xml": "<article/>",
         }
