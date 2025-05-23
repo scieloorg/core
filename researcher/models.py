@@ -766,15 +766,6 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
     def clean(self):
         if self.orcid:
             self.validate_orcid(self.orcid)
-
-        if not self.pk or self.researcher_orcid.count() == 0:
-            raise ValidationError(
-                {
-                    NON_FIELD_ERRORS: [
-                        "You must add at least one researcher to the ORCID."
-                    ]
-                }
-            )
         return super().clean()
 
     def save(self, **kwargs):
@@ -891,6 +882,12 @@ class NewResearcher(BaseResearcher):
                 ]
             ),
         ]
+
+    def __str__(self):
+        orcid = self.orcid.orcid if self.orcid else None
+        if orcid:
+            return f"{self.fullname} ({orcid})"
+        return self.fullname
 
     def save(self, **kwargs):
         self.fullname = self.join_names(self.given_names, self.last_name, self.suffix)
