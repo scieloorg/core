@@ -145,7 +145,7 @@ msgstr ""
 msgid "load_preprints"
 msgstr ""
 
-#: article/wagtail_hooks.py:27 collection/models.py:101
+#: article/wagtail_hooks.py:27 collection/models.pl:101
 #: collection/wagtail_hooks.py:20 core/users/forms.py:60 core/users/forms.py:72
 #: core/users/models.py:19 journal/models.py:1725 journal/models.py:2460
 msgid "Collection"
@@ -206,7 +206,7 @@ msgstr ""
 
 #: book/models.py:221
 msgid "Data de publicação"
-msgstr ""
+msgstr "Publication date"
 
 #: book/wagtail_hooks.py:23 book/wagtail_hooks.py:46 collection/choices.py:14
 msgid "Books"
@@ -291,19 +291,19 @@ msgstr ""
 
 #: core/choices.py:192
 msgid "Editor-Chefe"
-msgstr ""
+msgstr "Editor-in-Chief"
 
 #: core/choices.py:193
 msgid "Editor(es) Executivo"
-msgstr ""
+msgstr "Executive Editor(s)"
 
 #: core/choices.py:194
 msgid "Editor(es) Associados ou de Seção"
-msgstr ""
+msgstr "Associate or Section Editor(s)"
 
 #: core/choices.py:195
 msgid "Equipe Técnica"
-msgstr ""
+msgstr "Technical Team"
 
 #: core/choices.py:199
 msgid "January"
@@ -445,11 +445,11 @@ msgstr ""
 
 #: core/templates/503.html:27
 msgid "Site em manutenção"
-msgstr ""
+msgstr "Site under maintenance"
 
 #: core/templates/503.html:30
 msgid "Qualquer dúvida, por favor entre em contato com o administrador."
-msgstr ""
+msgstr "For any questions, please contact the administrator."
 
 #: core/templates/account/account_inactive.html:5
 #: core/templates/account/account_inactive.html:8
@@ -628,7 +628,7 @@ msgstr ""
 #, python-format
 msgid ""
 "The password reset link was invalid, possibly because it has already been "
-"used.  Please request a <a href=\"%(passwd_reset_url)s\">new password reset</"
+"used. Please request a <a href=\"%(passwd_reset_url)s\">new password reset</"
 "a>."
 msgstr ""
 
@@ -762,22 +762,22 @@ msgstr ""
 #, python-format
 msgid "<span>%(total_article)s</span> Article"
 msgid_plural "<span>%(total_article)s</span> Articles"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "<span>%(total_article)s</span> Article"
+msgstr[1] "<span>%(total_article)s</span> Articles"
 
 #: core/templates/wagtailadmin/summary_items/collection_summary_item.html:6
 #, python-format
 msgid "<span>%(total_collection)s</span> Collection"
 msgid_plural "<span>%(total_collection)s</span> Collections"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "<span>%(total_collection)s</span> Collection"
+msgstr[1] "<span>%(total_collection)s</span> Collections"
 
 #: core/templates/wagtailadmin/summary_items/journal_summary_item.html:6
 #, python-format
 msgid "<span>%(total_journal)s</span> Journal"
 msgid_plural "<span>%(total_journal)s</span> Journals"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "<span>%(total_journal)s</span> Journal"
+msgstr[1] "<span>%(total_journal)s</span> Journals"
 
 #: core/users/admin.py:17
 msgid "Personal info"
@@ -834,7 +834,7 @@ msgstr ""
 
 #: core_settings/models.py:18 core_settings/models.py:19
 msgid "Configuração do site"
-msgstr ""
+msgstr "Site configuration"
 
 #: core_settings/models.py:66
 msgid "Site settings"
@@ -846,31 +846,31 @@ msgstr ""
 
 #: core_settings/templates/wagtailsnippets/snippets/index.html:14
 msgid "Importar CSV"
-msgstr ""
+msgstr "Import CSV"
 
 #: core_settings/views.py:19
 msgid "Colunas faltando. Colunas requeridas"
-msgstr ""
+msgstr "Missing columns. Required columns"
 
 #: core_settings/views.py:29
 msgid "Arquivo inválido. Por favor, envie um arquivo CSV."
-msgstr ""
+msgstr "Invalid file. Please upload a CSV file."
 
 #: core_settings/views.py:35
 msgid "O arquivo enviado não é um CSV válido."
-msgstr ""
+msgstr "The uploaded file is not a valid CSV."
 
 #: core_settings/views.py:44
 msgid "Usuário sem permissão para esta funcionalidade."
-msgstr ""
+msgstr "User has no permission for this functionality."
 
 #: core_settings/views.py:78
 msgid "CSV importado com sucesso! Realizando importação..."
-msgstr ""
+msgstr "CSV imported successfully! Performing import..."
 
 #: core_settings/views.py:81
 msgid "Requisição inválida."
-msgstr ""
+msgstr "Invalid request."
 
 #: doi/choices.py:4
 msgid "DATA_CREATED"
@@ -926,15 +926,15 @@ msgstr ""
 
 #: editorialboard/choices.py:4 researcher/choices.py:4
 msgid "Declarado por el investigador"
-msgstr ""
+msgstr "Declared by the researcher"
 
 #: editorialboard/choices.py:5 researcher/choices.py:5
 msgid "Identificado automáticamente por programa de computador"
-msgstr ""
+msgstr "Automatically identified by computer program"
 
 #: editorialboard/choices.py:6 researcher/choices.py:6
 msgid "Identificado por algun usuario"
-msgstr ""
+msgstr "Identified by some user"
 
 #: editorialboard/choices.py:14
 msgid "Editor-in-chief"
@@ -1066,31 +1066,31 @@ msgstr ""
 
 #: institution/choices.py:5 organization/choices.py:5
 msgid "agência de apoio à pesquisa"
-msgstr ""
+msgstr "research support agency"
 
 #: institution/choices.py:8 organization/choices.py:8
 msgid "universidade e instâncias ligadas à universidades"
-msgstr ""
+msgstr "university and university-related entities"
 
 #: institution/choices.py:12 organization/choices.py:12
 msgid "empresa ou instituto ligadas ao governo"
-msgstr ""
+msgstr "government-affiliated company or institute"
 
 #: institution/choices.py:14 organization/choices.py:14
 msgid "organização privada"
-msgstr ""
+msgstr "private organization"
 
 #: institution/choices.py:15 organization/choices.py:15
 msgid "organização sem fins de lucros"
-msgstr ""
+msgstr "non-profit organization"
 
 #: institution/choices.py:18 organization/choices.py:18
 msgid "sociedade científica, associação pós-graduação, associação profissional"
-msgstr ""
+msgstr "scientific society, postgraduate association, professional association"
 
 #: institution/choices.py:20 organization/choices.py:20
 msgid "outros"
-msgstr ""
+msgstr "others"
 
 #: institution/choices.py:24
 msgid "yes"
@@ -1390,7 +1390,7 @@ msgstr ""
 
 #: journal/choices.py:65
 msgid "nbr 6023/89 - Associação Brasileira de Normas Técnicas"
-msgstr ""
+msgstr "nbr 6023/89 - Brazilian Association of Technical Standards"
 
 #: journal/choices.py:66
 msgid "other standard"
@@ -1560,7 +1560,7 @@ msgstr ""
 
 #: journal/choices.py:128
 msgid "Psicanalise"
-msgstr ""
+msgstr "Psychoanalysis"
 
 #: journal/choices.py:132
 msgid "Science Citation Index Expanded"
@@ -1805,7 +1805,7 @@ msgstr ""
 msgid ""
 "As palavras-chave devem ser extraídas de thesaurus,dicionários temáticos ou "
 "listas controladas nos idiomas que o periódico pública."
-msgstr ""
+msgstr "Keywords should be extracted from thesauri, thematic dictionaries, or controlled lists in the languages in which the journal publishes."
 
 #: journal/models.py:481 journal/models.py:2515
 msgid "Indexed At"
@@ -2076,9 +2076,9 @@ msgstr ""
 #: journal/models.py:1165
 msgid ""
 "Refers to sharing data, codes, methods and other materials used and \n"
-"            resulting from research that are usually the basis of the texts "
+"            resulting from research that are usually the basis of the texts "
 "of articles published by journals. \n"
-"            Guide: <a target='_blank' href='https://wp.scielo.org/wp-content/"
+"            Guide: <a target='_blank' href='https://wp.scielo.org/wp-content/"
 "uploads/Guia_TOP_pt.pdf'>https://wp.scielo.org/wp-content/uploads/"
 "Guia_TOP_pt.pdf</a>"
 msgstr ""
@@ -2087,18 +2087,18 @@ msgstr ""
 msgid ""
 "A preprint is defined as a manuscript ready for submission to a journal that "
 "is deposited \n"
-"            with trusted preprint servers before or in parallel with "
+"            with trusted preprint servers before or in parallel with "
 "submission to a journal. \n"
-"            This practice joins that of continuous publication as mechanisms "
+"            This practice joins that of continuous publication as mechanisms "
 "to speed up research communication. \n"
-"            Preprints share with journals the originality in the publication "
+"            Preprints share with journals the originality in the publication "
 "of articles and inhibit the use of \n"
-"            the double-blind procedure in the evaluation of manuscripts. \n"
-"            The use of preprints is an option and choice of the authors and "
+"            the double-blind procedure in the evaluation of manuscripts. \n"
+"            The use of preprints is an option and choice of the authors and "
 "it is up to the journals to adapt \n"
-"            their policies to accept the submission of manuscripts "
+"            their policies to accept the submission of manuscripts "
 "previously deposited in a preprints server \n"
-"            recognized by the journal."
+"            recognized by the journal."
 msgstr ""
 
 #: journal/models.py:1201
@@ -2118,45 +2118,45 @@ msgstr ""
 #: journal/models.py:1234
 msgid ""
 "Authors must attach a statement of approval from the ethics committee of \n"
-"            the institution responsible for approving the research"
+"            the institution responsible for approving the research"
 msgstr ""
 
 #: journal/models.py:1248
 msgid ""
 "Describe the policy used by the journal on copyright issues. \n"
-"            We recommend that this section be in accordance with the "
+"            We recommend that this section be in accordance with the "
 "recommendations of the SciELO criteria, \n"
-"            item 5.2.10.1.2. - Copyright"
+"            item 5.2.10.1.2. - Copyright"
 msgstr ""
 
 #: journal/models.py:1263
 msgid ""
 "EX. DOAJ: Copyright terms applied to posted content must be clearly stated "
 "and separate \n"
-"            from copyright terms applied to the website"
+"            from copyright terms applied to the website"
 msgstr ""
 
 #: journal/models.py:1280
 msgid ""
 "The author's declaration of responsibility for the content published in \n"
-"            the journal that owns the copyright Ex. DOAJ: The terms of "
+"            the journal that owns the copyright Ex. DOAJ: The terms of "
 "copyright must not contradict \n"
-"            the terms of the license or the terms of the open access policy. "
+"            the terms of the license or the terms of the open access policy. "
 "\"All rights reserved\" is \n"
-"            never appropriate for open access content"
+"            never appropriate for open access content"
 msgstr ""
 
 #: journal/models.py:1300
 msgid ""
 "Describe here how the journal will deal with ethical issues and/or \n"
-"            issues that may damage the journal's reputation. What is the "
+"            issues that may damage the journal's reputation. What is the "
 "journal's position regarding \n"
-"            the retraction policy that the journal will adopt in cases of "
+"            the retraction policy that the journal will adopt in cases of "
 "misconduct. \n"
-"            Best practice guide: <a target='_blank' \n"
-"            href='https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-"
+"            Best practice guide: <a target='_blank' \n"
+"            href='https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-"
 "Praticas-para-o-Fortalecimento-da-Etica-na-Publicacao-Cientifica.pdf'>\n"
-"            https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-Praticas-"
+"            https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-Praticas-"
 "para-o-Fortalecimento-da-Etica-na-Publicacao-Cientifica.pdf</a>"
 msgstr ""
 
@@ -2164,7 +2164,7 @@ msgstr ""
 msgid ""
 "Please describe here if the journal uses any similarity verification "
 "software. Describe the policy. What cases are checked?\n"
-"            At what stage in the workflow are manuscripts verified?"
+"            At what stage in the workflow are manuscripts verified?"
 msgstr ""
 
 #: journal/models.py:1337
@@ -2172,9 +2172,7 @@ msgid "Similarity erification software"
 msgstr ""
 
 #: journal/models.py:1343
-msgid ""
-"Describe the policy. Which cases are verified? At what point in the workflow "
-"are the manuscripts checked?"
+msgid "Describe the policy. Which cases are verified? At what point in the workflow are the manuscripts checked?"
 msgstr ""
 
 #: journal/models.py:1347
@@ -2199,34 +2197,34 @@ msgstr ""
 msgid ""
 "Please describe any charges to authors related to the submission or "
 "publication of works.\n"
-"        For article publication: Clearly state when no fees are charged.\n"
-"        Under what circumstances are charges applicable? Are there any "
+"        For article publication: Clearly state when no fees are charged.\n"
+"        Under what circumstances are charges applicable? Are there any "
 "discounts?\n"
-"        SciELO Statement on Financial Sustainability: <a target='_blank' \n"
-"            href='https://mailchi.mp/scielo/declaracao-sobre-"
+"        SciELO Statement on Financial Sustainability: <a target='_blank' \n"
+"            href='https://mailchi.mp/scielo/declaracao-sobre-"
 "sustentabilidade'>\n"
-"            https://mailchi.mp/scielo/declaracao-sobre-sustentabilidade</a>\n"
-"        "
+"            https://mailchi.mp/scielo/declaracao-sobre-sustentabilidade</a>\n"
+"        "
 msgstr ""
 
 #: journal/models.py:1426
 msgid ""
 "Describe the types of documents that can be submitted to the journal.\n"
-"                    Provide information regarding the positioning related to "
+"                    Provide information regarding the positioning related to "
 "preprint submissions.\n"
-"                    Examples: Original Article, Review Article, Preprints "
+"                    Examples: Original Article, Review Article, Preprints "
 "and etc."
 msgstr ""
 
 #: journal/models.py:1445
 msgid ""
 "Description of how authors contributions should be specified.\n"
-"        Does it use any taxonomy? If yes, which one?\n"
-"        Does the article text explicitly state the authors contributions?\n"
-"        Preferably, use the CREDiT taxonomy structure: <a target='_blank' \n"
-"            href='https://casrai.org/credit/'>https://casrai.org/credit/</"
+"        Does it use any taxonomy? If yes, which one?\n"
+"        Does the article text explicitly state the authors contributions?\n"
+"        Preferably, use the CREDiT taxonomy structure: <a target='_blank' \n"
+"            href='https://casrai.org/credit/'>https://casrai.org/credit/</"
 "a>\n"
-"        "
+"        "
 msgstr ""
 
 #: journal/models.py:1467
@@ -2270,7 +2268,7 @@ msgstr ""
 
 #: journal/models.py:1580
 msgid "Descreva o teim do check list"
-msgstr ""
+msgstr "Describe the checklist item"
 
 #: journal/models.py:1607 journal/models.py:2120
 msgid "Acronym"
@@ -2721,7 +2719,7 @@ msgstr ""
 #: journalpage/templates/journalpage/about.html:78
 #: journalpage/templates/journalpage/next_journal.html:76
 msgid "Periódicos"
-msgstr ""
+msgstr "Journals"
 
 #: journalpage/templates/journalpage/about.html:80
 #: journalpage/templates/journalpage/about.html:108
@@ -2729,375 +2727,375 @@ msgstr ""
 #: journalpage/templates/journalpage/includes/journal_info.html:89
 #: journalpage/templates/journalpage/next_journal.html:78
 msgid "Sobre o periódico"
-msgstr ""
+msgstr "About the journal"
 
 #: journalpage/templates/journalpage/about.html:109
 #: journalpage/templates/journalpage/about.html:399
 msgid "Ficha Bibliográfica"
-msgstr ""
+msgstr "Bibliographic Data"
 
 #: journalpage/templates/journalpage/about.html:113
 msgid "Título do periódico conforme registro do ISSN:"
-msgstr ""
+msgstr "Journal title as per ISSN registration:"
 
 #: journalpage/templates/journalpage/about.html:117
 msgid "Título abreviado:"
-msgstr ""
+msgstr "Abbreviated title:"
 
 #: journalpage/templates/journalpage/about.html:121
 msgid "Publicação de:"
-msgstr ""
+msgstr "Publication of:"
 
 #: journalpage/templates/journalpage/about.html:124
 msgid "Periodicidade:"
-msgstr ""
+msgstr "Frequency:"
 
 #: journalpage/templates/journalpage/about.html:128
 msgid "Modalidade de publicação:"
-msgstr ""
+msgstr "Publication type:"
 
 #: journalpage/templates/journalpage/about.html:132
 msgid "Ano de criação do periódico:"
-msgstr ""
+msgstr "Year of journal creation:"
 
 #: journalpage/templates/journalpage/about.html:135
 msgid "Área:"
-msgstr ""
+msgstr "Area:"
 
 #: journalpage/templates/journalpage/about.html:139
 msgid "Versão impressa:"
-msgstr ""
+msgstr "Print version:"
 
 #: journalpage/templates/journalpage/about.html:145
 msgid "Versão on-line ISSN:"
-msgstr ""
+msgstr "Online version ISSN:"
 
 #: journalpage/templates/journalpage/about.html:150
 #: journalpage/templates/journalpage/about.html:402
 msgid "Missão"
-msgstr ""
+msgstr "Mission"
 
 #: journalpage/templates/journalpage/about.html:154
 #: journalpage/templates/journalpage/about.html:405
 msgid "Breve Histórico"
-msgstr ""
+msgstr "Brief History"
 
 #: journalpage/templates/journalpage/about.html:158
 #: journalpage/templates/journalpage/about.html:408
 msgid "Foco e escopo"
-msgstr ""
+msgstr "Focus and scope"
 
 #: journalpage/templates/journalpage/about.html:162
 #: journalpage/templates/journalpage/about.html:411
 msgid "Contato"
-msgstr ""
+msgstr "Contact"
 
 #: journalpage/templates/journalpage/about.html:166
 msgid "Endereço completo da unidade / instituição responsável pelo periódico:"
-msgstr ""
+msgstr "Full address of the unit / institution responsible for the journal:"
 
 #: journalpage/templates/journalpage/about.html:170
 msgid "Cidade:"
-msgstr ""
+msgstr "City:"
 
 #: journalpage/templates/journalpage/about.html:174
 msgid "Estado:"
-msgstr ""
+msgstr "State:"
 
 #: journalpage/templates/journalpage/about.html:178
 msgid "País:"
-msgstr ""
+msgstr "Country:"
 
 #: journalpage/templates/journalpage/about.html:182
 msgid "E-mail:"
-msgstr ""
+msgstr "E-mail:"
 
 #: journalpage/templates/journalpage/about.html:188
 #: journalpage/templates/journalpage/about.html:414
 msgid "Websites e Mídias Sociais"
-msgstr ""
+msgstr "Websites and Social Media"
 
 #: journalpage/templates/journalpage/about.html:196
 #: journalpage/templates/journalpage/about.html:417
 msgid "Fontes de indexação"
-msgstr ""
+msgstr "Indexing sources"
 
 #: journalpage/templates/journalpage/about.html:205
 #: journalpage/templates/journalpage/about.html:420
 msgid "Patrocinadores e agências de Fomento"
-msgstr ""
+msgstr "Sponsors and Funding Agencies"
 
 #: journalpage/templates/journalpage/about.html:213
 #: journalpage/templates/journalpage/about.html:423
 msgid "Preservação digital"
-msgstr ""
+msgstr "Digital preservation"
 
 #: journalpage/templates/journalpage/about.html:230
 #: journalpage/templates/journalpage/about.html:428
 #: journalpage/templates/journalpage/includes/journal_info.html:92
 msgid "Política editorial"
-msgstr ""
+msgstr "Editorial policy"
 
 #: journalpage/templates/journalpage/about.html:232
 #: journalpage/templates/journalpage/about.html:431
 msgid "Conformidade com a Ciência Aberta"
-msgstr ""
+msgstr "Open Science Compliance"
 
 #: journalpage/templates/journalpage/about.html:238
 #: journalpage/templates/journalpage/about.html:434
 msgid "Dados abertos"
-msgstr ""
+msgstr "Open data"
 
 #: journalpage/templates/journalpage/about.html:250
 #: journalpage/templates/journalpage/about.html:440
 msgid "Peer review informado"
-msgstr ""
+msgstr "Informed peer review"
 
 #: journalpage/templates/journalpage/about.html:259
 #: journalpage/templates/journalpage/about.html:443
 #: thematic_areas/choices.py:272
 msgid "Ética"
-msgstr ""
+msgstr "Ethics"
 
 #: journalpage/templates/journalpage/about.html:265
 #: journalpage/templates/journalpage/about.html:445
 msgid "Comitê de Ética"
-msgstr ""
+msgstr "Ethics Committee"
 
 #: journalpage/templates/journalpage/about.html:269
 #: journalpage/templates/journalpage/about.html:448
 msgid "Direitos Autorais"
-msgstr ""
+msgstr "Copyright"
 
 #: journalpage/templates/journalpage/about.html:273
 #: journalpage/templates/journalpage/about.html:451
 msgid "Propriedade Intelectual"
-msgstr ""
+msgstr "Intellectual Property"
 
 #: journalpage/templates/journalpage/about.html:277
 msgid "Responsabilidade do site:"
-msgstr ""
+msgstr "Website responsibility:"
 
 #: journalpage/templates/journalpage/about.html:282
 msgid "Responsabilidade do autor:"
-msgstr ""
+msgstr "Author responsibility:"
 
 #: journalpage/templates/journalpage/about.html:286
 #: journalpage/templates/journalpage/about.html:454
 msgid "Política de Ética e Más condutas"
-msgstr ""
+msgstr "Ethics and Misconduct Policy"
 
 #: journalpage/templates/journalpage/about.html:288
 msgid "Política de retratação:"
-msgstr ""
+msgstr "Retraction policy:"
 
 #: journalpage/templates/journalpage/about.html:295
 #: journalpage/templates/journalpage/about.html:457
 msgid "Política sobre Conflito de Interesses"
-msgstr ""
+msgstr "Conflict of Interest Policy"
 
 #: journalpage/templates/journalpage/about.html:301
 #: journalpage/templates/journalpage/about.html:460
 msgid "Questões de gênero"
-msgstr ""
+msgstr "Gender issues"
 
 #: journalpage/templates/journalpage/about.html:307
 msgid "Licença"
-msgstr ""
+msgstr "License"
 
 #: journalpage/templates/journalpage/about.html:311
 msgid "licença:"
-msgstr ""
+msgstr "license:"
 
 #: journalpage/templates/journalpage/about.html:314
 msgid "Cobrança de taxas"
-msgstr ""
+msgstr "Fee charging"
 
 #: journalpage/templates/journalpage/about.html:318
 msgid "Moeda:"
-msgstr ""
+msgstr "Currency:"
 
 #: journalpage/templates/journalpage/about.html:318
 msgid "Valor:"
-msgstr ""
+msgstr "Value:"
 
 #: journalpage/templates/journalpage/about.html:322
 msgid "CORPO EDITORIAL"
-msgstr ""
+msgstr "EDITORIAL BOARD"
 
 #: journalpage/templates/journalpage/about.html:340
 msgid "INSTRUÇÕES PARA OS AUTORES"
-msgstr ""
+msgstr "INSTRUCTIONS FOR AUTHORS"
 
 #: journalpage/templates/journalpage/about.html:342
 msgid "Tipos de documentos aceitos"
-msgstr ""
+msgstr "Accepted document types"
 
 #: journalpage/templates/journalpage/about.html:349
 #: journalpage/templates/journalpage/about.html:488
 msgid "Contribuição dos Autores"
-msgstr ""
+msgstr "Authors Contributions"
 
 #: journalpage/templates/journalpage/about.html:354
 msgid "Formato de envio dos artigos"
-msgstr ""
+msgstr "Article submission format"
 
 #: journalpage/templates/journalpage/about.html:360
 msgid "Ativos digitais"
-msgstr ""
+msgstr "Digital assets"
 
 #: journalpage/templates/journalpage/about.html:364
 msgid "Citações e referências"
-msgstr ""
+msgstr "Citations and references"
 
 #: journalpage/templates/journalpage/about.html:368
 #: journalpage/templates/journalpage/about.html:500
 msgid "Documentos Suplementares Necessários para Submissão"
-msgstr ""
+msgstr "Supplementary Documents Required for Submission"
 
 #: journalpage/templates/journalpage/about.html:372
 #: journalpage/templates/journalpage/about.html:503
 msgid "Declaração de Financiamento"
-msgstr ""
+msgstr "Financing Statement"
 
 #: journalpage/templates/journalpage/about.html:376
 #: journalpage/templates/journalpage/about.html:506
 msgid "Agradecimentos"
-msgstr ""
+msgstr "Acknowledgments"
 
 #: journalpage/templates/journalpage/about.html:380
 msgid "Informações adicionais"
-msgstr ""
+msgstr "Additional information"
 
 #: journalpage/templates/journalpage/about.html:385
 msgid "*dados precisam estar disponíveis em alfabeto romano"
-msgstr ""
+msgstr "*data must be available in Roman alphabet"
 
 #: journalpage/templates/journalpage/about.html:465
 msgid "Corpo editorial"
-msgstr ""
+msgstr "Editorial board"
 
 #: journalpage/templates/journalpage/about.html:468
 msgid "Editor-chefe"
-msgstr ""
+msgstr "Editor-in-chief"
 
 #: journalpage/templates/journalpage/about.html:471
 msgid "Editor-executivo"
-msgstr ""
+msgstr "Executive editor"
 
 #: journalpage/templates/journalpage/about.html:474
 msgid "Editor(es) Associados ou de Seção / Área"
-msgstr ""
+msgstr "Associate or Section / Area Editor(s)"
 
 #: journalpage/templates/journalpage/about.html:477
 msgid "Equipe técnica"
-msgstr ""
+msgstr "Technical team"
 
 #: journalpage/templates/journalpage/about.html:482
 msgid "Instruções para os Autores"
-msgstr ""
+msgstr "Instructions for Authors"
 
 #: journalpage/templates/journalpage/about.html:485
 msgid "Tipos de Documentos Aceitos"
-msgstr ""
+msgstr "Accepted Document Types"
 
 #: journalpage/templates/journalpage/about.html:491
 msgid "Formato de Envio dos Artigos"
-msgstr ""
+msgstr "Article Submission Format"
 
 #: journalpage/templates/journalpage/about.html:494
 msgid "Ativos Digitais"
-msgstr ""
+msgstr "Digital Assets"
 
 #: journalpage/templates/journalpage/about.html:497
 msgid "Citações e Referências"
-msgstr ""
+msgstr "Citations and References"
 
 #: journalpage/templates/journalpage/about.html:509
 msgid "Informações Adicionais"
-msgstr ""
+msgstr "Additional Information"
 
 #: journalpage/templates/journalpage/includes/journal_info.html:21
 msgid "Publicação de"
-msgstr ""
+msgstr "Publication of"
 
 #: journalpage/templates/journalpage/includes/journal_info.html:26
 msgid "Área"
-msgstr ""
+msgstr "Area"
 
 #: journalpage/templates/journalpage/includes/journal_info.html:37
 msgid "Versão impressa ISSN"
-msgstr ""
+msgstr "Print version ISSN"
 
 #: journalpage/templates/journalpage/includes/journal_info.html:44
 msgid "Versão on-line ISSN"
-msgstr ""
+msgstr "Online version ISSN"
 
 #: journalpage/templates/journalpage/includes/journal_info.html:90
 msgid "Corpo Editorial"
-msgstr ""
+msgstr "Editorial Board"
 
 #: journalpage/templates/journalpage/includes/journal_info.html:91
 msgid "Instruções aos autores"
-msgstr ""
+msgstr "Instructions to authors"
 
 #: journalpage/templates/journalpage/includes/levelMenu.html:11
 msgid "Home do periódico"
-msgstr ""
+msgstr "Journal Home"
 
 #: journalpage/templates/journalpage/includes/levelMenu.html:17
 msgid "Todos os números"
-msgstr ""
+msgstr "All issues"
 
 #: journalpage/templates/journalpage/includes/levelMenu.html:19
 #: journalpage/templates/journalpage/includes/levelMenu.html:105
 msgid "número anterior"
-msgstr ""
+msgstr "previous issue"
 
 #: journalpage/templates/journalpage/includes/levelMenu.html:20
 msgid "Número anterior"
-msgstr ""
+msgstr "Previous issue"
 
 #: journalpage/templates/journalpage/includes/levelMenu.html:22
 #: journalpage/templates/journalpage/includes/levelMenu.html:108
 msgid "número atual"
-msgstr ""
+msgstr "current issue"
 
 #: journalpage/templates/journalpage/includes/levelMenu.html:23
 msgid "Número atual"
-msgstr ""
+msgstr "Current issue"
 
 #: journalpage/templates/journalpage/includes/levelMenu.html:25
 msgid "número seguinte"
-msgstr ""
+msgstr "next issue"
 
 #: journalpage/templates/journalpage/includes/levelMenu.html:26
 msgid "Número seguinte"
-msgstr ""
+msgstr "Next issue"
 
 #: journalpage/templates/journalpage/includes/levelMenu.html:33
 #: journalpage/templates/journalpage/includes/levelMenu.html:64
 #: journalpage/templates/journalpage/includes/levelMenu.html:117
 #: search/templates/search.html:43
 msgid "Buscar"
-msgstr ""
+msgstr "Search"
 
 #: journalpage/templates/journalpage/includes/levelMenu.html:36
 #: journalpage/templates/journalpage/includes/levelMenu.html:67
 msgid "Métricas"
-msgstr ""
+msgstr "Metrics"
 
 #: journalpage/templates/journalpage/includes/levelMenu.html:61
 msgid "Todos"
-msgstr ""
+msgstr "All"
 
 #: journalpage/templates/journalpage/includes/levelMenu.html:101
 msgid "todos"
-msgstr ""
+msgstr "all"
 
 #: journalpage/templates/journalpage/next_journal.html:94
 msgid "Esta revista mudou de título por favor consulte: "
-msgstr ""
+msgstr "This journal has changed its title, please consult: "
 
 #: location/models.py:28
 msgid "Name of the city"
@@ -3357,13 +3355,13 @@ msgstr ""
 
 #: pid_provider/scripts/schedule_pid_provider_for_opac_xmls.py:10
 msgid "Registra XML do site www.scielo.br no pid provider"
-msgstr ""
+msgstr "Registers XML from www.scielo.br website in pid provider"
 
 #: pid_provider/scripts/schedule_pid_provider_for_opac_xmls.py:19
 msgid ""
 "Executa diariamente às 23h UTC a carga de XML atualizados de 30 anteriores "
 "até hoje"
-msgstr ""
+msgstr "Daily at 23h UTC, loads updated XMLs from 30 days prior until today"
 
 #: pid_provider/wagtail_hooks.py:31
 msgid "Pid Requests"
@@ -3471,27 +3469,27 @@ msgstr ""
 
 #: search/choices.py:4
 msgid "Periódico"
-msgstr ""
+msgstr "Journal"
 
 #: search/choices.py:5
 msgid "Ano de publicação"
-msgstr ""
+msgstr "Publication year"
 
 #: search/choices.py:6
 msgid "Tipo de Literatura"
-msgstr ""
+msgstr "Type of Literature"
 
 #: search/choices.py:7 search/choices.py:10
 msgid "Coleções"
-msgstr ""
+msgstr "Collections"
 
 #: search/choices.py:8
 msgid "Ano"
-msgstr ""
+msgstr "Year"
 
 #: search/choices.py:9
 msgid "Idioma"
-msgstr ""
+msgstr "Language"
 
 #: search/choices.py:11
 msgid "Argentina"
@@ -3499,11 +3497,11 @@ msgstr ""
 
 #: search/choices.py:12
 msgid "Brasil"
-msgstr ""
+msgstr "Brazil"
 
 #: search/choices.py:13
 msgid "Bolívia"
-msgstr ""
+msgstr "Bolivia"
 
 #: search/choices.py:14
 msgid "Chile"
@@ -3511,7 +3509,7 @@ msgstr ""
 
 #: search/choices.py:15
 msgid "Colômbia"
-msgstr ""
+msgstr "Colombia"
 
 #: search/choices.py:16
 msgid "Costa Rica"
@@ -3523,11 +3521,11 @@ msgstr ""
 
 #: search/choices.py:18
 msgid "Espanha"
-msgstr ""
+msgstr "Spain"
 
 #: search/choices.py:19
 msgid "México"
-msgstr ""
+msgstr "Mexico"
 
 #: search/choices.py:20
 msgid "Portugal"
@@ -3539,7 +3537,7 @@ msgstr ""
 
 #: search/choices.py:22 thematic_areas/choices.py:510
 msgid "Saúde Pública"
-msgstr ""
+msgstr "Public Health"
 
 #: search/choices.py:23
 msgid "Social Sciences"
@@ -3547,7 +3545,7 @@ msgstr ""
 
 #: search/choices.py:24
 msgid "África do Sul"
-msgstr ""
+msgstr "South Africa"
 
 #: search/choices.py:25
 msgid "Peru"
@@ -3555,7 +3553,7 @@ msgstr ""
 
 #: search/choices.py:26
 msgid "Uruguai"
-msgstr ""
+msgstr "Uruguay"
 
 #: search/choices.py:27
 msgid "Ecuador"
@@ -3563,139 +3561,139 @@ msgstr ""
 
 #: search/choices.py:28
 msgid "Paraguai"
-msgstr ""
+msgstr "Paraguay"
 
 #: search/choices.py:29
 msgid "Índias Ocidentais"
-msgstr ""
+msgstr "West Indies"
 
 #: search/choices.py:30 thematic_areas/choices.py:593
 msgid "Português"
-msgstr ""
+msgstr "Portuguese"
 
 #: search/choices.py:31 thematic_areas/choices.py:580
 msgid "Espanhol"
-msgstr ""
+msgstr "Spanish"
 
 #: search/choices.py:32 thematic_areas/choices.py:588
 msgid "Inglês"
-msgstr ""
+msgstr "English"
 
 #: search/choices.py:33
 msgid "Africaner"
-msgstr ""
+msgstr "Afrikaans"
 
 #: search/choices.py:34 thematic_areas/choices.py:582
 msgid "Francês"
-msgstr ""
+msgstr "French"
 
 #: search/choices.py:35 thematic_areas/choices.py:589
 msgid "Italiano"
-msgstr ""
+msgstr "Italian"
 
 #: search/choices.py:36 thematic_areas/choices.py:572
 msgid "Alemão"
-msgstr ""
+msgstr "German"
 
 #: search/choices.py:37 thematic_areas/choices.py:573
 msgid "Árabe"
-msgstr ""
+msgstr "Arabic"
 
 #: search/choices.py:38 thematic_areas/choices.py:576
 msgid "Coreano"
-msgstr ""
+msgstr "Korean"
 
 #: search/choices.py:39 thematic_areas/choices.py:590
 msgid "Japonês"
-msgstr ""
+msgstr "Japanese"
 
 #: search/choices.py:40
 msgid "Búlgaro"
-msgstr ""
+msgstr "Bulgarian"
 
 #: search/choices.py:41
 msgid "Bósnio"
-msgstr ""
+msgstr "Bosnian"
 
 #: search/choices.py:42 search/choices.py:43
 msgid "Catalão"
-msgstr ""
+msgstr "Catalan"
 
 #: search/choices.py:44 thematic_areas/choices.py:595
 msgid "Russo"
-msgstr ""
+msgstr "Russian"
 
 #: search/choices.py:45 thematic_areas/choices.py:594
 msgid "Romeno"
-msgstr ""
+msgstr "Romanian"
 
 #: search/choices.py:46
 msgid "Ucraniano"
-msgstr ""
+msgstr "Ukrainian"
 
 #: search/choices.py:47 thematic_areas/choices.py:600
 msgid "Turco"
-msgstr ""
+msgstr "Turkish"
 
 #: search/choices.py:48 thematic_areas/choices.py:597
 msgid "Sueco"
-msgstr ""
+msgstr "Swedish"
 
 #: search/choices.py:49 thematic_areas/choices.py:596
 msgid "Sérvio"
-msgstr ""
+msgstr "Serbian"
 
 #: search/choices.py:50 thematic_areas/choices.py:578
 msgid "Eslovaco"
-msgstr ""
+msgstr "Slovak"
 
 #: search/choices.py:51 thematic_areas/choices.py:579
 msgid "Esloveno"
-msgstr ""
+msgstr "Slovenian"
 
 #: search/choices.py:52 thematic_areas/choices.py:592
 msgid "Polonês"
-msgstr ""
+msgstr "Polish"
 
 #: search/choices.py:53 search/choices.py:54 thematic_areas/choices.py:584
 msgid "Holandês"
-msgstr ""
+msgstr "Dutch"
 
 #: search/choices.py:55
 msgid "Letão"
-msgstr ""
+msgstr "Latvian"
 
 #: search/choices.py:56
 msgid "Lituano"
-msgstr ""
+msgstr "Lithuanian"
 
 #: search/choices.py:57
 msgid "Islandês"
-msgstr ""
+msgstr "Icelandic"
 
 #: search/choices.py:58 thematic_areas/choices.py:585
 msgid "Húngaro"
-msgstr ""
+msgstr "Hungarian"
 
 #: search/choices.py:59
 msgid "Croata"
-msgstr ""
+msgstr "Croatian"
 
 #: search/choices.py:60
 msgid "Hebraico"
-msgstr ""
+msgstr "Hebrew"
 
 #: search/choices.py:61 thematic_areas/choices.py:581
 msgid "Finlandês"
-msgstr ""
+msgstr "Finnish"
 
 #: search/choices.py:62 thematic_areas/choices.py:575
 msgid "Chinês"
-msgstr ""
+msgstr "Chinese"
 
 #: search/choices.py:63
 msgid "Artigo"
-msgstr ""
+msgstr "Article"
 
 #: search/choices.py:64
 msgid "Editorial"
@@ -3703,39 +3701,39 @@ msgstr ""
 
 #: search/choices.py:65
 msgid "Resenha de livro"
-msgstr ""
+msgstr "Book review"
 
 #: search/choices.py:66
 msgid "Relato de caso"
-msgstr ""
+msgstr "Case report"
 
 #: search/choices.py:67
 msgid "Comunicação rápida"
-msgstr ""
+msgstr "Rapid communication"
 
 #: search/choices.py:68
 msgid "Artigo de revisão"
-msgstr ""
+msgstr "Review article"
 
 #: search/choices.py:69
 msgid "Relato breve"
-msgstr ""
+msgstr "Brief report"
 
 #: search/choices.py:70
 msgid "Carta"
-msgstr ""
+msgstr "Letter"
 
 #: search/choices.py:71
 msgid "Artigo de comentário"
-msgstr ""
+msgstr "Commentary article"
 
 #: search/choices.py:72 search/choices.py:73
 msgid "Outros"
-msgstr ""
+msgstr "Others"
 
 #: search/choices.py:74 search/templates/include/result_doc_actions.html:7
 msgid "Resumo"
-msgstr ""
+msgstr "Abstract"
 
 #: search/choices.py:75
 msgid "Addendum"
@@ -3743,31 +3741,31 @@ msgstr ""
 
 #: search/choices.py:76
 msgid "Comunicado de imprensa"
-msgstr ""
+msgstr "Press release"
 
 #: search/choices.py:77
 msgid "Notícia"
-msgstr ""
+msgstr "News"
 
 #: search/choices.py:78
 msgid "Correção"
-msgstr ""
+msgstr "Correction"
 
 #: search/choices.py:79
 msgid "Discussão"
-msgstr ""
+msgstr "Discussion"
 
 #: search/choices.py:80
 msgid "Obituário"
-msgstr ""
+msgstr "Obituary"
 
 #: search/choices.py:81
 msgid "Em resumo"
-msgstr ""
+msgstr "In summary"
 
 #: search/templates/cluster.html:10
 msgid "Filtros"
-msgstr ""
+msgstr "Filters"
 
 #: search/templates/include/result_doc.html:34
 msgid "Volume"
@@ -3775,19 +3773,19 @@ msgstr ""
 
 #: search/templates/include/result_doc_actions.html:13
 msgid "Texto"
-msgstr ""
+msgstr "Text"
 
 #: search/templates/include/search_pagination.html:8
 msgid "Página"
-msgstr ""
+msgstr "Page"
 
 #: search/templates/search.html:9
 msgid "Pesquisa | SciELO"
-msgstr ""
+msgstr "Search | SciELO"
 
 #: search/templates/search.html:38
 msgid "Digite sua pesquisa..."
-msgstr ""
+msgstr "Enter your search..."
 
 #: search/templates/search.html:45
 msgid "Help"
@@ -3795,56 +3793,56 @@ msgstr ""
 
 #: search/templates/search.html:65
 msgid "registros encontrados para o termo"
-msgstr ""
+msgstr "records found for the term"
 
 #: search/templates/search.html:69
 msgid "Tempo da pesquisa"
-msgstr ""
+msgstr "Search time"
 
 #: search/templates/search.html:69
 msgid "milisegundos"
-msgstr ""
+msgstr "milliseconds"
 
 #: search/templates/search.html:72
 msgid "0 registros encontrados para o termo"
-msgstr ""
+msgstr "0 records found for the term"
 
 #: search/templates/search.html:100
 msgid "Ordenar por"
-msgstr ""
+msgstr "Sort by"
 
 #: search/templates/search.html:102
 msgid "Publicação - Mais novos primeiros"
-msgstr ""
+msgstr "Publication - Newest first"
 
 #: search/templates/search.html:103
 msgid "Publicação - Mais antigos primeiros"
-msgstr ""
+msgstr "Publication - Oldest first"
 
 #: search/templates/search.html:104
 msgid "Ordem descrecente de criação"
-msgstr ""
+msgstr "Descending order of creation"
 
 #: search/templates/search.html:105
 msgid "Relevância"
-msgstr ""
+msgstr "Relevance"
 
 #: search/templates/search.html:110
 msgid "Visualizar"
-msgstr ""
+msgstr "View"
 
 #: search/templates/search.html:118
 msgid "Itens por página"
-msgstr ""
+msgstr "Items per page"
 
 #: search/templates/search.html:289
 msgid ""
 "O valor do campo página não pode ser maior que a quantidade atual de páginas."
-msgstr ""
+msgstr "The page field value cannot be greater than the current number of pages."
 
 #: search/templates/search.html:297
 msgid "O valor do campo página deve ser maior que 0."
-msgstr ""
+msgstr "The page field value must be greater than 0."
 
 #: thematic_areas/choices.py:5 thematic_areas/choices.py:21
 #: thematic_areas/choices.py:118
@@ -3864,1707 +3862,1707 @@ msgstr ""
 
 #: thematic_areas/choices.py:8
 msgid "Ciências Agrárias"
-msgstr ""
+msgstr "Agricultural Sciences"
 
 #: thematic_areas/choices.py:9
 msgid "Ciências Biológicas"
-msgstr ""
+msgstr "Biological Sciences"
 
 #: thematic_areas/choices.py:10
 msgid "Ciências da Saúde"
-msgstr ""
+msgstr "Health Sciences"
 
 #: thematic_areas/choices.py:11
 msgid "Ciências Exatas e da Terra"
-msgstr ""
+msgstr "Exact and Earth Sciences"
 
 #: thematic_areas/choices.py:12
 msgid "Ciências Humanas"
-msgstr ""
+msgstr "Human Sciences"
 
 #: thematic_areas/choices.py:13
 msgid "Ciências Sociais Aplicadas"
-msgstr ""
+msgstr "Applied Social Sciences"
 
 #: thematic_areas/choices.py:14
 msgid "Engenharias"
-msgstr ""
+msgstr "Engineering"
 
 #: thematic_areas/choices.py:15
 msgid "Linguística, Letras e Artes"
-msgstr ""
+msgstr "Linguistics, Literature and Arts"
 
 #: thematic_areas/choices.py:16
 msgid "Multidisciplinar"
-msgstr ""
+msgstr "Multidisciplinary"
 
 #: thematic_areas/choices.py:24
 msgid "Administração"
-msgstr ""
+msgstr "Administration"
 
 #: thematic_areas/choices.py:25
 msgid "Agronomia"
-msgstr ""
+msgstr "Agronomy"
 
 #: thematic_areas/choices.py:26
 msgid "Antropologia"
-msgstr ""
+msgstr "Anthropology"
 
 #: thematic_areas/choices.py:27
 msgid "Arqueologia"
-msgstr ""
+msgstr "Archeology"
 
 #: thematic_areas/choices.py:28
 msgid "Arquitetura e urbanismo"
-msgstr ""
+msgstr "Architecture and urbanism"
 
 #: thematic_areas/choices.py:29
 msgid "Artes"
-msgstr ""
+msgstr "Arts"
 
 #: thematic_areas/choices.py:30
 msgid "Astronomia"
-msgstr ""
+msgstr "Astronomy"
 
 #: thematic_areas/choices.py:31
 msgid "Biofísica"
-msgstr ""
+msgstr "Biophysics"
 
 #: thematic_areas/choices.py:32
 msgid "Biologia geral"
-msgstr ""
+msgstr "General biology"
 
 #: thematic_areas/choices.py:33
 msgid "Bioquímica"
-msgstr ""
+msgstr "Biochemistry"
 
 #: thematic_areas/choices.py:34
 msgid "Biotecnologia"
-msgstr ""
+msgstr "Biotechnology"
 
 #: thematic_areas/choices.py:35
 msgid "Botânica"
-msgstr ""
+msgstr "Botany"
 
 #: thematic_areas/choices.py:36
 msgid "Ciência da computação"
-msgstr ""
+msgstr "Computer science"
 
 #: thematic_areas/choices.py:37
 msgid "Ciência da informação"
-msgstr ""
+msgstr "Information science"
 
 #: thematic_areas/choices.py:38
 msgid "Ciência e tecnologia de alimentos"
-msgstr ""
+msgstr "Food science and technology"
 
 #: thematic_areas/choices.py:39
 msgid "Ciência política"
-msgstr ""
+msgstr "Political science"
 
 #: thematic_areas/choices.py:40
 msgid "Ciências Ambientais"
-msgstr ""
+msgstr "Environmental Sciences"
 
 #: thematic_areas/choices.py:41
 msgid "Comunicação"
-msgstr ""
+msgstr "Communication"
 
 #: thematic_areas/choices.py:42
 msgid "Demografia"
-msgstr ""
+msgstr "Demography"
 
 #: thematic_areas/choices.py:43
 msgid "Desenho industrial"
-msgstr ""
+msgstr "Industrial design"
 
 #: thematic_areas/choices.py:44
 msgid "Direito"
-msgstr ""
+msgstr "Law"
 
 #: thematic_areas/choices.py:45
 msgid "Ecologia"
-msgstr ""
+msgstr "Ecology"
 
 #: thematic_areas/choices.py:46
 msgid "Economia"
-msgstr ""
+msgstr "Economy"
 
 #: thematic_areas/choices.py:47
 msgid "Economia doméstica"
-msgstr ""
+msgstr "Home economics"
 
 #: thematic_areas/choices.py:48
 msgid "Educação"
-msgstr ""
+msgstr "Education"
 
 #: thematic_areas/choices.py:49
 msgid "Educação física"
-msgstr ""
+msgstr "Physical education"
 
 #: thematic_areas/choices.py:50
 msgid "Enfermagem"
-msgstr ""
+msgstr "Nursing"
 
 #: thematic_areas/choices.py:51
 msgid "Engenharia aeroespacial"
-msgstr ""
+msgstr "Aerospace engineering"
 
 #: thematic_areas/choices.py:52
 msgid "Engenharia agrícola"
-msgstr ""
+msgstr "Agricultural engineering"
 
 #: thematic_areas/choices.py:53
 msgid "Engenharia biomédica"
-msgstr ""
+msgstr "Biomedical engineering"
 
 #: thematic_areas/choices.py:54
 msgid "Engenharia civil"
-msgstr ""
+msgstr "Civil engineering"
 
 #: thematic_areas/choices.py:57
 msgid "Engenharia de materiais e metalúrgica"
-msgstr ""
+msgstr "Materials and metallurgical engineering"
 
 #: thematic_areas/choices.py:59
 msgid "Engenharia de minas"
-msgstr ""
+msgstr "Mining engineering"
 
 #: thematic_areas/choices.py:60
 msgid "Engenharia de produção"
-msgstr ""
+msgstr "Production engineering"
 
 #: thematic_areas/choices.py:61
 msgid "Engenharia de transportes"
-msgstr ""
+msgstr "Transportation engineering"
 
 #: thematic_areas/choices.py:62
 msgid "Engenharia elétrica"
-msgstr ""
+msgstr "Electrical engineering"
 
 #: thematic_areas/choices.py:63
 msgid "Engenharia mecânica"
-msgstr ""
+msgstr "Mechanical engineering"
 
 #: thematic_areas/choices.py:64
 msgid "Engenharia naval e oceânica"
-msgstr ""
+msgstr "Naval and oceanic engineering"
 
 #: thematic_areas/choices.py:65
 msgid "Engenharia nuclear"
-msgstr ""
+msgstr "Nuclear engineering"
 
 #: thematic_areas/choices.py:66
 msgid "Engenharia química"
-msgstr ""
+msgstr "Chemical engineering"
 
 #: thematic_areas/choices.py:67
 msgid "Engenharia sanitária"
-msgstr ""
+msgstr "Sanitary engineering"
 
 #: thematic_areas/choices.py:68
 msgid "Ensino"
-msgstr ""
+msgstr "Teaching"
 
 #: thematic_areas/choices.py:69
 msgid "Farmácia"
-msgstr ""
+msgstr "Pharmacy"
 
 #: thematic_areas/choices.py:70
 msgid "Farmacologia"
-msgstr ""
+msgstr "Pharmacology"
 
 #: thematic_areas/choices.py:71
 msgid "Filosofia"
-msgstr ""
+msgstr "Philosophy"
 
 #: thematic_areas/choices.py:72
 msgid "Física"
-msgstr ""
+msgstr "Physics"
 
 #: thematic_areas/choices.py:73
 msgid "Fisiologia"
-msgstr ""
+msgstr "Physiology"
 
 #: thematic_areas/choices.py:74
 msgid "Fisioterapia e terapia ocupacional"
-msgstr ""
+msgstr "Physiotherapy and occupational therapy"
 
 #: thematic_areas/choices.py:75
 msgid "Fonoaudiologia"
-msgstr ""
+msgstr "Speech therapy"
 
 #: thematic_areas/choices.py:76
 msgid "Genética"
-msgstr ""
+msgstr "Genetics"
 
 #: thematic_areas/choices.py:77
 msgid "Geociências"
-msgstr ""
+msgstr "Geosciences"
 
 #: thematic_areas/choices.py:78
 msgid "Geografia"
-msgstr ""
+msgstr "Geography"
 
 #: thematic_areas/choices.py:79
 msgid "História"
-msgstr ""
+msgstr "History"
 
 #: thematic_areas/choices.py:80
 msgid "Imunologia"
-msgstr ""
+msgstr "Immunology"
 
 #: thematic_areas/choices.py:81
 msgid "Interdisciplinar"
-msgstr ""
+msgstr "Interdisciplinary"
 
 #: thematic_areas/choices.py:82
 msgid "Letras"
-msgstr ""
+msgstr "Literature"
 
 #: thematic_areas/choices.py:83
 msgid "Linguística"
-msgstr ""
+msgstr "Linguistics"
 
 #: thematic_areas/choices.py:84
 msgid "Matemática"
-msgstr ""
+msgstr "Mathematics"
 
 #: thematic_areas/choices.py:85
 msgid "Materiais "
-msgstr ""
+msgstr "Materials"
 
 #: thematic_areas/choices.py:86
 msgid "Medicina"
-msgstr ""
+msgstr "Medicine"
 
 #: thematic_areas/choices.py:87
 msgid "Medicina veterinária"
-msgstr ""
+msgstr "Veterinary medicine"
 
 #: thematic_areas/choices.py:88
 msgid "Microbiologia"
-msgstr ""
+msgstr "Microbiology"
 
 #: thematic_areas/choices.py:89
 msgid "Morfologia"
-msgstr ""
+msgstr "Morphology"
 
 #: thematic_areas/choices.py:90
 msgid "Museologia"
-msgstr ""
+msgstr "Museology"
 
 #: thematic_areas/choices.py:91
 msgid "Nutrição"
-msgstr ""
+msgstr "Nutrition"
 
 #: thematic_areas/choices.py:92
 msgid "Oceanografia"
-msgstr ""
+msgstr "Oceanography"
 
 #: thematic_areas/choices.py:93
 msgid "Odontologia"
-msgstr ""
+msgstr "Dentistry"
 
 #: thematic_areas/choices.py:94
 msgid "Parasitologia"
-msgstr ""
+msgstr "Parasitology"
 
 #: thematic_areas/choices.py:95
 msgid "Planejamento urbano e regional"
-msgstr ""
+msgstr "Urban and regional planning"
 
 #: thematic_areas/choices.py:96
 msgid "Probabilidade e estatística"
-msgstr ""
+msgstr "Probability and statistics"
 
 #: thematic_areas/choices.py:97
 msgid "Psicologia"
-msgstr ""
+msgstr "Psychology"
 
 #: thematic_areas/choices.py:98
 msgid "Química"
-msgstr ""
+msgstr "Chemistry"
 
 #: thematic_areas/choices.py:101
 msgid "Recursos florestais e engenharia florestal"
-msgstr ""
+msgstr "Forest resources and forest engineering"
 
 #: thematic_areas/choices.py:105
 msgid "Recursos pesqueiros e engenharia de pesca"
-msgstr ""
+msgstr "Fishery resources and fishing engineering"
 
 #: thematic_areas/choices.py:107
 msgid "Saúde coletiva"
-msgstr ""
+msgstr "Collective health"
 
 #: thematic_areas/choices.py:108
 msgid "Serviço social"
-msgstr ""
+msgstr "Social work"
 
 #: thematic_areas/choices.py:109
 msgid "Sociologia"
-msgstr ""
+msgstr "Sociology"
 
 #: thematic_areas/choices.py:110
 msgid "Teologia"
-msgstr ""
+msgstr "Theology"
 
 #: thematic_areas/choices.py:111
 msgid "Turismo"
-msgstr ""
+msgstr "Tourism"
 
 #: thematic_areas/choices.py:112
 msgid "Zoologia"
-msgstr ""
+msgstr "Zoology"
 
 #: thematic_areas/choices.py:113
 msgid "Zootecnia"
-msgstr ""
+msgstr "Animal science"
 
 #: thematic_areas/choices.py:121
 msgid "Administraçao de Empresas"
-msgstr ""
+msgstr "Business Administration"
 
 #: thematic_areas/choices.py:122
 msgid "Administração de Setores Específicos"
-msgstr ""
+msgstr "Administration of Specific Sectors"
 
 #: thematic_areas/choices.py:123
 msgid "Administração Educacional"
-msgstr ""
+msgstr "Educational Administration"
 
 #: thematic_areas/choices.py:124
 msgid "Administração Pública"
-msgstr ""
+msgstr "Public Administration"
 
 #: thematic_areas/choices.py:125
 msgid "Aerodinâmica"
-msgstr ""
+msgstr "Aerodynamics"
 
 #: thematic_areas/choices.py:126
 msgid "Agrometeorologia"
-msgstr ""
+msgstr "Agrometeorology"
 
 #: thematic_areas/choices.py:127
 msgid "Álgebra"
-msgstr ""
+msgstr "Algebra"
 
 #: thematic_areas/choices.py:128
 msgid "Análise"
-msgstr ""
+msgstr "Analysis"
 
 #: thematic_areas/choices.py:129
 msgid "Análise e Controle de Medicamentos"
-msgstr ""
+msgstr "Drug Analysis and Control"
 
 #: thematic_areas/choices.py:130
 msgid "Análise Nutricional de População"
-msgstr ""
+msgstr "Population Nutritional Analysis"
 
 #: thematic_areas/choices.py:131
 msgid "Análise Toxicológica"
-msgstr ""
+msgstr "Toxicological Analysis"
 
 #: thematic_areas/choices.py:132
 msgid "Anatomia"
-msgstr ""
+msgstr "Anatomy"
 
 #: thematic_areas/choices.py:135
 msgid "Anatomia Patológica e Patologia Clínica"
-msgstr ""
+msgstr "Pathological Anatomy and Clinical Pathology"
 
 #: thematic_areas/choices.py:139
 msgid "Antropologia das Populações Afro-Brasileiras"
-msgstr ""
+msgstr "Anthropology of Afro-Brazilian Populations"
 
 #: thematic_areas/choices.py:141
 msgid "Antropologia Rural"
-msgstr ""
+msgstr "Rural Anthropology"
 
 #: thematic_areas/choices.py:142
 msgid "Antropologia Urbana"
-msgstr ""
+msgstr "Urban Anthropology"
 
 #: thematic_areas/choices.py:143
 msgid "Aplicações de Radioisótopos"
-msgstr ""
+msgstr "Radioisotope Applications"
 
 #: thematic_areas/choices.py:144
 msgid "Aquicultura"
-msgstr ""
+msgstr "Aquaculture"
 
 #: thematic_areas/choices.py:147
 msgid "Áreas Clássicas de Fenomenologia e suas Aplicações"
-msgstr ""
+msgstr "Classical Areas of Phenomenology and their Applications"
 
 #: thematic_areas/choices.py:149
 msgid "Arqueologia Histórica"
-msgstr ""
+msgstr "Historical Archeology"
 
 #: thematic_areas/choices.py:150
 msgid "Arqueologia Pré-Histórica"
-msgstr ""
+msgstr "Prehistoric Archeology"
 
 #: thematic_areas/choices.py:151
 msgid "Arquivologia"
-msgstr ""
+msgstr "Archival Science"
 
 #: thematic_areas/choices.py:152
 msgid "Artes do Vídeo"
-msgstr ""
+msgstr "Video Arts"
 
 #: thematic_areas/choices.py:153
 msgid "Artes Plásticas"
-msgstr ""
+msgstr "Plastic Arts"
 
 #: thematic_areas/choices.py:154
 msgid "Astrofísica do Meio Interestelar"
-msgstr ""
+msgstr "Astrophysics of the Interstellar Medium"
 
 #: thematic_areas/choices.py:155
 msgid "Astrofísica do Sistema Solar"
-msgstr ""
+msgstr "Astrophysics of the Solar System"
 
 #: thematic_areas/choices.py:156
 msgid "Astrofísica Estelar"
-msgstr ""
+msgstr "Stellar Astrophysics"
 
 #: thematic_areas/choices.py:157
 msgid "Astrofísica Extragaláctica"
-msgstr ""
+msgstr "Extragalactic Astrophysics"
 
 #: thematic_areas/choices.py:160
 msgid "Astronomia de Posição e Mecânica Celeste"
-msgstr ""
+msgstr "Positional Astronomy and Celestial Mechanics"
 
 #: thematic_areas/choices.py:162
 msgid "Biblioteconomia"
-msgstr ""
+msgstr "Library Science"
 
 #: thematic_areas/choices.py:163
 msgid "Bioengenharia"
-msgstr ""
+msgstr "Bioengineering"
 
 #: thematic_areas/choices.py:164
 msgid "Biofísica Celular"
-msgstr ""
+msgstr "Cellular Biophysics"
 
 #: thematic_areas/choices.py:165
 msgid "Biofísica de Processos e Sistemas"
-msgstr ""
+msgstr "Biophysics of Processes and Systems"
 
 #: thematic_areas/choices.py:166
 msgid "Biofísica Molecular"
-msgstr ""
+msgstr "Molecular Biophysics"
 
 #: thematic_areas/choices.py:169
 msgid "Biologia e Fisiologia dos Mircroorganismos"
-msgstr ""
+msgstr "Biology and Physiology of Microorganisms"
 
 #: thematic_areas/choices.py:171
 msgid "Biologia Molecular"
-msgstr ""
+msgstr "Molecular Biology"
 
 #: thematic_areas/choices.py:172
 msgid "Bioquímica da Nutrição"
-msgstr ""
+msgstr "Nutritional Biochemistry"
 
 #: thematic_areas/choices.py:173
 msgid "Bioquímica de Microorganismos"
-msgstr ""
+msgstr "Biochemistry of Microorganisms"
 
 #: thematic_areas/choices.py:174
 msgid "Botânica Aplicada"
-msgstr ""
+msgstr "Applied Botany"
 
 #: thematic_areas/choices.py:175
 msgid "Bromatologia"
-msgstr ""
+msgstr "Bromatology"
 
 #: thematic_areas/choices.py:176
 msgid "Ciência de Alimentos"
-msgstr ""
+msgstr "Food Science"
 
 #: thematic_areas/choices.py:177
 msgid "Ciência do Solo"
-msgstr ""
+msgstr "Soil Science"
 
 #: thematic_areas/choices.py:178
 msgid "Ciências Contábeis"
-msgstr ""
+msgstr "Accounting Sciences"
 
 #: thematic_areas/choices.py:179
 msgid "Cinema"
-msgstr ""
+msgstr "Cinema"
 
 #: thematic_areas/choices.py:182
 msgid "Circuitos Elétricos, Magnéticos e Eletrônicos"
-msgstr ""
+msgstr "Electrical, Magnetic and Electronic Circuits"
 
 #: thematic_areas/choices.py:184
 msgid "Cirurgia"
-msgstr ""
+msgstr "Surgery"
 
 #: thematic_areas/choices.py:185
 msgid "Cirurgia Buco-Maxilo-Facial"
-msgstr ""
+msgstr "Buccomaxillofacial Surgery"
 
 #: thematic_areas/choices.py:186
 msgid "Citologia e Biologia Celular"
-msgstr ""
+msgstr "Cytology and Cell Biology"
 
 #: thematic_areas/choices.py:187
 msgid "Clínica e Cirurgia Animal"
-msgstr ""
+msgstr "Animal Clinic and Surgery"
 
 #: thematic_areas/choices.py:188
 msgid "Clínica Médica"
-msgstr ""
+msgstr "Clinical Medicine"
 
 #: thematic_areas/choices.py:189
 msgid "Clínica Odontológica"
-msgstr ""
+msgstr "Dental Clinic"
 
 #: thematic_areas/choices.py:190
 msgid "Combustível Nuclear"
-msgstr ""
+msgstr "Nuclear Fuel"
 
 #: thematic_areas/choices.py:191
 msgid "Componentes da Dinâmica Demográfica"
-msgstr ""
+msgstr "Components of Demographic Dynamics"
 
 #: thematic_areas/choices.py:192
 msgid "Comportamento Animal"
-msgstr ""
+msgstr "Animal Behavior"
 
 #: thematic_areas/choices.py:193
 msgid "Comportamento Político"
-msgstr ""
+msgstr "Political Behavior"
 
 #: thematic_areas/choices.py:194
 msgid "Comunicação Visual"
-msgstr ""
+msgstr "Visual Communication"
 
 #: thematic_areas/choices.py:195
 msgid "Conservação da Natureza"
-msgstr ""
+msgstr "Nature Conservation"
 
 #: thematic_areas/choices.py:196
 msgid "Construção Civil"
-msgstr ""
+msgstr "Civil Construction"
 
 #: thematic_areas/choices.py:197
 msgid "Construções Rurais e Ambiência"
-msgstr ""
+msgstr "Rural Constructions and Environment"
 
 #: thematic_areas/choices.py:200
 msgid "Crescimento, Flutuações e Planejamento Econômico"
-msgstr ""
+msgstr "Growth, Fluctuations and Economic Planning"
 
 #: thematic_areas/choices.py:202
 msgid "Currículo"
-msgstr ""
+msgstr "Curriculum"
 
 #: thematic_areas/choices.py:203
 msgid "Dança"
-msgstr ""
+msgstr "Dance"
 
 #: thematic_areas/choices.py:204
 msgid "Demografia Histórica"
-msgstr ""
+msgstr "Historical Demography"
 
 #: thematic_areas/choices.py:205
 msgid "Desenho de Produto"
-msgstr ""
+msgstr "Product Design"
 
 #: thematic_areas/choices.py:208
 msgid "Desnutrição e Desenvolvimento Fisiológico"
-msgstr ""
+msgstr "Malnutrition and Physiological Development"
 
 #: thematic_areas/choices.py:210
 msgid "Dietética"
-msgstr ""
+msgstr "Dietetics"
 
 #: thematic_areas/choices.py:211
 msgid "Dinâmica de Vôo"
-msgstr ""
+msgstr "Flight Dynamics"
 
 #: thematic_areas/choices.py:212
 msgid "Direito Privado"
-msgstr ""
+msgstr "Private Law"
 
 #: thematic_areas/choices.py:213
 msgid "Direito Público"
-msgstr ""
+msgstr "Public Law"
 
 #: thematic_areas/choices.py:214
 msgid "Direitos Especiais"
-msgstr ""
+msgstr "Special Rights"
 
 #: thematic_areas/choices.py:215
 msgid "Ecologia Aplicada"
-msgstr ""
+msgstr "Applied Ecology"
 
 #: thematic_areas/choices.py:216
 msgid "Ecologia de Ecossistemas"
-msgstr ""
+msgstr "Ecosystem Ecology"
 
 #: thematic_areas/choices.py:219
 msgid "Ecologia dos Animais Domésticos e Etologia"
-msgstr ""
+msgstr "Ecology of Domestic Animals and Ethology"
 
 #: thematic_areas/choices.py:221
 msgid "Ecologia Teórica"
-msgstr ""
+msgstr "Theoretical Ecology"
 
 #: thematic_areas/choices.py:224
 msgid "Economia Agrária e dos Recursos Naturais"
-msgstr ""
+msgstr "Agrarian and Natural Resource Economics"
 
 #: thematic_areas/choices.py:226
 msgid "Economia de Recursos Humanos"
-msgstr ""
+msgstr "Human Resources Economics"
 
 #: thematic_areas/choices.py:227
 msgid "Economia do Bem-Estar Social"
-msgstr ""
+msgstr "Social Welfare Economics"
 
 #: thematic_areas/choices.py:228
 msgid "Economia Industrial"
-msgstr ""
+msgstr "Industrial Economics"
 
 #: thematic_areas/choices.py:229
 msgid "Economia Internacional"
-msgstr ""
+msgstr "International Economics"
 
 #: thematic_areas/choices.py:230
 msgid "Economia Monetária e Fiscal"
-msgstr ""
+msgstr "Monetary and Fiscal Economics"
 
 #: thematic_areas/choices.py:231
 msgid "Economia Regional e Urbana"
-msgstr ""
+msgstr "Regional and Urban Economics"
 
 #: thematic_areas/choices.py:232
 msgid "Educação Artística"
-msgstr ""
+msgstr "Art Education"
 
 #: thematic_areas/choices.py:235
 msgid "Eletrônica Industrial, Sistemas e Controles Eletrônicos"
-msgstr ""
+msgstr "Industrial Electronics, Electronic Systems and Controls"
 
 #: thematic_areas/choices.py:237
 msgid "Embriologia"
-msgstr ""
+msgstr "Embryology"
 
 #: thematic_areas/choices.py:238
 msgid "Endodontia"
-msgstr ""
+msgstr "Endodontics"
 
 #: thematic_areas/choices.py:239
 msgid "Energia de Biomassa Florestal"
-msgstr ""
+msgstr "Forest Biomass Energy"
 
 #: thematic_areas/choices.py:240
 msgid "Energização Rural"
-msgstr ""
+msgstr "Rural Electrification"
 
 #: thematic_areas/choices.py:241
 msgid "Enfermagem de Doenças Contagiosas"
-msgstr ""
+msgstr "Nursing of Contagious Diseases"
 
 #: thematic_areas/choices.py:242
 msgid "Enfermagem de Saúde Pública"
-msgstr ""
+msgstr "Public Health Nursing"
 
 #: thematic_areas/choices.py:243
 msgid "Enfermagem Médico-Cirúrgica"
-msgstr ""
+msgstr "Medical-Surgical Nursing"
 
 #: thematic_areas/choices.py:244
 msgid "Enfermagem Obstétrica"
-msgstr ""
+msgstr "Obstetric Nursing"
 
 #: thematic_areas/choices.py:245
 msgid "Enfermagem Pediátrica"
-msgstr ""
+msgstr "Pediatric Nursing"
 
 #: thematic_areas/choices.py:246
 msgid "Enfermagem Psiquiátrica"
-msgstr ""
+msgstr "Psychiatric Nursing"
 
 #: thematic_areas/choices.py:247
 msgid "Engenharia de Água e Solo"
-msgstr ""
+msgstr "Water and Soil Engineering"
 
 #: thematic_areas/choices.py:248
 msgid "Engenharia de Alimentos"
-msgstr ""
+msgstr "Food Engineering"
 
 #: thematic_areas/choices.py:249
 msgid "Engenharia de Pesca"
-msgstr ""
+msgstr "Fisheries Engineering"
 
 #: thematic_areas/choices.py:252
 msgid "Engenharia de Processamento de Produtos Agrícolas"
-msgstr ""
+msgstr "Agricultural Product Processing Engineering"
 
 #: thematic_areas/choices.py:254
 msgid "Engenharia do Produto"
-msgstr ""
+msgstr "Product Engineering"
 
 #: thematic_areas/choices.py:255
 msgid "Engenharia Econômica"
-msgstr ""
+msgstr "Economic Engineering"
 
 #: thematic_areas/choices.py:256
 msgid "Engenharia Hidráulica"
-msgstr ""
+msgstr "Hydraulic Engineering"
 
 #: thematic_areas/choices.py:257
 msgid "Engenharia Médica"
-msgstr ""
+msgstr "Medical Engineering"
 
 #: thematic_areas/choices.py:258
 msgid "Engenharia Térmica"
-msgstr ""
+msgstr "Thermal Engineering"
 
 #: thematic_areas/choices.py:259
 msgid "Ensino-Aprendizagem"
-msgstr ""
+msgstr "Teaching-Learning"
 
 #: thematic_areas/choices.py:262
 msgid "Entomologia e Malacologia de Parasitos e Vetores"
-msgstr ""
+msgstr "Entomology and Malacology of Parasites and Vectors"
 
 #: thematic_areas/choices.py:264
 msgid "Enzimologia"
-msgstr ""
+msgstr "Enzymology"
 
 #: thematic_areas/choices.py:265
 msgid "Epidemiologia"
-msgstr ""
+msgstr "Epidemiology"
 
 #: thematic_areas/choices.py:266
 msgid "Epistemologia"
-msgstr ""
+msgstr "Epistemology"
 
 #: thematic_areas/choices.py:267
 msgid "Estado e Governo"
-msgstr ""
+msgstr "State and Government"
 
 #: thematic_areas/choices.py:268
 msgid "Estatística"
-msgstr ""
+msgstr "Statistics"
 
 #: thematic_areas/choices.py:269
 msgid "Estruturas"
-msgstr ""
+msgstr "Structures"
 
 #: thematic_areas/choices.py:270
 msgid "Estruturas Aeroespaciais"
-msgstr ""
+msgstr "Aerospace Structures"
 
 #: thematic_areas/choices.py:271
 msgid "Estruturas Navais e Oceânicas"
-msgstr ""
+msgstr "Naval and Oceanic Structures"
 
 #: thematic_areas/choices.py:273
 msgid "Etnofarmacologia"
-msgstr ""
+msgstr "Ethnopharmacology"
 
 #: thematic_areas/choices.py:274
 msgid "Etnologia Indígena"
-msgstr ""
+msgstr "Indigenous Ethnology"
 
 #: thematic_areas/choices.py:275
 msgid "Extensão Rural"
-msgstr ""
+msgstr "Rural Extension"
 
 #: thematic_areas/choices.py:276
 msgid "Farmacognosia"
-msgstr ""
+msgstr "Pharmacognosy"
 
 #: thematic_areas/choices.py:277
 msgid "Farmacologia Autonômica"
-msgstr ""
+msgstr "Autonomic Pharmacology"
 
 #: thematic_areas/choices.py:278
 msgid "Farmacologia Bioquímica e Molecular"
-msgstr ""
+msgstr "Biochemical and Molecular Pharmacology"
 
 #: thematic_areas/choices.py:279
 msgid "Farmacologia Cardiorenal"
-msgstr ""
+msgstr "Cardiorenal Pharmacology"
 
 #: thematic_areas/choices.py:280
 msgid "Farmacologia Clínica"
-msgstr ""
+msgstr "Clinical Pharmacology"
 
 #: thematic_areas/choices.py:281
 msgid "Farmacologia Geral"
-msgstr ""
+msgstr "General Pharmacology"
 
 #: thematic_areas/choices.py:282
 msgid "Farmacotecnia"
-msgstr ""
+msgstr "Pharmacotechnics"
 
 #: thematic_areas/choices.py:283
 msgid "Fenômenos de Transporte"
-msgstr ""
+msgstr "Transport Phenomena"
 
 #: thematic_areas/choices.py:284
 msgid "Filosofia Brasileira"
-msgstr ""
+msgstr "Brazilian Philosophy"
 
 #: thematic_areas/choices.py:285
 msgid "Filosofia da Linguagem"
-msgstr ""
+msgstr "Philosophy of Language"
 
 #: thematic_areas/choices.py:286
 msgid "Física Atômica e Molecular"
-msgstr ""
+msgstr "Atomic and Molecular Physics"
 
 #: thematic_areas/choices.py:287
 msgid "Física da Matéria Condensada"
-msgstr ""
+msgstr "Condensed Matter Physics"
 
 #: thematic_areas/choices.py:290
 msgid "Física das Partículas Elementares e Campos"
-msgstr ""
+msgstr "Physics of Elementary Particles and Fields"
 
 #: thematic_areas/choices.py:294
 msgid "Física dos Fluídos, Física de Plasmas e Descargas Elétricas"
-msgstr ""
+msgstr "Fluid Physics, Plasma Physics and Electrical Discharges"
 
 #: thematic_areas/choices.py:296
 msgid "Física Geral"
-msgstr ""
+msgstr "General Physics"
 
 #: thematic_areas/choices.py:297
 msgid "Física Nuclear"
-msgstr ""
+msgstr "Nuclear Physics"
 
 #: thematic_areas/choices.py:298
 msgid "Físico-Química"
-msgstr ""
+msgstr "Physical Chemistry"
 
 #: thematic_areas/choices.py:299
 msgid "Fisiologia Comparada"
-msgstr ""
+msgstr "Comparative Physiology"
 
 #: thematic_areas/choices.py:300
 msgid "Fisiologia de Orgãos e Sistemas"
-msgstr ""
+msgstr "Organ and System Physiology"
 
 #: thematic_areas/choices.py:301
 msgid "Fisiologia do Esforço"
-msgstr ""
+msgstr "Exercise Physiology"
 
 #: thematic_areas/choices.py:302
 msgid "Fisiologia dos Grupos Recentes"
-msgstr ""
+msgstr "Physiology of Recent Groups"
 
 #: thematic_areas/choices.py:303
 msgid "Fisiologia Geral"
-msgstr ""
+msgstr "General Physiology"
 
 #: thematic_areas/choices.py:304
 msgid "Fisiologia Vegetal"
-msgstr ""
+msgstr "Plant Physiology"
 
 #: thematic_areas/choices.py:305
 msgid "Fitogeografia"
-msgstr ""
+msgstr "Phytogeography"
 
 #: thematic_areas/choices.py:306
 msgid "Fitossanidade"
-msgstr ""
+msgstr "Plant Health"
 
 #: thematic_areas/choices.py:307
 msgid "Fitotecnia"
-msgstr ""
+msgstr "Phytotechnics"
 
 #: thematic_areas/choices.py:308
 msgid "Floricultura, Parques e Jardins"
-msgstr ""
+msgstr "Floriculture, Parks and Gardens"
 
 #: thematic_areas/choices.py:309
 msgid "Fontes de Dados Demográficos"
-msgstr ""
+msgstr "Sources of Demographic Data"
 
 #: thematic_areas/choices.py:310
 msgid "Fotografia"
-msgstr ""
+msgstr "Photography"
 
 #: thematic_areas/choices.py:311
 msgid "Fundamentos da Educação"
-msgstr ""
+msgstr "Foundations of Education"
 
 #: thematic_areas/choices.py:312
 msgid "Fundamentos da Sociologia"
-msgstr ""
+msgstr "Foundations of Sociology"
 
 #: thematic_areas/choices.py:315
 msgid "Fundamentos de Arquitetura e Urbanismo"
-msgstr ""
+msgstr "Fundamentals of Architecture and Urbanism"
 
 #: thematic_areas/choices.py:319
 msgid "Fundamentos do Planejamento Urbano e Regional"
-msgstr ""
+msgstr "Fundamentals of Urban and Regional Planning"
 
 #: thematic_areas/choices.py:321
 msgid "Fundamentos do Serviço Social"
-msgstr ""
+msgstr "Fundamentals of Social Work"
 
 #: thematic_areas/choices.py:322
 msgid "Fundamentos e Críticas das Artes"
-msgstr ""
+msgstr "Fundamentals and Criticisms of the Arts"
 
 #: thematic_areas/choices.py:323
 msgid "Fundamentos e Medidas da Psicologia"
-msgstr ""
+msgstr "Fundamentals and Measures of Psychology"
 
 #: thematic_areas/choices.py:324
 msgid "Fusão Controlada"
-msgstr ""
+msgstr "Controlled Fusion"
 
 #: thematic_areas/choices.py:325
 msgid "Genética Animal"
-msgstr ""
+msgstr "Animal Genetics"
 
 #: thematic_areas/choices.py:328
 msgid "Genética e Melhoramento dos Animais Domésticos"
-msgstr ""
+msgstr "Genetics and Breeding of Domestic Animals"
 
 #: thematic_areas/choices.py:330
 msgid "Genética Humana e Médica"
-msgstr ""
+msgstr "Human and Medical Genetics"
 
 #: thematic_areas/choices.py:333
 msgid "Genética Molecular e de Microorganismos"
-msgstr ""
+msgstr "Molecular and Microorganism Genetics"
 
 #: thematic_areas/choices.py:335
 msgid "Genética Quantitativa"
-msgstr ""
+msgstr "Quantitative Genetics"
 
 #: thematic_areas/choices.py:336
 msgid "Genética Vegetal"
-msgstr ""
+msgstr "Plant Genetics"
 
 #: thematic_areas/choices.py:337
 msgid "Geodésia"
-msgstr ""
+msgstr "Geodesy"
 
 #: thematic_areas/choices.py:338
 msgid "Geofísica"
-msgstr ""
+msgstr "Geophysics"
 
 #: thematic_areas/choices.py:339
 msgid "Geografia Física"
-msgstr ""
+msgstr "Physical Geography"
 
 #: thematic_areas/choices.py:340
 msgid "Geografia Humana"
-msgstr ""
+msgstr "Human Geography"
 
 #: thematic_areas/choices.py:341
 msgid "Geografia Regional"
-msgstr ""
+msgstr "Regional Geography"
 
 #: thematic_areas/choices.py:342
 msgid "Geologia"
-msgstr ""
+msgstr "Geology"
 
 #: thematic_areas/choices.py:343
 msgid "Geometria e Topologia"
-msgstr ""
+msgstr "Geometry and Topology"
 
 #: thematic_areas/choices.py:344
 msgid "Geotécnica"
-msgstr ""
+msgstr "Geotechnics"
 
 #: thematic_areas/choices.py:345
 msgid "Gerência de Produção"
-msgstr ""
+msgstr "Production Management"
 
 #: thematic_areas/choices.py:346
 msgid "Helmintologia de Parasitos"
-msgstr ""
+msgstr "Helminthology of Parasites"
 
 #: thematic_areas/choices.py:349
 msgid "Hidrodinâmica de Navios e Sistemas Oceânicos"
-msgstr ""
+msgstr "Hydrodynamics of Ships and Ocean Systems"
 
 #: thematic_areas/choices.py:351
 msgid "Histologia"
-msgstr ""
+msgstr "Histology"
 
 #: thematic_areas/choices.py:352
 msgid "História Antiga e Medieval"
-msgstr ""
+msgstr "Ancient and Medieval History"
 
 #: thematic_areas/choices.py:353
 msgid "História da América"
-msgstr ""
+msgstr "History of America"
 
 #: thematic_areas/choices.py:354
 msgid "História da Filosofia"
-msgstr ""
+msgstr "History of Philosophy"
 
 #: thematic_areas/choices.py:355
 msgid "História da Teologia"
-msgstr ""
+msgstr "History of Theology"
 
 #: thematic_areas/choices.py:356
 msgid "História das Ciências"
-msgstr ""
+msgstr "History of Sciences"
 
 #: thematic_areas/choices.py:357
 msgid "História do Brasil"
-msgstr ""
+msgstr "History of Brazil"
 
 #: thematic_areas/choices.py:358
 msgid "História Moderna e Contemporânea"
-msgstr ""
+msgstr "Modern and Contemporary History"
 
 #: thematic_areas/choices.py:359
 msgid "Imunogenética"
-msgstr ""
+msgstr "Immunogenetics"
 
 #: thematic_areas/choices.py:360
 msgid "Imunologia Aplicada"
-msgstr ""
+msgstr "Applied Immunology"
 
 #: thematic_areas/choices.py:361
 msgid "Imunologia Celular"
-msgstr ""
+msgstr "Cellular Immunology"
 
 #: thematic_areas/choices.py:362
 msgid "Imunoquímica"
-msgstr ""
+msgstr "Immunochemistry"
 
 #: thematic_areas/choices.py:363
 msgid "Infra-Estrutura de Transportes"
-msgstr ""
+msgstr "Transportation Infrastructure"
 
 #: thematic_areas/choices.py:366
 msgid "Inspeção de Produtos de Origem Animal"
-msgstr ""
+msgstr "Inspection of Products of Animal Origin"
 
 #: thematic_areas/choices.py:370
 msgid "Instalações e Equipamentos Metalúrgicos"
-msgstr ""
+msgstr "Metallurgical Installations and Equipment"
 
 #: thematic_areas/choices.py:372
 msgid "Instrumentação Astronômica"
-msgstr ""
+msgstr "Astronomical Instrumentation"
 
 #: thematic_areas/choices.py:373
 msgid "Jornalismo e Editoração"
-msgstr ""
+msgstr "Journalism and Publishing"
 
 #: thematic_areas/choices.py:374
 msgid "Lavra"
-msgstr ""
+msgstr "Mining"
 
 #: thematic_areas/choices.py:375
 msgid "Língua Portuguesa"
-msgstr ""
+msgstr "Portuguese Language"
 
 #: thematic_areas/choices.py:376
 msgid "Línguas Clássicas"
-msgstr ""
+msgstr "Classical Languages"
 
 #: thematic_areas/choices.py:377
 msgid "Línguas Estrangeiras Modernas"
-msgstr ""
+msgstr "Modern Foreign Languages"
 
 #: thematic_areas/choices.py:378
 msgid "Línguas Indígenas"
-msgstr ""
+msgstr "Indigenous Languages"
 
 #: thematic_areas/choices.py:379
 msgid "Linguística Aplicada"
-msgstr ""
+msgstr "Applied Linguistics"
 
 #: thematic_areas/choices.py:380
 msgid "Linguística Histórica"
-msgstr ""
+msgstr "Historical Linguistics"
 
 #: thematic_areas/choices.py:381
 msgid "Literatura Brasileira"
-msgstr ""
+msgstr "Brazilian Literature"
 
 #: thematic_areas/choices.py:382
 msgid "Literatura Comparada"
-msgstr ""
+msgstr "Comparative Literature"
 
 #: thematic_areas/choices.py:383
 msgid "Literaturas Clássicas"
-msgstr ""
+msgstr "Classical Literatures"
 
 #: thematic_areas/choices.py:384
 msgid "Literaturas Estrangeiras Modernas"
-msgstr ""
+msgstr "Modern Foreign Literatures"
 
 #: thematic_areas/choices.py:385
 msgid "Lógica"
-msgstr ""
+msgstr "Logic"
 
 #: thematic_areas/choices.py:386
 msgid "Manejo Florestal"
-msgstr ""
+msgstr "Forest Management"
 
 #: thematic_areas/choices.py:387
 msgid "Máquinas e Implementos Agrícolas"
-msgstr ""
+msgstr "Agricultural Machinery and Implements"
 
 #: thematic_areas/choices.py:388
 msgid "Máquinas Marítimas"
-msgstr ""
+msgstr "Marine Engines"
 
 #: thematic_areas/choices.py:389
 msgid "Matemática Aplicada"
-msgstr ""
+msgstr "Applied Mathematics"
 
 #: thematic_areas/choices.py:390
 msgid "Matemática da Computação"
-msgstr ""
+msgstr "Computational Mathematics"
 
 #: thematic_areas/choices.py:393
 msgid "Materiais e Processos para Engenharia Aeronáutica e Aeroespacial"
-msgstr ""
+msgstr "Materials and Processes for Aeronautical and Aerospace Engineering"
 
 #: thematic_areas/choices.py:395
 msgid "Materiais Elétricos"
-msgstr ""
+msgstr "Electrical Materials"
 
 #: thematic_areas/choices.py:396
 msgid "Materiais não-Metálicos"
-msgstr ""
+msgstr "Non-Metallic Materials"
 
 #: thematic_areas/choices.py:397
 msgid "Materiais Odontológicos"
-msgstr ""
+msgstr "Dental Materials"
 
 #: thematic_areas/choices.py:398
 msgid "Mecânica dos Sólidos"
-msgstr ""
+msgstr "Solid Mechanics"
 
 #: thematic_areas/choices.py:399
 msgid "Medicina Legal e Deontologia"
-msgstr ""
+msgstr "Legal Medicine and Deontology"
 
 #: thematic_areas/choices.py:400
 msgid "Medicina Preventiva"
-msgstr ""
+msgstr "Preventive Medicine"
 
 #: thematic_areas/choices.py:401
 msgid "Medicina Veterinária Preventiva"
-msgstr ""
+msgstr "Preventive Veterinary Medicine"
 
 #: thematic_areas/choices.py:404
 msgid "Medidas Elétricas, Magnéticas e Eletrônicas; Instrumentação"
-msgstr ""
+msgstr "Electrical, Magnetic and Electronic Measurements; Instrumentation"
 
 #: thematic_areas/choices.py:406
 msgid "Metabolismo e Bioenergética"
-msgstr ""
+msgstr "Metabolism and Bioenergetics"
 
 #: thematic_areas/choices.py:407
 msgid "Metafísica"
-msgstr ""
+msgstr "Metaphysics"
 
 #: thematic_areas/choices.py:408
 msgid "Metalurgia de Transformação"
-msgstr ""
+msgstr "Transformation Metallurgy"
 
 #: thematic_areas/choices.py:409
 msgid "Metalurgia Extrativa"
-msgstr ""
+msgstr "Extractive Metallurgy"
 
 #: thematic_areas/choices.py:410
 msgid "Metalurgia Física"
-msgstr ""
+msgstr "Physical Metallurgy"
 
 #: thematic_areas/choices.py:411
 msgid "Meteorologia"
-msgstr ""
+msgstr "Meteorology"
 
 #: thematic_areas/choices.py:412
 msgid "Metodologia e Técnicas da Computação"
-msgstr ""
+msgstr "Methodology and Techniques of Computation"
 
 #: thematic_areas/choices.py:415
 msgid "Metodos e Técnicas do Planejamento Urbano e Regional"
-msgstr ""
+msgstr "Methods and Techniques of Urban and Regional Planning"
 
 #: thematic_areas/choices.py:417
 msgid "Métodos Quantitativos em Economia"
-msgstr ""
+msgstr "Quantitative Methods in Economics"
 
 #: thematic_areas/choices.py:418
 msgid "Microbiologia Aplicada"
-msgstr ""
+msgstr "Applied Microbiology"
 
 #: thematic_areas/choices.py:419
 msgid "Morfologia dos Grupos Recentes"
-msgstr ""
+msgstr "Morphology of Recent Groups"
 
 #: thematic_areas/choices.py:420
 msgid "Morfologia Vegetal"
-msgstr ""
+msgstr "Plant Morphology"
 
 #: thematic_areas/choices.py:421
 msgid "Música"
-msgstr ""
+msgstr "Music"
 
 #: thematic_areas/choices.py:422
 msgid "Mutagênese"
-msgstr ""
+msgstr "Mutagenesis"
 
 #: thematic_areas/choices.py:423
 msgid "Neuropsicofarmacologia"
-msgstr ""
+msgstr "Neuropsychopharmacology"
 
 #: thematic_areas/choices.py:424
 msgid "Nupcialidade e Família"
-msgstr ""
+msgstr "Nuptiality and Family"
 
 #: thematic_areas/choices.py:425
 msgid "Nutrição e Alimentação Animal"
-msgstr ""
+msgstr "Animal Nutrition and Feeding"
 
 #: thematic_areas/choices.py:426
 msgid "Oceanografia Biológica"
-msgstr ""
+msgstr "Biological Oceanography"
 
 #: thematic_areas/choices.py:427
 msgid "Oceanografia Física"
-msgstr ""
+msgstr "Physical Oceanography"
 
 #: thematic_areas/choices.py:428
 msgid "Oceanografia Geológica"
-msgstr ""
+msgstr "Geological Oceanography"
 
 #: thematic_areas/choices.py:429
 msgid "Oceanografia Química"
-msgstr ""
+msgstr "Chemical Oceanography"
 
 #: thematic_areas/choices.py:430
 msgid "Odontologia Social e Preventiva"
-msgstr ""
+msgstr "Social and Preventive Dentistry"
 
 #: thematic_areas/choices.py:431
 msgid "Odontopediatria"
-msgstr ""
+msgstr "Pediatric Dentistry"
 
 #: thematic_areas/choices.py:432
 msgid "Ópera"
-msgstr ""
+msgstr "Opera"
 
 #: thematic_areas/choices.py:433
 msgid "Operações de Transportes"
-msgstr ""
+msgstr "Transport Operations"
 
 #: thematic_areas/choices.py:436
 msgid "Operações Industriais e Equipamentos para Engenharia Química"
-msgstr ""
+msgstr "Industrial Operations and Equipment for Chemical Engineering"
 
 #: thematic_areas/choices.py:438
 msgid "Orientação e Aconselhamento"
-msgstr ""
+msgstr "Guidance and Counseling"
 
 #: thematic_areas/choices.py:439
 msgid "Ortodontia"
-msgstr ""
+msgstr "Orthodontics"
 
 #: thematic_areas/choices.py:440
 msgid "Outras Literaturas Vernáculas"
-msgstr ""
+msgstr "Other Vernacular Literatures"
 
 #: thematic_areas/choices.py:441
 msgid "Outras Sociologias Específicas"
-msgstr ""
+msgstr "Other Specific Sociologies"
 
 #: thematic_areas/choices.py:442
 msgid "Paisagismo"
-msgstr ""
+msgstr "Landscaping"
 
 #: thematic_areas/choices.py:443
 msgid "Paleobotânica"
-msgstr ""
+msgstr "Paleobotany"
 
 #: thematic_areas/choices.py:444
 msgid "Paleozoologia"
-msgstr ""
+msgstr "Paleozoology"
 
 #: thematic_areas/choices.py:445
 msgid "Pastagem e Forragicultura"
-msgstr ""
+msgstr "Pasture and Forage"
 
 #: thematic_areas/choices.py:446
 msgid "Patologia Animal"
-msgstr ""
+msgstr "Animal Pathology"
 
 #: thematic_areas/choices.py:447
 msgid "Periodontia"
-msgstr ""
+msgstr "Periodontics"
 
 #: thematic_areas/choices.py:448
 msgid "Pesquisa Mineral"
-msgstr ""
+msgstr "Mineral Research"
 
 #: thematic_areas/choices.py:449
 msgid "Pesquisa Operacional"
-msgstr ""
+msgstr "Operations Research"
 
 #: thematic_areas/choices.py:450
 msgid "Planejamento de Transportes"
-msgstr ""
+msgstr "Transportation Planning"
 
 #: thematic_areas/choices.py:451
 msgid "Planejamento e Avaliação Educacional"
-msgstr ""
+msgstr "Educational Planning and Evaluation"
 
 #: thematic_areas/choices.py:452
 msgid "Política Internacional"
-msgstr ""
+msgstr "International Policy"
 
 #: thematic_areas/choices.py:453
 msgid "Política Pública e População"
-msgstr ""
+msgstr "Public Policy and Population"
 
 #: thematic_areas/choices.py:454
 msgid "Políticas Públicas"
-msgstr ""
+msgstr "Public Policies"
 
 #: thematic_areas/choices.py:455
 msgid "Probabilidade"
-msgstr ""
+msgstr "Probability"
 
 #: thematic_areas/choices.py:458
 msgid "Probabilidade e Estatística Aplicadas"
-msgstr ""
+msgstr "Applied Probability and Statistics"
 
 #: thematic_areas/choices.py:460
 msgid "Processos de Fabricação"
-msgstr ""
+msgstr "Manufacturing Processes"
 
 #: thematic_areas/choices.py:463
 msgid "Processos Industriais de Engenharia Química"
-msgstr ""
+msgstr "Industrial Processes of Chemical Engineering"
 
 #: thematic_areas/choices.py:465
 msgid "Produção Animal"
-msgstr ""
+msgstr "Animal Production"
 
 #: thematic_areas/choices.py:466
 msgid "Programação Visual"
-msgstr ""
+msgstr "Visual Programming"
 
 #: thematic_areas/choices.py:467
 msgid "Projetos de Arquitetura e Urbanismo"
-msgstr ""
+msgstr "Architecture and Urbanism Projects"
 
 #: thematic_areas/choices.py:468
 msgid "Projetos de Máquinas"
-msgstr ""
+msgstr "Machine Projects"
 
 #: thematic_areas/choices.py:471
 msgid "Projetos de Navios e de Sistemas Oceânicos"
-msgstr ""
+msgstr "Ship and Ocean Systems Projects"
 
 #: thematic_areas/choices.py:473
 msgid "Propulsão Aeroespacial"
-msgstr ""
+msgstr "Aerospace Propulsion"
 
 #: thematic_areas/choices.py:474
 msgid "Protozoologia de Parasitos"
-msgstr ""
+msgstr "Protozoology of Parasites"
 
 #: thematic_areas/choices.py:475
 msgid "Psicolinguística"
-msgstr ""
+msgstr "Psycholinguistics"
 
 #: thematic_areas/choices.py:476
 msgid "Psicologia Cognitiva"
-msgstr ""
+msgstr "Cognitive Psychology"
 
 #: thematic_areas/choices.py:477
 msgid "Psicologia Comparativa"
-msgstr ""
+msgstr "Comparative Psychology"
 
 #: thematic_areas/choices.py:478
 msgid "Psicologia do Desenvolvimento Humano"
-msgstr ""
+msgstr "Developmental Psychology"
 
 #: thematic_areas/choices.py:481
 msgid "Psicologia do Ensino e da Aprendizagem"
-msgstr ""
+msgstr "Psychology of Teaching and Learning"
 
 #: thematic_areas/choices.py:485
 msgid "Psicologia do Trabalho e Organizacional"
-msgstr ""
+msgstr "Work and Organizational Psychology"
 
 #: thematic_areas/choices.py:487
 msgid "Psicologia Experimental"
-msgstr ""
+msgstr "Experimental Psychology"
 
 #: thematic_areas/choices.py:488
 msgid "Psicologia Fisiológica"
-msgstr ""
+msgstr "Physiological Psychology"
 
 #: thematic_areas/choices.py:489
 msgid "Psicologia Social"
-msgstr ""
+msgstr "Social Psychology"
 
 #: thematic_areas/choices.py:490
 msgid "Psiquiatria"
-msgstr ""
+msgstr "Psychiatry"
 
 #: thematic_areas/choices.py:491
 msgid "Química Analítica"
-msgstr ""
+msgstr "Analytical Chemistry"
 
 #: thematic_areas/choices.py:492
 msgid "Química de Macromoléculas"
-msgstr ""
+msgstr "Macromolecular Chemistry"
 
 #: thematic_areas/choices.py:493
 msgid "Química Inorgânica"
-msgstr ""
+msgstr "Inorganic Chemistry"
 
 #: thematic_areas/choices.py:494
 msgid "Química Orgânica"
-msgstr ""
+msgstr "Organic Chemistry"
 
 #: thematic_areas/choices.py:495
 msgid "Rádio e Televisão"
-msgstr ""
+msgstr "Radio and Television"
 
 #: thematic_areas/choices.py:496
 msgid "Radiologia e Fotobiologia"
-msgstr ""
+msgstr "Radiology and Photobiology"
 
 #: thematic_areas/choices.py:497
 msgid "Radiologia Médica"
-msgstr ""
+msgstr "Medical Radiology"
 
 #: thematic_areas/choices.py:498
 msgid "Radiologia Odontológica"
-msgstr ""
+msgstr "Dental Radiology"
 
 #: thematic_areas/choices.py:499
 msgid "Recursos Hídricos"
-msgstr ""
+msgstr "Water Resources"
 
 #: thematic_areas/choices.py:502
 msgid "Recursos Pesqueiros de Águas Interiores"
-msgstr ""
+msgstr "Inland Water Fishery Resources"
 
 #: thematic_areas/choices.py:504
 msgid "Recursos Pesqueiros Marinhos"
-msgstr ""
+msgstr "Marine Fishery Resources"
 
 #: thematic_areas/choices.py:505
 msgid "Relações Públicas e Propaganda"
-msgstr ""
+msgstr "Public Relations and Advertising"
 
 #: thematic_areas/choices.py:506
 msgid "Reprodução Animal"
-msgstr ""
+msgstr "Animal Reproduction"
 
 #: thematic_areas/choices.py:507
 msgid "Saneamento Ambiental"
-msgstr ""
+msgstr "Environmental Sanitation"
 
 #: thematic_areas/choices.py:508
 msgid "Saneamento Básico"
-msgstr ""
+msgstr "Basic Sanitation"
 
 #: thematic_areas/choices.py:509
 msgid "Saúde Materno-Infantil"
-msgstr ""
+msgstr "Maternal and Child Health"
 
 #: thematic_areas/choices.py:511
 msgid "Serviço Social Aplicado"
-msgstr ""
+msgstr "Applied Social Work"
 
 #: thematic_areas/choices.py:512
 msgid "Serviços Urbanos e Regionais"
-msgstr ""
+msgstr "Urban and Regional Services"
 
 #: thematic_areas/choices.py:513
 msgid "Silvicultura"
-msgstr ""
+msgstr "Silviculture"
 
 #: thematic_areas/choices.py:514
 msgid "Sistemas Aeroespaciais"
-msgstr ""
+msgstr "Aerospace Systems"
 
 #: thematic_areas/choices.py:515
 msgid "Sistemas de Computação"
-msgstr ""
+msgstr "Computer Systems"
 
 #: thematic_areas/choices.py:516
 msgid "Sistemas Elétricos de Potência"
-msgstr ""
+msgstr "Electric Power Systems"
 
 #: thematic_areas/choices.py:517
 msgid "Sociolinguística e Dialetologia"
-msgstr ""
+msgstr "Sociolinguistics and Dialectology"
 
 #: thematic_areas/choices.py:518
 msgid "Sociologia da Saúde"
-msgstr ""
+msgstr "Sociology of Health"
 
 #: thematic_areas/choices.py:519
 msgid "Sociologia do Conhecimento"
-msgstr ""
+msgstr "Sociology of Knowledge"
 
 #: thematic_areas/choices.py:520
 msgid "Sociologia do Desenvolvimento"
-msgstr ""
+msgstr "Sociology of Development"
 
 #: thematic_areas/choices.py:521
 msgid "Sociologia Rural"
-msgstr ""
+msgstr "Rural Sociology"
 
 #: thematic_areas/choices.py:522
 msgid "Sociologia Urbana"
-msgstr ""
+msgstr "Urban Sociology"
 
 #: thematic_areas/choices.py:523
 msgid "Taxonomia dos Grupos Recentes"
-msgstr ""
+msgstr "Taxonomy of Recent Groups"
 
 #: thematic_areas/choices.py:524
 msgid "Taxonomia Vegetal"
-msgstr ""
+msgstr "Plant Taxonomy"
 
 #: thematic_areas/choices.py:525
 msgid "Teatro"
-msgstr ""
+msgstr "Theater"
 
 #: thematic_areas/choices.py:526
 msgid "Técnicas e Operações Florestais"
-msgstr ""
+msgstr "Forestry Techniques and Operations"
 
 #: thematic_areas/choices.py:527
 msgid "Tecnologia de Alimentos"
-msgstr ""
+msgstr "Food Technology"
 
 #: thematic_areas/choices.py:530
 msgid "Tecnologia de Arquitetura e Urbanismo"
-msgstr ""
+msgstr "Architecture and Urbanism Technology"
 
 #: thematic_areas/choices.py:534
 msgid "Tecnologia de Construção Naval e de Sistemas Oceânicos"
-msgstr ""
+msgstr "Naval Construction and Ocean Systems Technology"
 
 #: thematic_areas/choices.py:536
 msgid "Tecnologia de Reatores"
-msgstr ""
+msgstr "Reactor Technology"
 
 #: thematic_areas/choices.py:539
 msgid "Tecnologia e Utilização de Produtos Florestais"
-msgstr ""
+msgstr "Technology and Utilization of Forest Products"
 
 #: thematic_areas/choices.py:541
 msgid "Tecnologia Química"
-msgstr ""
+msgstr "Chemical Technology"
 
 #: thematic_areas/choices.py:542
 msgid "Telecomunicações"
-msgstr ""
+msgstr "Telecommunications"
 
 #: thematic_areas/choices.py:543
 msgid "Teologia Moral"
-msgstr ""
+msgstr "Moral Theology"
 
 #: thematic_areas/choices.py:544
 msgid "Teologia Pastoral"
-msgstr ""
+msgstr "Pastoral Theology"
 
 #: thematic_areas/choices.py:545
 msgid "Teologia Sistemática"
-msgstr ""
+msgstr "Systematic Theology"
 
 #: thematic_areas/choices.py:546
 msgid "Teoria Antropológica"
-msgstr ""
+msgstr "Anthropological Theory"
 
 #: thematic_areas/choices.py:547
 msgid "Teoria da Computação"
-msgstr ""
+msgstr "Theory of Computation"
 
 #: thematic_areas/choices.py:548
 msgid "Teoria da Comunicação"
-msgstr ""
+msgstr "Communication Theory"
 
 #: thematic_areas/choices.py:549
 msgid "Teoria da Informação"
-msgstr ""
+msgstr "Information Theory"
 
 #: thematic_areas/choices.py:550
 msgid "Teoria do Direito"
-msgstr ""
+msgstr "Theory of Law"
 
 #: thematic_areas/choices.py:551
 msgid "Teoria e Análise Linguística"
-msgstr ""
+msgstr "Linguistic Theory and Analysis"
 
 #: thematic_areas/choices.py:552
 msgid "Teoria e Filosofia da História"
-msgstr ""
+msgstr "Theory and Philosophy of History"
 
 #: thematic_areas/choices.py:553
 msgid "Teoria e Método em Arqueologia"
-msgstr ""
+msgstr "Theory and Method in Archeology"
 
 #: thematic_areas/choices.py:554
 msgid "Teoria Econômica"
-msgstr ""
+msgstr "Economic Theory"
 
 #: thematic_areas/choices.py:555
 msgid "Teoria Literária"
-msgstr ""
+msgstr "Literary Theory"
 
 #: thematic_areas/choices.py:556
 msgid "Teoria Política"
-msgstr ""
+msgstr "Political Theory"
 
 #: thematic_areas/choices.py:557
 msgid "Tópicos Específicos de Educação"
-msgstr ""
+msgstr "Specific Topics in Education"
 
 #: thematic_areas/choices.py:558
 msgid "Toxicologia"
-msgstr ""
+msgstr "Toxicology"
 
 #: thematic_areas/choices.py:561
 msgid "Tratamento de Águas de Abastecimento e Residuárias"
-msgstr ""
+msgstr "Treatment of Water Supply and Wastewater"
 
 #: thematic_areas/choices.py:563
 msgid "Tratamento de Minérios"
-msgstr ""
+msgstr "Mineral Processing"
 
 #: thematic_areas/choices.py:564
 msgid "Tratamento e Prevenção Psicológica"
-msgstr ""
+msgstr "Psychological Treatment and Prevention"
 
 #: thematic_areas/choices.py:565
 msgid "Veículos e Equipamentos de Controle"
-msgstr ""
+msgstr "Vehicles and Control Equipment"
 
 #: thematic_areas/choices.py:566
 msgid "Zoologia Aplicada"
-msgstr ""
+msgstr "Applied Zoology"
 
 #: thematic_areas/choices.py:574
 msgid "Bengali"
@@ -5572,31 +5570,31 @@ msgstr ""
 
 #: thematic_areas/choices.py:577
 msgid "Dinamarquês"
-msgstr ""
+msgstr "Danish"
 
 #: thematic_areas/choices.py:583
 msgid "Grego"
-msgstr ""
+msgstr "Greek"
 
 #: thematic_areas/choices.py:586
 msgid "Indiano"
-msgstr ""
+msgstr "Indian"
 
 #: thematic_areas/choices.py:587
 msgid "Indonésio"
-msgstr ""
+msgstr "Indonesian"
 
 #: thematic_areas/choices.py:591
 msgid "Norueguês"
-msgstr ""
+msgstr "Norwegian"
 
 #: thematic_areas/choices.py:598
 msgid "Tailandês"
-msgstr ""
+msgstr "Thai"
 
 #: thematic_areas/choices.py:599
 msgid "Tcheco"
-msgstr ""
+msgstr "Czech"
 
 #: thematic_areas/choices.py:606 thematic_areas/models.py:130
 msgid "Level 0"
