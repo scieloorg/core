@@ -40,7 +40,6 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
         unique_together = [("journal", "researcher")]
 
     panels = [
-        FieldPanel("journal", read_only=True),
         AutocompletePanel("researcher"),
         FieldPanel("image"),
         InlinePanel("role_editorial_board", label=_("Role")),

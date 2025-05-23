@@ -3,11 +3,12 @@
 {% load i18n %}
 {% load wagtailroutablepage_tags %}
 {% load wagtailcore_tags %}
+{% load custom_tags %}
 {% block body_class %}journal about{% endblock %}
 {% block content %}
-  {% include "journalpage/includes/header.html" %}
-  {% include "journalpage/includes/journal_info.html" %}
-  {% include "journalpage/includes/levelMenu.html" %}
+{% include "journalpage/includes/header.html" %}
+{% include "journalpage/includes/journal_info.html" %}
+{% include "journalpage/includes/levelMenu.html" %}
 
   {% block main_content %}
 
@@ -321,21 +322,34 @@
                         <hr>
                         <h4 id="editors">{% trans 'CORPO EDITORIAL' %}</h4>
                         <!-- Usar: instituição (mais sigla se houver), cidade, estado e país, orcid, Lattes (opcional para estrangeiros) e e-mail (divulgação opcional).
-                                                        Considerar os papéis descritos abaixo:-->
+                             Considerar os papéis descritos abaixo: -->
+
                         {% for role, role_display in role_editorial_board %}
-                          <h4 id="item-3-{{forloop.counter}}">{{role_display}}</h4>
-                          <ul type="disc">
-                            {% for editorial_member in editorial_board.order_by_role %}
-                              {% if editorial_member.role.std_role == role %}  
-                                <li>
-                                  {{editorial_member.researcher.person_name}}{% if editorial_member.researcher.affiliation.institution.institution_identification.name %}, {{editorial_member.researcher.affiliation.institution.institution_identification.name}}{% endif %}{% if editorial_member.researcher.affiliation.institution.location.representation %}, {{editorial_member.researcher.affiliation.institution.location.representation}} {% endif %}
-                                  <br> 
-                                  ORCID <a href="https://orcid.org/{{editorial_member.researcher.orcid}}">{{editorial_member.researcher.orcid}}</a> | <a href="http://lattes.cnpq.br/{{editorial_member.researcher.lattes}}">CV Lattes</a>
-                                </li>
-                              {% endif %}
+                        <h4 id="item-3-{{ forloop.counter }}">{{ role_display }}</h4>
+                        <ul type="disc">
+                          {% with editorial_board|dict_key:role as members %}
+                            {% for data in members %}
+                              <li>
+                                {{ data.researcher.fullname }}
+                                {% if data.researcher_affiliation %}, {{ data.researcher_affiliation.name }}
+                                  {% if data.researcher_affiliation.location %}
+                                    , {{ data.researcher_affiliation.location.formatted_location }}
+                                  {% endif %}
+                                {% endif %}
+                                <br>
+                                {% if data.researcher_orcid %}
+                                  ORCID <a target="_blank" href="https://orcid.org/{{ data.researcher_orcid }}">{{ data.researcher_orcid }}</a>
+                                {% endif %}
+                                {% if data.researcher_lattes %}
+                                  {% if data.researcher_orcid %} | {% endif %}
+                                  <a target="_blank" href="http://lattes.cnpq.br/{{ data.researcher_lattes }}">CV Lattes</a>
+                                {% endif %}
+                              </li>
                             {% endfor %}
-                          </ul>
+                          {% endwith %}
+                        </ul>
                         {% endfor %}
+                           
                         <hr>
                         <h4 id="instructions">{% trans 'INSTRUÇÕES PARA OS AUTORES' %}</h4>
                         <!-- O texto e o formato das instruções é livre e pode variar de acordo com o periódico ou com a área temática, entretanto, é necessário que sejam abordados os seguintes elementos:-->

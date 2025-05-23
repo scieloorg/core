@@ -3,7 +3,7 @@ from django.utils.translation import gettext as _
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
 from wagtail_modeladmin.views import CreateView
-
+from wagtail.admin.panels import FieldPanel, InlinePanel
 from config.menu import get_menu_order
 
 from .models import EditorialBoardMember, RoleModel
@@ -30,6 +30,11 @@ class EditorialBoardMemberAdmin(SnippetViewSet):
         "journal__title",
         "researcher__fullname",
     )
+    panels = [
+        FieldPanel("journal", read_only=True),
+        FieldPanel("researcher"),
+        InlinePanel("role_editorial_board", label=_("Role")),
+    ]
 
 
 class RoleModelAdmin(SnippetViewSet):
