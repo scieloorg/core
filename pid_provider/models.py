@@ -687,7 +687,7 @@ class PidProviderXML(
         return self.volume is None and self.number is None and self.suppl is None
 
     @classmethod
-    def _check_pids(cls, user, xml_adapter, registered):
+    def _check_pids_availability(cls, user, xml_adapter, registered):
         """
         No XML tem que conter os pids pertencentes ao registrado ou
         caso não é registrado, tem que ter pids inéditos.
@@ -711,7 +711,7 @@ class PidProviderXML(
             pids = registered.get_pids()
 
         if xml_adapter.v3 and xml_adapter.v3 not in pids:
-            item = cls._check_pid(
+            item = cls._check_pid_availability(
                 xml_pid_value=xml_adapter.v3,
                 pid_name="v3",
                 pid_type="pid_v3",
@@ -720,11 +720,10 @@ class PidProviderXML(
                 registered_pid=registered and registered.v3,
             )
             if item:
-                registered.v3 = xml_adapter.v3
                 changed_pids.append(item)
 
         if xml_adapter.v2 and xml_adapter.v2 not in pids:
-            item = cls._check_pid(
+            item = cls._check_pid_availability(
                 xml_pid_value=xml_adapter.v2,
                 pid_name="v2",
                 pid_type="pid_v2",
@@ -733,11 +732,10 @@ class PidProviderXML(
                 registered_pid=registered and registered.v2,
             )
             if item:
-                registered.v2 = xml_adapter.v2
                 changed_pids.append(item)
 
         if xml_adapter.aop_pid and xml_adapter.aop_pid not in pids:
-            item = cls._check_pid(
+            item = cls._check_pid_availability(
                 xml_pid_value=xml_adapter.aop_pid,
                 pid_name="aop_pid",
                 pid_type="aop_pid",
@@ -746,14 +744,13 @@ class PidProviderXML(
                 registered_pid=registered and registered.aop_pid,
             )
             if item:
-                registered.aop_pid = xml_adapter.aop_pid
                 changed_pids.append(item)
 
         registered._add_other_pid(changed_pids, user)
         return changed_pids
 
     @classmethod
-    def _check_pid(
+    def _check_pid_availability(
         cls,
         xml_pid_value,
         pid_name,
@@ -771,7 +768,7 @@ class PidProviderXML(
                 f"PID {xml_pid_value} belongs to {owner} ({owner.get_pids()})"
             )
         elif registered:
-            # indica a mudança do pid
+            # indica a diferença do pid registrado e do pid do XML
             return {
                 "pid_type": pid_type,
                 "pid_in_xml": xml_pid_value,
@@ -835,12 +832,12 @@ class PidProviderXML(
 
             if not xml_with_pre.v3:
                 raise exceptions.InvalidPidError(
-                    f"Unable to register {filename}, because v3 is invalid"
+                    f"Unable to register {filename}, because v3 was not present in the XML"
                 )
 
             if not xml_with_pre.v2:
                 raise exceptions.InvalidPidError(
-                    f"Unable to register {filename}, because v2 is invalid"
+                    f"Unable to register {filename}, because v2 was not present in the XML"
                 )
 
             # adaptador do xml with pre
@@ -862,8 +859,8 @@ class PidProviderXML(
             except exceptions.NotEnoughParametersToGetPidProviderXMLError as exc:
                 raise exc
 
-            # analisa se aceita ou rejeita registro
-            updated_data = cls.skip_registration(
+            # analisa se está atualizado
+            updated_data = cls.is_updated(
                 xml_adapter,
                 registered,
                 force_update,
@@ -879,11 +876,7 @@ class PidProviderXML(
             # valida os PIDs do XML
             # - não podem ter conflito com outros registros
             # - identifica mudança
-            changed_pids = cls._check_pids(user, xml_adapter, registered)
-            self.add_event(
-                name="check pids",
-                detail=changed_pids,
-            )
+            changed_pids = cls._check_pids_availability(user, xml_adapter, registered)
             # cria ou atualiza registro
             registered = cls._save(
                 registered,
@@ -896,19 +889,23 @@ class PidProviderXML(
 
             # data to return
             data = registered.data.copy()
-            self.add_event(
-                name="registered",
-                detail=registered.data,
-            )
             data["changed_pids"] = changed_pids
-
-            pid_request = PidRequest.cancel_failure(
-                user=user,
-                origin=origin,
-                origin_date=origin_date,
-                v3=data.get("v3"),
+            self.add_event(
+                name="finish registration",
                 detail=data,
             )
+
+            try:
+                pid_request = PidRequest.cancel_failure(
+                    user=user,
+                    origin=origin,
+                    origin_date=origin_date,
+                    v3=data.get("v3"),
+                    detail=data,
+                )
+            except Exception:
+                pass
+
             response = input_data
             response.update(data)
             return response
@@ -1002,7 +999,7 @@ class PidProviderXML(
         return registered
 
     @classmethod
-    def skip_registration(
+    def is_updated(
         cls, xml_adapter, registered, force_update, origin_date, registered_in_core
     ):
         """
