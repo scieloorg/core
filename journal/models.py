@@ -53,6 +53,7 @@ from location.models import Location
 from vocabulary.models import Vocabulary
 from thematic_areas.models import ThematicArea
 
+from .sources.api_article_meta import get_articlemeta_format
 from . import choices
 from .permissions import journal_permissions
 from organization.dynamic_models import OrgLevelPublisher, OrgLevelOwner, OrgLevelCopyrightHolder, OrgLevelSponsor
@@ -927,6 +928,10 @@ class Journal(CommonControlField, ClusterableModel):
         issns_str = " - ".join(issns)
         title = self.title 
         return f"{title} ({collection_acronym}) | ({issns_str})"
+
+    @property
+    def articlemeta_format(self):
+        return get_articlemeta_format(self)
 
     base_form_class = CoreAdminModelForm
 
