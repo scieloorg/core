@@ -110,9 +110,9 @@ class XMLVersion(CommonControlField):
             logging.exception(e)
         self.file.save(filename, ContentFile(content))
 
-    def is_equal_to(self, xml_adapter):
+    def is_equal_to(self, xml_with_pre):
         return os.path.isfile(self.file.path) and (
-            self.finger_print == xml_adapter.finger_print
+            self.finger_print == xml_with_pre.finger_print
         )
 
     @property
@@ -814,6 +814,7 @@ class PidProviderXML(
 
             # adaptador do xml with pre
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
+            data = get_xml_adapter_data(xml_adapter)
 
             # consulta se documento já está registrado
             try:
@@ -954,7 +955,7 @@ class PidProviderXML(
             return
 
         # verifica se é necessário atualizar
-        if registered.is_equal_to(xml_adapter):
+        if registered.is_equal_to(xml_adapter.xml_with_pre):
             # XML fornecido é igual ao registrado, não precisa continuar
             logging.info(f"Skip update: equal")
             return registered.data
@@ -977,9 +978,9 @@ class PidProviderXML(
             logging.info(f"Skip update: is already up-to-date")
             return registered.data
 
-    def is_equal_to(self, xml_adapter):
+    def is_equal_to(self, xml_with_pre):
         return bool(
-            self.current_version and self.current_version.is_equal_to(self, xml_adapter)
+            self.current_version and self.current_version.is_equal_to(xml_with_pre)
         )
 
     @classmethod
@@ -1007,7 +1008,6 @@ class PidProviderXML(
             Se os parâmetros disponíveis forem insuficientes para desambiguação.
 
         """
-        data = get_xml_adapter_data(xml_adapter)
         q, query_list = get_valid_query_parameters(xml_adapter)
 
         # Usar select_related para otimizar acesso futuro a current_version
@@ -1046,7 +1046,6 @@ class PidProviderXML(
             Se os parâmetros disponíveis forem insuficientes para desambiguação.
 
         """
-        data = get_xml_adapter_data(xml_adapter)
         q, query_list = get_valid_query_parameters(xml_adapter)
         yield from cls.objects.select_related("current_version").filter(
             q, **query_list[0]
@@ -1055,68 +1054,6 @@ class PidProviderXML(
             yield from cls.objects.select_related("current_version").filter(
                 q, **query_list[1]
             )
-
-    @classmethod
-    def get_registered(cls, xml_with_pre, origin=None):
-        """
-        Get registered
-
-        Parameters
-        ----------
-        xml_with_pre : XMLWithPre
-
-        Returns
-        -------
-            None
-            or
-            {
-                "v3": self.v3,
-                "v2": self.v2,
-                "aop_pid": self.aop_pid,
-                "xml_uri": self.xml_uri,
-                "article": self.article,
-                "created": self.created.isoformat(),
-                "updated": self.updated.isoformat(),
-            }
-            or
-            {"error_msg": str(e), "error_type": str(type(e))}
-        """
-        try:
-            xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
-            try:
-                registered = cls._get_record(xml_adapter)
-                response = registered.data.copy()
-                response["registered"] = True
-                return response
-            except cls.DoesNotExist as exc:
-                return {"filename": xml_with_pre.filename, "registered": False}
-            except cls.MultipleObjectsReturned as exc:
-                raise exc
-            except (
-                exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError
-            ) as exc:
-                raise exc
-            except exceptions.RequiredISSNErrorToGetPidProviderXMLError as exc:
-                raise exc
-            except exceptions.NotEnoughParametersToGetPidProviderXMLError as exc:
-                raise exc
-        except Exception as e:
-            # except (
-            #     exceptions.NotEnoughParametersToGetDocumentRecordError,
-            #     exceptions.QueryDocumentMultipleObjectsReturnedError,
-            # ) as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail={
-                    "operation": "PidProviderXML.get_registered",
-                    "detail": dict(
-                        origin=origin or xml_with_pre.filename,
-                    ),
-                },
-            )
-            return {"error_msg": str(e), "error_type": str(type(e))}
 
     @classmethod
     def _query_document(cls, xml_adapter):
@@ -1317,6 +1254,7 @@ class PidProviderXML(
         try:
             # adaptador do xml with pre
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
+            data = get_xml_adapter_data(xml_adapter)
 
             # consulta se documento já está registrado
             try:
@@ -1540,7 +1478,7 @@ class PidProviderXML(
         return True
 
     @classmethod
-    def is_registered(cls, xml_with_pre):
+    def is_registered(cls, xml_with_pre, complete_missing_xml_pids_with_registered_pids=True):
         """
         Verifica se há necessidade de registrar, se está registrado e é igual
 
@@ -1549,15 +1487,31 @@ class PidProviderXML(
         xml_with_pre : XMLWithPre
 
         """
-        xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
-
         try:
+            xml_adapter_data = None
+            xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
+            xml_adapter_data = get_xml_adapter_data(xml_adapter)
+
             try:
                 registered = cls._get_record(xml_adapter)
             except cls.DoesNotExist as exc:
-                registered = None
+                return {"filename": xml_with_pre.filename, "registered": False}
             except cls.MultipleObjectsReturned as exc:
-                raise exceptions.QueryDocumentMultipleObjectsReturnedError(exc)
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "operation": "PidProviderXML.is_registered",
+                        "xml_adapter_data": xml_adapter_data,
+                    },
+                )
+                response = {"error_msg": str(e), "error_type": str(type(e))}
+                response["input_data"] = xml_adapter_data
+                response["records"] = list(
+                    record.data for record in cls._get_records(xml_adapter)
+                )
+                return response
             except (
                 exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError
             ) as exc:
@@ -1567,36 +1521,48 @@ class PidProviderXML(
             except exceptions.NotEnoughParametersToGetPidProviderXMLError as exc:
                 raise exc
             if registered:
-                data = registered.data
-
-                xml_changed = {}
-                # Completa os valores ausentes de pid com recuperados ou com inéditos
-                try:
-                    before = (xml_with_pre.v3, xml_with_pre.v2, xml_with_pre.aop_pid)
-                    xml_with_pre.v3 = xml_with_pre.v3 or data["v3"]
-                    xml_with_pre.v2 = xml_with_pre.v2 or data["v2"]
-                    if data["aop_pid"]:
-                        xml_with_pre.aop_pid = data["aop_pid"]
-
-                    # verifica se houve mudança nos PIDs do XML
-                    after = (xml_with_pre.v3, xml_with_pre.v2, xml_with_pre.aop_pid)
-                    for label, bef, aft in zip(
-                        ("pid_v3", "pid_v2", "aop_pid"), before, after
-                    ):
-                        if bef != aft:
-                            xml_changed[label] = aft
-                except KeyError:
-                    pass
-                data["is_equal"] = registered.is_equal_to(xml_with_pre)
-                data["xml_changed"] = xml_changed
-                return data
-        except (
-            exceptions.NotEnoughParametersToGetDocumentRecordError,
-            exceptions.QueryDocumentMultipleObjectsReturnedError,
-        ) as e:
-            logging.exception(e)
-            return {"error_msg": str(e), "error_type": str(type(e))}
+                response = registered.data
+                response["input_data"] = xml_adapter_data
+                response["registered"] = True
+                response["finger_print"] = registered.current_version.finger_print
+                if complete_missing_xml_pids_with_registered_pids:
+                    response.update(registered.complete_missing_xml_pids_with_registered_pids(xml_with_pre))
+                return response
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "operation": "PidProviderXML.is_registered",
+                    "xml_adapter_data": xml_adapter_data,
+                },
+            )
+            return {"error_msg": str(e), "error_type": str(type(e)), "input_data": xml_adapter_data}
         return {}
+
+    def complete_missing_xml_pids_with_registered_pids(self, xml_with_pre):
+        # Completa os valores ausentes de pid com recuperados ou com inéditos
+        xml_changed = {}
+        try:
+            original_pids = (xml_with_pre.v3, xml_with_pre.v2, xml_with_pre.aop_pid)
+            xml_with_pre.v3 = xml_with_pre.v3 or registered_data["v3"]
+            xml_with_pre.v2 = xml_with_pre.v2 or registered_data["v2"]
+            xml_with_pre.aop_pid = xml_with_pre.aop_pid or registered_data["aop_pid"]
+
+            # verifica se houve mudança nos PIDs do XML
+            resulting_pids = (xml_with_pre.v3, xml_with_pre.v2, xml_with_pre.aop_pid)
+            for label, original_pid, resulting_pid in zip(
+                ("pid_v3", "pid_v2", "aop_pid"), original_pids, resulting_pids
+            ):
+                if original_pid != resulting_pid:
+                    xml_changed[label] = resulting_pid
+        except KeyError:
+            pass
+        return {
+            "is_equal": self.is_equal_to(xml_with_pre),
+            "xml_changed": xml_changed
+        }
 
     @classmethod
     def fix_pid_v2(cls, user, pid_v3, correct_pid_v2):
