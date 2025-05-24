@@ -822,8 +822,14 @@ class PidProviderXML(
         try:
             detail = xml_with_pre.data
             logging.info(f"PidProviderXML.register: {detail}")
-
-            self.add_event(name="start registration", detail=xml_with_pre.data)
+            timeline = None
+            timeline = PidProviderXMLTimeline.create_or_update(
+                user,
+                pkg_name=xml_with_pre.sps_pkg_name,
+                v3=xml_with_pre.v3,
+                v2=xml_with_pre.v2,
+                aop_pid=xml_with_pre.aop_pid,
+            )
 
             input_data = {}
             input_data["xml_with_pre"] = xml_with_pre
@@ -868,8 +874,8 @@ class PidProviderXML(
                 registered_in_core,
             )
             if updated_data:
-                self.add_event(
-                    name="finish registration", detail="xml was already up-to-date"
+                timeline.add_event(
+                    name="finish registration", detail="already up-to-date"
                 )
                 return updated_data
 
@@ -890,53 +896,20 @@ class PidProviderXML(
             # data to return
             data = registered.data.copy()
             data["changed_pids"] = changed_pids
-            self.add_event(
+            timeline.add_event(
                 name="finish registration",
                 detail=data,
             )
-
-            try:
-                pid_request = PidRequest.cancel_failure(
-                    user=user,
-                    origin=origin,
-                    origin_date=origin_date,
-                    v3=data.get("v3"),
-                    detail=data,
-                )
-            except Exception:
-                pass
-
             response = input_data
             response.update(data)
             return response
 
-        except (exceptions.QueryDocumentMultipleObjectsReturnedError,) as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            self.add_event(
-                name="finish registration",
-                exception=e,
-                exc_type=exc_type,
-                exc_value=exc_value,
-                exc_traceback=exc_traceback,
-            )
-
-            data = json.loads(str(e))
-            pid_request = PidRequest.create_or_update(
-                user=user,
-                origin=origin,
-                origin_date=origin_date,
-                result_type=str(type(e)),
-                result_msg=_("Found {} records for {}").format(
-                    len(data["items"]), data["params"]
-                ),
-                detail=data,
-            )
-            response = input_data
-            response.update(pid_request.data)
-            return response
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            self.add_event(
+            if not timeline:
+                raise
+
+            event = timeline.add_event(
                 name="finish registration",
                 exception=e,
                 exc_type=exc_type,
@@ -948,15 +921,9 @@ class PidProviderXML(
             # exceptions.NotEnoughParametersToGetDocumentRecordError,
             # exceptions.InvalidPidError,
             # outras
-            pid_request = PidRequest.register_failure(
-                e,
-                user=user,
-                origin_date=origin_date,
-                origin=origin,
-                detail=detail,
-            )
+            
             response = input_data
-            response.update(pid_request.data)
+            response.update(event.data)
             return response
 
     @classmethod
@@ -1900,7 +1867,7 @@ class FixPidV2(CommonControlField):
             )
 
 
-class PidProviderXMLTimeline(PidProviderXML):
+class PidProviderXMLTimeline(PidProviderXML, ClusterableModel):
     class Meta:
         proxy = True
 
@@ -1920,6 +1887,69 @@ class PidProviderXMLTimeline(PidProviderXML):
         ]
     )
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["pkg_name"]),
+        ]
+
+    @property
+    def data(self):
+        return {
+            "pkg_name": self.pkg_name,
+            "v3": self.v3,
+            "v2": self.v2,
+            "aop_pid": self.aop_pid,
+        }
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        pkg_name,
+        v3=None,
+        v2=None,
+        aop_pid=None,
+    ):
+        if not pkg_name:
+            raise ValueError(
+                f"PidProviderXMLTimeline.create. Missing params"
+            )
+        try:
+            obj = cls()
+            obj.pkg_name = pkg_name
+            obj.v3 = v3
+            obj.v2 = v2
+            obj.aop_pid = aop_pid
+            obj.creator = user
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(pkg_name, v3)
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        pkg_name,
+        v3=None,
+        v2=None,
+        aop_pid=None,
+    ):
+        try:
+            obj = cls.get(pkg_name=pkg_name)
+            obj.updated_by = user
+            obj.v3 = v3
+            obj.v2 = v2
+            obj.aop_pid = aop_pid
+            obj.save()
+            return obj
+        except cls.DoesNotExist:
+            return cls.create(user, pkg_name, v3, v2, aop_pid)
+
+    @classmethod
+    def get(cls, user, pkg_name, v3):
+        return cls.objects.get(pkg_name=pkg_name)
+
     def add_event(
         self,
         name,
@@ -1929,17 +1959,17 @@ class PidProviderXMLTimeline(PidProviderXML):
         exc_value=None,
         exc_traceback=None,
     ):
-        data = detail or {}
+        error = None
         if exception:
-            data.update(
-                dict(
-                    exception=str(exception),
-                    exc_type=str(exc_type),
-                    exc_value=str(exc_value),
-                    exc_traceback=str(exc_traceback),
-                )
+            error = dict(
+                error_msg=str(exception),
+                error_type=str(exc_type),
+                exc_value=str(exc_value),
+                exc_traceback=str(exc_traceback),
             )
-        self.event.add(PidProviderXMLEvent(ppx_timeline=self, name=name, detail=data))
+        event = PidProviderXMLEvent(ppx_timeline=self, name=name, detail=detail, error=error)
+        self.event.add(event)
+        return event
 
 
 class PidProviderXMLEvent(BaseEvent):
@@ -1950,9 +1980,13 @@ class PidProviderXMLEvent(BaseEvent):
         on_delete=models.CASCADE,
         related_name="event",
     )
+
+    error = models.JSONField(null=True, blank=True)
+
     panels = [
         FieldPanel("name", read_only=True),
         FieldPanel("detail", read_only=True),
+        FieldPanel("error", read_only=True),
         FieldPanel("created", read_only=True),
     ]
 
@@ -1962,3 +1996,10 @@ class PidProviderXMLEvent(BaseEvent):
         indexes = [
             models.Index(fields=["ppx_timeline"]),
         ]
+
+    @property
+    def data(self):
+        _data = {}
+        _data.update({"name": self.name, "detail": self.detail})
+        _data.update(self.error)
+        return _data
