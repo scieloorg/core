@@ -296,14 +296,10 @@ class PidRequest(CommonControlField):
         _("Result type"), max_length=100, null=True, blank=True
     )
     result_msg = models.TextField(_("Result message"), null=True, blank=True)
-    xml_version = models.ForeignKey(
-        XMLVersion, null=True, blank=True, on_delete=models.SET_NULL
-    )
     detail = models.JSONField(_("Detail"), null=True, blank=True)
     origin_date = models.CharField(
         _("Origin date"), max_length=10, null=True, blank=True
     )
-    v3 = models.CharField(_("PID v3"), max_length=23, null=True, blank=True)
     times = models.IntegerField(null=True, blank=True)
 
     class Meta:
@@ -313,18 +309,12 @@ class PidRequest(CommonControlField):
                     "result_type",
                 ]
             ),
-            models.Index(
-                fields=[
-                    "v3",
-                ]
-            ),
         ]
 
     @property
     def data(self):
         _data = {
             "origin": self.origin,
-            "v3": self.v3,
             "origin_date": self.origin_date,
             "result_type": self.result_type,
             "result_msg": self.result_msg,
@@ -342,7 +332,7 @@ class PidRequest(CommonControlField):
     @classmethod
     def get(
         cls,
-        origin=None,
+        origin,
     ):
         if origin:
             return cls.objects.get(origin=origin)
@@ -355,10 +345,8 @@ class PidRequest(CommonControlField):
         origin=None,
         result_type=None,
         result_msg=None,
-        xml_version=None,
         detail=None,
         origin_date=None,
-        v3=None,
     ):
         try:
             obj = cls.get(origin=origin)
@@ -367,14 +355,10 @@ class PidRequest(CommonControlField):
             obj = cls()
             obj.creator = user
             obj.origin = origin
-
-        obj.v3 = v3 or obj.v3
-        obj.result_type = result_type or obj.result_type
-        obj.result_msg = result_msg or obj.result_msg
-        obj.xml_version = xml_version or obj.xml_version
-        obj.detail = detail or obj.detail
-        obj.origin = origin or obj.origin
-        obj.origin_date = origin_date or obj.origin_date
+        obj.result_type = result_type
+        obj.result_msg = result_msg
+        obj.detail = detail
+        obj.origin_date = origin_date
         if not obj.times:
             obj.times = 0
         obj.times += 1
@@ -387,46 +371,28 @@ class PidRequest(CommonControlField):
         e,
         user=None,
         origin=None,
-        message=None,
-        detail=None,
         origin_date=None,
-        v3=None,
+        detail=None,
     ):
         logging.exception(e)
-        msg = str(e)
-        if message:
-            msg = f"{msg} {message}"
         return PidRequest.create_or_update(
             user=user,
             origin=origin,
             origin_date=origin_date,
             result_type=str(type(e)),
-            result_msg=msg,
+            result_msg=str(e),
             detail=detail,
-            v3=v3,
         )
 
     @classmethod
     def cancel_failure(
-        cls, user=None, origin=None, v3=None, detail=None, origin_date=None
+        cls, user=None, origin=None
     ):
-        if not origin:
-            return
         try:
-            PidRequest.get(origin)
+            PidRequest.get(origin).delete()
         except cls.DoesNotExist:
             # nao é necessario atualizar o status de falha não registrada anteriormente
             pass
-        else:
-            return PidRequest.create_or_update(
-                user=user,
-                origin=origin,
-                origin_date=origin_date,
-                result_type="OK",
-                result_msg="OK",
-                detail=detail,
-                v3=v3,
-            )
 
     @property
     def created_updated(self):
@@ -436,7 +402,7 @@ class PidRequest(CommonControlField):
     def items_to_retry(cls):
         # Adicionar select_related se for acessar xml_version posteriormente
         return (
-            cls.objects.select_related("xml_version", "xml_version__pid_provider_xml")
+            cls.objects
             .filter(~Q(result_type="OK"), origin__contains=":")
             .iterator()
         )

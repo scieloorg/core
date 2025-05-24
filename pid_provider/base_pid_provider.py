@@ -109,6 +109,7 @@ class BasePidProvider:
         force_update=None,
         is_published=None,
         registered_in_core=None,
+        detail=None
     ):
         """
         Fornece / Valida PID de um XML disponível por um URI
@@ -166,9 +167,6 @@ class BasePidProvider:
                     pid_request = PidRequest.cancel_failure(
                         user=user,
                         origin=xml_uri,
-                        origin_date=origin_date,
-                        v3=response.get("v3"),
-                        detail=response,
                     )
                 except Exception:
                     pass

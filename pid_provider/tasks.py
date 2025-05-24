@@ -371,21 +371,13 @@ def retry_to_provide_pid_for_failed_uris(
 ):
     for item in PidRequest.items_to_retry():
         try:
-            origin_date = item.origin_date
-            uri = item.origin
-
-            if item.detail:
-                pid_v2 = item.detail.get("pid_v2")
-                pid_v3 = item.detail.get("pid_v3")
-                collection_acron = item.detail.get("collection_acron")
-                journal_acron = item.detail.get("journal_acron")
-                year = item.detail.get("year")
-            else:
-                pid_v2 = None
-                pid_v3 = None
-                collection_acron = None
-                journal_acron = None
-                year = None
+            params = {
+                "uri": item.origin,
+                "username": username,
+                "user_id": user_id,
+                "origin_date": item.origin_date
+            }
+            params.update(item.detail or {})
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
@@ -394,22 +386,12 @@ def retry_to_provide_pid_for_failed_uris(
                 detail={
                     "task": "retry_to_provide_pid_for_failed_uris",
                     "item": str(item),
-                    "detail": item.detail,
+                    "detail": params,
                 },
             )
         else:
             task_provide_pid_for_xml_uri.apply_async(
-                kwargs={
-                    "uri": uri,
-                    "username": username,
-                    "user_id": user_id,
-                    "pid_v2": pid_v2,
-                    "pid_v3": pid_v3,
-                    "collection_acron": collection_acron,
-                    "journal_acron": journal_acron,
-                    "year": year,
-                    "origin_date": origin_date,
-                }
+                kwargs=**params
             )
 
 

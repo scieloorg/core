@@ -42,7 +42,6 @@ class PidRequestAdmin(ModelAdmin):
         "origin",
         "result_type",
         "result_msg",
-        "v3",
         "times",
         "created",
         "updated",
@@ -50,7 +49,6 @@ class PidRequestAdmin(ModelAdmin):
     list_filter = ("result_type",)
     search_fields = (
         "origin",
-        "v3",
         "result_msg",
     )
 
