@@ -786,21 +786,24 @@ class PidProviderXML(
 
         """
         try:
-            detail = xml_with_pre.data
-            logging.info(f"PidProviderXML.register: {detail}")
             timeline = None
+
+            input_data = {}
+            input_data["xml_with_pre.data"] = xml_with_pre.data
+            input_data["filename"] = filename
+            input_data["origin"] = origin
+
+            logging.info(f"PidProviderXML.register: {input_data}")
+
             timeline = PidProviderXMLTimeline.create_or_update(
                 user,
+                procedure="registration",
                 pkg_name=xml_with_pre.sps_pkg_name,
                 v3=xml_with_pre.v3,
                 v2=xml_with_pre.v2,
                 aop_pid=xml_with_pre.aop_pid,
+                detail=input_data,
             )
-
-            input_data = {}
-            input_data["xml_with_pre"] = xml_with_pre
-            input_data["filename"] = filename
-            input_data["origin"] = origin
 
             if not xml_with_pre.v3:
                 raise exceptions.InvalidPidError(
@@ -842,7 +845,7 @@ class PidProviderXML(
             )
             if updated_data:
                 timeline.add_event(
-                    name="finish registration", detail="already up-to-date"
+                    name="finish", detail="already up-to-date"
                 )
                 return updated_data
 
@@ -864,7 +867,7 @@ class PidProviderXML(
             data = registered.data.copy()
             data["changed_pids"] = changed_pids
             timeline.add_event(
-                name="finish registration",
+                name="finish",
                 detail=data,
             )
             response = input_data
@@ -874,21 +877,20 @@ class PidProviderXML(
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             if not timeline:
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail=input_data,
+                )
                 raise
 
             event = timeline.add_event(
-                name="finish registration",
+                name="finish",
                 exception=e,
                 exc_type=exc_type,
                 exc_value=exc_value,
                 exc_traceback=exc_traceback,
             )
-
-            # exceptions.ForbiddenPidProviderXMLRegistrationError,
-            # exceptions.NotEnoughParametersToGetDocumentRecordError,
-            # exceptions.InvalidPidError,
-            # outras
-            
             response = input_data
             response.update(event.data)
             return response
@@ -1488,28 +1490,46 @@ class PidProviderXML(
 
         """
         try:
+            timeline = None
+            input_data = {"xml_with_pre.data": xml_with_pre.data}
+            timeline = PidProviderXMLTimeline.create_or_update(
+                user,
+                procedure="is_registered",
+                pkg_name=xml_with_pre.sps_pkg_name,
+                v3=xml_with_pre.v3,
+                v2=xml_with_pre.v2,
+                aop_pid=xml_with_pre.aop_pid,
+                detail=input_data,
+            )
             xml_adapter_data = None
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
             xml_adapter_data = get_xml_adapter_data(xml_adapter)
 
+            input_data["xml_adapter_data"] = xml_adapter_data
+            timeline.detail = input_data
+            timeline.save()
+
             try:
                 registered = cls._get_record(xml_adapter)
             except cls.DoesNotExist as exc:
+                timeline.add_event(
+                    name="finish", detail="not registered"
+                )
                 return {"filename": xml_with_pre.filename, "registered": False}
             except cls.MultipleObjectsReturned as exc:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                UnexpectedEvent.create(
-                    exception=e,
-                    exc_traceback=exc_traceback,
-                    detail={
-                        "operation": "PidProviderXML.is_registered",
-                        "xml_adapter_data": xml_adapter_data,
-                    },
-                )
                 response = {"error_msg": str(e), "error_type": str(type(e))}
                 response["input_data"] = xml_adapter_data
                 response["records"] = list(
                     record.data for record in cls._get_records(xml_adapter)
+                )
+                timeline.add_event(
+                    name="finish",
+                    detail=response,
+                    exception=e,
+                    exc_type=exc_type,
+                    exc_value=exc_value,
+                    exc_traceback=exc_traceback,
                 )
                 return response
             except (
@@ -1520,25 +1540,32 @@ class PidProviderXML(
                 raise exc
             except exceptions.NotEnoughParametersToGetPidProviderXMLError as exc:
                 raise exc
-            if registered:
-                response = registered.data
-                response["input_data"] = xml_adapter_data
-                response["registered"] = True
-                response["finger_print"] = registered.current_version.finger_print
-                if complete_missing_xml_pids_with_registered_pids:
-                    response.update(registered.complete_missing_xml_pids_with_registered_pids(xml_with_pre))
-                return response
+            response = registered.data
+            response["input_data"] = xml_adapter_data
+            response["registered"] = True
+            response["finger_print"] = registered.current_version.finger_print
+            if complete_missing_xml_pids_with_registered_pids:
+                response.update(registered.complete_missing_xml_pids_with_registered_pids(xml_with_pre))
+
+            timeline.add_event(name="finish", detail=response)
+            return response
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail={
-                    "operation": "PidProviderXML.is_registered",
-                    "xml_adapter_data": xml_adapter_data,
-                },
-            )
-            return {"error_msg": str(e), "error_type": str(type(e)), "input_data": xml_adapter_data}
+            if timeline:
+                timeline.add_event(
+                    name="finish",
+                    exception=e,
+                    exc_type=exc_type,
+                    exc_value=exc_value,
+                    exc_traceback=exc_traceback,
+                )
+            else:
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail=input_data,
+                )
+            return {"error_msg": str(e), "error_type": str(type(e)), "input_data": input_data}
         return {}
 
     def complete_missing_xml_pids_with_registered_pids(self, xml_with_pre):
@@ -1801,7 +1828,7 @@ class FixPidV2(CommonControlField):
 
 class PidProviderXMLTimeline(CommonControlField, ClusterableModel):
     procedure = models.CharField(
-        _("Procedure"), max_length=100, null=True, blank=True
+        _("Procedure"), max_length=30, null=True, blank=True
     )
     pkg_name = models.CharField(
         _("Package name"), max_length=100, null=True, blank=True
