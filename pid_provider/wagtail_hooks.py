@@ -236,21 +236,20 @@ class PidProviderXMLTimelineSnippetViewSet(SnippetViewSet):
 
     list_display = (
         "pkg_name",
+        "procedure",
         "v3",
         "v2",
         "aop_pid",
         "updated",
     )
     search_fields = (
-        "issn_electronic",
-        "issn_print",
         "pkg_name",
         "v3",
         "v2",
         "aop_pid",
-        "main_doi",
     )
     list_filter = (
+        "procedure",
         "pub_year",
         "article_pub_year",
         "registered_in_core",

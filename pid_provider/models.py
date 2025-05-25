@@ -1799,88 +1799,119 @@ class FixPidV2(CommonControlField):
             )
 
 
-class PidProviderXMLTimeline(PidProviderXML, ClusterableModel):
-    class Meta:
-        proxy = True
+class PidProviderXMLTimeline(CommonControlField, ClusterableModel):
+    procedure = models.CharField(
+        _("Procedure"), max_length=100, null=True, blank=True
+    )
+    pkg_name = models.CharField(
+        _("Package name"), max_length=100, null=True, blank=True
+    )
+    v3 = models.CharField(_("v3"), max_length=23, null=True, blank=True)
+    v2 = models.CharField(_("v2"), max_length=24, null=True, blank=True)
+    aop_pid = models.CharField(_("aop_pid"), max_length=24, null=True, blank=True)
+    detail = models.JSONField(null=True, blank=True)
+
+    base_form_class = CoreAdminModelForm
 
     panel_id = [
-        FieldPanel("pkg_name"),
         FieldPanel("v3"),
         FieldPanel("v2"),
         FieldPanel("aop_pid"),
+        FieldPanel("detail"),
     ]
     panel_event = [
         InlinePanel("event"),
     ]
     edit_handler = TabbedInterface(
         [
-            ObjectList(panel_id, heading=_("Identification")),
+            ObjectList(panel_id, heading=_("Detail")),
             ObjectList(panel_event, heading=_("Events")),
         ]
     )
 
     class Meta:
+        ordering = ["-updated", "-created", "pkg_name"]
+        unique_together = [("pkg_name", "procedure")]
         indexes = [
-            models.Index(fields=["pkg_name"]),
+            models.Index(fields=["pkg_name", "procedure"]),
+            models.Index(fields=["v2", ]),
+            models.Index(fields=["v3", ]),
+            models.Index(fields=["aop_pid", ]),
         ]
+
+    def __str__(self):
+        return f"{self.pkg_name} {self.procedure}"
 
     @property
     def data(self):
         return {
+            "procedure": self.procedure,
             "pkg_name": self.pkg_name,
             "v3": self.v3,
             "v2": self.v2,
             "aop_pid": self.aop_pid,
+            "detail": self.detail
         }
 
     @classmethod
     def create(
         cls,
         user,
+        procedure,
         pkg_name,
         v3=None,
         v2=None,
         aop_pid=None,
+        detail=None,
     ):
-        if not pkg_name:
+        if not pkg_name and not procedure:
             raise ValueError(
-                f"PidProviderXMLTimeline.create. Missing params"
+                f"PidProviderXMLTimeline.create requires pkg_name and procedure"
             )
         try:
             obj = cls()
+            obj.procedure = procedure
             obj.pkg_name = pkg_name
             obj.v3 = v3
             obj.v2 = v2
             obj.aop_pid = aop_pid
+            obj.detail = detail
             obj.creator = user
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(pkg_name, v3)
+            return cls.get(procedure, pkg_name)
 
     @classmethod
     def create_or_update(
         cls,
         user,
+        procedure,
         pkg_name,
         v3=None,
         v2=None,
         aop_pid=None,
+        detail=None
     ):
+        if not pkg_name and not procedure:
+            raise ValueError(
+                f"PidProviderXMLTimeline.create_or_update requires pkg_name and procedure"
+            )
         try:
-            obj = cls.get(pkg_name=pkg_name)
+            obj = cls.get(procedure, pkg_name)
             obj.updated_by = user
             obj.v3 = v3
             obj.v2 = v2
             obj.aop_pid = aop_pid
+            obj.detail = detail
             obj.save()
             return obj
         except cls.DoesNotExist:
-            return cls.create(user, pkg_name, v3, v2, aop_pid)
+            return cls.create(user, procedure, pkg_name, v3, v2, aop_pid, detail)
 
     @classmethod
-    def get(cls, user, pkg_name, v3):
-        return cls.objects.get(pkg_name=pkg_name)
+    def get(cls, procedure, pkg_name):
+        return cls.objects.get(pkg_name=pkg_name, procedure=procedure)
 
     def add_event(
         self,
