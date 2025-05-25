@@ -907,24 +907,12 @@ class PidProviderXML(
     ):
         if registered:
             registered.updated_by = user
-            registered.updated = utcnow()
         else:
             registered = cls()
             registered.creator = user
-            registered.created = utcnow()
 
-        # evita que artigos WIP fique disponíveis antes de estarem públicos
-        try:
-            registered.available_since = available_since or (
-                xml_adapter.xml_with_pre.article_publication_date
-            )
-        except Exception as e:
-            # packtools error
-            registered.available_since = origin_date
-
-        registered.registered_in_core = registered_in_core
-        registered.origin_date = origin_date
-        registered._add_data(xml_adapter, user)
+        registered._add_dates(xml_adapter, origin_date, available_since)
+        registered._add_data(xml_adapter, registered_in_core)
         registered._add_journal(xml_adapter)
         registered._add_issue(xml_adapter)
 
@@ -1112,7 +1100,9 @@ class PidProviderXML(
                     str({"params": adapted_params, "items": items})
                 )
 
-    def _add_data(self, xml_adapter, user):
+    def _add_data(self, xml_adapter, registered_in_core):
+        self.registered_in_core = registered_in_core
+
         self.pkg_name = xml_adapter.sps_pkg_name
         self.article_pub_year = xml_adapter.article_pub_year
         self.v3 = xml_adapter.v3
@@ -1130,6 +1120,17 @@ class PidProviderXML(
         self.z_collab = xml_adapter.z_collab
         self.z_links = xml_adapter.z_links
         self.z_partial_body = xml_adapter.z_partial_body
+
+    def _add_dates(self, xml_adapter, origin_date, available_since):
+        # evita que artigos WIP fique disponíveis antes de estarem públicos
+        try:
+            registered.available_since = available_since or (
+                xml_adapter.xml_with_pre.article_publication_date
+            )
+        except Exception as e:
+            # packtools error
+            registered.available_since = origin_date
+        registered.origin_date = origin_date
 
     def _add_journal(self, xml_adapter):
         self.issn_electronic = xml_adapter.journal_issn_electronic
