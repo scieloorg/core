@@ -837,7 +837,7 @@ class PidProviderXML(
 
             # analisa se está atualizado
             updated_data = cls.is_updated(
-                xml_adapter,
+                xml_with_pre,
                 registered,
                 force_update,
                 origin_date,
@@ -936,7 +936,7 @@ class PidProviderXML(
 
     @classmethod
     def is_updated(
-        cls, xml_adapter, registered, force_update, origin_date, registered_in_core
+        cls, xml_with_pre, registered, force_update, origin_date, registered_in_core
     ):
         """
         XML é versão AOP, mas
@@ -957,12 +957,12 @@ class PidProviderXML(
             return
 
         # verifica se é necessário atualizar
-        if registered.is_equal_to(xml_adapter.xml_with_pre):
+        if registered.is_equal_to(xml_with_pre):
             # XML fornecido é igual ao registrado, não precisa continuar
             logging.info(f"Skip update: equal")
             return registered.data
 
-        if xml_adapter.is_aop and registered and not registered.is_aop:
+        if xml_with_pre.is_aop and registered and not registered.is_aop:
             logging.info(f"Skip update: forbidden")
             raise exceptions.ForbiddenPidProviderXMLRegistrationError(
                 _(
