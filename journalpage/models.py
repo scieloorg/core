@@ -1,13 +1,19 @@
+from django.http import HttpResponseNotFound
 from django.shortcuts import render
 from django.utils import translation
-from django.http import HttpResponseNotFound
-from wagtail.models import Page
 from wagtail.contrib.routable_page.models import RoutablePageMixin, re_path
+from wagtail.models import Page
 
-from journal.models import Journal
-from journalpage.utils.utils import get_journal_by_acronyms, get_editorial_board, render_journal_page_with_latest_context, verify_journal_is_latest
 from core.models import Language
 from editorialboard.choices import ROLE
+from journal.models import Journal
+from journalpage.utils.utils import (
+    get_editorial_board_with_role,
+    get_journal_by_acronyms,
+    render_journal_page_with_latest_context,
+    verify_journal_is_latest,
+)
+
 
 class JournalPage(RoutablePageMixin, Page):
     def get_context(self, request, *args, **kwargs):
@@ -41,7 +47,7 @@ class JournalPage(RoutablePageMixin, Page):
 
         acron_journal = journal.scielojournal_set.all()[0].journal_acron
         acron_collection = journal.scielojournal_set.all()[0].collection.acron3        
-        editorial_board = get_editorial_board(journal=journal)
+        editorial_board = get_editorial_board_with_role(journal=journal)
 
         mission = journal.mission.get_object_in_preferred_language(language=language)
         brief_history = journal.history.get_object_in_preferred_language(language=language)

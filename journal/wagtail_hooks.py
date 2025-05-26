@@ -2,6 +2,7 @@ from django.http import HttpResponseRedirect
 from django.urls import path
 from django.utils.translation import gettext as _
 from wagtail import hooks
+from wagtail.snippets import widgets as wagtailsnippets_widgets
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import (
     CreateView,
@@ -12,6 +13,7 @@ from wagtail_modeladmin.options import ModelAdmin
 from wagtail_modeladmin.views import CreateView, EditView
 
 from config.menu import get_menu_order
+from journalpage.models import JournalPage
 
 from . import models
 from .button_helper import IndexedAtHelper
@@ -131,7 +133,8 @@ class SciELOJournalAdminViewSet(SnippetViewSet):
     exclude_from_explorer = False
 
     list_display = (
-        "journal",
+        "journal__title",
+        "journal__official__initial_year",
         "issn_scielo",
         "journal_acron",
         "collection",
@@ -330,3 +333,21 @@ def register_calendar_url():
             name="import_file",
         ),
     ]
+
+
+@hooks.register('register_snippet_listing_buttons')
+def snippet_listing_buttons(snippet, user, next_url=None):
+    if isinstance(snippet, models.Journal):
+        journal_page = JournalPage.objects.get(slug="journal")
+        scielo_journal = models.SciELOJournal.objects \
+            .only("collection__acron3", "journal_acron") \
+            .select_related("collection") \
+            .get(journal=snippet)
+        url = journal_page.get_url() + journal_page.reverse_subpage('bibliographic', args=[scielo_journal.collection.acron3, scielo_journal.journal_acron])    
+        yield wagtailsnippets_widgets.SnippetListingButton(
+            _('Preview about journal'),
+            url,
+            priority=1,
+            icon_name='view',
+            attrs={"target": "_blank"},
+        )

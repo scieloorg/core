@@ -876,6 +876,21 @@ class Journal(CommonControlField, ClusterableModel):
             return bool(self.indexed_at.get(acronym=db_acronym))
         except IndexedAt.DoesNotExist:
             return False
+    
+    @property
+    def journal_acrons(self):
+        return self.scielojournal_set.select_related("collection").filter(collection__is_active=True).values_list("collection__acron3", flat=True)
+
+    @property
+    def issns(self):
+        official = self.official
+        issns = []
+        if official:
+            if official.issn_print:
+                issns.append(f"Issn Print: {official.issn_print}")
+            if official.issn_electronic:
+                issns.append(f"Issn Electronic: {official.issn_electronic}")
+        return issns
 
     @property
     def data(self):
@@ -938,7 +953,10 @@ class Journal(CommonControlField, ClusterableModel):
 
     def __str__(self):
         active_collection = getattr(self, "active_collections", [])
+        # Evita que carregue em lugares em não há necessidade de mostrar acronym e issns
         if not active_collection:
+            return f"{self.title} or {self.official} | Foundation year: {self.official.initial_year}"
+        collection_acronym = ", ".join(col.collection.acron3 for col in active_collection)
             active_collection = SciELOJournal.objects.filter(
                 journal=self, collection__is_active=True
             ).select_related("collection", "journal")
