@@ -1,15 +1,15 @@
 from django.http import HttpResponseRedirect
 from django.utils.translation import gettext as _
 from wagtail.snippets.models import register_snippet
-from wagtail.snippets.views.snippets import SnippetViewSet
-from wagtail_modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
+from wagtail.snippets.views.snippets import CreateView as CreateViewAdmin
+from wagtail.snippets.views.snippets import EditView, SnippetViewSet
+from wagtail_modeladmin.options import ModelAdmin, ModelAdminGroup
 from wagtail_modeladmin.views import CreateView
 
 from config.menu import get_menu_order
 
 from .models import (
     Affiliation,
-    NewResearcher,
     PersonName,
     Researcher,
     ResearcherIdentifier,
@@ -120,8 +120,40 @@ class ResearcherAdminGroup(ModelAdminGroup):
     )
 
 
+class ResearcherOrcidFormValidationMixin:
+    def form_valid(self, form):
+        form_kwargs = self.get_form_kwargs()
+        forms_data = form_kwargs['data']
+        total_forms = int(forms_data.get('researcher_orcid-TOTAL_FORMS', 0))
+        if total_forms == 0:
+            form.add_error(None, "You must add at least one researcher to the ORCID.")
+            return self.form_invalid(form)
+        
+        last_index = total_forms - 1
+        prefix = f"researcher_orcid-{last_index}"
+        marked_for_deletion = forms_data.get(f'{prefix}-DELETE') == '1'
+        given_names = forms_data.get(f'{prefix}-given_names', '').strip()
+        last_name = forms_data.get(f'{prefix}-last_name', '').strip()
+        affiliation = forms_data.get(f'{prefix}-affiliation', 'null')
+        
+        if marked_for_deletion or not given_names or not last_name or affiliation == 'null':
+            form.add_error(None, "You must add at least one valid researcher to the ORCID.")
+            return self.form_invalid(form)
+        return super().form_valid(form)
+
+
+class ResearcherOrcidCreateView(ResearcherOrcidFormValidationMixin, CreateViewAdmin):
+    ...
+
+
+class ResearcherOrcidEditView(ResearcherOrcidFormValidationMixin, EditView):
+    ...
+
+
 class ResearcherOrganizationAdminViewSet(SnippetViewSet):
     model = ResearcherOrcid
+    add_view_class = ResearcherOrcidCreateView
+    edit_view_class = ResearcherOrcidEditView
     menu_icon = "folder"
     menu_label = _("New Researcher")
     menu_order = get_menu_order("new_researcher")

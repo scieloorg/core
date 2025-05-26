@@ -6,7 +6,13 @@ import xmltodict
 
 from collection.models import Collection
 from institution.models import Publisher
-from journal.models import Journal, Mission, OfficialJournal, SciELOJournal, PublisherHistory
+from journal.models import (
+    Journal,
+    Mission,
+    OfficialJournal,
+    SciELOJournal,
+    PublisherHistory,
+)
 from tracker.models import UnexpectedEvent
 
 
@@ -148,7 +154,10 @@ def create_journal(user, journal_xml, collection):
             institution_type=None,
         )
         history = PublisherHistory.get_or_create(
-            institution=publisher, initial_date=None, final_date=None, user=user,
+            institution=publisher,
+            initial_date=None,
+            final_date=None,
+            user=user,
         )
         journal.panels_publisher.append(history)
         journal.creator = user
