@@ -7,19 +7,21 @@ from django.db import migrations, models
 
 
 def transfer_journal_url_to_journal_urls_inline_panel(apps, schema_editor):
-    Journal = apps.get_model('journal', 'Journal')
-    JournalURL = apps.get_model('journal', 'JournalURL')
+    Journal = apps.get_model("journal", "Journal")
+    JournalURL = apps.get_model("journal", "JournalURL")
 
     journals_to_create = []
     for instance in Journal.objects.filter(journal_url__isnull=False):
-        journals_to_create.append(JournalURL(journal=instance, url=instance.journal_url))
-    
+        journals_to_create.append(
+            JournalURL(journal=instance, url=instance.journal_url)
+        )
+
     if journals_to_create:
         JournalURL.objects.bulk_create(journals_to_create)
 
 
 def reverse_transfer_journal_url_to_journal_urls_inline_panel(apps, schema_editor):
-    JournalURL = apps.get_model('journal', 'JournalURL')
+    JournalURL = apps.get_model("journal", "JournalURL")
     JournalURL.objects.all().delete()
 
 
@@ -103,5 +105,5 @@ class Migration(migrations.Migration):
         migrations.RunPython(
             transfer_journal_url_to_journal_urls_inline_panel,
             reverse_code=reverse_transfer_journal_url_to_journal_urls_inline_panel,
-        )
+        ),
     ]
