@@ -1,9 +1,11 @@
 from django.http import HttpResponseRedirect
 from django.utils.translation import gettext as _
+from wagtail.admin.panels import FieldPanel, InlinePanel
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
 from wagtail_modeladmin.views import CreateView
-from wagtail.admin.panels import FieldPanel, InlinePanel
+from wagtailautocomplete.edit_handlers import AutocompletePanel
+
 from config.menu import get_menu_order
 
 from .models import EditorialBoardMember, RoleModel
@@ -32,7 +34,7 @@ class EditorialBoardMemberAdmin(SnippetViewSet):
     )
     panels = [
         FieldPanel("journal", read_only=True),
-        FieldPanel("researcher"),
+        AutocompletePanel("researcher"),
         InlinePanel("role_editorial_board", label=_("Role")),
     ]
 
