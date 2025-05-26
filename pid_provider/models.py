@@ -753,6 +753,7 @@ class PidProviderXML(
         available_since=None,
         origin=None,
         registered_in_core=None,
+        auto_solve_pid_conflict=False
     ):
         """
         Evaluate the XML data and returns corresponding PID v3, v2, aop_pid
@@ -835,6 +836,13 @@ class PidProviderXML(
             except exceptions.NotEnoughParametersToGetPidProviderXMLError as exc:
                 raise exc
 
+            # valida os PIDs do XML
+            # - não podem ter conflito com outros registros
+            # - identifica mudança
+            xml_changed = cls.complete_missing_xml_pids(xml_with_pre, registered, auto_solve_pid_conflict)
+
+            changed_pids = cls._check_pids_availability(user, xml_adapter, registered)
+
             # analisa se está atualizado
             updated_data = cls.is_updated(
                 xml_with_pre,
@@ -849,10 +857,6 @@ class PidProviderXML(
                 )
                 return updated_data
 
-            # valida os PIDs do XML
-            # - não podem ter conflito com outros registros
-            # - identifica mudança
-            changed_pids = cls._check_pids_availability(user, xml_adapter, registered)
             # cria ou atualiza registro
             registered = cls._save(
                 registered,
@@ -865,6 +869,7 @@ class PidProviderXML(
 
             # data to return
             data = registered.data.copy()
+            data["xml_changed"] = xml_changed
             data["changed_pids"] = changed_pids
             timeline.add_event(
                 name="finish",
@@ -894,6 +899,57 @@ class PidProviderXML(
             response = input_data
             response.update(event.data)
             return response
+
+    @classmethod
+    def complete_missing_xml_pids(cls, xml_with_pre, registered, auto_solve_pid_conflict):
+        xml_changed = {}
+
+        cls.is_valid_pid_len(xml_with_pre.v3)
+        if xml_with_pre.v2:
+            cls.is_valid_pid_len(xml_with_pre.v2)
+        if xml_with_pre.aop_pid:
+            cls.is_valid_pid_len(xml_with_pre.aop_pid)
+
+        xml_pid = xml_with_pre.v3
+        valid_pid = cls.get_valid_pid_v3(
+            registered_pid=registered and registered.v3,
+            xml_pid=xml_with_pre.v3,
+            auto_solve_pid_conflict=auto_solve_pid_conflict,
+        )
+
+        if valid_pid != xml_pid:
+            xml_with_pre.v3 = valid_pid
+            xml_changed["pid_v3"] = valid_pid
+
+        if registered:
+            if not xml_with_pre.v2:
+                xml_with_pre.v2 = registered.v2
+                xml_changed["pid_v2"] = registered.v2
+            if not xml_with_pre.aop_pid and registered.aop_pid:
+                xml_with_pre.aop_pid = registered.aop_pid
+                xml_changed["aop_pid"] = registered.aop_pid
+        return xml_changed
+
+    @classmethod
+    def get_valid_pid_v3(cls, registered_pid, xml_pid, auto_solve_pid_conflict=False):
+        # Se XML PID foi fornecido e é diferente do registrado:
+        if xml_pid and xml_pid != registered_pid:
+            # Verifica se o XML PID já está em uso por outro documento.
+            owner = cls._is_registered_pid(v3=xml_pid)
+            # Se o XML PID não está em uso, ele é válido para retorno.
+            if not owner:
+                return xml_pid
+
+            # Se o XML PID está em uso e auto_solve_pid_conflict é True, levanta erro.
+            if not auto_solve_pid_conflict:
+                raise PidProviderXMLPidV3ConflictError(
+                    f"ID '{xml_pid}' já está sendo usado por {owner}"
+                )
+
+        # XML PID não fornecido, ou igual ao registrado
+        # ou em conflito sem exceção
+        # retorna o PID registrado ou gera um novo.
+        return registered_pid or cls._get_unique_v3()
 
     @classmethod
     def _save(
@@ -1351,6 +1407,12 @@ class PidProviderXML(
     def _is_valid_pid(cls, value):
         return bool(value and len(value) == 23)
 
+    @staticmethod
+    def is_valid_pid_len(value, pid_type):
+        if value and len(value) == 23:
+            return True
+        raise ValueError(f"Invalid {pid_type} length: {value}")
+
     def get_pids(self):
         pids = [self.v3]
         if self.v2:
@@ -1481,7 +1543,7 @@ class PidProviderXML(
         return True
 
     @classmethod
-    def is_registered(cls, xml_with_pre, complete_missing_xml_pids_with_registered_pids=True):
+    def is_registered(cls, xml_with_pre, complete_missing_xml_pids_with_registered_pids=True, auto_solve_pid_conflict=True):
         """
         Verifica se há necessidade de registrar, se está registrado e é igual
 
@@ -1546,8 +1608,12 @@ class PidProviderXML(
             response["registered"] = True
             response["finger_print"] = registered.current_version.finger_print
             if complete_missing_xml_pids_with_registered_pids:
-                response.update(registered.complete_missing_xml_pids_with_registered_pids(xml_with_pre))
-
+                xml_changed = cls.complete_missing_xml_pids(
+                    xml_with_pre, registered, auto_solve_pid_conflict)
+                response.update({
+                    "is_equal": registered.is_equal_to(xml_with_pre),
+                    "xml_changed": xml_changed
+                })
             timeline.add_event(name="finish", detail=response)
             return response
         except Exception as e:
@@ -1568,29 +1634,6 @@ class PidProviderXML(
                 )
             return {"error_msg": str(e), "error_type": str(type(e)), "input_data": input_data}
         return {}
-
-    def complete_missing_xml_pids_with_registered_pids(self, xml_with_pre):
-        # Completa os valores ausentes de pid com recuperados ou com inéditos
-        xml_changed = {}
-        try:
-            original_pids = (xml_with_pre.v3, xml_with_pre.v2, xml_with_pre.aop_pid)
-            xml_with_pre.v3 = xml_with_pre.v3 or registered_data["v3"]
-            xml_with_pre.v2 = xml_with_pre.v2 or registered_data["v2"]
-            xml_with_pre.aop_pid = xml_with_pre.aop_pid or registered_data["aop_pid"]
-
-            # verifica se houve mudança nos PIDs do XML
-            resulting_pids = (xml_with_pre.v3, xml_with_pre.v2, xml_with_pre.aop_pid)
-            for label, original_pid, resulting_pid in zip(
-                ("pid_v3", "pid_v2", "aop_pid"), original_pids, resulting_pids
-            ):
-                if original_pid != resulting_pid:
-                    xml_changed[label] = resulting_pid
-        except KeyError:
-            pass
-        return {
-            "is_equal": self.is_equal_to(xml_with_pre),
-            "xml_changed": xml_changed
-        }
 
     @classmethod
     def fix_pid_v2(cls, user, pid_v3, correct_pid_v2):
