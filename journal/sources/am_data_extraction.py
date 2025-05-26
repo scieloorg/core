@@ -23,7 +23,7 @@ def get_issns(
         elif issn_scielo:
             issn = issn_scielo
         logging.info((current_issn, issn_scielo, type_issn, type_, issn))
-        return extract_issn_print_electronic([{'t': type_, '_': issn}])
+        return extract_issn_print_electronic([{"t": type_, "_": issn}])
     return None, None
 
 
