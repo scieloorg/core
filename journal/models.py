@@ -1,11 +1,11 @@
 import csv
 import logging
-import re
 import os
+import re
 
 from django.contrib.auth import get_user_model
 from django.core.validators import RegexValidator
-from django.db import models, IntegrityError
+from django.db import IntegrityError, models
 from django.db.models import Q
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -21,18 +21,18 @@ from core.choices import MONTHS
 from core.forms import CoreAdminModelForm
 from core.models import (
     CommonControlField,
+    FileWithLang,
     Language,
     License,
     RichTextWithLanguage,
     TextWithLang,
-    FileWithLang,
 )
 from institution.models import (
-    Publisher,
+    BaseHistoryItem,
     CopyrightHolder,
     Owner,
+    Publisher,
     Sponsor,
-    BaseHistoryItem,
 )
 from journal.exceptions import (
     IndexedAtCreationOrUpdateError,
@@ -46,19 +46,28 @@ from journal.exceptions import (
     SciELOJournalGetError,
     StandardCreationOrUpdateError,
     SubjectCreationOrUpdateError,
-    WosdbCreationOrUpdateError,
     TitleInDatabaseCreationOrUpdateError,
+    WosdbCreationOrUpdateError,
 )
 from location.models import Location
-from vocabulary.models import Vocabulary
+from organization.dynamic_models import (
+    OrgLevelCopyrightHolder,
+    OrgLevelOwner,
+    OrgLevelPublisher,
+    OrgLevelSponsor,
+)
+from organization.models import Organization
 from thematic_areas.models import ThematicArea
+from vocabulary.models import Vocabulary
 
 from . import choices
-from organization.dynamic_models import OrgLevelPublisher, OrgLevelOwner, OrgLevelCopyrightHolder, OrgLevelSponsor
-from organization.models import Organization
 
-HELP_TEXT_INSTITUTION = _("Institution data originally provided. This field is for reference only.")
-HELP_TEXT_ORGANIZATION = _("Select the standardized institution corresponding to the original data.")
+HELP_TEXT_INSTITUTION = _(
+    "Institution data originally provided. This field is for reference only."
+)
+HELP_TEXT_ORGANIZATION = _(
+    "Select the standardized institution corresponding to the original data."
+)
 
 User = get_user_model()
 
@@ -79,8 +88,12 @@ class OfficialJournal(CommonControlField, ClusterableModel):
         related_name="new_title_journal",
     )
     old_title = models.ManyToManyField("self", blank=True)
-    previous_journal_titles = models.TextField(_("Previous Journal titles"),null=True, blank=True)
-    next_journal_title = models.TextField(_("Next Journal Title"), null=True, blank=True)
+    previous_journal_titles = models.TextField(
+        _("Previous Journal titles"), null=True, blank=True
+    )
+    next_journal_title = models.TextField(
+        _("Next Journal Title"), null=True, blank=True
+    )
     initial_year = models.CharField(
         _("Initial Year"), max_length=4, blank=True, null=True
     )
@@ -109,7 +122,9 @@ class OfficialJournal(CommonControlField, ClusterableModel):
     issn_electronic = models.CharField(
         _("Electronic ISSN"), max_length=9, null=True, blank=True
     )
-    issn_print_is_active = models.BooleanField(verbose_name=_("ISSN Print is active"), default=False)
+    issn_print_is_active = models.BooleanField(
+        verbose_name=_("ISSN Print is active"), default=False
+    )
     issnl = models.CharField(_("ISSNL"), max_length=9, null=True, blank=True)
 
     panels_titles = [
@@ -283,7 +298,11 @@ class OfficialJournal(CommonControlField, ClusterableModel):
 
 class SocialNetwork(models.Model):
     name = models.CharField(
-        _("Name"), choices=choices.SOCIAL_NETWORK_NAMES, max_length=20, null=True, blank=True
+        _("Name"),
+        choices=choices.SOCIAL_NETWORK_NAMES,
+        max_length=20,
+        null=True,
+        blank=True,
     )
     url = models.URLField(_("URL"), null=True, blank=True)
 
@@ -473,7 +492,9 @@ class Journal(CommonControlField, ClusterableModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text=_("As palavras-chave devem ser extraídas de thesaurus,dicionários temáticos ou listas controladas nos idiomas que o periódico pública."),
+        help_text=_(
+            "As palavras-chave devem ser extraídas de thesaurus,dicionários temáticos ou listas controladas nos idiomas que o periódico pública."
+        ),
     )
     indexed_at = models.ManyToManyField(
         "IndexedAt",
@@ -481,16 +502,16 @@ class Journal(CommonControlField, ClusterableModel):
         blank=True,
         help_text=_(
             "Standardized values from recognized scientific databases, such as: Dimensions, DOAJ, Google Scholar, Latindex, MEDLINE, SCImago, etc."
-            )
-        )
+        ),
+    )
     additional_indexed_at = models.ManyToManyField(
         "AdditionalIndexedAt",
         verbose_name=_("Additional Index At"),
         blank=True,
         help_text=_(
             "Values from additional scientific databases that are not standardized."
-            )
-        )
+        ),
+    )
     journal_url = models.URLField(
         _("Journal URL"),
         null=True,
@@ -628,7 +649,9 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel("journal_email", label=_("Contact e-mail")),
         FieldPanel("logo", heading=_("Logo")),
         # FieldPanel("journal_url"),
-        InlinePanel("related_journal_urls", label=_("Journal Urls"), classname="collapsed"),
+        InlinePanel(
+            "related_journal_urls", label=_("Journal Urls"), classname="collapsed"
+        ),
         FieldPanel("submission_online_url"),
         FieldPanel("main_collection", read_only=True),
         InlinePanel("title_in_database", label=_("Title in Database"), classname="collapsed"),
@@ -649,7 +672,11 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel("open_data", label=_("Open data"), classname="collapsed"),
         InlinePanel("preprint", label=_("Preprint"), classname="collapsed"),
         InlinePanel("review", label=_("Peer review"), classname="collapsed"),
-        InlinePanel("open_science_compliance", label=_("Open Science Compliance"), classname="collapsed"),
+        InlinePanel(
+            "open_science_compliance",
+            label=_("Open Science Compliance"),
+            classname="collapsed",
+        ),
     ]
 
     panels_policy = [
@@ -846,6 +873,21 @@ class Journal(CommonControlField, ClusterableModel):
             return bool(self.indexed_at.get(acronym=db_acronym))
         except IndexedAt.DoesNotExist:
             return False
+    
+    @property
+    def journal_acrons(self):
+        return self.scielojournal_set.select_related("collection").filter(collection__is_active=True).values_list("collection__acron3", flat=True)
+
+    @property
+    def issns(self):
+        official = self.official
+        issns = []
+        if official:
+            if official.issn_print:
+                issns.append(f"Issn Print: {official.issn_print}")
+            if official.issn_electronic:
+                issns.append(f"Issn Electronic: {official.issn_electronic}")
+        return issns
 
     @property
     def data(self):
@@ -901,7 +943,6 @@ class Journal(CommonControlField, ClusterableModel):
         obj.open_access = open_access or obj.open_access
         obj.save()
 
-
         return obj
 
     def __unicode__(self):
@@ -909,12 +950,12 @@ class Journal(CommonControlField, ClusterableModel):
 
     def __str__(self):
         active_collection = getattr(self, "active_collections", [])
+        # Evita que carregue em lugares em não há necessidade de mostrar acronym e issns
         if not active_collection:
-            active_collection = SciELOJournal.objects.filter(
-                journal=self, 
-                collection__is_active=True
-            ).select_related("collection", "journal")
-        collection_acronym = ", ".join(col.collection.acron3 for col in active_collection)
+            return f"{self.title} or {self.official} | Foundation year: {self.official.initial_year}"
+        collection_acronym = ", ".join(
+            col.collection.acron3 for col in active_collection
+        )
         official = self.official
         issns = []
         if official:
@@ -922,9 +963,9 @@ class Journal(CommonControlField, ClusterableModel):
                 issns.append(f"Issn Print: {official.issn_print}")
             if official.issn_electronic:
                 issns.append(f"Issn Electronic: {official.issn_electronic}")
-        
+
         issns_str = " - ".join(issns)
-        title = self.title 
+        title = self.title
         return f"{title} ({collection_acronym}) | ({issns_str})"
 
     base_form_class = CoreAdminModelForm
@@ -1039,7 +1080,7 @@ class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text=HELP_TEXT_ORGANIZATION
+        help_text=HELP_TEXT_ORGANIZATION,
     )
 
     panels = BaseHistoryItem.panels +[
@@ -1069,7 +1110,7 @@ class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text=HELP_TEXT_ORGANIZATION
+        help_text=HELP_TEXT_ORGANIZATION,
     )
 
     panels = BaseHistoryItem.panels +[
@@ -1099,10 +1140,10 @@ class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text=HELP_TEXT_ORGANIZATION
+        help_text=HELP_TEXT_ORGANIZATION,
     )
 
-    panels = BaseHistoryItem.panels +[
+    panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
         # AutocompletePanel("organization"),
         InlinePanel("org_level", max_num=1, label=_("Level Sponsor"), classname="collapsed"),  
@@ -1132,10 +1173,10 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text=HELP_TEXT_ORGANIZATION
+        help_text=HELP_TEXT_ORGANIZATION,
     )
-    
-    panels = BaseHistoryItem.panels +[
+
+    panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
         # AutocompletePanel("organization"),
         InlinePanel("org_level", max_num=1, label=_("Level Copyright"), classname="collapsed"),
@@ -1739,8 +1780,8 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         on_delete=models.SET_NULL,
     )
     journal_acron = models.TextField(
-        _("Journal Acronym"), 
-        null=True, 
+        _("Journal Acronym"),
+        null=True,
         blank=True,
         validators=[
             RegexValidator(
@@ -1748,7 +1789,7 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
                 message=_("Only lowercase letters are allowed"),
                 code="invalid_journal_acron",
             )
-        ]
+        ],
     )
     issn_scielo = models.CharField(
         _("ISSN SciELO"), max_length=9, null=True, blank=True
@@ -1796,7 +1837,9 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         FieldPanel("issn_scielo"),
         FieldPanel("status"),
         AutocompletePanel("collection"),
-        InlinePanel("journal_history", label=_("Journal History"), classname="collapsed"),
+        InlinePanel(
+            "journal_history", label=_("Journal History"), classname="collapsed"
+        ),
     ]
 
     @classmethod
@@ -1902,7 +1945,7 @@ class SubjectDescriptor(CommonControlField):
     def get(
         cls,
         value,
-        ):
+    ):
         if not value:
             return None
         try:
@@ -1917,10 +1960,7 @@ class SubjectDescriptor(CommonControlField):
         user,
     ):
         try:
-            obj = cls(
-                value=value,
-                creator=user
-            )
+            obj = cls(value=value, creator=user)
             obj.save()
             return obj
         except IntegrityError:
@@ -1931,17 +1971,17 @@ class SubjectDescriptor(CommonControlField):
         cls,
         value,
         user,
-        ):
+    ):
         try:
             return cls.get(value=value)
         except cls.DoesNotExist:
             return cls.create(value=value, user=user)
-        
+
 
 class Subject(CommonControlField):
     code = models.CharField(max_length=30, null=True, blank=True)
     value = models.CharField(max_length=100, null=True, blank=True)
-    
+
     autocomplete_search_field = "value"
 
     def autocomplete_label(self):
@@ -2229,10 +2269,7 @@ class AdditionalIndexedAt(CommonControlField):
     name = models.TextField(_("Name"), null=True, blank=True)
 
     @classmethod
-    def get(
-        cls,
-        name
-        ):
+    def get(cls, name):
         if name:
             try:
                 return cls.objects.get(name=name)
@@ -2251,7 +2288,7 @@ class AdditionalIndexedAt(CommonControlField):
         obj.creator = user
         obj.save()
         return obj
-        
+
     @classmethod
     def get_or_create(
         cls,
@@ -2633,23 +2670,19 @@ class DataRepository(Orderable, CommonControlField):
 
 class JournalLogo(CommonControlField):
     journal = models.ForeignKey(
-        Journal,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True
+        Journal, on_delete=models.CASCADE, null=True, blank=True
     )
     logo = models.ForeignKey(
-            "wagtailimages.Image",
-            on_delete=models.SET_NULL,
-            related_name="+",
-            null=True,
-            blank=True,
+        "wagtailimages.Image",
+        on_delete=models.SET_NULL,
+        related_name="+",
+        null=True,
+        blank=True,
     )
 
     class Meta:
         unique_together = [("journal", "logo")]
 
-    
     @classmethod
     def get(
         cls,
@@ -2659,7 +2692,6 @@ class JournalLogo(CommonControlField):
         if not journal and not logo:
             raise ValueError("JournalLogo.get requires journal and logo paramenters")
         return cls.objects.get(journal=journal, logo=logo)
-    
 
     @classmethod
     def create(
@@ -2678,7 +2710,7 @@ class JournalLogo(CommonControlField):
             return obj
         except IntegrityError:
             return cls.get(journal=journal, logo=logo)
-        
+
     @classmethod
     def create_or_update(
         cls,
@@ -2692,7 +2724,7 @@ class JournalLogo(CommonControlField):
             return obj
         except cls.DoesNotExist:
             return cls.create(journal=journal, logo=logo, user=user)
-        
+
 
 class JournalOtherTitle(CommonControlField):
     journal = ParentalKey(
@@ -2705,7 +2737,6 @@ class JournalOtherTitle(CommonControlField):
     class Meta:
         unique_together = [("journal", "title")]
 
-
     @classmethod
     def get(
         cls,
@@ -2715,7 +2746,7 @@ class JournalOtherTitle(CommonControlField):
         if not title and not journal:
             raise ValueError("JournalTitle.get requires title paramenter")
         return journal.other_titles.get(title=title)
-        
+
     @classmethod
     def create(
         cls,
@@ -2745,7 +2776,7 @@ class JournalOtherTitle(CommonControlField):
             return cls.get(title=title, journal=journal)
         except cls.DoesNotExist:
             return cls.create(title=title, journal=journal, user=user)
-    
+
     def __str__(self):
         return f"{self.title}"
 
@@ -2763,7 +2794,7 @@ class JournalLicense(CommonControlField):
     ]
 
     class Meta:
-        unique_together = [("license_type", )]
+        unique_together = [("license_type",)]
         verbose_name = _("License")
         verbose_name_plural = _("Licenses")
         indexes = [
@@ -2792,9 +2823,7 @@ class JournalLicense(CommonControlField):
     ):
         if not license_type:
             raise ValueError("License.get requires license_type parameters")
-        filters = dict(
-            license_type__iexact=license_type
-        )
+        filters = dict(license_type__iexact=license_type)
         try:
             return cls.objects.get(**filters)
         except cls.MultipleObjectsReturned:
@@ -2825,16 +2854,21 @@ class JournalLicense(CommonControlField):
             return cls.get(license_type=license_type)
         except cls.DoesNotExist:
             return cls.create(user, license_type)
-        
+
 
 class JournalURL(CommonControlField):
     journal = ParentalKey(
-        Journal, on_delete=models.SET_NULL, related_name="related_journal_urls", null=True
+        Journal,
+        on_delete=models.SET_NULL,
+        related_name="related_journal_urls",
+        null=True,
     )
     url = models.URLField(
-        null=True, 
+        null=True,
         blank=True,
-        help_text=_("If the journal is published in another site, enter in this field the other site location"),
+        help_text=_(
+            "If the journal is published in another site, enter in this field the other site location"
+        ),
     )
 
 
@@ -2846,7 +2880,10 @@ class EditorialPolicy(Orderable, RichTextWithLanguage, CommonControlField):
 
 class OpenScienceCompliance(Orderable, RichTextWithLanguage, CommonControlField):
     journal = ParentalKey(
-        Journal, on_delete=models.SET_NULL, related_name="open_science_compliance", null=True
+        Journal,
+        on_delete=models.SET_NULL,
+        related_name="open_science_compliance",
+        null=True,
     )
 
 
@@ -2856,28 +2893,36 @@ class JournalTocSection(Orderable, CommonControlField, ClusterableModel):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
-    )        
+    )
     panels = [
         AutocompletePanel("journal"),
         InlinePanel("toc_items", label="Table of Contents items"),
     ]
-    
+
     @staticmethod
     def autocomplete_custom_queryset_filter(search_term):
-        return JournalTocSection.objects.filter(toc_items__text__icontains=search_term).distinct()
-    
+        return JournalTocSection.objects.filter(
+            toc_items__text__icontains=search_term
+        ).distinct()
+
     def autocomplete_label(self):
         return str(self)
 
     def __str__(self):
         related_values = self.toc_items.all()
-        value_list = [f"{toc_section.text} ({toc_section.language.code2})" for toc_section in related_values]
+        value_list = [
+            f"{toc_section.text} ({toc_section.language.code2})"
+            for toc_section in related_values
+        ]
         return f" | ".join(value_list)
 
 
 class TocItem(Orderable, TextWithLang, CommonControlField):
     journal_toc_section = ParentalKey(
-        JournalTocSection, on_delete=models.SET_NULL, related_name="toc_items", null=True
+        JournalTocSection,
+        on_delete=models.SET_NULL,
+        related_name="toc_items",
+        null=True,
     )
 
     def __str__(self):

@@ -151,11 +151,11 @@ class JournalSerializer(serializers.ModelSerializer):
         title_in_db = []
         for item in title_in_database:
             title_in_db_dict = {
-                'title': item.title,
-                'identifier': item.identifier,
-                'name': item.indexed_at.name,
-                'acronym': item.indexed_at.acronym,
-                'url': item.indexed_at.url,
+                "title": item.title,
+                "identifier": item.identifier,
+                "name": item.indexed_at.name,
+                "acronym": item.indexed_at.acronym,
+                "url": item.indexed_at.url,
             }
             title_in_db.append(title_in_db_dict)
         return title_in_db
@@ -166,7 +166,6 @@ class JournalSerializer(serializers.ModelSerializer):
             domain = f"http://{domain}"
             return f"{domain}{obj.logo.file.url}"
         return None
-
 
     def get_email(self, obj):
         if obj.journal_email.all():
@@ -181,7 +180,9 @@ class JournalSerializer(serializers.ModelSerializer):
     def get_next_journal_title(self, obj):
         if obj.official and obj.official.next_journal_title:
             try:
-                journal_new_title = models.Journal.objects.get(title__icontains=obj.official.next_journal_title)
+                journal_new_title = models.Journal.objects.get(
+                    title__icontains=obj.official.next_journal_title
+                )
                 issn_print = journal_new_title.official.issn_print
                 issn_electronic = journal_new_title.official.issn_electronic
             except models.Journal.DoesNotExist:
@@ -216,17 +217,20 @@ class JournalSerializer(serializers.ModelSerializer):
             data = []
             for item in queryset:
                 for section in item.toc_items.all():
-                    data.append({
-                        "value": section.text,
-                        "language": section.language.code2 if section.language else None
-                    })
+                    data.append(
+                        {
+                            "value": section.text,
+                            "language": (
+                                section.language.code2 if section.language else None
+                            ),
+                        }
+                    )
             return data
-        
+
     def get_wos_areas(self, obj):
         if obj.wos_area.all():
             return [wos_area.value for wos_area in obj.wos_area.all()]
         return None
-
 
     class Meta:
         model = models.Journal
@@ -245,7 +249,7 @@ class JournalSerializer(serializers.ModelSerializer):
             "publisher",
             "owner",
             "sponsor",
-            "copyright",            
+            "copyright",
             "subject_descriptor",
             "subject",
             "toc_items",
