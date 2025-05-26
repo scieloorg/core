@@ -1,11 +1,11 @@
 import csv
 import logging
-import re
 import os
+import re
 
 from django.contrib.auth import get_user_model
 from django.core.validators import RegexValidator
-from django.db import models, IntegrityError
+from django.db import IntegrityError, models
 from django.db.models import Q
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -21,18 +21,18 @@ from core.choices import MONTHS
 from core.forms import CoreAdminModelForm
 from core.models import (
     CommonControlField,
+    FileWithLang,
     Language,
     License,
     RichTextWithLanguage,
     TextWithLang,
-    FileWithLang,
 )
 from institution.models import (
-    Publisher,
+    BaseHistoryItem,
     CopyrightHolder,
     Owner,
+    Publisher,
     Sponsor,
-    BaseHistoryItem,
 )
 from journal.exceptions import (
     IndexedAtCreationOrUpdateError,
@@ -46,22 +46,21 @@ from journal.exceptions import (
     SciELOJournalGetError,
     StandardCreationOrUpdateError,
     SubjectCreationOrUpdateError,
-    WosdbCreationOrUpdateError,
     TitleInDatabaseCreationOrUpdateError,
+    WosdbCreationOrUpdateError,
 )
 from location.models import Location
-from vocabulary.models import Vocabulary
-from thematic_areas.models import ThematicArea
-
-from . import choices
-from .permissions import journal_permissions
 from organization.dynamic_models import (
-    OrgLevelPublisher,
-    OrgLevelOwner,
     OrgLevelCopyrightHolder,
+    OrgLevelOwner,
+    OrgLevelPublisher,
     OrgLevelSponsor,
 )
 from organization.models import Organization
+from thematic_areas.models import ThematicArea
+from vocabulary.models import Vocabulary
+
+from . import choices
 
 HELP_TEXT_INSTITUTION = _(
     "Institution data originally provided. This field is for reference only."
@@ -613,20 +612,20 @@ class Journal(CommonControlField, ClusterableModel):
         return str(self)
 
     panels_titles = [
-        AutocompletePanel("official"),
-        FieldPanel("title"),
-        FieldPanel("short_title"),
+        AutocompletePanel("official", read_only=True),
+        FieldPanel("title", read_only=True),
+        FieldPanel("short_title", read_only=True),
         InlinePanel("other_titles", label=_("Other titles"), classname="collapsed"),
     ]
 
     panels_scope_and_about = [
-        AutocompletePanel("indexed_at"),
-        AutocompletePanel("additional_indexed_at"),
-        AutocompletePanel("subject"),
-        AutocompletePanel("subject_descriptor"),
+        AutocompletePanel("indexed_at", read_only=True),
+        AutocompletePanel("additional_indexed_at", read_only=True),
+        AutocompletePanel("subject", read_only=True),
+        AutocompletePanel("subject_descriptor", read_only=True),
         InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
-        AutocompletePanel("wos_db"),
-        AutocompletePanel("wos_area"),
+        AutocompletePanel("wos_db", read_only=True),
+        AutocompletePanel("wos_area", read_only=True),
         InlinePanel("mission", label=_("Mission"), classname="collapsed"),
         InlinePanel("history", label=_("Brief History"), classname="collapsed"),
         InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
@@ -644,9 +643,9 @@ class Journal(CommonControlField, ClusterableModel):
     ]
 
     panels_website = [
-        FieldPanel("contact_name"),
-        FieldPanel("contact_address"),
-        AutocompletePanel("contact_location"),
+        FieldPanel("contact_name", read_only=True),
+        FieldPanel("contact_address", read_only=True),
+        AutocompletePanel("contact_location", read_only=True),
         InlinePanel("journal_email", label=_("Contact e-mail")),
         FieldPanel("logo", heading=_("Logo")),
         # FieldPanel("journal_url"),
@@ -654,10 +653,8 @@ class Journal(CommonControlField, ClusterableModel):
             "related_journal_urls", label=_("Journal Urls"), classname="collapsed"
         ),
         FieldPanel("submission_online_url"),
-        FieldPanel("main_collection"),
-        InlinePanel(
-            "title_in_database", label=_("Title in Database"), classname="collapsed"
-        ),
+        FieldPanel("main_collection", read_only=True),
+        InlinePanel("title_in_database", label=_("Title in Database"), classname="collapsed"),
         InlinePanel("journalsocialnetwork", label=_("Social Network")),
         FieldPanel("frequency"),
         FieldPanel("publishing_model"),
@@ -748,21 +745,21 @@ class Journal(CommonControlField, ClusterableModel):
     panels_notes = [InlinePanel("annotation", label=_("Notes"), classname="collapsed")]
 
     panels_legacy_compatibility_fields = [
-        FieldPanel("alphabet"),
-        FieldPanel("classification"),
-        FieldPanel("national_code"),
-        FieldPanel("type_of_literature"),
-        FieldPanel("treatment_level"),
-        FieldPanel("level_of_publication"),
-        FieldPanel("center_code"),
-        FieldPanel("identification_number"),
-        FieldPanel("ftp"),
-        FieldPanel("user_subscription"),
-        FieldPanel("subtitle"),
-        FieldPanel("section"),
-        FieldPanel("has_supplement"),
-        FieldPanel("is_supplement"),
-        FieldPanel("acronym_letters"),
+        FieldPanel("alphabet", read_only=True),
+        FieldPanel("classification", read_only=True),
+        FieldPanel("national_code", read_only=True),
+        FieldPanel("type_of_literature", read_only=True),
+        FieldPanel("treatment_level", read_only=True),
+        FieldPanel("level_of_publication", read_only=True),
+        FieldPanel("center_code", read_only=True),
+        FieldPanel("identification_number", read_only=True),
+        FieldPanel("ftp", read_only=True),
+        FieldPanel("user_subscription", read_only=True),
+        FieldPanel("subtitle", read_only=True),
+        FieldPanel("section", read_only=True),
+        FieldPanel("has_supplement", read_only=True),
+        FieldPanel("is_supplement", read_only=True),
+        FieldPanel("acronym_letters", read_only=True),
     ]
 
     panels_instructions_for_authors = [
@@ -830,13 +827,13 @@ class Journal(CommonControlField, ClusterableModel):
             ObjectList(panels_website, heading=_("Website")),
             ObjectList(panels_open_science, heading=_("Open Science")),
             ObjectList(panels_policy, heading=_("Journal Policy")),
-            ObjectList(panels_notes, heading=_("Notes")),
             ObjectList(
                 panels_legacy_compatibility_fields, heading=_("Legacy Compatibility")
             ),
             ObjectList(
                 panels_instructions_for_authors, heading=_("Instructions for Authors")
             ),
+            ObjectList(panels_notes, heading=_("Notes")),
             ObjectList(panels_editorial_board, heading=_("Editorial Board")),
         ]
     )
@@ -867,7 +864,7 @@ class Journal(CommonControlField, ClusterableModel):
                 ]
             ),
         ]
-        permissions = journal_permissions
+        permissions = []
 
     def is_indexed_at(self, db_acronym):
         if not db_acronym:
@@ -956,10 +953,6 @@ class Journal(CommonControlField, ClusterableModel):
         # Evita que carregue em lugares em não há necessidade de mostrar acronym e issns
         if not active_collection:
             return f"{self.title} or {self.official} | Foundation year: {self.official.initial_year}"
-        collection_acronym = ", ".join(col.collection.acron3 for col in active_collection)
-            active_collection = SciELOJournal.objects.filter(
-                journal=self, collection__is_active=True
-            ).select_related("collection", "journal")
         collection_acronym = ", ".join(
             col.collection.acron3 for col in active_collection
         )
@@ -1090,12 +1083,10 @@ class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
         help_text=HELP_TEXT_ORGANIZATION,
     )
 
-    panels = BaseHistoryItem.panels + [
-        AutocompletePanel("institution", read_only=True),
-        AutocompletePanel("organization"),
-        InlinePanel(
-            "org_level", max_num=1, label=_("Level Owner"), classname="collapsed"
-        ),
+    panels = BaseHistoryItem.panels +[
+        AutocompletePanel("institution",  read_only=True),
+        # AutocompletePanel("organization"),
+        InlinePanel("org_level", max_num=1, label=_("Level Owner"), classname="collapsed"),
     ]
 
     @classmethod
@@ -1122,12 +1113,10 @@ class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
         help_text=HELP_TEXT_ORGANIZATION,
     )
 
-    panels = BaseHistoryItem.panels + [
-        AutocompletePanel("institution", read_only=True),
-        AutocompletePanel("organization"),
-        InlinePanel(
-            "org_level", max_num=1, label=_("Level Publisher"), classname="collapsed"
-        ),
+    panels = BaseHistoryItem.panels +[
+        AutocompletePanel("institution",  read_only=True),
+        # AutocompletePanel("organization"),
+        InlinePanel("org_level", max_num=1, label=_("Level Publisher"), classname="collapsed"),
     ]
 
     @classmethod
@@ -1156,10 +1145,8 @@ class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
 
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
-        AutocompletePanel("organization"),
-        InlinePanel(
-            "org_level", max_num=1, label=_("Level Sponsor"), classname="collapsed"
-        ),
+        # AutocompletePanel("organization"),
+        InlinePanel("org_level", max_num=1, label=_("Level Sponsor"), classname="collapsed"),  
     ]
 
     @classmethod
@@ -1191,10 +1178,8 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem):
 
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
-        AutocompletePanel("organization"),
-        InlinePanel(
-            "org_level", max_num=1, label=_("Level Copyright"), classname="collapsed"
-        ),
+        # AutocompletePanel("organization"),
+        InlinePanel("org_level", max_num=1, label=_("Level Copyright"), classname="collapsed"),
     ]
 
     @classmethod
@@ -1647,6 +1632,10 @@ class ThematicAreaJournal(Orderable, CommonControlField):
     thematic_area = models.ForeignKey(
         ThematicArea, on_delete=models.SET_NULL, blank=True, null=True
     )
+
+    panels = [
+        FieldPanel("thematic_area", read_only=True),
+    ]
 
 
 class DigitalPreservationAgency(CommonControlField):
@@ -2333,8 +2322,8 @@ class Annotation(CommonControlField):
 
     panels = [
         FieldPanel("notes"),
-        FieldPanel("creation_date", classname="myReadonlyInput"),
-        FieldPanel("update_date", classname="myReadonlyInput"),
+        FieldPanel("creation_date"),
+        FieldPanel("update_date"),
     ]
 
     @classmethod
@@ -2579,6 +2568,12 @@ class TitleInDatabase(Orderable, CommonControlField):
         blank=True,
     )
 
+    panels = [
+        FieldPanel("indexed_at", read_only=True),
+        FieldPanel("title", read_only=True),
+        FieldPanel("identifier", read_only=True),
+    ]
+
     class Meta:
         verbose_name = _("Title in Database")
         verbose_name_plural = _("Title in databases")
@@ -2736,6 +2731,8 @@ class JournalOtherTitle(CommonControlField):
         Journal, on_delete=models.SET_NULL, related_name="other_titles", null=True
     )
     title = models.TextField(null=True, blank=True)
+
+    panels = [FieldPanel("title", read_only=True)]
 
     class Meta:
         unique_together = [("journal", "title")]
