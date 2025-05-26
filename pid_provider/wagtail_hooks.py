@@ -250,9 +250,6 @@ class PidProviderXMLTimelineSnippetViewSet(SnippetViewSet):
     )
     list_filter = (
         "procedure",
-        "pub_year",
-        "article_pub_year",
-        "registered_in_core",
     )
 
 
