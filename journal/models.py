@@ -54,7 +54,6 @@ from vocabulary.models import Vocabulary
 from thematic_areas.models import ThematicArea
 
 from . import choices
-from .permissions import journal_permissions
 from organization.dynamic_models import OrgLevelPublisher, OrgLevelOwner, OrgLevelCopyrightHolder, OrgLevelSponsor
 from organization.models import Organization
 
@@ -838,7 +837,6 @@ class Journal(CommonControlField, ClusterableModel):
                 ]
             ),
         ]
-        permissions = journal_permissions
 
     def is_indexed_at(self, db_acronym):
         if not db_acronym:
