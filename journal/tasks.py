@@ -184,7 +184,7 @@ def fetch_and_process_journal_logos_in_collection(self, collection_acron3=None, 
 
         if total_journals == 0:
             logger.warning(f"No journals found for collection {collection_acron3}")
-            raise ValueError(f"No journals found for collection {collection_acron3}")
+            return None
 
         tasks = []
         for journal_id in journal_ids:
@@ -203,7 +203,6 @@ def fetch_and_process_journal_logos_in_collection(self, collection_acron3=None, 
         logger.info(
             f"Started processing {total_journals} journal logos "
             f"for collection {collection_acron3 or 'all'}"
-            f"Group id: {result.id}"
         )
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
