@@ -214,7 +214,7 @@ def fetch_and_process_journal_logos_in_collection(self, collection_acron3=None, 
                 "collection_acron3": collection_acron3,
                 "error_type": exc_type.__name__ if exc_type else "Unknown",
             },
-
+        )
 
 
 @celery_app.task
