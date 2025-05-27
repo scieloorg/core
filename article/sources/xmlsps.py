@@ -469,7 +469,8 @@ def set_pids(xmltree, article):
 
 
 def set_date_pub(xmltree, article):
-    dates = HistoryDates(xmltree=xmltree).article_date
+    obj_date = HistoryDates(xmltree=xmltree)
+    dates = obj_date.article_date or obj_date.collection_date
     article.set_date_pub(dates)
 
 
