@@ -951,12 +951,13 @@ class Journal(CommonControlField, ClusterableModel):
     def __str__(self):
         active_collection = getattr(self, "active_collections", [])
         # Evita que carregue em lugares em não há necessidade de mostrar acronym e issns
+        official = self.official
         if not active_collection:
-            return f"{self.title} or {self.official} | Foundation year: {self.official.initial_year}"
+            foundation_year = self.official.initial_year if official and self.official.initial_year else "Unknown"
+            return f"{self.title} or {self.official} | Foundation year: {foundation_year}"
         collection_acronym = ", ".join(
             col.collection.acron3 for col in active_collection
         )
-        official = self.official
         issns = []
         if official:
             if official.issn_print:
