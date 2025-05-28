@@ -687,23 +687,12 @@ class PidProviderXML(
 
         """
         try:
-            timeline = None
             input_data = None
             xml_adapter_data = None
-            response = {}
 
+            response = {}
             response["input_data"] = xml_with_pre.data
             response["input_data"].update({"origin": origin})
-
-            timeline = PidProviderXMLTimeline.create_or_update(
-                user,
-                procedure="registration",
-                pkg_name=xml_with_pre.sps_pkg_name,
-                v3=xml_with_pre.v3,
-                v2=xml_with_pre.v2,
-                aop_pid=xml_with_pre.aop_pid,
-                detail=response,
-            )
 
             # adaptador do xml with pre
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
@@ -742,7 +731,6 @@ class PidProviderXML(
             )
             if updated_data:
                 response["skip_update"] = True
-                timeline.add_event(name="finish", detail=response)
                 return updated_data
 
             # cria ou atualiza registro
@@ -757,32 +745,17 @@ class PidProviderXML(
 
             # data to return
             response.update(registered.data)
-
-            timeline.add_event(
-                name="finish",
-                detail=response,
-            )
             return response
 
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            logging.exception(e)
-            if not timeline:
-                UnexpectedEvent.create(
-                    exception=e,
-                    exc_traceback=exc_traceback,
-                    detail=response,
-                )
-                raise
-
-            event = timeline.add_event(
-                name="finish",
+            UnexpectedEvent.create(
+                item=xml_with_pre.sps_pkg_name,
+                action="PidProviderXML.register",
                 exception=e,
-                exc_type=exc_type,
-                exc_value=exc_value,
                 exc_traceback=exc_traceback,
+                detail=response,
             )
-            response.update(event.data)
             return response
 
     @classmethod
@@ -1205,33 +1178,16 @@ class PidProviderXML(
 
         """
         try:
-            timeline = None
             input_data = {"xml_with_pre.data": xml_with_pre.data}
-            if user:
-                timeline = PidProviderXMLTimeline.create_or_update(
-                    user,
-                    procedure="is_registered",
-                    pkg_name=xml_with_pre.sps_pkg_name,
-                    v3=xml_with_pre.v3,
-                    v2=xml_with_pre.v2,
-                    aop_pid=xml_with_pre.aop_pid,
-                    detail=input_data,
-                )
             xml_adapter_data = None
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
             xml_adapter_data = get_xml_adapter_data(xml_adapter)
 
             input_data["xml_adapter_data"] = xml_adapter_data
 
-            if timeline:
-                timeline.detail = input_data
-                timeline.save()
-
             try:
                 registered = cls._get_record(xml_adapter)
             except cls.DoesNotExist as exc:
-                if timeline:
-                    timeline.add_event(name="finish", detail="not registered")
                 return {"filename": xml_with_pre.filename, "registered": False}
             except cls.MultipleObjectsReturned as exc:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -1241,15 +1197,6 @@ class PidProviderXML(
                 response["records"] = list(
                     record.data for record in cls._get_records(xml_adapter)
                 )
-                if timeline:
-                    timeline.add_event(
-                        name="finish",
-                        detail=response,
-                        exception=exc,
-                        exc_type=exc_type,
-                        exc_value=exc_value,
-                        exc_traceback=exc_traceback,
-                    )
                 return response
             except (
                 exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError
@@ -1274,26 +1221,16 @@ class PidProviderXML(
                         "xml_changed": xml_changed,
                     }
                 )
-            if timeline:
-                timeline.add_event(name="finish", detail=response)
             return response
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            logging.exception(e)
-            if timeline:
-                timeline.add_event(
-                    name="finish",
-                    exception=e,
-                    exc_type=exc_type,
-                    exc_value=exc_value,
-                    exc_traceback=exc_traceback,
-                )
-            else:
-                UnexpectedEvent.create(
-                    exception=e,
-                    exc_traceback=exc_traceback,
-                    detail=input_data,
-                )
+            UnexpectedEvent.create(
+                item=xml_with_pre.sps_pkg_name,
+                action="PidProviderXML.is_registered",
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail=input_data,
+            )
             return {
                 "error_msg": str(e),
                 "error_type": str(type(e)),
@@ -1534,177 +1471,3 @@ class FixPidV2(CommonControlField):
                 fixed_in_core=None,
                 fixed_in_upload=None,
             )
-
-
-class PidProviderXMLTimeline(CommonControlField, ClusterableModel):
-    procedure = models.CharField(_("Procedure"), max_length=30, null=True, blank=True)
-    pkg_name = models.CharField(
-        _("Package name"), max_length=100, null=True, blank=True
-    )
-    v3 = models.CharField(_("v3"), max_length=23, null=True, blank=True)
-    v2 = models.CharField(_("v2"), max_length=24, null=True, blank=True)
-    aop_pid = models.CharField(_("aop_pid"), max_length=24, null=True, blank=True)
-    detail = models.JSONField(null=True, blank=True)
-
-    base_form_class = CoreAdminModelForm
-
-    panel_id = [
-        FieldPanel("v3"),
-        FieldPanel("v2"),
-        FieldPanel("aop_pid"),
-        FieldPanel("detail"),
-    ]
-    panel_event = [
-        InlinePanel("event"),
-    ]
-    edit_handler = TabbedInterface(
-        [
-            ObjectList(panel_id, heading=_("Detail")),
-            ObjectList(panel_event, heading=_("Events")),
-        ]
-    )
-
-    class Meta:
-        ordering = ["-updated", "-created", "pkg_name"]
-        unique_together = [("pkg_name", "procedure")]
-        indexes = [
-            models.Index(fields=["pkg_name", "procedure"]),
-            models.Index(
-                fields=[
-                    "v2",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "v3",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "aop_pid",
-                ]
-            ),
-        ]
-
-    def __str__(self):
-        return f"{self.pkg_name} {self.procedure}"
-
-    @property
-    def data(self):
-        return {
-            "procedure": self.procedure,
-            "pkg_name": self.pkg_name,
-            "v3": self.v3,
-            "v2": self.v2,
-            "aop_pid": self.aop_pid,
-            "detail": self.detail,
-        }
-
-    @classmethod
-    def create(
-        cls,
-        user,
-        procedure,
-        pkg_name,
-        v3=None,
-        v2=None,
-        aop_pid=None,
-        detail=None,
-    ):
-        if not pkg_name and not procedure:
-            raise ValueError(
-                f"PidProviderXMLTimeline.create requires pkg_name and procedure"
-            )
-        try:
-            obj = cls()
-            obj.procedure = procedure
-            obj.pkg_name = pkg_name
-            obj.v3 = v3
-            obj.v2 = v2
-            obj.aop_pid = aop_pid
-            obj.detail = detail
-            obj.creator = user
-            obj.save()
-            return obj
-        except IntegrityError:
-            return cls.get(procedure, pkg_name)
-
-    @classmethod
-    def create_or_update(
-        cls, user, procedure, pkg_name, v3=None, v2=None, aop_pid=None, detail=None
-    ):
-        if not pkg_name and not procedure:
-            raise ValueError(
-                f"PidProviderXMLTimeline.create_or_update requires pkg_name and procedure"
-            )
-        try:
-            obj = cls.get(procedure, pkg_name)
-            obj.updated_by = user
-            obj.v3 = v3
-            obj.v2 = v2
-            obj.aop_pid = aop_pid
-            obj.detail = detail
-            obj.save()
-            return obj
-        except cls.DoesNotExist:
-            return cls.create(user, procedure, pkg_name, v3, v2, aop_pid, detail)
-
-    @classmethod
-    def get(cls, procedure, pkg_name):
-        return cls.objects.get(pkg_name=pkg_name, procedure=procedure)
-
-    def add_event(
-        self,
-        name,
-        detail=None,
-        exception=None,
-        exc_type=None,
-        exc_value=None,
-        exc_traceback=None,
-    ):
-        error = None
-        if exception:
-            error = dict(
-                error_msg=str(exception),
-                error_type=str(exc_type),
-                exc_value=str(exc_value),
-                exc_traceback=str(exc_traceback),
-            )
-        event = PidProviderXMLEvent(
-            ppx_timeline=self, name=name, detail=detail, error=error
-        )
-        self.event.add(event)
-        return event
-
-
-class PidProviderXMLEvent(BaseEvent):
-    ppx_timeline = ParentalKey(
-        "PidProviderXMLTimeline",
-        null=True,
-        blank=True,
-        on_delete=models.CASCADE,
-        related_name="event",
-    )
-
-    error = models.JSONField(null=True, blank=True)
-
-    panels = [
-        FieldPanel("name", read_only=True),
-        FieldPanel("detail", read_only=True),
-        FieldPanel("error", read_only=True),
-        FieldPanel("created", read_only=True),
-    ]
-
-    class Meta:
-        # isso faz com que em InlinePanel mostre do mais recente para o mais antigo
-        ordering = ["-created"]
-        indexes = [
-            models.Index(fields=["ppx_timeline"]),
-        ]
-
-    @property
-    def data(self):
-        _data = {}
-        _data.update({"name": self.name, "detail": self.detail})
-        _data.update(self.error)
-        return _data
