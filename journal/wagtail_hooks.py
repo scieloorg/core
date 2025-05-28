@@ -2,6 +2,7 @@ from django.http import HttpResponseRedirect
 from django.urls import path
 from django.utils.translation import gettext as _
 from wagtail import hooks
+from wagtail.snippets import widgets as wagtailsnippets_widgets
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import (
     CreateView,
@@ -12,6 +13,7 @@ from wagtail_modeladmin.options import ModelAdmin
 from wagtail_modeladmin.views import CreateView, EditView
 
 from config.menu import get_menu_order
+from journalpage.models import JournalPage
 
 from . import models
 from .button_helper import IndexedAtHelper
@@ -46,7 +48,11 @@ class OfficialJournalSnippetViewSet(SnippetViewSet):
         "created",
         "updated",
     )
-    list_filter = ("issn_print_is_active", "terminate_year", "initial_year", )
+    list_filter = (
+        "issn_print_is_active",
+        "terminate_year",
+        "initial_year",
+    )
     search_fields = (
         "title",
         "initial_year",
@@ -55,32 +61,7 @@ class OfficialJournalSnippetViewSet(SnippetViewSet):
         "issnl",
     )
 
-# class JournalEditViewSnippet(SnippetEditView):
-#     def form_valid(self, form):
-#         self.object = form.save_all(self.request.user)
-#         return HttpResponseRedirect(self.get_success_url())
 
-#     def get_edit_handler(self):
-#         """
-#         Sobrescreve o método 'get_edit_handler' de EditView.
-#         Verifica se o usuário tem permissão para editar o campo. Caso não tenha, os campos que não possuem a permissão
-#         'journal.can_edit_{field_name}' no 'user_permissions' serão configurados como somente leitura.
-#         Isso é aplicado para 'FieldPanel', 'AutocompletePanel'
-#         e 'InlinePanel'.
-#         """
-#         edit_handler = super().get_edit_handler()
-#         user_permissions = self.request.user.get_all_permissions()
-#         if not self.request.user.is_superuser:
-#             for object_list in edit_handler.children:
-#                 for field in object_list.children:
-#                     if isinstance(field, FieldPanel) and f"journal.can_edit_{field.field_name}" not in user_permissions:
-#                         field.__setattr__('read_only', True)
-#                     elif isinstance(field, InlinePanel) and f"journal.can_edit_{field.relation_name}" not in user_permissions:
-#                         field.classname = field.classname + ' read-only-inline-panel'
-#                         for inline_field in field.panel_definitions:
-#                             inline_field.__setattr__('read_only', True)
-#         return edit_handler
-    
 class JournalCreateView(CreateView):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
@@ -116,13 +97,22 @@ class JournalAdminSnippetViewSet(SnippetViewSet):
         "official__issn_electronic",
         "contact_location__country__name",
     )
+
     def get_queryset(self, request):
-        qs = models.Journal.objects.all().select_related("contact_location").prefetch_related("scielojournal_set")
-        user_groups = request.user.groups.values_list('name', flat=True)
+        qs = (
+            models.Journal.objects.all()
+            .select_related("contact_location")
+            .prefetch_related("scielojournal_set")
+        )
+        user_groups = request.user.groups.values_list("name", flat=True)
         if COLLECTION_TEAM in user_groups:
-            return qs.filter(scielojournal__collection__in=request.user.collection.all())
+            return qs.filter(
+                scielojournal__collection__in=request.user.collection.all()
+            )
         elif JOURNAL_TEAM in user_groups:
-            return qs.filter(id__in=request.user.journal.all().values_list("id", flat=True))
+            return qs.filter(
+                id__in=request.user.journal.all().values_list("id", flat=True)
+            )
         return qs
 
 
@@ -130,6 +120,7 @@ class SciELOJournalCreateView(CreateView):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
+
 
 class SciELOJournalAdminViewSet(SnippetViewSet):
     model = models.SciELOJournal
@@ -142,7 +133,8 @@ class SciELOJournalAdminViewSet(SnippetViewSet):
     exclude_from_explorer = False
 
     list_display = (
-        "journal",
+        "journal__title",
+        "journal__official__initial_year",
         "issn_scielo",
         "journal_acron",
         "collection",
@@ -150,7 +142,10 @@ class SciELOJournalAdminViewSet(SnippetViewSet):
         "created",
         "updated",
     )
-    list_filter = ("status", "collection", )
+    list_filter = (
+        "status",
+        "collection",
+    )
     search_fields = (
         "journal_acron",
         "journal__title",
@@ -159,18 +154,26 @@ class SciELOJournalAdminViewSet(SnippetViewSet):
 
     def get_queryset(self, request):
         qs = models.SciELOJournal.objects.all().select_related("journal", "collection")
-        user_groups = request.user.groups.values_list('name', flat=True)
+        user_groups = request.user.groups.values_list("name", flat=True)
         if COLLECTION_TEAM in user_groups:
             return qs.filter(collection__in=request.user.collection.all())
         elif JOURNAL_TEAM in user_groups:
-            return qs.filter(id__in=request.user.journal.all().values_list("id", flat=True))
+            return qs.filter(
+                id__in=request.user.journal.all().values_list("id", flat=True)
+            )
         return qs
+
 
 class JournalSnippetViewSetGroup(SnippetViewSetGroup):
     menu_label = _("Journals")
     menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("journal")
-    items = (JournalAdminSnippetViewSet, OfficialJournalSnippetViewSet, SciELOJournalAdminViewSet)
+    items = (
+        JournalAdminSnippetViewSet,
+        OfficialJournalSnippetViewSet,
+        SciELOJournalAdminViewSet,
+    )
+
 
 register_snippet(JournalSnippetViewSetGroup)
 
@@ -215,12 +218,8 @@ class AdditionalIndexedAtAdmin(ModelAdmin):
     menu_order = 110
     add_to_settings_menu = False
     exclude_from_explorer = False
-    list_display = (
-        "name",
-    )
-    search_fields = (
-        "name",
-    )
+    list_display = ("name",)
+    search_fields = ("name",)
 
 
 class IndexedAtFileAdmin(ModelAdmin):
@@ -276,12 +275,8 @@ class WosAreaAdmin(ModelAdmin):
     menu_order = 400
     add_to_settings_menu = False
     exclude_from_explorer = False
-    list_display = (
-        "value",
-    )
-    search_fields = (
-        "value",
-    )
+    list_display = ("value",)
+    search_fields = ("value",)
 
 
 class StandardAdmin(ModelAdmin):
@@ -302,22 +297,24 @@ class StandardAdmin(ModelAdmin):
 
 
 # TODO
-# Futuramente mudar para JournalAdminGroup 
+# Futuramente mudar para JournalAdminGroup
 # com permissoes de visualizacao restrita
 class AMJournalAdmin(ModelAdmin):
     model = models.AMJournal
     menu_label = "AM Journal"
     menu_icon = "folder"
     menu_order = get_menu_order("amjournal")
-    list_display = ("scielo_issn", "collection") 
+    list_display = ("scielo_issn", "collection")
     list_filter = ("collection",)
     search_fields = ("scielo_issn",)
+
 
 class ArticleSubmissionFormatCheckListAdmin(ModelAdmin):
     model = models.ArticleSubmissionFormatCheckList
     menu_label = _("Article Submission Format Check List")
     menu_icon = "folder"
     menu_order = get_menu_order("article_subm")
+
 
 # modeladmin_register(ArticleSubmissionFormatCheckListAdmin)
 
@@ -336,3 +333,21 @@ def register_calendar_url():
             name="import_file",
         ),
     ]
+
+
+@hooks.register('register_snippet_listing_buttons')
+def snippet_listing_buttons(snippet, user, next_url=None):
+    if isinstance(snippet, models.Journal):
+        journal_page = JournalPage.objects.get(slug="journal")
+        scielo_journal = models.SciELOJournal.objects \
+            .only("collection__acron3", "journal_acron") \
+            .select_related("collection") \
+            .filter(journal=snippet, collection__is_active=True).first()
+        url = journal_page.get_url() + journal_page.reverse_subpage('bibliographic', args=[scielo_journal.collection.acron3, scielo_journal.journal_acron])
+        yield wagtailsnippets_widgets.SnippetListingButton(
+            _(f'Preview about journal'), 
+            url,
+            priority=1,
+            icon_name='view',
+            attrs={"target": "_blank"},
+        )

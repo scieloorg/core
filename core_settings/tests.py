@@ -1,25 +1,34 @@
 import tempfile
-from unittest.mock import patch
 from datetime import date
+from unittest.mock import patch
+
+from django.contrib.auth.models import Group
 from django.test import TestCase
 from django.urls import reverse
 
 from core.users.models import User
-from organization.models import Organization
-from researcher.models import NewResearcher
-from .tasks import importar_csv_task_organization, importar_csv_task_newresearcher, importar_csv_task_editorialboardmember
+from editorialboard.models import EditorialBoardMember
 from journal.models import Journal
 from location.models import Location
-from editorialboard.models import EditorialBoardMember
+from organization.models import Organization
+from researcher.models import NewResearcher
+
+from .tasks import (
+    importar_csv_task_editorialboardmember,
+    importar_csv_task_newresearcher,
+    importar_csv_task_organization,
+)
 
 
 class ImportCSVTest(TestCase):
     def setUp(self):
+        collection_team_group, created = Group.objects.get_or_create(name="Collection Team")
         self.user = User.objects.create(
-            username="teste", password="teste", is_superuser=True
+            username="teste", password="teste",
         )
-        self.journal = Journal.objects.create(title="Revista XXXX")
+        self.user.groups.add(collection_team_group)
         self.client.force_login(self.user)
+        self.journal = Journal.objects.create(title="Revista XXXX")
         self.location = Location.create_or_update(
             user=self.user,
             city_name="São Paulo",
@@ -132,6 +141,58 @@ Organization 1;São Paulo;São Paulo;ORG1;www.org1.com.br;organização sem fins
             {
                 "status": False,
                 "message": f"Colunas faltando. Colunas requeridas: {sorted({'organization_name', 'country_code', 'city_name', 'state_name'})}. (Delimitador ;)",
+            },
+        )
+
+    @patch("core_settings.tasks.importar_csv_task.apply_async")
+    def test_import_csv_with_user_without_group(self, mock_apply_async):
+        mock_apply_async.return_value = None
+        self.user = User.objects.create(
+            username="teste2", password="teste2"
+        )
+        self.client.force_login(self.user)
+        temp_file = self.create_temp_file(self.csv_content_organization)
+        response = self.client.post(
+            reverse("import_csv"),
+            {
+                "csv_file": temp_file,
+                "type_csv": "organization",
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(
+            response.content,
+            {
+                "status": False,
+                "message": "Usuário sem permissão para esta funcionalidade.",
+            },
+        )
+
+    @patch("core_settings.tasks.importar_csv_task.apply_async")
+    def test_import_csv_with_user_superuser_without_group(self, mock_apply_async):
+        mock_apply_async.return_value = None
+        self.user = User.objects.create(
+            username="teste2", password="teste2", is_superuser=True
+        )
+        self.client.force_login(self.user)
+        temp_file = self.create_temp_file(self.csv_content_organization)
+        response = self.client.post(
+            reverse("import_csv"),
+            {
+                "csv_file": temp_file,
+                "type_csv": "organization",
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(
+            response.content,
+            {
+                "status": True,
+                "message": "CSV importado com sucesso! Realizando importação...",
             },
         )
 
