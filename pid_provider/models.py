@@ -173,9 +173,7 @@ class XMLVersion(CommonControlField):
     @classmethod
     def get_or_create(cls, user, pid_provider_xml, xml_with_pre):
         try:
-            latest = cls.select_related("pid_provider_xml").get(
-                pid_provider_xml, xml_with_pre.finger_print
-            )
+            latest = cls.get(pid_provider_xml, xml_with_pre.finger_print)
             if not os.path.isfile(latest.file.path):
                 latest.save_file(
                     f"{pid_provider_xml.v3}.xml",
@@ -442,9 +440,7 @@ class OtherPid(CommonControlField):
 
     class Meta:
         indexes = [
-            models.Index(fields=["pid_in_xml"]),
-            models.Index(fields=["pid_type"]),
-            models.Index(fields=["version"]),
+            models.Index(fields=["pid_provider_xml", "pid_in_xml", "version"]),
         ]
 
     def __str__(self):
@@ -582,19 +578,17 @@ class PidProviderXML(
             models.Index(fields=["v2"]),
             models.Index(fields=["issn_electronic"]),
             models.Index(fields=["issn_print"]),
-            models.Index(fields=["pub_year"]),
-            models.Index(fields=["article_pub_year"]),
             models.Index(fields=["main_doi"]),
             models.Index(fields=["registered_in_core"]),
             # === Compostos ===
-            models.Index(fields=["issn_electronic", "article_pub_year"]),
-            models.Index(fields=["issn_print", "article_pub_year"]),
+            models.Index(fields=["issn_electronic", "pub_year", "article_pub_year"]),
+            models.Index(fields=["issn_print", "pub_year", "article_pub_year"]),
             models.Index(fields=["pub_year", "volume", "number", "suppl"]),
             models.Index(fields=["issn_electronic", "main_doi"]),
             models.Index(fields=["issn_print", "main_doi"]),
             models.Index(fields=["issn_electronic", "elocation_id"]),
-            models.Index(fields=["z_surnames", "article_pub_year"]),
-            models.Index(fields=["z_collab", "article_pub_year"]),
+            models.Index(fields=["z_surnames", "pub_year"]),
+            models.Index(fields=["z_collab", "pub_year"]),
         ]
 
     def __str__(self):
@@ -620,6 +614,7 @@ class PidProviderXML(
             "v2": self.v2,
             "aop_pid": self.aop_pid,
             "pkg_name": self.pkg_name,
+            "finger_print": self.current_version and self.current_version.finger_print,
             "created": self.created and self.created.isoformat(),
             "updated": self.updated and self.updated.isoformat(),
             "record_status": "updated" if self.updated else "created",
@@ -693,13 +688,12 @@ class PidProviderXML(
         """
         try:
             timeline = None
+            input_data = None
+            xml_adapter_data = None
+            response = {}
 
-            input_data = {}
-            input_data["xml_with_pre.data"] = xml_with_pre.data
-            input_data["filename"] = filename
-            input_data["origin"] = origin
-
-            logging.info(f"PidProviderXML.register: {input_data}")
+            response["input_data"] = xml_with_pre.data
+            response["input_data"].update({"origin": origin})
 
             timeline = PidProviderXMLTimeline.create_or_update(
                 user,
@@ -708,22 +702,12 @@ class PidProviderXML(
                 v3=xml_with_pre.v3,
                 v2=xml_with_pre.v2,
                 aop_pid=xml_with_pre.aop_pid,
-                detail=input_data,
+                detail=response,
             )
-
-            if not xml_with_pre.v3:
-                raise exceptions.InvalidPidError(
-                    f"Unable to register {filename}, because v3 was not present in the XML"
-                )
-
-            if not xml_with_pre.v2:
-                raise exceptions.InvalidPidError(
-                    f"Unable to register {filename}, because v2 was not present in the XML"
-                )
 
             # adaptador do xml with pre
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
-            data = get_xml_adapter_data(xml_adapter)
+            response["xml_adapter_data"] = get_xml_adapter_data(xml_adapter)
 
             # consulta se documento já está registrado
             try:
@@ -744,7 +728,7 @@ class PidProviderXML(
             # valida os PIDs do XML
             # - não podem ter conflito com outros registros
             # - identifica mudança
-            xml_changed = cls.complete_missing_xml_pids(
+            response["xml_changed"] = cls.complete_missing_xml_pids(
                 xml_with_pre, registered, auto_solve_pid_conflict
             )
 
@@ -757,7 +741,8 @@ class PidProviderXML(
                 registered_in_core,
             )
             if updated_data:
-                timeline.add_event(name="finish", detail="already up-to-date")
+                response["skip_update"] = True
+                timeline.add_event(name="finish", detail=response)
                 return updated_data
 
             # cria ou atualiza registro
@@ -771,23 +756,22 @@ class PidProviderXML(
             )
 
             # data to return
-            data = registered.data.copy()
-            data["xml_changed"] = xml_changed
+            response.update(registered.data)
+
             timeline.add_event(
                 name="finish",
-                detail=data,
+                detail=response,
             )
-            response = input_data
-            response.update(data)
             return response
 
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
+            logging.exception(e)
             if not timeline:
                 UnexpectedEvent.create(
                     exception=e,
                     exc_traceback=exc_traceback,
-                    detail=input_data,
+                    detail=response,
                 )
                 raise
 
@@ -798,7 +782,6 @@ class PidProviderXML(
                 exc_value=exc_value,
                 exc_traceback=exc_traceback,
             )
-            response = input_data
             response.update(event.data)
             return response
 
@@ -808,11 +791,12 @@ class PidProviderXML(
     ):
         xml_changed = {}
 
-        cls.is_valid_pid_len(xml_with_pre.v3)
+        if xml_with_pre.v3:
+            cls.is_valid_pid_len(xml_with_pre.v3, "pid_v3")
         if xml_with_pre.v2:
-            cls.is_valid_pid_len(xml_with_pre.v2)
+            cls.is_valid_pid_len(xml_with_pre.v2, "pid_v2")
         if xml_with_pre.aop_pid:
-            cls.is_valid_pid_len(xml_with_pre.aop_pid)
+            cls.is_valid_pid_len(xml_with_pre.aop_pid, "aop_pid")
 
         xml_pid = xml_with_pre.v3
         valid_pid = cls.get_valid_pid_v3(
@@ -839,21 +823,46 @@ class PidProviderXML(
         # Se XML PID foi fornecido e é diferente do registrado:
         if xml_pid and xml_pid != registered_pid:
             # Verifica se o XML PID já está em uso por outro documento.
-            owner = cls._is_registered_pid(v3=xml_pid)
-            # Se o XML PID não está em uso, ele é válido para retorno.
-            if not owner:
-                return xml_pid
-
-            # Se o XML PID está em uso e auto_solve_pid_conflict é True, levanta erro.
-            if not auto_solve_pid_conflict:
-                raise PidProviderXMLPidV3ConflictError(
-                    f"ID '{xml_pid}' já está sendo usado por {owner}"
-                )
+            conflictless_pid = cls.get_conflictless_pid(
+                registered_pid, xml_pid, auto_solve_pid_conflict
+            )
+            if conflictless_pid:
+                return conflictless_pid
 
         # XML PID não fornecido, ou igual ao registrado
         # ou em conflito sem exceção
         # retorna o PID registrado ou gera um novo.
         return registered_pid or cls._get_unique_v3()
+
+    @classmethod
+    def get_conflictless_pid(cls, registered_pid, xml_pid, auto_solve_pid_conflict):
+        queryset = cls.objects.prefetch_related("other_pid")
+
+        if registered_pid:
+            queryset = queryset.filter(
+                Q(v3=xml_pid)
+                | Q(other_pid__pid_in_xml=xml_pid)
+                | Q(v3=registered_pid)
+                | Q(other_pid__pid_in_xml=registered_pid)
+            )
+        else:
+            queryset = queryset.filter(Q(v3=xml_pid) | Q(other_pid__pid_in_xml=xml_pid))
+
+        if queryset.count() in (0, 1):
+            # xml_pid é inédito ou é pid de registered
+            return xml_pid
+
+        conflicts = []
+        for item in queryset:
+            conflicts.append(item.data)
+            for other_pid in item.other_pid.all():
+                conflicts.append(other_pid.pid_provider_xml.data)
+
+        # Se o XML PID está em uso e auto_solve_pid_conflict é True, levanta erro.
+        if not auto_solve_pid_conflict:
+            raise PidProviderXMLPidV3ConflictError(
+                f"ID '{xml_pid}' já está sendo usado: {conflicts}"
+            )
 
     @classmethod
     def _save(
@@ -874,6 +883,7 @@ class PidProviderXML(
         else:
             registered = cls()
             registered.creator = user
+            registered_changed = None
 
         registered._add_dates(xml_adapter, origin_date, available_since)
         registered._add_data(xml_adapter, registered_in_core)
@@ -882,7 +892,8 @@ class PidProviderXML(
 
         registered.save()
 
-        registered._add_other_pid(registered_changed, user)
+        if registered_changed:
+            registered._add_other_pid(registered_changed, user)
         registered._add_current_version(xml_adapter.xml_with_pre, user)
         return registered
 
@@ -965,7 +976,9 @@ class PidProviderXML(
         q, query_list = get_valid_query_parameters(xml_adapter)
 
         # Usar select_related para otimizar acesso futuro a current_version
-        queryset = cls.objects.select_related("current_version")
+        queryset = cls.objects.select_related("current_version").prefetch_related(
+            "other_pid"
+        )
 
         try:
             # versão VoR (version of record)
@@ -976,6 +989,40 @@ class PidProviderXML(
                 return queryset.get(q, **query_list[1])
             except IndexError:
                 raise cls.DoesNotExist
+            except cls.MultipleObjectsReturned:
+                return cls._handle_multiple_records(
+                    xml_adapter, queryset, q, query_list[1]
+                )
+        except cls.MultipleObjectsReturned:
+            return cls._handle_multiple_records(xml_adapter, queryset, q, query_list[0])
+
+    @classmethod
+    def _handle_multiple_records(cls, xml_adapter, queryset, q, query_list):
+        # Evita duplicar registros e remove registros duplicados
+        items = queryset.filter(q, **query_list).order_by("-updated")
+        selected = None
+        v3 = xml_adapter.v3
+        if v3:
+            try:
+                selected = items.get(v3=v3)
+            except cls.DoesNotExist:
+                # esta abordagem evita duplicar registros
+                selected = items.filter(other_pid__pid_in_xml=v3).first()
+        if not selected:
+            selected = items.first()
+        registered_pids_changed = []
+        for item in items:
+            if item is selected:
+                continue
+            registered_pids_changed.extend(
+                item.check_registered_pids_changed(xml_adapter.xml_with_pre)
+            )
+            item.delete()
+        if selected and registered_pids_changed:
+            selected._add_other_pid(
+                registered_pids_changed, selected.update_by or selected.creator
+            )
+        return selected
 
     @classmethod
     def _get_records(cls, xml_adapter):
@@ -1001,16 +1048,16 @@ class PidProviderXML(
 
         """
         q, query_list = get_valid_query_parameters(xml_adapter)
-        yield from cls.objects.select_related("current_version").filter(
-            q, **query_list[0]
-        )
+        yield from cls.objects.select_related("current_version").prefetch_related(
+            "other_pid"
+        ).filter(q, **query_list[0]).order_by("-updated")
         if len(query_list) > 1:
-            yield from cls.objects.select_related("current_version").filter(
-                q, **query_list[1]
-            )
+            yield from cls.objects.select_related("current_version").prefetch_related(
+                "other_pid"
+            ).filter(q, **query_list[1]).order_by("-updated")
 
     def _add_data(self, xml_adapter, registered_in_core):
-        self.registered_in_core = registered_in_core
+        self.registered_in_core = bool(registered_in_core)
 
         self.pkg_name = xml_adapter.sps_pkg_name
         self.article_pub_year = xml_adapter.article_pub_year
@@ -1049,7 +1096,7 @@ class PidProviderXML(
         self.volume = xml_adapter.volume
         self.number = xml_adapter.number
         self.suppl = xml_adapter.suppl
-        self.pub_year = xml_adapter.pub_year
+        self.pub_year = xml_adapter.pub_year or xml_adapter.article_pub_year
 
     def _add_current_version(self, xml_with_pre, user, delete=False):
         if delete:
@@ -1068,7 +1115,7 @@ class PidProviderXML(
                 {
                     "pid_type": "pid_v3",
                     "pid_in_xml": xml_with_pre.v3,
-                    "current_version": self.current_version,
+                    "version": self.current_version,
                     "registered": self.v3,
                 }
             )
@@ -1077,7 +1124,7 @@ class PidProviderXML(
                 {
                     "pid_type": "pid_v2",
                     "pid_in_xml": xml_with_pre.v2,
-                    "current_version": self.current_version,
+                    "version": self.current_version,
                     "registered": self.v2,
                 }
             )
@@ -1086,18 +1133,18 @@ class PidProviderXML(
                 {
                     "pid_type": "aop_pid",
                     "pid_in_xml": xml_with_pre.aop_pid,
-                    "current_version": self.current_version,
+                    "version": self.current_version,
                     "registered": self.aop_pid,
                 }
             )
         return registered_changed
 
-    def _add_other_pid(self, changed_pids, user):
+    def _add_other_pid(self, registered_changed, user):
         # registrados passam a ser other pid
         # os pids do XML passam a ser os vigentes
-        if not changed_pids:
+        if not registered_changed:
             return
-        for change_args in changed_pids:
+        for change_args in registered_changed:
 
             change_args["pid_in_xml"] = change_args.pop("registered")
 
@@ -1105,7 +1152,7 @@ class PidProviderXML(
             change_args["pid_provider_xml"] = self
 
             OtherPid.get_or_create(**change_args)
-        self.other_pid_count = OtherPid.objects.filter(pid_provider_xml=self).count()
+        self.other_pid_count = self.other_pid.count()
         self.save()
 
     @classmethod
@@ -1124,22 +1171,16 @@ class PidProviderXML(
 
     @classmethod
     def _is_registered_pid(cls, v2=None, v3=None, aop_pid=None):
+        queryset = cls.objects.prefetch_related("other_pid")
         if v3:
-            items = cls.objects.filter(v3=v3)
+            qs = Q(v3=v3) | Q(other_pid__pid_in_xml=v3)
         elif v2:
-            items = cls.objects.filter(v2=v2)
+            qs = Q(v2=v2) | Q(other_pid__pid_in_xml=v2)
         elif aop_pid:
-            items = cls.objects.filter(Q(v2=aop_pid) | Q(aop_pid=aop_pid))
+            qs = Q(v2=aop_pid) | Q(other_pid__pid_in_xml=aop_pid) | Q(aop_pid=aop_pid)
         else:
             return None
-        try:
-            return items[0]
-        except IndexError:
-            try:
-                obj = OtherPid.objects.get(pid_in_xml=v3 or v2 or aop_pid)
-                return obj.pid_provider_xml
-            except OtherPid.DoesNotExist:
-                return None
+        return queryset.filter(qs).exists()
 
     @staticmethod
     def is_valid_pid_len(value, pid_type):
@@ -1181,8 +1222,10 @@ class PidProviderXML(
             xml_adapter_data = get_xml_adapter_data(xml_adapter)
 
             input_data["xml_adapter_data"] = xml_adapter_data
-            timeline.detail = input_data
-            timeline.save()
+
+            if timeline:
+                timeline.detail = input_data
+                timeline.save()
 
             try:
                 registered = cls._get_record(xml_adapter)
@@ -1192,6 +1235,7 @@ class PidProviderXML(
                 return {"filename": xml_with_pre.filename, "registered": False}
             except cls.MultipleObjectsReturned as exc:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
+                logging.exception(exc)
                 response = {"error_msg": str(exc), "error_type": str(type(exc))}
                 response["input_data"] = xml_adapter_data
                 response["records"] = list(
@@ -1218,7 +1262,8 @@ class PidProviderXML(
             response = registered.data
             response["input_data"] = xml_adapter_data
             response["registered"] = True
-            response["finger_print"] = registered.current_version.finger_print
+            if registered.current_version:
+                response["finger_print"] = registered.current_version.finger_print
             if complete_missing_xml_pids_with_registered_pids:
                 xml_changed = cls.complete_missing_xml_pids(
                     xml_with_pre, registered, auto_solve_pid_conflict
@@ -1234,6 +1279,7 @@ class PidProviderXML(
             return response
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
+            logging.exception(e)
             if timeline:
                 timeline.add_event(
                     name="finish",
