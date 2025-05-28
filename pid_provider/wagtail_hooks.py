@@ -17,7 +17,6 @@ from .models import (
     PidProviderXML,
     PidRequest,
     FixPidV2,
-    PidProviderXMLTimeline,
 )
 
 
@@ -224,33 +223,3 @@ class PidProviderAdminGroup(ModelAdminGroup):
 
 
 modeladmin_register(PidProviderAdminGroup)
-
-
-class PidProviderXMLTimelineSnippetViewSet(SnippetViewSet):
-    model = PidProviderXMLTimeline
-    icon = "folder-open-inverse"
-    menu_name = "PidProviderXMLTimeline"
-    menu_label = _("Pid Provider XML Timeline")
-    menu_order = get_menu_order("Pid Provider XML Timeline")
-    add_to_admin_menu = True
-
-    list_display = (
-        "pkg_name",
-        "procedure",
-        "v3",
-        "v2",
-        "aop_pid",
-        "updated",
-    )
-    search_fields = (
-        "pkg_name",
-        "v3",
-        "v2",
-        "aop_pid",
-    )
-    list_filter = (
-        "procedure",
-    )
-
-
-register_snippet(PidProviderXMLTimelineSnippetViewSet)
