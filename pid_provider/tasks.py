@@ -375,7 +375,7 @@ def retry_to_provide_pid_for_failed_uris(
                 "uri": item.origin,
                 "username": username,
                 "user_id": user_id,
-                "origin_date": item.origin_date
+                "origin_date": item.origin_date,
             }
             params.update(item.detail or {})
         except Exception as e:
@@ -390,9 +390,7 @@ def retry_to_provide_pid_for_failed_uris(
                 },
             )
         else:
-            task_provide_pid_for_xml_uri.apply_async(
-                kwargs=**params
-            )
+            task_provide_pid_for_xml_uri.apply_async(kwargs=params)
 
 
 @celery_app.task(bind=True)

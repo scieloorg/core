@@ -385,9 +385,7 @@ class PidRequest(CommonControlField):
         )
 
     @classmethod
-    def cancel_failure(
-        cls, user=None, origin=None
-    ):
+    def cancel_failure(cls, user=None, origin=None):
         try:
             PidRequest.get(origin).delete()
         except cls.DoesNotExist:
@@ -401,11 +399,7 @@ class PidRequest(CommonControlField):
     @classmethod
     def items_to_retry(cls):
         # Adicionar select_related se for acessar xml_version posteriormente
-        return (
-            cls.objects
-            .filter(~Q(result_type="OK"), origin__contains=":")
-            .iterator()
-        )
+        return cls.objects.filter(~Q(result_type="OK"), origin__contains=":").iterator()
 
     panels = [
         # FieldPanel("origin", read_only=True),
@@ -664,7 +658,7 @@ class PidProviderXML(
         available_since=None,
         origin=None,
         registered_in_core=None,
-        auto_solve_pid_conflict=False
+        auto_solve_pid_conflict=False,
     ):
         """
         Evaluate the XML data and returns corresponding PID v3, v2, aop_pid
@@ -750,7 +744,9 @@ class PidProviderXML(
             # valida os PIDs do XML
             # - não podem ter conflito com outros registros
             # - identifica mudança
-            xml_changed = cls.complete_missing_xml_pids(xml_with_pre, registered, auto_solve_pid_conflict)
+            xml_changed = cls.complete_missing_xml_pids(
+                xml_with_pre, registered, auto_solve_pid_conflict
+            )
 
             # analisa se continua o registro
             updated_data = cls.is_updated(
@@ -761,9 +757,7 @@ class PidProviderXML(
                 registered_in_core,
             )
             if updated_data:
-                timeline.add_event(
-                    name="finish", detail="already up-to-date"
-                )
+                timeline.add_event(name="finish", detail="already up-to-date")
                 return updated_data
 
             # cria ou atualiza registro
@@ -809,7 +803,9 @@ class PidProviderXML(
             return response
 
     @classmethod
-    def complete_missing_xml_pids(cls, xml_with_pre, registered, auto_solve_pid_conflict):
+    def complete_missing_xml_pids(
+        cls, xml_with_pre, registered, auto_solve_pid_conflict
+    ):
         xml_changed = {}
 
         cls.is_valid_pid_len(xml_with_pre.v3)
@@ -871,7 +867,9 @@ class PidProviderXML(
     ):
         if registered:
             # obtém os dados de substituição para registrar em other_pid
-            registered_changed = registered.check_registered_pids_changed(xml_adapter.xml_with_pre)
+            registered_changed = registered.check_registered_pids_changed(
+                xml_adapter.xml_with_pre
+            )
             registered.updated_by = user
         else:
             registered = cls()
@@ -1066,26 +1064,32 @@ class PidProviderXML(
     def check_registered_pids_changed(self, xml_with_pre):
         registered_changed = []
         if self.v3 != xml_with_pre.v3:
-            registered_changed.append({
-                "pid_type": "pid_v3",
-                "pid_in_xml": xml_with_pre.v3,
-                "current_version": self.current_version,
-                "registered": self.v3,
-            })
+            registered_changed.append(
+                {
+                    "pid_type": "pid_v3",
+                    "pid_in_xml": xml_with_pre.v3,
+                    "current_version": self.current_version,
+                    "registered": self.v3,
+                }
+            )
         if self.v2 != xml_with_pre.v2:
-            registered_changed.append({
-                "pid_type": "pid_v2",
-                "pid_in_xml": xml_with_pre.v2,
-                "current_version": self.current_version,
-                "registered": self.v2,
-            })
+            registered_changed.append(
+                {
+                    "pid_type": "pid_v2",
+                    "pid_in_xml": xml_with_pre.v2,
+                    "current_version": self.current_version,
+                    "registered": self.v2,
+                }
+            )
         if self.aop_pid != xml_with_pre.aop_pid:
-            registered_changed.append({
-                "pid_type": "aop_pid",
-                "pid_in_xml": xml_with_pre.aop_pid,
-                "current_version": self.current_version,
-                "registered": self.aop_pid,
-            })
+            registered_changed.append(
+                {
+                    "pid_type": "aop_pid",
+                    "pid_in_xml": xml_with_pre.aop_pid,
+                    "current_version": self.current_version,
+                    "registered": self.aop_pid,
+                }
+            )
         return registered_changed
 
     def _add_other_pid(self, changed_pids, user):
@@ -1144,7 +1148,13 @@ class PidProviderXML(
         raise ValueError(f"Invalid {pid_type} length: {value}")
 
     @classmethod
-    def is_registered(cls, xml_with_pre, complete_missing_xml_pids_with_registered_pids=True, auto_solve_pid_conflict=True, user=None):
+    def is_registered(
+        cls,
+        xml_with_pre,
+        complete_missing_xml_pids_with_registered_pids=True,
+        auto_solve_pid_conflict=True,
+        user=None,
+    ):
         """
         Verifica se há necessidade de registrar, se está registrado e é igual
 
@@ -1178,9 +1188,7 @@ class PidProviderXML(
                 registered = cls._get_record(xml_adapter)
             except cls.DoesNotExist as exc:
                 if timeline:
-                    timeline.add_event(
-                        name="finish", detail="not registered"
-                    )
+                    timeline.add_event(name="finish", detail="not registered")
                 return {"filename": xml_with_pre.filename, "registered": False}
             except cls.MultipleObjectsReturned as exc:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -1213,11 +1221,14 @@ class PidProviderXML(
             response["finger_print"] = registered.current_version.finger_print
             if complete_missing_xml_pids_with_registered_pids:
                 xml_changed = cls.complete_missing_xml_pids(
-                    xml_with_pre, registered, auto_solve_pid_conflict)
-                response.update({
-                    "is_equal": registered.is_equal_to(xml_with_pre),
-                    "xml_changed": xml_changed
-                })
+                    xml_with_pre, registered, auto_solve_pid_conflict
+                )
+                response.update(
+                    {
+                        "is_equal": registered.is_equal_to(xml_with_pre),
+                        "xml_changed": xml_changed,
+                    }
+                )
             if timeline:
                 timeline.add_event(name="finish", detail=response)
             return response
@@ -1237,7 +1248,11 @@ class PidProviderXML(
                     exc_traceback=exc_traceback,
                     detail=input_data,
                 )
-            return {"error_msg": str(e), "error_type": str(type(e)), "input_data": input_data}
+            return {
+                "error_msg": str(e),
+                "error_type": str(type(e)),
+                "input_data": input_data,
+            }
         return {}
 
     @classmethod
@@ -1476,9 +1491,7 @@ class FixPidV2(CommonControlField):
 
 
 class PidProviderXMLTimeline(CommonControlField, ClusterableModel):
-    procedure = models.CharField(
-        _("Procedure"), max_length=30, null=True, blank=True
-    )
+    procedure = models.CharField(_("Procedure"), max_length=30, null=True, blank=True)
     pkg_name = models.CharField(
         _("Package name"), max_length=100, null=True, blank=True
     )
@@ -1510,9 +1523,21 @@ class PidProviderXMLTimeline(CommonControlField, ClusterableModel):
         unique_together = [("pkg_name", "procedure")]
         indexes = [
             models.Index(fields=["pkg_name", "procedure"]),
-            models.Index(fields=["v2", ]),
-            models.Index(fields=["v3", ]),
-            models.Index(fields=["aop_pid", ]),
+            models.Index(
+                fields=[
+                    "v2",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "v3",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "aop_pid",
+                ]
+            ),
         ]
 
     def __str__(self):
@@ -1526,7 +1551,7 @@ class PidProviderXMLTimeline(CommonControlField, ClusterableModel):
             "v3": self.v3,
             "v2": self.v2,
             "aop_pid": self.aop_pid,
-            "detail": self.detail
+            "detail": self.detail,
         }
 
     @classmethod
@@ -1560,14 +1585,7 @@ class PidProviderXMLTimeline(CommonControlField, ClusterableModel):
 
     @classmethod
     def create_or_update(
-        cls,
-        user,
-        procedure,
-        pkg_name,
-        v3=None,
-        v2=None,
-        aop_pid=None,
-        detail=None
+        cls, user, procedure, pkg_name, v3=None, v2=None, aop_pid=None, detail=None
     ):
         if not pkg_name and not procedure:
             raise ValueError(
@@ -1606,7 +1624,9 @@ class PidProviderXMLTimeline(CommonControlField, ClusterableModel):
                 exc_value=str(exc_value),
                 exc_traceback=str(exc_traceback),
             )
-        event = PidProviderXMLEvent(ppx_timeline=self, name=name, detail=detail, error=error)
+        event = PidProviderXMLEvent(
+            ppx_timeline=self, name=name, detail=detail, error=error
+        )
         self.event.add(event)
         return event
 

@@ -29,7 +29,7 @@ class BasePidProvider:
         Fornece / Valida PID para o XML no formato de objeto de XMLWithPre
         """
         # Completa os valores ausentes de pid com recuperados ou com inéditos
-        
+
         registered = PidProviderXML.register(
             xml_with_pre,
             name,
@@ -39,7 +39,7 @@ class BasePidProvider:
             is_published=is_published,
             origin=origin,
             registered_in_core=registered_in_core,
-            auto_solve_pid_conflict=auto_solve_pid_conflict, # False = deixar sistema resolver, True = user resolve
+            auto_solve_pid_conflict=auto_solve_pid_conflict,  # False = deixar sistema resolver, True = user resolve
         )
         if registered["xml_changed"]:
             # indica que Upload precisa aplicar as mudanças no xml_with_pre
@@ -57,7 +57,7 @@ class BasePidProvider:
         is_published=None,
         registered_in_core=None,
         caller=None,
-        auto_solve_pid_conflict=None
+        auto_solve_pid_conflict=None,
     ):
         """
         Fornece / Valida PID para o XML em um arquivo compactado
@@ -78,7 +78,7 @@ class BasePidProvider:
                     origin=zip_xml_file_path,
                     registered_in_core=registered_in_core,
                     caller=caller,
-                    auto_solve_pid_conflict=auto_solve_pid_conflict
+                    auto_solve_pid_conflict=auto_solve_pid_conflict,
                 )
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -94,7 +94,7 @@ class BasePidProvider:
                         origin_date=origin_date,
                         force_update=force_update,
                         is_published=is_published,
-                        auto_solve_pid_conflict=auto_solve_pid_conflict
+                        auto_solve_pid_conflict=auto_solve_pid_conflict,
                     ),
                 },
             )
@@ -165,7 +165,7 @@ class BasePidProvider:
                 is_published=is_published,
                 origin=xml_uri,
                 registered_in_core=registered_in_core,
-                auto_solve_pid_conflict=auto_solve_pid_conflict
+                auto_solve_pid_conflict=auto_solve_pid_conflict,
             )
             if not response.get("error_msg"):
                 try:

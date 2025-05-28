@@ -57,7 +57,7 @@ def provide_pid_for_opac_and_am_xml(
             origin_date=origin_date,
             force_update=force_update,
             is_published=True,
-            detail=detail
+            detail=detail,
         )
         CollectionPidRequest.create_or_update(
             user=user,
