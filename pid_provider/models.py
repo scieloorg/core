@@ -754,6 +754,7 @@ class PidProviderXML(
                 exc_traceback=exc_traceback,
                 detail=response,
             )
+            response.update({"error_msg": str(e), "error_type": str(type(e))})
             return response
 
     @classmethod
@@ -969,31 +970,46 @@ class PidProviderXML(
 
     @classmethod
     def _handle_multiple_records(cls, xml_adapter, queryset, q, query_list):
-        # Evita duplicar registros e remove registros duplicados
-        items = queryset.filter(q, **query_list).order_by("-updated")
-        selected = None
-        v3 = xml_adapter.v3
-        if v3:
-            try:
-                selected = items.get(v3=v3)
-            except cls.DoesNotExist:
-                # esta abordagem evita duplicar registros
-                selected = items.filter(other_pid__pid_in_xml=v3).first()
-        if not selected:
-            selected = items.first()
-        registered_pids_changed = []
-        for item in items:
-            if item is selected:
-                continue
-            registered_pids_changed.extend(
-                item.check_registered_pids_changed(xml_adapter.xml_with_pre)
+        try:
+            # Evita duplicar registros e remove registros duplicados
+            xml_with_pre = xml_adapter.xml_with_pre
+            response = {}
+            response["xml_with_pre_data"] = xml_with_pre.data
+
+            items = queryset.filter(q, **query_list).order_by("-updated")
+            selected = None
+            v3 = xml_with_pre.v3
+            if v3:
+                try:
+                    selected = items.get(v3=v3)
+                except cls.DoesNotExist:
+                    # esta abordagem evita duplicar registros
+                    selected = items.filter(other_pid__pid_in_xml=v3).first()
+            if not selected:
+                selected = items.first()
+
+            registered_pids_changed = []
+            for item in items:
+                if item is selected:
+                    continue
+                registered_pids_changed.extend(
+                    item.check_registered_pids_changed(xml_with_pre)
+                )
+                item.delete()
+            if selected and registered_pids_changed:
+                selected._add_other_pid(
+                    registered_pids_changed, selected.update_by or selected.creator
+                )
+            return selected
+        except Exception as exc:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                item=xml_with_pre.sps_pkg_name,
+                action="PidProviderXML._handle_multiple_records",
+                exception=exc,
+                exc_traceback=exc_traceback,
+                detail=response,
             )
-            item.delete()
-        if selected and registered_pids_changed:
-            selected._add_other_pid(
-                registered_pids_changed, selected.update_by or selected.creator
-            )
-        return selected
 
     @classmethod
     def _get_records(cls, xml_adapter):
@@ -1176,25 +1192,34 @@ class PidProviderXML(
 
         """
         try:
-            input_data = {"xml_with_pre.data": xml_with_pre.data}
+            response = {}
+            response["input_data"] = {"xml_with_pre.data": xml_with_pre.data}
             xml_adapter_data = None
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
             xml_adapter_data = get_xml_adapter_data(xml_adapter)
 
-            input_data["xml_adapter_data"] = xml_adapter_data
+            response["xml_adapter_data"] = xml_adapter_data
 
             try:
                 registered = cls._get_record(xml_adapter)
             except cls.DoesNotExist as exc:
-                return {"filename": xml_with_pre.filename, "registered": False}
+                response.update(
+                    {"filename": xml_with_pre.filename, "registered": False}
+                )
+                return response
             except cls.MultipleObjectsReturned as exc:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                logging.exception(exc)
-                response = {"error_msg": str(exc), "error_type": str(type(exc))}
-                response["input_data"] = xml_adapter_data
                 response["records"] = list(
                     record.data for record in cls._get_records(xml_adapter)
                 )
+                UnexpectedEvent.create(
+                    item=xml_with_pre.sps_pkg_name,
+                    action="PidProviderXML.is_registered",
+                    exception=exc,
+                    exc_traceback=exc_traceback,
+                    detail=response,
+                )
+                response.update({"error_msg": str(exc), "error_type": str(type(exc))})
                 return response
             except (
                 exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError
@@ -1204,21 +1229,13 @@ class PidProviderXML(
                 raise exc
             except exceptions.NotEnoughParametersToGetPidProviderXMLError as exc:
                 raise exc
-            response = registered.data
-            response["input_data"] = xml_adapter_data
             response["registered"] = True
-            if registered.current_version:
-                response["finger_print"] = registered.current_version.finger_print
+            response.update(registered.data)
             if complete_missing_xml_pids_with_registered_pids:
-                xml_changed = cls.complete_missing_xml_pids(
+                response["xml_changed"] = cls.complete_missing_xml_pids(
                     xml_with_pre, registered, auto_solve_pid_conflict
                 )
-                response.update(
-                    {
-                        "is_equal": registered.is_equal_to(xml_with_pre),
-                        "xml_changed": xml_changed,
-                    }
-                )
+                response["is_equal"] = registered.is_equal_to(xml_with_pre)
             return response
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -1227,13 +1244,10 @@ class PidProviderXML(
                 action="PidProviderXML.is_registered",
                 exception=e,
                 exc_traceback=exc_traceback,
-                detail=input_data,
+                detail=response,
             )
-            return {
-                "error_msg": str(e),
-                "error_type": str(type(e)),
-                "input_data": input_data,
-            }
+            response.update({"error_msg": str(e), "error_type": str(type(e))})
+            return response
         return {}
 
     @classmethod
