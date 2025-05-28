@@ -499,6 +499,14 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     armazenando dados chaves que garantem a identificação do XML
     """
 
+    proc_status = models.CharField(
+        _("processing status"),
+        max_length=6,
+        null=True,
+        blank=True,
+        choices=choices.PPXML_STATUS,
+        default=choices.PPXML_STATUS_TODO,
+    )
     issn_electronic = models.CharField(
         _("issn_epub"), max_length=10, null=True, blank=True
     )
@@ -551,6 +559,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     base_form_class = CoreAdminModelForm
 
     panel_a = [
+        FieldPanel("processing_status"),
         FieldPanel("registered_in_core", read_only=True),
         FieldPanel("issn_electronic", read_only=True),
         FieldPanel("issn_print", read_only=True),
@@ -875,6 +884,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             registered.creator = user
             registered_changed = None
 
+        registered.proc_status = choices.PPXML_STATUS_TODO
         registered._add_dates(xml_adapter, origin_date, available_since)
         registered._add_data(xml_adapter, registered_in_core)
         registered._add_journal(xml_adapter)
