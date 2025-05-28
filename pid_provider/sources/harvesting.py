@@ -30,7 +30,7 @@ def provide_pid_for_opac_and_am_xml(
 ):
 
     try:
-        name = f"{pid_v3 or pid_v2 or datetime.now().isoformat().replace(":", "")}.xml"
+        name = f"{pid_v3 or pid_v2 or datetime.now().isoformat().replace(':', '')}.xml"
 
         if not force_update:
             try:
@@ -57,7 +57,7 @@ def provide_pid_for_opac_and_am_xml(
             origin_date=origin_date,
             force_update=force_update,
             is_published=True,
-            detail=detail,
+            detail=detail
         )
         CollectionPidRequest.create_or_update(
             user=user,

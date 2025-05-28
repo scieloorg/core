@@ -41,7 +41,7 @@ class BasePidProvider:
             registered_in_core=registered_in_core,
             auto_solve_pid_conflict=auto_solve_pid_conflict,  # False = deixar sistema resolver, True = user resolve
         )
-        if registered["xml_changed"]:
+        if registered.get("xml_changed"):
             # indica que Upload precisa aplicar as mudanças no xml_with_pre
             registered["apply_xml_changes"] = caller == "core"
         registered["xml_with_pre"] = xml_with_pre
