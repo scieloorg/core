@@ -9,7 +9,6 @@ from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
 from django.db.models import Q
 from django.utils.translation import gettext as _
-from django_prometheus.models import ExportModelOperationsMixin
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
@@ -25,6 +24,27 @@ from core.models import CommonControlField
 from pid_provider import choices, exceptions
 from pid_provider.query_params import get_valid_query_parameters, get_xml_adapter_data
 from tracker.models import BaseEvent, UnexpectedEvent
+
+try:
+    from django_prometheus.models import ExportModelOperationsMixin
+except ImportError:
+
+    class BasePidProviderXML:
+        """Base class for exportable models."""
+
+        class Meta:
+            abstract = True
+
+else:
+
+    class BasePidProviderXML(
+        ExportModelOperationsMixin("pidproviderxml"),
+    ):
+        """Base class for exportable models."""
+
+        class Meta:
+            abstract = True
+
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
@@ -473,9 +493,7 @@ class OtherPid(CommonControlField):
         return self.updated or self.created
 
 
-class PidProviderXML(
-    ExportModelOperationsMixin("pidproviderxml"), CommonControlField, ClusterableModel
-):
+class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     """
     Tem responsabilidade de garantir a atribuição do PID da versão 3,
     armazenando dados chaves que garantem a identificação do XML
