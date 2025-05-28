@@ -1,32 +1,30 @@
-import os
 import json
 import logging
+import os
 import sys
 import traceback
 from datetime import datetime
 
 from django.core.files.base import ContentFile
-from django.db import models, IntegrityError
+from django.db import IntegrityError, models
 from django.db.models import Q
 from django.utils.translation import gettext as _
-from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
-from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
+from django_prometheus.models import ExportModelOperationsMixin
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
+from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
+from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 from wagtail.fields import RichTextField
 from wagtail.models import Orderable
-from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
-from django_prometheus.models import ExportModelOperationsMixin
 
 from collection.models import Collection
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
-from pid_provider import exceptions
-from pid_provider import choices
+from pid_provider import choices, exceptions
 from pid_provider.query_params import get_valid_query_parameters, get_xml_adapter_data
-from tracker.models import UnexpectedEvent, BaseEvent
+from tracker.models import BaseEvent, UnexpectedEvent
 
 LOGGER = logging.getLogger(__name__)
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"

@@ -6,10 +6,10 @@ from unittest.mock import ANY, MagicMock, Mock, call, patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from lxml import etree
+from xmlsps.xml_sps_lib import XMLWithPre
 
 from pid_provider import exceptions, models
 from pid_provider.xml_sps_adapter import PidProviderXMLAdapter
-from xmlsps.xml_sps_lib import XMLWithPre
 
 User = get_user_model()
 
