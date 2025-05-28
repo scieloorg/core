@@ -1,5 +1,6 @@
 import logging
 import sys
+from datetime import datetime
 
 from django.contrib.auth import get_user_model
 
@@ -29,10 +30,7 @@ def provide_pid_for_opac_and_am_xml(
 ):
 
     try:
-        if not (pid_v3 or pid_v2):
-            raise ValueError("Either 'pid_v2' or 'pid_v3' must be provided.")
-
-        name = f"{pid_v3 or pid_v2}.xml"
+        name = f"{pid_v3 or pid_v2 or datetime.now().isoformat().replace(':', '')}.xml"
 
         if not force_update:
             try:
@@ -44,7 +42,13 @@ def provide_pid_for_opac_and_am_xml(
             except PidProviderXML.DoesNotExist:
                 pass
 
-
+        detail = dict(
+            pid_v2=pid_v2,
+            pid_v3=pid_v3,
+            collection_acron=collection_acron,
+            journal_acron=journal_acron,
+            year=year,
+        )
         pp = PidProvider()
         response = pp.provide_pid_for_xml_uri(
             uri,
@@ -53,6 +57,7 @@ def provide_pid_for_opac_and_am_xml(
             origin_date=origin_date,
             force_update=force_update,
             is_published=True,
+            detail=detail
         )
         CollectionPidRequest.create_or_update(
             user=user,

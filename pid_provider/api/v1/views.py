@@ -81,6 +81,7 @@ class PidProviderViewSet(
                     caller="core",
                 )
                 results = list(results)
+                logging.info(results)
                 resp_status = None
                 for item in results:
                     if item.get("record_status") == "created":

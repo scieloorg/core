@@ -4,7 +4,7 @@ import sys
 # from django.utils.translation import gettext as _
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
-from pid_provider.models import PidProviderXML
+from pid_provider.models import PidProviderXML, PidRequest
 from tracker.models import UnexpectedEvent
 
 
@@ -23,12 +23,12 @@ class BasePidProvider:
         origin=None,
         registered_in_core=None,
         caller=None,
+        auto_solve_pid_conflict=None,
     ):
         """
         Fornece / Valida PID para o XML no formato de objeto de XMLWithPre
         """
         # Completa os valores ausentes de pid com recuperados ou com inéditos
-        xml_changed = PidProviderXML.complete_pids(xml_with_pre)
 
         registered = PidProviderXML.register(
             xml_with_pre,
@@ -39,12 +39,12 @@ class BasePidProvider:
             is_published=is_published,
             origin=origin,
             registered_in_core=registered_in_core,
+            auto_solve_pid_conflict=auto_solve_pid_conflict,  # False = deixar sistema resolver, True = user resolve
         )
-        if xml_changed:
-            registered["xml_changed"] = xml_changed
+        if registered.get("xml_changed"):
             # indica que Upload precisa aplicar as mudanças no xml_with_pre
             registered["apply_xml_changes"] = caller == "core"
-
+        registered["xml_with_pre"] = xml_with_pre
         return registered
 
     def provide_pid_for_xml_zip(
@@ -57,6 +57,7 @@ class BasePidProvider:
         is_published=None,
         registered_in_core=None,
         caller=None,
+        auto_solve_pid_conflict=None,
     ):
         """
         Fornece / Valida PID para o XML em um arquivo compactado
@@ -77,6 +78,7 @@ class BasePidProvider:
                     origin=zip_xml_file_path,
                     registered_in_core=registered_in_core,
                     caller=caller,
+                    auto_solve_pid_conflict=auto_solve_pid_conflict,
                 )
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -92,6 +94,7 @@ class BasePidProvider:
                         origin_date=origin_date,
                         force_update=force_update,
                         is_published=is_published,
+                        auto_solve_pid_conflict=auto_solve_pid_conflict,
                     ),
                 },
             )
@@ -109,6 +112,8 @@ class BasePidProvider:
         force_update=None,
         is_published=None,
         registered_in_core=None,
+        detail=None,
+        auto_solve_pid_conflict=None,
     ):
         """
         Fornece / Valida PID de um XML disponível por um URI
@@ -121,6 +126,19 @@ class BasePidProvider:
             xml_with_pre = list(XMLWithPre.create(uri=xml_uri))[0]
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
+            detail = dict(
+                error_msg=str(e),
+                error_type=str(exc_type),
+                exc_value=str(exc_value),
+                exc_traceback=str(exc_traceback),
+            )
+            pid_request = PidRequest.register_failure(
+                e,
+                user=user,
+                origin_date=origin_date,
+                origin=xml_uri,
+                detail=detail,
+            )
             UnexpectedEvent.create(
                 exception=e,
                 exc_traceback=exc_traceback,
@@ -136,12 +154,9 @@ class BasePidProvider:
                     ),
                 },
             )
-            return {
-                "error_msg": f"Unable to provide pid for {xml_uri} {e}",
-                "error_type": str(type(e)),
-            }
+            return detail
         else:
-            return self.provide_pid_for_xml_with_pre(
+            response = self.provide_pid_for_xml_with_pre(
                 xml_with_pre,
                 name,
                 user,
@@ -150,7 +165,17 @@ class BasePidProvider:
                 is_published=is_published,
                 origin=xml_uri,
                 registered_in_core=registered_in_core,
+                auto_solve_pid_conflict=auto_solve_pid_conflict,
             )
+            if not response.get("error_msg"):
+                try:
+                    pid_request = PidRequest.cancel_failure(
+                        user=user,
+                        origin=xml_uri,
+                    )
+                except Exception:
+                    pass
+            return response
 
     @classmethod
     def is_registered_xml_with_pre(cls, xml_with_pre, origin):
@@ -168,7 +193,7 @@ class BasePidProvider:
                 "updated": self.updated.isoformat(),
             }
         """
-        return PidProviderXML.get_registered(xml_with_pre, origin)
+        return PidProviderXML.is_registered(xml_with_pre, origin)
 
     @classmethod
     def is_registered_xml_uri(cls, xml_uri):
