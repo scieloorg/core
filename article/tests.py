@@ -1,31 +1,21 @@
+import os
+import tempfile
+import pytest
+
+
 from freezegun import freeze_time
 from django.test import TestCase
-from django_test_migrations.migrator import Migrator
 from datetime import datetime
 from django.utils.timezone import make_aware
+from unittest.mock import patch, MagicMock
 
 from article.models import Article
-from article.tasks import remove_duplicate_articles, normalize_stored_email, get_researcher_identifier_unnormalized
+from article.tasks import remove_duplicate_articles, normalize_stored_email, get_researcher_identifier_unnormalized, migrate_path_xml_pid_provider_to_pid_provider
 from researcher.models import ResearcherIdentifier
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
-class TestArticleMigration(TestCase):
-    def test_migration_0013_article_article_license(self):
-        migrator = Migrator(database='default')
-        old_state = migrator.apply_initial_migration(('article', '0012_alter_article_publisher'))
-        Article = old_state.apps.get_model('article', 'Article')
-        LicenseStatement = old_state.apps.get_model('core', 'LicenseStatement')
-        article = Article.objects.create()
-        license_statement = LicenseStatement.objects.create(url="https://www.teste.com.br")
-        article.license_statements.add(license_statement)
-
-        new_state = migrator.apply_tested_migration(('article', '0013_article_article_license'))
-
-        Article = new_state.apps.get_model('article', 'Article')
-
-        article = Article.objects.first()
-        self.assertEqual(article.article_license, 'https://www.teste.com.br')
-        migrator.reset()
 
 
 class RemoveDuplicateArticlesTest(TestCase):

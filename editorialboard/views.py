@@ -1,9 +1,7 @@
 import csv
 import os
-from datetime import datetime
+import sys
 
-from django.contrib.auth import get_user_model
-from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.translation import gettext as _
 from wagtail.admin import messages
@@ -11,6 +9,11 @@ from wagtail.admin import messages
 from core.libs import chkcsv
 
 from .models import EditorialBoardMember, EditorialBoardMemberFile
+from journal.models import Journal
+from location.models import Location
+from researcher.models import Researcher    
+from tracker.models import UnexpectedEvent
+from core.models import Gender
 
 
 def validate_ebm(request):
@@ -71,61 +74,60 @@ def import_file_ebm(request):
         with open(file_path, "r") as csvfile:
             data = csv.DictReader(csvfile, delimiter=";")
             for line, row in enumerate(data):
-                given_names = row["Nome do membro"]
-                last_name = row["Sobrenome"]
-                # ed = EditorialBoardMember()
-                # ed.get_or_create(
-                #     row["Periódico"],
-                #     row["Cargo / instância do membro"],
-                #     row["Data"],
-                #     row["Email"],
-                #     row["Institution"],
-                #     given_names,
-                #     last_name,
-                #     row["Suffix"],
-                #     row["ORCID iD"],
-                #     row["CV Lattes"],
-                #     row["Gender"],
-                #     row["Gender status"],
-                #     request.user,
-                # )
-                # ,User)
-
-                EditorialBoardMember.create_or_update(
-                    request.user,
-                    researcher=None,
-                    journal=None,
-                    journal_title=row["Periódico"],
+                given_names = row.get("Nome do membro")
+                last_name = row.get("Sobrenome")
+                journal = Journal.objects.get(title__icontains=row.get("Periódico"))
+                gender = Gender.create_or_update(user=request.user, code=row.get("Gender"), gender="F")
+                location = Location.create_or_update(
+                    user=request.user,
+                    city_name=row.get("institution_city_name"),
+                    state_text=row.get("institution_state_text"),
+                    state_acronym=row.get("institution_state_acronym"),
+                    state_name=row.get("institution_state_name"),
+                    country_text=row.get("institution_country_text"),
+                    country_acronym=row.get("institution_country_acronym"),
+                    country_name=row.get("institution_country_name"),
+                )
+                researcher = Researcher.create_or_update(
+                    user=request.user,
                     given_names=given_names,
                     last_name=last_name,
-                    suffix=row["Suffix"],
-                    declared_person_name=row.get("declared_person_name"),
-                    lattes=row["CV Lattes"],
-                    orcid=row["ORCID iD"],
-                    email=row["Email"],
-                    gender_code=row["Gender"],
-                    gender_identification_status=row["Gender status"],
-                    institution_name=row["Institution"],
-                    institution_div1=row.get("institution_div1"),
-                    institution_div2=row.get("institution_div2"),
-                    institution_city_name=row.get("institution_city_name"),
-                    institution_country_text=row.get("institution_country_text"),
-                    institution_country_acronym=row.get("institution_country_acronym"),
-                    institution_country_name=row.get("institution_country_name"),
-                    institution_state_text=row.get("institution_state_text"),
-                    institution_state_acronym=row.get("institution_state_acronym"),
-                    institution_state_name=row.get("institution_state_name"),
+                    suffix=row.get("Suffix"),
+                    declared_name=row.get("declared_person_name"),
+                    lattes=row.get("CV Lattes"),
+                    orcid=row.get("ORCID iD"),
+                    email=row.get("Email"),
+                    gender=gender,
+                    location=location,
+                    aff_div1=row.get("institution_div1"),
+                    aff_div2=row.get("institution_div2"),
+                    aff_name=row.get("Instituição"),
+                )
+                EditorialBoardMember.create_or_update(
+                    user=request.user,
+                    researcher=researcher,
+                    journal=journal,
                     declared_role=row["Cargo / instância do membro"],
                     std_role=None,
-                    member_activity_initial_year=row["Data"],
-                    member_activity_final_year=row["Data"],
-                    member_activity_initial_month="01",
-                    member_activity_final_month="12",
                     editorial_board_initial_year=row["Data"],
                     editorial_board_final_year=row["Data"],
                 )
+
     except Exception as ex:
-        messages.error(request, _("Import error: %s, Line: %s") % (ex, str(line + 2)))
+        messages.error(request, _("Import error: %s, Line: %s. Exception: %s") % (ex, str(line + 2), ex))
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            item=str(file_upload),
+            action="editorialboard.views.import_file_ebm",
+            exception=ex,
+            exc_traceback=exc_traceback,
+            detail=dict(
+                line=line,
+                row=row,
+                file_path=file_path,
+                file_id=file_id,
+            ),
+        )
     else:
         messages.success(request, _("File imported successfully!"))
 

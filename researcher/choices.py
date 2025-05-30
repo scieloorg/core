@@ -5,3 +5,9 @@ GENDER_IDENTIFICATION_STATUS = [
     ("AUTOMATIC", _("Identificado automáticamente por programa de computador")),
     ("MANUAL", _("Identificado por algun usuario")),
 ]
+
+
+IDENTIFIER_TYPE = [
+    ("LATTES", _("LATTES")),
+    ("EMAIL", _("Email")),
+]

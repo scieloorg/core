@@ -69,7 +69,8 @@ WAGTAIL = [
     "wagtail_localize.modeladmin",
     "wagtail.embeds",
     "wagtail.sites",
-    "wagtail.users",
+    "core.users.apps.CustomUsersAppConfig",
+    # "wagtail.users",
     "wagtail.snippets",
     "wagtail.documents",
     "wagtail.images",
@@ -145,6 +146,7 @@ LOCAL_APPS = [
     "journalpage",
     "report",
     "xml_validation",
+    "organization",
 ]
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -478,9 +480,6 @@ SEARCH_FACET_LIST = [
     "type",
 ]
 
-WAGTAIL_USER_EDIT_FORM = 'core.users.forms.CustomUserEditForm'
-WAGTAIL_USER_CREATION_FORM = 'core.users.forms.CustomUserCreationForm'
-WAGTAIL_USER_CUSTOM_FIELDS = ['collection', 'journal']
 
 # django maintenance mode
 # ------------------------------------------------------------------------------
@@ -504,3 +503,26 @@ MAINTENANCE_MODE_STATE_FILE_PATH = "maintenance_mode_state.txt"
 FETCH_DATA_TIMEOUT = env.int("FETCH_DATA_TIMEOUT", default=10)
 
 ROSETTA_AUTO_COMPILE = True
+
+MODEL_TO_IMPORT_CSV = {
+    "organization": {'organization_name', 'country_code', 'city_name', 'state_name'},
+    "researcherorcid": {
+        "orcid",
+        "given_names",
+        "last_name",
+        "suffix",
+        "affiliation",
+        "country_code",
+        "city_name",
+        "state_name",
+    },
+    "editorialboardmember": {
+        "title_journal",
+        "affiliation",
+        "country_code",
+        "city_name",
+        "state_name",
+        "given_names",
+        "last_name",
+    },
+}

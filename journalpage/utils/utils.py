@@ -1,8 +1,9 @@
 from journal.models import Journal
-from editorialboard.models import EditorialBoard
+from editorialboard.models import EditorialBoardMember
 from editorialboard.choices import ROLE
 from django.shortcuts import render
 
+from collections import defaultdict
 
 def get_journal_by_acronyms(journal_acron, acron_collection):
     return Journal.objects.get(
@@ -22,14 +23,32 @@ def find_most_recent_journal(journal):
     return journal
 
 
-def get_editorial_board(journal):
+def get_editorial_board_with_role(journal):
     try:
-        editorial_board = EditorialBoard.objects.filter(journal=journal).latest(
-            "initial_year"
-        )
-    except EditorialBoard.DoesNotExist:
-        editorial_board = None
-    return editorial_board
+        editorial_board_by_latest_role = defaultdict(list)
+        editorial_board_members = EditorialBoardMember.objects.filter(journal=journal) \
+            .prefetch_related(
+                "role_editorial_board", 
+                "researcher__orcid", 
+                "researcher__affiliation__location"
+            )
+        for member in editorial_board_members:
+            role = member.role_editorial_board.order_by("-initial_year").first()
+            if role and role.role: 
+                lattes = member.researcher.researcher_ids.filter(source_name="LATTES")
+                lattes = lattes.first().identifier if lattes.exists() else None
+                orcid = member.researcher.orcid.orcid if member.researcher.orcid else None
+
+                editorial_board_by_latest_role[role.role.std_role].append({
+                    "researcher": member.researcher,
+                    "researcher_affiliation": member.researcher.affiliation,
+                    "researcher_orcid": orcid,
+                    "researcher_lattes": lattes,
+                })
+    except Exception:
+        editorial_board_by_latest_role = None
+
+    return editorial_board_by_latest_role
 
 
 def verify_journal_is_latest(journal):

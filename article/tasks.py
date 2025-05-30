@@ -1,4 +1,3 @@
-import re
 import logging
 import sys
 from datetime import datetime, timedelta
@@ -10,9 +9,11 @@ from django.db.models import Subquery
 
 from article.models import Article, ArticleFormat
 from article.sources import xmlsps
-from core.utils.extracts_normalized_email import extracts_normalized_email
 from article.sources.preprint import harvest_preprints
+from collection.models import Collection
+from core.utils.extracts_normalized_email import extracts_normalized_email
 from config import celery_app
+from journal.models import SciELOJournal
 from researcher.models import ResearcherIdentifier
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
@@ -52,12 +53,16 @@ def _items_to_load_article(from_date):
             from_date = datetime.strptime(from_date, "%Y-%m-%d")
         except Exception:
             from_date = None
+
     if not from_date:
         now = datetime.utcnow().isoformat()[:10]
         # Obtém os PidProvider que não estão em Article
         # E os PidProvider em que a diferença entre created e updated é maior/igual 1 day (Atualizações de artigos)
-        articles = Article.objects.values_list("pid_v3", flat=True)
-        return PidProviderXML.objects.filter(Q(available_since__isnull=True) | Q(available_since__lte=now)).filter(~Q(v3__in=articles) | Q(updated__gte=F("created") + timedelta(days=1))).iterator()
+        articles_v3 = Article.objects.values_list("pid_v3", flat=True)
+        pid_provider_v3 = PidProviderXML.objects.values_list("v3", flat=True)
+        # obtém os v3 que não estão em articles_v3
+        missing_pid_provider_v3 = set(pid_provider_v3) - set(articles_v3)
+        return PidProviderXML.objects.filter(Q(available_since__isnull=True) | Q(available_since__lte=now)).filter(Q(v3__in=missing_pid_provider_v3) | Q(updated__gte=F("created") + timedelta(days=1))).iterator()
     return PidProviderXML.public_items(from_date)
 
 
@@ -302,3 +307,5 @@ def normalize_stored_email(self,):
             updated_list.append(re_identifier)
 
     ResearcherIdentifier.objects.bulk_update(updated_list, ['identifier'])
+
+

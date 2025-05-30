@@ -14,6 +14,7 @@ class ArticleMetaFormatSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         return instance.articlemeta_format
 
+
 class GenericJournalViewSet(viewsets.ModelViewSet):
     serializer_class = JournalSerializer
     http_method_names = ["get"]
@@ -33,15 +34,15 @@ class JournalViewSet(GenericJournalViewSet):
         until_date_created = self.request.query_params.get("until_date_created")
         from_date_updated = self.request.query_params.get("from_date_updated")
         until_date_updated = self.request.query_params.get("until_date_updated")
-        
+
         # funcao para permitir apenas estes paramentros
         validate_params(
-            self.request, 
-            "issn_print", 
-            "issn_electronic", 
-            "issnl", 
-            "title", 
-            "thematic_areas", 
+            self.request,
+            "issn_print",
+            "issn_electronic",
+            "issnl",
+            "title",
+            "thematic_areas",
             "toc_item",
             "page",
             "from_date_created",
@@ -56,19 +57,19 @@ class JournalViewSet(GenericJournalViewSet):
 
         params = {}
         if issn:
-            params['scielojournal__issn_scielo'] = issn
+            params["scielojournal__issn_scielo"] = issn
         if issn_electronic:
-            params['official__issn_electronic'] = issn_electronic
+            params["official__issn_electronic"] = issn_electronic
         if issn_print:
-            params['official__issn_print'] = issn_print
+            params["official__issn_print"] = issn_print
         if issnl:
-            params['official__issnl'] = issnl
+            params["official__issnl"] = issnl
         if title:
-            params['title'] = title
+            params["title"] = title
         if toc_item:
-            params['journaltocsection__toc_items__text'] = toc_item    
+            params["journaltocsection__toc_items__text"] = toc_item
         if thematic_areas:
-            params['subject__value__in'] = thematic_areas.split(",")
+            params["subject__value__in"] = thematic_areas.split(",")
         if from_date_created:
             params["created__gte"] = from_date_created.replace("/", "-")
         if until_date_created:

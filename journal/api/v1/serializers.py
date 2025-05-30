@@ -94,8 +94,6 @@ class JournalSerializer(serializers.ModelSerializer):
     title_in_database = serializers.SerializerMethodField()
     url_logo = serializers.SerializerMethodField()
     mission = MissionSerializer(many=True, read_only=True)
-    issn_print = serializers.CharField(source="official.issn_print")
-    issn_electronic = serializers.CharField(source="official.issn_electronic")
     other_titles = serializers.SerializerMethodField()
     sponsor = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
@@ -145,6 +143,7 @@ class JournalSerializer(serializers.ModelSerializer):
                     }
                     for history in item.journal_history.all()
                 ],
+                "status": item.status,
             }
             journals.append(journal_dict)
 
@@ -155,11 +154,11 @@ class JournalSerializer(serializers.ModelSerializer):
         title_in_db = []
         for item in title_in_database:
             title_in_db_dict = {
-                'title': item.title,
-                'identifier': item.identifier,
-                'name': item.indexed_at.name,
-                'acronym': item.indexed_at.acronym,
-                'url': item.indexed_at.url,
+                "title": item.title,
+                "identifier": item.identifier,
+                "name": item.indexed_at.name,
+                "acronym": item.indexed_at.acronym,
+                "url": item.indexed_at.url,
             }
             title_in_db.append(title_in_db_dict)
         return title_in_db
@@ -170,7 +169,6 @@ class JournalSerializer(serializers.ModelSerializer):
             domain = f"http://{domain}"
             return f"{domain}{obj.logo.file.url}"
         return None
-
 
     def get_email(self, obj):
         if obj.journal_email.all():
@@ -220,17 +218,20 @@ class JournalSerializer(serializers.ModelSerializer):
             data = []
             for item in queryset:
                 for section in item.toc_items.all():
-                    data.append({
-                        "value": section.text,
-                        "language": section.language.code2 if section.language else None
-                    })
+                    data.append(
+                        {
+                            "value": section.text,
+                            "language": (
+                                section.language.code2 if section.language else None
+                            ),
+                        }
+                    )
             return data
 
     def get_wos_areas(self, obj):
         if obj.wos_area.all():
             return [wos_area.value for wos_area in obj.wos_area.all()]
         return None
-
 
     class Meta:
         model = models.Journal
@@ -245,13 +246,11 @@ class JournalSerializer(serializers.ModelSerializer):
             "previous_journal_title",
             "other_titles",
             "acronym",
-            "issn_print",
-            "issn_electronic",
             "journal_use_license",
             "publisher",
             "owner",
             "sponsor",
-            "copyright",            
+            "copyright",
             "subject_descriptor",
             "subject",
             "toc_items",

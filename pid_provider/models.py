@@ -1,3 +1,4 @@
+import os
 import json
 import logging
 import sys
@@ -148,7 +149,13 @@ class XMLVersion(CommonControlField):
     @classmethod
     def get_or_create(cls, user, pid_provider_xml, xml_with_pre):
         try:
-            return cls.get(pid_provider_xml, xml_with_pre.finger_print)
+            latest = cls.get(pid_provider_xml, xml_with_pre.finger_print)
+            if not os.path.isfile(latest.file.path):
+                latest.save_file(
+                    f"{pid_provider_xml.v3}.xml", xml_with_pre.tostring(pretty_print=True)
+                )
+                latest.save()
+            return latest
         except cls.DoesNotExist:
             return cls.create(
                 user=user,

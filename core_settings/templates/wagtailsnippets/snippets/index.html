@@ -1,0 +1,73 @@
+{% extends "wagtailsnippets/snippets/index.html" %}
+{% load wagtailadmin_tags i18n static %}
+{% load auth_extras has_csv %}
+
+{% block main_header %}
+    {{ block.super }}
+
+    {% if model_opts.model_name|has_csv %}
+        {% if request.user|has_group:"Collection Team" or request.user.is_superuser  %} 
+            <form action="{% url 'import_csv' %}" method="post" enctype="multipart/form-data" style="display: inline;">
+                {% csrf_token %}
+                <label for="csvFileInput" class="w-header-button button" style="cursor: pointer;">
+                    {% icon name="upload" classname="icon" %}
+                    {% trans 'Importar CSV' %}
+                </label>
+                <input id="csvFileInput" type="file" name="csv_file" required style="display: none;">
+            </form>
+        {% endif %}
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const importForm = document.querySelector("form[action*='import']");
+            const addButton = document.querySelector("#w-slim-header-buttons");
+        
+            if (importForm && addButton) {
+                // Remove margens ou define estilo flex se necessário
+                importForm.style.marginLeft = "10px";
+                importForm.style.display = "inline-block";
+        
+                // Move o formulário para logo após o botão "Adicionar organization"
+                addButton.appendChild(importForm);
+            }
+        });
+        // Envia requisição POST para importar CSV e retorna mensagem
+        document.addEventListener('DOMContentLoaded', function () {
+            const fileInput = document.getElementById('csvFileInput');
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+
+            fileInput.addEventListener('change', function () {
+                const formData = new FormData();
+                formData.append('csv_file', fileInput.files[0]);
+
+                const pathParts = window.location.pathname.split("/");
+                const typeCsv = pathParts[pathParts.length - 2];
+                
+                formData.append('type_csv', typeCsv);
+
+                fetch("{% url 'import_csv' %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status) {
+                        alert(data.message);
+                        window.location.reload();
+                    } else {
+                        alert(data.message);
+                        window.location.reload();
+                    }
+                })
+            });
+        });
+        </script>
+{% endblock %}
