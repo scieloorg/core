@@ -1,5 +1,6 @@
 {% extends "home/scieloorg/base.html" %}
 {% load i18n wagtailcore_tags %}
+{% load wagtailsettings_tags %}
 
 {% block title %}{{page.specific.title}}{% endblock title %}
 
@@ -19,7 +20,7 @@
                 <h1 class="scielo-logo">
                     <a href="javascript:;">
                         <img src="/static/scieloorg/images/logo-scielo-portal-no-label.svg">
-                        <span>Scientific Electronic Library Online</span>
+                        <span>{% trans 'Scientific Electronic Library Online' %}</span>
                     </a>
                 </h1>
 
