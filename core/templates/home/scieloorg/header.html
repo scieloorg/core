@@ -1,17 +1,24 @@
+{% load i18n %}
+{% load wagtailcore_tags %}
+
 <div class="row">
     <header class="header-container">
         <div class="menu-lang">
             <ul>
                 <li class="info">
-                    <a href="https://scielo.org/en/about-scielo">About SciELO</a>
+                    <a href="https://scielo.org/en/about-scielo">{% trans 'About SciELO' %}</a>
                 </li>
-                                    <li>
-                    <a href="https://scielo.org/language/pt">Português</a>
-                </li>
-                                    <li>
-                    <a href="https://scielo.org/language/es">Español</a>
-                </li>
-                                </ul>
+                {% if page %}
+                    {% for translation in page.get_translations.live %}
+                    {% get_language_info for translation.locale.language_code as lang %}
+                        <li>
+                            <a href="{% pageurl translation %}" rel="alternate" hreflang="{{ language_code }}">
+                                {{ lang.name_local }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                {% endif %}
+            </ul>
         </div>
     </header>
 </div>
