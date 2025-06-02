@@ -1,0 +1,55 @@
+
+<div class="tab-pane tab-pane-white" id="tab-youtube-videos">
+    <div class="row slider-youtube-videos" id="blog-feed-container">
+        <!-- Video serao inseridos aqui via JS -->
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "{% url 'youtube_feed_json' %}",
+        method: "GET",
+        dataType: "json",
+        success: function(response) {
+            var posts = response.posts;
+            var html = "";
+            posts.forEach(function(post) {
+                html += `
+                <div class="col-xs-12 col-md-4">
+                    <div class="card">
+                        <div class="card-header"
+                            style="background-image:url('${post.image ? post.image : 'https://placehold.co/300x300'}')">
+                        </div>
+                        <div class="card-body">
+                            <div class="card-title">
+                                <a href="${post.link}">
+                                    <span>Por SciELO</span>
+                                    <h3>${post.title}</h3>
+                                </a>
+                            </div>
+                            <p>${post.description}</p>
+                        </div>
+                        <div class="card-footer">
+                            <div class="row">
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <span>${post.date}</span>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-6 text-right">
+                                    <a href="${post.link}" class="btn-arrow arrow-blue">Read more</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+            $("#blog-feed-container").html(html);
+        },
+        error: function() {
+            $("#blog-feed-container").html("<p>Erro ao carregar o feed do blog.</p>");
+        }
+    });
+});
+</script>
