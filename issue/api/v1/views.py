@@ -1,11 +1,9 @@
-from rest_framework.exceptions import ValidationError
-
-from django.db.models import Q
 from rest_framework import viewsets, serializers
 
 from article import models
 from core.validators import validate_params
 from .serializers import IssueSerializer
+
 
 class ArticleMetaFormatIssueSerializer(serializers.ModelSerializer):
     class Meta:
