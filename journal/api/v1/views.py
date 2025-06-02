@@ -37,6 +37,7 @@ class JournalViewSet(GenericJournalViewSet):
             "thematic_areas",
             "toc_item",
             "page",
+            "collection_acron",
             "from_date_created",
             "until_date_created",
             "from_date_updated",
@@ -61,6 +62,8 @@ class JournalViewSet(GenericJournalViewSet):
             params["journaltocsection__toc_items__text"] = toc_item
         if thematic_areas:
             params["subject__value__in"] = thematic_areas.split(",")
+        if collection_acron:
+            params["scielojournal__collection__acron3"] = collection_acron
         if from_date_created:
             params["created__gte"] = from_date_created.replace("/", "-")
         if until_date_created:
