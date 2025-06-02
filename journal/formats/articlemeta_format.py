@@ -1,9 +1,11 @@
+from collections import defaultdict
+
 from journal.models import SciELOJournal, TitleInDatabase
 from journal.choices import STATUS
-from core.utils.api_articlemeta_format import add_to_result, add_items
+from core.utils.articlemeta_dict_utils import add_to_result, add_items
 
 def get_articlemeta_format_title(obj):
-    result = {}
+    result = defaultdict(list)
     scielo_journal = SciELOJournal.objects.filter(
         journal=obj, collection__is_active=True
     ).first()
@@ -44,7 +46,8 @@ def get_articlemeta_format_title(obj):
         ), result
     )
     add_to_result("v69", obj.journal_url, result)
-    add_to_result("v85", obj.vocabulary.acronym, result)
+    if obj.vocabulary:
+        add_to_result("v85", obj.vocabulary.acronym, result)
     add_to_result("v110", obj.subtitle, result)
     add_to_result(
         "v117", obj.standard.code if obj.standard and obj.standard.code else None, result
