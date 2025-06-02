@@ -1,24 +1,14 @@
 from django.http import HttpResponseRedirect
-from django.urls import path
 from django.utils.translation import gettext as _
-from wagtail import hooks
-from wagtail.admin.panels import FieldPanel, ObjectList
-from wagtail_modeladmin.options import (
-    ModelAdmin,
-    ModelAdminGroup,
-    modeladmin_register,
-)
+from wagtail.admin.panels import FieldPanel, InlinePanel
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
 from wagtail_modeladmin.views import CreateView
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 
-from .button_helper import EditorialBoardMemberHelper
-from .models import (
-    EditorialBoard,
-    EditorialBoardMember,
-    EditorialBoardMemberFile,
-    RoleModel,
-)
-from .views import import_file_ebm, validate_ebm
 from config.menu import get_menu_order
+
+from .models import EditorialBoardMember, RoleModel
 
 
 class EditorialBoardMemberCreateView(CreateView):
@@ -27,7 +17,7 @@ class EditorialBoardMemberCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class EditorialBoardMemberAdmin(ModelAdmin):
+class EditorialBoardMemberAdmin(SnippetViewSet):
     model = EditorialBoardMember
     menu_label = _("Editorial Board Member")
     menu_icon = "folder"
@@ -35,46 +25,22 @@ class EditorialBoardMemberAdmin(ModelAdmin):
     add_to_settings_menu = False
     exclude_from_explorer = False
     list_display = (
+        "journal",
         "researcher",
-        "editorial_board",
-        "role",
-        "created",
-        "updated",
     )
-    list_filter = ("role", )
     search_fields = (
         "journal__title",
-        "researcher__person_name__fullname",
+        "researcher__fullname",
     )
-    custom_panels = [
-        FieldPanel("researcher", read_only=True),
-        FieldPanel("role", read_only=True),
+    panels = [
+        FieldPanel("journal", read_only=True),
+        AutocompletePanel("researcher"),
+        InlinePanel("role_editorial_board", label=_("Role")),
     ]
-    edit_handler = ObjectList(custom_panels)
 
 
-class EditorialBoardMemberFileAdmin(ModelAdmin):
-    model = EditorialBoardMemberFile
-    button_helper_class = EditorialBoardMemberHelper
-    menu_label = "Editorial Board Member Upload"
-    menu_icon = "folder"
-    menu_order = 200
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-    list_display = ("attachment", "line_count", "is_valid")
-    list_filter = ("is_valid",)
-    search_fields = ("attachment",)
-
-
-class RoleModelCreateView(CreateView):
-    def form_valid(self, form):
-        self.object = form.save_all(self.request.user)
-        return HttpResponseRedirect(self.get_success_url())
-
-
-class RoleModelAdmin(ModelAdmin):
+class RoleModelAdmin(SnippetViewSet):
     model = RoleModel
-    create_view_class = RoleModelCreateView
     menu_label = _("RoleModel")
     menu_icon = "folder"
     menu_order = 9
@@ -85,61 +51,13 @@ class RoleModelAdmin(ModelAdmin):
     search_fields = ("declared_role",)
 
 
-class EditorialBoardCreateView(CreateView):
-    def form_valid(self, form):
-        self.object = form.save_all(self.request.user)
-        return HttpResponseRedirect(self.get_success_url())
-
-
-class EditorialBoardAdmin(ModelAdmin):
-    model = EditorialBoard
-    create_view_class = EditorialBoardCreateView
-    menu_label = _("EditorialBoard")
-    menu_icon = "folder"
-    menu_order = 9
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-    list_display = (
-        "journal",
-        "initial_year",
-        "final_year",
-        "created",
-        "updated",
-    )
-    list_filter = ("initial_year", "final_year")
-    search_fields = (
-        "journal__title",
-        "initial_year",
-        "final_year",
-    )
-
-
-class EditorialBoardAdminGroup(ModelAdminGroup):
+class EditorialBoardMemberGroupViewSet(SnippetViewSetGroup):
     menu_label = "Editorial Board Member"
-    menu_icon = "folder-open-inverse"  # change as required
+    menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("editorialboard")  # will put in 3rd place (000 being 1st, 100 2nd)
+    add_to_admin_menu = True
     items = (
-        RoleModelAdmin,
-        EditorialBoardAdmin,
         EditorialBoardMemberAdmin,
-        EditorialBoardMemberFileAdmin,
+        RoleModelAdmin,
     )
-
-
-modeladmin_register(EditorialBoardAdminGroup)
-
-
-@hooks.register("register_admin_urls")
-def register_editorial_url():
-    return [
-        path(
-            "editorialboard/editorialboradmember/validate",
-            validate_ebm,
-            name="validate_ebm",
-        ),
-        path(
-            "editorialboard/editorialboradmember/import_file",
-            import_file_ebm,
-            name="import_file_ebm",
-        ),
-    ]
+register_snippet(EditorialBoardMemberGroupViewSet)

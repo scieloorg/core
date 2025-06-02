@@ -1,37 +1,53 @@
 import logging
+import re
+import sys
 
-from django.db import models, IntegrityError
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from django.db import IntegrityError, models
 from django.db.models import Q
+from django.core.exceptions import NON_FIELD_ERRORS
 from django.utils.translation import gettext_lazy as _
-from modelcluster.fields import ParentalKey
+from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.choices import MONTHS
-from core.models import CommonControlField, Gender
 from core.forms import CoreAdminModelForm
+from core.models import CommonControlField, Gender
+from core.utils.extracts_normalized_email import extracts_normalized_email
 from core.utils.standardizer import remove_extra_spaces
 from institution.models import BaseInstitution
 from location.models import Location
+from organization.models import Organization
+from tracker.models import UnexpectedEvent
 
 from . import choices
-from .exceptions import PersonNameCreateError
+from .exceptions import InvalidOrcidError, PersonNameCreateError
 from .forms import ResearcherForm
 
-
+ORCID_REGEX = re.compile(r'\b(?:https?://)?(?:orcid\.org/)?(\d{4}-\d{4}-\d{4}-\d{4})\b')
 
 class Researcher(CommonControlField):
     """
     Class that represent the Researcher
     """
-    person_name = models.ForeignKey("PersonName", on_delete=models.SET_NULL, null=True, blank=True)
-    affiliation = models.ForeignKey("Affiliation", on_delete=models.SET_NULL, null=True, blank=True)
+
+    person_name = models.ForeignKey(
+        "PersonName", on_delete=models.SET_NULL, null=True, blank=True
+    )
+    affiliation = models.ForeignKey(
+        "Affiliation", on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     @staticmethod
     def autocomplete_custom_queryset_filter(search_term):
-        return Researcher.objects.filter(Q(person_name__fullname__icontains=search_term) | Q(person_name__declared_name__icontains=search_term))
+        return Researcher.objects.filter(
+            Q(person_name__fullname__icontains=search_term)
+            | Q(person_name__declared_name__icontains=search_term)
+        )
 
     def autocomplete_label(self):
         return str(self)
@@ -91,11 +107,13 @@ class Researcher(CommonControlField):
     ):
         try:
             return cls.objects.get(
-                person_name=person_name, affiliation=affiliation,
+                person_name=person_name,
+                affiliation=affiliation,
             )
         except cls.MultipleObjectsReturned:
             return cls.objects.filter(
-                person_name=person_name, affiliation=affiliation,
+                person_name=person_name,
+                affiliation=affiliation,
             ).first()
 
     @classmethod
@@ -149,7 +167,6 @@ class Researcher(CommonControlField):
         email=None,
         gender=None,
         gender_identification_status=None,
-
     ):
         person_name = PersonName.get_or_create(
             user,
@@ -196,7 +213,7 @@ class Researcher(CommonControlField):
                 url=None,
                 institution_type=None,
             )
-            
+
         if person_name:
             researcher = cls._create_or_update(
                 user=user,
@@ -239,7 +256,6 @@ class Affiliation(BaseInstitution):
     ]
 
     base_form_class = CoreAdminModelForm
-
 
 
 class PersonName(CommonControlField):
@@ -320,9 +336,7 @@ class PersonName(CommonControlField):
 
     @staticmethod
     def join_names(given_names, last_name, suffix):
-        return " ".join(
-            filter(None, [given_names, last_name, suffix])
-        )
+        return " ".join(filter(None, [given_names, last_name, suffix]))
 
     @classmethod
     def _get(
@@ -404,7 +418,9 @@ class PersonName(CommonControlField):
         given_names = remove_extra_spaces(given_names)
         last_name = remove_extra_spaces(last_name)
         suffix = remove_extra_spaces(suffix)
-        fullname = remove_extra_spaces(fullname) or PersonName.join_names(given_names, last_name, suffix)
+        fullname = remove_extra_spaces(fullname) or PersonName.join_names(
+            given_names, last_name, suffix
+        )
 
         try:
             return cls._get(given_names, last_name, suffix, fullname, declared_name)
@@ -544,7 +560,9 @@ class ResearcherAKA(CommonControlField, Orderable):
         researcher,
     ):
         try:
-            return cls.objects.get(researcher_identifier=researcher_identifier, researcher=researcher)
+            return cls.objects.get(
+                researcher_identifier=researcher_identifier, researcher=researcher
+            )
         except cls.MultipleObjectsReturned:
             return cls.objects.filter(
                 researcher_identifier=researcher_identifier,
@@ -578,20 +596,19 @@ class ResearcherAKA(CommonControlField, Orderable):
         try:
             return cls.get(researcher_identifier, researcher)
         except cls.DoesNotExist:
-            return cls.create(
-                user, researcher_identifier, researcher
-            )
+            return cls.create(user, researcher_identifier, researcher)
 
 
 class InstitutionalAuthor(CommonControlField):
     collab = models.TextField(_("Collab"), blank=True, null=True)
-    affiliation = models.ForeignKey("Affiliation", on_delete=models.SET_NULL, null=True, blank=True)
+    affiliation = models.ForeignKey(
+        "Affiliation", on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     autocomplete_search_field = "collab"
 
     def autocomplete_label(self):
         return str(self)
-
 
     class Meta:
         unique_together = [("collab", "affiliation")]
@@ -606,7 +623,6 @@ class InstitutionalAuthor(CommonControlField):
             raise ValueError("InstitutionalAuthor.get requires collab paramenter")
         return cls.objects.get(collab__iexact=collab, affiliation=affiliation)
 
-    
     @classmethod
     def create(
         cls,
@@ -625,7 +641,6 @@ class InstitutionalAuthor(CommonControlField):
         except IntegrityError:
             return cls.get(collab=collab, affiliation=affiliation)
 
-    
     @classmethod
     def get_or_create(
         cls,
@@ -637,6 +652,497 @@ class InstitutionalAuthor(CommonControlField):
             return cls.get(collab=collab, affiliation=affiliation)
         except cls.DoesNotExist:
             return cls.create(collab=collab, affiliation=affiliation, user=user)
-    
+
     def __str__(self):
         return f"{self.collab}"
+
+
+class BaseResearcher(CommonControlField, ClusterableModel):
+    """
+    Class that represent new researcher
+    """
+
+    given_names = models.CharField(
+        _("Given names"), max_length=128, blank=False, null=True
+    )
+    last_name = models.CharField(_("Last name"), max_length=64, blank=False, null=True)
+    suffix = models.CharField(_("Suffix"), max_length=16, blank=True, null=True)
+    # nome sem padrão definido ou nome completo
+    fullname = models.TextField(_("Full Name"), blank=False, null=True)
+    gender = models.ForeignKey(Gender, blank=True, null=True, on_delete=models.SET_NULL)
+    gender_identification_status = models.CharField(
+        _("Gender identification status"),
+        max_length=20,
+        choices=choices.GENDER_IDENTIFICATION_STATUS,
+        null=True,
+        blank=True,
+    )
+
+    panels = [
+        FieldPanel("given_names"),
+        FieldPanel("last_name"),
+        FieldPanel("suffix"),
+        FieldPanel("gender"),
+        FieldPanel("gender_identification_status"),
+    ]
+    base_form_class = CoreAdminModelForm
+    
+    autocomplete_search_field = "fullname"
+
+    def autocomplete_label(self):
+        return str(self)
+            
+    class Meta:
+        abstract = True
+        unique_together = [
+            (
+                "fullname",
+                "last_name",
+                "given_names",
+                "suffix",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=[
+                    "fullname",
+                ]
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.fullname}"
+
+    @staticmethod
+    def join_names(given_names, last_name, suffix):
+        return " ".join(filter(None, [given_names, last_name, suffix]))
+
+
+class ResearcherOrcid(CommonControlField, ClusterableModel):
+    orcid = models.CharField(max_length=64, unique=True, null=True)
+
+    panels = [ 
+        FieldPanel("orcid"),
+        InlinePanel("researcher_orcid", label="Researcher", classname="collapsed"),
+    ]
+
+    def __str__(self):
+        return f"{self.orcid}"
+    
+    def get_fullname_researcher(self):
+        """
+        Function to display the researcher name(s) in the admin interface.
+        """
+        if self.researcher_orcid.count() == 1:
+            return str(self.researcher_orcid.all().first())
+        elif self.researcher_orcid.count() > 1:
+            researcher_names = ", ".join(str(researcher) for researcher in self.researcher_orcid.all())
+            return f"({researcher_names})"
+        return None
+
+    get_fullname_researcher.short_description = "Researcher Name"
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    "orcid",
+                ]
+            ),
+        ]
+
+    @classmethod
+    def get_by_orcid(cls, orcid):
+        """
+        Try to find the researcher by the ORCID identifier.
+        """
+        if not orcid:
+            raise ValueError(
+                "Researcher.get_by_orcid requires orcid parameter"
+            )
+
+        return cls.objects.get(orcid=orcid)
+
+    def clean(self):
+        if self.orcid:
+            self.validate_orcid(self.orcid)
+        return super().clean()
+
+    def save(self, **kwargs):
+        self.orcid = self.extract_orcid_number(self.orcid)
+        super().save(**kwargs)
+
+    @classmethod
+    def get(
+        cls,
+        orcid,
+    ):
+        return cls.get_by_orcid(orcid)
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        orcid,
+    ):
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.orcid = orcid
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get_by_orcid(orcid)
+
+    @classmethod
+    def get_or_create(
+        cls,
+        user,
+        orcid,
+    ):
+        try:
+            cls.validate_orcid(orcid)
+            return cls.get_by_orcid(orcid)
+        except cls.DoesNotExist:
+            return cls.create(user, orcid)
+        except (InvalidOrcidError, ValueError) as e:
+            data = dict(
+                orcid=orcid,
+            )
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "task": "researcher.models.ResearcherOrcid.get_or_create",
+                    "data": data,
+                },
+            )
+
+    @staticmethod
+    def validate_orcid(orcid):
+        # TODO
+        # Request to api to validate the orcid
+        # https://pub.orcid.org/v3.0/{orcid}/record
+        
+        # Regex catch the orcid when
+        # https://orcid.org/0000-0002-1825-0097
+        # orcid.org/0000-0002-1825-0097
+        # 0000-0002-1825-0097
+        valid_orcid = ORCID_REGEX.match(orcid)
+        if not valid_orcid:
+            raise ValidationError({"orcid": f"ORCID {orcid} is not valid"})
+
+    @staticmethod
+    def extract_orcid_number(orcid):
+        """
+        Extract the ORCID number from orcid url.
+        """
+        return ORCID_REGEX.match(orcid).group(1)
+
+
+class NewResearcher(BaseResearcher):
+    orcid = ParentalKey(
+        ResearcherOrcid,
+        related_name="researcher_orcid",
+        on_delete=models.CASCADE,
+        null=True,
+    )
+    affiliation = models.ForeignKey(
+        Organization, on_delete=models.SET_NULL, null=True
+    )
+
+    panels = BaseResearcher.panels + [
+        AutocompletePanel("affiliation"),
+        InlinePanel("researcher_ids", label="Researcher IDs", classname="collapsed"),
+    ]
+
+    class Meta:
+        unique_together = [
+            (
+                "orcid",
+                "fullname",
+                "last_name",
+                "given_names",
+                "suffix",
+                "affiliation",
+            ),
+            (
+                "fullname",
+                "last_name",
+                "given_names",
+                "suffix",
+                "affiliation",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=[
+                    "fullname",
+                ]
+            ),
+        ]
+
+    def __str__(self):
+        orcid = self.orcid.orcid if self.orcid else None
+        if orcid:
+            return f"{self.fullname} ({orcid})"
+        return self.fullname
+
+    def save(self, **kwargs):
+        self.fullname = self.join_names(self.given_names, self.last_name, self.suffix)
+        super().save(**kwargs)
+
+    @classmethod
+    def get(cls, suffix, given_names, last_name, orcid=None, affiliation=None):
+        """
+        Try to find the researcher by the ORCID identifier.
+        If the researcher is found and the names match, return the researcher.
+        """
+        if not given_names or not last_name:
+            raise ValueError(
+                "Researcher.get requires given_names, last_name parameters"
+            )
+        fullname = cls.join_names(given_names, last_name, suffix)
+        if orcid:
+                researcher = cls.objects.get(
+                    orcid=orcid,
+                    fullname__iexact=fullname,
+                )
+                return researcher
+        return cls.objects.get(fullname__iexact=fullname, affiliation=affiliation)
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        given_names,
+        last_name,
+        suffix,
+        affiliation,
+        orcid,
+        gender,
+        gender_identification_status,
+    ):
+        try:
+            obj = cls(
+                creator=user,
+                given_names=given_names,
+                last_name=last_name,
+                suffix=suffix,
+                gender=gender,
+                gender_identification_status=gender_identification_status,
+                orcid=orcid,
+                affiliation=affiliation,
+            )
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(
+                given_names=given_names,
+                last_name=last_name,
+                affiliation=affiliation,
+                suffix=suffix,
+                orcid=orcid,
+            )
+
+    @classmethod
+    def get_or_create(
+        cls,
+        user,
+        given_names,
+        last_name,
+        suffix,
+        affiliation,
+        orcid=None,
+        gender=None,
+        gender_identification_status=None,
+    ):
+        try:
+            obj = cls.get(
+                given_names=given_names,
+                last_name=last_name,
+                suffix=suffix,
+                affiliation=affiliation,
+                orcid=orcid,
+            )
+            return obj
+        except cls.DoesNotExist:
+            obj = cls.create(
+                user=user,
+                given_names=given_names,
+                last_name=last_name,
+                suffix=suffix,
+                orcid=orcid,
+                affiliation=affiliation,
+                gender=gender,
+                gender_identification_status=gender_identification_status,
+            )
+            return obj
+        except ValueError as e:
+            data = dict(
+                given_names=given_names,
+                last_name=last_name,
+                suffix=suffix,
+            )
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "task": "researcher.models.get_or_create",
+                    "data": data,
+                },
+            )
+
+
+class ResearcherIds(CommonControlField):
+    """
+    Class that represent any id of a researcher
+    """
+
+    researcher = ParentalKey(
+        NewResearcher, related_name="researcher_ids", null=True, blank=True
+    )
+    identifier = models.CharField(_("ID"), max_length=64, blank=True, null=True)
+    source_name = models.CharField(
+        choices=choices.IDENTIFIER_TYPE, max_length=64, blank=True, null=True
+    )
+
+    panels = [
+        FieldPanel("identifier"),
+        FieldPanel("source_name"),
+    ]
+
+    base_form_class = ResearcherForm
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(any_value):
+        return ResearcherIdentifier.objects.filter(identifier__icontains=any_value)
+
+    def autocomplete_label(self):
+        return f"{self.identifier} {self.source_name}"
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    "identifier",
+                ]
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.source_name}: {self.identifier}"
+
+    @classmethod
+    def get(
+        cls,
+        researcher,
+        identifier,
+        source_name,
+    ):
+        if researcher and source_name and identifier:
+            return cls.objects.get(
+                researcher=researcher,
+                source_name=source_name,
+                identifier=identifier,
+            )
+        raise ValueError("ResearcherIdentifier.get requires source_name and identifier")
+
+    def clean(self):
+        if self.source_name == "EMAIL":
+            self.validate_email(self.identifier)
+        if self.source_name == "LATTES":
+            ...
+        return super().clean()
+
+    def save(self, **kwargs):
+        if self.source_name == "EMAIL":
+            email = extracts_normalized_email(self.identifier)
+            self.validate_email(email)
+            self.identifier = email
+        elif self.source_name == "LATTES":
+            self.identifier = self.validate_lattes(self.identifier)
+        super().save(**kwargs)
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        researcher,
+        identifier,
+        source_name,
+    ):
+        try:
+            obj = cls(
+                creator=user,
+                researcher=researcher,
+                identifier=identifier,
+                source_name=source_name,
+            )
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(identifier, source_name)
+        except ValidationError:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=InvalidOrcidError,
+                exc_traceback=exc_traceback,
+                detail={
+                    "task": "researcher.models.ResearcherIds.create",
+                    "identifier": identifier,
+                    "source_name": source_name,
+                },
+            )
+
+    @classmethod
+    def get_or_create(
+        cls,
+        user,
+        researcher, 
+        identifier,
+        source_name,
+    ):
+        try:
+            if source_name == "EMAIL":
+                cls.validate_email(identifier)
+            elif source_name == "LATTES":
+                cls.validate_lattes(identifier)
+            return cls.get(
+                identifier=identifier, 
+                source_name=source_name, 
+                researcher=researcher
+            )
+        except cls.DoesNotExist:
+            return cls.create(
+                user=user, 
+                researcher=researcher, 
+                identifier=identifier, 
+                source_name=source_name
+            )
+
+    @staticmethod
+    def validate_email(email):
+        try:
+            validate_email(email)
+        except ValidationError:
+            raise ValidationError({"identifier": f"Email {email} is not valid"})
+
+    @staticmethod
+    def validate_lattes(lattes):
+        clean_value = re.sub(r'[\.\-]', '', lattes)
+        if not re.fullmatch(r'\d{16}', clean_value):
+            raise ValidationError({"identifier": f"Lattes {lattes} is not valid"})
+
+    @staticmethod
+    def validate_orcid(orcid):
+        regex = r"^\d{4}-\d{4}-\d{4}-\d{3}[0-9X]{1}$"
+        valid_orcid = re.search(regex, orcid)
+        if not valid_orcid:
+            raise ValidationError({"identifier": f"ORCID {orcid} is not valid"})
+
+    @staticmethod
+    def clean_orcid(orcid):
+        return re.sub(r"https?://orcid\.org/", "", orcid).strip("/")

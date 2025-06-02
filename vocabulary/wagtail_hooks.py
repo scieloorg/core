@@ -6,6 +6,7 @@ from wagtail_modeladmin.options import (
     modeladmin_register,
 )
 from wagtail_modeladmin.views import CreateView
+from config.menu import get_menu_order
 
 from .models import Keyword, Vocabulary
 
@@ -67,7 +68,7 @@ class KeywordAdmin(ModelAdmin):
 class VocabularyGroup(ModelAdminGroup):
     menu_label = _("Vocabulary")
     menu_icon = "folder-open-inverse"  # change as required
-    menu_order = 9
+    menu_order = get_menu_order("vocabulary")
     items = (VocabularyAdmin, KeywordAdmin)
 
 

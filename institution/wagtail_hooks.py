@@ -2,18 +2,24 @@ from django.http import HttpResponseRedirect
 from django.urls import include, path
 from django.utils.translation import gettext as _
 from wagtail import hooks
-from wagtail_modeladmin.options import (
-    ModelAdmin,
-    ModelAdminGroup,
-    modeladmin_register,
-)
+from wagtail_modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
 from wagtail_modeladmin.views import CreateView
 
 from config.menu import get_menu_order
+
 from .button_helpers import ScimagoHelper
-from .models import Institution, Scimago, ScimagoFile, Sponsor, InstitutionIdentification
+from .models import (
+    CopyrightHolder,
+    Institution,
+    InstitutionIdentification,
+    Owner,
+    Publisher,
+    Scimago,
+    ScimagoFile,
+    Sponsor,
+)
 from .views import import_file_scimago, validate_scimago
-from journal.wagtail_hooks import OwnerAdmin, CopyrightholderAdmin, PublisherAdmin
+
 
 class InstitutionIdentificationCreateView(CreateView):
     def form_valid(self, form):
@@ -175,6 +181,90 @@ class ScimagoFileAdmin(ModelAdmin):
     list_display = ("attachment", "line_count", "is_valid")
     list_filter = ("is_valid",)
     search_fields = ("attachment",)
+
+
+class OwnerAdmin(ModelAdmin):
+    model = Owner
+    menu_icon = "folder"
+    menu_order = 300
+    menu_label = _("Owner")
+    add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
+    exclude_from_explorer = (
+        False  # or True to exclude pages of this type from Wagtail's explorer view
+    )
+    list_display = ("institution",)
+    search_fields = (
+        "institution__institution_identification__name",
+        "institution__institution_identification__acronym",
+        "institution__level_1",
+        "institution__level_2",
+        "institution__level_3",
+    )
+    list_export = (
+        "institution__institution_identification__name",
+        "institution__institution_identification__acronym",
+        "institution__level_1",
+        "institution__level_2",
+        "institution__level_3",
+        "location",
+    )
+    export_filename = "owner"
+
+
+class CopyrightholderAdmin(ModelAdmin):
+    model = CopyrightHolder
+    menu_icon = "folder"
+    menu_order = 400
+    menu_label = _("Copyrightholder")
+    add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
+    exclude_from_explorer = (
+        False  # or True to exclude pages of this type from Wagtail's explorer view
+    )
+    list_display = ("institution",)
+    search_fields = (
+        "institution__institution_identification__name",
+        "institution__institution_identification__acronym",
+        "institution__level_1",
+        "institution__level_2",
+        "institution__level_3",
+    )
+    list_export = (
+        "institution__institution_identification__name",
+        "institution__institution_identification__acronym",
+        "institution__level_1",
+        "institution__level_2",
+        "institution__level_3",
+        "location",
+    )
+    export_filename = "copyrightholder"
+
+
+class PublisherAdmin(ModelAdmin):
+    model = Publisher
+    menu_icon = "folder"
+    menu_order = 500
+    menu_label = _("Publisher")
+    add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
+    exclude_from_explorer = (
+        False  # or True to exclude pages of this type from Wagtail's explorer view
+    )
+    list_display = ("institution",)
+    search_fields = (
+        "institution__institution_identification__name",
+        "institution__institution_identification__acronym",
+        "institution__level_1",
+        "institution__level_2",
+        "institution__level_3",
+    )
+    list_export = (
+        "institution__institution_identification__name",
+        "institution__institution_identification__acronym",
+        "institution__level_1",
+        "institution__level_2",
+        "institution__level_3",
+        "location",
+    )
+    export_filename = "Publisher"
 
 
 class InstitutionsAdminGroup(ModelAdminGroup):
