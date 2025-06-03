@@ -51,7 +51,7 @@ class JournalViewSet(GenericJournalViewSet):
             queryset = queryset.filter(journaltocsection__toc_items__text=toc_item)
         if thematic_areas := query_params.get("thematic_areas"):
             queryset = queryset.filter(subject__value__in=thematic_areas.split(","))
-        if collection_acron := query_params.get("collection_acron"):
+        if collection_acron := query_params.get("collection"):
             queryset = queryset.filter(scielojournal__collection__acron3=collection_acron)
 
         for date_param, filter_key in [
