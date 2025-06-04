@@ -48,25 +48,47 @@ class UserSocialSignupForm(SocialSignupForm):
     """
 
 
-class CustomUserEditForm(UserEditForm):
-    qs = Journal.objects.select_related("official").prefetch_related(
+def get_journal_queryset_with_active_collections():
+    """
+    Returns a queryset of Journal objects with related SciELOJournal objects
+    that have active collections.
+    """
+    return (Journal.objects.select_related("official").prefetch_related(
         Prefetch(
-            "scielojournal_set", 
-            queryset=SciELOJournal.objects.select_related("collection").filter(collection__is_active=True),
-            to_attr="active_collections"
-        )
-    )
-    journal = forms.ModelMultipleChoiceField(queryset=qs, required=False, label=_("Journal"))
-    collection = forms.ModelMultipleChoiceField(queryset=Collection.objects.filter(is_active=True), required=True, label=_("Collection"))
-
-
-class CustomUserCreationForm(UserCreationForm):
-    qs = Journal.objects.select_related("official").prefetch_related(
-        Prefetch(
-            "scielojournal_set", 
+            "scielojournal_set",
             queryset=SciELOJournal.objects.select_related("collection").filter(collection__is_active=True),
             to_attr="active_collections",
         )
     )
-    journal = forms.ModelMultipleChoiceField(queryset=qs, required=False, label=_("Journal"))
-    collection = forms.ModelMultipleChoiceField(queryset=Collection.objects.filter(is_active=True), required=True, label=_("Collection"))
+    )
+
+class CustomUserEditForm(UserEditForm):
+    journal = forms.ModelMultipleChoiceField(
+        queryset=get_journal_queryset_with_active_collections(), 
+        required=False, 
+        label=_("Journal")
+    )
+    collection = forms.ModelMultipleChoiceField(
+        queryset=Collection.objects.filter(is_active=True), 
+        required=True, 
+        label=_("Collection")
+    )
+
+    class Meta(UserEditForm.Meta):
+        fields = UserEditForm.Meta.fields | {"journal", "collection"}
+
+
+class CustomUserCreationForm(UserCreationForm):
+    journal = forms.ModelMultipleChoiceField(
+        queryset=get_journal_queryset_with_active_collections(), 
+        required=False, 
+        label=_("Journal")
+    )
+    collection = forms.ModelMultipleChoiceField(
+        queryset=Collection.objects.filter(is_active=True), 
+        required=True, 
+        label=_("Collection")
+    )
+
+    class Meta(UserEditForm.Meta):
+        fields = UserEditForm.Meta.fields | {"journal", "collection"}
