@@ -53,25 +53,27 @@ def get_journal_queryset_with_active_collections():
     Returns a queryset of Journal objects with related SciELOJournal objects
     that have active collections.
     """
-    return (Journal.objects.select_related("official").prefetch_related(
+    return Journal.objects.select_related("official").prefetch_related(
         Prefetch(
             "scielojournal_set",
-            queryset=SciELOJournal.objects.select_related("collection").filter(collection__is_active=True),
+            queryset=SciELOJournal.objects.select_related("collection").filter(
+                collection__is_active=True
+            ),
             to_attr="active_collections",
         )
     )
-    )
+
 
 class CustomUserEditForm(UserEditForm):
     journal = forms.ModelMultipleChoiceField(
-        queryset=get_journal_queryset_with_active_collections(), 
-        required=False, 
-        label=_("Journal")
+        queryset=get_journal_queryset_with_active_collections(),
+        required=False,
+        label=_("Journal"),
     )
     collection = forms.ModelMultipleChoiceField(
-        queryset=Collection.objects.filter(is_active=True), 
-        required=True, 
-        label=_("Collection")
+        queryset=Collection.objects.filter(is_active=True),
+        required=True,
+        label=_("Collection"),
     )
 
     class Meta(UserEditForm.Meta):
@@ -80,14 +82,14 @@ class CustomUserEditForm(UserEditForm):
 
 class CustomUserCreationForm(UserCreationForm):
     journal = forms.ModelMultipleChoiceField(
-        queryset=get_journal_queryset_with_active_collections(), 
-        required=False, 
-        label=_("Journal")
+        queryset=get_journal_queryset_with_active_collections(),
+        required=False,
+        label=_("Journal"),
     )
     collection = forms.ModelMultipleChoiceField(
-        queryset=Collection.objects.filter(is_active=True), 
-        required=True, 
-        label=_("Collection")
+        queryset=Collection.objects.filter(is_active=True),
+        required=True,
+        label=_("Collection"),
     )
 
     class Meta(UserEditForm.Meta):
