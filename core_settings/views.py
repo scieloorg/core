@@ -4,7 +4,7 @@ import uuid
 from django.http import JsonResponse
 from django.utils.translation import gettext as _
 
-from config.settings.base import MODEL_TO_IMPORT_CSV
+from config.settings.base import MODEL_TO_IMPORT_CSV, COLLECTION_TEAM
 
 from .tasks import importar_csv_task
 
@@ -39,7 +39,7 @@ def validate_type_csv(csv_file):
 def import_csv(request):
     if (
         not request.user.is_authenticated or
-        not (request.user.is_superuser or request.user.groups.filter(name="Collection Team").exists())
+        not (request.user.is_superuser or request.user.groups.filter(name=COLLECTION_TEAM).exists())
     ):
         return JsonResponse(
             {
