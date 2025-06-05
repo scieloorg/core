@@ -526,3 +526,8 @@ MODEL_TO_IMPORT_CSV = {
         "last_name",
     },
 }
+
+
+# COLLECTION TEAM AND JOURNAL TEAM
+COLLECTION_TEAM = env.str("COLLECTION_TEAM", default="Collection Team")
+JOURNAL_TEAM = env.str("JOURNAL_TEAM", default="Journal Team")

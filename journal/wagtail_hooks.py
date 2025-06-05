@@ -13,14 +13,12 @@ from wagtail_modeladmin.options import ModelAdmin
 from wagtail_modeladmin.views import CreateView, EditView
 
 from config.menu import get_menu_order
+from config.settings.base import COLLECTION_TEAM, JOURNAL_TEAM
 from journalpage.models import JournalPage
 
 from . import models
 from .button_helper import IndexedAtHelper
 from .views import import_file, validate
-
-COLLECTION_TEAM = "Collection Team"
-JOURNAL_TEAM = "Journal Team"
 
 
 class OfficialJournalCreateViewSnippet(CreateView):
