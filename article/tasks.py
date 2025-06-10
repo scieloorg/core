@@ -2,10 +2,9 @@ import logging
 import sys
 from datetime import datetime, timedelta
 
-from django.db.models import Q, Count, F
+from django.db.models import Q, Count, F, Subquery
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
-from django.db.models import Subquery
 
 from article.models import Article, ArticleFormat
 from article.sources import xmlsps
@@ -37,7 +36,6 @@ def _get_user(request, username=None, user_id=None):
 @celery_app.task()
 def load_funding_data(user, file_path):
     user = User.objects.get(pk=user)
-
     controller.read_file(user, file_path)
 
 
@@ -56,35 +54,29 @@ def _items_to_load_article(from_date):
 
     if not from_date:
         now = datetime.utcnow().isoformat()[:10]
-        # Obtém os PidProvider que não estão em Article
-        # E os PidProvider em que a diferença entre created e updated é maior/igual 1 day (Atualizações de artigos)
         articles_v3 = Article.objects.values_list("pid_v3", flat=True)
         pid_provider_v3 = PidProviderXML.objects.values_list("v3", flat=True)
-        # obtém os v3 que não estão em articles_v3
         missing_pid_provider_v3 = set(pid_provider_v3) - set(articles_v3)
-        return PidProviderXML.objects.filter(Q(available_since__isnull=True) | Q(available_since__lte=now)).filter(Q(v3__in=missing_pid_provider_v3) | Q(updated__gte=F("created") + timedelta(days=1))).iterator()
+        return PidProviderXML.objects.filter(
+            Q(available_since__isnull=True) | Q(available_since__lte=now)
+        ).filter(
+            Q(v3__in=missing_pid_provider_v3) | Q(updated__gte=F("created") + timedelta(days=1))
+        ).iterator()
     return PidProviderXML.public_items(from_date)
 
 
 def items_to_load_article_with_valid_false():
-    # Obtém os objetos PidProviderXMl onde o campo pid_v3 de article e v3 possuem o mesmo valor
     articles = Article.objects.filter(valid=False).values("pid_v3")
     items = PidProviderXML.objects.filter(v3__in=Subquery(articles))
     for item in items:
         yield item
 
 
-@celery_app.task(bind=True, name=_("load_articles"))
-def load_articles(
-    self, user_id=None, username=None, from_date=None, load_invalid_articles=False, force_update=False
-):
+@celery_app.task(bind=True, name="carregar artigos")
+def load_articles(self, user_id=None, username=None, from_date=None, load_invalid_articles=False, force_update=False):
     try:
         user = _get_user(self.request, username, user_id)
-        if load_invalid_articles:
-            generator_articles = items_to_load_article_with_valid_false()
-        else:
-            generator_articles = _items_to_load_article(from_date)
-            
+        generator_articles = items_to_load_article_with_valid_false() if load_invalid_articles else _items_to_load_article(from_date)
         for item in generator_articles:
             try:
                 load_article.apply_async(
@@ -96,42 +88,30 @@ def load_articles(
                     }
                 )
             except Exception as exception:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
                 UnexpectedEvent.create(
                     exception=exception,
-                    exc_traceback=exc_traceback,
-                    detail={
-                        "task": "article.tasks.load_articles",
-                        "item": str(item),
-                    },
+                    exc_traceback=sys.exc_info()[2],
+                    detail={"task": "article.tasks.load_articles", "item": str(item)},
                 )
     except Exception as exception:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
             exception=exception,
-            exc_traceback=exc_traceback,
-            detail={
-                "task": "article.tasks.load_articles",
-            },
+            exc_traceback=sys.exc_info()[2],
+            detail={"task": "article.tasks.load_articles"},
         )
 
 
 @celery_app.task(bind=True, name=_("load_preprints"))
 def load_preprint(self, user_id, oai_pmh_preprint_uri):
     user = User.objects.get(pk=user_id)
-    ## fazer filtro para não coletar tudo sempre
     harvest_preprints(oai_pmh_preprint_uri, user)
 
 
 @celery_app.task(bind=True)
-def task_convert_xml_to_other_formats_for_articles(
-    self, user_id=None, username=None, from_date=None, force_update=False
-):
+def task_convert_xml_to_other_formats_for_articles(self, user_id=None, username=None, from_date=None, force_update=False):
     try:
         user = _get_user(self.request, username, user_id)
-
         for item in Article.objects.filter(sps_pkg_name__isnull=False).iterator():
-            logging.info(item.pid_v3)
             try:
                 convert_xml_to_other_formats.apply_async(
                     kwargs={
@@ -142,30 +122,21 @@ def task_convert_xml_to_other_formats_for_articles(
                     }
                 )
             except Exception as exception:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
                 UnexpectedEvent.create(
                     exception=exception,
-                    exc_traceback=exc_traceback,
-                    detail={
-                        "task": "article.tasks.task_convert_xml_to_other_formats_for_articles",
-                        "item": str(item),
-                    },
+                    exc_traceback=sys.exc_info()[2],
+                    detail={"task": "article.tasks.task_convert_xml_to_other_formats_for_articles", "item": str(item)},
                 )
     except Exception as exception:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
             exception=exception,
-            exc_traceback=exc_traceback,
-            detail={
-                "task": "article.tasks.task_convert_xml_to_other_formats_for_articles",
-            },
+            exc_traceback=sys.exc_info()[2],
+            detail={"task": "article.tasks.task_convert_xml_to_other_formats_for_articles"},
         )
 
 
 @celery_app.task(bind=True)
-def convert_xml_to_other_formats(
-    self, user_id=None, username=None, item_id=None, force_update=None
-):
+def convert_xml_to_other_formats(self, user_id=None, username=None, item_id=None, force_update=None):
     user = _get_user(self.request, username, user_id)
 
     try:
@@ -174,61 +145,43 @@ def convert_xml_to_other_formats(
         logging.info(f"Not found {item_id}")
         return
 
-    done = False
     try:
-        article_format = ArticleFormat.objects.get(article=article)
-        done = True
-    except ArticleFormat.MultipleObjectsReturned:
+        ArticleFormat.objects.get(article=article)
         done = True
     except ArticleFormat.DoesNotExist:
         done = False
-    logging.info(f"Done {done}")
+    except ArticleFormat.MultipleObjectsReturned:
+        done = True
 
     if not done or force_update:
         ArticleFormat.generate_formats(user, article=article)
 
 
 @celery_app.task(bind=True)
-def task_articles_complete_data(
-    self, user_id=None, username=None, from_date=None, force_update=False
-):
+def task_articles_complete_data(self, user_id=None, username=None, from_date=None, force_update=False):
     try:
         user = _get_user(self.request, username, user_id)
-
         for item in Article.objects.iterator():
             try:
                 article_complete_data.apply_async(
-                    kwargs={
-                        "user_id": user.id,
-                        "username": user.username,
-                        "item_id": item.id,
-                    }
+                    kwargs={"user_id": user.id, "username": user.username, "item_id": item.id}
                 )
             except Exception as exception:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
                 UnexpectedEvent.create(
                     exception=exception,
-                    exc_traceback=exc_traceback,
-                    detail={
-                        "task": "article.tasks.task_articles_complete_data",
-                        "item": str(item),
-                    },
+                    exc_traceback=sys.exc_info()[2],
+                    detail={"task": "article.tasks.task_articles_complete_data", "item": str(item)},
                 )
     except Exception as exception:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
             exception=exception,
-            exc_traceback=exc_traceback,
-            detail={
-                "task": "article.tasks.task_articles_complete_data",
-            },
+            exc_traceback=sys.exc_info()[2],
+            detail={"task": "article.tasks.task_articles_complete_data"},
         )
 
 
 @celery_app.task(bind=True)
-def article_complete_data(
-    self, user_id=None, username=None, item_id=None, force_update=None
-):
+def article_complete_data(self, user_id=None, username=None, item_id=None, force_update=None):
     user = _get_user(self.request, username, user_id)
     try:
         item = Article.objects.get(pk=item_id)
@@ -239,19 +192,17 @@ def article_complete_data(
         pass
 
 
-
 @celery_app.task(bind=True)
 def transfer_license_statements_fk_to_article_license(self, user_id=None, username=None):
     user = _get_user(self.request, username, user_id)
     articles_to_update = []
     for instance in Article.objects.filter(article_license__isnull=True):
-
-        new_license = None
-        if instance.license_statements.exists() and instance.license_statements.first().url:
-            new_license = instance.license_statements.first().url
-        elif instance.license and instance.license.license_type:
-            new_license = instance.license.license_type
-        
+        new_license = (
+            instance.license_statements.first().url
+            if instance.license_statements.exists() and instance.license_statements.first().url
+            else instance.license.license_type if instance.license and instance.license.license_type
+            else None
+        )
         if new_license:
             instance.article_license = new_license
             instance.updated_by = user
@@ -270,22 +221,18 @@ def remove_duplicate_articles(pid_v3=None):
         else:
             duplicates = Article.objects.values("pid_v3").annotate(pid_v3_count=Count("pid_v3")).filter(pid_v3_count__gt=1, valid=False)
         for duplicate in duplicates:
-            article_ids = Article.objects.filter(
-                pid_v3=duplicate["pid_v3"]
-            ).order_by("created")[1:].values_list("id", flat=True)
+            article_ids = Article.objects.filter(pid_v3=duplicate["pid_v3"]).order_by("created")[1:].values_list("id", flat=True)
             ids_to_exclude.extend(article_ids)
-        
+
         if ids_to_exclude:
             Article.objects.filter(id__in=ids_to_exclude).delete()
     except Exception as exception:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
             exception=exception,
-            exc_traceback=exc_traceback,
-            detail={
-                "task": "article.tasks.remove_duplicates_articles",
-            },
+            exc_traceback=sys.exc_info()[2],
+            detail={"task": "article.tasks.remove_duplicates_articles"},
         )
+
 
 @celery_app.task(bind=True)
 def remove_duplicate_articles_task(self, user_id=None, username=None, pid_v3=None):
@@ -295,11 +242,12 @@ def remove_duplicate_articles_task(self, user_id=None, username=None, pid_v3=Non
 def get_researcher_identifier_unnormalized():
     return ResearcherIdentifier.objects.filter(source_name="EMAIL").exclude(identifier__regex=r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 
+
 @celery_app.task(bind=True)
-def normalize_stored_email(self,):
+def normalize_stored_email(self):
     updated_list = []
     re_identifiers = get_researcher_identifier_unnormalized()
-    
+
     for re_identifier in re_identifiers:
         email = extracts_normalized_email(raw_email=re_identifier.identifier)
         if email:
@@ -309,3 +257,12 @@ def normalize_stored_email(self,):
     ResearcherIdentifier.objects.bulk_update(updated_list, ['identifier'])
 
 
+def generate_article_format(article_id):
+    try:
+        User = get_user_model()
+        user, _ = User.objects.get_or_create(username="system", defaults={"email": "system@domain"})
+        article = Article.objects.get(pk=article_id)
+        ArticleFormat.generate_formats(user=user, article=article)
+        return {"valid": True, "report": ""}
+    except Exception as e:
+        return {"valid": False, "report": str(e)}
