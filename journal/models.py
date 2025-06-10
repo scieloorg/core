@@ -72,62 +72,6 @@ HELP_TEXT_ORGANIZATION = _(
 User = get_user_model()
 
 
-class PanelReadOnlyMixin:
-    def __init__(
-        self, 
-        field_name,
-        editable_by_groups=None,
-        editable_by_superuser=True,
-        editable_by_perms=None,
-        **kwargs,
-    ):
-        self.editable_by_groups = editable_by_groups or []
-        self.editable_by_perms = editable_by_perms or []
-        self.editable_by_superuser = editable_by_superuser
-        super().__init__(field_name, **kwargs)
-
-    def clone_kwargs(self):
-        kwargs = super().clone_kwargs()
-        kwargs.update(
-            editable_by_groups=self.editable_by_groups,
-            editable_by_superuser=self.editable_by_superuser,
-            editable_by_perms=self.editable_by_perms,
-        )
-        return kwargs
-    
-    def can_user_edit(self, user):
-        """Verifica se o usuário pode editar este campo."""
-        if not user or not user.is_authenticated:
-            return False
-
-        if self.editable_by_superuser and user.is_superuser:
-            return True
-
-        if self.editable_by_groups:
-            user_groups = user.groups.values_list("name", flat=True)
-            return any(group in user_groups for group in self.editable_by_groups)
-        
-        if self.editable_by_perms:
-            return any(user.has_perm(perm) for perm in self.editable_by_perms)
-        
-        return False
-    
-    class BoundPanel(FieldPanel.BoundPanel):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            if self.request and hasattr(self.request, "user"):
-                if not self.panel.can_user_edit(self.request.user):
-                    # self.panel.read_only = True
-                    self.read_only = True
-
-
-class ConditionalReadOnlyAutocompletePanel(PanelReadOnlyMixin, AutocompletePanel):
-    ...
-
-
-class ConditionalReadOnlyFieldPanel(PanelReadOnlyMixin, FieldPanel):
-    ...
-
 class OfficialJournal(CommonControlField, ClusterableModel):
     """
     Class that represent the Official Journal
