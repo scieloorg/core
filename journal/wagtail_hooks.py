@@ -18,6 +18,7 @@ from journalpage.models import JournalPage
 
 from . import models
 from .button_helper import IndexedAtHelper
+from .proxys import JournalProxyEditor
 from .views import import_file, validate
 
 COLLECTION_TEAM = "Collection Team"
@@ -124,7 +125,7 @@ class JournalAdminSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
 
 
 class JournalAdminEditorSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
-    model = models.JournalProxyEditor
+    model = JournalProxyEditor
     inspect_view_enabled = True
     menu_label = _("Journals Editor")
     menu_icon = "folder"
@@ -392,6 +393,6 @@ def snippet_listing_buttons(snippet, user, next_url=None):
 
 @hooks.register("register_permissions")
 def register_ctf_permissions():
-    model = models.JournalProxyEditor
+    model = JournalProxyEditor
     content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
     return Permission.objects.filter(content_type=content_type)
