@@ -2945,7 +2945,7 @@ class JournalOtherTitle(CommonControlField):
     )
     title = models.TextField(null=True, blank=True)
 
-    # panels = [ConditionalReadOnlyFieldPanel("title", read_only=True)]
+    panels = [FieldPanel("title", read_only=True)]
 
     class Meta:
         unique_together = [("journal", "title")]
