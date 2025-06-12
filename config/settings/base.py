@@ -90,7 +90,7 @@ WAGTAIL = [
 DJANGO_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "django.contrib.sessions",
+    "django.contrib.sess<<<<<<< issue-72ions",
     "django.contrib.sites",
     "django.contrib.messages",
     "django.contrib.staticfiles",
@@ -141,6 +141,7 @@ LOCAL_APPS = [
     "thematic_areas",
     "vocabulary",
     "search",
+    "dataset",
     "reference",
     "tracker",
     "journalpage",
