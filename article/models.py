@@ -5,21 +5,20 @@ from datetime import datetime
 
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
-from django.db.utils import DataError
 from django.utils.translation import gettext as _
 from django_prometheus.models import ExportModelOperationsMixin
+
 from packtools.sps.formats import pubmed, pmc, crossref
 from packtools.sps.pid_provider.xml_sps_lib import generate_finger_print
 
 from legendarium.formatter import descriptive_format
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from packtools.sps.formats import crossref, pmc, pubmed
-from packtools.sps.pid_provider.xml_sps_lib import generate_finger_print
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
+from article.forms import ArticleForm, ArticleFormatForm
 from core.forms import CoreAdminModelForm
 from core.models import (
     CommonControlField,
@@ -38,6 +37,7 @@ from pid_provider.provider import PidProvider
 from researcher.models import InstitutionalAuthor, Researcher
 from tracker.models import UnexpectedEvent
 from vocabulary.models import Keyword
+
 
 
 class Article(ExportModelOperationsMixin('article'), CommonControlField, ClusterableModel):
@@ -99,6 +99,11 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
     )
     valid = models.BooleanField(default=False, blank=True, null=True)
 
+    autocomplete_search_field = "sps_pkg_name"
+
+    def autocomplete_label(self):
+        return str(self)
+
     panels_ids = [
         FieldPanel("pid_v2"),
         FieldPanel("pid_v3"),
@@ -131,12 +136,17 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
         AutocompletePanel("fundings"),
     ]
 
+    panels_formats = [
+        InlinePanel("formats", label=_("Formats")),
+    ]
+
     edit_handler = TabbedInterface(
         [
             ObjectList(panels_ids, heading=_("Identification")),
             ObjectList(panels_languages, heading=_("Data with language")),
             ObjectList(panels_researchers, heading=_("Researchers")),
             ObjectList(panels_institutions, heading=_("Publisher and Sponsors")),
+            ObjectList(panels_formats, heading=_("Formats")),
         ]
     )
 
@@ -171,7 +181,7 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
         ]
 
     def __unicode__(self):
-        return self.sps_pkg_name or self.pid_v3 or f"{self.doi.first()}" or self.title
+        return self.sps_pkg_name or self.pid_v3 or f"{self.doi.first()}" or self.titles
 
     def __str__(self):
         return self.sps_pkg_name or self.pid_v3 or f"{self.doi.first()}" or self.title
@@ -227,9 +237,17 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
 
         try:
             return descriptive_format(**leg_dict)
-        except Exception as ex: 
-            logging.exception("Erro on article %s, error: %s" % (self.pid_v2, ex)) 
+        except Exception as ex:
+            logging.exception("Erro on article %s, error: %s" % (self.pid_v2, ex))
             return ""
+
+    @property
+    def root_path(self):
+        items = [
+            self.journal.issn_electronic or self.journal.issn_print,
+            self.issue.year,
+        ]
+        return "/".join([item for item in items if item])
 
     @classmethod
     def get(
@@ -244,7 +262,7 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
     def create(
         cls,
         pid_v3,
-        user,        
+        user,
     ):
         try:
             obj = cls()
@@ -259,7 +277,7 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
     def get_or_create(
         cls,
         pid_v3,
-        user,        
+        user,
     ):
         try:
             return cls.get(pid_v3=pid_v3)
@@ -291,7 +309,14 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
     #             )
     #         )
 
-    base_form_class = CoreAdminModelForm
+    def generate_formats(self, user=None):
+        user = user or self.updated_by
+        ArticleFormat.create_or_update(user, self, "pmc")
+
+        for item in self.journal.indexed_at.all():
+            ArticleFormat.create_or_update(user, self, item.acronym)
+
+    base_form_class = ArticleForm
 
 
 class ArticleFunding(CommonControlField):
@@ -654,201 +679,131 @@ class ArticleCount(CommonControlField):
 def article_directory_path(instance, filename):
     try:
         return os.path.join(
-            *instance.article.sps_pkg_name.split("-"), instance.format_name, filename
+            "article", *instance.article.sps_pkg_name.split("-"), instance.format_name, filename
         )
     except AttributeError:
-        return os.path.join(instance.article.pid_v3, instance.format_name, filename)
+        return os.path.join("article", instance.article.root_path, instance.article.pid_v3, instance.format_name, filename)
 
 
 class ArticleFormat(CommonControlField):
+    """
+    Armazena cada instância de formato gerado para um Article.
+    """
+
+    # Mapeia nome de formato → função pipeline
+    PIPELINES = {
+        "crossref": crossref.pipeline_crossref,
+        "pubmed":   pubmed.pipeline_pubmed,
+        "pmc":      pmc.pipeline_pmc,
+    }
 
     article = ParentalKey(
         Article,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name="format",
+        related_name="formats",
     )
     format_name = models.CharField(
-        _("Article Format"), max_length=20, null=True, blank=True
+        "Article Format", max_length=20, null=True, blank=True
     )
     version = models.PositiveIntegerField(null=True, blank=True)
     file = models.FileField(
-        null=True,
-        blank=True,
-        verbose_name=_("File"),
-        upload_to=article_directory_path,
+        "File", null=True, blank=True, upload_to=lambda inst, fn: inst.article_directory_path(fn)
     )
     report = models.JSONField(null=True, blank=True)
-    valid = models.BooleanField(default=None, null=True, blank=True)
+    valid = models.BooleanField(null=True, blank=True)
     finger_print = models.CharField(max_length=64, null=True, blank=True)
 
-    base_form_class = CoreAdminModelForm
+    base_form_class = ArticleFormatForm
     panels = [
-        FieldPanel("file"),
+        AutocompletePanel("article"),
         FieldPanel("format_name"),
         FieldPanel("version"),
-        FieldPanel("report"),
+        FieldPanel("file"),
     ]
 
     class Meta:
-        verbose_name = _("Article Format")
-        verbose_name_plural = _("Article Formats")
         unique_together = [("article", "format_name", "version")]
         indexes = [
-            models.Index(
-                fields=[
-                    "article",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "format_name",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "version",
-                ]
-            ),
+            models.Index(fields=["article"]),
+            models.Index(fields=["format_name"]),
+            models.Index(fields=["version"]),
         ]
 
-    def __unicode__(self):
-        return f"{self.article} {self.format_name} {self.created.isoformat()}"
-
     def __str__(self):
-        return f"{self.article} {self.format_name} {self.created.isoformat()}"
-
-    @classmethod
-    def get(cls, article, format_name=None, version=None):
-        if article and format_name and version:
-            try:
-                return cls.objects.get(
-                    article=article, format_name=format_name, version=version
-                )
-            except cls.MultipleObjectsReturned:
-                return cls.objects.filter(
-                    article=article, format_name=format_name, version=version
-                ).last()
-        raise ValueError(
-            "ArticleFormat.get requires article and format_name and version"
-        )
-
-    @classmethod
-    def create(cls, user, article, format_name=None, version=None):
-        if article or format_name or version:
-            try:
-                obj = cls()
-                obj.article = article
-                obj.format_name = format_name
-                obj.version = version
-                obj.creator = user
-                obj.save()
-                return obj
-            except IntegrityError:
-                return cls.get(article, format_name, version)
-        raise ValueError(
-            "ArticleFormat.create requires article and format_name and version"
-        )
-
-    @classmethod
-    def create_or_update(cls, user, article, format_name=None, version=None):
-        try:
-            obj = cls.get(article, format_name=format_name, version=version)
-            obj.updated_by = user
-            obj.format_name = format_name or obj.format_name
-            obj.version = version or obj.version
-            obj.save()
-        except cls.DoesNotExist:
-            obj = cls.create(user, article, format_name, version)
-        return obj
+        return f"{self.article} [{self.format_name} v{self.version}]"
 
     def save_file(self, filename, content):
-        finger_print = generate_finger_print(content)
-        if finger_print != self.finger_print:
+        """
+        Salva o conteúdo num FileField, só se tiver fingerprint diferente.
+        """
+        fp = generate_finger_print(content)
+        if fp != self.finger_print:
             try:
-                self.file.delete()
-            except Exception as e:
+                self.file.delete(save=False)
+            except Exception:
                 pass
-            self.file.save(filename, ContentFile(content))
-            self.finger_print = finger_print
+            self.file.save(f"{filename}.xml", ContentFile(content), save=False)
+            self.finger_print = fp
             self.save()
 
-    @classmethod
-    def generate(
-        cls,
-        user,
-        article,
-        format_name,
-        filename,
-        function_generate_format,
-        indexed_check=False,
-        data=None,
-        version=None,
-    ):
-        if indexed_check and not article.is_indexed_at(format_name):
-            return
+    def _handle_error(self, exception):
+        """
+        Registra UnexpectedEvent e marca este formato como inválido.
+        """
+        exc_type, _, exc_tb = sys.exc_info()
+        ev = UnexpectedEvent.create(
+            exception=exception,
+            exc_traceback=exc_tb,
+            detail={
+                "function": "ArticleFormat._generate",
+                "format_name": self.format_name,
+                "article_pid_v3": self.article.pid_v3,
+            },
+        )
+        self.report = ev.data
+        self.valid = False
+        self.save()
+
+    def _generate(self, user, pipeline_func):
+        """
+        Executa o pipeline e salva o resultado, ou trata erro.
+        """
         try:
-            version = version or 1
-            obj = None
-            obj = cls.create_or_update(user, article, format_name, version)
-            xmltree = article.xmltree
-            if data is not None:
-                content = function_generate_format(xmltree, data=data)
-            else:
-                content = function_generate_format(xmltree)
-            obj.save_file(filename, content)
-            obj.report = None
-            obj.save()
-            return obj
+            xmltree = self.article.xmltree
+            content = pipeline_func(xmltree)
+            if not content:
+                raise ValueError(f"Formato '{self.format_name}' retornou conteúdo vazio.")
+            # salva, limpa relatório e marca válido
+            self.save_file(self.article.sps_pkg_name, content)
+            self.report = None
+            self.valid = True
+            self.updated_by = user
+            self.save()
         except Exception as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            unexpected_event = UnexpectedEvent.create(
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail=dict(
-                    function="article.models.ArticleFormat.generate",
-                    format_name=format_name,
-                    article_pid_v3=article.pid_v3,
-                    sps_pkg_name=article.sps_pkg_name,
-                ),
-            )
-            if obj:
-                obj.report = unexpected_event.data
-                obj.valid = False
-                obj.save()
+            self._handle_error(e)
 
     @classmethod
-    def generate_formats(cls, user, article):
-        for doi in article.doi.all():
-            if not doi.value:
-                break
-            try:
-                prefix = doi.value.split("/")[0]
-                crossref_data = CrossRefConfiguration.get_data(prefix)
-                cls.generate(
-                    user,
-                    article,
-                    "crossref",
-                    article.sps_pkg_name + ".xml",
-                    crossref.pipeline_crossref,
-                    data=crossref_data,
-                )
-            except CrossRefConfiguration.DoesNotExist:
-                break
-        cls.generate(
-            user,
-            article,
-            "pubmed",
-            article.sps_pkg_name + ".xml",
-            pubmed.pipeline_pubmed,
-            indexed_check=False,
-        )
-        cls.generate(
-            user,
-            article,
-            "pmc",
-            article.sps_pkg_name + ".xml",
-            pmc.pipeline_pmc,
-            indexed_check=False,
-        )
+    def generate_formats(cls, user, article, indexed_check=False, formats=None):
+        """
+        Gera todos os formatos configurados em PIPELINES para o dado artigo.
+        Se indexed_check=True, só gera aqueles em que article.is_indexed_at(fmt) é True.
+        """
+        targets = formats or cls.PIPELINES.keys()
+        for fmt in targets:
+            if fmt not in cls.PIPELINES:
+                continue
+            if indexed_check and not article.is_indexed_at(fmt):
+                continue
+
+            obj, created = cls.objects.get_or_create(
+                article=article,
+                format_name=fmt,
+                version=1,
+                defaults={"creator": user},
+            )
+            if not created:
+                obj.updated_by = user
+                obj.save()
+            obj._generate(user, cls.PIPELINES[fmt])

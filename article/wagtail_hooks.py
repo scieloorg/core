@@ -19,6 +19,7 @@ from article.models import (  # AbstractModel,; Category,; Title,
     ArticleFormat,
     ArticleFunding,
 )
+from article.views import ArticleFormatView
 from collection.models import Collection
 from config.menu import get_menu_order
 
@@ -30,7 +31,7 @@ class CollectionFilter(SimpleListFilter):
     def lookups(self, request, model_admin):
         collections = Collection.objects.filter(is_active=True)
         return [(collection.id, collection.main_name) for collection in collections]
-    
+
     def queryset(self, request, queryset):
         if self.value():
             return queryset.filter(journal__scielojournal__collection__id=self.value())
@@ -80,6 +81,7 @@ class ArticleFormatCreateView(CreateView):
 class ArticleFormatAdmin(ModelAdmin):
     model = ArticleFormat
     create_view_class = ArticleFormatCreateView
+    edit_view_class = ArticleFormatView
     menu_label = _("Article Format")
     menu_icon = "folder"
     menu_order = 500
@@ -149,13 +151,13 @@ class DuplicateArticlesViewSet(SnippetViewSet):
             raise PermissionDenied
         ids_duplicates = []
         duplicates = Article.objects.all().values("pid_v3").annotate(pid_v3_count=Count("pid_v3")).filter(pid_v3_count__gt=1)
-        
+
         for duplicate in duplicates:
             article_ids = Article.objects.filter(
                 pid_v3=duplicate['pid_v3']
             ).order_by("created")[1:].values_list("id", flat=True)
             ids_duplicates.extend(article_ids)
-        
+
         if ids_duplicates:
             return Article.objects.filter(id__in=ids_duplicates)
         else:
