@@ -5,13 +5,12 @@ from allauth.socialaccount.forms import SignupForm as SocialSignupForm
 from django import forms
 from django.contrib.auth import forms as admin_forms
 from django.contrib.auth import get_user_model
-from django.db.models import Prefetch
 from django.utils.translation import gettext_lazy as _
 from wagtail.users.forms import UserCreationForm, UserEditForm
 
-from config.settings.base import COLLECTION_TEAM, JOURNAL_TEAM
 from collection.models import Collection
-from journal.models import Journal, SciELOJournal
+from config.settings.base import COLLECTION_TEAM, JOURNAL_TEAM
+from journal.models import Journal
 
 User = get_user_model()
 
@@ -50,21 +49,6 @@ class UserSocialSignupForm(SocialSignupForm):
     See UserSignupForm otherwise.
     """
 
-
-def get_journal_queryset_with_active_collections():
-    """
-    Returns a queryset of Journal objects with related SciELOJournal objects
-    that have active collections.
-    """
-    return Journal.objects.select_related("official").prefetch_related(
-        Prefetch(
-            "scielojournal_set",
-            queryset=SciELOJournal.objects.select_related("collection").filter(
-                collection__is_active=True
-            ),
-            to_attr="active_collections",
-        )
-    )
 
 def validate_journals_belong_to_collections(journals, collections):
     """
@@ -145,7 +129,7 @@ class CustomUserFormMixin:
 
 class CustomUserEditForm(CustomUserFormMixin, UserEditForm):
     journal = forms.ModelMultipleChoiceField(
-        queryset=get_journal_queryset_with_active_collections(),
+        queryset=Journal.get_journal_queryset_with_active_collections(),
         required=False,
         label=_("Journal"),
         help_text=_("Select journals this user can access.")
@@ -163,7 +147,7 @@ class CustomUserEditForm(CustomUserFormMixin, UserEditForm):
 
 class CustomUserCreationForm(CustomUserFormMixin, UserCreationForm):
     journal = forms.ModelMultipleChoiceField(
-        queryset=get_journal_queryset_with_active_collections(),
+        queryset=Journal.get_journal_queryset_with_active_collections(),
         required=False,
         label=_("Journal"),
         help_text=_("Select journals this user can access.")
