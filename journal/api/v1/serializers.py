@@ -13,7 +13,6 @@ class OfficialJournalSerializer(serializers.ModelSerializer):
             "issn_print",
             "issn_electronic",
             "iso_short_title",
-            "issnl",
         ]
         datatables_always_serialize = ("id",)
 
