@@ -33,7 +33,7 @@ class EditorialBoardMemberAdmin(SnippetViewSet):
         "researcher__fullname",
     )
     panels = [
-        FieldPanel("journal", read_only=True),
+        AutocompletePanel("journal"),
         AutocompletePanel("researcher"),
         InlinePanel("role_editorial_board", label=_("Role")),
     ]
@@ -54,7 +54,7 @@ class RoleModelAdmin(SnippetViewSet):
 class EditorialBoardMemberGroupViewSet(SnippetViewSetGroup):
     menu_label = "Editorial Board Member"
     menu_icon = "folder-open-inverse"
-    menu_order = get_menu_order("editorialboard")  # will put in 3rd place (000 being 1st, 100 2nd)
+    menu_order = get_menu_order("editorialboard")
     add_to_admin_menu = True
     items = (
         EditorialBoardMemberAdmin,
