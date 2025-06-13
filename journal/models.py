@@ -6,7 +6,7 @@ import re
 from django.contrib.auth import get_user_model
 from django.core.validators import RegexValidator
 from django.db import IntegrityError, models
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -877,6 +877,22 @@ class Journal(CommonControlField, ClusterableModel):
     @property
     def journal_acrons(self):
         return self.scielojournal_set.select_related("collection").filter(collection__is_active=True).values_list("collection__acron3", flat=True)
+
+    @classmethod
+    def get_journal_queryset_with_active_collections(cls):
+        """
+        Returns a queryset of Journal objects with related SciELOJournal objects
+        that have active collections.
+        """
+        return cls.objects.select_related("official").prefetch_related(
+            Prefetch(
+                "scielojournal_set",
+                queryset=SciELOJournal.objects.select_related("collection").filter(
+                    collection__is_active=True
+                ),
+                to_attr="active_collections",
+            )
+        )
 
     @property
     def issns(self):

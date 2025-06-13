@@ -84,11 +84,11 @@
                                 </li>
                             {% endif %}
                         {% endif %}
-                        <li>
-                            {% include "wagtailadmin/shared/field.html" with field=form.groups %}
+                        
+                            <li>{% include "wagtailadmin/shared/field.html" with field=form.groups %}</li>
                             <li>{% include "wagtailadmin/shared/field.html" with field=form.collection %}</li>
                             <li>{% include "wagtailadmin/shared/field.html" with field=form.journal %}</li>
-                        </li>
+                        
                         <li>
                             <input type="submit" value="{% trans 'Save' %}" class="button"/>
                             {% if can_delete %}
