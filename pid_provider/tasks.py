@@ -1,16 +1,16 @@
 import logging
-import sys
-import pytz
-import re
 import os
+import re
+import sys
 from datetime import datetime
 
+import pytz
 from django.contrib.auth import get_user_model
 
 from collection.models import Collection
 from config import celery_app
 from core.utils.utils import fetch_data
-from pid_provider.models import CollectionPidRequest, PidRequest, PidProviderXML
+from pid_provider.models import CollectionPidRequest, PidProviderXML, PidRequest
 from pid_provider.sources import am
 from pid_provider.sources.harvesting import provide_pid_for_opac_and_am_xml
 from tracker.models import UnexpectedEvent
@@ -371,21 +371,13 @@ def retry_to_provide_pid_for_failed_uris(
 ):
     for item in PidRequest.items_to_retry():
         try:
-            origin_date = item.origin_date
-            uri = item.origin
-
-            if item.detail:
-                pid_v2 = item.detail.get("pid_v2")
-                pid_v3 = item.detail.get("pid_v3")
-                collection_acron = item.detail.get("collection_acron")
-                journal_acron = item.detail.get("journal_acron")
-                year = item.detail.get("year")
-            else:
-                pid_v2 = None
-                pid_v3 = None
-                collection_acron = None
-                journal_acron = None
-                year = None
+            params = {
+                "uri": item.origin,
+                "username": username,
+                "user_id": user_id,
+                "origin_date": item.origin_date,
+            }
+            params.update(item.detail or {})
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
@@ -394,23 +386,11 @@ def retry_to_provide_pid_for_failed_uris(
                 detail={
                     "task": "retry_to_provide_pid_for_failed_uris",
                     "item": str(item),
-                    "detail": item.detail,
+                    "detail": params,
                 },
             )
         else:
-            task_provide_pid_for_xml_uri.apply_async(
-                kwargs={
-                    "uri": uri,
-                    "username": username,
-                    "user_id": user_id,
-                    "pid_v2": pid_v2,
-                    "pid_v3": pid_v3,
-                    "collection_acron": collection_acron,
-                    "journal_acron": journal_acron,
-                    "year": year,
-                    "origin_date": origin_date,
-                }
-            )
+            task_provide_pid_for_xml_uri.apply_async(kwargs=params)
 
 
 @celery_app.task(bind=True)
@@ -472,29 +452,31 @@ def load_file_xml_version(username, collection_acron="scl", user_id=None):
                 path = item.current_version.file.path
             else:
                 raise ValueError(f"Missing path for item: {item.v3}")
-            
+
             if path and not os.path.isfile(path):
                 # get acronym from path
-                match = re.search(r'/pid_provider/\w+/\w+/([^/]+)/', path)
+                match = re.search(r"/pid_provider/\w+/\w+/([^/]+)/", path)
                 if match:
                     acronym = match.group(1)
                 else:
                     raise Exception(f"Unable to get acronym from path: {path}")
 
                 if not item.origin_date:
-                    formatted_date = "Mon, 01 Jan 1900 00:00:00 UTC"                             
+                    formatted_date = "Mon, 01 Jan 1900 00:00:00 UTC"
                 else:
                     try:
                         dt = datetime.strptime(item.origin_date, "%Y-%m-%d")
                         dt = dt.replace(tzinfo=pytz.UTC)
                         formatted_date = dt.strftime("%a, %d %b %Y %H:%M:%S %Z")
                     except ValueError as ve:
-                        raise ValueError(f"Invalid date format for item {item.v3}: {item.origin_date}") 
+                        raise ValueError(
+                            f"Invalid date format for item {item.v3}: {item.origin_date}"
+                        )
 
                 article = {
                     "journal_acronym": acronym,
                     "update": formatted_date,
-                    "publication_date": item.pub_year, # don't used in processing
+                    "publication_date": item.pub_year,  # don't used in processing
                 }
                 logging.info(f"Processing item: {item.v3}")
                 provide_pid_for_opac_article.apply_async(
