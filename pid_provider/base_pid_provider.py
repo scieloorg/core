@@ -10,7 +10,7 @@ from tracker.models import UnexpectedEvent
 
 class BasePidProvider:
     def __init__(self):
-        pass
+        self.caller = None
 
     def provide_pid_for_xml_with_pre(
         self,
@@ -26,9 +26,45 @@ class BasePidProvider:
         auto_solve_pid_conflict=None,
     ):
         """
-        Fornece / Valida PID para o XML no formato de objeto de XMLWithPre
+        Fornece e valida PIDs para documento XML, retornando dados completos de registro.
+
+        Parameters
+        ----------
+        xml_with_pre : XMLWithPre
+            Objeto XML preprocessado
+        name : str
+            Nome do arquivo/documento
+        user : User
+            Usuário responsável pela operação
+        origin_date : datetime, optional
+            Data de origem do documento
+        force_update : bool, optional
+            Força atualização mesmo sem alterações
+        is_published : bool, optional
+            Status de publicação
+        origin : str, optional
+            Origem do documento
+        registered_in_core : bool, optional
+            Se já registrado no sistema core
+        caller : str, optional
+            Identificador do sistema chamador
+        auto_solve_pid_conflict : bool, optional
+            Resolve conflitos de PID automaticamente
+
+        Returns
+        -------
+        dict
+            Sucesso: {"v3", "v2", "aop_pid", "xml_uri", "article", "created",
+                     "updated", "xml_changed", "record_status", "input_data",
+                     "xml_adapter_data", "skip_update"*, "xml_with_pre",
+                     "apply_xml_changes"*}
+            Erro: {"error_type", "error_message", "id", "filename", "error_msg",
+                  "xml_with_pre"}
+
+            * Chaves condicionais: skip_update (se atualização pulada),
+              apply_xml_changes (se caller="core" e xml_changed=True)
         """
-        # Completa os valores ausentes de pid com recuperados ou com inéditos
+        self.caller = caller
 
         registered = PidProviderXML.register(
             xml_with_pre,
@@ -41,9 +77,7 @@ class BasePidProvider:
             registered_in_core=registered_in_core,
             auto_solve_pid_conflict=auto_solve_pid_conflict,  # False = deixar sistema resolver, True = user resolve
         )
-        if registered.get("xml_changed"):
-            # indica que Upload precisa aplicar as mudanças no xml_with_pre
-            registered["apply_xml_changes"] = caller == "core"
+        registered["apply_xml_changes"] = self.caller == "core" and registered.get("xml_changed")
         registered["xml_with_pre"] = xml_with_pre
         return registered
 
@@ -57,7 +91,7 @@ class BasePidProvider:
         is_published=None,
         registered_in_core=None,
         caller=None,
-        auto_solve_pid_conflict=None,
+        auto_solve_pid_conflict=True,
     ):
         """
         Fornece / Valida PID para o XML em um arquivo compactado
