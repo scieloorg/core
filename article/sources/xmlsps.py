@@ -32,12 +32,10 @@ from vocabulary.models import Keyword
 from location.models import Location
 
 
-class XMLSPSArticleSaveError(Exception):
-    ...
+class XMLSPSArticleSaveError(Exception): ...
 
 
-class LicenseDoesNotExist(Exception):
-    ...
+class LicenseDoesNotExist(Exception): ...
 
 
 def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
@@ -111,7 +109,9 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             get_or_create_fundings(xmltree=xmltree, user=user, item=pid_v3)
         )
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
-        article.publisher = get_or_create_publisher(xmltree=xmltree, user=user, item=pid_v3)
+        article.publisher = get_or_create_publisher(
+            xmltree=xmltree, user=user, item=pid_v3
+        )
         article.valid = True
         article.save()
         logging.info(f"The article {pid_v3} has been processed")
@@ -196,15 +196,18 @@ def get_or_create_fundings(xmltree, user, item):
     """
     Ex fundings_award_group:
         [{
-        'funding-source': ['São Paulo Research Foundation', 'CAPES', 'CNPq'], 
+        'funding-source': ['São Paulo Research Foundation', 'CAPES', 'CNPq'],
         'award-id': ['2009/53363-8, 2009/52807-0, 2009/51766-8]}]
     """
     data = []
     fundings_award_group = FundingGroup(xmltree=xmltree).award_groups
-    
+
     if fundings_award_group:
         for fundings_award in fundings_award_group:
-            results = product(fundings_award.get("funding-source", []), fundings_award.get("award-id", []))
+            results = product(
+                fundings_award.get("funding-source", []),
+                fundings_award.get("award-id", []),
+            )
             for result in results:
                 try:
                     fs = result[0]
@@ -232,8 +235,8 @@ def get_or_create_fundings(xmltree, user, item):
                             funding_source=fs,
                             award_id=award_id,
                         ),
-                    )    
-    return data    
+                    )
+    return data
 
 
 def get_or_create_toc_sections(xmltree, user):
@@ -258,7 +261,7 @@ def get_or_create_toc_sections(xmltree, user):
                     function="article.xmlsps.sources.get_or_create_toc_sections",
                     toc_sections=item,
                 ),
-            )            
+            )
     return data
 
 
@@ -271,7 +274,7 @@ def set_license(xmltree, article):
 
 def create_or_update_keywords(xmltree, user, item):
     article_keywords = ArticleKeywords(xmltree=xmltree)
-    article_keywords.configure(tags_to_convert_to_html={'bold': 'b'})
+    article_keywords.configure(tags_to_convert_to_html={"bold": "b"})
     data = []
     for kwd in article_keywords.items:
         try:
@@ -302,7 +305,7 @@ def create_or_update_keywords(xmltree, user, item):
 def create_or_update_abstract(xmltree, user, article, item):
     data = []
     abstract = ArticleAbstract(xmltree=xmltree)
-    abstract.configure(tags_to_convert_to_html={'bold': 'b', 'italic': 'i'})
+    abstract.configure(tags_to_convert_to_html={"bold": "b", "italic": "i"})
 
     if xmltree.find(".//abstract") is not None:
         try:
@@ -483,7 +486,9 @@ def set_first_last_page_elocation_id(xmltree, article):
 
 
 def create_or_update_titles(xmltree, user, item):
-    titles = ArticleTitles(xmltree=xmltree,  tags_to_convert_to_html={'bold': 'b'}).article_title_list
+    titles = ArticleTitles(
+        xmltree=xmltree, tags_to_convert_to_html={"bold": "b"}
+    ).article_title_list
     data = []
     for title in titles:
         try:
