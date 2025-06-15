@@ -559,7 +559,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     base_form_class = CoreAdminModelForm
 
     panel_a = [
-        FieldPanel("processing_status"),
+        FieldPanel("proc_status"),
         FieldPanel("registered_in_core", read_only=True),
         FieldPanel("issn_electronic", read_only=True),
         FieldPanel("issn_print", read_only=True),
