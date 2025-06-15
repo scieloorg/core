@@ -102,54 +102,6 @@ def _get_begin_date(user, collection_acron):
 """
 
 
-@celery_app.task(bind=True, name="provide_pid_for_opac_article")
-def provide_pid_for_opac_article(
-    self,
-    username=None,
-    user_id=None,
-    collection_acron=None,
-    pid_v3=None,
-    article=None,
-    force_update=None,
-):
-    try:
-        logging.info(article)
-        acron = article["journal_acronym"]
-        uri = f"https://www.scielo.br/j/{acron}/a/{pid_v3}/?format=xml"
-        origin_date = datetime.strptime(
-            article.get("update") or article.get("create"),
-            "%a, %d %b %Y %H:%M:%S %Z",
-        ).isoformat()[:10]
-        year = article["publication_date"][:4]
-
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        UnexpectedEvent.create(
-            exception=e,
-            exc_traceback=exc_traceback,
-            detail={
-                "task": "provide_pid_for_opac_article",
-                "pid_v3": pid_v3,
-                "article": article,
-            },
-        )
-    else:
-        task_provide_pid_for_xml_uri.apply_async(
-            kwargs={
-                "uri": uri,
-                "username": username,
-                "user_id": user_id,
-                "pid_v2": None,
-                "pid_v3": pid_v3,
-                "collection_acron": collection_acron,
-                "journal_acron": acron,
-                "year": year,
-                "origin_date": origin_date,
-                "force_update": force_update,
-            }
-        )
-
-
 @celery_app.task(bind=True, name="provide_pid_for_opac_xmls")
 def provide_pid_for_opac_xmls(
     self,
@@ -160,6 +112,7 @@ def provide_pid_for_opac_xmls(
     limit=None,
     pages=None,
     force_update=None,
+    async=False,
 ):
 
     page = 1
@@ -167,8 +120,9 @@ def provide_pid_for_opac_xmls(
     collection_acron = "scl"
     end_date = end_date or datetime.utcnow().isoformat()[:10]
 
+    user = _get_user(self.request, username=username, user_id=user_id)
+
     if not begin_date:
-        user = _get_user(self.request, username=username, user_id=user_id)
         _load_collections(user)
         begin_date = _get_begin_date(user, collection_acron) or "2000-01-01"
 
@@ -196,13 +150,40 @@ def provide_pid_for_opac_xmls(
         else:
             for pid_v3, article in documents.items():
                 try:
-                    provide_pid_for_opac_article.apply_async(
+                    # Processa diretamente os dados do artigo e chama provide_pid_for_opac_and_am_xml
+                    acron = article["journal_acronym"]
+                    xml_uri = f"https://www.scielo.br/j/{acron}/a/{pid_v3}/?format=xml"
+                    origin_date = datetime.strptime(
+                        article.get("update") or article.get("create"),
+                        "%a, %d %b %Y %H:%M:%S %Z",
+                    ).isoformat()[:10]
+                    year = article["publication_date"][:4]
+
+                    if not async:
+                        provide_pid_for_opac_and_am_xml(
+                            user,
+                            xml_uri,
+                            pid_v2=None,
+                            pid_v3=pid_v3,
+                            collection_acron=collection_acron,
+                            journal_acron=acron,
+                            year=year,
+                            origin_date=origin_date,
+                            force_update=force_update,
+                        )
+                        continue
+
+                    task_provide_pid_for_xml_uri.apply_async(
                         kwargs={
+                            "uri": xml_uri,
                             "username": username,
                             "user_id": user_id,
-                            "collection_acron": collection_acron,
+                            "pid_v2": None,
                             "pid_v3": pid_v3,
-                            "article": article,
+                            "collection_acron": collection_acron,
+                            "journal_acron": acron,
+                            "year": year,
+                            "origin_date": origin_date,
                             "force_update": force_update,
                         }
                     )
@@ -473,19 +454,25 @@ def load_file_xml_version(username, collection_acron="scl", user_id=None):
                             f"Invalid date format for item {item.v3}: {item.origin_date}"
                         )
 
-                article = {
-                    "journal_acronym": acronym,
-                    "update": formatted_date,
-                    "publication_date": item.pub_year,  # don't used in processing
-                }
+                # Processa diretamente para chamar task_provide_pid_for_xml_uri
+                uri = f"https://www.scielo.br/j/{acronym}/a/{item.v3}/?format=xml"
+                origin_date = datetime.strptime(
+                    formatted_date, "%a, %d %b %Y %H:%M:%S %Z"
+                ).isoformat()[:10]
+                year = item.pub_year
+
                 logging.info(f"Processing item: {item.v3}")
-                provide_pid_for_opac_article.apply_async(
+                task_provide_pid_for_xml_uri.apply_async(
                     kwargs={
+                        "uri": uri,
                         "username": username,
                         "user_id": user_id,
-                        "collection_acron": collection_acron,
+                        "pid_v2": None,
                         "pid_v3": item.v3,
-                        "article": article,
+                        "collection_acron": collection_acron,
+                        "journal_acron": acronym,
+                        "year": year,
+                        "origin_date": origin_date,
                         "force_update": True,
                     }
                 )
