@@ -62,7 +62,12 @@ def items_to_load_article_with_valid_false():
 
 @celery_app.task(bind=True, name=_("load_articles"))
 def load_articles(
-    self, user_id=None, username=None, from_date=None, load_invalid_articles=False, force_update=False
+    self,
+    user_id=None,
+    username=None,
+    from_date=None,
+    load_invalid_articles=False,
+    force_update=False,
 ):
     try:
         user = _get_user(self.request, username, user_id)
@@ -70,7 +75,7 @@ def load_articles(
             generator_articles = items_to_load_article_with_valid_false()
         else:
             generator_articles = _items_to_load_article()
-            
+
         for item in generator_articles:
             try:
                 load_article.apply_async(
@@ -225,26 +230,32 @@ def article_complete_data(
         pass
 
 
-
 @celery_app.task(bind=True)
-def transfer_license_statements_fk_to_article_license(self, user_id=None, username=None):
+def transfer_license_statements_fk_to_article_license(
+    self, user_id=None, username=None
+):
     user = _get_user(self.request, username, user_id)
     articles_to_update = []
     for instance in Article.objects.filter(article_license__isnull=True):
 
         new_license = None
-        if instance.license_statements.exists() and instance.license_statements.first().url:
+        if (
+            instance.license_statements.exists()
+            and instance.license_statements.first().url
+        ):
             new_license = instance.license_statements.first().url
         elif instance.license and instance.license.license_type:
             new_license = instance.license.license_type
-        
+
         if new_license:
             instance.article_license = new_license
             instance.updated_by = user
             articles_to_update.append(instance)
 
     if articles_to_update:
-        Article.objects.bulk_update(articles_to_update, ['article_license', 'updated_by'])
+        Article.objects.bulk_update(
+            articles_to_update, ["article_license", "updated_by"]
+        )
         logging.info("The article_license of model Articles have been updated")
 
 
@@ -252,15 +263,26 @@ def remove_duplicate_articles(pid_v3=None):
     ids_to_exclude = []
     try:
         if pid_v3:
-            duplicates = Article.objects.filter(pid_v3=pid_v3).values("pid_v3").annotate(pid_v3_count=Count("pid_v3")).filter(pid_v3_count__gt=1, valid=False)
+            duplicates = (
+                Article.objects.filter(pid_v3=pid_v3)
+                .values("pid_v3")
+                .annotate(pid_v3_count=Count("pid_v3"))
+                .filter(pid_v3_count__gt=1, valid=False)
+            )
         else:
-            duplicates = Article.objects.values("pid_v3").annotate(pid_v3_count=Count("pid_v3")).filter(pid_v3_count__gt=1, valid=False)
+            duplicates = (
+                Article.objects.values("pid_v3")
+                .annotate(pid_v3_count=Count("pid_v3"))
+                .filter(pid_v3_count__gt=1, valid=False)
+            )
         for duplicate in duplicates:
-            article_ids = Article.objects.filter(
-                pid_v3=duplicate["pid_v3"]
-            ).order_by("created")[1:].values_list("id", flat=True)
+            article_ids = (
+                Article.objects.filter(pid_v3=duplicate["pid_v3"])
+                .order_by("created")[1:]
+                .values_list("id", flat=True)
+            )
             ids_to_exclude.extend(article_ids)
-        
+
         if ids_to_exclude:
             Article.objects.filter(id__in=ids_to_exclude).delete()
     except Exception as exception:
@@ -273,25 +295,29 @@ def remove_duplicate_articles(pid_v3=None):
             },
         )
 
+
 @celery_app.task(bind=True)
 def remove_duplicate_articles_task(self, user_id=None, username=None, pid_v3=None):
     remove_duplicate_articles(pid_v3)
 
 
 def get_researcher_identifier_unnormalized():
-    return ResearcherIdentifier.objects.filter(source_name="EMAIL").exclude(identifier__regex=r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    return ResearcherIdentifier.objects.filter(source_name="EMAIL").exclude(
+        identifier__regex=r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    )
+
 
 @celery_app.task(bind=True)
-def normalize_stored_email(self,):
+def normalize_stored_email(
+    self,
+):
     updated_list = []
     re_identifiers = get_researcher_identifier_unnormalized()
-    
+
     for re_identifier in re_identifiers:
         email = extracts_normalized_email(raw_email=re_identifier.identifier)
         if email:
             re_identifier.identifier = email
             updated_list.append(re_identifier)
 
-    ResearcherIdentifier.objects.bulk_update(updated_list, ['identifier'])
-
-
+    ResearcherIdentifier.objects.bulk_update(updated_list, ["identifier"])
