@@ -35,12 +35,19 @@ from institution.models import Publisher, Sponsor
 from issue.models import Issue, TocSection
 from journal.models import Journal, SciELOJournal
 from pid_provider.provider import PidProvider
+from pid_provider.models import PidProviderXML
 from researcher.models import InstitutionalAuthor, Researcher
 from tracker.models import UnexpectedEvent
 from vocabulary.models import Keyword
 
 
 class Article(ExportModelOperationsMixin('article'), CommonControlField, ClusterableModel):
+    pp_xml = models.ForeignKey(
+        PidProviderXML,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
     pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
     pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True, unique=True)
     sps_pkg_name = models.CharField(
