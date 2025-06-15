@@ -17,6 +17,7 @@ from journal.models import SciELOJournal
 from researcher.models import ResearcherIdentifier
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
+from pid_provider.choices import PPXML_STATUS_TODO
 from tracker.models import UnexpectedEvent
 
 from . import controller
@@ -47,23 +48,8 @@ def load_article(self, user_id=None, username=None, file_path=None, v3=None):
     xmlsps.load_article(user, file_path=file_path, v3=v3)
 
 
-def _items_to_load_article(from_date):
-    if from_date:
-        try:
-            from_date = datetime.strptime(from_date, "%Y-%m-%d")
-        except Exception:
-            from_date = None
-
-    if not from_date:
-        now = datetime.utcnow().isoformat()[:10]
-        # Obtém os PidProvider que não estão em Article
-        # E os PidProvider em que a diferença entre created e updated é maior/igual 1 day (Atualizações de artigos)
-        articles_v3 = Article.objects.values_list("pid_v3", flat=True)
-        pid_provider_v3 = PidProviderXML.objects.values_list("v3", flat=True)
-        # obtém os v3 que não estão em articles_v3
-        missing_pid_provider_v3 = set(pid_provider_v3) - set(articles_v3)
-        return PidProviderXML.objects.filter(Q(available_since__isnull=True) | Q(available_since__lte=now)).filter(Q(v3__in=missing_pid_provider_v3) | Q(updated__gte=F("created") + timedelta(days=1))).iterator()
-    return PidProviderXML.public_items(from_date)
+def _items_to_load_article():
+    return PidProviderXML.objects.filter(proc_status=PPXML_STATUS_TODO)
 
 
 def items_to_load_article_with_valid_false():
@@ -83,7 +69,7 @@ def load_articles(
         if load_invalid_articles:
             generator_articles = items_to_load_article_with_valid_false()
         else:
-            generator_articles = _items_to_load_article(from_date)
+            generator_articles = _items_to_load_article()
             
         for item in generator_articles:
             try:
