@@ -969,6 +969,11 @@ class Journal(CommonControlField, ClusterableModel):
         title = self.title
         return f"{title} ({collection_acronym}) | ({issns_str})"
 
+    @property
+    def articlemeta_format(self):
+        from .formats.articlemeta_format import get_articlemeta_format_title
+        return get_articlemeta_format_title(self)
+
     base_form_class = CoreAdminModelForm
 
 
