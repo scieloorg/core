@@ -42,22 +42,18 @@ def load_funding_data(user, file_path):
     controller.read_file(user, file_path)
 
 
-@celery_app.task(bind=True, name=_("load_article"))
-def load_article(self, user_id=None, username=None, file_path=None, v3=None):
-    user = _get_user(self.request, username, user_id)
-    xmlsps.load_article(user, file_path=file_path, v3=v3)
-
-
 def _items_to_load_article():
-    return PidProviderXML.objects.filter(proc_status=PPXML_STATUS_TODO)
+    return (
+        PidProviderXML.objects.select_related("current_version")
+        .filter(proc_status=PPXML_STATUS_TODO)
+        .iterator()
+    )
 
 
 def items_to_load_article_with_valid_false():
     # Obtém os objetos PidProviderXMl onde o campo pid_v3 de article e v3 possuem o mesmo valor
     articles = Article.objects.filter(valid=False).values("pid_v3")
-    items = PidProviderXML.objects.filter(v3__in=Subquery(articles))
-    for item in items:
-        yield item
+    return PidProviderXML.objects.filter(v3__in=Subquery(articles)).iterator()
 
 
 @celery_app.task(bind=True, name=_("load_articles"))
@@ -71,20 +67,19 @@ def load_articles(
 ):
     try:
         user = _get_user(self.request, username, user_id)
-        if load_invalid_articles:
-            generator_articles = items_to_load_article_with_valid_false()
-        else:
-            generator_articles = _items_to_load_article()
+
+        generator_articles = (
+            PidProviderXML.objects.select_related("current_version")
+            .filter(proc_status=PPXML_STATUS_TODO)
+            .iterator()
+        )
 
         for item in generator_articles:
             try:
-                load_article.apply_async(
-                    kwargs={
-                        "file_path": item.current_version.file.path,
-                        "user_id": user.id,
-                        "username": user.username,
-                        "v3": item.v3,
-                    }
+                xmlsps.load_article(
+                    user,
+                    file_path=item.current_version.file.path,
+                    v3=item.v3,
                 )
             except Exception as exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
