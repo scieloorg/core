@@ -80,6 +80,7 @@ def load_articles(
                     user,
                     file_path=item.current_version.file.path,
                     v3=item.v3,
+                    pp_xml=item,
                 )
             except Exception as exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()

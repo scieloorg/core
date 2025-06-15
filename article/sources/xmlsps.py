@@ -40,7 +40,7 @@ class LicenseDoesNotExist(Exception):
     ...
 
 
-def load_article(user, xml=None, file_path=None, v3=None):
+def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
     logging.info(f"load article {file_path} {v3}")
     try:
         if file_path:
@@ -73,6 +73,8 @@ def load_article(user, xml=None, file_path=None, v3=None):
 
     try:
         article = Article.get_or_create(pid_v3=pid_v3, user=user)
+        article.pp_xml = pp_xml
+
         xmltree = xml_with_pre.xmltree
         article.valid = False
         article.sps_pkg_name = xml_with_pre.sps_pkg_name
