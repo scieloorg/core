@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% load static %}
+{% load i18n %}
+{% load wagtailsettings_tags %}
+{% load i18n wagtailcore_tags %}
+{% load get_journals_by_name_institutiton %}
+{% block content%}
+
+<a href="{% pageurl parent_page %}">Home</a>
+
+<p>Journal{% if category%}: {{category}}{% endif %}</p>
+
+<form method="get" action="{% pageurl self %}" class="search-form">
+    <div class="form-group">
+        <label for="search_term">Search Term:</label>
+        <input type="text" id="search_term" name="search_term" value="{{ search_term }}" placeholder="Enter search term">
+    </div>
+    
+    <div class="form-group">
+        <label for="search_type">Search Type:</label>
+        <select id="search_type" name="search_type">
+            <option value="contains" {% if search_type == 'contains' %}selected{% endif %}>Contains</option>
+            <option value="exact" {% if search_type == 'exact' %}selected{% endif %}>Exact Title</option>
+            <option value="startswith" {% if search_type == 'startswith' %}selected{% endif %}>Starts With</option>
+        </select>
+    </div>
+    
+    <button type="submit" class="btn btn-primary">Search</button>
+</form>
+
+
+<form method="get" action="{% pageurl self %}" id="myForm">
+    <div class="form-group">
+        <label for="q">Selecione uma área de estudo:</label>
+        <select name="category" id="q" onchange="this.form.submit()" class="form-control">
+            <option hidden>All subjects</option>
+            <option value="" {% if not category %}selected{% endif %}>All subjects</option>
+            <option value="Agricultural Sciences" {% if category == "Agricultural Sciences" %}selected{% endif %}>Agricultural Sciences</option>
+            <option value="Biological Sciences" {% if category == "Biological Sciences" %}selected{% endif %}>Biological Sciences</option>
+            <option value="Applied Social Sciences" {% if category == "Applied Social Sciences" %}selected{% endif %}>Applied Social Sciences</option>
+            <option value="Engineering" {% if category == "Engineering" %}selected{% endif %}>Engineering</option>
+            <option value="Exact and Earth Sciences" {% if category == "Exact and Earth Sciences" %}selected{% endif %}>Exact and Earth Sciences</option>
+            <option value="Health Sciences" {% if category == "Health Sciences" %}selected{% endif %}>Health Sciences</option>
+            <option value="Human Sciences" {% if category == "Human Sciences" %}selected{% endif %}>Human Sciences</option>
+            <option value="Linguistics, Letters and Arts" {% if category == "Linguistics, Letters and Arts" %}selected{% endif %}>Linguistics, Letters and Arts</option>
+            <option value="Psicanalise" {% if category == "Psicanalise" %}selected{% endif %}>Psicanalise</option>
+        </select>
+    </div>
+</form>
+
+<p style="margin-bottom: 2px;">---download CSV----</p>
+<form action="{% url 'home:download-csv' %}" style="margin-bottom: 2px;" class="download-form">
+    <button type="submit" class="btn btn-success">Download List</button>
+</form>
+<div class="search-results">
+    <ul>
+        {% if publisher %}
+            ----------------
+            {% for inst in institution %}
+                {% if inst.name|get_journals_by_name_institutiton %}
+                        <p> Publisher: {{inst.name}} 
+                            {% for journal in inst.name|get_journals_by_name_institutiton %}
+                                <li>
+                                    <ul>
+                                        <!-- Revisar href -->
+                                        <a href="http://{{ journal.collection.all.first.domain }}/scielo.php?script=sci_serial&pid={{journal.official.issnl}}&lng=en" target="_blank">{{ journal.title }}</a>
+                                    </ul>
+                                </li>
+                            {% endfor%}
+                        </p>
+            -----------------
+                {% endif%}
+            {% endfor%}
+        {% else %}
+        <p>Total journals: {{ journals.count }}</p>
+        {% for journal in journals %}
+        {{ journal.title }}
+            {% if journal.collection.all %}
+                <!-- Revisar href -->
+                <a href="http://{{ journal.collection.all.first.domain }}/scielo.php?script=sci_serial&pid={{journal.official.issnl}}&lng=en" target="_blank">{{ journal.title }}</a>
+            {% endif %}
+        {% endfor %}        
+    {% endif%}
+    </ul>
+</div>
+
+{% endblock %}

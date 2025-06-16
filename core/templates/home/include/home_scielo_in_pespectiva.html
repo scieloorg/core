@@ -1,0 +1,71 @@
+{% load static compress %}
+{% load wagtailadmin_tags wagtailcore_tags wagtailimages_tags i18n %}
+{% load wagtailsettings_tags %}
+
+<div class="row row-tab-desk">
+    <div class="col-md-12 nav-center">
+        <ul class="nav nav-tabs">
+            <li class="active">
+                <h2><a href="#tab-blog" data-toggle="tab">{% trans 'SciELO in Perspective' %}</a></h2>
+            </li>            
+            <li>
+                <h2><a href="#tab-youtube-videos" data-toggle="tab">YouTube</a></h2>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<div class="tab-pane active tab-pane-white" id="tab-blog">
+    <div class="row slider-blog" id="blog-feed-container">
+        <!-- Os posts serão inseridos aqui via JS -->
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    $.ajax({
+        url: "{% url 'blog_feed_json' %}",
+        method: "GET",
+        dataType: "json",
+        success: function(response) {
+            var posts = response.posts;
+            var html = "";
+            posts.forEach(function(post) {
+                html += `
+                <div class="col-xs-12 col-md-4">
+                    <div class="card">
+                        <div class="card-header"
+                            style="background-image:url('${post.image ? post.image : 'https://placehold.co/300x300'}')">
+                        </div>
+                        <div class="card-body">
+                            <div class="card-title">
+                                <a href="${post.link}">
+                                    <span>Por SciELO</span>
+                                    <h3>${post.title}</h3>
+                                </a>
+                            </div>
+                            <p>${post.description}</p>
+                        </div>
+                        <div class="card-footer">
+                            <div class="row">
+                                <div class="col-xs-6 col-sm-6 col-md-6">
+                                    <span>${post.date}</span>
+                                </div>
+                                <div class="col-xs-6 col-sm-6 col-md-6 text-right">
+                                    <a href="${post.link}" class="btn-arrow arrow-blue">Read more</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+            $("#blog-feed-container").html(html);
+        },
+        error: function() {
+            $("#blog-feed-container").html("<p>Erro ao carregar o feed do blog.</p>");
+        }
+    });
+});
+</script>
