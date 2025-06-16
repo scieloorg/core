@@ -222,6 +222,8 @@ def get_or_create_fundings(xmltree, user, item):
             for result in results:
                 try:
                     fs, award_id = result
+                    if not fs or not award_id:
+                        continue
                     if not fs:
                         raise LoadArticleFundingError(
                             f"get_or_create_fundings requires fs. Found {result}"
@@ -506,13 +508,14 @@ def create_or_update_titles(xmltree, user, item):
     for title in titles:
         try:
             lang = get_or_create_language(title.get("lang"), user=user)
-            obj = DocumentTitle.create_or_update(
-                title=title.get("plain_text"),
-                rich_text=title.get("html_text"),
-                language=lang,
-                user=user,
-            )
-            data.append(obj)
+            if title.get("plain_text") or title.get("html_text"):
+                obj = DocumentTitle.create_or_update(
+                    title=title.get("plain_text"),
+                    rich_text=title.get("html_text"),
+                    language=lang,
+                    user=user,
+                )
+                data.append(obj)
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
