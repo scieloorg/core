@@ -112,7 +112,7 @@ def provide_pid_for_opac_xmls(
     limit=None,
     pages=None,
     force_update=None,
-    async=False,
+    concurrent=False,
 ):
 
     page = 1
@@ -159,7 +159,7 @@ def provide_pid_for_opac_xmls(
                     ).isoformat()[:10]
                     year = article["publication_date"][:4]
 
-                    if not async:
+                    if not concurrent:
                         provide_pid_for_opac_and_am_xml(
                             user,
                             xml_uri,
