@@ -388,6 +388,9 @@ class LicenseStatement(CommonControlField):
         AutocompletePanel("license"),
     ]
 
+    def __str__(self):
+        return f"{self.language} {self.license_p}"
+
     class Meta:
         unique_together = [("url", "license_p", "language")]
         verbose_name = _("License")
