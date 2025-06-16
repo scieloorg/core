@@ -58,10 +58,11 @@ class ArticleAdmin(ModelAdmin):
         "pid_v3",
         "pid_v2",
         "valid",
+        "data_status",
         "created",
         "updated",
     )
-    list_filter = ("valid", CollectionFilter)
+    list_filter = ("valid", CollectionFilter, "data_status")
     search_fields = (
         "titles__plain_text",
         "pid_v2",

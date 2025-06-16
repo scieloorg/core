@@ -1,20 +1,19 @@
 from django.http import HttpResponseRedirect
 from django.utils.translation import gettext as _
-from wagtail_modeladmin.options import (
-    ModelAdmin,
-    ModelAdminGroup,
-    modeladmin_register,
-)
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import SnippetViewSet
+from wagtail_modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
 from wagtail_modeladmin.views import CreateView
 
 from config.menu import get_menu_order
+
 from .models import (
-    PidProviderConfig,
     CollectionPidRequest,
+    FixPidV2,
     OtherPid,
+    PidProviderConfig,
     PidProviderXML,
     PidRequest,
-    FixPidV2,
 )
 
 
@@ -39,7 +38,6 @@ class PidRequestAdmin(ModelAdmin):
         "origin",
         "result_type",
         "result_msg",
-        "v3",
         "times",
         "created",
         "updated",
@@ -47,7 +45,6 @@ class PidRequestAdmin(ModelAdmin):
     list_filter = ("result_type",)
     search_fields = (
         "origin",
-        "v3",
         "result_msg",
     )
 
@@ -146,10 +143,7 @@ class OtherPidAdmin(ModelAdmin):
         "updated",
     )
     list_filter = ("pid_type",)
-    search_fields = (
-        "pid_in_xml",
-        "pid_provider_xml__v3",
-    )
+    search_fields = ("pid_in_xml", "pid_provider_xml__v3", "pid_provider_xml__pkg_name")
 
 
 class PidProviderConfigCreateView(CreateView):

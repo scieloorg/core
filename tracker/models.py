@@ -45,6 +45,34 @@ class EventReportCreateError(Exception):
 class EventReportDeleteEventsError(Exception):
     ...
 
+class BaseEvent(models.Model):
+    name = models.CharField(_("name"), max_length=200)
+    detail = models.JSONField(null=True, blank=True)
+    created = models.DateTimeField(verbose_name=_("Creation date"), auto_now_add=True)
+
+    class Meta:
+        abstract = True
+
+    @property
+    def data(self):
+        return {
+            "name": self.name,
+            "detail": self.detail,
+            "created": self.created.isoformat(),
+        }
+
+    @classmethod
+    def create(
+        cls,
+        name=None,
+        detail=None,
+    ):
+        obj = cls()
+        obj.detail = detail
+        obj.name = name
+        obj.save()
+        return obj
+
 
 class UnexpectedEvent(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -125,123 +153,11 @@ class UnexpectedEvent(models.Model):
             )
 
 
-class Event(CommonControlField):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    message = models.TextField(_("Message"), null=True, blank=True)
-    message_type = models.CharField(
-        _("Message type"),
-        choices=choices.EVENT_MSG_TYPE,
-        max_length=16,
-        null=True,
-        blank=True,
-    )
-    detail = models.JSONField(null=True, blank=True)
-    unexpected_event = models.ForeignKey(
-        UnexpectedEvent, on_delete=models.SET_NULL, null=True, blank=True
-    )
-
-    class Meta:
-        abstract = True
-        indexes = [
-            models.Index(fields=["message_type"]),
-        ]
-
-    @property
-    def data(self):
-        d = {}
-        d["created"] = self.created.isoformat()
-        d["user"] = self.user.username
-        d.update(
-            dict(
-                message=self.message, message_type=self.message_type, detail=self.detail
-            )
-        )
-        if self.unexpected_event:
-            d.update(self.unexpected_event.data)
-        return d
-
-    @classmethod
-    def create(
-        cls,
-        user=None,
-        message_type=None,
-        message=None,
-        e=None,
-        exc_traceback=None,
-        detail=None,
-    ):
-        try:
-            obj = cls()
-            obj.creator = user
-            obj.message = message
-            obj.message_type = message_type
-            obj.detail = detail
-            obj.save()
-
-            if e:
-                logging.exception(f"{message}: {e}")
-                obj.unexpected_event = UnexpectedEvent.create(
-                    exception=e,
-                    exc_traceback=exc_traceback,
-                )
-                obj.save()
-        except Exception as exc:
-            raise EventCreateError(
-                f"Unable to create Event ({message} {e}). EXCEPTION: {exc}"
-            )
-        return obj
-
-
 def tracker_file_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
 
     d = datetime.utcnow()
     return f"tracker/{d.year}/{d.month}/{d.day}/{filename}"
-
-
-class EventReport(CommonControlField):
-    file = models.FileField(
-        upload_to=tracker_file_directory_path, null=True, blank=True
-    )
-
-    class Meta:
-        abstract = True
-
-    def save_file(self, events, ext=None):
-        if not events:
-            return
-        try:
-            ext = ".json"
-            content = json.dumps(list([item.data for item in events]))
-            name = datetime.utcnow().isoformat() + ext
-            self.file.save(name, ContentFile(content))
-            self.delete_events(events)
-        except Exception as e:
-            raise EventReportSaveFileError(
-                f"Unable to save EventReport.file ({name}). Exception: {e}"
-            )
-
-    def delete_events(self, events):
-        for item in events:
-            try:
-                item.unexpected_event.delete()
-            except:
-                pass
-            try:
-                item.delete()
-            except:
-                pass
-
-    @classmethod
-    def create(cls, user):
-        try:
-            obj = cls()
-            obj.creator = user
-            obj.save()
-        except Exception as e:
-            raise EventReportCreateError(
-                f"Unable to create EventReport. Exception: {e}"
-            )
 
 
 class Hello(models.Model):
