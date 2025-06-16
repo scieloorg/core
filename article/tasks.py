@@ -17,7 +17,7 @@ from journal.models import SciELOJournal
 from researcher.models import ResearcherIdentifier
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
-from pid_provider.choices import PPXML_STATUS_TODO
+from pid_provider.choices import PPXML_STATUS_TODO, PPXML_STATUS_DONE
 from tracker.models import UnexpectedEvent
 
 from . import controller
@@ -56,14 +56,11 @@ def items_to_load_article_with_valid_false():
     return PidProviderXML.objects.filter(v3__in=Subquery(articles)).iterator()
 
 
-@celery_app.task(bind=True, name=_("load_articles"))
-def load_articles(
+@celery_app.task(bind=True, name="task_load_articles")
+def task_load_articles(
     self,
     user_id=None,
     username=None,
-    from_date=None,
-    load_invalid_articles=False,
-    force_update=False,
 ):
     try:
         user = _get_user(self.request, username, user_id)
@@ -76,12 +73,15 @@ def load_articles(
 
         for item in generator_articles:
             try:
-                xmlsps.load_article(
+                article = xmlsps.load_article(
                     user,
                     file_path=item.current_version.file.path,
                     v3=item.v3,
                     pp_xml=item,
                 )
+                if article and article.valid:
+                    item.proc_status = PPXML_STATUS_DONE
+                    item.save()
             except Exception as exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 UnexpectedEvent.create(
