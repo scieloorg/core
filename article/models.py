@@ -285,6 +285,37 @@ class Article(
         except cls.DoesNotExist:
             return cls.create(pid_v3=pid_v3, user=user)
 
+    @classmethod
+    def mark_as_deleted_articles_without_pp_xml(cls, user):
+        """
+        Marca artigos como DATA_STATUS_DELETED quando pp_xml é None.
+        
+        Args:
+            user: Usuário que está executando a operação
+            
+        Returns:
+            int: Número de artigos atualizados
+        """
+        try:
+            return cls.objects.filter(
+                pp_xml__isnull=True
+            ).exclude(
+                data_status=choices.DATA_STATUS_DELETED
+            ).update(
+                data_status=choices.DATA_STATUS_DELETED,
+                updated_by=user,
+                updated=datetime.utcnow()
+            )
+            
+        except Exception as exception:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=exception,
+                exc_traceback=exc_traceback,
+                action="article.models.Article.mark_articles_as_deleted_without_pp_xml",
+                detail=None,
+            )
+
     def set_date_pub(self, dates):
         if dates:
             self.pub_date_day = dates.get("day")
