@@ -32,6 +32,7 @@ class JournalViewSet(GenericJournalViewSet):
             "until_date_created",
             "from_date_updated",
             "until_date_updated",
+            "issnl",
             "",
         )
 
