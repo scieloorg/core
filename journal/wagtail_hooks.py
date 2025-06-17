@@ -375,7 +375,7 @@ def register_calendar_url():
 @hooks.register('register_snippet_listing_buttons')
 def snippet_listing_buttons(snippet, user, next_url=None):
     if isinstance(snippet, models.Journal):
-        journal_page = JournalPage.objects.get(slug="journal")
+        journal_page = JournalPage.objects.filter(slug="journal").first()
         scielo_journal = models.SciELOJournal.objects \
             .only("collection__acron3", "journal_acron") \
             .select_related("collection") \
