@@ -14,15 +14,13 @@ from wagtail.snippets.views.snippets import (
 from wagtail_modeladmin.options import ModelAdmin
 
 from config.menu import get_menu_order
+from config.settings.base import COLLECTION_TEAM, JOURNAL_TEAM
 from journalpage.models import JournalPage
 
 from . import models
 from .button_helper import IndexedAtHelper
 from .proxys import JournalProxyEditor
 from .views import import_file, validate
-
-COLLECTION_TEAM = "Collection Team"
-JOURNAL_TEAM = "Journal Team"
 
 
 class OfficialJournalCreateViewSnippet(CreateView):
@@ -377,7 +375,7 @@ def register_calendar_url():
 @hooks.register('register_snippet_listing_buttons')
 def snippet_listing_buttons(snippet, user, next_url=None):
     if isinstance(snippet, models.Journal):
-        journal_page = JournalPage.objects.get(slug="journal")
+        journal_page = JournalPage.objects.filter(slug="journal").first()
         scielo_journal = models.SciELOJournal.objects \
             .only("collection__acron3", "journal_acron") \
             .select_related("collection") \

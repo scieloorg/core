@@ -76,11 +76,9 @@
                             {% include "wagtailadmin/shared/field.html" with field=form.is_superuser %}
                             </li>
                         {% endif %}
+                        <li>{% include "wagtailadmin/shared/field.html" with field=form.groups %}</li>
                         <li>{% include "wagtailadmin/shared/field.html" with field=form.collection %}</li>
                         <li>{% include "wagtailadmin/shared/field.html" with field=form.journal %}</li>
-                        <li>
-                            {% include "wagtailadmin/shared/field.html" with field=form.groups %}
-                        </li>
                         <li><button class="button">{% trans "Add user" %}</button></li>
                     </ul>
                 </section>
