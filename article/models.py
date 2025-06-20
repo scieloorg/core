@@ -1,6 +1,6 @@
+import logging
 import os
 import sys
-import logging
 from datetime import datetime
 
 from django.core.files.base import ContentFile
@@ -8,9 +8,6 @@ from django.db import IntegrityError, models
 from django.db.utils import DataError
 from django.utils.translation import gettext as _
 from django_prometheus.models import ExportModelOperationsMixin
-from packtools.sps.formats import pubmed, pmc, crossref
-from packtools.sps.pid_provider.xml_sps_lib import generate_finger_print
-
 from legendarium.formatter import descriptive_format
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -20,6 +17,7 @@ from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInte
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
+from article import choices
 from core.forms import CoreAdminModelForm
 from core.models import (
     CommonControlField,
@@ -34,15 +32,34 @@ from doi_manager.models import CrossRefConfiguration
 from institution.models import Publisher, Sponsor
 from issue.models import Issue, TocSection
 from journal.models import Journal, SciELOJournal
+from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
 from researcher.models import InstitutionalAuthor, Researcher
 from tracker.models import UnexpectedEvent
 from vocabulary.models import Keyword
 
 
-class Article(ExportModelOperationsMixin('article'), CommonControlField, ClusterableModel):
+class Article(
+    ExportModelOperationsMixin("article"), CommonControlField, ClusterableModel
+):
+    pp_xml = models.ForeignKey(
+        PidProviderXML,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    data_status = models.CharField(
+        _("Data status"),
+        max_length=15,
+        null=True,
+        blank=True,
+        choices=choices.DATA_STATUS,
+        default=choices.DATA_STATUS_UNDEF,
+    )
     pid_v2 = models.CharField(_("PID V2"), max_length=23, null=True, blank=True)
-    pid_v3 = models.CharField(_("PID V3"), max_length=23, null=True, blank=True, unique=True)
+    pid_v3 = models.CharField(
+        _("PID V3"), max_length=23, null=True, blank=True, unique=True
+    )
     sps_pkg_name = models.CharField(
         _("Package name"), max_length=64, null=True, blank=True
     )
@@ -90,45 +107,39 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
     last_page = models.CharField(max_length=20, null=True, blank=True)
     elocation_id = models.CharField(max_length=64, null=True, blank=True)
     keywords = models.ManyToManyField(Keyword, blank=True)
-    publisher = models.ForeignKey(
-        Publisher,
-        verbose_name=_("Publisher"),
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-    )
     valid = models.BooleanField(default=False, blank=True, null=True)
 
     panels_ids = [
-        FieldPanel("pid_v2"),
-        FieldPanel("pid_v3"),
-        AutocompletePanel("doi"),
-        AutocompletePanel("journal"),
-        AutocompletePanel("issue"),
-        FieldPanel("pub_date_day"),
-        FieldPanel("pub_date_month"),
-        FieldPanel("pub_date_year"),
-        FieldPanel("first_page"),
-        FieldPanel("last_page"),
-        FieldPanel("elocation_id"),
+        FieldPanel("data_status"),
+        FieldPanel("valid"),
+        FieldPanel("pid_v2", read_only=True),
+        FieldPanel("pid_v3", read_only=True),
+        AutocompletePanel("doi", read_only=True),
+        AutocompletePanel("journal", read_only=True),
+        AutocompletePanel("issue", read_only=True),
+        FieldPanel("pub_date_day", read_only=True),
+        FieldPanel("pub_date_month", read_only=True),
+        FieldPanel("pub_date_year", read_only=True),
+        FieldPanel("first_page", read_only=True),
+        FieldPanel("last_page", read_only=True),
+        FieldPanel("elocation_id", read_only=True),
     ]
     panels_languages = [
-        FieldPanel("article_type"),
-        AutocompletePanel("toc_sections"),
-        AutocompletePanel("languages"),
-        AutocompletePanel("titles"),
+        FieldPanel("article_type", read_only=True),
+        AutocompletePanel("toc_sections", read_only=True),
+        AutocompletePanel("languages", read_only=True),
+        AutocompletePanel("titles", read_only=True),
         InlinePanel("abstracts", label=_("Abstract")),
-        AutocompletePanel("keywords"),
-        AutocompletePanel("license"),
-        AutocompletePanel("license_statements"),
+        AutocompletePanel("keywords", read_only=True),
+        AutocompletePanel("license", read_only=True),
+        # AutocompletePanel("license_statements"),
     ]
     panels_researchers = [
-        AutocompletePanel("researchers"),
-        AutocompletePanel("collab"),
+        AutocompletePanel("researchers", read_only=True),
+        AutocompletePanel("collab", read_only=True),
     ]
     panels_institutions = [
-        AutocompletePanel("publisher"),
-        AutocompletePanel("fundings"),
+        AutocompletePanel("fundings", read_only=True),
     ]
 
     edit_handler = TabbedInterface(
@@ -150,7 +161,12 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
             ),
             models.Index(
                 fields=[
-                    "pid_v2",
+                    "valid",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "data_status",
                 ]
             ),
             models.Index(
@@ -186,9 +202,12 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
 
     @property
     def collections(self):
-        scielo_journals = SciELOJournal.objects.filter(journal=self.journal)
-        for scielo_journal in scielo_journals:
-            yield scielo_journal.collection
+        if self.journal:
+            for item in self.journal.scielo_journal_set.all().select_related("collection"):
+                yield item.collection
+        # scielo_journals = SciELOJournal.objects.select_related("collection").filter(journal=self.journal)
+        # for scielo_journal in scielo_journals:
+        #     yield scielo_journal.collection
 
     @classmethod
     def last_created_date(cls):
@@ -227,8 +246,8 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
 
         try:
             return descriptive_format(**leg_dict)
-        except Exception as ex: 
-            logging.exception("Erro on article %s, error: %s" % (self.pid_v2, ex)) 
+        except Exception as ex:
+            logging.exception("Erro on article %s, error: %s" % (self.pid_v2, ex))
             return ""
 
     @classmethod
@@ -244,7 +263,7 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
     def create(
         cls,
         pid_v3,
-        user,        
+        user,
     ):
         try:
             obj = cls()
@@ -259,12 +278,43 @@ class Article(ExportModelOperationsMixin('article'), CommonControlField, Cluster
     def get_or_create(
         cls,
         pid_v3,
-        user,        
+        user,
     ):
         try:
             return cls.get(pid_v3=pid_v3)
         except cls.DoesNotExist:
             return cls.create(pid_v3=pid_v3, user=user)
+
+    @classmethod
+    def mark_as_deleted_articles_without_pp_xml(cls, user):
+        """
+        Marca artigos como DATA_STATUS_DELETED quando pp_xml é None.
+        
+        Args:
+            user: Usuário que está executando a operação
+            
+        Returns:
+            int: Número de artigos atualizados
+        """
+        try:
+            return cls.objects.filter(
+                pp_xml__isnull=True
+            ).exclude(
+                data_status=choices.DATA_STATUS_DELETED
+            ).update(
+                data_status=choices.DATA_STATUS_DELETED,
+                updated_by=user,
+                updated=datetime.utcnow()
+            )
+            
+        except Exception as exception:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=exception,
+                exc_traceback=exc_traceback,
+                action="article.models.Article.mark_articles_as_deleted_without_pp_xml",
+                detail=None,
+            )
 
     def set_date_pub(self, dates):
         if dates:
@@ -342,6 +392,8 @@ class ArticleFunding(CommonControlField):
 
     @classmethod
     def get_or_create(cls, award_id, funding_source, user):
+        if not award_id or not funding_source:
+            raise ValueError("ArticleFunding.get_or_create requires award_id and funding_source")
         try:
             return cls.objects.get(award_id=award_id, funding_source=funding_source)
         except cls.DoesNotExist:

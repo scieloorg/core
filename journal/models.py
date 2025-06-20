@@ -925,11 +925,28 @@ class Journal(CommonControlField, ClusterableModel):
     @classmethod
     def get(
         cls,
-        official_journal,
+        official_journal=None,
+        issn_print=None,
+        issn_electronic=None,
     ):
+
+        queryset = cls.objects.select_related("official")
         if official_journal:
-            return cls.objects.get(official=official_journal)
-        raise JournalGetError("Journal.get requires offical_journal parameter")
+            return queryset.get(official=official_journal)
+        
+        issns = []
+        if issn_electronic:
+            issns.append(issn_electronic)
+        if issn_print:
+            issns.append(issn_print)
+        if issns:
+            return queryset.filter(
+                Q(official__issn_print__in=issns)|
+                Q(official__issn_electronic__in=issns)
+            ).first()
+
+        raise JournalGetError(
+            "Journal.get requires offical_journal or issn_print or issn_electronic parameter")
 
     @classmethod
     def create_or_update(

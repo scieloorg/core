@@ -17,6 +17,7 @@ from journal.models import SciELOJournal
 from researcher.models import ResearcherIdentifier
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
+from pid_provider.choices import PPXML_STATUS_TODO, PPXML_STATUS_DONE
 from tracker.models import UnexpectedEvent
 
 from . import controller
@@ -41,60 +42,46 @@ def load_funding_data(user, file_path):
     controller.read_file(user, file_path)
 
 
-@celery_app.task(bind=True, name=_("load_article"))
-def load_article(self, user_id=None, username=None, file_path=None, v3=None):
-    user = _get_user(self.request, username, user_id)
-    xmlsps.load_article(user, file_path=file_path, v3=v3)
-
-
-def _items_to_load_article(from_date):
-    if from_date:
-        try:
-            from_date = datetime.strptime(from_date, "%Y-%m-%d")
-        except Exception:
-            from_date = None
-
-    if not from_date:
-        now = datetime.utcnow().isoformat()[:10]
-        # Obtém os PidProvider que não estão em Article
-        # E os PidProvider em que a diferença entre created e updated é maior/igual 1 day (Atualizações de artigos)
-        articles_v3 = Article.objects.values_list("pid_v3", flat=True)
-        pid_provider_v3 = PidProviderXML.objects.values_list("v3", flat=True)
-        # obtém os v3 que não estão em articles_v3
-        missing_pid_provider_v3 = set(pid_provider_v3) - set(articles_v3)
-        return PidProviderXML.objects.filter(Q(available_since__isnull=True) | Q(available_since__lte=now)).filter(Q(v3__in=missing_pid_provider_v3) | Q(updated__gte=F("created") + timedelta(days=1))).iterator()
-    return PidProviderXML.public_items(from_date)
+def _items_to_load_article():
+    return (
+        PidProviderXML.objects.select_related("current_version")
+        .filter(proc_status=PPXML_STATUS_TODO)
+        .iterator()
+    )
 
 
 def items_to_load_article_with_valid_false():
     # Obtém os objetos PidProviderXMl onde o campo pid_v3 de article e v3 possuem o mesmo valor
     articles = Article.objects.filter(valid=False).values("pid_v3")
-    items = PidProviderXML.objects.filter(v3__in=Subquery(articles))
-    for item in items:
-        yield item
+    return PidProviderXML.objects.filter(v3__in=Subquery(articles)).iterator()
 
 
-@celery_app.task(bind=True, name=_("load_articles"))
-def load_articles(
-    self, user_id=None, username=None, from_date=None, load_invalid_articles=False, force_update=False
+@celery_app.task(bind=True, name="task_load_articles")
+def task_load_articles(
+    self,
+    user_id=None,
+    username=None,
 ):
     try:
         user = _get_user(self.request, username, user_id)
-        if load_invalid_articles:
-            generator_articles = items_to_load_article_with_valid_false()
-        else:
-            generator_articles = _items_to_load_article(from_date)
-            
+
+        generator_articles = (
+            PidProviderXML.objects.select_related("current_version")
+            .filter(proc_status=PPXML_STATUS_TODO)
+            .iterator()
+        )
+
         for item in generator_articles:
             try:
-                load_article.apply_async(
-                    kwargs={
-                        "file_path": item.current_version.file.path,
-                        "user_id": user.id,
-                        "username": user.username,
-                        "v3": item.v3,
-                    }
+                article = xmlsps.load_article(
+                    user,
+                    file_path=item.current_version.file.path,
+                    v3=item.v3,
+                    pp_xml=item,
                 )
+                if article and article.valid:
+                    item.proc_status = PPXML_STATUS_DONE
+                    item.save()
             except Exception as exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 UnexpectedEvent.create(
@@ -105,6 +92,13 @@ def load_articles(
                         "item": str(item),
                     },
                 )
+
+        task_mark_articles_as_deleted_without_pp_xml.apply_async(
+            kwargs=dict(
+                user_id=user_id or user.id,
+                username=username or user.username,
+            )
+        )
     except Exception as exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
@@ -114,6 +108,39 @@ def load_articles(
                 "task": "article.tasks.load_articles",
             },
         )
+
+
+@celery_app.task(bind=True, name="task_mark_articles_as_deleted_without_pp_xml")
+def task_mark_articles_as_deleted_without_pp_xml(
+    self, user_id=None, username=None
+):
+    """
+    Tarefa Celery para marcar artigos como DATA_STATUS_DELETED quando pp_xml é None.
+    
+    Args:
+        user_id: ID do usuário (opcional)
+        username: Nome do usuário (opcional)
+    """
+    try:
+        user = _get_user(self.request, username, user_id)
+        
+        updated_count = Article.mark_articles_as_deleted_without_pp_xml(user)
+        
+        logging.info(
+            f"Task completed successfully. {updated_count} articles marked as deleted."
+        )
+        
+    except Exception as exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=exception,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "article.tasks.task_mark_articles_as_deleted_without_pp_xml",
+            },
+        )
+        
+        logging.error(f"Error in task_mark_articles_as_deleted_without_pp_xml: {exception}")
 
 
 @celery_app.task(bind=True, name=_("load_preprints"))
@@ -239,26 +266,32 @@ def article_complete_data(
         pass
 
 
-
 @celery_app.task(bind=True)
-def transfer_license_statements_fk_to_article_license(self, user_id=None, username=None):
+def transfer_license_statements_fk_to_article_license(
+    self, user_id=None, username=None
+):
     user = _get_user(self.request, username, user_id)
     articles_to_update = []
     for instance in Article.objects.filter(article_license__isnull=True):
 
         new_license = None
-        if instance.license_statements.exists() and instance.license_statements.first().url:
+        if (
+            instance.license_statements.exists()
+            and instance.license_statements.first().url
+        ):
             new_license = instance.license_statements.first().url
         elif instance.license and instance.license.license_type:
             new_license = instance.license.license_type
-        
+
         if new_license:
             instance.article_license = new_license
             instance.updated_by = user
             articles_to_update.append(instance)
 
     if articles_to_update:
-        Article.objects.bulk_update(articles_to_update, ['article_license', 'updated_by'])
+        Article.objects.bulk_update(
+            articles_to_update, ["article_license", "updated_by"]
+        )
         logging.info("The article_license of model Articles have been updated")
 
 
@@ -266,15 +299,26 @@ def remove_duplicate_articles(pid_v3=None):
     ids_to_exclude = []
     try:
         if pid_v3:
-            duplicates = Article.objects.filter(pid_v3=pid_v3).values("pid_v3").annotate(pid_v3_count=Count("pid_v3")).filter(pid_v3_count__gt=1, valid=False)
+            duplicates = (
+                Article.objects.filter(pid_v3=pid_v3)
+                .values("pid_v3")
+                .annotate(pid_v3_count=Count("pid_v3"))
+                .filter(pid_v3_count__gt=1, valid=False)
+            )
         else:
-            duplicates = Article.objects.values("pid_v3").annotate(pid_v3_count=Count("pid_v3")).filter(pid_v3_count__gt=1, valid=False)
+            duplicates = (
+                Article.objects.values("pid_v3")
+                .annotate(pid_v3_count=Count("pid_v3"))
+                .filter(pid_v3_count__gt=1, valid=False)
+            )
         for duplicate in duplicates:
-            article_ids = Article.objects.filter(
-                pid_v3=duplicate["pid_v3"]
-            ).order_by("created")[1:].values_list("id", flat=True)
+            article_ids = (
+                Article.objects.filter(pid_v3=duplicate["pid_v3"])
+                .order_by("created")[1:]
+                .values_list("id", flat=True)
+            )
             ids_to_exclude.extend(article_ids)
-        
+
         if ids_to_exclude:
             Article.objects.filter(id__in=ids_to_exclude).delete()
     except Exception as exception:
@@ -287,25 +331,29 @@ def remove_duplicate_articles(pid_v3=None):
             },
         )
 
+
 @celery_app.task(bind=True)
 def remove_duplicate_articles_task(self, user_id=None, username=None, pid_v3=None):
     remove_duplicate_articles(pid_v3)
 
 
 def get_researcher_identifier_unnormalized():
-    return ResearcherIdentifier.objects.filter(source_name="EMAIL").exclude(identifier__regex=r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    return ResearcherIdentifier.objects.filter(source_name="EMAIL").exclude(
+        identifier__regex=r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    )
+
 
 @celery_app.task(bind=True)
-def normalize_stored_email(self,):
+def normalize_stored_email(
+    self,
+):
     updated_list = []
     re_identifiers = get_researcher_identifier_unnormalized()
-    
+
     for re_identifier in re_identifiers:
         email = extracts_normalized_email(raw_email=re_identifier.identifier)
         if email:
             re_identifier.identifier = email
             updated_list.append(re_identifier)
 
-    ResearcherIdentifier.objects.bulk_update(updated_list, ['identifier'])
-
-
+    ResearcherIdentifier.objects.bulk_update(updated_list, ["identifier"])

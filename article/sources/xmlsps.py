@@ -3,44 +3,70 @@ import sys
 from itertools import product
 
 from lxml import etree
+from packtools.sps.models import journal_meta
 from packtools.sps.models.article_abstract import ArticleAbstract
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_contribs import ArticleContribs
+from packtools.sps.models.article_dates import HistoryDates
 from packtools.sps.models.article_doi_with_lang import DoiWithLang
 from packtools.sps.models.article_ids import ArticleIds
 from packtools.sps.models.article_license import ArticleLicense
 from packtools.sps.models.article_titles import ArticleTitles
-from packtools.sps.models.v2.article_toc_sections import ArticleTocSections
-from packtools.sps.models.article_dates import HistoryDates
 from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
 from packtools.sps.models.funding_group import FundingGroup
 from packtools.sps.models.journal_meta import ISSN, Title
-from packtools.sps.models import journal_meta
 from packtools.sps.models.kwd_group import ArticleKeywords
+from packtools.sps.models.v2.article_toc_sections import ArticleTocSections
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
+from article import choices
 from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle
-from core.utils.extracts_normalized_email import extracts_normalized_email
 from core.models import Language
+from core.utils.extracts_normalized_email import extracts_normalized_email
 from doi.models import DOI
-from institution.models import Sponsor, Publisher
+from institution.models import Publisher, Sponsor
 from issue.models import Issue, TocSection
 from journal.models import Journal, OfficialJournal
-from researcher.models import Researcher, InstitutionalAuthor, Affiliation
+from location.models import Location
+from researcher.models import Affiliation, InstitutionalAuthor, Researcher
 from tracker.models import UnexpectedEvent
 from vocabulary.models import Keyword
-from location.models import Location
 
 
-class XMLSPSArticleSaveError(Exception):
-    ...
+class XMLSPSArticleSaveError(Exception): ...
 
 
-class LicenseDoesNotExist(Exception):
-    ...
+class LicenseDoesNotExist(Exception): ...
 
 
-def load_article(user, xml=None, file_path=None, v3=None):
+class LoadArticlePublisherNameException(Exception): ...
+
+
+class LoadArticleFundingError(Exception): ...
+
+
+class LoadArticleTocSectionError(Exception): ...
+
+
+class LoadArticleKeywordError(Exception): ...
+
+
+class LoadArticleAbstractError(Exception): ...
+
+
+class LoadArticleContribError(Exception): ...
+
+
+class LoadArticleCollabError(Exception): ...
+
+
+class LoadArticleTitleError(Exception): ...
+
+
+class LoadArticleSponsorError(Exception): ...
+
+
+def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
     logging.info(f"load article {file_path} {v3}")
     try:
         if file_path:
@@ -72,19 +98,40 @@ def load_article(user, xml=None, file_path=None, v3=None):
     pid_v3 = v3 or xml_with_pre.v3
 
     try:
-        article = Article.get_or_create(pid_v3=pid_v3, user=user)
+        # Sequência organizada para atribuição de campos do Article
+        # Do mais simples (campos diretos) para o mais complexo (FKs e M2M)
         xmltree = xml_with_pre.xmltree
+        article = None
+
+        # CRIAÇÃO/OBTENÇÃO DO OBJETO PRINCIPAL
+        article = Article.get_or_create(pid_v3=pid_v3, user=user)
         article.valid = False
-        article.sps_pkg_name = xml_with_pre.sps_pkg_name
-        set_pids(xmltree=xmltree, article=article)
-        article.journal = get_journal(xmltree=xmltree)
-        set_date_pub(xmltree=xmltree, article=article)
-        set_license(xmltree=xmltree, article=article)
-        article.article_type = get_or_create_article_type(xmltree=xmltree, user=user)
-        article.issue = get_or_create_issues(xmltree=xmltree, user=user, item=pid_v3)
-        set_first_last_page_elocation_id(xmltree=xmltree, article=article)
+        article.data_status = choices.DATA_STATUS_PENDING
         article.save()
 
+        article.pp_xml = pp_xml
+        article.save()
+
+        # CAMPOS SIMPLES EXTRAÍDOS DO XML (ainda tipos primitivos)
+        article.sps_pkg_name = xml_with_pre.sps_pkg_name
+        set_pids(
+            xmltree=xmltree, article=article
+        )  # Provavelmente define campos como pid, etc.
+        set_date_pub(xmltree=xmltree, article=article)  # Define datas
+        set_license(xmltree=xmltree, article=article)  # Define campos de licença
+        set_first_last_page_elocation_id(
+            xmltree=xmltree, article=article
+        )  # Define paginação
+        article.article_type = get_or_create_article_type(xmltree=xmltree, user=user)
+        article.save()
+
+        # FOREIGN KEYS SIMPLES (dependências diretas, sem muita complexidade)
+        article.journal = get_journal(xmltree=xmltree)
+        article.issue = get_or_create_issues(xmltree=xmltree, user=user, item=pid_v3)
+
+        # MANY-TO-MANY
+        article.languages.add(get_or_create_main_language(xmltree=xmltree, user=user))
+        article.toc_sections.set(get_or_create_toc_sections(xmltree=xmltree, user=user))
         article.titles.set(
             create_or_update_titles(xmltree=xmltree, user=user, item=pid_v3)
         )
@@ -93,26 +140,28 @@ def load_article(user, xml=None, file_path=None, v3=None):
                 xmltree=xmltree, user=user, article=article, item=pid_v3
             )
         )
+        article.keywords.set(
+            create_or_update_keywords(xmltree=xmltree, user=user, item=pid_v3)
+        )
         article.researchers.set(
             create_or_update_researchers(xmltree=xmltree, user=user, item=pid_v3)
         )
         article.collab.set(
             get_or_create_institution_authors(xmltree=xmltree, user=user, item=pid_v3)
         )
-        article.keywords.set(
-            create_or_update_keywords(xmltree=xmltree, user=user, item=pid_v3)
-        )
-
-        article.languages.add(get_or_create_main_language(xmltree=xmltree, user=user))
-        article.toc_sections.set(get_or_create_toc_sections(xmltree=xmltree, user=user))
         article.fundings.set(
             get_or_create_fundings(xmltree=xmltree, user=user, item=pid_v3)
         )
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
-        article.publisher = get_or_create_publisher(xmltree=xmltree, user=user, item=pid_v3)
-        article.valid = True
-        article.save()
+
+        # FINALIZAÇÃO
+        article.valid = True  # Marca como válido após todas as atribuições
+        # FIXME | TODO melhorar como identificar o valor adequado
+        article.data_status = choices.DATA_STATUS_PUBLIC
+        article.save()  # Persistência final
+
         logging.info(f"The article {pid_v3} has been processed")
+        return article
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         xml_detail_error = etree.tostring(xmltree)
@@ -121,10 +170,7 @@ def load_article(user, xml=None, file_path=None, v3=None):
             action="article.sources.xmlsps.load_article",
             exception=e,
             exc_traceback=exc_traceback,
-            detail=dict(
-                function="article.sources.xmlsps.load_article",
-                message=f"{xml_detail_error}",
-            ),
+            detail=dict(data=xml_detail_error),
         )
 
 
@@ -148,68 +194,47 @@ def get_journal(xmltree):
         pass
 
     issn = ISSN(xmltree=xmltree)
-    journal_issn_epub = issn.epub
-    journal_issn_ppub = issn.ppub
+
     try:
-        official_journal = OfficialJournal.get(
-            issn_print=journal_issn_ppub, issn_electronic=journal_issn_epub
+        return Journal.get(
+            issn_electronic=issn.epub,
+            issn_print=issn.ppub,
         )
-        return Journal.objects.get(official=official_journal)
-    except (OfficialJournal.DoesNotExist, Journal.DoesNotExist):
+    except Journal.DoesNotExist:
         return None
-
-
-def get_or_create_publisher(xmltree, user, item):
-    try:
-        publisher_names = journal_meta.Publisher(xmltree=xmltree).publishers_names
-        if publisher_names:
-            return Publisher.get_or_create(
-                user=user,
-                name=publisher_names[0],
-                acronym=None,
-                level_1=None,
-                level_2=None,
-                level_3=None,
-                location=None,
-                official=None,
-                is_official=None,
-                url=None,
-                institution_type=None,
-            )
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        UnexpectedEvent.create(
-            item=item,
-            action="article.xmlsps.get_or_create_publisher",
-            exception=e,
-            exc_traceback=exc_traceback,
-            detail=dict(
-                function="article.xmlsps.get_or_create_publisher",
-                publisher_name=publisher_names,
-            ),
-        )
 
 
 def get_or_create_fundings(xmltree, user, item):
     """
     Ex fundings_award_group:
         [{
-        'funding-source': ['São Paulo Research Foundation', 'CAPES', 'CNPq'], 
+        'funding-source': ['São Paulo Research Foundation', 'CAPES', 'CNPq'],
         'award-id': ['2009/53363-8, 2009/52807-0, 2009/51766-8]}]
     """
     data = []
     fundings_award_group = FundingGroup(xmltree=xmltree).award_groups
-    
     if fundings_award_group:
         for fundings_award in fundings_award_group:
-            results = product(fundings_award.get("funding-source", []), fundings_award.get("award-id", []))
+            results = product(
+                fundings_award.get("funding-source", []),
+                fundings_award.get("award-id", []),
+            )
             for result in results:
                 try:
-                    fs = result[0]
+                    fs, award_id = result
+                    if not fs or not award_id:
+                        continue
+                    if not fs:
+                        raise LoadArticleFundingError(
+                            f"get_or_create_fundings requires fs. Found {result}"
+                        )
+                    if not award_id:
+                        raise LoadArticleFundingError(
+                            f"get_or_create_fundings requires award_id. Found {result}"
+                        )
                     sponsor = create_or_update_sponsor(
                         funding_name=fs, user=user, item=item
                     )
-                    award_id = result[1]
                     obj = ArticleFunding.get_or_create(
                         award_id=award_id,
                         funding_source=sponsor,
@@ -225,13 +250,11 @@ def get_or_create_fundings(xmltree, user, item):
                         exception=e,
                         exc_traceback=exc_traceback,
                         detail=dict(
-                            xmltree=f"{etree.tostring(xmltree)}",
-                            function="article.xmlsps.sources.get_or_create_fundings",
-                            funding_source=fs,
-                            award_id=award_id,
+                            data=result,
                         ),
-                    )    
-    return data    
+                    )
+                    raise LoadArticleFundingError(e)
+    return data
 
 
 def get_or_create_toc_sections(xmltree, user):
@@ -240,7 +263,7 @@ def get_or_create_toc_sections(xmltree, user):
     for item in toc_sections:
         try:
             obj = TocSection.get_or_create(
-                value=item.get("text"),
+                value=item.get("section"),
                 language=get_or_create_language(item.get("parent_lang"), user=user),
                 user=user,
             )
@@ -252,11 +275,10 @@ def get_or_create_toc_sections(xmltree, user):
                 exception=e,
                 exc_traceback=exc_traceback,
                 detail=dict(
-                    xmltree=f"{etree.tostring(xmltree)}",
-                    function="article.xmlsps.sources.get_or_create_toc_sections",
-                    toc_sections=item,
+                    data=item,
                 ),
-            )            
+            )
+            raise LoadArticleTocSectionError(f"{e}: {item}")
     return data
 
 
@@ -269,7 +291,7 @@ def set_license(xmltree, article):
 
 def create_or_update_keywords(xmltree, user, item):
     article_keywords = ArticleKeywords(xmltree=xmltree)
-    article_keywords.configure(tags_to_convert_to_html={'bold': 'b'})
+    article_keywords.configure(tags_to_convert_to_html={"bold": "b"})
     data = []
     for kwd in article_keywords.items:
         try:
@@ -289,43 +311,41 @@ def create_or_update_keywords(xmltree, user, item):
                 exception=e,
                 exc_traceback=exc_traceback,
                 detail=dict(
-                    xmltree=f"{etree.tostring(xmltree)}",
-                    function="article.xmlsps.get_or_create_keywords",
-                    keyword=kwd,
+                    data=kwd,
                 ),
             )
+            raise LoadArticleKeywordError(e)
     return data
 
 
 def create_or_update_abstract(xmltree, user, article, item):
     data = []
     abstract = ArticleAbstract(xmltree=xmltree)
-    abstract.configure(tags_to_convert_to_html={'bold': 'b', 'italic': 'i'})
+    abstract.configure(tags_to_convert_to_html={"bold": "b", "italic": "i"})
 
     if xmltree.find(".//abstract") is not None:
-        try:
-            for ab in abstract.get_abstracts():
-                if ab:
-                    obj = DocumentAbstract.create_or_update(
-                        user=user,
-                        article=article,
-                        language=get_or_create_language(ab.get("lang"), user=user),
-                        text=ab.get("plain_text"),
-                        rich_text=ab.get("html_text"),
-                    )
-                    data.append(obj)
-        except Exception as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                item=item,
-                action="article.xmlsps.sources.create_or_update_abstract",
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail=dict(
-                    xmltree=f"{etree.tostring(xmltree)}",
-                    function="article.xmlsps.sources.create_or_update_abstract",
-                ),
-            )
+        for ab in abstract.get_abstracts():
+            if not ab:
+                continue
+            try:
+                obj = DocumentAbstract.create_or_update(
+                    user=user,
+                    article=article,
+                    language=get_or_create_language(ab.get("lang"), user=user),
+                    text=ab.get("plain_text"),
+                    rich_text=ab.get("html_text"),
+                )
+                data.append(obj)
+            except Exception as e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    item=item,
+                    action="article.xmlsps.sources.create_or_update_abstract",
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail=dict(data=ab),
+                )
+                raise LoadArticleAbstractError(e)
     return data
 
 
@@ -339,8 +359,10 @@ def create_or_update_researchers(xmltree, user, item):
 
     # Falta gender e gender_identification_status
     data = []
+    affs = None
     for author in authors:
         try:
+            affs = None
             contrib_name = author.get("contrib_name", None)
             if contrib_name is not None:
                 given_names = contrib_name.get("given-names")
@@ -403,12 +425,11 @@ def create_or_update_researchers(xmltree, user, item):
                 exception=e,
                 exc_traceback=exc_traceback,
                 detail=dict(
-                    xmltree=f"{etree.tostring(xmltree)}",
-                    function="article.xmlsps.create_or_update_researchers",
                     author=author,
                     affiliation=affs,
                 ),
             )
+            raise LoadArticleContribError(e)
     return data
 
 
@@ -454,11 +475,10 @@ def get_or_create_institution_authors(xmltree, user, item):
                 exception=e,
                 exc_traceback=exc_traceback,
                 detail=dict(
-                    xmltree=f"{etree.tostring(xmltree)}",
-                    function="article.xmlsps.get_or_create_institution_authors",
                     author=author,
                 ),
             )
+            raise LoadArticleCollabError(e)
     return data
 
 
@@ -482,18 +502,21 @@ def set_first_last_page_elocation_id(xmltree, article):
 
 
 def create_or_update_titles(xmltree, user, item):
-    titles = ArticleTitles(xmltree=xmltree,  tags_to_convert_to_html={'bold': 'b'}).article_title_list
+    titles = ArticleTitles(
+        xmltree=xmltree, tags_to_convert_to_html={"bold": "b"}
+    ).article_title_list
     data = []
     for title in titles:
         try:
             lang = get_or_create_language(title.get("lang"), user=user)
-            obj = DocumentTitle.create_or_update(
-                title=title.get("plain_text"),
-                rich_text=title.get("html_text"),
-                language=lang,
-                user=user,
-            )
-            data.append(obj)
+            if title.get("plain_text") or title.get("html_text"):
+                obj = DocumentTitle.create_or_update(
+                    title=title.get("plain_text"),
+                    rich_text=title.get("html_text"),
+                    language=lang,
+                    user=user,
+                )
+                data.append(obj)
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
@@ -502,12 +525,10 @@ def create_or_update_titles(xmltree, user, item):
                 exception=e,
                 exc_traceback=exc_traceback,
                 detail=dict(
-                    xmltree=f"{etree.tostring(xmltree)}",
-                    function="article.sources.xmlsps.create_or_update_titles",
-                    title=title.get("plain_text"),
-                    language=lang,
+                    title=title,
                 ),
             )
+            raise LoadArticleTitleError(e)
     return data
 
 
@@ -546,11 +567,10 @@ def get_or_create_issues(xmltree, user, item):
             exception=e,
             exc_traceback=exc_traceback,
             detail=dict(
-                xmltree=f"{etree.tostring(xmltree)}",
-                function="article.xmlsps.get_or_create_issues",
                 issue=issue_data,
             ),
         )
+        raise LoadArticleIssueError(e)
 
 
 def get_or_create_language(lang, user):
@@ -587,7 +607,7 @@ def create_or_update_sponsor(funding_name, user, item):
             exception=e,
             exc_traceback=exc_traceback,
             detail=dict(
-                function="article.xmlsps.create_or_update_sponsor",
                 funding_name=funding_name,
             ),
         )
+        raise LoadArticleSponsorError(e)
