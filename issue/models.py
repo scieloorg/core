@@ -211,7 +211,7 @@ class Issue(CommonControlField, ClusterableModel):
 
     @property
     def articlemeta_format(self):
-        from .sources.articlemeta_format import get_articlemeta_format_issue
+        from .formats.articlemeta_format import get_articlemeta_format_issue
         return get_articlemeta_format_issue(self)
 
     base_form_class = CoreAdminModelForm
