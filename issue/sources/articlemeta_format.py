@@ -9,11 +9,16 @@ def get_articlemeta_format_issue(obj):
 
     scielo_journal = SciELOJournal.objects.filter(journal=obj.journal).first()
 
+    path_to_base_issue(obj, result)
     short_title(obj, result)
     volume(obj, result)
     number(obj, result)
     issue_title(obj, result)
+    part(obj, result)
     issn(scielo_journal, result)
+    title_of_issue(obj, result)
+    status_issue(obj, result)
+    legend_bibliographic(obj, result)
     # Dado fixo v48
     title_summary(obj, result)
     editora(obj, result)
@@ -35,10 +40,17 @@ def get_articlemeta_format_issue(obj):
     order_of_register_in_database_of_issues(obj, result)
     order_by_type_of_register(obj, result)
     type_of_register(obj, result)
+    field_of_use_of_system(scielo_journal, obj, result)
     journal_acron(scielo_journal, result)
     status_processing(obj, result)
     
     return result
+
+def path_to_base_issue(obj, result):
+    """
+    Path to base issue
+    """
+    return add_to_result("v4", f"v{obj.volume}n{obj.number}", result)
 
 def short_title(obj, result):
     """
@@ -64,11 +76,97 @@ def issue_title(obj, result):
     """
     return add_items("v33", [title for title in obj.issue_title.all()], result)
 
+def part(obj, result):
+    """
+    Part
+    """
+    return result["v34"].append({"_": None})
+
 def issn(scielo_journal, result):
     """
     ISSN
     """
     return add_to_result("v35", scielo_journal.issn_scielo, result)
+
+def title_of_issue(obj, result):
+    """
+    Title of the issue
+    """
+    return add_to_result("v36", f"{obj.year}{obj.number}", result)
+
+def status_issue(obj, result):
+    """
+    Status issue
+    """
+    return add_to_result("v42", '1', result)
+
+def legend_bibliographic(obj, result):
+    """
+    Legend bibliographic
+    ex:
+    [
+        {
+            'l': 'pt', 
+            'c': 'São Paulo', 
+            't': 'Rev Odontol Univ São Paulo', 
+            'v': 'v. 11', 
+            'n': 'n. 2', 
+            'm': 'Abr./Jun.', 
+            '': '', 
+            'a': '1997'
+        }, 
+        {
+            'l': 'en', 
+            'c': 'São Paulo', 
+            't': 'Rev Odontol Univ São Paulo', 
+            'v': 'vol. 11', 
+            'n': 'no. 2', 
+            'm': 'Apr./June', 
+            '': '', 
+            'a': '1997'
+        }, 
+        {
+            'l': 'es', 
+            'c': 'São Paulo', 
+            't': 'Rev Odontol Univ São Paulo', 
+            'v': 'v. 11', 
+            'n': 'n. 2', 
+            'm': 'Abr./Jun.', 
+            '_': '', 
+            'a': '1997'
+        }
+    ]
+    """
+    city = obj.journal.location.city.name if obj.journal.location and obj.journal.location.city else None
+    journal_title = obj.journal.title if obj.journal and obj.journal.title else None
+
+    volume_info = {
+        'pt': f"v. {obj.volume}",
+        'es': f"v. {obj.volume}",
+        'en': f"vol. {obj.volume}"
+    }
+    number_info = {
+        'pt': f"n. {obj.number}",
+        'es': f"n. {obj.number}",
+        'en': f"no. {obj.number}"
+    }
+
+    v43_entries = [
+        {
+            'l': lang,
+            't': journal_title,
+            'c': city,
+            'v': volume_info[lang],
+            'n': number_info[lang],
+            'a': obj.year,
+            'm': obj.season,
+            '': '',
+        }
+        for lang in ['pt', 'es', 'en']
+    ]
+
+    return result["v43"].extend(v43_entries)
+
 
 def title_summary(obj, result):
     """"
@@ -195,12 +293,11 @@ def type_of_register(obj, result):
     """
     return add_to_result("706", 'i', result)
 
-# TODO
-# def field_of_use_of_system(scielo_journal, obj, result):
-#     """
-#     Field of use of system
-#     """
-#     return add_to_result("v888", f"{scielo_journal.journal_acron} + v36", result)
+def field_of_use_of_system(scielo_journal, obj, result):
+    """
+    Field of use of system
+    """
+    return add_to_result("v888", f"{scielo_journal.journal_acron.upper()}{obj.volume}{obj.number}", result)
 
 def journal_acron(scielo_journal, result):
     """
