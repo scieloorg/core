@@ -1,3 +1,5 @@
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseRedirect
 from django.urls import path
 from django.utils.translation import gettext as _
@@ -10,17 +12,15 @@ from wagtail.snippets.views.snippets import (
     SnippetViewSetGroup,
 )
 from wagtail_modeladmin.options import ModelAdmin
-from wagtail_modeladmin.views import CreateView, EditView
 
 from config.menu import get_menu_order
+from config.settings.base import COLLECTION_TEAM, JOURNAL_TEAM
 from journalpage.models import JournalPage
 
 from . import models
 from .button_helper import IndexedAtHelper
+from .proxys import JournalProxyEditor
 from .views import import_file, validate
-
-COLLECTION_TEAM = "Collection Team"
-JOURNAL_TEAM = "Journal Team"
 
 
 class OfficialJournalCreateViewSnippet(CreateView):
@@ -32,12 +32,12 @@ class OfficialJournalCreateViewSnippet(CreateView):
 class OfficialJournalSnippetViewSet(SnippetViewSet):
     model = models.OfficialJournal
     menu_label = _("ISSN Journals")
+    inspect_view_enabled = True
     add_view_class = OfficialJournalCreateViewSnippet
     menu_icon = "folder"
     menu_order = 100
     add_to_settings_menu = False
     exclude_from_explorer = False
-    add_to_admin_menu = True
     list_display = (
         "title",
         "initial_year",
@@ -68,7 +68,30 @@ class JournalCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class JournalAdminSnippetViewSet(SnippetViewSet):
+class FilteredJournalQuerysetMixin:
+    """
+    Mixin que filtra o queryset de journals baseado nas permissões 
+    e grupos do usuário (COLLECTION_TEAM ou JOURNAL_TEAM).
+    """    
+    def get_queryset(self, request):
+        qs = (
+            models.Journal.objects.all()
+            .select_related("contact_location")
+            .prefetch_related("scielojournal_set")
+        )
+        user_groups = request.user.groups.values_list("name", flat=True)
+        if COLLECTION_TEAM in user_groups:
+            return qs.filter(
+                scielojournal__collection__in=request.user.collection.all()
+            )
+        elif JOURNAL_TEAM in user_groups:
+            return qs.filter(
+                id__in=request.user.journal.all().values_list("id", flat=True)
+            )
+        return qs
+
+
+class JournalAdminSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
     model = models.Journal
     inspect_view_enabled = True
     menu_label = _("Journals")
@@ -98,22 +121,35 @@ class JournalAdminSnippetViewSet(SnippetViewSet):
         "contact_location__country__name",
     )
 
-    def get_queryset(self, request):
-        qs = (
-            models.Journal.objects.all()
-            .select_related("contact_location")
-            .prefetch_related("scielojournal_set")
-        )
-        user_groups = request.user.groups.values_list("name", flat=True)
-        if COLLECTION_TEAM in user_groups:
-            return qs.filter(
-                scielojournal__collection__in=request.user.collection.all()
-            )
-        elif JOURNAL_TEAM in user_groups:
-            return qs.filter(
-                id__in=request.user.journal.all().values_list("id", flat=True)
-            )
-        return qs
+
+class JournalAdminEditorSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
+    model = JournalProxyEditor
+    inspect_view_enabled = True
+    menu_label = _("Journals Editor")
+    menu_icon = "folder"
+    menu_order = get_menu_order("journal")
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_per_page = 20
+
+    list_display = (
+        "title",
+        "contact_location",
+        "created",
+        "updated",
+    )
+    list_filter = (
+        "journal_use_license",
+        "publishing_model",
+        "subject",
+        "main_collection",
+    )
+    search_fields = (
+        "title",
+        "official__issn_print",
+        "official__issn_electronic",
+        "contact_location__country__name",
+    )
 
 
 class SciELOJournalCreateView(CreateView):
@@ -170,6 +206,7 @@ class JournalSnippetViewSetGroup(SnippetViewSetGroup):
     menu_order = get_menu_order("journal")
     items = (
         JournalAdminSnippetViewSet,
+        JournalAdminEditorSnippetViewSet,
         OfficialJournalSnippetViewSet,
         SciELOJournalAdminViewSet,
     )
@@ -338,7 +375,7 @@ def register_calendar_url():
 @hooks.register('register_snippet_listing_buttons')
 def snippet_listing_buttons(snippet, user, next_url=None):
     if isinstance(snippet, models.Journal):
-        journal_page = JournalPage.objects.get(slug="journal")
+        journal_page = JournalPage.objects.filter(slug="journal").first()
         scielo_journal = models.SciELOJournal.objects \
             .only("collection__acron3", "journal_acron") \
             .select_related("collection") \
@@ -351,3 +388,9 @@ def snippet_listing_buttons(snippet, user, next_url=None):
             icon_name='view',
             attrs={"target": "_blank"},
         )
+
+@hooks.register("register_permissions")
+def register_ctf_permissions():
+    model = JournalProxyEditor
+    content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
+    return Permission.objects.filter(content_type=content_type)

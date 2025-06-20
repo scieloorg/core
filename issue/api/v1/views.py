@@ -29,19 +29,7 @@ class IssueViewSet(GenericIssueViewSet):
             parâmetros que recuperam registros a partir da data de atualização do periódico. 
             Importante para recuperar registros mais recentes.
         """
-        queryset = super().get_queryset()
-        collection = self.request.query_params.get("collection")
-        from_publication_year = self.request.query_params.get("from_publication_year")
-        until_publication_year = self.request.query_params.get("until_publication_year")
-        from_date_created = self.request.query_params.get("from_date_created")
-        until_date_created = self.request.query_params.get("until_date_created")
-        from_date_updated = self.request.query_params.get("from_date_updated")
-        until_date_updated = self.request.query_params.get("until_date_updated")
-        issn_print = self.request.query_params.get("issn_print")
-        issn_electronic = self.request.query_params.get("issn_electronic")
-        volume = self.request.query_params.get("volume")
-        number = self.request.query_params.get("number")
-        supplement = self.request.query_params.get("supplement")
+        query_params = self.request.query_params
         
         validate_params(
             self.request, 
@@ -61,34 +49,33 @@ class IssueViewSet(GenericIssueViewSet):
             "formats",
             "",
         )
+        queryset = super().get_queryset()
 
-        params = {}
-        if collection:
-            params["journal__scielojournal__collection__acron3"] = collection
-        if from_publication_year:
-            params["year__gte"] = from_publication_year
-        if until_publication_year:
-            params["year__lte"] = until_publication_year
-        if from_date_created:
-            params["created__gte"] = from_date_created.replace("/", "-")
-        if until_date_created:
-            params["created__lte"] = until_date_created.replace("/", "-")
-        if from_date_updated:
-            params["updated__gte"] = from_date_updated.replace("/", "-")
-        if until_date_updated:
-            params["updated__lte"] = until_date_updated.replace("/", "-")
-        if issn_print:
-            params["journal__official__issn_print"] = issn_print
-        if issn_electronic:
-            params["journal__official__issn_electronic"] = issn_electronic
-        if volume:
-            params["volume"] = volume
-        if number:
-            params["number"] = number                
-        if supplement:
-            params["supplement"] = supplement
-        if params:
-            queryset = queryset.filter(**params)
+        if collection := query_params.get("collection"):
+            queryset = queryset.filter(journal__scielojournal__collection__acron3=collection)
+        if from_publication_year := query_params.get("from_publication_year"):
+            queryset = queryset.filter(year__gte=from_publication_year)
+        if until_publication_year := query_params.get("until_publication_year"):
+            queryset = queryset.filter(year__lte=until_publication_year)
+        if from_date_created := query_params.get("from_date_created"):
+            queryset = queryset.filter(created__gte=from_date_created.replace("/", "-"))
+        if until_date_created := query_params.get("until_date_created"):
+            queryset = queryset.filter(created__lte=until_date_created.replace("/", "-"))
+        if from_date_updated := query_params.get("from_date_updated"):
+            queryset = queryset.filter(updated__gte=from_date_updated.replace("/", "-"))
+        if until_date_updated := query_params.get("until_date_updated"):
+            queryset = queryset.filter(updated__lte=until_date_updated.replace("/", "-"))
+        if issn_print := query_params.get("issn_print"):
+            queryset = queryset.filter(journal__official__issn_print=issn_print)
+        if issn_electronic := query_params.get("issn_electronic"):
+            queryset = queryset.filter(journal__official__issn_electronic=issn_electronic)
+        if volume := query_params.get("volume"):
+            queryset = queryset.filter(volume=volume)
+        if number := query_params.get("number"):
+            queryset = queryset.filter(number=number)
+        if supplement := query_params.get("supplement"):
+            queryset = queryset.filter(supplement=supplement)
+
         return queryset 
 
     def get_serializer_class(self):
