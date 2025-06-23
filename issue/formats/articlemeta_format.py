@@ -41,6 +41,12 @@ class ArticlemetaIssueFormatter:
             self._format_metadata,
             self._format_system_info,
             self._format_legend_bibliographic,
+            self._format_supplement_info,
+            self._format_title_summary,
+            self._format_institution_info,
+            self._format_field_use_system,
+            self._format_register_order_info,
+            self._format_title_in_database
         ]
         
         for formatter in formatters:
@@ -70,19 +76,8 @@ class ArticlemetaIssueFormatter:
         # Part (dado fixo)
         self.result["v34"].append({"_": None})
         
-        # Title summary (fixo)
-        self.result['v48'].extend([
-            {'h': 'Sumário', 'l': 'pt', '_': ''},
-            {'h': 'Table of Contents', 'l': 'en', '_': ''},
-            {'h': 'Sumario', 'l': 'es', '_': ''}
-        ])
         # Status issue (fixo)
         add_to_result("v42", '1', self.result)
-        if not self.obj.number:
-            add_to_result("v131", self.obj.supplement, self.result)
-        else:
-            add_to_result("v132", self.obj.supplement, self.result)
-
 
     def _format_publication_info(self):
         """Informações de publicação"""
@@ -117,20 +112,24 @@ class ArticlemetaIssueFormatter:
         if journal.official and hasattr(journal.official, 'parallel_titles'):
             add_items("v230", [pt.text for pt in journal.official.parallel_titles if pt.text], self.result)
 
+    def _format_institution_info(self):
+        """Informações de instituições"""
+        journal = self.obj.journal
+        history = {
+            "v62": "copyright_holder_history",
+            "v140": "sponsor_history",
+            "v480": "publisher_history"
+        }
+
+        for key, attr in history.items():
+            history = getattr(journal, attr, None)
+            if history:
+                items = [holder.get_institution_name for holder in history.all()]
+                add_items(key, items, self.result)
+
+    def _format_title_in_database(self):
         medline_data = self.medline_titles
         add_items("v421", [medline.title for medline in medline_data], self.result)
-
-        # Copyright
-        if hasattr(journal, 'copyright_holder_history'):
-            add_items("v62", [ch.get_institution_name for ch in journal.copyright_holder_history.all()], self.result)
-        
-        # Sponsors
-        if hasattr(journal, 'sponsor_history'):
-            add_items("v140", [sponsor.get_institution_name for sponsor in journal.sponsor_history.all()], self.result)
-        
-        # Publishers
-        if hasattr(journal, 'publisher_history'):
-            add_items("v480", [publisher.get_institution_name for publisher in journal.publisher_history.all()], self.result)
 
     def _format_metadata(self):
         """Metadados e relacionamentos"""
@@ -140,11 +139,16 @@ class ArticlemetaIssueFormatter:
     def _format_system_info(self):
         """Informações do sistema"""
         add_to_result("v200", '0', self.result)
+        add_to_result("v991", '1', self.result)
+
+    def _format_register_order_info(self):
+        """Ordem do registro e por tipo do registro na base do fascículo e tipo do registro"""
         add_to_result("v700", '0', self.result)
         add_to_result("v701", '1', self.result)
         add_to_result("v706", 'i', self.result)
-        add_to_result("v991", '1', self.result)
 
+    def _format_field_use_system(self):
+        """Campo usado no sistema"""
         if self.scielo_journal:
             field_value = f"{self.scielo_journal.journal_acron.upper()}{self.obj.volume}{self.obj.number}"
             add_to_result("v888", field_value, self.result)
@@ -186,6 +190,21 @@ class ArticlemetaIssueFormatter:
         ]
         
         self.result["v43"].extend(v43_entries)
+
+    def _format_supplement_info(self):
+        """Informações de suplemento"""
+        if not self.obj.number:
+            add_to_result("v131", self.obj.supplement, self.result)
+        else:
+            add_to_result("v132", self.obj.supplement, self.result)
+
+    def _format_title_summary(self):
+        """Título do sumário"""
+        self.result['v48'].extend([
+            {'h': 'Sumário', 'l': 'pt', '_': ''},
+            {'h': 'Table of Contents', 'l': 'en', '_': ''},
+            {'h': 'Sumario', 'l': 'es', '_': ''}
+        ])
 
 
 def get_articlemeta_format_issue(obj):
