@@ -124,7 +124,7 @@ def task_mark_articles_as_deleted_without_pp_xml(
     try:
         user = _get_user(self.request, username, user_id)
         
-        updated_count = Article.mark_articles_as_deleted_without_pp_xml(user)
+        updated_count = Article.mark_as_deleted_articles_without_pp_xml(user)
         
         logging.info(
             f"Task completed successfully. {updated_count} articles marked as deleted."
