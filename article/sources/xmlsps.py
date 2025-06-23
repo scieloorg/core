@@ -3,10 +3,9 @@ import sys
 from itertools import product
 
 from lxml import etree
-from packtools.sps.models import journal_meta
 from packtools.sps.models.article_abstract import ArticleAbstract
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
-from packtools.sps.models.article_contribs import ArticleContribs
+from packtools.sps.models.article_contribs import ArticleContribs, XMLContribs
 from packtools.sps.models.article_dates import HistoryDates
 from packtools.sps.models.article_doi_with_lang import DoiWithLang
 from packtools.sps.models.article_ids import ArticleIds
@@ -20,50 +19,28 @@ from packtools.sps.models.v2.article_toc_sections import ArticleTocSections
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article import choices
+from article.exceptions import (
+    LoadArticleAbstractError,
+    LoadArticleCollabError,
+    LoadArticleContribError,
+    LoadArticleFundingError,
+    LoadArticleKeywordError,
+    LoadArticleTitleError,
+    LoadArticleTocSectionError,
+    LoadArticleSponsorError,
+    LoadArticleIssueError,
+)
 from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle
 from core.models import Language
 from core.utils.extracts_normalized_email import extracts_normalized_email
 from doi.models import DOI
-from institution.models import Publisher, Sponsor
+from institution.models import Sponsor
 from issue.models import Issue, TocSection
-from journal.models import Journal, OfficialJournal
+from journal.models import Journal
 from location.models import Location
 from researcher.models import Affiliation, InstitutionalAuthor, Researcher
 from tracker.models import UnexpectedEvent
 from vocabulary.models import Keyword
-
-
-class XMLSPSArticleSaveError(Exception): ...
-
-
-class LicenseDoesNotExist(Exception): ...
-
-
-class LoadArticlePublisherNameException(Exception): ...
-
-
-class LoadArticleFundingError(Exception): ...
-
-
-class LoadArticleTocSectionError(Exception): ...
-
-
-class LoadArticleKeywordError(Exception): ...
-
-
-class LoadArticleAbstractError(Exception): ...
-
-
-class LoadArticleContribError(Exception): ...
-
-
-class LoadArticleCollabError(Exception): ...
-
-
-class LoadArticleTitleError(Exception): ...
-
-
-class LoadArticleSponsorError(Exception): ...
 
 
 def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
@@ -354,8 +331,8 @@ def create_or_update_researchers(xmltree, user, item):
         article_lang = ArticleAndSubArticles(xmltree=xmltree).main_lang
     except Exception as e:
         article_lang = None
-
-    authors = ArticleContribs(xmltree=xmltree).contribs
+        
+    authors = XMLContribs(xmltree=xmltree).contribs
 
     # Falta gender e gender_identification_status
     data = []
