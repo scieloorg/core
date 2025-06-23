@@ -53,6 +53,9 @@ class ArticlemetaIssueFormatter:
         # Path to base issue
         add_to_result("v4", f"v{self.obj.volume}n{self.obj.number}", self.result)
         
+        # Dado legado pouco utilizado
+        # "v6": Ordem de publicação dos fascículos para apresentação na interface
+        
         # Volume e número
         add_to_result("v31", self.obj.volume, self.result)
         add_to_result("v32", self.obj.number, self.result)
