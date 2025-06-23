@@ -76,7 +76,7 @@ class JournalViewSet(GenericJournalViewSet):
                 except (ValueError, AttributeError):
                     continue
 
-        return queryset.filter(**params)
+        return queryset
     
     def get_serializer_class(self):
         format_param = self.request.query_params.get("formats")
