@@ -34,7 +34,7 @@ class JournalViewSet(GenericJournalViewSet):
             "thematic_areas",
             "toc_item",
             "page",
-            "collection_acron",
+            "collection",
             "from_date_created",
             "until_date_created",
             "from_date_updated",
