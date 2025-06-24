@@ -446,42 +446,42 @@ class BaseHistoryItem(CommonControlField):
             return ''
     
     @property
-    def get_institution_name(self):
+    def institution_name(self):
         try:
             return self.institution.institution.institution_identification.name
         except AttributeError:
             return None
 
     @property
-    def get_institution_city_name(self):
+    def institution_city_name(self):
         try:
             return self.institution.institution.location.city.name
         except AttributeError:
             return None
     
     @property
-    def get_institution_country_name(self):
+    def institution_country_name(self):
         try:
             return self.institution.institution.location.country.name
         except AttributeError:
             return None 
         
     @property
-    def get_institution_country_acronym(self):
+    def institution_country_acronym(self):
         try:
             return self.institution.institution.location.country.acronym
         except AttributeError:
             return None
         
     @property
-    def get_institution_state_name(self):
+    def institution_state_name(self):
         try:
             return self.institution.institution.location.state.name
         except AttributeError:
             return None        
 
     @property
-    def get_instition_state_acronym(self):
+    def instition_state_acronym(self):
         try:
             return self.institution.institution.location.state.acronym
         except AttributeError:

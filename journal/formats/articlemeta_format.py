@@ -85,10 +85,10 @@ class ArticlemetaJournalFormatter:
         """Informações do publisher"""
         publishers = list(self.publisher_history)
         
-        add_items("v310", [p.get_institution_country_name for p in publishers], self.result)
-        add_items("v320", [p.get_instition_state_acronym for p in publishers], self.result)
-        add_items("v480", [p.get_institution_name for p in publishers], self.result)
-        add_items("v490", [p.get_institution_city_name for p in publishers], self.result)
+        add_items("v310", [p.institution_country_name for p in publishers], self.result)
+        add_items("v320", [p.instition_state_acronym for p in publishers], self.result)
+        add_items("v480", [p.institution_name for p in publishers], self.result)
+        add_items("v490", [p.institution_city_name for p in publishers], self.result)
     
     def _format_indexing_info(self):
         """Informações de indexação"""

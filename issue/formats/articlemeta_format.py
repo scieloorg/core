@@ -124,7 +124,7 @@ class ArticlemetaIssueFormatter:
         for key, attr in history.items():
             history = getattr(journal, attr, None)
             if history:
-                items = [holder.get_institution_name for holder in history.all()]
+                items = [holder.institution_name for holder in history.all()]
                 add_items(key, items, self.result)
 
     def _format_title_in_database(self):
