@@ -14,6 +14,8 @@ class ArticlemetaJournalFormatter:
         self._scielo_journal = None
         self._publisher_history = None
         self._medline_titles = None
+        self._copyright_holder_history = None
+        self._sponsor_history = None
     
     @property
     def scielo_journal(self):
@@ -35,6 +37,22 @@ class ArticlemetaJournalFormatter:
         return self._publisher_history
     
     @property
+    def sponsor_history(self):
+        if self._sponsor_history is None:
+            self._sponsor_history = self.obj.sponsor_history.select_related(
+                'institution__institution', 'institution__institution__location'
+            ).all()
+        return self._sponsor_history
+    
+    @property
+    def copyright_holder_history(self):
+        if self._copyright_holder_history is None:
+            self._copyright_holder_history = self.obj.copyright_holder_history.select_related(
+                'institution__institution', 'institution__institution__location'
+            ).all()
+        return self._copyright_holder_history
+
+    @property
     @lru_cache(maxsize=1)
     def medline_titles(self):
         return list(TitleInDatabase.objects.filter(
@@ -42,12 +60,22 @@ class ArticlemetaJournalFormatter:
             indexed_at__acronym__iexact="medline"
         ))
     
+    @property
+    @lru_cache(maxsize=1)
+    def secs_codes(self):
+        return list(TitleInDatabase.objects.filter(
+            journal=self.obj,
+            indexed_at__acronym__iexact="secs"
+        ))
+
     def format(self):
         """Formata todos os dados do journal"""
         formatters = [
             self._format_basic_info,
             self._format_publication_info,
             self._format_publisher_info,
+            self._format_copyright_holder_info,
+            self._format_sponsor_info,
             self._format_indexing_info,
             self._format_metadata,
             self._format_issn,
@@ -90,8 +118,22 @@ class ArticlemetaJournalFormatter:
         add_items("v480", [p.institution_name for p in publishers], self.result)
         add_items("v490", [p.institution_city_name for p in publishers], self.result)
     
+    def _format_copyright_holder_info(self):
+        """Informações do copyright holder"""
+        copyright_holders = list(self.copyright_holder_history)
+        add_items("v62", [p.institution_country_name for p in copyright_holders], self.result)
+
+    def _format_sponsor_info(self):
+        """Informações do sponsor"""
+        sponsors = list(self.sponsor_history)
+        add_items("v140", [p.institution_country_name for p in sponsors], self.result)
+
     def _format_indexing_info(self):
         """Informações de indexação"""
+        # secs codes
+        secs_code = self.secs_codes
+        add_items("v37", [sc.identifier for sc in secs_code if sc.identifier], self.result)
+        
         # Medline
         medline_data = self.medline_titles
         add_items("v420", [m.identifier for m in medline_data], self.result)
