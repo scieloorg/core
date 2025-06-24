@@ -1,5 +1,4 @@
-from django.db.models import Q
-from rest_framework import viewsets
+from rest_framework import viewsets, serializers
 
 from journal import models
 from .serializers import JournalSerializer
@@ -7,6 +6,14 @@ from .serializers import JournalSerializer
 from core.validators import validate_params
 
 
+class ArticleMetaFormatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Journal
+
+    def to_representation(self, instance):
+        return instance.articlemeta_format
+
+    
 class GenericJournalViewSet(viewsets.ModelViewSet):
     serializer_class = JournalSerializer
     http_method_names = ["get"]
@@ -32,6 +39,7 @@ class JournalViewSet(GenericJournalViewSet):
             "until_date_created",
             "from_date_updated",
             "until_date_updated",
+            "formats",
             "issnl",
             "",
         )
@@ -69,3 +77,10 @@ class JournalViewSet(GenericJournalViewSet):
                     continue
 
         return queryset
+    
+    def get_serializer_class(self):
+        format_param = self.request.query_params.get("formats")
+        if format_param == "articlemeta":
+            return ArticleMetaFormatSerializer
+        return JournalSerializer
+
