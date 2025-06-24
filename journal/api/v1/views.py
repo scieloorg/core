@@ -1,9 +1,10 @@
-from rest_framework import viewsets, serializers
+from rest_framework import serializers, viewsets
 
-from journal import models
-from .serializers import JournalSerializer
-
+from core.utils.utils import formated_date_api_params
 from core.validators import validate_params
+from journal import models
+
+from .serializers import JournalSerializer
 
 
 class ArticleMetaFormatSerializer(serializers.ModelSerializer):
@@ -63,18 +64,7 @@ class JournalViewSet(GenericJournalViewSet):
         if collection_acron := query_params.get("collection"):
             queryset = queryset.filter(scielojournal__collection__acron3=collection_acron)
 
-        for date_param, filter_key in [
-            ("from_date_created", "created__gte"),
-            ("until_date_created", "created__lte"),
-            ("from_date_updated", "updated__gte"),
-            ("until_date_updated", "updated__lte"),
-        ]:
-            if data_value := query_params.get(date_param):
-                try:
-                    formated_date = data_value.replace("/", "-")
-                    queryset = queryset.filter(**{filter_key: formated_date})
-                except (ValueError, AttributeError):
-                    continue
+
 
         return queryset
     
