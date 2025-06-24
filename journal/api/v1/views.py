@@ -30,7 +30,7 @@ class JournalViewSet(GenericJournalViewSet):
             self.request,
             "issn_print",
             "issn_electronic",
-            "issnl",
+            "issn",
             "title",
             "thematic_areas",
             "toc_item",
