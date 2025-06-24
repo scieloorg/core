@@ -21,7 +21,7 @@ class ArticlemetaJournalFormatter:
             self._scielo_journal = SciELOJournal.objects.select_related(
                 'collection', 'journal'
             ).filter(
-                journal=self.obj, 
+                journal=self.obj,
                 collection__is_active=True
             ).first()
         return self._scielo_journal
@@ -49,7 +49,8 @@ class ArticlemetaJournalFormatter:
             self._format_publication_info,
             self._format_publisher_info,
             self._format_indexing_info,
-            self._format_metadata
+            self._format_metadata,
+            self._format_issn,
         ]
         
         for formatter in formatters:
@@ -104,6 +105,11 @@ class ArticlemetaJournalFormatter:
         add_to_result("v940", self.obj.created.isoformat(), self.result)
         add_to_result("v941", self.obj.updated.isoformat(), self.result)
 
+    def _format_issn(self):
+        official = getattr(self.obj, 'official', None)
+        if official:
+            issns = [issn for issn in [self.obj.official.issn_print, self.obj.official.issn_electronic] if issn]
+            self.result['issns'].extend(issns)
 
 def get_articlemeta_format_title(obj):
     formatter = ArticlemetaJournalFormatter(obj)
