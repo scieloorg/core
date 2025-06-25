@@ -16,7 +16,8 @@ class ArticlemetaJournalFormatter:
         self._medline_titles = None
         self._copyright_holder_history = None
         self._sponsor_history = None
-    
+        self.official = getattr(self.obj, 'official', None)
+
     @property
     def scielo_journal(self):
         if self._scielo_journal is None:
@@ -58,7 +59,7 @@ class ArticlemetaJournalFormatter:
         return list(TitleInDatabase.objects.filter(
             journal=self.obj, 
             indexed_at__acronym__iexact="medline"
-        ))
+        ).select_related("indexed_at"))
     
     @property
     @lru_cache(maxsize=1)
@@ -66,7 +67,7 @@ class ArticlemetaJournalFormatter:
         return list(TitleInDatabase.objects.filter(
             journal=self.obj,
             indexed_at__acronym__iexact="secs"
-        ))
+        ).select_related("indexed_at"))
 
     def format(self):
         """Formata todos os dados do journal"""
@@ -78,37 +79,87 @@ class ArticlemetaJournalFormatter:
             self._format_sponsor_info,
             self._format_indexing_info,
             self._format_metadata,
-            self._format_issn,
+            self._format_issn_info,
+            self._format_title_jorunal_info,
+            self._format_scielo_journal_info,
+            self._format_subject_areas_info,
+            self._format_mission_info,
         ]
         
         for formatter in formatters:
             formatter()
         
         return dict(self.result)
-    
+
     def _format_basic_info(self):
         """Informações básicas do journal"""
+        simple_fields = {
+            "v5": self.obj.type_of_literature,
+            "v6": self.obj.treatment_level,
+            "v10": self.obj.center_code,
+            "v20": self.obj.national_code,
+            "v30": self.obj.identification_number,
+            "v66": self.obj.ftp,
+            "v67": self.obj.user_subscription,
+            "v110": self.obj.subtitle,
+            "v130": self.obj.section,
+            "v330": self.obj.level_of_publication,
+            "v340": self.obj.alphabet,
+            "v380": self.obj.frequency,
+            "v550": self.obj.has_supplement,
+            "v560": self.obj.is_supplement,
+        }
+        for key, value in simple_fields.items():
+            add_to_result(key, value, self.result)
+
+        if self.scielo_journal and self.scielo_journal.status:
+            add_to_result("v50", self.scielo_journal.status.lower(), self.result)
+
+        if acronym := getattr(self.obj.vocabulary, 'acronym', None): 
+            add_to_result("v85", acronym, self.result)
+        add_to_result("v117", self.obj.standard.code if self.obj.standard and self.obj.standard.code else None, self.result)
+        add_items("v350", [lang.code2 for lang in self.obj.text_language.all()], self.result)
+        add_items("v360", [lang.code2 for lang in self.obj.abstract_language.all()], self.result)
+        add_items("v900", [annotation.notes for annotation in self.obj.annotation.all()], self.result)
+
+    def _format_title_jorunal_info(self):
+        """Informações do Title Journalal"""
+        add_to_result("v150", self.obj.short_title, self.result)
+
+        if parallel_titles := getattr(self.official, 'parallel_titles', None): 
+            add_items("v230", [pt.text for pt in parallel_titles if pt.text], self.result)
+        
+        add_items("v240", [other_title.title for other_title in self.obj.other_titles.all()], self.result)
+        add_items("v610", [old_title.title for old_title in self.official.old_title.all()], self.result)
+        if title := getattr(self.official.new_title, 'title', None):
+            add_to_result("v710", self.official.new_title.title, self.result)
+
+    def _format_scielo_journal_info(self):
+        """Informações do SciELO Journal"""
         add_to_result("collection", self.scielo_journal.collection.acron3 if self.scielo_journal.collection else None, self.result)
         add_to_result("code", self.scielo_journal.issn_scielo if self.scielo_journal else None, self.result)
-        add_to_result("v5", self.obj.type_of_literature, self.result)
-        add_to_result("v6", self.obj.treatment_level, self.result)
-        add_to_result("v10", self.obj.center_code, self.result)
-        add_to_result("v20", self.obj.national_code, self.result)
-        add_to_result("v30", self.obj.identification_number, self.result)
-    
+        if hasattr(self.scielo_journal, 'journal_acron'):
+            add_to_result("v68", self.scielo_journal.journal_acron, self.result)
+
     def _format_publication_info(self):
         """Informações de publicação"""
-        if self.obj.official:
-            official = self.obj.official
-            add_to_result("v100", official.title, self.result)
-            add_to_result("v301", official.initial_year, self.result)
-            add_to_result("v302", official.initial_volume, self.result)
-            add_to_result("v303", official.initial_number, self.result)
+        if self.official:
+            add_to_result("v100", self.official.title, self.result)
+            add_to_result("v301", self.official.initial_year, self.result)
+            add_to_result("v302", self.official.initial_volume, self.result)
+            add_to_result("v303", self.official.initial_number, self.result)
             
-            # Título paralelo
-            if hasattr(official, 'parallel_titles'):
-                add_items("v230", [pt.text for pt in official.parallel_titles if pt.text], self.result)
-    
+            year = self.official.terminate_year
+            month = self.official.terminate_month
+
+            if month and year:
+                add_to_result("v304", year + month, self.result)
+            elif year:
+                add_to_result("v304", year, self.result)
+
+            add_to_result("v305", self.official.final_volume, self.result)
+            add_to_result("v306", self.official.final_number, self.result)
+
     def _format_publisher_info(self):
         """Informações do publisher"""
         publishers = list(self.publisher_history)
@@ -147,11 +198,45 @@ class ArticlemetaJournalFormatter:
         add_to_result("v940", self.obj.created.isoformat(), self.result)
         add_to_result("v941", self.obj.updated.isoformat(), self.result)
 
-    def _format_issn(self):
-        official = getattr(self.obj, 'official', None)
-        if official:
-            issns = [issn for issn in [self.obj.official.issn_print, self.obj.official.issn_electronic] if issn]
+    def _format_issn_info(self):
+        """Informações de ISSN"""
+        if self.official:
+            issn_print = self.obj.official.issn_print
+            issn_electronic = self.obj.official.issn_electronic 
+            self._format_issn_list(issn_print, issn_electronic)
+            self._format_issn_with_type(issn_print, issn_electronic)
+    
+    def _format_issn_list(self, issn_print, issn_electronic):
+        if self.official:
+            issns = [issn for issn in [issn_print, issn_electronic] if issn]
             self.result['issns'].extend(issns)
+    
+    def _format_issn_with_type(self, issn_print, issn_electronic):
+        issns = []
+        if issn_print:
+            issns.append({"_": issn_print, "t": "PRINT"})
+        if issn_electronic:
+            issns.append({"_": issn_electronic, "t": "ONLIN"})
+        self.result["v435"] = issns
+
+    def _format_subject_areas_info(self):
+        add_items("v440", [descriptor.value for descriptor in self.obj.subject_descriptor.all()], self.result)
+        add_items("v441", [subject.value for subject in self.obj.subject.all()], self.result)
+
+    def _format_mission_info(self):
+        if not hasattr(self.obj, 'mission') or not self.obj.mission.exists():
+            return
+            
+        missions_data = []
+        for mission in self.obj.mission.select_related('language'):
+            if mission.language and mission.get_text_pure:
+                missions_data.append({
+                    "l": mission.language.code2,
+                    "_": mission.get_text_pure
+                })
+        
+        if missions_data:
+            self.result["v901"] = missions_data
 
 def get_articlemeta_format_title(obj):
     formatter = ArticlemetaJournalFormatter(obj)
