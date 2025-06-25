@@ -114,3 +114,4 @@ freezegun==1.5.1
 # django-rosetta
 # ------------------------------------------------------------------------------
 django-rosetta==0.10.1
+urllib3>=2.5.0 # not directly required, pinned by Snyk to avoid a vulnerability
