@@ -133,7 +133,9 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             create_or_update_researchers(xmltree=xmltree, user=user, item=pid_v3)
         )
         article.collab.set(
-            get_or_create_institution_authors(xmltree=xmltree, user=user, item=pid_v3)
+            get_or_create_institution_authors(
+                xmltree=xmltree, user=user, item=pid_v3, errors=errors
+            )
         )
         article.fundings.set(
             get_or_create_fundings(
@@ -425,52 +427,60 @@ def create_or_update_researchers(xmltree, user, item):
     return data
 
 
-def get_or_create_institution_authors(xmltree, user, item):
+def get_or_create_institution_authors(xmltree, user, item, errors):
     data = []
-    authors = ArticleContribs(xmltree=xmltree).contribs
-    for author in authors:
-        try:
-            affiliation = None
-            if collab := author.get("collab"):
-                if affs := author.get("affs"):
-                    for aff in affs:
-                        location = Location.create_or_update(
-                            user=user,
-                            country_name=aff.get("country_name"),
-                            state_name=aff.get("state"),
-                            city_name=aff.get("city"),
-                        )
-                        affiliation = Affiliation.get_or_create(
-                            name=aff.get("orgname"),
-                            acronym=None,
-                            level_1=aff.get("orgdiv1"),
-                            level_2=aff.get("orgdiv2"),
-                            level_3=None,
-                            location=location,
-                            official=None,
-                            is_official=None,
-                            url=None,
-                            institution_type=None,
-                            user=user,
-                        )
-                obj = InstitutionalAuthor.get_or_create(
-                    collab=collab,
-                    affiliation=affiliation,
-                    user=user,
+    try:
+        authors = ArticleContribs(xmltree=xmltree).contribs
+        for author in authors:
+            try:
+                affiliation = None
+                if collab := author.get("collab"):
+                    if affs := author.get("affs"):
+                        for aff in affs:
+                            location = Location.create_or_update(
+                                user=user,
+                                country_name=aff.get("country_name"),
+                                state_name=aff.get("state"),
+                                city_name=aff.get("city"),
+                            )
+                            affiliation = Affiliation.get_or_create(
+                                name=aff.get("orgname"),
+                                acronym=None,
+                                level_1=aff.get("orgdiv1"),
+                                level_2=aff.get("orgdiv2"),
+                                level_3=None,
+                                location=location,
+                                official=None,
+                                is_official=None,
+                                url=None,
+                                institution_type=None,
+                                user=user,
+                            )
+                    obj = InstitutionalAuthor.get_or_create(
+                        collab=collab,
+                        affiliation=affiliation,
+                        user=user,
+                    )
+                    data.append(obj)
+            except Exception as e:
+                errors.append(
+                    {
+                        "function": "get_or_create_institution_authors",
+                        "item": item,
+                        "author": author,
+                        "error_type": str(type(e)),
+                        "error_message": str(e),
+                    }
                 )
-                data.append(obj)
-        except Exception as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                item=item,
-                action="article.xmlsps.get_or_create_institution_authors",
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail=dict(
-                    author=author,
-                ),
-            )
-            raise LoadArticleCollabError(e)
+    except Exception as e:
+        errors.append(
+            {
+                "function": "get_or_create_institution_authors",
+                "item": item,
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
+        )
     return data
 
 
