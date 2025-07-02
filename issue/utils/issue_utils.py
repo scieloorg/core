@@ -31,7 +31,7 @@ def get_or_create_issue(
         user=user,
         season=None,
     )
-
+    return obj
 
 def get_scielo_journal(issn_scielo):
     try:
