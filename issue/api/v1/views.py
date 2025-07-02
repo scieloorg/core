@@ -51,6 +51,7 @@ class IssueViewSet(GenericIssueViewSet):
             "supplement",
             "page",
             "formats",
+            "code",
             "",
         )
         queryset = super().get_queryset()
@@ -73,10 +74,11 @@ class IssueViewSet(GenericIssueViewSet):
             queryset = queryset.filter(supplement=supplement)
         if issn := query_params.get("issn"):
             queryset = queryset.filter(Q(journal__official__issn_print=issn) | Q(journal__official__issn_electronic=issn))
+        if code := query_params.get("code"):
+            queryset = queryset.filter(article__pid_v2=code)
 
         dates = formated_date_api_params(query_params)
         queryset = queryset.filter(**dates)
-
 
         return queryset 
 
