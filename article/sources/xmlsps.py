@@ -130,7 +130,9 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             create_or_update_keywords(xmltree=xmltree, user=user, item=pid_v3)
         )
         article.researchers.set(
-            create_or_update_researchers(xmltree=xmltree, user=user, item=pid_v3)
+            create_or_update_researchers(
+                xmltree=xmltree, user=user, item=pid_v3, errors=errors
+            )
         )
         article.collab.set(
             get_or_create_institution_authors(
@@ -343,87 +345,98 @@ def create_or_update_abstract(xmltree, user, article, item):
     return data
 
 
-def create_or_update_researchers(xmltree, user, item):
+def create_or_update_researchers(xmltree, user, item, errors):
+    article_lang = None
     try:
         article_lang = ArticleAndSubArticles(xmltree=xmltree).main_lang
     except Exception as e:
-        article_lang = None
-
-    authors = XMLContribs(xmltree=xmltree).contribs
-
-    # Falta gender e gender_identification_status
-    data = []
-    affs = None
-    for author in authors:
-        try:
-            affs = None
-            contrib_name = author.get("contrib_name", None)
-            if contrib_name is not None:
-                given_names = contrib_name.get("given-names")
-                surname = contrib_name.get("surname")
-                suffix = contrib_name.get("suffix")
-            else:
-                surname = None
-                suffix = None
-                given_names = None
-
-            contrib_ids = author.get("contrib_ids", None)
-            if contrib_ids is not None:
-                orcid = contrib_ids.get("orcid")
-                lattes = contrib_ids.get("lattes")
-            else:
-                orcid = None
-                lattes = None
-
-            researcher_data = {
-                "user": user,
-                "given_names": given_names,
-                "last_name": surname,
-                "suffix": suffix,
-                "lang": article_lang,
-                "orcid": orcid,
-                "lattes": lattes,
-                # "email": author.get("email"),
-                "gender": author.get("gender"),
-                "gender_identification_status": author.get(
-                    "gender_identification_status"
-                ),
+        errors.append(
+            {
+                "function": "create_or_update_researchers.get_main_lang",
+                "error_type": str(type(e)),
+                "error_message": str(e),
             }
+        )
 
-            affs = author.get("affs", [])
-            if not affs:
-                obj = Researcher.create_or_update(**researcher_data)
-                data.append(obj)
-            else:
-                for aff in affs:
-                    raw_email = author.get("email") or aff.get("email")
-                    email = extracts_normalized_email(raw_email=raw_email)
-                    aff_data = {
-                        **researcher_data,
-                        "aff_name": aff.get("orgname"),
-                        "aff_div1": aff.get("orgdiv1"),
-                        "aff_div2": aff.get("orgdiv2"),
-                        "aff_city_name": aff.get("city"),
-                        "aff_country_acronym": aff.get("country_code"),
-                        "aff_country_name": aff.get("country_name"),
-                        "aff_state_text": aff.get("state"),
-                        "email": email,
-                    }
-                    obj = Researcher.create_or_update(**aff_data)
+    data = []
+    try:
+        authors = XMLContribs(xmltree=xmltree).contribs
+
+        for author in authors:
+            try:
+                contrib_name = author.get("contrib_name", None)
+                if contrib_name is not None:
+                    given_names = contrib_name.get("given-names")
+                    surname = contrib_name.get("surname")
+                    suffix = contrib_name.get("suffix")
+                else:
+                    surname = None
+                    suffix = None
+                    given_names = None
+
+                contrib_ids = author.get("contrib_ids", None)
+                if contrib_ids is not None:
+                    orcid = contrib_ids.get("orcid")
+                    lattes = contrib_ids.get("lattes")
+                else:
+                    orcid = None
+                    lattes = None
+
+                researcher_data = {
+                    "user": user,
+                    "given_names": given_names,
+                    "last_name": surname,
+                    "suffix": suffix,
+                    "lang": article_lang,
+                    "orcid": orcid,
+                    "lattes": lattes,
+                    "gender": author.get("gender"),
+                    "gender_identification_status": author.get(
+                        "gender_identification_status"
+                    ),
+                }
+
+                affs = author.get("affs", [])
+                if not affs:
+                    obj = Researcher.create_or_update(**researcher_data)
                     data.append(obj)
-        except Exception as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                item=item,
-                action="article.xmlsps.create_or_update_researchers",
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail=dict(
-                    author=author,
-                    affiliation=affs,
-                ),
-            )
-            raise LoadArticleContribError(e)
+                else:
+                    for aff in affs:
+                        raw_email = author.get("email") or aff.get("email")
+                        email = extracts_normalized_email(raw_email=raw_email)
+                        aff_data = {
+                            **researcher_data,
+                            "aff_name": aff.get("orgname"),
+                            "aff_div1": aff.get("orgdiv1"),
+                            "aff_div2": aff.get("orgdiv2"),
+                            "aff_city_name": aff.get("city"),
+                            "aff_country_acronym": aff.get("country_code"),
+                            "aff_country_name": aff.get("country_name"),
+                            "aff_state_text": aff.get("state"),
+                            "email": email,
+                        }
+                        obj = Researcher.create_or_update(**aff_data)
+                        data.append(obj)
+            except Exception as e:
+                errors.append(
+                    {
+                        "function": "create_or_update_researchers",
+                        "item": item,
+                        "author": author,
+                        "affiliation": author.get("affs", []),
+                        "error_type": str(type(e)),
+                        "error_message": str(e),
+                    }
+                )
+    except Exception as e:
+        errors.append(
+            {
+                "function": "create_or_update_researchers",
+                "item": item,
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
+        )
     return data
 
 
