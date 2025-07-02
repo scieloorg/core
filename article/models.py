@@ -203,7 +203,9 @@ class Article(
     @property
     def collections(self):
         if self.journal:
-            for item in self.journal.scielo_journal_set.all().select_related("collection"):
+            for item in self.journal.scielo_journal_set.all().select_related(
+                "collection"
+            ):
                 yield item.collection
         # scielo_journals = SciELOJournal.objects.select_related("collection").filter(journal=self.journal)
         # for scielo_journal in scielo_journals:
@@ -289,24 +291,24 @@ class Article(
     def mark_as_deleted_articles_without_pp_xml(cls, user):
         """
         Marca artigos como DATA_STATUS_DELETED quando pp_xml é None.
-        
+
         Args:
             user: Usuário que está executando a operação
-            
+
         Returns:
             int: Número de artigos atualizados
         """
         try:
-            return cls.objects.filter(
-                pp_xml__isnull=True
-            ).exclude(
-                data_status=choices.DATA_STATUS_DELETED
-            ).update(
-                data_status=choices.DATA_STATUS_DELETED,
-                updated_by=user,
-                updated=datetime.utcnow()
+            return (
+                cls.objects.filter(pp_xml__isnull=True)
+                .exclude(data_status=choices.DATA_STATUS_DELETED)
+                .update(
+                    data_status=choices.DATA_STATUS_DELETED,
+                    updated_by=user,
+                    updated=datetime.utcnow(),
+                )
             )
-            
+
         except Exception as exception:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
@@ -393,7 +395,9 @@ class ArticleFunding(CommonControlField):
     @classmethod
     def get_or_create(cls, award_id, funding_source, user):
         if not award_id or not funding_source:
-            raise ValueError("ArticleFunding.get_or_create requires award_id and funding_source")
+            raise ValueError(
+                "ArticleFunding.get_or_create requires award_id and funding_source"
+            )
         try:
             return cls.objects.get(award_id=award_id, funding_source=funding_source)
         except cls.DoesNotExist:

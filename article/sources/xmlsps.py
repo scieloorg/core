@@ -331,7 +331,7 @@ def create_or_update_researchers(xmltree, user, item):
         article_lang = ArticleAndSubArticles(xmltree=xmltree).main_lang
     except Exception as e:
         article_lang = None
-        
+
     authors = XMLContribs(xmltree=xmltree).contribs
 
     # Falta gender e gender_identification_status

@@ -111,25 +111,23 @@ def task_load_articles(
 
 
 @celery_app.task(bind=True, name="task_mark_articles_as_deleted_without_pp_xml")
-def task_mark_articles_as_deleted_without_pp_xml(
-    self, user_id=None, username=None
-):
+def task_mark_articles_as_deleted_without_pp_xml(self, user_id=None, username=None):
     """
     Tarefa Celery para marcar artigos como DATA_STATUS_DELETED quando pp_xml é None.
-    
+
     Args:
         user_id: ID do usuário (opcional)
         username: Nome do usuário (opcional)
     """
     try:
         user = _get_user(self.request, username, user_id)
-        
+
         updated_count = Article.mark_as_deleted_articles_without_pp_xml(user)
-        
+
         logging.info(
             f"Task completed successfully. {updated_count} articles marked as deleted."
         )
-        
+
     except Exception as exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
@@ -139,8 +137,10 @@ def task_mark_articles_as_deleted_without_pp_xml(
                 "task": "article.tasks.task_mark_articles_as_deleted_without_pp_xml",
             },
         )
-        
-        logging.error(f"Error in task_mark_articles_as_deleted_without_pp_xml: {exception}")
+
+        logging.error(
+            f"Error in task_mark_articles_as_deleted_without_pp_xml: {exception}"
+        )
 
 
 @celery_app.task(bind=True, name=_("load_preprints"))

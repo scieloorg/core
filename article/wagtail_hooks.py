@@ -30,7 +30,7 @@ class CollectionFilter(SimpleListFilter):
     def lookups(self, request, model_admin):
         collections = Collection.objects.filter(is_active=True)
         return [(collection.id, collection.main_name) for collection in collections]
-    
+
     def queryset(self, request, queryset):
         if self.value():
             return queryset.filter(journal__scielojournal__collection__id=self.value())
@@ -133,7 +133,9 @@ class ArticleFundingAdmin(ModelAdmin):
 class ArticleAdminGroup(ModelAdminGroup):
     menu_label = _("Articles")
     menu_icon = "folder-open-inverse"  # change as required
-    menu_order = get_menu_order("article")  # will put in 3rd place (000 being 1st, 100 2nd)
+    menu_order = get_menu_order(
+        "article"
+    )  # will put in 3rd place (000 being 1st, 100 2nd)
     items = (ArticleAdmin, ArticleFormatAdmin, ArticleFundingAdmin)
 
 
@@ -142,24 +144,32 @@ modeladmin_register(ArticleAdminGroup)
 
 class DuplicateArticlesViewSet(SnippetViewSet):
     model = Article
-    icon = 'folder'
+    icon = "folder"
     list_display = ["pid_v3", "updated", "created"]
 
     def get_queryset(self, request):
         if not request.user.is_superuser:
             raise PermissionDenied
         ids_duplicates = []
-        duplicates = Article.objects.all().values("pid_v3").annotate(pid_v3_count=Count("pid_v3")).filter(pid_v3_count__gt=1)
-        
+        duplicates = (
+            Article.objects.all()
+            .values("pid_v3")
+            .annotate(pid_v3_count=Count("pid_v3"))
+            .filter(pid_v3_count__gt=1)
+        )
+
         for duplicate in duplicates:
-            article_ids = Article.objects.filter(
-                pid_v3=duplicate['pid_v3']
-            ).order_by("created")[1:].values_list("id", flat=True)
+            article_ids = (
+                Article.objects.filter(pid_v3=duplicate["pid_v3"])
+                .order_by("created")[1:]
+                .values_list("id", flat=True)
+            )
             ids_duplicates.extend(article_ids)
-        
+
         if ids_duplicates:
             return Article.objects.filter(id__in=ids_duplicates)
         else:
             return Article.objects.none()
+
 
 register_snippet(DuplicateArticlesViewSet)
