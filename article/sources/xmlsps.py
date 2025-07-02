@@ -6,11 +6,11 @@ from lxml import etree
 from packtools.sps.models.article_abstract import ArticleAbstract
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_contribs import ArticleContribs, XMLContribs
-from packtools.sps.models.article_dates import HistoryDates
 from packtools.sps.models.article_doi_with_lang import DoiWithLang
 from packtools.sps.models.article_ids import ArticleIds
 from packtools.sps.models.article_license import ArticleLicense
 from packtools.sps.models.article_titles import ArticleTitles
+from packtools.sps.models.dates import ArticleDates
 from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
 from packtools.sps.models.funding_group import FundingGroup
 from packtools.sps.models.journal_meta import ISSN, Title
@@ -24,11 +24,11 @@ from article.exceptions import (
     LoadArticleCollabError,
     LoadArticleContribError,
     LoadArticleFundingError,
+    LoadArticleIssueError,
     LoadArticleKeywordError,
+    LoadArticleSponsorError,
     LoadArticleTitleError,
     LoadArticleTocSectionError,
-    LoadArticleSponsorError,
-    LoadArticleIssueError,
 )
 from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle
 from core.models import Language
@@ -38,6 +38,7 @@ from institution.models import Sponsor
 from issue.models import Issue, TocSection
 from journal.models import Journal
 from location.models import Location
+from pid_provider.choices import PPXML_STATUS_DONE
 from researcher.models import Affiliation, InstitutionalAuthor, Researcher
 from tracker.models import UnexpectedEvent
 from vocabulary.models import Keyword
@@ -77,6 +78,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
     try:
         # Sequência organizada para atribuição de campos do Article
         # Do mais simples (campos diretos) para o mais complexo (FKs e M2M)
+        errors = []
         xmltree = xml_with_pre.xmltree
         article = None
 
@@ -84,10 +86,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         article = Article.get_or_create(pid_v3=pid_v3, user=user)
         article.valid = False
         article.data_status = choices.DATA_STATUS_PENDING
-        article.save()
-
         article.pp_xml = pp_xml
-        article.save()
 
         # CAMPOS SIMPLES EXTRAÍDOS DO XML (ainda tipos primitivos)
         article.sps_pkg_name = xml_with_pre.sps_pkg_name
@@ -108,7 +107,9 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
 
         # MANY-TO-MANY
         article.languages.add(get_or_create_main_language(xmltree=xmltree, user=user))
-        article.toc_sections.set(get_or_create_toc_sections(xmltree=xmltree, user=user))
+        article.toc_sections.set(
+            get_or_create_toc_sections(xmltree=xmltree, user=user, errors=errors)
+        )
         article.titles.set(
             create_or_update_titles(xmltree=xmltree, user=user, item=pid_v3)
         )
@@ -132,10 +133,15 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
 
         # FINALIZAÇÃO
-        article.valid = True  # Marca como válido após todas as atribuições
+        article.valid = not (errors)  # Marca como válido após todas as atribuições
         # FIXME | TODO melhorar como identificar o valor adequado
-        article.data_status = choices.DATA_STATUS_PUBLIC
+        if article.valid:
+            article.data_status = choices.DATA_STATUS_PUBLIC
         article.save()  # Persistência final
+
+        if article.valid and article.pp_xml.proc_status != PPXML_STATUS_DONE:
+            article.pp_xml.proc_status = PPXML_STATUS_DONE
+            article.pp_xml.save()
 
         logging.info(f"The article {pid_v3} has been processed")
         return article
@@ -234,29 +240,32 @@ def get_or_create_fundings(xmltree, user, item):
     return data
 
 
-def get_or_create_toc_sections(xmltree, user):
+def get_or_create_toc_sections(xmltree, user, errors):
     toc_sections = ArticleTocSections(xmltree=xmltree).sections
-    data = []
+
     for item in toc_sections:
+        section_title = item.get("section")
+        section_lang = item.get("parent_lang")
+
+        if not section_title and not section_lang:
+            continue
+
         try:
-            obj = TocSection.get_or_create(
-                value=item.get("section"),
-                language=get_or_create_language(item.get("parent_lang"), user=user),
+            yield TocSection.get_or_create(
+                value=section_title,
+                language=get_or_create_language(section_lang, user=user),
                 user=user,
             )
-            data.append(obj)
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                action="article.xmlsps.sources.get_or_create_toc_sections",
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail=dict(
-                    data=item,
-                ),
+            errors.append(
+                {
+                    "function": "get_or_create_toc_sections",
+                    "item": item,
+                    "error_type": str(type(e)),
+                    "error_message": str(e),
+                }
             )
-            raise LoadArticleTocSectionError(f"{e}: {item}")
-    return data
 
 
 def set_license(xmltree, article):
@@ -466,7 +475,7 @@ def set_pids(xmltree, article):
 
 
 def set_date_pub(xmltree, article):
-    obj_date = HistoryDates(xmltree=xmltree)
+    obj_date = ArticleDates(xmltree=xmltree)
     dates = obj_date.article_date or obj_date.collection_date
     article.set_date_pub(dates)
 
@@ -516,7 +525,7 @@ def get_or_create_article_type(xmltree, user):
 
 def get_or_create_issues(xmltree, user, item):
     issue_data = ArticleMetaIssue(xmltree=xmltree).data
-    history_dates = HistoryDates(xmltree=xmltree)
+    history_dates = ArticleDates(xmltree=xmltree)
     collection_date = history_dates.collection_date or {}
     article_date = history_dates.article_date or {}
 
