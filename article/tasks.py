@@ -374,7 +374,40 @@ def task_load_article_source_from_opac(
     timeout=None,
     auto_solve_pid_conflict=None,
 ):
-
+    """
+    API Response
+    {
+        "begin_date":"2023-06-01 00-00-00",
+        "collection":"scl",
+        "dictionary_date": "Sat, 01 Jul 2023 00:00:00 GMT",
+        "documents":{
+            "JFhVphtq6czR6PHMvC4w38N": {
+                "aop_pid":"",
+                "create":"Sat, 28 Nov 2020 23:42:43 GMT",
+                "default_language":"en",
+                "journal_acronym":"aabc",
+                "pid":"S0001-37652012000100017",
+                "pid_v1":"S0001-3765(12)08400117",
+                "pid_v2":"S0001-37652012000100017",
+                "pid_v3":"JFhVphtq6czR6PHMvC4w38N",
+                "publication_date":"2012-05-22",
+                "update":"Fri, 30 Jun 2023 20:57:30 GMT"
+            },
+            "ZZYxjr9xbVHWmckYgDwBfTc":{
+                "aop_pid":"",
+                "create":"Sat, 28 Nov 2020 23:42:37 GMT",
+                "default_language":"en",
+                "journal_acronym":"aabc",
+                "pid":"S0001-37652012000100014",
+                "pid_v1":"S0001-3765(12)08400114",
+                "pid_v2":"S0001-37652012000100014",
+                "pid_v3":"ZZYxjr9xbVHWmckYgDwBfTc",
+                "publication_date":"2012-02-24",
+                "update":"Fri, 30 Jun 2023 20:56:59 GMT",
+            }
+        }
+    }
+    """
     page = 1
     domain = domain or "www.scielo.br"
     limit = limit or 100
@@ -392,6 +425,7 @@ def task_load_article_source_from_opac(
                 f"&begin_date={begin_date}&limit={limit}&page={page}"
             )
             response = fetch_data(uri, json=True, timeout=timeout, verify=True)
+
             pages = pages or response["pages"]
             documents = response["documents"]
 
