@@ -4,4 +4,6 @@ def add_items(key, items, dictonary, field_name="_"):
 
 def add_to_result(key, value, dictonary, field_name="_"):
     if value:
+        if key not in dictonary:
+            dictonary[key] = []
         dictonary[key].append({field_name: value})
