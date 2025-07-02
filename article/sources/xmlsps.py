@@ -128,7 +128,9 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             get_or_create_institution_authors(xmltree=xmltree, user=user, item=pid_v3)
         )
         article.fundings.set(
-            get_or_create_fundings(xmltree=xmltree, user=user, item=pid_v3)
+            get_or_create_fundings(
+                xmltree=xmltree, user=user, item=pid_v3, errors=errors
+            )
         )
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
 
@@ -187,7 +189,7 @@ def get_journal(xmltree):
         return None
 
 
-def get_or_create_fundings(xmltree, user, item):
+def get_or_create_fundings(xmltree, user, item, errors):
     """
     Ex fundings_award_group:
         [{
@@ -195,48 +197,49 @@ def get_or_create_fundings(xmltree, user, item):
         'award-id': ['2009/53363-8, 2009/52807-0, 2009/51766-8]}]
     """
     data = []
-    fundings_award_group = FundingGroup(xmltree=xmltree).award_groups
-    if fundings_award_group:
-        for fundings_award in fundings_award_group:
-            results = product(
-                fundings_award.get("funding-source", []),
-                fundings_award.get("award-id", []),
-            )
-            for result in results:
-                try:
-                    fs, award_id = result
-                    if not fs or not award_id:
-                        continue
-                    if not fs:
-                        raise LoadArticleFundingError(
-                            f"get_or_create_fundings requires fs. Found {result}"
+    try:
+        fundings_award_group = FundingGroup(xmltree=xmltree).award_groups
+        if fundings_award_group:
+            for fundings_award in fundings_award_group:
+                results = product(
+                    fundings_award.get("funding-source", []),
+                    fundings_award.get("award-id", []),
+                )
+                for result in results:
+                    try:
+                        fs, award_id = result
+                        if not fs or not award_id:
+                            continue
+                        sponsor = create_or_update_sponsor(
+                            funding_name=fs, user=user, item=item, errors=errors
                         )
-                    if not award_id:
-                        raise LoadArticleFundingError(
-                            f"get_or_create_fundings requires award_id. Found {result}"
+                        if sponsor:
+                            obj = ArticleFunding.get_or_create(
+                                award_id=award_id,
+                                funding_source=sponsor,
+                                user=user,
+                            )
+                            if obj:
+                                data.append(obj)
+                    except Exception as e:
+                        errors.append(
+                            {
+                                "function": "get_or_create_fundings",
+                                "item": item,
+                                "data": result,
+                                "error_type": str(type(e)),
+                                "error_message": str(e),
+                            }
                         )
-                    sponsor = create_or_update_sponsor(
-                        funding_name=fs, user=user, item=item
-                    )
-                    obj = ArticleFunding.get_or_create(
-                        award_id=award_id,
-                        funding_source=sponsor,
-                        user=user,
-                    )
-                    if obj:
-                        data.append(obj)
-                except Exception as e:
-                    exc_type, exc_value, exc_traceback = sys.exc_info()
-                    UnexpectedEvent.create(
-                        item=item,
-                        action="article.xmlsps.sources.get_or_create_fundings",
-                        exception=e,
-                        exc_traceback=exc_traceback,
-                        detail=dict(
-                            data=result,
-                        ),
-                    )
-                    raise LoadArticleFundingError(e)
+    except Exception as e:
+        errors.append(
+            {
+                "function": "get_or_create_fundings",
+                "item": item,
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
+        )
     return data
 
 
@@ -570,7 +573,7 @@ def get_or_create_main_language(xmltree, user):
     return obj
 
 
-def create_or_update_sponsor(funding_name, user, item):
+def create_or_update_sponsor(funding_name, user, item, errors):
     try:
         return Sponsor.get_or_create(
             user=user,
@@ -586,14 +589,13 @@ def create_or_update_sponsor(funding_name, user, item):
             institution_type=None,
         )
     except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        UnexpectedEvent.create(
-            item=item,
-            action="article.xmlsps.create_or_update_sponsor",
-            exception=e,
-            exc_traceback=exc_traceback,
-            detail=dict(
-                funding_name=funding_name,
-            ),
+        errors.append(
+            {
+                "function": "create_or_update_sponsor",
+                "item": item,
+                "funding_name": funding_name,
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
         )
-        raise LoadArticleSponsorError(e)
+        return None
