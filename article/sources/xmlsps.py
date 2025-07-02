@@ -96,7 +96,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         set_date_pub(xmltree=xmltree, article=article)  # Define datas
         set_license(xmltree=xmltree, article=article)  # Define campos de licença
         set_first_last_page_elocation_id(
-            xmltree=xmltree, article=article
+            xmltree=xmltree, article=article, errors=errors,
         )  # Define paginação
         article.article_type = get_or_create_article_type(xmltree=xmltree, user=user, errors=errors)
         article.save()
@@ -480,11 +480,18 @@ def set_date_pub(xmltree, article):
     article.set_date_pub(dates)
 
 
-def set_first_last_page_elocation_id(xmltree, article):
-    xml = ArticleMetaIssue(xmltree=xmltree)
-    article.first_page = xml.fpage
-    article.last_page = xml.lpage
-    article.elocation_id = xml.elocation_id
+def set_first_last_page_elocation_id(xmltree, article, errors):
+    try:
+        xml = ArticleMetaIssue(xmltree=xmltree)
+        article.first_page = xml.fpage
+        article.last_page = xml.lpage
+        article.elocation_id = xml.elocation_id
+    except Exception as e:
+        errors.append({
+            "function": "set_first_last_page_elocation_id",
+            "error_type": str(type(e)),
+            "error_message": str(e),
+        })
 
 
 def create_or_update_titles(xmltree, user, item):
