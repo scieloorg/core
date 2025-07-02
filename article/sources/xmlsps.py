@@ -103,7 +103,9 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
 
         # FOREIGN KEYS SIMPLES (dependências diretas, sem muita complexidade)
         article.journal = get_journal(xmltree=xmltree)
-        article.issue = get_or_create_issues(xmltree=xmltree, user=user, item=pid_v3)
+        article.issue = get_or_create_issues(
+            xmltree=xmltree, user=user, item=pid_v3, errors=errors
+        )
 
         # MANY-TO-MANY
         article.languages.add(get_or_create_main_language(xmltree=xmltree, user=user))
@@ -526,19 +528,21 @@ def get_or_create_article_type(xmltree, user):
     return article_type
 
 
-def get_or_create_issues(xmltree, user, item):
-    issue_data = ArticleMetaIssue(xmltree=xmltree).data
-    history_dates = ArticleDates(xmltree=xmltree)
-    collection_date = history_dates.collection_date or {}
-    article_date = history_dates.article_date or {}
-
-    season = collection_date.get("season")
-    year = collection_date.get("year") or article_date.get("year")
-    month = collection_date.get("month")
-    suppl = collection_date.get("suppl")
+def get_or_create_issues(xmltree, user, item, errors):
     try:
+        issue_data = ArticleMetaIssue(xmltree=xmltree).data
+        history_dates = ArticleDates(xmltree=xmltree)
+        collection_date = history_dates.collection_date or {}
+        article_date = history_dates.article_date or {}
+
+        season = collection_date.get("season")
+        year = collection_date.get("year") or article_date.get("year")
+        month = collection_date.get("month")
+        suppl = collection_date.get("suppl")
+
+        journal = get_journal(xmltree=xmltree, errors=errors)
         obj = Issue.get_or_create(
-            journal=get_journal(xmltree=xmltree),
+            journal=journal,
             number=issue_data.get("number"),
             volume=issue_data.get("volume"),
             season=season,
@@ -548,18 +552,17 @@ def get_or_create_issues(xmltree, user, item):
             user=user,
         )
         return obj
-    except AttributeError as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        UnexpectedEvent.create(
-            item=item,
-            action="article.xmlsps.get_or_create_issues",
-            exception=e,
-            exc_traceback=exc_traceback,
-            detail=dict(
-                issue=issue_data,
-            ),
+    except Exception as e:
+        errors.append(
+            {
+                "function": "get_or_create_issues",
+                "item": item,
+                "issue": issue_data if "issue_data" in locals() else None,
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
         )
-        raise LoadArticleIssueError(e)
+        return None
 
 
 def get_or_create_language(lang, user):
