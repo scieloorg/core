@@ -110,9 +110,9 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         article.save()
 
         # FOREIGN KEYS SIMPLES (dependências diretas, sem muita complexidade)
-        article.journal = get_journal(xmltree=xmltree)
+        article.journal = get_journal(xmltree=xmltree, errors=errors)
         article.issue = get_or_create_issues(
-            xmltree=xmltree, user=user, item=pid_v3, errors=errors
+            xmltree=xmltree, user=user, journal=journal, item=pid_v3, errors=errors
         )
 
         # MANY-TO-MANY
@@ -181,20 +181,36 @@ def get_or_create_doi(xmltree, user):
     return data
 
 
-def get_journal(xmltree):
+def get_journal(xmltree, errors):
     try:
         return Journal.objects.get(title=Title(xmltree=xmltree).journal_title)
     except (Journal.DoesNotExist, Journal.MultipleObjectsReturned):
         pass
-
-    issn = ISSN(xmltree=xmltree)
+    except Exception as e:
+        errors.append(
+            {
+                "function": "get_journal",
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
+        )
 
     try:
+        issn = ISSN(xmltree=xmltree)
         return Journal.get(
             issn_electronic=issn.epub,
             issn_print=issn.ppub,
         )
     except Journal.DoesNotExist:
+        return None
+    except Exception as e:
+        errors.append(
+            {
+                "function": "get_journal",
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
+        )
         return None
 
 
@@ -600,7 +616,7 @@ def get_or_create_article_type(xmltree, user, errors):
         return None
 
 
-def get_or_create_issues(xmltree, user, item, errors):
+def get_or_create_issues(xmltree, user, journal, item, errors):
     try:
         issue_data = ArticleMetaIssue(xmltree=xmltree).data
         history_dates = ArticleDates(xmltree=xmltree)
@@ -612,7 +628,6 @@ def get_or_create_issues(xmltree, user, item, errors):
         month = collection_date.get("month")
         suppl = collection_date.get("suppl")
 
-        journal = get_journal(xmltree=xmltree, errors=errors)
         obj = Issue.get_or_create(
             journal=journal,
             number=issue_data.get("number"),
