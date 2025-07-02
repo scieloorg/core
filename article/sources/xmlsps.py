@@ -91,14 +91,20 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         # CAMPOS SIMPLES EXTRAÍDOS DO XML (ainda tipos primitivos)
         article.sps_pkg_name = xml_with_pre.sps_pkg_name
         set_pids(
-            xmltree=xmltree, article=article
+            xmltree=xmltree,
+            article=article,
+            errors=errors,
         )  # Provavelmente define campos como pid, etc.
         set_date_pub(xmltree=xmltree, article=article, errors=errors)  # Define datas
         set_license(xmltree=xmltree, article=article)  # Define campos de licença
         set_first_last_page_elocation_id(
-            xmltree=xmltree, article=article, errors=errors,
+            xmltree=xmltree,
+            article=article,
+            errors=errors,
         )  # Define paginação
-        article.article_type = get_or_create_article_type(xmltree=xmltree, user=user, errors=errors)
+        article.article_type = get_or_create_article_type(
+            xmltree=xmltree, user=user, errors=errors
+        )
         article.save()
 
         # FOREIGN KEYS SIMPLES (dependências diretas, sem muita complexidade)
@@ -468,10 +474,19 @@ def get_or_create_institution_authors(xmltree, user, item):
     return data
 
 
-def set_pids(xmltree, article):
-    pids = ArticleIds(xmltree=xmltree).data
-    if pids.get("v2") or pids.get("v3"):
-        article.set_pids(pids)
+def set_pids(xmltree, article, errors):
+    try:
+        pids = ArticleIds(xmltree=xmltree).data
+        if pids.get("v2") or pids.get("v3"):
+            article.set_pids(pids)
+    except Exception as e:
+        errors.append(
+            {
+                "function": "set_pids",
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
+        )
 
 
 def set_date_pub(xmltree, article, errors):
@@ -480,11 +495,13 @@ def set_date_pub(xmltree, article, errors):
         dates = obj_date.article_date or obj_date.collection_date
         article.set_date_pub(dates)
     except Exception as e:
-        errors.append({
-            "function": "set_date_pub",
-            "error_type": str(type(e)),
-            "error_message": str(e),
-        })
+        errors.append(
+            {
+                "function": "set_date_pub",
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
+        )
 
 
 def set_first_last_page_elocation_id(xmltree, article, errors):
@@ -494,11 +511,13 @@ def set_first_last_page_elocation_id(xmltree, article, errors):
         article.last_page = xml.lpage
         article.elocation_id = xml.elocation_id
     except Exception as e:
-        errors.append({
-            "function": "set_first_last_page_elocation_id",
-            "error_type": str(type(e)),
-            "error_message": str(e),
-        })
+        errors.append(
+            {
+                "function": "set_first_last_page_elocation_id",
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
+        )
 
 
 def create_or_update_titles(xmltree, user, item):
@@ -537,11 +556,13 @@ def get_or_create_article_type(xmltree, user, errors):
         article_type = ArticleAndSubArticles(xmltree=xmltree).main_article_type
         return article_type
     except Exception as e:
-        errors.append({
-            "function": "get_or_create_article_type",
-            "error_type": str(type(e)),
-            "error_message": str(e),
-        })
+        errors.append(
+            {
+                "function": "get_or_create_article_type",
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
+        )
         return None
 
 
