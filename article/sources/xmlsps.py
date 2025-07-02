@@ -93,7 +93,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         set_pids(
             xmltree=xmltree, article=article
         )  # Provavelmente define campos como pid, etc.
-        set_date_pub(xmltree=xmltree, article=article)  # Define datas
+        set_date_pub(xmltree=xmltree, article=article, errors=errors)  # Define datas
         set_license(xmltree=xmltree, article=article)  # Define campos de licença
         set_first_last_page_elocation_id(
             xmltree=xmltree, article=article, errors=errors,
@@ -474,10 +474,17 @@ def set_pids(xmltree, article):
         article.set_pids(pids)
 
 
-def set_date_pub(xmltree, article):
-    obj_date = ArticleDates(xmltree=xmltree)
-    dates = obj_date.article_date or obj_date.collection_date
-    article.set_date_pub(dates)
+def set_date_pub(xmltree, article, errors):
+    try:
+        obj_date = ArticleDates(xmltree=xmltree)
+        dates = obj_date.article_date or obj_date.collection_date
+        article.set_date_pub(dates)
+    except Exception as e:
+        errors.append({
+            "function": "set_date_pub",
+            "error_type": str(type(e)),
+            "error_message": str(e),
+        })
 
 
 def set_first_last_page_elocation_id(xmltree, article, errors):
