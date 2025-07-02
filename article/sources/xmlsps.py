@@ -6,11 +6,11 @@ from lxml import etree
 from packtools.sps.models.article_abstract import ArticleAbstract
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_contribs import ArticleContribs, XMLContribs
+from packtools.sps.models.dates import ArticleDates
 from packtools.sps.models.article_doi_with_lang import DoiWithLang
 from packtools.sps.models.article_ids import ArticleIds
 from packtools.sps.models.article_license import ArticleLicense
 from packtools.sps.models.article_titles import ArticleTitles
-from packtools.sps.models.dates import ArticleDates
 from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
 from packtools.sps.models.funding_group import FundingGroup
 from packtools.sps.models.journal_meta import ISSN, Title
@@ -19,17 +19,6 @@ from packtools.sps.models.v2.article_toc_sections import ArticleTocSections
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article import choices
-from article.exceptions import (
-    LoadArticleAbstractError,
-    LoadArticleCollabError,
-    LoadArticleContribError,
-    LoadArticleFundingError,
-    LoadArticleIssueError,
-    LoadArticleKeywordError,
-    LoadArticleSponsorError,
-    LoadArticleTitleError,
-    LoadArticleTocSectionError,
-)
 from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle
 from core.models import Language
 from core.utils.extracts_normalized_email import extracts_normalized_email
@@ -46,6 +35,8 @@ from vocabulary.models import Keyword
 
 def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
     logging.info(f"load article {file_path} {v3}")
+    errors = []
+
     try:
         if file_path:
             for xml_with_pre in XMLWithPre.create(file_path):
@@ -78,7 +69,6 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
     try:
         # Sequência organizada para atribuição de campos do Article
         # Do mais simples (campos diretos) para o mais complexo (FKs e M2M)
-        errors = []
         xmltree = xml_with_pre.xmltree
         article = None
 
@@ -90,20 +80,12 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
 
         # CAMPOS SIMPLES EXTRAÍDOS DO XML (ainda tipos primitivos)
         article.sps_pkg_name = xml_with_pre.sps_pkg_name
-        set_pids(
-            xmltree=xmltree,
-            article=article,
-            errors=errors,
-        )  # Provavelmente define campos como pid, etc.
-        set_date_pub(xmltree=xmltree, article=article, errors=errors)  # Define datas
-        set_license(
-            xmltree=xmltree, article=article, errors=errors
-        )  # Define campos de licença
+        set_pids(xmltree=xmltree, article=article, errors=errors)
+        set_date_pub(xmltree=xmltree, article=article, errors=errors)
+        set_license(xmltree=xmltree, article=article, errors=errors)
         set_first_last_page_elocation_id(
-            xmltree=xmltree,
-            article=article,
-            errors=errors,
-        )  # Define paginação
+            xmltree=xmltree, article=article, errors=errors
+        )
         article.article_type = get_or_create_article_type(
             xmltree=xmltree, user=user, errors=errors
         )
@@ -112,24 +94,37 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         # FOREIGN KEYS SIMPLES (dependências diretas, sem muita complexidade)
         article.journal = get_journal(xmltree=xmltree, errors=errors)
         article.issue = get_or_create_issues(
-            xmltree=xmltree, user=user, journal=journal, item=pid_v3, errors=errors
+            xmltree=xmltree,
+            user=user,
+            journal=article.journal,
+            item=pid_v3,
+            errors=errors,
         )
 
         # MANY-TO-MANY
-        article.languages.add(get_or_create_main_language(xmltree=xmltree, user=user))
+        main_lang = get_or_create_main_language(
+            xmltree=xmltree, user=user, errors=errors
+        )
+        if main_lang:
+            article.languages.add(main_lang)
+
         article.toc_sections.set(
             get_or_create_toc_sections(xmltree=xmltree, user=user, errors=errors)
         )
         article.titles.set(
-            create_or_update_titles(xmltree=xmltree, user=user, item=pid_v3)
+            create_or_update_titles(
+                xmltree=xmltree, user=user, item=pid_v3, errors=errors
+            )
         )
         article.abstracts.set(
             create_or_update_abstract(
-                xmltree=xmltree, user=user, article=article, item=pid_v3
+                xmltree=xmltree, user=user, article=article, item=pid_v3, errors=errors
             )
         )
         article.keywords.set(
-            create_or_update_keywords(xmltree=xmltree, user=user, item=pid_v3)
+            create_or_update_keywords(
+                xmltree=xmltree, user=user, item=pid_v3, errors=errors
+            )
         )
         article.researchers.set(
             create_or_update_researchers(
@@ -146,20 +141,28 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
                 xmltree=xmltree, user=user, item=pid_v3, errors=errors
             )
         )
-        article.doi.set(get_or_create_doi(xmltree=xmltree, user=user))
+        article.doi.set(get_or_create_doi(xmltree=xmltree, user=user, errors=errors))
 
         # FINALIZAÇÃO
-        article.valid = not (errors)  # Marca como válido após todas as atribuições
+        article.valid = not errors  # Marca como válido após todas as atribuições
         # FIXME | TODO melhorar como identificar o valor adequado
         if article.valid:
             article.data_status = choices.DATA_STATUS_PUBLIC
+
+        article.errors = errors
         article.save()  # Persistência final
 
-        if article.valid and article.pp_xml.proc_status != PPXML_STATUS_DONE:
+        if (
+            article.valid
+            and article.pp_xml
+            and article.pp_xml.proc_status != PPXML_STATUS_DONE
+        ):
             article.pp_xml.proc_status = PPXML_STATUS_DONE
             article.pp_xml.save()
 
-        logging.info(f"The article {pid_v3} has been processed")
+        logging.info(
+            f"The article {pid_v3} has been processed with {len(errors)} errors"
+        )
         return article
     except Exception as e:
         erros.append({"error_type": str(type(e)), "error_message": str(e)})
@@ -168,16 +171,36 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         return article
 
 
-def get_or_create_doi(xmltree, user):
-    doi_with_lang = DoiWithLang(xmltree=xmltree).data
+def get_or_create_doi(xmltree, user, errors):
     data = []
-    for doi in doi_with_lang:
-        obj = DOI.get_or_create(
-            value=doi.get("value"),
-            language=get_or_create_language(doi.get("lang"), user=user),
-            creator=user,
+    try:
+        doi_with_lang = DoiWithLang(xmltree=xmltree).data
+        for doi in doi_with_lang:
+            try:
+                lang = get_or_create_language(doi.get("lang"), user=user, errors=errors)
+                obj = DOI.get_or_create(
+                    value=doi.get("value"),
+                    language=lang,
+                    creator=user,
+                )
+                data.append(obj)
+            except Exception as e:
+                errors.append(
+                    {
+                        "function": "get_or_create_doi",
+                        "item": doi,
+                        "error_type": str(type(e)),
+                        "error_message": str(e),
+                    }
+                )
+    except Exception as e:
+        errors.append(
+            {
+                "function": "get_or_create_doi",
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
         )
-        data.append(obj)
     return data
 
 
@@ -269,31 +292,43 @@ def get_or_create_fundings(xmltree, user, item, errors):
 
 
 def get_or_create_toc_sections(xmltree, user, errors):
-    toc_sections = ArticleTocSections(xmltree=xmltree).sections
+    data = []
+    try:
+        toc_sections = ArticleTocSections(xmltree=xmltree).sections
 
-    for item in toc_sections:
-        section_title = item.get("section")
-        section_lang = item.get("parent_lang")
+        for item in toc_sections:
+            section_title = item.get("section")
+            section_lang = item.get("parent_lang")
 
-        if not section_title and not section_lang:
-            continue
+            if not section_title and not section_lang:
+                continue
 
-        try:
-            yield TocSection.get_or_create(
-                value=section_title,
-                language=get_or_create_language(section_lang, user=user),
-                user=user,
-            )
-        except Exception as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            errors.append(
-                {
-                    "function": "get_or_create_toc_sections",
-                    "item": item,
-                    "error_type": str(type(e)),
-                    "error_message": str(e),
-                }
-            )
+            try:
+                lang = get_or_create_language(section_lang, user=user, errors=errors)
+                obj = TocSection.get_or_create(
+                    value=section_title,
+                    language=lang,
+                    user=user,
+                )
+                data.append(obj)
+            except Exception as e:
+                errors.append(
+                    {
+                        "function": "get_or_create_toc_sections",
+                        "item": item,
+                        "error_type": str(type(e)),
+                        "error_message": str(e),
+                    }
+                )
+    except Exception as e:
+        errors.append(
+            {
+                "function": "get_or_create_toc_sections",
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
+        )
+    return data
 
 
 def set_license(xmltree, article, errors):
@@ -312,63 +347,86 @@ def set_license(xmltree, article, errors):
         )
 
 
-def create_or_update_keywords(xmltree, user, item):
-    article_keywords = ArticleKeywords(xmltree=xmltree)
-    article_keywords.configure(tags_to_convert_to_html={"bold": "b"})
+def create_or_update_keywords(xmltree, user, item, errors):
     data = []
-    for kwd in article_keywords.items:
-        try:
-            obj = Keyword.create_or_update(
-                user=user,
-                vocabulary=None,
-                language=get_or_create_language(kwd.get("lang"), user=user),
-                text=kwd.get("plain_text"),
-                html_text=kwd.get("html_text"),
-            )
-            data.append(obj)
-        except Exception as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                item=item,
-                action="article.xmlsps.get_or_create_keywords",
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail=dict(
-                    data=kwd,
-                ),
-            )
-            raise LoadArticleKeywordError(e)
-    return data
+    try:
+        article_keywords = ArticleKeywords(xmltree=xmltree)
+        article_keywords.configure(tags_to_convert_to_html={"bold": "b"})
 
-
-def create_or_update_abstract(xmltree, user, article, item):
-    data = []
-    abstract = ArticleAbstract(xmltree=xmltree)
-    abstract.configure(tags_to_convert_to_html={"bold": "b", "italic": "i"})
-
-    if xmltree.find(".//abstract") is not None:
-        for ab in abstract.get_abstracts():
-            if not ab:
-                continue
+        for kwd in article_keywords.items:
             try:
-                obj = DocumentAbstract.create_or_update(
+                lang = get_or_create_language(kwd.get("lang"), user=user, errors=errors)
+                obj = Keyword.create_or_update(
                     user=user,
-                    article=article,
-                    language=get_or_create_language(ab.get("lang"), user=user),
-                    text=ab.get("plain_text"),
-                    rich_text=ab.get("html_text"),
+                    vocabulary=None,
+                    language=lang,
+                    text=kwd.get("plain_text"),
+                    html_text=kwd.get("html_text"),
                 )
                 data.append(obj)
             except Exception as e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                UnexpectedEvent.create(
-                    item=item,
-                    action="article.xmlsps.sources.create_or_update_abstract",
-                    exception=e,
-                    exc_traceback=exc_traceback,
-                    detail=dict(data=ab),
+                errors.append(
+                    {
+                        "function": "create_or_update_keywords",
+                        "item": item,
+                        "data": kwd,
+                        "error_type": str(type(e)),
+                        "error_message": str(e),
+                    }
                 )
-                raise LoadArticleAbstractError(e)
+    except Exception as e:
+        errors.append(
+            {
+                "function": "create_or_update_keywords",
+                "item": item,
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
+        )
+    return data
+
+
+def create_or_update_abstract(xmltree, user, article, item, errors):
+    data = []
+    try:
+        abstract = ArticleAbstract(xmltree=xmltree)
+        abstract.configure(tags_to_convert_to_html={"bold": "b", "italic": "i"})
+
+        if xmltree.find(".//abstract") is not None:
+            for ab in abstract.get_abstracts():
+                if not ab:
+                    continue
+                try:
+                    lang = get_or_create_language(
+                        ab.get("lang"), user=user, errors=errors
+                    )
+                    obj = DocumentAbstract.create_or_update(
+                        user=user,
+                        article=article,
+                        language=lang,
+                        text=ab.get("plain_text"),
+                        rich_text=ab.get("html_text"),
+                    )
+                    data.append(obj)
+                except Exception as e:
+                    errors.append(
+                        {
+                            "function": "create_or_update_abstract",
+                            "item": item,
+                            "data": ab,
+                            "error_type": str(type(e)),
+                            "error_message": str(e),
+                        }
+                    )
+    except Exception as e:
+        errors.append(
+            {
+                "function": "create_or_update_abstract",
+                "item": item,
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
+        )
     return data
 
 
@@ -570,34 +628,45 @@ def set_first_last_page_elocation_id(xmltree, article, errors):
         )
 
 
-def create_or_update_titles(xmltree, user, item):
-    titles = ArticleTitles(
-        xmltree=xmltree, tags_to_convert_to_html={"bold": "b"}
-    ).article_title_list
+def create_or_update_titles(xmltree, user, item, errors):
     data = []
-    for title in titles:
-        try:
-            lang = get_or_create_language(title.get("lang"), user=user)
-            if title.get("plain_text") or title.get("html_text"):
-                obj = DocumentTitle.create_or_update(
-                    title=title.get("plain_text"),
-                    rich_text=title.get("html_text"),
-                    language=lang,
-                    user=user,
+    try:
+        titles = ArticleTitles(
+            xmltree=xmltree, tags_to_convert_to_html={"bold": "b"}
+        ).article_title_list
+
+        for title in titles:
+            try:
+                lang = get_or_create_language(
+                    title.get("lang"), user=user, errors=errors
                 )
-                data.append(obj)
-        except Exception as e:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                item=item,
-                action="article.sources.xmlsps.create_or_update_titles",
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail=dict(
-                    title=title,
-                ),
-            )
-            raise LoadArticleTitleError(e)
+                if title.get("plain_text") or title.get("html_text"):
+                    obj = DocumentTitle.create_or_update(
+                        title=title.get("plain_text"),
+                        rich_text=title.get("html_text"),
+                        language=lang,
+                        user=user,
+                    )
+                    data.append(obj)
+            except Exception as e:
+                errors.append(
+                    {
+                        "function": "create_or_update_titles",
+                        "item": item,
+                        "title": title,
+                        "error_type": str(type(e)),
+                        "error_message": str(e),
+                    }
+                )
+    except Exception as e:
+        errors.append(
+            {
+                "function": "create_or_update_titles",
+                "item": item,
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
+        )
     return data
 
 
@@ -652,15 +721,36 @@ def get_or_create_issues(xmltree, user, journal, item, errors):
         return None
 
 
-def get_or_create_language(lang, user):
-    obj = Language.get_or_create(code2=lang, creator=user)
-    return obj
+def get_or_create_language(lang, user, errors):
+    try:
+        obj = Language.get_or_create(code2=lang, creator=user)
+        return obj
+    except Exception as e:
+        errors.append(
+            {
+                "function": "get_or_create_language",
+                "lang": lang,
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
+        )
+        return None
 
 
-def get_or_create_main_language(xmltree, user):
-    lang = ArticleAndSubArticles(xmltree=xmltree).main_lang
-    obj = get_or_create_language(lang, user)
-    return obj
+def get_or_create_main_language(xmltree, user, errors):
+    try:
+        lang = ArticleAndSubArticles(xmltree=xmltree).main_lang
+        obj = get_or_create_language(lang, user, errors)
+        return obj
+    except Exception as e:
+        errors.append(
+            {
+                "function": "get_or_create_main_language",
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
+        )
+        return None
 
 
 def create_or_update_sponsor(funding_name, user, item, errors):
