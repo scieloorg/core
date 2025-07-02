@@ -8,8 +8,9 @@ from journal.models import SciELOJournal, TitleInDatabase
 class ArticlemetaJournalFormatter:
     """Formatador para dados do ArticleMeta"""
     
-    def __init__(self, obj):
+    def __init__(self, obj, collection):
         self.obj = obj
+        self.collection = collection
         self.result = defaultdict(list)
         self._scielo_journal = None
         self._publisher_history = None
@@ -20,13 +21,14 @@ class ArticlemetaJournalFormatter:
 
     @property
     def scielo_journal(self):
-        if self._scielo_journal is None:
-            self._scielo_journal = SciELOJournal.objects.select_related(
-                'collection', 'journal'
-            ).filter(
-                journal=self.obj,
-                collection__is_active=True
-            ).first()
+        if self._scielo_journal is not None:
+            return self._scielo_journal
+
+        qs = SciELOJournal.objects.select_related('collection', 'journal').filter(journal=self.obj)
+        if self.collection:
+            qs = qs.filter(collection__acron3=self.collection)
+
+        self._scielo_journal = qs.first()
         return self._scielo_journal
     
     @property
@@ -55,19 +57,12 @@ class ArticlemetaJournalFormatter:
 
     @property
     @lru_cache(maxsize=1)
-    def medline_titles(self):
-        return list(TitleInDatabase.objects.filter(
-            journal=self.obj, 
-            indexed_at__acronym__iexact="medline"
-        ).select_related("indexed_at"))
-    
-    @property
-    @lru_cache(maxsize=1)
-    def secs_codes(self):
-        return list(TitleInDatabase.objects.filter(
-            journal=self.obj,
-            indexed_at__acronym__iexact="secs"
-        ).select_related("indexed_at"))
+    def titles_in_database_medline_secs(self):
+        titles_in_db = TitleInDatabase.objects.filter(
+                journal=self.obj,
+                indexed_at__acronym__in=["medline", "secs"]
+            ).select_related("indexed_at")
+        return titles_in_db
 
     def format(self):
         """Formata todos os dados do journal"""
@@ -80,10 +75,13 @@ class ArticlemetaJournalFormatter:
             self._format_indexing_info,
             self._format_metadata,
             self._format_issn_info,
-            self._format_title_jorunal_info,
+            self._format_title_journal_info,
             self._format_scielo_journal_info,
             self._format_subject_areas_info,
             self._format_mission_info,
+            self._format_contact_address_info,
+            self._format_collection_info,
+            self._format_journal_history,
         ]
         
         for formatter in formatters:
@@ -100,6 +98,7 @@ class ArticlemetaJournalFormatter:
             "v20": self.obj.national_code,
             "v30": self.obj.identification_number,
             "v66": self.obj.ftp,
+            "v65": "<hr>",
             "v67": self.obj.user_subscription,
             "v110": self.obj.subtitle,
             "v130": self.obj.section,
@@ -108,38 +107,70 @@ class ArticlemetaJournalFormatter:
             "v380": self.obj.frequency,
             "v550": self.obj.has_supplement,
             "v560": self.obj.is_supplement,
+            "v692": self.obj.submission_online_url,
+            "v699": self.obj.publishing_model,
         }
         for key, value in simple_fields.items():
             add_to_result(key, value, self.result)
 
-        if self.scielo_journal and self.scielo_journal.status:
-            add_to_result("v50", self.scielo_journal.status.lower(), self.result)
-
         if acronym := getattr(self.obj.vocabulary, 'acronym', None): 
             add_to_result("v85", acronym, self.result)
+        
+        if license := getattr(self.obj.journal_use_license, 'license_type', None):
+            add_to_result("v541", license, self.result)
+
+        add_items("v64", [e.email for e in self.obj.journal_email.all()], self.result) 
         add_to_result("v117", self.obj.standard.code if self.obj.standard and self.obj.standard.code else None, self.result)
         add_items("v350", [lang.code2 for lang in self.obj.text_language.all()], self.result)
         add_items("v360", [lang.code2 for lang in self.obj.abstract_language.all()], self.result)
         add_items("v900", [annotation.notes for annotation in self.obj.annotation.all()], self.result)
 
-    def _format_title_jorunal_info(self):
+    def _format_contact_address_info(self):
+        address = self.obj.contact_address
+        try:
+            add_items("v63", address.split("\n"), self.result)
+        except Exception as e:
+            add_to_result("v63", address, self.result)
+
+    def _format_title_journal_info(self):
         """Informações do Title Journalal"""
         add_to_result("v150", self.obj.short_title, self.result)
-
+        if iso_short_title := getattr(self.obj.official, 'iso_short_title', None):
+            add_to_result("v151", iso_short_title, self.result)
+        
         if parallel_titles := getattr(self.official, 'parallel_titles', None): 
             add_items("v230", [pt.text for pt in parallel_titles if pt.text], self.result)
         
         add_items("v240", [other_title.title for other_title in self.obj.other_titles.all()], self.result)
         add_items("v610", [old_title.title for old_title in self.official.old_title.all()], self.result)
         if title := getattr(self.official.new_title, 'title', None):
-            add_to_result("v710", self.official.new_title.title, self.result)
+            add_to_result("v710", title, self.result)
+
+    def _format_collection_info(self):
+        if self.scielo_journal and self.scielo_journal.collection:
+            collection = self.scielo_journal.collection
+            if collection:
+                acron3 = collection.acron3
+                self.result["collection"] = acron3
+                add_to_result("v690", collection.domain, self.result)
+                add_to_result("v992", collection.acron3, self.result)
 
     def _format_scielo_journal_info(self):
         """Informações do SciELO Journal"""
-        add_to_result("collection", self.scielo_journal.collection.acron3 if self.scielo_journal.collection else None, self.result)
-        add_to_result("code", self.scielo_journal.issn_scielo if self.scielo_journal else None, self.result)
-        if hasattr(self.scielo_journal, 'journal_acron'):
-            add_to_result("v68", self.scielo_journal.journal_acron, self.result)
+        if self.scielo_journal:
+            issn_scielo = self.scielo_journal.issn_scielo
+            journal_acron = self.scielo_journal.journal_acron
+            key_to_issn = {
+                "v50": self.scielo_journal.status if self.scielo_journal.status else None,
+                "v68": journal_acron,
+                "v400": issn_scielo,
+                "v880": issn_scielo,
+                "v930": journal_acron.upper(),
+            }
+            for key, value in key_to_issn.items():
+                add_to_result(key, value, self.result)
+
+            self.result["code"] = issn_scielo
 
     def _format_publication_info(self):
         """Informações de publicação"""
@@ -164,7 +195,7 @@ class ArticlemetaJournalFormatter:
         """Informações do publisher"""
         publishers = list(self.publisher_history)
         
-        add_items("v310", [p.institution_country_name for p in publishers], self.result)
+        add_items("v310", [p.institution_country_acronym for p in publishers], self.result)
         add_items("v320", [p.instition_state_acronym for p in publishers], self.result)
         add_items("v480", [p.institution_name for p in publishers], self.result)
         add_items("v490", [p.institution_city_name for p in publishers], self.result)
@@ -172,45 +203,77 @@ class ArticlemetaJournalFormatter:
     def _format_copyright_holder_info(self):
         """Informações do copyright holder"""
         copyright_holders = list(self.copyright_holder_history)
-        add_items("v62", [p.institution_country_name for p in copyright_holders], self.result)
+        add_items("v62", [p.institution_name for p in copyright_holders], self.result)
 
     def _format_sponsor_info(self):
         """Informações do sponsor"""
         sponsors = list(self.sponsor_history)
-        add_items("v140", [p.institution_country_name for p in sponsors], self.result)
+        add_items("v140", [p.institution_name for p in sponsors], self.result)
 
     def _format_indexing_info(self):
         """Informações de indexação"""
         # secs codes
-        secs_code = self.secs_codes
-        add_items("v37", [sc.identifier for sc in secs_code if sc.identifier], self.result)
-        
-        # Medline
-        medline_data = self.medline_titles
+        titles_in_db = self.titles_in_database_medline_secs
+        medline_data = [t for t in titles_in_db if t.indexed_at.acronym.lower() == "medline"]
+        secs_data = [t for t in titles_in_db if t.indexed_at.acronym.lower() == "secs"]
+        add_items("v37", [sc.identifier for sc in secs_data if sc.identifier], self.result)
+        title_medline = [m.title for m in medline_data]
         add_items("v420", [m.identifier for m in medline_data], self.result)
-        add_items("v421", [m.title for m in medline_data], self.result)
-        
-        # Indexed at
-        add_items("v450", [idx.name for idx in self.obj.indexed_at.all()], self.result)
-    
+        add_items("v421", title_medline, self.result)
+
+        indexeds_standard = [idx.name for idx in self.obj.indexed_at.all()]
+        additional_indexed_at = [idx.name for idx in self.obj.additional_indexed_at.all()]
+        add_items("v450", indexeds_standard + additional_indexed_at, self.result)
+        self._format_wos_db_info()
+        self._format_wos_area_info()
+
+    def _format_wos_db_info(self):
+        wos_db = self.obj.wos_db.all()
+        key_to_code = {
+            "v851": "SCIE",
+            "v852": "SSCI",
+            "v853": "A&HCI",
+        }
+        for key, code in key_to_code.items():
+            add_items(key, [wos.code for wos in wos_db if wos.code == code], self.result)
+
+    def _format_wos_area_info(self):
+        add_items("v854", [wos.value for wos in self.obj.wos_area.all()], self.result)
+
     def _format_metadata(self):
         """Metadados diversos"""
-        add_to_result("v940", self.obj.created.isoformat(), self.result)
-        add_to_result("v941", self.obj.updated.isoformat(), self.result)
+        add_to_result("v940", self.obj.created.strftime('%Y%m%d'), self.result)
+        add_to_result("v941", self.obj.updated.strftime('%Y%m%d'), self.result)
+        add_to_result("v942", self.obj.created.strftime('%Y%m%d'), self.result)
+        add_to_result("v943", self.obj.updated.strftime('%Y%m%d'), self.result)
+
+        self.result["processing_date"] = self.obj.created.strftime('%Y-%m-%d')
+        self.result["created_at"] = self.obj.created.strftime('%Y-%m-%d')
 
     def _format_issn_info(self):
         """Informações de ISSN"""
         if self.official:
-            issn_print = self.obj.official.issn_print
-            issn_electronic = self.obj.official.issn_electronic 
+            issn_print = self.official.issn_print
+            issn_electronic = self.obj.official.issn_electronic
+            add_to_result("v935", issn_electronic, self.result)
             self._format_issn_list(issn_print, issn_electronic)
             self._format_issn_with_type(issn_print, issn_electronic)
-    
+            self._format_issn_type(issn_print)
+
     def _format_issn_list(self, issn_print, issn_electronic):
         if self.official:
             issns = [issn for issn in [issn_print, issn_electronic] if issn]
             self.result['issns'].extend(issns)
     
+    def _format_issn_type(self, issn_print):
+        if self.scielo_journal:
+            if issn_print == self.scielo_journal.issn_scielo:
+                type_issn = 'ONLIN'
+                add_to_result("v35", type_issn, self.result)
+            else:
+                type_issn = "PRINT"
+                add_to_result("v35", type_issn, self.result)
+
     def _format_issn_with_type(self, issn_print, issn_electronic):
         issns = []
         if issn_print:
@@ -221,7 +284,7 @@ class ArticlemetaJournalFormatter:
 
     def _format_subject_areas_info(self):
         add_items("v440", [descriptor.value for descriptor in self.obj.subject_descriptor.all()], self.result)
-        add_items("v441", [subject.value for subject in self.obj.subject.all()], self.result)
+        add_items("v441", [subject.code for subject in self.obj.subject.all()], self.result)
 
     def _format_mission_info(self):
         if not hasattr(self.obj, 'mission') or not self.obj.mission.exists():
@@ -237,7 +300,40 @@ class ArticlemetaJournalFormatter:
         
         if missions_data:
             self.result["v901"] = missions_data
+    
+    def _former_dict_journal_history(self, subfield_a, subfield_b):
+        dict_a = {
+            "_": "",
+            "a": subfield_a,
+            "b": "C"
+        }
+        if subfield_b:
+            dict_a.update({"d": subfield_b})
+        return dict_a
 
-def get_articlemeta_format_title(obj):
-    formatter = ArticlemetaJournalFormatter(obj)
+    def _format_journal_history(self):
+        journal_history = self.scielo_journal.journal_history.all()
+        subfields = []
+        subfield_b = ""
+        for jh in journal_history:
+            subfield_a = f"{jh.year}{jh.month}{jh.day or '01'}"
+            if jh.interruption_reason:
+                subfield_b = "D" if jh.interruption_reason == "ceased" else "S"
+            if jh.event_type == "ADMITTED":
+                dict_subfield =self._former_dict_journal_history(
+                    subfield_a=subfield_a, 
+                    subfield_b=subfield_b, 
+                )
+                subfields.append(dict_subfield)
+            elif jh.event_type == "INTERRUPTED":
+                dict_subfield = self._former_dict_journal_history(
+                    subfield_a=subfield_a, 
+                    subfield_b=subfield_b, 
+                )
+                subfields.append(dict_subfield)
+
+        self.result["v51"] =  subfields
+
+def get_articlemeta_format_title(obj, collection):
+    formatter = ArticlemetaJournalFormatter(obj, collection)
     return formatter.format()
