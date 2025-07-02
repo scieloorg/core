@@ -98,7 +98,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         set_first_last_page_elocation_id(
             xmltree=xmltree, article=article
         )  # Define paginação
-        article.article_type = get_or_create_article_type(xmltree=xmltree, user=user)
+        article.article_type = get_or_create_article_type(xmltree=xmltree, user=user, errors=errors)
         article.save()
 
         # FOREIGN KEYS SIMPLES (dependências diretas, sem muita complexidade)
@@ -150,15 +150,10 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         logging.info(f"The article {pid_v3} has been processed")
         return article
     except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        xml_detail_error = etree.tostring(xmltree)
-        UnexpectedEvent.create(
-            item=pid_v3,
-            action="article.sources.xmlsps.load_article",
-            exception=e,
-            exc_traceback=exc_traceback,
-            detail=dict(data=xml_detail_error),
-        )
+        erros.append({"error_type": str(type(e)), "error_message": str(e)})
+        article.errors = errors
+        article.save()
+        return article
 
 
 def get_or_create_doi(xmltree, user):
@@ -523,9 +518,17 @@ def create_or_update_titles(xmltree, user, item):
     return data
 
 
-def get_or_create_article_type(xmltree, user):
-    article_type = ArticleAndSubArticles(xmltree=xmltree).main_article_type
-    return article_type
+def get_or_create_article_type(xmltree, user, errors):
+    try:
+        article_type = ArticleAndSubArticles(xmltree=xmltree).main_article_type
+        return article_type
+    except Exception as e:
+        errors.append({
+            "function": "get_or_create_article_type",
+            "error_type": str(type(e)),
+            "error_message": str(e),
+        })
+        return None
 
 
 def get_or_create_issues(xmltree, user, item, errors):
