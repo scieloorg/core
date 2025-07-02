@@ -96,7 +96,9 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             errors=errors,
         )  # Provavelmente define campos como pid, etc.
         set_date_pub(xmltree=xmltree, article=article, errors=errors)  # Define datas
-        set_license(xmltree=xmltree, article=article)  # Define campos de licença
+        set_license(
+            xmltree=xmltree, article=article, errors=errors
+        )  # Define campos de licença
         set_first_last_page_elocation_id(
             xmltree=xmltree,
             article=article,
@@ -278,11 +280,20 @@ def get_or_create_toc_sections(xmltree, user, errors):
             )
 
 
-def set_license(xmltree, article):
-    xml_licenses = ArticleLicense(xmltree=xmltree).licenses
-    for xml_license in xml_licenses:
-        if license := xml_license.get("link"):
-            article.article_license = license
+def set_license(xmltree, article, errors):
+    try:
+        xml_licenses = ArticleLicense(xmltree=xmltree).licenses
+        for xml_license in xml_licenses:
+            if license := xml_license.get("link"):
+                article.article_license = license
+    except Exception as e:
+        errors.append(
+            {
+                "function": "set_license",
+                "error_type": str(type(e)),
+                "error_message": str(e),
+            }
+        )
 
 
 def create_or_update_keywords(xmltree, user, item):
