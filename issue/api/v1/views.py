@@ -1,11 +1,19 @@
-from rest_framework.exceptions import ValidationError
-
 from django.db.models import Q
-from rest_framework import viewsets
+from rest_framework import serializers, viewsets
 
 from article import models
+from core.utils.utils import formated_date_api_params
 from core.validators import validate_params
+
 from .serializers import IssueSerializer
+
+
+class ArticleMetaFormatIssueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Issue
+    
+    def to_representation(self, instance):
+        return instance.articlemeta_format
 
 
 class GenericIssueViewSet(viewsets.ModelViewSet):
@@ -36,11 +44,14 @@ class IssueViewSet(GenericIssueViewSet):
             "from_date_updated",
             "until_date_updated",
             "issn_print",
-            "issn_electronic",  
+            "issn_electronic",
+            "issn",
             "volume", 
             "number",
             "supplement",
             "page",
+            "formats",
+            "code",
             "",
         )
         queryset = super().get_queryset()
@@ -51,14 +62,6 @@ class IssueViewSet(GenericIssueViewSet):
             queryset = queryset.filter(year__gte=from_publication_year)
         if until_publication_year := query_params.get("until_publication_year"):
             queryset = queryset.filter(year__lte=until_publication_year)
-        if from_date_created := query_params.get("from_date_created"):
-            queryset = queryset.filter(created__gte=from_date_created.replace("/", "-"))
-        if until_date_created := query_params.get("until_date_created"):
-            queryset = queryset.filter(created__lte=until_date_created.replace("/", "-"))
-        if from_date_updated := query_params.get("from_date_updated"):
-            queryset = queryset.filter(updated__gte=from_date_updated.replace("/", "-"))
-        if until_date_updated := query_params.get("until_date_updated"):
-            queryset = queryset.filter(updated__lte=until_date_updated.replace("/", "-"))
         if issn_print := query_params.get("issn_print"):
             queryset = queryset.filter(journal__official__issn_print=issn_print)
         if issn_electronic := query_params.get("issn_electronic"):
@@ -69,7 +72,18 @@ class IssueViewSet(GenericIssueViewSet):
             queryset = queryset.filter(number=number)
         if supplement := query_params.get("supplement"):
             queryset = queryset.filter(supplement=supplement)
+        if issn := query_params.get("issn"):
+            queryset = queryset.filter(Q(journal__official__issn_print=issn) | Q(journal__official__issn_electronic=issn))
+        if code := query_params.get("code"):
+            queryset = queryset.filter(article__pid_v2=code)
+
+        dates = formated_date_api_params(query_params)
+        queryset = queryset.filter(**dates)
 
         return queryset 
 
-    
+    def get_serializer_class(self):
+        format_param = self.request.query_params.get("formats")
+        if format_param == "articlemeta":
+            return ArticleMetaFormatIssueSerializer
+        return IssueSerializer

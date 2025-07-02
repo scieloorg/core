@@ -1,0 +1,585 @@
+{
+    "code": "0034-891020180002",
+    "collection": "scl",
+    "publication_year": "2018",
+    "processing_date": "2018-09-11",
+    "issue_type": "supplement",
+    "publication_date": "2018",
+    "created_at": "2018-09-11",
+    "issue": {
+        "v541": [
+            {
+                "_": "BY"
+            }
+        ],
+        "v992": [
+            {
+                "_": "scl"
+            }
+        ],
+        "v36": [
+            {
+                "_": "2018"
+            }
+        ],
+        "v65": [
+            {
+                "_": "20180000"
+            }
+        ],
+        "code": "0034-891020180002",
+        "v421": [
+            {
+                "_": "Rev Saude Publica"
+            }
+        ],
+        "v930": [
+            {
+                "_": "RSP"
+            }
+        ],
+        "v31": [
+            {
+                "_": "52"
+            }
+        ],
+        "v35": [
+            {
+                "_": "0034-8910"
+            }
+        ],
+        "v151": [
+            {
+                "_": "Rev. sa\u00fade p\u00fablica"
+            }
+        ],
+        "v880": [
+            {
+                "_": "0034-891020180002"
+            }
+        ],
+        "v91": [
+            {
+                "_": "20180911"
+            }
+        ],
+        "v991": [
+            {
+                "_": "1"
+            }
+        ],
+        "v706": [
+            {
+                "_": "i"
+            }
+        ],
+        "v4": "v52s1",
+        "v131": [
+            {
+                "_": "1"
+            }
+        ],
+        "v30": [
+            {
+                "_": "Rev. Sa\u00fade P\u00fablica"
+            }
+        ],
+        "v701": [
+            {
+                "_": "1"
+            }
+        ],
+        "processing_date": "2018-09-11",
+        "v130": [
+            {
+                "_": "Revista de Sa\u00fade P\u00fablica"
+            }
+        ],
+        "v435": [
+            {
+                "t": "PRINT",
+                "_": "0034-8910"
+            },
+            {
+                "t": "ONLIN",
+                "_": "1518-8787"
+            }
+        ],
+        "v700": [
+            {
+                "_": "0"
+            }
+        ],
+        "v42": [
+            {
+                "_": "1"
+            }
+        ],
+        "v85": [
+            {
+                "_": "decs"
+            }
+        ],
+        "v230": [
+            {
+                "_": "Journal of Public Health"
+            }
+        ],
+        "v48": [
+            {
+                "h": "Sumario",
+                "_": "",
+                "l": "es"
+            },
+            {
+                "h": "Sum\u00e1rio",
+                "_": "",
+                "l": "pt"
+            },
+            {
+                "h": "Table of Contents",
+                "_": "",
+                "l": "en"
+            }
+        ],
+        "collection": "scl",
+        "v480": [
+            {
+                "_": "Faculdade de Sa\u00fade P\u00fablica da Universidade de S\u00e3o Paulo"
+            }
+        ],
+        "v117": [
+            {
+                "_": "vancouv"
+            }
+        ],
+        "v935": [
+            {
+                "_": "1518-8787"
+            }
+        ],
+        "v200": [
+            {
+                "_": "0"
+            }
+        ],
+        "v122": [
+            {
+                "_": "1"
+            }
+        ]
+    },
+    "title": {
+        "code": "0034-8910",
+        "collection": "scl",
+        "created_at": "2018-04-04",
+        "issns": [
+            "1518-8787",
+            "0034-8910"
+        ],
+        "processing_date": "2018-04-04",
+        "v10": [
+            {
+                "_": "br1.1"
+            }
+        ],
+        "v100": [
+            {
+                "_": "Revista de Sa\u00fade P\u00fablica"
+            }
+        ],
+        "v117": [
+            {
+                "_": "vancouv"
+            }
+        ],
+        "v150": [
+            {
+                "_": "Rev. Sa\u00fade P\u00fablica"
+            }
+        ],
+        "v151": [
+            {
+                "_": "Rev. sa\u00fade p\u00fablica"
+            }
+        ],
+        "v20": [
+            {
+                "_": "068227-6"
+            }
+        ],
+        "v230": [
+            {
+                "_": "Journal of Public Health"
+            }
+        ],
+        "v30": [
+            {
+                "_": "fbpe-013"
+            }
+        ],
+        "v301": [
+            {
+                "_": "1967"
+            }
+        ],
+        "v302": [
+            {
+                "_": "1"
+            }
+        ],
+        "v303": [
+            {
+                "_": "1"
+            }
+        ],
+        "v310": [
+            {
+                "_": "BR"
+            }
+        ],
+        "v320": [
+            {
+                "_": "SP"
+            }
+        ],
+        "v330": [
+            {
+                "_": "CT"
+            }
+        ],
+        "v340": [
+            {
+                "_": "A"
+            }
+        ],
+        "v35": [
+            {
+                "_": "ONLIN"
+            }
+        ],
+        "v350": [
+            {
+                "_": "es"
+            },
+            {
+                "_": "en"
+            },
+            {
+                "_": "pt"
+            }
+        ],
+        "v360": [
+            {
+                "_": "es"
+            },
+            {
+                "_": "en"
+            },
+            {
+                "_": "pt"
+            }
+        ],
+        "v380": [
+            {
+                "_": "A"
+            }
+        ],
+        "v400": [
+            {
+                "_": "0034-8910"
+            }
+        ],
+        "v421": [
+            {
+                "_": "Rev Saude Publica"
+            }
+        ],
+        "v435": [
+            {
+                "t": "PRINT",
+                "_": "0034-8910"
+            },
+            {
+                "t": "ONLIN",
+                "_": "1518-8787"
+            }
+        ],
+        "v440": [
+            {
+                "_": "SAUDE COLETIVA"
+            },
+            {
+                "_": "SAUDE PUBLICA"
+            },
+            {
+                "_": "MICROBIOLOGIA"
+            }
+        ],
+        "v441": [
+            {
+                "_": "Health Sciences"
+            }
+        ],
+        "v450": [
+            {
+                "_": "CAB-Health"
+            },
+            {
+                "_": "EMBASE"
+            },
+            {
+                "_": "Popline"
+            },
+            {
+                "_": "LILACS"
+            },
+            {
+                "_": "AdSa\u00fade"
+            },
+            {
+                "_": "DOCPAL"
+            },
+            {
+                "_": "Abstracts on Hygiene and Communicable Diseases"
+            },
+            {
+                "_": "Abstracts on Zooparasitology"
+            },
+            {
+                "_": "Biological Abstracts"
+            },
+            {
+                "_": "Current Contents/Social & Behavioral Science"
+            },
+            {
+                "_": "entomology Abstracts"
+            },
+            {
+                "_": "Excerpta Medica"
+            },
+            {
+                "_": "Index Medicus"
+            },
+            {
+                "_": "Microbiology Abstracts"
+            },
+            {
+                "_": "Nutrition Abstracts and Reviews-SeriesB"
+            },
+            {
+                "_": "Review Medical Veterinary entomology"
+            },
+            {
+                "_": "Safety Science Abstracts Journal"
+            },
+            {
+                "_": "Social Science Citation Index"
+            },
+            {
+                "_": "Tropical Diseases Bulletin"
+            },
+            {
+                "_": "Veterinary Bulletin"
+            },
+            {
+                "_": "Virology Abstracts"
+            },
+            {
+                "_": "ISI"
+            },
+            {
+                "_": "PubMed"
+            }
+        ],
+        "v480": [
+            {
+                "_": "Faculdade de Sa\u00fade P\u00fablica da Universidade de S\u00e3o Paulo"
+            }
+        ],
+        "v490": [
+            {
+                "_": "S\u00e3o Paulo"
+            }
+        ],
+        "v5": [
+            {
+                "_": "S"
+            }
+        ],
+        "v50": [
+            {
+                "_": "C"
+            }
+        ],
+        "v51": [
+            {
+                "a": "19980430",
+                "b": "C",
+                "_": ""
+            }
+        ],
+        "v541": [
+            {
+                "_": "BY"
+            }
+        ],
+        "v6": [
+            {
+                "_": "c"
+            }
+        ],
+        "v62": [
+            {
+                "_": "Faculdade de Sa\u00fade P\u00fablica da Universidade de S\u00e3o Paulo"
+            }
+        ],
+        "v63": [
+            {
+                "_": "Avenida Dr. Arnaldo, 715"
+            },
+            {
+                "_": "01246-904 S\u00e3o Paulo SP Brazil"
+            },
+            {
+                "_": "Tel./Fax: +55 11 3061-7985"
+            }
+        ],
+        "v64": [
+            {
+                "_": "revsp@usp.br"
+            }
+        ],
+        "v65": [
+            {
+                "_": "<hr>"
+            }
+        ],
+        "v66": [
+            {
+                "_": "art"
+            }
+        ],
+        "v67": [
+            {
+                "_": "na"
+            }
+        ],
+        "v68": [
+            {
+                "_": "rsp"
+            }
+        ],
+        "v690": [
+            {
+                "_": "www.scielo.br"
+            }
+        ],
+        "v691": [
+            {
+                "_": "101000000000000000000000"
+            }
+        ],
+        "v692": [
+            {
+                "_": "http://mc04.manuscriptcentral.com/rsp-scielo"
+            }
+        ],
+        "v699": [
+            {
+                "_": "continuous"
+            }
+        ],
+        "v85": [
+            {
+                "_": "decs"
+            }
+        ],
+        "v851": [
+            {
+                "_": "SCIE"
+            }
+        ],
+        "v852": [
+            {
+                "_": "SSCI"
+            }
+        ],
+        "v854": [
+            {
+                "_": "PUBLIC, ENVIRONMENTAL & OCCUPATIONAL HEALTH"
+            },
+            {
+                "_": "SOCIOLOGY"
+            }
+        ],
+        "v880": [
+            {
+                "_": "0034-8910"
+            }
+        ],
+        "v901": [
+            {
+                "l": "es",
+                "_": "Publicar y diseminar productos del trabajo cient\u00edfico relevantes para la Salud P\u00fablica"
+            },
+            {
+                "l": "pt",
+                "_": "Publicar e disseminar produtos do trabalho cient\u00edfico que sejam relevantes para a Sa\u00fade P\u00fablica"
+            },
+            {
+                "l": "en",
+                "_": "To publish and divulge scientific production on subjects of relevance to Public Health"
+            }
+        ],
+        "v930": [
+            {
+                "_": "RSP"
+            }
+        ],
+        "v935": [
+            {
+                "_": "1518-8787"
+            }
+        ],
+        "v940": [
+            {
+                "_": "19980430"
+            }
+        ],
+        "v941": [
+            {
+                "_": "20180404"
+            }
+        ],
+        "v942": [
+            {
+                "_": "19980430"
+            }
+        ],
+        "v943": [
+            {
+                "_": "20250321"
+            }
+        ],
+        "v950": [
+            {
+                "_": "MRB"
+            }
+        ],
+        "v951": [
+            {
+                "_": "MRB"
+            }
+        ],
+        "v992": [
+            {
+                "_": "scl"
+            }
+        ]
+    },
+    "code_title": [
+        "1518-8787",
+        "0034-8910"
+    ]
+}
