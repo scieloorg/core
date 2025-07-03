@@ -36,7 +36,7 @@ class Issue(CommonControlField, ClusterableModel):
     )
     sections = models.ManyToManyField("TocSection", blank=True)
     license = models.ManyToManyField(License, blank=True)
-    code_sections = models.ManyToManyField("CodeSectionIssue", blank=True)
+    code_sections = models.ManyToManyField("SectionIssue", blank=True)
     city = models.ForeignKey(City, on_delete=models.SET_NULL, blank=True, null=True)
     number = models.CharField(_("Issue number"), max_length=20, null=True, blank=True)
     volume = models.CharField(_("Issue volume"), max_length=20, null=True, blank=True)
