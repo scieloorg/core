@@ -359,8 +359,8 @@ def normalize_stored_email(
     ResearcherIdentifier.objects.bulk_update(updated_list, ["identifier"])
 
 
-@celery_app.task(bind=True, name="task_load_article_source_from_opac")
-def task_load_article_source_from_opac(
+@celery_app.task(bind=True, name="task_get_opac_xmls")
+def task_get_opac_xmls(
     self,
     username=None,
     user_id=None,
@@ -435,7 +435,7 @@ def task_load_article_source_from_opac(
                 exception=e,
                 exc_traceback=exc_traceback,
                 detail={
-                    "task": "task_load_article_source_from_opac",
+                    "task": "task_get_opac_xmls",
                     "uri": uri,
                 },
             )
@@ -468,7 +468,7 @@ def task_load_article_source_from_opac(
                         exception=e,
                         exc_traceback=exc_traceback,
                         detail={
-                            "task": "task_load_article_source_from_opac",
+                            "task": "task_get_opac_xmls",
                             "pid_v3": pid_v3,
                             "document": document,
                         },
