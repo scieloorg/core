@@ -5,22 +5,24 @@ from datetime import datetime
 
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
+from django.db.models import Q
 from django.db.utils import DataError
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 from django_prometheus.models import ExportModelOperationsMixin
 from legendarium.formatter import descriptive_format
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from packtools.sps.formats import crossref, pmc, pubmed
-from packtools.sps.pid_provider.xml_sps_lib import generate_finger_print
+from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre, generate_finger_print
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from article import choices
 from core.forms import CoreAdminModelForm
+from core.models import CommonControlField  # Ajuste o import conforme sua estrutura
 from core.models import (
-    CommonControlField,
     FlexibleDate,
     Language,
     License,
@@ -32,6 +34,7 @@ from doi_manager.models import CrossRefConfiguration
 from institution.models import Publisher, Sponsor
 from issue.models import Issue, TocSection
 from journal.models import Journal, SciELOJournal
+from pid_provider.choices import PPXML_STATUS_DONE
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
 from researcher.models import InstitutionalAuthor, Researcher
@@ -108,6 +111,7 @@ class Article(
     elocation_id = models.CharField(max_length=64, null=True, blank=True)
     keywords = models.ManyToManyField(Keyword, blank=True)
     valid = models.BooleanField(default=False, blank=True, null=True)
+    errors = models.JSONField(default=None, blank=True, null=True)
 
     panels_ids = [
         FieldPanel("data_status"),
@@ -203,7 +207,9 @@ class Article(
     @property
     def collections(self):
         if self.journal:
-            for item in self.journal.scielo_journal_set.all().select_related("collection"):
+            for item in self.journal.scielo_journal_set.all().select_related(
+                "collection"
+            ):
                 yield item.collection
         # scielo_journals = SciELOJournal.objects.select_related("collection").filter(journal=self.journal)
         # for scielo_journal in scielo_journals:
@@ -289,24 +295,24 @@ class Article(
     def mark_as_deleted_articles_without_pp_xml(cls, user):
         """
         Marca artigos como DATA_STATUS_DELETED quando pp_xml é None.
-        
+
         Args:
             user: Usuário que está executando a operação
-            
+
         Returns:
             int: Número de artigos atualizados
         """
         try:
-            return cls.objects.filter(
-                pp_xml__isnull=True
-            ).exclude(
-                data_status=choices.DATA_STATUS_DELETED
-            ).update(
-                data_status=choices.DATA_STATUS_DELETED,
-                updated_by=user,
-                updated=datetime.utcnow()
+            return (
+                cls.objects.filter(pp_xml__isnull=True)
+                .exclude(data_status=choices.DATA_STATUS_DELETED)
+                .update(
+                    data_status=choices.DATA_STATUS_DELETED,
+                    updated_by=user,
+                    updated=datetime.utcnow(),
+                )
             )
-            
+
         except Exception as exception:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
@@ -393,7 +399,9 @@ class ArticleFunding(CommonControlField):
     @classmethod
     def get_or_create(cls, award_id, funding_source, user):
         if not award_id or not funding_source:
-            raise ValueError("ArticleFunding.get_or_create requires award_id and funding_source")
+            raise ValueError(
+                "ArticleFunding.get_or_create requires award_id and funding_source"
+            )
         try:
             return cls.objects.get(award_id=award_id, funding_source=funding_source)
         except cls.DoesNotExist:
@@ -904,3 +912,423 @@ class ArticleFormat(CommonControlField):
             pmc.pipeline_pmc,
             indexed_check=False,
         )
+
+
+def article_source_path(instance, filename):
+    """Define o caminho para upload de arquivos de fonte de artigos"""
+    subdir = "/".join(instance.sps_pkg_name.split("-"))
+    return f"article_sources/{subdir}/{filename}"
+
+
+class ArticleSource(CommonControlField):
+    """
+    Represent article sources with URL or file
+    Fields:
+        created
+        updated
+        url
+        file
+        source_date
+        status
+    """
+
+    class StatusChoices(models.TextChoices):
+        PENDING = "pending", _("Pending")
+        PROCESSING = "processing", _("Processing")
+        COMPLETED = "completed", _("Completed")
+        ERROR = "error", _("Error")
+        REPROCESS = "reprocess", _("Reprocess")
+
+    url = models.URLField(
+        verbose_name=_("Article URL"),
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text=_("Article URL"),
+    )
+    file = models.FileField(
+        verbose_name=_("Article file"),
+        upload_to=article_source_path,
+        null=True,
+        blank=True,
+        help_text=_("Upload article file"),
+    )
+    source_date = models.CharField(
+        verbose_name=_("Source date"),
+        max_length=10,
+        null=True,
+        blank=True,
+        help_text=_("Date of data collection or original data date"),
+    )
+    status = models.CharField(
+        verbose_name=_("Status"),
+        max_length=20,
+        choices=StatusChoices.choices,
+        default=StatusChoices.PENDING,
+        help_text=_("Processing status of the article source"),
+    )
+    pid_provider_xml = models.ForeignKey(
+        PidProviderXML,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name=_("PID Provider XML"),
+        help_text=_("Related PID Provider XML instance"),
+    )
+    article = models.ForeignKey(
+        Article,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Article"),
+        help_text=_("Related Article instance"),
+    )
+    detail = models.JSONField(null=True, blank=True, default=None)
+
+    base_form_class = CoreAdminModelForm
+
+    panels = [
+        FieldPanel("url", read_only=True),
+        FieldPanel("file", read_only=True),
+        FieldPanel("source_date", read_only=True),
+        FieldPanel("status"),
+        FieldPanel("pid_provider_xml", read_only=True),
+        FieldPanel("article", read_only=True),
+        FieldPanel("detail", read_only=True),
+    ]
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return ArticleSource.objects.filter(
+            Q(url__icontains=search_term) | Q(file__icontains=search_term)
+        )
+
+    def autocomplete_label(self):
+        if self.url:
+            return f"{self.url}"
+        elif self.file:
+            return f"{self.file.name}"
+        return f"ArticleSource #{self.pk}"
+
+    class Meta:
+        verbose_name = _("Article Source")
+        verbose_name_plural = _("Article Sources")
+        indexes = [
+            models.Index(fields=["url"]),
+            models.Index(fields=["source_date"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["status", "updated"]),
+            models.Index(fields=["pid_provider_xml"]),
+            models.Index(fields=["article"]),
+        ]
+
+    def __unicode__(self):
+        if self.url:
+            return f"{self.url}"
+        elif self.file:
+            return f"{self.file.name}"
+        return f"ArticleSource #{self.pk}"
+
+    def __str__(self):
+        if self.url:
+            return f"{self.url}"
+        elif self.file:
+            return f"{self.file.name}"
+        return f"ArticleSource #{self.pk}"
+
+    @classmethod
+    def get(cls, url):
+        if url:
+            try:
+                return cls.objects.get(url__iexact=url)
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(url__iexact=url).first()
+
+        raise ValueError("ArticleSource.get requires url")
+
+    @classmethod
+    def create(cls, user, url=None, source_date=None):
+        if not url:
+            raise ValueError("ArticleSource.create requires url")
+
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.url = url
+            obj.source_date = source_date
+            obj.status = cls.StatusChoices.PENDING
+            obj.save()
+            try:
+                obj.create_file()
+            except Exception as e:
+                pass
+            return obj
+        except IntegrityError:
+            return cls.get(url=url, file_path=file_path)
+
+    @classmethod
+    def create_or_update(cls, user, url=None, source_date=None, force_update=None):
+        try:
+            logging.info(f"ArticleSource.create_or_update {url}")
+            obj = cls.get(url=url)
+
+            if (
+                force_update
+                or (source_date and source_date != obj.source_date)
+                or not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)
+            ):
+                logging.info(f"updating source: {(source_date, obj.source_date)}")
+                logging.info(f"updating file: {not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)}")
+                obj.create_file()
+                obj.updated_by = user
+                obj.source_date = source_date
+                obj.status = cls.StatusChoices.REPROCESS
+                obj.save()
+
+        except cls.DoesNotExist:
+            obj = cls.create(user, url=url, source_date=source_date)
+        return obj
+
+    @property
+    def sps_pkg_name(self):
+        if not hasattr(self, "_sps_pkg_name") or not self._sps_pkg_name:
+            try:
+                xml_with_pre = list(XMLWithPre.create(path=self.file.path))[0]
+            except:
+                xml_with_pre = list(XMLWithPre.create(uri=self.url))[0]
+            self._sps_pkg_name = xml_with_pre.sps_pkg_name
+        return self._sps_pkg_name
+
+    def create_file(self):
+        logging.info(f"ArticleSource.create_file for {self.url}")
+        xml_with_pre = list(XMLWithPre.create(uri=self.url))[0]
+        self.save_file(
+            f"{self.sps_pkg_name}.xml", xml_with_pre.tostring(pretty_print=True)
+        )
+
+    def save_file(self, filename, content):
+        try:
+            self.file.delete(save=False)
+        except Exception as e:
+            logging.exception(e)
+        self.file.save(filename, ContentFile(content))
+
+    # Métodos para controle de status
+    def mark_as_processing(self):
+        """Marca como processando"""
+        self.status = self.StatusChoices.PROCESSING
+        self.save()
+
+    def mark_as_completed(self):
+        """Marca como concluído"""
+        self.status = self.StatusChoices.COMPLETED
+        self.save()
+
+    def mark_as_error(self):
+        """Marca como erro"""
+        self.status = self.StatusChoices.ERROR
+        self.save()
+
+    def mark_for_reprocess(self):
+        """Marca para reprocessamento"""
+        self.status = self.StatusChoices.REPROCESS
+        self.save()
+
+    # Métodos de consulta por status
+    @classmethod
+    def get_pending(cls):
+        """Retorna fontes pendentes"""
+        return cls.objects.filter(status=cls.StatusChoices.PENDING)
+
+    @classmethod
+    def get_for_reprocess(cls):
+        """Retorna fontes marcadas para reprocessamento"""
+        return cls.objects.filter(status=cls.StatusChoices.REPROCESS)
+
+    @classmethod
+    def get_processing(cls):
+        """Retorna fontes em processamento"""
+        return cls.objects.filter(status=cls.StatusChoices.PROCESSING)
+
+    @classmethod
+    def get_completed(cls):
+        """Retorna fontes concluídas"""
+        return cls.objects.filter(status=cls.StatusChoices.COMPLETED)
+
+    @classmethod
+    def get_with_errors(cls):
+        """Retorna fontes com erro"""
+        return cls.objects.filter(status=cls.StatusChoices.ERROR)
+
+    @classmethod
+    def get_needs_processing(cls):
+        """Retorna fontes que precisam ser processadas (pending + reprocess)"""
+        return cls.objects.filter(
+            status__in=[cls.StatusChoices.PENDING, cls.StatusChoices.REPROCESS]
+        )
+
+    @classmethod
+    def process_xmls(
+        cls,
+        user,
+        load_article,
+        status__in=None,
+        force_update=False,
+        auto_solve_pid_conflict=False,
+    ):
+        if force_update:
+            items = cls.objects.iterator()
+        else:
+            params = {}
+            params["status__in"] = status__in or [
+                cls.StatusChoices.PENDING,
+                cls.StatusChoices.REPROCESS,
+            ]
+
+            items = cls.objects.select_related(
+                "pid_provider_xml",
+                "article",
+            ).filter(
+                Q(pid_provider_xml__isnull=True)
+                | Q(file__isnull=True)
+                | Q(article__isnull=True)
+                | Q(article__valid__in=[None, False])
+                | Q(**params),
+            )
+        logging.info(f"Process article source total: {items.count()}")
+        for item in items:
+            item.process_xml(user, load_article, force_update, auto_solve_pid_conflict)
+
+    def process_xml(
+        self, user, load_article, force_update=False, auto_solve_pid_conflict=False
+    ):
+        """
+        Processa um arquivo XML de artigo científico, criando ou atualizando os dados necessários.
+
+        Este método gerencia todo o fluxo de processamento de um XML de artigo, incluindo:
+        - Download/criação do arquivo XML se necessário
+        - Geração de PID (Persistent Identifier) através do PidProvider
+        - Criação do objeto Article associado
+        - Atualização do status conforme o resultado do processamento
+
+        Args:
+            user: Usuário responsável pelo processamento
+            load_article: Função callback para carregar/criar o artigo a partir do XML
+            force_update (bool): Se True, força a atualização mesmo se os dados já existem
+            auto_solve_pid_conflict (bool): Se True, resolve automaticamente conflitos de PID
+
+        Raises:
+            ValueError: Se a URL não estiver definida
+
+        Note:
+            O método atualiza os seguintes atributos do objeto:
+            - status: Estado do processamento (PENDING, COMPLETED, ERROR)
+            - file: Arquivo XML baixado/criado
+            - pid_provider_xml: Objeto PidProviderXML associado
+            - article: Objeto Article criado
+            - detail: Lista com detalhes do processamento
+        """
+
+        try:
+            # Valida se existe URL para processar
+            if not self.url:
+                raise ValueError(_("URL is required"))
+
+            if self.article and self.article.valid:
+                if self.status != ArticleSource.StatusChoices.COMPLETED:
+                    self.mark_as_completed()
+                return
+
+            # Lista para armazenar detalhes do processamento
+            detail = []
+
+            # Define status inicial como pendente
+            self.status = ArticleSource.StatusChoices.PENDING
+
+            # Verifica se precisa criar/baixar o arquivo XML
+            if (
+                force_update
+                or not self.file
+                or not self.file.path
+                or not os.path.isfile(self.file.path)
+            ):
+                logging.info("create file")
+                detail.append("create file")
+                self.create_file()  # Método que baixa/cria o arquivo XML
+                detail.append("created file")
+
+            self.set_pid_provider_xml(
+                user, detail, force_update, auto_solve_pid_conflict
+            )
+            if not self.pid_provider_xml or not self.pid_provider_xml.v3:
+                raise ValueError("Missing pid_provider_xml")
+
+            # Se tem v3, pode criar o artigo
+            if force_update or not self.article or not self.article.valid:
+                logging.info("create article")
+                detail.append("create article")
+
+                # Chama a função para carregar/criar o artigo
+                self.article = load_article(
+                    user=user,
+                    xml=None,
+                    file_path=self.file.path,
+                    v3=self.pid_provider_xml.v3,
+                    pp_xml=self.pid_provider_xml,
+                )
+                # Verifica se o artigo foi criado com sucesso
+                if self.article.valid:
+                    detail.append("created valid article")
+                    self.mark_as_completed()  # Marca o processamento como concluído
+                else:
+                    detail.append("created incomplete article")
+
+            logging.info((self.article, self.pid_provider_xml))
+            self.detail = detail
+            self.save()
+
+        except Exception as e:
+            # Registra a exceção no log
+            logging.exception(e)
+
+            # Obtém informações detalhadas da exceção
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+
+            # Adiciona informações do erro aos detalhes
+            detail.append(str({"error_type": str(type(e)), "error_message": str(e)}))
+            self.detail = detail
+
+            # Marca o processamento como erro
+            self.mark_as_error()
+
+    def set_pid_provider_xml(self, user, detail, force_update, auto_solve_pid_conflict):
+        # Verifica se precisa gerar o PID para o XML
+        if force_update or not self.pid_provider_xml:
+            logging.info("create pid_provider_xml")
+            detail.append("create pid_provider_xml")
+
+            # Instancia o provedor de PIDs
+            pp = PidProvider()
+
+            # Solicita PID para o arquivo XML/ZIP
+            responses = pp.provide_pid_for_xml_zip(
+                self.file.path,
+                user,
+                filename=self.sps_pkg_name,
+                origin_date=self.source_date,
+                force_update=force_update,
+                is_published=True,
+                auto_solve_pid_conflict=auto_solve_pid_conflict,
+            )
+
+            # Obtém a primeira resposta (assumindo apenas uma)
+            response = list(responses)[0]
+            v3 = response.get("v3")
+
+            if v3:
+                # Associa o PidProviderXML ao ArticleSource
+                self.pid_provider_xml = PidProviderXML.objects.get(v3=v3)
+                detail.append("created pid_provider_xml")
+            else:
+                # Registra erro se não conseguiu obter v3
+                detail.append(str(response))

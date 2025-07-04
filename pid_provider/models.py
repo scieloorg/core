@@ -260,48 +260,9 @@ class PidProviderConfig(CommonControlField, ClusterableModel):
         FieldPanel("api_username"),
         FieldPanel("api_password"),
         FieldPanel("timeout"),
-        InlinePanel("endpoint", label=_("Endpoints")),
     ]
 
     base_form_class = CoreAdminModelForm
-
-
-class PidProviderEndpoint(CommonControlField):
-    """
-    Registro de PIDs (associados a um PidProviderXML) cujo valor difere do valor atribuído
-    """
-
-    config = ParentalKey(
-        "PidProviderConfig",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="endpoint",
-    )
-    name = models.CharField(
-        _("Endpoint name"),
-        max_length=16,
-        null=True,
-        blank=True,
-        choices=choices.ENDPOINTS,
-    )
-    url = models.URLField(_("Endpoint URL"), max_length=128, null=True, blank=True)
-    enabled = models.BooleanField(default=False)
-
-    panels = [
-        FieldPanel("name"),
-        FieldPanel("url"),
-        FieldPanel("enabled"),
-    ]
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["name"]),
-            models.Index(fields=["enabled"]),
-        ]
-
-    def __str__(self):
-        return f"{self.url} {self.enabled}"
 
 
 class PidRequest(CommonControlField):
