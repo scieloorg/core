@@ -953,8 +953,9 @@ class ArticleSource(CommonControlField):
         blank=True,
         help_text=_("Upload article file"),
     )
-    source_date = models.DateTimeField(
+    source_date = models.CharField(
         verbose_name=_("Source date"),
+        max_length=10,
         null=True,
         blank=True,
         help_text=_("Date of data collection or original data date"),
@@ -1068,14 +1069,17 @@ class ArticleSource(CommonControlField):
     @classmethod
     def create_or_update(cls, user, url=None, source_date=None, force_update=None):
         try:
+            logging.info(f"ArticleSource.create_or_update {url}")
             obj = cls.get(url=url)
 
             if (
                 force_update
                 or (source_date and source_date != obj.source_date)
-                or obj.status != cls.StatusChoices.COMPLETED
+                or not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)
             ):
-                obj.create_file(filename, content)
+                logging.info(f"updating source: {(source_date, obj.source_date)}")
+                logging.info(f"updating file: {not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)}")
+                obj.create_file()
                 obj.updated_by = user
                 obj.source_date = source_date
                 obj.status = cls.StatusChoices.REPROCESS
@@ -1096,6 +1100,7 @@ class ArticleSource(CommonControlField):
         return self._sps_pkg_name
 
     def create_file(self):
+        logging.info(f"ArticleSource.create_file for {self.url}")
         xml_with_pre = list(XMLWithPre.create(uri=self.url))[0]
         self.save_file(
             f"{self.sps_pkg_name}.xml", xml_with_pre.tostring(pretty_print=True)
@@ -1185,10 +1190,12 @@ class ArticleSource(CommonControlField):
                 "article",
             ).filter(
                 Q(pid_provider_xml__isnull=True)
+                | Q(file__isnull=True)
                 | Q(article__isnull=True)
-                | Q(article__valid__in=[None, False]),
-                **params,
+                | Q(article__valid__in=[None, False])
+                | Q(**params),
             )
+        logging.info(f"Process article source total: {items.count()}")
         for item in items:
             item.process_xml(user, load_article, force_update, auto_solve_pid_conflict)
 
@@ -1227,6 +1234,11 @@ class ArticleSource(CommonControlField):
             if not self.url:
                 raise ValueError(_("URL is required"))
 
+            if self.article and self.article.valid:
+                if self.status != ArticleSource.StatusChoices.COMPLETED:
+                    self.mark_as_completed()
+                return
+
             # Lista para armazenar detalhes do processamento
             detail = []
 
@@ -1240,6 +1252,7 @@ class ArticleSource(CommonControlField):
                 or not self.file.path
                 or not os.path.isfile(self.file.path)
             ):
+                logging.info("create file")
                 detail.append("create file")
                 self.create_file()  # Método que baixa/cria o arquivo XML
                 detail.append("created file")
@@ -1252,6 +1265,7 @@ class ArticleSource(CommonControlField):
 
             # Se tem v3, pode criar o artigo
             if force_update or not self.article or not self.article.valid:
+                logging.info("create article")
                 detail.append("create article")
 
                 # Chama a função para carregar/criar o artigo
@@ -1269,6 +1283,7 @@ class ArticleSource(CommonControlField):
                 else:
                     detail.append("created incomplete article")
 
+            logging.info((self.article, self.pid_provider_xml))
             self.detail = detail
             self.save()
 
@@ -1289,6 +1304,7 @@ class ArticleSource(CommonControlField):
     def set_pid_provider_xml(self, user, detail, force_update, auto_solve_pid_conflict):
         # Verifica se precisa gerar o PID para o XML
         if force_update or not self.pid_provider_xml:
+            logging.info("create pid_provider_xml")
             detail.append("create pid_provider_xml")
 
             # Instancia o provedor de PIDs
@@ -1299,7 +1315,7 @@ class ArticleSource(CommonControlField):
                 self.file.path,
                 user,
                 filename=self.sps_pkg_name,
-                origin_date=self.source_date.isoformat()[:10],
+                origin_date=self.source_date,
                 force_update=force_update,
                 is_published=True,
                 auto_solve_pid_conflict=auto_solve_pid_conflict,
