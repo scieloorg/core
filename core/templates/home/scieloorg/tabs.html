@@ -1,13 +1,15 @@
-    <!-- tabs -->
+{% load i18n wagtailcore_tags %}
+
+<!-- tabs -->
     <section>
         <div class="row row-tab-desk">
             <div class="col-md-12 nav-center">
                 <ul class="nav nav-tabs">
                     <li class="active">
-                        <h2><a href="#tab-colecoes" data-toggle="tab">Collections</a></h2>
+                        <h2><a href="#tab-colecoes" data-toggle="tab">{% trans 'Collections' %}</a></h2>
                     </li>
                     <li>
-                        <h2><a href="#tab-periodicos" data-toggle="tab">Journals</a></h2>
+                        <h2><a href="#tab-periodicos" data-toggle="tab">{% trans 'Journals' %}</a></h2>
                     </li>
                     <!-- Youtube videos is static, so it's not coming from the backend -->
                 </ul>
@@ -17,164 +19,109 @@
         <div class="tab-content clearfix">
             <div class="row row-tab-mobile">
                 <div class="col-xs-12">
-                    <h2><a href="#tab-colecoes" data-toggle="tab" class="btn btn-tab-mobile active">Collections</a></h2>
+                    <h2><a href="#tab-colecoes" data-toggle="tab" class="btn btn-tab-mobile active">{% trans 'Collections' %}</a></h2>
                 </div>
             </div>
 
-            <div class="tab-pane active " id="tab-colecoes">
+            <div class="tab-pane active" id="tab-colecoes">
                 <div class="row">
                     <div class="col-sm-12 col-md-12">
                         <dl>
-                            <dd class="flag-arg flag-no-data  first-node-collection ">
-                                <h3>Journals</h3>
-                                <a href="http://www.scielo.org.ar">
-                                    <h4>Argentina</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="flag-bol flag-no-data ">
-                                <a href="http://www.scielo.org.bo">
-                                    <h4>Bolivia</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="flag-scl flag-no-data ">
-                                <a href="http://www.scielo.br">
-                                    <h4>Brazil</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="flag-chl flag-no-data ">
-                                <a href="http://www.scielo.cl">
-                                    <h4>Chile</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="flag-col flag-no-data ">
-                                <a href="http://www.scielo.org.co">
-                                    <h4>Colombia</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="flag-cri flag-no-data ">
-                                <a href="http://www.scielo.sa.cr">
-                                    <h4>Costa Rica</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="flag-cub flag-no-data ">
-                                <a href="http://scielo.sld.cu">
-                                    <h4>Cuba</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="flag-ecu flag-no-data ">
-                                <a href="http://scielo.senescyt.gob.ec">
-                                    <h4>Ecuador</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="flag-mex flag-no-data ">
-                                <a href="http://www.scielo.org.mx">
-                                    <h4>Mexico</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="flag-pry flag-no-data ">
-                                <a href="http://scielo.iics.una.py">
-                                    <h4>Paraguay</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="flag-per flag-no-data ">
-                                <a href="http://www.scielo.org.pe">
-                                    <h4>Peru</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="flag-prt flag-no-data ">
-                                <a href="http://www.scielo.pt">
-                                    <h4>Portugal</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="flag-spa flag-no-data ">
-                                <a href="http://www.scielosp.org">
-                                    <h4>Public Health</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="flag-sza flag-no-data ">
-                                <a href="http://www.scielo.org.za">
-                                    <h4>South Africa</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="flag-esp flag-no-data ">
-                                <a href="http://scielo.isciii.es">
-                                    <h4>Spain</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="flag-ury flag-no-data ">
-                                <a href="http://www.scielo.edu.uy">
-                                    <h4>Uruguay</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-
-                            <dd class="flag-ven flag-no-data  first-node-collection ">
-                                <h3>In development</h3>
-                                <a href="http://ve.scielo.org">
-                                    <h4>Venezuela</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="flag-wid flag-no-data ">
-                                <a href="http://westindies.scielo.org">
-                                    <h4>West Indies</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
+                            {% for col in collections_journals %}
+                                {% if forloop.first %}
+                                <dd class="flag-{{col.acron3}} flag-no-data  first-node-collection">
+                                    <h3>{% trans 'Journals' %}</h3>
+                                    <a href="http://{{col.domain}}">
+                                        <h4>{{col}}</h4>
+                                        <span> </span>
+                                    </a>
+                                </dd>
+                                {% else %}
+                                <dd class="flag-{{col.acron3}} flag-no-data">
+                                    <a href="http://{{col.domain}}">
+                                        <h4>{{col}}</h4>
+                                        <span> </span>
+                                    </a>
+                                </dd>
+                                {% endif %}
+                            {% endfor%}
+            
+                            {% for col in collections_in_development %}
+                                {% if forloop.first %}
+                                <dd class="flag-{{col.acron3}} flag-no-data  first-node-collection">
+                                    <h3>{% trans 'In development' %}</h3>
+                                    <a href="http://{{col.domain}}">
+                                        <h4>{{col}}</h4>
+                                        <span> </span>
+                                    </a>
+                                </dd>
+                                {% else %}
+                                <dd class="flag-{{col.acron3}} flag-no-data">
+                                    <a href="http://{{col.domain}}">
+                                        <h4>{{col}}</h4>
+                                        <span> </span>
+                                    </a>
+                                </dd>
+                                {% endif %}
+                            {% endfor%}
                             <div>
-                                <dd class="scielo-servers-repos scielo-servers-repos-no-data  first-node-collection ">
-                                    <h3>Servers and Repositories</h3>
-                                    <a href="https://data.scielo.org">
-                                        <h4>SciELO Data</h4>
-                                    </a>
-                                </dd>
-                                <dd class="scielo-servers-repos scielo-servers-repos-no-data ">
-                                    <a href="https://preprints.scielo.org">
-                                        <h4>SciELO Preprints</h4>
-                                    </a>
-                                </dd>
+                                {% for col in collections_servers_and_repositorios %}
+                                    {% if forloop.first %}
+                                    <dd class="scielo-servers-repos scielo-servers-repos-no-data first-node-collection">
+                                        <h3>{% trans 'Servers and Repositories' %}</h3>
+                                        <a href="http://{{col.domain}}">
+                                            <h4>{{col}}</h4>
+                                            <span> </span>
+                                        </a>
+                                    </dd>
+                                    {% else %}
+                                    <dd class="scielo-servers-repos scielo-servers-repos-no-data">
+                                        <a href="http://{{col.domain}}">
+                                            <h4>{{col}}</h4>
+                                            <span> </span>
+                                        </a>
+                                    </dd>
+                                    {% endif %}
+                                {% endfor%}
                             </div>
-                            <dd class="scielo-books scielo-books-no-data  first-node-collection ">
-                                <h3>Books</h3>
-                                <a href="http://books.scielo.org">
-                                    <h4>SciELO Books</h4>
-                                </a>
-                            </dd>
-
-                            <dd class="scielo-books scielo-books-no-data  first-node-collection ">
-                                <h3>Others</h3>
-                                <a href="http://www.biodiversitylibrary.org/browse/contributor/SCIELO">
-                                    <h4>Biodiversity Heritage Library</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="scielo-books scielo-books-no-data ">
-                                <a href="http://cienciaecultura.bvs.br">
-                                    <h4>Ciência e Cultura</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
-                            <dd class="scielo-books scielo-books-no-data ">
-                                <a href="http://revistapesquisa.fapesp.br">
-                                    <h4>Pesquisa FAPESP</h4>
-                                    <span> </span>
-                                </a>
-                            </dd>
+            
+                            {% for col in collections_books %}
+                                {% if forloop.first %}
+                                <dd class="scielo-books scielo-books-no-data first-node-collection">
+                                    <h3>{% trans 'Books' %}</h3>
+                                    <a href="http://{{col.domain}}">
+                                        <h4>{{col}}</h4>
+                                        <span> </span>
+                                    </a>
+                                </dd>
+                                {% else %}
+                                <dd class="scielo-books scielo-books-no-data">
+                                    <a href="http://{{col.domain}}">
+                                        <h4>{{col}}</h4>
+                                        <span> </span>
+                                    </a>
+                                </dd>
+                                {% endif %}
+                            {% endfor%}
+            
+                            {% for col in collections_others %}
+                                {% if forloop.first %}
+                                <dd class="scielo-books scielo-books-no-data first-node-collection">
+                                    <h3>{% trans 'Others' %}</h3>
+                                    <a href="http://{{col.domain}}">
+                                        <h4>{{col}}</h4>
+                                        <span> </span>
+                                    </a>
+                                </dd>
+                                {% else %}
+                                <dd class="scielo-books scielo-books-no-data">
+                                    <a href="http://{{col.domain}}">
+                                        <h4>{{col}}</h4>
+                                        <span> </span>
+                                    </a>
+                                </dd>
+                                {% endif %}
+                            {% endfor%}
 
                         </dl>
                     </div>
@@ -182,45 +129,28 @@
             </div>
             <div class="row row-tab-mobile">
                 <div class="col-xs-12">
-                    <h2><a href="#tab-periodicos" data-toggle="tab" class="btn btn-tab-mobile active">Journals</a></h2>
+                    <h2><a href="#tab-periodicos" data-toggle="tab" class="btn btn-tab-mobile active">{% trans 'Journals' %}</a></h2>
                 </div>
             </div>
-
-            <div class="tab-pane  " id="tab-periodicos">
+            
+            <div class="tab-pane" id="tab-periodicos">
                 <div class="row">
                     <div class="col-md-12">
                         <dl>
                             <dt>
-                                <h3>Search journals</h3>
+                                <h3>{% trans 'Search journals' %}</h3>
                             </dt>
                             <dd class="search-periodicos">
-                                <form action="https://scielo.org/en/journals/list-by-alphabetical-order">
+                                <form method="get" action="#">
                                     <input type="hidden" name="matching" id="matching" value="contains">
                                     <div class="input-group">
                                         <input type="text" name="search" id="search" class="form-control"
-                                            placeholder="Enter one or more words">
+                                            placeholder="{% trans 'Enter one or more words' %}">
                                         <div class="input-group-btn">
-                                            <button type="button" id="matchingButton"
-                                                class="btn btn-default dropdown-toggle" data-toggle="dropdown"
-                                                aria-haspopup="true" aria-expanded="false">
-                                                Contains <span class="caret"></span>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-right">
-                                                <li><a
-                                                        href="javascript:scieloLib.SetMatching('Contains', 'contains');">Contains</a>
-                                                </li>
-                                                <li><a
-                                                        href="javascript:scieloLib.SetMatching('Exact title', 'extact_title');">Exact
-                                                        title</a></li>
-                                                <li><a
-                                                        href="javascript:scieloLib.SetMatching('Starts with', 'starts_with');">Starts
-                                                        with</a></li>
-                                            </ul>
-                                            <input type="submit" class="btn btn-primary" value="" alt="Buscar"
-                                                title="Buscar">
+                                            <input type="submit" class="btn btn-primary" value="" alt="{% trans 'Search' %}"
+                                                title="{% trans 'Search' %}">
                                         </div><!-- /input-group-btn -->
                                     </div><!-- /input-group -->
-
                                 </form>
                             </dd>
                         </dl>
@@ -228,72 +158,35 @@
                     <div class="col-md-2">
                         <dl>
                             <dt>
-                                <h3>List of journals</h3>
+                                <h3>{% trans 'List of journals' %}</h3>
                             </dt>
-                            <dd class="text">
-                                <a href="https://scielo.org/en/journals/list-by-alphabetical-order">In alphabetical
-                                    order</a>
-                            </dd>
-                            <dd class="text">
-                                <a href="https://scielo.org/en/journals/list-by-publishers">Of publishers</a>
-                            </dd>
+                            <form method="get" action="#">
+                                <dd class="text dd-button">
+                                    <button type="submit" value="" name="category">{% trans 'In alphabetical order' %}</button>
+                                </dd>
+                                <dd class="text dd-button">
+                                    <button type="submit" value="publisher" name="category">{% trans 'Of publisher' %}</button>
+                                </dd>
+                            </form>
                         </dl>
                     </div>
                     <div class="col-md-10">
                         <dl>
                             <dt>
-                                <h3>List of journals by subject</h3>
+                                <h3>{% trans 'List of journals by subject' %}</h3>
                             </dt>
-                            <dd class="text">
-                                <a href="https://scielo.org/en/journals/list-by-subject-area">All</a>
-                            </dd>
-
-                            <dd>
-                                <a href="https://scielo.org/en/journals/list-by-subject-area/5/agricultural-sciences">Agricultural
-                                    Sciences</a>
-                            </dd>
-
-                            <dd>
-                                <a href="https://scielo.org/en/journals/list-by-subject-area/4/applied-social-sciences">Applied
-                                    Social Sciences</a>
-                            </dd>
-
-                            <dd>
-                                <a href="https://scielo.org/en/journals/list-by-subject-area/7/biological-sciences">Biological
-                                    Sciences</a>
-                            </dd>
-
-                            <dd>
-                                <a
-                                    href="https://scielo.org/en/journals/list-by-subject-area/8/engineering">Engineering</a>
-                            </dd>
-
-                            <dd>
-                                <a
-                                    href="https://scielo.org/en/journals/list-by-subject-area/6/exact-and-earth-sciences">Exact
-                                    and Earth Sciences</a>
-                            </dd>
-
-                            <dd>
-                                <a href="https://scielo.org/en/journals/list-by-subject-area/1/health-sciences">Health
-                                    Sciences</a>
-                            </dd>
-
-                            <dd>
-                                <a href="https://scielo.org/en/journals/list-by-subject-area/3/human-sciences">Human
-                                    Sciences</a>
-                            </dd>
-
-                            <dd>
-                                <a
-                                    href="https://scielo.org/en/journals/list-by-subject-area/9/linguistics-letters-and-arts">Linguistics,
-                                    Letters and Arts</a>
-                            </dd>
-
-                            <dd>
-                                <a
-                                    href="https://scielo.org/en/journals/list-by-subject-area/2/psychoanalysis">Psychoanalysis</a>
-                            </dd>
+                            <form method="get" action="#">
+                                <dd class="text dd-button">
+                                    <button type="submit" value="" name="category">{% trans 'All' %}</button></a>
+                                </dd>
+                                <dd>
+                                <!-- FIXME Translation -->
+                                {% for category in categories %}
+                                    <dd class="text dd-button">
+                                        <button type="submit" value="{{category}}" name="category">{{category}}</button>
+                                    </dd>
+                                {% endfor%}
+                            </form>
                         </dl>
                     </div>
                 </div>
@@ -309,7 +202,7 @@
             <div class="col-md-12 nav-center">
                 <ul class="nav nav-tabs">
                     <li class="active">
-                        <h2><a href="#tab-blog" data-toggle="tab">SciELO in Perspective</a></h2>
+                        <h2><a href="#tab-blog" data-toggle="tab">{% trans 'SciELO in Perspective' %}</a></h2>
                     </li>
                     <li>
                         <h2><a href="#tab-twitter" data-toggle="tab">Twitter @RedeSciELO</a></h2>
@@ -325,8 +218,7 @@
         <div class="tab-content clearfix">
             <div class="row row-tab-mobile">
                 <div class="col-xs-12">
-                    <h2><a href="#tab-blog" data-toggle="tab" class="btn btn-tab-mobile active">SciELO in
-                            Perspective</a></h2>
+                    <h2><a href="#tab-blog" data-toggle="tab" class="btn btn-tab-mobile active">{% trans 'SciELO in Perspective' %}</a></h2>
                 </div>
             </div>
 
