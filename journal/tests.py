@@ -235,7 +235,6 @@ class TestAPIJournalArticleMeta(TestCase):
 
     def test_load_journal_scl_from_article_meta(self):
         formatter = get_articlemeta_format_title(self.journal_scl, collection="scl")
-        import ipdb; ipdb.set_trace()
         for key in self.data_json_journal_scl[0].keys():
             with self.subTest(key=key):
                 expected = self.data_json_journal_scl[0].get(key)
