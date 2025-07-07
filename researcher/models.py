@@ -677,13 +677,16 @@ class BaseResearcher(CommonControlField, ClusterableModel):
         null=True,
         blank=True,
     )
+    race = models.ForeignKey("Race", blank=True, null=True, on_delete=models.SET_NULL)
 
     panels = [
         FieldPanel("given_names"),
         FieldPanel("last_name"),
         FieldPanel("suffix"),
-        FieldPanel("gender"),
+        AutocompletePanel("gender"),
+        AutocompletePanel("race"),
         FieldPanel("gender_identification_status"),
+
     ]
     base_form_class = CoreAdminModelForm
     
@@ -1146,3 +1149,23 @@ class ResearcherIds(CommonControlField):
     @staticmethod
     def clean_orcid(orcid):
         return re.sub(r"https?://orcid\.org/", "", orcid).strip("/")
+
+
+class Race(CommonControlField):
+    race = models.CharField(_("Race"), max_length=64, blank=True, null=True)
+
+    panels = [
+        FieldPanel("race"),
+    ]
+
+    autocomplete_search_field = "race"
+    
+    def autocomplete_label(self):
+        return str(self)
+
+    class Meta:
+        verbose_name = _("Race")
+        verbose_name_plural = _("Races")
+
+    def __str__(self):
+        return f"{self.race}"
