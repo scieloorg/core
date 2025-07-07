@@ -1064,7 +1064,7 @@ class ArticleSource(CommonControlField):
                 pass
             return obj
         except IntegrityError:
-            return cls.get(url=url, file_path=file_path)
+            return cls.get(url=url)
 
     @classmethod
     def create_or_update(cls, user, url=None, source_date=None, force_update=None):
@@ -1234,7 +1234,7 @@ class ArticleSource(CommonControlField):
             if not self.url:
                 raise ValueError(_("URL is required"))
 
-            if self.article and self.article.valid:
+            if not force_update and self.article and self.article.valid:
                 if self.status != ArticleSource.StatusChoices.COMPLETED:
                     self.mark_as_completed()
                 return
