@@ -312,27 +312,28 @@ class ArticlemetaJournalFormatter:
         return dict_a
 
     def _format_journal_history(self):
-        journal_history = self.scielo_journal.journal_history.all()
-        subfields = []
-        subfield_b = ""
-        for jh in journal_history:
-            subfield_a = f"{jh.year}{jh.month}{jh.day or '01'}"
-            if jh.interruption_reason:
-                subfield_b = "D" if jh.interruption_reason == "ceased" else "S"
-            if jh.event_type == "ADMITTED":
-                dict_subfield =self._former_dict_journal_history(
-                    subfield_a=subfield_a, 
-                    subfield_b=subfield_b, 
-                )
-                subfields.append(dict_subfield)
-            elif jh.event_type == "INTERRUPTED":
-                dict_subfield = self._former_dict_journal_history(
-                    subfield_a=subfield_a, 
-                    subfield_b=subfield_b, 
-                )
-                subfields.append(dict_subfield)
+        if self.scielo_journal:
+            journal_history = self.scielo_journal.journal_history.all()
+            subfields = []
+            subfield_b = ""
+            for jh in journal_history:
+                subfield_a = f"{jh.year}{jh.month}{jh.day or '01'}"
+                if jh.interruption_reason:
+                    subfield_b = "D" if jh.interruption_reason == "ceased" else "S"
+                if jh.event_type == "ADMITTED":
+                    dict_subfield =self._former_dict_journal_history(
+                        subfield_a=subfield_a, 
+                        subfield_b=subfield_b, 
+                    )
+                    subfields.append(dict_subfield)
+                elif jh.event_type == "INTERRUPTED":
+                    dict_subfield = self._former_dict_journal_history(
+                        subfield_a=subfield_a, 
+                        subfield_b=subfield_b, 
+                    )
+                    subfields.append(dict_subfield)
 
-        self.result["v51"] =  subfields
+            self.result["v51"] =  subfields
 
 def get_articlemeta_format_title(obj, collection):
     formatter = ArticlemetaJournalFormatter(obj, collection)
