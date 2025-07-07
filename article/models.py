@@ -207,7 +207,7 @@ class Article(
     @property
     def collections(self):
         if self.journal:
-            for item in self.journal.scielo_journal_set.all().select_related(
+            for item in self.journal.scielojournal_set.all().select_related(
                 "collection"
             ):
                 yield item.collection
