@@ -150,10 +150,8 @@ class ArticlemetaIssueFormatter:
         if self.journal.vocabulary:
             add_to_result("v85", self.journal.vocabulary.acronym, self.result['issue'])
 
-        if self.journal.official and self.journal.official.iso_short_title:
+        if self.journal.official:
             add_to_result("v151", self.journal.official.iso_short_title, self.result['issue'])
-
-        if self.journal.official and hasattr(self.journal.official, 'parallel_titles'):
             add_items("v230", [pt.text for pt in self.journal.official.parallel_titles if pt.text], self.result['issue'])
 
 
