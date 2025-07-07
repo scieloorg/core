@@ -987,7 +987,7 @@ class Journal(CommonControlField, ClusterableModel):
         official = self.official
         if not active_collection:
             foundation_year = self.official.initial_year if official and self.official.initial_year else "Unknown"
-            return f"{self.title} or {self.official} | Foundation year: {foundation_year}"
+            return f"{self.title or self.official} | Foundation year: {foundation_year}"
         collection_acronym = ", ".join(
             col.collection.acron3 for col in active_collection
         )
