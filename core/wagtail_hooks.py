@@ -13,7 +13,6 @@ from wagtail_modeladmin.options import (
 
 from article.models import Article
 from collection.models import Collection
-from core.models import Gender
 from config.menu import get_menu_order, WAGTAIL_MENU_APPS_ORDER
 from journal import models
 from config.menu import get_menu_order
@@ -104,22 +103,6 @@ def add_items_summary_items(request, items):
     items.append(ArticleSummaryItem(request))
 
 
-class GenderAdmin(ModelAdmin):
-    model = Gender
-    menu_icon = "folder"
-    menu_order = 600
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-    list_display = (
-        "code",
-        "gender",
-    )
-
-    search_fields = (
-        "code",
-        "gender",
-    )
-
 class ListCodesAdminGroup(ModelAdminGroup):
     menu_label = "List of codes"
     menu_icon = "folder-open-inverse"
@@ -132,7 +115,6 @@ class ListCodesAdminGroup(ModelAdminGroup):
         WebOfKnowledgeAdmin,
         WosAreaAdmin,
         StandardAdmin,
-        GenderAdmin,
         VocabularyAdmin, 
         KeywordAdmin,
         ThematicAreaAdmin,

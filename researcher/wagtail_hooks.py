@@ -2,7 +2,11 @@ from django.http import HttpResponseRedirect
 from django.utils.translation import gettext as _
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import CreateView as CreateViewAdmin
-from wagtail.snippets.views.snippets import EditView, SnippetViewSet
+from wagtail.snippets.views.snippets import (
+    EditView,
+    SnippetViewSet,
+    SnippetViewSetGroup,
+)
 from wagtail_modeladmin.options import ModelAdmin, ModelAdminGroup
 from wagtail_modeladmin.views import CreateView
 
@@ -10,7 +14,9 @@ from config.menu import get_menu_order
 
 from .models import (
     Affiliation,
+    Gender,
     PersonName,
+    Race,
     Researcher,
     ResearcherIdentifier,
     ResearcherOrcid,
@@ -156,10 +162,50 @@ class ResearcherOrganizationAdminViewSet(SnippetViewSet):
     edit_view_class = ResearcherOrcidEditView
     menu_icon = "folder"
     menu_label = _("New Researcher")
-    menu_order = get_menu_order("new_researcher")
+    menu_order = 1
     list_display = ["__str__", "get_fullname_researcher"]
     inspect_view_enabled = True
-    add_to_admin_menu = True
+    # add_to_admin_menu = True
 
-register_snippet(ResearcherOrganizationAdminViewSet)
 
+class RaceAdminViewSet(SnippetViewSet):
+    model = Race
+    menu_label = _("Race")
+    menu_icon = "folder"
+    menu_order = 2
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "race",
+    )
+    search_fields = (
+        "race",
+    )
+
+class GenderAdminViewSet(SnippetViewSet):
+    model = Gender
+    menu_label = _("Gender")
+    menu_icon = "folder"
+    menu_order = 3
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_display = (
+        "gender",
+        "code",
+    )
+    search_fields = (
+        "gender",
+        "code",
+    )
+
+class NewResearcherAdminViewSetGroup(SnippetViewSetGroup):
+    menu_label = _("New Researcher")
+    menu_icon = "folder-open-inverse"
+    menu_order = get_menu_order("new_researcher")
+    items = (
+        ResearcherOrganizationAdminViewSet,
+        RaceAdminViewSet,
+        GenderAdminViewSet,
+    )
+
+register_snippet(NewResearcherAdminViewSetGroup)
