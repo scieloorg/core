@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.db import models, IntegrityError
 from django.db.models import Case, When, Value, IntegerField
 from django.utils.translation import gettext as _
+from django.utils.html import strip_tags
 from wagtail.admin.panels import FieldPanel
 from wagtail.fields import RichTextField
 from wagtail.search import index
@@ -269,6 +270,10 @@ class RichTextWithLanguage(models.Model):
         AutocompletePanel("language"),
         FieldPanel("rich_text"),
     ]
+
+    @property
+    def get_text_pure(self):
+        return strip_tags(self.rich_text)
 
     objects = LanguageFallbackManager()
 

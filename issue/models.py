@@ -1,4 +1,4 @@
-from django.db import models, IntegrityError
+from django.db import IntegrityError, models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -36,6 +36,7 @@ class Issue(CommonControlField, ClusterableModel):
     )
     sections = models.ManyToManyField("TocSection", blank=True)
     license = models.ManyToManyField(License, blank=True)
+    code_sections = models.ManyToManyField("SectionIssue", blank=True)
     city = models.ForeignKey(City, on_delete=models.SET_NULL, blank=True, null=True)
     number = models.CharField(_("Issue number"), max_length=20, null=True, blank=True)
     volume = models.CharField(_("Issue volume"), max_length=20, null=True, blank=True)
@@ -213,6 +214,10 @@ class Issue(CommonControlField, ClusterableModel):
 
         return "%s, %s, %s" % (self.journal, issue_info, self.year)
 
+    def articlemeta_format(self, collection):
+        # Evita importacao circular
+        from .formats.articlemeta_format import get_articlemeta_format_issue
+        return get_articlemeta_format_issue(self, collection)
 
     base_form_class = CoreAdminModelForm
 
@@ -324,3 +329,28 @@ class TocSection(TextLanguageMixin, CommonControlField):
 
     def __str__(self):
         return f"{self.plain_text} - {self.language}"
+
+
+class CodeSectionIssue(CommonControlField):
+    code = models.CharField(_("Code"), max_length=40, unique=True, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.code} - {self.text} ({self.language.code2 if self.language else 'N/A'})"
+    
+
+class SectionIssue(TextWithLang, CommonControlField):
+    code_section = models.ForeignKey(
+        CodeSectionIssue,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return f"{self.code}"
+    
+    class Meta:
+        unique_together = [("code_section", "language")]
+
+    def __str__(self):
+        return f"{self.code_section.code} - {self.text} ({self.language.code2 if self.language else 'N/A'})"
