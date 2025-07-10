@@ -29,7 +29,7 @@ def get_or_create_issue(
         year=data[:4],
         month=data[4:6],
         sections=get_or_create_sections(sections_data, user),
-        markup_done=markup_done,
+        markup_done=extract_value(markup_done),
         user=user,
         season=None,
     )
