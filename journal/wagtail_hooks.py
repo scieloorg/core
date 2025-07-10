@@ -379,7 +379,7 @@ def snippet_listing_buttons(snippet, user, next_url=None):
         scielo_journal = models.SciELOJournal.objects \
             .only("collection__acron3", "journal_acron") \
             .select_related("collection") \
-            .filter(journal=snippet, collection__is_active=True).first()
+            .filter(journal=snippet).first()
         url = journal_page.get_url() + journal_page.reverse_subpage('bibliographic', args=[scielo_journal.collection.acron3, scielo_journal.journal_acron])
         yield wagtailsnippets_widgets.SnippetListingButton(
             _(f'Preview about journal'), 
