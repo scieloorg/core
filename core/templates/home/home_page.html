@@ -23,7 +23,6 @@
                         <span>{% trans 'Scientific Electronic Library Online' %}</span>
                     </a>
                 </h1>
-
                 <form name="searchForm" id="searchForm" action="https://search.scielo.org/" method="get">
                     <input type="hidden" name="lang" id="lang" value="en">
                     <input type="hidden" name="count" id="count" value="15">
@@ -34,12 +33,14 @@
                     <input type="hidden" name="fb" id="fb" value="">
                     <input type="hidden" name="page" id="page" value="1">
 
-                    <div class="search-box">
-                        <input type="text" name="q" placeholder="Search articles: Enter one or more words" autofocus>
-                        <a href="javascript:$('#searchForm').submit();" class="btn btn-default btn-input"></a>
-                        <a
-                            href="https://search.scielo.org/?q=*:*&lang=pt&count=15&from=0&output=site&sort=&format=summary&fb=&page=1&q=*&lang=pt&page=1">Advanced
-                            Search</a>
+                    <div class="input-group mb-3 mt-5">
+                        <input type="text" name="q" class="form-control" placeholder="Search articles: Enter one or more words" aria-label="Search articles: Enter one or more words" autofocus>
+                        <a class="btn btn-primary btn-lg scielo__btn-with-icon--only">
+                            <i class="material-icons-outlined">search</i>
+                        </a>
+                    </div>
+                    <div class="text-end">
+                        <a href="https://search.scielo.org/?q=*:*&lang=pt&count=15&from=0&output=site&sort=&format=summary&fb=&page=1&q=*&lang=pt&page=1" class="btn btn-link">Advanced Search</a>
                     </div>
                 </form>
             </div>
@@ -48,6 +49,7 @@
         <!-- ./capa -->
     </div>
 
+    
     {% include 'home/scieloorg/tabs.html' %}
 
 </div>
@@ -58,7 +60,7 @@
 <script>
     $(function () {
 
-        scieloLib.Init();
+        //scieloLib.Init();
 
         $('.showBlock').click(function () {
             var field = $(this);

@@ -42,7 +42,7 @@ urlpatterns = [
     path('filter_journals/', filter_journals, name='filter_journals'),
     path('import-csv/', import_csv, name='import_csv'), 
     path("api/blog-feed/", blog_feed_json, name="blog_feed_json"),
-    path("api/youtube-scielo-feed/", youtube_feed_json, name="blog_feed_json"),
+    path("api/youtube-scielo-feed/", youtube_feed_json, name="youtube_feed_json"),
     # Your stuff: custom urls includes go here
     # For anything not caught by a more specific rule above, hand over to
     # Wagtail’s page serving mechanism. This should be the last pattern in

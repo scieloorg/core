@@ -50,11 +50,12 @@ class ListPageJournal(Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
         parent_specific_page = self.get_parent().specific
-        journals = Journal.objects.select_related("subject").order_by("title")
+        journals = Journal.objects.all().order_by("title")
 
         category = request.GET.get("category")
         search_term = request.GET.get("search", "")
         publisher = category == "publisher"
+        institution = []
 
         if any(category in item for item in STUDY_AREA):
             journals = journals.filter(subject__code=category)
