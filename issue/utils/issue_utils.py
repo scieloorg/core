@@ -3,7 +3,7 @@ import logging
 from core.models import Language
 from journal.models import SciELOJournal
 
-from ..models import Issue, TocSection
+from ..models import Issue, TocSection, CodeSectionIssue, SectionIssue
 
 
 def get_or_create_issue(
@@ -27,10 +27,13 @@ def get_or_create_issue(
         supplement=supplement,
         year=data[:4],
         month=data[4:6],
-        sections=get_or_create_sections(sections_data, user),
         user=user,
         season=None,
     )
+    data_code_sections = get_or_create_code_sections(sections_data, user)
+    for section in data_code_sections:
+        obj.code_sections.add(section)
+
     return obj
 
 def get_scielo_journal(issn_scielo):
@@ -71,6 +74,7 @@ def extract_value_sections_data(sections):
         {
             "lang": x.get("l"),
             "section": x.get("t"),
+            "code": x.get("c"),
         }
         for x in sections
     ]
@@ -95,3 +99,24 @@ def get_or_create_sections(sections, user):
 def extract_value(value):
     if value and isinstance(value, list):
         return [x.get("_") for x in value][0]
+
+
+def get_or_create_code_sections(sections_data, user):
+    data = []
+    if sections_data and isinstance(sections_data, list):
+        sections = extract_value_sections_data(sections=sections_data)
+        for section in sections:
+            code_section, _ = CodeSectionIssue.objects.get_or_create(
+                code=section.get("code"),
+                creator=user,
+            )
+            issue_section, _ = SectionIssue.objects.get_or_create(
+                code_section=code_section,
+                text=section.get("section"),
+                language=Language.get_or_create(code2=section.get("lang"), user=user),
+                creator=user,
+            )
+            data.append(issue_section)
+    return data
+
+
