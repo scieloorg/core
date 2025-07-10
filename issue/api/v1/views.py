@@ -41,6 +41,7 @@ class IssueViewSet(GenericIssueViewSet):
             "number",
             "supplement",
             "page",
+            "markup_done",
             "",
         )
         queryset = super().get_queryset()
@@ -69,6 +70,8 @@ class IssueViewSet(GenericIssueViewSet):
             queryset = queryset.filter(number=number)
         if supplement := query_params.get("supplement"):
             queryset = queryset.filter(supplement=supplement)
+        if markup_done := query_params.get("markup_done"):
+            queryset = queryset.filter(markup_done=markup_done)
 
         return queryset 
 
