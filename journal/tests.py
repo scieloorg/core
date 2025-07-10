@@ -1,16 +1,33 @@
 import json
 from unittest.mock import patch
-
+from deepdiff import DeepDiff
 from django.test import TestCase
 from django_test_migrations.migrator import Migrator
 
 from collection.models import Collection
+from core.models import Gender, Language, License
 from core.users.models import User
-from journal.models import AMJournal, Journal, JournalLicense, SciELOJournal
+from editorialboard.models import RoleModel
+from journal.models import (
+    AMJournal,
+    DigitalPreservationAgency,
+    IndexedAt,
+    Journal,
+    JournalLicense,
+    SciELOJournal,
+    Standard,
+    Subject,
+    WebOfKnowledge,
+    WebOfKnowledgeSubjectCategory,
+)
 from journal.tasks import (
+    _register_journal_data,
     child_load_license_of_use_in_journal,
     load_license_of_use_in_journal,
 )
+from journal.formats.articlemeta_format import get_articlemeta_format_title
+from thematic_areas.models import ThematicArea
+from vocabulary.models import Vocabulary
 
 
 class MigrationTestCase(TestCase):
@@ -142,3 +159,89 @@ class TestLoadLicenseOfUseInJournal(TestCase):
         journal_license = JournalLicense.objects.all()
         self.assertEqual(journal_license.count(), 0)
         self.assertEqual(self.journal.journal_use_license, None)
+
+import json
+
+def sort_any(obj):
+    if isinstance(obj, dict):
+        return {k: sort_any(v.lower()) for k, v in sorted(obj.items())}
+    elif isinstance(obj, list):
+        if all(isinstance(i, dict) for i in obj):
+            return sorted((sort_any(i) for i in obj), key=lambda x: json.dumps(x, sort_keys=True))
+        elif all(not isinstance(i, dict) for i in obj):
+            return sorted(obj)
+        else:
+            return [sort_any(i) for i in obj]
+    else:
+        return obj
+
+class TestAPIJournalArticleMeta(TestCase):
+    def setUp(self):
+        self.collection_spa = Collection.objects.create(
+            acron3="spa",
+            code="spa",
+            is_active=True,
+            domain="www.scielosp.org",
+        )
+        self.collection_scl = Collection.objects.create(
+            acron3="scl",
+            code="scl",
+            is_active=True,
+            domain="www.scielo.br",
+        )
+        self.data_json_journal_scl = json.loads(open("./journal/fixture/tests/data_journal_scl_0034-8910.json").read())
+        self.user = User.objects.create(username="teste", password="teste")
+        self.am_journal_scl = AMJournal.objects.create(
+            collection=Collection.objects.get(acron3="scl"),
+            scielo_issn="0034-8910",
+            data=self.data_json_journal_scl,
+            creator=self.user,
+        )
+        self.load_standards()
+
+    def set_journals(self):
+        self.journal_scl = SciELOJournal.objects.get(collection__acron3="scl").journal
+
+    def load_standards(self):
+        self.load_modules()
+        _register_journal_data(self.user, self.collection_scl.acron3)
+        _register_journal_data(self.user, self.collection_spa.acron3)
+        self.set_journals()
+        self.include_articlemeta_metadata(data_json=self.data_json_journal_scl[0], journal=self.journal_scl)
+
+    def load_modules(self):
+        Language.load(self.user)
+        Vocabulary.load(self.user)
+        Standard.load(self.user)
+        Subject.load(self.user)
+        WebOfKnowledge.load(self.user)
+        ThematicArea.load(self.user)
+        WebOfKnowledgeSubjectCategory.load(self.user)
+        IndexedAt.load(self.user)
+        RoleModel.load(self.user)
+        License.load(self.user)
+        DigitalPreservationAgency.load(self.user)
+        Gender.load(self.user)
+    
+    def include_articlemeta_metadata(self, data_json, journal):
+        data_json["created_at"] = journal.created.strftime('%Y-%m-%d')
+        data_json["processing_date"] = journal.created.strftime('%Y-%m-%d')
+        data_json["v940"] = [{"_": journal.created.strftime('%Y%m%d')}]
+        data_json["v941"] = [{"_": journal.updated.strftime('%Y%m%d')}]
+        data_json["v942"] = [{"_": journal.created.strftime('%Y%m%d')}]
+        data_json["v943"] = [{"_": journal.updated.strftime('%Y%m%d')}]
+        if "v691" in data_json:
+            del data_json["v691"]
+
+    def test_load_journal_scl_from_article_meta(self):
+        formatter = get_articlemeta_format_title(self.journal_scl, collection="scl")
+        for key in self.data_json_journal_scl[0].keys():
+            with self.subTest(key=key):
+                expected = self.data_json_journal_scl[0].get(key)
+                result = formatter.get(key)
+                expected_sorted = sort_any(expected)
+                result_sorted = sort_any(result)
+                self.assertEqual(
+                    result_sorted, expected_sorted,
+                    f"Key {key} not equal. Expected: {expected_sorted}, Result: {result_sorted}"
+        )
