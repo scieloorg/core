@@ -50,6 +50,7 @@ class Issue(CommonControlField, ClusterableModel):
     year = models.CharField(_("Issue year"), max_length=20, null=True, blank=True)
     month = models.CharField(_("Issue month"), max_length=20, null=True, blank=True)
     supplement = models.CharField(_("Supplement"), max_length=20, null=True, blank=True)
+    markup_done = models.BooleanField(_("Markup done"), default=True)
 
     autocomplete_search_field = "journal__title"
 
@@ -65,6 +66,7 @@ class Issue(CommonControlField, ClusterableModel):
         FieldPanel("year"),
         FieldPanel("season"),
         FieldPanel("month"),
+        FieldPanel("markup_done"),
     ]
 
     panels_title = [
@@ -165,6 +167,7 @@ class Issue(CommonControlField, ClusterableModel):
         year,
         month,
         supplement,
+        markup_done,
         user,
         sections=None,
     ):
@@ -189,6 +192,7 @@ class Issue(CommonControlField, ClusterableModel):
             issue.year = year
             issue.month = month
             issue.supplement = supplement
+            issue.markup_done = markup_done
             issue.creator = user
             issue.save()
             if sections:

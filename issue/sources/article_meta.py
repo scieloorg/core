@@ -27,6 +27,7 @@ def process_issue_article_meta(collection, limit, user):
                     supplement_number=issue_dict.get("supplement_number"),
                     data_iso=issue_dict.get("date_iso"),
                     sections_data=issue_dict.get("sections_data"),
+                    markup_done=issue_dict.get("markup_done"),
                     user=user,
                 )
             except Exception as exc:
