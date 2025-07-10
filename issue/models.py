@@ -50,7 +50,7 @@ class Issue(CommonControlField, ClusterableModel):
     year = models.CharField(_("Issue year"), max_length=20, null=True, blank=True)
     month = models.CharField(_("Issue month"), max_length=20, null=True, blank=True)
     supplement = models.CharField(_("Supplement"), max_length=20, null=True, blank=True)
-    markup_done = models.BooleanField(_("Markup done"), default=True)
+    markup_done = models.BooleanField(_("Markup done"), default=False)
 
     autocomplete_search_field = "journal__title"
 
