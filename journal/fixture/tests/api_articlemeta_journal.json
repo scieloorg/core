@@ -1,0 +1,787 @@
+[
+    {
+        "code": "0034-8910",
+        "collection": "spa",
+        "v51": [
+            {
+                "_": "",
+                "b": "C",
+                "a": "20010801"
+            }
+        ],
+        "v10": [
+            {
+                "_": "br1.1"
+            }
+        ],
+        "v64": [
+            {
+                "_": "revsp@org.usp.br"
+            }
+        ],
+        "v350": [
+            {
+                "_": "en"
+            },
+            {
+                "_": "pt"
+            },
+            {
+                "_": "es"
+            }
+        ],
+        "v140": [
+            {
+                "_": "CNPq - Conselho Nacional de Desenvolvimento Cient\u00edfico e Tecnol\u00f3gico"
+            }
+        ],
+        "v450": [
+            {
+                "_": "CAB-HEALTH"
+            },
+            {
+                "_": "EMBASE"
+            },
+            {
+                "_": "POPLINE"
+            },
+            {
+                "_": "LILACS"
+            },
+            {
+                "_": "ADSA\u00daDE"
+            },
+            {
+                "_": "DOCPAL"
+            },
+            {
+                "_": "ABSTRACTS ON HYGIENE AND COMMUNICABLE DISEASES"
+            },
+            {
+                "_": "ABSTRACTS ON ZOOPARASITOLOGY"
+            },
+            {
+                "_": "BIOLOGICAL ABSTRACTS"
+            },
+            {
+                "_": "CURRENT CONTENTS/SOCIAL & BEHAVIORAL SCIENCE"
+            },
+            {
+                "_": "ENTOMOLOGY ABSTRACTS"
+            },
+            {
+                "_": "EXCERPTA MEDICA"
+            },
+            {
+                "_": "INDEX MEDICUS"
+            },
+            {
+                "_": "MICROBIOLOGY ABSTRACTS"
+            },
+            {
+                "_": "NUTRITION ABSTRACTS AND REVIEWS-SERIESB"
+            },
+            {
+                "_": "REVIEW MEDICAL VETERINARY ENTOMOLOGY"
+            },
+            {
+                "_": "SAFETY SCIENCE ABSTRACTS JOURNAL"
+            },
+            {
+                "_": "SOCIAL SCIENCE CITATION INDEX"
+            },
+            {
+                "_": "TROPICAL DISEASES BULLETIN"
+            },
+            {
+                "_": "VETERINARY BULLETIN"
+            },
+            {
+                "_": "VIROLOGY ABSTRACTS"
+            },
+            {
+                "_": "ISI"
+            },
+            {
+                "_": "PUBMED"
+            }
+        ],
+        "v950": [
+            {
+                "_": "sonia.reis"
+            }
+        ],
+        "v692": [
+            {
+                "_": "http://mc04.manuscriptcentral.com/rsp-scielo"
+            }
+        ],
+        "v230": [
+            {
+                "_": "Journal of Public Health"
+            }
+        ],
+        "created_at": "2017-05-30",
+        "v63": [
+            {
+                "_": "Avenida Dr. Arnaldo, 715, S\u00e3o Paulo, SP, BR, 01246-904, 55 11 3068-0539"
+            }
+        ],
+        "v68": [
+            {
+                "_": "rsp"
+            }
+        ],
+        "v440": [
+            {
+                "_": "SAUDE COLETIVA"
+            },
+            {
+                "_": "SAUDE PUBLICA"
+            },
+            {
+                "_": "MICROBIOLOGIA"
+            }
+        ],
+        "v301": [
+            {
+                "_": "1967"
+            }
+        ],
+        "v302": [
+            {
+                "_": "1"
+            }
+        ],
+        "v854": [
+            {
+                "_": "Health Policy & Services"
+            }
+        ],
+        "v441": [
+            {
+                "_": "Health Sciences"
+            }
+        ],
+        "issns": [
+            "1518-8787",
+            "0034-8910"
+        ],
+        "v20": [
+            {
+                "_": "068227-6"
+            }
+        ],
+        "v930": [
+            {
+                "_": "rsp"
+            }
+        ],
+        "v940": [
+            {
+                "_": "19980430"
+            }
+        ],
+        "v6": [
+            {
+                "_": "c"
+            }
+        ],
+        "v400": [
+            {
+                "_": "0034-8910"
+            }
+        ],
+        "v935": [
+            {
+                "_": "1518-8787"
+            }
+        ],
+        "v942": [
+            {
+                "_": "19980430"
+            }
+        ],
+        "v117": [
+            {
+                "_": "vancouv"
+            }
+        ],
+        "v901": [
+            {
+                "l": "es",
+                "_": "Publicar y diseminar productos del trabajo cient\u00edfico relevantes para la Salud P\u00fablica"
+            },
+            {
+                "l": "pt",
+                "_": "Publicar e disseminar produtos do trabalho cient\u00edfico que sejam relevantes para a Sa\u00fade P\u00fablica"
+            },
+            {
+                "l": "en",
+                "_": "To publish and divulge scientific production on subjects of relevance to Public Health"
+            }
+        ],
+        "v66": [
+            {
+                "_": "art"
+            }
+        ],
+        "v85": [
+            {
+                "_": "decs"
+            }
+        ],
+        "v330": [
+            {
+                "_": "CT"
+            }
+        ],
+        "v421": [
+            {
+                "_": "Rev Saude Publica"
+            }
+        ],
+        "v5": [
+            {
+                "_": "S"
+            }
+        ],
+        "processing_date": "2017-05-30",
+        "v951": [
+            {
+                "_": "sonia.reis"
+            }
+        ],
+        "v240": [
+            {
+                "_": "Rev Saude Publica"
+            }
+        ],
+        "v480": [
+            {
+                "_": "Faculdade de Sa\u00fade P\u00fablica da Universidade de S\u00e3o Paulo"
+            }
+        ],
+        "v35": [
+            {
+                "_": "ONLIN"
+            }
+        ],
+        "v310": [
+            {
+                "_": "BR"
+            }
+        ],
+        "v490": [
+            {
+                "_": "S\u00e3o Paulo"
+            }
+        ],
+        "v50": [
+            {
+                "_": "C"
+            }
+        ],
+        "v380": [
+            {
+                "_": "B"
+            }
+        ],
+        "v941": [
+            {
+                "_": "20170530"
+            }
+        ],
+        "v67": [
+            {
+                "_": "na"
+            }
+        ],
+        "v303": [
+            {
+                "_": "1"
+            }
+        ],
+        "v880": [
+            {
+                "_": "0034-8910"
+            }
+        ],
+        "v943": [
+            {
+                "_": "20200331"
+            }
+        ],
+        "v100": [
+            {
+                "_": "Revista de Sa\u00fade P\u00fablica"
+            }
+        ],
+        "v320": [
+            {
+                "_": "SP"
+            }
+        ],
+        "v541": [
+            {
+                "_": "BY/4.0"
+            }
+        ],
+        "v540": [
+            {
+                "_": "",
+                "t": "<a rel=\"license\" href=\"http://creativecommons.org/licenses/by/4.0/\"><img alt=\"Creative Commons License\" style=\"border-width:0\" src=\"https://i.creativecommons.org/l/by/4.0/80x15.png\" /></a><br />This work is licensed under a <a rel=\"license\" href=\"http://creativecommons.org/licenses/by/4.0/\">Creative Commons Attribution 4.0 International License</a>.",
+                "l": "en"
+            },
+            {
+                "_": "",
+                "t": "<a rel=\"license\" href=\"http://creativecommons.org/licenses/by/4.0/\"><img alt=\"Creative Commons License\" style=\"border-width:0\" src=\"https://i.creativecommons.org/l/by/4.0/80x15.png\" /></a><br />This work is licensed under a <a rel=\"license\" href=\"http://creativecommons.org/licenses/by/4.0/\">Creative Commons Attribution 4.0 International License</a>.",
+                "l": "es"
+            },
+            {
+                "_": "",
+                "t": "<a rel=\"license\" href=\"http://creativecommons.org/licenses/by/4.0/\"><img alt=\"Creative Commons License\" style=\"border-width:0\" src=\"https://i.creativecommons.org/l/by/4.0/80x15.png\" /></a><br />This work is licensed under a <a rel=\"license\" href=\"http://creativecommons.org/licenses/by/4.0/\">Creative Commons Attribution 4.0 International License</a>.",
+                "l": "pt"
+            }
+        ],
+        "v151": [
+            {
+                "_": "Rev. sa\u00fade p\u00fablica"
+            }
+        ],
+        "v150": [
+            {
+                "_": "Rev. Sa\u00fade P\u00fablica"
+            }
+        ],
+        "v435": [
+            {
+                "_": "1518-8787",
+                "t": "ONLIN"
+            },
+            {
+                "_": "0034-8910",
+                "t": "PRINT"
+            }
+        ],
+        "v62": [
+            {
+                "_": "Faculdade de Sa\u00fade P\u00fablica da Universidade de S\u00e3o Paulo"
+            }
+        ],
+        "v992": [
+            {
+                "_": "spa"
+            }
+        ]
+    },
+    {
+        "code": "0034-8910",
+        "collection": "scl",
+        "created_at": "2018-04-04",
+        "issns": [
+            "1518-8787",
+            "0034-8910"
+        ],
+        "processing_date": "2018-04-04",
+        "v10": [
+            {
+                "_": "br1.1"
+            }
+        ],
+        "v100": [
+            {
+                "_": "Revista de Sa\u00fade P\u00fablica"
+            }
+        ],
+        "v117": [
+            {
+                "_": "vancouv"
+            }
+        ],
+        "v150": [
+            {
+                "_": "Rev. Sa\u00fade P\u00fablica"
+            }
+        ],
+        "v151": [
+            {
+                "_": "Rev. sa\u00fade p\u00fablica"
+            }
+        ],
+        "v20": [
+            {
+                "_": "068227-6"
+            }
+        ],
+        "v230": [
+            {
+                "_": "Journal of Public Health"
+            }
+        ],
+        "v30": [
+            {
+                "_": "fbpe-013"
+            }
+        ],
+        "v301": [
+            {
+                "_": "1967"
+            }
+        ],
+        "v302": [
+            {
+                "_": "1"
+            }
+        ],
+        "v303": [
+            {
+                "_": "1"
+            }
+        ],
+        "v310": [
+            {
+                "_": "BR"
+            }
+        ],
+        "v320": [
+            {
+                "_": "SP"
+            }
+        ],
+        "v330": [
+            {
+                "_": "CT"
+            }
+        ],
+        "v340": [
+            {
+                "_": "A"
+            }
+        ],
+        "v35": [
+            {
+                "_": "ONLIN"
+            }
+        ],
+        "v350": [
+            {
+                "_": "es"
+            },
+            {
+                "_": "en"
+            },
+            {
+                "_": "pt"
+            }
+        ],
+        "v360": [
+            {
+                "_": "es"
+            },
+            {
+                "_": "en"
+            },
+            {
+                "_": "pt"
+            }
+        ],
+        "v380": [
+            {
+                "_": "A"
+            }
+        ],
+        "v400": [
+            {
+                "_": "0034-8910"
+            }
+        ],
+        "v421": [
+            {
+                "_": "Rev Saude Publica"
+            }
+        ],
+        "v435": [
+            {
+                "t": "PRINT",
+                "_": "0034-8910"
+            },
+            {
+                "t": "ONLIN",
+                "_": "1518-8787"
+            }
+        ],
+        "v440": [
+            {
+                "_": "SAUDE COLETIVA"
+            },
+            {
+                "_": "SAUDE PUBLICA"
+            },
+            {
+                "_": "MICROBIOLOGIA"
+            }
+        ],
+        "v441": [
+            {
+                "_": "Health Sciences"
+            }
+        ],
+        "v450": [
+            {
+                "_": "CAB-Health"
+            },
+            {
+                "_": "EMBASE"
+            },
+            {
+                "_": "Popline"
+            },
+            {
+                "_": "LILACS"
+            },
+            {
+                "_": "AdSa\u00fade"
+            },
+            {
+                "_": "DOCPAL"
+            },
+            {
+                "_": "Abstracts on Hygiene and Communicable Diseases"
+            },
+            {
+                "_": "Abstracts on Zooparasitology"
+            },
+            {
+                "_": "Biological Abstracts"
+            },
+            {
+                "_": "Current Contents/Social & Behavioral Science"
+            },
+            {
+                "_": "entomology Abstracts"
+            },
+            {
+                "_": "Excerpta Medica"
+            },
+            {
+                "_": "Index Medicus"
+            },
+            {
+                "_": "Microbiology Abstracts"
+            },
+            {
+                "_": "Nutrition Abstracts and Reviews-SeriesB"
+            },
+            {
+                "_": "Review Medical Veterinary entomology"
+            },
+            {
+                "_": "Safety Science Abstracts Journal"
+            },
+            {
+                "_": "Social Science Citation Index"
+            },
+            {
+                "_": "Tropical Diseases Bulletin"
+            },
+            {
+                "_": "Veterinary Bulletin"
+            },
+            {
+                "_": "Virology Abstracts"
+            },
+            {
+                "_": "ISI"
+            },
+            {
+                "_": "PubMed"
+            }
+        ],
+        "v480": [
+            {
+                "_": "Faculdade de Sa\u00fade P\u00fablica da Universidade de S\u00e3o Paulo"
+            }
+        ],
+        "v490": [
+            {
+                "_": "S\u00e3o Paulo"
+            }
+        ],
+        "v5": [
+            {
+                "_": "S"
+            }
+        ],
+        "v50": [
+            {
+                "_": "C"
+            }
+        ],
+        "v51": [
+            {
+                "a": "19980430",
+                "b": "C",
+                "_": ""
+            }
+        ],
+        "v541": [
+            {
+                "_": "BY"
+            }
+        ],
+        "v6": [
+            {
+                "_": "c"
+            }
+        ],
+        "v62": [
+            {
+                "_": "Faculdade de Sa\u00fade P\u00fablica da Universidade de S\u00e3o Paulo"
+            }
+        ],
+        "v63": [
+            {
+                "_": "Avenida Dr. Arnaldo, 715"
+            },
+            {
+                "_": "01246-904 S\u00e3o Paulo SP Brazil"
+            },
+            {
+                "_": "Tel./Fax: +55 11 3061-7985"
+            }
+        ],
+        "v64": [
+            {
+                "_": "revsp@usp.br"
+            }
+        ],
+        "v65": [
+            {
+                "_": "<hr>"
+            }
+        ],
+        "v66": [
+            {
+                "_": "art"
+            }
+        ],
+        "v67": [
+            {
+                "_": "na"
+            }
+        ],
+        "v68": [
+            {
+                "_": "rsp"
+            }
+        ],
+        "v690": [
+            {
+                "_": "www.scielo.br"
+            }
+        ],
+        "v691": [
+            {
+                "_": "101000000000000000000000"
+            }
+        ],
+        "v692": [
+            {
+                "_": "http://mc04.manuscriptcentral.com/rsp-scielo"
+            }
+        ],
+        "v699": [
+            {
+                "_": "continuous"
+            }
+        ],
+        "v85": [
+            {
+                "_": "decs"
+            }
+        ],
+        "v851": [
+            {
+                "_": "SCIE"
+            }
+        ],
+        "v852": [
+            {
+                "_": "SSCI"
+            }
+        ],
+        "v854": [
+            {
+                "_": "PUBLIC, ENVIRONMENTAL & OCCUPATIONAL HEALTH"
+            },
+            {
+                "_": "SOCIOLOGY"
+            }
+        ],
+        "v880": [
+            {
+                "_": "0034-8910"
+            }
+        ],
+        "v901": [
+            {
+                "l": "es",
+                "_": "Publicar y diseminar productos del trabajo cient\u00edfico relevantes para la Salud P\u00fablica"
+            },
+            {
+                "l": "pt",
+                "_": "Publicar e disseminar produtos do trabalho cient\u00edfico que sejam relevantes para a Sa\u00fade P\u00fablica"
+            },
+            {
+                "l": "en",
+                "_": "To publish and divulge scientific production on subjects of relevance to Public Health"
+            }
+        ],
+        "v930": [
+            {
+                "_": "RSP"
+            }
+        ],
+        "v935": [
+            {
+                "_": "1518-8787"
+            }
+        ],
+        "v940": [
+            {
+                "_": "19980430"
+            }
+        ],
+        "v941": [
+            {
+                "_": "20180404"
+            }
+        ],
+        "v942": [
+            {
+                "_": "19980430"
+            }
+        ],
+        "v943": [
+            {
+                "_": "20250321"
+            }
+        ],
+        "v950": [
+            {
+                "_": "MRB"
+            }
+        ],
+        "v951": [
+            {
+                "_": "MRB"
+            }
+        ],
+        "v992": [
+            {
+                "_": "scl"
+            }
+        ]
+    }
+]

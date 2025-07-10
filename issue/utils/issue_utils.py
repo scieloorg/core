@@ -34,7 +34,7 @@ def get_or_create_issue(
     for section in data_code_sections:
         obj.code_sections.add(section)
 
-
+    return obj
 
 def get_scielo_journal(issn_scielo):
     try:

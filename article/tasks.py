@@ -2,22 +2,22 @@ import logging
 import sys
 from datetime import datetime, timedelta
 
-from django.db.models import Q, Count, F
 from django.contrib.auth import get_user_model
+from django.db.models import Count, F, Q, Subquery
 from django.utils.translation import gettext as _
-from django.db.models import Subquery
 
-from article.models import Article, ArticleFormat
-from article.sources import xmlsps
+from article.models import Article, ArticleFormat, ArticleSource
 from article.sources.preprint import harvest_preprints
+from article.sources.xmlsps import load_article
 from collection.models import Collection
-from core.utils.extracts_normalized_email import extracts_normalized_email
 from config import celery_app
+from core.utils.extracts_normalized_email import extracts_normalized_email
+from core.utils.utils import fetch_data
 from journal.models import SciELOJournal
-from researcher.models import ResearcherIdentifier
+from pid_provider.choices import PPXML_STATUS_DONE, PPXML_STATUS_TODO
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
-from pid_provider.choices import PPXML_STATUS_TODO, PPXML_STATUS_DONE
+from researcher.models import ResearcherIdentifier
 from tracker.models import UnexpectedEvent
 
 from . import controller
@@ -73,7 +73,7 @@ def task_load_articles(
 
         for item in generator_articles:
             try:
-                article = xmlsps.load_article(
+                article = load_article(
                     user,
                     file_path=item.current_version.file.path,
                     v3=item.v3,
@@ -111,25 +111,23 @@ def task_load_articles(
 
 
 @celery_app.task(bind=True, name="task_mark_articles_as_deleted_without_pp_xml")
-def task_mark_articles_as_deleted_without_pp_xml(
-    self, user_id=None, username=None
-):
+def task_mark_articles_as_deleted_without_pp_xml(self, user_id=None, username=None):
     """
     Tarefa Celery para marcar artigos como DATA_STATUS_DELETED quando pp_xml é None.
-    
+
     Args:
         user_id: ID do usuário (opcional)
         username: Nome do usuário (opcional)
     """
     try:
         user = _get_user(self.request, username, user_id)
-        
-        updated_count = Article.mark_articles_as_deleted_without_pp_xml(user)
-        
+
+        updated_count = Article.mark_as_deleted_articles_without_pp_xml(user)
+
         logging.info(
             f"Task completed successfully. {updated_count} articles marked as deleted."
         )
-        
+
     except Exception as exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
@@ -139,8 +137,10 @@ def task_mark_articles_as_deleted_without_pp_xml(
                 "task": "article.tasks.task_mark_articles_as_deleted_without_pp_xml",
             },
         )
-        
-        logging.error(f"Error in task_mark_articles_as_deleted_without_pp_xml: {exception}")
+
+        logging.error(
+            f"Error in task_mark_articles_as_deleted_without_pp_xml: {exception}"
+        )
 
 
 @celery_app.task(bind=True, name=_("load_preprints"))
@@ -357,3 +357,152 @@ def normalize_stored_email(
             updated_list.append(re_identifier)
 
     ResearcherIdentifier.objects.bulk_update(updated_list, ["identifier"])
+
+
+@celery_app.task(bind=True, name="task_get_opac_xmls")
+def task_get_opac_xmls(
+    self,
+    username=None,
+    user_id=None,
+    begin_date=None,
+    end_date=None,
+    limit=None,
+    pages=None,
+    force_update=None,
+    domain=None,
+    collection_acron=None,
+    timeout=None,
+    auto_solve_pid_conflict=None,
+):
+    """
+    API Response
+    {
+        "begin_date":"2023-06-01 00-00-00",
+        "collection":"scl",
+        "dictionary_date": "Sat, 01 Jul 2023 00:00:00 GMT",
+        "documents":{
+            "JFhVphtq6czR6PHMvC4w38N": {
+                "aop_pid":"",
+                "create":"Sat, 28 Nov 2020 23:42:43 GMT",
+                "default_language":"en",
+                "journal_acronym":"aabc",
+                "pid":"S0001-37652012000100017",
+                "pid_v1":"S0001-3765(12)08400117",
+                "pid_v2":"S0001-37652012000100017",
+                "pid_v3":"JFhVphtq6czR6PHMvC4w38N",
+                "publication_date":"2012-05-22",
+                "update":"Fri, 30 Jun 2023 20:57:30 GMT"
+            },
+            "ZZYxjr9xbVHWmckYgDwBfTc":{
+                "aop_pid":"",
+                "create":"Sat, 28 Nov 2020 23:42:37 GMT",
+                "default_language":"en",
+                "journal_acronym":"aabc",
+                "pid":"S0001-37652012000100014",
+                "pid_v1":"S0001-3765(12)08400114",
+                "pid_v2":"S0001-37652012000100014",
+                "pid_v3":"ZZYxjr9xbVHWmckYgDwBfTc",
+                "publication_date":"2012-02-24",
+                "update":"Fri, 30 Jun 2023 20:56:59 GMT",
+            }
+        }
+    }
+    """
+    page = 1
+    domain = domain or "www.scielo.br"
+    limit = limit or 100
+    collection_acron = collection_acron or "scl"
+    end_date = end_date or datetime.utcnow().isoformat()[:10]
+    timeout = timeout or 5
+    begin_date = begin_date or "2000-01-01"
+
+    user = _get_user(self.request, username=username, user_id=user_id)
+
+    while True:
+        try:
+            uri = (
+                f"https://{domain}/api/v1/counter_dict?end_date={end_date}"
+                f"&begin_date={begin_date}&limit={limit}&page={page}"
+            )
+            response = fetch_data(uri, json=True, timeout=timeout, verify=True)
+
+            pages = pages or response["pages"]
+            documents = response["documents"]
+
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "task": "task_get_opac_xmls",
+                    "uri": uri,
+                },
+            )
+
+        else:
+            for pid_v3, document in documents.items():
+                try:
+                    # Processa diretamente os dados do artigo e chama provide_pid_for_opac_and_am_xml
+                    acron = document["journal_acronym"]
+                    xml_uri = f"https://www.scielo.br/j/{acron}/a/{pid_v3}/?format=xml"
+                    origin_date = datetime.strptime(
+                        document.get("update") or document.get("create"),
+                        "%a, %d %b %Y %H:%M:%S %Z",
+                    ).isoformat()[:10]
+                    year = document["publication_date"][:4]
+
+                    article_source = ArticleSource.create_or_update(
+                        user,
+                        url=xml_uri,
+                        source_date=origin_date,
+                        force_update=force_update,
+                    )
+                    article_source.process_xml(
+                        user, load_article, force_update, auto_solve_pid_conflict
+                    )
+
+                except Exception as e:
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    UnexpectedEvent.create(
+                        exception=e,
+                        exc_traceback=exc_traceback,
+                        detail={
+                            "task": "task_get_opac_xmls",
+                            "pid_v3": pid_v3,
+                            "document": document,
+                        },
+                    )
+
+        finally:
+            page += 1
+            if page > pages:
+                break
+
+
+@celery_app.task(bind=True, name="task_load_article_from_article_source")
+def task_load_article_from_article_source(
+    self,
+    username=None,
+    user_id=None,
+    force_update=None,
+    status__in=None,
+    auto_solve_pid_conflict=None,
+):
+    try:
+        user = _get_user(self.request, username=username, user_id=user_id)
+        ArticleSource.process_xmls(
+            user, load_article, status__in, force_update, auto_solve_pid_conflict
+        )
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "task_load_article_from_article_source",
+                "status__in": status__in,
+                "force_update": force_update,
+            },
+        )
