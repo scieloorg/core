@@ -51,6 +51,7 @@ class IssueViewSet(GenericIssueViewSet):
             "number",
             "supplement",
             "page",
+            "markup_done",
             "formats",
             "code",
             "",
@@ -58,7 +59,6 @@ class IssueViewSet(GenericIssueViewSet):
         queryset = super().get_queryset()
 
         params = {}
-
         if collection := query_params.get("collection"):
             params["journal__scielojournal__collection__acron3"] = collection
         if from_publication_year := query_params.get("from_publication_year"):
@@ -73,6 +73,8 @@ class IssueViewSet(GenericIssueViewSet):
             params["supplement"] = supplement
         if code := query_params.get("code"):
             params["article__pid_v2"] = code
+        if markup_done := query_params.get("markup_done"):
+            params["markup_done"] = markup_done
 
         issn = query_params.get("issn")
         issn_print = query_params.get("issn_print")
