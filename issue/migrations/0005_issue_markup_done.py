@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="issue",
             name="markup_done",
-            field=models.BooleanField(default=True, verbose_name="Markup done"),
+            field=models.BooleanField(default=False, verbose_name="Markup done"),
         ),
     ]
