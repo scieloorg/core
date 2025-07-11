@@ -79,6 +79,7 @@ def parse_date_string(date):
     """
     year = None
     month = None
+    day = None
     if date:
         if date.isdigit() and len(date) == 4:
             year = date
@@ -86,7 +87,9 @@ def parse_date_string(date):
         elif date.isdigit and len(date) == 8:
             year = date[0:4]
             month = date[4:6] if date[4:6] != "00" else None
-    return year, month
+            if month:
+                day = date[6:8] if date[6:8] != "00" else None
+    return year, month, day
 
 
 def extract_value_from_journal_history(value):
@@ -102,14 +105,16 @@ def extract_value_from_journal_history(value):
     data = []
     if value:
         for v in value:
-            initial_year, initial_month = parse_date_string(v.get("a"))
-            final_year, final_month = parse_date_string(v.get("c"))
+            initial_year, initial_month, initial_day = parse_date_string(v.get("a"))
+            final_year, final_month, final_day = parse_date_string(v.get("c"))
             data.append(
                 {
                     "initial_year": initial_year,
                     "initial_month": initial_month,
+                    "initial_day": initial_day,
                     "final_year": final_year,
                     "final_month": final_month,
+                    "final_day": final_day,
                     "event_type": v.get("d"),
                     "interruption_reason": v.get("e"),
                 }

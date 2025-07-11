@@ -51,4 +51,7 @@ class IssueSerializer(serializers.ModelSerializer):
                 "issnl": obj.journal.official.issnl,
                 "scielo_journal": scielo_journal,
                 "collection_acron": obj.journal.scielojournal_set.first().collection.acron3,
+                "license": obj.journal.journal_use_license.license_type if obj.journal.journal_use_license else None,
+                "publisher": [publisher.institution.institution.institution_identification for publisher in obj.journal.publisher_history.all() if publisher.institution and publisher.institution.institution],
+                "nlmtitle": [medline.name for medline in obj.journal.indexed_at.all()],
             }

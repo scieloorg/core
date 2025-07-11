@@ -24,8 +24,4 @@ class PidProvider(BasePidProvider):
             return None
 
     def fix_pid_v2(self, user, pid_v3, correct_pid_v2):
-        try:
-            item = PidProviderXML.objects.get(v3=pid_v3)
-        except PidProviderXML.DoesNotExist as e:
-            raise PidProviderXML.DoesNotExist(f"{e}: {pid_v3}")
-        return item.fix_pid_v2(user, correct_pid_v2)
+        return PidProviderXML.fix_pid_v2(user, pid_v3, correct_pid_v2)

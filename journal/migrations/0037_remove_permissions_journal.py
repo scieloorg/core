@@ -7,6 +7,4 @@ class Migration(migrations.Migration):
         ("journal", "0036_alter_journal_options"),
     ]
 
-    operations = [
-        
-    ]
+    operations = []

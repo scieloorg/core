@@ -169,13 +169,13 @@ def update_panel_information(
     )
     get_or_create_vocabulary(vocabulary=vocabulary, journal=journal, user=user)
     create_or_update_standard(standard=standard, journal=journal, user=user)
-    journal.frequency = extract_value(frequency)
-    journal.publishing_model = extract_value(publishing_model)
-    journal.alphabet = extract_value(alphabet)
-    journal.classification = extract_value(classification)
-    journal.national_code = extract_value(national_code)
-    journal.type_of_literature = extract_value(type_of_literature)
-    journal.treatment_level = extract_value(treatment_level)
+    journal.frequency = journal.frequency or extract_value(frequency)
+    journal.publishing_model = journal.publishing_model or extract_value(publishing_model)
+    journal.alphabet = journal.alphabet or extract_value(alphabet)
+    journal.classification = journal.classification or extract_value(classification)
+    journal.national_code = journal.national_code or extract_value(national_code)
+    journal.type_of_literature = journal.type_of_literature or extract_value(type_of_literature)
+    journal.treatment_level = journal.treatment_level or extract_value(treatment_level)
     if len(extract_value(level_of_publication)) < 3:
         journal.level_of_publication = extract_value(level_of_publication)
 
@@ -379,13 +379,13 @@ def update_panel_legacy_compatibility_fields(
     is_supplement,
     acronym_letters,
 ):
-    journal.center_code = extract_value(center_code)
-    journal.identification_number = extract_value(identification_number)
-    journal.subtitle = extract_value(subtitle)
-    journal.section = extract_value(section)
-    journal.has_supplement = extract_value(has_supplement)
-    journal.is_supplement = extract_value(is_supplement)
-    journal.acronym_letters = extract_value(acronym_letters)
+    journal.center_code = journal.center_code or extract_value(center_code)
+    journal.identification_number = journal.identification_number or extract_value(identification_number)
+    journal.subtitle = journal.subtitle or extract_value(subtitle)
+    journal.section = journal.section or extract_value(section)
+    journal.has_supplement = journal.has_supplement or extract_value(has_supplement)
+    journal.is_supplement = journal.is_supplement or extract_value(is_supplement)
+    journal.acronym_letters = journal.acronym_letters or extract_value(acronym_letters)
     set_ftp(journal, extract_value(ftp))
     set_user_subscription(journal, extract_value(user_subscription))
 
@@ -484,13 +484,13 @@ def create_or_update_official_journal(
 
     initial_date = extract_value(initial_date)
     terminate_date = extract_value(terminate_date)
-    official_journal.initial_year, official_journal.initial_month = parse_date_string(
+    official_journal.initial_year, official_journal.initial_month, _ = parse_date_string(
         date=initial_date
     )
     official_journal.initial_number = extract_value(initial_number)
     official_journal.initial_volume = extract_value(initial_volume)
 
-    year, month = parse_date_string(date=terminate_date)
+    year, month, _ = parse_date_string(date=terminate_date)
     official_journal.terminate_year = year
     official_journal.terminate_month = month
 
@@ -610,7 +610,8 @@ def get_or_create_subject_descriptor(subject_descriptors, journal, user):
                                 "subject": s,
                             },
                         )
-        journal.subject_descriptor.set(data)
+        for descriptor in data:
+            journal.subject_descriptor.add(descriptor)
 
 
 def create_or_update_subject(subject, journal, user):
@@ -624,7 +625,8 @@ def create_or_update_subject(subject, journal, user):
                 code=s,
             )
             data.append(obj)
-        journal.subject.set(data)
+        for subject in data:
+            journal.subject.add(subject)
 
 
 def create_or_update_journal_languages(language_data, journal, language_type, user):
@@ -674,7 +676,8 @@ def create_or_update_wos_db(journal, wos_scie, wos_ssci, wos_ahci, user):
                 user=user,
             )
             data.append(obj)
-    journal.wos_db.set(data)
+    for wos in data:
+        journal.wos_db.add(wos)
 
 
 def get_or_update_wos_areas(journal, wos_areas, user):
@@ -705,7 +708,8 @@ def get_or_update_wos_areas(journal, wos_areas, user):
                         "wos_areas": value,
                     },
                 )
-        journal.wos_area.set(data)
+        for area in data:
+            journal.wos_area.add(area)
 
 
 def get_or_create_indexed_at(journal, indexed_at, user):
@@ -807,7 +811,7 @@ def get_or_update_parallel_titles(of_journal, parallel_titles):
         if isinstance(titles, str):
             titles = [titles]
         for title in titles:
-            JournalParallelTitle.create_or_update(
+            JournalParallelTitle.objects.get_or_create(
                 official_journal=of_journal,
                 text=title,
             )

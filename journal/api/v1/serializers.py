@@ -13,7 +13,6 @@ class OfficialJournalSerializer(serializers.ModelSerializer):
             "issn_print",
             "issn_electronic",
             "iso_short_title",
-            "issnl",
         ]
         datatables_always_serialize = ("id",)
 
@@ -67,7 +66,7 @@ class OwnerSerializer(serializers.ModelSerializer):
 
 
 class MissionSerializer(serializers.ModelSerializer):
-    language = serializers.CharField(source="language.code2")
+    language = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Mission
@@ -75,7 +74,10 @@ class MissionSerializer(serializers.ModelSerializer):
             "rich_text",
             "language",
         ]
-
+    def get_language(self, obj):
+        if obj.language is not None:
+            return obj.language.code2
+        return None    
 
 class JournalSerializer(serializers.ModelSerializer):
     # Serializadores para campos de relacionamento, como 'official', devem corresponder aos campos do modelo.
@@ -180,9 +182,7 @@ class JournalSerializer(serializers.ModelSerializer):
     def get_next_journal_title(self, obj):
         if obj.official and obj.official.next_journal_title:
             try:
-                journal_new_title = models.Journal.objects.get(
-                    title__icontains=obj.official.next_journal_title
-                )
+                journal_new_title = models.Journal.objects.get(title__exact=obj.official.next_journal_title)
                 issn_print = journal_new_title.official.issn_print
                 issn_electronic = journal_new_title.official.issn_electronic
             except models.Journal.DoesNotExist:
@@ -198,7 +198,7 @@ class JournalSerializer(serializers.ModelSerializer):
         if obj.official and obj.official.previous_journal_titles:
             try:
                 old_journal = obj.official.old_title.get(
-                    title__icontains=obj.official.previous_journal_titles
+                    title__exact=obj.official.previous_journal_titles
                 )
                 old_issn_print = old_journal.issn_print
                 old_issn_electronic = old_journal.issn_electronic

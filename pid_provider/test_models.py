@@ -6,10 +6,10 @@ from unittest.mock import ANY, MagicMock, Mock, call, patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from lxml import etree
+from xmlsps.xml_sps_lib import XMLWithPre
 
 from pid_provider import exceptions, models
 from pid_provider.xml_sps_adapter import PidProviderXMLAdapter
-from xmlsps.xml_sps_lib import XMLWithPre
 
 User = get_user_model()
 
@@ -57,7 +57,6 @@ def _get_xml_adapter_with_issue_data():
     xml_adapter.aop_pid = "12345678901234567890aop"
 
     xml_adapter.main_doi = "data-main_doi"
-    xml_adapter.main_toc_section = "data-main_toc_section"
     xml_adapter.elocation_id = "data-elocation_id"
     return xml_adapter
 
@@ -65,7 +64,6 @@ def _get_xml_adapter_with_issue_data():
 class PidProviderXMLValidateQueryParamsTest(TestCase):
     def setUp(self):
         self.article_params = {
-            "z_article_titles_texts": "TITLES",
             "z_collab": "VALUE",
             "z_links": "Links",
             "z_partial_body": "Body",
@@ -677,9 +675,6 @@ class PidProviderXMLAddDataForRegularArticleTest(TestCase):
     def test_main_doi(self):
         self.assertEqual("10.1590/S1413-4152202020180029", self.registered.main_doi)
 
-    def test_main_toc_section(self):
-        self.assertEqual("Artigo Técnico", self.registered.main_toc_section)
-
     def test_fpage(self):
         self.assertEqual("627", self.registered.fpage)
 
@@ -694,12 +689,6 @@ class PidProviderXMLAddDataForRegularArticleTest(TestCase):
 
     def test_article_pub_year(self):
         self.assertEqual("2020", self.registered.article_pub_year)
-
-    def test_z_article_titles_texts(self):
-        self.assertEqual(
-            "faeeb3be97ee2232a2f370f4e5e2460a10232df854a438b0490c9a5604666655",
-            self.registered.z_article_titles_texts,
-        )
 
     def test_z_surnames(self):
         self.assertEqual(
@@ -743,7 +732,7 @@ class PidProviderXMLRegisterTest(TestCase):
     ):
         expected = {
             "result_type": "<class 'pid_provider.exceptions.NotEnoughParametersToGetDocumentRecordError'>",
-            "result_message": "No attribute enough for disambiguations {'z_surnames': None, 'z_collab': None, 'main_doi': None, 'z_links': None, 'z_partial_body': None, 'pkg_name': None, 'elocation_id': None, 'journal__issn_print': None, 'journal__issn_electronic': None, 'article_pub_year': None, 'z_article_titles_texts': None}",
+            "result_message": "No attribute enough for disambiguations {'z_surnames': None, 'z_collab': None, 'main_doi': None, 'z_links': None, 'z_partial_body': None, 'pkg_name': None, 'elocation_id': None, 'journal__issn_print': None, 'journal__issn_electronic': None, 'article_pub_year': None}",
             "origin": "filename.xml",
             "xml": "<article/>",
         }
@@ -790,7 +779,7 @@ class PidProviderXMLRegisterTest(TestCase):
     ):
         expected = {
             "result_type": "<class 'pid_provider.exceptions.NotEnoughParametersToGetDocumentRecordError'>",
-            "result_message": "No attribute enough for disambiguations {'z_surnames': None, 'z_collab': None, 'main_doi': None, 'z_links': None, 'z_partial_body': None, 'pkg_name': None, 'elocation_id': None, 'journal__issn_print': None, 'journal__issn_electronic': None, 'article_pub_year': None, 'z_article_titles_texts': None}",
+            "result_message": "No attribute enough for disambiguations {'z_surnames': None, 'z_collab': None, 'main_doi': None, 'z_links': None, 'z_partial_body': None, 'pkg_name': None, 'elocation_id': None, 'journal__issn_print': None, 'journal__issn_electronic': None, 'article_pub_year': None}",
             "origin": "filename.xml",
             "xml": "<article/>",
         }
