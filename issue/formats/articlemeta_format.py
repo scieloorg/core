@@ -321,7 +321,8 @@ class ArticlemetaIssueFormatter:
                 if text:
                     item["t"] = text
             data.append(item)
-        self.result['issue']['v49'] = data
+        if data:
+            self.result['issue']['v49'] = data
 
 def get_articlemeta_format_issue(obj, collection):
     """
