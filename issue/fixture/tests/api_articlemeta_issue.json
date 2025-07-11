@@ -115,6 +115,44 @@
                 "_": "1"
             }
         ],
+        "v49": [
+            {
+                "c": "SPM210",
+                "_": "",
+                "l": "es",
+                "t": "Presentaci\u00f3n"
+            },
+            {
+                "c": "SPM010",
+                "_": "",
+                "l": "es",
+                "t": "Art\u00edculos originales"
+            },
+            {
+                "c": "SPM050",
+                "_": "",
+                "l": "es",
+                "t": "Art\u00edculos especiales"
+            },
+            {
+                "c": "SPM210",
+                "_": "",
+                "l": "en",
+                "t": "Presentation"
+            },
+            {
+                "c": "SPM010",
+                "_": "",
+                "l": "en",
+                "t": "Original articles"
+            },
+            {
+                "c": "SPM050",
+                "_": "",
+                "l": "en",
+                "t": "Special articles"
+            }
+        ],        
         "v85": [
             {
                 "_": "decs"
