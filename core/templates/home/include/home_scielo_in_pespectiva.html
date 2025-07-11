@@ -1,0 +1,113 @@
+{% load static compress %}
+{% load wagtailadmin_tags wagtailcore_tags wagtailimages_tags i18n %}
+{% load wagtailsettings_tags %}
+
+
+<script src="{% static 'scieloorg/js/jquery-3.7.1.min.js' %}" type="text/javascript"></script>
+<script src="{% static 'scieloorg/js/slick.min.js' %}" type="text/javascript" charset="utf-8"></script>
+<script>
+$(document).ready(function() {
+
+    let imgSrc = "https://placehold.co/300x300";
+
+    function truncate(text, maxLength) {
+        if (text.length > maxLength) {
+            return text.substring(0, maxLength).trim() + '...';
+        }
+        return text;
+    }
+
+    function stripHTML(html) {
+        var tmp = document.createElement("DIV");
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || "";
+    }
+
+    $.ajax({
+        url: "{% url 'blog_feed_json' %}",
+        method: "GET",
+        dataType: "json",
+        success: function(response) {
+            var posts = response.posts;
+            var html = "";
+            posts.forEach(function(post) {
+                html += `<div class="card"><a href="${post.link}" target="_blank" class="stretched-link card-link">`;
+
+                if (post.image) {  
+                    imgSrc = post.image;
+                }
+
+                html += `<img src="${imgSrc}" class="card-img-top" alt="${stripHTML(post.title)}">`;
+
+                html += `<div class="card-body">
+                                <div class="card-title">
+                                    <div class="h6 card-subtitle mb-1">Por SciELO</div>
+                                    <strong class="text-primary">${stripHTML(post.title)}</strong>
+                                </div>
+                                <p class="card-text mt-2">${truncate(stripHTML(post.description), 70)}</p>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn btn-secondary d-blok mx-0 my-0 w-100">
+                                    {% trans 'Continue lendo' %}
+                                </button>
+                            </div>
+                        </a>
+                    </div>`;
+
+            });
+            $("#blog-feed-container").html(html);
+
+            $('.slider-blog').slick({
+                'focusOnChange': false,
+                'slidesToShow': 3,
+                'infinite': false,
+                'centerPadding': '0',
+                'arrows': true,
+                'dots': true,
+                'slidesToScroll': 3,
+                'responsive': [
+                    {
+                    'breakpoint': 767,
+                    'settings': {
+                        'dots': true,
+                        'slidesToShow': 1,
+                        'slidesToScroll': 1,
+                        'centerMode': false,
+                        'arrows': false,
+                        'focusOnChange': false,
+                    }
+                    },
+                    {
+                    'breakpoint': 992,
+                    'settings': {
+                        'dots': true,
+                        'slidesToShow': 2,
+                        'slidesToScroll': 2,
+                        'centerMode': false,
+                        'arrows': false,
+                        'focusOnChange': false,
+                    }
+                    }
+                ]
+
+            });
+
+            
+        },
+        error: function() {
+            $("#blog-feed-container").html("<p>Erro ao carregar o feed do blog.</p>");
+        }
+    });
+
+    // Corrige o slick ao alternar as abas
+    $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function () {
+        $('.slider-blog').slick('setPosition');
+        $('.slider-youtube-videos').slick('setPosition');
+    });
+
+
+
+    
+
+});
+</script>
