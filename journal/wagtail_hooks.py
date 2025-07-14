@@ -79,6 +79,8 @@ class FilteredJournalQuerysetMixin:
             .select_related("contact_location")
             .prefetch_related("scielojournal_set")
         )
+        if request.user.is_superuser:
+            return qs
         user_groups = request.user.groups.values_list("name", flat=True)
         if COLLECTION_TEAM in user_groups:
             return qs.filter(
@@ -88,7 +90,7 @@ class FilteredJournalQuerysetMixin:
             return qs.filter(
                 id__in=request.user.journal.all().values_list("id", flat=True)
             )
-        return qs
+        return qs.none()
 
 
 class JournalAdminSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
