@@ -50,10 +50,13 @@ class ListPageJournal(Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
         parent_specific_page = self.get_parent().specific
-        journals = Journal.objects.all().order_by("title")
+        journals = Journal.objects.all().values("title", "scielojournal__issn_scielo", "scielojournal__collection__domain", "scielojournal__journal_history__event_type").distinct("title").order_by("title")
 
         category = request.GET.get("category")
-        search_term = request.GET.get("search", "")
+        search_term = request.GET.get("search_term", "")
+        starts_with_letter = request.GET.get("start_with_letter", "")
+        active_or_discontinued = request.GET.get("tab", "")
+
         publisher = category == "publisher"
         institution = []
 
@@ -61,8 +64,12 @@ class ListPageJournal(Page):
             journals = journals.filter(subject__code=category)
         elif search_term:
             journals = journals.filter(title__icontains=search_term)
+        elif starts_with_letter:
+            journals = journals.filter(title__istartswith=starts_with_letter)
+        elif active_or_discontinued:
+            journals = journals.filter(scielojournal__journal_history__event_type="ADMITTED")
         elif publisher:
-            institution = Institution.objects.all().order_by("name")
+            institution = Institution.objects.all().order_by("institution_identification__name")
 
         context["search_term"] = search_term
         context["parent_page"] = parent_specific_page
