@@ -864,7 +864,6 @@ class Journal(CommonControlField, ClusterableModel):
                 ]
             ),
         ]
-        permissions = []
 
     def is_indexed_at(self, db_acronym):
         if not db_acronym:
