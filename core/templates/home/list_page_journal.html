@@ -6,8 +6,6 @@
 {% load i18n wagtailcore_tags %}
 {% load get_journals_by_name_institutiton %}
 {% block content%}
-
-
 <header>
     <div class="container">
         <div class="row">
@@ -38,7 +36,7 @@
                     <li class="breadcrumb-item">
                         Periódicos
                     </li>
-                </ol>          
+                </ol>
             </div>
         </div>
     </div>
@@ -52,27 +50,39 @@
         </div>
         <div class="row">
             <div class="col-12 col-sm-8">
-                <ul class="nav nav-pills">
-                    <li class="nav-item" role="presentation">
-                        <a class="btn btn-sm btn-secondary active" id="tab-todos-tab" data-bs-toggle="tab" href="#tab-todos" role="tab" aria-controls="tab1" aria-selected="true">
-                            {% trans 'Todos' %}
-                        </a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a class="ms-1 btn btn-sm btn-secondary scielo__btn-with-icon--left" id="tab-ativos-tab" data-bs-toggle="tab" href="#tab-ativos" role="tab" aria-controls="tab1" aria-selected="true">
-                            <span class="material-icons" style="color: #2c9d45;">fiber_manual_record</span> {% trans 'Ativos' %}
-                        </a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a class="ms-1 btn btn-sm btn-secondary scielo__btn-with-icon--left" id="tab-descontinuados-tab" data-bs-toggle="tab" href="#tab-descontinuados" role="tab" aria-controls="tab2" aria-selected="false">
-                            <span class="material-icons" style="color: #c63800;">fiber_manual_record</span> {% trans 'Descontinuados' %}
-                        </a> 
-                    </li>
-                </ul>
+            <ul class="nav nav-pills">
+            <li class="nav-item" role="presentation">
+                <a href="{{ self.url }}" class="btn btn-sm btn-secondary">
+                {% trans "Todos" %}
+                </a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a href="#" class="ms-1 btn btn-sm btn-secondary scielo__btn-with-icon--left" onclick="submitTab('actives'); return false;">
+                <span class="material-icons" style="color: #2c9d45;">fiber_manual_record</span> {% trans "Ativos" %}
+                </a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a href="#" class="ms-1 btn btn-sm btn-secondary scielo__btn-with-icon--left" onclick="submitTab('discontinued'); return false;">
+                <span class="material-icons" style="color: #c63800;">fiber_manual_record</span> {% trans "Descontinuados" %}
+                </a>
+            </li>
+            </ul>
+
+            <form id="tabForm" action="{{self.url}}" method="get" style="display:none;">
+                <input type="hidden" name="tab" id="tabInput">
+            </form>
+            <form id="tabClear" action="{{self.url}}" method="get" style="display:none;">
+                <input type="hidden" id="tabInput">
+            </form>
             </div>
             <div class="col-12 col-sm-4">
-                <form method="get" action="#" class="search-form">
-                    <input type="text" class="form-control form-control-sm" id="search_term" name="search_term" value="{{ search_term }}" placeholder="Digite para filtrar">
+                <form method="get" action="{{ self.url }}" class="search-form">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control form-control-sm" id="search_term" name="search_term" value="{{ search_term }}" placeholder="Digite para filtrar">
+                        <button type="submit" class="btn btn-primary btn-lg scielo__btn-with-icon--only">
+                        <i class="material-icons-outlined">search</i>
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -83,74 +93,61 @@
                     <div class="tab-pane fade show active pb-0" id="tab-todos" role="tabpanel" aria-labelledby="tab-todos-tab">
                         <div class="row">
                             <div class="col-12 d-flex align-items-start">
-                                
                                 <table class="table table-hover">
                                     <caption class="visually-hidden">Journal list</caption>
                                     <thead>
-                                      <tr>
-                                        <th class="w-100" scope="col">{% trans 'Periódicos' %}<span id="totalLabel"></span> <small>({% trans 'total' %} {{ journals.count }})</small></th>
-                                        <th class="text-nowrap w-auto" scope="col">
-                                            
-                                            
-
-                                            <form action="#" style="margin-bottom: 2px;" class="download-form">
-                                                <!-- <button type="submit" class="btn btn-success">Download List</button> -->
-                                                <button id="btnGroupDropDownload" type="submit" class="btn btn-sm btn-secondary scielo__btn-with-icon--only dropdown-toggle mb-0 float-end d-print-none" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <tr>
+                                            <th class="w-100" scope="col">{% trans 'Periódicos' %}<span id="totalLabel"></span> <small>({% trans 'total' %} {{ journals.count }})</small></th>
+                                            <th class="text-nowrap w-auto" scope="col">
+                                                <form action="#" style="margin-bottom: 2px;" class="download-form">
+                                                    <!-- <button type="submit" class="btn btn-success">Download List</button> -->
+                                                    <button id="btnGroupDropDownload" type="submit" class="btn btn-sm btn-secondary scielo__btn-with-icon--only dropdown-toggle mb-0 float-end d-print-none" data-bs-toggle="dropdown" aria-expanded="false">
                                                     <span class="material-icons-outlined">download</span>
-                                                </button>
-                                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btnGroupDropDownload" >
-                                                    <li>
-                                                    <a class="dropdown-item" href="#">
-                                                        XLS 
-                                                    </a>
-                                                    </li>
-                                                    <li>
-                                                    <a class="dropdown-item" href="#">
-                                                        CSV
-                                                    </a>
-                                                    </li>
-                                                </ul>
-                                            </form>
-
-                                        </th>
-                                      </tr>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btnGroupDropDownload" >
+                                                        <li>
+                                                            <a class="dropdown-item" href="#">
+                                                            XLS 
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a class="dropdown-item" href="#">
+                                                            CSV
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </form>
+                                            </th>
+                                        </tr>
                                     </thead>
                                     <tbody>
-                                      <tr class="separator-by-letter">
-                                        <td colspan="2">
-                                            <strong id="letter-A">
-                                            A
-                                            </strong>
-                                        </td>
-                                      </tr>
-                                      <tr>
-                                        <th colspan="2">
-                                            <span class="material-icons align-middle fs-5" style="color: #2c9d45;">fiber_manual_record</span> <a href="#">A Peste : Revista de Psicanálise e Sociedade</a>
-                                        </th>
-                                      </tr>
-                                      <tr>
-                                        <th colspan="2">
-                                            <span class="material-icons align-middle fs-5" style="color: #2c9d45;">fiber_manual_record</span> <a href="#">A Peste : Revista de Psicanálise e Sociedade</a>
-                                        </th>
-                                      </tr>
-                                      <tr>
-                                        <th colspan="2">
-                                            <span class="material-icons align-middle fs-5" style="color: #2c9d45;">fiber_manual_record</span> <a href="#">A Peste : Revista de Psicanálise e Sociedade</a>
-                                        </th>
-                                      </tr>
-                                      <tr>
-                                        <th colspan="2">
-                                            <span class="material-icons align-middle fs-5" style="color: #2c9d45;">fiber_manual_record</span> <a href="#">A Peste : Revista de Psicanálise e Sociedade</a>
-                                        </th>
-                                      </tr>
-                                      
+                                        <tr class="separator-by-letter">
+                                            <td colspan="2">
+                                                <strong id="letter-A">
+                                                A
+                                                </strong>
+                                            </td>
+                                        </tr>
+                                        {% for journal in journals %}
+                                        <tr>
+                                            <th colspan="2">
+                                                {% if journal.scielojournal__journal_history__event_type == "ADMITTED" %}
+                                                    <span class="material-icons align-middle fs-5" style="color: #2c9d45;">fiber_manual_record</span> 
+                                                {% elif journal.scielojournal__journal_history__event_type != "ADMITTED" %}
+                                                    <span class="material-icons align-middle fs-5" style="color: #c63800;">fiber_manual_record</span> 
+                                                {% endif %}
+                                                <a target="_blank" href="http://{{ journal.scielojournal__collection__domain }}/scielo.php?script=sci_serial&pid={{journal.scielojournal__issn_scielo}}&lng=en">{{ journal.title }}</a>
+                                            </th>
+                                        </tr>
+                                        {% endfor %}
                                     </tbody>
-                                  </table>
-
-                                  <div class="btn-group-vertical btn-group-fixed ms-4" role="group" aria-label="...">
-                                    <button type="button" name="letterBtn" id="letterBtnA" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('A');">A</button><button type="button" name="letterBtn" id="letterBtnB" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('B');">B</button><button type="button" name="letterBtn" id="letterBtnC" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('C');">C</button><button type="button" name="letterBtn" id="letterBtnD" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('D');">D</button><button type="button" name="letterBtn" id="letterBtnE" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('E');">E</button><button type="button" name="letterBtn" id="letterBtnF" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('F');">F</button><button type="button" name="letterBtn" id="letterBtnG" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('G');">G</button><button type="button" name="letterBtn" id="letterBtnH" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('H');">H</button><button type="button" name="letterBtn" id="letterBtnI" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('I');">I</button><button type="button" name="letterBtn" id="letterBtnJ" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('J');">J</button><button type="button" name="letterBtn" id="letterBtnK" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('K');">K</button><button type="button" name="letterBtn" id="letterBtnL" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('L');">L</button><button type="button" name="letterBtn" id="letterBtnM" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('M');">M</button><button type="button" name="letterBtn" id="letterBtnN" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('N');">N</button><button type="button" name="letterBtn" id="letterBtnO" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('O');">O</button><button type="button" name="letterBtn" id="letterBtnP" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('P');">P</button><button type="button" name="letterBtn" id="letterBtnQ" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('Q');">Q</button><button type="button" name="letterBtn" id="letterBtnR" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('R');">R</button><button type="button" name="letterBtn" id="letterBtnS" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('S');">S</button><button type="button" name="letterBtn" id="letterBtnT" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('T');">T</button><button type="button" name="letterBtn" id="letterBtnU" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('U');">U</button><button type="button" name="letterBtn" id="letterBtnV" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('V');">V</button><button type="button" name="letterBtn" id="letterBtnW" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('W');">W</button><button type="button" name="letterBtn" id="letterBtnX" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('X');">X</button><button type="button" name="letterBtn" id="letterBtnY" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('Y');">Y</button><button type="button" name="letterBtn" id="letterBtnZ" class="btn btn-sm btn-default " onclick="javascript:set_letter_filter('Z');">Z</button>
-                                  </div>
-
+                                </table>
+                                <form action="{{self.url}}" method="get" id="letterFilterForm">
+                                    <div class="btn-group-vertical btn-group-fixed ms-4" role="group" aria-label="Filtro por letra" id="letterBtnGroup">
+                                        <!-- Botões serão inseridos aqui via JavaScript -->
+                                    </div>
+                                    <input type="hidden" name="start_with_letter" id="letterInput" value="">
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -174,43 +171,67 @@
     </div>
 </section>
 
+<script>
+// Letras de A a Z
+  const letters = Array.from({length: 26}, (_, i) => String.fromCharCode(65 + i));
+  const btnGroup = document.getElementById('letterBtnGroup');
+  const letterInput = document.getElementById('letterInput');
+  const form = document.getElementById('letterFilterForm');
+
+  letters.forEach(letter => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-sm btn-default';
+    btn.textContent = letter;
+    btn.onclick = function() {
+      letterInput.value = letter;
+      form.submit();
+    };
+    btnGroup.appendChild(btn);
+  });
+function submitTab(tab) {
+    document.getElementById('tabInput').value = tab;
+    document.getElementById('tabForm').submit();
+  }
+
+</script>
+
 <!--
-
-<a href="#">Home</a>
-
-<p>Journal{% if category%}: {{category}}{% endif %}</p>
-
-<div class="search-results">
-    <ul>
-        {% if publisher %}
-            ----------------
-            {% for inst in institution %}
-                {% if inst.name|get_journals_by_name_institutiton %}
-                        <p> Publisher: {{inst.name}} 
-                            {% for journal in inst.name|get_journals_by_name_institutiton %}
-                                <li>
-                                    <ul>
-                                        <!- Revisar href ->
-                                        <a href="http://{{ journal.collection.all.first.domain }}/scielo.php?script=sci_serial&pid={{journal.official.issnl}}&lng=en" target="_blank">{{ journal.title }}</a>
-                                    </ul>
-                                </li>
-                            {% endfor%}
-                        </p>
-            -----------------
-                {% endif%}
-            {% endfor%}
-        {% else %}
-        <p>Total journals: {{ journals.count }}</p>
-        {% for journal in journals %}
-        {{ journal.title }}
-            {% if journal.collection.all %}
-                <!- Revisar href ->
-                <a href="http://{{ journal.collection.all.first.domain }}/scielo.php?script=sci_serial&pid={{journal.official.issnl}}&lng=en" target="_blank">{{ journal.title }}</a>
-            {% endif %}
-        {% endfor %}        
-    {% endif%}
-    </ul>
-</div>
-
-{% endblock %}
--->
+    <a href="#">Home</a>
+    
+    <p>Journal{% if category%}: {{category}}{% endif %}</p>
+    
+    <div class="search-results">
+        <ul>
+            {% if publisher %}
+                ----------------
+                {% for inst in institution %}
+                    {% if inst.name|get_journals_by_name_institutiton %}
+                            <p> Publisher: {{inst.name}} 
+                                {% for journal in inst.name|get_journals_by_name_institutiton %}
+                                    <li>
+                                        <ul>
+                                            <!- Revisar href ->
+                                            <a href="http://{{ journal.collection.all.first.domain }}/scielo.php?script=sci_serial&pid={{journal.official.issnl}}&lng=en" target="_blank">{{ journal.title }}</a>
+                                        </ul>
+                                    </li>
+                                {% endfor%}
+                            </p>
+                -----------------
+                    {% endif%}
+                {% endfor%}
+            {% else %}
+            <p>Total journals: {{ journals.count }}</p>
+            {% for journal in journals %}
+            {{ journal.title }}
+                {% if journal.collection.all %}
+                    <!- Revisar href ->
+                    <a href="http://{{ journal.collection.all.first.domain }}/scielo.php?script=sci_serial&pid={{journal.official.issnl}}&lng=en" target="_blank">{{ journal.title }}</a>
+                {% endif %}
+            {% endfor %}        
+        {% endif%}
+        </ul>
+    </div>
+    
+    {% endblock %}
+    -->

@@ -126,7 +126,7 @@
                         <div class="col">
 
                             <!---  
-                                usar include do form page para exibir form da capa    
+                                usar include do form page para exibir form da capa
 
                                 criar um form estático bonitão.
 
@@ -140,21 +140,27 @@
                                 <dt>
                                     <h3 class="h6 fw-bold">{% trans 'List of journals' %}</h3>
                                 </dt>
-                                <form method="get" action="#">
-                                    <dd class="text dd-button">
-                                        <button type="submit" class="btn btn-secondary" value="" name="category">{% trans 'In alphabetical order' %}</button>
-                                    </dd>
-                                    <dd class="text dd-button">
-                                        <button type="submit" class="btn btn-secondary" value="publisher" name="category">{% trans 'Of publisher' %}</button>
-                                    </dd>
-                                </form>
+                                {% for child in page.get_children.live %}
+                                    {% if child.slug == "list-journals" %}
+                                    <form method="get" action="{{ child.url }}">
+                                        <dd class="text dd-button">
+                                            <button type="submit" class="btn btn-secondary" value="" name="category">{% trans 'In alphabetical order' %}</button>
+                                        </dd>
+                                        <dd class="text dd-button">
+                                            <button type="submit" class="btn btn-secondary" value="publisher" name="category">{% trans 'Of publisher' %}</button>
+                                        </dd>
+                                    </form>
+                                    {% endif %}
+                                {% endfor %}
                             </dl>
 
                             <dl>
                                 <dt>
                                     <h3 class="h6 fw-bold">{% trans 'List of journals by subject' %}</h3>
                                 </dt>
-                                <form method="get" action="#">
+                                {% for child in page.get_children.live %}
+                                    {% if child.slug == "list-journals" %}                                
+                                <form method="get" action="{{ child.url }}">
                                     <dd class="text dd-button">
                                         <button type="submit" class="btn btn-secondary" value="" name="category">{% trans 'All' %}</button></a>
                                     </dd>
@@ -166,6 +172,8 @@
                                         </dd>
                                     {% endfor%}
                                 </form>
+                                    {% endif %}
+                                {% endfor %}
                             </dl>
 
 
