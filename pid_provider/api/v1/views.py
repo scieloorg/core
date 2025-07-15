@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from pid_provider.provider import PidProvider
+from pid_provider.tasks import task_provide_pid_for_xml_str
 
 
 class PidProviderViewSet(
@@ -71,37 +71,28 @@ class PidProviderViewSet(
 
         uploaded_file = request.FILES["file"]
         try:
-            xml_str = None
-            zip_buffer = io.BytesIO(uploaded_file.read())
-            with zipfile.ZipFile(zip_buffer, "r") as zip_file:
-                for file_info in zip_file.infolist():
-                    if file_info.filename.endswith(".xml"):
-                        with zip_file.open(file_info) as xml_file:
-                            xml_str = xml_file.read()
-                            break
-            if not xml_str:
-                raise ValueError(f"Unable to read zip file {uploaded_file.name}")
-            results = self.pid_provider.provide_pid_for_xml_str(
-                xml_str,
-                name=uploaded_file.name,
-                user=request.user,
-                caller="core",
+            user = self.request.user
+            response = task_provide_pid_for_xml_str.apply_async(
+                kwargs=dict(
+                    username=user.username,
+                    user_id=user.id,
+                    zip_filename=uploaded_file.name,
+                    zip_content=uploaded_file.read(),
+
+                )
             )
-            results = list(results)
-            logging.info(results)
-            resp_status = None
-            for item in results:
-                if item.get("record_status") == "created":
-                    resp_status = resp_status or status.HTTP_201_CREATED
-                elif item.get("record_status") == "updated":
-                    resp_status = resp_status or status.HTTP_200_OK
-                else:
-                    resp_status = status.HTTP_400_BAD_REQUEST
-                try:
-                    item.pop("xml_with_pre")
-                except KeyError:
-                    pass
-            return Response(results, status=resp_status)
+            result = response.get()
+            if result.get("record_status") == "created":
+                resp_status = resp_status or status.HTTP_201_CREATED
+            elif result.get("record_status") == "updated":
+                resp_status = resp_status or status.HTTP_200_OK
+            else:
+                resp_status = status.HTTP_400_BAD_REQUEST
+            try:
+                result.pop("xml_with_pre")
+            except KeyError:
+                pass
+            return Response([result], status=resp_status)
         except Exception as e:
             logging.exception(e)
             return Response(
