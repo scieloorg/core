@@ -2,6 +2,8 @@ import logging
 import os
 import re
 import sys
+from io import BytesIO
+from zipfile import ZipFile
 from datetime import datetime
 
 import pytz
@@ -10,6 +12,7 @@ from django.contrib.auth import get_user_model
 from collection.models import Collection
 from config import celery_app
 from core.utils.utils import fetch_data
+from pid_provider.provider import PidProvider
 from pid_provider.models import CollectionPidRequest, PidProviderXML, PidRequest
 from pid_provider.sources import am
 from pid_provider.sources.harvesting import provide_pid_for_opac_and_am_xml
@@ -19,6 +22,7 @@ from tracker.models import UnexpectedEvent
 
 
 User = get_user_model()
+pid_provider = PidProvider()
 
 
 def _get_user(request, username=None, user_id=None):
@@ -281,3 +285,44 @@ def task_provide_pid_for_xml_uri(
                 ),
             },
         )
+
+
+@celery_app.task(bind=True)
+def task_provide_pid_for_xml_str(
+    self,
+    username=None,
+    user_id=None,
+    zip_filename=None,
+    zip_content=None,
+):
+    try:
+        user = _get_user(self.request, username=username, user_id=user_id)
+        with ZipFile(BytesIO(zip_content), "r") as zip_file:
+            for file_info in zip_file.infolist():
+                if file_info.filename.endswith(".xml"):
+                    with zip_file.open(file_info) as xml_file:
+                        return pid_provider.provide_pid_for_xml_str(
+                            xml_file.read(),
+                            name=zip_filename,
+                            user=user,
+                            caller="core",
+                        )
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "task_provide_pid_for_xml_str",
+                "detail": dict(
+                    username=username,
+                    user_id=user_id,
+                    zip_filename=zip_filename,
+                ),
+            },
+        )
+        return {
+            "error_msg": f"Unable to provide pid for {zip_filename} {e}",
+            "error_type": str(type(e)),
+        }
+
