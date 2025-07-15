@@ -2,7 +2,7 @@ import logging
 import sys
 
 # from django.utils.translation import gettext as _
-from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
+from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre, get_xml_with_pre
 
 from pid_provider.models import PidProviderXML, PidRequest
 from tracker.models import UnexpectedEvent
@@ -80,6 +80,66 @@ class BasePidProvider:
         registered["apply_xml_changes"] = self.caller == "core" and registered.get("xml_changed")
         registered["xml_with_pre"] = xml_with_pre
         return registered
+    
+    def provide_pid_for_xml_str(
+        self,
+        xml_str,
+        user,
+        filename=None,
+        origin_date=None,
+        force_update=None,
+        is_published=None,
+        registered_in_core=None,
+        caller=None,
+        auto_solve_pid_conflict=True,
+    ):
+        """
+        Fornece / Valida PID para o XML em um arquivo compactado
+
+        Returns
+        -------
+            list of dict
+        """
+        try:
+            xml_with_pre = get_xml_with_pre(xml_str)
+            response = self.provide_pid_for_xml_with_pre(
+                xml_with_pre=xml_with_pre,
+                name=xml_with_pre.sps_pkg_name+".xml",
+                user=user,
+                origin_date=origin_date,
+                force_update=force_update,
+                is_published=is_published,
+                origin=None,
+                registered_in_core=registered_in_core,
+                caller=caller,
+                auto_solve_pid_conflict=auto_solve_pid_conflict,
+            )
+            try:
+                response.pop("xml_with_pre")
+            except KeyError:
+                pass
+            return response
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "operation": "PidProvider.provide_pid_for_xml_str",
+                    "input": dict(
+                        user=user.username,
+                        filename=filename,
+                        origin_date=origin_date,
+                        force_update=force_update,
+                        is_published=is_published,
+                        auto_solve_pid_conflict=auto_solve_pid_conflict,
+                    ),
+                },
+            )
+            return {
+                "error_msg": f"Unable to provide pid for {filename} {e}",
+                "error_type": str(type(e)),
+            }
 
     def provide_pid_for_xml_zip(
         self,

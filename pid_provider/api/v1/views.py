@@ -1,6 +1,6 @@
-import os
+import zipfile
+import io
 import logging
-from tempfile import TemporaryDirectory
 
 from rest_framework import status
 from rest_framework.mixins import CreateModelMixin
@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from pid_provider.provider import PidProvider
+from pid_provider.tasks import task_provide_pid_for_xml_str
 
 
 class PidProviderViewSet(
@@ -66,35 +66,31 @@ class PidProviderViewSet(
        """
 
         # self._authenticate(request)
-        logging.info("Receiving files %s" % request.FILES)
-        logging.info("Receiving data %s" % request.data)
-
         uploaded_file = request.FILES["file"]
         try:
-            with TemporaryDirectory() as output_folder:
-                downloaded_file_path = os.path.join(output_folder, uploaded_file.name)
-                with open(downloaded_file_path, "wb") as fp:
-                    fp.write(uploaded_file.read())
-                results = self.pid_provider.provide_pid_for_xml_zip(
-                    zip_xml_file_path=downloaded_file_path,
-                    user=request.user,
-                    caller="core",
+            logging.info(f"Receiving {uploaded_file.name}")
+            user = self.request.user
+            response = task_provide_pid_for_xml_str.apply_async(
+                kwargs=dict(
+                    username=user.username,
+                    user_id=user.id,
+                    zip_filename=uploaded_file.name,
+                    zip_content=uploaded_file.read(),
+
                 )
-                results = list(results)
-                logging.info(results)
-                resp_status = None
-                for item in results:
-                    if item.get("record_status") == "created":
-                        resp_status = resp_status or status.HTTP_201_CREATED
-                    elif item.get("record_status") == "updated":
-                        resp_status = resp_status or status.HTTP_200_OK
-                    else:
-                        resp_status = status.HTTP_400_BAD_REQUEST
-                    try:
-                        item.pop("xml_with_pre")
-                    except KeyError:
-                        pass
-                return Response(results, status=resp_status)
+            )
+            result = response.get()
+            logging.info(result)
+
+            status_mapping = {
+                "created": status.HTTP_201_CREATED,
+                "updated": status.HTTP_200_OK,
+            }
+            resp_status = status_mapping.get(
+                result.get("record_status"),
+                status.HTTP_400_BAD_REQUEST,
+            )
+            return Response([result], status=resp_status)
         except Exception as e:
             logging.exception(e)
             return Response(
