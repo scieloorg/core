@@ -2,7 +2,7 @@ import logging
 import sys
 
 # from django.utils.translation import gettext as _
-from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
+from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre, get_xml_with_pre
 
 from pid_provider.models import PidProviderXML, PidRequest
 from tracker.models import UnexpectedEvent
@@ -66,6 +66,77 @@ class BasePidProvider:
         """
         self.caller = caller
 
+        registered = PidProviderXML.register(
+            xml_with_pre,
+            name,
+            user,
+            origin_date=origin_date,
+            force_update=force_update,
+            is_published=is_published,
+            origin=origin,
+            registered_in_core=registered_in_core,
+            auto_solve_pid_conflict=auto_solve_pid_conflict,  # False = deixar sistema resolver, True = user resolve
+        )
+        registered["apply_xml_changes"] = self.caller == "core" and registered.get("xml_changed")
+        registered["xml_with_pre"] = xml_with_pre
+        return registered
+
+
+    def provide_pid_for_xml_str(
+        self,
+        xml_str,
+        name,
+        user,
+        origin_date=None,
+        force_update=None,
+        is_published=None,
+        origin=None,
+        registered_in_core=None,
+        caller=None,
+        auto_solve_pid_conflict=None,
+    ):
+        """
+        Fornece e valida PIDs para documento XML, retornando dados completos de registro.
+
+        Parameters
+        ----------
+        xml_with_pre : XMLWithPre
+            Objeto XML preprocessado
+        name : str
+            Nome do arquivo/documento
+        user : User
+            Usuário responsável pela operação
+        origin_date : datetime, optional
+            Data de origem do documento
+        force_update : bool, optional
+            Força atualização mesmo sem alterações
+        is_published : bool, optional
+            Status de publicação
+        origin : str, optional
+            Origem do documento
+        registered_in_core : bool, optional
+            Se já registrado no sistema core
+        caller : str, optional
+            Identificador do sistema chamador
+        auto_solve_pid_conflict : bool, optional
+            Resolve conflitos de PID automaticamente
+
+        Returns
+        -------
+        dict
+            Sucesso: {"v3", "v2", "aop_pid", "xml_uri", "article", "created",
+                     "updated", "xml_changed", "record_status", "input_data",
+                     "xml_adapter_data", "skip_update"*, "xml_with_pre",
+                     "apply_xml_changes"*}
+            Erro: {"error_type", "error_message", "id", "filename", "error_msg",
+                  "xml_with_pre"}
+
+            * Chaves condicionais: skip_update (se atualização pulada),
+              apply_xml_changes (se caller="core" e xml_changed=True)
+        """
+        self.caller = caller
+
+        xml_with_pre = get_xml_with_pre(xml_str)
         registered = PidProviderXML.register(
             xml_with_pre,
             name,
