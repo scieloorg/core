@@ -79,6 +79,8 @@ class FilteredJournalQuerysetMixin:
             .select_related("contact_location")
             .prefetch_related("scielojournal_set")
         )
+        if request.user.is_superuser:
+            return qs
         user_groups = request.user.groups.values_list("name", flat=True)
         if COLLECTION_TEAM in user_groups:
             return qs.filter(
@@ -88,7 +90,7 @@ class FilteredJournalQuerysetMixin:
             return qs.filter(
                 id__in=request.user.journal.all().values_list("id", flat=True)
             )
-        return qs
+        return qs.none()
 
 
 class JournalAdminSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
@@ -380,14 +382,17 @@ def snippet_listing_buttons(snippet, user, next_url=None):
             .only("collection__acron3", "journal_acron") \
             .select_related("collection") \
             .filter(journal=snippet).first()
-        url = journal_page.get_url() + journal_page.reverse_subpage('bibliographic', args=[scielo_journal.collection.acron3, scielo_journal.journal_acron])
-        yield wagtailsnippets_widgets.SnippetListingButton(
-            _(f'Preview about journal'), 
-            url,
-            priority=1,
-            icon_name='view',
-            attrs={"target": "_blank"},
-        )
+        try:
+            url = journal_page.get_url() + journal_page.reverse_subpage('bibliographic', args=[scielo_journal.collection.acron3, scielo_journal.journal_acron])
+            yield wagtailsnippets_widgets.SnippetListingButton(
+                _(f'Preview about journal'), 
+                url,
+                priority=1,
+                icon_name='view',
+                attrs={"target": "_blank"},
+            )
+        except AttributeError:
+            pass
 
 @hooks.register("register_permissions")
 def register_ctf_permissions():
