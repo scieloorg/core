@@ -1,6 +1,6 @@
-import os
+import zipfile
+import io
 import logging
-from tempfile import TemporaryDirectory
 
 from rest_framework import status
 from rest_framework.mixins import CreateModelMixin
@@ -71,12 +71,19 @@ class PidProviderViewSet(
 
         uploaded_file = request.FILES["file"]
         try:
-            with TemporaryDirectory() as output_folder:
-                downloaded_file_path = os.path.join(output_folder, uploaded_file.name)
-                with open(downloaded_file_path, "wb") as fp:
-                    fp.write(uploaded_file.read())
-                results = self.pid_provider.provide_pid_for_xml_zip(
-                    zip_xml_file_path=downloaded_file_path,
+            xml_str = None
+            zip_buffer = io.BytesIO(uploaded_file.read())
+            with zipfile.ZipFile(zip_buffer, "r") as zip_file:
+                for file_info in zip_file.infolist():
+                    if file_info.filename.endswith(".xml"):
+                        with zip_file.open(file_info) as xml_file:
+                            xml_str = xml_file.read()
+                            break
+                if not xml_str:
+                    raise ValueError(f"Unable to read zip file {uploaded_file.name}")
+                results = self.pid_provider.provide_pid_for_xml_str(
+                    xml_str,
+                    name=uploaded_file.name,
                     user=request.user,
                     caller="core",
                 )
