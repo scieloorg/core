@@ -302,9 +302,9 @@ def task_provide_pid_for_xml_str(
                 if file_info.filename.endswith(".xml"):
                     with zip_file.open(file_info) as xml_file:
                         return pid_provider.provide_pid_for_xml_str(
-                            xml_file.read(),
-                            name=zip_filename,
+                            xml_file.read().decode("utf-8"),
                             user=user,
+                            filename=file_info.filename,
                             caller="core",
                         )
     except Exception as e:

@@ -102,18 +102,23 @@ class BasePidProvider:
         """
         try:
             xml_with_pre = get_xml_with_pre(xml_str)
-            return self.provide_pid_for_xml_with_pre(
-                xml_with_pre,
-                xml_with_pre.sps_pkg_name+".xml",
-                user,
-                origin_date,
-                force_update,
-                is_published,
-                origin,
-                registered_in_core,
-                caller,
-                auto_solve_pid_conflict,
+            response = self.provide_pid_for_xml_with_pre(
+                xml_with_pre=xml_with_pre,
+                name=xml_with_pre.sps_pkg_name+".xml",
+                user=user,
+                origin_date=origin_date,
+                force_update=force_update,
+                is_published=is_published,
+                origin=None,
+                registered_in_core=registered_in_core,
+                caller=caller,
+                auto_solve_pid_conflict=auto_solve_pid_conflict,
             )
+            try:
+                response.pop("xml_with_pre")
+            except KeyError:
+                pass
+            return response
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
@@ -122,7 +127,6 @@ class BasePidProvider:
                 detail={
                     "operation": "PidProvider.provide_pid_for_xml_str",
                     "input": dict(
-                        zip_xml_file_path=zip_xml_file_path,
                         user=user.username,
                         filename=filename,
                         origin_date=origin_date,
@@ -133,7 +137,7 @@ class BasePidProvider:
                 },
             )
             return {
-                "error_msg": f"Unable to provide pid for {name} {e}",
+                "error_msg": f"Unable to provide pid for {filename} {e}",
                 "error_type": str(type(e)),
             }
 

@@ -66,11 +66,9 @@ class PidProviderViewSet(
        """
 
         # self._authenticate(request)
-        logging.info("Receiving files %s" % request.FILES)
-        logging.info("Receiving data %s" % request.data)
-
         uploaded_file = request.FILES["file"]
         try:
+            logging.info(f"Receiving {uploaded_file.name}")
             user = self.request.user
             response = task_provide_pid_for_xml_str.apply_async(
                 kwargs=dict(
@@ -82,16 +80,16 @@ class PidProviderViewSet(
                 )
             )
             result = response.get()
-            if result.get("record_status") == "created":
-                resp_status = resp_status or status.HTTP_201_CREATED
-            elif result.get("record_status") == "updated":
-                resp_status = resp_status or status.HTTP_200_OK
-            else:
-                resp_status = status.HTTP_400_BAD_REQUEST
-            try:
-                result.pop("xml_with_pre")
-            except KeyError:
-                pass
+            logging.info(result)
+
+            status_mapping = {
+                "created": status.HTTP_201_CREATED,
+                "updated": status.HTTP_200_OK,
+            }
+            resp_status = status_mapping.get(
+                result.get("record_status"),
+                status.HTTP_400_BAD_REQUEST,
+            )
             return Response([result], status=resp_status)
         except Exception as e:
             logging.exception(e)
