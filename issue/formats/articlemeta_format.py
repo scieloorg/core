@@ -60,6 +60,7 @@ class ArticlemetaIssueFormatter:
             self._format_collection_info,
             self._format_article_info,
             self._format_issn_info,
+            self._format_code_sections,
         ]
         
         for formatter in formatters:
@@ -190,7 +191,7 @@ class ArticlemetaIssueFormatter:
     def _format_system_info(self):
         """Informações do sistema"""
         key_to_code = {
-            "v200": '0',
+            "v200": str(int(self.obj.markup_done)),
             "v991": '1',
         }
         for key, value in key_to_code.items():
@@ -305,6 +306,23 @@ class ArticlemetaIssueFormatter:
             issn_electronic,
             issn_print,
         ]
+
+    def _format_code_sections(self):
+        data = []
+        for section in self.obj.code_sections.all():
+            code = getattr(section.code_section, "code", None)
+            lang = getattr(section.language, "code2", None)
+            text = section.text
+            if code:
+                item = {"c": code}
+                item["_"] = ""
+                if lang:
+                    item["l"] = lang
+                if text:
+                    item["t"] = text
+            data.append(item)
+        if data:
+            self.result['issue']['v49'] = data
 
 def get_articlemeta_format_issue(obj, collection):
     """
