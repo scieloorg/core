@@ -114,8 +114,11 @@ THIRD_PARTY_APPS = [
     "rest_framework",
     "haystack",
     "maintenance_mode",
-    'django_prometheus',
-    'rosetta',
+    "django_prometheus",
+    "rosetta",
+    "wagtail_2fa",
+    "django_otp",
+    "django_otp.plugins.otp_totp",
 ]
 
 LOCAL_APPS = [
@@ -203,6 +206,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "wagtail_2fa.middleware.VerifyUserMiddleware",
+    "wagtail_2fa.middleware.VerifyUserPermissionsMiddleware", 
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.common.BrokenLinkEmailsMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -531,3 +536,6 @@ MODEL_TO_IMPORT_CSV = {
 # COLLECTION TEAM AND JOURNAL TEAM
 COLLECTION_TEAM = "Collection Team"
 JOURNAL_TEAM = "Journal Team"
+
+WAGTAIL_2FA_REQUIRED = env.bool("WAGTAIL_2FA_REQUIRED", default=False)
+WAGTAIL_2FA_OTP_TOTP_NAME = env.str("WAGTAIL_2FA_OTP_TOTP_NAME", default="SciELO Core")
