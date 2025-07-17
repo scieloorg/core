@@ -1,5 +1,18 @@
 {% load i18n wagtailcore_tags %}
 
+
+<style>
+dd.dd-button {
+  margin-bottom: 1px; /* ou 2px, ou 0, conforme preferir */
+  margin-top: 0;
+}
+
+.dl-search-journals {
+    margin-bottom: 2px;
+    margin-top: 0;
+}
+
+</style>
 <!-- tabs -->
     <section>
         <div class="container">
@@ -136,15 +149,29 @@
                             --->
                             
                             
-                            <dl>
-                                <dt>
-                                    <h3 class="h6 fw-bold">{% trans 'List of journals' %}</h3>
-                                </dt>
+                            <dl class="dl-search-journals">
                                 {% for child in page.get_children.live %}
+                                    
                                     {% if child.slug == "list-journals" %}
-                                    <form method="get" action="{{ child.url }}">
+                                    <dt >
+                                        <h3 class="h6 fw-bold">{% trans 'Search journals' %}</h3>
+                                    </dt>
+                                    
+                                    <form action="{{ child.url }}" method="get">
+                                        <div class="input-group mb-3">
+                                            <input type="text" name="search_term" class="form-control" placeholder="Search journals: Enter one or more words" aria-label="Search journals: Enter one or more words" autofocus>
+                                            <button type="submit" class="btn btn-primary btn-lg scielo__btn-with-icon--only">
+                                                <i class="material-icons-outlined">search</i>
+                                            </button>
+                                        </div>
+                                    </form>
+                                    <dt>
+                                        <h3 class="h6 fw-bold">{% trans 'List of journals' %}</h3>
+                                    </dt>
+                                    <form method="post" action="{{ child.url }}">
+                                        {% csrf_token %}
                                         <dd class="text dd-button">
-                                            <button type="submit" class="btn btn-secondary" value="" name="category">{% trans 'In alphabetical order' %}</button>
+                                            <button type="submit" class="btn btn-secondary">{% trans 'In alphabetical order' %}</button>
                                         </dd>
                                         <dd class="text dd-button">
                                             <button type="submit" class="btn btn-secondary" value="publisher" name="category">{% trans 'Of publisher' %}</button>
@@ -154,24 +181,27 @@
                                 {% endfor %}
                             </dl>
 
-                            <dl>
+                            <dl class="dl-search-journals"> 
                                 <dt>
                                     <h3 class="h6 fw-bold">{% trans 'List of journals by subject' %}</h3>
                                 </dt>
                                 {% for child in page.get_children.live %}
-                                    {% if child.slug == "list-journals" %}                                
-                                <form method="get" action="{{ child.url }}">
-                                    <dd class="text dd-button">
-                                        <button type="submit" class="btn btn-secondary" value="" name="category">{% trans 'All' %}</button></a>
-                                    </dd>
-                                    <dd>
-                                    <!-- FIXME Translation -->
-                                    {% for category in categories %}
-                                        <dd class="text dd-button">
-                                            <button type="submit" class="btn btn-secondary" value="{{category}}" name="category">{{category}}</button>
-                                        </dd>
-                                    {% endfor%}
-                                </form>
+                                    {% if child.slug == "list-journals" %}
+                                        <form method="post" style="display: inline;" action="{{ child.url }}">
+                                            {% csrf_token %}
+                                            <dd class="text dd-button">
+                                                <button type="submit" class="btn btn-secondary">{% trans 'All' %}</button></a>
+                                            </dd>
+                                            <dd>
+                                        </form>
+                                            <!-- FIXME Translation -->
+                                            <form method="get" style="display: inline;" action="{{ child.url }}">
+                                                {% for category in categories %}
+                                                    <dd class="text dd-button">
+                                                        <button type="submit" class="btn btn-secondary" value="{{category}}" name="category">{{category}}</button>
+                                                    </dd>
+                                                {% endfor%}
+                                            </form>
                                     {% endif %}
                                 {% endfor %}
                             </dl>
