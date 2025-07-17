@@ -56,6 +56,20 @@ SECURE_CONTENT_TYPE_NOSNIFF = env.bool(
     "DJANGO_SECURE_CONTENT_TYPE_NOSNIFF", default=True
 )
 
+# Duração máxima da sessão em segundos. Padrão: 30 minutos (1800s).
+# Sobrescreva com a variável de ambiente DJANGO_SESSION_COOKIE_AGE. Ex: export DJANGO_SESSION_COOKIE_AGE=3600
+SESSION_COOKIE_AGE = int(os.getenv('DJANGO_SESSION_COOKIE_AGE', 30 * 60))
+
+# Se o cookie da sessão expira ao fechar o navegador. Padrão: True (conforme 'true' no getenv).
+# Sobrescreva com DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE=False para persistir.
+# Ex: export DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE=False
+SESSION_EXPIRE_AT_BROWSER_CLOSE = os.getenv('DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE', 'True').lower() == 'true'
+
+# Salva a sessão a cada requisição. Essencial para timeout por inatividade. Padrão: True.
+# Sobrescreva com DJANGO_SESSION_SAVE_EVERY_REQUEST=False para desativar.
+# Ex: export DJANGO_SESSION_SAVE_EVERY_REQUEST=False
+SESSION_SAVE_EVERY_REQUEST = os.getenv('DJANGO_SESSION_SAVE_EVERY_REQUEST', 'True').lower() == 'true'
+
 # STATIC
 # ------------------------
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
