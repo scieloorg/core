@@ -50,7 +50,17 @@ class ListPageJournal(Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
         parent_specific_page = self.get_parent().specific
-        journals = Journal.objects.all().values("title", "scielojournal__issn_scielo", "scielojournal__collection__domain", "scielojournal__journal_history__event_type").distinct("title").order_by("title")
+        journals = (
+            Journal.objects.filter(scielojournal__status__in=["C", "D", "S"])
+            .values(
+                "title",
+                "scielojournal__issn_scielo",
+                "scielojournal__collection__domain",
+                "scielojournal__status",
+            )
+            .distinct("title")
+            .order_by("title")
+        )
 
         category = request.GET.get("category")
         search_term = request.GET.get("search_term", "")
@@ -67,9 +77,11 @@ class ListPageJournal(Page):
         elif starts_with_letter:
             journals = journals.filter(title__istartswith=starts_with_letter)
         elif active_or_discontinued:
-            journals = journals.filter(scielojournal__journal_history__event_type="ADMITTED")
+            journals = journals.filter(scielojournal__status=active_or_discontinued)
         elif publisher:
-            institution = Institution.objects.all().order_by("institution_identification__name")
+            institution = Institution.objects.all().order_by(
+                "institution_identification__name"
+            )
 
         context["search_term"] = search_term
         context["parent_page"] = parent_specific_page
@@ -78,6 +90,7 @@ class ListPageJournal(Page):
         context["institution"] = institution
         context["journals"] = journals
         return context
+
 
 class FormField(AbstractFormField):
     page = ParentalKey("FormPage", on_delete=models.CASCADE, related_name="form_fields")
