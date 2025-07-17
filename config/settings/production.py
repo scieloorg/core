@@ -186,7 +186,7 @@ if env.bool("USE_SENTRY", default=False):
                 "propagate": False,
             },
             # Celery Signals
-            "myproject.celery_signals": {
+            "config.celery_signals": {
                 "handlers": ["console"],
                 "level": "DEBUG", # ESSENCIAL: para ver a mensagem de depuração
                 "propagate": False, # Não envie para o logger pai (root), para ter controle total
