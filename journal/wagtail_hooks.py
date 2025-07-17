@@ -79,16 +79,26 @@ class FilteredJournalQuerysetMixin:
             .select_related("contact_location")
             .prefetch_related("scielojournal_set")
         )
+        user = request.user
+
+        if user.is_superuser:
+            return qs
+
         user_groups = request.user.groups.values_list("name", flat=True)
         if COLLECTION_TEAM in user_groups:
-            return qs.filter(
-                scielojournal__collection__in=request.user.collection.all()
-            )
+            collections = getattr(user, "collections", None)
+            if collections is not None:
+                return qs.filter(
+                    scielojournal__collection__in=collections
+                )
         elif JOURNAL_TEAM in user_groups:
-            return qs.filter(
-                id__in=request.user.journal.all().values_list("id", flat=True)
-            )
-        return qs
+            journals = getattr(user, "journals", None)
+            if journals is not None:
+                journals_ids = journals.values_list("id", flat=True)
+                return qs.filter(
+                    id__in=journals_ids
+                )
+        return qs.none()
 
 
 class JournalAdminSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
