@@ -19,7 +19,7 @@
         </div>
         <div class="row">
             <div class="col text-center">
-                <div class="scielo__logo-scielo--medium"></div>
+                <a href="{{ page.get_parent.specific.url }}"><div class="scielo__logo-scielo--medium"></div></a>
                 <!-- <span>Scientific Electronic Library Online</span> -->
             </div>
         </div>
@@ -50,30 +50,25 @@
         </div>
         <div class="row">
             <div class="col-12 col-sm-8">
-            <ul class="nav nav-pills">
-            <li class="nav-item" role="presentation">
-                <a href="{{ self.url }}" class="btn btn-sm btn-secondary">
-                {% trans "Todos" %}
-                </a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a href="#" class="ms-1 btn btn-sm btn-secondary scielo__btn-with-icon--left" onclick="submitTab('actives'); return false;">
-                <span class="material-icons" style="color: #2c9d45;">fiber_manual_record</span> {% trans "Ativos" %}
-                </a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a href="#" class="ms-1 btn btn-sm btn-secondary scielo__btn-with-icon--left" onclick="submitTab('discontinued'); return false;">
-                <span class="material-icons" style="color: #c63800;">fiber_manual_record</span> {% trans "Descontinuados" %}
-                </a>
-            </li>
-            </ul>
-
-            <form id="tabForm" action="{{self.url}}" method="get" style="display:none;">
-                <input type="hidden" name="tab" id="tabInput">
-            </form>
-            <form id="tabClear" action="{{self.url}}" method="get" style="display:none;">
-                <input type="hidden" id="tabInput">
-            </form>
+                <form id="meuForm" action="{{ self.url }}" method="get">
+                    <ul class="nav">
+                        <li class="nav-item" role="presentation">
+                            <button type="submit" class="ms-1 btn btn-sm btn-secondary" name="tab" value="">
+                                {% trans "Todos" %}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button type="submit" class="ms-1 btn btn-sm btn-secondary scielo__btn-with-icon--left" name="tab" value="C">
+                                <span class="material-icons" style="color: #2c9d45;">fiber_manual_record</span> {% trans "Ativos" %}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button type="submit" class="ms-1 btn btn-sm btn-secondary scielo__btn-with-icon--left" name="tab" value="D">
+                                <span class="material-icons" style="color: #c63800;">fiber_manual_record</span> {% trans "Descontinuados" %}
+                            </button>
+                        </li>
+                    </ul>
+                </form>
             </div>
             <div class="col-12 col-sm-4">
                 <form method="get" action="{{ self.url }}" class="search-form">
@@ -131,9 +126,9 @@
                                         {% for journal in journals %}
                                         <tr>
                                             <th colspan="2">
-                                                {% if journal.scielojournal__journal_history__event_type == "ADMITTED" %}
+                                                {% if journal.scielojournal__status in "C" %}
                                                     <span class="material-icons align-middle fs-5" style="color: #2c9d45;">fiber_manual_record</span> 
-                                                {% elif journal.scielojournal__journal_history__event_type != "ADMITTED" %}
+                                                {% elif journal.scielojournal__status in "DS" %} 
                                                     <span class="material-icons align-middle fs-5" style="color: #c63800;">fiber_manual_record</span> 
                                                 {% endif %}
                                                 <a target="_blank" href="http://{{ journal.scielojournal__collection__domain }}/scielo.php?script=sci_serial&pid={{journal.scielojournal__issn_scielo}}&lng=en">{{ journal.title }}</a>
@@ -173,26 +168,22 @@
 
 <script>
 // Letras de A a Z
-  const letters = Array.from({length: 26}, (_, i) => String.fromCharCode(65 + i));
-  const btnGroup = document.getElementById('letterBtnGroup');
-  const letterInput = document.getElementById('letterInput');
-  const form = document.getElementById('letterFilterForm');
+const letters = Array.from({length: 26}, (_, i) => String.fromCharCode(65 + i));
+const btnGroup = document.getElementById('letterBtnGroup');
+const letterInput = document.getElementById('letterInput');
+const form = document.getElementById('letterFilterForm');
 
-  letters.forEach(letter => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'btn btn-sm btn-default';
-    btn.textContent = letter;
-    btn.onclick = function() {
-      letterInput.value = letter;
-      form.submit();
-    };
-    btnGroup.appendChild(btn);
-  });
-function submitTab(tab) {
-    document.getElementById('tabInput').value = tab;
-    document.getElementById('tabForm').submit();
-  }
+letters.forEach(letter => {
+const btn = document.createElement('button');
+btn.type = 'button';
+btn.className = 'btn btn-sm btn-default';
+btn.textContent = letter;
+btn.onclick = function() {
+    letterInput.value = letter;
+    form.submit();
+};
+btnGroup.appendChild(btn);
+});
 
 </script>
 
