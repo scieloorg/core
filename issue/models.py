@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db import IntegrityError, models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -220,6 +222,67 @@ class Issue(CommonControlField, ClusterableModel):
         return get_articlemeta_format_issue(self, collection)
 
     base_form_class = CoreAdminModelForm
+
+
+class IssueExport(CommonControlField):
+    """
+    Controla exportações de fascículos para o ArticleMeta
+    """
+    issue = models.ForeignKey(
+        Issue,
+        on_delete=models.CASCADE,
+        related_name="exports",
+        verbose_name=_("Issue")
+    )
+    export_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('articlemeta', 'ArticleMeta'),
+        ],
+        verbose_name=_("Export Type")
+    )
+    exported_at = models.DateTimeField(auto_now_add=True)
+    collection = models.ForeignKey(
+        'collection.Collection',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_("Collection")
+    )
+    
+    class Meta:
+        unique_together = ['issue', 'export_type', 'collection']
+        indexes = [
+            models.Index(fields=['collection', 'export_type']),
+            models.Index(fields=['exported_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.issue.number or ''}:{self.issue.volume or ''} -> {self.export_type}"
+
+    @classmethod
+    def mark_as_exported(cls, issue, export_type, collection, user=None):
+        """Marca um fascículo como exportado"""
+        obj, created = cls.objects.get_or_create(
+            issue=issue,
+            export_type=export_type,
+            collection=collection,
+            defaults={'creator': user}
+        )
+        if not created:
+            obj.exported_at = datetime.now()
+            obj.updated_by = user
+            obj.save()
+        return obj
+
+    @classmethod
+    def is_exported(cls, issue, export_type, collection):
+        """Verifica se um fascículo já foi exportado"""
+        return cls.objects.filter(
+            issue=issue,
+            export_type=export_type,
+            collection=collection
+        ).exists()
 
 
 class IssueTitle(Orderable, CommonControlField):
