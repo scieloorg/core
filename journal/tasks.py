@@ -10,7 +10,8 @@ from wagtail.images.models import Image
 from collection.models import Collection
 from config import celery_app
 from core.utils.rename_dictionary_keys import rename_dictionary_keys
-from core.utils.utils import fetch_data
+from core.utils.utils import fetch_data, _get_user
+from journal import controller
 from journal.models import (
     AMJournal,
     Journal,
@@ -30,15 +31,6 @@ from tracker.models import UnexpectedEvent
 User = get_user_model()
 
 logger = logging.getLogger(__name__)
-
-def _get_user(request, username=None, user_id=None):
-    try:
-        return User.objects.get(pk=request.user.id)
-    except AttributeError:
-        if user_id:
-            return User.objects.get(pk=user_id)
-        if username:
-            return User.objects.get(username=username)
 
 
 @celery_app.task(bind=True)
