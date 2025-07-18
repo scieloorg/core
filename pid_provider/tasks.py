@@ -288,32 +288,37 @@ def task_provide_pid_for_xml_uri(
 
 
 @celery_app.task(bind=True)
-def task_provide_pid_for_xml_str(
+def task_provide_pid_for_xml_zip(
     self,
     username=None,
     user_id=None,
     zip_filename=None,
-    zip_content=None,
 ):
     try:
         user = _get_user(self.request, username=username, user_id=user_id)
-        with ZipFile(BytesIO(zip_content), "r") as zip_file:
-            for file_info in zip_file.infolist():
-                if file_info.filename.endswith(".xml"):
-                    with zip_file.open(file_info) as xml_file:
-                        return pid_provider.provide_pid_for_xml_str(
-                            xml_file.read().decode("utf-8"),
-                            user=user,
-                            filename=file_info.filename,
-                            caller="core",
-                        )
+        response = pid_provider.provide_pid_for_xml_zip(
+            zip_filename,
+            user,
+            filename=None,
+            origin_date=None,
+            force_update=None,
+            is_published=None,
+            registered_in_core=None,
+            caller="core",
+        )
+        try:
+            response = list(response)[0]
+            response.pop("xml_with_pre")
+        except KeyError:
+            response = {}
+        return response
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
             exception=e,
             exc_traceback=exc_traceback,
             detail={
-                "task": "task_provide_pid_for_xml_str",
+                "task": "task_provide_pid_for_xml_zip",
                 "detail": dict(
                     username=username,
                     user_id=user_id,
