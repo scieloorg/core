@@ -150,6 +150,11 @@ class Language(CommonControlField):
                     "code2",
                 ]
             ),
+            models.Index(
+                fields=[
+                    "name",
+                ]
+            )
         ]
 
     def __unicode__(self):
