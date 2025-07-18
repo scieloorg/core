@@ -1332,3 +1332,66 @@ class ArticleSource(CommonControlField):
             else:
                 # Registra erro se não conseguiu obter v3
                 detail.append(str(response))
+
+
+class ArticleExport(CommonControlField):
+    """
+    Controla exportações de artigos para diferentes bases de dados (articlemeta, crossref, pubmed)
+    """
+    article = models.ForeignKey(
+        Article,
+        on_delete=models.CASCADE,
+        related_name="exports",
+        verbose_name=_("Article")
+    )
+    export_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('articlemeta', 'ArticleMeta'),
+            ('crossref', 'CrossRef'),
+            ('pubmed', 'PubMed'),
+        ],
+        verbose_name=_("Export Type")
+    )
+    exported_at = models.DateTimeField(auto_now_add=True)
+    collection = models.ForeignKey(
+        'collection.Collection',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_("Collection")
+    )
+    
+    class Meta:
+        unique_together = ['article', 'export_type', 'collection']
+        indexes = [
+            models.Index(fields=['article', 'export_type']),
+            models.Index(fields=['exported_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.article.pid_v3} -> {self.export_type}"
+
+    @classmethod
+    def mark_as_exported(cls, article, export_type, collection, user=None):
+        """Marca um artigo como exportado"""
+        obj, created = cls.objects.get_or_create(
+            article=article,
+            export_type=export_type,
+            collection=collection,
+            defaults={'creator': user}
+        )
+        if not created:
+            obj.exported_at = datetime.now()
+            obj.updated_by = user
+            obj.save()
+        return obj
+
+    @classmethod
+    def is_exported(cls, article, export_type, collection):
+        """Verifica se um artigo já foi exportado"""
+        return cls.objects.filter(
+            article=article,
+            export_type=export_type,
+            collection=collection
+        ).exists()
