@@ -308,9 +308,12 @@ def task_provide_pid_for_xml_zip(
         )
         try:
             response = list(response)[0]
+        except IndexError:
+            response = {}
+        try:
             response.pop("xml_with_pre")
         except KeyError:
-            response = {}
+            pass
         return response
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
