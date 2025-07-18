@@ -194,3 +194,83 @@ def export_article_to_articlemeta(
             )
         
     return True
+
+
+def bulk_export_articles_to_articlemeta(
+    collections=[],
+    issn=None,
+    number=None,
+    volume=None,
+    year_of_publication=None,
+    from_date=None,
+    until_date=None,
+    days_to_go_back=None,
+    force_update=True,
+    user=None,
+    client=None,    
+) -> bool:
+    """
+    Bulk export articles to ArticleMeta.
+
+    Args:
+        collections (list): List of collection acronyms to filter articles.
+        issn (str): ISSN to filter articles.
+        number (int): Issue number to filter articles.
+        volume (int): Issue volume to filter articles.
+        year_of_publication (int): Year of publication to filter articles.
+        from_date (str): Start date to filter articles.
+        until_date (str): End date to filter articles.
+        days_to_go_back (int): Number of days to go back from today or until_date to filter articles.
+        force_update (bool): Whether to force update the export. Defaults to True.
+        user (User): User object.
+        client (MongoDB client): MongoDB client instance. A default client will be created if not provided.
+    
+    Returns:
+        bool: True if the export was successful, False otherwise.
+    """
+    filters = {}
+        
+    # Issue number filter
+    if number:
+        filters['issue__number'] = number
+
+    # Issue volume filter
+    if volume:
+        filters['issue__volume'] = volume
+
+    # Year of publication filter
+    if year_of_publication:
+        filters['pub_date_year'] = year_of_publication
+
+    # Date range filter
+    if from_date or until_date or days_to_go_back:
+        from_date_str, until_date_str = date_utils.get_date_range(from_date, until_date, days_to_go_back)
+        filters['updated__range'] = (from_date_str, until_date_str)
+
+    # Build queryset with filters
+    queryset = Article.objects.filter(**filters)
+    
+    # Add ISSN filter separately using Q objects
+    if issn:
+        queryset = queryset.filter(
+            Q(journal__official__issn_print=issn) | 
+            Q(journal__official__issn_electronic=issn)
+        )
+
+    # Filter articles by collections if specified
+    if collections:
+        queryset = queryset.filter(journal__scielojournal__collection__acron3__in=collections)
+
+    logging.info(f"Starting export of {queryset.count()} articles to ArticleMeta.")
+    
+    # Iterate over queryset and export each article to ArticleMeta
+    for article in queryset.iterator():
+        export_article_to_articlemeta(
+            pid_v3=article.pid_v3,
+            collections=[c.acron3 for c in article.collections] if not collections else collections,
+            force_update=force_update,
+            user=user,
+            client=client,
+        )
+
+    logging.info(f"Export completed.")
