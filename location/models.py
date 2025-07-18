@@ -522,7 +522,7 @@ class Location(CommonControlField):
             Q(city__name__icontains=search_term)
             | Q(state__name__icontains=search_term)
             | Q(country__name__icontains=search_term)
-        )
+        ).prefetch_related("city", "state", "country")
 
     def autocomplete_label(self):
         return str(self)
