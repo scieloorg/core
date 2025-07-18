@@ -6,7 +6,7 @@ import re
 from django.contrib.auth import get_user_model
 from django.core.validators import RegexValidator
 from django.db import IntegrityError, models
-from django.db.models import Q, Prefetch
+from django.db.models import Prefetch, Q
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -27,6 +27,7 @@ from core.models import (
     RichTextWithLanguage,
     TextWithLang,
 )
+from core.utils.thread_context import get_current_collections, get_current_user
 from institution.models import (
     BaseHistoryItem,
     CopyrightHolder,
@@ -610,6 +611,26 @@ class Journal(CommonControlField, ClusterableModel):
 
     def autocomplete_label(self):
         return str(self)
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        user = get_current_user()
+        
+        if not user or not user.is_authenticated:
+            return Journal.objects.none()
+        
+        queryset = Journal.objects.all()
+        if user.is_superuser:
+            return queryset.filter(title__icontains=search_term)
+        
+        collections = get_current_collections()
+        if not collections:
+            return queryset.none()
+    
+        return queryset.filter(
+            title__icontains=search_term, 
+            scielojournal__collection__in=collections
+        ).distinct()
 
     panels_titles = [
         AutocompletePanel("official"),

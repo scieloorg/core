@@ -215,6 +215,7 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
     "maintenance_mode.middleware.MaintenanceModeMiddleware",
     'django_prometheus.middleware.PrometheusAfterMiddleware',
+    "core.middleware.UserCollectionMiddleware",
 ]
 
 # STATIC
