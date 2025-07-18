@@ -260,3 +260,57 @@ def child_load_license_of_use_in_journal(
             )
             item.journal_use_license = license
             item.save()
+
+
+@celery_app.task(bind=True, name="task_export_journals_to_articlemeta")
+def task_export_journals_to_articlemeta(
+    self,
+    collections=[],
+    from_date=None,
+    until_date=None,
+    days_to_go_back=None,
+    force_update=True,
+    user_id=None,
+    username=None,
+):
+    """
+    Export journals to ArticleMeta Database with flexible filtering.
+    
+    Args:
+        collections: Filter by collections acronyms (e.g., ['scl', 'mex'])
+        force_update: Force update existing records
+        user_id: User ID for authentication
+        username: Username for authentication
+    """
+    user = _get_user(self.request, username=username, user_id=user_id)
+
+    return controller.bulk_export_journals_to_articlemeta(
+        collections=collections,
+        from_date=from_date,
+        until_date=until_date,
+        days_to_go_back=days_to_go_back,
+        force_update=force_update,
+        user=user,
+        client=None,
+    )
+
+
+@celery_app.task(bind=True, name="task_export_journal_to_articlemeta")
+def task_export_journal_to_articlemeta(self, issn=None, force_update=True, user_id=None, username=None):
+    """
+    Export journal to ArticleMeta Database.
+
+    Args:
+        issn: ISSN of the journal
+        force_update: Force update existing records
+        user_id: User ID for authentication
+        username: Username for authentication
+    """
+    user = _get_user(self.request, username=username, user_id=user_id)
+
+    return controller.export_journal_to_articlemeta(
+        issn=issn,
+        force_update=force_update,
+        user=user,
+        client=None,
+    )
