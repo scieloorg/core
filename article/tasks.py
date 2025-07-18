@@ -6,13 +6,14 @@ from django.contrib.auth import get_user_model
 from django.db.models import Count, F, Q, Subquery
 from django.utils.translation import gettext as _
 
+from article import controller
 from article.models import Article, ArticleFormat, ArticleSource
 from article.sources.preprint import harvest_preprints
 from article.sources.xmlsps import load_article
 from collection.models import Collection
 from config import celery_app
 from core.utils.extracts_normalized_email import extracts_normalized_email
-from core.utils.utils import fetch_data
+from core.utils.utils import fetch_data, _get_user
 from journal.models import SciELOJournal
 from pid_provider.choices import PPXML_STATUS_DONE, PPXML_STATUS_TODO
 from pid_provider.models import PidProviderXML
@@ -20,19 +21,8 @@ from pid_provider.provider import PidProvider
 from researcher.models import ResearcherIdentifier
 from tracker.models import UnexpectedEvent
 
-from . import controller
 
 User = get_user_model()
-
-
-def _get_user(request, username=None, user_id=None):
-    try:
-        return User.objects.get(pk=request.user.id)
-    except AttributeError:
-        if user_id:
-            return User.objects.get(pk=user_id)
-        if username:
-            return User.objects.get(username=username)
 
 
 @celery_app.task()
