@@ -537,5 +537,8 @@ MODEL_TO_IMPORT_CSV = {
 COLLECTION_TEAM = "Collection Team"
 JOURNAL_TEAM = "Journal Team"
 
+MONGODB_URI = env.str("MONGODB_URI", default="mongodb://localhost:27017")
+MONGODB_DATABASE = env.str("MONGODB_DATABASE", default="articlemeta")
+
 WAGTAIL_2FA_REQUIRED = env.bool("WAGTAIL_2FA_REQUIRED", default=False)
 WAGTAIL_2FA_OTP_TOTP_NAME = env.str("WAGTAIL_2FA_OTP_TOTP_NAME", default="SciELO Core")
