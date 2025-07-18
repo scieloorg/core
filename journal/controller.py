@@ -84,3 +84,51 @@ def export_journal_to_articlemeta(
         return False
     
     return True
+
+
+def bulk_export_journals_to_articlemeta(
+    collections=[],
+    from_date=None,
+    until_date=None,
+    days_to_go_back=None,
+    force_update=True,
+    user=None,
+    client=None,
+):
+    """
+    Export journals to ArticleMeta Database with flexible filtering.
+    
+    Args:
+        collections: Filter by collections acronyms (e.g., ['scl', 'mex'])
+        from_date: Export articles from this date
+        until_date: Export articles until this date
+        days_to_go_back: Export articles from this number of days ago
+        force_update: Force update existing records
+        user: User object
+        client: MongoDB client object
+    """
+    filters = {}
+    
+    # Collection filter
+    if collections:
+        filters['collection__acron3__in'] = collections
+
+    # Date filters
+    if from_date or until_date or days_to_go_back:
+        from_date_str, until_date_str = date_utils.get_date_range(from_date, until_date, days_to_go_back)
+        filters['updated__range'] = (from_date_str, until_date_str)
+
+    # Build queryset with filters
+    queryset = SciELOJournal.objects.filter(**filters)
+        
+    logging.info(f"Starting export of {queryset.count()} journals to ArticleMeta.")
+    
+    for sj in queryset.iterator():
+        export_journal_to_articlemeta(
+            issn=sj.issn_scielo,
+            force_update=force_update,
+            user=user,
+            client=client,
+        )
+
+    logging.info(f"Export completed.")
