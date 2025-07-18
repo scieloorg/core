@@ -255,6 +255,21 @@ class Article(
         except Exception as ex:
             logging.exception("Erro on article %s, error: %s" % (self.pid_v2, ex))
             return ""
+        
+    @property
+    def pub_date(self):
+        year = self.pub_date_year or ''
+        month = self.pub_date_month or ''
+        day = self.pub_date_day or ''
+        
+        if year and month and day:
+            return f"{year}-{month.zfill(2)}-{day.zfill(2)}"
+        
+        elif year and month:
+            return f"{year}-{month.zfill(2)}"
+        
+        else:
+            return year
 
     @classmethod
     def get(
