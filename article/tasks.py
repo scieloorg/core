@@ -496,3 +496,76 @@ def task_load_article_from_article_source(
                 "force_update": force_update,
             },
         )
+
+
+@celery_app.task(bind=True, name="task_export_articles_to_articlemeta")
+def task_export_articles_to_articlemeta(
+    self,
+    collections=[],
+    issn=None,
+    number=None,
+    volume=None,
+    year_of_publication=None,
+    from_date=None,
+    until_date=None,
+    days_to_go_back=None,
+    force_update=True,
+    user_id=None,
+    username=None,
+):
+    """
+    Export articles to ArticleMeta Database with flexible filtering.
+    Note that from_date and until_date filters work on the field `updated` from Article.
+    
+    Args:
+        collections: Filter by collections (e.g. ['scl', 'mex'])
+        issn: Filter by journal ISSN
+        number: Filter by specific number
+        volume: Filter by specific volume
+        year_of_publication: Filter by publication year
+        from_date: Filter by date range (start date)
+        until_date: Filter by date range (end date)
+        days_to_go_back: Filter by date range (days to go back from today or until_date)
+        force_update: Force update existing records
+        user_id: User ID
+        username: Username
+    """
+    user = _get_user(self.request, username=username, user_id=user_id)
+
+    return controller.bulk_export_articles_to_articlemeta(
+        collections=collections,
+        issn=issn,
+        number=number,
+        volume=volume,
+        year_of_publication=year_of_publication,
+        from_date=from_date,
+        until_date=until_date,
+        days_to_go_back=days_to_go_back,
+        force_update=force_update,
+        user=user,
+        client=None,
+    )
+
+
+@celery_app.task(bind=True, name="task_export_article_to_articlemeta")
+def task_export_article_to_articlemeta(self, pid_v3=None, force_update=True, user_id=None, username=None):
+    """
+    Export a single article to ArticleMeta Database.
+
+    Args:
+        pid_v3: Article PID v3
+        force_update: Force update existing records
+        user_id: User ID
+        username: Username
+
+    Returns:
+        bool: True if export was successful, False otherwise.
+    """
+    user = _get_user(self.request, username=username, user_id=user_id)
+
+    return controller.export_article_to_articlemeta(
+        pid_v3=pid_v3,
+        user=user,
+        force_update=force_update,
+        client=None
+    )
