@@ -393,6 +393,11 @@ class LicenseStatement(CommonControlField):
         AutocompletePanel("license"),
     ]
 
+    autocomplete_search_field = "license_p"
+
+    def autocomplete_label(self):
+        return str(self)
+
     def __str__(self):
         return f"{self.language} {self.license_p}"
 
