@@ -50,8 +50,30 @@ class ListPageJournal(Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
         parent_specific_page = self.get_parent().specific
+
+        category = request.GET.get("category")
+        search_term = request.GET.get("search_term", "")
+        starts_with_letter = request.GET.get("start_with_letter", "")
+        active_or_discontinued = request.GET.get("tab", "")
+
+        publisher = category == "publisher"
+        institution = []
+        
+        filters = {
+            "scielojournal__status__in": ["C", "D", "S"]
+        }
+
+        if category and any(category in item for item in STUDY_AREA):
+            filters["subject__code"] = category
+        if search_term:
+            filters["title__icontains"] = search_term
+        if starts_with_letter:
+            filters["title__istartswith"] = starts_with_letter
+        if active_or_discontinued:
+            filters["scielojournal__status"] = active_or_discontinued
+
         journals = (
-            Journal.objects.filter(scielojournal__status__in=["C", "D", "S"])
+            Journal.objects.filter(**filters)
             .values(
                 "title",
                 "scielojournal__issn_scielo",
@@ -62,23 +84,7 @@ class ListPageJournal(Page):
             .order_by("title")
         )
 
-        category = request.GET.get("category")
-        search_term = request.GET.get("search_term", "")
-        starts_with_letter = request.GET.get("start_with_letter", "")
-        active_or_discontinued = request.GET.get("tab", "")
-
-        publisher = category == "publisher"
-        institution = []
-
-        if any(category in item for item in STUDY_AREA):
-            journals = journals.filter(subject__code=category)
-        elif search_term:
-            journals = journals.filter(title__icontains=search_term)
-        elif starts_with_letter:
-            journals = journals.filter(title__istartswith=starts_with_letter)
-        elif active_or_discontinued:
-            journals = journals.filter(scielojournal__status=active_or_discontinued)
-        elif publisher:
+        if publisher:
             institution = Institution.objects.all().order_by(
                 "institution_identification__name"
             )
