@@ -19,7 +19,7 @@ from journalpage.models import JournalPage
 
 from . import models
 from .button_helper import IndexedAtHelper
-from .proxys import JournalProxyEditor
+from .proxys import JournalProxyEditor, JournalProxyPanelPolicy, JournalProxyPanelInstructionsForAuthors
 from .views import import_file, validate
 
 
@@ -73,15 +73,36 @@ class FilteredJournalQuerysetMixin:
     Mixin que filtra o queryset de journals baseado nas permissões 
     e grupos do usuário (COLLECTION_TEAM ou JOURNAL_TEAM).
     """    
+    list_display = (
+        "title",
+        "contact_location",
+        "created",
+        "updated",
+    )
+    list_filter = (
+        "journal_use_license",
+        "publishing_model",
+        "subject",
+        "main_collection",
+    )
+    search_fields = (
+        "title",
+        "official__issn_print",
+        "official__issn_electronic",
+        "contact_location__country__name",
+    )
+    
     def get_queryset(self, request):
         qs = (
             models.Journal.objects.all()
             .select_related("contact_location")
             .prefetch_related("scielojournal_set")
         )
+
         user = request.user
         if user.is_superuser:
             return qs
+
         user_groups = request.user.groups.values_list("name", flat=True)
         if COLLECTION_TEAM in user_groups:
             collections = getattr(user, "collections", None)
@@ -110,25 +131,6 @@ class JournalAdminSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
     exclude_from_explorer = False
     list_per_page = 20
 
-    list_display = (
-        "title",
-        "contact_location",
-        "created",
-        "updated",
-    )
-    list_filter = (
-        "journal_use_license",
-        "publishing_model",
-        "subject",
-        "main_collection",
-    )
-    search_fields = (
-        "title",
-        "official__issn_print",
-        "official__issn_electronic",
-        "contact_location__country__name",
-    )
-
 
 class JournalAdminEditorSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
     model = JournalProxyEditor
@@ -140,24 +142,26 @@ class JournalAdminEditorSnippetViewSet(FilteredJournalQuerysetMixin, SnippetView
     exclude_from_explorer = False
     list_per_page = 20
 
-    list_display = (
-        "title",
-        "contact_location",
-        "created",
-        "updated",
-    )
-    list_filter = (
-        "journal_use_license",
-        "publishing_model",
-        "subject",
-        "main_collection",
-    )
-    search_fields = (
-        "title",
-        "official__issn_print",
-        "official__issn_electronic",
-        "contact_location__country__name",
-    )
+
+class JournalAdminPolicySnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
+    model = JournalProxyPanelPolicy
+    inspect_view_enabled = True
+    menu_label = _("Journals Policy")
+    menu_icon = "folder"
+    menu_order = get_menu_order("journal")
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_per_page = 20
+
+class JournalAdminInstructionsForAuthorsSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
+    model = JournalProxyPanelInstructionsForAuthors
+    inspect_view_enabled = True
+    menu_label = _("Journal Instructions for Authors")
+    menu_icon = "folder"
+    menu_order = get_menu_order("journal")
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_per_page = 20
 
 
 class SciELOJournalCreateView(CreateView):
@@ -217,6 +221,8 @@ class JournalSnippetViewSetGroup(SnippetViewSetGroup):
         JournalAdminEditorSnippetViewSet,
         OfficialJournalSnippetViewSet,
         SciELOJournalAdminViewSet,
+        JournalAdminPolicySnippetViewSet,
+        JournalAdminInstructionsForAuthorsSnippetViewSet,
     )
 
 

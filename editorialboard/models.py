@@ -38,6 +38,13 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
     
     class Meta:
         unique_together = [("journal", "researcher")]
+        indexes = [
+            models.Index(
+                fields=[
+                    "researcher",
+                ]
+            ),
+        ]
 
     panels = [
         AutocompletePanel("researcher"),
@@ -50,7 +57,10 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
     def __str__(self):
         return f"{self.researcher.fullname} ({self.role_editorial_board.all()})"
 
-
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return EditorialBoardMember.objects.filter(researcher__fullname__icontains=search_term).prefetch_related("researcher")
+    
     def autocomplete_label(self):
         return str(self)
 
