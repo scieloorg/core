@@ -54,26 +54,26 @@ class IssueAdmin(SnippetViewSet):
     )
 
     def get_queryset(self, request):
-        qs = Issue.objects.all()
+        qs = Issue.objects
         user = request.user
 
         if user.is_superuser:
-            return qs
+            return qs.all()
 
-        user_groups = user.groups.values_list("name", flat=True)
+        user_groups = set(user.groups.values_list("name", flat=True))
         if COLLECTION_TEAM in user_groups:
             collections = getattr(user, "collections", None)
             if collections is not None:
                 return qs.filter(
                     journal__scielojournal__collection__in=collections
-                )
+                ).select_related("journal")
         elif JOURNAL_TEAM in user_groups:
             journals = getattr(user, "journals", None)
             if journals is not None:
                 journals_ids = journals.values_list("id", flat=True)
                 return qs.filter(
                     journal__id__in=journals_ids
-                )
+                ).select_related("journal")
         return qs.none()
 
 
