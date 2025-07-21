@@ -50,7 +50,6 @@ wagtail-django-recaptcha==2.1.1  # https://pypi.org/project/wagtail-django-recap
 wagtailmenus==3.1.9  # https://github.com/rkhleics/wagtailmenus
 wagtail-localize==1.12.2  # https://github.com/wagtail/wagtail-localize
 wagtail-modeladmin==2.0.0  # https://github.com/wagtail/wagtail-modeladmin
-wagtail-autocomplete==0.11.0  # https://github.com/wagtail/wagtail-autocomplete
 wagtail-2fa-new==1.8.0  # https://pypi.org/project/wagtail-2fa-new/
 
 
