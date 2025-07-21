@@ -1,0 +1,67 @@
+{% load humanize static i18n wagtailsettings_tags wagtailcore_tags get_journals_by_name_institutiton %}
+
+<div class="tab-content mt-3 mb-5" id="myTabContent2">
+    <div class="tab-pane fade show active pb-0" id="tab-todos" role="tabpanel" aria-labelledby="tab-todos-tab">
+        <div class="row">
+            <div class="col-12 d-flex align-items-start">
+                <table class="table table-hover">
+                    <caption class="visually-hidden">Journal list</caption>
+                    <thead>
+                        <tr>
+                            <th class="w-100" scope="col">{% trans 'Periódicos' %}<span id="totalLabel"></span> <small>({% trans 'total' %} {{ journals.count }})</small></th>
+                            <th class="text-nowrap w-auto" scope="col">
+                                <form action="#" style="margin-bottom: 2px;" class="download-form">
+                                    <button id="btnGroupDropDownload" type="submit" class="btn btn-sm btn-secondary scielo__btn-with-icon--only dropdown-toggle mb-0 float-end d-print-none" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <span class="material-icons-outlined">download</span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btnGroupDropDownload" >
+                                        <li>
+                                            <a class="dropdown-item" href="#">XLS</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#">CSV</a>
+                                        </li>
+                                    </ul>
+                                </form>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="separator-by-letter">
+                            <td colspan="2">
+                                <strong id="letter-A">A</strong>
+                            </td>
+                        </tr>
+                        {% for journal in journals %}
+                        <tr>
+                            <th colspan="2">
+                                {% if journal.scielojournal__status in "C" %}
+                                    <span class="material-icons align-middle fs-5" style="color: #2c9d45;">fiber_manual_record</span> 
+                                {% elif journal.scielojournal__status in "DS" %} 
+                                    <span class="material-icons align-middle fs-5" style="color: #c63800;">fiber_manual_record</span> 
+                                {% endif %}
+                                <a target="_blank" href="http://{{ journal.scielojournal__collection__domain }}/scielo.php?script=sci_serial&pid={{journal.scielojournal__issn_scielo}}&lng=en">{{ journal.title }}</a>
+                            </th>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% include "home/include/list_journal_page/journals_letter_filter.html" %}
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane fade p-4 pb-0" id="tab-ativos" role="tabpanel" aria-labelledby="tab-ativos-tab">
+        <div class="row">
+            <div class="col">
+                {% trans 'Conteúdo Ativos' %}
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane fade p-4 pb-0" id="tab-descontinuados" role="tabpanel" aria-labelledby="tab-descontinuados-tab">
+        <div class="row">
+            <div class="col">
+                {% trans 'Conteúdo Descontinuados' %}
+            </div>
+        </div>
+    </div>
+</div>

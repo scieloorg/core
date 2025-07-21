@@ -1,0 +1,10 @@
+{% load humanize static i18n wagtailsettings_tags wagtailcore_tags get_journals_by_name_institutiton %}
+
+<form method="get" action="{{ self.url }}" class="search-form">
+    <div class="input-group mb-3">
+        <input type="text" class="form-control form-control-sm" id="search_term" name="search_term" value="{{ search_term }}" placeholder="Digite para filtrar">
+        <button type="submit" class="btn btn-primary btn-lg scielo__btn-with-icon--only">
+            <i class="material-icons-outlined">{% trans 'Search' %}</i>
+        </button>
+    </div>
+</form>

@@ -1,0 +1,24 @@
+{% load humanize static i18n wagtailsettings_tags wagtailcore_tags get_journals_by_name_institutiton %}
+
+<header>
+    <div class="container">
+        <div class="row">
+            <div class="col text-end p-4">
+                <ul class="list-unstyled">
+                    <li>
+                        <a href="https://scielo.org/en/about-scielo">
+                            <span class="material-icons-outlined">info</span> {% trans 'About SciELO' %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col text-center">
+                <a href="{{ page.get_parent.specific.url }}">
+                    <div class="scielo__logo-scielo--medium"></div>
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
