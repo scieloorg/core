@@ -16,19 +16,19 @@ freezegun==1.5.1  # https://pypi.org/project/freezegun/
 # DJANGO CORE
 # ==============================================================================
 
-django==5.0.8  # https://www.djangoproject.com/
+django==5.2.3  # https://www.djangoproject.com/
 django-environ==0.11.2  # https://github.com/joke2k/django-environ
 django-model-utils==4.4.0  # https://github.com/jazzband/django-model-utils
-django-crispy-forms==2.1  # https://github.com/django-crispy-forms/django-crispy-forms
-crispy-bootstrap5==2024.2  # https://github.com/django-crispy-forms/crispy-bootstrap5
-django-compressor==4.4  # https://github.com/django-compressor/django-compressor
+django-crispy-forms==2.4  # https://github.com/django-crispy-forms/django-crispy-forms
+crispy-bootstrap5==2025.6  # https://github.com/django-crispy-forms/crispy-bootstrap5
+django-compressor==4.5.1  # https://github.com/django-compressor/django-compressor
 
 
 # ==============================================================================
 # AUTHENTICATION & SECURITY
 # ==============================================================================
 
-django-allauth==0.61.1  # https://github.com/pennersr/django-allauth
+django-allauth==65.10.0  # https://github.com/pennersr/django-allauth
 
 # ==============================================================================
 # DJANGO REST FRAMEWORK
@@ -43,12 +43,12 @@ djangorestframework-simplejwt==5.3.1  # https://django-rest-framework-simplejwt.
 # ==============================================================================
 
 # Core
-wagtail==6.2  # https://github.com/wagtail/wagtail
+wagtail==6.4.2  # https://github.com/wagtail/wagtail
 
 # Wagtail Extensions
 wagtail-django-recaptcha==2.1.1  # https://pypi.org/project/wagtail-django-recaptcha/
 wagtailmenus==3.1.9  # https://github.com/rkhleics/wagtailmenus
-wagtail-localize==1.8.2  # https://github.com/wagtail/wagtail-localize
+wagtail-localize==1.12.2  # https://github.com/wagtail/wagtail-localize
 wagtail-modeladmin==2.0.0  # https://github.com/wagtail/wagtail-modeladmin
 wagtail-autocomplete==0.11.0  # https://github.com/wagtail/wagtail-autocomplete
 wagtail-2fa-new==1.8.0  # https://pypi.org/project/wagtail-2fa-new/
@@ -67,10 +67,10 @@ django-redis==5.4.0  # https://github.com/jazzband/django-redis
 # TASK QUEUE & BACKGROUND JOBS
 # ==============================================================================
 
-celery==5.3.6  # pyup: < 6.0  # https://github.com/celery/celery
+celery==5.5.3  # pyup: < 6.0  # https://github.com/celery/celery
 flower==2.0.1  # https://github.com/mher/flower
-django-celery-beat==2.6.0  # https://github.com/celery/django-celery-beat
-django_celery_results==2.5.1  # https://github.com/celery/django-celery-results
+django-celery-beat==2.8.1  # https://github.com/celery/django-celery-beat
+django_celery_results==2.6.0  # https://github.com/celery/django-celery-results
 
 
 # ==============================================================================
