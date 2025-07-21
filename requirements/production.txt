@@ -20,8 +20,6 @@ gevent==24.2.1  # http://www.gevent.org/
 # ==============================================================================
 
 psycopg2-binary==2.9.9  # https://github.com/psycopg/psycopg2
-django-db-pool==1.2.5  # https://github.com/altairbow/django-db-pool
-psycogreen==1.0.2  # https://github.com/psycogreen/psycogreen
 
 # ==============================================================================
 # EMAIL
