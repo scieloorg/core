@@ -334,3 +334,12 @@ def task_provide_pid_for_xml_zip(
             "error_type": str(type(e)),
         }
 
+
+@celery_app.task(bind=True)
+def task_delete_provide_pid_tmp_zip(
+    self,
+    temp_file_path,
+):
+    if temp_file_path and os.path.exists(temp_file_path):
+        os.remove(temp_file_path)
+
