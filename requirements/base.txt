@@ -134,3 +134,5 @@ git+https://git@github.com/scieloorg/packtools@4.11.11#egg=packtools
 
 certifi>=2023.7.22  # not directly required, pinned by Snyk to avoid a vulnerability
 requests>=2.31.0  # not directly required, pinned by Snyk to avoid a vulnerability
+
+django-silk==5.3.2
