@@ -619,7 +619,7 @@ class Journal(CommonControlField, ClusterableModel):
         if not user or not user.is_authenticated:
             return Journal.objects.none()
         
-        queryset = Journal.objects.all()
+        queryset = Journal.objects
         if user.is_superuser:
             return queryset.filter(title__icontains=search_term)
         
