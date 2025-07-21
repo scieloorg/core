@@ -1008,7 +1008,7 @@ class Journal(CommonControlField, ClusterableModel):
         official = self.official
         if not active_collection:
             foundation_year = self.official.initial_year if official and self.official.initial_year else "Unknown"
-            return f"{self.title} or {self.official} | Foundation year: {foundation_year}"
+            return f"{self.title or self.official} | Foundation year: {foundation_year}"
         collection_acronym = ", ".join(
             col.collection.acron3 for col in active_collection
         )
@@ -1022,6 +1022,11 @@ class Journal(CommonControlField, ClusterableModel):
         issns_str = " - ".join(issns)
         title = self.title
         return f"{title} ({collection_acronym}) | ({issns_str})"
+
+    def articlemeta_format(self, collection):
+        #Evita importacao circular
+        from .formats.articlemeta_format import get_articlemeta_format_title
+        return get_articlemeta_format_title(self, collection)
 
     base_form_class = CoreAdminModelForm
 
