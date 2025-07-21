@@ -19,7 +19,7 @@ class IssueCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class IssueAdmin(SnippetViewSet):
+class IssueAdminSnippetViewSet(SnippetViewSet):
     model = Issue
     inspect_view_enabled = True
     menu_label = _("Issues")
@@ -77,11 +77,11 @@ class IssueAdmin(SnippetViewSet):
         return qs.none()
 
 
-class IssueAdminGroup(SnippetViewSetGroup):
+class IssueAdminSnippetViewSetGroup(SnippetViewSetGroup):
     menu_label = _("Issues")
     menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("issue")
-    items = (IssueAdmin, )
+    items = (IssueAdminSnippetViewSet, )
 
 
-register_snippet(IssueAdminGroup)
+register_snippet(IssueAdminSnippetViewSetGroup)
