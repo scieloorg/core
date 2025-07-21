@@ -111,7 +111,6 @@ class CustomUserFormMixin:
     def clean(self):
         """Perform form validation."""
         cleaned_data = super().clean()
-        print(COLLECTION_TEAM, JOURNAL_TEAM)
         groups = cleaned_data.get("groups")
         journals = cleaned_data.get("journal")
         collections = cleaned_data.get("collection")

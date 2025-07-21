@@ -1,116 +1,132 @@
+# ==============================================================================
+# CORE DEPENDENCIES
+# ==============================================================================
+
+# Python utilities
 pytz==2023.3.post1  # https://github.com/stub42/pytz
 Pillow==10.2.0  # https://github.com/python-pillow/Pillow
 argon2-cffi==23.1.0  # https://github.com/hynek/argon2_cffi
 whitenoise==6.6.0  # https://github.com/evansd/whitenoise
-redis==5.0.1  # https://github.com/redis/redis-py
-hiredis==2.2.3  # https://github.com/redis/hiredis-py
-# celery==5.2.7  # pyup: < 6.0  # https://github.com/celery/celery
-celery==5.3.6  # pyup: < 6.0  # https://github.com/celery/celery
-flower==2.0.1  # https://github.com/mher/flower
 xmltodict==0.13.0  # https://github.com/martinblech/xmltodict.git
+lxml==4.9.4  # https://github.com/lxml/lxml
+freezegun==1.5.1  # https://pypi.org/project/freezegun/
 
-# Django
-# ------------------------------------------------------------------------------
-# django==4.1.8  # pyup: < 4.0  # https://www.djangoproject.com/
-django==5.0.8
+
+# ==============================================================================
+# DJANGO CORE
+# ==============================================================================
+
+django==5.0.8  # https://www.djangoproject.com/
 django-environ==0.11.2  # https://github.com/joke2k/django-environ
 django-model-utils==4.4.0  # https://github.com/jazzband/django-model-utils
-django-allauth==0.61.1  # https://github.com/pennersr/django-allauth
 django-crispy-forms==2.1  # https://github.com/django-crispy-forms/django-crispy-forms
-crispy-bootstrap5==2024.2 # https://github.com/django-crispy-forms/crispy-bootstrap5
+crispy-bootstrap5==2024.2  # https://github.com/django-crispy-forms/crispy-bootstrap5
 django-compressor==4.4  # https://github.com/django-compressor/django-compressor
-django-redis==5.4.0  # https://github.com/jazzband/django-redis4
 
-# Django REST
-djangorestframework==3.15.2
+
+# ==============================================================================
+# AUTHENTICATION & SECURITY
+# ==============================================================================
+
+django-allauth==0.61.1  # https://github.com/pennersr/django-allauth
+
+# ==============================================================================
+# DJANGO REST FRAMEWORK
+# ==============================================================================
+
+djangorestframework==3.15.2  # https://django-rest-framework.readthedocs.io/
 djangorestframework-simplejwt==5.3.1  # https://django-rest-framework-simplejwt.readthedocs.io/en/latest/
 
-# Wagtail
-# ------------------------------------------------------------------------------
+
+# ==============================================================================
+# WAGTAIL CMS
+# ==============================================================================
+
+# Core
 wagtail==6.2  # https://github.com/wagtail/wagtail
 
+# Wagtail Extensions
+wagtail-django-recaptcha==2.1.1  # https://pypi.org/project/wagtail-django-recaptcha/
+wagtailmenus==3.1.9  # https://github.com/rkhleics/wagtailmenus
+wagtail-localize==1.8.2  # https://github.com/wagtail/wagtail-localize
+wagtail-modeladmin==2.0.0  # https://github.com/wagtail/wagtail-modeladmin
+wagtail-autocomplete==0.11.0  # https://github.com/wagtail/wagtail-autocomplete
+wagtail-2fa-new==1.8.0  # https://pypi.org/project/wagtail-2fa-new/
 
-# Wagtail Recaptcha
-# ------------------------------------------------------------------------------
-# django-recaptcha==4.0.0
-wagtail-django-recaptcha==2.1.1
 
-# Wagtail Menu
-# ------------------------------------------------------------------------------
-wagtailmenus==3.1.9
+# ==============================================================================
+# CACHE & SESSION
+# ==============================================================================
 
-# Wagtail Localize
-# ------------------------------------------------------------------------------
-wagtail-localize==1.8.2
+redis==5.0.1  # https://github.com/redis/redis-py
+hiredis==2.2.3  # https://github.com/redis/hiredis-py
+django-redis==5.4.0  # https://github.com/jazzband/django-redis
 
-#Wagtail Admin
-# ------------------------------------------------------------------------------
-wagtail-modeladmin==2.0.0
 
-# Django celery
-# ------------------------------------------------------------------------------
+# ==============================================================================
+# TASK QUEUE & BACKGROUND JOBS
+# ==============================================================================
+
+celery==5.3.6  # pyup: < 6.0  # https://github.com/celery/celery
+flower==2.0.1  # https://github.com/mher/flower
 django-celery-beat==2.6.0  # https://github.com/celery/django-celery-beat
-django_celery_results==2.5.1
-
-# Wagtail-Autocomplete
-# https://github.com/wagtail/wagtail-autocomplete
-# ------------------------------------------------------------------------------
-wagtail-autocomplete==0.11.0
+django_celery_results==2.5.1  # https://github.com/celery/django-celery-results
 
 
-# Minio
-minio==7.2.5
+# ==============================================================================
+# SEARCH
+# ==============================================================================
 
-# packtools
-# ------------------------------------------------------------------------------
-lxml==4.9.4 # https://github.com/lxml/lxml
-tornado>=6.3.3 # not directly required, pinned by Snyk to avoid a vulnerability
-git+https://git@github.com/scieloorg/packtools@4.11.11#egg=packtools
-# packtools@https://github.com/scieloorg/packtools/archive/refs/tags/3.3.3.zip
-#-e git+https://github.com/scieloorg/packtools#egg=packtools
+# Solr integration
+git+https://github.com/django-haystack/django-haystack.git  # Django Haystack
+pysolr==3.9.0  # https://pypi.org/project/pysolr/
 
 
-# Sickle
-# ------------------------------------------------------------------------------
-Sickle==0.7.0
+# ==============================================================================
+# STORAGE
+# ==============================================================================
 
-# Solr
-# ------------------------------------------------------------------------------
-# django-haystack==3.2.1
-git+https://github.com/django-haystack/django-haystack.git
+minio==7.2.5  # https://min.io/docs/minio/linux/developers/python/minio-py.html
+
+# ==============================================================================
+# MONITORING & MAINTENANCE
+# ==============================================================================
+
+django-prometheus==2.3.1  # https://github.com/korfuri/django-prometheus
+django-maintenance-mode==0.21.1  # https://github.com/fabiocaccamo/django-maintenance-mode
 
 
-# PySolr
-# ------------------------------------------------------------------------------
-pysolr==3.9.0
+# ==============================================================================
+# INTERNATIONALIZATION
+# ==============================================================================
 
-# Tenacity
-# ------------------------------------------------------------------------------
+django-rosetta==0.10.1  # https://github.com/mbi/django-rosetta
+
+# ==============================================================================
+# EXTERNAL INTEGRATIONS
+# ==============================================================================
+
+# OAI-PMH harvesting
+Sickle==0.7.0  # https://pypi.org/project/sickle/
+
+# Retry logic
 tenacity==8.2.3  # https://pypi.org/project/tenacity/
+tornado>=6.3.3  # not directly required, pinned by Snyk to avoid a vulnerability
 
-#Django Maintenance Mode
-# ------------------------------------------------------------------------------
-django-maintenance-mode==0.21.1
+# ==============================================================================
+# SCIELO SPECIFIC
+# ==============================================================================
 
-# Snky
-# ------------------------------------------------------------------------------
-certifi>=2023.7.22 # not directly required, pinned by Snyk to avoid a vulnerability
-requests>=2.31.0 # not directly required, pinned by Snyk to avoid a vulnerability
-
-
-#Django prometheus
-# ------------------------------------------------------------------------------
-django-prometheus==2.3.1
-
+# Packtools - XML validation
+# packtools@https://github.com/scieloorg/packtools/archive/refs/tags/3.3.3.zip
+git+https://git@github.com/scieloorg/packtools@4.11.11#egg=packtools
 
 # SciELO Legendarium
 -e git+https://github.com/scieloorg/legendarium#egg=legendarium  # https://github.com/scieloorg/legendarium
 
+# ==============================================================================
+# SECURITY UPDATES
+# ==============================================================================
 
-# freezegun
-# ------------------------------------------------------------------------------
-freezegun==1.5.1
-
-# django-rosetta
-# ------------------------------------------------------------------------------
-django-rosetta==0.10.1
+certifi>=2023.7.22  # not directly required, pinned by Snyk to avoid a vulnerability
+requests>=2.31.0  # not directly required, pinned by Snyk to avoid a vulnerability

@@ -2,7 +2,7 @@ import logging
 import sys
 
 # from django.utils.translation import gettext as _
-from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
+from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre, get_xml_with_pre
 
 from pid_provider.models import PidProviderXML, PidRequest
 from tracker.models import UnexpectedEvent
@@ -80,7 +80,7 @@ class BasePidProvider:
         registered["apply_xml_changes"] = self.caller == "core" and registered.get("xml_changed")
         registered["xml_with_pre"] = xml_with_pre
         return registered
-
+    
     def provide_pid_for_xml_zip(
         self,
         zip_xml_file_path,
