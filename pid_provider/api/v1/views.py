@@ -1,7 +1,7 @@
-import os
 import logging
 from tempfile import NamedTemporaryFile
 
+from celery.exceptions import TimeoutError
 from rest_framework import status
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.parsers import FileUploadParser
@@ -9,13 +9,26 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from pid_provider.tasks import task_provide_pid_for_xml_zip
-
+from pid_provider.provider import PidProvider
+from pid_provider.tasks import (
+    task_delete_provide_pid_tmp_zip,
+    task_provide_pid_for_xml_zip,
+)
 
 STATUS_MAPPING = {
     "created": status.HTTP_201_CREATED,
     "updated": status.HTTP_200_OK,
 }
+# usando redis 0 maior prioridade
+TASK_HIGH_PRIORITY = 0
+TASK_LOW_PRIORITY = 9
+# Cancela se não começar em X segundos
+TASK_EXPIRES = 30
+# queue=queue          # Fila específica
+TASK_QUEUE = "pid_provider"
+# tempo de espera da resposta
+TASK_TIMEOUT = 30
+
 
 class PidProviderViewSet(
     GenericViewSet,  # generic view functionality
@@ -71,33 +84,56 @@ class PidProviderViewSet(
             logging.info(f"Receiving {uploaded_file.name}")
             user = self.request.user
 
-            with NamedTemporaryFile(delete=False, suffix='.zip') as tmp_zip_file:
+            with NamedTemporaryFile(delete=False, suffix=".zip") as tmp_zip_file:
                 for chunk in uploaded_file.chunks():
                     tmp_zip_file.write(chunk)
                 temp_file_path = tmp_zip_file.name
 
+            # 1. ENVIAR TASK com priority e expires
             response = task_provide_pid_for_xml_zip.apply_async(
-                kwargs=dict(
-                    username=user.username,
-                    user_id=user.id,
-                    zip_filename=temp_file_path,
-                ),
-                timeout=300,
+                kwargs={
+                    "username": user.username,
+                    "user_id": user.id,
+                    "zip_filename": temp_file_path,
+                },
+                priority=TASK_HIGH_PRIORITY,
+                expires=TASK_EXPIRES,
+                # queue=queue,
             )
-            result = response.get()
+
+            # 2. ESPERAR RESULTADO com timeout
+            try:
+                result = response.get(
+                    timeout=TASK_TIMEOUT
+                )  # Espera no máximo X segundos
+                status = (
+                    STATUS_MAPPING.get(result.get("record_status"))
+                    or status.HTTP_200_OK
+                )
+            except TimeoutError:
+                # Timeout atingido - task ainda está rodando
+                result = {
+                    "status": "processing",
+                    "task_id": response.id,
+                    "message": f"Processing with {TASK_HIGH_PRIORITY} priority. Check back later.",
+                    "priority": TASK_HIGH_PRIORITY,
+                    "expires_in": f"{TASK_EXPIRES} seconds",
+                }
+                status = status.HTTP_202_ACCEPTED
+
         except Exception as e:
             logging.exception(e)
             result = {"error_type": str(type(e)), "error_message": str(e)}
+            status = status.HTTP_400_BAD_REQUEST
         finally:
             logging.info(result)
-            try:
-                if temp_file_path and os.path.exists(temp_file_path):
-                    os.remove(temp_file_path)
-            except Exception as exc:
-                pass
-            return Response(
-                [result],
-                status=STATUS_MAPPING.get(result.get("record_status")) or status.HTTP_400_BAD_REQUEST)
+            task_delete_provide_pid_tmp_zip.apply_async(
+                kwargs={
+                    "temp_file_path": temp_file_path,
+                },
+                priority=TASK_LOW_PRIORITY,
+            )
+            return Response([result], status=status)
 
 
 class FixPidV2ViewSet(
