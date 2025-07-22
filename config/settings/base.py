@@ -380,7 +380,7 @@ TASK_QUEUE = env('TASK_QUEUE', default='high')
 # Tempo máximo em segundos que uma tarefa pode levar para ser concluída (timeout "suave").
 # `env.int()` garante que o valor lido seja um inteiro.
 TASK_TIMEOUT = env.int('TASK_TIMEOUT', default=5 * 60)
-
+RUN_ASYNC = env.int('RUN_ASYNC', default=0)
 # Celery Results
 # ------------------------------------------------------------------------------
 # https: // django-celery-results.readthedocs.io/en/latest/getting_started.html
