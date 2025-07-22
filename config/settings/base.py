@@ -369,6 +369,18 @@ CELERY_WORKER_SEND_TASK_EVENTS = True
 CELERY_SEND_TASK_SENT_EVENT = True
 CELERYD_SEND_EVENTS = True
 CE_BUCKETS=1,2.5,5,10,30,60,300,600,900,1800
+
+# Tempo em segundos para cancelar uma tarefa se ela não começar.
+# `env.int()` garante que o valor lido seja um inteiro.
+TASK_EXPIRES = env.int('TASK_EXPIRES', default=5 * 60)
+
+# Nome da fila padrão para as tarefas.
+TASK_QUEUE = env('TASK_QUEUE', default='high')
+
+# Tempo máximo em segundos que uma tarefa pode levar para ser concluída (timeout "suave").
+# `env.int()` garante que o valor lido seja um inteiro.
+TASK_TIMEOUT = env.int('TASK_TIMEOUT', default=5 * 60)
+
 # Celery Results
 # ------------------------------------------------------------------------------
 # https: // django-celery-results.readthedocs.io/en/latest/getting_started.html
