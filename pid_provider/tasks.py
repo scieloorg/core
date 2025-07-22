@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 
 from django.contrib.auth import get_user_model
 
@@ -290,6 +291,7 @@ def task_provide_pid_for_xml_zip(
 ):
     try:
         user = _get_user(self.request, username=username, user_id=user_id)
+        logging.info("Running task_provide_pid_for_xml_zip")
         response = pid_provider.provide_pid_for_xml_zip(
             zip_filename,
             user,
@@ -300,6 +302,7 @@ def task_provide_pid_for_xml_zip(
             registered_in_core=None,
             caller="core",
         )
+        logging.info("fim Running task_provide_pid_for_xml_zip")
         try:
             response = list(response)[0]
         except IndexError:
