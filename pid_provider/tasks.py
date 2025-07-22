@@ -1,19 +1,13 @@
-import logging
 import os
-import re
 import sys
-from io import BytesIO
-from zipfile import ZipFile
-from datetime import datetime
 
-import pytz
 from django.contrib.auth import get_user_model
 
 from collection.models import Collection
 from config import celery_app
 from core.utils.utils import fetch_data
+from pid_provider.models import CollectionPidRequest, PidRequest
 from pid_provider.provider import PidProvider
-from pid_provider.models import CollectionPidRequest, PidProviderXML, PidRequest
 from pid_provider.sources import am
 from pid_provider.sources.harvesting import provide_pid_for_opac_and_am_xml
 from tracker.models import UnexpectedEvent
