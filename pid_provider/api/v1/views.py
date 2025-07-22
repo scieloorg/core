@@ -1,8 +1,9 @@
 import logging
 from tempfile import NamedTemporaryFile
+from config.settings.base import TASK_EXPIRES, TASK_TIMEOUT
 
 from celery.exceptions import TimeoutError
-from rest_framework import status
+from rest_framework import status as rest_framework_status
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.parsers import FileUploadParser
 from rest_framework.permissions import IsAuthenticated
@@ -16,18 +17,14 @@ from pid_provider.tasks import (
 )
 
 STATUS_MAPPING = {
-    "created": status.HTTP_201_CREATED,
-    "updated": status.HTTP_200_OK,
+    "created": rest_framework_status.HTTP_201_CREATED,
+    "updated": rest_framework_status.HTTP_200_OK,
 }
 # usando redis 0 maior prioridade
 TASK_HIGH_PRIORITY = 0
 TASK_LOW_PRIORITY = 9
-# Cancela se não começar em X segundos
-TASK_EXPIRES = 30
 # queue=queue          # Fila específica
-TASK_QUEUE = "pid_provider"
-# tempo de espera da resposta
-TASK_TIMEOUT = 30
+# TASK_QUEUE = "pid_provider"
 
 
 class PidProviderViewSet(
@@ -102,13 +99,14 @@ class PidProviderViewSet(
             )
 
             # 2. ESPERAR RESULTADO com timeout
+            result_status = rest_framework_status.HTTP_400_BAD_REQUEST
             try:
                 result = response.get(
                     timeout=TASK_TIMEOUT
                 )  # Espera no máximo X segundos
-                status = (
+                result_status = (
                     STATUS_MAPPING.get(result.get("record_status"))
-                    or status.HTTP_200_OK
+                    or rest_framework_status.HTTP_200_OK
                 )
             except TimeoutError:
                 # Timeout atingido - task ainda está rodando
@@ -119,12 +117,12 @@ class PidProviderViewSet(
                     "priority": TASK_HIGH_PRIORITY,
                     "expires_in": f"{TASK_EXPIRES} seconds",
                 }
-                status = status.HTTP_202_ACCEPTED
+                result_status = rest_framework_status.HTTP_202_ACCEPTED
 
         except Exception as e:
             logging.exception(e)
             result = {"error_type": str(type(e)), "error_message": str(e)}
-            status = status.HTTP_400_BAD_REQUEST
+            result_status = rest_framework_status.HTTP_400_BAD_REQUEST
         finally:
             logging.info(result)
             task_delete_provide_pid_tmp_zip.apply_async(
@@ -133,7 +131,7 @@ class PidProviderViewSet(
                 },
                 priority=TASK_LOW_PRIORITY,
             )
-            return Response([result], status=status)
+            return Response([result], status=result_status)
 
 
 class FixPidV2ViewSet(
@@ -197,7 +195,7 @@ class FixPidV2ViewSet(
             pid_v3 = request.data.get("pid_v3")
             correct_pid_v2 = request.data.get("correct_pid_v2")
 
-            resp_status = status.HTTP_400_BAD_REQUEST
+            resp_status = rest_framework_status.HTTP_400_BAD_REQUEST
             if len(pid_v3 or "") == len(correct_pid_v2 or "") == 23:
                 result = self.pid_provider.fix_pid_v2(
                     pid_v3=request.data.get("pid_v3"),
@@ -205,7 +203,7 @@ class FixPidV2ViewSet(
                     user=request.user,
                 )
                 if result.get("record_status") == "updated":
-                    resp_status = status.HTTP_200_OK
+                    resp_status = rest_framework_status.HTTP_200_OK
             else:
                 result = {
                     "error": "Invalid parameters",
@@ -217,5 +215,5 @@ class FixPidV2ViewSet(
             logging.exception(e)
             return Response(
                 {"error_type": str(type(e)), "error_message": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=rest_framework_status.HTTP_400_BAD_REQUEST,
             )
