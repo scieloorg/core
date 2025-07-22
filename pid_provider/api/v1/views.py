@@ -1,7 +1,7 @@
-import os
 import logging
 from tempfile import NamedTemporaryFile
 
+from celery.exceptions import TimeoutError
 from rest_framework import status
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.parsers import FileUploadParser
@@ -9,11 +9,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from pid_provider.provider import PidProvider
 from pid_provider.tasks import (
-    task_provide_pid_for_xml_zip,
     task_delete_provide_pid_tmp_zip,
+    task_provide_pid_for_xml_zip,
 )
-from celery.exceptions import TimeoutError
 
 STATUS_MAPPING = {
     "created": status.HTTP_201_CREATED,
