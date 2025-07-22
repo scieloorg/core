@@ -55,7 +55,15 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
     base_form_class = CoreAdminModelForm
 
     def __str__(self):
-        return f"{self.researcher.fullname} ({self.role_editorial_board.all()})"
+        if not self.researcher:
+            return "None"
+        
+        roles = [
+            role.role.std_role or role.role.declared_role
+            for role in self.role_editorial_board.all()
+            if role and role.role
+        ]
+        return f"{self.researcher.fullname} {roles}"
 
     @staticmethod
     def autocomplete_custom_queryset_filter(search_term):

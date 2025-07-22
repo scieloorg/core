@@ -192,10 +192,6 @@ class JournalProxyEditor(Journal):
         AutocompletePanel("abstract_language"),
     ]
 
-    panels_editorial_board = [
-        InlinePanel("editorial_board_member_journal", label=_("Editorial Board")),
-    ]
-
     edit_handler = TabbedInterface(
         [
             ObjectList(panels_titles, heading=_("Titles")),
@@ -204,7 +200,6 @@ class JournalProxyEditor(Journal):
             ObjectList(panels_website, heading=_("Website")),
             ObjectList(panels_open_science, heading=_("Open Science")),
             ObjectList(panels_notes, heading=_("Notes")),
-            ObjectList(panels_editorial_board, heading=_("Editorial Board")),
         ]
     )
     class Meta:
