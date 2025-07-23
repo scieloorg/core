@@ -7,7 +7,6 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 from config.settings.base import TASK_EXPIRES, TASK_TIMEOUT, RUN_ASYNC
 
 from celery.exceptions import TimeoutError
-from django.db import close_old_connections
 from rest_framework import status as rest_framework_status
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.parsers import FileUploadParser
@@ -157,7 +156,6 @@ class PidProviderViewSet(
                 user_id=user.id,
                 zip_filename=downloaded_file_path,
             )
-        close_old_connections()
         return response
 
 

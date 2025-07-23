@@ -303,10 +303,7 @@ def task_provide_pid_for_xml_zip(
             caller="core",
         )
         logging.info("fim Running task_provide_pid_for_xml_zip")
-        try:
-            response = list(response)[0]
-        except IndexError:
-            response = {}
+        response = list(response)[0]
         try:
             response.pop("xml_with_pre")
         except KeyError:
