@@ -1,6 +1,5 @@
-function adicionarParametrosUrlAoForm(formId) {
+function adicionarParametrosUrlAoForm(form) {
   const urlParams = new URLSearchParams(window.location.search);
-  const form = document.getElementById(formId);
 
   urlParams.forEach((value, key) => {
     if (!form.querySelector(`[name="${key}"]`)) {
@@ -13,6 +12,9 @@ function adicionarParametrosUrlAoForm(formId) {
   });
 }
 
-document.getElementById('meuForm').addEventListener('submit', function(e) {
-  adicionarParametrosUrlAoForm('meuForm');
+// Aplicar a todos os formulários automaticamente
+document.querySelectorAll('form').forEach(form => {
+  form.addEventListener('submit', function(e) {
+    adicionarParametrosUrlAoForm(this);
+  });
 });

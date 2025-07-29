@@ -173,8 +173,13 @@ dd.dd-button {
                                         <dd class="text dd-button">
                                             <button type="submit" class="btn btn-secondary">{% trans 'In alphabetical order' %}</button>
                                         </dd>
+                                    </form>
+                                    {% endif %}
+                                    {% if child.slug == "list-journals-by-publisher" %}
+                                    <form method="post" style="display: inline;" action="{{ child.url }}">
+                                        {% csrf_token %}
                                         <dd class="text dd-button">
-                                            <button type="submit" class="btn btn-secondary" value="publisher" name="category">{% trans 'Of publisher' %}</button>
+                                            <button type="submit" class="btn btn-secondary">{% trans 'Of publisher' %}</button>
                                         </dd>
                                     </form>
                                     {% endif %}

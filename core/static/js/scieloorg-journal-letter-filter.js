@@ -11,6 +11,11 @@ letters.forEach(letter => {
     btn.textContent = letter;
     btn.onclick = function() {
         letterInput.value = letter;
+        
+        // Adicionar parâmetros ANTES de submeter
+        adicionarParametrosUrlAoForm(form);
+        
+        // Agora submeter o formulário
         form.submit();
     };
     btnGroup.appendChild(btn);

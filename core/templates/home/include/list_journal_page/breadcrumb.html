@@ -7,9 +7,28 @@
                 <ol class="breadcrumb mb-0 ps-0">
                     <li class="breadcrumb-item">
                         <a href="/home" alt="Home"><span class="material-icons-outlined">home</span></a> {% trans 'Home' %}
-                    </li>
                     <li class="breadcrumb-item">
                         {% trans 'Periódicos' %}
+                    </li>
+                </ol>
+            </div>
+            <div class="breadcrumb-content">
+                {% if self.get_ancestors|length > 1 %}
+                    <ul class="breadcrumb">
+                        {% for p in self.get_ancestors %}
+                            {% if p.is_root == False %}
+                                <li><a href="{{ p.url }}">{{ p.title }}>>></a></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <ol class="breadcrumb mb-0 ps-0">
+                    <li class="breadcrumb-item">
+                        <h3 style="margin: 0%;"><strong>{{ page.title }}</strong></h3>
                     </li>
                 </ol>
             </div>

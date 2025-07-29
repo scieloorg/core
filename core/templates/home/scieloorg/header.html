@@ -2,21 +2,32 @@
 {% load wagtailcore_tags %}
 
 <header>
-    <div class="text-end p-4">
-        <ul class="list-unstyled">
-            <li>
-                <a href="https://scielo.org/en/about-scielo"><span class="material-icons-outlined">info</span> {% trans 'About SciELO' %}</a>
-            </li>
-            {% if page %}
-                {% for translation in page.get_translations.live %}
-                {% get_language_info for translation.locale.language_code as lang %}
-                    <li>
-                        <a href="{% pageurl translation %}" rel="alternate" hreflang="{{ language_code }}">
-                            {{ lang.name_local }}
-                        </a>
-                    </li>
+    <div class="container">
+        <div class="d-flex justify-content-end p-4">
+            <ul class="list-unstyled d-flex align-items-center gap-2 mb-0">
+                <li>
+                    <a href="{% pageurl page_about %}">
+                        <span class="material-icons-outlined">info</span> {% trans 'About SciELO' %}
+                    </a>
+                </li>
+                {% if page %}
+                    {% for translation in page.get_translations.live %}
+                        {% get_language_info for translation.locale.language_code as lang %}
+                        <li>
+                            <a href="{% pageurl translation %}" rel="alternate" hreflang="{{ language_code }}">
+                                {{ lang.name_local }}
+                            </a>
+                        </li>
                     {% endfor %}
-            {% endif %}
-        </ul>
+                {% endif %}
+            </ul>
+        </div>
+        <div class="row">
+            <div class="col text-center">
+                <a href="{{ page.get_parent.specific.url }}">
+                    <div class="scielo__logo-scielo--medium"></div>
+                </a>
+            </div>
+        </div>
     </div>
 </header>

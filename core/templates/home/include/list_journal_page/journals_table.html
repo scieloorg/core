@@ -9,21 +9,7 @@
                     <thead>
                         <tr>
                             <th class="w-100" scope="col">{% trans 'Periódicos' %}<span id="totalLabel"></span> <small>({% trans 'total' %} {{ journals.count }})</small></th>
-                            <th class="text-nowrap w-auto" scope="col">
-                                <form action="#" style="margin-bottom: 2px;" class="download-form">
-                                    <button id="btnGroupDropDownload" type="submit" class="btn btn-sm btn-secondary scielo__btn-with-icon--only dropdown-toggle mb-0 float-end d-print-none" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <span class="material-icons-outlined">download</span>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btnGroupDropDownload" >
-                                        <li>
-                                            <a class="dropdown-item" href="#">XLS</a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" href="#">CSV</a>
-                                        </li>
-                                    </ul>
-                                </form>
-                            </th>
+                            {% include "home/include/download_button_csv_xls.html" %}
                         </tr>
                     </thead>
                     <tbody>
@@ -35,12 +21,12 @@
                         {% for journal in journals %}
                         <tr>
                             <th colspan="2">
-                                {% if journal.scielojournal__status in "C" %}
+                                {% if journal.status in "C" %}
                                     <span class="material-icons align-middle fs-5" style="color: #2c9d45;">fiber_manual_record</span> 
-                                {% elif journal.scielojournal__status in "DS" %} 
+                                {% elif journal.status in "DS" %} 
                                     <span class="material-icons align-middle fs-5" style="color: #c63800;">fiber_manual_record</span> 
                                 {% endif %}
-                                <a target="_blank" href="http://{{ journal.scielojournal__collection__domain }}/scielo.php?script=sci_serial&pid={{journal.scielojournal__issn_scielo}}&lng=en">{{ journal.title }}</a>
+                                <a target="_blank" href="http://{{ journal.collection__domain }}/scielo.php?script=sci_serial&pid={{journal.scielojournal__issn_scielo}}&lng=en">{{ journal.journal__title }}</a><span style="color: #888; font-size: 0.9em; opacity: 0.7; padding: 4px 8px;">{{journal.collection__main_name}}</span>
                             </th>
                         </tr>
                         {% endfor %}

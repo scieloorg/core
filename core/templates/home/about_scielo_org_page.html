@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load humanize static i18n wagtailsettings_tags wagtailcore_tags get_journals_by_name_institutiton %}
+{% load wagtailcore_tags %}
+{% block content %}
+
+<style>
+.scielo-list {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0;
+}
+
+.scielo-list-item {
+    border: none;
+    border-radius: 5px;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 18px 24px;
+    font-size: 15px;
+    color: #333;
+    transition: background 0.2s, color 0.2s;
+    cursor: pointer;
+}
+
+.scielo-list-item:last-child {
+    border-bottom: none;
+}
+
+.scielo-list-item a {
+    color: inherit;
+    text-decoration: none;
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.scielo-list-item:hover,
+.scielo-list-item:focus,
+.scielo-list-item.active {
+    background: #7b97d9;
+    color: #fff;
+}
+
+.scielo-list-text {
+    background: #fff;
+    color: #555;
+    font-style: italic;
+}
+
+</style>
+    {% include "home/scieloorg/header.html" %}
+    {% include "home/include/list_journal_page/breadcrumb.html" %}
+<section>
+    <div class="container">
+        {% for block in page.list_page %}
+            {% if block.block_type == 'page' %}
+                <div class="scielo-list-item">
+                    <a href="{{ block.value.url }}">{{ block.value.title }}</a>
+                </div>
+            {% elif block.block_type == 'text' %}
+                <div>
+                    {{ block.value|richtext }}
+                </div>
+            {% elif block.block_type == 'url' %}
+                <div class="scielo-list-item">
+                    <a href="{{ block.value }}" target="_blank">{{ block.value }}</a>
+                </div>
+            {% elif block.block_type == 'document' %}
+                <div class="scielo-list-item">
+                    <a target="_blank" href="{{ block.value.url }}">{{ block.value.title }}</a>
+                </div>
+            {% endif %}
+        {% endfor %}
+        {% for child in page.get_children.live.public %}
+            <div class="scielo-list-item">
+               <a href="{% pageurl child %}">{{ child.title }}</a>
+            </div>
+        {% endfor%}
+    </div>
+</section>
+    
+{% endblock %}

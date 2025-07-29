@@ -1,6 +1,6 @@
 {% load humanize static i18n wagtailsettings_tags wagtailcore_tags get_journals_by_name_institutiton %}
 
-<form id="meuForm" action="{{ self.url }}" method="get">
+<form id="tabForm" action="{{ self.url }}" method="get">
     <ul class="nav">
         <li class="nav-item" role="presentation">
             <button type="submit" class="ms-1 btn btn-sm btn-secondary" name="tab" value="">
@@ -13,34 +13,9 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button type="submit" class="ms-1 btn btn-sm btn-secondary scielo__btn-with-icon--left" name="tab" value="D">
+            <button type="submit" class="ms-1 btn btn-sm btn-secondary scielo__btn-with-icon--left" name="tab" value="DS">
                 <span class="material-icons" style="color: #c63800;">fiber_manual_record</span> {% trans "Descontinuados" %}
             </button>
         </li>
     </ul>
 </form>
-
-
-<script>
-function adicionarParametrosUrlAoForm(formId) {
-  const urlParams = new URLSearchParams(window.location.search);
-  const form = document.getElementById(formId);
-
-  // Para cada parâmetro da URL, cria um input hidden no form
-  urlParams.forEach((value, key) => {
-    // Evita duplicar campos se já existirem
-    if (!form.querySelector(`[name="${key}"]`)) {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = key;
-      input.value = value;
-      form.appendChild(input);
-    }
-  });
-}
-
-document.getElementById('meuForm').addEventListener('submit', function(e) {
-  adicionarParametrosUrlAoForm('meuForm');
-
-});
-</script>
