@@ -1,0 +1,21 @@
+{% load humanize static i18n wagtailsettings_tags wagtailcore_tags get_journals_by_name_institutiton %}
+
+<form id="tabForm" action="{{ self.url }}" method="get">
+    <ul class="nav">
+        <li class="nav-item" role="presentation">
+            <button type="submit" class="ms-1 btn btn-sm btn-secondary" name="tab" value="">
+                {% trans "Todos" %}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button type="submit" class="ms-1 btn btn-sm btn-secondary scielo__btn-with-icon--left" name="tab" value="C">
+                <span class="material-icons" style="color: #2c9d45;">fiber_manual_record</span> {% trans "Ativos" %}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button type="submit" class="ms-1 btn btn-sm btn-secondary scielo__btn-with-icon--left" name="tab" value="DS">
+                <span class="material-icons" style="color: #c63800;">fiber_manual_record</span> {% trans "Descontinuados" %}
+            </button>
+        </li>
+    </ul>
+</form>
