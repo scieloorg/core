@@ -1,29 +1,41 @@
 from django.db import models
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.http import JsonResponse
 from django.template.response import TemplateResponse
 from django.utils.translation import get_language
 from modelcluster.fields import ParentalKey
+from wagtail import blocks
 from wagtail.admin.panels import FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel
 from wagtail.contrib.forms.models import AbstractFormField
 from wagtail.contrib.forms.panels import FormSubmissionsPanel
-from wagtail.fields import RichTextField
-from wagtail.models import Page
+from wagtail.documents.blocks import DocumentChooserBlock
+from wagtail.fields import RichTextField, StreamField
+from wagtail.models import Locale, Page
 from wagtailcaptcha.models import WagtailCaptchaEmailForm
 
 from collection.models import Collection
 from core.utils.utils import language_iso
-from institution.models import Institution
 from journal.choices import STUDY_AREA
-from journal.models import Journal
+from journal.models import OwnerHistory, SciELOJournal
 
 
 class HomePage(Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        lang = language_iso(get_language())
-        collections = Collection.objects.all()
+        collections = Collection.objects.all().order_by("main_name")
         children = self.get_children()
+        try:
+            lang = get_language()
+            locale = Locale.objects.get(language_code__iexact=lang)
+            page_about = (
+                self.get_children()
+                .live()
+                .public()
+                .get(slug="about-scielo", locale=locale)
+            )
+            context["page_about"] = page_about
+        except (Page.DoesNotExist, Locale.DoesNotExist, Page.MultipleObjectsReturned):
+            context["page_about"] = Page.objects.filter(slug="about-scielo").first()
 
         context["collections_journals"] = collections.filter(
             Q(is_active=True) & Q(status="certified")
@@ -49,52 +61,122 @@ class HomePage(Page):
 class ListPageJournal(Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        parent_specific_page = self.get_parent().specific
-
+        lang = get_language()
+        locale = Locale.objects.get(language_code__iexact=lang)
+        parent_specific_page = (
+            self.get_parent()
+            .specific.get_children()
+            .live()
+            .public()
+            .get(slug="about-scielo", locale=locale)
+        )
+        context["page_about"] = parent_specific_page
         category = request.GET.get("category")
         search_term = request.GET.get("search_term", "")
         starts_with_letter = request.GET.get("start_with_letter", "")
-        active_or_discontinued = request.GET.get("tab", "")
+        active_or_discontinued = list(request.GET.get("tab", ""))
 
-        publisher = category == "publisher"
-        institution = []
-        
-        filters = {
-            "scielojournal__status__in": ["C", "D", "S"]
-        }
+        filters = Q()
+        filters &= Q(status__in=["C", "D", "S"])
 
         if category and any(category in item for item in STUDY_AREA):
-            filters["subject__code"] = category
+            filters &= Q(journal__subject__code=category)
         if search_term:
-            filters["title__icontains"] = search_term
+            filters &= Q(journal__title__icontains=search_term)
         if starts_with_letter:
-            filters["title__istartswith"] = starts_with_letter
+            filters &= Q(journal__title__istartswith=starts_with_letter)
         if active_or_discontinued:
-            filters["scielojournal__status"] = active_or_discontinued
+            filters &= Q(status__in=active_or_discontinued)
 
         journals = (
-            Journal.objects.filter(**filters)
+            SciELOJournal.objects.filter(filters)
             .values(
-                "title",
-                "scielojournal__issn_scielo",
-                "scielojournal__collection__domain",
-                "scielojournal__status",
+                "journal__title",
+                "issn_scielo",
+                "collection__domain",
+                "collection__main_name",
+                "status",
             )
-            .distinct("title")
-            .order_by("title")
+            .order_by("journal__title")
         )
 
-        if publisher:
-            institution = Institution.objects.all().order_by(
-                "institution_identification__name"
-            )
-
-        context["search_term"] = search_term
-        context["parent_page"] = parent_specific_page
-        context["category"] = category
-        context["publisher"] = publisher
-        context["institution"] = institution
         context["journals"] = journals
+        return context
+
+
+class ListPageJournalByPublisher(Page):
+    def get_context(self, request, *args, **kwargs):
+        context = super().get_context(request, *args, **kwargs)
+        lang = get_language()
+        locale = Locale.objects.get(language_code__iexact=lang)
+        parent_specific_page = (
+            self.get_parent()
+            .specific.get_children()
+            .live()
+            .public()
+            .get(slug="about-scielo", locale=locale)
+        )
+        context["page_about"] = parent_specific_page
+        search_term = request.GET.get("search_term", "")
+        starts_with_letter = request.GET.get("start_with_letter", "")
+        active_or_discontinued = list(request.GET.get("tab", ""))
+
+        filters = Q()
+        filters &= Q(journal__scielojournal__status__in=["C", "D", "S"])
+        if search_term:
+            filters &= Q(journal__title__icontains=search_term) | Q(
+                institution__institution__institution_identification__name__icontains=search_term
+            )
+        if starts_with_letter:
+            filters &= Q(journal__title__istartswith=starts_with_letter)
+        if active_or_discontinued:
+            filters &= Q(journal__scielojournal__status__in=active_or_discontinued)
+
+        publishers = (
+            OwnerHistory.objects.filter(
+                institution__isnull=False,
+                institution__institution__institution_identification__name__isnull=False,
+            )
+            .filter(filters)
+            .select_related(
+                "institution__institution__institution_identification",
+                "journal",
+            )
+            .prefetch_related(
+                Prefetch(
+                    "journal__scielojournal_set",
+                    queryset=SciELOJournal.objects.select_related("collection")
+                    .filter(status__in=["C", "D", "S"])
+                    .order_by("journal__title"),
+                )
+            )
+            .order_by("institution__institution__institution_identification__name")
+            .distinct("institution__institution__institution_identification__name")
+        )
+
+        context["publishers"] = publishers
+        context["parent_page"] = parent_specific_page
+        return context
+
+
+class AboutScieloOrgPage(Page):
+    list_page = StreamField(
+        [
+            ("page", blocks.PageChooserBlock()),
+            ("text", blocks.RichTextBlock()),
+            ("url", blocks.URLBlock()),
+            ("document", DocumentChooserBlock()),
+        ],
+        blank=True,
+    )
+
+    content_panels = Page.content_panels + [
+        FieldPanel("list_page"),
+    ]
+
+    def get_context(self, request, *args, **kwargs):
+        context = super().get_context(request, *args, **kwargs)
+        context["page_about"] = self
         return context
 
 
@@ -121,9 +203,11 @@ class FormPage(WagtailCaptchaEmailForm):
                     return JsonResponse(
                         {
                             "alert": "success",
-                            "message": self.thank_you_text
-                            if self.thank_you_text
-                            else "Formulário enviado com sucesso!",
+                            "message": (
+                                self.thank_you_text
+                                if self.thank_you_text
+                                else "Formulário enviado com sucesso!"
+                            ),
                         }
                     )
                 else:
