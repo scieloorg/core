@@ -26,3 +26,24 @@ class User(AbstractUser):
 
         """
         return reverse("users:detail", kwargs={"username": self.username})
+
+
+    @property
+    def collections(self):
+        """Get collections for user.
+
+        Returns:
+            list: List of collections.
+
+        """
+        return self.collection.all()
+    
+    @property
+    def journals(self):
+        """Get journals for user.
+
+        Returns:
+            list: List of journals.
+
+        """
+        return self.journal.all()

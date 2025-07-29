@@ -116,7 +116,7 @@ def get_or_create_code_sections(sections_data, user):
             issue_section, _ = SectionIssue.objects.get_or_create(
                 code_section=code_section,
                 text=section.get("section"),
-                language=Language.get_or_create(code2=section.get("lang"), user=user),
+                language=Language.get_or_create(code2=section.get("lang"), creator=user),
                 creator=user,
             )
             data.append(issue_section)

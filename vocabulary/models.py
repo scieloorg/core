@@ -110,6 +110,11 @@ class Keyword(CommonControlField, TextWithLang):
         null=True,
     )
 
+    autocomplete_search_field = "html_text"
+
+    def autocomplete_label(self):
+        return str(self)
+
     panels = [
         FieldPanel("text"),
         FieldPanel("html_text"),

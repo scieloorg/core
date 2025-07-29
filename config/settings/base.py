@@ -114,8 +114,11 @@ THIRD_PARTY_APPS = [
     "rest_framework",
     "haystack",
     "maintenance_mode",
-    'django_prometheus',
-    'rosetta',
+    "django_prometheus",
+    "rosetta",
+    "wagtail_2fa",
+    "django_otp",
+    "django_otp.plugins.otp_totp",
 ]
 
 LOCAL_APPS = [
@@ -203,6 +206,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "wagtail_2fa.middleware.VerifyUserMiddleware",
+    "wagtail_2fa.middleware.VerifyUserPermissionsMiddleware", 
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.common.BrokenLinkEmailsMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -210,6 +215,7 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
     "maintenance_mode.middleware.MaintenanceModeMiddleware",
     'django_prometheus.middleware.PrometheusAfterMiddleware',
+    "core.middleware.UserCollectionMiddleware",
 ]
 
 # STATIC
@@ -247,7 +253,7 @@ TEMPLATES = [
         "OPTIONS": {
             # https://docs.djangoproject.com/en/dev/ref/settings/#template-context-processors
             "context_processors": [
-                "django.template.context_processors.debug",
+                # "django.template.context_processors.debug",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.template.context_processors.i18n",
@@ -363,6 +369,18 @@ CELERY_WORKER_SEND_TASK_EVENTS = True
 CELERY_SEND_TASK_SENT_EVENT = True
 CELERYD_SEND_EVENTS = True
 CE_BUCKETS=1,2.5,5,10,30,60,300,600,900,1800
+
+# Tempo em segundos para cancelar uma tarefa se ela não começar.
+# `env.int()` garante que o valor lido seja um inteiro.
+TASK_EXPIRES = env.int('TASK_EXPIRES', default=5 * 60)
+
+# Nome da fila padrão para as tarefas.
+TASK_QUEUE = env('TASK_QUEUE', default='high')
+
+# Tempo máximo em segundos que uma tarefa pode levar para ser concluída (timeout "suave").
+# `env.int()` garante que o valor lido seja um inteiro.
+TASK_TIMEOUT = env.int('TASK_TIMEOUT', default=5 * 60)
+RUN_ASYNC = env.int('RUN_ASYNC', default=0)
 # Celery Results
 # ------------------------------------------------------------------------------
 # https: // django-celery-results.readthedocs.io/en/latest/getting_started.html
@@ -531,3 +549,6 @@ MODEL_TO_IMPORT_CSV = {
 # COLLECTION TEAM AND JOURNAL TEAM
 COLLECTION_TEAM = "Collection Team"
 JOURNAL_TEAM = "Journal Team"
+
+WAGTAIL_2FA_REQUIRED = env.bool("WAGTAIL_2FA_REQUIRED", default=False)
+WAGTAIL_2FA_OTP_TOTP_NAME = env.str("WAGTAIL_2FA_OTP_TOTP_NAME", default="SciELO Core")

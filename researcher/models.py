@@ -857,6 +857,15 @@ class NewResearcher(BaseResearcher):
         InlinePanel("researcher_ids", label="Researcher IDs", classname="collapsed"),
     ]
 
+    autocomplete_search_field = "fullname"
+    
+    def autocomplete_label(self):
+        return str(self)
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return NewResearcher.objects.filter(fullname__icontains=search_term).prefetch_related("affiliation", "orcid")
+
     class Meta:
         unique_together = [
             (
@@ -879,6 +888,11 @@ class NewResearcher(BaseResearcher):
             models.Index(
                 fields=[
                     "fullname",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "orcid",
                 ]
             ),
         ]
@@ -1018,7 +1032,7 @@ class ResearcherIds(CommonControlField):
 
     @staticmethod
     def autocomplete_custom_queryset_filter(any_value):
-        return ResearcherIdentifier.objects.filter(identifier__icontains=any_value)
+        return ResearcherIds.objects.filter(identifier__icontains=any_value).prefetch_related("researcher")
 
     def autocomplete_label(self):
         return f"{self.identifier} {self.source_name}"

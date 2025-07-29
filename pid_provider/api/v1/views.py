@@ -1,8 +1,13 @@
 import os
 import logging
-from tempfile import TemporaryDirectory
+from io import BytesIO
+from zipfile import ZipFile
 
-from rest_framework import status
+from tempfile import NamedTemporaryFile, TemporaryDirectory
+from config.settings.base import TASK_EXPIRES, TASK_TIMEOUT, RUN_ASYNC
+
+from celery.exceptions import TimeoutError
+from rest_framework import status as rest_framework_status
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.parsers import FileUploadParser
 from rest_framework.permissions import IsAuthenticated
@@ -10,6 +15,21 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from pid_provider.provider import PidProvider
+from pid_provider.tasks import (
+    task_delete_provide_pid_tmp_zip,
+    task_provide_pid_for_xml_zip,
+)
+
+STATUS_MAPPING = {
+    "created": rest_framework_status.HTTP_201_CREATED,
+    "updated": rest_framework_status.HTTP_200_OK,
+    "processing": rest_framework_status.HTTP_202_ACCEPTED,
+}
+# usando redis 0 maior prioridade
+TASK_HIGH_PRIORITY = 0
+TASK_LOW_PRIORITY = 9
+# queue=queue          # Fila específica
+# TASK_QUEUE = "pid_provider"
 
 
 class PidProviderViewSet(
@@ -22,13 +42,7 @@ class PidProviderViewSet(
     ]
     permission_classes = [IsAuthenticated]
 
-    @property
-    def pid_provider(self):
-        if not hasattr(self, "_pid_provider") or not self._pid_provider:
-            self._pid_provider = PidProvider()
-        return self._pid_provider
-
-    def create(self, request, format="zip"):
+    def create(self, request):
         """
         Receive a zip file which contains XML file(s)
         Register / Update XML data and files
@@ -66,41 +80,83 @@ class PidProviderViewSet(
        """
 
         # self._authenticate(request)
-        logging.info("Receiving files %s" % request.FILES)
-        logging.info("Receiving data %s" % request.data)
-
-        uploaded_file = request.FILES["file"]
         try:
-            with TemporaryDirectory() as output_folder:
-                downloaded_file_path = os.path.join(output_folder, uploaded_file.name)
-                with open(downloaded_file_path, "wb") as fp:
-                    fp.write(uploaded_file.read())
-                results = self.pid_provider.provide_pid_for_xml_zip(
-                    zip_xml_file_path=downloaded_file_path,
-                    user=request.user,
-                    caller="core",
-                )
-                results = list(results)
-                logging.info(results)
-                resp_status = None
-                for item in results:
-                    if item.get("record_status") == "created":
-                        resp_status = resp_status or status.HTTP_201_CREATED
-                    elif item.get("record_status") == "updated":
-                        resp_status = resp_status or status.HTTP_200_OK
-                    else:
-                        resp_status = status.HTTP_400_BAD_REQUEST
-                    try:
-                        item.pop("xml_with_pre")
-                    except KeyError:
-                        pass
-                return Response(results, status=resp_status)
+            result_status = rest_framework_status.HTTP_400_BAD_REQUEST
+            uploaded_file = request.FILES["file"]
+            logging.info(f"Receiving {uploaded_file.name}")
+            user = self.request.user
+
+            if RUN_ASYNC:
+                logging.info("Async")
+                result = self.run_async(user, uploaded_file)
+            else:
+                logging.info("Sync")
+                result = self.run_sync(user, uploaded_file)
+
+            result_status = (
+                STATUS_MAPPING.get(result.get("record_status"))
+                or rest_framework_status.HTTP_200_OK
+            )
         except Exception as e:
             logging.exception(e)
-            return Response(
-                [{"error_type": str(type(e)), "error_message": str(e)}],
-                status=status.HTTP_400_BAD_REQUEST,
+            result = {"error_type": str(type(e)), "error_message": str(e)}
+            result_status = rest_framework_status.HTTP_400_BAD_REQUEST
+        finally:
+            logging.info(result)
+            return Response([result], status=result_status)
+
+    def run_async(self, user, uploaded_file):
+        with NamedTemporaryFile(delete=False, suffix=".zip") as tmp_zip_file:
+            for chunk in uploaded_file.chunks():
+                tmp_zip_file.write(chunk)
+                # tmp_zip_file.write(uploaded_file.read())
+            temp_file_path = tmp_zip_file.name
+
+        # 1. ENVIAR TASK com priority e expires
+        response = task_provide_pid_for_xml_zip.apply_async(
+            kwargs={
+                "username": user.username,
+                "user_id": user.id,
+                "zip_filename": temp_file_path,
+            },
+            priority=TASK_HIGH_PRIORITY,
+            expires=TASK_EXPIRES,
+            # queue=queue,
+        )
+        try:
+            result = response.get(timeout=TASK_TIMEOUT)  # Espera no máximo X segundos
+        except TimeoutError:
+            # Timeout atingido - task ainda está rodando
+            result = {
+                "record_status": "processing",
+                "task_id": response.id,
+                "message": f"Processing with {TASK_HIGH_PRIORITY} priority. Check back later.",
+                "priority": TASK_HIGH_PRIORITY,
+                "expires_in": f"{TASK_EXPIRES} seconds",
+            }
+
+        task_delete_provide_pid_tmp_zip.apply_async(
+            kwargs={
+                "temp_file_path": temp_file_path,
+            },
+            priority=TASK_LOW_PRIORITY,
+        )
+        return result
+
+    def run_sync(self, user, uploaded_file):
+        response = {}
+        with TemporaryDirectory() as output_folder:
+            downloaded_file_path = os.path.join(output_folder, uploaded_file.name)
+            with open(downloaded_file_path, "wb") as fp:
+                for chunk in uploaded_file.chunks():
+                    fp.write(chunk)
+                # fp.write(uploaded_file.read())
+            response = task_provide_pid_for_xml_zip(
+                username=user.username,
+                user_id=user.id,
+                zip_filename=downloaded_file_path,
             )
+        return response
 
 
 class FixPidV2ViewSet(
@@ -164,7 +220,7 @@ class FixPidV2ViewSet(
             pid_v3 = request.data.get("pid_v3")
             correct_pid_v2 = request.data.get("correct_pid_v2")
 
-            resp_status = status.HTTP_400_BAD_REQUEST
+            resp_status = rest_framework_status.HTTP_400_BAD_REQUEST
             if len(pid_v3 or "") == len(correct_pid_v2 or "") == 23:
                 result = self.pid_provider.fix_pid_v2(
                     pid_v3=request.data.get("pid_v3"),
@@ -172,7 +228,7 @@ class FixPidV2ViewSet(
                     user=request.user,
                 )
                 if result.get("record_status") == "updated":
-                    resp_status = status.HTTP_200_OK
+                    resp_status = rest_framework_status.HTTP_200_OK
             else:
                 result = {
                     "error": "Invalid parameters",
@@ -184,5 +240,5 @@ class FixPidV2ViewSet(
             logging.exception(e)
             return Response(
                 {"error_type": str(type(e)), "error_message": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=rest_framework_status.HTTP_400_BAD_REQUEST,
             )

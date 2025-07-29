@@ -6,7 +6,7 @@ import re
 from django.contrib.auth import get_user_model
 from django.core.validators import RegexValidator
 from django.db import IntegrityError, models
-from django.db.models import Q, Prefetch
+from django.db.models import Prefetch, Q
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -27,6 +27,7 @@ from core.models import (
     RichTextWithLanguage,
     TextWithLang,
 )
+from core.utils.thread_context import get_current_collections, get_current_user
 from institution.models import (
     BaseHistoryItem,
     CopyrightHolder,
@@ -611,6 +612,26 @@ class Journal(CommonControlField, ClusterableModel):
     def autocomplete_label(self):
         return str(self)
 
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        user = get_current_user()
+        
+        if not user or not user.is_authenticated:
+            return Journal.objects.none()
+        
+        queryset = Journal.objects
+        if user.is_superuser:
+            return queryset.filter(title__icontains=search_term)
+        
+        collections = get_current_collections()
+        if not collections:
+            return queryset.none()
+    
+        return queryset.filter(
+            title__icontains=search_term, 
+            scielojournal__collection__in=collections
+        ).distinct()
+
     panels_titles = [
         AutocompletePanel("official"),
         FieldPanel("title"),
@@ -679,69 +700,6 @@ class Journal(CommonControlField, ClusterableModel):
         ),
     ]
 
-    panels_policy = [
-        InlinePanel(
-            "ethics",
-            label=_("Ethics"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "ecommittee",
-            label=_("Ethics Committee"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "copyright",
-            label=_("Copyright"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "website_responsibility",
-            label=_("Intellectual Property / Terms of use / Website responsibility"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "author_responsibility",
-            label=_("Intellectual Property / Terms of use / Author responsibility"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "policies",
-            label=_("Retraction Policy | Ethics and Misconduct Policy"),
-            classname="collapsed",
-        ),
-        AutocompletePanel("digital_pa"),
-        InlinePanel(
-            "digital_preservation",
-            label=_("Digital Preservation"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "conflict_policy",
-            label=_("Conflict of interest policy"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "software_adoption",
-            label=_("Similarity Verification Software Adoption"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "gender_issues",
-            label=_("Gender Issues"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "fee_charging",
-            label=_("Fee Charging"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "editorial_policy",
-            label=_("Editorial Policy"),
-            classname="collapsed",
-        ),
-    ]
     panels_notes = [InlinePanel("annotation", label=_("Notes"), classname="collapsed")]
 
     panels_legacy_compatibility_fields = [
@@ -762,62 +720,6 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("acronym_letters"),
     ]
 
-    panels_instructions_for_authors = [
-        InlinePanel(
-            "accepted_documment_types",
-            label=_("Accepted Document Types"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "authors_contributions",
-            label=_("Authors Contributions"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "preparing_manuscript",
-            label=_("Preparing Manuscript"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "digital_assets",
-            label=_("Digital Assets"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "citations_and_references",
-            label=_("Citations and References"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "supp_docs_submission",
-            label=_("Supplementary Documents Required for Submission"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "financing_statement",
-            label=_("Financing Statement"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "acknowledgements",
-            label=_("Acknowledgements"),
-            classname="collapsed",
-        ),
-        InlinePanel(
-            "additional_information",
-            label=_("Additional Information"),
-            classname="collapsed",
-        ),
-        FieldPanel("author_name"),
-        FieldPanel("manuscript_length"),
-        FieldPanel("format_check_list"),
-        AutocompletePanel("text_language"),
-        AutocompletePanel("abstract_language"),
-    ]
-
-    panels_editorial_board = [
-        InlinePanel("editorial_board_member_journal", label=_("Editorial Board")),
-    ]
 
     edit_handler = TabbedInterface(
         [
@@ -826,15 +728,10 @@ class Journal(CommonControlField, ClusterableModel):
             ObjectList(panels_institutions, heading=_("Institutions")),
             ObjectList(panels_website, heading=_("Website")),
             ObjectList(panels_open_science, heading=_("Open Science")),
-            ObjectList(panels_policy, heading=_("Journal Policy")),
             ObjectList(
                 panels_legacy_compatibility_fields, heading=_("Legacy Compatibility")
             ),
-            ObjectList(
-                panels_instructions_for_authors, heading=_("Instructions for Authors")
-            ),
             ObjectList(panels_notes, heading=_("Notes")),
-            ObjectList(panels_editorial_board, heading=_("Editorial Board")),
         ]
     )
 
@@ -1978,6 +1875,13 @@ class SubjectDescriptor(CommonControlField):
 
     class Meta:
         ordering = ["value"]
+        indexes = [
+            models.Index(
+                fields=[
+                    "value",
+                ]
+            )
+        ]
 
     @classmethod
     def get(
@@ -2021,6 +1925,20 @@ class Subject(CommonControlField):
     value = models.CharField(max_length=100, null=True, blank=True)
 
     autocomplete_search_field = "value"
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    "value",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "code",
+                ]
+            ),
+        ]
 
     def autocomplete_label(self):
         return str(self)

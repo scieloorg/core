@@ -38,6 +38,13 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
     
     class Meta:
         unique_together = [("journal", "researcher")]
+        indexes = [
+            models.Index(
+                fields=[
+                    "researcher",
+                ]
+            ),
+        ]
 
     panels = [
         AutocompletePanel("researcher"),
@@ -48,9 +55,20 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
     base_form_class = CoreAdminModelForm
 
     def __str__(self):
-        return f"{self.researcher.fullname} ({self.role_editorial_board.all()})"
+        if not self.researcher:
+            return "None"
+        
+        roles = [
+            role.role.std_role or role.role.declared_role
+            for role in self.role_editorial_board.all()
+            if role and role.role
+        ]
+        return f"{self.researcher.fullname} {roles}"
 
-
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return EditorialBoardMember.objects.filter(researcher__fullname__icontains=search_term).prefetch_related("researcher")
+    
     def autocomplete_label(self):
         return str(self)
 

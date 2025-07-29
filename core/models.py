@@ -150,6 +150,11 @@ class Language(CommonControlField):
                     "code2",
                 ]
             ),
+            models.Index(
+                fields=[
+                    "name",
+                ]
+            )
         ]
 
     def __unicode__(self):
@@ -392,6 +397,11 @@ class LicenseStatement(CommonControlField):
         AutocompletePanel("language"),
         AutocompletePanel("license"),
     ]
+
+    autocomplete_search_field = "license_p"
+
+    def autocomplete_label(self):
+        return str(self)
 
     def __str__(self):
         return f"{self.language} {self.license_p}"
