@@ -1,0 +1,13 @@
+<th class="text-nowrap w-auto" scope="col">
+        <button id="btnGroupDropDownload" type="submit" class="btn btn-sm btn-secondary scielo__btn-with-icon--only dropdown-toggle mb-0 float-end d-print-none" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="material-icons-outlined">download</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btnGroupDropDownload" >
+            <li>
+                <a class="dropdown-item" href="{% url 'download_xls_journals_page_scielo_org' %}">XLS</a>
+            </li>
+            <li>
+                <a class="dropdown-item" href="{% url 'download_csv_journals_page_scielo_org' %}">CSV</a>
+            </li>
+        </ul>
+</th>

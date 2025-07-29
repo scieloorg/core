@@ -16,7 +16,7 @@ from core.api.wagtail.api import api_router
 from core.search_site import views as search_views  # noqa isort:skip
 from core.users.views import filter_journals
 from core_settings.views import import_csv
-from core.home.views import blog_feed_json, youtube_feed_json
+from core.home.views import blog_feed_json, youtube_feed_json, download_csv_journals_page_scielo_org, download_xls_journals_page_scielo_org
 
 urlpatterns = [
     # path("", TemplateView.as_view(template_name="home/home_page.html"), name="home"),
@@ -43,6 +43,8 @@ urlpatterns = [
     path('import-csv/', import_csv, name='import_csv'), 
     path("api/blog-feed/", blog_feed_json, name="blog_feed_json"),
     path("api/youtube-scielo-feed/", youtube_feed_json, name="youtube_feed_json"),
+    path("download-csv-journals-page-scielo-org/", download_csv_journals_page_scielo_org, name="download_csv_journals_page_scielo_org"),
+    path("download-xls-journals-page-scielo-org/", download_xls_journals_page_scielo_org, name="download_xls_journals_page_scielo_org"),
     # Your stuff: custom urls includes go here
     # For anything not caught by a more specific rule above, hand over to
     # Wagtail’s page serving mechanism. This should be the last pattern in
