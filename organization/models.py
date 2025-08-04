@@ -16,23 +16,36 @@ from .exceptions import (
     OrganizationGetError,
 )
 from core.forms import CoreAdminModelForm
-from core.models import CommonControlField
+from core.models import CommonControlField, BaseHistory
 from core.utils.standardizer import remove_extra_spaces
 from location.models import Location
 
 
-class BaseOrganization(CommonControlField, ClusterableModel):
+HELP_TEXT_ORGANIZATION = _("Select the standardized organization data")
+
+
+class BaseOrganization(models.Model):
     name = models.TextField(_("Name"), null=False, blank=False)
     acronym = models.TextField(_("Institution Acronym"), null=True, blank=True)
     location = models.ForeignKey(
         Location, on_delete=models.SET_NULL, null=True, blank=False
     )
+    url = models.URLField("url", blank=True, null=True)
+    logo = models.ImageField(_("Logo"), blank=True, null=True)
     panels = [
         FieldPanel("name"),
         FieldPanel("acronym"),
         AutocompletePanel("location"),
+        FieldPanel("url"),
+        FieldPanel("logo"),
     ]
-    autocomplete_search_field = "name"
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return cls.objects.filter(
+            Q(name__icontains=search_term) |
+            Q(location__country__name__icontains=search_term)
+        ).distinct()
 
     def __str__(self):
         return f"{self.name} | {self.location}"
@@ -56,11 +69,6 @@ class BaseOrganization(CommonControlField, ClusterableModel):
                     "acronym",
                 ]
             ),
-            models.Index(
-                fields=[
-                    "is_official",
-                ]
-            ),
         ]
 
     base_form_class = CoreAdminModelForm
@@ -71,17 +79,17 @@ class BaseOrganization(CommonControlField, ClusterableModel):
         name,
         acronym,
         location,
+        url=None,
     ):
         if not name and not location:
             raise OrganizationGetError("Organization.get requires name and location")
-
         params = {}
         params["name__iexact"] = name
         params["location"] = location
-
         if acronym:
             params["acronym__iexact"] = acronym
-
+        if url:
+            params["url"] = url
         try:
             return cls.objects.get(**params)
         except cls.MultipleObjectsReturned:
@@ -93,15 +101,21 @@ class BaseOrganization(CommonControlField, ClusterableModel):
         name,
         acronym,
         location,
-        user,
+        user=None,
+        url=None,
+        logo=None,
     ):
         try:
             obj = cls(
                 name=name,
                 acronym=acronym,
                 location=location,
-                creator=user,
+                url=url,
+                logo=logo,
             )
+            # Se a classe concreta tiver o campo creator, define-o
+            if hasattr(obj, 'creator') and user:
+                obj.creator = user
             obj.save()
             return obj
         except IntegrityError:
@@ -114,6 +128,8 @@ class BaseOrganization(CommonControlField, ClusterableModel):
         acronym=None,
         location=None,
         user=None,
+        url=None,
+        logo=None,
     ):
         if not name or not location:
             raise OrganizationCreateOrUpdateError(
@@ -124,19 +140,38 @@ class BaseOrganization(CommonControlField, ClusterableModel):
         acronym = remove_extra_spaces(acronym)
 
         try:
-            return cls.get(name=name, acronym=acronym, location=location)
+            obj = cls.get(name=name, acronym=acronym, location=location)
+            # Atualiza campos se fornecidos
+            updated = False
+
+            if url is not None and obj.url != url:
+                obj.url = url
+                updated = True
+
+            if logo is not None and obj.logo != logo:
+                obj.logo = logo
+                updated = True
+
+            if updated:
+                # Se a classe concreta tiver o campo updated_by, define-o
+                if hasattr(obj, 'updated_by') and user:
+                    obj.updated_by = user
+                obj.save()
+
+            return obj
+
         except cls.DoesNotExist:
             return cls.create(
                 name=name,
                 acronym=acronym,
                 location=location,
                 user=user,
+                url=url,
+                logo=logo,
             )
 
 
-class Organization(BaseOrganization):
-    url = models.URLField("url", blank=True, null=True)
-    logo = models.ImageField(_("Logo"), blank=True, null=True)
+class Organization(BaseOrganization, CommonControlField, ClusterableModel):
     institution_type_mec = models.CharField(
         _("Institution Type (MEC)"),
         choices=choices.inst_type,
@@ -147,7 +182,6 @@ class Organization(BaseOrganization):
     institution_type_scielo = models.ManyToManyField(
         "OrganizationInstitutionType",
         verbose_name=_("Institution Type (SciELO)"),
-        null=True,
         blank=True,
     )
     is_official = models.BooleanField(
@@ -157,10 +191,9 @@ class Organization(BaseOrganization):
     )
 
     panels = BaseOrganization.panels + [
-        FieldPanel("url"),
-        FieldPanel("logo"),
         FieldPanel("institution_type_mec"),
         AutocompletePanel("institution_type_scielo"),
+        FieldPanel("is_official"),
     ]
 
     @classmethod
@@ -176,21 +209,94 @@ class Organization(BaseOrganization):
         institution_type_scielo=None,
         is_official=None,
     ):
-        institution_type_mec = remove_extra_spaces(institution_type_mec)
+        # Limpa espaços extras do tipo de instituição MEC
+        if institution_type_mec:
+            institution_type_mec = remove_extra_spaces(institution_type_mec)
+
+        # Chama o método da classe pai com os parâmetros corretos
         obj = super().create_or_update(
-            name,
-            acronym,
-            location,
-            user,
+            name=name,
+            acronym=acronym,
+            location=location,
+            user=user,
+            url=url,
+            logo=logo,
         )
-        obj.url = url or obj.url
-        obj.logo = logo or obj.logo
-        obj.institution_type_mec = institution_type_mec or obj.institution_type_mec
-        obj.is_official = is_official or obj.is_official
-        obj.save()
-        if institution_type_scielo:
-            obj.institution_type_scielo.add(institution_type_scielo)
+
+        # Atualiza campos específicos de Organization
+        updated = False
+
+        if (
+            institution_type_mec is not None
+            and obj.institution_type_mec != institution_type_mec
+        ):
+            obj.institution_type_mec = institution_type_mec
+            updated = True
+
+        if is_official is not None and obj.is_official != is_official:
+            obj.is_official = is_official
+            updated = True
+
+        if updated:
+            obj.updated_by = user
+            obj.save()
+
+        # Gerencia os tipos de instituição SciELO (ManyToMany)
+        if institution_type_scielo is not None:
+            if isinstance(institution_type_scielo, list):
+                # Se for uma lista de objetos ou IDs
+                obj.institution_type_scielo.set(institution_type_scielo)
+            else:
+                # Se for um único objeto
+                obj.institution_type_scielo.add(institution_type_scielo)
+
         return obj
+
+    @classmethod
+    def create(
+        cls,
+        name,
+        acronym,
+        location,
+        user,
+        url=None,
+        logo=None,
+        institution_type_mec=None,
+        institution_type_scielo=None,
+        is_official=None,
+    ):
+        """Override do método create para incluir campos específicos"""
+        try:
+            # Cria usando o método da classe pai
+            obj = super().create(
+                name=name,
+                acronym=acronym,
+                location=location,
+                user=user,
+                url=url,
+                logo=logo,
+            )
+
+            # Adiciona campos específicos de Organization
+            if institution_type_mec:
+                obj.institution_type_mec = remove_extra_spaces(institution_type_mec)
+
+            if is_official is not None:
+                obj.is_official = is_official
+
+            obj.save()
+
+            # Adiciona tipos de instituição SciELO após salvar
+            if institution_type_scielo:
+                if isinstance(institution_type_scielo, list):
+                    obj.institution_type_scielo.set(institution_type_scielo)
+                else:
+                    obj.institution_type_scielo.add(institution_type_scielo)
+
+            return obj
+
+        except IntegrityError:
+            return cls.get(name=name, acronym=acronym, location=location)
 
 
 class BaseOrgLevel(CommonControlField):
@@ -317,7 +423,7 @@ class OrganizationInstitutionType(CommonControlField):
     def autocomplete_label(self):
         return str(self)
 
-    panels = [AutocompletePanel("name")]
+    panels = [FieldPanel("name")]
 
     @classmethod
     def load(cls, user, file_path=None):
@@ -334,7 +440,7 @@ class OrganizationInstitutionType(CommonControlField):
     def get(cls, name):
         if not name:
             raise OrganizationTypeGetError(
-                "OrganizationInstitutionType.get requires name paramenter"
+                "OrganizationInstitutionType.get requires name parameter"
             )
         return cls.objects.get(name=name)
 
