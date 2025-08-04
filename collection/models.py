@@ -4,12 +4,14 @@ from django.db import models
 from django.utils.translation import gettext as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from wagtail.admin.panels import FieldPanel, InlinePanel
+from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
+from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
-from core.models import CommonControlField, Language, TextWithLang
+from core.models import CommonControlField, Language, TextWithLang, BaseHistory, SocialNetwork, BaseLogo
 from core.utils.utils import fetch_data
+from organization.models import Organization, HELP_TEXT_ORGANIZATION
 
 from . import choices
 
@@ -83,19 +85,47 @@ class Collection(CommonControlField, ClusterableModel):
     def autocomplete_label(self):
         return str(self)
 
-    panels = [
+    # Definir as abas separadamente
+    identification_panels = [
         FieldPanel("acron3"),
         FieldPanel("acron2"),
         FieldPanel("code"),
         FieldPanel("domain"),
-        InlinePanel("collection_name", label=_("Translated names")),
         FieldPanel("main_name"),
+        InlinePanel("collection_name", label=_("Translated names")),
+    ]
+
+    other_characteristics_panels = [
         FieldPanel("status"),
         FieldPanel("has_analytics"),
         FieldPanel("collection_type"),
         FieldPanel("is_active"),
         FieldPanel("foundation_date"),
     ]
+
+    logo_panels = [
+        InlinePanel("logos", label=_("Logos"), min_num=0),
+    ]
+    supporting_organization_panels = [
+        InlinePanel("supporting_organization", label=_("Supporting Organization")),
+    ]
+    executing_organization_panels = [
+        InlinePanel("executing_organization", label=_("Executing Organization")),
+    ]
+
+    social_network_panels = [
+        InlinePanel("social_network", label=_("Social networks")),
+    ]
+
+    # Criar a interface com abas
+    edit_handler = TabbedInterface([
+        ObjectList(identification_panels, heading=_("Identification")),
+        ObjectList(other_characteristics_panels, heading=_("Other characteristics")),
+        ObjectList(logo_panels, heading=_("Logos")),
+        ObjectList(supporting_organization_panels, heading=_("Supporting Organizations")),
+        ObjectList(executing_organization_panels, heading=_("Executing Organization")),
+        ObjectList(social_network_panels, heading=_("Social networks")),
+    ])
 
     class Meta:
         verbose_name = _("Collection")
@@ -233,3 +263,90 @@ class Collection(CommonControlField, ClusterableModel):
     @property
     def name(self):
         return CollectionName.objects.filter(collection=self).iterator()
+
+
+class CollectionSocialNetwork(Orderable, SocialNetwork):
+    page = ParentalKey(
+        Collection,
+        on_delete=models.SET_NULL,
+        related_name="social_network",
+        null=True,
+    )
+
+
+class CollectionSupportingOrganization(Orderable, ClusterableModel, BaseHistory):
+    collection = ParentalKey(
+        Collection, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        related_name="supporting_organization"
+    )
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=HELP_TEXT_ORGANIZATION,
+    )
+    
+    panels = BaseHistory.panels + [
+        AutocompletePanel("organization"),
+    ]
+        
+    class Meta:
+        verbose_name = _("Supporting Organization")
+        verbose_name_plural = _("Supporting Organizations")
+        
+    def __str__(self):
+        return str(self.organization)
+
+
+class CollectionExecutingOrganization(Orderable, ClusterableModel, BaseHistory):
+    collection = ParentalKey(
+        Collection, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        related_name="executing_organization"
+    )
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=HELP_TEXT_ORGANIZATION,
+    )
+    
+    panels = BaseHistory.panels + [
+        AutocompletePanel("organization"),
+    ]
+        
+    class Meta:
+        verbose_name = _("Executing Organization")
+        verbose_name_plural = _("Executing Organizations")
+        
+    def __str__(self):
+        return str(self.organization)
+
+
+class CollectionLogo(Orderable, BaseLogo):
+    """
+    Model para armazenar diferentes versões de logos da coleção
+    com suporte a múltiplos tamanhos e idiomas
+    """
+    collection = ParentalKey(
+        'Collection',
+        on_delete=models.CASCADE,
+        related_name='logos',
+        verbose_name=_("Collection")
+    )
+    
+    class Meta:
+        verbose_name = _("Collection Logo")
+        verbose_name_plural = _("Collection Logos")
+        ordering = ['sort_order', 'language', 'size']
+        unique_together = [
+            ('collection', 'size', 'language', ),
+        ]
+
+    def __str__(self):
+        return f"{self.collection} - {self.language} ({self.size})"
