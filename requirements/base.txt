@@ -123,7 +123,7 @@ tornado>=6.3.3  # not directly required, pinned by Snyk to avoid a vulnerability
 
 # Packtools - XML validation
 # packtools@https://github.com/scieloorg/packtools/archive/refs/tags/3.3.3.zip
-git+https://git@github.com/scieloorg/packtools@4.11.16#egg=packtools
+git+https://git@github.com/scieloorg/packtools@4.11.17#egg=packtools
 
 # SciELO Legendarium
 -e git+https://github.com/scieloorg/legendarium#egg=legendarium  # https://github.com/scieloorg/legendarium
