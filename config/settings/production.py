@@ -183,7 +183,12 @@ if env.bool("USE_SENTRY", default=False):
                 "level": "DEBUG",
                 "class": "logging.StreamHandler",
                 "formatter": "verbose",
-            }
+            },
+            "profiling": {
+                "level": "WARNING",
+                "class": "logging.FileHandler",
+                "filename": "profiling.log",
+            },
         },
         "root": {"level": "INFO", "handlers": ["console"]},
         "loggers": {
@@ -205,8 +210,12 @@ if env.bool("USE_SENTRY", default=False):
                 "level": "DEBUG", # ESSENCIAL: para ver a mensagem de depuração
                 "propagate": False, # Não envie para o logger pai (root), para ter controle total
             },
+            "profiling": {
+                "handlers": ["profiling"],
+                "level": "WARNING",
+                "propagate": False,
+            },
         },
-
     }
 
     # Sentry
@@ -234,3 +243,7 @@ if env.bool("USE_SENTRY", default=False):
 
 # Your stuff...
 # ------------------------------------------------------------------------------
+
+PROFILING_ENABLED = env.bool("DJANGO_PROFILING_ENABLED", default=False)
+PROFILING_LOG_SLOW_REQUESTS = 2.0  # Só log se > 2 segundos
+PROFILING_LOG_HIGH_MEMORY = 200    # Só log se > 200MB
