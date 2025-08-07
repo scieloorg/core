@@ -14,6 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from core.utils.profiling_tools import profile_endpoint  # ajuste o import conforme sua estrutura
 from pid_provider.provider import PidProvider
 from pid_provider.tasks import (
     task_delete_provide_pid_tmp_zip,
@@ -42,6 +43,7 @@ class PidProviderViewSet(
     ]
     permission_classes = [IsAuthenticated]
 
+    @profile_endpoint
     def create(self, request):
         """
         Receive a zip file which contains XML file(s)
