@@ -216,6 +216,7 @@ MIDDLEWARE = [
     "maintenance_mode.middleware.MaintenanceModeMiddleware",
     'django_prometheus.middleware.PrometheusAfterMiddleware',
     "core.middleware.UserCollectionMiddleware",
+    "core.utils.profiling_tools.LightweightProfilingMiddleware",
 ]
 
 # STATIC
@@ -324,14 +325,30 @@ LOGGING = {
         "verbose": {
             "format": "%(levelname)s %(asctime)s %(module)s "
             "%(process)d %(thread)d %(message)s"
-        }
+        },
+        "simple": {
+            "format": '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        },
     },
     "handlers": {
         "console": {
             "level": "DEBUG",
             "class": "logging.StreamHandler",
             "formatter": "verbose",
-        }
+        },
+        "profiling_file": {
+            "level": "WARNING",
+            "class": "logging.FileHandler",
+            "filename": ROOT_DIR / "profiling.log",  # <-- Arquivo será criado aqui
+            "formatter": "simple",
+        },
+    },
+    "loggers": {
+        "profiling": {  # <-- Logger usado pelo decorador
+            "handlers": ["profiling_file", "console"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
     },
     "root": {"level": "INFO", "handlers": ["console"]},
 }
@@ -552,3 +569,7 @@ JOURNAL_TEAM = "Journal Team"
 
 WAGTAIL_2FA_REQUIRED = env.bool("WAGTAIL_2FA_REQUIRED", default=False)
 WAGTAIL_2FA_OTP_TOTP_NAME = env.str("WAGTAIL_2FA_OTP_TOTP_NAME", default="SciELO Core")
+
+PROFILING_ENABLED = True
+PROFILING_LOG_SLOW_REQUESTS = 0.5  # Log requisições > 500ms
+PROFILING_LOG_HIGH_MEMORY = 50     # Log se usar > 50MB
