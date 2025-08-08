@@ -14,6 +14,7 @@ PROFILING_LOG_SLOW_REQUESTS = getattr(settings, 'PROFILING_LOG_SLOW_REQUESTS', 0
 PROFILING_LOG_HIGH_MEMORY = getattr(settings, 'PROFILING_LOG_HIGH_MEMORY', 40)  # MB
 
 profiling_logger = logging.getLogger('profiling')
+profiling_logger.warning(f"PROFILING_ENABLED={PROFILING_ENABLED}")
 profiling_logger.warning(f"PROFILING_LOG_ALL={PROFILING_LOG_ALL}")
 profiling_logger.warning(f"PROFILING_LOG_SLOW_REQUESTS={PROFILING_LOG_SLOW_REQUESTS}")
 profiling_logger.warning(f"PROFILING_LOG_HIGH_MEMORY={PROFILING_LOG_HIGH_MEMORY}")
@@ -60,7 +61,7 @@ def profile_endpoint(func):
             )
             
             #  Log apenas se for relevante
-            if duration > PROFILING_LOG_SLOW_REQUESTS or memory_used > PROFILING_LOG_HIGH_MEMORY:
+            if (duration > PROFILING_LOG_SLOW_REQUESTS) or (memory_used > PROFILING_LOG_HIGH_MEMORY):
                 profiling_logger.warning(f"Slow {msg}")
                 # Se muito lento, log das queries mais demoradas
                 if duration > PROFILING_LOG_SLOW_REQUESTS * 2:
@@ -151,11 +152,10 @@ def profile_classmethod(func):
                 f"user: {method_info['user']} | "
                 f"file: {method_info['filename']}"
             )
-            if duration > PROFILING_LOG_SLOW_REQUESTS or memory_used > PROFILING_LOG_HIGH_MEMORY:
+            if (duration > PROFILING_LOG_SLOW_REQUESTS) or (memory_used > PROFILING_LOG_HIGH_MEMORY):
                 profiling_logger.warning(f"Slow {msg}")
             elif PROFILING_LOG_ALL:
-                profiling_logger.warning(msg)
-            
+                profiling_logger.warning(msg)            
             return result
             
         except Exception as e:

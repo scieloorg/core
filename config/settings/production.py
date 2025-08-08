@@ -243,7 +243,3 @@ if env.bool("USE_SENTRY", default=False):
 
 # Your stuff...
 # ------------------------------------------------------------------------------
-
-PROFILING_ENABLED = env.bool("DJANGO_PROFILING_ENABLED", default=False)
-PROFILING_LOG_SLOW_REQUESTS = 2.0  # Só log se > 2 segundos
-PROFILING_LOG_HIGH_MEMORY = 200    # Só log se > 200MB

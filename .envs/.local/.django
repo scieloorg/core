@@ -18,4 +18,5 @@ CELERY_FLOWER_PASSWORD=QgScyefPrYhHgO6onW61u0nazc5xdBuP4sM7jMRrBBFuA2RjsFhZLp7xb
 # ------------------------------------------------------------------------------
 FETCH_DATA_TIMEOUT=2
 
-PROFILING_LOG_ALL=True
+DJANGO_PROFILING_ENABLED=True
+RUN_ASYNC=False
