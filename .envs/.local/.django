@@ -17,3 +17,5 @@ CELERY_FLOWER_PASSWORD=QgScyefPrYhHgO6onW61u0nazc5xdBuP4sM7jMRrBBFuA2RjsFhZLp7xb
 # Timeout fetch_data
 # ------------------------------------------------------------------------------
 FETCH_DATA_TIMEOUT=2
+
+PROFILING_LOG_ALL=True

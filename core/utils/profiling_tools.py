@@ -9,10 +9,12 @@ from django.conf import settings
 
 # Ativa/desativa profiling via settings
 PROFILING_ENABLED = getattr(settings, 'PROFILING_ENABLED', False)
+PROFILING_LOG_ALL = getattr(settings, 'PROFILING_LOG_ALL', False)
 PROFILING_LOG_SLOW_REQUESTS = getattr(settings, 'PROFILING_LOG_SLOW_REQUESTS', 0.4)  # segundos
 PROFILING_LOG_HIGH_MEMORY = getattr(settings, 'PROFILING_LOG_HIGH_MEMORY', 40)  # MB
 
 profiling_logger = logging.getLogger('profiling')
+profiling_logger.warning(f"PROFILING_LOG_ALL={PROFILING_LOG_ALL}")
 profiling_logger.warning(f"PROFILING_LOG_SLOW_REQUESTS={PROFILING_LOG_SLOW_REQUESTS}")
 profiling_logger.warning(f"PROFILING_LOG_HIGH_MEMORY={PROFILING_LOG_HIGH_MEMORY}")
 
@@ -48,7 +50,7 @@ def profile_endpoint(func):
             memory_used = end_memory - start_memory
             queries_count = end_queries - start_queries
 
-            profiling_logger.warning(
+            msg = (
                 f"request detected | "
                 f"endpoint: {request.path} | "
                 f"duration: {duration:.2f}s | "
@@ -59,15 +61,7 @@ def profile_endpoint(func):
             
             #  Log apenas se for relevante
             if duration > PROFILING_LOG_SLOW_REQUESTS or memory_used > PROFILING_LOG_HIGH_MEMORY:
-                profiling_logger.warning(
-                    f"Slow request detected | "
-                    f"endpoint: {request.path} | "
-                    f"duration: {duration:.2f}s | "
-                    f"memory: +{memory_used:.1f}MB | "
-                    f"queries: {queries_count} | "
-                    f"user: {getattr(request.user, 'username', 'anonymous')}"
-                )
-                
+                profiling_logger.warning(f"Slow {msg}")
                 # Se muito lento, log das queries mais demoradas
                 if duration > PROFILING_LOG_SLOW_REQUESTS * 2:
                     slow_queries = sorted(
@@ -80,6 +74,8 @@ def profile_endpoint(func):
                         profiling_logger.warning(
                             f"  Slow query #{i}: {query['time']}s - {query['sql'][:100]}..."
                         )
+            elif PROFILING_LOG_ALL:
+                profiling_logger.warning(msg)
 
             # Adiciona headers opcionais
             if hasattr(response, 'headers'):
@@ -146,7 +142,7 @@ def profile_classmethod(func):
             queries_count = len(connection.queries) - start_queries
             
             # Log
-            profiling_logger.warning(
+            msg = (
                 f"classmethod | "
                 f"{method_info['class']}.{method_info['method']} | "
                 f"duration: {duration:.2f}s | "
@@ -156,15 +152,9 @@ def profile_classmethod(func):
                 f"file: {method_info['filename']}"
             )
             if duration > PROFILING_LOG_SLOW_REQUESTS or memory_used > PROFILING_LOG_HIGH_MEMORY:
-                profiling_logger.warning(
-                    f"Slow classmethod | "
-                    f"{method_info['class']}.{method_info['method']} | "
-                    f"duration: {duration:.2f}s | "
-                    f"memory: +{memory_used:.1f}MB | "
-                    f"queries: {queries_count} | "
-                    f"user: {method_info['user']} | "
-                    f"file: {method_info['filename']}"
-                )
+                profiling_logger.warning(f"Slow {msg}")
+            elif PROFILING_LOG_ALL:
+                profiling_logger.warning(msg)
             
             return result
             
