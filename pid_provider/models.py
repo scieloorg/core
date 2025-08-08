@@ -23,11 +23,8 @@ from collection.models import Collection
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from pid_provider import choices, exceptions
-from pid_provider.query_params import (
-    get_journal_q_expression,
-    get_valid_query_parameters,
-    get_xml_adapter_data,
-)
+from pid_provider.query_params import get_valid_query_parameters
+
 from tracker.models import UnexpectedEvent
 
 from core.utils.profiling_tools import (
@@ -101,9 +98,9 @@ class XMLVersion(CommonControlField):
     finger_print = models.CharField(max_length=64, null=True, blank=True)
 
     class Meta:
+        ordering = ["-created"]
         indexes = [
-            models.Index(fields=["finger_print"]),
-            models.Index(fields=["pid_provider_xml"]),
+            models.Index(fields=["pid_provider_xml", "finger_print"]),
         ]
 
     def __str__(self):
@@ -176,7 +173,7 @@ class XMLVersion(CommonControlField):
         """
         Retorna última versão se finger_print corresponde
         """
-        if not pid_provider_xml and not finger_print:
+        if not pid_provider_xml or not finger_print:
             raise XMLVersionGetError(
                 "XMLVersion.get requires pid_provider_xml and xml_with_pre parameters"
             )
@@ -185,10 +182,8 @@ class XMLVersion(CommonControlField):
             .filter(pid_provider_xml=pid_provider_xml, finger_print=finger_print)
             .latest("created")
         )
-        logging.info(f"XMLVersion.get found {found}")
         if found:
             return found
-
         raise cls.DoesNotExist(f"{pid_provider_xml} {finger_print}")
 
     @classmethod
@@ -197,8 +192,12 @@ class XMLVersion(CommonControlField):
         try:
             latest = cls.get(pid_provider_xml, xml_with_pre.finger_print)
             if not os.path.isfile(latest.file.path):
+                try:
+                    filename = xml_with_pre.sps_pkg_name
+                except Exception as e:
+                    filename = pid_provider_xml.v3
                 latest.save_file(
-                    f"{pid_provider_xml.v3}.xml",
+                    f"{filename}.xml",
                     xml_with_pre.tostring(pretty_print=True),
                 )
                 latest.save()
@@ -569,23 +568,45 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     class Meta:
         ordering = ["-updated", "-created", "pkg_name"]
         indexes = [
-            # === Essenciais ===
+            # === ID unicos ===
             models.Index(fields=["pkg_name"]),
             models.Index(fields=["v3"]),
             models.Index(fields=["v2"]),
-            models.Index(fields=["issn_electronic"]),
-            models.Index(fields=["issn_print"]),
-            models.Index(fields=["main_doi"]),
+            models.Index(fields=["aop_pid"], condition=Q(aop_pid__isnull=False)),
+            models.Index(fields=["main_doi"], condition=Q(main_doi__isnull=False)),
+            # === journal ===
+            models.Index(
+                fields=["issn_electronic"], condition=Q(issn_electronic__isnull=False)
+            ),
+            models.Index(fields=["issn_print"], condition=Q(issn_print__isnull=False)),
+            # === authors ===
+            models.Index(fields=["z_surnames"], condition=Q(z_surnames__isnull=False)),
+            models.Index(fields=["z_collab"], condition=Q(z_collab__isnull=False)),
+            # Para queries com datas
+            models.Index(fields=["-updated"]),
+            models.Index(fields=["-created"]),
+            # === Operacionais ===
+            models.Index(fields=["proc_status"]),
             models.Index(fields=["registered_in_core"]),
+            models.Index(fields=["available_since", "-updated"]),
             # === Compostos ===
-            models.Index(fields=["issn_electronic", "pub_year", "article_pub_year"]),
-            models.Index(fields=["issn_print", "pub_year", "article_pub_year"]),
-            models.Index(fields=["pub_year", "volume", "number", "suppl"]),
-            models.Index(fields=["issn_electronic", "main_doi"]),
-            models.Index(fields=["issn_print", "main_doi"]),
-            models.Index(fields=["issn_electronic", "elocation_id"]),
-            models.Index(fields=["z_surnames", "pub_year"]),
-            models.Index(fields=["z_collab", "pub_year"]),
+            models.Index(
+                fields=["issn_electronic", "elocation_id"],
+                condition=Q(issn_electronic__isnull=False, elocation_id__isnull=False),
+            ),
+            models.Index(
+                fields=["issn_electronic", "pub_year", "volume", "number", "suppl"],
+                condition=Q(issn_electronic__isnull=False),
+            ),
+            models.Index(
+                fields=["issn_print", "pub_year", "volume", "number", "suppl"],
+                condition=Q(issn_print__isnull=False),
+            ),
+            models.Index(
+                fields=["fpage", "fpage_seq", "lpage"], condition=Q(fpage__isnull=False)
+            ),
+            # Para otimizar queries com current_version
+            models.Index(fields=["current_version"]),
         ]
 
     def __str__(self):
@@ -625,8 +646,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     def get_xml_with_pre(cls, v3):
         try:
             # Usar select_related para evitar query extra ao acessar current_version
-            obj = cls.objects.select_related("current_version").get(v3=v3)
-            return obj.xml_with_pre
+            return cls.objects.select_related("current_version").get(v3=v3).xml_with_pre
         except cls.DoesNotExist:
             return None
         except Exception:
@@ -634,7 +654,10 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
     @property
     def xml_with_pre(self):
-        return self.current_version and self.current_version.xml_with_pre
+        try:
+            return self.current_version.xml_with_pre
+        except AttributeError:
+            return None
 
     @property
     @lru_cache(maxsize=1)
@@ -714,7 +737,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
             # adaptador do xml with pre
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
-            response["xml_adapter_data"] = get_xml_adapter_data(xml_adapter)
+            response["xml_adapter_data"] = xml_adapter.data
 
             # consulta se documento já está registrado
             try:
@@ -940,7 +963,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         raise cls.DoesNotExist
 
     @classmethod
-    @profile_classmethod
+    # @profile_classmethod
     def get_record_by_data(cls, xml_adapter, queryset=None):
         """
         Get record by data
@@ -976,7 +999,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             # versão VoR (version of record)
             return queryset.get(q, **query_list[0])
         except cls.MultipleObjectsReturned:
-            return cls._select_one(xml_adapter, queryset, q, query_list)
+            return cls._select_one(xml_adapter, queryset, q, query_list[0])
         except cls.DoesNotExist:
             # versão aop (ahead of print)
             try:
@@ -987,7 +1010,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 try:
                     return queryset.get(q, **params)
                 except cls.MultipleObjectsReturned:
-                    return cls._select_one(xml_adapter, queryset, q, query_list)
+                    return cls._select_one(xml_adapter, queryset, q, params)
         raise cls.DoesNotExist
 
     @classmethod
@@ -1301,7 +1324,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             response["input_data"] = xml_with_pre.data
             xml_adapter_data = None
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
-            xml_adapter_data = get_xml_adapter_data(xml_adapter)
+            xml_adapter_data = xml_adapter.data
 
             response["xml_adapter_data"] = xml_adapter_data
 
