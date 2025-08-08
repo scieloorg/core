@@ -572,16 +572,16 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             models.Index(fields=["pkg_name"]),
             models.Index(fields=["v3"]),
             models.Index(fields=["v2"]),
-            models.Index(fields=["aop_pid"], condition=Q(aop_pid__isnull=False)),
-            models.Index(fields=["main_doi"], condition=Q(main_doi__isnull=False)),
+            models.Index(fields=["aop_pid"], condition=Q(aop_pid__isnull=False), name="ppx_aop_pid"),
+            models.Index(fields=["main_doi"], condition=Q(main_doi__isnull=False), name="ppx_main_doi"),
             # === journal ===
             models.Index(
-                fields=["issn_electronic"], condition=Q(issn_electronic__isnull=False)
+                fields=["issn_electronic"], condition=Q(issn_electronic__isnull=False), name="ppx_issn_electronic"
             ),
-            models.Index(fields=["issn_print"], condition=Q(issn_print__isnull=False)),
+            models.Index(fields=["issn_print"], condition=Q(issn_print__isnull=False), name="ppx_issn_print"),
             # === authors ===
-            models.Index(fields=["z_surnames"], condition=Q(z_surnames__isnull=False)),
-            models.Index(fields=["z_collab"], condition=Q(z_collab__isnull=False)),
+            models.Index(fields=["z_surnames"], condition=Q(z_surnames__isnull=False), name="ppx_z_surnames"),
+            models.Index(fields=["z_collab"], condition=Q(z_collab__isnull=False), name="ppx_z_collab"),
             # Para queries com datas
             models.Index(fields=["-updated"]),
             models.Index(fields=["-created"]),
@@ -592,18 +592,18 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             # === Compostos ===
             models.Index(
                 fields=["issn_electronic", "elocation_id"],
-                condition=Q(issn_electronic__isnull=False, elocation_id__isnull=False),
+                condition=Q(issn_electronic__isnull=False, elocation_id__isnull=False), name="ppx_elocation_id",
             ),
             models.Index(
                 fields=["issn_electronic", "pub_year", "volume", "number", "suppl"],
-                condition=Q(issn_electronic__isnull=False),
+                condition=Q(issn_electronic__isnull=False), name="ppx_eissue",
             ),
             models.Index(
                 fields=["issn_print", "pub_year", "volume", "number", "suppl"],
-                condition=Q(issn_print__isnull=False),
+                condition=Q(issn_print__isnull=False), name="ppx_pissue",
             ),
             models.Index(
-                fields=["fpage", "fpage_seq", "lpage"], condition=Q(fpage__isnull=False)
+                fields=["fpage", "fpage_seq", "lpage"], condition=Q(fpage__isnull=False), name="ppx_fpage"
             ),
             # Para otimizar queries com current_version
             models.Index(fields=["current_version"]),
