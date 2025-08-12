@@ -67,3 +67,10 @@ DB_MAX_OVERFLOW=20
 # Tempo máximo (em segundos) que uma conexão pode viver antes de ser reciclada
 # Ajuda a evitar conexões "stale" ou "bad". Exemplo: 300 segundos (5 minutos)
 DB_RECYCLE=300
+
+
+# ---- profiling 
+DJANGO_PROFILING_ENABLED=True
+DJANGO_PROFILING_LOG_SLOW_REQUESTS=0.5
+DJANGO_PROFILING_LOG_HIGH_MEMORY=50
+DJANGO_PROFILING_LOG_ALL=True

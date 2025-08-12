@@ -5,6 +5,10 @@ from pid_provider import exceptions
 
 
 def get_valid_query_parameters(xml_adapter):
+    return get_journal_q_expression(xml_adapter), get_kwargs(xml_adapter)
+
+
+def get_kwargs(xml_adapter):
     """
     Gera parâmetros de consulta válidos para pesquisa no banco de dados com base nos dados do adaptador XML.
 
@@ -25,8 +29,6 @@ def get_valid_query_parameters(xml_adapter):
         RequiredPublicationYearErrorToGetPidProviderXMLError: Se nenhum ano de publicação for fornecido.
         NotEnoughParametersToGetPidProviderXMLError: Se os parâmetros de desambiguação forem insuficientes.
     """
-    q = (get_journal_q_expression(xml_adapter)) & (get_pub_year_expression(xml_adapter))
-
     basic_params = get_basic_params(xml_adapter)
     if xml_adapter.is_aop:
         kwargs = [_get_valid_params(xml_adapter, basic_params)]
@@ -43,7 +45,7 @@ def get_valid_query_parameters(xml_adapter):
                 get_issue_params(xml_adapter, aop_version=True),
             ),
         ]
-    return q, kwargs
+    return kwargs
 
 
 def _get_valid_params(xml_adapter, basic_params, issue_params=None):
@@ -65,16 +67,13 @@ def _get_valid_params(xml_adapter, basic_params, issue_params=None):
     Raises:
         NotEnoughParametersToGetPidProviderXMLError: Se os parâmetros de desambiguação forem insuficientes.
     """
-    valid_params = {}
+    valid_params = issue_params or {}
     valid_params.update(basic_params)
-    if issue_params:
-        valid_params.update(issue_params)
     try:
         validate_query_params(valid_params)
     except exceptions.RequiredAuthorErrorToGetPidProviderXMLError:
         try:
-            disambiguation_params = get_disambiguation_params(xml_adapter)
-            valid_params.update(disambiguation_params)
+            valid_params.update(get_disambiguation_params(xml_adapter))
         except exceptions.NotEnoughParametersToGetPidProviderXMLError:
             raise
     return valid_params
@@ -96,18 +95,22 @@ def get_journal_q_expression(xml_adapter):
     Raises:
         RequiredISSNErrorToGetPidProviderXMLError: Se nem o ISSN eletrônico nem o impresso forem fornecidos.
     """
-    q = Q()
-    if xml_adapter.journal_issn_electronic:
-        q |= Q(issn_electronic=xml_adapter.journal_issn_electronic)
-    if xml_adapter.journal_issn_print:
-        q |= Q(issn_print=xml_adapter.journal_issn_print)
-    if not xml_adapter.journal_issn_electronic and not xml_adapter.journal_issn_print:
-        raise exceptions.RequiredISSNErrorToGetPidProviderXMLError(
-            _("Required Print or Electronic ISSN to identify XML {}").format(
-                xml_adapter.pkg_name,
-            )
+    if xml_adapter.journal_issn_electronic and xml_adapter.journal_issn_print:
+        return Q(issn_electronic=xml_adapter.journal_issn_electronic) | Q(
+            issn_print=xml_adapter.journal_issn_print
         )
-    return q
+
+    if xml_adapter.journal_issn_electronic:
+        return Q(issn_electronic=xml_adapter.journal_issn_electronic)
+
+    if xml_adapter.journal_issn_print:
+        return Q(issn_print=xml_adapter.journal_issn_print)
+
+    raise exceptions.RequiredISSNErrorToGetPidProviderXMLError(
+        _("Required Print or Electronic ISSN to identify XML {}").format(
+            xml_adapter.pkg_name,
+        )
+    )
 
 
 def get_pub_year_expression(xml_adapter):
@@ -126,18 +129,14 @@ def get_pub_year_expression(xml_adapter):
     Raises:
         RequiredPublicationYearErrorToGetPidProviderXMLError: Se nenhum ano de publicação for fornecido.
     """
-    q = Q()
-    if xml_adapter.article_pub_year:
-        q |= Q(article_pub_year=xml_adapter.article_pub_year)
     if xml_adapter.pub_year:
-        q |= Q(pub_year=xml_adapter.pub_year)
-    if not xml_adapter.article_pub_year and not xml_adapter.pub_year:
-        raise exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError(
-            _("Required issue or article publication year {}").format(
-                xml_adapter.pkg_name,
-            )
+        return {"pub_year": xml_adapter.pub_year}
+
+    raise exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError(
+        _("Required issue or article publication year {}").format(
+            xml_adapter.pkg_name,
         )
-    return q
+    )
 
 
 def get_basic_params(xml_adapter):
@@ -157,13 +156,15 @@ def get_basic_params(xml_adapter):
             - main_doi__iexact: DOI principal (correspondência exata sem distinção entre maiúsculas e minúsculas).
             - elocation_id__iexact: ID de localização eletrônica (correspondência exata sem distinção entre maiúsculas e minúsculas).
     """
-    _params = dict(
-        z_surnames=xml_adapter.z_surnames or None,
-        z_collab=xml_adapter.z_collab or None,
-    )
+    _params = get_pub_year_expression(xml_adapter)
+    if xml_adapter.z_surnames:
+        _params["z_surnames"] = xml_adapter.z_surnames
+    if xml_adapter.z_collab:
+        _params["z_collab"] = xml_adapter.z_collab
     if xml_adapter.main_doi:
         _params["main_doi__iexact"] = xml_adapter.main_doi
-    _params["elocation_id__iexact"] = xml_adapter.elocation_id
+    if xml_adapter.elocation_id:
+        _params["elocation_id__iexact"] = xml_adapter.elocation_id
     return _params
 
 
@@ -195,9 +196,19 @@ def get_issue_params(xml_adapter, filter_by_issue=False, aop_version=False):
         _params["volume__iexact"] = xml_adapter.volume
         _params["number__iexact"] = xml_adapter.number
         _params["suppl__iexact"] = xml_adapter.suppl
-        _params["fpage__iexact"] = xml_adapter.fpage
-        _params["fpage_seq__iexact"] = xml_adapter.fpage_seq
-        _params["lpage__iexact"] = xml_adapter.lpage
+
+        if xml_adapter.fpage:
+            try:
+                if int(xml_adapter.fpage) == 0:
+                    fpage = None
+                else:
+                    fpage = xml_adapter.fpage
+            except (TypeError, ValueError):
+                fpage = None
+            if fpage:
+                _params["fpage__iexact"] = fpage
+                _params["fpage_seq__iexact"] = xml_adapter.fpage_seq
+                _params["lpage__iexact"] = xml_adapter.lpage
     return _params
 
 
@@ -218,18 +229,17 @@ def get_disambiguation_params(xml_adapter):
         NotEnoughParametersToGetPidProviderXMLError: Se nem links nem conteúdo parcial do corpo
                                                      estiverem disponíveis para desambiguação.
     """
-    _params = {}
     if xml_adapter.z_links:
-        _params["z_links"] = xml_adapter.z_links
-    elif xml_adapter.z_partial_body:
-        _params["z_partial_body"] = xml_adapter.z_partial_body
-    else:
-        raise exceptions.NotEnoughParametersToGetPidProviderXMLError(
-            _("No attribute enough for disambiguations {}").format(
-                _params,
-            )
+        return {"z_links": xml_adapter.z_links}
+
+    if xml_adapter.z_partial_body:
+        return {"z_partial_body": xml_adapter.z_partial_body}
+
+    raise exceptions.NotEnoughParametersToGetPidProviderXMLError(
+        _("No attribute enough for disambiguations {}").format(
+            xml_adapter.pkg_name,
         )
-    return _params
+    )
 
 
 def validate_query_params(query_params):
@@ -250,73 +260,25 @@ def validate_query_params(query_params):
         RequiredAuthorErrorToGetPidProviderXMLError: Se nenhuma informação do autor for fornecida
                                                      e nenhum identificador forte estiver disponível.
     """
-    _params = query_params
-
     if any(
         [
-            _params.get("main_doi__iexact"),
-            _params.get("fpage__iexact"),
-            _params.get("elocation_id__iexact"),
+            query_params.get("main_doi__iexact"),
+            query_params.get("fpage__iexact"),
+            query_params.get("elocation_id__iexact"),
         ]
     ):
         return True
 
-    if not any(
+    if any(
         [
-            _params.get("z_surnames"),
-            _params.get("z_collab"),
+            query_params.get("z_surnames"),
+            query_params.get("z_collab"),
         ]
     ):
-        raise exceptions.RequiredAuthorErrorToGetPidProviderXMLError(
-            _("Required collab or surname {}").format(
-                _params,
-            )
+        return True
+
+    raise exceptions.RequiredAuthorErrorToGetPidProviderXMLError(
+        _("Required collab or surname {}").format(
+            query_params,
         )
-    return True
-
-
-def get_xml_adapter_data(xml_adapter):
-    """
-    Extrai todos os dados relevantes do objeto adaptador XML em um formato padronizado.
-
-    Esta função tenta recuperar dados do atributo 'data' do adaptador primeiro,
-    e retorna para a extração de atributos individuais se o atributo 'data' não existir.
-    Isso fornece uma interface consistente para acessar informações do adaptador XML.
-
-    Args:
-        xml_adapter: Objeto adaptador XML contendo metadados do artigo e do periódico.
-
-    Returns:
-        dict: Dicionário contendo todos os dados relevantes do adaptador, incluindo:
-            - pkg_name: Nome do pacote.
-            - issn_print/issn_electronic: Valores de ISSN do periódico.
-            - article_pub_year/pub_year: Anos de publicação.
-            - main_doi: DOI principal.
-            - elocation_id: ID de localização eletrônica.
-            - volume/number/suppl: Informações do fascículo.
-            - fpage/fpage_seq/lpage: Informações de página.
-            - z_surnames/z_collab: Informações do autor.
-            - z_links/z_partial_body: Conteúdo adicional para desambiguação.
-    """
-    try:
-        return xml_adapter.data
-    except AttributeError:
-        return dict(
-            pkg_name=xml_adapter.sps_pkg_name,
-            issn_print=xml_adapter.journal_issn_print,
-            issn_electronic=xml_adapter.journal_issn_electronic,
-            article_pub_year=xml_adapter.article_pub_year,
-            pub_year=xml_adapter.pub_year,
-            main_doi=xml_adapter.main_doi,
-            elocation_id=xml_adapter.elocation_id,
-            volume=xml_adapter.volume,
-            number=xml_adapter.number,
-            suppl=xml_adapter.suppl,
-            fpage=xml_adapter.fpage,
-            fpage_seq=xml_adapter.fpage_seq,
-            lpage=xml_adapter.lpage,
-            z_surnames=xml_adapter.z_surnames or None,
-            z_collab=xml_adapter.z_collab or None,
-            z_links=xml_adapter.z_links,
-            z_partial_body=xml_adapter.z_partial_body,
-        )
+    )

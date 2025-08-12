@@ -4,6 +4,7 @@ import os
 import sys
 import traceback
 from datetime import datetime
+from functools import lru_cache
 
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
@@ -22,8 +23,13 @@ from collection.models import Collection
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from pid_provider import choices, exceptions
-from pid_provider.query_params import get_journal_q_expression, get_valid_query_parameters, get_xml_adapter_data
+from pid_provider.query_params import get_valid_query_parameters
+
 from tracker.models import UnexpectedEvent
+
+from core.utils.profiling_tools import (
+    profile_classmethod,
+)  # ajuste o import conforme sua estrutura
 
 try:
     from django_prometheus.models import ExportModelOperationsMixin
@@ -92,15 +98,16 @@ class XMLVersion(CommonControlField):
     finger_print = models.CharField(max_length=64, null=True, blank=True)
 
     class Meta:
+        ordering = ["-created"]
         indexes = [
-            models.Index(fields=["finger_print"]),
-            models.Index(fields=["pid_provider_xml"]),
+            models.Index(fields=["pid_provider_xml", "finger_print"]),
         ]
 
     def __str__(self):
         return f"{self.pid_provider_xml.pkg_name} {self.created}"
 
     @classmethod
+    @profile_classmethod
     def create(
         cls,
         user,
@@ -134,6 +141,7 @@ class XMLVersion(CommonControlField):
         )
 
     @property
+    @lru_cache(maxsize=1)
     def xml_with_pre(self):
         if not os.path.isfile(self.file.path):
             raise FileNotFoundError(
@@ -150,6 +158,7 @@ class XMLVersion(CommonControlField):
             )
 
     @property
+    @lru_cache(maxsize=1)
     def xml(self):
         try:
             return self.xml_with_pre.tostring(pretty_print=True)
@@ -159,42 +168,36 @@ class XMLVersion(CommonControlField):
             return None
 
     @classmethod
-    def latest(cls, pid_provider_xml):
-        if pid_provider_xml:
-            # Adicionar select_related para evitar query extra ao acessar pid_provider_xml
-            item = (
-                cls.objects.select_related("pid_provider_xml")
-                .filter(pid_provider_xml=pid_provider_xml)
-                .latest("created")
-            )
-            if item and os.path.isfile(item.file.path):
-                return item
-            raise cls.DoesNotExist(f"{pid_provider_xml}")
-        raise XMLVersionLatestError(
-            "XMLVersion.latest: unable to get {}".format(pid_provider_xml)
-        )
-
-    @classmethod
+    @profile_classmethod
     def get(cls, pid_provider_xml, finger_print):
         """
         Retorna última versão se finger_print corresponde
         """
-        if not pid_provider_xml and not finger_print:
+        if not pid_provider_xml or not finger_print:
             raise XMLVersionGetError(
                 "XMLVersion.get requires pid_provider_xml and xml_with_pre parameters"
             )
-        latest = cls.latest(pid_provider_xml)
-        if latest.finger_print == finger_print:
-            return latest
+        found = (
+            cls.objects.select_related("pid_provider_xml")
+            .filter(pid_provider_xml=pid_provider_xml, finger_print=finger_print)
+            .latest("created")
+        )
+        if found:
+            return found
         raise cls.DoesNotExist(f"{pid_provider_xml} {finger_print}")
 
     @classmethod
+    @profile_classmethod
     def get_or_create(cls, user, pid_provider_xml, xml_with_pre):
         try:
             latest = cls.get(pid_provider_xml, xml_with_pre.finger_print)
             if not os.path.isfile(latest.file.path):
+                try:
+                    filename = xml_with_pre.sps_pkg_name
+                except Exception as e:
+                    filename = pid_provider_xml.v3
                 latest.save_file(
-                    f"{pid_provider_xml.v3}.xml",
+                    f"{filename}.xml",
                     xml_with_pre.tostring(pretty_print=True),
                 )
                 latest.save()
@@ -233,6 +236,7 @@ class PidProviderConfig(CommonControlField, ClusterableModel):
         return f"{self.pid_provider_api_post_xml}"
 
     @classmethod
+    @profile_classmethod
     def get_or_create(
         cls,
         creator=None,
@@ -307,6 +311,7 @@ class PidRequest(CommonControlField):
         return f"{self.origin}"
 
     @classmethod
+    @profile_classmethod
     def get(
         cls,
         origin,
@@ -316,6 +321,7 @@ class PidRequest(CommonControlField):
         raise ValueError("PidRequest.get requires parameters")
 
     @classmethod
+    @profile_classmethod
     def create_or_update(
         cls,
         user=None,
@@ -343,6 +349,7 @@ class PidRequest(CommonControlField):
         return obj
 
     @classmethod
+    @profile_classmethod
     def register_failure(
         cls,
         e,
@@ -362,6 +369,7 @@ class PidRequest(CommonControlField):
         )
 
     @classmethod
+    @profile_classmethod
     def cancel_failure(cls, user=None, origin=None):
         try:
             PidRequest.get(origin).delete()
@@ -374,6 +382,7 @@ class PidRequest(CommonControlField):
         return self.updated or self.created
 
     @classmethod
+    @profile_classmethod
     def items_to_retry(cls):
         # Adicionar select_related se for acessar xml_version posteriormente
         return cls.objects.filter(~Q(result_type="OK"), origin__contains=":").iterator()
@@ -426,6 +435,7 @@ class OtherPid(CommonControlField):
         return f"{self.pid_type} {self.pid_in_xml} {self.created}"
 
     @classmethod
+    @profile_classmethod
     def get_or_create(cls, pid_type, pid_in_xml, version, user, pid_provider_xml):
         if pid_in_xml and pid_type and version and user and pid_provider_xml:
             try:
@@ -558,29 +568,52 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     class Meta:
         ordering = ["-updated", "-created", "pkg_name"]
         indexes = [
-            # === Essenciais ===
+            # === ID unicos ===
             models.Index(fields=["pkg_name"]),
             models.Index(fields=["v3"]),
             models.Index(fields=["v2"]),
-            models.Index(fields=["issn_electronic"]),
-            models.Index(fields=["issn_print"]),
-            models.Index(fields=["main_doi"]),
+            models.Index(fields=["aop_pid"], condition=Q(aop_pid__isnull=False), name="ppx_aop_pid"),
+            models.Index(fields=["main_doi"], condition=Q(main_doi__isnull=False), name="ppx_main_doi"),
+            # === journal ===
+            models.Index(
+                fields=["issn_electronic"], condition=Q(issn_electronic__isnull=False), name="ppx_issn_electronic"
+            ),
+            models.Index(fields=["issn_print"], condition=Q(issn_print__isnull=False), name="ppx_issn_print"),
+            # === authors ===
+            models.Index(fields=["z_surnames"], condition=Q(z_surnames__isnull=False), name="ppx_z_surnames"),
+            models.Index(fields=["z_collab"], condition=Q(z_collab__isnull=False), name="ppx_z_collab"),
+            # Para queries com datas
+            models.Index(fields=["-updated"]),
+            models.Index(fields=["-created"]),
+            # === Operacionais ===
+            models.Index(fields=["proc_status"]),
             models.Index(fields=["registered_in_core"]),
+            models.Index(fields=["available_since", "-updated"]),
             # === Compostos ===
-            models.Index(fields=["issn_electronic", "pub_year", "article_pub_year"]),
-            models.Index(fields=["issn_print", "pub_year", "article_pub_year"]),
-            models.Index(fields=["pub_year", "volume", "number", "suppl"]),
-            models.Index(fields=["issn_electronic", "main_doi"]),
-            models.Index(fields=["issn_print", "main_doi"]),
-            models.Index(fields=["issn_electronic", "elocation_id"]),
-            models.Index(fields=["z_surnames", "pub_year"]),
-            models.Index(fields=["z_collab", "pub_year"]),
+            models.Index(
+                fields=["issn_electronic", "elocation_id"],
+                condition=Q(issn_electronic__isnull=False, elocation_id__isnull=False), name="ppx_elocation_id",
+            ),
+            models.Index(
+                fields=["issn_electronic", "pub_year", "volume", "number", "suppl"],
+                condition=Q(issn_electronic__isnull=False), name="ppx_eissue",
+            ),
+            models.Index(
+                fields=["issn_print", "pub_year", "volume", "number", "suppl"],
+                condition=Q(issn_print__isnull=False), name="ppx_pissue",
+            ),
+            models.Index(
+                fields=["fpage", "fpage_seq", "lpage"], condition=Q(fpage__isnull=False), name="ppx_fpage"
+            ),
+            # Para otimizar queries com current_version
+            models.Index(fields=["current_version"]),
         ]
 
     def __str__(self):
         return f"{self.pkg_name} {self.v3}"
 
     @classmethod
+    @profile_classmethod
     def public_items(cls, from_date):
         now = datetime.utcnow().isoformat()[:10]
         return cls.objects.filter(
@@ -609,11 +642,11 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         return _data
 
     @classmethod
+    @profile_classmethod
     def get_xml_with_pre(cls, v3):
         try:
             # Usar select_related para evitar query extra ao acessar current_version
-            obj = cls.objects.select_related("current_version").get(v3=v3)
-            return obj.xml_with_pre
+            return cls.objects.select_related("current_version").get(v3=v3).xml_with_pre
         except cls.DoesNotExist:
             return None
         except Exception:
@@ -621,13 +654,22 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
     @property
     def xml_with_pre(self):
-        return self.current_version and self.current_version.xml_with_pre
+        try:
+            return self.current_version.xml_with_pre
+        except AttributeError:
+            return None
 
     @property
+    @lru_cache(maxsize=1)
     def is_aop(self):
-        return self.volume is None and self.number is None and self.suppl is None
+        if self.volume:
+            return False
+        if self.number:
+            return False
+        return True
 
     @classmethod
+    @profile_classmethod
     def register(
         cls,
         xml_with_pre,
@@ -695,7 +737,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
             # adaptador do xml with pre
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
-            response["xml_adapter_data"] = get_xml_adapter_data(xml_adapter)
+            response["xml_adapter_data"] = xml_adapter.data
 
             # consulta se documento já está registrado
             try:
@@ -759,6 +801,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             return response
 
     @classmethod
+    @profile_classmethod
     def complete_missing_xml_pids(
         cls, xml_adapter, registered, auto_solve_pid_conflict
     ):
@@ -792,7 +835,10 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         return xml_changed
 
     @classmethod
-    def get_valid_pid_v3(cls, xml_adapter, registered_pid, auto_solve_pid_conflict=False):
+    @profile_classmethod
+    def get_valid_pid_v3(
+        cls, xml_adapter, registered_pid, auto_solve_pid_conflict=False
+    ):
         # Se XML PID foi fornecido e é diferente do registrado:
         xml_pid = xml_adapter.v3
         if xml_pid and xml_pid != registered_pid:
@@ -814,6 +860,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         return registered_pid or cls._get_unique_v3()
 
     @classmethod
+    @profile_classmethod
     def _save(
         cls,
         registered,
@@ -848,6 +895,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         return registered
 
     @classmethod
+    @profile_classmethod
     def is_updated(
         cls, xml_with_pre, registered, force_update, origin_date, registered_in_core
     ):
@@ -899,8 +947,11 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         )
 
     @classmethod
+    @profile_classmethod
     def get_record(cls, xml_adapter):
-        queryset = cls.objects.select_related("current_version").prefetch_related("other_pid")
+        queryset = cls.objects.select_related("current_version").prefetch_related(
+            "other_pid"
+        )
         try:
             return cls.get_record_by_data(xml_adapter, queryset)
         except cls.DoesNotExist:
@@ -912,6 +963,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         raise cls.DoesNotExist
 
     @classmethod
+    # @profile_classmethod
     def get_record_by_data(cls, xml_adapter, queryset=None):
         """
         Get record by data
@@ -938,14 +990,16 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         """
         # Usar select_related para otimizar acesso futuro a current_version
         if not queryset:
-            queryset = cls.objects.select_related("current_version").prefetch_related("other_pid")
+            queryset = cls.objects.select_related("current_version").prefetch_related(
+                "other_pid"
+            )
 
         q, query_list = get_valid_query_parameters(xml_adapter)
         try:
             # versão VoR (version of record)
             return queryset.get(q, **query_list[0])
         except cls.MultipleObjectsReturned:
-            return cls._select_one(xml_adapter, queryset, q, query_list)
+            return cls._select_one(xml_adapter, queryset, q, query_list[0])
         except cls.DoesNotExist:
             # versão aop (ahead of print)
             try:
@@ -956,10 +1010,11 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 try:
                     return queryset.get(q, **params)
                 except cls.MultipleObjectsReturned:
-                    return cls._select_one(xml_adapter, queryset, q, query_list)
+                    return cls._select_one(xml_adapter, queryset, q, params)
         raise cls.DoesNotExist
 
     @classmethod
+    @profile_classmethod
     def get_record_by_pid_v3(cls, xml_adapter, queryset=None):
         # tenta procurar pelo pid_v3
         xml_pid_v3 = xml_adapter.v3
@@ -967,14 +1022,18 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             raise cls.DoesNotExist
 
         if not queryset:
-            queryset = cls.objects.select_related("current_version").prefetch_related("other_pid")
-        
+            queryset = cls.objects.select_related("current_version").prefetch_related(
+                "other_pid"
+            )
+
         q = Q(v3=xml_pid_v3) | Q(other_pid__pid_in_xml=xml_pid_v3)
         selected = cls._select_one(xml_adapter, queryset, q)
         if selected:
             if selected.match(xml_adapter):
                 return selected
-            raise PidProviderXMLPidV3ConflictError(f"Pid v3 {xml_pid_v3} belongs to {selected}")
+            raise PidProviderXMLPidV3ConflictError(
+                f"Pid v3 {xml_pid_v3} belongs to {selected}"
+            )
         raise cls.DoesNotExist
 
     def match(self, xml_adapter):
@@ -1026,6 +1085,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         return False
 
     @classmethod
+    @profile_classmethod
     def _select_one(cls, xml_adapter, queryset, q, query_list=None):
         query_list = query_list or {}
         items = queryset.filter(q, **query_list).order_by("-updated")
@@ -1035,6 +1095,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         raise cls.DoesNotExist
 
     @classmethod
+    @profile_classmethod
     def _handle_multiple_records(cls, xml_adapter, items):
         try:
             # Evita duplicar registros e remove registros duplicados
@@ -1078,6 +1139,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             )
 
     @classmethod
+    @profile_classmethod
     def _get_records(cls, xml_adapter):
         """
         Get record
@@ -1209,6 +1271,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         self.save()
 
     @classmethod
+    @profile_classmethod
     def _get_unique_v3(cls):
         """
         Generate v3 and return it only if it is new
@@ -1223,6 +1286,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 return generated
 
     @classmethod
+    @profile_classmethod
     def _is_registered_pid(cls, v2=None, v3=None, aop_pid=None):
         queryset = cls.objects.prefetch_related("other_pid")
         if v3:
@@ -1242,6 +1306,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         raise ValueError(f"Invalid {pid_type} length: {value}")
 
     @classmethod
+    @profile_classmethod
     def is_registered(
         cls,
         xml_with_pre,
@@ -1259,7 +1324,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             response["input_data"] = xml_with_pre.data
             xml_adapter_data = None
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
-            xml_adapter_data = get_xml_adapter_data(xml_adapter)
+            xml_adapter_data = xml_adapter.data
 
             response["xml_adapter_data"] = xml_adapter_data
 
@@ -1310,6 +1375,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         return {}
 
     @classmethod
+    @profile_classmethod
     def fix_pid_v2(cls, user, pid_v3, correct_pid_v2):
         try:
             item = cls.objects.select_related("current_version").get(v3=pid_v3)
@@ -1359,6 +1425,7 @@ class CollectionPidRequest(CommonControlField):
         return f"{self.collection}"
 
     @classmethod
+    @profile_classmethod
     def get(
         cls,
         collection=None,
@@ -1376,6 +1443,7 @@ class CollectionPidRequest(CommonControlField):
         raise ValueError("PidRequest.get requires parameters")
 
     @classmethod
+    @profile_classmethod
     def create(
         cls,
         user=None,
@@ -1393,6 +1461,7 @@ class CollectionPidRequest(CommonControlField):
             return cls.get(collection)
 
     @classmethod
+    @profile_classmethod
     def create_or_update(
         cls,
         user=None,
@@ -1457,12 +1526,14 @@ class FixPidV2(CommonControlField):
         return f"{self.pid_provider_xml.v3}"
 
     @classmethod
+    @profile_classmethod
     def get(cls, pid_provider_xml=None):
         if pid_provider_xml:
             return cls.objects.get(pid_provider_xml=pid_provider_xml)
         raise ValueError("FixPidV2.get requires pid_v3")
 
     @classmethod
+    @profile_classmethod
     def create(
         cls,
         user,
@@ -1494,6 +1565,7 @@ class FixPidV2(CommonControlField):
             return cls.get(pid_provider_xml)
 
     @classmethod
+    @profile_classmethod
     def create_or_update(
         cls,
         user,
@@ -1523,6 +1595,7 @@ class FixPidV2(CommonControlField):
             )
 
     @classmethod
+    @profile_classmethod
     def get_or_create(
         cls,
         user,

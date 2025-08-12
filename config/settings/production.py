@@ -183,7 +183,12 @@ if env.bool("USE_SENTRY", default=False):
                 "level": "DEBUG",
                 "class": "logging.StreamHandler",
                 "formatter": "verbose",
-            }
+            },
+            "profiling": {
+                "level": "WARNING",
+                "class": "logging.FileHandler",
+                "filename": "profiling.log",
+            },
         },
         "root": {"level": "INFO", "handlers": ["console"]},
         "loggers": {
@@ -205,8 +210,12 @@ if env.bool("USE_SENTRY", default=False):
                 "level": "DEBUG", # ESSENCIAL: para ver a mensagem de depuração
                 "propagate": False, # Não envie para o logger pai (root), para ter controle total
             },
+            "profiling": {
+                "handlers": ["profiling"],
+                "level": "WARNING",
+                "propagate": False,
+            },
         },
-
     }
 
     # Sentry
