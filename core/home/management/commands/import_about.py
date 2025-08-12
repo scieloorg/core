@@ -25,6 +25,8 @@ def normalize_slug(title, post_id=None, max_length=45):
     return f"{base_slug}-{post_id}" if post_id else base_slug
 
 def build_page_data(item):
+    ns = {"wp": "http://wordpress.org/export/1.2/"}
+
     post_id = get_text(item, "{http://wordpress.org/export/1.2/}post_id", "wp:post_id")
     parent_id = get_text(item, "{http://wordpress.org/export/1.2/}post_parent", "wp:post_parent") or "0"
     title_raw = get_text(item, "title")
@@ -34,8 +36,9 @@ def build_page_data(item):
     title_ml = parse_multilang(title_raw)
     content_ml = parse_multilang(content_raw)
 
-    main_title = title_ml.get("br") or title_ml.get("en") or title_ml.get("es") or "pagina-sem-titulo"
-    main_slug = normalize_slug(main_title, post_id)
+    main_title = title_ml.get("br") or title_ml.get("en") or title_ml.get("es")
+
+    slug = item.findtext("wp:post_name", namespaces=ns)
     menu_order = int(get_text(item, "{http://wordpress.org/export/1.2/}menu_order", "wp:menu_order") or "0")
 
     # Preencher bodies por idioma
@@ -58,29 +61,29 @@ def build_page_data(item):
             'body': body_br,
             "external_link": external_link,
             "menu_order": menu_order,
-            "slug": main_slug,
+            "slug": slug,
         },
         'en': {
             "post_id": post_id,
             "parent_id": parent_id,
             "main_title": main_title,
             'title': title_ml.get('en', ''),
-            "lang": "pt-br",
+            "lang": "en",
             'body': body_en,
             "external_link": external_link,
             "menu_order": menu_order,
-            "slug": main_slug,
+            "slug": slug,
         },
         'es': {
             "post_id": post_id,
             "parent_id": parent_id,
             "main_title": main_title,
             'title': title_ml.get('es', ''),
-            "lang": "pt-br",
+            "lang": "es",
             'body': body_es,
             "external_link": external_link,
             "menu_order": menu_order,
-            "slug": main_slug,
+            "slug": slug,
         }
     }
 
@@ -94,7 +97,6 @@ class Command(BaseCommand):
     def get_children_map(self, xml_path):
         tree = ET.parse(xml_path)
         root = tree.getroot()
-        items = []
         item_by_id = {}
         children_map = defaultdict(list)
 
@@ -102,10 +104,9 @@ class Command(BaseCommand):
             page_content = build_page_data(item)
             for lang_code, page_data in page_content.items():
                 # Pular itens sem título
-                if page_data["main_title"] == "pagina-sem-titulo":
+                if not page_data["main_title"] or not page_data["title"]:
                     continue
 
-                items.append(page_data)
                 item_by_id[page_data["post_id"]] = page_data
                 children_map[page_data["parent_id"]].append(page_data)
 
@@ -115,126 +116,80 @@ class Command(BaseCommand):
         def create_pages(parent_wagtail_page, post_id):
             children = sorted(children_map.get(post_id, []), key=lambda d: d["menu_order"])
             for data in children:
-                try:
-                    locale = Locale.objects.get(language_code=data["lang"])
-                except Locale.DoesNotExist:
-                    self.stdout.write(
-                        self.style.WARNING(f'Locale {data["lang"]} não existe. Criando...')
-                    )
-                    locale = Locale.objects.create(language_code=data["lang"])
+                # só cria se o idioma do item bater com o locale do pai
+                if data["lang"].lower() != parent_wagtail_page.locale.language_code.lower():
+                    continue
                 page = AboutScieloOrgPage(
                     title=data["title"],
                     slug=data["slug"],
                     body=data["body"],
                     external_link=data["external_link"],
                     list_page=[],
-                    locale=locale,
+                    locale=parent_wagtail_page.locale,
                 )
                 parent_wagtail_page.add_child(instance=page)
                 page.save_revision().publish()
                 create_pages(page, data["post_id"])
 
-        about_page = self.start_and_clean()
-
         children_map, item_by_id = self.get_children_map(options["xml_path"])
-
-        # Criar árvore de páginas
-        create_pages(about_page, about_xml_post_id)
-        about_page.save_revision().publish()
-        self.stdout.write(self.style.SUCCESS("Páginas 'Sobre o SciELO' criadas/atualizadas respeitando hierarquia!"))
+        for about_page in self.start_and_clean():
+            # Criar árvore de páginas
+            create_pages(about_page, "93")
+            about_page.save_revision().publish()
+            self.stdout.write(self.style.SUCCESS("Páginas 'Sobre o SciELO' criadas/atualizadas respeitando hierarquia!"))
 
     def start_and_clean(self):
-        DEFAULT_LANG = "pt-br"
-        title_br = "Sobre o SciELO"
-        title_en = "About SciELO"
-        title_es = "Sobre el SciELO"
-        slug_root = "sobre-o-scielo"
-        body_br = "Página institucional Sobre o SciELO."
-        body_en = "Institutional About SciELO page."
-        body_es = "Página institucional Sobre el SciELO."
-
         translations = {
-            "pt-br": {"title": title_br, "body": body_br, "slug": slug_root},
-            "en": {"title": title_en, "body": body_en, "slug": "about-scielo"},
-            "es": {"title": title_es, "body": body_es, "slug": "sobre-el-scielo"},
+            "pt-br": {"title": "Sobre o SciELO", "body": "Página institucional Sobre o SciELO.", "slug": "sobre-o-scielo"},
+            "en": {"title": "About SciELO", "body": "Institutional About SciELO page.", "slug": "about-scielo"},
+            "es": {"title": "Sobre el SciELO", "body": "Página institucional Sobre el SciELO.", "slug": "sobre-el-scielo"},
         }
 
         # 1) Garantir HomePage publicada
-        homepage = HomePage.objects.first()
-        if not homepage:
-            root = Page.get_first_root_node()
-            homepage = HomePage(title="Homepage", slug="homepage")
-            root.add_child(instance=homepage)
-            homepage.save_revision().publish()
-        else:
-            homepage.save_revision().publish()
+        for lang_code, title in [('en', 'Homepage'), ('es', 'Página Principal'), ('pt-br', 'Página Inicial')]:
+            locale, _ = Locale.objects.get_or_create(language_code=lang_code)
 
-        # 2) Garantir Locale padrão
-        try:
-            pt_locale = Locale.objects.get(language_code=DEFAULT_LANG)
-        except Locale.DoesNotExist:
-            pt_locale = Locale.objects.create(language_code=DEFAULT_LANG)
+            # tente reaproveitar uma Home existente para o locale
+            homepage = HomePage.objects.filter(locale=locale).order_by('id').first()
+            if not homepage:
+                # repara a árvore antes de criar a primeira Home
+                Page.fix_tree()
 
-        # 3) Garantir/ criar a página raiz pt-br
-        about_page = (
-            AboutScieloOrgPage.objects
-            .child_of(homepage)
-            .filter(slug=slug_root, locale=pt_locale)
-            .first()
-        )
+                root = Page.get_first_root_node()
+                # refresca o root do banco para evitar instância "stale"
+                root = Page.objects.get(pk=root.pk)
 
-        if not about_page:
-            about_page = AboutScieloOrgPage(
-                title=translations["pt-br"]["title"],
-                slug=translations["pt-br"]["slug"],
-                body=translations["pt-br"]["body"],
-                external_link="",
-                list_page=[],
-                locale=pt_locale,
-            )
-            homepage.add_child(instance=about_page)
-            about_page.save_revision().publish()
-            self.stdout.write(self.style.SUCCESS(f"Criada raiz pt-br: {about_page.title}"))
-        else:
-            # limpa apenas a subárvore (descendentes), preservando a raiz
-            for p in about_page.get_descendants().specific().order_by("-depth"):
-                p.delete()
-            self.stdout.write(self.style.WARNING("Subárvore existente limpa (descendentes removidos)."))
+                # garanta slug único sob o root
+                base_slug = "homepage"
+                slug = base_slug
+                if Page.objects.child_of(root).filter(slug=slug).exists():
+                    slug = f"{base_slug}-{locale.language_code.lower()}"
 
-        # 4) Criar/atualizar traduções en/es a partir da pt-br
-        for lang in ("en", "es"):
-            data = translations[lang]
+                homepage = HomePage(title=title, slug=slug, locale=locale)
+                root.add_child(instance=homepage)
+                homepage.save_revision().publish()
+            else:
+                # opcional: mantém publicada/atualizada
+                homepage.save_revision().publish()
+
+            translation = translations.get(lang_code)
+
             try:
-                target_locale = Locale.objects.get(language_code=lang)
-            except Locale.DoesNotExist:
-                target_locale = Locale.objects.create(language_code=lang)
+                page = AboutScieloOrgPage.objects.get(locale=locale)
+                for p in page.get_children():
+                    p.specific.delete()
+            except AboutScieloOrgPage.DoesNotExist:
+                page = AboutScieloOrgPage(
+                    title=translation["title"],
+                    slug=translation["slug"],
+                    body=translation["body"],
+                    external_link="",
+                    list_page=[],
+                    locale=locale,
+                )
 
-            # Se já existir tradução, atualiza; senão, copia
-            tr_page = AboutScieloOrgPage.objects.filter(
-                translation_key=about_page.translation_key,
-                locale=target_locale,
-            ).first()
+                homepage.add_child(instance=page)
 
-            if tr_page is None:
-                if hasattr(about_page, "copy_for_translation"):
-                    tr_page = about_page.copy_for_translation(locale=target_locale, copy_parents=True)
-                else:
-                    tr_page = AboutScieloOrgPage(
-                        title=data["title"],
-                        slug=data["slug"],
-                        body=data["body"],
-                        external_link="",
-                        list_page=[],
-                        locale=target_locale,
-                    )
-                    homepage.add_child(instance=tr_page)
+                page.save_revision().publish()
 
-            tr_page.title = data["title"]
-            tr_page.slug = data["slug"]
-            tr_page.body = data["body"]
-            tr_page.external_link = ""
-            tr_page.save_revision().publish()
-            self.stdout.write(self.style.SUCCESS(f"Tradução {lang} pronta: {tr_page.title}"))
-
-        return about_page
-
+            yield page
