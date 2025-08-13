@@ -1,5 +1,6 @@
 import os
 import logging
+import sys
 from io import BytesIO
 from zipfile import ZipFile
 
@@ -14,12 +15,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from core.utils.profiling_tools import profile_endpoint  # ajuste o import conforme sua estrutura
+from core.utils.profiling_tools import profile_endpoint, profile_method  # ajuste o import conforme sua estrutura
 from pid_provider.provider import PidProvider
 from pid_provider.tasks import (
     task_delete_provide_pid_tmp_zip,
     task_provide_pid_for_xml_zip,
 )
+from tracker.models import UnexpectedEvent
+
 
 STATUS_MAPPING = {
     "created": rest_framework_status.HTTP_201_CREATED,
@@ -95,70 +98,119 @@ class PidProviderViewSet(
                 logging.info("Sync")
                 result = self.run_sync(user, uploaded_file)
 
-            result_status = (
-                STATUS_MAPPING.get(result.get("record_status"))
-                or rest_framework_status.HTTP_200_OK
-            )
         except Exception as e:
-            logging.exception(e)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "task": "PidProviderViewSet.create",
+                    "detail": dict(
+                        uploaded_file=uploaded_file.name,
+                    ),
+                },
+            )
             result = {"error_type": str(type(e)), "error_message": str(e)}
-            result_status = rest_framework_status.HTTP_400_BAD_REQUEST
         finally:
             logging.info(result)
-            return Response([result], status=result_status)
+            if result.get("error_type"):
+                result_status = rest_framework_status.HTTP_400_BAD_REQUEST
+            return Response([result], status=result_status or rest_framework_status.HTTP_200_OK)
 
+    @profile_method
     def run_async(self, user, uploaded_file):
-        with NamedTemporaryFile(delete=False, suffix=".zip") as tmp_zip_file:
-            for chunk in uploaded_file.chunks():
-                tmp_zip_file.write(chunk)
-                # tmp_zip_file.write(uploaded_file.read())
-            temp_file_path = tmp_zip_file.name
-
-        # 1. ENVIAR TASK com priority e expires
-        response = task_provide_pid_for_xml_zip.apply_async(
-            kwargs={
-                "username": user.username,
-                "user_id": user.id,
-                "zip_filename": temp_file_path,
-            },
-            priority=TASK_HIGH_PRIORITY,
-            expires=TASK_EXPIRES,
-            # queue=queue,
-        )
         try:
-            result = response.get(timeout=TASK_TIMEOUT)  # Espera no máximo X segundos
-        except TimeoutError:
-            # Timeout atingido - task ainda está rodando
-            result = {
-                "record_status": "processing",
-                "task_id": response.id,
-                "message": f"Processing with {TASK_HIGH_PRIORITY} priority. Check back later.",
-                "priority": TASK_HIGH_PRIORITY,
-                "expires_in": f"{TASK_EXPIRES} seconds",
-            }
-
-        task_delete_provide_pid_tmp_zip.apply_async(
-            kwargs={
-                "temp_file_path": temp_file_path,
-            },
-            priority=TASK_LOW_PRIORITY,
-        )
-        return result
-
-    def run_sync(self, user, uploaded_file):
-        response = {}
-        with TemporaryDirectory() as output_folder:
-            downloaded_file_path = os.path.join(output_folder, uploaded_file.name)
-            with open(downloaded_file_path, "wb") as fp:
+            with NamedTemporaryFile(delete=False, suffix=".zip") as tmp_zip_file:
                 for chunk in uploaded_file.chunks():
-                    fp.write(chunk)
-                # fp.write(uploaded_file.read())
-            response = task_provide_pid_for_xml_zip(
-                username=user.username,
-                user_id=user.id,
-                zip_filename=downloaded_file_path,
+                    tmp_zip_file.write(chunk)
+                    # tmp_zip_file.write(uploaded_file.read())
+                temp_file_path = tmp_zip_file.name
+
+            # 1. ENVIAR TASK com priority e expires
+            response = task_provide_pid_for_xml_zip.apply_async(
+                kwargs={
+                    "username": user.username,
+                    "user_id": user.id,
+                    "zip_filename": temp_file_path,
+                },
+                priority=TASK_HIGH_PRIORITY,
+                expires=TASK_EXPIRES,
+                # queue=queue,
             )
-        return response
+            try:
+                result = response.get(timeout=TASK_TIMEOUT)  # Espera no máximo X segundos
+            except TimeoutError:
+                # Timeout atingido - task ainda está rodando
+                result = {
+                    "record_status": "processing",
+                    "task_id": response.id,
+                    "message": f"Processing with {TASK_HIGH_PRIORITY} priority. Check back later.",
+                    "priority": TASK_HIGH_PRIORITY,
+                    "expires_in": f"{TASK_EXPIRES} seconds",
+                }
+
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "task": "PidProviderViewSet.run_async",
+                    "detail": dict(
+                        uploaded_file=uploaded_file.name,
+                    ),
+                },
+            )
+            result = {"error_type": str(type(e)), "error_message": str(e)}
+        finally:
+            task_delete_provide_pid_tmp_zip.apply_async(
+                kwargs={
+                    "temp_file_path": temp_file_path,
+                },
+                priority=TASK_LOW_PRIORITY,
+            )
+            return result
+
+
+    @profile_method
+    def run_sync(self, user, uploaded_file):
+        try:
+            response = {}
+            with TemporaryDirectory() as output_folder:
+                downloaded_file_path = os.path.join(output_folder, uploaded_file.name)
+                with open(downloaded_file_path, "wb") as fp:
+                    for chunk in uploaded_file.chunks():
+                        fp.write(chunk)
+                    # fp.write(uploaded_file.read())
+                pp = PidProvider()
+                for response in pp.provide_pid_for_xml_zip(
+                    downloaded_file_path,
+                    user,
+                    filename=None,
+                    origin_date=None,
+                    force_update=None,
+                    is_published=None,
+                    registered_in_core=None,
+                    caller="core",
+                ):
+                    try:
+                        response.pop("xml_with_pre")
+                    except KeyError:
+                        pass
+            return response
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "task": "PidProviderViewSet.run_sync",
+                    "detail": dict(
+                        uploaded_file=uploaded_file.name,
+                    ),
+                },
+            )
+            return {"error_type": str(type(e)), "error_message": str(e)}
 
 
 class FixPidV2ViewSet(
@@ -170,12 +222,7 @@ class FixPidV2ViewSet(
     ]
     permission_classes = [IsAuthenticated]
 
-    @property
-    def pid_provider(self):
-        if not hasattr(self, "_pid_provider") or not self._pid_provider:
-            self._pid_provider = PidProvider()
-        return self._pid_provider
-
+    @profile_endpoint
     def create(self, request):
         """
         Receive a pid_v3 e correct_pid_v2
@@ -224,7 +271,8 @@ class FixPidV2ViewSet(
 
             resp_status = rest_framework_status.HTTP_400_BAD_REQUEST
             if len(pid_v3 or "") == len(correct_pid_v2 or "") == 23:
-                result = self.pid_provider.fix_pid_v2(
+                pp = PidProvider()
+                result = pp.fix_pid_v2(
                     pid_v3=request.data.get("pid_v3"),
                     correct_pid_v2=request.data.get("correct_pid_v2"),
                     user=request.user,
