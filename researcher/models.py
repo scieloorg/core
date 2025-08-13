@@ -24,6 +24,8 @@ from location.models import Location
 from organization.models import Organization
 from tracker.models import UnexpectedEvent
 
+from researcher.utils import validate_orcid
+
 from . import choices
 from .exceptions import InvalidOrcidError, PersonNameCreateError
 from .forms import ResearcherForm
@@ -765,7 +767,10 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
 
     def clean(self):
         if self.orcid:
-            self.validate_orcid(self.orcid)
+            try:
+                validate_orcid(self.orcid)
+            except ValueError:
+                pass
         return super().clean()
 
     def save(self, **kwargs):
@@ -801,7 +806,7 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
         orcid,
     ):
         try:
-            cls.validate_orcid(orcid)
+            validate_orcid(orcid)
             return cls.get_by_orcid(orcid)
         except cls.DoesNotExist:
             return cls.create(user, orcid)
@@ -818,20 +823,6 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
                     "data": data,
                 },
             )
-
-    @staticmethod
-    def validate_orcid(orcid):
-        # TODO
-        # Request to api to validate the orcid
-        # https://pub.orcid.org/v3.0/{orcid}/record
-        
-        # Regex catch the orcid when
-        # https://orcid.org/0000-0002-1825-0097
-        # orcid.org/0000-0002-1825-0097
-        # 0000-0002-1825-0097
-        valid_orcid = ORCID_REGEX.match(orcid)
-        if not valid_orcid:
-            raise ValidationError({"orcid": f"ORCID {orcid} is not valid"})
 
     @staticmethod
     def extract_orcid_number(orcid):
@@ -1149,13 +1140,6 @@ class ResearcherIds(CommonControlField):
         clean_value = re.sub(r'[\.\-]', '', lattes)
         if not re.fullmatch(r'\d{16}', clean_value):
             raise ValidationError({"identifier": f"Lattes {lattes} is not valid"})
-
-    @staticmethod
-    def validate_orcid(orcid):
-        regex = r"^\d{4}-\d{4}-\d{4}-\d{3}[0-9X]{1}$"
-        valid_orcid = re.search(regex, orcid)
-        if not valid_orcid:
-            raise ValidationError({"identifier": f"ORCID {orcid} is not valid"})
 
     @staticmethod
     def clean_orcid(orcid):
