@@ -318,6 +318,8 @@ MANAGERS = ADMINS
 # https://docs.djangoproject.com/en/dev/ref/settings/#logging
 # See https://docs.djangoproject.com/en/dev/topics/logging for
 # more details on how to customize your logging configuration.
+logs_path = ROOT_DIR / "logs"
+logs_path.mkdir(parents=True, exist_ok=True)
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -338,14 +340,18 @@ LOGGING = {
         },
         "profiling_file": {
             "level": "DEBUG",
-            "class": "logging.FileHandler",
-            "filename": ROOT_DIR / "profiling.log",  # <-- Arquivo será criado aqui
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "filename": ROOT_DIR / "logs" / "profiling.log",
+            "when": "H",         # Rotaciona a cada hora
+            "interval": 1,       # A cada 1 hora
+            "backupCount": 168,  # Mantém 168 horas (7 dias)
             "formatter": "simple",
+            "encoding": "utf-8",
         },
     },
     "loggers": {
         "profiling": {  # <-- Logger usado pelo decorador
-            "handlers": ["profiling_file", "console"],
+            "handlers": ["profiling_file"],
             "level": "DEBUG",
             "propagate": False,
         },
