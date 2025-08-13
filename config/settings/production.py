@@ -176,7 +176,10 @@ if env.bool("USE_SENTRY", default=False):
             "verbose": {
                 "format": "%(levelname)s %(asctime)s %(module)s "
                 "%(process)d %(thread)d %(message)s"
-            }
+            },
+            "simple": {
+                "format": '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            },
         },
         "handlers": {
             "console": {
