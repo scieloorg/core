@@ -184,10 +184,15 @@ if env.bool("USE_SENTRY", default=False):
                 "class": "logging.StreamHandler",
                 "formatter": "verbose",
             },
-            "profiling": {
-                "level": "WARNING",
-                "class": "logging.FileHandler",
-                "filename": "profiling.log",
+            "profiling_file": {
+                "level": "DEBUG",
+                "class": "logging.handlers.TimedRotatingFileHandler",
+                "filename": APPS_DIR / "media" / "profiling-prod.log",
+                "when": "midnight",
+                "interval": 1,
+                "backupCount": 30,  # Mantém 30 dias
+                "formatter": "simple",
+                "encoding": "utf-8",
             },
         },
         "root": {"level": "INFO", "handlers": ["console"]},
@@ -210,9 +215,9 @@ if env.bool("USE_SENTRY", default=False):
                 "level": "DEBUG", # ESSENCIAL: para ver a mensagem de depuração
                 "propagate": False, # Não envie para o logger pai (root), para ter controle total
             },
-            "profiling": {
-                "handlers": ["profiling"],
-                "level": "WARNING",
+            "profiling": {  # <-- Logger usado pelo decorador
+                "handlers": ["profiling_file"],
+                "level": "DEBUG",
                 "propagate": False,
             },
         },
