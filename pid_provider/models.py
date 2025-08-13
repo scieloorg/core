@@ -29,6 +29,9 @@ from tracker.models import UnexpectedEvent
 
 from core.utils.profiling_tools import (
     profile_classmethod,
+    profile_property,
+    profile_method,
+    profile_staticmethod,
 )  # ajuste o import conforme sua estrutura
 
 try:
@@ -293,6 +296,7 @@ class PidRequest(CommonControlField):
         ]
 
     @property
+    @profile_property
     def data(self):
         _data = {
             "origin": self.origin,
@@ -627,6 +631,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         return self.updated or self.created
 
     @property
+    @profile_property
     def data(self):
         _data = {
             "v3": self.v3,
@@ -653,6 +658,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             return None
 
     @property
+    @profile_property
     def xml_with_pre(self):
         try:
             return self.current_version.xml_with_pre
@@ -941,6 +947,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             logging.info(f"Skip update: is already up-to-date")
             return registered.data
 
+    @profile_method
     def is_equal_to(self, xml_with_pre):
         return bool(
             self.current_version and self.current_version.is_equal_to(xml_with_pre)
@@ -1036,6 +1043,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             )
         raise cls.DoesNotExist
 
+    @profile_method
     def match(self, xml_adapter):
         """
         Verifica se esta instância representa o mesmo artigo que o xml_adapter
@@ -1171,6 +1179,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 "other_pid"
             ).filter(q, **query_list[1]).order_by("-updated")
 
+    @profile_method
     def _add_data(self, xml_adapter, registered_in_core):
         self.registered_in_core = bool(registered_in_core)
 
@@ -1192,6 +1201,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         self.z_links = xml_adapter.z_links
         self.z_partial_body = xml_adapter.z_partial_body
 
+    @profile_method
     def _add_dates(self, xml_adapter, origin_date, available_since):
         # evita que artigos WIP fique disponíveis antes de estarem públicos
         try:
@@ -1203,16 +1213,19 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             self.available_since = origin_date
         self.origin_date = origin_date
 
+    @profile_method
     def _add_journal(self, xml_adapter):
         self.issn_electronic = xml_adapter.journal_issn_electronic
         self.issn_print = xml_adapter.journal_issn_print
 
+    @profile_method
     def _add_issue(self, xml_adapter):
         self.volume = xml_adapter.volume
         self.number = xml_adapter.number
         self.suppl = xml_adapter.suppl
         self.pub_year = xml_adapter.pub_year or xml_adapter.article_pub_year
 
+    @profile_method
     def _add_current_version(self, xml_with_pre, user, delete=False):
         if delete:
             try:
@@ -1223,6 +1236,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         self.current_version = XMLVersion.get_or_create(user, self, xml_with_pre)
         self.save()
 
+    @profile_method
     def check_registered_pids_changed(self, xml_with_pre):
         registered_changed = []
         if self.v3 != xml_with_pre.v3:
@@ -1254,6 +1268,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             )
         return registered_changed
 
+    @profile_method
     def _add_other_pid(self, registered_changed, user):
         # registrados passam a ser other pid
         # os pids do XML passam a ser os vigentes
@@ -1300,6 +1315,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         return queryset.filter(qs).exists()
 
     @staticmethod
+    @profile_staticmethod
     def is_valid_pid_len(value, pid_type):
         if value and len(value) == 23:
             return True
@@ -1519,9 +1535,11 @@ class FixPidV2(CommonControlField):
         return f"{self.pid_provider_xml.v3}"
 
     @staticmethod
+    @profile_staticmethod
     def autocomplete_custom_queryset_filter(search_term):
         return FixPidV2.objects.filter(pid_provider_xml__v3__icontains=search_term)
 
+    @profile_method
     def autocomplete_label(self):
         return f"{self.pid_provider_xml.v3}"
 
