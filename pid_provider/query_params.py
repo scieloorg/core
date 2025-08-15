@@ -1,13 +1,16 @@
 from django.db.models import Q
 from django.utils.translation import gettext as _
 
+from core.utils.profiling_tools import profile_function
 from pid_provider import exceptions
 
 
+@profile_function
 def get_valid_query_parameters(xml_adapter):
-    return get_journal_q_expression(xml_adapter), get_kwargs(xml_adapter)
+    return get_journal_q_expression(xml_adapter), list(get_kwargs(xml_adapter))
 
 
+@profile_function
 def get_kwargs(xml_adapter):
     """
     Gera parâmetros de consulta válidos para pesquisa no banco de dados com base nos dados do adaptador XML.
@@ -31,24 +34,19 @@ def get_kwargs(xml_adapter):
     """
     basic_params = get_basic_params(xml_adapter)
     if xml_adapter.is_aop:
-        kwargs = [_get_valid_params(xml_adapter, basic_params)]
+        yield _get_valid_params(xml_adapter, basic_params)
     else:
-        kwargs = [
-            _get_valid_params(
-                xml_adapter,
-                basic_params,
-                get_issue_params(xml_adapter, filter_by_issue=True),
-            ),
-            _get_valid_params(
-                xml_adapter,
-                basic_params,
-                get_issue_params(xml_adapter, aop_version=True),
-            ),
-        ]
-    return kwargs
+        params = get_issue_params(xml_adapter, filter_by_issue=True) or {}
+        params.update(basic_params)
+        yield _get_valid_params(xml_adapter, params)
+
+        params = get_issue_params(xml_adapter, aop_version=True) or {}
+        params.update(basic_params)
+        yield _get_valid_params(xml_adapter, params)
 
 
-def _get_valid_params(xml_adapter, basic_params, issue_params=None):
+@profile_function
+def _get_valid_params(xml_adapter, params):
     """
     Cria um dicionário de parâmetros validado combinando parâmetros básicos e de fascículo.
 
@@ -67,18 +65,17 @@ def _get_valid_params(xml_adapter, basic_params, issue_params=None):
     Raises:
         NotEnoughParametersToGetPidProviderXMLError: Se os parâmetros de desambiguação forem insuficientes.
     """
-    valid_params = issue_params or {}
-    valid_params.update(basic_params)
     try:
-        validate_query_params(valid_params)
+        validate_query_params(params)
     except exceptions.RequiredAuthorErrorToGetPidProviderXMLError:
         try:
-            valid_params.update(get_disambiguation_params(xml_adapter))
+            params.update(get_disambiguation_params(xml_adapter))
         except exceptions.NotEnoughParametersToGetPidProviderXMLError:
             raise
-    return valid_params
+    return params
 
 
+@profile_function
 def get_journal_q_expression(xml_adapter):
     """
     Cria uma expressão Q do Django para identificação de periódico usando valores de ISSN.
@@ -113,6 +110,7 @@ def get_journal_q_expression(xml_adapter):
     )
 
 
+@profile_function
 def get_pub_year_expression(xml_adapter):
     """
     Cria uma expressão Q do Django para filtragem por ano de publicação.
@@ -139,6 +137,7 @@ def get_pub_year_expression(xml_adapter):
     )
 
 
+@profile_function
 def get_basic_params(xml_adapter):
     """
     Extrai parâmetros de consulta básicos do adaptador XML para identificação do artigo.
@@ -168,6 +167,7 @@ def get_basic_params(xml_adapter):
     return _params
 
 
+@profile_function
 def get_issue_params(xml_adapter, filter_by_issue=False, aop_version=False):
     """
     Extrai parâmetros de consulta específicos do fascículo do adaptador XML.
@@ -212,6 +212,7 @@ def get_issue_params(xml_adapter, filter_by_issue=False, aop_version=False):
     return _params
 
 
+@profile_function
 def get_disambiguation_params(xml_adapter):
     """
     Extrai parâmetros de desambiguação para identificação do artigo quando os parâmetros básicos são insuficientes.
@@ -242,6 +243,7 @@ def get_disambiguation_params(xml_adapter):
     )
 
 
+@profile_function
 def validate_query_params(query_params):
     """
     Valida se os parâmetros de consulta contêm informações suficientes para identificação do artigo.
