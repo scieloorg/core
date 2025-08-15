@@ -14,7 +14,8 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["example.com"])
 # ------------------------------------------------------------------------------
 DATABASES["default"] = env.db("DATABASE_URL")  # noqa F405
 DATABASES["default"]["ATOMIC_REQUESTS"] = True  # noqa F405
-DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=60)  # noqa F405
+DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=0) or env.int("DJANGO_CONN_MAX_AGE", default=60)  # noqa F405
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = env.bool('DJANGO_CONN_HEALTH_CHECKS', True)
 DATABASES["default"]["ENGINE"] = 'django_prometheus.db.backends.postgresql'
 # Melhoria: Usando variáveis de ambiente para OPTIONS e POOL_OPTIONS com defaults
 DATABASES["default"]["OPTIONS"] = {
@@ -27,7 +28,6 @@ DATABASES["default"]["POOL_OPTIONS"] = {
     'RECYCLE': env.int("DB_RECYCLE", default=300),
     # Adicione outras opções do pool aqui se necessário
 }
-
 # CACHES
 # ------------------------------------------------------------------------------
 CACHES = {
