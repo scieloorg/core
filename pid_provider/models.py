@@ -181,7 +181,7 @@ class XMLVersion(CommonControlField):
                 "XMLVersion.get requires pid_provider_xml and xml_with_pre parameters"
             )
         found = (
-            cls.objects.select_related("pid_provider_xml")
+            cls.objects
             .filter(pid_provider_xml=pid_provider_xml, finger_print=finger_print)
             .latest("created")
         )
@@ -849,10 +849,9 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         xml_pid = xml_adapter.v3
         if xml_pid and xml_pid != registered_pid:
             # Verifica se o XML PID já está em uso por outro documento.
-            queryset = cls.objects.prefetch_related("other_pid")
             try:
                 # garantir que xml_adapter.v3 não tenha conflito
-                cls.get_record_by_pid_v3(xml_adapter, queryset)
+                cls.get_record_by_pid_v3(xml_adapter)
                 return xml_pid
             except cls.DoesNotExist:
                 return xml_pid
@@ -956,22 +955,19 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     @classmethod
     @profile_classmethod
     def get_record(cls, xml_adapter):
-        queryset = cls.objects.select_related("current_version").prefetch_related(
-            "other_pid"
-        )
         try:
-            return cls.get_record_by_data(xml_adapter, queryset)
+            return cls.get_record_by_data(xml_adapter)
         except cls.DoesNotExist:
             try:
                 # tenta match com pid_v3
-                return cls.get_record_by_pid_v3(xml_adapter, queryset)
+                return cls.get_record_by_pid_v3(xml_adapter)
             except PidProviderXMLPidV3ConflictError:
                 pass
         raise cls.DoesNotExist
 
     @classmethod
-    # @profile_classmethod
-    def get_record_by_data(cls, xml_adapter, queryset=None):
+    @profile_classmethod
+    def get_record_by_data(cls, xml_adapter):
         """
         Get record by data
 
@@ -996,48 +992,33 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
         """
         # Usar select_related para otimizar acesso futuro a current_version
-        if not queryset:
-            queryset = cls.objects.select_related("current_version").prefetch_related(
-                "other_pid"
-            )
-
         q, query_list = get_valid_query_parameters(xml_adapter)
+        # versão VoR (version of record)
+        item = cls.objects.filter(q, **query_list[0]).order_by("-updated").first()
+        if item:
+            return item
+        # versão aop (ahead of print)
         try:
-            # versão VoR (version of record)
-            return queryset.get(q, **query_list[0])
-        except cls.MultipleObjectsReturned:
-            return cls._select_one(xml_adapter, queryset, q, query_list[0])
-        except cls.DoesNotExist:
-            # versão aop (ahead of print)
-            try:
-                params = query_list[1]
-            except IndexError:
-                params = {}
-            if params:
-                try:
-                    return queryset.get(q, **params)
-                except cls.MultipleObjectsReturned:
-                    return cls._select_one(xml_adapter, queryset, q, params)
+            if query_list[1]:
+                item = cls.objects.filter(q, **query_list[1]).order_by("-updated").first()
+                if item:
+                    return item
+        except IndexError:
+            pass
         raise cls.DoesNotExist
 
     @classmethod
     @profile_classmethod
-    def get_record_by_pid_v3(cls, xml_adapter, queryset=None):
+    def get_record_by_pid_v3(cls, xml_adapter):
         # tenta procurar pelo pid_v3
-        xml_pid_v3 = xml_adapter.v3
-        if not xml_pid_v3:
+        if not xml_adapter.v3:
             raise cls.DoesNotExist
 
-        if not queryset:
-            queryset = cls.objects.select_related("current_version").prefetch_related(
-                "other_pid"
-            )
-
-        q = Q(v3=xml_pid_v3) | Q(other_pid__pid_in_xml=xml_pid_v3)
-        selected = cls._select_one(xml_adapter, queryset, q)
-        if selected:
-            if selected.match(xml_adapter):
-                return selected
+        xml_pid_v3 = xml_adapter.v3
+        item = cls.objects.filter(Q(v3=xml_pid_v3) | Q(other_pid__pid_in_xml=xml_pid_v3)).order_by("-updated").first()
+        if item:
+            if item.match(xml_adapter):
+                return item
             raise PidProviderXMLPidV3ConflictError(
                 f"Pid v3 {xml_pid_v3} belongs to {selected}"
             )
@@ -1066,17 +1047,10 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         if xml_adapter.sps_pkg_name == self.pkg_name:
             return True
 
-        xml__xml_with_pre = xml_adapter.xml_with_pre
-        self__xml_with_pre = self.xml_with_pre
-
-        xml_authors = xml__xml_with_pre.authors
-        self_authors = self__xml_with_pre.authors
-        if xml_authors and str(xml_authors) == str(self_authors):
+        if xml_adapter.z_surnames and xml_adapter.z_surnames == self.z_surnames:
             return True
 
-        xml_article_titles = xml__xml_with_pre.article_titles
-        self_article_titles = self__xml_with_pre.article_titles
-        if xml_article_titles and str(xml_article_titles) == str(self_article_titles):
+        if xml_adapter.z_collab and xml_adapter.z_collab == self.z_collab:
             return True
 
         # Links
@@ -1089,66 +1063,11 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             and xml_adapter.z_partial_body == self.z_partial_body
         ):
             return True
-
         return False
 
     @classmethod
     @profile_classmethod
-    def _select_one(cls, xml_adapter, queryset, q, query_list=None):
-        query_list = query_list or {}
-        items = queryset.filter(q, **query_list).order_by("-updated")
-        selected = items.first()
-        if selected:
-            return selected
-        raise cls.DoesNotExist
-
-    @classmethod
-    @profile_classmethod
-    def _handle_multiple_records(cls, xml_adapter, items):
-        try:
-            # Evita duplicar registros e remove registros duplicados
-            xml_with_pre = xml_adapter.xml_with_pre
-            response = {}
-            response["xml_with_pre_data"] = xml_with_pre.data
-
-            selected = items.first()
-            if not selected:
-                return
-
-            v3 = xml_with_pre.v3
-            if v3:
-                try:
-                    selected = items.get(v3=v3)
-                except cls.DoesNotExist:
-                    # esta abordagem evita duplicar registros
-                    selected = items.filter(other_pid__pid_in_xml=v3).first()
-
-            registered_pids_changed = []
-            for item in items:
-                if item is selected:
-                    continue
-                registered_pids_changed.extend(
-                    item.check_registered_pids_changed(xml_with_pre)
-                )
-                item.delete()
-            if selected and registered_pids_changed:
-                selected._add_other_pid(
-                    registered_pids_changed, selected.update_by or selected.creator
-                )
-            return selected
-        except Exception as exc:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                item=xml_with_pre.sps_pkg_name,
-                action="PidProviderXML._handle_multiple_records",
-                exception=exc,
-                exc_traceback=exc_traceback,
-                detail=response,
-            )
-
-    @classmethod
-    @profile_classmethod
-    def _get_records(cls, xml_adapter):
+    def _get_records_data(cls, xml_adapter):
         """
         Get record
 
@@ -1171,13 +1090,11 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
         """
         q, query_list = get_valid_query_parameters(xml_adapter)
-        yield from cls.objects.select_related("current_version").prefetch_related(
-            "other_pid"
-        ).filter(q, **query_list[0]).order_by("-updated")
-        if len(query_list) > 1:
-            yield from cls.objects.select_related("current_version").prefetch_related(
-                "other_pid"
-            ).filter(q, **query_list[1]).order_by("-updated")
+        for item in cls.objects.filter(q, **query_list[0]).order_by("-updated").iterator():
+            yield item.data
+        if len(query_list) > 1 and query_list[1]:
+            for item in cls.objects.filter(q, **query_list[1]).order_by("-updated").iterator():
+                yield item.data
 
     @profile_method
     def _add_data(self, xml_adapter, registered_in_core):
@@ -1303,7 +1220,6 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     @classmethod
     @profile_classmethod
     def _is_registered_pid(cls, v2=None, v3=None, aop_pid=None):
-        queryset = cls.objects.prefetch_related("other_pid")
         if v3:
             qs = Q(v3=v3) | Q(other_pid__pid_in_xml=v3)
         elif v2:
@@ -1312,7 +1228,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             qs = Q(v2=aop_pid) | Q(other_pid__pid_in_xml=aop_pid) | Q(aop_pid=aop_pid)
         else:
             return None
-        return queryset.filter(qs).exists()
+        return cls.objects.filter(qs).exists()
 
     @staticmethod
     @profile_staticmethod
@@ -1353,9 +1269,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 return response
             except cls.MultipleObjectsReturned as exc:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                response["records"] = list(
-                    record.data for record in cls._get_records(xml_adapter)
-                )
+                response["records"] = list(cls._get_records_data(xml_adapter))
                 UnexpectedEvent.create(
                     item=xml_with_pre.sps_pkg_name,
                     action="PidProviderXML.is_registered",
@@ -1394,7 +1308,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     @profile_classmethod
     def fix_pid_v2(cls, user, pid_v3, correct_pid_v2):
         try:
-            item = cls.objects.select_related("current_version").get(v3=pid_v3)
+            item = cls.objects.get(v3=pid_v3)
         except cls.DoesNotExist as e:
             raise cls.DoesNotExist(f"{e}: {pid_v3}")
 
