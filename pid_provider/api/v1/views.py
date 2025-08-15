@@ -86,7 +86,7 @@ class PidProviderViewSet(
 
         # self._authenticate(request)
         try:
-            result_status = rest_framework_status.HTTP_400_BAD_REQUEST
+            result_status = None
             uploaded_file = request.FILES["file"]
             logging.info(f"Receiving {uploaded_file.name}")
             user = self.request.user
@@ -115,6 +115,8 @@ class PidProviderViewSet(
             logging.info(result)
             if result.get("error_type"):
                 result_status = rest_framework_status.HTTP_400_BAD_REQUEST
+            else:
+                result_status = STATUS_MAPPING.get(result.get("record_status"))
             return Response([result], status=result_status or rest_framework_status.HTTP_200_OK)
 
     @profile_method
