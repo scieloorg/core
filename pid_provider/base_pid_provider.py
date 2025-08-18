@@ -232,7 +232,7 @@ class BasePidProvider:
                 "updated": self.updated.isoformat(),
             }
         """
-        return PidProviderXML.is_registered(xml_with_pre, origin)
+        return PidProviderXML.is_registered(xml_with_pre)
 
     @classmethod
     @profile_method
