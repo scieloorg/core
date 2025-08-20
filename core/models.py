@@ -72,7 +72,7 @@ class Gender(CommonControlField):
 
     gender = models.CharField(_("Sex"), max_length=50, null=True, blank=True)
 
-    autocomplete_search_filter = "code"
+    autocomplete_search_field = "code"
 
     def autocomplete_label(self):
         return str(self)
@@ -86,10 +86,10 @@ class Gender(CommonControlField):
         unique_together = [("code", "gender")]
 
     def __unicode__(self):
-        return self.gender or self.code
+        return f"{self.gender} | {self.code}"
 
     def __str__(self):
-        return self.gender or self.code
+        return f"{self.gender} | {self.code}"
 
     @classmethod
     def load(cls, user):
