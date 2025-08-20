@@ -1,0 +1,8 @@
+{% load humanize static i18n wagtailsettings_tags wagtailcore_tags get_journals_by_name_institutiton %}
+
+<form action="{{self.url}}" method="get" id="letterFilterForm">
+    <div class="btn-group-vertical btn-group-fixed ms-4" role="group" aria-label="Filtro por letra" id="letterBtnGroup">
+        <!-- Botões serão inseridos aqui via JavaScript -->
+    </div>
+    <input type="hidden" name="start_with_letter" id="letterInput" value="">
+</form>

@@ -1,0 +1,40 @@
+{% load humanize static i18n wagtailsettings_tags wagtailcore_tags get_journals_by_name_institutiton %}
+
+<div class="tab-content mt-3 mb-5" id="myTabContent2">
+    <div class="tab-pane fade show active pb-0" id="tab-todos" role="tabpanel" aria-labelledby="tab-todos-tab">
+        <div class="row">
+            <div class="col-12 d-flex align-items-start">
+                <table class="table table-hover">
+                    <caption class="visually-hidden">Journal list</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">{% trans 'Publisher' %}</th>
+                            <th scope="col">{% trans 'Journals' %}</th>
+                            {% include "home/include/download_button_csv_xls.html" %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for publisher in publishers %}
+                        <tr>
+                            <td><strong>{{ publisher.institution.institution.institution_identification.name }}</strong></td>
+                            <td>
+                                <ul class="mb-0">
+                                    {% for scielojournal in publisher.journal.scielojournal_set.all %}
+                                        {% if scielojournal.status in "C" %}
+                                            <span class="material-icons align-middle fs-5" style="color: #2c9d45;">fiber_manual_record</span>
+                                        {% elif scielojournal.status in "DS" %}
+                                            <span class="material-icons align-middle fs-5" style="color: #c63800;">fiber_manual_record</span>
+                                        {% endif %}
+                                        <a target="_blank" href="http://{{ scielojournal.collection.domain }}/scielo.php?script=sci_serial&pid={{ scielojournal.issn_scielo }}&lng=en">{{ scielojournal.journal.title }}</a><span style="color: #888; font-size: 0.9em; opacity: 0.7; padding: 4px 8px;">{{ scielojournal.collection.main_name }}</span> 
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% include "home/include/list_journal_page/journals_letter_filter.html" %}
+            </div>
+        </div>
+    </div>
+</div>

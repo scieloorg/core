@@ -1,18 +1,44 @@
 # PRECAUTION: avoid production dependencies that aren't in development
 
+# ==============================================================================
+# PRODUCTION REQUIREMENTS
+# ==============================================================================
+# This file contains dependencies specific to production environments.
+# It should be used in conjunction with base.txt
+
 -r base.txt
 
+# ==============================================================================
+# WEB SERVER & WSGI
+# ==============================================================================
+
+gunicorn==21.2.0  # https://github.com/benoitc/gunicorn
 gevent==24.2.1  # http://www.gevent.org/
-gunicorn==21.2.0 # https://github.com/benoitc/gunicorn
+
+# ==============================================================================
+# DATABASE
+# ==============================================================================
+
 psycopg2-binary==2.9.9  # https://github.com/psycopg/psycopg2
+
+# ==============================================================================
+# EMAIL
+# ==============================================================================
+
+django-anymail  # https://github.com/anymail/django-anymail
+
+# ==============================================================================
+# MONITORING & ERROR TRACKING
+# ==============================================================================
+
+# Sentry
 sentry-sdk[django]==2.5.1  # https://github.com/getsentry/sentry-python
 
-# Django
-# ------------------------------------------------------------------------------
-django-anymail  # https://github.com/anymail/django-anymail
-setuptools>=68.2.2 # not directly required, pinned by Snyk to avoid a vulnerability
+# Elastic APM
+elastic-apm==6.21.4.post8347027212  # https://pypi.org/project/elastic-apm/
 
+# ==============================================================================
+# SECURITY UPDATES
+# ==============================================================================
 
-# Elastic-APM  # https://pypi.org/project/elastic-apm/
-# ------------------------------------------------------------------------------
-elastic-apm==6.21.4.post8347027212
+setuptools>=68.2.2  # not directly required, pinned by Snyk to avoid a vulnerability

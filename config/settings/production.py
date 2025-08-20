@@ -14,8 +14,20 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["example.com"])
 # ------------------------------------------------------------------------------
 DATABASES["default"] = env.db("DATABASE_URL")  # noqa F405
 DATABASES["default"]["ATOMIC_REQUESTS"] = True  # noqa F405
-DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=60)  # noqa F405
+DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=0) or env.int("DJANGO_CONN_MAX_AGE", default=60)  # noqa F405
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = env.bool('DJANGO_CONN_HEALTH_CHECKS', True)
 DATABASES["default"]["ENGINE"] = 'django_prometheus.db.backends.postgresql'
+# Melhoria: Usando variáveis de ambiente para OPTIONS e POOL_OPTIONS com defaults
+DATABASES["default"]["OPTIONS"] = {
+    "connect_timeout": env.int("DB_CONNECT_TIMEOUT", default=10),
+    # Adicione outras opções de conexão aqui se necessário
+}
+DATABASES["default"]["POOL_OPTIONS"] = {
+    'POOL_SIZE': env.int("DB_POOL_SIZE", default=10),
+    'MAX_OVERFLOW': env.int("DB_MAX_OVERFLOW", default=20),
+    'RECYCLE': env.int("DB_RECYCLE", default=300),
+    # Adicione outras opções do pool aqui se necessário
+}
 # CACHES
 # ------------------------------------------------------------------------------
 CACHES = {
@@ -55,6 +67,20 @@ SECURE_HSTS_PRELOAD = env.bool("DJANGO_SECURE_HSTS_PRELOAD", default=True)
 SECURE_CONTENT_TYPE_NOSNIFF = env.bool(
     "DJANGO_SECURE_CONTENT_TYPE_NOSNIFF", default=True
 )
+
+# Duração máxima da sessão em segundos. Padrão: 30 minutos (1800s).
+# Sobrescreva com a variável de ambiente DJANGO_SESSION_COOKIE_AGE. Ex: export DJANGO_SESSION_COOKIE_AGE=3600
+SESSION_COOKIE_AGE = env.int('DJANGO_SESSION_COOKIE_AGE', 30 * 60)
+
+# Se o cookie da sessão expira ao fechar o navegador. Padrão: True (conforme 'true' no getenv).
+# Sobrescreva com DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE=False para persistir.
+# Ex: export DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE=False
+SESSION_EXPIRE_AT_BROWSER_CLOSE = env.bool('DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE', True)
+
+# Salva a sessão a cada requisição. Essencial para timeout por inatividade. Padrão: True.
+# Sobrescreva com DJANGO_SESSION_SAVE_EVERY_REQUEST=False para desativar.
+# Ex: export DJANGO_SESSION_SAVE_EVERY_REQUEST=False
+SESSION_SAVE_EVERY_REQUEST = env.bool('DJANGO_SESSION_SAVE_EVERY_REQUEST', True)
 
 # STATIC
 # ------------------------
@@ -150,14 +176,27 @@ if env.bool("USE_SENTRY", default=False):
             "verbose": {
                 "format": "%(levelname)s %(asctime)s %(module)s "
                 "%(process)d %(thread)d %(message)s"
-            }
+            },
+            "simple": {
+                "format": '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            },
         },
         "handlers": {
             "console": {
                 "level": "DEBUG",
                 "class": "logging.StreamHandler",
                 "formatter": "verbose",
-            }
+            },
+            "profiling_file": {
+                "level": "DEBUG",
+                "class": "logging.handlers.TimedRotatingFileHandler",
+                "filename": APPS_DIR / "media" / "profiling-prod.log",
+                "when": "midnight",
+                "interval": 1,
+                "backupCount": 30,  # Mantém 30 dias
+                "formatter": "simple",
+                "encoding": "utf-8",
+            },
         },
         "root": {"level": "INFO", "handlers": ["console"]},
         "loggers": {
@@ -171,6 +210,17 @@ if env.bool("USE_SENTRY", default=False):
             "django.security.DisallowedHost": {
                 "level": "ERROR",
                 "handlers": ["console"],
+                "propagate": False,
+            },
+            # Celery Signals
+            "config.celery_signals": {
+                "handlers": ["console"],
+                "level": "DEBUG", # ESSENCIAL: para ver a mensagem de depuração
+                "propagate": False, # Não envie para o logger pai (root), para ter controle total
+            },
+            "profiling": {  # <-- Logger usado pelo decorador
+                "handlers": ["profiling_file"],
+                "level": "DEBUG",
                 "propagate": False,
             },
         },

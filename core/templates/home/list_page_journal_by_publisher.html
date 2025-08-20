@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load humanize static i18n wagtailsettings_tags wagtailcore_tags get_journals_by_name_institutiton %}
+
+{% block content %}
+    {% include "home/scieloorg/header.html" %}
+    {% include "home/include/list_journal_page/breadcrumb.html" %}
+    <section>
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h1 class="h4 mb-3"> Periódicos</h1>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 col-sm-8">
+                    {% include "home/include/list_journal_page/journals_tabs.html" %}
+                </div>
+                <div class="col-12 col-sm-4">
+                    {% include "home/include/list_journal_page/journals_search_form.html" %}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    {% include "home/include/list_journal_page/journals_table_by_publisher.html" %}
+                </div>
+            </div>
+        </div>
+    </section>
+    
+{% endblock %}

@@ -1,14 +1,18 @@
 from django.http import HttpResponseRedirect
 from django.utils.translation import gettext as _
-from wagtail_modeladmin.options import (
-    ModelAdmin,
-    ModelAdminGroup,
-    modeladmin_register,
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import (
+    CreateView,
+    SnippetViewSet,
+    SnippetViewSetGroup,
 )
-from wagtail_modeladmin.views import CreateView
+
 
 from .models import Issue, IssueExport
 from config.menu import get_menu_order
+from config.settings.base import COLLECTION_TEAM, JOURNAL_TEAM
+
+from .models import Issue
 
 
 class IssueCreateView(CreateView):
@@ -17,11 +21,11 @@ class IssueCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class IssueAdmin(ModelAdmin):
+class IssueAdminSnippetViewSet(SnippetViewSet):
     model = Issue
     inspect_view_enabled = True
     menu_label = _("Issues")
-    create_view_class = IssueCreateView
+    add_view_class = IssueCreateView
     menu_icon = "folder-open-inverse"
     menu_order = 150
     add_to_settings_menu = False
@@ -51,6 +55,30 @@ class IssueAdmin(ModelAdmin):
         "supplement",
     )
 
+    def get_queryset(self, request):
+        qs = Issue.objects
+        user = request.user
+
+        if user.is_superuser:
+            return qs.all()
+
+        user_groups = set(user.groups.values_list("name", flat=True))
+        if COLLECTION_TEAM in user_groups:
+            collections = getattr(user, "collections", None)
+            if collections is not None:
+                return qs.filter(
+                    journal__scielojournal__collection__in=collections
+                ).select_related("journal")
+        elif JOURNAL_TEAM in user_groups:
+            journals = getattr(user, "journals", None)
+            if journals is not None:
+                journals_ids = journals.values_list("id", flat=True)
+                return qs.filter(
+                    journal__id__in=journals_ids
+                ).select_related("journal")
+        return qs.none()
+
+
 
 class IssueExportCreateView(CreateView):
     def form_valid(self, form):
@@ -58,9 +86,9 @@ class IssueExportCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class IssueExportAdmin(ModelAdmin):
+class IssueExportAdmin(SnippetViewSet):
     model = IssueExport
-    create_view_class = IssueExportCreateView
+    add_view_class = IssueExportCreateView
     inspect_view_enabled = True
     menu_label = _("Issue Exports")
     menu_icon = "download"
@@ -87,11 +115,11 @@ class IssueExportAdmin(ModelAdmin):
     )
 
 
-class IssueAdminGroup(ModelAdminGroup):
+class IssueAdminSnippetViewSetGroup(SnippetViewSetGroup):
     menu_label = _("Issues")
     menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("issue")
-    items = (IssueAdmin, IssueExportAdmin)
+    items = (IssueAdminSnippetViewSet, IssueExportAdmin)
 
 
-modeladmin_register(IssueAdminGroup)
+register_snippet(IssueAdminSnippetViewSetGroup)

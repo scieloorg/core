@@ -192,10 +192,6 @@ class JournalProxyEditor(Journal):
         AutocompletePanel("abstract_language"),
     ]
 
-    panels_editorial_board = [
-        InlinePanel("editorial_board_member_journal", label=_("Editorial Board")),
-    ]
-
     edit_handler = TabbedInterface(
         [
             ObjectList(panels_titles, heading=_("Titles")),
@@ -203,15 +199,157 @@ class JournalProxyEditor(Journal):
             ObjectList(panels_institutions, heading=_("Institutions")),
             ObjectList(panels_website, heading=_("Website")),
             ObjectList(panels_open_science, heading=_("Open Science")),
-            ObjectList(panels_policy, heading=_("Journal Policy")),
-            ObjectList(
-                panels_instructions_for_authors, heading=_("Instructions for Authors")
-            ),
             ObjectList(panels_notes, heading=_("Notes")),
-            ObjectList(panels_editorial_board, heading=_("Editorial Board")),
         ]
     )
     class Meta:
         proxy = True
         verbose_name = _("Journal Editor")
         verbose_name_plural = _("Journal Editors")
+
+
+class JournalProxyPanelPolicy(Journal):
+    panels_policy = [
+        InlinePanel(
+            "ethics",
+            label=_("Ethics"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "ecommittee",
+            label=_("Ethics Committee"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "copyright",
+            label=_("Copyright"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "website_responsibility",
+            label=_("Intellectual Property / Terms of use / Website responsibility"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "author_responsibility",
+            label=_("Intellectual Property / Terms of use / Author responsibility"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "policies",
+            label=_("Retraction Policy | Ethics and Misconduct Policy"),
+            classname="collapsed",
+        ),
+        AutocompletePanel("digital_pa"),
+        InlinePanel(
+            "digital_preservation",
+            label=_("Digital Preservation"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "conflict_policy",
+            label=_("Conflict of interest policy"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "software_adoption",
+            label=_("Similarity Verification Software Adoption"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "gender_issues",
+            label=_("Gender Issues"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "fee_charging",
+            label=_("Fee Charging"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "editorial_policy",
+            label=_("Editorial Policy"),
+            classname="collapsed",
+        ),
+    ]
+    panels_editorial_board = [
+        InlinePanel("editorial_board_member_journal", label=_("Editorial Board")),
+    ]
+
+    edit_handler = TabbedInterface(
+        [
+            ObjectList(panels_policy, heading=_("Journal Policy")),
+        ]
+    )
+    class Meta:
+        proxy = True
+        verbose_name = _("Journal Policy")
+        verbose_name_plural = _("Journal Policy")
+
+
+
+class JournalProxyPanelInstructionsForAuthors(Journal):
+    panels_instructions_for_authors = [
+        InlinePanel(
+            "accepted_documment_types",
+            label=_("Accepted Document Types"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "authors_contributions",
+            label=_("Authors Contributions"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "preparing_manuscript",
+            label=_("Preparing Manuscript"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "digital_assets",
+            label=_("Digital Assets"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "citations_and_references",
+            label=_("Citations and References"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "supp_docs_submission",
+            label=_("Supplementary Documents Required for Submission"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "financing_statement",
+            label=_("Financing Statement"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "acknowledgements",
+            label=_("Acknowledgements"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "additional_information",
+            label=_("Additional Information"),
+            classname="collapsed",
+        ),
+        FieldPanel("author_name"),
+        FieldPanel("manuscript_length"),
+        FieldPanel("format_check_list"),
+        AutocompletePanel("text_language"),
+        AutocompletePanel("abstract_language"),
+    ]
+
+    edit_handler = TabbedInterface(
+        [
+            ObjectList(
+                panels_instructions_for_authors, heading=_("Instructions for Authors")
+            )
+        ]
+    )
+    class Meta:
+        proxy = True
+        verbose_name = _("Journal Instructions for Authors")
+        verbose_name_plural = _("Journal Instructions for Authors")
