@@ -46,36 +46,105 @@
     font-style: italic;
 }
 
+.document-highlight {
+    background: #f8f9fa;
+    border: 2px solid #28a745;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.document-highlight a {
+    color: #28a745;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.document-highlight a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 576px) {
+    .scielo-list-item {
+        padding: 15px 20px;
+        font-size: 14px;
+    }
+}
 </style>
-    {% include "home/scieloorg/header.html" %}
-    {% include "home/include/list_journal_page/breadcrumb.html" %}
+
+{% include "home/scieloorg/header.html" %}
+{% include "home/include/list_journal_page/breadcrumb.html" %}
+
 <section>
     <div class="container">
-        {% for block in page.list_page %}
-            {% if block.block_type == 'page' %}
-                <div class="scielo-list-item">
-                    <a href="{{ block.value.url }}">{{ block.value.title }}</a>
-                </div>
-            {% elif block.block_type == 'text' %}
-                <div>
-                    {{ block.value|richtext }}
-                </div>
-            {% elif block.block_type == 'url' %}
-                <div class="scielo-list-item">
-                    <a href="{{ block.value }}" target="_blank">{{ block.value }}</a>
-                </div>
-            {% elif block.block_type == 'document' %}
-                <div class="scielo-list-item">
-                    <a target="_blank" href="{{ block.value.url }}">{{ block.value.title }}</a>
-                </div>
-            {% endif %}
-        {% endfor %}
-        {% for child in page.get_children.live.public %}
-            <div class="scielo-list-item">
-               <a href="{% pageurl child %}">{{ child.title }}</a>
-            </div>
-        {% endfor%}
+        {% if page.external_link %}
+            <script>
+                window.open("{{ page.external_link }}", "_blank");
+                window.location.href = "{{ page.external_link }}";
+            </script>
+            <p style="text-align: center; margin: 40px 0;">
+                Redirecionando para <a href="{{ page.external_link }}" target="_blank" rel="noopener noreferrer">{{ page.external_link }}</a>...
+            </p>
+        {% else %}
+
+          {# Mostrar documento principal destacado #}
+          {% if page.attached_document %}
+              <div class="document-highlight">
+                  <a href="{{ page.attached_document.url }}" target="_blank" rel="noopener noreferrer">
+                      {{ page.attached_document.title }}
+                  </a>
+                  <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                      {% if page.attached_document.file_extension %}{{ page.attached_document.file_extension|upper }}{% endif %}
+                      {% if page.attached_document.file_size %} • {{ page.attached_document.file_size|filesizeformat }}{% endif %}
+                  </div>
+              </div>
+          {% endif %}
+
+          {# Conteúdo principal da página #}
+          {% if page.body %}
+              <div class="scielo-list-text">
+                  {{ page.body|richtext }}
+              </div>
+          {% endif %}
+
+          {# Lista de itens do StreamField #}
+          {% for block in page.list_page %}
+              {% if block.block_type == 'page' %}
+                  <div class="scielo-list-item">
+                      <a href="{{ block.value.url }}">{{ block.value.title }}</a>
+                  </div>
+              {% elif block.block_type == 'multilang_text' %}
+                  <div class="scielo-list-text">
+                      {{ block.value|richtext }}
+                  </div>
+              {% elif block.block_type == 'url' %}
+                  <div class="scielo-list-item">
+                      <a href="{{ block.value }}" target="_blank" rel="noopener noreferrer">
+                          {{ block.value }}
+                      </a>
+                  </div>
+              {% elif block.block_type == 'document' %}
+                  <div class="scielo-list-item">
+                      <a href="{{ block.value.url }}" target="_blank" rel="noopener noreferrer">
+                          {{ block.value.title }}
+                          {% if block.value.file_extension %}
+                              <span style="font-size: 12px; color: #999;">({{ block.value.file_extension|upper }})</span>
+                          {% endif %}
+                      </a>
+                  </div>
+              {% endif %}
+          {% endfor %}
+
+          {# Páginas filhas #}
+          {% for child in page.get_children.live.public %}
+              <div class="scielo-list-item">
+                 <a href="{% pageurl child %}">{{ child.title }}</a>
+              </div>
+          {% endfor %}
+      {% endif %}
     </div>
 </section>
-    
+
 {% endblock %}
