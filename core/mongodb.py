@@ -55,7 +55,7 @@ def write_to_db(data, database, collection, force_update=True, client=None):
         else:
             col.replace_one(
                 {
-                    "code": data["code"], 
+                    "code": data["code"],
                     "collection": data["collection"]
                 },
                 data,
@@ -64,4 +64,4 @@ def write_to_db(data, database, collection, force_update=True, client=None):
         return True
 
     except Exception as e:
-        raise Exception(f"Failed to write to MongoDB collection {col}: {str(e)}")
+        raise Exception(f"Failed to write to MongoDB collection {collection}: {str(e)}")
