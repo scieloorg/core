@@ -2,7 +2,7 @@ from collections import defaultdict
 from functools import lru_cache
 
 from article.models import Article
-from core.utils.articlemeta_dict_utils import add_items, add_to_result
+from core.utils.articlemeta_dict_utils import add_items, add_to_result, add_multiple_to_result
 from journal.models import SciELOJournal, TitleInDatabase
 from journal.formats.articlemeta_format import ArticlemetaJournalFormatter
 
@@ -71,14 +71,16 @@ class ArticlemetaIssueFormatter:
     def _format_basic_info(self):
         """Informações básicas do issue"""
         # Path to base issue
-        key_to_code = {
-            "v31": self.obj.volume,
-            "v32": self.obj.number,
-            "v36": f"{self.obj.year}{self.obj.number}" if self.obj.number else self.obj.year,
-            "v42": '1',
-        }
-        for key, value in key_to_code.items():
-            add_to_result(key, value, self.result['issue'])
+        
+        add_multiple_to_result(
+            {
+                "v31": self.obj.volume,
+                "v32": self.obj.number,
+                "v36": f"{self.obj.year}{self.obj.number}" if self.obj.number else self.obj.year,
+                "v42": '1',
+            },
+            self.result['issue']
+        )
         # "v6": Ordem de publicação dos fascículos para apresentação na interface
 
         if hasattr(self.obj, 'issue_title'):
@@ -124,23 +126,20 @@ class ArticlemetaIssueFormatter:
         """Informações de coleção"""
         collection = self.scielo_journal.collection
         if collection:
-            key_to_code = {
-                "v992": collection.acron3,
-            }
-            for key, value in key_to_code.items():
-                add_to_result(key, value, self.result['issue'])
+            add_to_result("v992", collection.acron3, self.result['issue'])
             self.result['collection'] = collection.acron3
             self.result['issue']['collection'] = collection.acron3
 
     def _format_journal_info(self):
         """Informações do journal"""
-        key_to_code = {
-            "v30": self.journal.short_title,
-            "v130": self.journal.title,
-            "v117": self.journal.standard.code if self.journal.standard else None,
-        }
-        for key, value in key_to_code.items():
-            add_to_result(key, value, self.result['issue'])
+        add_multiple_to_result(
+            {
+                "v30": self.journal.short_title,
+                "v130": self.journal.title,
+                "v117": self.journal.standard.code if self.journal.standard else None,
+            },
+            self.result['issue']
+        )
         
         if self.journal and self.journal.journal_use_license:
             add_to_result("v541", self.journal.journal_use_license.license_type, self.result['issue'])
@@ -190,23 +189,24 @@ class ArticlemetaIssueFormatter:
 
     def _format_system_info(self):
         """Informações do sistema"""
-        key_to_code = {
-            "v200": str(int(self.obj.markup_done)),
-            "v991": '1',
-        }
-        for key, value in key_to_code.items():
-            add_to_result(key, value, self.result['issue'])
+        add_multiple_to_result(
+            {
+                "v200": str(int(self.obj.markup_done)),
+                "v991": '1',
+            },
+            self.result['issue']
+        )
 
     def _format_register_order_info(self):
         """Ordem do registro e por tipo do registro na base do fascículo e tipo do registro"""
-        key_to_code = {
-            "v700": '0',
-            "v701": '1',
-            "v706": 'i',
-        }
-        for key, value in key_to_code.items():
-            add_to_result(key, value, self.result['issue'])
-
+        add_multiple_to_result(
+            {
+                "v700": '0',
+                "v701": '1',
+                "v706": 'i',
+            },
+            self.result['issue']
+        )
 
     def _format_field_use_system(self):
         """Campo usado no sistema"""
@@ -264,17 +264,8 @@ class ArticlemetaIssueFormatter:
     def _format_article_info(self):
         """Informações de artigo"""
         if self.article.exists():
-            code = self.article.first().pid_v2[1:]
-            key_to_code = {
-                "v122": str(self.obj.article_set.count()),
-                "v880": self.article.first().pid_v2[1:],
-            }
-            for key, value in key_to_code.items():
-                add_to_result(key, value, self.result['issue'])
-            
-            self.result['issue']['code'] = code
-            self.result['code'] = code
-            
+            article_count = str(self.obj.article_set.count()) 
+            add_to_result("v122", article_count, self.result['issue'])
 
     def _format_issn_info(self):
         """Informações de edição"""
@@ -282,15 +273,25 @@ class ArticlemetaIssueFormatter:
             issn_print = self.scielo_journal.journal.official.issn_print
             issn_electronic = self.scielo_journal.journal.official.issn_electronic
             issn_scielo = self.scielo_journal.issn_scielo
-            key_to_code = {
-                "v35": issn_scielo,
-                "v935": issn_electronic,
-            }
-            for key, value in key_to_code.items():
-                add_to_result(key, value, self.result['issue'])        
+            add_multiple_to_result(
+                {
+                    "v35": issn_scielo,
+                    "v935": issn_electronic,
+                },
+                self.result['issue']
+            )
             
             self._format_issn_with_type(issn_print, issn_electronic)
             self._format_issn_code_title(issn_print, issn_electronic)
+            self._format_code(issn_scielo)
+    
+    def _format_code(self, issn_scielo):
+        """Informações de código"""
+        if self.obj.year and self.obj.order:
+            code = f"{issn_scielo}{self.obj.year}{self.obj.order}"
+            self.result['code'] = code    
+            self.result['issue']['code'] = code
+            add_to_result("v880", code, self.result['issue'])
 
     def _format_issn_with_type(self, issn_print, issn_electronic):
         """Informações de ISSN com tipo"""
