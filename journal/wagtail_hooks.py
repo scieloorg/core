@@ -80,7 +80,7 @@ class JournalExportSnippetViewSet(SnippetViewSet):
 
     list_display = (
         "collection",
-        "journal",
+        "scielo_journal",
         "export_type",
         "created",
         "updated",
@@ -90,7 +90,7 @@ class JournalExportSnippetViewSet(SnippetViewSet):
         "export_type",
     )
     search_fields = (
-        "journal__title",
+        "scielo_journal__title",
         "collection__acron3",
     )
 
