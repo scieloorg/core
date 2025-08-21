@@ -133,7 +133,7 @@ def export_issue_to_articlemeta(
     for scielo_journal in issue.journal.scielojournal_set.all():
         if not force_update and IssueExport.is_exported(issue, 'articlemeta', scielo_journal.collection):
             logging.info(f"Issue {issue_code} already exported to collection {scielo_journal.collection}. Skipping.")
-
+            continue
         try:
             issue_data = issue.articlemeta_format(scielo_journal.collection.acron3)
             issue_data['processing_date'] = datetime.strptime(issue_data['processing_date'], "%Y-%m-%d")
