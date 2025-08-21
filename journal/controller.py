@@ -9,6 +9,7 @@ from tracker.models import UnexpectedEvent
 
 def export_journal_to_articlemeta(
     issn,
+    collection_acron3,
     force_update=True, 
     user=None,
     client=None,
@@ -30,7 +31,7 @@ def export_journal_to_articlemeta(
         return False
     
     try:
-        sj = SciELOJournal.objects.get(issn_scielo=issn)
+        sj = SciELOJournal.objects.get(issn_scielo=issn, collection__acron3=collection_acron3)
     except SciELOJournal.DoesNotExist:
         logging.error(f"SciELO Journal with issn_scielo {issn} does not exist.")
         return False
@@ -99,7 +100,7 @@ def bulk_export_journals_to_articlemeta(
     Export journals to ArticleMeta Database with flexible filtering.
     
     Args:
-        collections: Filter by collections acronyms (e.g., ['scl', 'mex'])
+        collections: List of collections acronyms (e.g., ['scl', 'mex'])
         from_date: Export articles from this date
         until_date: Export articles until this date
         days_to_go_back: Export articles from this number of days ago
@@ -126,6 +127,7 @@ def bulk_export_journals_to_articlemeta(
     for sj in queryset.iterator():
         export_journal_to_articlemeta(
             issn=sj.issn_scielo,
+            collection_acron3=sj.collection.acron3,
             force_update=force_update,
             user=user,
             client=client,
