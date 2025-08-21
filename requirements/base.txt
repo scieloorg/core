@@ -90,7 +90,7 @@ pysolr==3.9.0  # https://pypi.org/project/pysolr/
 # ------------------------------------------------------------------------------
 lxml==4.9.4 # https://github.com/lxml/lxml
 tornado>=6.3.3 # not directly required, pinned by Snyk to avoid a vulnerability
-git+https://git@github.com/scieloorg/packtools@4.11.12#egg=packtools
+git+https://git@github.com/scieloorg/packtools@4.11.18#egg=packtools
 
 
 # pymongo
@@ -139,9 +139,6 @@ tornado>=6.3.3  # not directly required, pinned by Snyk to avoid a vulnerability
 # SCIELO SPECIFIC
 # ==============================================================================
 
-# Packtools - XML validation
-# packtools@https://github.com/scieloorg/packtools/archive/refs/tags/3.3.3.zip
-git+https://git@github.com/scieloorg/packtools@4.11.18#egg=packtools
 
 # SciELO Legendarium
 -e git+https://github.com/scieloorg/legendarium#egg=legendarium  # https://github.com/scieloorg/legendarium
