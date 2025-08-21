@@ -27,7 +27,7 @@ DEBUG = env.bool("DJANGO_DEBUG", False)
 # In Windows, this must be set to your system time zone.
 TIME_ZONE = "UTC"
 # https://docs.djangoproject.com/en/dev/ref/settings/#language-code
-LANGUAGE_CODE = "pt-BR"
+LANGUAGE_CODE = "pt-br"
 # https://docs.djangoproject.com/en/dev/ref/settings/#site-id
 SITE_ID = 1
 # https://docs.djangoproject.com/en/dev/ref/settings/#use-i18n
@@ -202,12 +202,12 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "wagtail_2fa.middleware.VerifyUserMiddleware",
-    "wagtail_2fa.middleware.VerifyUserPermissionsMiddleware", 
+    "wagtail_2fa.middleware.VerifyUserPermissionsMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.common.BrokenLinkEmailsMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -416,18 +416,14 @@ WAGTAIL_SITE_NAME = "core"
 BASE_URL = "https://core"
 
 LANGUAGES = [
-    ("en", "English"),
-    ("es", "Spanish"),
-    ("pt-BR", "Portuguese"),
+    ('pt-br', _('Português (Brasil)')),
+    ('es', _('Español')),
+    ('en', _('English')),
 ]
 
 WAGTAIL_I18N_ENABLED = True
 
-WAGTAIL_CONTENT_LANGUAGES = [
-    ("en", "English"),
-    ("es", "Spanish"),
-    ("pt-BR", "Portuguese"),
-]
+WAGTAIL_CONTENT_LANGUAGES = LANGUAGES
 
 NOCAPTCHA = True
 
