@@ -28,7 +28,7 @@ from . import choices
 from .exceptions import InvalidOrcidError, PersonNameCreateError
 from .forms import ResearcherForm
 
-ORCID_REGEX = re.compile(r'\b(?:https?://)?(?:orcid\.org/)?(\d{4}-\d{4}-\d{4}-\d{4})\b')
+ORCID_REGEX = re.compile(r'\b(?:https?://)?(?:www\.)?(?:orcid\.org/)?(\d{4}-\d{4}-\d{4}-\d{3}[0-9X])\b')
 
 class Researcher(CommonControlField):
     """
@@ -1149,13 +1149,6 @@ class ResearcherIds(CommonControlField):
         clean_value = re.sub(r'[\.\-]', '', lattes)
         if not re.fullmatch(r'\d{16}', clean_value):
             raise ValidationError({"identifier": f"Lattes {lattes} is not valid"})
-
-    @staticmethod
-    def validate_orcid(orcid):
-        regex = r"^\d{4}-\d{4}-\d{4}-\d{3}[0-9X]{1}$"
-        valid_orcid = re.search(regex, orcid)
-        if not valid_orcid:
-            raise ValidationError({"identifier": f"ORCID {orcid} is not valid"})
 
     @staticmethod
     def clean_orcid(orcid):
