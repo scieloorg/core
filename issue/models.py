@@ -76,6 +76,8 @@ class Issue(CommonControlField, ClusterableModel):
         FieldPanel("year"),
         FieldPanel("season"),
         FieldPanel("month"),
+        FieldPanel("order"),
+        FieldPanel("issue_pid_suffix", read_only=True),
         FieldPanel("markup_done"),
     ]
 
