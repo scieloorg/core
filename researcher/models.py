@@ -30,6 +30,7 @@ from .forms import ResearcherForm
 
 ORCID_REGEX = re.compile(r'\b(?:https?://)?(?:www\.)?(?:orcid\.org/)?(\d{4}-\d{4}-\d{4}-\d{3}[0-9X])\b')
 
+
 class Researcher(CommonControlField):
     """
     Class that represent the Researcher
@@ -821,17 +822,59 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
 
     @staticmethod
     def validate_orcid(orcid):
+        """
+        Valida um ORCID quanto ao formato e ao dígito verificador (checksum).
+
+        Esta função verifica:
+        - Se o identificador informado corresponde a um ORCID válido segundo o regex `ORCID_REGEX`,
+          aceitando as formas:
+            - "https://orcid.org/0000-0002-1825-0097"
+            - "orcid.org/0000-0002-1825-0097"
+            - "0000-0002-1825-0097"
+        - Se o dígito verificador (checksum) está correto conforme a especificação ORCID (ISO/IEC 7064 mod 11-2).
+        
+        Parâmetros:
+        - orcid (str): O ORCID informado, em qualquer um dos formatos aceitos.
+
+        Retorno:
+        - None: Não retorna valor quando a validação é bem-sucedida.
+
+        Exceções:
+        - ValidationError: Lançada quando:
+            - o formato do ORCID é inválido em relação ao `ORCID_REGEX`; ou
+            - o dígito verificador (checksum) é inválido.
+        """
         # TODO
         # Request to api to validate the orcid
         # https://pub.orcid.org/v3.0/{orcid}/record
-        
-        # Regex catch the orcid when
-        # https://orcid.org/0000-0002-1825-0097
-        # orcid.org/0000-0002-1825-0097
-        # 0000-0002-1825-0097
         valid_orcid = ORCID_REGEX.match(orcid)
         if not valid_orcid:
             raise ValidationError({"orcid": f"ORCID {orcid} is not valid"})
+        if not ResearcherOrcid.orcid_checksum_is_valid(orcid):
+            raise ValidationError({"orcid": f"ORCID {orcid} checksum is not valid"})
+
+    @staticmethod
+    def orcid_checksum_is_valid(orcid):
+        """
+        Verifica o dígito verificador (checksum) de um ORCID.
+        
+        Parâmetros:
+        - orcid (str): O ORCID em qualquer formato aceito (URL completa, domínio + id, ou apenas o id
+          no formato 0000-0000-0000-0000).
+
+        Retorno:
+        - bool: True se o checksum do ORCID é válido; False caso contrário.
+        """
+        orcid = ResearcherOrcid.extract_orcid_number(orcid)
+        core = orcid.replace("-", "")
+        digits, check = core[:-1], core[-1]
+        total = 0
+        for d in digits:
+            total = (total + int(d)) * 2
+        remainder = total % 11
+        checksum = (12 - remainder) % 11
+        expected = 'X' if checksum == 10 else str(checksum)
+        return expected == check
 
     @staticmethod
     def extract_orcid_number(orcid):
