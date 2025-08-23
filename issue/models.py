@@ -21,7 +21,7 @@ from journal.models import Journal
 from location.models import City
 
 from .exceptions import TocSectionGetError
-from .utils.extract_digits_of_string import _get_digits
+from .utils.extract_digits import _get_digits
 
 
 class Issue(CommonControlField, ClusterableModel):
@@ -242,7 +242,6 @@ class Issue(CommonControlField, ClusterableModel):
             self.issue_pid_suffix = self.generate_issue_pid_suffix()
         super().save(*args, **kwargs)
 
-
     def generate_issue_pid_suffix(self):
         return str(self.generate_order()).zfill(4)
 
@@ -254,7 +253,7 @@ class Issue(CommonControlField, ClusterableModel):
         parts = self.number.split("spe")[-1]
         spe_val = _get_digits(parts)
         return spe_start + spe_val
-
+    
     def generate_order(self, suppl_start=1000, spe_start=2000):
         if self.supplement is not None:
             return self.generate_order_supplement(suppl_start)
