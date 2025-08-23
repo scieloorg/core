@@ -288,7 +288,7 @@ class ArticlemetaIssueFormatter:
     def _format_code(self, issn_scielo):
         """Informações de código"""
         if self.obj.year and self.obj.order:
-            code = f"{issn_scielo}{self.obj.year}{self.obj.order}"
+            code = f"{issn_scielo}{self.obj.year}{self.obj.issue_pid_suffix}"
             self.result['code'] = code    
             self.result['issue']['code'] = code
             add_to_result("v880", code, self.result['issue'])
