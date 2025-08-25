@@ -6,13 +6,14 @@ from django.contrib.auth import get_user_model
 from django.db.models import Count, F, Q, Subquery
 from django.utils.translation import gettext as _
 
+from article import controller
 from article.models import Article, ArticleFormat, ArticleSource
 from article.sources.preprint import harvest_preprints
 from article.sources.xmlsps import load_article
 from collection.models import Collection
 from config import celery_app
 from core.utils.extracts_normalized_email import extracts_normalized_email
-from core.utils.utils import fetch_data
+from core.utils.utils import fetch_data, _get_user
 from journal.models import SciELOJournal
 from pid_provider.choices import PPXML_STATUS_DONE, PPXML_STATUS_TODO
 from pid_provider.models import PidProviderXML
@@ -20,19 +21,8 @@ from pid_provider.provider import PidProvider
 from researcher.models import ResearcherIdentifier
 from tracker.models import UnexpectedEvent
 
-from . import controller
 
 User = get_user_model()
-
-
-def _get_user(request, username=None, user_id=None):
-    try:
-        return User.objects.get(pk=request.user.id)
-    except AttributeError:
-        if user_id:
-            return User.objects.get(pk=user_id)
-        if username:
-            return User.objects.get(username=username)
 
 
 @celery_app.task()
@@ -506,3 +496,76 @@ def task_load_article_from_article_source(
                 "force_update": force_update,
             },
         )
+
+
+@celery_app.task(bind=True, name="task_export_articles_to_articlemeta")
+def task_export_articles_to_articlemeta(
+    self,
+    collections=[],
+    issn=None,
+    number=None,
+    volume=None,
+    year_of_publication=None,
+    from_date=None,
+    until_date=None,
+    days_to_go_back=None,
+    force_update=True,
+    user_id=None,
+    username=None,
+):
+    """
+    Export articles to ArticleMeta Database with flexible filtering.
+    Note that from_date and until_date filters work on the field `updated` from Article.
+    
+    Args:
+        collections: Filter by collections (e.g. ['scl', 'mex'])
+        issn: Filter by journal ISSN
+        number: Filter by specific number
+        volume: Filter by specific volume
+        year_of_publication: Filter by publication year
+        from_date: Filter by date range (start date)
+        until_date: Filter by date range (end date)
+        days_to_go_back: Filter by date range (days to go back from today or until_date)
+        force_update: Force update existing records
+        user_id: User ID
+        username: Username
+    """
+    user = _get_user(self.request, username=username, user_id=user_id)
+
+    return controller.bulk_export_articles_to_articlemeta(
+        collections=collections,
+        issn=issn,
+        number=number,
+        volume=volume,
+        year_of_publication=year_of_publication,
+        from_date=from_date,
+        until_date=until_date,
+        days_to_go_back=days_to_go_back,
+        force_update=force_update,
+        user=user,
+        client=None,
+    )
+
+
+@celery_app.task(bind=True, name="task_export_article_to_articlemeta")
+def task_export_article_to_articlemeta(self, pid_v3=None, force_update=True, user_id=None, username=None):
+    """
+    Export a single article to ArticleMeta Database.
+
+    Args:
+        pid_v3: Article PID v3
+        force_update: Force update existing records
+        user_id: User ID
+        username: Username
+
+    Returns:
+        bool: True if export was successful, False otherwise.
+    """
+    user = _get_user(self.request, username=username, user_id=user_id)
+
+    return controller.export_article_to_articlemeta(
+        pid_v3=pid_v3,
+        user=user,
+        force_update=force_update,
+        client=None
+    )

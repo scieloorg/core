@@ -43,43 +43,81 @@ class ResearcherOrcidTest(TestCase):
     def test_researcher_orcid_create(self):
         ResearcherOrcid.get_or_create(
             user=self.user,
-            orcid="0000-0002-9147-0547",
+            orcid="https://orcid.org/0000-0002-1825-0097",
         )
         researcher_orcid = ResearcherOrcid.objects.all()
         self.assertEqual(researcher_orcid.count(), 1)
-        self.assertEqual(researcher_orcid.first().orcid, "0000-0002-9147-0547")
+        self.assertEqual(researcher_orcid.first().orcid, "0000-0002-1825-0097")
 
     def test_researcher_orcid_create_two_times(self):
         ResearcherOrcid.get_or_create(
             user=self.user,
-            orcid="0000-0002-9147-0547",
+            orcid="0000-0002-1825-0097",
         )
         ResearcherOrcid.get_or_create(
             user=self.user,
-            orcid="0000-0002-9147-0547",
+            orcid="0000-0002-1825-0097",
         )
         researcher_orcid = ResearcherOrcid.objects.all()
         self.assertEqual(researcher_orcid.count(), 1)
-        self.assertEqual(researcher_orcid.first().orcid, "0000-0002-9147-0547")
+        self.assertEqual(researcher_orcid.first().orcid, "0000-0002-1825-0097")
 
-    def test_researcher_orcid_create_wrong_orcid_https(self):
+    def test_researcher_orcid_create_orcid_https(self):
         ResearcherOrcid.get_or_create(
             user=self.user,
-            orcid="https://orcid.org/0000-0002-9147-0547",
+            orcid="https://orcid.org/0000-0002-1825-0097",
         )
         researcher_orcid = ResearcherOrcid.objects.all()
         self.assertEqual(researcher_orcid.count(), 1)
-        self.assertEqual(researcher_orcid.first().orcid, "0000-0002-9147-0547")
+        self.assertEqual(researcher_orcid.first().orcid, "0000-0002-1825-0097")
 
-    def test_researcher_orcid_create_wrong_orcid_http(self):
+    def test_researcher_orcid_create_orcid_http(self):
         ResearcherOrcid.get_or_create(
             user=self.user,
-            orcid="http://orcid.org/0000-0002-9147-0547",
+            orcid="http://orcid.org/0000-0002-1825-0097",
         )
         researcher_orcid = ResearcherOrcid.objects.all()
         self.assertEqual(researcher_orcid.count(), 1)
-        self.assertEqual(researcher_orcid.first().orcid, "0000-0002-9147-0547")
+        self.assertEqual(researcher_orcid.first().orcid, "0000-0002-1825-0097")
 
+    def test_researcher_orcid_create_orcid_http_www(self):
+        ResearcherOrcid.get_or_create(
+            user=self.user,
+            orcid="http://www.orcid.org/0000-0002-1825-0097",
+        )
+        researcher_orcid = ResearcherOrcid.objects.all()
+        self.assertEqual(researcher_orcid.count(), 1)
+        self.assertEqual(researcher_orcid.first().orcid, "0000-0002-1825-0097")
+
+    def test_researcher_orcid_create_orcid_with_X(self):
+        ResearcherOrcid.get_or_create(
+            user=self.user,
+            orcid="https://orcid.org/0000-0002-1694-233X",
+        )
+        researcher_orcid = ResearcherOrcid.objects.all()
+        self.assertEqual(researcher_orcid.count(), 1)
+        self.assertEqual(researcher_orcid.first().orcid, "0000-0002-1694-233X")
+
+    def test_researcher_orcid_create_wrong_orcid(self):
+        with self.assertRaises(ValidationError):
+            ResearcherOrcid.get_or_create(
+                user=self.user,
+                orcid="http://orcid.org/0000-0002-9147-057",
+            )
+    
+    def test_researcher_orcid_create_wrong_domain_orcid(self):
+        with self.assertRaises(ValidationError):
+            ResearcherOrcid.get_or_create(
+                user=self.user,
+                orcid="http://orc.org/0000-0002-9147-057X",
+            )
+
+    def test_researcher_orcid_create_wrong_orcid_without_domain(self):
+        with self.assertRaises(ValidationError):
+            ResearcherOrcid.get_or_create(
+                user=self.user,
+                orcid="0000-0002-9147-057",
+            )
 
 class NewResearcherTest(TestCase):
     def setUp(self):
@@ -87,11 +125,11 @@ class NewResearcherTest(TestCase):
         # ParentalKey
         self.researcher_id_orcid = ResearcherOrcid.get_or_create(
             user=self.user,
-            orcid="0000-0002-9147-0547",
+            orcid="0000-0002-1825-0097",
         )
         self.researcher_id_orcid_2 = ResearcherOrcid.get_or_create(
             user=self.user,
-            orcid="0000-0002-9147-0548",
+            orcid="0000-0001-5109-3700",
         )        
 
         self.location = Location.create_or_update(
@@ -143,12 +181,6 @@ class NewResearcherTest(TestCase):
             source_name=source_name,
         )
 
-    def test_researcher_orcid_create_with_wrong_orcid(self):
-        with self.assertRaises(ValidationError):
-            ResearcherOrcid.get_or_create(
-                user=self.user,
-                orcid="0000-0002-9147",
-            )
 
     def test_new_researcher_create(self):
         researcher = self.get_or_create_researcher(
@@ -174,7 +206,7 @@ class NewResearcherTest(TestCase):
         self.assertEqual(
             researcher[0].researcher_ids.first().identifier, "user.teste@dom.org"
         )
-        self.assertEqual(researcher[0].orcid.orcid, "0000-0002-9147-0547")
+        self.assertEqual(researcher[0].orcid.orcid, "0000-0002-1825-0097")
         self.assertEqual(researcher[0].affiliation, self.organization)
 
     def test_researcher_id_create_with_wrong_email(self):
@@ -252,7 +284,7 @@ class NewResearcherTest(TestCase):
         self.assertEqual(
             researcher[0].researcher_ids.first().identifier, "user.teste@dom.org"
         )
-        self.assertEqual(researcher[0].orcid.orcid, "0000-0002-9147-0547")
+        self.assertEqual(researcher[0].orcid.orcid, "0000-0002-1825-0097")
         self.assertEqual(researcher[0].affiliation, self.organization)
         self.assertEqual(researcher[0].affiliation, self.organization)
         self.assertEqual(ResearcherIds.objects.all().count(), 1)
@@ -322,7 +354,7 @@ class NewResearcherTest(TestCase):
         self.assertEqual(
             researcher[0].researcher_ids.first().identifier, "user.teste@dom.org"
         )
-        self.assertEqual(researcher[0].orcid.orcid, "0000-0002-9147-0547")
+        self.assertEqual(researcher[0].orcid.orcid, "0000-0002-1825-0097")
         self.assertEqual(researcher[1].given_names, "Anna2")
         self.assertEqual(researcher[1].last_name, "Carla2")
         self.assertEqual(researcher[1].suffix, "Jr2.")
@@ -367,7 +399,7 @@ class NewResearcherTest(TestCase):
         self.assertEqual(researcher[0].last_name, "Carla")
         self.assertEqual(researcher[0].suffix, "Jr.")
         self.assertEqual(researcher[0].researcher_ids.count(), 1)
-        self.assertEqual(researcher[0].orcid.orcid, "0000-0002-9147-0547")
+        self.assertEqual(researcher[0].orcid.orcid, "0000-0002-1825-0097")
         self.assertEqual(
             researcher[0].researcher_ids.first().identifier, "user.teste@dom.org"
         )
@@ -378,7 +410,7 @@ class NewResearcherTest(TestCase):
         self.assertEqual(
             researcher[1].researcher_ids.first().identifier, "user.teste@dom.org"
         )
-        self.assertEqual(researcher[1].orcid.orcid, "0000-0002-9147-0548")
+        self.assertEqual(researcher[1].orcid.orcid, "0000-0001-5109-3700")
         self.assertNotEqual(researcher[0], researcher[1])
         
     def test_new_researcher_create_without_orcid_same_affiliation(self):

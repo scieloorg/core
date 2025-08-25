@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from collection.models import Collection
 from config import celery_app
 from core.utils.utils import fetch_data
+from core.utils.profiling_tools import profile_function  # ajuste o import conforme sua estrutura
 from pid_provider.models import CollectionPidRequest, PidRequest
 from pid_provider.provider import PidProvider
 from pid_provider.sources import am
@@ -17,7 +18,6 @@ from tracker.models import UnexpectedEvent
 
 
 User = get_user_model()
-pid_provider = PidProvider()
 
 
 def _get_user(request, username=None, user_id=None):
@@ -289,10 +289,20 @@ def task_provide_pid_for_xml_zip(
     user_id=None,
     zip_filename=None,
 ):
+    return _provide_pid_for_xml_zip(username, user_id, zip_filename)
+
+
+@profile_function
+def _provide_pid_for_xml_zip(
+    username=None,
+    user_id=None,
+    zip_filename=None,
+):
     try:
-        user = _get_user(self.request, username=username, user_id=user_id)
+        user = _get_user(None, username=username, user_id=user_id)
         logging.info("Running task_provide_pid_for_xml_zip")
-        response = pid_provider.provide_pid_for_xml_zip(
+        pp = PidProvider()
+        for response in pp.provide_pid_for_xml_zip(
             zip_filename,
             user,
             filename=None,
@@ -301,21 +311,19 @@ def task_provide_pid_for_xml_zip(
             is_published=None,
             registered_in_core=None,
             caller="core",
-        )
-        logging.info("fim Running task_provide_pid_for_xml_zip")
-        response = list(response)[0]
-        try:
-            response.pop("xml_with_pre")
-        except KeyError:
-            pass
-        return response
+        ):
+            try:
+                response.pop("xml_with_pre")
+            except KeyError:
+                pass
+            return response
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
             exception=e,
             exc_traceback=exc_traceback,
             detail={
-                "task": "task_provide_pid_for_xml_zip",
+                "task": "_provide_pid_for_xml_zip",
                 "detail": dict(
                     username=username,
                     user_id=user_id,

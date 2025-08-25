@@ -13,6 +13,7 @@ from wagtail_modeladmin.views import CreateView
 
 from article.models import (  # AbstractModel,; Category,; Title,
     Article,
+    ArticleExport,
     ArticleFormat,
     ArticleFunding,
     ArticleSource,
@@ -68,6 +69,42 @@ class ArticleAdmin(ModelAdmin):
         "sps_pkg_name",
         "pid_v3",
     )
+
+
+class ArticleExportCreateView(CreateView):
+    def form_valid(self, form):
+        self.object = form.save_all(self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
+    
+
+class ArticleExportAdmin(ModelAdmin):
+    model = ArticleExport
+    create_view_class = ArticleExportCreateView
+    menu_label = _("Article Export")
+    menu_icon = "folder"
+    menu_order = 100
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+
+    list_display = (
+        "article",
+        "pid_v3", 
+        "export_type", 
+        "created", 
+        "updated"
+    )
+    list_filter = (
+        "collection", 
+        "export_type",
+    )
+    search_fields = (
+        "article__pid_v3", 
+        "article__sps_pkg_name"
+    )
+
+    def pid_v3(self, obj):
+        return obj.article.pid_v3
+    pid_v3.short_description = "PID_V3"
 
 
 class ArticleFormatCreateView(CreateView):
@@ -134,7 +171,7 @@ class ArticleAdminGroup(ModelAdminGroup):
     menu_order = get_menu_order(
         "article"
     )  # will put in 3rd place (000 being 1st, 100 2nd)
-    items = (ArticleAdmin, ArticleFormatAdmin, ArticleFundingAdmin)
+    items = (ArticleAdmin, ArticleExportAdmin, ArticleFormatAdmin, ArticleFundingAdmin)
 
 
 modeladmin_register(ArticleAdminGroup)

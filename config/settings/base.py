@@ -216,6 +216,7 @@ MIDDLEWARE = [
     "maintenance_mode.middleware.MaintenanceModeMiddleware",
     'django_prometheus.middleware.PrometheusAfterMiddleware',
     "core.middleware.UserCollectionMiddleware",
+    "core.utils.profiling_tools.LightweightProfilingMiddleware",
 ]
 
 # STATIC
@@ -317,6 +318,8 @@ MANAGERS = ADMINS
 # https://docs.djangoproject.com/en/dev/ref/settings/#logging
 # See https://docs.djangoproject.com/en/dev/topics/logging for
 # more details on how to customize your logging configuration.
+logs_path = ROOT_DIR / "logs"
+logs_path.mkdir(parents=True, exist_ok=True)
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -324,14 +327,34 @@ LOGGING = {
         "verbose": {
             "format": "%(levelname)s %(asctime)s %(module)s "
             "%(process)d %(thread)d %(message)s"
-        }
+        },
+        "simple": {
+            "format": '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        },
     },
     "handlers": {
         "console": {
             "level": "DEBUG",
             "class": "logging.StreamHandler",
             "formatter": "verbose",
-        }
+        },
+        "profiling_file": {
+            "level": "DEBUG",
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "filename": ROOT_DIR / "logs" / "profiling.log",
+            "when": "H",         # Rotaciona a cada hora
+            "interval": 1,       # A cada 1 hora
+            "backupCount": 168,  # Mantém 168 horas (7 dias)
+            "formatter": "simple",
+            "encoding": "utf-8",
+        },
+    },
+    "loggers": {
+        "profiling": {  # <-- Logger usado pelo decorador
+            "handlers": ["profiling_file"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
     },
     "root": {"level": "INFO", "handlers": ["console"]},
 }
@@ -380,7 +403,7 @@ TASK_QUEUE = env('TASK_QUEUE', default='high')
 # Tempo máximo em segundos que uma tarefa pode levar para ser concluída (timeout "suave").
 # `env.int()` garante que o valor lido seja um inteiro.
 TASK_TIMEOUT = env.int('TASK_TIMEOUT', default=5 * 60)
-RUN_ASYNC = env.int('RUN_ASYNC', default=0)
+RUN_ASYNC = env.bool('RUN_ASYNC', default=0)
 # Celery Results
 # ------------------------------------------------------------------------------
 # https: // django-celery-results.readthedocs.io/en/latest/getting_started.html
@@ -546,5 +569,13 @@ MODEL_TO_IMPORT_CSV = {
 COLLECTION_TEAM = "Collection Team"
 JOURNAL_TEAM = "Journal Team"
 
+MONGODB_URI = env.str("MONGODB_URI", default="mongodb://localhost:27017")
+MONGODB_DATABASE = env.str("MONGODB_DATABASE", default="articlemeta")
+
 WAGTAIL_2FA_REQUIRED = env.bool("WAGTAIL_2FA_REQUIRED", default=False)
 WAGTAIL_2FA_OTP_TOTP_NAME = env.str("WAGTAIL_2FA_OTP_TOTP_NAME", default="SciELO Core")
+
+PROFILING_ENABLED = env.bool('DJANGO_PROFILING_ENABLED', default=False)
+PROFILING_LOG_SLOW_REQUESTS = env.float('DJANGO_PROFILING_LOG_SLOW_REQUESTS', default=0.2)
+PROFILING_LOG_HIGH_MEMORY = env.int('DJANGO_PROFILING_LOG_HIGH_MEMORY', default=20)
+PROFILING_LOG_ALL = env.bool('DJANGO_PROFILING_LOG_ALL', default=True)

@@ -4,6 +4,7 @@ import sys
 # from django.utils.translation import gettext as _
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre, get_xml_with_pre
 
+from core.utils.profiling_tools import profile_method  # ajuste o import conforme sua estrutura
 from pid_provider.models import PidProviderXML, PidRequest
 from tracker.models import UnexpectedEvent
 
@@ -12,6 +13,7 @@ class BasePidProvider:
     def __init__(self):
         self.caller = None
 
+    @profile_method
     def provide_pid_for_xml_with_pre(
         self,
         xml_with_pre,
@@ -81,6 +83,7 @@ class BasePidProvider:
         registered["xml_with_pre"] = xml_with_pre
         return registered
     
+    @profile_method
     def provide_pid_for_xml_zip(
         self,
         zip_xml_file_path,
@@ -137,6 +140,7 @@ class BasePidProvider:
                 "error_type": str(type(e)),
             }
 
+    @profile_method
     def provide_pid_for_xml_uri(
         self,
         xml_uri,
@@ -212,6 +216,7 @@ class BasePidProvider:
             return response
 
     @classmethod
+    @profile_method
     def is_registered_xml_with_pre(cls, xml_with_pre, origin):
         """
         Returns
@@ -227,9 +232,10 @@ class BasePidProvider:
                 "updated": self.updated.isoformat(),
             }
         """
-        return PidProviderXML.is_registered(xml_with_pre, origin)
+        return PidProviderXML.is_registered(xml_with_pre)
 
     @classmethod
+    @profile_method
     def is_registered_xml_uri(cls, xml_uri):
         """
         Returns
@@ -266,6 +272,7 @@ class BasePidProvider:
             }
 
     @classmethod
+    @profile_method
     def is_registered_xml_zip(cls, zip_xml_file_path):
         """
         Returns
