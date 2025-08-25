@@ -16,6 +16,8 @@ def get_or_create_issue(
     sections_data,
     markup_done,
     user,
+    order=None,
+    issue_pid_suffix=None,    
 ):
     scielo_journal = get_scielo_journal(issn_scielo)
     supplement = extract_value(supplement_number) or extract_value(supplement_volume)
@@ -30,6 +32,8 @@ def get_or_create_issue(
         month=data[4:6],
         sections=get_or_create_sections(sections_data, user),
         markup_done=extract_value(markup_done),
+        order=order,
+        issue_pid_suffix=issue_pid_suffix,
         user=user,
         season=None,
     )

@@ -3,6 +3,8 @@ import logging
 import os
 import re
 
+from datetime import datetime
+
 from django.contrib.auth import get_user_model
 from django.core.validators import RegexValidator
 from django.db import IntegrityError, models
@@ -1825,6 +1827,67 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         obj.status = code_status or obj.status
         obj.save()
         return obj
+
+
+class SciELOJournalExport(CommonControlField):
+    """
+    Controla exportações de periódicos para o articlemeta
+    """
+    scielo_journal = models.ForeignKey(
+        SciELOJournal,
+        on_delete=models.CASCADE,
+        related_name="exports",
+        verbose_name=_("SciELO Journal")
+    )
+    export_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('articlemeta', 'ArticleMeta'),
+        ],
+        verbose_name=_("Export Type")
+    )
+    exported_at = models.DateTimeField(auto_now_add=True)
+    collection = models.ForeignKey(
+        'collection.Collection',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_("Collection")
+    )
+    
+    class Meta:
+        unique_together = ['scielo_journal', 'export_type', 'collection']
+        indexes = [
+            models.Index(fields=['scielo_journal', 'export_type']),
+            models.Index(fields=['exported_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.scielo_journal.issn_scielo} -> {self.export_type}"
+
+    @classmethod
+    def mark_as_exported(cls, scielo_journal, export_type, collection, user=None):
+        """Marca um periódico SciELO como exportado"""
+        obj, created = cls.objects.get_or_create(
+            scielo_journal=scielo_journal,
+            export_type=export_type,
+            collection=collection,
+            defaults={'creator': user}
+        )
+        if not created:
+            obj.exported_at = datetime.now()
+            obj.updated_by = user
+            obj.save()
+        return obj
+
+    @classmethod
+    def is_exported(cls, scielo_journal, export_type, collection):
+        """Verifica se um periódico SciELO já foi exportado"""
+        return cls.objects.filter(
+            scielo_journal=scielo_journal,
+            export_type=export_type,
+            collection=collection
+        ).exists()
 
 
 class JournalParallelTitle(TextWithLang):

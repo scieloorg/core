@@ -10,7 +10,8 @@ from wagtail.images.models import Image
 from collection.models import Collection
 from config import celery_app
 from core.utils.rename_dictionary_keys import rename_dictionary_keys
-from core.utils.utils import fetch_data
+from core.utils.utils import fetch_data, _get_user
+from journal import controller
 from journal.models import (
     AMJournal,
     Journal,
@@ -30,15 +31,6 @@ from tracker.models import UnexpectedEvent
 User = get_user_model()
 
 logger = logging.getLogger(__name__)
-
-def _get_user(request, username=None, user_id=None):
-    try:
-        return User.objects.get(pk=request.user.id)
-    except AttributeError:
-        if user_id:
-            return User.objects.get(pk=user_id)
-        if username:
-            return User.objects.get(username=username)
 
 
 @celery_app.task(bind=True)
@@ -268,3 +260,57 @@ def child_load_license_of_use_in_journal(
             )
             item.journal_use_license = license
             item.save()
+
+
+@celery_app.task(bind=True, name="task_export_journals_to_articlemeta")
+def task_export_journals_to_articlemeta(
+    self,
+    collections=[],
+    from_date=None,
+    until_date=None,
+    days_to_go_back=None,
+    force_update=True,
+    user_id=None,
+    username=None,
+):
+    """
+    Export journals to ArticleMeta Database with flexible filtering.
+    
+    Args:
+        collections: Filter by collections acronyms (e.g., ['scl', 'mex'])
+        force_update: Force update existing records
+        user_id: User ID for authentication
+        username: Username for authentication
+    """
+    user = _get_user(self.request, username=username, user_id=user_id)
+
+    return controller.bulk_export_journals_to_articlemeta(
+        collections=collections,
+        from_date=from_date,
+        until_date=until_date,
+        days_to_go_back=days_to_go_back,
+        force_update=force_update,
+        user=user,
+        client=None,
+    )
+
+
+@celery_app.task(bind=True, name="task_export_journal_to_articlemeta")
+def task_export_journal_to_articlemeta(self, issn=None, force_update=True, user_id=None, username=None):
+    """
+    Export journal to ArticleMeta Database.
+
+    Args:
+        issn: ISSN of the journal
+        force_update: Force update existing records
+        user_id: User ID for authentication
+        username: Username for authentication
+    """
+    user = _get_user(self.request, username=username, user_id=user_id)
+
+    return controller.export_journal_to_articlemeta(
+        issn=issn,
+        force_update=force_update,
+        user=user,
+        client=None,
+    )

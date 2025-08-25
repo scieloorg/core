@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db import IntegrityError, models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -7,7 +9,6 @@ from wagtail.fields import RichTextField
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
-from core import choices
 from core.forms import CoreAdminModelForm
 from core.models import (
     CommonControlField,
@@ -20,6 +21,7 @@ from journal.models import Journal
 from location.models import City
 
 from .exceptions import TocSectionGetError
+from .utils.extract_digits import _get_digits
 
 
 class Issue(CommonControlField, ClusterableModel):
@@ -51,6 +53,14 @@ class Issue(CommonControlField, ClusterableModel):
     month = models.CharField(_("Issue month"), max_length=20, null=True, blank=True)
     supplement = models.CharField(_("Supplement"), max_length=20, null=True, blank=True)
     markup_done = models.BooleanField(_("Markup done"), default=False)
+    order = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text=_(
+            "This number controls the order issues appear for a specific year on the website grid"
+        ),
+    )
+    issue_pid_suffix = models.CharField(max_length=4, null=True, blank=True)
 
     autocomplete_search_field = "journal__title"
 
@@ -66,6 +76,8 @@ class Issue(CommonControlField, ClusterableModel):
         FieldPanel("year"),
         FieldPanel("season"),
         FieldPanel("month"),
+        FieldPanel("order"),
+        FieldPanel("issue_pid_suffix", read_only=True),
         FieldPanel("markup_done"),
     ]
 
@@ -170,6 +182,8 @@ class Issue(CommonControlField, ClusterableModel):
         markup_done,
         user,
         sections=None,
+        issue_pid_suffix=None,
+        order=None,
     ):
         issues = cls.objects.filter(
             creator=user,
@@ -193,6 +207,8 @@ class Issue(CommonControlField, ClusterableModel):
             issue.month = month
             issue.supplement = supplement
             issue.markup_done = markup_done
+            issue.order = order or issue.generate_order()
+            issue.issue_pid_suffix = issue_pid_suffix or issue.generate_issue_pid_suffix()
             issue.creator = user
             issue.save()
             if sections:
@@ -219,7 +235,102 @@ class Issue(CommonControlField, ClusterableModel):
         from .formats.articlemeta_format import get_articlemeta_format_issue
         return get_articlemeta_format_issue(self, collection)
 
+    def save(self, *args, **kwargs):
+        if not self.order:
+            self.order = self.generate_order()
+        if not self.issue_pid_suffix:
+            self.issue_pid_suffix = self.generate_issue_pid_suffix()
+        super().save(*args, **kwargs)
+
+    def generate_issue_pid_suffix(self):
+        return str(self.generate_order()).zfill(4)
+
+    def generate_order_supplement(self, suppl_start=1000):
+        suppl_val = _get_digits(self.supplement)
+        return suppl_start + suppl_val
+
+    def generate_order_number(self, spe_start=2000):
+        parts = self.number.split("spe")[-1]
+        spe_val = _get_digits(parts)
+        return spe_start + spe_val
+    
+    def generate_order(self, suppl_start=1000, spe_start=2000):
+        if self.supplement is not None:
+            return self.generate_order_supplement(suppl_start)
+
+        if not self.number:
+            return 1
+
+        if "spe" in self.number:
+            return self.generate_order_number(spe_start)
+        if self.number == "ahead":
+            return 9999
+
+        number = _get_digits(self.number)
+        return number or 1
+
     base_form_class = CoreAdminModelForm
+
+
+class IssueExport(CommonControlField):
+    """
+    Controla exportações de fascículos para o ArticleMeta
+    """
+    issue = models.ForeignKey(
+        Issue,
+        on_delete=models.CASCADE,
+        related_name="exports",
+        verbose_name=_("Issue")
+    )
+    export_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('articlemeta', 'ArticleMeta'),
+        ],
+        verbose_name=_("Export Type")
+    )
+    exported_at = models.DateTimeField(auto_now_add=True)
+    collection = models.ForeignKey(
+        'collection.Collection',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_("Collection")
+    )
+    
+    class Meta:
+        unique_together = ['issue', 'export_type', 'collection']
+        indexes = [
+            models.Index(fields=['collection', 'export_type']),
+            models.Index(fields=['exported_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.issue.number or ''}:{self.issue.volume or ''} -> {self.export_type}"
+
+    @classmethod
+    def mark_as_exported(cls, issue, export_type, collection, user=None):
+        """Marca um fascículo como exportado"""
+        obj, created = cls.objects.get_or_create(
+            issue=issue,
+            export_type=export_type,
+            collection=collection,
+            defaults={'creator': user}
+        )
+        if not created:
+            obj.exported_at = datetime.now()
+            obj.updated_by = user
+            obj.save()
+        return obj
+
+    @classmethod
+    def is_exported(cls, issue, export_type, collection):
+        """Verifica se um fascículo já foi exportado"""
+        return cls.objects.filter(
+            issue=issue,
+            export_type=export_type,
+            collection=collection
+        ).exists()
 
 
 class IssueTitle(Orderable, CommonControlField):

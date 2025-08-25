@@ -62,6 +62,39 @@ class OfficialJournalSnippetViewSet(SnippetViewSet):
     )
 
 
+class JournalExportCreateView(CreateView):
+    def form_valid(self, form):
+        self.object = form.save_all(self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
+    
+
+class JournalExportSnippetViewSet(SnippetViewSet):
+    model = models.SciELOJournalExport
+    inspect_view_enabled = True
+    add_view_class = JournalExportCreateView
+    menu_label = _("Journal Export")
+    menu_icon = "folder"
+    menu_order = 300
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+
+    list_display = (
+        "collection",
+        "scielo_journal",
+        "export_type",
+        "created",
+        "updated",
+    )
+    list_filter = (
+        "collection",
+        "export_type",
+    )
+    search_fields = (
+        "scielo_journal__title",
+        "collection__acron3",
+    )
+
+
 class JournalCreateView(CreateView):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
@@ -221,6 +254,7 @@ class JournalSnippetViewSetGroup(SnippetViewSetGroup):
         JournalAdminEditorSnippetViewSet,
         OfficialJournalSnippetViewSet,
         SciELOJournalAdminViewSet,
+        JournalExportSnippetViewSet,
         JournalAdminPolicySnippetViewSet,
         JournalAdminInstructionsForAuthorsSnippetViewSet,
     )

@@ -57,6 +57,7 @@ class TestAPIIssueArticleMeta(TestCase):
             data_iso=self.data_issue.get("date_iso"),
             sections_data=self.data_issue.get("sections_data"),
             markup_done=self.data_issue.get("markup_done"),
+            issue_pid_suffix="1001",
             user=self.user,
         )
         self.include_articlemeta_metadata(data_json=self.issue_json, issue=self.issue)
