@@ -1,27 +1,149 @@
 {% load i18n %}
 {% load wagtailcore_tags %}
 
+<style>
+.language-selector {
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 8px 0;
+}
+
+.language-nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.language-links {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.language-links li {
+    display: flex;
+    align-items: center;
+}
+
+.language-links a,
+.language-links .current-language {
+    color: #666;
+    text-decoration: none;
+    padding: 4px 8px;
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+.language-links a:hover {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.language-links .current-language {
+    font-weight: 500;
+    color: #333;
+}
+
+.language-separator {
+    color: #ccc;
+    margin: 0 4px;
+    font-size: 14px;
+}
+
+.about-link {
+    color: #666;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+.about-link:hover {
+    color: #007bff;
+    text-decoration: none;
+}
+
+@media (max-width: 768px) {
+    .language-nav-container {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .language-links {
+        justify-content: center;
+        font-size: 13px;
+    }
+}
+</style>
+
 <header>
-    <div class="container">
-        <div class="d-flex justify-content-end p-4">
-            <ul class="list-unstyled d-flex align-items-center gap-2 mb-0">
-                <li>
-                    <a href="{% pageurl page_about %}">
-                        <span class="material-icons-outlined">info</span> {% trans 'About SciELO' %}
-                    </a>
-                </li>
-                {% if page %}
-                    {% for translation in page.get_translations.live %}
-                        {% get_language_info for translation.locale.language_code as lang %}
+    <!-- Navegação de idiomas no topo -->
+    <div class="language-selector">
+        <div class="container">
+            <div class="language-nav-container">
+                <!-- "Sobre o SciELO" à esquerda (muda conforme idioma) -->
+                <div>
+                    <span class="about-link" style="color: #333; font-weight: 500;">
+                        {% if page.locale.language_code == 'pt-br' %}
+                            Sobre o SciELO
+                        {% elif page.locale.language_code == 'en' %}
+                            About SciELO
+                        {% elif page.locale.language_code == 'es' %}
+                            Sobre el SciELO
+                        {% else %}
+                            Sobre o SciELO
+                        {% endif %}
+                    </span>
+                </div>
+
+                <!-- Idiomas à direita -->
+                <ul class="language-links">
+                    {% get_current_language as current_language %}
+                    {% if page %}
+                        {# Mostrar página atual como destaque #}
                         <li>
-                            <a href="{% pageurl translation %}" rel="alternate" hreflang="{{ language_code }}">
-                                {{ lang.name_local }}
-                            </a>
+                            <span class="current-language">
+                                {% if page.locale.language_code == 'pt-br' %}
+                                    Português-BR
+                                {% elif page.locale.language_code == 'en' %}
+                                    English
+                                {% elif page.locale.language_code == 'es' %}
+                                    Español
+                                {% else %}
+                                    {{ page.locale.language_code|upper }}
+                                {% endif %}
+                            </span>
                         </li>
-                    {% endfor %}
-                {% endif %}
-            </ul>
+
+                        {# Mostrar todas as traduções disponíveis #}
+                        {% for translation in page.get_translations.live %}
+                            <li><span class="language-separator">|</span></li>
+                            <li>
+                                <a href="{% pageurl translation %}"
+                                   rel="alternate"
+                                   hreflang="{{ translation.locale.language_code }}">
+                                    {% if translation.locale.language_code == 'pt-br' %}
+                                        Português-BR
+                                    {% elif translation.locale.language_code == 'en' %}
+                                        English
+                                    {% elif translation.locale.language_code == 'es' %}
+                                        Español
+                                    {% else %}
+                                        {{ translation.locale.language_code|upper }}
+                                    {% endif %}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    {% endif %}
+                </ul>
+            </div>
         </div>
+    </div>
+
+    <!-- Header principal -->
+    <div class="container">
         <div class="row">
             <div class="col text-center">
                 <a href="{{ page.get_parent.specific.url }}">
