@@ -539,6 +539,18 @@ class Location(CommonControlField):
         return f"{_('Country')}: {self.country}, {_('State')}: {self.state}, {_('City')}: {self.city}"
     
     @property
+    def data(self):
+        d = {
+            "city_name": self.city.name if self.city else None,
+            "state_name": self.state.name if self.state else None,
+            "state_acronym": self.state.acronym if self.state else None,
+            "country_name": self.country.name if self.country else None,
+            "country_acronym": self.country.acronym if self.country else None,
+            "country_acron3": self.country.acron3 if self.country else None,
+        }
+        return d
+
+    @property
     def formatted_location(self):
         parts = []
 
