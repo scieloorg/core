@@ -1041,22 +1041,24 @@ msgid ""
 "You cannot select both 'Collection Team' and 'Journal Team'. Please select "
 "only one."
 msgstr ""
+"Você não pode selecionar 'Equipe de Coleção' e 'Equipe de Periódico'. Por favor, selecione "
+"apenas uma."
 
 #: core/users/forms.py:108
 msgid "Please select at least one journal."
-msgstr ""
+msgstr "Por favor, selecione pelo menos um periódico."
 
 #: core/users/forms.py:109
 msgid "Selected journals do not belong to the selected collections."
-msgstr ""
+msgstr "Os periódicos selecionados não pertencem às coleções selecionadas."
 
 #: core/users/forms.py:134 core/users/forms.py:152
 msgid "Select journals this user can access."
-msgstr ""
+msgstr "Selecione os periódicos que este usuário pode acessar."
 
 #: core/users/forms.py:140 core/users/forms.py:158
 msgid "Select collections this user can access."
-msgstr ""
+msgstr "Selecione as coleções que este usuário pode acessar."
 
 #: core/users/models.py:15
 msgid "Name of User"
@@ -1133,7 +1135,7 @@ msgstr "Requisição inválida."
 
 #: doi/choices.py:4
 msgid "DATA_CREATED"
-msgstr "DATA_CRIADA"
+msgstr "DADOS_CRIADOS"
 
 #: doi/choices.py:5
 msgid "SUBMITTED"
@@ -1480,13 +1482,15 @@ msgstr "Suplemento"
 
 #: issue/models.py:55
 msgid "Markup done"
-msgstr ""
+msgstr "Marcação concluída"
 
 #: issue/models.py:60
 msgid ""
 "This number controls the order issues appear for a specific year on the "
 "website grid"
 msgstr ""
+"Este número controla a ordem em que os fascículos aparecem para um ano específico na "
+"grade do site"
 
 #: issue/models.py:85
 msgid "Issue title"
@@ -1526,10 +1530,8 @@ msgid "TocSections"
 msgstr "Seções do Sumário"
 
 #: issue/wagtail_hooks.py:93
-#, fuzzy
-#| msgid "Issue month"
 msgid "Issue Exports"
-msgstr "Mês do fascículo"
+msgstr "Exportações de Fascículos"
 
 #: journal/choices.py:19
 msgid "Unknow"
@@ -3509,11 +3511,11 @@ msgstr "V2 correto"
 
 #: pid_provider/query_params.py:107
 msgid "Required Print or Electronic ISSN to identify XML {}"
-msgstr ""
+msgstr "ISSN Impresso ou Eletrônico obrigatório para identificar XML {}"
 
 #: pid_provider/query_params.py:134
 msgid "Required issue or article publication year {}"
-msgstr ""
+msgstr "Ano de publicação do fascículo ou artigo obrigatório {}"
 
 #: pid_provider/query_params.py:240
 msgid "No attribute enough for disambiguations {}"
@@ -3521,7 +3523,7 @@ msgstr "Nenhum atributo suficiente para desambiguações {}"
 
 #: pid_provider/query_params.py:283
 msgid "Required collab or surname {}"
-msgstr ""
+msgstr "Colaboração ou sobrenome obrigatório {}"
 
 #: pid_provider/scripts/schedule_pid_provider_for_opac_xmls.py:10
 msgid "Registra XML do site www.scielo.br no pid provider"

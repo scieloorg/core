@@ -18,299 +18,294 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: altmetric/choices.py:4 article/models.py:998 article/models.py:1360
-#: article/wagtail_hooks.py:47
-msgid "Article"
-msgstr ""
-
 #: altmetric/choices.py:5 article/models.py:71 core/users/forms.py:133
 #: core/users/forms.py:151 core/users/models.py:18 issue/models.py:34
 #: journal/models.py:741 journal/models.py:1714 journal/wagtail_hooks.py:171
 msgid "Journal"
-msgstr ""
+msgstr "Journal"
 
 #: altmetric/models.py:10 journal/models.py:1732
 msgid "ISSN SciELO"
-msgstr ""
+msgstr "ISSN SciELO"
 
 #: altmetric/models.py:13
 msgid "Extraction Date"
-msgstr ""
+msgstr "Extraction Date"
 
 #: altmetric/models.py:16
 msgid "Resource Type"
-msgstr ""
+msgstr "Resource Type"
 
 #: altmetric/models.py:22 journal/models.py:2532 report/models.py:46
 msgid "JSON File"
-msgstr ""
+msgstr "JSON File"
 
 #: altmetric/wagtail_hooks.py:14
 msgid "Altmetric"
-msgstr ""
+msgstr "Altmetric"
 
 #: article/choices.py:11
 msgid "public"
-msgstr ""
+msgstr "public"
 
 #: article/choices.py:12
 msgid "pending"
-msgstr ""
+msgstr "pending"
 
 #: article/choices.py:13
 msgid "moved"
-msgstr ""
+msgstr "moved"
 
 #: article/choices.py:14
 msgid "deleted"
-msgstr ""
+msgstr "deleted"
 
 #: article/choices.py:15 pid_provider/choices.py:17
 msgid "undefined"
-msgstr ""
+msgstr "undefined"
 
 #: article/models.py:55
 msgid "Data status"
-msgstr ""
+msgstr "Data status"
 
 #: article/models.py:62
 msgid "PID V2"
-msgstr ""
+msgstr "PID V2"
 
 #: article/models.py:64
 msgid "PID V3"
-msgstr ""
+msgstr "PID V3"
 
 #: article/models.py:67 pid_provider/models.py:499
 msgid "Package name"
-msgstr ""
+msgstr "Package name"
 
 #: article/models.py:78
 msgid "pub date day"
-msgstr ""
+msgstr "pub date day"
 
 #: article/models.py:85
 msgid "pub date month"
-msgstr ""
+msgstr "pub date month"
 
 #: article/models.py:95
 msgid "Fundings"
-msgstr ""
+msgstr "Fundings"
 
 #: article/models.py:136
 msgid "Abstract"
-msgstr ""
+msgstr "Abstract"
 
 #: article/models.py:151 book/models.py:139 pid_provider/models.py:567
 msgid "Identification"
-msgstr ""
+msgstr "Identification"
 
 #: article/models.py:152
 msgid "Data with language"
-msgstr ""
+msgstr "Data with language"
 
 #: article/models.py:153 researcher/wagtail_hooks.py:112
 msgid "Researchers"
-msgstr ""
+msgstr "Researchers"
 
 #: article/models.py:154
 msgid "Publisher and Sponsors"
-msgstr ""
+msgstr "Publisher and Sponsors"
 
 #: article/models.py:369
 msgid "Award ID"
-msgstr ""
+msgstr "Award ID"
 
 #: article/models.py:484 core/models.py:201
 msgid "Text"
-msgstr ""
+msgstr "Text"
 
 #: article/models.py:575 article/models.py:651 collection/models.py:67
 #: core/models.py:71 issue/models.py:446
 msgid "Code"
-msgstr ""
+msgstr "Code"
 
 #: article/models.py:689
 msgid "Count"
-msgstr ""
+msgstr "Count"
 
 #: article/models.py:693 book/models.py:57 book/models.py:225
 #: core/models.py:145 core/models.py:205 core/models.py:222 core/models.py:269
 #: core/models.py:553 doi/models.py:18 thematic_areas/models.py:19
 msgid "Language"
-msgstr ""
+msgstr "Language"
 
 #: article/models.py:748 article/models.py:770 article/wagtail_hooks.py:119
 msgid "Article Format"
-msgstr ""
+msgstr "Article Format"
 
 #: article/models.py:754 core/models.py:545 journal/models.py:920
 #: report/models.py:42
 msgid "File"
-msgstr ""
+msgstr "File"
 
 #: article/models.py:771
 msgid "Article Formats"
-msgstr ""
+msgstr "Article Formats"
 
 #: article/models.py:951 tracker/choices.py:28
 msgid "Pending"
-msgstr ""
+msgstr "Pending"
 
 #: article/models.py:952
 msgid "Processing"
-msgstr ""
+msgstr "Processing"
 
 #: article/models.py:953
 msgid "Completed"
-msgstr ""
+msgstr "Completed"
 
 #: article/models.py:954
 msgid "Error"
-msgstr ""
+msgstr "Error"
 
 #: article/models.py:955
 msgid "Reprocess"
-msgstr ""
+msgstr "Reprocess"
 
 #: article/models.py:958 article/models.py:962
 msgid "Article URL"
-msgstr ""
+msgstr "Article URL"
 
 #: article/models.py:965
 msgid "Article file"
-msgstr ""
+msgstr "Article file"
 
 #: article/models.py:969
 msgid "Upload article file"
-msgstr ""
+msgstr "Upload article file"
 
 #: article/models.py:972
 msgid "Source date"
-msgstr ""
+msgstr "Source date"
 
 #: article/models.py:976
 msgid "Date of data collection or original data date"
-msgstr ""
+msgstr "Date of data collection or original data date"
 
 #: article/models.py:979 collection/models.py:71 doi/models.py:80
 #: journal/models.py:1735
 msgid "Status"
-msgstr ""
+msgstr "Status"
 
 #: article/models.py:983
 msgid "Processing status of the article source"
-msgstr ""
+msgstr "Processing status of the article source"
 
 #: article/models.py:990
 msgid "PID Provider XML"
-msgstr ""
+msgstr "PID Provider XML"
 
 #: article/models.py:991
 msgid "Related PID Provider XML instance"
-msgstr ""
+msgstr "Related PID Provider XML instance"
 
 #: article/models.py:999
 msgid "Related Article instance"
-msgstr ""
+msgstr "Related Article instance"
 
 #: article/models.py:1029
 msgid "Article Source"
-msgstr ""
+msgstr "Article Source"
 
 #: article/models.py:1030 article/wagtail_hooks.py:217
 msgid "Article Sources"
-msgstr ""
+msgstr "Article Sources"
 
 #: article/models.py:1250
 msgid "URL is required"
-msgstr ""
+msgstr "URL is required"
 
 #: article/models.py:1369 issue/models.py:290 journal/models.py:1847
 msgid "Export Type"
-msgstr ""
+msgstr "Export Type"
 
 #: article/models.py:1377 article/wagtail_hooks.py:26 collection/models.py:101
 #: collection/wagtail_hooks.py:20 core/users/forms.py:139
 #: core/users/forms.py:157 core/users/models.py:19 issue/models.py:298
 #: journal/models.py:1706 journal/models.py:1855 journal/models.py:2519
 msgid "Collection"
-msgstr ""
+msgstr "Collection"
 
 #: article/tasks.py:136 article/tasks__.py:162
 msgid "load_preprints"
-msgstr ""
+msgstr "load_preprints"
 
 #: article/tasks__.py:95
 msgid "load_article"
-msgstr ""
+msgstr "load_article"
 
 #: article/tasks__.py:115
 msgid "load_articles"
-msgstr ""
+msgstr "load_articles"
 
 #: article/wagtail_hooks.py:83
 msgid "Article Export"
-msgstr ""
+msgstr "Article Export"
 
 #: article/wagtail_hooks.py:152
 msgid "Article Funding"
-msgstr ""
+msgstr "Article Funding"
 
 #: article/wagtail_hooks.py:169
 msgid "Articles"
-msgstr ""
+msgstr "Articles"
 
 #: bigbang/utils/scheduler.py:51 core/utils/scheduler.py:61
 msgid "Scheduled task: {}"
-msgstr ""
+msgstr "Scheduled task: {}"
 
 #: book/models.py:45 book/models.py:219 journal/models.py:2579
 #: report/models.py:34
 msgid "Title"
-msgstr ""
+msgstr "Title"
 
 #: book/models.py:46
 msgid "Synopsis"
-msgstr ""
+msgstr "Synopsis"
 
 #: book/models.py:48
 msgid "Electronic ISBN"
-msgstr ""
+msgstr "Electronic ISBN"
 
 #: book/models.py:50 core/models.py:290
 msgid "Year"
-msgstr ""
+msgstr "Year"
 
 #: book/models.py:53
 msgid "Authors"
-msgstr ""
+msgstr "Authors"
 
 #: book/models.py:64
 msgid "Localization"
-msgstr ""
+msgstr "Localization"
 
 #: book/models.py:71
 #: core/templates/home/include/list_journal_page/journals_table_by_publisher.html:11
 #: institution/wagtail_hooks.py:246 journal/models.py:659 journal/proxys.py:31
 msgid "Publisher"
-msgstr ""
+msgstr "Publisher"
 
 #: book/models.py:78
 msgid "SciELO Book"
-msgstr ""
+msgstr "SciELO Book"
 
 #: book/models.py:79
 msgid "SciELO Books"
-msgstr ""
+msgstr "SciELO Books"
 
 #: book/models.py:134 book/models.py:238
 msgid "Chapter"
-msgstr ""
+msgstr "Chapter"
 
 #: book/models.py:140 book/models.py:239
 msgid "Chapters"
-msgstr ""
+msgstr "Chapters"
 
 #: book/models.py:221
 msgid "Data de publicação"
@@ -319,23 +314,23 @@ msgstr "Publication date"
 #: book/wagtail_hooks.py:23 book/wagtail_hooks.py:46 collection/choices.py:14
 #: core/templates/home/scieloorg/tabs.html:100
 msgid "Books"
-msgstr ""
+msgstr "Books"
 
 #: collection/choices.py:4
 msgid "Certified"
-msgstr ""
+msgstr "Certified"
 
 #: collection/choices.py:5
 msgid "Development"
-msgstr ""
+msgstr "Development"
 
 #: collection/choices.py:6
 msgid "Diffusion"
-msgstr ""
+msgstr "Diffusion"
 
 #: collection/choices.py:7
 msgid "Independent"
-msgstr ""
+msgstr "Independent"
 
 #: collection/choices.py:11
 #: core/templates/home/include/list_journal_page/journals_table_by_publisher.html:12
@@ -343,59 +338,59 @@ msgstr ""
 #: core/templates/home/scieloorg/tabs.html:47 journal/models.py:742
 #: journal/wagtail_hooks.py:159 journal/wagtail_hooks.py:249
 msgid "Journals"
-msgstr ""
+msgstr "Journals"
 
 #: collection/choices.py:12
 msgid "Preprints"
-msgstr ""
+msgstr "Preprints"
 
 #: collection/choices.py:13
 msgid "Repositories"
-msgstr ""
+msgstr "Repositories"
 
 #: collection/choices.py:15
 msgid "Data repository"
-msgstr ""
+msgstr "Data repository"
 
 #: collection/models.py:62
 msgid "Acronym with 3 chars"
-msgstr ""
+msgstr "Acronym with 3 chars"
 
 #: collection/models.py:65
 msgid "Acronym with 2 chars"
-msgstr ""
+msgstr "Acronym with 2 chars"
 
 #: collection/models.py:68
 msgid "Domain"
-msgstr ""
+msgstr "Domain"
 
 #: collection/models.py:69
 msgid "Main name"
-msgstr ""
+msgstr "Main name"
 
 #: collection/models.py:73
 msgid "Has analytics"
-msgstr ""
+msgstr "Has analytics"
 
 #: collection/models.py:76
 msgid "Collection Type"
-msgstr ""
+msgstr "Collection Type"
 
 #: collection/models.py:78
 msgid "Is active"
-msgstr ""
+msgstr "Is active"
 
 #: collection/models.py:79
 msgid "Foundation data"
-msgstr ""
+msgstr "Foundation data"
 
 #: collection/models.py:91
 msgid "Translated names"
-msgstr ""
+msgstr "Translated names"
 
 #: collection/models.py:102 core/templates/home/scieloorg/tabs.html:24
 msgid "Collections"
-msgstr ""
+msgstr "Collections"
 
 #: core/choices.py:192
 msgid "Editor-Chefe"
@@ -415,142 +410,142 @@ msgstr "Technical Team"
 
 #: core/choices.py:199
 msgid "January"
-msgstr ""
+msgstr "January"
 
 #: core/choices.py:200
 msgid "February"
-msgstr ""
+msgstr "February"
 
 #: core/choices.py:201
 msgid "March"
-msgstr ""
+msgstr "March"
 
 #: core/choices.py:202
 msgid "April"
-msgstr ""
+msgstr "April"
 
 #: core/choices.py:203
 msgid "May"
-msgstr ""
+msgstr "May"
 
 #: core/choices.py:204
 msgid "June"
-msgstr ""
+msgstr "June"
 
 #: core/choices.py:205
 msgid "July"
-msgstr ""
+msgstr "July"
 
 #: core/choices.py:206
 msgid "August"
-msgstr ""
+msgstr "August"
 
 #: core/choices.py:207
 msgid "September"
-msgstr ""
+msgstr "September"
 
 #: core/choices.py:208
 msgid "October"
-msgstr ""
+msgstr "October"
 
 #: core/choices.py:209
 msgid "November"
-msgstr ""
+msgstr "November"
 
 #: core/choices.py:210
 msgid "December"
-msgstr ""
+msgstr "December"
 
 #: core/choices.py:216
 msgid "by"
-msgstr ""
+msgstr "by"
 
 #: core/choices.py:217
 msgid "by-sa"
-msgstr ""
+msgstr "by-sa"
 
 #: core/choices.py:218
 msgid "by-nc"
-msgstr ""
+msgstr "by-nc"
 
 #: core/choices.py:219
 msgid "by-nc-sa"
-msgstr ""
+msgstr "by-nc-sa"
 
 #: core/choices.py:220
 msgid "by-nd"
-msgstr ""
+msgstr "by-nd"
 
 #: core/choices.py:221
 msgid "by-nc-nd"
-msgstr ""
+msgstr "by-nc-nd"
 
 #: core/choices.py:225
 msgid "Male"
-msgstr ""
+msgstr "Male"
 
 #: core/choices.py:226
 msgid "Female"
-msgstr ""
+msgstr "Female"
 
 #: core/models.py:33 tracker/models.py:51 tracker/models.py:79
 #: tracker/models.py:166
 msgid "Creation date"
-msgstr ""
+msgstr "Creation date"
 
 #: core/models.py:36
 msgid "Last update date"
-msgstr ""
+msgstr "Last update date"
 
 #: core/models.py:41
 msgid "Creator"
-msgstr ""
+msgstr "Creator"
 
 #: core/models.py:51
 msgid "Updater"
-msgstr ""
+msgstr "Updater"
 
 #: core/models.py:73
 msgid "Sex"
-msgstr ""
+msgstr "Sex"
 
 #: core/models.py:136
 msgid "Language Name"
-msgstr ""
+msgstr "Language Name"
 
 #: core/models.py:137
 msgid "Language code 2"
-msgstr ""
+msgstr "Language code 2"
 
 #: core/models.py:146
 msgid "Languages"
-msgstr ""
+msgstr "Languages"
 
 #: core/models.py:217 core/models.py:265 journal/models.py:1554
 #: vocabulary/models.py:104
 msgid "Rich Text"
-msgstr ""
+msgstr "Rich Text"
 
 #: core/models.py:218
 msgid "Plain Text"
-msgstr ""
+msgstr "Plain Text"
 
 #: core/models.py:291
 msgid "Month"
-msgstr ""
+msgstr "Month"
 
 #: core/models.py:292
 msgid "Day"
-msgstr ""
+msgstr "Day"
 
 #: core/models.py:323 core/models.py:411 issue/models.py:106
 #: journal/models.py:2817
 msgid "License"
-msgstr ""
+msgstr "License"
 
 #: core/models.py:324 core/models.py:412 journal/models.py:2818
 msgid "Licenses"
-msgstr ""
+msgstr "Licenses"
 
 #: core/templates/503.html:27
 msgid "Site em manutenção"
@@ -563,134 +558,134 @@ msgstr "For any questions, please contact the administrator."
 #: core/templates/account/account_inactive.html:5
 #: core/templates/account/account_inactive.html:8
 msgid "Account Inactive"
-msgstr ""
+msgstr "Account Inactive"
 
 #: core/templates/account/account_inactive.html:10
 msgid "This account is inactive."
-msgstr ""
+msgstr "This account is inactive"
 
 #: core/templates/account/email.html:7
 #: core/users/templates/wagtailusers/users/create.html:12
 #: core/users/templates/wagtailusers/users/edit.html:12
 msgid "Account"
-msgstr ""
+msgstr "Account"
 
 #: core/templates/account/email.html:10
 msgid "E-mail Addresses"
-msgstr ""
+msgstr "E-mail Addresses"
 
 #: core/templates/account/email.html:13
 msgid "The following e-mail addresses are associated with your account:"
-msgstr ""
+msgstr "The following e-mail addresses are associated with your account:"
 
 #: core/templates/account/email.html:27
 msgid "Verified"
-msgstr ""
+msgstr "Verified"
 
 #: core/templates/account/email.html:29
 msgid "Unverified"
-msgstr ""
+msgstr "Unverified"
 
 #: core/templates/account/email.html:31
 msgid "Primary"
-msgstr ""
+msgstr "Primary"
 
 #: core/templates/account/email.html:37
 msgid "Make Primary"
-msgstr ""
+msgstr "Make Primary"
 
 #: core/templates/account/email.html:38
 msgid "Re-send Verification"
-msgstr ""
+msgstr "Re-send Verification"
 
 #: core/templates/account/email.html:39
 msgid "Remove"
-msgstr ""
+msgstr "Remove"
 
 #: core/templates/account/email.html:46
 msgid "Warning:"
-msgstr ""
+msgstr "Warning:"
 
 #: core/templates/account/email.html:46
 msgid ""
 "You currently do not have any e-mail address set up. You should really add "
 "an e-mail address so you can receive notifications, reset your password, etc."
-msgstr ""
+msgstr "You currently do not have any e-mail address set up. You should really add an e-mail address so you can receive notifications, reset your password, etc."
 
 #: core/templates/account/email.html:51
 msgid "Add E-mail Address"
-msgstr ""
+msgstr "Add E-mail Address"
 
 #: core/templates/account/email.html:56
 msgid "Add E-mail"
-msgstr ""
+msgstr "Add E-mail"
 
 #: core/templates/account/email.html:66
 msgid "Do you really want to remove the selected e-mail address?"
-msgstr ""
+msgstr "Do you really want to remove the selected e-mail address?"
 
 #: core/templates/account/email_confirm.html:6
 #: core/templates/account/email_confirm.html:10
 msgid "Confirm E-mail Address"
-msgstr ""
+msgstr "Confirm E-mail Address"
 
 #: core/templates/account/email_confirm.html:16
 #, python-format
 msgid ""
 "Please confirm that <a href=\"mailto:%(email)s\">%(email)s</a> is an e-mail "
 "address for user %(user_display)s."
-msgstr ""
+msgstr "Please confirm that <a href=\"mailto:%(email)s\">%(email)s</a> is an e-mail address for user %(user_display)s."
 
 #: core/templates/account/email_confirm.html:20
 msgid "Confirm"
-msgstr ""
+msgstr "Confirm"
 
 #: core/templates/account/email_confirm.html:27
 #, python-format
 msgid ""
 "This e-mail confirmation link expired or is invalid. Please <a href="
 "\"%(email_url)s\">issue a new e-mail confirmation request</a>."
-msgstr ""
+msgstr "This e-mail confirmation link expired or is invalid. Please <a href=\"%(email_url)s\">issue a new e-mail confirmation request</a>."
 
 #: core/templates/account/login.html:7 core/templates/account/login.html:11
 #: core/templates/account/login.html:56
 msgid "Sign In"
-msgstr ""
+msgstr "Sign In"
 
 #: core/templates/account/login.html:17
 msgid "Please sign in with one of your existing third party accounts:"
-msgstr ""
+msgstr "Please sign in with one of your existing third party accounts:"
 
 #: core/templates/account/login.html:19
 #, python-format
 msgid ""
 "Or, <a href=\"%(signup_url)s\">sign up</a> for a %(site_name)s account and "
 "sign in below:"
-msgstr ""
+msgstr "Or, <a href=\"%(signup_url)s\">sign up</a> for a %(site_name)s account and sign in below:"
 
 #: core/templates/account/login.html:32
 msgid "or"
-msgstr ""
+msgstr "or"
 
 #: core/templates/account/login.html:41
 #, python-format
 msgid ""
 "If you have not created an account yet, then please <a href=\"%(signup_url)s"
 "\">sign up</a> first."
-msgstr ""
+msgstr "If you have not created an account yet, then please <a href=\"%(signup_url)s\">sign up</a> first."
 
 #: core/templates/account/login.html:55
 msgid "Forgot Password?"
-msgstr ""
+msgstr "Forgot Password?"
 
 #: core/templates/account/logout.html:5 core/templates/account/logout.html:8
 #: core/templates/account/logout.html:17
 msgid "Sign Out"
-msgstr ""
+msgstr "Sign Out"
 
 #: core/templates/account/logout.html:10
 msgid "Are you sure you want to sign out?"
-msgstr ""
+msgstr "Are you sure you want to sign out?"
 
 #: core/templates/account/password_change.html:6
 #: core/templates/account/password_change.html:9
@@ -700,38 +695,38 @@ msgstr ""
 #: core/templates/account/password_reset_from_key_done.html:4
 #: core/templates/account/password_reset_from_key_done.html:7
 msgid "Change Password"
-msgstr ""
+msgstr "Change Password"
 
 #: core/templates/account/password_reset.html:7
 #: core/templates/account/password_reset.html:11
 #: core/templates/account/password_reset_done.html:6
 #: core/templates/account/password_reset_done.html:9
 msgid "Password Reset"
-msgstr ""
+msgstr "Password Reset"
 
 #: core/templates/account/password_reset.html:16
 msgid ""
 "Forgotten your password? Enter your e-mail address below, and we'll send you "
 "an e-mail allowing you to reset it."
-msgstr ""
+msgstr "Forgotten your password? Enter your e-mail address below, and we'll send you an e-mail allowing you to reset it."
 
 #: core/templates/account/password_reset.html:21
 msgid "Reset My Password"
-msgstr ""
+msgstr "Reset My Password"
 
 #: core/templates/account/password_reset.html:24
 msgid "Please contact us if you have any trouble resetting your password."
-msgstr ""
+msgstr "Please contact us if you have any trouble resetting your password."
 
 #: core/templates/account/password_reset_done.html:15
 msgid ""
 "We have sent you an e-mail. Please contact us if you do not receive it "
 "within a few minutes."
-msgstr ""
+msgstr "We have sent you an e-mail. Please contact us if you do not receive it within a few minutes."
 
 #: core/templates/account/password_reset_from_key.html:8
 msgid "Bad Token"
-msgstr ""
+msgstr "Bad Token"
 
 #: core/templates/account/password_reset_from_key.html:12
 #, python-format
@@ -739,98 +734,98 @@ msgid ""
 "The password reset link was invalid, possibly because it has already been "
 "used.  Please request a <a href=\"%(passwd_reset_url)s\">new password reset</"
 "a>."
-msgstr ""
+msgstr "The password reset link was invalid, possibly because it has already been used. Please request a <a href=\"%(passwd_reset_url)s\">new password reset</a>."
 
 #: core/templates/account/password_reset_from_key.html:18
 msgid "change password"
-msgstr ""
+msgstr "change password"
 
 #: core/templates/account/password_reset_from_key.html:21
 #: core/templates/account/password_reset_from_key_done.html:8
 msgid "Your password is now changed."
-msgstr ""
+msgstr "Your password is now changed."
 
 #: core/templates/account/password_set.html:6
 #: core/templates/account/password_set.html:9
 #: core/templates/account/password_set.html:14
 msgid "Set Password"
-msgstr ""
+msgstr "Set Password"
 
 #: core/templates/account/signup.html:6
 msgid "Signup"
-msgstr ""
+msgstr "Signup"
 
 #: core/templates/account/signup.html:9 core/templates/account/signup.html:19
 msgid "Sign Up"
-msgstr ""
+msgstr "Sign Up"
 
 #: core/templates/account/signup.html:11
 #, python-format
 msgid ""
 "Already have an account? Then please <a href=\"%(login_url)s\">sign in</a>."
-msgstr ""
+msgstr "Already have an account? Then please <a href=\"%(login_url)s\">sign in</a>."
 
 #: core/templates/account/signup_closed.html:5
 #: core/templates/account/signup_closed.html:8
 msgid "Sign Up Closed"
-msgstr ""
+msgstr "Sign Up Closed"
 
 #: core/templates/account/signup_closed.html:10
 msgid "We are sorry, but the sign up is currently closed."
-msgstr ""
+msgstr "We are sorry, but the sign up is currently closed."
 
 #: core/templates/account/verification_sent.html:5
 #: core/templates/account/verification_sent.html:8
 #: core/templates/account/verified_email_required.html:5
 #: core/templates/account/verified_email_required.html:8
 msgid "Verify Your E-mail Address"
-msgstr ""
+msgstr "Verify Your E-mail Address"
 
 #: core/templates/account/verification_sent.html:10
 msgid ""
 "We have sent an e-mail to you for verification. Follow the link provided to "
 "finalize the signup process. Please contact us if you do not receive it "
 "within a few minutes."
-msgstr ""
+msgstr "We have sent an e-mail to you for verification. Follow the link provided to finalize the signup process. Please contact us if you do not receive it within a few minutes."
 
 #: core/templates/account/verified_email_required.html:12
 msgid ""
 "This part of the site requires us to verify that\n"
 "you are who you claim to be. For this purpose, we require that you\n"
 "verify ownership of your e-mail address. "
-msgstr ""
+msgstr "This part of the site requires us to verify that\nyou are who you claim to be. For this purpose, we require that you\nverify ownership of your e-mail address."
 
 #: core/templates/account/verified_email_required.html:16
 msgid ""
 "We have sent an e-mail to you for\n"
 "verification. Please click on the link inside this e-mail. Please\n"
 "contact us if you do not receive it within a few minutes."
-msgstr ""
+msgstr "We have sent an e-mail to you for\nverification. Please click on the link inside this e-mail. Please\ncontact us if you do not receive it within a few minutes."
 
 #: core/templates/account/verified_email_required.html:20
 #, python-format
 msgid ""
 "<strong>Note:</strong> you can still <a href=\"%(email_url)s\">change your e-"
 "mail address</a>."
-msgstr ""
+msgstr "<strong>Note:</strong> you can still <a href=\"%(email_url)s\">change your e-mail address</a>."
 
 #: core/templates/home/home_page.html:18
 #: core/templates/home/scieloorg/header.html:10
 msgid "About SciELO"
-msgstr ""
+msgstr "About SciELO"
 
 #: core/templates/home/home_page.html:44
 msgid "Scientific Electronic Library Online"
-msgstr ""
+msgstr "Scientific Electronic Library Online"
 
 #: core/templates/home/include/home_scielo_in_pespectiva.html:51
 #: core/templates/home/include/home_scielo_youtube.html:67
 msgid "Continue lendo"
-msgstr ""
+msgstr "Continue reading"
 
 #: core/templates/home/include/list_journal_page/breadcrumb.html:9
 msgid "Home"
-msgstr ""
+msgstr "Home"
 
 #: core/templates/home/include/list_journal_page/breadcrumb.html:11
 #: core/templates/home/include/list_journal_page/journals_table.html:11
@@ -841,15 +836,15 @@ msgstr "Journals"
 
 #: core/templates/home/include/list_journal_page/journals_table.html:11
 msgid "total"
-msgstr ""
+msgstr "total"
 
 #: core/templates/home/include/list_journal_page/journals_table.html:42
 msgid "Conteúdo Ativos"
-msgstr ""
+msgstr "Active Content"
 
 #: core/templates/home/include/list_journal_page/journals_table.html:49
 msgid "Conteúdo Descontinuados"
-msgstr ""
+msgstr "Discontinued Content"
 
 #: core/templates/home/include/list_journal_page/journals_tabs.html:7
 #: journalpage/templates/journalpage/includes/levelMenu.html:61
@@ -858,104 +853,104 @@ msgstr "All"
 
 #: core/templates/home/include/list_journal_page/journals_tabs.html:12
 msgid "Ativos"
-msgstr ""
+msgstr "Active"
 
 #: core/templates/home/include/list_journal_page/journals_tabs.html:17
 msgid "Descontinuados"
-msgstr ""
+msgstr "Discontinued"
 
 #: core/templates/home/scieloorg/tabs.html:64
 msgid "In development"
-msgstr ""
+msgstr "In development"
 
 #: core/templates/home/scieloorg/tabs.html:82
 msgid "Servers and Repositories"
-msgstr ""
+msgstr "Servers and Repositories"
 
 #: core/templates/home/scieloorg/tabs.html:117
 msgid "Others"
-msgstr ""
+msgstr "Others"
 
 #: core/templates/home/scieloorg/tabs.html:157
 msgid "Search journals"
-msgstr ""
+msgstr "Search journals"
 
 #: core/templates/home/scieloorg/tabs.html:169
 msgid "List of journals"
-msgstr ""
+msgstr "List of journals"
 
 #: core/templates/home/scieloorg/tabs.html:174
 msgid "In alphabetical order"
-msgstr ""
+msgstr "In alphabetical order"
 
 #: core/templates/home/scieloorg/tabs.html:182
 msgid "Of publisher"
-msgstr ""
+msgstr "Of publisher"
 
 #: core/templates/home/scieloorg/tabs.html:191
 msgid "List of journals by subject"
-msgstr ""
+msgstr "List of journals by subject"
 
 #: core/templates/home/scieloorg/tabs.html:198
 msgid "All"
-msgstr ""
+msgstr "All"
 
 #: core/templates/home/scieloorg/tabs.html:232
 msgid "SciELO in Perspective"
-msgstr ""
+msgstr "SciELO in Perspective"
 
 #: core/templates/home/welcome_page.html:53
 #: core/templates/home/welcome_page.html:56
 msgid "View the release notes"
-msgstr ""
+msgstr "View the release notes"
 
 #: core/templates/home/welcome_page.html:68
 msgid "Welcome to your SciELO Content Manager"
-msgstr ""
+msgstr "Welcome to your SciELO Content Manager"
 
 #: core/templates/home/welcome_page.html:69
 msgid ""
 "Please feel free to <a href=\"https://github.com/wagtail/wagtail/wiki/Slack"
 "\">join our community on Slack</a>, or get started with one of the links "
 "below."
-msgstr ""
+msgstr "Please feel free to <a href=\"https://github.com/wagtail/wagtail/wiki/Slack\">join our community on Slack</a>, or get started with one of the links below."
 
 #: core/templates/home/welcome_page.html:77
 msgid "Wagtail Documentation"
-msgstr ""
+msgstr "Wagtail Documentation"
 
 #: core/templates/home/welcome_page.html:78
 msgid "Topics, references, & how-tos"
-msgstr ""
+msgstr "Topics, references, & how-tos"
 
 #: core/templates/home/welcome_page.html:85
 msgid "Tutorial"
-msgstr ""
+msgstr "Tutorial"
 
 #: core/templates/home/welcome_page.html:86
 msgid "Build your first Wagtail site"
-msgstr ""
+msgstr "Build your first Wagtail site"
 
 #: core/templates/home/welcome_page.html:93
 msgid "Admin Interface"
-msgstr ""
+msgstr "Admin Interface"
 
 #: core/templates/home/welcome_page.html:94
 msgid "Create your superuser first!"
-msgstr ""
+msgstr "Create your superuser first!"
 
 #: core/templates/modeladmin/edit.html:9
 #, python-format
 msgid "Back to %(model_name)s list"
-msgstr ""
+msgstr "Back to %(model_name)s list"
 
 #: core/templates/wagtailadmin/home.html:7
 msgid "Welcome to the administrative area of "
-msgstr ""
+msgstr "Welcome to the administrative area of "
 
 #: core/templates/wagtailadmin/login.html:7
 msgid "Administrative area of "
-msgstr ""
+msgstr "Administrative area of "
 
 #: core/templates/wagtailadmin/summary_items/article_summary_item.html:6
 #, python-format
@@ -980,23 +975,23 @@ msgstr[1] "<span>%(total_journal)s</span> Journals"
 
 #: core/users/admin.py:17
 msgid "Personal info"
-msgstr ""
+msgstr "Personal info"
 
 #: core/users/admin.py:19
 msgid "Permissions"
-msgstr ""
+msgstr "Permissions"
 
 #: core/users/admin.py:30
 msgid "Important dates"
-msgstr ""
+msgstr "Important dates"
 
 #: core/users/apps.py:8
 msgid "Users"
-msgstr ""
+msgstr "Users"
 
 #: core/users/forms.py:33 core/users/tests/test_forms.py:39
 msgid "This username has already been taken."
-msgstr ""
+msgstr "This username has already been taken."
 
 #: core/users/forms.py:94
 msgid ""
@@ -1324,7 +1319,7 @@ msgstr ""
 
 #: institution/choices.py:26
 msgid "unknow"
-msgstr ""
+msgstr "unknown"
 
 #: institution/models.py:27 organization/models.py:141
 msgid "Institution Type (MEC)"
@@ -1492,7 +1487,7 @@ msgstr ""
 
 #: journal/choices.py:19
 msgid "Unknow"
-msgstr ""
+msgstr "Unknown"
 
 #: journal/choices.py:20
 msgid "Current"
@@ -1718,7 +1713,7 @@ msgstr ""
 
 #: journal/choices.py:98
 msgid "Divulgation"
-msgstr ""
+msgstr "Dissemination"
 
 #: journal/choices.py:103
 msgid "Analytical of a monograph"
