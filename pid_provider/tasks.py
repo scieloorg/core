@@ -14,7 +14,7 @@ from pid_provider.sources import am
 from pid_provider.sources.harvesting import provide_pid_for_opac_and_am_xml
 from tracker.models import UnexpectedEvent
 
-# from django.utils.translation import gettext as _
+# from django.utils.translation import gettext_lazy as _
 
 
 User = get_user_model()

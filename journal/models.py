@@ -169,8 +169,8 @@ class OfficialJournal(CommonControlField, ClusterableModel):
     base_form_class = CoreAdminModelForm
 
     class Meta:
-        verbose_name = _("ISSN Journal")
-        verbose_name_plural = _("ISSN Journals")
+        verbose_name = _("Journal (ISSN)")
+        verbose_name_plural = _("Journals (ISSN)")
         indexes = [
             models.Index(
                 fields=[

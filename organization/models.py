@@ -2,7 +2,7 @@ import csv
 
 from django.apps import apps
 from django.db import models, IntegrityError
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 from modelcluster.models import ClusterableModel
 from modelcluster.fields import ParentalKey
 from wagtail.admin.panels import FieldPanel, InlinePanel

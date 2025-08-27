@@ -1,4 +1,4 @@
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 
 
 ENDPOINTS = (("fix-pid-v2", "fix-pid-v2"),)

@@ -1,5 +1,5 @@
 from django.http import HttpResponseRedirect
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 from wagtail_modeladmin.options import (
     ModelAdmin,
     ModelAdminGroup,
