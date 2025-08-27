@@ -31,7 +31,7 @@ class OfficialJournalCreateViewSnippet(CreateView):
 
 class OfficialJournalSnippetViewSet(SnippetViewSet):
     model = models.OfficialJournal
-    menu_label = _("ISSN Journals")
+    menu_label = _("Journals (ISSN)")
     inspect_view_enabled = True
     add_view_class = OfficialJournalCreateViewSnippet
     menu_icon = "folder"

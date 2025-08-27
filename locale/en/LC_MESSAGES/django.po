@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-26 20:18+0000\n"
+"POT-Creation-Date: 2025-08-27 15:18+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,13 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: altmetric/choices.py:4 article/models.py:998 article/models.py:1360
+#: article/wagtail_hooks.py:47
+#, fuzzy
+#| msgid "Articles"
+msgid "Article"
+msgstr "Articles"
 
 #: altmetric/choices.py:5 article/models.py:71 core/users/forms.py:133
 #: core/users/forms.py:151 core/users/models.py:18 issue/models.py:34
@@ -610,7 +617,9 @@ msgstr "Warning:"
 msgid ""
 "You currently do not have any e-mail address set up. You should really add "
 "an e-mail address so you can receive notifications, reset your password, etc."
-msgstr "You currently do not have any e-mail address set up. You should really add an e-mail address so you can receive notifications, reset your password, etc."
+msgstr ""
+"You currently do not have any e-mail address set up. You should really add "
+"an e-mail address so you can receive notifications, reset your password, etc."
 
 #: core/templates/account/email.html:51
 msgid "Add E-mail Address"
@@ -634,7 +643,9 @@ msgstr "Confirm E-mail Address"
 msgid ""
 "Please confirm that <a href=\"mailto:%(email)s\">%(email)s</a> is an e-mail "
 "address for user %(user_display)s."
-msgstr "Please confirm that <a href=\"mailto:%(email)s\">%(email)s</a> is an e-mail address for user %(user_display)s."
+msgstr ""
+"Please confirm that <a href=\"mailto:%(email)s\">%(email)s</a> is an e-mail "
+"address for user %(user_display)s."
 
 #: core/templates/account/email_confirm.html:20
 msgid "Confirm"
@@ -645,7 +656,9 @@ msgstr "Confirm"
 msgid ""
 "This e-mail confirmation link expired or is invalid. Please <a href="
 "\"%(email_url)s\">issue a new e-mail confirmation request</a>."
-msgstr "This e-mail confirmation link expired or is invalid. Please <a href=\"%(email_url)s\">issue a new e-mail confirmation request</a>."
+msgstr ""
+"This e-mail confirmation link expired or is invalid. Please <a href="
+"\"%(email_url)s\">issue a new e-mail confirmation request</a>."
 
 #: core/templates/account/login.html:7 core/templates/account/login.html:11
 #: core/templates/account/login.html:56
@@ -661,7 +674,9 @@ msgstr "Please sign in with one of your existing third party accounts:"
 msgid ""
 "Or, <a href=\"%(signup_url)s\">sign up</a> for a %(site_name)s account and "
 "sign in below:"
-msgstr "Or, <a href=\"%(signup_url)s\">sign up</a> for a %(site_name)s account and sign in below:"
+msgstr ""
+"Or, <a href=\"%(signup_url)s\">sign up</a> for a %(site_name)s account and "
+"sign in below:"
 
 #: core/templates/account/login.html:32
 msgid "or"
@@ -672,7 +687,9 @@ msgstr "or"
 msgid ""
 "If you have not created an account yet, then please <a href=\"%(signup_url)s"
 "\">sign up</a> first."
-msgstr "If you have not created an account yet, then please <a href=\"%(signup_url)s\">sign up</a> first."
+msgstr ""
+"If you have not created an account yet, then please <a href=\"%(signup_url)s"
+"\">sign up</a> first."
 
 #: core/templates/account/login.html:55
 msgid "Forgot Password?"
@@ -708,7 +725,9 @@ msgstr "Password Reset"
 msgid ""
 "Forgotten your password? Enter your e-mail address below, and we'll send you "
 "an e-mail allowing you to reset it."
-msgstr "Forgotten your password? Enter your e-mail address below, and we'll send you an e-mail allowing you to reset it."
+msgstr ""
+"Forgotten your password? Enter your e-mail address below, and we'll send you "
+"an e-mail allowing you to reset it."
 
 #: core/templates/account/password_reset.html:21
 msgid "Reset My Password"
@@ -722,7 +741,9 @@ msgstr "Please contact us if you have any trouble resetting your password."
 msgid ""
 "We have sent you an e-mail. Please contact us if you do not receive it "
 "within a few minutes."
-msgstr "We have sent you an e-mail. Please contact us if you do not receive it within a few minutes."
+msgstr ""
+"We have sent you an e-mail. Please contact us if you do not receive it "
+"within a few minutes."
 
 #: core/templates/account/password_reset_from_key.html:8
 msgid "Bad Token"
@@ -734,7 +755,10 @@ msgid ""
 "The password reset link was invalid, possibly because it has already been "
 "used.  Please request a <a href=\"%(passwd_reset_url)s\">new password reset</"
 "a>."
-msgstr "The password reset link was invalid, possibly because it has already been used. Please request a <a href=\"%(passwd_reset_url)s\">new password reset</a>."
+msgstr ""
+"The password reset link was invalid, possibly because it has already been "
+"used. Please request a <a href=\"%(passwd_reset_url)s\">new password reset</"
+"a>."
 
 #: core/templates/account/password_reset_from_key.html:18
 msgid "change password"
@@ -763,7 +787,8 @@ msgstr "Sign Up"
 #, python-format
 msgid ""
 "Already have an account? Then please <a href=\"%(login_url)s\">sign in</a>."
-msgstr "Already have an account? Then please <a href=\"%(login_url)s\">sign in</a>."
+msgstr ""
+"Already have an account? Then please <a href=\"%(login_url)s\">sign in</a>."
 
 #: core/templates/account/signup_closed.html:5
 #: core/templates/account/signup_closed.html:8
@@ -786,28 +811,39 @@ msgid ""
 "We have sent an e-mail to you for verification. Follow the link provided to "
 "finalize the signup process. Please contact us if you do not receive it "
 "within a few minutes."
-msgstr "We have sent an e-mail to you for verification. Follow the link provided to finalize the signup process. Please contact us if you do not receive it within a few minutes."
+msgstr ""
+"We have sent an e-mail to you for verification. Follow the link provided to "
+"finalize the signup process. Please contact us if you do not receive it "
+"within a few minutes."
 
 #: core/templates/account/verified_email_required.html:12
 msgid ""
 "This part of the site requires us to verify that\n"
 "you are who you claim to be. For this purpose, we require that you\n"
 "verify ownership of your e-mail address. "
-msgstr "This part of the site requires us to verify that\nyou are who you claim to be. For this purpose, we require that you\nverify ownership of your e-mail address."
+msgstr ""
+"This part of the site requires us to verify that\n"
+"you are who you claim to be. For this purpose, we require that you\n"
+"verify ownership of your e-mail address."
 
 #: core/templates/account/verified_email_required.html:16
 msgid ""
 "We have sent an e-mail to you for\n"
 "verification. Please click on the link inside this e-mail. Please\n"
 "contact us if you do not receive it within a few minutes."
-msgstr "We have sent an e-mail to you for\nverification. Please click on the link inside this e-mail. Please\ncontact us if you do not receive it within a few minutes."
+msgstr ""
+"We have sent an e-mail to you for\n"
+"verification. Please click on the link inside this e-mail. Please\n"
+"contact us if you do not receive it within a few minutes."
 
 #: core/templates/account/verified_email_required.html:20
 #, python-format
 msgid ""
 "<strong>Note:</strong> you can still <a href=\"%(email_url)s\">change your e-"
 "mail address</a>."
-msgstr "<strong>Note:</strong> you can still <a href=\"%(email_url)s\">change your e-mail address</a>."
+msgstr ""
+"<strong>Note:</strong> you can still <a href=\"%(email_url)s\">change your e-"
+"mail address</a>."
 
 #: core/templates/home/home_page.html:18
 #: core/templates/home/scieloorg/header.html:10
@@ -913,7 +949,10 @@ msgid ""
 "Please feel free to <a href=\"https://github.com/wagtail/wagtail/wiki/Slack"
 "\">join our community on Slack</a>, or get started with one of the links "
 "below."
-msgstr "Please feel free to <a href=\"https://github.com/wagtail/wagtail/wiki/Slack\">join our community on Slack</a>, or get started with one of the links below."
+msgstr ""
+"Please feel free to <a href=\"https://github.com/wagtail/wagtail/wiki/Slack"
+"\">join our community on Slack</a>, or get started with one of the links "
+"below."
 
 #: core/templates/home/welcome_page.html:77
 msgid "Wagtail Documentation"
@@ -1224,7 +1263,11 @@ msgid "Editorial Board Member"
 msgstr ""
 
 #: editorialboard/wagtail_hooks.py:44
-msgid "RoleModel"
+msgid "Editorial Board Roles"
+msgstr ""
+
+#: editorialboard/wagtail_hooks.py:55 journal/proxys.py:276
+msgid "Editorial Board"
 msgstr ""
 
 #: files_storage/controller.py:29 files_storage/controller.py:50
@@ -1919,12 +1962,12 @@ msgstr ""
 msgid "Issns"
 msgstr ""
 
-#: journal/models.py:172 journal/models.py:354
-msgid "ISSN Journal"
+#: journal/models.py:172
+msgid "Journal (ISSN)"
 msgstr ""
 
 #: journal/models.py:173 journal/wagtail_hooks.py:34
-msgid "ISSN Journals"
+msgid "Journals (ISSN)"
 msgstr ""
 
 #: journal/models.py:261
@@ -1942,6 +1985,12 @@ msgstr ""
 #: journal/models.py:316
 msgid "Social Networks"
 msgstr ""
+
+#: journal/models.py:354
+#, fuzzy
+#| msgid "Journal"
+msgid "ISSN Journal"
+msgstr "Journal"
 
 #: journal/models.py:359
 msgid "Journal Title"
@@ -2586,10 +2635,6 @@ msgstr "Journalism and Publishing"
 #| msgid "Jornalismo e Editoração"
 msgid "Journal Editors"
 msgstr "Journalism and Publishing"
-
-#: journal/proxys.py:276
-msgid "Editorial Board"
-msgstr ""
 
 #: journal/proxys.py:281 journal/proxys.py:286 journal/proxys.py:287
 msgid "Journal Policy"
@@ -3363,7 +3408,7 @@ msgid "PersonName"
 msgstr ""
 
 #: researcher/wagtail_hooks.py:158
-msgid "New Researcher"
+msgid "Researcher (ORCID)"
 msgstr ""
 
 #: search/choices.py:4

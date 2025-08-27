@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-26 20:18+0000\n"
+"POT-Creation-Date: 2025-08-27 15:18+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -31,7 +31,7 @@ msgstr "Revista"
 
 #: altmetric/models.py:10 journal/models.py:1732
 msgid "ISSN SciELO"
-msgstr ""
+msgstr "ISSN SciELO"
 
 #: altmetric/models.py:13
 msgid "Extraction Date"
@@ -47,45 +47,39 @@ msgstr "Archivo JSON"
 
 #: altmetric/wagtail_hooks.py:14
 msgid "Altmetric"
-msgstr ""
+msgstr "Altmetric"
 
 #: article/choices.py:11
 msgid "public"
-msgstr ""
+msgstr "público"
 
 #: article/choices.py:12
-#, fuzzy
-#| msgid "Pending"
 msgid "pending"
-msgstr "Pendiente"
+msgstr "pendiente"
 
 #: article/choices.py:13
-#, fuzzy
-#| msgid "Remove"
 msgid "moved"
-msgstr "Eliminar"
+msgstr "movido"
 
 #: article/choices.py:14
 msgid "deleted"
-msgstr ""
+msgstr "eliminado"
 
 #: article/choices.py:15 pid_provider/choices.py:17
-#, fuzzy
-#| msgid "Undefined"
 msgid "undefined"
-msgstr "Indefinida"
+msgstr "indefinido"
 
 #: article/models.py:55
 msgid "Data status"
-msgstr ""
+msgstr "Estado de los datos"
 
 #: article/models.py:62
 msgid "PID V2"
-msgstr ""
+msgstr "PID V2"
 
 #: article/models.py:64
 msgid "PID V3"
-msgstr ""
+msgstr "PID V3"
 
 #: article/models.py:67 pid_provider/models.py:499
 msgid "Package name"
@@ -165,51 +159,39 @@ msgstr "Pendiente"
 
 #: article/models.py:952
 msgid "Processing"
-msgstr ""
+msgstr "Procesando"
 
 #: article/models.py:953
 msgid "Completed"
-msgstr ""
+msgstr "Completado"
 
 #: article/models.py:954
-#, fuzzy
-#| msgid "error"
 msgid "Error"
-msgstr "error"
+msgstr "Error"
 
 #: article/models.py:955
-#, fuzzy
-#| msgid "To reprocess"
 msgid "Reprocess"
-msgstr "Para reprocesar"
+msgstr "Reprocesar"
 
 #: article/models.py:958 article/models.py:962
-#, fuzzy
-#| msgid "Article"
 msgid "Article URL"
-msgstr "Artículo"
+msgstr "URL del Artículo"
 
 #: article/models.py:965
-#, fuzzy
-#| msgid "Article"
 msgid "Article file"
-msgstr "Artículo"
+msgstr "Archivo del artículo"
 
 #: article/models.py:969
-#, fuzzy
-#| msgid "load_article"
 msgid "Upload article file"
-msgstr "cargar_artículo"
+msgstr "Cargar archivo del artículo"
 
 #: article/models.py:972
-#, fuzzy
-#| msgid "Source name"
 msgid "Source date"
-msgstr "Nombre de la fuente"
+msgstr "Fecha de origen"
 
 #: article/models.py:976
 msgid "Date of data collection or original data date"
-msgstr ""
+msgstr "Fecha de recolección de datos o fecha de datos originales"
 
 #: article/models.py:979 collection/models.py:71 doi/models.py:80
 #: journal/models.py:1735
@@ -218,45 +200,35 @@ msgstr "Estado"
 
 #: article/models.py:983
 msgid "Processing status of the article source"
-msgstr ""
+msgstr "Estado de procesamiento del origen del artículo"
 
 #: article/models.py:990
-#, fuzzy
-#| msgid "Pid Provider XMLs"
 msgid "PID Provider XML"
-msgstr "XMLs de Proveedor de PID"
+msgstr "XML del Proveedor PID"
 
 #: article/models.py:991
-#, fuzzy
-#| msgid "Pid Provider XMLs"
 msgid "Related PID Provider XML instance"
-msgstr "XMLs de Proveedor de PID"
+msgstr "Instancia XML del Proveedor PID relacionada"
 
 #: article/models.py:999
 msgid "Related Article instance"
-msgstr ""
+msgstr "Instancia de Artículo relacionada"
 
 #: article/models.py:1029
-#, fuzzy
-#| msgid "Article Format"
 msgid "Article Source"
-msgstr "Formato del Artículo"
+msgstr "Fuente del Artículo"
 
 #: article/models.py:1030 article/wagtail_hooks.py:217
-#, fuzzy
-#| msgid "Article Formats"
 msgid "Article Sources"
-msgstr "Formatos de Artículo"
+msgstr "Fuentes de Artículos"
 
 #: article/models.py:1250
 msgid "URL is required"
-msgstr ""
+msgstr "Se requiere URL"
 
 #: article/models.py:1369 issue/models.py:290 journal/models.py:1847
-#, fuzzy
-#| msgid "Exception Type"
 msgid "Export Type"
-msgstr "Tipo de Excepción"
+msgstr "Tipo de Exportación"
 
 #: article/models.py:1377 article/wagtail_hooks.py:26 collection/models.py:101
 #: collection/wagtail_hooks.py:20 core/users/forms.py:139
@@ -278,10 +250,8 @@ msgid "load_articles"
 msgstr "cargar_artículos"
 
 #: article/wagtail_hooks.py:83
-#, fuzzy
-#| msgid "Article Format"
 msgid "Article Export"
-msgstr "Formato del Artículo"
+msgstr "Exportación de Artículo"
 
 #: article/wagtail_hooks.py:152
 msgid "Article Funding"
@@ -389,11 +359,11 @@ msgstr "Repositorio de datos"
 
 #: collection/models.py:62
 msgid "Acronym with 3 chars"
-msgstr "Acronismo de 3 caracteres"
+msgstr "Acrónimo de 3 caracteres"
 
 #: collection/models.py:65
 msgid "Acronym with 2 chars"
-msgstr "Acronismo de 2 caracteres"
+msgstr "Acrónimo de 2 caracteres"
 
 #: collection/models.py:68
 msgid "Domain"
@@ -493,27 +463,27 @@ msgstr "Diciembre"
 
 #: core/choices.py:216
 msgid "by"
-msgstr "por"
+msgstr "by"
 
 #: core/choices.py:217
 msgid "by-sa"
-msgstr "por-sa"
+msgstr "by-sa"
 
 #: core/choices.py:218
 msgid "by-nc"
-msgstr "por-nc"
+msgstr "by-nc"
 
 #: core/choices.py:219
 msgid "by-nc-sa"
-msgstr "por-nc-sa"
+msgstr "by-nc-sa"
 
 #: core/choices.py:220
 msgid "by-nd"
-msgstr "por-nd"
+msgstr "by-nd"
 
 #: core/choices.py:221
 msgid "by-nc-nd"
-msgstr "por-nc-nd"
+msgstr "by-nc-nd"
 
 #: core/choices.py:225
 msgid "Male"
@@ -787,11 +757,7 @@ msgid "Bad Token"
 msgstr "Token Inválido"
 
 #: core/templates/account/password_reset_from_key.html:12
-#, fuzzy, python-format
-#| msgid ""
-#| "The password reset link was invalid, possibly because it has already been "
-#| "used.  Please request a <a href=\"%(passwd_reset_url)s\">new password "
-#| "reset</a>."
+#, python-format
 msgid ""
 "The password reset link was invalid, possibly because it has already been "
 "used.  Please request a <a href=\"%(passwd_reset_url)s\">new password reset</"
@@ -890,43 +856,39 @@ msgstr ""
 #: core/templates/home/home_page.html:18
 #: core/templates/home/scieloorg/header.html:10
 msgid "About SciELO"
-msgstr ""
+msgstr "Acerca de SciELO"
 
 #: core/templates/home/home_page.html:44
-#, fuzzy
-#| msgid "Scientific/technical"
 msgid "Scientific Electronic Library Online"
-msgstr "Científico/técnico"
+msgstr "Scientific Electronic Library Online"
 
 #: core/templates/home/include/home_scielo_in_pespectiva.html:51
 #: core/templates/home/include/home_scielo_youtube.html:67
-#, fuzzy
-#| msgid "Continuous"
 msgid "Continue lendo"
-msgstr "Continua"
+msgstr "Continuar leyendo"
 
 #: core/templates/home/include/list_journal_page/breadcrumb.html:9
 msgid "Home"
-msgstr ""
+msgstr "Inicio"
 
 #: core/templates/home/include/list_journal_page/breadcrumb.html:11
 #: core/templates/home/include/list_journal_page/journals_table.html:11
 #: journalpage/templates/journalpage/about.html:79
 #: journalpage/templates/journalpage/next_journal.html:76
 msgid "Periódicos"
-msgstr ""
+msgstr "Periódicos"
 
 #: core/templates/home/include/list_journal_page/journals_table.html:11
 msgid "total"
-msgstr ""
+msgstr "total"
 
 #: core/templates/home/include/list_journal_page/journals_table.html:42
 msgid "Conteúdo Ativos"
-msgstr ""
+msgstr "Contenido Activo"
 
 #: core/templates/home/include/list_journal_page/journals_table.html:49
 msgid "Conteúdo Descontinuados"
-msgstr ""
+msgstr "Contenido Descontinuado"
 
 #: core/templates/home/include/list_journal_page/journals_tabs.html:7
 #: journalpage/templates/journalpage/includes/levelMenu.html:61
@@ -935,65 +897,51 @@ msgstr "Todos"
 
 #: core/templates/home/include/list_journal_page/journals_tabs.html:12
 msgid "Ativos"
-msgstr ""
+msgstr "Activos"
 
 #: core/templates/home/include/list_journal_page/journals_tabs.html:17
-#, fuzzy
-#| msgid "Continuous"
 msgid "Descontinuados"
-msgstr "Continua"
+msgstr "Descontinuados"
 
 #: core/templates/home/scieloorg/tabs.html:64
-#, fuzzy
-#| msgid "Development"
 msgid "In development"
-msgstr "Desarrollo"
+msgstr "En desarrollo"
 
 #: core/templates/home/scieloorg/tabs.html:82
-#, fuzzy
-#| msgid "Repositories"
 msgid "Servers and Repositories"
-msgstr "Repositorios"
+msgstr "Servidores y Repositorios"
 
 #: core/templates/home/scieloorg/tabs.html:117
-#, fuzzy
-#| msgid "Other PIDs"
 msgid "Others"
-msgstr "Otros PIDs"
+msgstr "Otros"
 
 #: core/templates/home/scieloorg/tabs.html:157
-#, fuzzy
-#| msgid "Ceased journal"
 msgid "Search journals"
-msgstr "Revista cesada"
+msgstr "Buscar revistas"
 
 #: core/templates/home/scieloorg/tabs.html:169
-#, fuzzy
-#| msgid "Can edit official journal"
 msgid "List of journals"
-msgstr "Puede editar la revista oficial"
+msgstr "Lista de revistas"
 
 #: core/templates/home/scieloorg/tabs.html:174
 msgid "In alphabetical order"
-msgstr ""
+msgstr "En orden alfabético"
 
 #: core/templates/home/scieloorg/tabs.html:182
-#, fuzzy
-#| msgid "Publisher"
 msgid "Of publisher"
-msgstr "Editor"
+msgstr "Por editor"
 
 #: core/templates/home/scieloorg/tabs.html:191
 msgid "List of journals by subject"
-msgstr ""
+msgstr "Lista de revistas por tema"
 
 #: core/templates/home/scieloorg/tabs.html:198
 msgid "All"
-msgstr ""
+msgstr "Todos"
 
 #: core/templates/home/scieloorg/tabs.html:232
 msgid "SciELO in Perspective"
-msgstr ""
+msgstr "SciELO en Perspectiva"
 
 #: core/templates/home/welcome_page.html:53
 #: core/templates/home/welcome_page.html:56
@@ -1097,22 +1045,25 @@ msgid ""
 "You cannot select both 'Collection Team' and 'Journal Team'. Please select "
 "only one."
 msgstr ""
+"No puede seleccionar tanto 'Equipo de Colección' como 'Equipo de Revista'. "
+"Por favor, seleccione solo uno."
 
 #: core/users/forms.py:108
 msgid "Please select at least one journal."
-msgstr ""
+msgstr "Por favor, seleccione al menos una revista."
 
 #: core/users/forms.py:109
 msgid "Selected journals do not belong to the selected collections."
 msgstr ""
+"Las revistas seleccionadas no pertenecen a las colecciones seleccionadas."
 
 #: core/users/forms.py:134 core/users/forms.py:152
 msgid "Select journals this user can access."
-msgstr ""
+msgstr "Seleccione las revistas a las que este usuario puede acceder."
 
 #: core/users/forms.py:140 core/users/forms.py:158
 msgid "Select collections this user can access."
-msgstr ""
+msgstr "Seleccione las colecciones a las que este usuario puede acceder."
 
 #: core/users/models.py:15
 msgid "Name of User"
@@ -1241,15 +1192,15 @@ msgstr "Importar"
 
 #: editorialboard/choices.py:4 researcher/choices.py:4
 msgid "Declarado por el investigador"
-msgstr ""
+msgstr "Declarado por el investigador"
 
 #: editorialboard/choices.py:5 researcher/choices.py:5
 msgid "Identificado automáticamente por programa de computador"
-msgstr ""
+msgstr "Identificado automáticamente por programa de computadora"
 
 #: editorialboard/choices.py:6 researcher/choices.py:6
 msgid "Identificado por algun usuario"
-msgstr ""
+msgstr "Identificado por algún usuario"
 
 #: editorialboard/choices.py:14
 msgid "Editor-in-chief"
@@ -1323,8 +1274,14 @@ msgid "Editorial Board Member"
 msgstr "Miembro del Consejo Editorial"
 
 #: editorialboard/wagtail_hooks.py:44
-msgid "RoleModel"
-msgstr "Modelo de Rol"
+#, fuzzy
+#| msgid "Editorial Board"
+msgid "Editorial Board Roles"
+msgstr "Consejo Editorial"
+
+#: editorialboard/wagtail_hooks.py:55 journal/proxys.py:276
+msgid "Editorial Board"
+msgstr "Consejo Editorial"
 
 #: files_storage/controller.py:29 files_storage/controller.py:50
 msgid "Unable to get MinioStorage {} {} {}"
@@ -1465,7 +1422,7 @@ msgstr "País"
 
 #: institution/models.py:706 organization/models.py:26
 msgid "Institution Acronym"
-msgstr "Acronismo de Institución"
+msgstr "Acrónimo de Institución"
 
 #: institution/models.py:708 organization/models.py:154
 msgid "Is official"
@@ -1495,7 +1452,7 @@ msgstr "Patrocinador"
 
 #: institution/wagtail_hooks.py:150
 msgid "Scimago"
-msgstr ""
+msgstr "Scimago"
 
 #: institution/wagtail_hooks.py:190 journal/models.py:658 journal/proxys.py:30
 msgid "Owner"
@@ -1535,13 +1492,15 @@ msgstr "Suplemento"
 
 #: issue/models.py:55
 msgid "Markup done"
-msgstr ""
+msgstr "Marcado completado"
 
 #: issue/models.py:60
 msgid ""
 "This number controls the order issues appear for a specific year on the "
 "website grid"
 msgstr ""
+"Este número controla el orden en que aparecen los fascículos para un año "
+"específico en la cuadrícula del sitio web"
 
 #: issue/models.py:85
 msgid "Issue title"
@@ -1581,10 +1540,8 @@ msgid "TocSections"
 msgstr "Secciones de Tabla de Contenidos"
 
 #: issue/wagtail_hooks.py:93
-#, fuzzy
-#| msgid "Issue month"
 msgid "Issue Exports"
-msgstr "Mes de fascículo"
+msgstr "Exportaciones de Fascículos"
 
 #: journal/choices.py:19
 msgid "Unknow"
@@ -1768,7 +1725,7 @@ msgstr "Ponencias de congresos como Serie de Monografías"
 
 #: journal/choices.py:83
 msgid "Project papers as Monograph Series"
-msgstr "Documentos de proyecto como Serie de Monografías"
+msgstr "Document de Serie de Monografías"
 
 #: journal/choices.py:84
 msgid "Document in a non conventional form"
@@ -2026,13 +1983,13 @@ msgstr "Fechas"
 msgid "Issns"
 msgstr "ISSNs"
 
-#: journal/models.py:172 journal/models.py:354
-msgid "ISSN Journal"
-msgstr "Revista ISSN"
+#: journal/models.py:172
+msgid "Journal (ISSN)"
+msgstr "Revista (ISSN)"
 
 #: journal/models.py:173 journal/wagtail_hooks.py:34
-msgid "ISSN Journals"
-msgstr "Revistas ISSN"
+msgid "Journals (ISSN)"
+msgstr "Revistas (ISSN)"
 
 #: journal/models.py:261
 msgid "Unable to create or update official journal {}"
@@ -2049,6 +2006,12 @@ msgstr "Red Social"
 #: journal/models.py:316
 msgid "Social Networks"
 msgstr "Redes Sociales"
+
+#: journal/models.py:354
+#, fuzzy
+#| msgid "Journal"
+msgid "ISSN Journal"
+msgstr "Revista"
 
 #: journal/models.py:359
 msgid "Journal Title"
@@ -2884,10 +2847,6 @@ msgstr "Historial de la Revista"
 msgid "Journal Editors"
 msgstr "Historial de la Revista"
 
-#: journal/proxys.py:276
-msgid "Editorial Board"
-msgstr "Consejo Editorial"
-
 #: journal/proxys.py:281 journal/proxys.py:286 journal/proxys.py:287
 msgid "Journal Policy"
 msgstr "Política de la Revista"
@@ -3679,8 +3638,8 @@ msgid "PersonName"
 msgstr "Nombre de la persona"
 
 #: researcher/wagtail_hooks.py:158
-msgid "New Researcher"
-msgstr "Nuevo Investigador"
+msgid "Researcher (ORCID)"
+msgstr "Investigador (ORCID)"
 
 #: search/choices.py:4
 msgid "Periódico"
@@ -3696,7 +3655,7 @@ msgstr "Tipo de Literatura"
 
 #: search/choices.py:7 search/choices.py:10
 msgid "Coleções"
-msgstr ""
+msgstr "Colecciones"
 
 #: search/choices.py:8
 msgid "Ano"
@@ -5983,6 +5942,9 @@ msgstr "Configuración de Validación"
 #: xml_validation/wagtail_hooks.py:19
 msgid "SciELO Publishing Schema"
 msgstr "Esquema de Publicación de SciELO"
+
+#~ msgid "RoleModel"
+#~ msgstr "Modelo de Rol"
 
 #, fuzzy
 #~| msgid "Journal History"

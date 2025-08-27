@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-26 20:18+0000\n"
+"POT-Creation-Date: 2025-08-27 15:18+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -372,10 +372,6 @@ msgstr "Domínio"
 #: collection/models.py:69
 msgid "Main name"
 msgstr "Nome principal"
-
-#: collection/models.py:71
-msgid "Code"
-msgstr "Código"
 
 #: collection/models.py:73
 msgid "Has analytics"
@@ -1041,8 +1037,8 @@ msgid ""
 "You cannot select both 'Collection Team' and 'Journal Team'. Please select "
 "only one."
 msgstr ""
-"Você não pode selecionar 'Equipe de Coleção' e 'Equipe de Periódico'. Por favor, selecione "
-"apenas uma."
+"Você não pode selecionar 'Equipe de Coleção' e 'Equipe de Periódico'. Por "
+"favor, selecione apenas uma."
 
 #: core/users/forms.py:108
 msgid "Please select at least one journal."
@@ -1269,8 +1265,14 @@ msgid "Editorial Board Member"
 msgstr "Membro do Corpo Editorial"
 
 #: editorialboard/wagtail_hooks.py:44
-msgid "RoleModel"
-msgstr "Modelo de Função"
+#, fuzzy
+#| msgid "Editorial Board"
+msgid "Editorial Board Roles"
+msgstr "Corpo Editorial"
+
+#: editorialboard/wagtail_hooks.py:55 journal/proxys.py:276
+msgid "Editorial Board"
+msgstr "Corpo Editorial"
 
 #: files_storage/controller.py:29 files_storage/controller.py:50
 msgid "Unable to get MinioStorage {} {} {}"
@@ -1489,8 +1491,8 @@ msgid ""
 "This number controls the order issues appear for a specific year on the "
 "website grid"
 msgstr ""
-"Este número controla a ordem em que os fascículos aparecem para um ano específico na "
-"grade do site"
+"Este número controla a ordem em que os fascículos aparecem para um ano "
+"específico na grade do site"
 
 #: issue/models.py:85
 msgid "Issue title"
@@ -1972,12 +1974,12 @@ msgstr "Datas"
 msgid "Issns"
 msgstr "ISSNs"
 
-#: journal/models.py:172 journal/models.py:354
-msgid "ISSN Journal"
-msgstr "Periódico ISSN"
+#: journal/models.py:172
+msgid "Journal (ISSN)"
+msgstr "Periódico (ISSN)"
 
 #: journal/models.py:173 journal/wagtail_hooks.py:34
-msgid "ISSN Journals"
+msgid "Journals (ISSN)"
 msgstr "Periódicos (ISSN)"
 
 #: journal/models.py:261
@@ -1995,6 +1997,12 @@ msgstr "Rede Social"
 #: journal/models.py:316
 msgid "Social Networks"
 msgstr "Redes Sociais"
+
+#: journal/models.py:354
+#, fuzzy
+#| msgid "Journal"
+msgid "ISSN Journal"
+msgstr "Periódico"
 
 #: journal/models.py:359
 msgid "Journal Title"
@@ -2844,10 +2852,6 @@ msgstr "Histórico do Periódico"
 msgid "Journal Editors"
 msgstr "Histórico do Periódico"
 
-#: journal/proxys.py:276
-msgid "Editorial Board"
-msgstr "Corpo Editorial"
-
 #: journal/proxys.py:281 journal/proxys.py:286 journal/proxys.py:287
 msgid "Journal Policy"
 msgstr "Política do Periódico"
@@ -3638,8 +3642,8 @@ msgid "PersonName"
 msgstr "Nome da Pessoa"
 
 #: researcher/wagtail_hooks.py:158
-msgid "New Researcher"
-msgstr "Novo Pesquisador"
+msgid "Researcher (ORCID)"
+msgstr "Pesquisador (ORCID)"
 
 #: search/choices.py:4
 msgid "Periódico"
@@ -5941,6 +5945,9 @@ msgstr "Configuração de Validação"
 #: xml_validation/wagtail_hooks.py:19
 msgid "SciELO Publishing Schema"
 msgstr "Esquema de Publicação SciELO"
+
+#~ msgid "RoleModel"
+#~ msgstr "Modelo de Função"
 
 #, fuzzy
 #~| msgid "Journal History"
