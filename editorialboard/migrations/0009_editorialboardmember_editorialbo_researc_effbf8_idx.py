@@ -8,7 +8,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("editorialboard", "0008_alter_editorialboardmember_created_and_more"),
-        ("journal", "0040_subject_journal_sub_value_0138a4_idx_and_more"),
         (
             "researcher",
             "0007_alter_affiliation_created_alter_affiliation_creator_and_more",
