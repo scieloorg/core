@@ -168,7 +168,7 @@ class JournalAdminSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
 class JournalAdminEditorSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
     model = JournalProxyEditor
     inspect_view_enabled = True
-    menu_label = _("Journals Editor")
+    menu_label = _("Journal")
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
     add_to_settings_menu = False
@@ -179,7 +179,7 @@ class JournalAdminEditorSnippetViewSet(FilteredJournalQuerysetMixin, SnippetView
 class JournalAdminPolicySnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
     model = JournalProxyPanelPolicy
     inspect_view_enabled = True
-    menu_label = _("Journals Policy")
+    menu_label = _("Journal Policies")
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
     add_to_settings_menu = False
@@ -202,8 +202,8 @@ class SciELOJournalCreateView(CreateView):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
 
-
 class SciELOJournalAdminViewSet(SnippetViewSet):
+
     model = models.SciELOJournal
     inspect_view_enabled = True
     menu_label = _("SciELO Journals")
@@ -250,10 +250,10 @@ class JournalSnippetViewSetGroup(SnippetViewSetGroup):
     menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("journal")
     items = (
-        JournalAdminSnippetViewSet,
-        JournalAdminEditorSnippetViewSet,
         OfficialJournalSnippetViewSet,
+        JournalAdminSnippetViewSet,
         SciELOJournalAdminViewSet,
+        JournalAdminEditorSnippetViewSet,
         JournalExportSnippetViewSet,
         JournalAdminPolicySnippetViewSet,
         JournalAdminInstructionsForAuthorsSnippetViewSet,

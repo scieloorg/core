@@ -41,7 +41,7 @@ class EditorialBoardMemberAdmin(SnippetViewSet):
 
 class RoleModelAdmin(SnippetViewSet):
     model = RoleModel
-    menu_label = _("RoleModel")
+    menu_label = _("Editorial Board Roles")
     menu_icon = "folder"
     menu_order = 9
     add_to_settings_menu = False
@@ -52,7 +52,7 @@ class RoleModelAdmin(SnippetViewSet):
 
 
 class EditorialBoardMemberGroupViewSet(SnippetViewSetGroup):
-    menu_label = "Editorial Board Member"
+    menu_label = _("Editorial Board")
     menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("editorialboard")
     add_to_admin_menu = True

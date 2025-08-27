@@ -155,7 +155,7 @@ class ResearcherOrganizationAdminViewSet(SnippetViewSet):
     add_view_class = ResearcherOrcidCreateView
     edit_view_class = ResearcherOrcidEditView
     menu_icon = "folder"
-    menu_label = _("New Researcher")
+    menu_label = _("Researcher (ORCID)")
     menu_order = get_menu_order("new_researcher")
     list_display = ["__str__", "get_fullname_researcher"]
     inspect_view_enabled = True
