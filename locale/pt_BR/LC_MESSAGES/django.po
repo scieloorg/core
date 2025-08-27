@@ -467,23 +467,23 @@ msgstr "por"
 
 #: core/choices.py:217
 msgid "by-sa"
-msgstr "por-sa"
+msgstr "by-sa"
 
 #: core/choices.py:218
 msgid "by-nc"
-msgstr "por-nc"
+msgstr "by-nc"
 
 #: core/choices.py:219
 msgid "by-nc-sa"
-msgstr "por-nc-sa"
+msgstr "by-nc-sa"
 
 #: core/choices.py:220
 msgid "by-nd"
-msgstr "por-nd"
+msgstr "by-nd"
 
 #: core/choices.py:221
 msgid "by-nc-nd"
-msgstr "por-nc-nd"
+msgstr "by-nc-nd"
 
 #: core/choices.py:225
 msgid "Male"
