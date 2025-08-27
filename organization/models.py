@@ -1,25 +1,26 @@
 import csv
 
 from django.apps import apps
-from django.db import models, IntegrityError
+from django.db import IntegrityError, models
+from django.db.models import Q
 from django.utils.translation import gettext as _
-from modelcluster.models import ClusterableModel
 from modelcluster.fields import ParentalKey
-from wagtail.admin.panels import FieldPanel, InlinePanel
+from modelcluster.models import ClusterableModel
+from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
-from . import choices
-from .exceptions import (
-    OrganizationTypeGetError,
-    OrganizationCreateOrUpdateError,
-    OrganizationLevelGetError,
-    OrganizationGetError,
-)
 from core.forms import CoreAdminModelForm
-from core.models import CommonControlField, BaseHistory
+from core.models import BaseHistory, CommonControlField
 from core.utils.standardizer import remove_extra_spaces
 from location.models import Location
 
+from . import choices
+from .exceptions import (
+    OrganizationCreateOrUpdateError,
+    OrganizationGetError,
+    OrganizationLevelGetError,
+    OrganizationTypeGetError,
+)
 
 HELP_TEXT_ORGANIZATION = _("Select the standardized organization data")
 
@@ -32,20 +33,9 @@ class BaseOrganization(models.Model):
     )
     url = models.URLField("url", blank=True, null=True)
     logo = models.ImageField(_("Logo"), blank=True, null=True)
-    panels = [
-        FieldPanel("name"),
-        FieldPanel("acronym"),
-        AutocompletePanel("location"),
-        FieldPanel("url"),
-        FieldPanel("logo"),
-    ]
 
-    @staticmethod
-    def autocomplete_custom_queryset_filter(search_term):
-        return cls.objects.filter(
-            Q(name__icontains=search_term) |
-            Q(location__country__name__icontains=search_term)
-        ).distinct()
+
+    autocomplete_search_field = "name"
 
     def __str__(self):
         return f"{self.name} | {self.location}"
@@ -81,8 +71,9 @@ class BaseOrganization(models.Model):
         location,
         url=None,
     ):
-        if not name and not location:
+        if not name or not location:
             raise OrganizationGetError("Organization.get requires name and location")
+
         params = {}
         params["name__iexact"] = name
         params["location"] = location
@@ -113,13 +104,33 @@ class BaseOrganization(models.Model):
                 url=url,
                 logo=logo,
             )
-            # Se a classe concreta tiver o campo creator, define-o
             if hasattr(obj, 'creator') and user:
                 obj.creator = user
             obj.save()
+            print(obj)
             return obj
         except IntegrityError:
             return cls.get(name=name, acronym=acronym, location=location)
+
+    def update_logo(obj, user, logo=None):
+        update = False
+        if logo is not None and obj.logo != logo:
+            obj.logo = logo
+            update = True
+        if update:
+            if hasattr(obj, 'updated_by') and user:
+                obj.updated_by = user
+            obj.save()
+
+    def update_url(obj, user, url=None):
+        update = False
+        if url is not None and obj.url != url:
+            obj.url = url
+            update = True
+        if update:
+            if hasattr(obj, 'updated_by') and user:
+                obj.updated_by = user
+            obj.save()
 
     @classmethod
     def create_or_update(
@@ -141,23 +152,8 @@ class BaseOrganization(models.Model):
 
         try:
             obj = cls.get(name=name, acronym=acronym, location=location)
-            # Atualiza campos se fornecidos
-            updated = False
-
-            if url is not None and obj.url != url:
-                obj.url = url
-                updated = True
-
-            if logo is not None and obj.logo != logo:
-                obj.logo = logo
-                updated = True
-
-            if updated:
-                # Se a classe concreta tiver o campo updated_by, define-o
-                if hasattr(obj, 'updated_by') and user:
-                    obj.updated_by = user
-                obj.save()
-
+            obj.update_logo(user, logo)
+            obj.update_url(user, url)
             return obj
 
         except cls.DoesNotExist:
@@ -190,11 +186,41 @@ class Organization(BaseOrganization, CommonControlField, ClusterableModel):
         blank=True,
     )
 
-    panels = BaseOrganization.panels + [
+    panels = [
+        FieldPanel("name"),
+        FieldPanel("acronym"),
+        AutocompletePanel("location"),
+        FieldPanel("url"),
+        FieldPanel("logo"),
         FieldPanel("institution_type_mec"),
         AutocompletePanel("institution_type_scielo"),
-        FieldPanel("is_official"),
+        # FieldPanel("is_official"),
     ]
+
+    def update_institutions(self, user, institution_type_mec=None, institution_type_scielo=None, is_official=None):
+        updated = False
+
+        
+        if (
+            institution_type_mec is not None
+            and self.institution_type_mec != institution_type_mec
+        ):
+            self.institution_type_mec = institution_type_mec
+            updated = True
+
+        if is_official is not None and self.is_official != is_official:
+            self.is_official = is_official
+            updated = True
+
+        if updated:
+            self.updated_by = user
+            self.save()
+
+        if institution_type_scielo is not None:
+            if isinstance(institution_type_scielo, list):
+                self.institution_type_scielo.set(institution_type_scielo)
+            else:
+                self.institution_type_scielo.add(institution_type_scielo)
 
     @classmethod
     def create_or_update(
@@ -209,11 +235,8 @@ class Organization(BaseOrganization, CommonControlField, ClusterableModel):
         institution_type_scielo=None,
         is_official=None,
     ):
-        # Limpa espaços extras do tipo de instituição MEC
-        if institution_type_mec:
-            institution_type_mec = remove_extra_spaces(institution_type_mec)
 
-        # Chama o método da classe pai com os parâmetros corretos
+        institution_type_mec = remove_extra_spaces(institution_type_mec)
         obj = super().create_or_update(
             name=name,
             acronym=acronym,
@@ -222,82 +245,9 @@ class Organization(BaseOrganization, CommonControlField, ClusterableModel):
             url=url,
             logo=logo,
         )
-
-        # Atualiza campos específicos de Organization
-        updated = False
-
-        if (
-            institution_type_mec is not None
-            and obj.institution_type_mec != institution_type_mec
-        ):
-            obj.institution_type_mec = institution_type_mec
-            updated = True
-
-        if is_official is not None and obj.is_official != is_official:
-            obj.is_official = is_official
-            updated = True
-
-        if updated:
-            obj.updated_by = user
-            obj.save()
-
-        # Gerencia os tipos de instituição SciELO (ManyToMany)
-        if institution_type_scielo is not None:
-            if isinstance(institution_type_scielo, list):
-                # Se for uma lista de objetos ou IDs
-                obj.institution_type_scielo.set(institution_type_scielo)
-            else:
-                # Se for um único objeto
-                obj.institution_type_scielo.add(institution_type_scielo)
+        obj.update_institutions(user, institution_type_mec, institution_type_scielo, is_official)
 
         return obj
-
-    @classmethod
-    def create(
-        cls,
-        name,
-        acronym,
-        location,
-        user,
-        url=None,
-        logo=None,
-        institution_type_mec=None,
-        institution_type_scielo=None,
-        is_official=None,
-    ):
-        """Override do método create para incluir campos específicos"""
-        try:
-            # Cria usando o método da classe pai
-            obj = super().create(
-                name=name,
-                acronym=acronym,
-                location=location,
-                user=user,
-                url=url,
-                logo=logo,
-            )
-
-            # Adiciona campos específicos de Organization
-            if institution_type_mec:
-                obj.institution_type_mec = remove_extra_spaces(institution_type_mec)
-
-            if is_official is not None:
-                obj.is_official = is_official
-
-            obj.save()
-
-            # Adiciona tipos de instituição SciELO após salvar
-            if institution_type_scielo:
-                if isinstance(institution_type_scielo, list):
-                    obj.institution_type_scielo.set(institution_type_scielo)
-                else:
-                    obj.institution_type_scielo.add(institution_type_scielo)
-
-            return obj
-
-        except IntegrityError:
-            return cls.get(name=name, acronym=acronym, location=location)
-
 
 class BaseOrgLevel(CommonControlField):
     level_1 = models.TextField(_("Organization Level 1"), null=True, blank=True)
