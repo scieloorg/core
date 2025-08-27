@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 
 from collection.models import Collection
 from config import celery_app

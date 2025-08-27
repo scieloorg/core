@@ -9,7 +9,7 @@ from functools import lru_cache
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
 from django.db.models import Q
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
