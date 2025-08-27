@@ -225,3 +225,20 @@ GENDER_CHOICES = [
     ('M', _('Male')),
     ('F', _('Female')),
 ]
+
+SOCIAL_NETWORK_NAMES = [
+    ("facebook", "Facebook"),
+    ("twitter", "Twitter"),
+    ("mastodon", "Mastodon"),
+    ("bsky", "Discover Blue Sky"),
+    ("youtube", "Youtube"),
+]
+
+
+LOGO_SIZE_CHOICES = [
+    ('thumbnail', _('Thumbnail (150x150)')),
+    ('small', _('Small (300x300)')),
+    ('medium', _('Medium (600x600)')),
+    ('large', _('Large (1200x1200)')),
+    ('original', _('Original')),
+]

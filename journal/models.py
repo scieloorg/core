@@ -28,6 +28,7 @@ from core.models import (
     License,
     RichTextWithLanguage,
     TextWithLang,
+    SocialNetwork,
 )
 from core.utils.thread_context import get_current_collections, get_current_user
 from institution.models import (
@@ -59,7 +60,7 @@ from organization.dynamic_models import (
     OrgLevelPublisher,
     OrgLevelSponsor,
 )
-from organization.models import Organization
+from organization.models import Organization, HELP_TEXT_ORGANIZATION
 from thematic_areas.models import ThematicArea
 from vocabulary.models import Vocabulary
 
@@ -67,9 +68,6 @@ from . import choices
 
 HELP_TEXT_INSTITUTION = _(
     "Institution data originally provided. This field is for reference only."
-)
-HELP_TEXT_ORGANIZATION = _(
-    "Select the standardized institution corresponding to the original data."
 )
 
 User = get_user_model()
@@ -297,42 +295,6 @@ class OfficialJournal(CommonControlField, ClusterableModel):
     @property
     def parallel_titles(self):
         return JournalParallelTitle.objects.filter(official_journal=self)
-
-
-class SocialNetwork(models.Model):
-    name = models.CharField(
-        _("Name"),
-        choices=choices.SOCIAL_NETWORK_NAMES,
-        max_length=20,
-        null=True,
-        blank=True,
-    )
-    url = models.URLField(_("URL"), null=True, blank=True)
-
-    panels = [FieldPanel("name"), FieldPanel("url")]
-
-    class Meta:
-        verbose_name = _("Social Network")
-        verbose_name_plural = _("Social Networks")
-        indexes = [
-            models.Index(
-                fields=[
-                    "name",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "url",
-                ]
-            ),
-        ]
-        abstract = True
-
-    @property
-    def data(self):
-        d = {"social_network__name": self.name, "social_network__url": self.url}
-
-        return d
 
 
 class Journal(CommonControlField, ClusterableModel):
