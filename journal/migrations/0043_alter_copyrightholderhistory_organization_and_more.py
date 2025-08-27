@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("journal", "0042_merge_20250801_1525"),
+        ("journal", "0042_merge_20250820_1422"),
         (
             "organization",
             "0008_remove_organization_organizatio_is_offi_538fd2_idx_and_more",
