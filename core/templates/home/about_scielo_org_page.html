@@ -79,70 +79,37 @@
 
 <section>
     <div class="container">
-        {% if page.external_link %}
-            <script>
-                window.open("{{ page.external_link }}", "_blank");
-                window.location.href = "{{ page.external_link }}";
-            </script>
-            <p style="text-align: center; margin: 40px 0;">
-                Redirecionando para <a href="{{ page.external_link }}" target="_blank" rel="noopener noreferrer">{{ page.external_link }}</a>...
-            </p>
-        {% else %}
-
-          {# Mostrar documento principal destacado #}
-          {% if page.attached_document %}
-              <div class="document-highlight">
-                  <a href="{{ page.attached_document.url }}" target="_blank" rel="noopener noreferrer">
-                      {{ page.attached_document.title }}
-                  </a>
-                  <div style="font-size: 12px; color: #666; margin-top: 5px;">
-                      {% if page.attached_document.file_extension %}{{ page.attached_document.file_extension|upper }}{% endif %}
-                      {% if page.attached_document.file_size %} • {{ page.attached_document.file_size|filesizeformat }}{% endif %}
-                  </div>
-              </div>
-          {% endif %}
-
-          {# Conteúdo principal da página #}
-          {% if page.body %}
-              <div class="scielo-list-text">
-                  {{ page.body|richtext }}
-              </div>
-          {% endif %}
 
           {# Lista de itens do StreamField #}
           {% for block in page.list_page %}
-              {% if block.block_type == 'page' %}
-                  <div class="scielo-list-item">
-                      <a href="{{ block.value.url }}">{{ block.value.title }}</a>
-                  </div>
-              {% elif block.block_type == 'multilang_text' %}
-                  <div class="scielo-list-text">
-                      {{ block.value|richtext }}
-                  </div>
-              {% elif block.block_type == 'url' %}
-                  <div class="scielo-list-item">
-                      <a href="{{ block.value }}" target="_blank" rel="noopener noreferrer">
-                          {{ block.value }}
-                      </a>
-                  </div>
-              {% elif block.block_type == 'document' %}
-                  <div class="scielo-list-item">
-                      <a href="{{ block.value.url }}" target="_blank" rel="noopener noreferrer">
-                          {{ block.value.title }}
-                          {% if block.value.file_extension %}
-                              <span style="font-size: 12px; color: #999;">({{ block.value.file_extension|upper }})</span>
-                          {% endif %}
-                      </a>
-                  </div>
-              {% endif %}
+            {% if block.block_type == 'page' %}
+                <div class="scielo-list-item">
+                    <a href="{{ block.value.url }}">{{ block.value.title }}</a>
+                </div>
+            {% elif block.block_type == 'url' %}
+                <div class="scielo-list-item">
+                    <a href="{{ block.value }}" target="_blank" rel="noopener noreferrer">
+                        {{ block.value }}
+                    </a>
+                </div>
+            {% elif block.block_type == 'text' %}
+                <div>
+                    {{ block.value|richtext }}
+                </div>
+            {% elif block.block_type == 'document' %}
+                <div class="scielo-list-item">
+                    <a href="{{ block.value.url }}" target="_blank" rel="noopener noreferrer">
+                        {{ block.value.title }}
+                        {% if block.value.file_extension %}
+                            <span style="font-size: 12px; color: #999;">({{ block.value.file_extension|upper }})</span>
+                        {% endif %}
+                    </a>
+                </div>
+            {% elif block.block_type == 'table' %}
+                {% include_block block %}
+            {% endif %}
           {% endfor %}
 
-          {# Páginas filhas #}
-          {% for child in page.get_children.live.public %}
-              <div class="scielo-list-item">
-                 <a href="{% pageurl child %}">{{ child.title }}</a>
-              </div>
-          {% endfor %}
       {% endif %}
     </div>
 </section>
