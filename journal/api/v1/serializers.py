@@ -1,5 +1,5 @@
-from wagtail.models.sites import Site
 from rest_framework import serializers
+from wagtail.models.sites import Site
 
 from core.api.v1.serializers import LanguageSerializer
 from journal import models
@@ -85,7 +85,7 @@ class JournalSerializer(serializers.ModelSerializer):
     subject_descriptor = SubjectDescriptorSerializer(many=True, read_only=True)
     subject = SubjectSerializer(many=True, read_only=True)
     text_language = LanguageSerializer(many=True, read_only=True)
-    journal_use_license = JournalUseLicenseSerializer(many=False, read_only=True)
+    journal_use_license = serializers.SerializerMethodField()
     publisher = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
     acronym = serializers.SerializerMethodField()
@@ -101,6 +101,7 @@ class JournalSerializer(serializers.ModelSerializer):
     previous_journal_title = serializers.SerializerMethodField()
     toc_items = serializers.SerializerMethodField()
     wos_areas = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
 
     def get_institution_history(self, institution_history):
         if queryset := institution_history.all():
@@ -129,7 +130,7 @@ class JournalSerializer(serializers.ModelSerializer):
         journals = []
         for item in results:
             journal_dict = {
-                "collection_acron": item.collection.acron3,
+                "collection_acron": item.collection.acron3 if item.collection else None,
                 "issn_scielo": item.issn_scielo,
                 "journal_acron": item.journal_acron,
                 "journal_history": [
@@ -232,6 +233,15 @@ class JournalSerializer(serializers.ModelSerializer):
             return [wos_area.value for wos_area in obj.wos_area.all()]
         return None
 
+    def get_location(self, obj):
+        if obj.contact_location:
+            return obj.contact_location.data
+
+    def get_journal_use_license(self, obj):
+        if obj.journal_use_license:
+            return obj.journal_use_license.license_type
+        return None
+
     class Meta:
         model = models.Journal
         fields = [
@@ -255,7 +265,9 @@ class JournalSerializer(serializers.ModelSerializer):
             "toc_items",
             "submission_online_url",
             "email",
+            "contact_name",
             "contact_address",
+            "location",
             "text_language",
             "doi_prefix",
             "title_in_database",
