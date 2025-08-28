@@ -440,8 +440,23 @@ def snippet_listing_buttons(snippet, user, next_url=None):
         except AttributeError:
             pass
 
+
 @hooks.register("register_permissions")
 def register_ctf_permissions():
     model = JournalProxyEditor
+    content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
+    return Permission.objects.filter(content_type=content_type)
+
+
+@hooks.register("register_permissions")
+def register_ctf_permissions_1():
+    model = JournalProxyPanelPolicy
+    content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
+    return Permission.objects.filter(content_type=content_type)
+
+
+@hooks.register("register_permissions")
+def register_ctf_permissions_2():
+    model = JournalProxyPanelInstructionsForAuthors
     content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
     return Permission.objects.filter(content_type=content_type)
