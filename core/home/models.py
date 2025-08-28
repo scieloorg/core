@@ -9,18 +9,18 @@ from wagtail.admin.panels import FieldPanel, FieldRowPanel, InlinePanel, MultiFi
 from wagtail.contrib.forms.models import AbstractFormField
 from wagtail.contrib.forms.panels import FormSubmissionsPanel
 from wagtail.documents.blocks import DocumentChooserBlock
-from wagtail.fields import RichTextField, StreamField
-from wagtail.models import Locale, Page, TranslatableMixin
+from wagtail.fields import RichTextField, StreamBlock, StreamField
+from wagtail.models import Locale, Page
 from wagtailcaptcha.models import WagtailCaptchaEmailForm
+from wagtailtables.blocks import TableBlock
 
 from collection.models import Collection
-from core.utils.utils import language_iso
 from journal.choices import STUDY_AREA
 from journal.models import OwnerHistory, SciELOJournal
 
 
 class HomePage(Page):
-    subpage_types = ['home.AboutScieloOrgPage']
+    subpage_types = ['home.AboutScieloOrgPage', 'home.ListPageJournal', 'home.ListPageJournalByPublisher']
 
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
@@ -30,6 +30,7 @@ class HomePage(Page):
             lang = get_language()
             try:
                 locale = Locale.objects.get(language_code__iexact=lang)
+                print(locale)
             except Locale.MultipleObjectsReturned:
                 locale = Locale.objects.filter(language_code__iexact=lang).first()
             except Locale.DoesNotExist:
@@ -39,7 +40,9 @@ class HomePage(Page):
                 self.get_children()
                 .live()
                 .public()
-                .get(slug="about-scielo", locale=locale)
+                .type(AboutScieloOrgPage)
+                .filter(locale=locale)
+                .first()
             )
             context["page_about"] = page_about
         except (Page.DoesNotExist, Locale.DoesNotExist, Page.MultipleObjectsReturned):
@@ -167,36 +170,26 @@ class ListPageJournalByPublisher(Page):
         return context
 
 
+class ContentTableBlock(StreamBlock):
+    table_block = TableBlock()
+
+
 class AboutScieloOrgPage(Page):
-
-    body = RichTextField("Body", blank=True)
-    external_link = models.URLField("Link externo", blank=True, null=True, max_length=2000)
-
-    attached_document = models.ForeignKey(
-        'wagtaildocs.Document',
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name='+',
-        help_text="Documento principal desta página"
-    )
-
-    parent_page_types = ['home.HomePage']
+    subpage_types = ['home.AboutScieloOrgPage']
 
     list_page = StreamField(
         [
-            ("page", blocks.PageChooserBlock()),
+            ("text", blocks.RichTextBlock()),
             ("url", blocks.URLBlock()),
+            ("table", ContentTableBlock()),
             ("document", DocumentChooserBlock()),
+            ("page", blocks.PageChooserBlock()),
         ],
         blank=True,
         use_json_field=True,
     )
 
     content_panels = Page.content_panels + [
-        FieldPanel("attached_document"),
-        FieldPanel("external_link"),
-        FieldPanel("body"),
         FieldPanel("list_page"),
     ]
 
