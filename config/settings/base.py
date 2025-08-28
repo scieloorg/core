@@ -119,6 +119,7 @@ THIRD_PARTY_APPS = [
     "wagtail_2fa",
     "django_otp",
     "django_otp.plugins.otp_totp",
+    "wagtailtables",
 ]
 
 LOCAL_APPS = [

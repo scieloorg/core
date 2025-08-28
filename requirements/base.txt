@@ -167,3 +167,7 @@ wagtail-2fa-new==1.8.0  # https://pypi.org/project/wagtail-2fa-new/
 xlwt==1.3.0
 
 django-silk==5.3.2
+
+# Wagtail Tables 
+# ------------------------------------------------------------------------------
+wagtailtables==0.2.2 # https://pypi.org/project/wagtailtables/
