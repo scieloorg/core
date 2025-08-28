@@ -1,7 +1,7 @@
 import logging
 import sys
 
-# from django.utils.translation import gettext as _
+# from django.utils.translation import gettext_lazy as _
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre, get_xml_with_pre
 
 from core.utils.profiling_tools import profile_method  # ajuste o import conforme sua estrutura

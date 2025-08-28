@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-23 23:14+0000\n"
+"POT-Creation-Date: 2025-08-27 15:18+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,276 +18,386 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: altmetric/choices.py:4 article/wagtail_hooks.py:48
+#: altmetric/choices.py:4 article/models.py:998 article/models.py:1360
+#: article/wagtail_hooks.py:47
+#, fuzzy
+#| msgid "Articles"
 msgid "Article"
-msgstr ""
+msgstr "Articles"
 
-#: altmetric/choices.py:5 article/models.py:51 core/users/forms.py:59
-#: core/users/forms.py:71 core/users/models.py:18 issue/models.py:32
-#: journal/models.py:816 journal/models.py:1733
+#: altmetric/choices.py:5 article/models.py:71 core/users/forms.py:133
+#: core/users/forms.py:151 core/users/models.py:18 issue/models.py:34
+#: journal/models.py:741 journal/models.py:1714 journal/wagtail_hooks.py:171
 msgid "Journal"
-msgstr ""
+msgstr "Journal"
 
-#: altmetric/models.py:10 journal/models.py:1751
+#: altmetric/models.py:10 journal/models.py:1732
 msgid "ISSN SciELO"
-msgstr ""
+msgstr "ISSN SciELO"
 
 #: altmetric/models.py:13
 msgid "Extraction Date"
-msgstr ""
+msgstr "Extraction Date"
 
 #: altmetric/models.py:16
 msgid "Resource Type"
-msgstr ""
+msgstr "Resource Type"
 
-#: altmetric/models.py:22 journal/models.py:2473 report/models.py:46
+#: altmetric/models.py:22 journal/models.py:2532 report/models.py:46
 msgid "JSON File"
-msgstr ""
+msgstr "JSON File"
 
 #: altmetric/wagtail_hooks.py:14
 msgid "Altmetric"
-msgstr ""
+msgstr "Altmetric"
 
-#: article/models.py:44
+#: article/choices.py:11
+msgid "public"
+msgstr "public"
+
+#: article/choices.py:12
+msgid "pending"
+msgstr "pending"
+
+#: article/choices.py:13
+msgid "moved"
+msgstr "moved"
+
+#: article/choices.py:14
+msgid "deleted"
+msgstr "deleted"
+
+#: article/choices.py:15 pid_provider/choices.py:17
+msgid "undefined"
+msgstr "undefined"
+
+#: article/models.py:55
+msgid "Data status"
+msgstr "Data status"
+
+#: article/models.py:62
 msgid "PID V2"
-msgstr ""
+msgstr "PID V2"
 
-#: article/models.py:45
+#: article/models.py:64
 msgid "PID V3"
-msgstr ""
+msgstr "PID V3"
 
-#: article/models.py:47 pid_provider/models.py:503
+#: article/models.py:67 pid_provider/models.py:499
 msgid "Package name"
-msgstr ""
+msgstr "Package name"
 
-#: article/models.py:58
+#: article/models.py:78
 msgid "pub date day"
-msgstr ""
+msgstr "pub date day"
 
-#: article/models.py:65
+#: article/models.py:85
 msgid "pub date month"
-msgstr ""
+msgstr "pub date month"
 
-#: article/models.py:75
+#: article/models.py:95
 msgid "Fundings"
-msgstr ""
+msgstr "Fundings"
 
-#: article/models.py:95 book/models.py:71 institution/wagtail_hooks.py:246
-#: journal/models.py:616
-msgid "Publisher"
-msgstr ""
-
-#: article/models.py:120
+#: article/models.py:136
 msgid "Abstract"
-msgstr ""
+msgstr "Abstract"
 
-#: article/models.py:136 book/models.py:139 pid_provider/models.py:575
+#: article/models.py:151 book/models.py:139 pid_provider/models.py:567
 msgid "Identification"
-msgstr ""
+msgstr "Identification"
 
-#: article/models.py:137
+#: article/models.py:152
 msgid "Data with language"
-msgstr ""
+msgstr "Data with language"
 
-#: article/models.py:138 researcher/wagtail_hooks.py:112
+#: article/models.py:153 researcher/wagtail_hooks.py:112
 msgid "Researchers"
-msgstr ""
+msgstr "Researchers"
 
-#: article/models.py:139
+#: article/models.py:154
 msgid "Publisher and Sponsors"
-msgstr ""
+msgstr "Publisher and Sponsors"
 
-#: article/models.py:298
+#: article/models.py:369
 msgid "Award ID"
-msgstr ""
+msgstr "Award ID"
 
-#: article/models.py:409 core/models.py:197
+#: article/models.py:484 core/models.py:201
 msgid "Text"
-msgstr ""
+msgstr "Text"
 
-#: article/models.py:500 article/models.py:576 collection/models.py:67
-#: core/models.py:70
+#: article/models.py:575 article/models.py:651 collection/models.py:67
+#: core/models.py:71 issue/models.py:446
 msgid "Code"
-msgstr ""
+msgstr "Code"
 
-#: article/models.py:614
+#: article/models.py:689
 msgid "Count"
-msgstr ""
+msgstr "Count"
 
-#: article/models.py:618 book/models.py:57 book/models.py:225
-#: core/models.py:146 core/models.py:201 core/models.py:218 core/models.py:262
-#: core/models.py:534 doi/models.py:18 thematic_areas/models.py:19
+#: article/models.py:693 book/models.py:57 book/models.py:225
+#: core/models.py:145 core/models.py:205 core/models.py:222 core/models.py:269
+#: core/models.py:553 doi/models.py:18 thematic_areas/models.py:19
 msgid "Language"
-msgstr ""
+msgstr "Language"
 
-#: article/models.py:673 article/models.py:695 article/wagtail_hooks.py:83
+#: article/models.py:748 article/models.py:770 article/wagtail_hooks.py:119
 msgid "Article Format"
-msgstr ""
+msgstr "Article Format"
 
-#: article/models.py:679 core/models.py:526 journal/models.py:943
+#: article/models.py:754 core/models.py:545 journal/models.py:920
 #: report/models.py:42
 msgid "File"
-msgstr ""
+msgstr "File"
 
-#: article/models.py:696
+#: article/models.py:771
 msgid "Article Formats"
-msgstr ""
+msgstr "Article Formats"
 
-#: article/tasks.py:44
-msgid "load_article"
-msgstr ""
+#: article/models.py:951 tracker/choices.py:28
+msgid "Pending"
+msgstr "Pending"
 
-#: article/tasks.py:77
-msgid "load_articles"
-msgstr ""
+#: article/models.py:952
+msgid "Processing"
+msgstr "Processing"
 
-#: article/tasks.py:119
-msgid "load_preprints"
-msgstr ""
+#: article/models.py:953
+msgid "Completed"
+msgstr "Completed"
 
-#: article/wagtail_hooks.py:27 collection/models.pl:101
-#: collection/wagtail_hooks.py:20 core/users/forms.py:60 core/users/forms.py:72
-#: core/users/models.py:19 journal/models.py:1725 journal/models.py:2460
+#: article/models.py:954
+msgid "Error"
+msgstr "Error"
+
+#: article/models.py:955
+msgid "Reprocess"
+msgstr "Reprocess"
+
+#: article/models.py:958 article/models.py:962
+msgid "Article URL"
+msgstr "Article URL"
+
+#: article/models.py:965
+msgid "Article file"
+msgstr "Article file"
+
+#: article/models.py:969
+msgid "Upload article file"
+msgstr "Upload article file"
+
+#: article/models.py:972
+msgid "Source date"
+msgstr "Source date"
+
+#: article/models.py:976
+msgid "Date of data collection or original data date"
+msgstr "Date of data collection or original data date"
+
+#: article/models.py:979 collection/models.py:71 doi/models.py:80
+#: journal/models.py:1735
+msgid "Status"
+msgstr "Status"
+
+#: article/models.py:983
+msgid "Processing status of the article source"
+msgstr "Processing status of the article source"
+
+#: article/models.py:990
+msgid "PID Provider XML"
+msgstr "PID Provider XML"
+
+#: article/models.py:991
+msgid "Related PID Provider XML instance"
+msgstr "Related PID Provider XML instance"
+
+#: article/models.py:999
+msgid "Related Article instance"
+msgstr "Related Article instance"
+
+#: article/models.py:1029
+msgid "Article Source"
+msgstr "Article Source"
+
+#: article/models.py:1030 article/wagtail_hooks.py:217
+msgid "Article Sources"
+msgstr "Article Sources"
+
+#: article/models.py:1250
+msgid "URL is required"
+msgstr "URL is required"
+
+#: article/models.py:1369 issue/models.py:290 journal/models.py:1847
+msgid "Export Type"
+msgstr "Export Type"
+
+#: article/models.py:1377 article/wagtail_hooks.py:26 collection/models.py:101
+#: collection/wagtail_hooks.py:20 core/users/forms.py:139
+#: core/users/forms.py:157 core/users/models.py:19 issue/models.py:298
+#: journal/models.py:1706 journal/models.py:1855 journal/models.py:2519
 msgid "Collection"
-msgstr ""
+msgstr "Collection"
 
-#: article/wagtail_hooks.py:116
+#: article/tasks.py:136 article/tasks__.py:162
+msgid "load_preprints"
+msgstr "load_preprints"
+
+#: article/tasks__.py:95
+msgid "load_article"
+msgstr "load_article"
+
+#: article/tasks__.py:115
+msgid "load_articles"
+msgstr "load_articles"
+
+#: article/wagtail_hooks.py:83
+msgid "Article Export"
+msgstr "Article Export"
+
+#: article/wagtail_hooks.py:152
 msgid "Article Funding"
-msgstr ""
+msgstr "Article Funding"
 
-#: article/wagtail_hooks.py:133
+#: article/wagtail_hooks.py:169
 msgid "Articles"
-msgstr ""
+msgstr "Articles"
 
 #: bigbang/utils/scheduler.py:51 core/utils/scheduler.py:61
 msgid "Scheduled task: {}"
-msgstr ""
+msgstr "Scheduled task: {}"
 
-#: book/models.py:45 book/models.py:219 journal/models.py:2520
+#: book/models.py:45 book/models.py:219 journal/models.py:2579
 #: report/models.py:34
 msgid "Title"
-msgstr ""
+msgstr "Title"
 
 #: book/models.py:46
 msgid "Synopsis"
-msgstr ""
+msgstr "Synopsis"
 
 #: book/models.py:48
 msgid "Electronic ISBN"
-msgstr ""
+msgstr "Electronic ISBN"
 
-#: book/models.py:50 core/models.py:279
+#: book/models.py:50 core/models.py:290
 msgid "Year"
-msgstr ""
+msgstr "Year"
 
 #: book/models.py:53
 msgid "Authors"
-msgstr ""
+msgstr "Authors"
 
 #: book/models.py:64
 msgid "Localization"
-msgstr ""
+msgstr "Localization"
+
+#: book/models.py:71
+#: core/templates/home/include/list_journal_page/journals_table_by_publisher.html:11
+#: institution/wagtail_hooks.py:246 journal/models.py:659 journal/proxys.py:31
+msgid "Publisher"
+msgstr "Publisher"
 
 #: book/models.py:78
 msgid "SciELO Book"
-msgstr ""
+msgstr "SciELO Book"
 
 #: book/models.py:79
 msgid "SciELO Books"
-msgstr ""
+msgstr "SciELO Books"
 
 #: book/models.py:134 book/models.py:238
 msgid "Chapter"
-msgstr ""
+msgstr "Chapter"
 
 #: book/models.py:140 book/models.py:239
 msgid "Chapters"
-msgstr ""
+msgstr "Chapters"
 
 #: book/models.py:221
 msgid "Data de publicação"
 msgstr "Publication date"
 
 #: book/wagtail_hooks.py:23 book/wagtail_hooks.py:46 collection/choices.py:14
+#: core/templates/home/scieloorg/tabs.html:100
 msgid "Books"
-msgstr ""
+msgstr "Books"
 
 #: collection/choices.py:4
 msgid "Certified"
-msgstr ""
+msgstr "Certified"
 
 #: collection/choices.py:5
 msgid "Development"
-msgstr ""
+msgstr "Development"
 
 #: collection/choices.py:6
 msgid "Diffusion"
-msgstr ""
+msgstr "Diffusion"
 
 #: collection/choices.py:7
 msgid "Independent"
-msgstr ""
+msgstr "Independent"
 
-#: collection/choices.py:11 journal/models.py:817 journal/wagtail_hooks.py:93
-#: journal/wagtail_hooks.py:170
+#: collection/choices.py:11
+#: core/templates/home/include/list_journal_page/journals_table_by_publisher.html:12
+#: core/templates/home/scieloorg/tabs.html:29
+#: core/templates/home/scieloorg/tabs.html:47 journal/models.py:742
+#: journal/wagtail_hooks.py:159 journal/wagtail_hooks.py:249
 msgid "Journals"
-msgstr ""
+msgstr "Journals"
 
 #: collection/choices.py:12
 msgid "Preprints"
-msgstr ""
+msgstr "Preprints"
 
 #: collection/choices.py:13
 msgid "Repositories"
-msgstr ""
+msgstr "Repositories"
 
 #: collection/choices.py:15
 msgid "Data repository"
-msgstr ""
+msgstr "Data repository"
 
 #: collection/models.py:62
 msgid "Acronym with 3 chars"
-msgstr ""
+msgstr "Acronym with 3 chars"
 
 #: collection/models.py:65
 msgid "Acronym with 2 chars"
-msgstr ""
+msgstr "Acronym with 2 chars"
 
 #: collection/models.py:68
 msgid "Domain"
-msgstr ""
+msgstr "Domain"
 
 #: collection/models.py:69
 msgid "Main name"
-msgstr ""
-
-#: collection/models.py:71 doi/models.py:80 journal/models.py:1754
-msgid "Status"
-msgstr ""
+msgstr "Main name"
 
 #: collection/models.py:73
 msgid "Has analytics"
-msgstr ""
+msgstr "Has analytics"
 
 #: collection/models.py:76
 msgid "Collection Type"
-msgstr ""
+msgstr "Collection Type"
 
 #: collection/models.py:78
 msgid "Is active"
-msgstr ""
+msgstr "Is active"
 
 #: collection/models.py:79
 msgid "Foundation data"
-msgstr ""
+msgstr "Foundation data"
 
 #: collection/models.py:91
 msgid "Translated names"
-msgstr ""
+msgstr "Translated names"
 
-#: collection/models.py:102
+#: collection/models.py:102 core/templates/home/scieloorg/tabs.html:24
 msgid "Collections"
-msgstr ""
+msgstr "Collections"
 
 #: core/choices.py:192
 msgid "Editor-Chefe"
@@ -307,141 +417,142 @@ msgstr "Technical Team"
 
 #: core/choices.py:199
 msgid "January"
-msgstr ""
+msgstr "January"
 
 #: core/choices.py:200
 msgid "February"
-msgstr ""
+msgstr "February"
 
 #: core/choices.py:201
 msgid "March"
-msgstr ""
+msgstr "March"
 
 #: core/choices.py:202
 msgid "April"
-msgstr ""
+msgstr "April"
 
 #: core/choices.py:203
 msgid "May"
-msgstr ""
+msgstr "May"
 
 #: core/choices.py:204
 msgid "June"
-msgstr ""
+msgstr "June"
 
 #: core/choices.py:205
 msgid "July"
-msgstr ""
+msgstr "July"
 
 #: core/choices.py:206
 msgid "August"
-msgstr ""
+msgstr "August"
 
 #: core/choices.py:207
 msgid "September"
-msgstr ""
+msgstr "September"
 
 #: core/choices.py:208
 msgid "October"
-msgstr ""
+msgstr "October"
 
 #: core/choices.py:209
 msgid "November"
-msgstr ""
+msgstr "November"
 
 #: core/choices.py:210
 msgid "December"
-msgstr ""
+msgstr "December"
 
 #: core/choices.py:216
 msgid "by"
-msgstr ""
+msgstr "by"
 
 #: core/choices.py:217
 msgid "by-sa"
-msgstr ""
+msgstr "by-sa"
 
 #: core/choices.py:218
 msgid "by-nc"
-msgstr ""
+msgstr "by-nc"
 
 #: core/choices.py:219
 msgid "by-nc-sa"
-msgstr ""
+msgstr "by-nc-sa"
 
 #: core/choices.py:220
 msgid "by-nd"
-msgstr ""
+msgstr "by-nd"
 
 #: core/choices.py:221
 msgid "by-nc-nd"
-msgstr ""
+msgstr "by-nc-nd"
 
 #: core/choices.py:225
 msgid "Male"
-msgstr ""
+msgstr "Male"
 
 #: core/choices.py:226
 msgid "Female"
-msgstr ""
+msgstr "Female"
 
-#: core/models.py:32 tracker/models.py:51 tracker/models.py:250
+#: core/models.py:33 tracker/models.py:51 tracker/models.py:79
+#: tracker/models.py:166
 msgid "Creation date"
-msgstr ""
+msgstr "Creation date"
 
-#: core/models.py:35
+#: core/models.py:36
 msgid "Last update date"
-msgstr ""
+msgstr "Last update date"
 
-#: core/models.py:40
+#: core/models.py:41
 msgid "Creator"
-msgstr ""
+msgstr "Creator"
 
-#: core/models.py:50
+#: core/models.py:51
 msgid "Updater"
-msgstr ""
+msgstr "Updater"
 
-#: core/models.py:72
+#: core/models.py:73
 msgid "Sex"
-msgstr ""
+msgstr "Sex"
+
+#: core/models.py:136
+msgid "Language Name"
+msgstr "Language Name"
 
 #: core/models.py:137
-msgid "Language Name"
-msgstr ""
-
-#: core/models.py:138
 msgid "Language code 2"
-msgstr ""
+msgstr "Language code 2"
 
-#: core/models.py:147
+#: core/models.py:146
 msgid "Languages"
-msgstr ""
+msgstr "Languages"
 
-#: core/models.py:213 core/models.py:258 journal/models.py:1577
+#: core/models.py:217 core/models.py:265 journal/models.py:1554
 #: vocabulary/models.py:104
 msgid "Rich Text"
-msgstr ""
+msgstr "Rich Text"
 
-#: core/models.py:214
+#: core/models.py:218
 msgid "Plain Text"
-msgstr ""
+msgstr "Plain Text"
 
-#: core/models.py:280
+#: core/models.py:291
 msgid "Month"
-msgstr ""
+msgstr "Month"
 
-#: core/models.py:281
+#: core/models.py:292
 msgid "Day"
-msgstr ""
+msgstr "Day"
 
-#: core/models.py:312 core/models.py:393 issue/models.py:91
-#: journal/models.py:2757
+#: core/models.py:323 core/models.py:411 issue/models.py:106
+#: journal/models.py:2817
 msgid "License"
-msgstr ""
+msgstr "License"
 
-#: core/models.py:313 core/models.py:394 journal/models.py:2758
+#: core/models.py:324 core/models.py:412 journal/models.py:2818
 msgid "Licenses"
-msgstr ""
+msgstr "Licenses"
 
 #: core/templates/503.html:27
 msgid "Site em manutenção"
@@ -454,76 +565,78 @@ msgstr "For any questions, please contact the administrator."
 #: core/templates/account/account_inactive.html:5
 #: core/templates/account/account_inactive.html:8
 msgid "Account Inactive"
-msgstr ""
+msgstr "Account Inactive"
 
 #: core/templates/account/account_inactive.html:10
 msgid "This account is inactive."
-msgstr ""
+msgstr "This account is inactive"
 
 #: core/templates/account/email.html:7
 #: core/users/templates/wagtailusers/users/create.html:12
 #: core/users/templates/wagtailusers/users/edit.html:12
 msgid "Account"
-msgstr ""
+msgstr "Account"
 
 #: core/templates/account/email.html:10
 msgid "E-mail Addresses"
-msgstr ""
+msgstr "E-mail Addresses"
 
 #: core/templates/account/email.html:13
 msgid "The following e-mail addresses are associated with your account:"
-msgstr ""
+msgstr "The following e-mail addresses are associated with your account:"
 
 #: core/templates/account/email.html:27
 msgid "Verified"
-msgstr ""
+msgstr "Verified"
 
 #: core/templates/account/email.html:29
 msgid "Unverified"
-msgstr ""
+msgstr "Unverified"
 
 #: core/templates/account/email.html:31
 msgid "Primary"
-msgstr ""
+msgstr "Primary"
 
 #: core/templates/account/email.html:37
 msgid "Make Primary"
-msgstr ""
+msgstr "Make Primary"
 
 #: core/templates/account/email.html:38
 msgid "Re-send Verification"
-msgstr ""
+msgstr "Re-send Verification"
 
 #: core/templates/account/email.html:39
 msgid "Remove"
-msgstr ""
+msgstr "Remove"
 
 #: core/templates/account/email.html:46
 msgid "Warning:"
-msgstr ""
+msgstr "Warning:"
 
 #: core/templates/account/email.html:46
 msgid ""
 "You currently do not have any e-mail address set up. You should really add "
 "an e-mail address so you can receive notifications, reset your password, etc."
 msgstr ""
+"You currently do not have any e-mail address set up. You should really add "
+"an e-mail address so you can receive notifications, reset your password, etc."
 
 #: core/templates/account/email.html:51
 msgid "Add E-mail Address"
-msgstr ""
+msgstr "Add E-mail Address"
 
 #: core/templates/account/email.html:56
 msgid "Add E-mail"
-msgstr ""
+msgstr "Add E-mail"
 
 #: core/templates/account/email.html:66
 msgid "Do you really want to remove the selected e-mail address?"
-msgstr ""
+msgstr "Do you really want to remove the selected e-mail address?"
 
 #: core/templates/account/email_confirm.html:6
 #: core/templates/account/email_confirm.html:10
 msgid "Confirm E-mail Address"
-msgstr ""
+msgstr "Confirm E-mail Address"
 
 #: core/templates/account/email_confirm.html:16
 #, python-format
@@ -531,10 +644,12 @@ msgid ""
 "Please confirm that <a href=\"mailto:%(email)s\">%(email)s</a> is an e-mail "
 "address for user %(user_display)s."
 msgstr ""
+"Please confirm that <a href=\"mailto:%(email)s\">%(email)s</a> is an e-mail "
+"address for user %(user_display)s."
 
 #: core/templates/account/email_confirm.html:20
 msgid "Confirm"
-msgstr ""
+msgstr "Confirm"
 
 #: core/templates/account/email_confirm.html:27
 #, python-format
@@ -542,15 +657,17 @@ msgid ""
 "This e-mail confirmation link expired or is invalid. Please <a href="
 "\"%(email_url)s\">issue a new e-mail confirmation request</a>."
 msgstr ""
+"This e-mail confirmation link expired or is invalid. Please <a href="
+"\"%(email_url)s\">issue a new e-mail confirmation request</a>."
 
 #: core/templates/account/login.html:7 core/templates/account/login.html:11
 #: core/templates/account/login.html:56
 msgid "Sign In"
-msgstr ""
+msgstr "Sign In"
 
 #: core/templates/account/login.html:17
 msgid "Please sign in with one of your existing third party accounts:"
-msgstr ""
+msgstr "Please sign in with one of your existing third party accounts:"
 
 #: core/templates/account/login.html:19
 #, python-format
@@ -558,10 +675,12 @@ msgid ""
 "Or, <a href=\"%(signup_url)s\">sign up</a> for a %(site_name)s account and "
 "sign in below:"
 msgstr ""
+"Or, <a href=\"%(signup_url)s\">sign up</a> for a %(site_name)s account and "
+"sign in below:"
 
 #: core/templates/account/login.html:32
 msgid "or"
-msgstr ""
+msgstr "or"
 
 #: core/templates/account/login.html:41
 #, python-format
@@ -569,19 +688,21 @@ msgid ""
 "If you have not created an account yet, then please <a href=\"%(signup_url)s"
 "\">sign up</a> first."
 msgstr ""
+"If you have not created an account yet, then please <a href=\"%(signup_url)s"
+"\">sign up</a> first."
 
 #: core/templates/account/login.html:55
 msgid "Forgot Password?"
-msgstr ""
+msgstr "Forgot Password?"
 
 #: core/templates/account/logout.html:5 core/templates/account/logout.html:8
 #: core/templates/account/logout.html:17
 msgid "Sign Out"
-msgstr ""
+msgstr "Sign Out"
 
 #: core/templates/account/logout.html:10
 msgid "Are you sure you want to sign out?"
-msgstr ""
+msgstr "Are you sure you want to sign out?"
 
 #: core/templates/account/password_change.html:6
 #: core/templates/account/password_change.html:9
@@ -591,91 +712,99 @@ msgstr ""
 #: core/templates/account/password_reset_from_key_done.html:4
 #: core/templates/account/password_reset_from_key_done.html:7
 msgid "Change Password"
-msgstr ""
+msgstr "Change Password"
 
 #: core/templates/account/password_reset.html:7
 #: core/templates/account/password_reset.html:11
 #: core/templates/account/password_reset_done.html:6
 #: core/templates/account/password_reset_done.html:9
 msgid "Password Reset"
-msgstr ""
+msgstr "Password Reset"
 
 #: core/templates/account/password_reset.html:16
 msgid ""
 "Forgotten your password? Enter your e-mail address below, and we'll send you "
 "an e-mail allowing you to reset it."
 msgstr ""
+"Forgotten your password? Enter your e-mail address below, and we'll send you "
+"an e-mail allowing you to reset it."
 
 #: core/templates/account/password_reset.html:21
 msgid "Reset My Password"
-msgstr ""
+msgstr "Reset My Password"
 
 #: core/templates/account/password_reset.html:24
 msgid "Please contact us if you have any trouble resetting your password."
-msgstr ""
+msgstr "Please contact us if you have any trouble resetting your password."
 
 #: core/templates/account/password_reset_done.html:15
 msgid ""
 "We have sent you an e-mail. Please contact us if you do not receive it "
 "within a few minutes."
 msgstr ""
+"We have sent you an e-mail. Please contact us if you do not receive it "
+"within a few minutes."
 
 #: core/templates/account/password_reset_from_key.html:8
 msgid "Bad Token"
-msgstr ""
+msgstr "Bad Token"
 
 #: core/templates/account/password_reset_from_key.html:12
 #, python-format
 msgid ""
 "The password reset link was invalid, possibly because it has already been "
-"used. Please request a <a href=\"%(passwd_reset_url)s\">new password reset</"
+"used.  Please request a <a href=\"%(passwd_reset_url)s\">new password reset</"
 "a>."
 msgstr ""
+"The password reset link was invalid, possibly because it has already been "
+"used. Please request a <a href=\"%(passwd_reset_url)s\">new password reset</"
+"a>."
 
 #: core/templates/account/password_reset_from_key.html:18
 msgid "change password"
-msgstr ""
+msgstr "change password"
 
 #: core/templates/account/password_reset_from_key.html:21
 #: core/templates/account/password_reset_from_key_done.html:8
 msgid "Your password is now changed."
-msgstr ""
+msgstr "Your password is now changed."
 
 #: core/templates/account/password_set.html:6
 #: core/templates/account/password_set.html:9
 #: core/templates/account/password_set.html:14
 msgid "Set Password"
-msgstr ""
+msgstr "Set Password"
 
 #: core/templates/account/signup.html:6
 msgid "Signup"
-msgstr ""
+msgstr "Signup"
 
 #: core/templates/account/signup.html:9 core/templates/account/signup.html:19
 msgid "Sign Up"
-msgstr ""
+msgstr "Sign Up"
 
 #: core/templates/account/signup.html:11
 #, python-format
 msgid ""
 "Already have an account? Then please <a href=\"%(login_url)s\">sign in</a>."
 msgstr ""
+"Already have an account? Then please <a href=\"%(login_url)s\">sign in</a>."
 
 #: core/templates/account/signup_closed.html:5
 #: core/templates/account/signup_closed.html:8
 msgid "Sign Up Closed"
-msgstr ""
+msgstr "Sign Up Closed"
 
 #: core/templates/account/signup_closed.html:10
 msgid "We are sorry, but the sign up is currently closed."
-msgstr ""
+msgstr "We are sorry, but the sign up is currently closed."
 
 #: core/templates/account/verification_sent.html:5
 #: core/templates/account/verification_sent.html:8
 #: core/templates/account/verified_email_required.html:5
 #: core/templates/account/verified_email_required.html:8
 msgid "Verify Your E-mail Address"
-msgstr ""
+msgstr "Verify Your E-mail Address"
 
 #: core/templates/account/verification_sent.html:10
 msgid ""
@@ -683,6 +812,9 @@ msgid ""
 "finalize the signup process. Please contact us if you do not receive it "
 "within a few minutes."
 msgstr ""
+"We have sent an e-mail to you for verification. Follow the link provided to "
+"finalize the signup process. Please contact us if you do not receive it "
+"within a few minutes."
 
 #: core/templates/account/verified_email_required.html:12
 msgid ""
@@ -690,6 +822,9 @@ msgid ""
 "you are who you claim to be. For this purpose, we require that you\n"
 "verify ownership of your e-mail address. "
 msgstr ""
+"This part of the site requires us to verify that\n"
+"you are who you claim to be. For this purpose, we require that you\n"
+"verify ownership of your e-mail address."
 
 #: core/templates/account/verified_email_required.html:16
 msgid ""
@@ -697,6 +832,9 @@ msgid ""
 "verification. Please click on the link inside this e-mail. Please\n"
 "contact us if you do not receive it within a few minutes."
 msgstr ""
+"We have sent an e-mail to you for\n"
+"verification. Please click on the link inside this e-mail. Please\n"
+"contact us if you do not receive it within a few minutes."
 
 #: core/templates/account/verified_email_required.html:20
 #, python-format
@@ -704,15 +842,107 @@ msgid ""
 "<strong>Note:</strong> you can still <a href=\"%(email_url)s\">change your e-"
 "mail address</a>."
 msgstr ""
+"<strong>Note:</strong> you can still <a href=\"%(email_url)s\">change your e-"
+"mail address</a>."
+
+#: core/templates/home/home_page.html:18
+#: core/templates/home/scieloorg/header.html:10
+msgid "About SciELO"
+msgstr "About SciELO"
+
+#: core/templates/home/home_page.html:44
+msgid "Scientific Electronic Library Online"
+msgstr "Scientific Electronic Library Online"
+
+#: core/templates/home/include/home_scielo_in_pespectiva.html:51
+#: core/templates/home/include/home_scielo_youtube.html:67
+msgid "Continue lendo"
+msgstr "Continue reading"
+
+#: core/templates/home/include/list_journal_page/breadcrumb.html:9
+msgid "Home"
+msgstr "Home"
+
+#: core/templates/home/include/list_journal_page/breadcrumb.html:11
+#: core/templates/home/include/list_journal_page/journals_table.html:11
+#: journalpage/templates/journalpage/about.html:79
+#: journalpage/templates/journalpage/next_journal.html:76
+msgid "Periódicos"
+msgstr "Journals"
+
+#: core/templates/home/include/list_journal_page/journals_table.html:11
+msgid "total"
+msgstr "total"
+
+#: core/templates/home/include/list_journal_page/journals_table.html:42
+msgid "Conteúdo Ativos"
+msgstr "Active Content"
+
+#: core/templates/home/include/list_journal_page/journals_table.html:49
+msgid "Conteúdo Descontinuados"
+msgstr "Discontinued Content"
+
+#: core/templates/home/include/list_journal_page/journals_tabs.html:7
+#: journalpage/templates/journalpage/includes/levelMenu.html:61
+msgid "Todos"
+msgstr "All"
+
+#: core/templates/home/include/list_journal_page/journals_tabs.html:12
+msgid "Ativos"
+msgstr "Active"
+
+#: core/templates/home/include/list_journal_page/journals_tabs.html:17
+msgid "Descontinuados"
+msgstr "Discontinued"
+
+#: core/templates/home/scieloorg/tabs.html:64
+msgid "In development"
+msgstr "In development"
+
+#: core/templates/home/scieloorg/tabs.html:82
+msgid "Servers and Repositories"
+msgstr "Servers and Repositories"
+
+#: core/templates/home/scieloorg/tabs.html:117
+msgid "Others"
+msgstr "Others"
+
+#: core/templates/home/scieloorg/tabs.html:157
+msgid "Search journals"
+msgstr "Search journals"
+
+#: core/templates/home/scieloorg/tabs.html:169
+msgid "List of journals"
+msgstr "List of journals"
+
+#: core/templates/home/scieloorg/tabs.html:174
+msgid "In alphabetical order"
+msgstr "In alphabetical order"
+
+#: core/templates/home/scieloorg/tabs.html:182
+msgid "Of publisher"
+msgstr "Of publisher"
+
+#: core/templates/home/scieloorg/tabs.html:191
+msgid "List of journals by subject"
+msgstr "List of journals by subject"
+
+#: core/templates/home/scieloorg/tabs.html:198
+msgid "All"
+msgstr "All"
+
+#: core/templates/home/scieloorg/tabs.html:232
+msgid "SciELO in Perspective"
+msgstr "SciELO in Perspective"
 
 #: core/templates/home/welcome_page.html:53
 #: core/templates/home/welcome_page.html:56
 msgid "View the release notes"
-msgstr ""
+msgstr "View the release notes"
 
 #: core/templates/home/welcome_page.html:68
 msgid "Welcome to your SciELO Content Manager"
-msgstr ""
+msgstr "Welcome to your SciELO Content Manager"
 
 #: core/templates/home/welcome_page.html:69
 msgid ""
@@ -720,43 +950,46 @@ msgid ""
 "\">join our community on Slack</a>, or get started with one of the links "
 "below."
 msgstr ""
+"Please feel free to <a href=\"https://github.com/wagtail/wagtail/wiki/Slack"
+"\">join our community on Slack</a>, or get started with one of the links "
+"below."
 
 #: core/templates/home/welcome_page.html:77
 msgid "Wagtail Documentation"
-msgstr ""
+msgstr "Wagtail Documentation"
 
 #: core/templates/home/welcome_page.html:78
 msgid "Topics, references, & how-tos"
-msgstr ""
+msgstr "Topics, references, & how-tos"
 
 #: core/templates/home/welcome_page.html:85
 msgid "Tutorial"
-msgstr ""
+msgstr "Tutorial"
 
 #: core/templates/home/welcome_page.html:86
 msgid "Build your first Wagtail site"
-msgstr ""
+msgstr "Build your first Wagtail site"
 
 #: core/templates/home/welcome_page.html:93
 msgid "Admin Interface"
-msgstr ""
+msgstr "Admin Interface"
 
 #: core/templates/home/welcome_page.html:94
 msgid "Create your superuser first!"
-msgstr ""
+msgstr "Create your superuser first!"
 
 #: core/templates/modeladmin/edit.html:9
 #, python-format
 msgid "Back to %(model_name)s list"
-msgstr ""
+msgstr "Back to %(model_name)s list"
 
 #: core/templates/wagtailadmin/home.html:7
 msgid "Welcome to the administrative area of "
-msgstr ""
+msgstr "Welcome to the administrative area of "
 
 #: core/templates/wagtailadmin/login.html:7
 msgid "Administrative area of "
-msgstr ""
+msgstr "Administrative area of "
 
 #: core/templates/wagtailadmin/summary_items/article_summary_item.html:6
 #, python-format
@@ -781,22 +1014,44 @@ msgstr[1] "<span>%(total_journal)s</span> Journals"
 
 #: core/users/admin.py:17
 msgid "Personal info"
-msgstr ""
+msgstr "Personal info"
 
 #: core/users/admin.py:19
 msgid "Permissions"
-msgstr ""
+msgstr "Permissions"
 
 #: core/users/admin.py:30
 msgid "Important dates"
-msgstr ""
+msgstr "Important dates"
 
 #: core/users/apps.py:8
 msgid "Users"
+msgstr "Users"
+
+#: core/users/forms.py:33 core/users/tests/test_forms.py:39
+msgid "This username has already been taken."
+msgstr "This username has already been taken."
+
+#: core/users/forms.py:94
+msgid ""
+"You cannot select both 'Collection Team' and 'Journal Team'. Please select "
+"only one."
 msgstr ""
 
-#: core/users/forms.py:31 core/users/tests/test_forms.py:39
-msgid "This username has already been taken."
+#: core/users/forms.py:108
+msgid "Please select at least one journal."
+msgstr ""
+
+#: core/users/forms.py:109
+msgid "Selected journals do not belong to the selected collections."
+msgstr ""
+
+#: core/users/forms.py:134 core/users/forms.py:152
+msgid "Select journals this user can access."
+msgstr ""
+
+#: core/users/forms.py:140 core/users/forms.py:158
+msgid "Select collections this user can access."
 msgstr ""
 
 #: core/users/models.py:15
@@ -804,7 +1059,7 @@ msgid "Name of User"
 msgstr ""
 
 #: core/users/templates/wagtailusers/users/create.html:6
-#: core/users/templates/wagtailusers/users/create.html:84
+#: core/users/templates/wagtailusers/users/create.html:82
 msgid "Add user"
 msgstr ""
 
@@ -860,15 +1115,15 @@ msgstr "Invalid file. Please upload a CSV file."
 msgid "O arquivo enviado não é um CSV válido."
 msgstr "The uploaded file is not a valid CSV."
 
-#: core_settings/views.py:44
+#: core_settings/views.py:47
 msgid "Usuário sem permissão para esta funcionalidade."
 msgstr "User has no permission for this functionality."
 
-#: core_settings/views.py:78
+#: core_settings/views.py:81
 msgid "CSV importado com sucesso! Realizando importação..."
 msgstr "CSV imported successfully! Performing import..."
 
-#: core_settings/views.py:81
+#: core_settings/views.py:84
 msgid "Requisição inválida."
 msgstr "Invalid request."
 
@@ -956,23 +1211,24 @@ msgstr ""
 msgid "Upload a profile photo of the editorial board member."
 msgstr ""
 
-#: editorialboard/models.py:46 editorialboard/models.py:236
+#: editorialboard/models.py:52 editorialboard/models.py:253
+#: editorialboard/wagtail_hooks.py:38
 msgid "Role"
 msgstr ""
 
-#: editorialboard/models.py:223 institution/models.py:650
-#: journal/models.py:2214 location/models.py:661 thematic_areas/models.py:97
+#: editorialboard/models.py:240 institution/models.py:693
+#: journal/models.py:2276 location/models.py:661 thematic_areas/models.py:97
 #: thematic_areas/models.py:223
 msgid "Is valid?"
 msgstr ""
 
-#: editorialboard/models.py:225 institution/models.py:652
-#: journal/models.py:2216 location/models.py:663 thematic_areas/models.py:103
+#: editorialboard/models.py:242 institution/models.py:695
+#: journal/models.py:2278 location/models.py:663 thematic_areas/models.py:103
 #: thematic_areas/models.py:225
 msgid "Number of lines"
 msgstr ""
 
-#: editorialboard/models.py:239
+#: editorialboard/models.py:256
 msgid "Declared Role"
 msgstr ""
 
@@ -997,17 +1253,21 @@ msgstr ""
 msgid "Import error: %s, Line: %s. Exception: %s"
 msgstr ""
 
-#: editorialboard/views.py:132 institution/views.py:72 journal/views.py:86
+#: editorialboard/views.py:132 institution/views.py:72 journal/views.py:90
 #: location/views.py:73 thematic_areas/views.py:98 thematic_areas/views.py:195
 msgid "File imported successfully!"
 msgstr ""
 
-#: editorialboard/wagtail_hooks.py:20
+#: editorialboard/wagtail_hooks.py:22
 msgid "Editorial Board Member"
 msgstr ""
 
-#: editorialboard/wagtail_hooks.py:37
-msgid "RoleModel"
+#: editorialboard/wagtail_hooks.py:44
+msgid "Editorial Board Roles"
+msgstr ""
+
+#: editorialboard/wagtail_hooks.py:55 journal/proxys.py:276
+msgid "Editorial Board"
 msgstr ""
 
 #: files_storage/controller.py:29 files_storage/controller.py:50
@@ -1022,8 +1282,8 @@ msgstr ""
 msgid "Unable to push xml content {} {} {} {}"
 msgstr ""
 
-#: files_storage/models.py:14 institution/models.py:662 journal/models.py:287
-#: journal/models.py:1599 journal/models.py:2119 journal/models.py:2226
+#: files_storage/models.py:14 institution/models.py:705 journal/models.py:304
+#: journal/models.py:1580 journal/models.py:2181 journal/models.py:2288
 #: organization/models.py:25
 msgid "Name"
 msgstr ""
@@ -1102,7 +1362,7 @@ msgstr ""
 
 #: institution/choices.py:26
 msgid "unknow"
-msgstr ""
+msgstr "unknown"
 
 #: institution/models.py:27 organization/models.py:141
 msgid "Institution Type (MEC)"
@@ -1124,7 +1384,8 @@ msgstr ""
 msgid "Organization Level 3"
 msgstr ""
 
-#: institution/models.py:43 journal/models.py:630 organization/models.py:139
+#: institution/models.py:43 journal/models.py:673 journal/proxys.py:45
+#: organization/models.py:139
 msgid "Logo"
 msgstr ""
 
@@ -1136,33 +1397,33 @@ msgstr ""
 msgid "Final Date"
 msgstr ""
 
-#: institution/models.py:372 institution/models.py:571
+#: institution/models.py:372 institution/models.py:614
 #: institution/wagtail_hooks.py:73
 msgid "Institution"
 msgstr ""
 
-#: institution/models.py:579 location/models.py:365 location/models.py:504
+#: institution/models.py:622 location/models.py:365 location/models.py:504
 #: location/wagtail_hooks.py:95
 msgid "Country"
 msgstr ""
 
-#: institution/models.py:663 organization/models.py:26
+#: institution/models.py:706 organization/models.py:26
 msgid "Institution Acronym"
 msgstr ""
 
-#: institution/models.py:665 organization/models.py:154
+#: institution/models.py:708 organization/models.py:154
 msgid "Is official"
 msgstr ""
 
-#: institution/models.py:671
+#: institution/models.py:714
 msgid "Official name"
 msgstr ""
 
-#: institution/models.py:833 organization/models.py:309
+#: institution/models.py:876 organization/models.py:309
 msgid "Institution Type"
 msgstr ""
 
-#: institution/views.py:70 journal/views.py:84 location/views.py:71
+#: institution/views.py:70 journal/views.py:86 location/views.py:71
 #: thematic_areas/views.py:96 thematic_areas/views.py:193
 #, python-format
 msgid "Import error: %(exception)s, Line: %(line)s"
@@ -1172,7 +1433,7 @@ msgstr ""
 msgid "InstitutionIdentification"
 msgstr ""
 
-#: institution/wagtail_hooks.py:115 journal/models.py:617
+#: institution/wagtail_hooks.py:115 journal/models.py:660 journal/proxys.py:32
 msgid "Sponsor"
 msgstr ""
 
@@ -1180,7 +1441,7 @@ msgstr ""
 msgid "Scimago"
 msgstr ""
 
-#: institution/wagtail_hooks.py:190 journal/models.py:615
+#: institution/wagtail_hooks.py:190 journal/models.py:658 journal/proxys.py:30
 msgid "Owner"
 msgstr ""
 
@@ -1188,73 +1449,88 @@ msgstr ""
 msgid "Copyrightholder"
 msgstr ""
 
-#: institution/wagtail_hooks.py:271 journal/models.py:800
+#: institution/wagtail_hooks.py:271 journal/models.py:730 journal/proxys.py:199
 msgid "Institutions"
 msgstr ""
 
-#: issue/models.py:40
+#: issue/models.py:43
 msgid "Issue number"
 msgstr ""
 
-#: issue/models.py:41
+#: issue/models.py:44
 msgid "Issue volume"
 msgstr ""
 
-#: issue/models.py:43
+#: issue/models.py:46
 msgid "Issue season"
 msgstr ""
 
-#: issue/models.py:49
+#: issue/models.py:52
 msgid "Issue year"
 msgstr ""
 
-#: issue/models.py:50
+#: issue/models.py:53
 msgid "Issue month"
 msgstr ""
 
-#: issue/models.py:51
+#: issue/models.py:54
 msgid "Supplement"
 msgstr ""
 
-#: issue/models.py:70
+#: issue/models.py:55
+msgid "Markup done"
+msgstr ""
+
+#: issue/models.py:60
+msgid ""
+"This number controls the order issues appear for a specific year on the "
+"website grid"
+msgstr ""
+
+#: issue/models.py:85
 msgid "Issue title"
 msgstr ""
 
-#: issue/models.py:87 issue/models.py:96
+#: issue/models.py:102 issue/models.py:111 issue/models.py:283
 msgid "Issue"
 msgstr ""
 
-#: issue/models.py:88 journal/models.py:146 journal/models.py:798
+#: issue/models.py:103 journal/models.py:163 journal/models.py:728
+#: journal/proxys.py:197
 msgid "Titles"
 msgstr ""
 
-#: issue/models.py:89 journal/models.py:536
+#: issue/models.py:104 journal/models.py:559
 msgid "Subtitle"
 msgstr ""
 
-#: issue/models.py:90
+#: issue/models.py:105
 msgid "Sections"
 msgstr ""
 
-#: issue/models.py:97 issue/wagtail_hooks.py:23 issue/wagtail_hooks.py:56
+#: issue/models.py:112 issue/wagtail_hooks.py:27 issue/wagtail_hooks.py:119
 msgid "Issues"
 msgstr ""
 
-#: issue/models.py:224
+#: issue/models.py:344
 msgid "Issue Title"
 msgstr ""
 
-#: issue/models.py:263
+#: issue/models.py:383
 msgid "TocSection"
 msgstr ""
 
-#: issue/models.py:264
+#: issue/models.py:384
 msgid "TocSections"
+msgstr ""
+
+#: issue/wagtail_hooks.py:93
+msgid "Issue Exports"
 msgstr ""
 
 #: journal/choices.py:19
 msgid "Unknow"
-msgstr ""
+msgstr "Unknown"
 
 #: journal/choices.py:20
 msgid "Current"
@@ -1480,7 +1756,7 @@ msgstr ""
 
 #: journal/choices.py:98
 msgid "Divulgation"
-msgstr ""
+msgstr "Dissemination"
 
 #: journal/choices.py:103
 msgid "Analytical of a monograph"
@@ -1598,642 +1874,542 @@ msgstr ""
 msgid "by the editor"
 msgstr ""
 
-#: journal/models.py:61
+#: journal/models.py:69
 msgid "Institution data originally provided. This field is for reference only."
 msgstr ""
 
-#: journal/models.py:62
+#: journal/models.py:72
 msgid "Select the standardized institution corresponding to the original data."
 msgstr ""
 
-#: journal/models.py:72
+#: journal/models.py:83
 msgid "ISSN Title"
 msgstr ""
 
-#: journal/models.py:73
+#: journal/models.py:84
 msgid "ISO Short Title"
 msgstr ""
 
-#: journal/models.py:76
+#: journal/models.py:87
 msgid "New Title"
 msgstr ""
 
-#: journal/models.py:83
+#: journal/models.py:95
 msgid "Previous Journal titles"
 msgstr ""
 
-#: journal/models.py:84
+#: journal/models.py:98
 msgid "Next Journal Title"
 msgstr ""
 
-#: journal/models.py:86
+#: journal/models.py:101
 msgid "Initial Year"
 msgstr ""
 
-#: journal/models.py:89
+#: journal/models.py:104
 msgid "Month Year"
 msgstr ""
 
-#: journal/models.py:92
+#: journal/models.py:107
 msgid "Initial Volume"
 msgstr ""
 
-#: journal/models.py:95
+#: journal/models.py:110
 msgid "Initial Number"
 msgstr ""
 
-#: journal/models.py:98
+#: journal/models.py:113
 msgid "Termination year"
 msgstr ""
 
-#: journal/models.py:101
+#: journal/models.py:116
 msgid "Termination month"
 msgstr ""
 
-#: journal/models.py:104
+#: journal/models.py:119
 msgid "Final Volume"
 msgstr ""
 
-#: journal/models.py:107
+#: journal/models.py:122
 msgid "Final Number"
 msgstr ""
 
-#: journal/models.py:109
+#: journal/models.py:124
 msgid "Print ISSN"
 msgstr ""
 
-#: journal/models.py:111
+#: journal/models.py:126
 msgid "Electronic ISSN"
 msgstr ""
 
-#: journal/models.py:113
+#: journal/models.py:129
 msgid "ISSN Print is active"
 msgstr ""
 
-#: journal/models.py:114
+#: journal/models.py:131
 msgid "ISSNL"
 msgstr ""
 
-#: journal/models.py:119
+#: journal/models.py:136
 msgid "Parallel titles"
 msgstr ""
 
-#: journal/models.py:147
+#: journal/models.py:164
 msgid "Dates"
 msgstr ""
 
-#: journal/models.py:148
+#: journal/models.py:165
 msgid "Issns"
 msgstr ""
 
-#: journal/models.py:155 journal/models.py:333
-msgid "ISSN Journal"
+#: journal/models.py:172
+msgid "Journal (ISSN)"
 msgstr ""
 
-#: journal/models.py:156 journal/wagtail_hooks.py:32
-msgid "ISSN Journals"
+#: journal/models.py:173 journal/wagtail_hooks.py:34
+msgid "Journals (ISSN)"
 msgstr ""
 
-#: journal/models.py:244
+#: journal/models.py:261
 msgid "Unable to create or update official journal {}"
 msgstr ""
 
-#: journal/models.py:289 journal/models.py:2121
+#: journal/models.py:310 journal/models.py:2183
 msgid "URL"
 msgstr ""
 
-#: journal/models.py:294 journal/models.py:636
+#: journal/models.py:315 journal/models.py:681 journal/proxys.py:53
 msgid "Social Network"
 msgstr ""
 
-#: journal/models.py:295
+#: journal/models.py:316
 msgid "Social Networks"
 msgstr ""
 
-#: journal/models.py:338
+#: journal/models.py:354
+#, fuzzy
+#| msgid "Journal"
+msgid "ISSN Journal"
+msgstr "Journal"
+
+#: journal/models.py:359
 msgid "Journal Title"
 msgstr ""
 
-#: journal/models.py:339
+#: journal/models.py:360
 msgid "Short Title"
 msgstr ""
 
-#: journal/models.py:348
+#: journal/models.py:369
 msgid "Submission online URL"
 msgstr ""
 
-#: journal/models.py:352
+#: journal/models.py:373
 msgid "Address"
 msgstr ""
 
-#: journal/models.py:358
+#: journal/models.py:379
 msgid "Open Access status"
 msgstr ""
 
-#: journal/models.py:366 journal/models.py:647
+#: journal/models.py:387 journal/models.py:692 journal/proxys.py:64
 msgid "Open Science accordance form"
 msgstr ""
 
-#: journal/models.py:371 journal/models.py:946
+#: journal/models.py:392 journal/models.py:923
 msgid ""
 "Suggested form: <a target='_blank' href='https://wp.scielo.org/wp-content/"
 "uploads/Formulario-de-Conformidade-Ciencia-Aberta.docx'>https://wp.scielo."
 "org/wp-content/uploads/Formulario-de-Conformidade-Ciencia-Aberta.docx</a>"
 msgstr ""
 
-#: journal/models.py:377
+#: journal/models.py:398
 msgid "Main Collection"
 msgstr ""
 
-#: journal/models.py:383
+#: journal/models.py:404
 msgid "Frequency"
 msgstr ""
 
-#: journal/models.py:390
+#: journal/models.py:411
 msgid "Publishing Model"
 msgstr ""
 
-#: journal/models.py:398
+#: journal/models.py:419
 msgid "Subject Descriptors"
 msgstr ""
 
-#: journal/models.py:403
+#: journal/models.py:424
 msgid "Study Areas"
 msgstr ""
 
-#: journal/models.py:408
+#: journal/models.py:429
 msgid "Web of Knowledge Databases"
 msgstr ""
 
-#: journal/models.py:413
+#: journal/models.py:434
 msgid "Web of Knowledge Subject Categories"
 msgstr ""
 
-#: journal/models.py:418
+#: journal/models.py:439
 msgid "Text Languages"
 msgstr ""
 
-#: journal/models.py:424
+#: journal/models.py:445
 msgid "Abstract Languages"
 msgstr ""
 
-#: journal/models.py:435
+#: journal/models.py:456
 msgid "Alphabet"
 msgstr ""
 
-#: journal/models.py:442
+#: journal/models.py:463
 msgid "Type of Literature"
 msgstr ""
 
-#: journal/models.py:449
+#: journal/models.py:470
 msgid "Treatment Level"
 msgstr ""
 
-#: journal/models.py:456
+#: journal/models.py:477
 msgid "Level of Publication"
 msgstr ""
 
-#: journal/models.py:463
+#: journal/models.py:484
 msgid "National Code"
 msgstr ""
 
-#: journal/models.py:468
+#: journal/models.py:489
 msgid "Classification"
 msgstr ""
 
-#: journal/models.py:477
+#: journal/models.py:499
 msgid ""
 "As palavras-chave devem ser extraídas de thesaurus,dicionários temáticos ou "
 "listas controladas nos idiomas que o periódico pública."
-msgstr "Keywords should be extracted from thesauri, thematic dictionaries, or controlled lists in the languages in which the journal publishes."
+msgstr ""
+"Keywords should be extracted from thesauri, thematic dictionaries, or "
+"controlled lists in the languages in which the journal publishes."
 
-#: journal/models.py:481 journal/models.py:2515
+#: journal/models.py:504 journal/models.py:2574
 msgid "Indexed At"
 msgstr ""
 
-#: journal/models.py:484
+#: journal/models.py:507
 msgid ""
 "Standardized values from recognized scientific databases, such as: "
 "Dimensions, DOAJ, Google Scholar, Latindex, MEDLINE, SCImago, etc."
 msgstr ""
 
-#: journal/models.py:489
+#: journal/models.py:512
 msgid "Additional Index At"
 msgstr ""
 
-#: journal/models.py:492
+#: journal/models.py:515
 msgid "Values from additional scientific databases that are not standardized."
 msgstr ""
 
-#: journal/models.py:496
+#: journal/models.py:519
 msgid "Journal URL"
 msgstr ""
 
-#: journal/models.py:513
+#: journal/models.py:536
 msgid "Center code"
 msgstr ""
 
-#: journal/models.py:518
+#: journal/models.py:541
 msgid "Identification Number"
 msgstr ""
 
-#: journal/models.py:524
+#: journal/models.py:547
 msgid "Ftp"
 msgstr ""
 
-#: journal/models.py:530
+#: journal/models.py:553
 msgid "User Subscription"
 msgstr ""
 
-#: journal/models.py:541
+#: journal/models.py:564
 msgid "Section"
 msgstr ""
 
-#: journal/models.py:547
+#: journal/models.py:570
 msgid "Has Supplement"
 msgstr ""
 
-#: journal/models.py:552
+#: journal/models.py:575
 msgid "Is supplement"
 msgstr ""
 
-#: journal/models.py:558
+#: journal/models.py:581
 msgid "Acronym Letters"
 msgstr ""
 
-#: journal/models.py:566
+#: journal/models.py:589
 msgid "Authors names"
 msgstr ""
 
-#: journal/models.py:568
+#: journal/models.py:591
 msgid ""
 "For compound surnames, create clear identification [uppercase, bold, and/or "
 "hyphen]"
 msgstr ""
 
-#: journal/models.py:574
+#: journal/models.py:597
 msgid "Manuscript Length"
 msgstr ""
 
-#: journal/models.py:575
+#: journal/models.py:598
 msgid "Manuscript Length (consider spacing)"
 msgstr ""
 
-#: journal/models.py:584
+#: journal/models.py:607
 msgid "DigitalPreservationAgency"
 msgstr ""
 
-#: journal/models.py:598
+#: journal/models.py:641 journal/proxys.py:13
 msgid "Other titles"
 msgstr ""
 
-#: journal/models.py:606 thematic_areas/models.py:158
+#: journal/models.py:649 journal/proxys.py:21 thematic_areas/models.py:158
 #: thematic_areas/wagtail_hooks.py:197
 msgid "Thematic Areas"
 msgstr ""
 
-#: journal/models.py:609
+#: journal/models.py:652 journal/proxys.py:24
 msgid "Mission"
 msgstr ""
 
-#: journal/models.py:610
+#: journal/models.py:653 journal/proxys.py:25
 msgid "Brief History"
 msgstr ""
 
-#: journal/models.py:611
+#: journal/models.py:654 journal/proxys.py:26
 msgid "Focus and Scope"
 msgstr ""
 
-#: journal/models.py:620
+#: journal/models.py:663 journal/proxys.py:35
 msgid "Copyright Holder"
 msgstr ""
 
-#: journal/models.py:629
+#: journal/models.py:672 journal/proxys.py:44
 msgid "Contact e-mail"
 msgstr ""
 
-#: journal/models.py:632
+#: journal/models.py:676 journal/proxys.py:48
 msgid "Journal Urls"
 msgstr ""
 
-#: journal/models.py:635 journal/models.py:2532
+#: journal/models.py:680 journal/models.py:2597 journal/proxys.py:52
 msgid "Title in Database"
 msgstr ""
 
-#: journal/models.py:650
+#: journal/models.py:695 journal/proxys.py:67
 msgid "Open data"
 msgstr ""
 
-#: journal/models.py:651 journalpage/templates/journalpage/about.html:244
-#: journalpage/templates/journalpage/about.html:437
+#: journal/models.py:696 journal/proxys.py:68
+#: journalpage/templates/journalpage/about.html:245
+#: journalpage/templates/journalpage/about.html:451
 msgid "Preprint"
 msgstr ""
 
-#: journal/models.py:652
+#: journal/models.py:697 journal/proxys.py:69
 msgid "Peer review"
 msgstr ""
 
-#: journal/models.py:653
+#: journal/models.py:700 journal/proxys.py:72
 msgid "Open Science Compliance"
 msgstr ""
 
-#: journal/models.py:659
-msgid "Ethics"
-msgstr ""
-
-#: journal/models.py:664
-msgid "Ethics Committee"
-msgstr ""
-
-#: journal/models.py:669
-msgid "Copyright"
-msgstr ""
-
-#: journal/models.py:674
-msgid "Intellectual Property / Terms of use / Website responsibility"
-msgstr ""
-
-#: journal/models.py:679
-msgid "Intellectual Property / Terms of use / Author responsibility"
-msgstr ""
-
-#: journal/models.py:684
-msgid "Retraction Policy | Ethics and Misconduct Policy"
-msgstr ""
-
-#: journal/models.py:690
-msgid "Digital Preservation"
-msgstr ""
-
-#: journal/models.py:695
-msgid "Conflict of interest policy"
-msgstr ""
-
-#: journal/models.py:700
-msgid "Similarity Verification Software Adoption"
-msgstr ""
-
-#: journal/models.py:705
-msgid "Gender Issues"
-msgstr ""
-
-#: journal/models.py:710
-msgid "Fee Charging"
-msgstr ""
-
-#: journal/models.py:715
-msgid "Editorial Policy"
-msgstr ""
-
-#: journal/models.py:719 journal/models.py:804 journal/models.py:2276
+#: journal/models.py:705 journal/models.py:736 journal/models.py:2335
+#: journal/proxys.py:140 journal/proxys.py:202
 msgid "Notes"
 msgstr ""
 
-#: journal/models.py:742
-msgid "Accepted Document Types"
-msgstr ""
-
-#: journal/models.py:747
-msgid "Authors Contributions"
-msgstr ""
-
-#: journal/models.py:752
-msgid "Preparing Manuscript"
-msgstr ""
-
-#: journal/models.py:757
-msgid "Digital Assets"
-msgstr ""
-
-#: journal/models.py:762
-msgid "Citations and References"
-msgstr ""
-
-#: journal/models.py:767
-msgid "Supplementary Documents Required for Submission"
-msgstr ""
-
-#: journal/models.py:772
-msgid "Financing Statement"
-msgstr ""
-
-#: journal/models.py:777
-msgid "Acknowledgements"
-msgstr ""
-
-#: journal/models.py:782
-msgid "Additional Information"
-msgstr ""
-
-#: journal/models.py:793 journal/models.py:811
-msgid "Editorial Board"
-msgstr ""
-
-#: journal/models.py:799
+#: journal/models.py:729 journal/proxys.py:198
 msgid "Scope and about"
 msgstr ""
 
-#: journal/models.py:801
+#: journal/models.py:731 journal/proxys.py:200
 msgid "Website"
 msgstr ""
 
-#: journal/models.py:802
+#: journal/models.py:732 journal/proxys.py:201
 msgid "Open Science"
 msgstr ""
 
-#: journal/models.py:803
-msgid "Journal Policy"
-msgstr ""
-
-#: journal/models.py:806
+#: journal/models.py:734
 msgid "Legacy Compatibility"
 msgstr ""
 
-#: journal/models.py:809
-msgid "Instructions for Authors"
-msgstr ""
-
-#: journal/models.py:895 journal/models.py:1018
+#: journal/models.py:867 journal/models.py:995
 msgid "Unable to create or update journal {}"
 msgstr ""
 
-#: journal/models.py:1049
-msgid "Level Owner"
-msgstr ""
-
-#: journal/models.py:1079
-msgid "Level Publisher"
-msgstr ""
-
-#: journal/models.py:1109
-msgid "Level Sponsor"
-msgstr ""
-
 #: journal/models.py:1142
-msgid "Level Copyright"
-msgstr ""
-
-#: journal/models.py:1165
 msgid ""
 "Refers to sharing data, codes, methods and other materials used and \n"
-"            resulting from research that are usually the basis of the texts "
+"            resulting from research that are usually the basis of the texts "
 "of articles published by journals. \n"
-"            Guide: <a target='_blank' href='https://wp.scielo.org/wp-content/"
+"            Guide: <a target='_blank' href='https://wp.scielo.org/wp-content/"
 "uploads/Guia_TOP_pt.pdf'>https://wp.scielo.org/wp-content/uploads/"
 "Guia_TOP_pt.pdf</a>"
 msgstr ""
 
-#: journal/models.py:1181
+#: journal/models.py:1158
 msgid ""
 "A preprint is defined as a manuscript ready for submission to a journal that "
 "is deposited \n"
-"            with trusted preprint servers before or in parallel with "
+"            with trusted preprint servers before or in parallel with "
 "submission to a journal. \n"
-"            This practice joins that of continuous publication as mechanisms "
+"            This practice joins that of continuous publication as mechanisms "
 "to speed up research communication. \n"
-"            Preprints share with journals the originality in the publication "
+"            Preprints share with journals the originality in the publication "
 "of articles and inhibit the use of \n"
-"            the double-blind procedure in the evaluation of manuscripts. \n"
-"            The use of preprints is an option and choice of the authors and "
+"            the double-blind procedure in the evaluation of manuscripts. \n"
+"            The use of preprints is an option and choice of the authors and "
 "it is up to the journals to adapt \n"
-"            their policies to accept the submission of manuscripts "
+"            their policies to accept the submission of manuscripts "
 "previously deposited in a preprints server \n"
-"            recognized by the journal."
+"            recognized by the journal."
 msgstr ""
 
-#: journal/models.py:1201
+#: journal/models.py:1178
 msgid ""
 "Insert here a brief history with events and milestones in the trajectory of "
 "the journal"
 msgstr ""
 
-#: journal/models.py:1213
+#: journal/models.py:1190
 msgid "Insert here the focus and scope of the journal"
 msgstr ""
 
-#: journal/models.py:1222
+#: journal/models.py:1199
 msgid "Brief description of the review flow"
 msgstr ""
 
-#: journal/models.py:1234
+#: journal/models.py:1211
 msgid ""
 "Authors must attach a statement of approval from the ethics committee of \n"
-"            the institution responsible for approving the research"
+"            the institution responsible for approving the research"
 msgstr ""
 
-#: journal/models.py:1248
+#: journal/models.py:1225
 msgid ""
 "Describe the policy used by the journal on copyright issues. \n"
-"            We recommend that this section be in accordance with the "
+"            We recommend that this section be in accordance with the "
 "recommendations of the SciELO criteria, \n"
-"            item 5.2.10.1.2. - Copyright"
+"            item 5.2.10.1.2. - Copyright"
 msgstr ""
 
-#: journal/models.py:1263
+#: journal/models.py:1240
 msgid ""
 "EX. DOAJ: Copyright terms applied to posted content must be clearly stated "
 "and separate \n"
-"            from copyright terms applied to the website"
+"            from copyright terms applied to the website"
 msgstr ""
 
-#: journal/models.py:1280
+#: journal/models.py:1257
 msgid ""
 "The author's declaration of responsibility for the content published in \n"
-"            the journal that owns the copyright Ex. DOAJ: The terms of "
+"            the journal that owns the copyright Ex. DOAJ: The terms of "
 "copyright must not contradict \n"
-"            the terms of the license or the terms of the open access policy. "
+"            the terms of the license or the terms of the open access policy. "
 "\"All rights reserved\" is \n"
-"            never appropriate for open access content"
+"            never appropriate for open access content"
 msgstr ""
 
-#: journal/models.py:1300
+#: journal/models.py:1277
 msgid ""
 "Describe here how the journal will deal with ethical issues and/or \n"
-"            issues that may damage the journal's reputation. What is the "
+"            issues that may damage the journal's reputation. What is the "
 "journal's position regarding \n"
-"            the retraction policy that the journal will adopt in cases of "
+"            the retraction policy that the journal will adopt in cases of "
 "misconduct. \n"
-"            Best practice guide: <a target='_blank' \n"
-"            href='https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-"
+"            Best practice guide: <a target='_blank' \n"
+"            href='https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-"
 "Praticas-para-o-Fortalecimento-da-Etica-na-Publicacao-Cientifica.pdf'>\n"
-"            https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-Praticas-"
+"            https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-Praticas-"
 "para-o-Fortalecimento-da-Etica-na-Publicacao-Cientifica.pdf</a>"
 msgstr ""
 
-#: journal/models.py:1334
+#: journal/models.py:1311
 msgid ""
 "Please describe here if the journal uses any similarity verification "
 "software. Describe the policy. What cases are checked?\n"
-"            At what stage in the workflow are manuscripts verified?"
+"            At what stage in the workflow are manuscripts verified?"
 msgstr ""
 
-#: journal/models.py:1337
+#: journal/models.py:1314
 msgid "Similarity erification software"
 msgstr ""
 
-#: journal/models.py:1343
-msgid "Describe the policy. Which cases are verified? At what point in the workflow are the manuscripts checked?"
+#: journal/models.py:1320
+msgid ""
+"Describe the policy. Which cases are verified? At what point in the workflow "
+"are the manuscripts checked?"
 msgstr ""
 
-#: journal/models.py:1347
+#: journal/models.py:1324
 msgid "Write the name of the software used."
 msgstr ""
 
-#: journal/models.py:1350
+#: journal/models.py:1327
 msgid "Write the link of the software used."
 msgstr ""
 
-#: journal/models.py:1370
+#: journal/models.py:1347
 msgid ""
 "Describe how your journal considers gender diversity in the group of "
 "authors, editorial board, and reviewers."
 msgstr ""
 
-#: journal/models.py:1392
+#: journal/models.py:1369
 msgid "Concepts"
 msgstr ""
 
-#: journal/models.py:1397
+#: journal/models.py:1374
 msgid ""
 "Please describe any charges to authors related to the submission or "
 "publication of works.\n"
-"        For article publication: Clearly state when no fees are charged.\n"
-"        Under what circumstances are charges applicable? Are there any "
+"        For article publication: Clearly state when no fees are charged.\n"
+"        Under what circumstances are charges applicable? Are there any "
 "discounts?\n"
-"        SciELO Statement on Financial Sustainability: <a target='_blank' \n"
-"            href='https://mailchi.mp/scielo/declaracao-sobre-"
+"        SciELO Statement on Financial Sustainability: <a target='_blank' \n"
+"            href='https://mailchi.mp/scielo/declaracao-sobre-"
 "sustentabilidade'>\n"
-"            https://mailchi.mp/scielo/declaracao-sobre-sustentabilidade</a>\n"
-"        "
+"            https://mailchi.mp/scielo/declaracao-sobre-sustentabilidade</a>\n"
+"        "
 msgstr ""
 
-#: journal/models.py:1426
+#: journal/models.py:1403
 msgid ""
 "Describe the types of documents that can be submitted to the journal.\n"
-"                    Provide information regarding the positioning related to "
+"                    Provide information regarding the positioning related to "
 "preprint submissions.\n"
-"                    Examples: Original Article, Review Article, Preprints "
+"                    Examples: Original Article, Review Article, Preprints "
 "and etc."
 msgstr ""
 
-#: journal/models.py:1445
+#: journal/models.py:1422
 msgid ""
 "Description of how authors contributions should be specified.\n"
-"        Does it use any taxonomy? If yes, which one?\n"
-"        Does the article text explicitly state the authors contributions?\n"
-"        Preferably, use the CREDiT taxonomy structure: <a target='_blank' \n"
-"            href='https://casrai.org/credit/'>https://casrai.org/credit/</"
+"        Does it use any taxonomy? If yes, which one?\n"
+"        Does the article text explicitly state the authors contributions?\n"
+"        Preferably, use the CREDiT taxonomy structure: <a target='_blank' \n"
+"            href='https://casrai.org/credit/'>https://casrai.org/credit/</"
 "a>\n"
-"        "
+"        "
 msgstr ""
 
-#: journal/models.py:1467
+#: journal/models.py:1444
 msgid ""
 "Specify how authors should present their research and explain why the work "
 "is suitable for publication in the journal."
 msgstr ""
 
-#: journal/models.py:1480
+#: journal/models.py:1457
 msgid ""
 "Please describe how tables, charts, figures, illustrations, maps, diagrams, "
 "and other digital assets in the documents should be presented for "
@@ -2241,777 +2417,546 @@ msgid ""
 "such as format, resolution, size, etc."
 msgstr ""
 
-#: journal/models.py:1496
+#: journal/models.py:1473
 msgid ""
 "Describe the citation and referencing style used by the journal. Provide "
 "examples of document types according to the style."
 msgstr ""
 
-#: journal/models.py:1514
+#: journal/models.py:1491
 msgid ""
 "Describe any supplementary documents requested from authors during "
 "manuscript submission. Examples may include Open Science Compliance Form, "
 "authors' agreement statement, ethics committee approval form, etc."
 msgstr ""
 
-#: journal/models.py:1531
+#: journal/models.py:1508
 msgid "???"
 msgstr ""
 
-#: journal/models.py:1540
+#: journal/models.py:1517
 msgid "Describe the acknowledgments."
 msgstr ""
 
-#: journal/models.py:1554
+#: journal/models.py:1531
 msgid "Free field for entering additional information or data."
 msgstr ""
 
-#: journal/models.py:1580
+#: journal/models.py:1557
 msgid "Descreva o teim do check list"
 msgstr "Describe the checklist item"
 
-#: journal/models.py:1607 journal/models.py:2120
+#: journal/models.py:1588 journal/models.py:2182
 msgid "Acronym"
 msgstr ""
 
-#: journal/models.py:1739
+#: journal/models.py:1720
 msgid "Journal Acronym"
 msgstr ""
 
-#: journal/models.py:1745
+#: journal/models.py:1726
 msgid "Only lowercase letters are allowed"
 msgstr ""
 
-#: journal/models.py:1765
+#: journal/models.py:1746 journal/models.py:1840
 msgid "SciELO Journal"
 msgstr ""
 
-#: journal/models.py:1766 journal/wagtail_hooks.py:137
+#: journal/models.py:1747 journal/wagtail_hooks.py:209
 msgid "SciELO Journals"
 msgstr ""
 
-#: journal/models.py:1796
+#: journal/models.py:1778
 msgid "Journal History"
 msgstr ""
 
-#: journal/models.py:1838
+#: journal/models.py:1821
 msgid "Unable to create or update SciELO journal {}"
 msgstr ""
 
-#: journal/models.py:2122
+#: journal/models.py:2184
 msgid "Description"
 msgstr ""
 
-#: journal/models.py:2124
+#: journal/models.py:2186
 msgid "Type"
 msgstr ""
 
-#: journal/models.py:2277
+#: journal/models.py:2336
 msgid "Creation Date"
 msgstr ""
 
-#: journal/models.py:2278
+#: journal/models.py:2337
 msgid "Update Date"
 msgstr ""
 
-#: journal/models.py:2331
+#: journal/models.py:2390
 msgid "Event year"
 msgstr ""
 
-#: journal/models.py:2333
+#: journal/models.py:2392
 msgid "Event month"
 msgstr ""
 
-#: journal/models.py:2339
+#: journal/models.py:2398
 msgid "Event day"
 msgstr ""
 
-#: journal/models.py:2342
+#: journal/models.py:2401
 msgid "Event type"
 msgstr ""
 
-#: journal/models.py:2349
+#: journal/models.py:2408
 msgid "Indexing interruption reason"
 msgstr ""
 
-#: journal/models.py:2367
+#: journal/models.py:2426
 msgid "Event"
 msgstr ""
 
-#: journal/models.py:2368
+#: journal/models.py:2427
 msgid "Events"
 msgstr ""
 
-#: journal/models.py:2467
+#: journal/models.py:2526
 msgid "Scielo Issn"
 msgstr ""
 
-#: journal/models.py:2526
+#: journal/models.py:2585
 msgid "Identifier"
 msgstr ""
 
-#: journal/models.py:2533
+#: journal/models.py:2598
 msgid "Title in databases"
 msgstr ""
 
-#: journal/models.py:2621
+#: journal/models.py:2686
 msgid "Enter the URI of the data repository."
 msgstr ""
 
-#: journal/models.py:2827
+#: journal/models.py:2889
 msgid ""
 "If the journal is published in another site, enter in this field the other "
 "site location"
 msgstr ""
 
-#: journal/permissions.py:5
-msgid "Can edit official journal"
+#: journal/proxys.py:80 journal/proxys.py:215
+msgid "Ethics"
 msgstr ""
 
-#: journal/permissions.py:6
-msgid "Can edit title"
+#: journal/proxys.py:85 journal/proxys.py:220
+msgid "Ethics Committee"
 msgstr ""
 
-#: journal/permissions.py:7
-msgid "Can edit short title"
+#: journal/proxys.py:90 journal/proxys.py:225
+msgid "Copyright"
 msgstr ""
 
-#: journal/permissions.py:8
-msgid "Can edit submission online url"
+#: journal/proxys.py:95 journal/proxys.py:230
+msgid "Intellectual Property / Terms of use / Website responsibility"
 msgstr ""
 
-#: journal/permissions.py:9
-msgid "Can edit contact name"
+#: journal/proxys.py:100 journal/proxys.py:235
+msgid "Intellectual Property / Terms of use / Author responsibility"
 msgstr ""
 
-#: journal/permissions.py:10
-msgid "Can edit contact address"
+#: journal/proxys.py:105 journal/proxys.py:240
+msgid "Retraction Policy | Ethics and Misconduct Policy"
 msgstr ""
 
-#: journal/permissions.py:11
-msgid "Can edit contact location"
+#: journal/proxys.py:111 journal/proxys.py:246
+msgid "Digital Preservation"
 msgstr ""
 
-#: journal/permissions.py:12
-msgid "Can edit open access"
+#: journal/proxys.py:116 journal/proxys.py:251
+msgid "Conflict of interest policy"
 msgstr ""
 
-#: journal/permissions.py:13
-msgid "Can edit url Open Science accordance form"
+#: journal/proxys.py:121 journal/proxys.py:256
+msgid "Similarity Verification Software Adoption"
 msgstr ""
 
-#: journal/permissions.py:14
-msgid "Can edit main collection"
+#: journal/proxys.py:126 journal/proxys.py:261
+msgid "Gender Issues"
 msgstr ""
 
-#: journal/permissions.py:15
-msgid "Can edit frequency"
+#: journal/proxys.py:131 journal/proxys.py:266
+msgid "Fee Charging"
 msgstr ""
 
-#: journal/permissions.py:16
-msgid "Can edit publishing model"
+#: journal/proxys.py:136 journal/proxys.py:271
+msgid "Editorial Policy"
 msgstr ""
 
-#: journal/permissions.py:17
-msgid "Can edit subject descriptor"
+#: journal/proxys.py:145 journal/proxys.py:295
+msgid "Accepted Document Types"
 msgstr ""
 
-#: journal/permissions.py:18
-msgid "Can edit subject"
+#: journal/proxys.py:150 journal/proxys.py:300
+msgid "Authors Contributions"
 msgstr ""
 
-#: journal/permissions.py:19
-msgid "Can edit Web of Knowledge Databases"
+#: journal/proxys.py:155 journal/proxys.py:305
+msgid "Preparing Manuscript"
 msgstr ""
 
-#: journal/permissions.py:20
-msgid "Can edit Web of Knowledge Subject Categories"
+#: journal/proxys.py:160 journal/proxys.py:310
+msgid "Digital Assets"
 msgstr ""
 
-#: journal/permissions.py:21
-msgid "Can edit abstract language"
+#: journal/proxys.py:165 journal/proxys.py:315
+msgid "Citations and References"
 msgstr ""
 
-#: journal/permissions.py:22
-msgid "Can edit standard"
+#: journal/proxys.py:170 journal/proxys.py:320
+msgid "Supplementary Documents Required for Submission"
 msgstr ""
 
-#: journal/permissions.py:23
-msgid "Can edit alphabet"
+#: journal/proxys.py:175 journal/proxys.py:325
+msgid "Financing Statement"
 msgstr ""
 
-#: journal/permissions.py:24
-msgid "Can edit type of literature"
+#: journal/proxys.py:180 journal/proxys.py:330
+msgid "Acknowledgements"
 msgstr ""
 
-#: journal/permissions.py:25
-msgid "Can edit treatment level"
+#: journal/proxys.py:185 journal/proxys.py:335
+msgid "Additional Information"
 msgstr ""
 
-#: journal/permissions.py:26
-msgid "Can edit level of publication"
-msgstr ""
-
-#: journal/permissions.py:27
-msgid "Can edit national code"
-msgstr ""
-
-#: journal/permissions.py:28
-msgid "Can edit classification"
-msgstr ""
-
-#: journal/permissions.py:29
-msgid "Can edit vocabulary"
-msgstr ""
-
-#: journal/permissions.py:30
-msgid "Can edit indexed at"
-msgstr ""
-
-#: journal/permissions.py:31
-msgid "Can edit additional indexed at"
-msgstr ""
-
-#: journal/permissions.py:32
-msgid "Can edit journal url"
-msgstr ""
-
-#: journal/permissions.py:33
-msgid "Can edit use license"
-msgstr ""
-
-#: journal/permissions.py:34
-msgid "Can edit journal use license"
-msgstr ""
-
-#: journal/permissions.py:35
-msgid "Can edit center code"
-msgstr ""
-
-#: journal/permissions.py:36
-msgid "Can edit identification number"
-msgstr ""
-
-#: journal/permissions.py:37
-msgid "Can edit ftp"
-msgstr ""
-
-#: journal/permissions.py:38
-msgid "Can edit user subscription"
-msgstr ""
-
-#: journal/permissions.py:39
-msgid "Can edit subtitle"
-msgstr ""
-
-#: journal/permissions.py:40
-msgid "Can edit section"
-msgstr ""
-
-#: journal/permissions.py:41
-msgid "Can edit has supplement"
-msgstr ""
-
-#: journal/permissions.py:42
-msgid "Can edit is supplement"
-msgstr ""
-
-#: journal/permissions.py:43
-msgid "Can edit acronym letters"
-msgstr ""
-
-#: journal/permissions.py:44
-msgid "Can edit author name"
-msgstr ""
-
-#: journal/permissions.py:45
-msgid "Can edit manuscript length"
-msgstr ""
-
-#: journal/permissions.py:46
-msgid "Can edit format check list"
-msgstr ""
-
-#: journal/permissions.py:47
-msgid "Can edit digital pa"
-msgstr ""
-
-#: journal/permissions.py:48
-msgid "Can edit doi prefix"
-msgstr ""
-
-#: journal/permissions.py:49
-msgid "Can edit mission"
-msgstr ""
-
-#: journal/permissions.py:50
-msgid "Can edit owner history"
-msgstr ""
-
-#: journal/permissions.py:51
-msgid "Can edit publisher history"
-msgstr ""
-
-#: journal/permissions.py:52
-msgid "Can edit sponsor history"
-msgstr ""
-
-#: journal/permissions.py:53
-msgid "Can edit copyright holder history"
-msgstr ""
-
-#: journal/permissions.py:54
-msgid "Can edit journalsocialnetwork"
-msgstr ""
-
-#: journal/permissions.py:55
-msgid "Can edit file oa"
-msgstr ""
-
-#: journal/permissions.py:56
-msgid "Can edit journal email"
-msgstr ""
-
-#: journal/permissions.py:57
-msgid "Can edit history"
-msgstr ""
-
-#: journal/permissions.py:58
-msgid "Can edit focus"
-msgstr ""
-
-#: journal/permissions.py:59
-msgid "Can edit thematic area"
-msgstr ""
-
-#: journal/permissions.py:60
-msgid "Can edit annotation"
-msgstr ""
-
-#: journal/permissions.py:61
-msgid "Can edit ecommittee"
-msgstr ""
-
-#: journal/permissions.py:62
-msgid "Can edit other titles"
-msgstr ""
-
-#: journal/permissions.py:63
-msgid "Can edit related journal urls"
-msgstr ""
-
-#: journal/permissions.py:64
-msgid "Can edit open data"
-msgstr ""
-
-#: journal/permissions.py:65
-msgid "Can edit preprint"
-msgstr ""
-
-#: journal/permissions.py:66
-msgid "Can edit review"
-msgstr ""
-
-#: journal/permissions.py:67
-msgid "Can edit open science compliance"
-msgstr ""
-
-#: journal/permissions.py:68
-msgid "Can edit ethics"
-msgstr ""
-
-#: journal/permissions.py:69
-msgid "Can edit copyrigth"
-msgstr ""
-
-#: journal/permissions.py:70
-msgid "Can edit website responsibility"
-msgstr ""
-
-#: journal/permissions.py:71
-msgid "Can edit author responsibility"
-msgstr ""
-
-#: journal/permissions.py:72
-msgid "Can edit policies"
-msgstr ""
-
-#: journal/permissions.py:73
-msgid "Can edit digital preservation"
-msgstr ""
-
-#: journal/permissions.py:74
-msgid "Can edit conflict policy"
-msgstr ""
-
-#: journal/permissions.py:75
-msgid "Can edit software adoption"
-msgstr ""
-
-#: journal/permissions.py:76
-msgid "Can edit Gender Issues"
-msgstr ""
-
-#: journal/permissions.py:77
-msgid "Can edit Fee Charging"
-msgstr ""
-
-#: journal/permissions.py:78
-msgid "Can edit Editorial Policy"
-msgstr ""
+#: journal/proxys.py:207
+#, fuzzy
+#| msgid "Jornalismo e Editoração"
+msgid "Journal Editor"
+msgstr "Journalism and Publishing"
 
-#: journal/permissions.py:79
-msgid "Can edit Accepted Document Types"
-msgstr ""
-
-#: journal/permissions.py:80
-msgid "Can edit Authors Contributions"
-msgstr ""
-
-#: journal/permissions.py:81
-msgid "Can edit Preparing Manuscript"
-msgstr ""
-
-#: journal/permissions.py:82
-msgid "Can edit Digital Assets"
-msgstr ""
-
-#: journal/permissions.py:83
-msgid "Can edit Citations and References"
-msgstr ""
-
-#: journal/permissions.py:84
-msgid "Can edit Supplementary Documents Required for Submission"
-msgstr ""
-
-#: journal/permissions.py:85
-msgid "Can edit Financing Statement"
-msgstr ""
-
-#: journal/permissions.py:86
-msgid "Can edit Acknowledgements"
-msgstr ""
+#: journal/proxys.py:208
+#, fuzzy
+#| msgid "Jornalismo e Editoração"
+msgid "Journal Editors"
+msgstr "Journalism and Publishing"
 
-#: journal/permissions.py:87
-msgid "Can edit Additional Information"
+#: journal/proxys.py:281 journal/proxys.py:286 journal/proxys.py:287
+msgid "Journal Policy"
 msgstr ""
 
-#: journal/permissions.py:88
-msgid "Can edit Text Language"
+#: journal/proxys.py:348
+msgid "Instructions for Authors"
 msgstr ""
 
-#: journal/permissions.py:89
-msgid "Can edit logo"
+#: journal/proxys.py:354 journal/proxys.py:355 journal/wagtail_hooks.py:192
+msgid "Journal Instructions for Authors"
 msgstr ""
 
-#: journal/permissions.py:90
-msgid "Can edit title in database"
+#: journal/wagtail_hooks.py:75
+msgid "Journal Export"
 msgstr ""
 
-#: journal/permissions.py:91
-msgid "Can edit copyright"
-msgstr ""
+#: journal/wagtail_hooks.py:182
+#, fuzzy
+#| msgid "Jornalismo e Editoração"
+msgid "Journal Policies"
+msgstr "Journalism and Publishing"
 
-#: journal/wagtail_hooks.py:318
+#: journal/wagtail_hooks.py:399
 msgid "Article Submission Format Check List"
 msgstr ""
 
-#: journalpage/templates/journalpage/about.html:78
-#: journalpage/templates/journalpage/next_journal.html:76
-msgid "Periódicos"
-msgstr "Journals"
+#: journal/wagtail_hooks.py:434
+msgid "Preview about journal"
+msgstr ""
 
-#: journalpage/templates/journalpage/about.html:80
-#: journalpage/templates/journalpage/about.html:108
-#: journalpage/templates/journalpage/about.html:396
+#: journalpage/templates/journalpage/about.html:81
+#: journalpage/templates/journalpage/about.html:109
+#: journalpage/templates/journalpage/about.html:410
 #: journalpage/templates/journalpage/includes/journal_info.html:89
 #: journalpage/templates/journalpage/next_journal.html:78
 msgid "Sobre o periódico"
 msgstr "About the journal"
 
-#: journalpage/templates/journalpage/about.html:109
-#: journalpage/templates/journalpage/about.html:399
+#: journalpage/templates/journalpage/about.html:110
+#: journalpage/templates/journalpage/about.html:413
 msgid "Ficha Bibliográfica"
 msgstr "Bibliographic Data"
 
-#: journalpage/templates/journalpage/about.html:113
+#: journalpage/templates/journalpage/about.html:114
 msgid "Título do periódico conforme registro do ISSN:"
 msgstr "Journal title as per ISSN registration:"
 
-#: journalpage/templates/journalpage/about.html:117
+#: journalpage/templates/journalpage/about.html:118
 msgid "Título abreviado:"
 msgstr "Abbreviated title:"
 
-#: journalpage/templates/journalpage/about.html:121
+#: journalpage/templates/journalpage/about.html:122
 msgid "Publicação de:"
 msgstr "Publication of:"
 
-#: journalpage/templates/journalpage/about.html:124
+#: journalpage/templates/journalpage/about.html:125
 msgid "Periodicidade:"
 msgstr "Frequency:"
 
-#: journalpage/templates/journalpage/about.html:128
+#: journalpage/templates/journalpage/about.html:129
 msgid "Modalidade de publicação:"
 msgstr "Publication type:"
 
-#: journalpage/templates/journalpage/about.html:132
+#: journalpage/templates/journalpage/about.html:133
 msgid "Ano de criação do periódico:"
 msgstr "Year of journal creation:"
 
-#: journalpage/templates/journalpage/about.html:135
+#: journalpage/templates/journalpage/about.html:136
 msgid "Área:"
 msgstr "Area:"
 
-#: journalpage/templates/journalpage/about.html:139
+#: journalpage/templates/journalpage/about.html:140
 msgid "Versão impressa:"
 msgstr "Print version:"
 
-#: journalpage/templates/journalpage/about.html:145
+#: journalpage/templates/journalpage/about.html:146
 msgid "Versão on-line ISSN:"
 msgstr "Online version ISSN:"
 
-#: journalpage/templates/journalpage/about.html:150
-#: journalpage/templates/journalpage/about.html:402
+#: journalpage/templates/journalpage/about.html:151
+#: journalpage/templates/journalpage/about.html:416
 msgid "Missão"
 msgstr "Mission"
 
-#: journalpage/templates/journalpage/about.html:154
-#: journalpage/templates/journalpage/about.html:405
+#: journalpage/templates/journalpage/about.html:155
+#: journalpage/templates/journalpage/about.html:419
 msgid "Breve Histórico"
 msgstr "Brief History"
 
-#: journalpage/templates/journalpage/about.html:158
-#: journalpage/templates/journalpage/about.html:408
+#: journalpage/templates/journalpage/about.html:159
+#: journalpage/templates/journalpage/about.html:422
 msgid "Foco e escopo"
 msgstr "Focus and scope"
 
-#: journalpage/templates/journalpage/about.html:162
-#: journalpage/templates/journalpage/about.html:411
+#: journalpage/templates/journalpage/about.html:163
+#: journalpage/templates/journalpage/about.html:425
 msgid "Contato"
 msgstr "Contact"
 
-#: journalpage/templates/journalpage/about.html:166
+#: journalpage/templates/journalpage/about.html:167
 msgid "Endereço completo da unidade / instituição responsável pelo periódico:"
 msgstr "Full address of the unit / institution responsible for the journal:"
 
-#: journalpage/templates/journalpage/about.html:170
+#: journalpage/templates/journalpage/about.html:171
 msgid "Cidade:"
 msgstr "City:"
 
-#: journalpage/templates/journalpage/about.html:174
+#: journalpage/templates/journalpage/about.html:175
 msgid "Estado:"
 msgstr "State:"
 
-#: journalpage/templates/journalpage/about.html:178
+#: journalpage/templates/journalpage/about.html:179
 msgid "País:"
 msgstr "Country:"
 
-#: journalpage/templates/journalpage/about.html:182
+#: journalpage/templates/journalpage/about.html:183
 msgid "E-mail:"
 msgstr "E-mail:"
 
-#: journalpage/templates/journalpage/about.html:188
-#: journalpage/templates/journalpage/about.html:414
+#: journalpage/templates/journalpage/about.html:189
+#: journalpage/templates/journalpage/about.html:428
 msgid "Websites e Mídias Sociais"
 msgstr "Websites and Social Media"
 
-#: journalpage/templates/journalpage/about.html:196
-#: journalpage/templates/journalpage/about.html:417
+#: journalpage/templates/journalpage/about.html:197
+#: journalpage/templates/journalpage/about.html:431
 msgid "Fontes de indexação"
 msgstr "Indexing sources"
 
-#: journalpage/templates/journalpage/about.html:205
-#: journalpage/templates/journalpage/about.html:420
+#: journalpage/templates/journalpage/about.html:206
+#: journalpage/templates/journalpage/about.html:434
 msgid "Patrocinadores e agências de Fomento"
 msgstr "Sponsors and Funding Agencies"
 
-#: journalpage/templates/journalpage/about.html:213
-#: journalpage/templates/journalpage/about.html:423
+#: journalpage/templates/journalpage/about.html:214
+#: journalpage/templates/journalpage/about.html:437
 msgid "Preservação digital"
 msgstr "Digital preservation"
 
-#: journalpage/templates/journalpage/about.html:230
-#: journalpage/templates/journalpage/about.html:428
+#: journalpage/templates/journalpage/about.html:231
+#: journalpage/templates/journalpage/about.html:442
 #: journalpage/templates/journalpage/includes/journal_info.html:92
 msgid "Política editorial"
 msgstr "Editorial policy"
 
-#: journalpage/templates/journalpage/about.html:232
-#: journalpage/templates/journalpage/about.html:431
+#: journalpage/templates/journalpage/about.html:233
+#: journalpage/templates/journalpage/about.html:445
 msgid "Conformidade com a Ciência Aberta"
 msgstr "Open Science Compliance"
 
-#: journalpage/templates/journalpage/about.html:238
-#: journalpage/templates/journalpage/about.html:434
+#: journalpage/templates/journalpage/about.html:239
+#: journalpage/templates/journalpage/about.html:448
 msgid "Dados abertos"
 msgstr "Open data"
 
-#: journalpage/templates/journalpage/about.html:250
-#: journalpage/templates/journalpage/about.html:440
+#: journalpage/templates/journalpage/about.html:251
+#: journalpage/templates/journalpage/about.html:454
 msgid "Peer review informado"
 msgstr "Informed peer review"
 
-#: journalpage/templates/journalpage/about.html:259
-#: journalpage/templates/journalpage/about.html:443
+#: journalpage/templates/journalpage/about.html:260
+#: journalpage/templates/journalpage/about.html:457
 #: thematic_areas/choices.py:272
 msgid "Ética"
 msgstr "Ethics"
 
-#: journalpage/templates/journalpage/about.html:265
-#: journalpage/templates/journalpage/about.html:445
+#: journalpage/templates/journalpage/about.html:266
+#: journalpage/templates/journalpage/about.html:459
 msgid "Comitê de Ética"
 msgstr "Ethics Committee"
 
-#: journalpage/templates/journalpage/about.html:269
-#: journalpage/templates/journalpage/about.html:448
+#: journalpage/templates/journalpage/about.html:270
+#: journalpage/templates/journalpage/about.html:462
 msgid "Direitos Autorais"
 msgstr "Copyright"
 
-#: journalpage/templates/journalpage/about.html:273
-#: journalpage/templates/journalpage/about.html:451
+#: journalpage/templates/journalpage/about.html:274
+#: journalpage/templates/journalpage/about.html:465
 msgid "Propriedade Intelectual"
 msgstr "Intellectual Property"
 
-#: journalpage/templates/journalpage/about.html:277
+#: journalpage/templates/journalpage/about.html:278
 msgid "Responsabilidade do site:"
 msgstr "Website responsibility:"
 
-#: journalpage/templates/journalpage/about.html:282
+#: journalpage/templates/journalpage/about.html:283
 msgid "Responsabilidade do autor:"
 msgstr "Author responsibility:"
 
-#: journalpage/templates/journalpage/about.html:286
-#: journalpage/templates/journalpage/about.html:454
+#: journalpage/templates/journalpage/about.html:287
+#: journalpage/templates/journalpage/about.html:468
 msgid "Política de Ética e Más condutas"
 msgstr "Ethics and Misconduct Policy"
 
-#: journalpage/templates/journalpage/about.html:288
+#: journalpage/templates/journalpage/about.html:289
 msgid "Política de retratação:"
 msgstr "Retraction policy:"
 
-#: journalpage/templates/journalpage/about.html:295
-#: journalpage/templates/journalpage/about.html:457
+#: journalpage/templates/journalpage/about.html:296
+#: journalpage/templates/journalpage/about.html:471
 msgid "Política sobre Conflito de Interesses"
 msgstr "Conflict of Interest Policy"
 
-#: journalpage/templates/journalpage/about.html:301
-#: journalpage/templates/journalpage/about.html:460
+#: journalpage/templates/journalpage/about.html:302
+#: journalpage/templates/journalpage/about.html:474
 msgid "Questões de gênero"
 msgstr "Gender issues"
 
-#: journalpage/templates/journalpage/about.html:307
+#: journalpage/templates/journalpage/about.html:308
 msgid "Licença"
 msgstr "License"
 
-#: journalpage/templates/journalpage/about.html:311
+#: journalpage/templates/journalpage/about.html:312
 msgid "licença:"
 msgstr "license:"
 
-#: journalpage/templates/journalpage/about.html:314
+#: journalpage/templates/journalpage/about.html:315
 msgid "Cobrança de taxas"
 msgstr "Fee charging"
 
-#: journalpage/templates/journalpage/about.html:318
+#: journalpage/templates/journalpage/about.html:319
 msgid "Moeda:"
 msgstr "Currency:"
 
-#: journalpage/templates/journalpage/about.html:318
+#: journalpage/templates/journalpage/about.html:319
 msgid "Valor:"
 msgstr "Value:"
 
-#: journalpage/templates/journalpage/about.html:322
+#: journalpage/templates/journalpage/about.html:323
 msgid "CORPO EDITORIAL"
 msgstr "EDITORIAL BOARD"
 
-#: journalpage/templates/journalpage/about.html:340
+#: journalpage/templates/journalpage/about.html:354
 msgid "INSTRUÇÕES PARA OS AUTORES"
 msgstr "INSTRUCTIONS FOR AUTHORS"
 
-#: journalpage/templates/journalpage/about.html:342
+#: journalpage/templates/journalpage/about.html:356
 msgid "Tipos de documentos aceitos"
 msgstr "Accepted document types"
 
-#: journalpage/templates/journalpage/about.html:349
-#: journalpage/templates/journalpage/about.html:488
+#: journalpage/templates/journalpage/about.html:363
+#: journalpage/templates/journalpage/about.html:502
 msgid "Contribuição dos Autores"
 msgstr "Authors Contributions"
 
-#: journalpage/templates/journalpage/about.html:354
+#: journalpage/templates/journalpage/about.html:368
 msgid "Formato de envio dos artigos"
 msgstr "Article submission format"
 
-#: journalpage/templates/journalpage/about.html:360
+#: journalpage/templates/journalpage/about.html:374
 msgid "Ativos digitais"
 msgstr "Digital assets"
 
-#: journalpage/templates/journalpage/about.html:364
+#: journalpage/templates/journalpage/about.html:378
 msgid "Citações e referências"
 msgstr "Citations and references"
 
-#: journalpage/templates/journalpage/about.html:368
-#: journalpage/templates/journalpage/about.html:500
+#: journalpage/templates/journalpage/about.html:382
+#: journalpage/templates/journalpage/about.html:514
 msgid "Documentos Suplementares Necessários para Submissão"
 msgstr "Supplementary Documents Required for Submission"
 
-#: journalpage/templates/journalpage/about.html:372
-#: journalpage/templates/journalpage/about.html:503
+#: journalpage/templates/journalpage/about.html:386
+#: journalpage/templates/journalpage/about.html:517
 msgid "Declaração de Financiamento"
 msgstr "Financing Statement"
 
-#: journalpage/templates/journalpage/about.html:376
-#: journalpage/templates/journalpage/about.html:506
+#: journalpage/templates/journalpage/about.html:390
+#: journalpage/templates/journalpage/about.html:520
 msgid "Agradecimentos"
 msgstr "Acknowledgments"
 
-#: journalpage/templates/journalpage/about.html:380
+#: journalpage/templates/journalpage/about.html:394
 msgid "Informações adicionais"
 msgstr "Additional information"
 
-#: journalpage/templates/journalpage/about.html:385
+#: journalpage/templates/journalpage/about.html:399
 msgid "*dados precisam estar disponíveis em alfabeto romano"
 msgstr "*data must be available in Roman alphabet"
 
-#: journalpage/templates/journalpage/about.html:465
+#: journalpage/templates/journalpage/about.html:479
 msgid "Corpo editorial"
 msgstr "Editorial board"
 
-#: journalpage/templates/journalpage/about.html:468
+#: journalpage/templates/journalpage/about.html:482
 msgid "Editor-chefe"
 msgstr "Editor-in-chief"
 
-#: journalpage/templates/journalpage/about.html:471
+#: journalpage/templates/journalpage/about.html:485
 msgid "Editor-executivo"
 msgstr "Executive editor"
 
-#: journalpage/templates/journalpage/about.html:474
+#: journalpage/templates/journalpage/about.html:488
 msgid "Editor(es) Associados ou de Seção / Área"
 msgstr "Associate or Section / Area Editor(s)"
 
-#: journalpage/templates/journalpage/about.html:477
+#: journalpage/templates/journalpage/about.html:491
 msgid "Equipe técnica"
 msgstr "Technical team"
 
-#: journalpage/templates/journalpage/about.html:482
+#: journalpage/templates/journalpage/about.html:496
 msgid "Instruções para os Autores"
 msgstr "Instructions for Authors"
 
-#: journalpage/templates/journalpage/about.html:485
+#: journalpage/templates/journalpage/about.html:499
 msgid "Tipos de Documentos Aceitos"
 msgstr "Accepted Document Types"
 
-#: journalpage/templates/journalpage/about.html:491
+#: journalpage/templates/journalpage/about.html:505
 msgid "Formato de Envio dos Artigos"
 msgstr "Article Submission Format"
 
-#: journalpage/templates/journalpage/about.html:494
+#: journalpage/templates/journalpage/about.html:508
 msgid "Ativos Digitais"
 msgstr "Digital Assets"
 
-#: journalpage/templates/journalpage/about.html:497
+#: journalpage/templates/journalpage/about.html:511
 msgid "Citações e Referências"
 msgstr "Citations and References"
 
-#: journalpage/templates/journalpage/about.html:509
+#: journalpage/templates/journalpage/about.html:523
 msgid "Informações Adicionais"
 msgstr "Additional Information"
 
@@ -3084,10 +3029,6 @@ msgstr "Search"
 #: journalpage/templates/journalpage/includes/levelMenu.html:67
 msgid "Métricas"
 msgstr "Metrics"
-
-#: journalpage/templates/journalpage/includes/levelMenu.html:61
-msgid "Todos"
-msgstr "All"
 
 #: journalpage/templates/journalpage/includes/levelMenu.html:101
 msgid "todos"
@@ -3162,195 +3103,198 @@ msgstr ""
 msgid "Organization"
 msgstr ""
 
-#: pid_provider/models.py:112
+#: pid_provider/choices.py:13 tracker/choices.py:25
+msgid "To do"
+msgstr ""
+
+#: pid_provider/choices.py:14 tracker/choices.py:26
+msgid "Done"
+msgstr ""
+
+#: pid_provider/choices.py:15
+msgid "waiting"
+msgstr ""
+
+#: pid_provider/choices.py:16
+msgid "ignore"
+msgstr ""
+
+#: pid_provider/models.py:151
+msgid "Unable to read XML {} {}"
+msgstr ""
+
+#: pid_provider/models.py:158
 msgid "Unable to get xml with pre (XMLVersion) {}: {} {}"
 msgstr ""
 
-#: pid_provider/models.py:173
+#: pid_provider/models.py:222
 msgid "XML Post URI"
 msgstr ""
 
-#: pid_provider/models.py:176
+#: pid_provider/models.py:225
 msgid "Get Token URI"
 msgstr ""
 
-#: pid_provider/models.py:178
+#: pid_provider/models.py:227
 msgid "Timeout"
 msgstr ""
 
-#: pid_provider/models.py:179
+#: pid_provider/models.py:229
 msgid "API Username"
 msgstr ""
 
-#: pid_provider/models.py:180
+#: pid_provider/models.py:232
 msgid "API Password"
 msgstr ""
 
-#: pid_provider/models.py:216
-msgid "Endpoints"
-msgstr ""
-
-#: pid_provider/models.py:234
-msgid "Endpoint name"
-msgstr ""
-
-#: pid_provider/models.py:236
-msgid "Endpoint URL"
-msgstr ""
-
-#: pid_provider/models.py:258
+#: pid_provider/models.py:277
 msgid "Request origin"
 msgstr ""
 
-#: pid_provider/models.py:260
+#: pid_provider/models.py:280
 msgid "Result type"
 msgstr ""
 
-#: pid_provider/models.py:261
+#: pid_provider/models.py:282
 msgid "Result message"
 msgstr ""
 
-#: pid_provider/models.py:265
+#: pid_provider/models.py:283
 msgid "Detail"
 msgstr ""
 
-#: pid_provider/models.py:267 pid_provider/models.py:531
+#: pid_provider/models.py:285 pid_provider/models.py:524
 msgid "Origin date"
 msgstr ""
 
-#: pid_provider/models.py:269
-msgid "PID v3"
-msgstr ""
-
-#: pid_provider/models.py:427
+#: pid_provider/models.py:418
 msgid "PID type"
 msgstr ""
 
-#: pid_provider/models.py:429
+#: pid_provider/models.py:420
 msgid "PID pid_in_xml"
 msgstr ""
 
-#: pid_provider/models.py:488
-msgid "journal title"
+#: pid_provider/models.py:478
+msgid "processing status"
 msgstr ""
 
-#: pid_provider/models.py:491
+#: pid_provider/models.py:486
 msgid "issn_epub"
 msgstr ""
 
-#: pid_provider/models.py:493
+#: pid_provider/models.py:488
 msgid "issn_ppub"
 msgstr ""
 
-#: pid_provider/models.py:494
+#: pid_provider/models.py:489
 msgid "pub_year"
 msgstr ""
 
-#: pid_provider/models.py:495
+#: pid_provider/models.py:490
 msgid "volume"
 msgstr ""
 
-#: pid_provider/models.py:496
+#: pid_provider/models.py:491
 msgid "number"
 msgstr ""
 
-#: pid_provider/models.py:497
+#: pid_provider/models.py:492
 msgid "suppl"
 msgstr ""
 
-#: pid_provider/models.py:504
+#: pid_provider/models.py:501
 msgid "v3"
 msgstr ""
 
-#: pid_provider/models.py:505
+#: pid_provider/models.py:502
 msgid "v2"
 msgstr ""
 
-#: pid_provider/models.py:506
+#: pid_provider/models.py:503
 msgid "AOP PID"
 msgstr ""
 
-#: pid_provider/models.py:509
+#: pid_provider/models.py:506
 msgid "elocation id"
 msgstr ""
 
-#: pid_provider/models.py:511
+#: pid_provider/models.py:508
 msgid "fpage"
 msgstr ""
 
-#: pid_provider/models.py:512
+#: pid_provider/models.py:509
 msgid "fpage_seq"
 msgstr ""
 
-#: pid_provider/models.py:513
+#: pid_provider/models.py:510
 msgid "lpage"
 msgstr ""
 
-#: pid_provider/models.py:515
+#: pid_provider/models.py:512
 msgid "Document Publication Year"
 msgstr ""
 
-#: pid_provider/models.py:517
-msgid "main_toc_section"
-msgstr ""
-
-#: pid_provider/models.py:518
+#: pid_provider/models.py:514
 msgid "DOI"
 msgstr ""
 
-#: pid_provider/models.py:521
-msgid "article_titles_texts"
-msgstr ""
-
-#: pid_provider/models.py:523
+#: pid_provider/models.py:516
 msgid "surnames"
 msgstr ""
 
-#: pid_provider/models.py:524
+#: pid_provider/models.py:517
 msgid "collab"
 msgstr ""
 
-#: pid_provider/models.py:525
+#: pid_provider/models.py:518
 msgid "links"
 msgstr ""
 
-#: pid_provider/models.py:527
+#: pid_provider/models.py:520
 msgid "partial_body"
 msgstr ""
 
-#: pid_provider/models.py:536
+#: pid_provider/models.py:529
 msgid "Available since"
 msgstr ""
 
-#: pid_provider/models.py:570
+#: pid_provider/models.py:562
 msgid "Other PID"
 msgstr ""
 
-#: pid_provider/models.py:576
+#: pid_provider/models.py:568
 msgid "Other PIDs"
 msgstr ""
 
-#: pid_provider/models.py:851
-msgid "Found {} records for {}"
-msgstr ""
-
-#: pid_provider/models.py:946
+#: pid_provider/models.py:935
 msgid ""
 "The XML content is an ahead of print version but the document {} is already "
 "published in an issue"
 msgstr ""
 
-#: pid_provider/models.py:1390 pid_provider/models.py:1402
-#: pid_provider/models.py:1425
-msgid "No attribute enough for disambiguations {}"
-msgstr ""
-
-#: pid_provider/models.py:1583
+#: pid_provider/models.py:1421
 msgid "Incorrect v2"
 msgstr ""
 
-#: pid_provider/models.py:1586
+#: pid_provider/models.py:1424
 msgid "Correct v2"
+msgstr ""
+
+#: pid_provider/query_params.py:107
+msgid "Required Print or Electronic ISSN to identify XML {}"
+msgstr ""
+
+#: pid_provider/query_params.py:134
+msgid "Required issue or article publication year {}"
+msgstr ""
+
+#: pid_provider/query_params.py:240
+msgid "No attribute enough for disambiguations {}"
+msgstr ""
+
+#: pid_provider/query_params.py:283
+msgid "Required collab or surname {}"
 msgstr ""
 
 #: pid_provider/scripts/schedule_pid_provider_for_opac_xmls.py:10
@@ -3363,31 +3307,31 @@ msgid ""
 "até hoje"
 msgstr "Daily at 23h UTC, loads updated XMLs from 30 days prior until today"
 
-#: pid_provider/wagtail_hooks.py:31
+#: pid_provider/wagtail_hooks.py:30
 msgid "Pid Requests"
 msgstr ""
 
-#: pid_provider/wagtail_hooks.py:59
+#: pid_provider/wagtail_hooks.py:56
 msgid "Collection Pid Requests"
 msgstr ""
 
-#: pid_provider/wagtail_hooks.py:89
+#: pid_provider/wagtail_hooks.py:86
 msgid "Pid Provider XMLs"
 msgstr ""
 
-#: pid_provider/wagtail_hooks.py:134
+#: pid_provider/wagtail_hooks.py:131
 msgid "Pid Changes"
 msgstr ""
 
-#: pid_provider/wagtail_hooks.py:165
+#: pid_provider/wagtail_hooks.py:159
 msgid "Pid Provider Config"
 msgstr ""
 
-#: pid_provider/wagtail_hooks.py:188
+#: pid_provider/wagtail_hooks.py:182
 msgid "Fix pid v2"
 msgstr ""
 
-#: pid_provider/wagtail_hooks.py:211
+#: pid_provider/wagtail_hooks.py:205
 msgid "Pid Provider"
 msgstr ""
 
@@ -3411,39 +3355,39 @@ msgstr ""
 msgid "Email"
 msgstr ""
 
-#: researcher/models.py:267 researcher/models.py:666
+#: researcher/models.py:268 researcher/models.py:667
 msgid "Given names"
 msgstr ""
 
-#: researcher/models.py:269 researcher/models.py:668
+#: researcher/models.py:270 researcher/models.py:669
 msgid "Last name"
 msgstr ""
 
-#: researcher/models.py:270 researcher/models.py:669
+#: researcher/models.py:271 researcher/models.py:670
 msgid "Suffix"
 msgstr ""
 
-#: researcher/models.py:271 researcher/models.py:671
+#: researcher/models.py:272 researcher/models.py:672
 msgid "Full Name"
 msgstr ""
 
-#: researcher/models.py:274
+#: researcher/models.py:275
 msgid "Declared Name"
 msgstr ""
 
-#: researcher/models.py:278 researcher/models.py:674
+#: researcher/models.py:279 researcher/models.py:675
 msgid "Gender identification status"
 msgstr ""
 
-#: researcher/models.py:445 researcher/models.py:1010
+#: researcher/models.py:446 researcher/models.py:1064
 msgid "ID"
 msgstr ""
 
-#: researcher/models.py:447
+#: researcher/models.py:448
 msgid "Source name"
 msgstr ""
 
-#: researcher/models.py:603
+#: researcher/models.py:604
 msgid "Collab"
 msgstr ""
 
@@ -3463,8 +3407,8 @@ msgstr ""
 msgid "PersonName"
 msgstr ""
 
-#: researcher/wagtail_hooks.py:126
-msgid "New Researcher"
+#: researcher/wagtail_hooks.py:158
+msgid "Researcher (ORCID)"
 msgstr ""
 
 #: search/choices.py:4
@@ -3838,7 +3782,8 @@ msgstr "Items per page"
 #: search/templates/search.html:289
 msgid ""
 "O valor do campo página não pode ser maior que a quantidade atual de páginas."
-msgstr "The page field value cannot be greater than the current number of pages."
+msgstr ""
+"The page field value cannot be greater than the current number of pages."
 
 #: search/templates/search.html:297
 msgid "O valor do campo página deve ser maior que 0."
@@ -5679,48 +5624,32 @@ msgstr ""
 msgid "To reprocess"
 msgstr ""
 
-#: tracker/choices.py:25
-msgid "To do"
-msgstr ""
-
-#: tracker/choices.py:26
-msgid "Done"
-msgstr ""
-
 #: tracker/choices.py:27
 msgid "Doing"
-msgstr ""
-
-#: tracker/choices.py:28
-msgid "Pending"
 msgstr ""
 
 #: tracker/choices.py:29
 msgid "ignored"
 msgstr ""
 
-#: tracker/models.py:52 tracker/models.py:251
+#: tracker/models.py:49
+msgid "name"
+msgstr ""
+
+#: tracker/models.py:80 tracker/models.py:167
 msgid "Exception Type"
 msgstr ""
 
-#: tracker/models.py:53 tracker/models.py:252
+#: tracker/models.py:81 tracker/models.py:168
 msgid "Exception Msg"
 msgstr ""
 
-#: tracker/models.py:57
+#: tracker/models.py:85
 msgid "Item"
 msgstr ""
 
-#: tracker/models.py:63
+#: tracker/models.py:91
 msgid "Action"
-msgstr ""
-
-#: tracker/models.py:130
-msgid "Message"
-msgstr ""
-
-#: tracker/models.py:132
-msgid "Message type"
 msgstr ""
 
 #: tracker/wagtail_hooks.py:18
@@ -5776,3 +5705,8 @@ msgstr ""
 #: xml_validation/wagtail_hooks.py:19
 msgid "SciELO Publishing Schema"
 msgstr ""
+
+#, fuzzy
+#~| msgid "Jornalismo e Editoração"
+#~ msgid "Journals Editor"
+#~ msgstr "Journalism and Publishing"

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
 from django.db.models import Count, F, Q, Subquery
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 
 from article import controller
 from article.models import Article, ArticleFormat, ArticleSource

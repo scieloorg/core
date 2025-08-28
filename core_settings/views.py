@@ -2,7 +2,7 @@ import csv
 import uuid
 
 from django.http import JsonResponse
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 
 from config.settings.base import MODEL_TO_IMPORT_CSV, COLLECTION_TEAM
 

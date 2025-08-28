@@ -1,5 +1,5 @@
 from django.http import HttpResponseRedirect
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import CreateView as CreateViewAdmin
 from wagtail.snippets.views.snippets import EditView, SnippetViewSet
@@ -155,7 +155,7 @@ class ResearcherOrganizationAdminViewSet(SnippetViewSet):
     add_view_class = ResearcherOrcidCreateView
     edit_view_class = ResearcherOrcidEditView
     menu_icon = "folder"
-    menu_label = _("New Researcher")
+    menu_label = _("Researcher (ORCID)")
     menu_order = get_menu_order("new_researcher")
     list_display = ["__str__", "get_fullname_researcher"]
     inspect_view_enabled = True

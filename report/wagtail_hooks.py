@@ -2,7 +2,7 @@ from wagtail_modeladmin.options import (
     ModelAdmin,
     modeladmin_register,
 )
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 
 from .models import ReportCSV
 from config.menu import get_menu_order
