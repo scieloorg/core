@@ -17,6 +17,7 @@ from wagtailtables.blocks import TableBlock
 from collection.models import Collection
 from journal.choices import STUDY_AREA
 from journal.models import OwnerHistory, SciELOJournal
+from organization.models import Organization
 
 
 class HomePage(Page):
@@ -174,6 +175,11 @@ class ContentTableBlock(StreamBlock):
     table_block = TableBlock()
 
 
+class FAQItemBlock(blocks.StructBlock):
+    question = blocks.CharBlock(required=True)
+    body = blocks.RichTextBlock(required=True)
+
+
 class AboutScieloOrgPage(Page):
     subpage_types = ['home.AboutScieloOrgPage']
 
@@ -184,6 +190,7 @@ class AboutScieloOrgPage(Page):
             ("table", ContentTableBlock()),
             ("document", DocumentChooserBlock()),
             ("page", blocks.PageChooserBlock()),
+            ("faq", FAQItemBlock()),
         ],
         blank=True,
         use_json_field=True,
