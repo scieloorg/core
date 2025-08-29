@@ -94,6 +94,58 @@ class OrganizationTest(TestCase):
             )
 
 
+    def test_update_institutions(self):
+        self.organization = Organization.create_or_update(
+            user=self.user,
+            name=self.institution.institution_identification.name,
+            acronym=self.institution.institution_identification.acronym,
+            url=self.institution.url,
+            location=self.location,
+            institution_type_scielo=self.institution_type_scielo,
+            institution_type_mec="institution_type_mec",
+            is_official=True,
+        )
+
+        self.assertEqual(self.organization.name, "Name of institution")
+        self.assertEqual(self.organization.acronym, "Acronym of institution")
+        self.assertEqual(self.organization.url, "www.teste.com.br")
+        self.assertEqual(self.organization.institution_type_mec, "institution_type_mec")
+        self.assertEqual(
+            self.organization.institution_type_scielo.first(),
+            self.institution_type_scielo,
+        )
+        self.assertEqual(self.organization.location.country.name, "Brasil")
+        self.assertEqual(self.organization.is_official, True)
+
+        self.institution_type_scielo_2 =OrganizationInstitutionType.create_or_update(
+            user=self.user,
+            name="institution_type_scielo_2",
+        )
+
+        self.organization = Organization.create_or_update(
+            user=self.user,
+            name=self.institution.institution_identification.name,
+            acronym=self.institution.institution_identification.acronym,
+            location=self.location,
+            institution_type_scielo=self.institution_type_scielo_2,
+            institution_type_mec="institution_type_mec2",
+            is_official=True,
+            url="www.teste2.com.br",
+        )
+        # self.organization.update_institutions(user=self.user, institution_type_mec="institution_type_mec2", institution_type_scielo=self.institution_type_scielo_2, is_official=True)
+        self.assertEqual(self.organization.institution_type_mec, "institution_type_mec2")
+        self.assertEqual(
+            self.organization.institution_type_scielo.count(),
+            2
+        )
+        self.assertEqual(
+            self.organization.institution_type_scielo.filter(name="institution_type_scielo_2").exists(),
+            True
+        )
+        self.assertEqual(self.organization.is_official, True)
+        self.assertEqual(self.organization.url, "www.teste2.com.br")
+
+
 class OrganizationTaskTest(TestCase):
     def setUp(self):
         self.user = User.objects.create(username="teste", password="teste")

@@ -1,37 +1,40 @@
 import csv
 
 from django.apps import apps
-from django.db import models, IntegrityError
-from django.utils.translation import gettext_lazy as _
-from modelcluster.models import ClusterableModel
+from django.db import IntegrityError, models
+from django.db.models import Q
+from django.utils.translation import gettext as _
 from modelcluster.fields import ParentalKey
-from wagtail.admin.panels import FieldPanel, InlinePanel
+from modelcluster.models import ClusterableModel
+from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
-from . import choices
-from .exceptions import (
-    OrganizationTypeGetError,
-    OrganizationCreateOrUpdateError,
-    OrganizationLevelGetError,
-    OrganizationGetError,
-)
 from core.forms import CoreAdminModelForm
-from core.models import CommonControlField
+from core.models import BaseHistory, CommonControlField
 from core.utils.standardizer import remove_extra_spaces
 from location.models import Location
 
+from . import choices
+from .exceptions import (
+    OrganizationCreateOrUpdateError,
+    OrganizationGetError,
+    OrganizationLevelGetError,
+    OrganizationTypeGetError,
+)
 
-class BaseOrganization(CommonControlField, ClusterableModel):
+HELP_TEXT_ORGANIZATION = _("Select the standardized organization data")
+
+
+class BaseOrganization(models.Model):
     name = models.TextField(_("Name"), null=False, blank=False)
     acronym = models.TextField(_("Institution Acronym"), null=True, blank=True)
     location = models.ForeignKey(
         Location, on_delete=models.SET_NULL, null=True, blank=False
     )
-    panels = [
-        FieldPanel("name"),
-        FieldPanel("acronym"),
-        AutocompletePanel("location"),
-    ]
+    url = models.URLField("url", blank=True, null=True)
+    logo = models.ImageField(_("Logo"), blank=True, null=True)
+
+
     autocomplete_search_field = "name"
 
     def __str__(self):
@@ -56,11 +59,6 @@ class BaseOrganization(CommonControlField, ClusterableModel):
                     "acronym",
                 ]
             ),
-            models.Index(
-                fields=[
-                    "is_official",
-                ]
-            ),
         ]
 
     base_form_class = CoreAdminModelForm
@@ -71,17 +69,18 @@ class BaseOrganization(CommonControlField, ClusterableModel):
         name,
         acronym,
         location,
+        url=None,
     ):
-        if not name and not location:
+        if not name or not location:
             raise OrganizationGetError("Organization.get requires name and location")
 
         params = {}
         params["name__iexact"] = name
         params["location"] = location
-
         if acronym:
             params["acronym__iexact"] = acronym
-
+        if url:
+            params["url"] = url
         try:
             return cls.objects.get(**params)
         except cls.MultipleObjectsReturned:
@@ -93,19 +92,45 @@ class BaseOrganization(CommonControlField, ClusterableModel):
         name,
         acronym,
         location,
-        user,
+        user=None,
+        url=None,
+        logo=None,
     ):
         try:
             obj = cls(
                 name=name,
                 acronym=acronym,
                 location=location,
-                creator=user,
+                url=url,
+                logo=logo,
             )
+            if hasattr(obj, 'creator') and user:
+                obj.creator = user
             obj.save()
+            print(obj)
             return obj
         except IntegrityError:
             return cls.get(name=name, acronym=acronym, location=location)
+
+    def update_logo(obj, user, logo=None):
+        update = False
+        if logo is not None and obj.logo != logo:
+            obj.logo = logo
+            update = True
+        if update:
+            if hasattr(obj, 'updated_by') and user:
+                obj.updated_by = user
+            obj.save()
+
+    def update_url(obj, user, url=None):
+        update = False
+        if url is not None and obj.url != url:
+            obj.url = url
+            update = True
+        if update:
+            if hasattr(obj, 'updated_by') and user:
+                obj.updated_by = user
+            obj.save()
 
     @classmethod
     def create_or_update(
@@ -114,6 +139,8 @@ class BaseOrganization(CommonControlField, ClusterableModel):
         acronym=None,
         location=None,
         user=None,
+        url=None,
+        logo=None,
     ):
         if not name or not location:
             raise OrganizationCreateOrUpdateError(
@@ -124,19 +151,23 @@ class BaseOrganization(CommonControlField, ClusterableModel):
         acronym = remove_extra_spaces(acronym)
 
         try:
-            return cls.get(name=name, acronym=acronym, location=location)
+            obj = cls.get(name=name, acronym=acronym, location=location)
+            obj.update_logo(user, logo)
+            obj.update_url(user, url)
+            return obj
+
         except cls.DoesNotExist:
             return cls.create(
                 name=name,
                 acronym=acronym,
                 location=location,
                 user=user,
+                url=url,
+                logo=logo,
             )
 
 
-class Organization(BaseOrganization):
-    url = models.URLField("url", blank=True, null=True)
-    logo = models.ImageField(_("Logo"), blank=True, null=True)
+class Organization(BaseOrganization, CommonControlField, ClusterableModel):
     institution_type_mec = models.CharField(
         _("Institution Type (MEC)"),
         choices=choices.inst_type,
@@ -147,7 +178,6 @@ class Organization(BaseOrganization):
     institution_type_scielo = models.ManyToManyField(
         "OrganizationInstitutionType",
         verbose_name=_("Institution Type (SciELO)"),
-        null=True,
         blank=True,
     )
     is_official = models.BooleanField(
@@ -156,12 +186,41 @@ class Organization(BaseOrganization):
         blank=True,
     )
 
-    panels = BaseOrganization.panels + [
+    panels = [
+        FieldPanel("name"),
+        FieldPanel("acronym"),
+        AutocompletePanel("location"),
         FieldPanel("url"),
         FieldPanel("logo"),
         FieldPanel("institution_type_mec"),
         AutocompletePanel("institution_type_scielo"),
+        # FieldPanel("is_official"),
     ]
+
+    def update_institutions(self, user, institution_type_mec=None, institution_type_scielo=None, is_official=None):
+        updated = False
+
+        
+        if (
+            institution_type_mec is not None
+            and self.institution_type_mec != institution_type_mec
+        ):
+            self.institution_type_mec = institution_type_mec
+            updated = True
+
+        if is_official is not None and self.is_official != is_official:
+            self.is_official = is_official
+            updated = True
+
+        if updated:
+            self.updated_by = user
+            self.save()
+
+        if institution_type_scielo is not None:
+            if isinstance(institution_type_scielo, list):
+                self.institution_type_scielo.set(institution_type_scielo)
+            else:
+                self.institution_type_scielo.add(institution_type_scielo)
 
     @classmethod
     def create_or_update(
@@ -176,22 +235,19 @@ class Organization(BaseOrganization):
         institution_type_scielo=None,
         is_official=None,
     ):
+
         institution_type_mec = remove_extra_spaces(institution_type_mec)
         obj = super().create_or_update(
-            name,
-            acronym,
-            location,
-            user,
+            name=name,
+            acronym=acronym,
+            location=location,
+            user=user,
+            url=url,
+            logo=logo,
         )
-        obj.url = url or obj.url
-        obj.logo = logo or obj.logo
-        obj.institution_type_mec = institution_type_mec or obj.institution_type_mec
-        obj.is_official = is_official or obj.is_official
-        obj.save()
-        if institution_type_scielo:
-            obj.institution_type_scielo.add(institution_type_scielo)
-        return obj
+        obj.update_institutions(user, institution_type_mec, institution_type_scielo, is_official)
 
+        return obj
 
 class BaseOrgLevel(CommonControlField):
     level_1 = models.TextField(_("Organization Level 1"), null=True, blank=True)
@@ -317,7 +373,7 @@ class OrganizationInstitutionType(CommonControlField):
     def autocomplete_label(self):
         return str(self)
 
-    panels = [AutocompletePanel("name")]
+    panels = [FieldPanel("name")]
 
     @classmethod
     def load(cls, user, file_path=None):
@@ -334,7 +390,7 @@ class OrganizationInstitutionType(CommonControlField):
     def get(cls, name):
         if not name:
             raise OrganizationTypeGetError(
-                "OrganizationInstitutionType.get requires name paramenter"
+                "OrganizationInstitutionType.get requires name parameter"
             )
         return cls.objects.get(name=name)
 

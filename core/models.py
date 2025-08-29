@@ -566,3 +566,97 @@ class FileWithLang(models.Model):
 
     class Meta:
         abstract = True
+
+
+class BaseHistory(models.Model):
+    initial_date = models.DateField(_("Initial Date"), null=True, blank=True)
+    final_date = models.DateField(_("Final Date"), null=True, blank=True)
+
+    panels = [
+        FieldPanel("initial_date"),
+        FieldPanel("final_date"),
+    ]
+
+    class Meta:
+        abstract = True
+
+
+class BaseLogo(models.Model):
+    """
+    Model para armazenar diferentes versões de logos da coleção
+    com suporte a múltiplos tamanhos e idiomas
+    """   
+    logo = models.ForeignKey(
+        "wagtailimages.Image",
+        on_delete=models.SET_NULL,
+        related_name="+",
+        null=True,
+        blank=True,
+        verbose_name=_("Logo Image")
+    )
+    
+    size = models.CharField(
+        _("Logo Size"),
+        max_length=20,
+        choices=choices.LOGO_SIZE_CHOICES,
+        default='medium',
+        help_text=_("Select the size/purpose of this logo")
+    )
+    
+    language = models.ForeignKey(
+        Language,
+        verbose_name=_("Logo language"),
+        help_text=_("Language version of this logo"),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+            
+    panels = [
+        FieldPanel("logo"),
+        FieldPanel("size"),
+        FieldPanel("language"),
+    ]
+    
+    class Meta:
+        abstract = True
+        ordering = ['sort_order', 'language', 'size']
+    
+    def __str__(self):
+        return f"{self.collection} - {self.language} ({self.size})"
+
+
+class SocialNetwork(models.Model):
+    name = models.CharField(
+        _("Name"),
+        choices=choices.SOCIAL_NETWORK_NAMES,
+        max_length=20,
+        null=True,
+        blank=True,
+    )
+    url = models.URLField(_("URL"), null=True, blank=True)
+
+    panels = [
+        FieldPanel("name"),
+        FieldPanel("url"),
+    ]
+
+    class Meta:
+        verbose_name = _("Social Network")
+        verbose_name_plural = _("Social Networks")
+        indexes = [
+            models.Index(
+                fields=[
+                    "url",
+                ]
+            ),
+        ]
+        abstract = True
+
+    @property
+    def data(self):
+        """Retorna um dicionário com os dados essenciais da rede social."""
+        return {
+            'name': self.name,
+            'url': self.url,
+        }
