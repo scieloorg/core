@@ -72,6 +72,69 @@
         font-size: 14px;
     }
 }
+
+/* Container geral do item */
+.faq-item {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 12px 0;
+}
+
+/* Botão/pergunta */
+.faq-question {
+  all: unset;                 /* Remove estilos default (equivalente a button reset) */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  cursor: pointer;
+  font-weight: 600;
+  color: #111827;
+  padding: 12px 0;
+}
+
+/* Ícone de seta (chevron) */
+.faq-icon {
+  width: 12px;
+  height: 12px;
+  margin-left: 12px;
+  position: relative;
+  transition: transform 0.25s ease;
+}
+.faq-icon::before,
+.faq-icon::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 8px;
+  height: 2px;
+  background: #6b7280; /* cor do ícone */
+  transform-origin: right center;
+}
+.faq-icon::before { transform: translateY(-1px) rotate(35deg); }
+.faq-icon::after  { transform: translateY(-1px) rotate(-35deg); }
+/* Rotaciona para “abrir” (vira um X > V) quando expandido */
+.faq-question[aria-expanded="true"] .faq-icon {
+  transform: rotate(90deg);
+}
+
+/* Corpo/resposta (colapsado por padrão) */
+.faq-body {
+  overflow: hidden;
+  height: 0;
+  opacity: 0;
+  transition: height 0.25s ease, opacity 0.2s ease;
+}
+.faq-item.is-open .faq-body {
+  opacity: 1;
+}
+
+/* Acessibilidade foco */
+.faq-question:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
 </style>
 
 {% include "home/scieloorg/header.html" %}
@@ -107,11 +170,60 @@
                 </div>
             {% elif block.block_type == 'table' %}
                 {% include_block block %}
+            {% elif block.block_type == 'faq' %}
+            <div class="faq-item" data-faq>
+                <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-body-{{ forloop.counter }}" id="faq-question-{{ forloop.counter }}">
+                <span class="faq-question-text">{{ block.value.question }}</span>
+                <span class="faq-icon" aria-hidden="true"></span>
+                </button>
+                <div class="faq-body" id="faq-body-{{ forloop.counter }}" role="region" aria-labelledby="faq-question-{{ forloop.counter }}">
+                {{ block.value.body|richtext }}
+                </div>
+            </div>
             {% endif %}
           {% endfor %}
 
-      {% endif %}
     </div>
 </section>
+
+<script>
+  (function () {
+    function openBody(body) {
+      body.style.height = body.scrollHeight + 'px';
+      body.addEventListener('transitionend', function onEnd() {
+        body.style.height = 'auto';
+        body.removeEventListener('transitionend', onEnd);
+      });
+    }
+    function closeBody(body) {
+      body.style.height = body.scrollHeight + 'px'; // set start height
+      // force reflow
+      body.offsetHeight; 
+      body.style.height = '0px';
+    }
+    function toggleFAQ(item) {
+      const btn = item.querySelector('.faq-question');
+      const body = item.querySelector('.faq-body');
+      const isOpening = !item.classList.contains('is-open');
+      item.classList.toggle('is-open', isOpening);
+      btn.setAttribute('aria-expanded', String(isOpening));
+      if (isOpening) {
+        body.style.height = '0px';
+        // next frame
+        requestAnimationFrame(() => openBody(body));
+      } else {
+        closeBody(body);
+      }
+    }
+
+    document.addEventListener('click', function(e) {
+      const btn = e.target.closest('.faq-question');
+      if (!btn) return;
+      const item = btn.closest('[data-faq]');
+      if (!item) return;
+      toggleFAQ(item);
+    });
+  })();
+</script>
 
 {% endblock %}
