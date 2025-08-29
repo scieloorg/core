@@ -19,31 +19,37 @@ from journal.choices import STUDY_AREA
 from journal.models import OwnerHistory, SciELOJournal
 
 
+def get_page_about(obj):
+    try:
+        lang = get_language()
+        try:
+            locale = Locale.objects.get(language_code__iexact=lang)
+        except Locale.MultipleObjectsReturned:
+            locale = Locale.objects.filter(language_code__iexact=lang).first()
+        except Locale.DoesNotExist:
+            # Fallback para locale padrão
+            locale = Locale.get_default()
+        page_about = (
+            obj.get_children()
+            .live()
+            .public()
+            .type(AboutScieloOrgPage)
+            .filter(locale=locale)
+            .first()
+        )
+    except (Page.DoesNotExist, Locale.DoesNotExist, Page.MultipleObjectsReturned):
+        page_about = Page.objects.filter(slug="about-scielo").first()
+    return page_about
+    
+
 class HomePage(Page):
-    subpage_types = ['home.AboutScieloOrgPage']
+    subpage_types = ['home.AboutScieloOrgPage', 'home.ListPageJournal', 'home.ListPageJournalByPublisher']
 
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
         collections = Collection.objects.all().order_by("main_name")
         children = self.get_children()
-        try:
-            lang = get_language()
-            try:
-                locale = Locale.objects.get(language_code__iexact=lang)
-            except Locale.MultipleObjectsReturned:
-                locale = Locale.objects.filter(language_code__iexact=lang).first()
-            except Locale.DoesNotExist:
-                # Fallback para locale padrão
-                locale = Locale.get_default()
-            page_about = (
-                self.get_children()
-                .live()
-                .public()
-                .get(slug="about-scielo", locale=locale)
-            )
-            context["page_about"] = page_about
-        except (Page.DoesNotExist, Locale.DoesNotExist, Page.MultipleObjectsReturned):
-            context["page_about"] = Page.objects.filter(slug="about-scielo").first()
+        context["page_about"] = get_page_about(self)
 
         context["collections_journals"] = collections.filter(
             Q(is_active=True) & Q(status="certified")
@@ -69,16 +75,7 @@ class HomePage(Page):
 class ListPageJournal(Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        lang = get_language()
-        locale = Locale.objects.get(language_code__iexact=lang)
-        parent_specific_page = (
-            self.get_parent()
-            .specific.get_children()
-            .live()
-            .public()
-            .get(slug="about-scielo", locale=locale)
-        )
-        context["page_about"] = parent_specific_page
+        context["page_about"] = get_page_about(self)
         category = request.GET.get("category")
         search_term = request.GET.get("search_term", "")
         starts_with_letter = request.GET.get("start_with_letter", "")
@@ -115,16 +112,7 @@ class ListPageJournal(Page):
 class ListPageJournalByPublisher(Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        lang = get_language()
-        locale = Locale.objects.get(language_code__iexact=lang)
-        parent_specific_page = (
-            self.get_parent()
-            .specific.get_children()
-            .live()
-            .public()
-            .get(slug="about-scielo", locale=locale)
-        )
-        context["page_about"] = parent_specific_page
+        context["page_about"] = get_page_about(self)
         search_term = request.GET.get("search_term", "")
         starts_with_letter = request.GET.get("start_with_letter", "")
         active_or_discontinued = list(request.GET.get("tab", ""))
@@ -163,7 +151,7 @@ class ListPageJournalByPublisher(Page):
         )
 
         context["publishers"] = publishers
-        context["parent_page"] = parent_specific_page
+        context["parent_page"] = context["page_about"]
         return context
 
 
