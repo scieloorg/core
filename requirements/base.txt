@@ -4,7 +4,7 @@
 
 # Python utilities
 pytz==2023.3.post1  # https://github.com/stub42/pytz
-Pillow==10.2.0  # https://github.com/python-pillow/Pillow
+Pillow==10.3.0  # https://github.com/python-pillow/Pillow
 argon2-cffi==23.1.0  # https://github.com/hynek/argon2_cffi
 whitenoise==6.6.0  # https://github.com/evansd/whitenoise
 xmltodict==0.13.0  # https://github.com/martinblech/xmltodict.git
