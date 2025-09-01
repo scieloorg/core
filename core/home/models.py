@@ -155,16 +155,6 @@ class ListPageJournalByPublisher(Page):
         return context
 
 
-class MultilangTextBlock(blocks.StructBlock):
-    br = blocks.RichTextBlock(label="Português", required=False)
-    en = blocks.RichTextBlock(label="Inglês", required=False)
-    es = blocks.RichTextBlock(label="Espanhol", required=False)
-
-    class Meta:
-        icon = "doc-full"
-        label = "Texto multilíngue"
-
-
 class AboutScieloOrgPage(Page):
 
     body = RichTextField("Body", blank=True)
@@ -184,7 +174,6 @@ class AboutScieloOrgPage(Page):
     list_page = StreamField(
         [
             ("page", blocks.PageChooserBlock()),
-            ("multilang_text", MultilangTextBlock()),
             ("url", blocks.URLBlock()),
             ("document", DocumentChooserBlock()),
         ],
