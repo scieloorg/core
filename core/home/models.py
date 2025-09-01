@@ -155,7 +155,13 @@ class ListPageJournalByPublisher(Page):
         return context
 
 
+class FAQItemBlock(blocks.StructBlock):
+    question = blocks.CharBlock(required=True)
+    body = blocks.RichTextBlock(required=True)
+
+
 class AboutScieloOrgPage(Page):
+    subpage_types = ['home.AboutScieloOrgPage']
 
     body = RichTextField("Body", blank=True)
     external_link = models.URLField("Link externo", blank=True, null=True, max_length=2000)
@@ -169,13 +175,9 @@ class AboutScieloOrgPage(Page):
         help_text="Documento principal desta página"
     )
 
-    parent_page_types = ['home.HomePage']
-
     list_page = StreamField(
         [
-            ("page", blocks.PageChooserBlock()),
-            ("url", blocks.URLBlock()),
-            ("document", DocumentChooserBlock()),
+            ("faq_item", FAQItemBlock()),
         ],
         blank=True,
         use_json_field=True,
