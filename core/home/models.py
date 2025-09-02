@@ -3,18 +3,17 @@ from django.db.models import Prefetch, Q
 from django.http import JsonResponse
 from django.template.response import TemplateResponse
 from django.utils.translation import get_language
+from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from wagtail import blocks
 from wagtail.admin.panels import FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel
 from wagtail.contrib.forms.models import AbstractFormField
 from wagtail.contrib.forms.panels import FormSubmissionsPanel
-from wagtail.documents.blocks import DocumentChooserBlock
 from wagtail.fields import RichTextField, StreamField
-from wagtail.models import Locale, Page, TranslatableMixin
+from wagtail.models import Locale, Page
 from wagtailcaptcha.models import WagtailCaptchaEmailForm
 
 from collection.models import Collection
-from core.utils.utils import language_iso
 from journal.choices import STUDY_AREA
 from journal.models import OwnerHistory, SciELOJournal
 
@@ -155,20 +154,16 @@ class ListPageJournalByPublisher(Page):
         return context
 
 
-class MultilangTextBlock(blocks.StructBlock):
-    br = blocks.RichTextBlock(label="Português", required=False)
-    en = blocks.RichTextBlock(label="Inglês", required=False)
-    es = blocks.RichTextBlock(label="Espanhol", required=False)
-
-    class Meta:
-        icon = "doc-full"
-        label = "Texto multilíngue"
+class FAQItemBlock(blocks.StructBlock):
+    question = blocks.CharBlock(required=True)
+    body = blocks.RichTextBlock(required=True)
 
 
 class AboutScieloOrgPage(Page):
+    subpage_types = ['home.AboutScieloOrgPage']
 
-    body = RichTextField("Body", blank=True)
-    external_link = models.URLField("Link externo", blank=True, null=True, max_length=2000)
+    body = RichTextField(_("Body"), blank=True)
+    external_link = models.URLField(_("Link externo"), blank=True, null=True, max_length=2000)
 
     attached_document = models.ForeignKey(
         'wagtaildocs.Document',
@@ -176,17 +171,12 @@ class AboutScieloOrgPage(Page):
         blank=True,
         on_delete=models.SET_NULL,
         related_name='+',
-        help_text="Documento principal desta página"
+        help_text=_("Documento principal desta página")
     )
-
-    parent_page_types = ['home.HomePage']
 
     list_page = StreamField(
         [
-            ("page", blocks.PageChooserBlock()),
-            ("multilang_text", MultilangTextBlock()),
-            ("url", blocks.URLBlock()),
-            ("document", DocumentChooserBlock()),
+            ("faq_item", FAQItemBlock()),
         ],
         blank=True,
         use_json_field=True,
