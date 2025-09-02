@@ -18,7 +18,7 @@ from journal.choices import STUDY_AREA
 from journal.models import OwnerHistory, SciELOJournal
 
 
-def get_page_about(obj):
+def get_page_about():
     try:
         lang = get_language()
         try:
@@ -28,16 +28,10 @@ def get_page_about(obj):
         except Locale.DoesNotExist:
             # Fallback para locale padrão
             locale = Locale.get_default()
-        page_about = (
-            obj.get_children()
-            .live()
-            .public()
-            .type(AboutScieloOrgPage)
-            .filter(locale=locale)
-            .first()
-        )
+        home_page = HomePage.objects.filter(locale=locale).first()
+        page_about = home_page.get_children().live().public().type(AboutScieloOrgPage).filter(locale=locale).first()
     except (Page.DoesNotExist, Locale.DoesNotExist, Page.MultipleObjectsReturned):
-        page_about = Page.objects.filter(slug="about-scielo").first()
+        page_about = Page.objects.filter(slug="sobre-o-scielo").first()
     return page_about
     
 
@@ -47,8 +41,8 @@ class HomePage(Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
         collections = Collection.objects.all().order_by("main_name")
-        children = self.get_children()
-        context["page_about"] = get_page_about(self)
+        children_qs = self.get_children().live().specific()
+        context["page_about"] = get_page_about()
 
         context["collections_journals"] = collections.filter(
             Q(is_active=True) & Q(status="certified")
@@ -67,14 +61,15 @@ class HomePage(Page):
             Q(is_active=True) & Q(status="diffusion")
         )
         context["categories"] = [item[0] for item in STUDY_AREA]
-        context["children"] = children
+        context["list_journal_pages"] =[p for p in children_qs if isinstance(p, ListPageJournal)]
+        context["list_journal_by_publisher_pages"] =[p for p in children_qs if isinstance(p, ListPageJournalByPublisher)]
         return context
 
 
 class ListPageJournal(Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        context["page_about"] = get_page_about(self)
+        context["page_about"] = get_page_about()
         category = request.GET.get("category")
         search_term = request.GET.get("search_term", "")
         starts_with_letter = request.GET.get("start_with_letter", "")
@@ -111,7 +106,7 @@ class ListPageJournal(Page):
 class ListPageJournalByPublisher(Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        context["page_about"] = get_page_about(self)
+        context["page_about"] = get_page_about()
         search_term = request.GET.get("search_term", "")
         starts_with_letter = request.GET.get("start_with_letter", "")
         active_or_discontinued = list(request.GET.get("tab", ""))
