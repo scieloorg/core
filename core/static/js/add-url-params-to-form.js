@@ -15,6 +15,12 @@ function adicionarParametrosUrlAoForm(form) {
 // Aplicar a todos os formulários automaticamente
 document.querySelectorAll('form').forEach(form => {
   form.addEventListener('submit', function(e) {
+    const submitter = e.submitter
+    if (submitter && submitter.id == 'tab-all') {
+      e.preventDefault();
+      window.location.href = this.getAttribute('action') || window.location.pathname;
+      return;
+    }
     adicionarParametrosUrlAoForm(this);
   });
 });

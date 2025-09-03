@@ -1,27 +1,57 @@
 {% load humanize static i18n wagtailsettings_tags wagtailcore_tags get_journals_by_name_institutiton %}
+<style>
+/* Escopo: apenas dentro da section.breadcrumb */
+section.breadcrumb ol.breadcrumb,
+section.breadcrumb ul.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  list-style: none;
+  padding: 0;
+  margin: 5px;
+  background: transparent;
+}
+
+section.breadcrumb .breadcrumb-item,
+section.breadcrumb li {
+  color: #6b7280;           /* cinza suave */
+  font-size: 0.95rem;
+}
+
+section.breadcrumb li + li::before {
+  content: "›";
+  color: #a3a3a3;
+  margin-right: 10px;
+}
+
+section.breadcrumb a {
+  color: #2563eb;           /* azul */
+  text-decoration: none;
+}
+
+section.breadcrumb a:hover,
+section.breadcrumb a:focus {
+  text-decoration: underline;
+}
+
+    
+</style>
 
 <section class="breadcrumb mt-3 mb-5 py-0 py-1">
     <div class="container">
         <div class="row">
-            <div class="col">
-                <ol class="breadcrumb mb-0 ps-0">
-                    <li class="breadcrumb-item">
-                        <a href="/home" alt="Home"><span class="material-icons-outlined">home</span></a> {% trans 'Home' %}
-                    <li class="breadcrumb-item">
-                        {% trans 'Periódicos' %}
-                    </li>
-                </ol>
-            </div>
             <div class="breadcrumb-content">
-                {% if self.get_ancestors|length > 1 %}
-                    <ul class="breadcrumb">
-                        {% for p in self.get_ancestors %}
-                            {% if p.is_root == False %}
-                                <li><a href="{{ p.url }}">{{ p.title }}>>></a></li>
-                            {% endif %}
-                        {% endfor %}
-                    </ul>
+            {% with ancestors=self.get_ancestors %}
+                {% if ancestors|length > 1 %}
+                <ul class="breadcrumb">
+                    {% for p in ancestors %}
+                    {% if p.depth >= 3 %} {# começa em "inicio" #}
+                        <li><a href="{{ p.url }}">{{ p.title }}</a></li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
                 {% endif %}
+            {% endwith %}
             </div>
         </div>
         <div class="row">

@@ -137,22 +137,8 @@ dd.dd-button {
                     
                     <div class="row">
                         <div class="col">
-
-                            <!---  
-                                usar include do form page para exibir form da capa
-
-                                criar um form estático bonitão.
-
-                                contendo input text e botão de submit.
-
-                                Deixar bonito que depois o samuel ajusta o back end.
-                            --->
-                            
-                            
                             <dl class="dl-search-journals">
-                                {% for child in page.get_children.live %}
-                                    
-                                    {% if child.slug == "list-journals" %}
+                                {% for child in list_journal_pages %}
                                     <dt >
                                         <h3 class="h6 fw-bold">{% trans 'Search journals' %}</h3>
                                     </dt>
@@ -174,15 +160,16 @@ dd.dd-button {
                                             <button type="submit" class="btn btn-secondary">{% trans 'In alphabetical order' %}</button>
                                         </dd>
                                     </form>
-                                    {% endif %}
-                                    {% if child.slug == "list-journals-by-publisher" %}
+                                {% endfor %}
+
+                                {# By publisher #}
+                                {% for child in list_journal_by_publisher_pages %}
                                     <form method="post" style="display: inline;" action="{{ child.url }}">
                                         {% csrf_token %}
                                         <dd class="text dd-button">
                                             <button type="submit" class="btn btn-secondary">{% trans 'Of publisher' %}</button>
                                         </dd>
                                     </form>
-                                    {% endif %}
                                 {% endfor %}
                             </dl>
 
@@ -190,28 +177,24 @@ dd.dd-button {
                                 <dt>
                                     <h3 class="h6 fw-bold">{% trans 'List of journals by subject' %}</h3>
                                 </dt>
-                                {% for child in page.get_children.live %}
-                                    {% if child.slug == "list-journals" %}
-                                        <form method="post" style="display: inline;" action="{{ child.url }}">
-                                            {% csrf_token %}
-                                            <dd class="text dd-button">
-                                                <button type="submit" class="btn btn-secondary">{% trans 'All' %}</button></a>
-                                            </dd>
-                                            <dd>
+                                {% for child in list_journal_pages %}
+                                    <form method="post" style="display: inline;" action="{{ child.url }}">
+                                        {% csrf_token %}
+                                        <dd class="text dd-button">
+                                            <button type="submit" class="btn btn-secondary">{% trans 'All' %}</button></a>
+                                        </dd>
+                                        <dd>
+                                    </form>
+                                        <!-- FIXME Translation -->
+                                        <form method="get" style="display: inline;" action="{{ child.url }}">
+                                            {% for category in categories %}
+                                                <dd class="text dd-button">
+                                                    <button type="submit" class="btn btn-secondary" value="{{category}}" name="category">{{category}}</button>
+                                                </dd>
+                                            {% endfor%}
                                         </form>
-                                            <!-- FIXME Translation -->
-                                            <form method="get" style="display: inline;" action="{{ child.url }}">
-                                                {% for category in categories %}
-                                                    <dd class="text dd-button">
-                                                        <button type="submit" class="btn btn-secondary" value="{{category}}" name="category">{{category}}</button>
-                                                    </dd>
-                                                {% endfor%}
-                                            </form>
-                                    {% endif %}
                                 {% endfor %}
                             </dl>
-
-
                         </div>
                     </div>
                 </div>
