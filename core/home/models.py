@@ -40,27 +40,26 @@ class HomePage(Page):
 
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        collections = Collection.objects.all().order_by("main_name")
+        collections = Collection.objects.filter(domain__isnull=False, is_active=True).order_by("main_name")
         children_qs = self.get_children().live().specific()
-        context["page_about"] = get_page_about()
 
         context["collections_journals"] = collections.filter(
-            Q(is_active=True) & Q(status="certified")
+            Q(status="certified")
         )
         context["collections_in_development"] = collections.filter(
-            Q(is_active=True) & Q(status="development")
+            Q(status="development")
         )
         context["collections_servers_and_repositorios"] = collections.filter(
-            Q(is_active=True)
-            & (Q(collection_type="repositories") | Q(collection_type="preprints"))
+            (Q(collection_type="repositories") | Q(collection_type="preprints"))
         )
         context["collections_books"] = collections.filter(
-            Q(is_active=True) & Q(collection_type="books")
+            Q(collection_type="books")
         )
         context["collections_others"] = collections.filter(
-            Q(is_active=True) & Q(status="diffusion")
+            Q(status="diffusion")
         )
         context["categories"] = [item[0] for item in STUDY_AREA]
+        context["page_about"] = get_page_about()
         context["list_journal_pages"] =[p for p in children_qs if isinstance(p, ListPageJournal)]
         context["list_journal_by_publisher_pages"] =[p for p in children_qs if isinstance(p, ListPageJournalByPublisher)]
         return context
@@ -69,7 +68,6 @@ class HomePage(Page):
 class ListPageJournal(Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        context["page_about"] = get_page_about()
         category = request.GET.get("category")
         search_term = request.GET.get("search_term", "")
         starts_with_letter = request.GET.get("start_with_letter", "")
@@ -100,13 +98,13 @@ class ListPageJournal(Page):
         )
 
         context["journals"] = journals
+        context["page_about"] = get_page_about()
         return context
 
 
 class ListPageJournalByPublisher(Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        context["page_about"] = get_page_about()
         search_term = request.GET.get("search_term", "")
         starts_with_letter = request.GET.get("start_with_letter", "")
         active_or_discontinued = list(request.GET.get("tab", ""))
@@ -145,6 +143,7 @@ class ListPageJournalByPublisher(Page):
         )
 
         context["publishers"] = publishers
+        context["page_about"] = get_page_about()
         context["parent_page"] = context["page_about"]
         return context
 
