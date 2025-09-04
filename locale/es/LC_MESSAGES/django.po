@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-04 14:26+0000\n"
+"POT-Creation-Date: 2025-09-04 14:42+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1007,6 +1007,14 @@ msgstr "Acerca de SciELO"
 msgid "Scientific Electronic Library Online"
 msgstr "Scientific Electronic Library Online"
 
+#: core/templates/home/home_page.html:58
+msgid "Search articles: Enter one or more words"
+msgstr "Buscar artículos: Ingrese una o más palabras"
+
+#: core/templates/home/home_page.html:64
+msgid "Advanced Search"
+msgstr "Búsqueda avanzada"
+
 #: core/templates/home/include/home_scielo_in_pespectiva.html:51
 #: core/templates/home/include/home_scielo_youtube.html:67
 msgid "Continue lendo"
@@ -1089,7 +1097,7 @@ msgstr "Todos"
 msgid "SciELO in Perspective"
 msgstr "SciELO en Perspectiva"
 
-#: core/templates/home/scieloorg/tabs.html:234
+#: core/templates/home/scieloorg/tabs.html:238
 msgid "Acesse o Blog SciELO em Perspectiva"
 msgstr "Acceda al blog SciELO en Perspectiva"
 
