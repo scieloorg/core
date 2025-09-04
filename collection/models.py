@@ -265,6 +265,19 @@ class Collection(CommonControlField, ClusterableModel):
         return CollectionName.objects.filter(collection=self).iterator()
 
 
+    def get_name_for_language(self, lang_code=None):
+        """
+        Retorna o nome da coleção no idioma especificado.
+        Se não envontrar, retorna o main_name ou o primeiro disponível.
+        """
+        from django.utils import translation
+        if not lang_code:
+            lang_code = translation.get_language()
+        name_obj = CollectionName.objects.filter(collection=self, language__code2=lang_code).first()
+        if name_obj:
+            return name_obj.text
+        return self.main_name or (self.collection_name.first().text if self.collection_name.exists() else "")
+
 class CollectionSocialNetwork(Orderable, SocialNetwork):
     page = ParentalKey(
         Collection,

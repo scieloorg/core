@@ -33,35 +33,30 @@ def get_page_about():
     except (Page.DoesNotExist, Locale.DoesNotExist, Page.MultipleObjectsReturned):
         page_about = Page.objects.filter(slug="sobre-o-scielo").first()
     return page_about
-    
+
+def as_item(qs, lang_code):
+    return [{"obj": obj, "name": obj.get_name_for_language(lang_code)} for obj in qs]
 
 class HomePage(Page):
     subpage_types = ['home.AboutScieloOrgPage', 'home.ListPageJournal', 'home.ListPageJournalByPublisher']
 
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        collections = Collection.objects.filter(domain__isnull=False, is_active=True).order_by("main_name")
+        lang_code = get_language()
+        lang_code = "pt" if lang_code == "pt-br" else lang_code
+        collections = Collection.objects.filter(domain__isnull=False, is_active=True, collection_name__language__code2=lang_code).order_by("collection_name__text").prefetch_related("collection_name")
         children_qs = self.get_children().live().specific()
-
-        context["collections_journals"] = collections.filter(
-            Q(status="certified")
-        )
-        context["collections_in_development"] = collections.filter(
-            Q(status="development")
-        )
-        context["collections_servers_and_repositorios"] = collections.filter(
-            (Q(collection_type="repositories") | Q(collection_type="preprints"))
-        )
-        context["collections_books"] = collections.filter(
-            Q(collection_type="books")
-        )
-        context["collections_others"] = collections.filter(
-            Q(status="diffusion")
-        )
+        
+        context["collections_journals"] = as_item(qs=collections.filter(Q(status="certified")), lang_code=lang_code)
+        context["collections_in_development"] = as_item(qs=collections.filter(Q(status="development")), lang_code=lang_code)
+        context["collections_servers_and_repositorios"] = as_item(qs=collections.filter((Q(collection_type="repositories") | Q(collection_type="preprints"))), lang_code=lang_code)
+        context["collections_books"] = as_item(qs=collections.filter(Q(collection_type="books")), lang_code=lang_code)
+        context["collections_others"] = as_item(qs=collections.filter(Q(status="diffusion")), lang_code=lang_code)
         context["categories"] = [item[0] for item in STUDY_AREA]
         context["page_about"] = get_page_about()
         context["list_journal_pages"] =[p for p in children_qs if isinstance(p, ListPageJournal)]
         context["list_journal_by_publisher_pages"] =[p for p in children_qs if isinstance(p, ListPageJournalByPublisher)]
+
         return context
 
 
