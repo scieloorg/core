@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% load humanize static i18n wagtailsettings_tags wagtailcore_tags get_journals_by_name_institutiton %}
 {% load wagtailcore_tags %}
-{% block content %}
 
+{% block title %}{{page.specific.title}}{% endblock title %}
+
+{% block content %}
 <style>
 .scielo-list {
     max-width: 800px;
@@ -136,69 +138,97 @@
 }
 
 </style>
-
-
-{% include "home/scieloorg/header.html" %}
-{% include "home/include/list_journal_page/breadcrumb.html" %}
-
-<section>
-    <div class="container">
-        {% if page.external_link %}
-            <script>
-                window.open("{{ page.external_link }}", "_blank");
-                window.location.href = "{{ page.external_link }}";
-            </script>
-            <p style="text-align: center; margin: 40px 0;">
-                Redirecionando para <a href="{{ page.external_link }}" target="_blank" rel="noopener noreferrer">{{ page.external_link }}</a>...
-            </p>
-        {% else %}
-
-          {# Mostrar documento principal destacado #}
-          {% if page.attached_document %}
-              <div class="document-highlight">
-                  <a href="{{ page.attached_document.url }}" target="_blank" rel="noopener noreferrer">
-                      {{ page.attached_document.title }}
-                  </a>
-                  <div style="font-size: 12px; color: #666; margin-top: 5px;">
-                      {% if page.attached_document.file_extension %}{{ page.attached_document.file_extension|upper }}{% endif %}
-                      {% if page.attached_document.file_size %} • {{ page.attached_document.file_size|filesizeformat }}{% endif %}
-                  </div>
-              </div>
-          {% endif %}
-
-          {# Conteúdo principal da página #}
-          {% if page.body %}
-              <div class="scielo-list-text">
-                  {{ page.body|richtext }}
-              </div>
-          {% endif %}
-
-          {# Lista de itens do StreamField #}
-          {% for block in page.list_page %}
-              {% if block.block_type == 'faq_item' %}
-                <div class="faq-item" data-faq>
-                    <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-body-{{ forloop.counter }}" id="faq-question-{{ forloop.counter }}">
-                    <span class="faq-question-text">{{ block.value.question }} ({{page.last_published_at}})</span> 
-                    <span class="faq-icon" aria-hidden="true"></span>
+    {% include "home/scieloorg/header.html" %}
+    {% include "home/include/list_journal_page/breadcrumb.html" %}
+    <section>
+        <div class="container">
+            <form name="searchForm" id="searchForm" action="" method="get">
+                <div class="input-group mb-3 mt-5">
+                    <input type="search"
+                           class="form-control"
+                           name="q"
+                           value="{{ q|default:'' }}"
+                           placeholder="Buscar páginas Sobre SciELO"
+                           aria-label="Buscar páginas" />
+                    <button type="submit"
+                            class="btn btn-primary btn-lg scielo__btn-with-icon--only">
+                        <i class="material-icons-outlined">search</i>
                     </button>
-                    <div class="faq-body" id="faq-body-{{ forloop.counter }}" role="region" aria-labelledby="faq-question-{{ forloop.counter }}">
-                    {{ block.value.body|richtext }}
-                    </div>
                 </div>
-              {% endif %}
-          {% endfor %}
-
-          {# Páginas filhas #}
-          {% for child in page.get_children.live.public %}
-              <div class="scielo-list-item">
-                 <a href="{% pageurl child %}">{{ child.title }}</a>
-              </div>
-          {% endfor %}
-      {% endif %}
-    </div>
-</section>
-
-<script>
+            </form>
+            {% if q %}
+                <p style="margin-top:10px;">
+                    Resultados para: <strong>{{ q }}</strong>
+                </p>
+                {% if search_results %}
+                    <div class="search-results">
+                        {% for result in search_results %}
+                            <div class="scielo-list-item">
+                                <a href="{% pageurl result %}">{{ result.title }}</a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>Nenhum resultado encontrado.</p>
+                {% endif %}
+            {% else %}
+                {% if page.external_link %}
+                    <script>
+                  window.open("{{ page.external_link }}", "_blank");
+                  window.location.href = "{{ page.external_link }}";
+                    </script>
+                    <p style="text-align: center; margin: 40px 0;">
+                        Redirecionando para <a href="{{ page.external_link }}"
+    target="_blank"
+    rel="noopener noreferrer">{{ page.external_link }}</a>...
+                    </p>
+                {% else %}
+                    {# Mostrar documento principal destacado #}
+                    {% if page.attached_document %}
+                        <div class="document-highlight">
+                            <a href="{{ page.attached_document.url }}"
+                               target="_blank"
+                               rel="noopener noreferrer">{{ page.attached_document.title }}</a>
+                            <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                                {% if page.attached_document.file_extension %}{{ page.attached_document.file_extension|upper }}{% endif %}
+                                {% if page.attached_document.file_size %}• {{ page.attached_document.file_size|filesizeformat }}{% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    {# Conteúdo principal da página #}
+                    {% if page.body %}<div class="scielo-list-text">{{ page.body|richtext }}</div>{% endif %}
+                    {# Lista de itens do StreamField #}
+                    {% for block in page.list_page %}
+                        {% if block.block_type == 'faq_item' %}
+                            <div class="faq-item" data-faq>
+                                <button class="faq-question"
+                                        type="button"
+                                        aria-expanded="false"
+                                        aria-controls="faq-body-{{ forloop.counter }}"
+                                        id="faq-question-{{ forloop.counter }}">
+                                    <span class="faq-question-text">{{ block.value.question }} ({{ page.last_published_at }})</span>
+                                    <span class="faq-icon" aria-hidden="true"></span>
+                                </button>
+                                <div class="faq-body"
+                                     id="faq-body-{{ forloop.counter }}"
+                                     role="region"
+                                     aria-labelledby="faq-question-{{ forloop.counter }}">
+                                    {{ block.value.body|richtext }}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                {# Páginas filhas #}
+                {% for child in page.get_children.live.public %}
+                    <div class="scielo-list-item">
+                        <a href="{% pageurl child %}">{{ child.title }}</a>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </section>
+    <script>
   (function () {
     function openBody(body) {
       body.style.height = body.scrollHeight + 'px';
@@ -210,7 +240,7 @@
     function closeBody(body) {
       body.style.height = body.scrollHeight + 'px'; // set start height
       // force reflow
-      body.offsetHeight; 
+      body.offsetHeight;
       body.style.height = '0px';
     }
     function toggleFAQ(item) {
@@ -236,6 +266,5 @@
       toggleFAQ(item);
     });
   })();
-</script>
-
+    </script>
 {% endblock %}

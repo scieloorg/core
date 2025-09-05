@@ -10,7 +10,7 @@ from wagtail.admin.panels import FieldPanel, FieldRowPanel, InlinePanel, MultiFi
 from wagtail.contrib.forms.models import AbstractFormField
 from wagtail.contrib.forms.panels import FormSubmissionsPanel
 from wagtail.fields import RichTextField, StreamField
-from wagtail.models import Locale, Page
+from wagtail.models import Locale, Page, Site
 from wagtailcaptcha.models import WagtailCaptchaEmailForm
 
 from collection.models import Collection
@@ -33,7 +33,7 @@ def get_page_about():
     except (Page.DoesNotExist, Locale.DoesNotExist, Page.MultipleObjectsReturned):
         page_about = Page.objects.filter(slug="sobre-o-scielo").first()
     return page_about
-    
+
 
 class HomePage(Page):
     subpage_types = ['home.AboutScieloOrgPage', 'home.ListPageJournal', 'home.ListPageJournalByPublisher']
@@ -186,6 +186,20 @@ class AboutScieloOrgPage(Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
         context["page_about"] = self
+
+        q = request.GET.get("q", "").strip()
+        search_results = []
+        if q:
+            site = Site.find_for_request(request)
+            pages = Page.objects.live().public()
+            if site:
+                pages = pages.descendant_of(site.root_page, inclusive=True)
+
+            pages = pages.type(AboutScieloOrgPage)
+            search_results = list(pages.search(q))
+
+            context["q"] = q
+            context["search_results"] = search_results
         return context
 
     class Meta:
