@@ -2,7 +2,6 @@ import csv
 import logging
 import os
 import re
-
 from datetime import datetime
 
 from django.contrib.auth import get_user_model
@@ -27,8 +26,8 @@ from core.models import (
     Language,
     License,
     RichTextWithLanguage,
-    TextWithLang,
     SocialNetwork,
+    TextWithLang,
 )
 from core.utils.thread_context import get_current_collections, get_current_user
 from institution.models import (
@@ -60,7 +59,7 @@ from organization.dynamic_models import (
     OrgLevelPublisher,
     OrgLevelSponsor,
 )
-from organization.models import Organization, HELP_TEXT_ORGANIZATION
+from organization.models import HELP_TEXT_ORGANIZATION, Organization
 from thematic_areas.models import ThematicArea
 from vocabulary.models import Vocabulary
 
@@ -592,8 +591,7 @@ class Journal(CommonControlField, ClusterableModel):
             return queryset.none()
 
         return queryset.filter(
-            title__icontains=search_term,
-            scielojournal__collection__in=collections
+            title__icontains=search_term, scielojournal__collection__in=collections
         ).distinct()
 
     panels_titles = [
@@ -639,7 +637,9 @@ class Journal(CommonControlField, ClusterableModel):
         ),
         FieldPanel("submission_online_url"),
         FieldPanel("main_collection"),
-        InlinePanel("title_in_database", label=_("Title in Database"), classname="collapsed"),
+        InlinePanel(
+            "title_in_database", label=_("Title in Database"), classname="collapsed"
+        ),
         InlinePanel("journalsocialnetwork", label=_("Social Network")),
         FieldPanel("frequency"),
         FieldPanel("publishing_model"),
@@ -683,7 +683,6 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("is_supplement"),
         FieldPanel("acronym_letters"),
     ]
-
 
     edit_handler = TabbedInterface(
         [
@@ -736,7 +735,11 @@ class Journal(CommonControlField, ClusterableModel):
 
     @property
     def journal_acrons(self):
-        return self.scielojournal_set.select_related("collection").filter(collection__is_active=True).values_list("collection__acron3", flat=True)
+        return (
+            self.scielojournal_set.select_related("collection")
+            .filter(collection__is_active=True)
+            .values_list("collection__acron3", flat=True)
+        )
 
     @classmethod
     def get_journal_queryset_with_active_collections(cls):
@@ -801,12 +804,13 @@ class Journal(CommonControlField, ClusterableModel):
             issns.append(issn_print)
         if issns:
             return queryset.filter(
-                Q(official__issn_print__in=issns)|
-                Q(official__issn_electronic__in=issns)
+                Q(official__issn_print__in=issns)
+                | Q(official__issn_electronic__in=issns)
             ).first()
 
         raise JournalGetError(
-            "Journal.get requires offical_journal or issn_print or issn_electronic parameter")
+            "Journal.get requires offical_journal or issn_print or issn_electronic parameter"
+        )
 
     @classmethod
     def create_or_update(
@@ -846,7 +850,11 @@ class Journal(CommonControlField, ClusterableModel):
         # Evita que carregue em lugares em não há necessidade de mostrar acronym e issns
         official = self.official
         if not active_collection:
-            foundation_year = self.official.initial_year if official and self.official.initial_year else "Unknown"
+            foundation_year = (
+                self.official.initial_year
+                if official and self.official.initial_year
+                else "Unknown"
+            )
             return f"{self.title or self.official} | Foundation year: {foundation_year}"
         collection_acronym = ", ".join(
             col.collection.acron3 for col in active_collection
@@ -863,8 +871,9 @@ class Journal(CommonControlField, ClusterableModel):
         return f"{title} ({collection_acronym}) | ({issns_str})"
 
     def articlemeta_format(self, collection):
-        #Evita importacao circular
+        # Evita importacao circular
         from .formats.articlemeta_format import get_articlemeta_format_title
+
         return get_articlemeta_format_title(self, collection)
 
     base_form_class = CoreAdminModelForm
@@ -982,10 +991,12 @@ class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
         help_text=HELP_TEXT_ORGANIZATION,
     )
 
-    panels = BaseHistoryItem.panels +[
+    panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
-        InlinePanel("org_level", max_num=1, label=_("Level Owner"), classname="collapsed"),
+        InlinePanel(
+            "org_level", max_num=1, label=_("Level Owner"), classname="collapsed"
+        ),
     ]
 
     @classmethod
@@ -1012,10 +1023,12 @@ class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
         help_text=HELP_TEXT_ORGANIZATION,
     )
 
-    panels = BaseHistoryItem.panels +[
+    panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
-        InlinePanel("org_level", max_num=1, label=_("Level Publisher"), classname="collapsed"),
+        InlinePanel(
+            "org_level", max_num=1, label=_("Level Publisher"), classname="collapsed"
+        ),
     ]
 
     @classmethod
@@ -1045,7 +1058,9 @@ class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
-        InlinePanel("org_level", max_num=1, label=_("Level Sponsor"), classname="collapsed"),
+        InlinePanel(
+            "org_level", max_num=1, label=_("Level Sponsor"), classname="collapsed"
+        ),
     ]
 
     @classmethod
@@ -1078,7 +1093,9 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem):
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
-        InlinePanel("org_level", max_num=1, label=_("Level Copyright"), classname="collapsed"),
+        InlinePanel(
+            "org_level", max_num=1, label=_("Level Copyright"), classname="collapsed"
+        ),
     ]
 
     @classmethod
@@ -1795,33 +1812,34 @@ class SciELOJournalExport(CommonControlField):
     """
     Controla exportações de periódicos para o articlemeta
     """
+
     scielo_journal = models.ForeignKey(
         SciELOJournal,
         on_delete=models.CASCADE,
         related_name="exports",
-        verbose_name=_("SciELO Journal")
+        verbose_name=_("SciELO Journal"),
     )
     export_type = models.CharField(
         max_length=50,
         choices=[
-            ('articlemeta', 'ArticleMeta'),
+            ("articlemeta", "ArticleMeta"),
         ],
-        verbose_name=_("Export Type")
+        verbose_name=_("Export Type"),
     )
     exported_at = models.DateTimeField(auto_now_add=True)
     collection = models.ForeignKey(
-        'collection.Collection',
+        "collection.Collection",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name=_("Collection")
+        verbose_name=_("Collection"),
     )
 
     class Meta:
-        unique_together = ['scielo_journal', 'export_type', 'collection']
+        unique_together = ["scielo_journal", "export_type", "collection"]
         indexes = [
-            models.Index(fields=['scielo_journal', 'export_type']),
-            models.Index(fields=['exported_at']),
+            models.Index(fields=["scielo_journal", "export_type"]),
+            models.Index(fields=["exported_at"]),
         ]
 
     def __str__(self):
@@ -1834,7 +1852,7 @@ class SciELOJournalExport(CommonControlField):
             scielo_journal=scielo_journal,
             export_type=export_type,
             collection=collection,
-            defaults={'creator': user}
+            defaults={"creator": user},
         )
         if not created:
             obj.exported_at = datetime.now()
@@ -1848,7 +1866,7 @@ class SciELOJournalExport(CommonControlField):
         return cls.objects.filter(
             scielo_journal=scielo_journal,
             export_type=export_type,
-            collection=collection
+            collection=collection,
         ).exists()
 
 
