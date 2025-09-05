@@ -29,39 +29,51 @@ def get_page_about():
             # Fallback para locale padrão
             locale = Locale.get_default()
         home_page = HomePage.objects.filter(locale=locale).first()
-        page_about = home_page.get_children().live().public().type(AboutScieloOrgPage).filter(locale=locale).first()
+        page_about = (
+            home_page.get_children()
+            .live()
+            .public()
+            .type(AboutScieloOrgPage)
+            .filter(locale=locale)
+            .first()
+        )
     except (Page.DoesNotExist, Locale.DoesNotExist, Page.MultipleObjectsReturned):
         page_about = Page.objects.filter(slug="sobre-o-scielo").first()
     return page_about
 
 
 class HomePage(Page):
-    subpage_types = ['home.AboutScieloOrgPage', 'home.ListPageJournal', 'home.ListPageJournalByPublisher']
+    subpage_types = [
+        "home.AboutScieloOrgPage",
+        "home.ListPageJournal",
+        "home.ListPageJournalByPublisher",
+    ]
 
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        collections = Collection.objects.filter(domain__isnull=False, is_active=True).order_by("main_name")
+        collections = Collection.objects.filter(
+            domain__isnull=False, is_active=True
+        ).order_by("main_name")
         children_qs = self.get_children().live().specific()
 
-        context["collections_journals"] = collections.filter(
-            Q(status="certified")
-        )
+        context["collections_journals"] = collections.filter(Q(status="certified"))
         context["collections_in_development"] = collections.filter(
             Q(status="development")
         )
         context["collections_servers_and_repositorios"] = collections.filter(
             (Q(collection_type="repositories") | Q(collection_type="preprints"))
         )
-        context["collections_books"] = collections.filter(
-            Q(collection_type="books")
-        )
-        context["collections_others"] = collections.filter(
-            Q(status="diffusion")
-        )
+        context["collections_books"] = collections.filter(Q(collection_type="books"))
+        context["collections_others"] = collections.filter(Q(status="diffusion"))
         context["categories"] = [item[0] for item in STUDY_AREA]
         context["page_about"] = get_page_about()
-        context["list_journal_pages"] =[p for p in children_qs if isinstance(p, ListPageJournal)]
-        context["list_journal_by_publisher_pages"] =[p for p in children_qs if isinstance(p, ListPageJournalByPublisher)]
+        context["list_journal_pages"] = [
+            p for p in children_qs if isinstance(p, ListPageJournal)
+        ]
+        context["list_journal_by_publisher_pages"] = [
+            p for p in children_qs if isinstance(p, ListPageJournalByPublisher)
+        ]
+
         return context
 
 
@@ -154,18 +166,20 @@ class FAQItemBlock(blocks.StructBlock):
 
 
 class AboutScieloOrgPage(Page):
-    subpage_types = ['home.AboutScieloOrgPage']
+    subpage_types = ["home.AboutScieloOrgPage"]
 
     body = RichTextField(_("Body"), blank=True)
-    external_link = models.URLField(_("Link externo"), blank=True, null=True, max_length=2000)
+    external_link = models.URLField(
+        _("Link externo"), blank=True, null=True, max_length=2000
+    )
 
     attached_document = models.ForeignKey(
-        'wagtaildocs.Document',
+        "wagtaildocs.Document",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name='+',
-        help_text=_("Documento principal desta página")
+        related_name="+",
+        help_text=_("Documento principal desta página"),
     )
 
     list_page = StreamField(
