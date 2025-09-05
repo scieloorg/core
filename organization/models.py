@@ -34,7 +34,6 @@ class BaseOrganization(models.Model):
     url = models.URLField("url", blank=True, null=True)
     logo = models.ImageField(_("Logo"), blank=True, null=True)
 
-
     autocomplete_search_field = "name"
 
     def __str__(self):
@@ -104,7 +103,7 @@ class BaseOrganization(models.Model):
                 url=url,
                 logo=logo,
             )
-            if hasattr(obj, 'creator') and user:
+            if hasattr(obj, "creator") and user:
                 obj.creator = user
             obj.save()
             print(obj)
@@ -118,7 +117,7 @@ class BaseOrganization(models.Model):
             obj.logo = logo
             update = True
         if update:
-            if hasattr(obj, 'updated_by') and user:
+            if hasattr(obj, "updated_by") and user:
                 obj.updated_by = user
             obj.save()
 
@@ -128,7 +127,7 @@ class BaseOrganization(models.Model):
             obj.url = url
             update = True
         if update:
-            if hasattr(obj, 'updated_by') and user:
+            if hasattr(obj, "updated_by") and user:
                 obj.updated_by = user
             obj.save()
 
@@ -197,9 +196,14 @@ class Organization(BaseOrganization, CommonControlField, ClusterableModel):
         # FieldPanel("is_official"),
     ]
 
-    def update_institutions(self, user, institution_type_mec=None, institution_type_scielo=None, is_official=None):
+    def update_institutions(
+        self,
+        user,
+        institution_type_mec=None,
+        institution_type_scielo=None,
+        is_official=None,
+    ):
         updated = False
-
 
         if (
             institution_type_mec is not None
@@ -245,9 +249,12 @@ class Organization(BaseOrganization, CommonControlField, ClusterableModel):
             url=url,
             logo=logo,
         )
-        obj.update_institutions(user, institution_type_mec, institution_type_scielo, is_official)
+        obj.update_institutions(
+            user, institution_type_mec, institution_type_scielo, is_official
+        )
 
         return obj
+
 
 class BaseOrgLevel(CommonControlField):
     level_1 = models.TextField(_("Organization Level 1"), null=True, blank=True)
