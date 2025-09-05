@@ -579,20 +579,20 @@ class Journal(CommonControlField, ClusterableModel):
     @staticmethod
     def autocomplete_custom_queryset_filter(search_term):
         user = get_current_user()
-        
+
         if not user or not user.is_authenticated:
             return Journal.objects.none()
-        
+
         queryset = Journal.objects
         if user.is_superuser:
             return queryset.filter(title__icontains=search_term)
-        
+
         collections = get_current_collections()
         if not collections:
             return queryset.none()
-    
+
         return queryset.filter(
-            title__icontains=search_term, 
+            title__icontains=search_term,
             scielojournal__collection__in=collections
         ).distinct()
 
@@ -733,7 +733,7 @@ class Journal(CommonControlField, ClusterableModel):
             return bool(self.indexed_at.get(acronym=db_acronym))
         except IndexedAt.DoesNotExist:
             return False
-    
+
     @property
     def journal_acrons(self):
         return self.scielojournal_set.select_related("collection").filter(collection__is_active=True).values_list("collection__acron3", flat=True)
@@ -793,7 +793,7 @@ class Journal(CommonControlField, ClusterableModel):
         queryset = cls.objects.select_related("official")
         if official_journal:
             return queryset.get(official=official_journal)
-        
+
         issns = []
         if issn_electronic:
             issns.append(issn_electronic)
@@ -984,8 +984,8 @@ class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
 
     panels = BaseHistoryItem.panels +[
         AutocompletePanel("institution", read_only=True),
-        # AutocompletePanel("organization"),
-        # InlinePanel("org_level", max_num=1, label=_("Level Owner"), classname="collapsed"),
+        AutocompletePanel("organization"),
+        InlinePanel("org_level", max_num=1, label=_("Level Owner"), classname="collapsed"),
     ]
 
     @classmethod
@@ -1014,8 +1014,8 @@ class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
 
     panels = BaseHistoryItem.panels +[
         AutocompletePanel("institution", read_only=True),
-        # AutocompletePanel("organization"),
-        # InlinePanel("org_level", max_num=1, label=_("Level Publisher"), classname="collapsed"),
+        AutocompletePanel("organization"),
+        InlinePanel("org_level", max_num=1, label=_("Level Publisher"), classname="collapsed"),
     ]
 
     @classmethod
@@ -1044,8 +1044,8 @@ class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
 
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
-        # AutocompletePanel("organization"),
-        # InlinePanel("org_level", max_num=1, label=_("Level Sponsor"), classname="collapsed"),  
+        AutocompletePanel("organization"),
+        InlinePanel("org_level", max_num=1, label=_("Level Sponsor"), classname="collapsed"),
     ]
 
     @classmethod
@@ -1077,8 +1077,8 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem):
 
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
-        # AutocompletePanel("organization"),
-        # InlinePanel("org_level", max_num=1, label=_("Level Copyright"), classname="collapsed"),
+        AutocompletePanel("organization"),
+        InlinePanel("org_level", max_num=1, label=_("Level Copyright"), classname="collapsed"),
     ]
 
     @classmethod
@@ -1101,8 +1101,8 @@ class OpenData(Orderable, RichTextWithLanguage, CommonControlField):
         blank=True,
         help_text=mark_safe(
             _(
-                """Refers to sharing data, codes, methods and other materials used and 
-            resulting from research that are usually the basis of the texts of articles published by journals. 
+                """Refers to sharing data, codes, methods and other materials used and
+            resulting from research that are usually the basis of the texts of articles published by journals.
             Guide: <a target='_blank' href='https://wp.scielo.org/wp-content/uploads/Guia_TOP_pt.pdf'>https://wp.scielo.org/wp-content/uploads/Guia_TOP_pt.pdf</a>"""
             )
         ),
@@ -1117,13 +1117,13 @@ class Preprint(Orderable, RichTextWithLanguage, CommonControlField):
         null=True,
         blank=True,
         help_text=_(
-            """A preprint is defined as a manuscript ready for submission to a journal that is deposited 
-            with trusted preprint servers before or in parallel with submission to a journal. 
-            This practice joins that of continuous publication as mechanisms to speed up research communication. 
-            Preprints share with journals the originality in the publication of articles and inhibit the use of 
-            the double-blind procedure in the evaluation of manuscripts. 
-            The use of preprints is an option and choice of the authors and it is up to the journals to adapt 
-            their policies to accept the submission of manuscripts previously deposited in a preprints server 
+            """A preprint is defined as a manuscript ready for submission to a journal that is deposited
+            with trusted preprint servers before or in parallel with submission to a journal.
+            This practice joins that of continuous publication as mechanisms to speed up research communication.
+            Preprints share with journals the originality in the publication of articles and inhibit the use of
+            the double-blind procedure in the evaluation of manuscripts.
+            The use of preprints is an option and choice of the authors and it is up to the journals to adapt
+            their policies to accept the submission of manuscripts previously deposited in a preprints server
             recognized by the journal."""
         ),
     )
@@ -1170,7 +1170,7 @@ class Ecommittee(Orderable, RichTextWithLanguage, CommonControlField):
         null=True,
         blank=True,
         help_text=_(
-            """Authors must attach a statement of approval from the ethics committee of 
+            """Authors must attach a statement of approval from the ethics committee of
             the institution responsible for approving the research"""
         ),
     )
@@ -1184,8 +1184,8 @@ class Copyright(Orderable, RichTextWithLanguage, CommonControlField):
         null=True,
         blank=True,
         help_text=_(
-            """Describe the policy used by the journal on copyright issues. 
-            We recommend that this section be in accordance with the recommendations of the SciELO criteria, 
+            """Describe the policy used by the journal on copyright issues.
+            We recommend that this section be in accordance with the recommendations of the SciELO criteria,
             item 5.2.10.1.2. - Copyright"""
         ),
     )
@@ -1199,7 +1199,7 @@ class WebsiteResponsibility(Orderable, RichTextWithLanguage, CommonControlField)
         null=True,
         blank=True,
         help_text=_(
-            """EX. DOAJ: Copyright terms applied to posted content must be clearly stated and separate 
+            """EX. DOAJ: Copyright terms applied to posted content must be clearly stated and separate
             from copyright terms applied to the website"""
         ),
     )
@@ -1216,9 +1216,9 @@ class AuthorResponsibility(Orderable, RichTextWithLanguage, CommonControlField):
         null=True,
         blank=True,
         help_text=_(
-            """The author's declaration of responsibility for the content published in 
-            the journal that owns the copyright Ex. DOAJ: The terms of copyright must not contradict 
-            the terms of the license or the terms of the open access policy. "All rights reserved" is 
+            """The author's declaration of responsibility for the content published in
+            the journal that owns the copyright Ex. DOAJ: The terms of copyright must not contradict
+            the terms of the license or the terms of the open access policy. "All rights reserved" is
             never appropriate for open access content"""
         ),
     )
@@ -1236,10 +1236,10 @@ class Policies(Orderable, RichTextWithLanguage, CommonControlField):
         blank=True,
         help_text=mark_safe(
             _(
-                """Describe here how the journal will deal with ethical issues and/or 
-            issues that may damage the journal's reputation. What is the journal's position regarding 
-            the retraction policy that the journal will adopt in cases of misconduct. 
-            Best practice guide: <a target='_blank' 
+                """Describe here how the journal will deal with ethical issues and/or
+            issues that may damage the journal's reputation. What is the journal's position regarding
+            the retraction policy that the journal will adopt in cases of misconduct.
+            Best practice guide: <a target='_blank'
             href='https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-Praticas-para-o-Fortalecimento-da-Etica-na-Publicacao-Cientifica.pdf'>
             https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-Praticas-para-o-Fortalecimento-da-Etica-na-Publicacao-Cientifica.pdf</a>"""
             )
@@ -1336,7 +1336,7 @@ class FeeCharging(Orderable, RichTextWithLanguage, CommonControlField):
                 """Please describe any charges to authors related to the submission or publication of works.
         For article publication: Clearly state when no fees are charged.
         Under what circumstances are charges applicable? Are there any discounts?
-        SciELO Statement on Financial Sustainability: <a target='_blank' 
+        SciELO Statement on Financial Sustainability: <a target='_blank'
             href='https://mailchi.mp/scielo/declaracao-sobre-sustentabilidade'>
             https://mailchi.mp/scielo/declaracao-sobre-sustentabilidade</a>
         """
@@ -1384,7 +1384,7 @@ class AuthorsContributions(Orderable, RichTextWithLanguage, CommonControlField):
                 """Description of how authors contributions should be specified.
         Does it use any taxonomy? If yes, which one?
         Does the article text explicitly state the authors contributions?
-        Preferably, use the CREDiT taxonomy structure: <a target='_blank' 
+        Preferably, use the CREDiT taxonomy structure: <a target='_blank'
             href='https://casrai.org/credit/'>https://casrai.org/credit/</a>
         """
             )
@@ -1816,14 +1816,14 @@ class SciELOJournalExport(CommonControlField):
         blank=True,
         verbose_name=_("Collection")
     )
-    
+
     class Meta:
         unique_together = ['scielo_journal', 'export_type', 'collection']
         indexes = [
             models.Index(fields=['scielo_journal', 'export_type']),
             models.Index(fields=['exported_at']),
         ]
-    
+
     def __str__(self):
         return f"{self.scielo_journal.issn_scielo} -> {self.export_type}"
 
