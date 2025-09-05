@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load humanize static i18n wagtailsettings_tags wagtailcore_tags get_journals_by_name_institutiton %}
-
+{% block title %}{{page.specific.title}}{% endblock title %}
 {% block content %}
     {% include "home/scieloorg/header.html" %}
     {% include "home/include/list_journal_page/breadcrumb.html" %}
@@ -26,5 +26,5 @@
             </div>
         </div>
     </section>
-    
+
 {% endblock %}
