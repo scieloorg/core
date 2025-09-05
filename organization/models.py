@@ -3,7 +3,7 @@ import csv
 from django.apps import apps
 from django.db import IntegrityError, models
 from django.db.models import Q
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel
@@ -200,7 +200,7 @@ class Organization(BaseOrganization, CommonControlField, ClusterableModel):
     def update_institutions(self, user, institution_type_mec=None, institution_type_scielo=None, is_official=None):
         updated = False
 
-        
+
         if (
             institution_type_mec is not None
             and self.institution_type_mec != institution_type_mec
