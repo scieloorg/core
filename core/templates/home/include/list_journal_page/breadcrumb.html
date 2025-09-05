@@ -34,7 +34,7 @@ section.breadcrumb a:focus {
   text-decoration: underline;
 }
 
-    
+
 </style>
 
 <section class="breadcrumb mt-3 mb-5 py-0 py-1">
@@ -45,10 +45,15 @@ section.breadcrumb a:focus {
                 {% if ancestors|length > 1 %}
                 <ul class="breadcrumb">
                     {% for p in ancestors %}
-                    {% if p.depth >= 3 %} {# começa em "inicio" #}
-                        <li><a href="{{ p.url }}">{{ p.title }}</a></li>
-                    {% endif %}
+                      {% if p.depth >= 3 %} {# começa em "inicio" #}
+                          <li>
+                            <a href="{{ p.url }}">{{ p.title }}</a>
+                          </li>
+                      {% endif %}
                     {% endfor %}
+                  <li>
+                    <span>{{page.title}}</span>
+                  </li>
                 </ul>
                 {% endif %}
             {% endwith %}
@@ -58,10 +63,11 @@ section.breadcrumb a:focus {
             <div class="col">
                 <ol class="breadcrumb mb-0 ps-0">
                     <li class="breadcrumb-item">
-                        <h3 style="margin: 0%;"><strong>{{ page.title }}</strong></h3>
+                        <h3 style="margin: 0%; padding-bottom: 10px;"><strong>{{ page.title }}</strong></h3>
                     </li>
                 </ol>
             </div>
         </div>
+        {% include "home/include/social_media.html" %}
     </div>
 </section>
