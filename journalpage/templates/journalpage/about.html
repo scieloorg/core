@@ -59,10 +59,10 @@
 
           </div>
           <div class="col-3 pt-3">
-        
-            <!-- share --> 
+
+            <!-- share -->
             {% include "journalpage/includes/share.html" %}
-          
+
           </div>
         </div>
       </div>
@@ -80,18 +80,18 @@
             <li class="breadcrumb-item"><a href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}">{{journal.title}}</a></li>
             <li class="breadcrumb-item">{% trans 'Sobre o periódico' %}</li>
           </ol>
-            
+
           </div>
           <div class="col-3 pt-3">
-        
-            <!-- share --> 
+
+            <!-- share -->
             {% include "journalpage/includes/share.html" %}
-          
+
           </div>
         </div>
       </div>
     </section>
-  
+
     <section class="journalContent">
       <div class="container">
         <div class="row">
@@ -119,7 +119,14 @@
                             <i>{{ journal.short_title }}</i>
                           </li>
                           <li>
-                            <strong>{% trans 'Publicação de:' %}</strong> {% for publisher in journal.publisher_history.all %} <i>{{ publisher.institution.institution.institution_identification.name}}</i>{% endfor %}
+                            <strong>{% trans 'Publicação de:' %}</strong>
+                            {% for publisher in journal.publisher_history.all %}
+                              {% if publisher.organization %}
+                                <i>{{ publisher.organization.name }}</i>
+                              {% else %}
+                                <i>{{ publisher.institution.institution.institution_identification.name}}</i>
+                              {% endif %}
+                            {% endfor %}
                           </li>
                           <li>
                             <strong>{% trans 'Periodicidade:' %}</strong>
@@ -135,33 +142,33 @@
                           <li>
                             <strong>{% trans 'Área:' %}</strong> {% for study_area in journal.subject.all %} <i>{{ study_area }}</i> {% endfor %}
                           </li>
-                          {% if journal.official.issn_print %} 
+                          {% if journal.official.issn_print %}
                             <li>
-                              <strong>{% trans 'Versão impressa:' %}</strong> 
-                              <i>{{ journal.official.issn_print }}</i> 
+                              <strong>{% trans 'Versão impressa:' %}</strong>
+                              <i>{{ journal.official.issn_print }}</i>
                             </li>
                           {% endif %}
-                          {% if journal.official.issn_electronic %}   
+                          {% if journal.official.issn_electronic %}
                             <li>
-                              <strong>{% trans 'Versão on-line ISSN:' %}</strong> 
+                              <strong>{% trans 'Versão on-line ISSN:' %}</strong>
                               <i>{{ journal.official.issn_electronic }}</i>
                             </li>
                           {% endif %}
                         </ul>
                         <h5 id="item-1-2">{% trans 'Missão' %}</h5>
-                        {% for m in mission %} 
-                          {{ m.rich_text|richtext }} 
-                        {% endfor %} 
+                        {% for m in mission %}
+                          {{ m.rich_text|richtext }}
+                        {% endfor %}
                         <h5 id="item-1-3">{% trans 'Breve Histórico' %}</h5>
-                        {% for bf in brief_history %} 
-                          {{ bf.rich_text|richtext }} 
-                        {% endfor %} 
+                        {% for bf in brief_history %}
+                          {{ bf.rich_text|richtext }}
+                        {% endfor %}
                         <h5 id="item-1-4">{% trans 'Foco e escopo' %}</h5>
-                        {% for hs in focus_and_scope %} 
+                        {% for hs in focus_and_scope %}
                           {{ hs.rich_text|richtext }}
-                        {% endfor %} 
+                        {% endfor %}
                         <h5 id="item-1-5">{% trans 'Contato' %}</h5>
-                        
+
                         <ul type="disc">
                           <li>
                             <strong>{% trans 'Endereço completo da unidade / instituição responsável pelo periódico:' %}</strong>
@@ -187,27 +194,31 @@
                           </li>
                         </ul>
                         <h5 id="item-1-6">{% trans 'Websites e Mídias Sociais' %}</h5>
-                        <ul type="disc"> 
-                          {% for sn in social_network %} 
+                        <ul type="disc">
+                          {% for sn in social_network %}
                             <li>
                               <a href="{{ sn.url }}">{{ sn.name }}</a>
-                            </li> 
-                          {% endfor %} 
+                            </li>
+                          {% endfor %}
                         </ul>
                         <h5 id="item-1-7">{% trans 'Fontes de indexação' %}</h5>
-                        <ul type="disc"> 
-                          {% for indexed_at in journal.indexed_at.all %} 
-                            <li>{{ indexed_at.name }}</li> 
-                          {% endfor %} 
+                        <ul type="disc">
+                          {% for indexed_at in journal.indexed_at.all %}
+                            <li>{{ indexed_at.name }}</li>
+                          {% endfor %}
                           {% for additional_indexed in journal.additional_indexed_at.all %}
                             <li>{{additional_indexed.name}}</li>
                           {% endfor%}
                         </ul>
                         <h5 id="item-1-8">{% trans 'Patrocinadores e agências de Fomento' %}</h5>
-                        <ul type="disc"> 
-                          {% for sponsor in sponsor_history %} 
-                            <li>{{sponsor.institution.institution.institution_identification.name}}</li> 
-                          {% endfor%} 
+                        <ul type="disc">
+                          {% for sponsor in sponsor_history %}
+                            {% if sponsor.organization %}
+                              <li>{{ sponsor.organization.name }}</li>
+                            {% else %}
+                              <li>{{ sponsor.institution.institution.institution_identification.name }}</li>
+                            {% endif %}
+                          {% endfor%}
                         </ul>
                         <!-- InlinePanel Preservacao Digital -->
                         <!-- Panel Policy -->
@@ -217,12 +228,12 @@
                             <div class="widget widget-Lockss widget-instance-IssueBrowseByYear_Lockss">
 
                               <input class="at-locks-messaging" type="hidden" value="LOCKSS system has permission to collect, preserve, and serve this Archival Unit" />
-                            
+
                               <input class="at-clockss-messaging" type="hidden" value="CLOCKSS system has permission to ingest, preserve, and serve this Archival Unit" />
-                            
+
                             </div>
-                          {% endif%} 
-                        <ul type="disc">                                 
+                          {% endif%}
+                        <ul type="disc">
                           {% for dp in digital_preservation %}
                               <li>{{ dp.name }}</li>
                           {% endfor %}
@@ -349,7 +360,7 @@
                           {% endwith %}
                         </ul>
                         {% endfor %}
-                           
+
                         <hr>
                         <h4 id="instructions">{% trans 'INSTRUÇÕES PARA OS AUTORES' %}</h4>
                         <!-- O texto e o formato das instruções é livre e pode variar de acordo com o periódico ou com a área temática, entretanto, é necessário que sejam abordados os seguintes elementos:-->
@@ -378,7 +389,7 @@
                         <h5 id="item-4-5">{% trans 'Citações e referências' %}</h5>
                         {% for cr in citations_and_references %}
                             {{ cr.rich_text|richtext }}
-                        {% endfor %}                        
+                        {% endfor %}
                         <h5 id="item-4-6">{% trans 'Documentos Suplementares Necessários para Submissão' %}</h5>
                         {% for sds in supp_docs_submission %}
                             {{ sds.rich_text|richtext }}
@@ -437,7 +448,7 @@
                                     <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-1-9">{% trans 'Preservação digital' %}</a>
                                 </li>
                               </ul>
-                          </li>                  
+                          </li>
                           <li>
                             <a class="fw-bold nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-2" style="font-weight: bold;">{% trans 'Política editorial' %}</a>
                             <ul>
@@ -491,7 +502,7 @@
                                     <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-3-4">{% trans 'Equipe técnica' %}</a>
                                 </li>
                             </ul>
-                        </li>                        
+                        </li>
                         <li>
                           <a href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#instructions" class="fw-bold nav-link">{% trans 'Instruções para os Autores' %}</a>
                           <ul>
@@ -523,7 +534,7 @@
                               <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-4-9">{% trans 'Informações Adicionais' %}</a>
                             </li>
                           </ul>
-                        </li>                        
+                        </li>
                       </ul>
                       </nav>
                     </div>
@@ -557,5 +568,3 @@
 
 
 {% endblock %}
-
-
