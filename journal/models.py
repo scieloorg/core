@@ -579,22 +579,26 @@ class Journal(CommonControlField, ClusterableModel):
     @staticmethod
     def autocomplete_custom_queryset_filter(search_term):
         user = get_current_user()
-        
+
         if not user or not user.is_authenticated:
             return Journal.objects.none()
         
         queryset = Journal.objects
         if user.is_superuser:
             return queryset.filter(title__icontains=search_term)
-        
+
         collections = get_current_collections()
         if not collections:
             return queryset.none()
-    
-        return queryset.filter(
-            title__icontains=search_term, 
-            scielojournal__collection__in=collections
-        ).distinct()
+
+        return (queryset
+            .filter(title__icontains=search_term)
+            .filter(
+                Q(scielojournal__collection__in=collections) |
+                Q(main_collection__in=collections)
+            )
+            .distinct()
+        )
 
     panels_titles = [
         AutocompletePanel("official"),
