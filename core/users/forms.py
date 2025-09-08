@@ -76,7 +76,8 @@ class CustomUserFormMixin:
         self._setup_collection_field_requirement()
     
     def _setup_collection_field_requirement(self):
-        if self.data and self.data.get('is_superuser') == 'on':
+        instance_is_super = getattr(self.instance, 'is_superuser', False)
+        if instance_is_super and "collection" in self.fields:
             logging.info("User is superuser, setting collection field to not required.")
             self.fields["collection"].required = False
             return True
@@ -97,7 +98,7 @@ class CustomUserFormMixin:
     def _should_skip_journal_validation(self, cleaned_data, groups_names):
         """Determines if journal validation should be skipped"""
         return (
-            cleaned_data.get("is_superuser") or
+            self.instance.is_superuser or
             COLLECTION_TEAM in groups_names
         )
     
