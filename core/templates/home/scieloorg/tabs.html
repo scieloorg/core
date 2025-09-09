@@ -45,14 +45,14 @@ dd.dd-button {
                                     {% if forloop.first %}
                                     <dd class="first-node-collection">
                                         <h3 class="h6 fw-bold">{% trans 'Journals' %}</h3>
-                                        <a href="http://{{col.domain}}" class="flag-{{col.acron3}} flag-no-data">
-                                            <h4 class="h6">{{col}}</h4>
+                                        <a href="http://{{col.obj.domain}}" class="flag-{{col.obj.acron3}} flag-no-data">
+                                            <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
                                     {% else %}
                                     <dd>
-                                        <a href="http://{{col.domain}}" class="flag-{{col.acron3}} flag-no-data">
-                                            <h4 class="h6">{{col}}</h4>
+                                        <a href="http://{{col.obj.domain}}" class="flag-{{col.obj.acron3}} flag-no-data">
+                                            <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
                                     {% endif %}
@@ -62,14 +62,14 @@ dd.dd-button {
                                     {% if forloop.first %}
                                     <dd class="first-node-collection">
                                         <h3 class="h6 fw-bold">{% trans 'In development' %}</h3>
-                                        <a href="http://{{col.domain}}" class="flag-{{col.acron3}} flag-no-data">
-                                            <h4 class="h6">{{col}}</h4>
+                                        <a href="http://{{col.obj.domain}}" class="flag-{{col.obj.acron3}} flag-no-data">
+                                            <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
                                     {% else %}
                                     <dd>
-                                        <a href="http://{{col.domain}}" class="flag-{{col.acron3}} flag-no-data">
-                                            <h4 class="h6">{{col}}</h4>
+                                        <a href="http://{{col.obj.domain}}" class="flag-{{col.obj.acron3}} flag-no-data">
+                                            <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
                                     {% endif %}
@@ -80,14 +80,14 @@ dd.dd-button {
                                         {% if forloop.first %}
                                         <dd class="first-node-collection">
                                             <h3 class="h6 fw-bold">{% trans 'Servers and Repositories' %}</h3>
-                                            <a href="http://{{col.domain}}" class="scielo-servers-repos scielo-servers-repos-no-data">
-                                                <h4 class="h6">{{col}}</h4>
+                                            <a href="http://{{col.obj.domain}}" class="scielo-servers-repos obj.scielo-servers-repos-no-data">
+                                                <h4 class="h6">{{col.name}}</h4>
                                             </a>
                                         </dd>
                                         {% else %}
                                         <dd>
-                                            <a href="http://{{col.domain}}" class="scielo-servers-repos scielo-servers-repos-no-data">
-                                                <h4 class="h6">{{col}}</h4>
+                                            <a href="http://{{col.obj.domain}}" class="scielo-servers-repos obj.scielo-servers-repos-no-data">
+                                                <h4 class="h6">{{col.name}}</h4>
                                             </a>
                                         </dd>
                                         {% endif %}
@@ -98,14 +98,14 @@ dd.dd-button {
                                     {% if forloop.first %}
                                     <dd class="first-node-collection">
                                         <h3 class="h6 fw-bold">{% trans 'Books' %}</h3>
-                                        <a href="http://{{col.domain}}" class="scielo-books scielo-books-no-data">
-                                            <h4 class="h6">{{col}}</h4>
+                                        <a href="http://{{col.obj.domain}}" class="scielo-books scielo-obj.books-no-data">
+                                            <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
                                     {% else %}
                                     <dd>
-                                        <a href="http://{{col.domain}}" class="scielo-books scielo-books-no-data">
-                                            <h4 class="h6">{{col}}</h4>
+                                        <a href="http://{{col.obj.domain}}" class="scielo-books scielo-obj.books-no-data">
+                                            <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
                                     {% endif %}
@@ -115,14 +115,14 @@ dd.dd-button {
                                     {% if forloop.first %}
                                     <dd class="first-node-collection">
                                         <h3 class="h6 fw-bold">{% trans 'Others' %}</h3>
-                                        <a href="http://{{col.domain}}" class="scielo-books scielo-books-no-data">
-                                            <h4 class="h6">{{col}}</h4>
+                                        <a href="http://{{col.obj.domain}}" class="scielo-books scielo-obj.books-no-data">
+                                            <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
                                     {% else %}
                                     <dd>
-                                        <a href="http://{{col.domain}}" class="scielo-books scielo-books-no-data">
-                                            <h4 class="h6">{{col}}</h4>
+                                        <a href="http://{{col.obj.domain}}" class="scielo-books scielo-obj.books-no-data">
+                                            <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
                                     {% endif %}
@@ -230,8 +230,12 @@ dd.dd-button {
                             </div>
                             <div class="row">
                                 <div class="col d-flex justify-content-end">
-                                    <a href="https://blog.scielo.org/" class="mt-5 btn btn-secondary scielo__btn-with-icon--right">
-                                        Acesse o Blog SciELO em Perspectiva
+                                    {% if LANGUAGE_CODE == 'pt-br' %}
+                                        <a href="https://blog.scielo.org/" class="mt-5 btn btn-secondary scielo__btn-with-icon--right">
+                                    {% else %}
+                                        <a href="https://blog.scielo.org/{{LANGUAGE_CODE}}" class="mt-5 btn btn-secondary scielo__btn-with-icon--right">
+                                    {% endif %}
+                                        {% trans 'Acesse o Blog SciELO em Perspectiva' %}
                                         <i class="material-icons-outlined">arrow_forward</i>
                                     </a>
                                 </div>

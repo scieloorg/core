@@ -41,8 +41,6 @@ urlpatterns = [
     path("api/v1/", include("config.api_router")),
     path('filter_journals/', filter_journals, name='filter_journals'),
     path('import-csv/', import_csv, name='import_csv'), 
-    path("api/blog-feed/", blog_feed_json, name="blog_feed_json"),
-    path("api/youtube-scielo-feed/", youtube_feed_json, name="youtube_feed_json"),
     path("download-csv-journals-page-scielo-org/", download_csv_journals_page_scielo_org, name="download_csv_journals_page_scielo_org"),
     path("download-xls-journals-page-scielo-org/", download_xls_journals_page_scielo_org, name="download_xls_journals_page_scielo_org"),
     # Your stuff: custom urls includes go here
@@ -60,6 +58,8 @@ urlpatterns = [
 # These will be available under a language code prefix. For example /en/search/
 urlpatterns += i18n_patterns(
     # Site search
+    path("api/blog-feed/", blog_feed_json, name="blog_feed_json"),
+    path("api/youtube-scielo-feed/", youtube_feed_json, name="youtube_feed_json"),
     re_path(r"^search_site/$", search_views.search, name="search_site"),
     # Index search
     re_path(r"^search/", include("search.urls")),
