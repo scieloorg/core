@@ -626,6 +626,16 @@ class BaseLogo(models.Model):
         return f"{self.collection} - {self.language} ({self.size})"
 
 
+ICON_MAP = {
+    'twitter': 'icon-twitter',
+    'instagram': 'icon-instagram',
+    'linkedin': 'icon-linkedin',
+    'github': 'icon-github',
+    'facebook': 'icon-facebook',
+    'tiktok': 'icon-tiktok',
+    'youtube': 'icon-youtube',
+}
+
 class SocialNetwork(models.Model):
     name = models.CharField(
         _("Name"),
@@ -654,9 +664,16 @@ class SocialNetwork(models.Model):
         abstract = True
 
     @property
+    def icon_class(self):
+        return ICON_MAP.get(self.name, "icon-reload")
+
+    @property
     def data(self):
         """Retorna um dicionário com os dados essenciais da rede social."""
         return {
             'name': self.name,
             'url': self.url,
         }
+
+    def __str__(self):
+        return self.name

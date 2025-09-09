@@ -1,0 +1,12 @@
+{% load humanize static i18n wagtailsettings_tags wagtailcore_tags get_journals_by_name_institutiton %}
+<div>
+    <ul class="list-unstyled justify-content-center justify-content-sm-start d-flex mt-3 mb-0 scielo__social-network-links">
+        {% for social_network in social_networks %}
+            <li class="me-2">
+                <a href="{{ social_network.url }}" target="_blank" aria-label="{{ social_network.get_name_display }}">
+                    <i class="{{ social_network.icon_class }}"></i>
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>

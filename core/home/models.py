@@ -10,10 +10,11 @@ from wagtail.admin.panels import FieldPanel, FieldRowPanel, InlinePanel, MultiFi
 from wagtail.contrib.forms.models import AbstractFormField
 from wagtail.contrib.forms.panels import FormSubmissionsPanel
 from wagtail.fields import RichTextField, StreamField
-from wagtail.models import Locale, Page
+from wagtail.models import Locale, Page, Site
 from wagtailcaptcha.models import WagtailCaptchaEmailForm
 
 from collection.models import Collection
+from core.home.utils.get_social_networks import get_social_networks
 from journal.choices import STUDY_AREA
 from journal.models import OwnerHistory, SciELOJournal
 
@@ -29,39 +30,51 @@ def get_page_about():
             # Fallback para locale padrão
             locale = Locale.get_default()
         home_page = HomePage.objects.filter(locale=locale).first()
-        page_about = home_page.get_children().live().public().type(AboutScieloOrgPage).filter(locale=locale).first()
+        page_about = (
+            home_page.get_children()
+            .live()
+            .public()
+            .type(AboutScieloOrgPage)
+            .filter(locale=locale)
+            .first()
+        )
     except (Page.DoesNotExist, Locale.DoesNotExist, Page.MultipleObjectsReturned):
         page_about = Page.objects.filter(slug="sobre-o-scielo").first()
     return page_about
-    
+
 
 class HomePage(Page):
-    subpage_types = ['home.AboutScieloOrgPage', 'home.ListPageJournal', 'home.ListPageJournalByPublisher']
+    subpage_types = [
+        "home.AboutScieloOrgPage",
+        "home.ListPageJournal",
+        "home.ListPageJournalByPublisher",
+    ]
 
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        collections = Collection.objects.filter(domain__isnull=False, is_active=True).order_by("main_name")
+        collections = Collection.objects.filter(
+            domain__isnull=False, is_active=True
+        ).order_by("main_name")
         children_qs = self.get_children().live().specific()
 
-        context["collections_journals"] = collections.filter(
-            Q(status="certified")
-        )
+        context["collections_journals"] = collections.filter(Q(status="certified"))
         context["collections_in_development"] = collections.filter(
             Q(status="development")
         )
         context["collections_servers_and_repositorios"] = collections.filter(
             (Q(collection_type="repositories") | Q(collection_type="preprints"))
         )
-        context["collections_books"] = collections.filter(
-            Q(collection_type="books")
-        )
-        context["collections_others"] = collections.filter(
-            Q(status="diffusion")
-        )
+        context["collections_books"] = collections.filter(Q(collection_type="books"))
+        context["collections_others"] = collections.filter(Q(status="diffusion"))
         context["categories"] = [item[0] for item in STUDY_AREA]
         context["page_about"] = get_page_about()
-        context["list_journal_pages"] =[p for p in children_qs if isinstance(p, ListPageJournal)]
-        context["list_journal_by_publisher_pages"] =[p for p in children_qs if isinstance(p, ListPageJournalByPublisher)]
+        context["list_journal_pages"] = [
+            p for p in children_qs if isinstance(p, ListPageJournal)
+        ]
+        context["list_journal_by_publisher_pages"] = [
+            p for p in children_qs if isinstance(p, ListPageJournalByPublisher)
+        ]
+        context["social_networks"] = get_social_networks("scl")
         return context
 
 
@@ -98,6 +111,7 @@ class ListPageJournal(Page):
         )
 
         context["journals"] = journals
+        context["social_networks"] = get_social_networks("scl")
         context["page_about"] = get_page_about()
         return context
 
@@ -143,6 +157,7 @@ class ListPageJournalByPublisher(Page):
         )
 
         context["publishers"] = publishers
+        context["social_networks"] = get_social_networks("scl")
         context["page_about"] = get_page_about()
         context["parent_page"] = context["page_about"]
         return context
@@ -151,22 +166,26 @@ class ListPageJournalByPublisher(Page):
 class FAQItemBlock(blocks.StructBlock):
     question = blocks.CharBlock(required=True)
     body = blocks.RichTextBlock(required=True)
+    updated = blocks.DateBlock(required=False)
 
 
 class AboutScieloOrgPage(Page):
-    subpage_types = ['home.AboutScieloOrgPage']
+    subpage_types = ["home.AboutScieloOrgPage"]
 
     body = RichTextField(_("Body"), blank=True)
-    external_link = models.URLField(_("Link externo"), blank=True, null=True, max_length=2000)
+    external_link = models.URLField(
+        _("Link externo"), blank=True, null=True, max_length=2000
+    )
 
     attached_document = models.ForeignKey(
-        'wagtaildocs.Document',
+        "wagtaildocs.Document",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name='+',
-        help_text=_("Documento principal desta página")
+        related_name="+",
+        help_text=_("Documento principal desta página"),
     )
+    updated = models.DateField(blank=True, null=True)
 
     list_page = StreamField(
         [
@@ -181,11 +200,30 @@ class AboutScieloOrgPage(Page):
         FieldPanel("external_link"),
         FieldPanel("body"),
         FieldPanel("list_page"),
+        FieldPanel("updated"),
     ]
+
+    @staticmethod
+    def search_pages(request, context):
+        q = request.GET.get("q", "").strip()
+        search_results = []
+        if q:
+            site = Site.find_for_request(request)
+            pages = Page.objects.live().public()
+            if site:
+                pages = pages.descendant_of(site.root_page, inclusive=True)
+
+            pages = pages.type(AboutScieloOrgPage)
+            search_results = list(pages.search(q))
+
+            context["q"] = q
+            context["search_results"] = search_results
 
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
+        context["social_networks"] = get_social_networks("scl")
         context["page_about"] = self
+        self.search_pages(request, context)
         return context
 
     class Meta:

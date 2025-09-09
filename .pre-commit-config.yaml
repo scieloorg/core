@@ -8,7 +8,6 @@ repos:
       - id: trailing-whitespace
         stages: [commit]
       - id: end-of-file-fixer
-        stages: [commit]
 
   - repo: https://github.com/PyCQA/isort
     rev: 6.0.1
