@@ -28,3 +28,8 @@
     </section>
 
 {% endblock %}
+
+{% block inline_javascript %}
+<script src="{% static 'scieloorg/js/scieloorg-journal-letter-filter.js' %}" type="text/javascript"></script>
+<script src="{% static 'scieloorg/js/add-url-params-to-form.js' %}" type="text/javascript"></script>
+{% endblock inline_javascript %}
