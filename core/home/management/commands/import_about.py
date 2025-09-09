@@ -346,7 +346,6 @@ class Command(BaseCommand):
             title=self.LANGUAGES[lang_code]["about_title"],
             slug=self.get_unique_slug(parent, about_slug),
             locale=locale,
-            body=f"Página institucional sobre o SciELO - {lang_code.upper()}.",
             translation_key=translation_key,
         )
 
