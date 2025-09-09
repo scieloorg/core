@@ -13,12 +13,12 @@ section.breadcrumb ul.breadcrumb {
 }
 
 section.breadcrumb .breadcrumb-item,
-section.breadcrumb li {
+.breadcrumb-li {
   color: #6b7280;           /* cinza suave */
   font-size: 0.95rem;
 }
 
-section.breadcrumb li + li::before {
+.breadcrumb-li + li::before {
   content: "›";
   color: #a3a3a3;
   margin-right: 10px;
@@ -37,37 +37,33 @@ section.breadcrumb a:focus {
 
 </style>
 
-<section class="breadcrumb mt-3 mb-5 py-0 py-1">
-    <div class="container">
-        <div class="row">
-            <div class="breadcrumb-content">
-            {% with ancestors=self.get_ancestors %}
-                {% if ancestors|length > 1 %}
-                <ul class="breadcrumb">
-                    {% for p in ancestors %}
-                      {% if p.depth >= 3 %} {# começa em "inicio" #}
-                          <li>
-                            <a href="{{ p.url }}">{{ p.title }}</a>
-                          </li>
-                      {% endif %}
-                    {% endfor %}
-                  <li>
-                    <span>{{page.title}}</span>
-                  </li>
-                </ul>
+<section class="breadcrumb mt-3 mb-2 py-0 py-1">
+  <div class="container">
+    <div class="row">
+      <div class="breadcrumb-content">
+        {% with ancestors=self.get_ancestors %}
+          {% if ancestors|length > 1 %}
+            <ul class="breadcrumb">
+              {% for p in ancestors %}
+                {% if p.depth >= 3 %}
+                  <li class="breadcrumb-li"><a href="{{ p.url }}">{{ p.title }}</a></li>
                 {% endif %}
-            {% endwith %}
-            </div>
-        </div>
-        <div class="row">
-            <div class="col">
-                <ol class="breadcrumb mb-0 ps-0">
-                    <li class="breadcrumb-item">
-                        <h3 style="margin: 0%; padding-bottom: 10px;"><strong>{{ page.title }}</strong></h3>
-                    </li>
-                </ol>
-            </div>
-        </div>
-        {% include "home/include/social_media.html" %}
+              {% endfor %}
+              <li><span>{{ page.title }}</span></li>
+            </ul>
+          {% endif %}
+        {% endwith %}
+      </div>
     </div>
+
+    <div class="row align-items-center justify-content-between g-0 title-social-row">
+      <div class="col-12 col-md-auto">
+        <h1 class="page-title m-0 pb-2">{{ page.title }}</h1>
+      </div>
+
+      <div class="col-12 col-md d-flex justify-content-md-end pt-2 pt-md-0">
+        {% include "home/include/share_page_about.html" %}
+      </div>
+    </div>
+  </div>
 </section>
