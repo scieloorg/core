@@ -590,9 +590,15 @@ class Journal(CommonControlField, ClusterableModel):
         if not collections:
             return queryset.none()
 
-        return queryset.filter(
-            title__icontains=search_term, scielojournal__collection__in=collections
-        ).distinct()
+        return (queryset
+            .filter(title__icontains=search_term)
+            .filter(
+                Q(scielojournal__collection__in=collections) |
+                Q(main_collection__in=collections)
+            )
+            .distinct()
+        )
+
 
     panels_titles = [
         AutocompletePanel("official"),
