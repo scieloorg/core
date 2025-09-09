@@ -141,21 +141,28 @@
     {% include "home/scieloorg/header.html" %}
     {% include "home/include/list_journal_page/breadcrumb.html" %}
     <section>
-        <div class="container">
-            <form name="searchForm" id="searchForm" action="" method="get">
-                <div class="input-group mb-3 mt-5">
-                    <input type="search"
-                           class="form-control"
-                           name="q"
-                           value="{{ q|default:'' }}"
-                           placeholder="Buscar páginas Sobre SciELO"
-                           aria-label="Buscar páginas" />
-                    <button type="submit"
-                            class="btn btn-primary btn-lg scielo__btn-with-icon--only">
-                        <i class="material-icons-outlined">search</i>
-                    </button>
+        <div class="container my-3">
+            <div class="row justify-content-end">
+                <div class="col-12 col-md-6 col-lg-4">
+                    <form name="searchForm" id="searchForm" action="" method="get">
+                            <div class="input-group mb-3 mt-4">
+                                <input type="search"
+                                    class="form-control"
+                                    name="q"
+                                    value="{{ q|default:'' }}"
+                                    placeholder="Buscar páginas Sobre SciELO"
+                                    aria-label="Buscar páginas" />
+                                <button type="submit"
+                                        class="btn btn-primary btn-lg scielo__btn-with-icon--only">
+                                    <i class="material-icons-outlined">search</i>
+                                </button>
+                            </div>
+                        </form>
                 </div>
-            </form>
+            </div>
+        </div>
+
+        <div class="container">
             {% if q %}
                 <p style="margin-top:10px;">
                     Resultados para: <strong>{{ q }}</strong>
