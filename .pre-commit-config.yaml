@@ -1,32 +1,28 @@
 exclude: "^docs/|/migrations/"
-default_stages: [commit]
+default_stages: [push]
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
+        stages: [commit]
       - id: end-of-file-fixer
-      - id: check-yaml
-
-  - repo: https://github.com/psf/black
-    rev: 23.1.0
-    hooks:
-      - id: black
+        stages: [commit]
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
+    rev: 6.0.1
     hooks:
       - id: isort
+        args: ["--profile", "black"]   # garante compatibilidade com Black
+        stages: [push]
 
-  - repo: https://github.com/PyCQA/flake8
-    rev: 6.0.0
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
     hooks:
-      - id: flake8
-        args: ["--config=setup.cfg"]
-        additional_dependencies: [flake8-isort]
+      - id: black
+        stages: [push]
 
-# sets up .pre-commit-ci.yaml to ensure pre-commit dependencies stay up to date
 ci:
   autoupdate_schedule: weekly
   skip: []
