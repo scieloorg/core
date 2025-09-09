@@ -166,6 +166,7 @@ class ListPageJournalByPublisher(Page):
 class FAQItemBlock(blocks.StructBlock):
     question = blocks.CharBlock(required=True)
     body = blocks.RichTextBlock(required=True)
+    updated = blocks.DateBlock(required=False)
 
 
 class AboutScieloOrgPage(Page):
@@ -184,6 +185,7 @@ class AboutScieloOrgPage(Page):
         related_name="+",
         help_text=_("Documento principal desta página"),
     )
+    updated = models.DateField(blank=True, null=True)
 
     list_page = StreamField(
         [
@@ -198,6 +200,7 @@ class AboutScieloOrgPage(Page):
         FieldPanel("external_link"),
         FieldPanel("body"),
         FieldPanel("list_page"),
+        FieldPanel("updated"),
     ]
 
     @staticmethod

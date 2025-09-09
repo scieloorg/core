@@ -136,6 +136,12 @@
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
+.page-updated-at {
+    font-size: .75em;
+    color: #7f7a71;
+    text-align: right;
+    padding: 0 10px 17px;
+}
 
 </style>
     {% include "home/scieloorg/header.html" %}
@@ -203,7 +209,13 @@
                         </div>
                     {% endif %}
                     {# Conteúdo principal da página #}
-                    {% if page.body %}<div class="scielo-list-text">{{ page.body|richtext }}</div>{% endif %}
+                    {% if page.body %}
+                        <div class="container">
+                            <div class="page-updated-at">
+                                ({{page.updated}})
+                            </div>
+                        </div>
+                    <div class="scielo-list-text">{{ page.body|richtext }}</div>{% endif %}
                     {# Lista de itens do StreamField #}
                     {% for block in page.list_page %}
                         {% if block.block_type == 'faq_item' %}
