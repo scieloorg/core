@@ -188,12 +188,12 @@
             </a>
         </li>
         <li>
-            <a href="" target="_blank" class="showTooltip" title="Compartilhar no Facebook">
+            <a href="#" target="_blank" class="showTooltip" title="Compartilhar no Facebook">
                 <span class="glyphBtn facebook"></span>
             </a>
         </li>
         <li>
-            <a href="" target="_blank" class="showTooltip" title="Compartilhar no Twitter">
+            <a href="#" target="_blank" class="showTooltip" title="Compartilhar no Twitter">
                 <span class="glyphBtn twitter"></span>
             </a>
         </li>
@@ -205,32 +205,32 @@
                 <ul>
                     <li class="dropdown-header">{% trans 'Outras redes sociais' %}</li>
                     <li>
-                        <a href="" target="_blank" class="shareGooglePlus">
+                        <a href="#" target="_blank" class="shareGooglePlus">
                             <span class="glyphBtn googlePlus"></span> Google+
                         </a>
                     </li>
                     <li>
-                        <a href="" target="_blank" class="shareLinkedIn">
+                        <a href="#" target="_blank" class="shareLinkedIn">
                             <span class="glyphBtn linkedIn"></span> LinkedIn
                         </a>
                     </li>
                     <li>
-                        <a href="" target="_blank" class="shareReddit">
+                        <a href="#" target="_blank" class="shareReddit">
                             <span class="glyphBtn reddit"></span> Reddit
                         </a>
                     </li>
                     <li>
-                        <a href="" target="_blank" class="shareStambleUpon">
+                        <a href="#" target="_blank" class="shareStambleUpon">
                             <span class="glyphBtn stambleUpon"></span> StumbleUpon
                         </a>
                     </li>
                     <li>
-                        <a href="" target="_blank" class="shareCiteULike">
+                        <a href="#" target="_blank" class="shareCiteULike">
                             <span class="glyphBtn citeULike"></span> CiteULike
                         </a>
                     </li>
                     <li>
-                        <a href="" target="_blank" class="shareMendeley">
+                        <a href="#" target="_blank" class="shareMendeley">
                             <span class="glyphBtn mendeley"></span> Mendeley
                         </a>
                     </li>
@@ -243,40 +243,38 @@
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     var currentUrl = encodeURIComponent(window.location.href);
-    console.log(currentUrl);
+
     // Facebook
-    var fb = document.querySelector('a[href^="https://www.facebook.com/sharer/sharer.php"]');
+    var fb = document.querySelector('.glyphBtn.facebook').parentElement;
     if (fb) fb.href = "https://www.facebook.com/sharer/sharer.php?u=" + currentUrl;
 
     // Twitter
-    var tw = document.querySelector('a[href^="https://twitter.com/intent/tweet"]');
+    var tw = document.querySelector('.glyphBtn.twitter').parentElement;
     if (tw) tw.href = "https://twitter.com/intent/tweet?text=" + currentUrl;
 
-    // Atom/RSS (não precisa alterar, pois é um feed fixo)
-
     // Google+
-    var gp = document.querySelector('a[href^="https://plus.google.com/share"]');
+    var gp = document.querySelector('.shareGooglePlus');
     if (gp) gp.href = "https://plus.google.com/share?url=" + currentUrl;
 
     // LinkedIn
-    var li = document.querySelector('a[href^="http://www.linkedin.com/shareArticle"]');
-    if (li) li.href = "http://www.linkedin.com/shareArticle?mini=true&url=" + currentUrl;
+    var li = document.querySelector('.shareLinkedIn');
+    if (li) li.href = "https://www.linkedin.com/shareArticle?mini=true&url=" + currentUrl;
 
     // Reddit
-    var rd = document.querySelector('a[href^="http://www.reddit.com/submit"]');
-    if (rd) rd.href = "http://www.reddit.com/submit?url=" + currentUrl;
+    var rd = document.querySelector('.shareReddit');
+    if (rd) rd.href = "https://www.reddit.com/submit?url=" + currentUrl;
 
     // StumbleUpon
-    var su = document.querySelector('a[href^="http://www.stumbleupon.com/submit"]');
-    if (su) su.href = "http://www.stumbleupon.com/submit?url=" + currentUrl;
+    var su = document.querySelector('.shareStambleUpon');
+    if (su) su.href = "https://www.stumbleupon.com/submit?url=" + currentUrl;
 
     // CiteULike
-    var cu = document.querySelector('a[href^="http://www.citeulike.org/posturl"]');
-    if (cu) cu.href = "http://www.citeulike.org/posturl?url=" + currentUrl;
+    var cu = document.querySelector('.shareCiteULike');
+    if (cu) cu.href = "https://www.citeulike.org/posturl?url=" + currentUrl;
 
     // Mendeley
-    var md = document.querySelector('a[href^="http://www.mendeley.com/import/"]');
-    if (md) md.href = "http://www.mendeley.com/import/?url=" + currentUrl;
+    var md = document.querySelector('.shareMendeley');
+    if (md) md.href = "https://www.mendeley.com/import/?url=" + currentUrl;
 });
 
 // Responsivo: abre/fecha o menu ao clicar no botão de compartilhar
