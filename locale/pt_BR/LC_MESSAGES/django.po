@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-09 18:52+0000\n"
+"POT-Creation-Date: 2025-09-09 19:12+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1064,18 +1064,15 @@ msgid "Descontinuados"
 msgstr "Descontinuados"
 
 #: core/templates/home/include/share_page_about.html:173
-#, fuzzy
-#| msgid "Completed"
 msgid "Compartilhe"
-msgstr ""
+msgstr "Compartilhe"
 
+#: core/templates/home/include/share_page_about.html:196
 #: core/templates/home/include/share_page_about.html:201
 msgid "Outras redes sociais"
-msgstr ""
+msgstr "Outras redes sociais"
 
 #: core/templates/home/scieloorg/header.html:89
-#, fuzzy
-#| msgid "About SciELO"
 msgid "Sobre o SciELO"
 msgstr "Sobre o SciELO"
 
