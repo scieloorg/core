@@ -10,10 +10,11 @@ from wagtail.admin.panels import FieldPanel, FieldRowPanel, InlinePanel, MultiFi
 from wagtail.contrib.forms.models import AbstractFormField
 from wagtail.contrib.forms.panels import FormSubmissionsPanel
 from wagtail.fields import RichTextField, StreamField
-from wagtail.models import Locale, Page
+from wagtail.models import Locale, Page, Site
 from wagtailcaptcha.models import WagtailCaptchaEmailForm
 
 from collection.models import Collection
+from core.home.utils.get_social_networks import get_social_networks
 from journal.choices import STUDY_AREA
 from journal.models import OwnerHistory, SciELOJournal
 
@@ -94,7 +95,7 @@ class HomePage(Page):
         context["list_journal_by_publisher_pages"] = [
             p for p in children_qs if isinstance(p, ListPageJournalByPublisher)
         ]
-
+        context["social_networks"] = get_social_networks("scl")
         return context
 
 
@@ -131,6 +132,7 @@ class ListPageJournal(Page):
         )
 
         context["journals"] = journals
+        context["social_networks"] = get_social_networks("scl")
         context["page_about"] = get_page_about()
         return context
 
@@ -176,6 +178,7 @@ class ListPageJournalByPublisher(Page):
         )
 
         context["publishers"] = publishers
+        context["social_networks"] = get_social_networks("scl")
         context["page_about"] = get_page_about()
         context["parent_page"] = context["page_about"]
         return context
@@ -184,6 +187,7 @@ class ListPageJournalByPublisher(Page):
 class FAQItemBlock(blocks.StructBlock):
     question = blocks.CharBlock(required=True)
     body = blocks.RichTextBlock(required=True)
+    updated = blocks.DateBlock(required=False)
 
 
 class AboutScieloOrgPage(Page):
@@ -202,6 +206,7 @@ class AboutScieloOrgPage(Page):
         related_name="+",
         help_text=_("Documento principal desta página"),
     )
+    updated = models.DateField(blank=True, null=True)
 
     list_page = StreamField(
         [
@@ -216,11 +221,30 @@ class AboutScieloOrgPage(Page):
         FieldPanel("external_link"),
         FieldPanel("body"),
         FieldPanel("list_page"),
+        FieldPanel("updated"),
     ]
+
+    @staticmethod
+    def search_pages(request, context):
+        q = request.GET.get("q", "").strip()
+        search_results = []
+        if q:
+            site = Site.find_for_request(request)
+            pages = Page.objects.live().public()
+            if site:
+                pages = pages.descendant_of(site.root_page, inclusive=True)
+
+            pages = pages.type(AboutScieloOrgPage)
+            search_results = list(pages.search(q))
+
+            context["q"] = q
+            context["search_results"] = search_results
 
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
+        context["social_networks"] = get_social_networks("scl")
         context["page_about"] = self
+        self.search_pages(request, context)
         return context
 
     class Meta:

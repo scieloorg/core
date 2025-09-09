@@ -1,0 +1,240 @@
+{% load humanize static i18n wagtailsettings_tags wagtailcore_tags get_journals_by_name_institutiton %}
+<style>
+.share {
+    margin: 20px 0;
+    font-family: Arial, sans-serif;
+}
+
+.share ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.share ul > li {
+    margin-right: 10px;
+    position: relative;
+}
+
+.share span {
+    color: #888;
+    font-size: 14px;
+    margin-right: 10px;
+}
+
+.glyphBtn {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    vertical-align: middle;
+    filter: grayscale(40%);
+    transition: filter 0.2s;
+}
+
+.glyphBtn.print { background-image: url('https://img.icons8.com/material-outlined/24/000000/print.png'); }
+.glyphBtn.rssMini { background-image: url('https://img.icons8.com/material-outlined/24/000000/rss.png'); }
+.glyphBtn.sendMail { background-image: url('https://img.icons8.com/material-outlined/24/000000/new-post.png'); }
+.glyphBtn.facebook { background-image: url('https://img.icons8.com/color/24/000000/facebook.png'); }
+.glyphBtn.twitter { background-image: url('https://img.icons8.com/color/24/000000/twitter.png'); }
+.glyphBtn.otherNetworks { background-image: url('https://img.icons8.com/material-outlined/24/000000/share.png'); }
+.glyphBtn.googlePlus { background-image: url('https://img.icons8.com/color/24/000000/google-plus.png'); }
+.glyphBtn.linkedIn { background-image: url('https://img.icons8.com/color/24/000000/linkedin.png'); }
+.glyphBtn.reddit { background-image: url('https://img.icons8.com/color/24/000000/reddit.png'); }
+.glyphBtn.stambleUpon { background-image: url('https://img.icons8.com/color/24/000000/stumbleupon.png'); }
+.glyphBtn.citeULike { background-image: url('https://img.icons8.com/ios-filled/24/000000/bookmark-ribbon.png'); }
+.glyphBtn.mendeley { background-image: url('https://img.icons8.com/color/24/000000/mendeley.png'); }
+
+.glyphBtn:hover {
+    filter: none;
+}
+
+.menu-share {
+    display: none;
+    position: absolute;
+    top: 32px;
+    left: 0;
+    min-width: 320px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    z-index: 100;
+    padding: 8px 0;
+    animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px);}
+    to { opacity: 1; transform: translateY(0);}
+}
+
+.menu-share ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.menu-share .dropdown-header {
+    font-size: 13px;
+    color: #888;
+    padding: 8px 16px 4px 16px;
+    font-weight: bold;
+    flex-basis: 100%;
+}
+
+.menu-share li {
+    margin: 0; 
+    width: 100%;
+}
+
+.menu-share a {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    color: #333;
+    text-decoration: none;
+    font-size: 15px;
+    width: 100%; /* Ocupa toda a largura do menu */
+    transition: background 0.2s, color 0.2s;
+    background: none;
+    box-sizing: border-box;
+}
+
+.menu-share a:hover {
+    background: #f5f5f5;
+    color: #007bff;
+}
+
+.menu-share .glyphBtn {
+    margin-right: 10px;
+}
+
+.dropdown-share {
+    position: relative;
+}
+
+.dropdown-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+}
+
+.dropdown-toggle:focus {
+    outline: none;
+}
+
+/* Tooltip simples */
+.showTooltip[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    top: -32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #222;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    white-space: nowrap;
+    z-index: 200;
+    opacity: 1;
+    pointer-events: none;
+}
+
+/* Responsivo */
+@media (max-width: 600px) {
+    .menu-share {
+        min-width: 180px;
+        left: 0;
+        right: auto;
+    }
+    .menu-share ul {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .menu-share li {
+        margin: 0 0 4px 0;
+    }
+}
+</style>
+
+<div class="share">
+    <ul>
+        <li>
+            <span>Compartilhe</span>
+        </li>
+        <li>
+            <a href="javascript:window.print();" class="showTooltip" title="Imprimir">
+                <span class="glyphBtn print"></span>
+            </a>
+        </li>
+        <li>
+            <a href="https://scielosp.org/journals/feed/" target="_blank" class="showTooltip" title="Atom">
+                <span class="glyphBtn rssMini"></span>
+            </a>
+        </li>
+        <li>
+            <a href="#" target="_blank" class="showTooltip" title="Compartilhar no Facebook">
+                <span class="glyphBtn facebook"></span>
+            </a>
+        </li>
+        <li>
+            <a href="#" target="_blank" class="showTooltip" title="Compartilhar no Twitter">
+                <span class="glyphBtn twitter"></span>
+            </a>
+        </li>
+        <li class="dropdown-share">
+            <button id="dropdown-menu-share" class="dropdown-toggle showTooltip" title="Outras redes sociais" aria-haspopup="true" aria-expanded="false">
+                <span class="glyphBtn otherNetworks"></span>
+            </button>
+            <div class="menu-share" id="menu-share">
+                <ul>
+                    <li class="dropdown-header">{% trans 'Outras redes sociais' %}</li>
+                    <li>
+                        <a href="#" target="_blank" class="shareGooglePlus">
+                            <span class="glyphBtn googlePlus"></span> Google+
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" target="_blank" class="shareLinkedIn">
+                            <span class="glyphBtn linkedIn"></span> LinkedIn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" target="_blank" class="shareReddit">
+                            <span class="glyphBtn reddit"></span> Reddit
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" target="_blank" class="shareStambleUpon">
+                            <span class="glyphBtn stambleUpon"></span> StumbleUpon
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" target="_blank" class="shareCiteULike">
+                            <span class="glyphBtn citeULike"></span> CiteULike
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" target="_blank" class="shareMendeley">
+                            <span class="glyphBtn mendeley"></span> Mendeley
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+    </ul>
+</div>
+
+{% block inline_javascript %}
+    <script src="{% static 'scieloorg/js/share_page_scieloorg.js' %}" type="text/javascript"></script>
+{% endblock inline_javascript %}
