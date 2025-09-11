@@ -20,23 +20,23 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task()
-def load_issue(*args):
+def load_issue(user_id=None, username=None):
     """
     Load issue record.
 
     Sync or Async function
     """
 
-    user = User.objects.get(id=args[0] if args else 1)
+    user = _get_user(request=None,user_id=user_id, username=username)
 
     controller.load(user)
 
 
 @celery_app.task()
-def load_issue_from_article_meta(**kwargs):
-    user = User.objects.get(id=kwargs["user_id"] if kwargs["user_id"] else 1)
+def load_issue_from_article_meta(user_id=None, username=None, collection=None, limit=None):
+    user = _get_user(request=None,user_id=user_id, username=username)
     process_issue_article_meta(
-        collection=kwargs["collection"], limit=kwargs["limit"], user=user
+        collection=collection, limit=limit, user=user
     )
 
 
