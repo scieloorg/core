@@ -55,8 +55,6 @@ def request_issue_article_meta(
     limit=10,
     offset=None,
 ):
-    if not limit:
-        limit = 10
     offset = f"&offset={offset}" if offset else ""
     url = (
         f"https://articlemeta.scielo.org/api/v1/issue/identifiers/?collection={collection}&limit={limit}"
