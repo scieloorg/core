@@ -162,7 +162,7 @@ def fetch_and_process_journal_logo(
             }
         )
         journal_logo = JournalLogo.create_or_update(journal=journal, logo=img_wagtail, user=user)
-        if journal.logo:
+        if not journal.logo and journal.logo != img_wagtail:
             journal.logo = journal_logo.logo
         journal.save()
         logger.info(f"Successfully processed logo for journal {journal_id}")
