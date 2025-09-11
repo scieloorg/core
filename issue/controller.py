@@ -76,7 +76,7 @@ def get_issue(user, journal_xml, collection):
                         month=month,
                         user=user,
                         supplement=supplement,
-                        markup_done=False
+                        markup_done=False,
                         season=None,
                     )
                 except Exception as e:
