@@ -91,6 +91,7 @@ class Issue(CommonControlField, ClusterableModel):
 
     panels_summary = [
         AutocompletePanel("sections"),
+        AutocompletePanel("code_sections"),
     ]
 
     panels_license = [
@@ -446,7 +447,7 @@ class CodeSectionIssue(CommonControlField):
     code = models.CharField(_("Code"), max_length=40, unique=True, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.code} - {self.text} ({self.language.code2 if self.language else 'N/A'})"
+        return f"{self.code}"
     
 
 class SectionIssue(TextWithLang, CommonControlField):
@@ -456,6 +457,11 @@ class SectionIssue(TextWithLang, CommonControlField):
         null=True,
         blank=True,
     )
+
+    autocomplete_search_field = "text"
+
+    def autocomplete_label(self):
+        return str(self)
 
     def __str__(self):
         return f"{self.code}"

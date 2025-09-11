@@ -40,6 +40,11 @@ def get_journal_xml(collection, issn):
 
 def get_issue(user, journal_xml, collection):
     issn_scielo = journal_xml["SERIAL"]["ISSN_AS_ID"]
+    
+    if not issn_scielo:
+        logging.info(f"No ISSN found for journal")
+        pass
+    
     try:
         scielo_journal = SciELOJournal.get(
             collection=collection, issn_scielo=issn_scielo
@@ -71,6 +76,8 @@ def get_issue(user, journal_xml, collection):
                         month=month,
                         user=user,
                         supplement=supplement,
+                        markup_done=False,
+                        season=None,
                     )
                 except Exception as e:
                     exc_type, exc_value, exc_traceback = sys.exc_info()
