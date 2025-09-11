@@ -42,9 +42,9 @@ def process_issue_article_meta(collection, limit, user):
 def list_of_collections_acron3(collections):
     query_collection = Collection.objects
     if not collections:
-        collections = query_collection.all().values_list("acron3", flat=True)
+        collections = query_collection.values_list("acron3", flat=True)
     elif collections:
-        if isinstance(collections, list):
+        if not isinstance(collections, list):
             collections = [collections]
         collections = query_collection.filter(acron3__in=collections).values_list("acron3", flat=True)    
     return [collection for collection in collections]
