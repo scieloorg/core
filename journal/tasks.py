@@ -103,10 +103,25 @@ def load_journal_from_article_meta_for_one_collection(
                 "collection_acron": collection_acron,
             },
         )
+from urllib.parse import urlparse
+
+def _normalize_collection_domain(url, strip_www=False):
+    parsed = urlparse(url if "://" in url else "http://" + url)
+    host = parsed.netloc or parsed.path
+    
+    if strip_www and host.startswith("www."):
+        host = host[4:]
+    return host
+
 
 def _build_logo_url(collection, journal_acron):
     """Build logo URL based on collection type."""
-    domain = collection.domain
+    try:
+        domain = _normalize_collection_domain(collection.domain)
+    except Exception as e:
+        logging.error(f"Error normalizing collection domain: {e}")
+        return None
+    
     collection_acron3 = collection.acron3
 
     if collection_acron3 == "scl":
@@ -136,10 +151,16 @@ def fetch_and_process_journal_logo(
 
         user = _get_user(self.request, username=username, user_id=user_id)
         url_logo = _build_logo_url(collection, journal_acron)
+        if not url_logo:
+            return None
 
-        response = fetch_data(url_logo, json=False, timeout=1, verify=False)
-        img_wagtail = Image(title=journal_acron)
-        img_wagtail.file.save(f"{journal_acron}_glogo.gif", ContentFile(response))
+        response = fetch_data(url_logo, json=False, timeout=30, verify=True)
+        img_wagtail, created = Image.objects.get_or_create(
+            title=journal_acron,
+            defaults={
+                "file": ContentFile(response, name=f"{journal_acron}_glogo.gif"),
+            }
+        )
         journal_logo = JournalLogo.create_or_update(journal=journal, logo=img_wagtail, user=user)
         if journal.logo:
             journal.logo = journal_logo.logo
