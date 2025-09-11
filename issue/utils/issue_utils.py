@@ -77,33 +77,6 @@ def extract_date(date):
     return None, None
 
 
-def extract_value_sections_data(sections):
-    """
-    "v49": [
-      {
-        "c": "BJID020",
-        "l": "en",
-        "_": "",
-        "t": "Case Report"
-      },
-      {
-        "c": "BJID010",
-        "l": "en",
-        "_": "",
-        "t": "Original Papers"
-      }
-    ]
-    """
-    return [
-        {
-            "lang": x.get("l"),
-            "section": x.get("t"),
-            "code": x.get("c"),
-        }
-        for x in sections
-    ]
-
-
 def get_or_create_sections(sections, user):
     data = []
     if sections and isinstance(sections, list):
