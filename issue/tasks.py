@@ -35,6 +35,8 @@ def load_issue(user_id=None, username=None):
 @celery_app.task()
 def load_issue_from_article_meta(user_id=None, username=None, collection=None, limit=None):
     user = _get_user(request=None,user_id=user_id, username=username)
+    if not isinstance(limit, int):
+        limit = 100
     process_issue_article_meta(
         collection=collection, limit=limit, user=user
     )
