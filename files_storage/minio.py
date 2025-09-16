@@ -321,7 +321,7 @@ class MinioStorage:
             return self.fput(file_path, object_name, mimetype)
         except S3Error as err:
             raise MinioStorageFPutError(
-                "Unable to fput for %s %s %s %s" % (file_path, object_name, type(e), e)
+                "Unable to fput for %s %s %s %s" % (file_path, object_name, type(err), err)
             )
 
     def fput_content(self, content, mimetype, object_name) -> str:
