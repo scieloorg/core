@@ -425,7 +425,6 @@ class BaseHistoryItem(CommonControlField):
                 initial_date=initial_date,
                 final_date=final_date,
             )
-            history.updated_by = user
         except cls.DoesNotExist:
             history = cls()
             history.institution = institution

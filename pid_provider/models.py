@@ -1020,7 +1020,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             if item.match(xml_adapter):
                 return item
             raise PidProviderXMLPidV3ConflictError(
-                f"Pid v3 {xml_pid_v3} belongs to {selected}"
+                f"Pid v3 {xml_pid_v3} belongs to {item}"
             )
         raise cls.DoesNotExist
 
