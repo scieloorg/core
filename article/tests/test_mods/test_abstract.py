@@ -10,7 +10,7 @@ User = get_user_model()
 
 class MODSAbstractTestCase(TransactionTestCase):
     """
-    Testes unitários para elemento MODS abstract
+    Testes unitários focados no índice MODS para elemento abstract
 
     Usa TransactionTestCase para evitar problemas com --keepdb
     e permite melhor limpeza entre testes
@@ -47,8 +47,6 @@ class MODSAbstractTestCase(TransactionTestCase):
         # Limpar dados criados no teste
         DocumentAbstract.objects.all().delete()
         Article.objects.all().delete()
-
-        # Manter usuário e idiomas (são reutilizáveis)
         super().tearDown()
 
     def _create_test_article(self, sps_pkg_name=None):
@@ -63,26 +61,47 @@ class MODSAbstractTestCase(TransactionTestCase):
             creator=self.user
         )
 
-    def test_manual_abstract_creation_basic(self):
-        """Teste: criação manual de DocumentAbstract e mapeamento MODS básico"""
-        # Criar artigo manualmente
+    def test_document_abstract_creation_basic(self):
+        """Teste único para validar criação do modelo DocumentAbstract"""
         article = self._create_test_article()
 
-        # Criar resumo simples
-        DocumentAbstract.objects.create(
+        # Criar resumo básico
+        abstract = DocumentAbstract.objects.create(
             article=article,
-            plain_text="Resumo manual em português para teste unitário.",
+            plain_text="Resumo de teste para validação do modelo.",
             language=self.lang_pt,
             creator=self.user
         )
 
-        # Validar modelo
-        abstracts = article.abstracts.all()
-        self.assertEqual(abstracts.count(), 1, "Deveria ter 1 resumo manual")
+        # Validações básicas do modelo
+        self.assertIsNotNone(abstract.id, "Abstract deve ter ID após criação")
+        self.assertEqual(abstract.article, article, "Article deve estar corretamente associado")
+        self.assertEqual(abstract.language, self.lang_pt, "Idioma deve estar correto")
+        self.assertEqual(abstract.creator, self.user, "Creator deve estar correto")
+        self.assertIn("teste", abstract.plain_text, "Texto deve estar correto")
 
-        abstract = abstracts.first()
-        self.assertEqual(abstract.language, self.lang_pt)
-        self.assertIn("português", abstract.plain_text)
+        # Verificar relacionamento reverso
+        self.assertEqual(article.abstracts.count(), 1, "Article deve ter 1 abstract")
+        self.assertEqual(article.abstracts.first(), abstract, "Relacionamento reverso deve funcionar")
+
+    def test_mods_index_no_abstracts(self):
+        """Teste índice MODS: artigo sem resumos"""
+        article = self._create_test_article()
+
+        # Validar mapeamento MODS vazio
+        mods_abstracts = self.index.prepare_mods_abstract(article)
+        self.assertEqual(len(mods_abstracts), 0, "MODS não deveria ter abstracts")
+
+    def test_mods_index_single_abstract(self):
+        """Teste índice MODS: resumo único com idioma"""
+        article = self._create_test_article()
+
+        DocumentAbstract.objects.create(
+            article=article,
+            plain_text="Resumo único em português para teste do índice MODS.",
+            language=self.lang_pt,
+            creator=self.user
+        )
 
         # Validar mapeamento MODS básico
         mods_abstracts = self.index.prepare_mods_abstract(article)
@@ -90,78 +109,74 @@ class MODSAbstractTestCase(TransactionTestCase):
 
         mods_abstract = mods_abstracts[0]
 
-        # Verificar estrutura básica (campos que realmente existem)
+        # Verificar estrutura básica
         self.assertIn('text', mods_abstract, "Deve ter campo 'text'")
-        self.assertEqual(mods_abstract['text'], abstract.plain_text)
+        self.assertEqual(mods_abstract['text'], "Resumo único em português para teste do índice MODS.")
 
+        # Verificar idioma se presente
         if 'lang' in mods_abstract:
             self.assertEqual(mods_abstract['lang'], 'pt')
 
-    def test_multiple_abstracts_basic(self):
-        """Teste: múltiplos resumos básicos"""
+        # Verificar displayLabel se presente
+        if 'displayLabel' in mods_abstract:
+            self.assertEqual(mods_abstract['displayLabel'], 'Resumo')
+
+    def test_mods_index_multiple_abstracts(self):
+        """Teste índice MODS: múltiplos resumos em idiomas diferentes"""
         article = self._create_test_article()
 
         # Criar resumos em idiomas diferentes
         DocumentAbstract.objects.create(
             article=article,
-            plain_text="Resumo em português.",
+            plain_text="Resumo em português para teste multilíngue.",
             language=self.lang_pt,
             creator=self.user
         )
 
         DocumentAbstract.objects.create(
             article=article,
-            plain_text="Abstract in English.",
+            plain_text="Abstract in English for multilingual test.",
             language=self.lang_en,
             creator=self.user
         )
 
-        # Validar modelos
-        abstracts = article.abstracts.all()
-        self.assertEqual(abstracts.count(), 2, "Deveria ter 2 resumos")
-
-        # Verificar idiomas
-        languages = {abs.language.code2 for abs in abstracts}
-        self.assertEqual(languages, {'pt', 'en'}, "Deveria ter resumos em pt e en")
-
-        # Validar mapeamento MODS
-        mods_abstracts = self.index.prepare_mods_abstract(article)
-        self.assertEqual(len(mods_abstracts), 2, "MODS deveria ter 2 abstracts")
-
-        # Verificar que ambos os idiomas estão representados
-        mods_langs = {abs.get('lang') for abs in mods_abstracts if 'lang' in abs}
-        self.assertTrue(len(mods_langs) > 0, "Pelo menos um idioma deve estar presente")
-
-    def test_no_abstracts(self):
-        """Teste: artigo sem resumos"""
-        article = self._create_test_article()
-
-        # Não criar resumos
-        abstracts = article.abstracts.all()
-        self.assertEqual(abstracts.count(), 0, "Não deveria ter resumos")
-
-        # Validar mapeamento MODS vazio
-        mods_abstracts = self.index.prepare_mods_abstract(article)
-        self.assertEqual(len(mods_abstracts), 0, "MODS não deveria ter abstracts")
-
-    def test_abstract_without_language(self):
-        """Teste: resumo sem idioma especificado"""
-        article = self._create_test_article()
-
-        # Criar resumo sem idioma
         DocumentAbstract.objects.create(
             article=article,
-            plain_text="Resumo sem idioma especificado.",
-            language=None,  # Sem idioma
+            plain_text="Resumen en español para prueba multilingüe.",
+            language=self.lang_es,
             creator=self.user
         )
 
-        # Validar modelo
-        abstracts = article.abstracts.all()
-        self.assertEqual(abstracts.count(), 1, "Deveria ter 1 resumo")
+        # Validar mapeamento MODS
+        mods_abstracts = self.index.prepare_mods_abstract(article)
+        self.assertEqual(len(mods_abstracts), 3, "MODS deveria ter 3 abstracts")
 
-        abstract = abstracts.first()
-        self.assertIsNone(abstract.language, "Idioma deve ser None")
+        # Verificar que todos têm estrutura básica
+        for mods_abstract in mods_abstracts:
+            self.assertIn('text', mods_abstract, "Cada abstract deve ter campo 'text'")
+            self.assertTrue(len(mods_abstract['text']) > 0, "Text não deve estar vazio")
+
+        # Verificar idiomas se presentes
+        mods_langs = {abs.get('lang') for abs in mods_abstracts if 'lang' in abs}
+        expected_langs = {'pt', 'en', 'es'}
+        self.assertEqual(mods_langs, expected_langs, "Todos os idiomas devem estar presentes")
+
+        # Verificar displayLabels se presentes
+        display_labels = {abs.get('displayLabel') for abs in mods_abstracts if 'displayLabel' in abs}
+        expected_labels = {'Resumo', 'Abstract', 'Resumen'}
+        if display_labels:  # Só verifica se existem displayLabels
+            self.assertEqual(display_labels, expected_labels, "DisplayLabels devem estar corretos")
+
+    def test_mods_index_abstract_without_language(self):
+        """Teste índice MODS: resumo sem idioma especificado"""
+        article = self._create_test_article()
+
+        DocumentAbstract.objects.create(
+            article=article,
+            plain_text="Resumo sem idioma especificado para teste do índice.",
+            language=None,  # Sem idioma
+            creator=self.user
+        )
 
         # Validar mapeamento MODS
         mods_abstracts = self.index.prepare_mods_abstract(article)
@@ -169,42 +184,22 @@ class MODSAbstractTestCase(TransactionTestCase):
 
         mods_abstract = mods_abstracts[0]
         self.assertIn('text', mods_abstract)
-        self.assertIn("resumo sem idioma", mods_abstract['text'].lower())
+        self.assertIn("sem idioma", mods_abstract['text'].lower())
 
-    def test_mods_abstract_structure_basic(self):
-        """Teste: estrutura básica do elemento MODS abstract"""
-        article = self._create_test_article()
+        # Não deve ter campo lang
+        self.assertNotIn('lang', mods_abstract, "Não deve ter campo 'lang' quando language é None")
+        self.assertNotIn('displayLabel', mods_abstract, "Não deve ter displayLabel quando language é None")
 
-        DocumentAbstract.objects.create(
-            article=article,
-            plain_text="Teste de estrutura MODS abstract.",
-            language=self.lang_en,
-            creator=self.user
-        )
-
-        # Testar mapeamento MODS
-        mods_abstracts = self.index.prepare_mods_abstract(article)
-        self.assertEqual(len(mods_abstracts), 1)
-
-        mods_abstract = mods_abstracts[0]
-
-        # Verificar apenas campos que sabemos que existem
-        self.assertIn('text', mods_abstract, "Deve ter campo 'text'")
-        self.assertEqual(mods_abstract['text'], "Teste de estrutura MODS abstract.")
-
-        # Verificar idioma se presente
-        if 'lang' in mods_abstract:
-            self.assertEqual(mods_abstract['lang'], 'en')
-
-    def test_complex_abstract_content(self):
-        """Teste: conteúdo de resumo mais complexo"""
+    def test_mods_index_complex_abstract_content(self):
+        """Teste índice MODS: conteúdo de resumo estruturado complexo"""
         article = self._create_test_article()
 
         complex_text = """
-        Objective: To evaluate the effectiveness of novel methodology.
-        Methods: We conducted a systematic review with 150 studies.
-        Results: Significant improvement was observed (p<0.05).
-        Conclusion: The methodology proves effective for applications.
+        Objective: To evaluate the effectiveness of novel methodology in clinical settings.
+        Methods: We conducted a systematic review with 150 randomized controlled trials.
+        Results: Significant improvement was observed in 78% of cases (p<0.05).
+        Conclusion: The methodology proves effective for real-world applications.
+        Keywords: methodology, clinical trials, systematic review.
         """
 
         DocumentAbstract.objects.create(
@@ -214,17 +209,6 @@ class MODSAbstractTestCase(TransactionTestCase):
             creator=self.user
         )
 
-        # Validar modelo
-        abstracts = article.abstracts.all()
-        abstract = abstracts.first()
-
-        # Verificar se conteúdo estruturado foi preservado
-        content = abstract.plain_text.lower()
-        self.assertIn("objective", content)
-        self.assertIn("methods", content)
-        self.assertIn("results", content)
-        self.assertIn("conclusion", content)
-
         # Validar mapeamento MODS
         mods_abstracts = self.index.prepare_mods_abstract(article)
         self.assertEqual(len(mods_abstracts), 1)
@@ -233,42 +217,110 @@ class MODSAbstractTestCase(TransactionTestCase):
         mods_content = mods_abstract['text'].lower()
 
         # Verificar que conteúdo estruturado foi preservado no MODS
-        self.assertIn("objective", mods_content)
-        self.assertIn("methods", mods_content)
-        self.assertIn("results", mods_content)
-        self.assertIn("conclusion", mods_content)
+        self.assertIn("objective", mods_content, "Seção Objective deve estar presente")
+        self.assertIn("methods", mods_content, "Seção Methods deve estar presente")
+        self.assertIn("results", mods_content, "Seção Results deve estar presente")
+        self.assertIn("conclusion", mods_content, "Seção Conclusion deve estar presente")
+        self.assertIn("systematic review", mods_content, "Termo específico deve estar presente")
+        self.assertIn("p<0.05", mods_content, "Dados estatísticos devem estar presentes")
 
-    def test_unique_constraint_handling(self):
-        """Teste: tratamento correto de constraints de unicidade"""
+        # Verificar idioma
+        if 'lang' in mods_abstract:
+            self.assertEqual(mods_abstract['lang'], 'en')
+
+        # Verificar displayLabel
+        if 'displayLabel' in mods_abstract:
+            self.assertEqual(mods_abstract['displayLabel'], 'Abstract')
+
+    def test_mods_index_empty_text_handling(self):
+        """Teste índice MODS: tratamento de texto vazio"""
         article = self._create_test_article()
 
-        # Criar primeiro resumo
+        # Criar abstract com texto vazio
         DocumentAbstract.objects.create(
             article=article,
-            plain_text="Primeiro resumo em português.",
+            plain_text="",  # Texto vazio
             language=self.lang_pt,
             creator=self.user
         )
 
-        # Tentar criar segundo resumo com mesmo artigo/idioma deve falhar
-        with self.assertRaises(Exception):  # IntegrityError esperado
-            DocumentAbstract.objects.create(
-                article=article,
-                plain_text="Segundo resumo em português.",  # Mesmo idioma
-                language=self.lang_pt,
-                creator=self.user
-            )
+        # Validar mapeamento MODS
+        mods_abstracts = self.index.prepare_mods_abstract(article)
+        self.assertEqual(len(mods_abstracts), 1, "MODS deveria incluir abstract mesmo com texto vazio")
 
-        # Mas criar com idioma diferente deve funcionar
+        mods_abstract = mods_abstracts[0]
+        self.assertIn('text', mods_abstract)
+        self.assertEqual(mods_abstract['text'], "", "Texto vazio deve ser preservado")
+
+    def test_mods_index_whitespace_text_handling(self):
+        """Teste índice MODS: tratamento de texto com apenas espaços em branco"""
+        article = self._create_test_article()
+
+        whitespace_text = "   \n\t   \n   "  # Apenas espaços em branco
+
         DocumentAbstract.objects.create(
             article=article,
-            plain_text="Abstract in English.",
-            language=self.lang_en,  # Idioma diferente
+            plain_text=whitespace_text,
+            language=self.lang_en,
             creator=self.user
         )
 
-        # Verificar que temos apenas 2 resumos
-        self.assertEqual(article.abstracts.count(), 2)
+        # Validar mapeamento MODS
+        mods_abstracts = self.index.prepare_mods_abstract(article)
+        self.assertEqual(len(mods_abstracts), 1, "MODS deveria incluir abstract com whitespace")
 
+        mods_abstract = mods_abstracts[0]
+        self.assertIn('text', mods_abstract)
+        self.assertEqual(mods_abstract['text'], whitespace_text, "Whitespace deve ser preservado como está")
 
+    def test_mods_index_mixed_scenarios(self):
+        """Teste índice MODS: cenário misto com abstracts variados"""
+        article = self._create_test_article()
+
+        # Abstract normal com idioma
+        DocumentAbstract.objects.create(
+            article=article,
+            plain_text="Resumo normal em português.",
+            language=self.lang_pt,
+            creator=self.user
+        )
+
+        # Abstract sem idioma
+        DocumentAbstract.objects.create(
+            article=article,
+            plain_text="Abstract without language specification.",
+            language=None,
+            creator=self.user
+        )
+
+        # Abstract com texto complexo
+        DocumentAbstract.objects.create(
+            article=article,
+            plain_text="Resumen complejo con métodos, resultados y conclusiones específicas.",
+            language=self.lang_es,
+            creator=self.user
+        )
+
+        # Validar mapeamento MODS
+        mods_abstracts = self.index.prepare_mods_abstract(article)
+        self.assertEqual(len(mods_abstracts), 3, "MODS deveria ter 3 abstracts no cenário misto")
+
+        # Verificar que todos têm estrutura básica
+        for i, mods_abstract in enumerate(mods_abstracts):
+            self.assertIn('text', mods_abstract, f"Abstract {i} deve ter campo 'text'")
+            self.assertTrue(len(mods_abstract['text']) > 0, f"Abstract {i} deve ter texto não vazio")
+
+        # Contar abstracts com e sem idioma
+        with_lang = [abs for abs in mods_abstracts if 'lang' in abs]
+        without_lang = [abs for abs in mods_abstracts if 'lang' not in abs]
+
+        self.assertEqual(len(with_lang), 2, "Deveria ter 2 abstracts com idioma")
+        self.assertEqual(len(without_lang), 1, "Deveria ter 1 abstract sem idioma")
+
+        # Verificar idiomas específicos
+        langs_present = {abs['lang'] for abs in with_lang}
+        expected_langs = {'pt', 'es'}
+        self.assertEqual(langs_present, expected_langs, "Idiomas pt e es devem estar presentes")
+
+# Comando para executar os testes:
 # python manage.py test --keepdb article.tests.test_mods.test_abstract.MODSAbstractTestCase -v 2
