@@ -603,6 +603,19 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
             .prefetch_related(
                 "titles",
                 "researchers__person_name",
+                # Otimizações para MODS - Afiliações estruturadas dos pesquisadores
+                "researchers__affiliation__institution__institution_identification",
+                "researchers__affiliation__institution__location__city",
+                "researchers__affiliation__institution__location__state",
+                "researchers__affiliation__institution__location__country",
+                # Otimizações para MODS - Múltiplos identificadores via ResearcherAKA
+                "researchers__researcheraka_set__researcher_identifier",
+                # Otimizações para MODS - Colaboradores corporativos estruturados
+                "collab__affiliation__institution__institution_identification",
+                "collab__affiliation__institution__location__city",
+                "collab__affiliation__institution__location__state",
+                "collab__affiliation__institution__location__country",
+                # Campos originais mantidos
                 "collab",
                 "languages",
                 "keywords",
@@ -641,6 +654,33 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
             return obj.get_available(fmt=fmt) if hasattr(obj, "get_available") else []
         except Exception:
             return []
+
+    def _prepare_affiliation_data(self, researcher):
+        """Prepara dados de afiliação estruturados"""
+        if not researcher.affiliation or not researcher.affiliation.institution:
+            return None
+
+        institution = researcher.affiliation.institution
+        affiliation_parts = []
+
+        # Nome da instituição
+        if institution.institution_identification:
+            affiliation_parts.append(institution.institution_identification)
+
+        # Localização estruturada
+        if institution.location:
+            location_parts = []
+            if institution.location.city:
+                location_parts.append(institution.location.city)
+            if institution.location.state:
+                location_parts.append(institution.location.state)
+            if institution.location.country:
+                location_parts.append(institution.location.country)
+
+            if location_parts:
+                affiliation_parts.append(", ".join(location_parts))
+
+        return " - ".join(affiliation_parts) if affiliation_parts else str(researcher.affiliation)
 
     # MÉTODOS DE PREPARAÇÃO OAI-PMH BÁSICOS
     def prepare_id(self, obj):
@@ -687,48 +727,322 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
                 title_data = {
                     "title": title.plain_text,
                     "lang": title.language.code2 if title.language else None,
-                    "type": "main",  # Pode ser expandido para outros tipos
                 }
                 # Remove valores None
                 title_data = {k: v for k, v in title_data.items() if v is not None}
                 titles.append(title_data)
         return titles
 
-    # MODS: name
+    # MODS: name - Implementação Enriquecida
     def prepare_mods_name(self, obj):
         """
-        Prepara elemento name do MODS
-        Inclui autores pessoas físicas e institucionais
+        Prepara elemento name do MODS com estrutura completa
+
+        Implementa todos os subelementos e atributos MODS para nomes:
+        - namePart estruturado (given/family/termsOfAddress)
+        - múltiplos nameIdentifier (ORCID, LATTES, EMAIL, etc.)
+        - afiliação hierárquica estruturada
+        - role com autoridade
+        - entidades corporativas estruturadas
         """
         names = []
 
-        # Autores pessoas físicas
+        # PESQUISADORES INDIVIDUAIS
         if obj.researchers.exists():
-            researchers = obj.researchers.select_related("person_name").filter(
-                person_name__isnull=False
-            )
+            researchers = obj.researchers.select_related(
+                "person_name",
+                "affiliation__institution__institution_identification",
+                "affiliation__institution__location__city",
+                "affiliation__institution__location__state",
+                "affiliation__institution__location__country"
+            ).prefetch_related(
+                "researcheraka_set__researcher_identifier"
+            ).filter(person_name__isnull=False)
+
             for researcher in researchers:
                 name_data = {
                     "type": "personal",
-                    "namePart": str(researcher.person_name),
-                    "role": "author",
+                    "role": {
+                        "roleTerm": {
+                            "type": "text",
+                            "authority": "marcrelator",
+                            "text": "author"
+                        }
+                    }
                 }
-                # Adiciona ORCID se disponível
-                if hasattr(researcher, "orcid") and researcher.orcid:
-                    name_data["orcid"] = researcher.orcid
+
+                # NAMEPART ESTRUTURADO
+                name_parts = self._prepare_name_parts(researcher.person_name)
+                if name_parts:
+                    name_data["namePart"] = name_parts
+
+                # MÚLTIPLOS IDENTIFICADORES
+                identifiers = self._prepare_name_identifiers(researcher)
+                if identifiers:
+                    name_data["nameIdentifier"] = identifiers
+
+                # AFILIAÇÃO ESTRUTURADA
+                affiliation = self._prepare_name_affiliation(researcher)
+                if affiliation:
+                    name_data["affiliation"] = affiliation
+
                 names.append(name_data)
 
-        # Autores institucionais
+        # AUTORES CORPORATIVOS/INSTITUCIONAIS
         if obj.collab.exists():
-            for collab in obj.collab.all():
-                name_data = {
-                    "type": "corporate",
-                    "namePart": collab.collab,
-                    "role": "author",
-                }
-                names.append(name_data)
+            collabs = obj.collab.select_related(
+                "affiliation__institution__institution_identification",
+                "affiliation__institution__location__city",
+                "affiliation__institution__location__state",
+                "affiliation__institution__location__country"
+            )
+
+            for collab in collabs:
+                if collab.collab:  # Verificar se tem texto de colaboração
+                    corporate_name = {
+                        "type": "corporate",
+                        "namePart": collab.collab,
+                        "role": {
+                            "roleTerm": {
+                                "type": "text",
+                                "authority": "marcrelator",
+                                "text": "author"
+                            }
+                        }
+                    }
+
+                    # Afiliação para entidade corporativa
+                    if collab.affiliation:
+                        corporate_affiliation = self._prepare_corporate_affiliation(collab.affiliation)
+                        if corporate_affiliation:
+                            corporate_name["affiliation"] = corporate_affiliation
+
+                    names.append(corporate_name)
 
         return names
+
+    def _prepare_name_parts(self, person_name):
+        """
+        Prepara namePart estruturado conforme padrão MODS
+
+        Returns:
+            list: Lista de dicionários com type e text para cada parte do nome
+        """
+        name_parts = []
+
+        # Nome(s) próprio(s) - given names
+        if person_name.given_names:
+            name_parts.append({
+                "type": "given",
+                "text": person_name.given_names
+            })
+
+        # Sobrenome - family name
+        if person_name.last_name:
+            name_parts.append({
+                "type": "family",
+                "text": person_name.last_name
+            })
+
+        # Sufixos (Jr., Sr., III, etc.) - terms of address
+        if person_name.suffix:
+            name_parts.append({
+                "type": "termsOfAddress",
+                "text": person_name.suffix
+            })
+
+        # Se não temos partes estruturadas, usar fullname ou declared_name
+        if not name_parts:
+            name_text = person_name.fullname or person_name.declared_name
+            if name_text:
+                name_parts.append({
+                    "text": name_text
+                })
+
+        return name_parts
+
+    def _prepare_name_identifiers(self, researcher):
+        """
+        Prepara múltiplos nameIdentifier para um pesquisador
+
+        Returns:
+            list: Lista de identificadores com type e text
+        """
+        identifiers = []
+
+        # Buscar todos os identificadores via ResearcherAKA
+        researcher_akas = researcher.researcheraka_set.select_related(
+            'researcher_identifier'
+        ).all()
+
+        for aka in researcher_akas:
+            if aka.researcher_identifier and aka.researcher_identifier.identifier:
+                source_name = aka.researcher_identifier.source_name
+                identifier_value = aka.researcher_identifier.identifier
+
+                # Mapear source_name para tipos MODS apropriados
+                identifier_type = self._map_identifier_type(source_name)
+
+                identifier_data = {
+                    "type": identifier_type,
+                    "text": identifier_value
+                }
+
+                # Para ORCID, adicionar autoridade
+                if source_name.upper() == 'ORCID':
+                    identifier_data["authority"] = "orcid"
+
+                identifiers.append(identifier_data)
+
+        return identifiers
+
+    def _map_identifier_type(self, source_name):
+        """
+        Mapeia source_name para tipos MODS padrão
+
+        Args:
+            source_name: Nome da fonte do identificador
+
+        Returns:
+            str: Tipo MODS apropriado
+        """
+        mapping = {
+            'ORCID': 'orcid',
+            'LATTES': 'lattes',
+            'EMAIL': 'email',
+            'SCOPUS': 'scopus',
+            'RESEARCHERID': 'researcherid',
+            'GOOGLE_SCHOLAR': 'scholar',
+        }
+
+        return mapping.get(source_name.upper(), source_name.lower())
+
+    def _prepare_name_affiliation(self, researcher):
+        """
+        Prepara afiliação estruturada para pesquisador individual
+
+        Returns:
+            str: Texto de afiliação estruturado hierarquicamente
+        """
+        if not researcher.affiliation:
+            return None
+
+        affiliation_parts = []
+
+        try:
+            institution = researcher.affiliation.institution
+            if not institution:
+                return None
+
+            # Nome da instituição (prioridade: identification > levels)
+            if institution.institution_identification:
+                institution_name = institution.institution_identification.name
+                if institution_name:
+                    affiliation_parts.append(institution_name)
+
+            # Níveis hierárquicos da organização
+            levels = [
+                institution.level_1,
+                institution.level_2,
+                institution.level_3
+            ]
+
+            for level in levels:
+                if level and level.strip():
+                    affiliation_parts.append(level.strip())
+
+            # Localização geográfica estruturada
+            location_parts = self._prepare_location_text(institution.location)
+            if location_parts:
+                affiliation_parts.extend(location_parts)
+
+        except Exception:
+            # Fallback para string simples se houver erro
+            return str(researcher.affiliation) if researcher.affiliation else None
+
+        return " - ".join(affiliation_parts) if affiliation_parts else None
+
+    def _prepare_corporate_affiliation(self, affiliation):
+        """
+        Prepara afiliação para entidade corporativa
+
+        Returns:
+            str: Texto de afiliação para entidade corporativa
+        """
+        if not affiliation or not affiliation.institution:
+            return None
+
+        return self._prepare_institution_text(affiliation.institution)
+
+    def _prepare_institution_text(self, institution):
+        """
+        Prepara texto estruturado de uma instituição
+
+        Returns:
+            str: Representação textual estruturada da instituição
+        """
+        parts = []
+
+        try:
+            # Nome/identificação principal
+            if institution.institution_identification:
+                if institution.institution_identification.name:
+                    parts.append(institution.institution_identification.name)
+                elif institution.institution_identification.acronym:
+                    parts.append(institution.institution_identification.acronym)
+
+            # Níveis organizacionais
+            levels = [institution.level_1, institution.level_2, institution.level_3]
+            for level in levels:
+                if level and level.strip():
+                    parts.append(level.strip())
+
+            # Localização
+            location_parts = self._prepare_location_text(institution.location)
+            if location_parts:
+                parts.extend(location_parts)
+
+        except Exception:
+            # Fallback
+            return str(institution) if institution else None
+
+        return " - ".join(parts) if parts else None
+
+    def _prepare_location_text(self, location):
+        """
+        Prepara texto de localização estruturada
+
+        Returns:
+            list: Lista de partes da localização
+        """
+        if not location:
+            return []
+
+        location_parts = []
+
+        try:
+            # Cidade
+            if location.city and location.city.name:
+                location_parts.append(location.city.name)
+
+            # Estado (preferir sigla se disponível)
+            if location.state:
+                state_text = location.state.acronym or location.state.name
+                if state_text:
+                    location_parts.append(state_text)
+
+            # País
+            if location.country and location.country.name:
+                location_parts.append(location.country.name)
+
+        except Exception:
+            # Fallback para property formatted_location se disponível
+            if hasattr(location, 'formatted_location'):
+                return [location.formatted_location]
+            elif hasattr(location, '__str__'):
+                return [str(location)]
+
+        return location_parts
 
 
     # MODS: typeOfResource
