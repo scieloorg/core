@@ -59,7 +59,6 @@ def fetch_data(url, headers=None, json=False, timeout=FETCH_DATA_TIMEOUT, verify
     """
 
     try:
-        logger.info("Fetching the URL: %s" % url)
         response = requests.get(url, headers=headers, timeout=timeout, verify=verify)
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as exc:
         logger.error("Erro fetching the content: %s, retry..., erro: %s" % (url, exc))
@@ -69,18 +68,22 @@ def fetch_data(url, headers=None, json=False, timeout=FETCH_DATA_TIMEOUT, verify
         requests.exceptions.MissingSchema,
         requests.exceptions.InvalidURL,
     ) as exc:
+        logger.error(
+            "Erro fetching the content: %s, not retryable..., erro: %s" % (url, exc)
+        )
         raise NonRetryableError(exc) from exc
     try:
         response.raise_for_status()
     except requests.HTTPError as exc:
         if 400 <= exc.response.status_code < 500:
+            logger.error(
+                "Erro fetching the content: %s, not retryable..., erro: %s" % (url, exc)
+            )
             raise NonRetryableError(exc) from exc
         elif 500 <= exc.response.status_code < 600:
-            logger.error(
-                "Erro fetching the content: %s, retry..., erro: %s" % (url, exc)
-            )
             raise RetryableError(exc) from exc
         else:
+            logger.error("Erro fetching the content: %s, erro: %s" % (url, exc))
             raise
 
     return response.content if not json else response.json()

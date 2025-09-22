@@ -5,30 +5,25 @@ from django.utils.html import format_html
 from wagtail import hooks
 from wagtail.admin.navigation import get_site_for_user
 from wagtail.admin.site_summary import SummaryItem
-from wagtail_modeladmin.options import (
-    ModelAdmin,
-    ModelAdminGroup,
-    modeladmin_register,
-)
+from wagtail_modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
 
 from article.models import Article
 from collection.models import Collection
+from config.menu import WAGTAIL_MENU_APPS_ORDER, get_menu_order
 from core.models import Gender
-from config.menu import get_menu_order, WAGTAIL_MENU_APPS_ORDER
 from journal import models
-from config.menu import get_menu_order
 from journal.wagtail_hooks import (
-    IndexedAtAdmin,
     AdditionalIndexedAtAdmin,
-    IndexedAtFileAdmin,
     ArticleSubmissionFormatCheckListAdmin,
+    IndexedAtAdmin,
+    IndexedAtFileAdmin,
+    StandardAdmin,
     SubjectAdmin,
     WebOfKnowledgeAdmin,
     WosAreaAdmin,
-    StandardAdmin,
 )
 from thematic_areas.wagtail_hooks import ThematicAreaAdmin, ThematicAreaFileAdmin
-from vocabulary.wagtail_hooks import VocabularyAdmin, KeywordAdmin
+from vocabulary.wagtail_hooks import KeywordAdmin, VocabularyAdmin
 
 
 @hooks.register("insert_global_admin_css", order=100)
@@ -120,6 +115,7 @@ class GenderAdmin(ModelAdmin):
         "gender",
     )
 
+
 class ListCodesAdminGroup(ModelAdminGroup):
     menu_label = "List of codes"
     menu_icon = "folder-open-inverse"
@@ -133,24 +129,29 @@ class ListCodesAdminGroup(ModelAdminGroup):
         WosAreaAdmin,
         StandardAdmin,
         GenderAdmin,
-        VocabularyAdmin, 
+        VocabularyAdmin,
         KeywordAdmin,
         ThematicAreaAdmin,
         ThematicAreaFileAdmin,
         ArticleSubmissionFormatCheckListAdmin,
     )
 
+
 modeladmin_register(ListCodesAdminGroup)
 
 
-@hooks.register('construct_main_menu')
+@hooks.register("construct_main_menu")
 def reorder_menu_items(request, menu_items):
     for item in menu_items:
         if item.label in WAGTAIL_MENU_APPS_ORDER:
             item.order = get_menu_order(item.label)
 
 
-@hooks.register('construct_main_menu')
+@hooks.register("construct_main_menu")
 def remove_menu_items(request, menu_items):
     if not request.user.is_superuser:
-        menu_items[:] = [item for item in menu_items if item.name not in ['documents', 'explorer', 'reports']]
+        menu_items[:] = [
+            item
+            for item in menu_items
+            if item.name not in ["documents", "explorer", "reports"]
+        ]
