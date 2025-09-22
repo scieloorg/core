@@ -7,70 +7,7 @@ from wagtail_modeladmin.views import CreateView
 
 from config.menu import get_menu_order
 
-from .models import (
-    CollectionPidRequest,
-    FixPidV2,
-    OtherPid,
-    PidProviderConfig,
-    PidProviderXML,
-    PidRequest,
-)
-
-
-class PidRequestCreateView(CreateView):
-    def form_valid(self, form):
-        self.object = form.save_all(self.request.user)
-        return HttpResponseRedirect(self.get_success_url())
-
-
-class PidRequestAdmin(ModelAdmin):
-    list_per_page = 10
-    model = PidRequest
-    inspect_view_enabled = True
-    menu_label = _("Pid Requests")
-    create_view_class = PidRequestCreateView
-    menu_icon = "folder"
-    menu_order = 300
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-
-    list_display = (
-        "origin",
-        "result_type",
-        "result_msg",
-        "times",
-        "created",
-        "updated",
-    )
-    list_filter = ("result_type",)
-    search_fields = (
-        "origin",
-        "result_msg",
-    )
-
-
-class CollectionPidRequestAdmin(ModelAdmin):
-    list_per_page = 10
-    model = CollectionPidRequest
-    inspect_view_enabled = True
-    menu_label = _("Collection Pid Requests")
-    create_view_class = PidRequestCreateView
-    menu_icon = "folder"
-    menu_order = 300
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-
-    list_display = (
-        "collection",
-        "end_date",
-        "created",
-        "updated",
-    )
-    list_filter = []
-    search_fields = (
-        "collection__acron3",
-        "collection__name",
-    )
+from .models import FixPidV2, OtherPid, PidProviderConfig, PidProviderXML
 
 
 class PidProviderXMLAdminCreateView(CreateView):
@@ -102,7 +39,6 @@ class PidProviderXMLAdmin(ModelAdmin):
         "updated",
     )
     list_filter = (
-        "article_pub_year",
         "pub_year",
         "other_pid_count",
         "registered_in_core",
@@ -113,7 +49,7 @@ class PidProviderXMLAdmin(ModelAdmin):
         "v2",
         "aop_pid",
         "main_doi",
-        "article_pub_year",
+        "pub_year",
         "available_since",
     )
 
@@ -208,9 +144,7 @@ class PidProviderAdminGroup(ModelAdminGroup):
     items = (
         PidProviderConfigAdmin,
         PidProviderXMLAdmin,
-        PidRequestAdmin,
         OtherPidAdmin,
-        CollectionPidRequestAdmin,
         FixPidV2Admin,
     )
 
