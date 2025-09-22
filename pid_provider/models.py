@@ -355,10 +355,12 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         default=choices.PPXML_STATUS_TODO,
     )
     issn_electronic = models.CharField(
-        _("issn_epub"), max_length=10, null=True, blank=True
+        _("Electronic ISSN"), max_length=10, null=True, blank=True
     )
-    issn_print = models.CharField(_("issn_ppub"), max_length=10, null=True, blank=True)
-    pub_year = models.CharField(_("pub_year"), max_length=4, null=True, blank=True)
+    issn_print = models.CharField(_("Print ISSN"), max_length=10, null=True, blank=True)
+    pub_year = models.CharField(
+        _("publication year"), max_length=4, null=True, blank=True
+    )
     volume = models.CharField(_("volume"), max_length=16, null=True, blank=True)
     number = models.CharField(_("number"), max_length=16, null=True, blank=True)
     suppl = models.CharField(_("suppl"), max_length=16, null=True, blank=True)
