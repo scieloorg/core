@@ -22,17 +22,22 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 from collection.models import Collection
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
-from pid_provider import choices, exceptions
-from pid_provider.query_params import get_valid_query_parameters
-
-from tracker.models import UnexpectedEvent
-
-from core.utils.profiling_tools import (
+from core.utils.profiling_tools import (  # ajuste o import conforme sua estrutura
     profile_classmethod,
-    profile_property,
     profile_method,
+    profile_property,
     profile_staticmethod,
-)  # ajuste o import conforme sua estrutura
+)
+from core.utils.similarity import is_similar
+from pid_provider import choices, exceptions
+from pid_provider.query_params import (
+    get_article_q_expression,
+    get_issue_kwargs,
+    get_journal_q_expression,
+    get_valid_query_parameters,
+    zero_to_none,
+)
+from tracker.models import BaseEvent, EventSaveError, UnexpectedEvent
 
 try:
     from django_prometheus.models import ExportModelOperationsMixin
@@ -180,11 +185,9 @@ class XMLVersion(CommonControlField):
             raise XMLVersionGetError(
                 "XMLVersion.get requires pid_provider_xml and xml_with_pre parameters"
             )
-        found = (
-            cls.objects
-            .filter(pid_provider_xml=pid_provider_xml, finger_print=finger_print)
-            .latest("created")
-        )
+        found = cls.objects.filter(
+            pid_provider_xml=pid_provider_xml, finger_print=finger_print
+        ).latest("created")
         if found:
             return found
         raise cls.DoesNotExist(f"{pid_provider_xml} {finger_print}")
@@ -272,137 +275,6 @@ class PidProviderConfig(CommonControlField, ClusterableModel):
     base_form_class = CoreAdminModelForm
 
 
-class PidRequest(CommonControlField):
-    origin = models.CharField(
-        _("Request origin"), max_length=124, null=True, blank=True
-    )
-    result_type = models.CharField(
-        _("Result type"), max_length=100, null=True, blank=True
-    )
-    result_msg = models.TextField(_("Result message"), null=True, blank=True)
-    detail = models.JSONField(_("Detail"), null=True, blank=True)
-    origin_date = models.CharField(
-        _("Origin date"), max_length=10, null=True, blank=True
-    )
-    times = models.IntegerField(null=True, blank=True)
-
-    class Meta:
-        indexes = [
-            models.Index(
-                fields=[
-                    "result_type",
-                ]
-            ),
-        ]
-
-    @property
-    @profile_property
-    def data(self):
-        _data = {
-            "origin": self.origin,
-            "origin_date": self.origin_date,
-            "result_type": self.result_type,
-            "result_msg": self.result_msg,
-            "detail": self.detail,
-            "times": self.times,
-        }
-        return _data
-
-    def __unicode__(self):
-        return f"{self.origin}"
-
-    def __str__(self):
-        return f"{self.origin}"
-
-    @classmethod
-    @profile_classmethod
-    def get(
-        cls,
-        origin,
-    ):
-        if origin:
-            return cls.objects.get(origin=origin)
-        raise ValueError("PidRequest.get requires parameters")
-
-    @classmethod
-    @profile_classmethod
-    def create_or_update(
-        cls,
-        user=None,
-        origin=None,
-        result_type=None,
-        result_msg=None,
-        detail=None,
-        origin_date=None,
-    ):
-        try:
-            obj = cls.get(origin=origin)
-            obj.updated_by = user
-        except cls.DoesNotExist:
-            obj = cls()
-            obj.creator = user
-            obj.origin = origin
-        obj.result_type = result_type
-        obj.result_msg = result_msg
-        obj.detail = detail
-        obj.origin_date = origin_date
-        if not obj.times:
-            obj.times = 0
-        obj.times += 1
-        obj.save()
-        return obj
-
-    @classmethod
-    @profile_classmethod
-    def register_failure(
-        cls,
-        e,
-        user=None,
-        origin=None,
-        origin_date=None,
-        detail=None,
-    ):
-        logging.exception(e)
-        return PidRequest.create_or_update(
-            user=user,
-            origin=origin,
-            origin_date=origin_date,
-            result_type=str(type(e)),
-            result_msg=str(e),
-            detail=detail,
-        )
-
-    @classmethod
-    @profile_classmethod
-    def cancel_failure(cls, user=None, origin=None):
-        try:
-            PidRequest.get(origin).delete()
-        except cls.DoesNotExist:
-            # nao é necessario atualizar o status de falha não registrada anteriormente
-            pass
-
-    @property
-    def created_updated(self):
-        return self.updated or self.created
-
-    @classmethod
-    @profile_classmethod
-    def items_to_retry(cls):
-        # Adicionar select_related se for acessar xml_version posteriormente
-        return cls.objects.filter(~Q(result_type="OK"), origin__contains=":").iterator()
-
-    panels = [
-        # FieldPanel("origin", read_only=True),
-        FieldPanel("origin_date", read_only=True),
-        FieldPanel("result_type", read_only=True),
-        FieldPanel("result_msg", read_only=True),
-        # AutocompletePanel("xml_version", read_only=True),
-        FieldPanel("detail", read_only=True),
-    ]
-
-    base_form_class = CoreAdminModelForm
-
-
 class OtherPid(CommonControlField):
     """
     Registro de PIDs (associados a um PidProviderXML) cujo valor difere do valor atribuído
@@ -476,17 +348,19 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
     proc_status = models.CharField(
         _("processing status"),
-        max_length=6,
+        max_length=7,
         null=True,
         blank=True,
         choices=choices.PPXML_STATUS,
         default=choices.PPXML_STATUS_TODO,
     )
     issn_electronic = models.CharField(
-        _("issn_epub"), max_length=10, null=True, blank=True
+        _("Electronic ISSN"), max_length=10, null=True, blank=True
     )
-    issn_print = models.CharField(_("issn_ppub"), max_length=10, null=True, blank=True)
-    pub_year = models.CharField(_("pub_year"), max_length=4, null=True, blank=True)
+    issn_print = models.CharField(_("Print ISSN"), max_length=10, null=True, blank=True)
+    pub_year = models.CharField(
+        _("publication year"), max_length=4, null=True, blank=True
+    )
     volume = models.CharField(_("volume"), max_length=16, null=True, blank=True)
     number = models.CharField(_("number"), max_length=16, null=True, blank=True)
     suppl = models.CharField(_("suppl"), max_length=16, null=True, blank=True)
@@ -576,16 +450,38 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             models.Index(fields=["pkg_name"]),
             models.Index(fields=["v3"]),
             models.Index(fields=["v2"]),
-            models.Index(fields=["aop_pid"], condition=Q(aop_pid__isnull=False), name="ppx_aop_pid"),
-            models.Index(fields=["main_doi"], condition=Q(main_doi__isnull=False), name="ppx_main_doi"),
+            models.Index(
+                fields=["aop_pid"],
+                condition=Q(aop_pid__isnull=False),
+                name="ppx_aop_pid",
+            ),
+            models.Index(
+                fields=["main_doi"],
+                condition=Q(main_doi__isnull=False),
+                name="ppx_main_doi",
+            ),
             # === journal ===
             models.Index(
-                fields=["issn_electronic"], condition=Q(issn_electronic__isnull=False), name="ppx_issn_electronic"
+                fields=["issn_electronic"],
+                condition=Q(issn_electronic__isnull=False),
+                name="ppx_issn_electronic",
             ),
-            models.Index(fields=["issn_print"], condition=Q(issn_print__isnull=False), name="ppx_issn_print"),
+            models.Index(
+                fields=["issn_print"],
+                condition=Q(issn_print__isnull=False),
+                name="ppx_issn_print",
+            ),
             # === authors ===
-            models.Index(fields=["z_surnames"], condition=Q(z_surnames__isnull=False), name="ppx_z_surnames"),
-            models.Index(fields=["z_collab"], condition=Q(z_collab__isnull=False), name="ppx_z_collab"),
+            models.Index(
+                fields=["z_surnames"],
+                condition=Q(z_surnames__isnull=False),
+                name="ppx_z_surnames",
+            ),
+            models.Index(
+                fields=["z_collab"],
+                condition=Q(z_collab__isnull=False),
+                name="ppx_z_collab",
+            ),
             # Para queries com datas
             models.Index(fields=["-updated"]),
             models.Index(fields=["-created"]),
@@ -596,18 +492,23 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             # === Compostos ===
             models.Index(
                 fields=["issn_electronic", "elocation_id"],
-                condition=Q(issn_electronic__isnull=False, elocation_id__isnull=False), name="ppx_elocation_id",
+                condition=Q(issn_electronic__isnull=False, elocation_id__isnull=False),
+                name="ppx_elocation_id",
             ),
             models.Index(
                 fields=["issn_electronic", "pub_year", "volume", "number", "suppl"],
-                condition=Q(issn_electronic__isnull=False), name="ppx_eissue",
+                condition=Q(issn_electronic__isnull=False),
+                name="ppx_eissue",
             ),
             models.Index(
                 fields=["issn_print", "pub_year", "volume", "number", "suppl"],
-                condition=Q(issn_print__isnull=False), name="ppx_pissue",
+                condition=Q(issn_print__isnull=False),
+                name="ppx_pissue",
             ),
             models.Index(
-                fields=["fpage", "fpage_seq", "lpage"], condition=Q(fpage__isnull=False), name="ppx_fpage"
+                fields=["fpage", "fpage_seq", "lpage"],
+                condition=Q(fpage__isnull=False),
+                name="ppx_fpage",
             ),
             # Para otimizar queries com current_version
             models.Index(fields=["current_version"]),
@@ -615,6 +516,34 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
     def __str__(self):
         return f"{self.pkg_name} {self.v3}"
+
+    @classmethod
+    def get_queryset(
+        cls,
+        issn_list=None,
+        from_pub_year=None,
+        until_pub_year=None,
+        from_updated_date=None,
+        until_updated_date=None,
+        proc_status_list=None,
+        params=None,
+    ):
+        params = params or {}
+
+        q = Q()
+        if issn_list:
+            q = Q(issn_print__in=issn_list) | Q(issn_electronic__in=issn_list)
+        if from_updated_date:
+            params["updated__gte"] = from_updated_date
+        if until_updated_date:
+            params["updated__lte"] = until_updated_date
+        if from_pub_year:
+            params["pub_year__gte"] = from_pub_year
+        if until_pub_year:
+            params["pub_year__lte"] = until_pub_year
+        if proc_status_list:
+            params["proc_status__in"] = proc_status_list
+        return cls.objects.filter(q, **params)
 
     @classmethod
     @profile_classmethod
@@ -778,7 +707,8 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             )
             if updated_data:
                 response["skip_update"] = True
-                return updated_data
+                response.update(updated_data)
+                return response
 
             # cria ou atualiza registro
             registered = cls._save(
@@ -918,8 +848,10 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             logging.info(f"Do not skip update: not registered")
             return
 
-        if registered_in_core != registered.registered_in_core:
-            logging.info(f"Do not skip update: need to update registered_in_core")
+        if registered_in_core and not registered.registered_in_core:
+            logging.info(
+                f"Do not skip update: need to update registered.registered_in_core=True"
+            )
             return
 
         # verifica se é necessário atualizar
@@ -956,55 +888,31 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     @profile_classmethod
     def get_record(cls, xml_adapter):
         try:
-            return cls.get_record_by_data(xml_adapter)
+            # match exato
+            return cls.get_record_data(xml_adapter)
         except cls.DoesNotExist:
-            try:
-                # tenta match com pid_v3
-                return cls.get_record_by_pid_v3(xml_adapter)
-            except PidProviderXMLPidV3ConflictError:
-                pass
-        raise cls.DoesNotExist
+            logging.error(f"Falhou match exato")
+            pass
+        try:
+            return cls.get_record_by_main_doi(xml_adapter)
+        except (cls.DoesNotExist, ValueError):
+            logging.error(f"Falhou match com DOI")
+            pass
+        try:
+            return cls.get_record_by_pid_v3(xml_adapter)
+        except (cls.DoesNotExist, ValueError):
+            logging.error(f"Falhou match com pid v3")
+            pass
+        return cls.get_record_flexible_match(xml_adapter)
 
     @classmethod
     @profile_classmethod
-    def get_record_by_data(cls, xml_adapter):
-        """
-        Get record by data
-
-        Arguments
-        ---------
-        xml_adapter : PidProviderXMLAdapter
-
-        Returns
-        -------
-        PidProviderXML
-
-        Raises
-        ------
-        DoesNotExist
-        MultipleObjectsReturned
-        RequiredPublicationYearErrorToGetPidProviderXMLError
-            Se o ano de publicação requerido não estiver disponível.
-        RequiredISSNErrorToGetPidProviderXMLError
-            Se nem o ISSN eletrônico nem o impresso estiverem disponíveis.
-        NotEnoughParametersToGetPidProviderXMLError
-            Se os parâmetros disponíveis forem insuficientes para desambiguação.
-
-        """
-        # Usar select_related para otimizar acesso futuro a current_version
-        q, query_list = get_valid_query_parameters(xml_adapter)
-        # versão VoR (version of record)
-        item = cls.objects.filter(q, **query_list[0]).order_by("-updated").first()
-        if item:
-            return item
-        # versão aop (ahead of print)
-        try:
-            if query_list[1]:
-                item = cls.objects.filter(q, **query_list[1]).order_by("-updated").first()
-                if item:
-                    return item
-        except IndexError:
-            pass
+    def get_record_data(cls, xml_adapter):
+        q, param_list = get_valid_query_parameters(xml_adapter)
+        for params in param_list:
+            item = cls.objects.filter(q, **params).order_by("-updated").first()
+            if item:
+                return item
         raise cls.DoesNotExist
 
     @classmethod
@@ -1012,17 +920,53 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     def get_record_by_pid_v3(cls, xml_adapter):
         # tenta procurar pelo pid_v3
         if not xml_adapter.v3:
-            raise cls.DoesNotExist
+            raise ValueError("get_record_by_pid_v3: XML has not pid v3")
 
         xml_pid_v3 = xml_adapter.v3
-        item = cls.objects.filter(Q(v3=xml_pid_v3) | Q(other_pid__pid_in_xml=xml_pid_v3)).order_by("-updated").first()
+        item = (
+            cls.objects.filter(Q(v3=xml_pid_v3) | Q(other_pid__pid_in_xml=xml_pid_v3))
+            .order_by("-updated")
+            .first()
+        )
         if item:
-            if item.match(xml_adapter):
+            if item.match(xml_adapter) >= 3:
                 return item
             raise PidProviderXMLPidV3ConflictError(
                 f"Pid v3 {xml_pid_v3} belongs to {item}"
             )
         raise cls.DoesNotExist
+
+    @classmethod
+    @profile_classmethod
+    def get_record_by_main_doi(cls, xml_adapter):
+        # tenta procurar pelo pid_v3
+        if not xml_adapter.main_doi:
+            raise ValueError("get_record_by_main_doi: XML has no main_doi")
+
+        doi = xml_adapter.main_doi
+        item = cls.objects.filter(main_doi=doi).order_by("-updated").first()
+        if item:
+            if item.match(xml_adapter) >= 3:
+                return item
+        raise cls.DoesNotExist
+
+    @classmethod
+    @profile_classmethod
+    def get_record_flexible_match(cls, xml_adapter):
+        q1 = get_journal_q_expression(xml_adapter)
+        q2 = get_article_q_expression(xml_adapter)
+        kwargs_groups = get_issue_kwargs(xml_adapter)
+        matches = []
+        for kwargs in kwargs_groups:
+            for item in cls.objects.filter(q1 & q2, **kwargs).order_by("-updated"):
+                total = item.match(xml_adapter)
+                if total >= 3:
+                    matches.append((total, item.updated.isoformat(), item.id))
+        if not matches:
+            logging.info("get_record_flexible_match: No matches")
+            raise cls.DoesNotExist
+        logging.info(f"get_record_flexible_match: {matches}")
+        return cls.objects.get(pk=sorted(matches)[-1][-1])
 
     @profile_method
     def match(self, xml_adapter):
@@ -1040,30 +984,26 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             True se representam o mesmo artigo
         """
         # DOI
-        if xml_adapter.main_doi and xml_adapter.main_doi == self.main_doi:
-            return True
+        matches = []
+        matches.append(self.has_similar_title(xml_adapter))
+        matches.append(xml_adapter.z_surnames == self.z_surnames)
+        matches.append(xml_adapter.z_collab == self.z_collab)
+        matches.append(xml_adapter.z_links == self.z_links)
+        matches.append(xml_adapter.z_partial_body == self.z_partial_body)
+        return matches.count(True)
 
-        # Package name
-        if xml_adapter.sps_pkg_name == self.pkg_name:
-            return True
-
-        if xml_adapter.z_surnames and xml_adapter.z_surnames == self.z_surnames:
-            return True
-
-        if xml_adapter.z_collab and xml_adapter.z_collab == self.z_collab:
-            return True
-
-        # Links
-        if xml_adapter.z_links and xml_adapter.z_links == self.z_links:
-            return True
-
-        # Partial body
-        if (
-            xml_adapter.z_partial_body
-            and xml_adapter.z_partial_body == self.z_partial_body
-        ):
-            return True
-        return False
+    def has_similar_title(self, xml_adapter):
+        if not xml_adapter.xml_with_pre.article_titles_texts:
+            return False
+        if not self.xml_with_pre.article_titles_texts:
+            return False
+        words1 = set()
+        for item in xml_adapter.xml_with_pre.article_titles_texts:
+            words1.update(item.split())
+        words2 = set()
+        for item in self.xml_with_pre.article_titles_texts:
+            words2.update(item.split())
+        return is_similar(" ".join(sorted(words1)), " ".join(sorted(words2)))
 
     @classmethod
     @profile_classmethod
@@ -1089,11 +1029,9 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             Se os parâmetros disponíveis forem insuficientes para desambiguação.
 
         """
-        q, query_list = get_valid_query_parameters(xml_adapter)
-        for item in cls.objects.filter(q, **query_list[0]).order_by("-updated").iterator():
-            yield item.data
-        if len(query_list) > 1 and query_list[1]:
-            for item in cls.objects.filter(q, **query_list[1]).order_by("-updated").iterator():
+        q, param_list = get_valid_query_parameters(xml_adapter)
+        for params in param_list:
+            for item in cls.objects.filter(q, **params).order_by("-updated").iterator():
                 yield item.data
 
     @profile_method
@@ -1137,8 +1075,8 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
     @profile_method
     def _add_issue(self, xml_adapter):
-        self.volume = xml_adapter.volume
-        self.number = xml_adapter.number
+        self.volume = zero_to_none(xml_adapter.volume)
+        self.number = zero_to_none(xml_adapter.number)
         self.suppl = xml_adapter.suppl
         self.pub_year = xml_adapter.pub_year or xml_adapter.article_pub_year
 
@@ -1325,87 +1263,6 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             raise exceptions.PidProviderXMLFixPidV2Error(
                 f"Unable to fix pid v2 for {item.v3} {e} {type(e)}"
             )
-
-
-class CollectionPidRequest(CommonControlField):
-    """
-    Uso exclusivo no Core
-    para controlar a entrada de XML provenientes do AM
-    registrando cada coleção e a data da coleta
-    """
-
-    collection = models.ForeignKey(
-        Collection, on_delete=models.SET_NULL, null=True, blank=True
-    )
-    end_date = models.CharField(max_length=10, null=True, blank=True)
-
-    panels = [
-        FieldPanel("end_date"),
-    ]
-
-    base_form_class = CoreAdminModelForm
-
-    class Meta:
-        unique_together = [("collection",)]
-
-    def __unicode__(self):
-        return f"{self.collection}"
-
-    def __str__(self):
-        return f"{self.collection}"
-
-    @classmethod
-    @profile_classmethod
-    def get(
-        cls,
-        collection=None,
-    ):
-        if collection:
-            try:
-                return cls.objects.get(collection=collection)
-            except cls.MultipleObjectsReturned:
-                obj = cls.objects.filter(collection=collection).first()
-                for item in cls.objects.filter(collection=collection).iterator():
-                    if item is obj:
-                        continue
-                    item.delete()
-                return obj
-        raise ValueError("PidRequest.get requires parameters")
-
-    @classmethod
-    @profile_classmethod
-    def create(
-        cls,
-        user=None,
-        collection=None,
-        end_date=None,
-    ):
-        try:
-            obj = cls()
-            obj.creator = user
-            obj.collection = collection
-            obj.end_date = end_date
-            obj.save()
-            return obj
-        except IntegrityError:
-            return cls.get(collection)
-
-    @classmethod
-    @profile_classmethod
-    def create_or_update(
-        cls,
-        user=None,
-        collection=None,
-        end_date=None,
-    ):
-        try:
-            obj = cls.get(collection=collection)
-            obj.updated_by = user
-            obj.end_date = end_date or obj.end_date or "1900-01-01"
-            obj.save()
-            return obj
-        except cls.DoesNotExist:
-            return cls.create(user, collection, end_date)
 
 
 class FixPidV2(CommonControlField):

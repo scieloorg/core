@@ -15,9 +15,13 @@ class User(AbstractUser):
     name = models.CharField(_("Name of User"), blank=True, max_length=255)
     first_name = models.CharField(max_length=150, blank=True, verbose_name="first name")
     last_name = models.CharField(max_length=150, blank=True, verbose_name="last name")
-    journal = models.ManyToManyField("journal.Journal", verbose_name=_("Journal"), blank=True)
-    collection = models.ManyToManyField("collection.Collection", verbose_name=_("Collection"), blank=True)
-    
+    journal = models.ManyToManyField(
+        "journal.Journal", verbose_name=_("Journal"), blank=True
+    )
+    collection = models.ManyToManyField(
+        "collection.Collection", verbose_name=_("Collection"), blank=True
+    )
+
     def get_absolute_url(self):
         """Get url for user's detail view.
 
@@ -26,7 +30,6 @@ class User(AbstractUser):
 
         """
         return reverse("users:detail", kwargs={"username": self.username})
-
 
     @property
     def collections(self):
@@ -37,7 +40,7 @@ class User(AbstractUser):
 
         """
         return self.collection.all()
-    
+
     @property
     def journals(self):
         """Get journals for user.

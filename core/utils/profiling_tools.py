@@ -1,11 +1,12 @@
 # profiling_tools.py - Versão expandida com suporte a métodos e properties
 
-import time
 import functools
-import psutil
 import logging
-from django.db import connection
+import time
+
+import psutil
 from django.conf import settings
+from django.db import connection
 
 # Ativa/desativa profiling via settings
 PROFILING_ENABLED = getattr(settings, "PROFILING_ENABLED", False)
