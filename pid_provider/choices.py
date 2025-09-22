@@ -1,6 +1,5 @@
 from django.utils.translation import gettext_lazy as _
 
-
 ENDPOINTS = (("fix-pid-v2", "fix-pid-v2"),)
 
 PPXML_STATUS_WAIT = "WAIT"

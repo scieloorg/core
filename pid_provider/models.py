@@ -22,17 +22,15 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 from collection.models import Collection
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
+from core.utils.profiling_tools import (  # ajuste o import conforme sua estrutura
+    profile_classmethod,
+    profile_method,
+    profile_property,
+    profile_staticmethod,
+)
 from pid_provider import choices, exceptions
 from pid_provider.query_params import get_valid_query_parameters
-
 from tracker.models import UnexpectedEvent
-
-from core.utils.profiling_tools import (
-    profile_classmethod,
-    profile_property,
-    profile_method,
-    profile_staticmethod,
-)  # ajuste o import conforme sua estrutura
 
 try:
     from django_prometheus.models import ExportModelOperationsMixin

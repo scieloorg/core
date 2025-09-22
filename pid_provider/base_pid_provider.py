@@ -4,9 +4,9 @@ import sys
 # from django.utils.translation import gettext_lazy as _
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre, get_xml_with_pre
 
-from core.utils.profiling_tools import (
+from core.utils.profiling_tools import (  # ajuste o import conforme sua estrutura
     profile_method,
-)  # ajuste o import conforme sua estrutura
+)
 from pid_provider.models import PidProviderXML, PidRequest
 from tracker.models import UnexpectedEvent
 

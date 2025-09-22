@@ -4,12 +4,13 @@ from datetime import datetime
 
 from django.contrib.auth import get_user_model
 
+from collection.models import Collection
+from pid_provider.models import CollectionPidRequest, PidProviderXML
+from pid_provider.provider import PidProvider
+from tracker.models import UnexpectedEvent
+
 # from django.utils.translation import gettext as _
 
-from collection.models import Collection
-from pid_provider.provider import PidProvider
-from pid_provider.models import CollectionPidRequest, PidProviderXML
-from tracker.models import UnexpectedEvent
 
 User = get_user_model()
 
