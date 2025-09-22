@@ -51,29 +51,34 @@ user_redirect_view = UserRedirectView.as_view()
 
 def filter_journals(request):
     # Filtra apenas valores numéricos não vazios
-    raw_ids = request.GET.getlist('collections[]')
+    raw_ids = request.GET.getlist("collections[]")
     collection_ids = [int(cid) for cid in raw_ids if cid.isdigit()]
     if collection_ids:
-        journals = Journal.objects.filter(
-            scielojournal__collection__id__in=collection_ids,
-            scielojournal__collection__is_active=True
-            ).select_related("official").prefetch_related(
+        journals = (
+            Journal.objects.filter(
+                scielojournal__collection__id__in=collection_ids,
+                scielojournal__collection__is_active=True,
+            )
+            .select_related("official")
+            .prefetch_related(
                 Prefetch(
                     "scielojournal_set",
                     queryset=SciELOJournal.objects.select_related("collection").filter(
-                        collection__id__in=collection_ids,
-                        collection__is_active=True
+                        collection__id__in=collection_ids, collection__is_active=True
                     ),
-                    to_attr="active_collections"
+                    to_attr="active_collections",
                 )
             )
+        )
     else:
         journals = Journal.objects.select_related("official").prefetch_related(
             Prefetch(
                 "scielojournal_set",
-                queryset=SciELOJournal.objects.select_related("collection").filter(collection__is_active=True),
-                to_attr="active_collections"
+                queryset=SciELOJournal.objects.select_related("collection").filter(
+                    collection__is_active=True
+                ),
+                to_attr="active_collections",
             )
         )
-    journal_list = [{'id': journal.id, 'name': str(journal)} for journal in journals]
+    journal_list = [{"id": journal.id, "name": str(journal)} for journal in journals]
     return JsonResponse(journal_list, safe=False)

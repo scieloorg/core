@@ -94,7 +94,7 @@ def _get_user(request, username=None, user_id=None):
             return User.objects.get(pk=user_id)
         if username:
             return User.objects.get(username=username)
-        
+
 
 def formated_date_api_params(query_params):
     formated_date = {}
@@ -108,5 +108,5 @@ def formated_date_api_params(query_params):
             try:
                 formated_date.update({filter_key: data_value.replace("/", "-")})
             except (ValueError, AttributeError):
-                continue 
+                continue
     return formated_date
