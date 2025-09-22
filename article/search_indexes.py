@@ -3,6 +3,7 @@ from haystack import indexes
 from journal.models import SciELOJournal
 
 from .models import Article
+from .mods_mappings import MODS_TYPE_OF_RESOURCE_MAPPING, DISPLAY_LABEL, AUDIENCE_MAPPING
 
 from legendarium.formatter import descriptive_format
 
@@ -464,7 +465,6 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         return self.get_model().objects.all()
 
 
-# NOVA CLASSE ADICIONADA: ArticleOAIMODSIndex
 class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
     """
     Índice OAI-PMH para metadados MODS (Metadata Object Description Schema)
@@ -1048,51 +1048,279 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
     # MODS: typeOfResource
     def prepare_mods_type_of_resource(self, obj):
         """
-            Prepara elemento typeOfResource do MODS
-            Mapeia article_type para valores MODS apropriados
-            """
-        # Mapeamento básico de tipos de artigo para tipos MODS
-        type_mapping = {
-            "research-article": "text",
-            "review-article": "text",
-            "case-report": "text",
-            "editorial": "text",
-            "letter": "text",
-            "brief-report": "text",
-            "correction": "text",
-            "retraction": "text",
+        Prepara elemento typeOfResource do MODS
+        """
+
+        # Valor principal
+        resource_type = MODS_TYPE_OF_RESOURCE_MAPPING.get(obj.article_type, "text/digital") if obj.article_type else "text/digital"
+
+        # Estrutura base
+        type_data = {
+            "text": resource_type
         }
 
-        article_type = obj.article_type
-        return type_mapping.get(article_type, "text") if article_type else "text"
+        # 1. ID
+        pid_for_id = obj.pid_v3 or obj.pid_v2
+        if pid_for_id:
+            type_data["ID"] = pid_for_id
+
+        # 2. lang
+        try:
+            primary_language = obj.languages.first() if obj.languages.exists() else None
+            if primary_language and hasattr(primary_language, 'code2') and primary_language.code2:
+                type_data["lang"] = primary_language.code2
+        except Exception:
+            pass
+
+        # 3. displayLabel
+        if obj.article_type:
+            display_label = obj.article_type.replace("-", " ").title()
+            type_data["displayLabel"] = display_label
+
+        return type_data
 
     # MODS: originInfo
     def prepare_mods_origin_info(self, obj):
         """
-        Prepara elemento originInfo do MODS
-        Inclui informações de publicação
+        Prepara elemento originInfo do MODS com origem de dados correta
         """
         origin_info = []
-
         origin_data = {}
 
-        # Data de publicação usando a propriedade pub_date
-        if hasattr(obj, "pub_date") and obj.pub_date:
-            origin_data["dateIssued"] = obj.pub_date
-            origin_data["encoding"] = "w3cdtf"
+        try:
+            # 1. dateIssued seguro
+            if (hasattr(obj, 'pub_date_year') and obj.pub_date_year and
+                str(obj.pub_date_year).strip()):
 
-        # Editor/Publicador
-        if obj.journal and hasattr(obj.journal, "publisher") and obj.journal.publisher:
-            origin_data["publisher"] = obj.journal.publisher.name
+                date_parts = [str(obj.pub_date_year)]
 
-        # Local de publicação
-        if obj.journal:
-            origin_data["place"] = obj.journal.title
+                if (hasattr(obj, 'pub_date_month') and obj.pub_date_month and
+                    str(obj.pub_date_month).strip()):
+                    date_parts.append(str(obj.pub_date_month).zfill(2))
+
+                    if (hasattr(obj, 'pub_date_day') and obj.pub_date_day and
+                        str(obj.pub_date_day).strip()):
+                        date_parts.append(str(obj.pub_date_day).zfill(2))
+
+                origin_data["dateIssued"] = {
+                    "text": "-".join(date_parts),
+                    "encoding": "w3cdtf",
+                    "keyDate": "yes"
+                }
+
+        except (AttributeError, TypeError, ValueError):
+            pass
+
+        # 2. publisher via publisher_history (relacionamento correto)
+        publishers = []
+        try:
+            if (obj.journal and
+                hasattr(obj.journal, 'publisher_history') and
+                obj.journal.publisher_history.exists()):
+
+                for pub_history in obj.journal.publisher_history.select_related(
+                    'institution__institution__institution_identification',
+                    'organization'
+                ):
+                    try:
+                        pub_name = None
+
+                        # Tentar nova estrutura Organization primeiro
+                        if (pub_history.organization and
+                            pub_history.organization.name):
+                            pub_name = pub_history.organization.name.strip()
+
+                            if (pub_history.organization.acronym and
+                                pub_history.organization.acronym.strip()):
+                                pub_name += f" ({pub_history.organization.acronym.strip()})"
+
+                        # Fallback para estrutura Institution legada
+                        elif (pub_history.institution and
+                              pub_history.institution.institution and
+                              pub_history.institution.institution.institution_identification and
+                              pub_history.institution.institution.institution_identification.name):
+
+                            inst_id = pub_history.institution.institution.institution_identification
+                            pub_name = inst_id.name.strip()
+
+                            if inst_id.acronym and inst_id.acronym.strip():
+                                pub_name += f" ({inst_id.acronym.strip()})"
+
+                        if pub_name:
+                            publishers.append(pub_name)
+
+                    except (AttributeError, TypeError):
+                        continue
+
+            if publishers:
+                origin_data["publisher"] = publishers
+
+        except (AttributeError, TypeError):
+            pass
+
+        # 3. place via múltiplas fontes com prioridades
+        places = []
+        try:
+            # Fonte 1: contact_location do Journal (prioridade alta)
+            if (obj.journal and
+                hasattr(obj.journal, 'contact_location') and
+                obj.journal.contact_location):
+
+                location = obj.journal.contact_location
+                place_terms = self._extract_place_terms_from_location(location)
+
+                if place_terms:
+                    places.append({"placeTerm": place_terms})
+
+            # Fonte 2: Location via Publisher Organizations (se não há contact_location)
+            if not places and obj.journal and hasattr(obj.journal, 'publisher_history'):
+                for pub_history in obj.journal.publisher_history.select_related(
+                    'organization__location__city',
+                    'organization__location__state',
+                    'organization__location__country'
+                ):
+                    try:
+                        if (pub_history.organization and
+                            pub_history.organization.location):
+
+                            place_terms = self._extract_place_terms_from_location(
+                                pub_history.organization.location
+                            )
+
+                            if place_terms:
+                                places.append({"placeTerm": place_terms})
+                                break  # Usar apenas o primeiro válido
+
+                    except (AttributeError, TypeError):
+                        continue
+
+            # Fonte 3: Collections (fallback final)
+            if not places:
+                try:
+                    scielo_journals = obj.journal.scielojournal_set.select_related(
+                        'collection'
+                    ).filter(collection__is_active=True)
+
+                    for scielo_journal in scielo_journals:
+                        collection = scielo_journal.collection
+                        if (collection and
+                            hasattr(collection, 'main_name') and
+                            collection.main_name):
+                            # Usar nome da coleção como place genérico
+                            place_terms = [{
+                                "type": "text",
+                                "text": collection.main_name.strip()
+                            }]
+                            places.append({"placeTerm": place_terms})
+                            break
+
+                except (AttributeError, TypeError):
+                    pass
+
+            if places:
+                origin_data["place"] = places
+
+        except (AttributeError, TypeError):
+            pass
+
+        # 4. frequency do Journal
+        try:
+            if (obj.journal and
+                hasattr(obj.journal, 'frequency') and
+                obj.journal.frequency and
+                obj.journal.frequency.strip()):
+                origin_data["frequency"] = obj.journal.frequency.strip()
+        except (AttributeError, TypeError):
+            pass
+
+        # 5. Atributos MODS padrão
+        origin_data["eventType"] = "publication"
+
+        # Idioma principal
+        try:
+            if (hasattr(obj, 'languages') and obj.languages.exists()):
+                primary_lang = obj.languages.first()
+                if (primary_lang and
+                    hasattr(primary_lang, 'code2') and
+                    primary_lang.code2 and
+                    primary_lang.code2.strip()):
+                    origin_data["lang"] = primary_lang.code2.strip()
+        except (AttributeError, TypeError):
+            pass
 
         if origin_data:
             origin_info.append(origin_data)
 
         return origin_info
+
+    def _extract_place_terms_from_location(self, location):
+        """
+        Método auxiliar para extrair placeTerm de um objeto Location
+        """
+        place_terms = []
+
+        try:
+            # Cidade
+            if (location.city and
+                hasattr(location.city, 'name') and
+                location.city.name and
+                location.city.name.strip()):
+                place_terms.append({
+                    "type": "text",
+                    "text": location.city.name.strip()
+                })
+
+            # Estado
+            if location.state:
+                if (hasattr(location.state, 'name') and
+                    location.state.name and
+                    location.state.name.strip()):
+                    place_terms.append({
+                        "type": "text",
+                        "text": location.state.name.strip()
+                    })
+
+                if (hasattr(location.state, 'acronym') and
+                    location.state.acronym and
+                    location.state.acronym.strip()):
+                    place_terms.append({
+                        "type": "code",
+                        "authority": "iso3166-2",
+                        "text": location.state.acronym.strip()
+                    })
+
+            # País
+            if location.country:
+                if (hasattr(location.country, 'name') and
+                    location.country.name and
+                    location.country.name.strip()):
+                    place_terms.append({
+                        "type": "text",
+                        "text": location.country.name.strip()
+                    })
+
+                if (hasattr(location.country, 'acronym') and
+                    location.country.acronym and
+                    location.country.acronym.strip()):
+                    place_terms.append({
+                        "type": "code",
+                        "authority": "iso3166-1-alpha-2",
+                        "text": location.country.acronym.strip()
+                    })
+
+                if (hasattr(location.country, 'acron3') and
+                    location.country.acron3 and
+                    location.country.acron3.strip()):
+                    place_terms.append({
+                        "type": "code",
+                        "authority": "iso3166-1-alpha-3",
+                        "text": location.country.acron3.strip()
+                    })
+
+        except (AttributeError, TypeError):
+            pass
+
+        return place_terms
 
     # MODS: language
     def prepare_mods_language(self, obj):
@@ -1170,13 +1398,8 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
 
                 # DISPLAYLABEL - Rótulo multilíngue
                 if abstract.language:
-                    display_labels = {
-                        'pt': 'Resumo',
-                        'en': 'Abstract',
-                        'es': 'Resumen',
-                    }
-                    if abstract.language.code2 in display_labels:
-                        abstract_data["displayLabel"] = display_labels[abstract.language.code2]
+                    if abstract.language.code2 in DISPLAY_LABEL:
+                        abstract_data["displayLabel"] = DISPLAY_LABEL[abstract.language.code2]
 
                 abstracts.append(abstract_data)
 
@@ -1464,16 +1687,7 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
 
         # Baseado no tipo de artigo, inferir audiência
         if obj.article_type:
-            audience_mapping = {
-                "research-article": "researchers",
-                "review-article": "researchers",
-                "case-report": "practitioners",
-                "editorial": "general",
-                "letter": "general",
-                "brief-report": "practitioners",
-            }
-
-            audience = audience_mapping.get(obj.article_type, "researchers")
+            audience = AUDIENCE_MAPPING.get(obj.article_type, "researchers")
             audiences.append({"authority": "scielo", "text": audience})
 
         return audiences
