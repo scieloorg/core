@@ -1,0 +1,14 @@
+{% extends "wagtailadmin/shared/header.html" %}
+{% load i18n modeladmin_tags wagtailadmin_tags wagtailcore_tags %}
+
+{% block extra_rows %}
+    <div class="row">
+        <div class="left">
+            <div class="col">
+                <div>
+                    <span>{% blocktrans trimmed %}{{ result_count }} out of {{ all_count }}{% endblocktrans %}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
