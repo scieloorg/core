@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 def _close_old_connections():
     try:
         close_old_connections()
-        logger.info("Conexões de banco de dados antigas fechadas após a tarefa Celery.")
     except Exception as e:
         logger.error(f"Erro ao fechar conexões de banco de dados após a tarefa Celery: {e}")
 
