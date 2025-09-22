@@ -2,6 +2,7 @@ import logging
 import re
 
 import requests
+from django.contrib.auth import get_user_model
 from langcodes import standardize_tag, tag_is_valid
 from tenacity import (
     retry,
@@ -10,7 +11,6 @@ from tenacity import (
     wait_exponential,
 )
 from urllib3.util import Retry
-from django.contrib.auth import get_user_model
 
 from config.settings.base import FETCH_DATA_TIMEOUT
 

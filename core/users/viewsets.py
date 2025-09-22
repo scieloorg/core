@@ -1,4 +1,5 @@
 from wagtail.users.views.users import UserViewSet as WagtailUserViewSet
+
 from .forms import CustomUserCreationForm, CustomUserEditForm
 
 

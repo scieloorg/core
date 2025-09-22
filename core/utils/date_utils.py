@@ -1,6 +1,5 @@
-from datetime import datetime, timedelta
-
 import re
+from datetime import datetime, timedelta
 
 
 def get_date_range(from_date=None, until_date=None, days_to_go_back=7):
