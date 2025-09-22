@@ -18,32 +18,26 @@ from core.models import CommonControlField
 from tracker import choices
 
 
-class ProcEventCreateError(Exception):
-    ...
+class ProcEventCreateError(Exception): ...
 
 
-class UnexpectedEventCreateError(Exception):
-    ...
+class UnexpectedEventCreateError(Exception): ...
 
 
-class EventCreateError(Exception):
-    ...
+class EventCreateError(Exception): ...
 
 
-class EventReportCreateError(Exception):
-    ...
+class EventReportCreateError(Exception): ...
 
 
-class EventReportSaveFileError(Exception):
-    ...
+class EventReportSaveFileError(Exception): ...
 
 
-class EventReportCreateError(Exception):
-    ...
+class EventReportCreateError(Exception): ...
 
 
-class EventReportDeleteEventsError(Exception):
-    ...
+class EventReportDeleteEventsError(Exception): ...
+
 
 class BaseEvent(models.Model):
     name = models.CharField(_("name"), max_length=200)
@@ -191,13 +185,7 @@ class Hello(models.Model):
         )
 
     @classmethod
-    def create(
-        cls,
-        exception=None,
-        exc_traceback=None,
-        detail=None,
-        status=None
-    ):
+    def create(cls, exception=None, exc_traceback=None, detail=None, status=None):
         if exception:
             logging.exception(exception)
 
