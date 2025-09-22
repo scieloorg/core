@@ -180,11 +180,9 @@ class XMLVersion(CommonControlField):
             raise XMLVersionGetError(
                 "XMLVersion.get requires pid_provider_xml and xml_with_pre parameters"
             )
-        found = (
-            cls.objects
-            .filter(pid_provider_xml=pid_provider_xml, finger_print=finger_print)
-            .latest("created")
-        )
+        found = cls.objects.filter(
+            pid_provider_xml=pid_provider_xml, finger_print=finger_print
+        ).latest("created")
         if found:
             return found
         raise cls.DoesNotExist(f"{pid_provider_xml} {finger_print}")
@@ -576,16 +574,38 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             models.Index(fields=["pkg_name"]),
             models.Index(fields=["v3"]),
             models.Index(fields=["v2"]),
-            models.Index(fields=["aop_pid"], condition=Q(aop_pid__isnull=False), name="ppx_aop_pid"),
-            models.Index(fields=["main_doi"], condition=Q(main_doi__isnull=False), name="ppx_main_doi"),
+            models.Index(
+                fields=["aop_pid"],
+                condition=Q(aop_pid__isnull=False),
+                name="ppx_aop_pid",
+            ),
+            models.Index(
+                fields=["main_doi"],
+                condition=Q(main_doi__isnull=False),
+                name="ppx_main_doi",
+            ),
             # === journal ===
             models.Index(
-                fields=["issn_electronic"], condition=Q(issn_electronic__isnull=False), name="ppx_issn_electronic"
+                fields=["issn_electronic"],
+                condition=Q(issn_electronic__isnull=False),
+                name="ppx_issn_electronic",
             ),
-            models.Index(fields=["issn_print"], condition=Q(issn_print__isnull=False), name="ppx_issn_print"),
+            models.Index(
+                fields=["issn_print"],
+                condition=Q(issn_print__isnull=False),
+                name="ppx_issn_print",
+            ),
             # === authors ===
-            models.Index(fields=["z_surnames"], condition=Q(z_surnames__isnull=False), name="ppx_z_surnames"),
-            models.Index(fields=["z_collab"], condition=Q(z_collab__isnull=False), name="ppx_z_collab"),
+            models.Index(
+                fields=["z_surnames"],
+                condition=Q(z_surnames__isnull=False),
+                name="ppx_z_surnames",
+            ),
+            models.Index(
+                fields=["z_collab"],
+                condition=Q(z_collab__isnull=False),
+                name="ppx_z_collab",
+            ),
             # Para queries com datas
             models.Index(fields=["-updated"]),
             models.Index(fields=["-created"]),
@@ -596,18 +616,23 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             # === Compostos ===
             models.Index(
                 fields=["issn_electronic", "elocation_id"],
-                condition=Q(issn_electronic__isnull=False, elocation_id__isnull=False), name="ppx_elocation_id",
+                condition=Q(issn_electronic__isnull=False, elocation_id__isnull=False),
+                name="ppx_elocation_id",
             ),
             models.Index(
                 fields=["issn_electronic", "pub_year", "volume", "number", "suppl"],
-                condition=Q(issn_electronic__isnull=False), name="ppx_eissue",
+                condition=Q(issn_electronic__isnull=False),
+                name="ppx_eissue",
             ),
             models.Index(
                 fields=["issn_print", "pub_year", "volume", "number", "suppl"],
-                condition=Q(issn_print__isnull=False), name="ppx_pissue",
+                condition=Q(issn_print__isnull=False),
+                name="ppx_pissue",
             ),
             models.Index(
-                fields=["fpage", "fpage_seq", "lpage"], condition=Q(fpage__isnull=False), name="ppx_fpage"
+                fields=["fpage", "fpage_seq", "lpage"],
+                condition=Q(fpage__isnull=False),
+                name="ppx_fpage",
             ),
             # Para otimizar queries com current_version
             models.Index(fields=["current_version"]),
@@ -1000,7 +1025,9 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         # versão aop (ahead of print)
         try:
             if query_list[1]:
-                item = cls.objects.filter(q, **query_list[1]).order_by("-updated").first()
+                item = (
+                    cls.objects.filter(q, **query_list[1]).order_by("-updated").first()
+                )
                 if item:
                     return item
         except IndexError:
@@ -1015,7 +1042,11 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             raise cls.DoesNotExist
 
         xml_pid_v3 = xml_adapter.v3
-        item = cls.objects.filter(Q(v3=xml_pid_v3) | Q(other_pid__pid_in_xml=xml_pid_v3)).order_by("-updated").first()
+        item = (
+            cls.objects.filter(Q(v3=xml_pid_v3) | Q(other_pid__pid_in_xml=xml_pid_v3))
+            .order_by("-updated")
+            .first()
+        )
         if item:
             if item.match(xml_adapter):
                 return item
@@ -1090,10 +1121,14 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
         """
         q, query_list = get_valid_query_parameters(xml_adapter)
-        for item in cls.objects.filter(q, **query_list[0]).order_by("-updated").iterator():
+        for item in (
+            cls.objects.filter(q, **query_list[0]).order_by("-updated").iterator()
+        ):
             yield item.data
         if len(query_list) > 1 and query_list[1]:
-            for item in cls.objects.filter(q, **query_list[1]).order_by("-updated").iterator():
+            for item in (
+                cls.objects.filter(q, **query_list[1]).order_by("-updated").iterator()
+            ):
                 yield item.data
 
     @profile_method

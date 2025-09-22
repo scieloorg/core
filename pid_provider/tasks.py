@@ -7,7 +7,9 @@ from django.contrib.auth import get_user_model
 from collection.models import Collection
 from config import celery_app
 from core.utils.utils import fetch_data
-from core.utils.profiling_tools import profile_function  # ajuste o import conforme sua estrutura
+from core.utils.profiling_tools import (
+    profile_function,
+)  # ajuste o import conforme sua estrutura
 from pid_provider.models import CollectionPidRequest, PidRequest
 from pid_provider.provider import PidProvider
 from pid_provider.sources import am
@@ -344,4 +346,3 @@ def task_delete_provide_pid_tmp_zip(
 ):
     if temp_file_path and os.path.exists(temp_file_path):
         os.remove(temp_file_path)
-

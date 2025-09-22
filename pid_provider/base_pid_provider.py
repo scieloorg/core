@@ -4,7 +4,9 @@ import sys
 # from django.utils.translation import gettext_lazy as _
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre, get_xml_with_pre
 
-from core.utils.profiling_tools import profile_method  # ajuste o import conforme sua estrutura
+from core.utils.profiling_tools import (
+    profile_method,
+)  # ajuste o import conforme sua estrutura
 from pid_provider.models import PidProviderXML, PidRequest
 from tracker.models import UnexpectedEvent
 
@@ -79,10 +81,12 @@ class BasePidProvider:
             registered_in_core=registered_in_core,
             auto_solve_pid_conflict=auto_solve_pid_conflict,  # False = deixar sistema resolver, True = user resolve
         )
-        registered["apply_xml_changes"] = self.caller == "core" and registered.get("xml_changed")
+        registered["apply_xml_changes"] = self.caller == "core" and registered.get(
+            "xml_changed"
+        )
         registered["xml_with_pre"] = xml_with_pre
         return registered
-    
+
     @profile_method
     def provide_pid_for_xml_zip(
         self,
