@@ -27,3 +27,11 @@ AUDIENCE_MAPPING = {
     "letter": "general",
     "brief-report": "practitioners",
 }
+
+ISO_639_1_TO_2B = {
+    'pt': 'por', 'en': 'eng', 'es': 'spa', 'fr': 'fre',
+    'it': 'ita', 'de': 'ger', 'ru': 'rus', 'zh': 'chi',
+    'ja': 'jpn', 'ar': 'ara', 'hi': 'hin'
+}
+
+LATIN_SCRIPT_LANGUAGES = {'pt', 'en', 'es', 'fr', 'it', 'de'}
