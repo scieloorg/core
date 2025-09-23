@@ -491,6 +491,18 @@ HAYSTACK_CONNECTIONS = {
         "SOLR_TIMEOUT": 10,
         "EXCLUDED_INDEXES": ["article.search_indexes.ArticleIndex"],
     },
+    "oaimods": {
+            "ENGINE": "haystack.backends.solr_backend.SolrEngine",
+            "URL": "%s%s" % (env("SOLR_URL", default="http://solr:8983/solr/"), "oaimods"),
+            "ADMIN_URL": "http://solr:8983/solr/admin/cores",
+            "INCLUDE_SPELLING": True,
+            "SILENTLY_FAIL": False,
+            "SOLR_TIMEOUT": 10,
+            "EXCLUDED_INDEXES": [
+                "article.search_indexes.ArticleIndex",
+                "article.search_indexes.ArticleOAIIndex"
+            ],
+        },
 }
 
 HAYSTACK_ROUTERS = [
