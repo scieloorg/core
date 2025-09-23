@@ -3,7 +3,7 @@ from haystack import indexes
 from journal.models import SciELOJournal
 
 from .models import Article
-from .mods_mappings import MODS_TYPE_OF_RESOURCE_MAPPING, DISPLAY_LABEL, AUDIENCE_MAPPING
+from .mods_mappings import MODS_TYPE_OF_RESOURCE_MAPPING, DISPLAY_LABEL, AUDIENCE_MAPPING, ISO_639_1_TO_2B, LATIN_SCRIPT_LANGUAGES
 
 from legendarium.formatter import descriptive_format
 
@@ -518,70 +518,70 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
         null=True, index_fieldname="mods.identifier"
     )
 
-    # subject (0-n) - Assuntos, tópicos ou conceitos
-    mods_subject = indexes.MultiValueField(null=True, index_fieldname="mods.subject")
-
-    # abstract (0-n) - Resumo do conteúdo intelectual
-    mods_abstract = indexes.MultiValueField(null=True, index_fieldname="mods.abstract")
-
-    # accessCondition (0-n) - Condições de acesso e uso
-    mods_access_condition = indexes.MultiValueField(
-        null=True, index_fieldname="mods.accessCondition"
-    )
-
-    # relatedItem (0-n) - Recursos relacionados
-    mods_related_item = indexes.MultiValueField(
-        null=True, index_fieldname="mods.relatedItem"
-    )
-
-    # part (0-n) - Informações sobre partes do recurso
-    mods_part = indexes.MultiValueField(null=True, index_fieldname="mods.part")
-
-    # location (0-n) - Localização física ou eletrônica
-    mods_location = indexes.MultiValueField(null=True, index_fieldname="mods.location")
-
-    # ELEMENTOS MODS - PRIORIDADE MÉDIA-ALTA
-    # physicalDescription (0-n) - Características físicas do recurso
-    mods_physical_description = indexes.MultiValueField(
-        null=True, index_fieldname="mods.physicalDescription"
-    )
-
-    # recordInfo (0-n) - Informações sobre o registro de metadados
-    mods_record_info = indexes.MultiValueField(
-        null=True, index_fieldname="mods.recordInfo"
-    )
-
-    # extension (0-n) - Metadados não cobertos pelos elementos padrão
-    mods_extension = indexes.MultiValueField(
-        null=True, index_fieldname="mods.extension"
-    )
-
-    # note (0-n) - Informação geral em forma de nota
-    mods_note = indexes.MultiValueField(null=True, index_fieldname="mods.note")
-
-    # genre (0-n) - Categoria que caracteriza estilo/forma
-    mods_genre = indexes.MultiValueField(null=True, index_fieldname="mods.genre")
-
-    # ELEMENTOS MODS - PRIORIDADE MÉDIA
-    # classification (0-n) - Número ou código de classificação
-    mods_classification = indexes.MultiValueField(
-        null=True, index_fieldname="mods.classification"
-    )
-
-    # tableOfContents (0-n) - Sumário ou índice do conteúdo
-    mods_table_of_contents = indexes.MultiValueField(
-        null=True, index_fieldname="mods.tableOfContents"
-    )
-
-    # targetAudience (0-n) - Público-alvo do recurso
-    mods_target_audience = indexes.MultiValueField(
-        null=True, index_fieldname="mods.targetAudience"
-    )
-
-    # Campo compile para template XML completo
-    compile = indexes.CharField(
-        null=True, index_fieldname="item.compile", use_template=True
-    )
+    # # subject (0-n) - Assuntos, tópicos ou conceitos
+    # mods_subject = indexes.MultiValueField(null=True, index_fieldname="mods.subject")
+    #
+    # # abstract (0-n) - Resumo do conteúdo intelectual
+    # mods_abstract = indexes.MultiValueField(null=True, index_fieldname="mods.abstract")
+    #
+    # # accessCondition (0-n) - Condições de acesso e uso
+    # mods_access_condition = indexes.MultiValueField(
+    #     null=True, index_fieldname="mods.accessCondition"
+    # )
+    #
+    # # relatedItem (0-n) - Recursos relacionados
+    # mods_related_item = indexes.MultiValueField(
+    #     null=True, index_fieldname="mods.relatedItem"
+    # )
+    #
+    # # part (0-n) - Informações sobre partes do recurso
+    # mods_part = indexes.MultiValueField(null=True, index_fieldname="mods.part")
+    #
+    # # location (0-n) - Localização física ou eletrônica
+    # mods_location = indexes.MultiValueField(null=True, index_fieldname="mods.location")
+    #
+    # # ELEMENTOS MODS - PRIORIDADE MÉDIA-ALTA
+    # # physicalDescription (0-n) - Características físicas do recurso
+    # mods_physical_description = indexes.MultiValueField(
+    #     null=True, index_fieldname="mods.physicalDescription"
+    # )
+    #
+    # # recordInfo (0-n) - Informações sobre o registro de metadados
+    # mods_record_info = indexes.MultiValueField(
+    #     null=True, index_fieldname="mods.recordInfo"
+    # )
+    #
+    # # extension (0-n) - Metadados não cobertos pelos elementos padrão
+    # mods_extension = indexes.MultiValueField(
+    #     null=True, index_fieldname="mods.extension"
+    # )
+    #
+    # # note (0-n) - Informação geral em forma de nota
+    # mods_note = indexes.MultiValueField(null=True, index_fieldname="mods.note")
+    #
+    # # genre (0-n) - Categoria que caracteriza estilo/forma
+    # mods_genre = indexes.MultiValueField(null=True, index_fieldname="mods.genre")
+    #
+    # # ELEMENTOS MODS - PRIORIDADE MÉDIA
+    # # classification (0-n) - Número ou código de classificação
+    # mods_classification = indexes.MultiValueField(
+    #     null=True, index_fieldname="mods.classification"
+    # )
+    #
+    # # tableOfContents (0-n) - Sumário ou índice do conteúdo
+    # mods_table_of_contents = indexes.MultiValueField(
+    #     null=True, index_fieldname="mods.tableOfContents"
+    # )
+    #
+    # # targetAudience (0-n) - Público-alvo do recurso
+    # mods_target_audience = indexes.MultiValueField(
+    #     null=True, index_fieldname="mods.targetAudience"
+    # )
+    #
+    # # Campo compile para template XML completo
+    # compile = indexes.CharField(
+    #     null=True, index_fieldname="item.compile", use_template=True
+    # )
 
     # CONFIGURAÇÃO DO ÍNDICE
     def get_model(self):
@@ -590,43 +590,21 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
     def index_queryset(self, using=None):
         """
         Define o queryset base para indexação com otimizações.
-        Filtra apenas artigos válidos e publicados, com queries otimizadas.
+        Indexa todos os artigos independente do status.
         """
         return (
             self.get_model()
-            .objects.select_related(
-                "journal",
-                "issue",
-                "license",
-                "creator",
-            )
+            .objects.select_related("journal", "issue", "license", "creator")
             .prefetch_related(
-                "titles",
-                "researchers__person_name",
-                # Otimizações para MODS - Afiliações estruturadas dos pesquisadores
+                "titles", "researchers__person_name", "collab",
+                "languages", "keywords", "doi", "abstracts",
+                "license_statements", "fundings__funding_source",
+                "toc_sections", "journal__scielojournal_set__collection",
+                # Otimizações MODS específicas
                 "researchers__affiliation__institution__institution_identification",
-                "researchers__affiliation__institution__location__city",
-                "researchers__affiliation__institution__location__state",
-                "researchers__affiliation__institution__location__country",
-                # Otimizações para MODS - Múltiplos identificadores via ResearcherAKA
                 "researchers__researcheraka_set__researcher_identifier",
-                # Otimizações para MODS - Colaboradores corporativos estruturados
-                "collab__affiliation__institution__institution_identification",
-                "collab__affiliation__institution__location__city",
-                "collab__affiliation__institution__location__state",
-                "collab__affiliation__institution__location__country",
-                # Campos originais mantidos
-                "collab",
-                "languages",
-                "keywords",
-                "doi",
-                "abstracts",
-                "license_statements",
-                "fundings__funding_source",
-                "toc_sections",
-                "journal__scielojournal_set__collection",
             )
-            .filter(data_status__in=["PUBLIC", "DELETED"])  # Permite soft delete
+            # Sem filtro de status - indexa todos os artigos
         )
 
     # MÉTODOS AUXILIARES PRIVADOS
@@ -733,7 +711,7 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
                 titles.append(title_data)
         return titles
 
-    # MODS: name - Implementação Enriquecida
+    # MODS: name
     def prepare_mods_name(self, obj):
         """
         Prepara elemento name do MODS com estrutura completa
@@ -1325,49 +1303,209 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
     # MODS: language
     def prepare_mods_language(self, obj):
         """
-        Prepara elemento language do MODS
+        Versão otimizada com mapeamento ISO correto
         """
         languages = []
-        if obj.languages.exists():
-            for language in obj.languages.all():
-                lang_data = {
-                    "languageTerm": {
-                        "type": "code",
-                        "authority": "iso639-2b",
-                        "text": language.code2,
-                    }
-                }
-                languages.append(lang_data)
+
+        try:
+            if obj.languages.exists():
+                for i, lang in enumerate(obj.languages.all()):
+                    if not (lang and lang.code2):
+                        continue
+
+                    code2 = lang.code2.strip().lower()
+                    language_data = {"languageTerm": []}
+
+                    # Código ISO 639-2b (preferido pelo MODS)
+                    if code2 in ISO_639_1_TO_2B:
+                        language_data["languageTerm"].append({
+                            "type": "code",
+                            "authority": "iso639-2b",
+                            "text": ISO_639_1_TO_2B[code2]
+                        })
+
+                    # Nome textual
+                    if lang.name:
+                        language_data["languageTerm"].append({
+                            "type": "text",
+                            "text": lang.name.strip()
+                        })
+
+                    # Primeiro idioma é primary
+                    if i == 0:
+                        language_data["usage"] = "primary"
+
+                    # Script latino para idiomas aplicáveis
+                    if code2 in LATIN_SCRIPT_LANGUAGES:
+                        language_data["scriptTerm"] = [{
+                            "type": "code",
+                            "authority": "iso15924",
+                            "text": "Latn"
+                        }]
+
+                    if language_data["languageTerm"]:
+                        languages.append(language_data)
+
+        except (AttributeError, TypeError):
+            pass
+
         return languages
 
     # MODS: identifier
     def prepare_mods_identifier(self, obj):
         """
-        Prepara elemento identifier do MODS
-        Inclui PIDs, DOIs e outros identificadores
+        Prepara elemento identifier do MODS com taxonomia completa de identificadores SciELO
         """
         identifiers = []
 
-        # PID v2
-        if obj.pid_v2:
-            identifiers.append({"type": "scielo-pid-v2", "text": obj.pid_v2})
-
-        # PID v3
-        if obj.pid_v3:
-            identifiers.append({"type": "scielo-pid-v3", "text": obj.pid_v3})
-
-        # DOIs
+        # 1. DOIs - Padrão internacional (prioridade máxima)
         if obj.doi.exists():
             for doi in obj.doi.all():
-                identifiers.append({"type": "doi", "text": doi.value})
+                if doi.value:
+                    identifier_data = {
+                        "type": "doi",
+                        "text": doi.value.strip()
+                    }
 
-        # URLs disponíveis (HTML e PDF)
-        for fmt in ["html", "pdf"]:
-            for item in self._safe_get_available_urls(obj, fmt):
-                if isinstance(item, dict) and "url" in item:
-                    identifiers.append({"type": "uri", "text": item["url"]})
+                    if not self._is_valid_doi(doi.value):
+                        identifier_data["invalid"] = "yes"
+
+                    identifiers.append(identifier_data)
+
+        # 2. PIDs SciELO - Identificadores primários da plataforma
+        if obj.pid_v3:
+            identifiers.append({
+                "type": "local",
+                "displayLabel": "SciELO PID v3",
+                "text": obj.pid_v3
+            })
+
+        if obj.pid_v2:
+            identifiers.append({
+                "type": "local",
+                "displayLabel": "SciELO PID v2",
+                "text": obj.pid_v2
+            })
+
+        # 3. Package Identifier - Identificador técnico SPS
+        if obj.sps_pkg_name:
+            identifiers.append({
+                "type": "local",
+                "displayLabel": "SPS Package Name",
+                "text": obj.sps_pkg_name
+            })
+
+        # 4. ISSNs do Journal (via relacionamento otimizado)
+        if obj.journal and obj.journal.official:
+            official = obj.journal.official
+
+            if official.issn_print:
+                identifiers.append({
+                    "type": "issn",
+                    "displayLabel": "Print ISSN",
+                    "text": official.issn_print
+                })
+
+            if official.issn_electronic:
+                identifiers.append({
+                    "type": "issn",
+                    "displayLabel": "Electronic ISSN",
+                    "text": official.issn_electronic
+                })
+
+            if official.issnl:
+                identifiers.append({
+                    "type": "issnl",
+                    "text": official.issnl
+                })
+
+        # 5. Identificadores Collection-specific
+        collections = self._safe_get_collections(obj)
+        for collection in collections:
+            # Collection identifiers
+            if collection.acron3:
+                identifiers.append({
+                    "type": "local",
+                    "displayLabel": f"Collection Acronym",
+                    "text": collection.acron3
+                })
+
+            if collection.code:
+                identifiers.append({
+                    "type": "local",
+                    "displayLabel": f"Collection Code",
+                    "text": collection.code
+                })
+
+        # 6. SciELO Journal identifiers por collection
+        if obj.journal:
+            for scielo_journal in obj.journal.scielojournal_set.select_related('collection').filter(
+                collection__is_active=True
+            ):
+                collection_label = scielo_journal.collection.acron3
+
+                if scielo_journal.journal_acron:
+                    identifiers.append({
+                        "type": "local",
+                        "displayLabel": f"Journal Acronym ({collection_label})",
+                        "text": scielo_journal.journal_acron
+                    })
+
+                if scielo_journal.issn_scielo and scielo_journal.issn_scielo != obj.journal.official.issn_print:
+                    identifiers.append({
+                        "type": "issn",
+                        "displayLabel": f"SciELO ISSN ({collection_label})",
+                        "text": scielo_journal.issn_scielo
+                    })
+
+        # 7. Issue identifiers
+        if obj.issue:
+            if obj.issue.issue_pid_suffix:
+                identifiers.append({
+                    "type": "local",
+                    "displayLabel": "Issue PID Suffix",
+                    "text": obj.issue.issue_pid_suffix
+                })
+
+        # 8. URLs estruturados (último para não sobrecarregar)
+        for collection in collections:
+            if collection.domain and obj.pid_v2:
+                # URL canônico principal
+                identifiers.append({
+                    "type": "uri",
+                    "displayLabel": f"Canonical URL ({collection.acron3})",
+                    "text": f"https://{collection.domain}/scielo.php?script=sci_arttext&pid={obj.pid_v2}"
+                })
 
         return identifiers
+
+    def _is_valid_doi(self, value):
+        """
+        Valida formato DOI segundo padrões internacionais
+        Referência: https://www.doi.org/doi_handbook/2_Numbering.html
+        """
+        import re
+        if not value:
+            return False
+
+        # Remove espaços e converte para minúsculo para validação
+        clean_value = value.strip().lower()
+
+        # Padrão básico: 10.xxxx/xxxxx (mínimo 4 dígitos no prefixo)
+        basic_pattern = r'^10\.\d{4,}/\S+$'
+
+        return bool(re.match(basic_pattern, clean_value))
+
+    def _safe_get_collections(self, obj):
+        """
+        Método auxiliar otimizado para obter coleções com fallback seguro
+        """
+        try:
+            if hasattr(obj, 'collections') and obj.collections:
+                return list(obj.collections)
+            return []
+        except Exception:
+            return []
 
     # MODS: subject
     def prepare_mods_subject(self, obj):
