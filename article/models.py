@@ -8,7 +8,6 @@ from django.db import IntegrityError, models
 from django.db.models import Q
 from django.db.utils import DataError
 from django.utils.translation import gettext_lazy as _
-from django.utils.translation import gettext_lazy as _
 from django_prometheus.models import ExportModelOperationsMixin
 from legendarium.formatter import descriptive_format
 from modelcluster.fields import ParentalKey
@@ -255,19 +254,19 @@ class Article(
         except Exception as ex:
             logging.exception("Erro on article %s, error: %s" % (self.pid_v2, ex))
             return ""
-        
+
     @property
     def pub_date(self):
-        year = self.pub_date_year or ''
-        month = self.pub_date_month or ''
-        day = self.pub_date_day or ''
-        
+        year = self.pub_date_year or ""
+        month = self.pub_date_month or ""
+        day = self.pub_date_day or ""
+
         if year and month and day:
             return f"{year}-{month.zfill(2)}-{day.zfill(2)}"
-        
+
         elif year and month:
             return f"{year}-{month.zfill(2)}"
-        
+
         else:
             return year
 
@@ -1090,10 +1089,14 @@ class ArticleSource(CommonControlField):
             if (
                 force_update
                 or (source_date and source_date != obj.source_date)
-                or not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)
+                or not obj.file
+                or not obj.file.path
+                or not os.path.isfile(obj.file.path)
             ):
                 logging.info(f"updating source: {(source_date, obj.source_date)}")
-                logging.info(f"updating file: {not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)}")
+                logging.info(
+                    f"updating file: {not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)}"
+                )
                 obj.create_file()
                 obj.updated_by = user
                 obj.source_date = source_date
@@ -1353,37 +1356,38 @@ class ArticleExport(CommonControlField):
     """
     Controla exportações de artigos para diferentes bases de dados (articlemeta, crossref, pubmed)
     """
+
     article = models.ForeignKey(
         Article,
         on_delete=models.CASCADE,
         related_name="exports",
-        verbose_name=_("Article")
+        verbose_name=_("Article"),
     )
     export_type = models.CharField(
         max_length=50,
         choices=[
-            ('articlemeta', 'ArticleMeta'),
-            ('crossref', 'CrossRef'),
-            ('pubmed', 'PubMed'),
+            ("articlemeta", "ArticleMeta"),
+            ("crossref", "CrossRef"),
+            ("pubmed", "PubMed"),
         ],
-        verbose_name=_("Export Type")
+        verbose_name=_("Export Type"),
     )
     exported_at = models.DateTimeField(auto_now_add=True)
     collection = models.ForeignKey(
-        'collection.Collection',
+        "collection.Collection",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name=_("Collection")
+        verbose_name=_("Collection"),
     )
-    
+
     class Meta:
-        unique_together = ['article', 'export_type', 'collection']
+        unique_together = ["article", "export_type", "collection"]
         indexes = [
-            models.Index(fields=['article', 'export_type']),
-            models.Index(fields=['exported_at']),
+            models.Index(fields=["article", "export_type"]),
+            models.Index(fields=["exported_at"]),
         ]
-    
+
     def __str__(self):
         return f"{self.article.pid_v3} -> {self.export_type}"
 
@@ -1394,7 +1398,7 @@ class ArticleExport(CommonControlField):
             article=article,
             export_type=export_type,
             collection=collection,
-            defaults={'creator': user}
+            defaults={"creator": user},
         )
         if not created:
             obj.exported_at = datetime.now()
@@ -1406,7 +1410,5 @@ class ArticleExport(CommonControlField):
     def is_exported(cls, article, export_type, collection):
         """Verifica se um artigo já foi exportado"""
         return cls.objects.filter(
-            article=article,
-            export_type=export_type,
-            collection=collection
+            article=article, export_type=export_type, collection=collection
         ).exists()

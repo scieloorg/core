@@ -75,7 +75,7 @@ class ArticleExportCreateView(CreateView):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
-    
+
 
 class ArticleExportAdmin(ModelAdmin):
     model = ArticleExport
@@ -86,24 +86,16 @@ class ArticleExportAdmin(ModelAdmin):
     add_to_settings_menu = False
     exclude_from_explorer = False
 
-    list_display = (
-        "article",
-        "pid_v3", 
-        "export_type", 
-        "created", 
-        "updated"
-    )
+    list_display = ("article", "pid_v3", "export_type", "created", "updated")
     list_filter = (
-        "collection", 
+        "collection",
         "export_type",
     )
-    search_fields = (
-        "article__pid_v3", 
-        "article__sps_pkg_name"
-    )
+    search_fields = ("article__pid_v3", "article__sps_pkg_name")
 
     def pid_v3(self, obj):
         return obj.article.pid_v3
+
     pid_v3.short_description = "PID_V3"
 
 
