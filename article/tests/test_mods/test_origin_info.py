@@ -64,18 +64,21 @@ class MODSOriginInfoTestCase(TransactionTestCase):
 
     def _create_location(self, suffix=''):
         """Helper para criar localização completa com sufixo único"""
+        # Usar sufixo numérico para manter dentro dos limites de campo
+        suffix_num = suffix.replace('_', '').replace('pub', '').replace('complete', '') or str(uuid.uuid4().int)[:2]
+
         country, _ = Country.objects.get_or_create(
             name=f'Brasil{suffix}',
-            acronym=f'BR{suffix}',
+            acronym='BR',  # Manter padrão de 2 chars
             defaults={
-                'acron3': f'BRA{suffix}',
+                'acron3': 'BRA',  # Manter padrão de 3 chars
                 'creator': self.user
             }
         )
 
         state, _ = State.objects.get_or_create(
             name=f'São Paulo{suffix}',
-            acronym=f'SP{suffix}',
+            acronym='SP',  # Manter padrão de 2 chars
             defaults={'creator': self.user}
         )
 
