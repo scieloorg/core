@@ -35,3 +35,36 @@ ISO_639_1_TO_2B = {
 }
 
 LATIN_SCRIPT_LANGUAGES = {'pt', 'en', 'es', 'fr', 'it', 'de'}
+
+STRUCTURAL_SECTIONS = {
+    'editorial', 'erratum', 'errata', 'correction', 'retraction',
+    'nominata', 'instructions', 'guidelines', 'normas',
+    'instruções', 'diretrizes', 'acknowledgments', 'agradecimentos',
+    'index', 'índice', 'sumário', 'contents'
+}
+
+POLICIES = {
+            'scl': 'Open access following SciELO Brazil editorial criteria',
+            'arg': 'Open access following SciELO Argentina editorial criteria',
+            'chl': 'Open access following SciELO Chile editorial criteria',
+            'col': 'Open access following SciELO Colombia editorial criteria',
+            'cub': 'Open access following SciELO Cuba editorial criteria',
+            'esp': 'Open access following SciELO Spain editorial criteria',
+            'mex': 'Open access following SciELO Mexico editorial criteria',
+            'per': 'Open access following SciELO Peru editorial criteria',
+            'prt': 'Open access following SciELO Portugal editorial criteria',
+            'psi': 'Open access following SciELO Psychology editorial criteria',
+            'sza': 'Open access following SciELO South Africa editorial criteria',
+            'ury': 'Open access following SciELO Uruguay editorial criteria',
+            'ven': 'Open access following SciELO Venezuela editorial criteria'
+        }
+
+MAPPING_OAI_STATUS = {
+            "": None,
+            "diamond": None,  # Totalmente aberto
+            "gold": None,  # Totalmente aberto
+            "hybrid": "Hybrid open access model - some content may require subscription",
+            "bronze": "Bronze open access - free to read but with copyright restrictions",
+            "green": "Green open access - author self-archived version available",
+            "closed": "Subscription required for full access"
+        }
