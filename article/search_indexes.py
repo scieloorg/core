@@ -3,7 +3,8 @@ from haystack import indexes
 from journal.models import SciELOJournal
 
 from .models import Article
-from .mods_mappings import MODS_TYPE_OF_RESOURCE_MAPPING, DISPLAY_LABEL, AUDIENCE_MAPPING, ISO_639_1_TO_2B, LATIN_SCRIPT_LANGUAGES
+from .mods_mappings import (MODS_TYPE_OF_RESOURCE_MAPPING, DISPLAY_LABEL, AUDIENCE_MAPPING, ISO_639_1_TO_2B,
+                            LATIN_SCRIPT_LANGUAGES, STRUCTURAL_SECTIONS, POLICIES, MAPPING_OAI_STATUS)
 
 from legendarium.formatter import descriptive_format
 
@@ -518,17 +519,17 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
         null=True, index_fieldname="mods.identifier"
     )
 
-    # # subject (0-n) - Assuntos, tópicos ou conceitos
-    # mods_subject = indexes.MultiValueField(null=True, index_fieldname="mods.subject")
-    #
-    # # abstract (0-n) - Resumo do conteúdo intelectual
-    # mods_abstract = indexes.MultiValueField(null=True, index_fieldname="mods.abstract")
-    #
-    # # accessCondition (0-n) - Condições de acesso e uso
-    # mods_access_condition = indexes.MultiValueField(
-    #     null=True, index_fieldname="mods.accessCondition"
-    # )
-    #
+    # subject (0-n) - Assuntos, tópicos ou conceitos
+    mods_subject = indexes.MultiValueField(null=True, index_fieldname="mods.subject")
+
+    # abstract (0-n) - Resumo do conteúdo intelectual
+    mods_abstract = indexes.MultiValueField(null=True, index_fieldname="mods.abstract")
+
+    # accessCondition (0-n) - Condições de acesso e uso
+    mods_access_condition = indexes.MultiValueField(
+        null=True, index_fieldname="mods.accessCondition"
+    )
+
     # # relatedItem (0-n) - Recursos relacionados
     # mods_related_item = indexes.MultiValueField(
     #     null=True, index_fieldname="mods.relatedItem"
@@ -1510,17 +1511,123 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
     # MODS: subject
     def prepare_mods_subject(self, obj):
         """
-        Prepara elemento subject do MODS
+        Prepara subject MODS com todas as correlações confirmadas
         """
         subjects = []
+
+        # 1. Keywords do artigo (fonte primária)
         if obj.keywords.exists():
             for keyword in obj.keywords.all():
                 subject_data = {"topic": keyword.text}
-                # Adiciona idioma se disponível
-                if hasattr(keyword, "language") and keyword.language:
-                    subject_data["lang"] = keyword.language.code2
+
+                if keyword.vocabulary:
+                    topic_data = {"text": keyword.text}
+                    if keyword.vocabulary.acronym:
+                        topic_data["authority"] = keyword.vocabulary.acronym.lower()
+                    elif keyword.vocabulary.name:
+                        topic_data["authority"] = keyword.vocabulary.name.lower().replace(" ", "-")
+                    subject_data = {"topic": topic_data}
+
+                if keyword.language and keyword.language.code2:
+                    lang_code = ISO_639_1_TO_2B.get(keyword.language.code2, keyword.language.code2)
+                    subject_data["lang"] = lang_code
+
                 subjects.append(subject_data)
+
+        # 2. Subject areas do Journal (CONFIRMADO)
+        if obj.journal and obj.journal.subject.exists():
+            for subject_area in obj.journal.subject.all():
+                if subject_area.value:
+                    subjects.append({
+                        "topic": {
+                            "authority": "scielo-subject-area",
+                            "text": subject_area.value
+                        }
+                    })
+
+        # 3. Subject descriptors do Journal (CONFIRMADO)
+        if obj.journal and obj.journal.subject_descriptor.exists():
+            for descriptor in obj.journal.subject_descriptor.all():
+                if descriptor.value:
+                    subjects.append({
+                        "topic": {
+                            "authority": "scielo-descriptor",
+                            "text": descriptor.value
+                        }
+                    })
+
+        # 4. Web of Knowledge Subject Categories (CONFIRMADO)
+        if obj.journal and obj.journal.wos_area.exists():
+            for wos_category in obj.journal.wos_area.all():
+                if wos_category.value:
+                    subjects.append({
+                        "topic": {
+                            "authority": "wos",
+                            "authorityURI": "http://apps.webofknowledge.com/",
+                            "text": wos_category.value
+                        }
+                    })
+
+        # 5. Áreas temáticas do Journal (CONFIRMADO)
+        if obj.journal and hasattr(obj.journal, 'thematic_area') and obj.journal.thematic_area.exists():
+            for thematic_area_journal in obj.journal.thematic_area.all():
+                thematic_area = thematic_area_journal.thematic_area
+
+                # Usar hierarquia: level2 > level1 > level0
+                if thematic_area.level2:
+                    topic_text = thematic_area.level2
+                elif thematic_area.level1:
+                    topic_text = thematic_area.level1
+                elif thematic_area.level0:
+                    topic_text = thematic_area.level0
+                else:
+                    continue
+
+                subjects.append({
+                    "topic": {
+                        "authority": "capes-thematic-area",
+                        "text": topic_text
+                    }
+                })
+
+        # 6. TOC Sections (apenas se semanticamente relevantes)
+        if obj.toc_sections.exists():
+            for section in obj.toc_sections.all():
+                if section.plain_text and self._is_subject_relevant_section(section.plain_text):
+                    subject_data = {
+                        "topic": {
+                            "authority": "scielo-toc",
+                            "text": section.plain_text
+                        }
+                    }
+
+                    if section.language and section.language.code2:
+                        lang_code = ISO_639_1_TO_2B.get(section.language.code2, section.language.code2)
+                        subject_data["lang"] = lang_code
+
+                    subjects.append(subject_data)
+
         return subjects
+
+    def _is_subject_relevant_section(self, section_text):
+        """
+        Filtra seções do TOC que representam verdadeiros assuntos temáticos
+        """
+        if not section_text:
+            return False
+
+        section_lower = section_text.lower().strip()
+
+        # Excluir se for exatamente uma seção estrutural
+        if section_lower in STRUCTURAL_SECTIONS:
+            return False
+
+        # Incluir se parece ser um assunto temático
+        # (comprimento razoável, não só números/símbolos)
+        if len(section_text.strip()) >= 3 and not section_text.strip().isdigit():
+            return True
+
+        return False
 
     # MODS: abstract
     def prepare_mods_abstract(self, obj):
@@ -1546,27 +1653,194 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
     # MODS: accessCondition
     def prepare_mods_access_condition(self, obj):
         """
-        Prepara elemento accessCondition do MODS
+        Prepara elemento accessCondition do MODS com fontes completamente documentadas.
+
+        FONTES DE DADOS CONFIRMADAS:
+        1. Journal.journal_use_license.license_type (JournalLicense)
+        2. Journal.use_license.license_type (core.models.License)
+        3. Journal.open_access (choices.OA_STATUS)
+        4. LicenseStatement.url + license_p (se disponível via relacionamentos)
+        5. Collections (políticas inferidas por coleção)
         """
         access_conditions = []
 
-        # Licença principal
-        if obj.license:
-            license_text = obj.license.license_type or obj.license.name
-            if license_text:
-                access_conditions.append(
-                    {"type": "use and reproduction", "text": license_text}
-                )
+        # 1. LICENÇA ESPECÍFICA DO JOURNAL - FONTE: JournalLicense.license_type
+        if (obj.journal and
+            obj.journal.journal_use_license and
+            obj.journal.journal_use_license.license_type):
 
-        # Declarações de licença adicionais
-        if obj.license_statements.exists():
-            for statement in obj.license_statements.all():
-                if statement.statement:
-                    access_conditions.append(
-                        {"type": "use and reproduction", "text": statement.statement}
-                    )
+            license_type = obj.journal.journal_use_license.license_type
+            condition_data = {
+                "type": "use and reproduction",
+                "text": license_type,
+                "authority": "scielo-journal-license"
+            }
+
+            # Detectar Creative Commons
+            if self._is_creative_commons_license(license_type):
+                condition_data.update({
+                    "authority": "creativecommons",
+                    "authorityURI": "https://creativecommons.org/",
+                    "displayLabel": "Creative Commons License"
+                })
+
+            access_conditions.append(condition_data)
+
+        # 2. LICENÇA GERAL - FONTE: core.models.License.license_type
+        elif (obj.journal and
+              obj.journal.use_license and
+              obj.journal.use_license.license_type):
+
+            license_type = obj.journal.use_license.license_type
+            condition_data = {
+                "type": "use and reproduction",
+                "text": license_type,
+                "authority": "scielo-core-license"
+            }
+
+            if self._is_creative_commons_license(license_type):
+                condition_data.update({
+                    "authority": "creativecommons",
+                    "authorityURI": "https://creativecommons.org/"
+                })
+
+            access_conditions.append(condition_data)
+
+        # 3. LICENSE STATEMENTS - FONTE: LicenseStatement (se implementado relacionamento)
+        license_statements = self._get_license_statements(obj)
+        for statement in license_statements:
+            condition_data = {
+                "type": "use and reproduction",
+                "text": statement.get("license_p", statement.get("url", ""))
+            }
+
+            # URL da licença
+            if statement.get("url"):
+                condition_data["xlink:href"] = statement["url"]
+
+                # Parse da URL para detectar Creative Commons
+                parsed = self._parse_license_url(statement["url"])
+                if parsed.get("license_type"):
+                    condition_data.update({
+                        "authority": "creativecommons",
+                        "authorityURI": "https://creativecommons.org/",
+                        "displayLabel": f"Creative Commons {parsed['license_type'].upper()}"
+                    })
+
+                    if parsed.get("license_version"):
+                        condition_data["displayLabel"] += f" {parsed['license_version']}"
+
+            # Idioma da declaração
+            if statement.get("language"):
+                condition_data["lang"] = statement["language"]
+
+            access_conditions.append(condition_data)
+
+        # 4. RESTRIÇÕES DE ACESSO - FONTE: Journal.open_access (choices.OA_STATUS)
+        if obj.journal and obj.journal.open_access:
+            restriction = self._map_oa_status_to_restriction(obj.journal.open_access)
+            if restriction:
+                access_conditions.append({
+                    "type": "restriction on access",
+                    "text": restriction,
+                    "authority": "scielo-oa-model",
+                    "displayLabel": f"Open Access Model: {obj.journal.open_access.title()}"
+                })
+
+        # 5. POLÍTICAS DE COLEÇÃO - FONTE: Collections relacionadas
+        collections = self._safe_get_collections(obj)
+        for collection in collections:
+            policy = self._get_collection_policy(collection)
+            if policy:
+                access_conditions.append({
+                    "type": "restriction on access",
+                    "text": policy,
+                    "authority": "scielo-collection-policy",
+                    "displayLabel": f"Collection Policy ({collection.acron3})"
+                })
 
         return access_conditions
+
+    def _get_license_statements(self, obj):
+        """
+        Obtém LicenseStatement relacionados (se implementado).
+
+        FONTE: core.models.LicenseStatement via relacionamentos
+        Nota: Relacionamento precisa ser implementado nos modelos Article/Journal
+        """
+        statements = []
+
+        # Verificar se existe relacionamento (seria necessário adicionar aos modelos)
+        if hasattr(obj, 'license_statements') and obj.license_statements.exists():
+            for statement in obj.license_statements.all():
+                statement_data = {}
+
+                if statement.url:
+                    statement_data["url"] = statement.url
+                if statement.license_p:
+                    statement_data["license_p"] = statement.license_p
+                if statement.language:
+                    statement_data["language"] = statement.language.code2
+
+                if statement_data:
+                    statements.append(statement_data)
+
+        return statements
+
+    def _parse_license_url(self, url):
+        """
+        Parse de URL de licença usando método do LicenseStatement.
+
+        FONTE: LicenseStatement.parse_url() (método estático existente)
+        """
+        try:
+            from core.models import LicenseStatement
+            return LicenseStatement.parse_url(url)
+        except Exception:
+            return {}
+
+    def _map_oa_status_to_restriction(self, oa_status):
+        """
+        Mapeia OA_STATUS para restrições MODS.
+
+        FONTE: journal/choices.py - OA_STATUS
+        Valores confirmados: ["", "diamond", "gold", "hybrid", "bronze", "green", "closed"]
+        """
+
+        return MAPPING_OAI_STATUS.get(oa_status)
+
+    def _is_creative_commons_license(self, license_text):
+        """Detecta Creative Commons no texto da licença."""
+        if not license_text:
+            return False
+
+        license_lower = license_text.lower()
+        cc_indicators = [
+            'creative commons', 'cc ', 'cc-', 'attribution',
+            'by-', 'cc by', 'creativecommons', 'ccby'
+        ]
+
+        return any(indicator in license_lower for indicator in cc_indicators)
+
+    def _get_collection_policy(self, collection):
+        """
+        Política de acesso por coleção SciELO.
+
+        FONTE: Collection model + conhecimento das políticas SciELO
+        """
+        if not (hasattr(collection, 'acron3') and collection.acron3):
+            return None
+
+        return POLICIES.get(collection.acron3.lower())
+
+    def _safe_get_collections(self, obj):
+        """Obtém collections com tratamento seguro de erros."""
+        try:
+            if hasattr(obj, 'collections') and obj.collections:
+                return list(obj.collections)
+            return []
+        except Exception:
+            return []
 
     # MODS: relatedItem
     def prepare_mods_related_item(self, obj):
