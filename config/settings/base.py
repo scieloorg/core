@@ -579,3 +579,18 @@ PROFILING_ENABLED = env.bool('DJANGO_PROFILING_ENABLED', default=False)
 PROFILING_LOG_SLOW_REQUESTS = env.float('DJANGO_PROFILING_LOG_SLOW_REQUESTS', default=0.2)
 PROFILING_LOG_HIGH_MEMORY = env.int('DJANGO_PROFILING_LOG_HIGH_MEMORY', default=20)
 PROFILING_LOG_ALL = env.bool('DJANGO_PROFILING_LOG_ALL', default=True)
+
+
+# JWT para dados de colleção no opac_5
+JWT_PRIVATE_KEY_PATH = env.str("JWT_PRIVATE_KEY_PATH", default="/app/jwt_private.pem")
+
+with open(JWT_PRIVATE_KEY_PATH, "rb") as f:
+    JWT_PRIVATE_KEY = f.read()
+
+JWT_ALG = "RS256"
+JWT_ISS = env.str("JWT_ISS", default="https://api.seu-django.com")
+JWT_AUD = env.str("JWT_AUD", default="seu-flask-servico")
+JWT_EXP_SECONDS = env.int("JWT_EXP_SECONDS", default=3600)
+
+# ENDPOINT PARA ATUALIZAÇÃO DOS DADOS DE COLEÇÃO NO OPAC_5
+ENDPOINT_COLLECTION = env.str("ENDPOINT_COLLECTION", default="/api/v1/update_collection/")
