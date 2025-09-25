@@ -1,0 +1,6 @@
+JWT_ISS="https://api.seu-django.com"
+JWT_AUD="seu-flask-servico"
+JWT_EXP_SECONDS=600
+JWT_ALG="RS256"
+# JWT_PRIVATE_KEY JA CORRESPONDENTE AO jwt_public OPAC_5 PARA TESTES.
+JWT_PRIVATE_KEY_PATH="/app/jwt_private_local.pem"

@@ -20,3 +20,7 @@ FETCH_DATA_TIMEOUT=2
 
 DJANGO_PROFILING_ENABLED=True
 RUN_ASYNC=False
+
+# ENDPOINT PARA ATUALIZAÇÃO DE COLEÇÕES
+# ------------------------------------------------------------------------------
+ENDPOINT_COLLECTION="/api/v1/update_collection/"
