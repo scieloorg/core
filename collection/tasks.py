@@ -88,7 +88,6 @@ def build_collection_webhook(event, collection_acron, headers=None):
     if not collection.domain:
         return None
     serializer = CollectionSerializer(collection)
-    event = "collection.created" if event else "collection.updated"
     payload = {
         "event": event,
         "results": serializer.data,
