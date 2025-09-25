@@ -530,14 +530,14 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
         null=True, index_fieldname="mods.accessCondition"
     )
 
-    # # relatedItem (0-n) - Recursos relacionados
-    # mods_related_item = indexes.MultiValueField(
-    #     null=True, index_fieldname="mods.relatedItem"
-    # )
-    #
-    # # part (0-n) - Informações sobre partes do recurso
-    # mods_part = indexes.MultiValueField(null=True, index_fieldname="mods.part")
-    #
+    # relatedItem (0-n) - Recursos relacionados
+    mods_related_item = indexes.MultiValueField(
+        null=True, index_fieldname="mods.relatedItem"
+    )
+
+    # part (0-n) - Informações sobre partes do recurso
+    mods_part = indexes.MultiValueField(null=True, index_fieldname="mods.part")
+
     # # location (0-n) - Localização física ou eletrônica
     # mods_location = indexes.MultiValueField(null=True, index_fieldname="mods.location")
     #
@@ -617,13 +617,11 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
         return f"oai:scielo:{identifier}" if identifier else None
 
     def _safe_get_collections(self, obj):
-        """Método auxiliar seguro para obter coleções."""
+        """Obtém collections com tratamento seguro de erros."""
         try:
-            return (
-                list(obj.collections)
-                if hasattr(obj, "collections") and obj.collections
-                else []
-            )
+            if hasattr(obj, 'collections') and obj.collections:
+                return list(obj.collections)
+            return []
         except Exception:
             return []
 
@@ -1497,17 +1495,6 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
 
         return bool(re.match(basic_pattern, clean_value))
 
-    def _safe_get_collections(self, obj):
-        """
-        Método auxiliar otimizado para obter coleções com fallback seguro
-        """
-        try:
-            if hasattr(obj, 'collections') and obj.collections:
-                return list(obj.collections)
-            return []
-        except Exception:
-            return []
-
     # MODS: subject
     def prepare_mods_subject(self, obj):
         """
@@ -1833,45 +1820,169 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
 
         return POLICIES.get(collection.acron3.lower())
 
-    def _safe_get_collections(self, obj):
-        """Obtém collections com tratamento seguro de erros."""
-        try:
-            if hasattr(obj, 'collections') and obj.collections:
-                return list(obj.collections)
-            return []
-        except Exception:
-            return []
-
     # MODS: relatedItem
     def prepare_mods_related_item(self, obj):
         """
-        Prepara elemento relatedItem do MODS
+        Prepara elemento relatedItem do MODS baseado APENAS em relacionamentos CONFIRMADOS
+
+        FONTES CONFIRMADAS nos modelos fornecidos:
+        1. HOST: obj.issue (ForeignKey), obj.journal (ForeignKey) - models.py issue/journal
+        2. OTHER FORMAT: obj.format.all() (ArticleFormat) - models.py article
+        3. OTHER VERSION: obj.doi.all() (DOI ManyToMany) - models.py doi
+        4. PRECEDING/SUCCEEDING: obj.journal.official.old_title/new_title - models.py journal
+        5. REFERENCES: collections property e URLs SciELO padrão - models.py article
         """
         related_items = []
 
-        # Fascículo (Issue)
-        if obj.issue:
-            related_item = {"type": "host"}
+        # 1. HOST: Periódico e Fascículo (CONFIRMADO em Issue e Journal models)
+        if obj.issue and obj.journal:
+            host_item = {
+                "type": "host",
+                "displayLabel": "Published in"
+            }
 
-            # Título do periódico
-            if obj.journal:
-                related_item["titleInfo"] = {"title": obj.journal.title}
+            # Título do periódico (CONFIRMADO: Journal.title)
+            host_item["titleInfo"] = {"title": obj.journal.title}
 
-            # Detalhes da parte
-            part_details = []
+            # ISSNs via obj.journal.official (CONFIRMADO: OfficialJournal)
+            if hasattr(obj.journal, 'official') and obj.journal.official:
+                identifiers = []
+                if obj.journal.official.issn_print:
+                    identifiers.append({
+                        "type": "issn",
+                        "displayLabel": "Print ISSN",
+                        "text": obj.journal.official.issn_print
+                    })
+                if obj.journal.official.issn_electronic:
+                    identifiers.append({
+                        "type": "issn",
+                        "displayLabel": "Electronic ISSN",
+                        "text": obj.journal.official.issn_electronic
+                    })
+                if obj.journal.official.issnl:
+                    identifiers.append({
+                        "type": "issnl",
+                        "text": obj.journal.official.issnl
+                    })
+                if identifiers:
+                    host_item["identifier"] = identifiers
+
+            # Detalhes do fascículo (CONFIRMADO: Issue.volume, Issue.number, Issue.supplement)
+            part_data = {}
+            details = []
+
             if obj.issue.volume:
-                part_details.append({"type": "volume", "number": obj.issue.volume})
+                details.append({"type": "volume", "number": obj.issue.volume})
             if obj.issue.number:
-                part_details.append({"type": "issue", "number": obj.issue.number})
+                details.append({"type": "issue", "number": obj.issue.number})
+            if obj.issue.supplement:
+                details.append({"type": "supplement", "number": obj.issue.supplement})
 
-            if part_details or obj.issue.year:
-                related_item["part"] = {}
-                if part_details:
-                    related_item["part"]["detail"] = part_details
-                if obj.issue.year:
-                    related_item["part"]["date"] = obj.issue.year
+            if details:
+                part_data["detail"] = details
 
-            related_items.append(related_item)
+            # Data de publicação (CONFIRMADO: Issue.year, Article.pub_date_year)
+            if obj.issue.year:
+                part_data["date"] = str(obj.issue.year)
+            elif obj.pub_date_year:
+                part_data["date"] = str(obj.pub_date_year)
+
+            if part_data:
+                host_item["part"] = part_data
+
+            related_items.append(host_item)
+
+        # 2. OTHER FORMAT: Formatos disponíveis (CONFIRMADO: ArticleFormat model)
+        try:
+            if hasattr(obj, 'format') and obj.format.exists():
+                for article_format in obj.format.all():
+                    if article_format.format_name and article_format.valid:
+                        format_item = {
+                            "type": "otherFormat",
+                            "displayLabel": f"{article_format.format_name.upper()} format"
+                        }
+
+                        # URL do arquivo se disponível (CONFIRMADO: ArticleFormat.file)
+                        if article_format.file and hasattr(article_format.file, 'url'):
+                            format_item["xlink:href"] = article_format.file.url
+
+                        # Metadados específicos por formato (CONFIRMADO em tasks.py)
+                        format_mapping = {
+                            "crossref": "CrossRef XML",
+                            "pubmed": "PubMed XML",
+                            "pmc": "PMC XML"
+                        }
+                        if article_format.format_name in format_mapping:
+                            format_item["genre"] = format_mapping[article_format.format_name]
+
+                        related_items.append(format_item)
+
+        except Exception:
+            # Falha silenciosa se ArticleFormat não estiver disponível
+            pass
+
+        # 3. OTHER VERSION: Versões via DOI (CONFIRMADO: DOI model)
+        if obj.doi.exists():
+            for doi in obj.doi.all():
+                if doi.value:
+                    # DOI como versão canônica (CONFIRMADO: DOI.value)
+                    doi_item = {
+                        "type": "otherVersion",
+                        "displayLabel": "Canonical DOI version",
+                        "xlink:href": f"https://doi.org/{doi.value.strip()}"
+                    }
+
+                    # Idioma se disponível (CONFIRMADO: DOI.language)
+                    if doi.language and hasattr(doi.language, 'code2') and doi.language.code2:
+                        doi_item["lang"] = doi.language.code2
+
+                    related_items.append(doi_item)
+
+        # 4. REFERENCES: URLs das coleções (CONFIRMADO via collections property)
+        collections = self._safe_get_collections(obj)
+        for collection in collections:
+            if hasattr(collection, 'domain') and collection.domain and obj.pid_v2:
+                # URL HTML principal (CONFIRMADO: padrão URL SciELO)
+                html_item = {
+                    "type": "otherVersion",
+                    "displayLabel": f"SciELO {collection.acron3 if hasattr(collection, 'acron3') else ''} HTML",
+                    "xlink:href": f"https://{collection.domain}/scielo.php?script=sci_arttext&pid={obj.pid_v2}"
+                }
+                related_items.append(html_item)
+
+                # URL PDF (CONFIRMADO: padrão URL SciELO)
+                pdf_item = {
+                    "type": "otherFormat",
+                    "displayLabel": f"SciELO {collection.acron3 if hasattr(collection, 'acron3') else ''} PDF",
+                    "xlink:href": f"https://{collection.domain}/scielo.php?script=sci_pdf&pid={obj.pid_v2}"
+                }
+                related_items.append(pdf_item)
+
+        # 5. PRECEDING/SUCCEEDING: Títulos anterior/posterior (CONFIRMADO: OfficialJournal)
+        if obj.journal and obj.journal.official:
+            try:
+                # Título anterior (CONFIRMADO: OfficialJournal.old_title)
+                if obj.journal.official.old_title.exists():
+                    for old_title in obj.journal.official.old_title.all():
+                        if old_title.title:
+                            preceding_item = {
+                                "type": "preceding",
+                                "displayLabel": "Previous journal title",
+                                "titleInfo": {"title": old_title.title}
+                            }
+                            related_items.append(preceding_item)
+
+                # Novo título (CONFIRMADO: OfficialJournal.new_title)
+                if obj.journal.official.new_title and obj.journal.official.new_title.title:
+                    succeeding_item = {
+                        "type": "succeeding",
+                        "displayLabel": "New journal title",
+                        "titleInfo": {"title": obj.journal.official.new_title.title}
+                    }
+                    related_items.append(succeeding_item)
+
+            except Exception:
+                pass
 
         return related_items
 
