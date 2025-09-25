@@ -2,6 +2,8 @@ from rest_framework import serializers
 from collection import models
 from core.api.v1.serializers import LanguageSerializer
 from organization.api.v1.serializers import OrganizationSerializer
+from wagtail.models.sites import Site
+
 
 class CollectionNameSerializer(serializers.ModelSerializer):
     """Serializer para nomes traduzidos da coleção"""
@@ -14,6 +16,32 @@ class CollectionNameSerializer(serializers.ModelSerializer):
             "language",
         ]
 
+class CollectionLogoListSerializer(serializers.ListSerializer):
+    """
+    Agrupa os logos por 'purpose' e consolida por idioma,
+    eliminando duplicatas por (purpose, lang_code2).
+    """
+    def to_representation(self, data):
+        items = super().to_representation(data)
+        grouped = {}
+        seen = set()
+
+        for item in items:
+            purpose = item.get("purpose")
+            url = item.get("logo_url")
+            lang = item.get("language", {})
+            code2 = lang.get("code2")
+
+            if not purpose or not code2 or not url:
+                continue
+
+            key = (purpose, code2)
+            if key in seen:
+                continue
+            seen.add(key)
+
+            grouped.setdefault(purpose, {}).update({code2: url})
+        return grouped
 
 class CollectionLogoSerializer(serializers.ModelSerializer):
     """Serializer para logos da coleção"""
@@ -22,36 +50,19 @@ class CollectionLogoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.CollectionLogo
+        list_serializer_class = CollectionLogoListSerializer
         fields = [
-            "logo",
             "logo_url",
-            "size",
+            "purpose",
             "language",
         ]
     
     def get_logo_url(self, obj):
-        """Retorna a URL do logo renderizado no tamanho apropriado"""
         if obj.logo:
-            # Ajusta o rendition baseado no tamanho
-            rendition_specs = {
-                'small': 'fill-100x100',
-                'medium': 'fill-200x200',
-                'large': 'fill-400x400',
-                'banner': 'width-1200',
-                'thumbnail': 'fill-150x150',
-                'header': 'height-80',
-                'footer': 'height-60',
-            }
-            spec = rendition_specs.get(obj.size, 'fill-200x200')
-            rendition = obj.logo.get_rendition(spec)
-            
-            # Retorna URL completa se houver request no contexto
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(rendition.url)
-            return rendition.url
+            domain = Site.objects.get(is_default_site=True).hostname
+            domain = f"http://{domain}"
+            return f"{domain}{obj.logo.file.url}"
         return None
-
 
 
 class SupportingOrganizationSerializer(serializers.ModelSerializer):
@@ -93,7 +104,6 @@ class SocialNetworkSerializer(serializers.ModelSerializer):
 
 class CollectionSerializer(serializers.ModelSerializer):
     """Serializer principal para Collection com todos os relacionamentos"""
-    # Campos relacionados (read-only por padrão)
     collection_names = CollectionNameSerializer(source='collection_name', many=True, read_only=True)
     logos = CollectionLogoSerializer(many=True, read_only=True)
     supporting_organizations = SupportingOrganizationSerializer(source='supporting_organization', many=True, read_only=True)
