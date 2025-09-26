@@ -2,6 +2,7 @@ import logging
 import re
 
 import requests
+from django.contrib.auth import get_user_model
 from langcodes import standardize_tag, tag_is_valid
 from tenacity import (
     retry,
@@ -10,7 +11,6 @@ from tenacity import (
     wait_exponential,
 )
 from urllib3.util import Retry
-from django.contrib.auth import get_user_model
 
 from config.settings.base import FETCH_DATA_TIMEOUT
 
@@ -59,7 +59,6 @@ def fetch_data(url, headers=None, json=False, timeout=FETCH_DATA_TIMEOUT, verify
     """
 
     try:
-        logger.info("Fetching the URL: %s" % url)
         response = requests.get(url, headers=headers, timeout=timeout, verify=verify)
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as exc:
         logger.error("Erro fetching the content: %s, retry..., erro: %s" % (url, exc))
@@ -69,18 +68,22 @@ def fetch_data(url, headers=None, json=False, timeout=FETCH_DATA_TIMEOUT, verify
         requests.exceptions.MissingSchema,
         requests.exceptions.InvalidURL,
     ) as exc:
+        logger.error(
+            "Erro fetching the content: %s, not retryable..., erro: %s" % (url, exc)
+        )
         raise NonRetryableError(exc) from exc
     try:
         response.raise_for_status()
     except requests.HTTPError as exc:
         if 400 <= exc.response.status_code < 500:
+            logger.error(
+                "Erro fetching the content: %s, not retryable..., erro: %s" % (url, exc)
+            )
             raise NonRetryableError(exc) from exc
         elif 500 <= exc.response.status_code < 600:
-            logger.error(
-                "Erro fetching the content: %s, retry..., erro: %s" % (url, exc)
-            )
             raise RetryableError(exc) from exc
         else:
+            logger.error("Erro fetching the content: %s, erro: %s" % (url, exc))
             raise
 
     return response.content if not json else response.json()
@@ -94,7 +97,7 @@ def _get_user(request, username=None, user_id=None):
             return User.objects.get(pk=user_id)
         if username:
             return User.objects.get(username=username)
-        
+
 
 def formated_date_api_params(query_params):
     formated_date = {}
@@ -108,5 +111,5 @@ def formated_date_api_params(query_params):
             try:
                 formated_date.update({filter_key: data_value.replace("/", "-")})
             except (ValueError, AttributeError):
-                continue 
+                continue
     return formated_date

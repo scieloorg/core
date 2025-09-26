@@ -5,6 +5,14 @@ from core.utils.profiling_tools import profile_function
 from pid_provider import exceptions
 
 
+def zero_to_none(data):
+    if not data.isdigit():
+        return data
+    if int(data) == 0:
+        return None
+    return data
+
+
 @profile_function
 def get_valid_query_parameters(xml_adapter):
     return get_journal_q_expression(xml_adapter), list(get_kwargs(xml_adapter))
@@ -32,17 +40,39 @@ def get_kwargs(xml_adapter):
         RequiredPublicationYearErrorToGetPidProviderXMLError: Se nenhum ano de publicação for fornecido.
         NotEnoughParametersToGetPidProviderXMLError: Se os parâmetros de desambiguação forem insuficientes.
     """
-    basic_params = get_basic_params(xml_adapter)
+    year_param = get_pub_year_expression(xml_adapter)
     if xml_adapter.is_aop:
-        yield _get_valid_params(xml_adapter, basic_params)
+        params = {}
+        params.update(year_param)
+        params.update(get_basic_params(xml_adapter))
+        yield _get_valid_params(xml_adapter, params)
     else:
         params = get_issue_params(xml_adapter, filter_by_issue=True) or {}
-        params.update(basic_params)
+        params.update(year_param)
+        params.update(get_basic_params(xml_adapter, filter_by_issue=True))
         yield _get_valid_params(xml_adapter, params)
 
         params = get_issue_params(xml_adapter, aop_version=True) or {}
-        params.update(basic_params)
+        params.update(year_param)
+        params.update(get_basic_params(xml_adapter))
         yield _get_valid_params(xml_adapter, params)
+
+
+@profile_function
+def get_issue_kwargs(xml_adapter):
+    year_param = get_pub_year_expression(xml_adapter)
+    if xml_adapter.is_aop:
+        params = {}
+        params.update(year_param)
+        yield params
+    else:
+        params = get_issue_params(xml_adapter, filter_by_issue=True) or {}
+        params.update(year_param)
+        yield params
+
+        params = get_issue_params(xml_adapter, aop_version=True) or {}
+        params.update(year_param)
+        yield params
 
 
 @profile_function
@@ -111,6 +141,49 @@ def get_journal_q_expression(xml_adapter):
 
 
 @profile_function
+def get_article_q_expression(xml_adapter):
+    """
+    Cria uma expressão Q do Django para identificação de periódico usando valores de ISSN.
+
+    Esta função constrói uma expressão Q que corresponde a artigos por ISSN eletrônico
+    ou ISSN impresso. Pelo menos um ISSN deve ser fornecido.
+
+    Args:
+        xml_adapter: Objeto adaptador XML contendo informações de ISSN do periódico.
+
+    Returns:
+        django.db.models.Q: Expressão Q para filtragem de periódico.
+
+    Raises:
+        RequiredISSNErrorToGetPidProviderXMLError: Se nem o ISSN eletrônico nem o impresso forem fornecidos.
+    """
+    q = Q()
+    if xml_adapter.z_surnames:
+        q |= Q(z_surnames=xml_adapter.z_surnames)
+    if xml_adapter.z_collab:
+        q |= Q(z_collab=xml_adapter.z_collab)
+    if xml_adapter.main_doi:
+        q |= Q(main_doi__iexact=xml_adapter.main_doi)
+    if xml_adapter.elocation_id:
+        q |= Q(elocation_id__iexact=xml_adapter.elocation_id)
+
+    if zero_to_none(xml_adapter.fpage):
+        q |= Q(fpage__iexact=xml_adapter.fpage)
+        if xml_adapter.fpage_seq:
+            q |= Q(fpage_seq__iexact=xml_adapter.fpage_seq)
+        if xml_adapter.lpage:
+            q |= Q(lpage__iexact=xml_adapter.lpage)
+
+    if xml_adapter.z_links:
+        q |= Q(z_links=xml_adapter.z_links)
+
+    if xml_adapter.z_partial_body:
+        q |= Q(z_partial_body=xml_adapter.z_partial_body)
+
+    return q
+
+
+@profile_function
 def get_pub_year_expression(xml_adapter):
     """
     Cria uma expressão Q do Django para filtragem por ano de publicação.
@@ -138,7 +211,7 @@ def get_pub_year_expression(xml_adapter):
 
 
 @profile_function
-def get_basic_params(xml_adapter):
+def get_basic_params(xml_adapter, filter_by_issue=False):
     """
     Extrai parâmetros de consulta básicos do adaptador XML para identificação do artigo.
 
@@ -155,15 +228,25 @@ def get_basic_params(xml_adapter):
             - main_doi__iexact: DOI principal (correspondência exata sem distinção entre maiúsculas e minúsculas).
             - elocation_id__iexact: ID de localização eletrônica (correspondência exata sem distinção entre maiúsculas e minúsculas).
     """
-    _params = get_pub_year_expression(xml_adapter)
+    _params = {}
     if xml_adapter.z_surnames:
         _params["z_surnames"] = xml_adapter.z_surnames
     if xml_adapter.z_collab:
         _params["z_collab"] = xml_adapter.z_collab
     if xml_adapter.main_doi:
         _params["main_doi__iexact"] = xml_adapter.main_doi
-    if xml_adapter.elocation_id:
-        _params["elocation_id__iexact"] = xml_adapter.elocation_id
+
+    if filter_by_issue:
+        if xml_adapter.elocation_id:
+            _params["elocation_id__iexact"] = xml_adapter.elocation_id
+
+        if xml_adapter.fpage:
+            fpage = zero_to_none(xml_adapter.fpage)
+            if fpage:
+                _params["fpage__iexact"] = fpage
+                _params["fpage_seq__iexact"] = xml_adapter.fpage_seq
+                _params["lpage__iexact"] = xml_adapter.lpage
+
     return _params
 
 
@@ -196,19 +279,6 @@ def get_issue_params(xml_adapter, filter_by_issue=False, aop_version=False):
         _params["volume__iexact"] = xml_adapter.volume
         _params["number__iexact"] = xml_adapter.number
         _params["suppl__iexact"] = xml_adapter.suppl
-
-        if xml_adapter.fpage:
-            try:
-                if int(xml_adapter.fpage) == 0:
-                    fpage = None
-                else:
-                    fpage = xml_adapter.fpage
-            except (TypeError, ValueError):
-                fpage = None
-            if fpage:
-                _params["fpage__iexact"] = fpage
-                _params["fpage_seq__iexact"] = xml_adapter.fpage_seq
-                _params["lpage__iexact"] = xml_adapter.lpage
     return _params
 
 

@@ -1,4 +1,4 @@
-from core.utils.profiling_tools import profile_staticmethod, profile_method
+from core.utils.profiling_tools import profile_method, profile_staticmethod
 from pid_provider.base_pid_provider import BasePidProvider
 from pid_provider.models import PidProviderXML
 

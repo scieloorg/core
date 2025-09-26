@@ -1,96 +1,24 @@
 from django.http import HttpResponseRedirect
 from django.utils.translation import gettext_lazy as _
+from wagtail import hooks
 from wagtail.snippets.models import register_snippet
-from wagtail.snippets.views.snippets import SnippetViewSet
-from wagtail_modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
-from wagtail_modeladmin.views import CreateView
+from wagtail.snippets.views.snippets import SnippetViewSetGroup
 
 from config.menu import get_menu_order
-
-from .models import (
-    CollectionPidRequest,
-    FixPidV2,
-    OtherPid,
-    PidProviderConfig,
-    PidProviderXML,
-    PidRequest,
-)
+from core.viewsets import CommonControlFieldViewSet
+from pid_provider.models import FixPidV2, OtherPid, PidProviderConfig, PidProviderXML
 
 
-class PidRequestCreateView(CreateView):
-    def form_valid(self, form):
-        self.object = form.save_all(self.request.user)
-        return HttpResponseRedirect(self.get_success_url())
-
-
-class PidRequestAdmin(ModelAdmin):
-    list_per_page = 10
-    model = PidRequest
-    inspect_view_enabled = True
-    menu_label = _("Pid Requests")
-    create_view_class = PidRequestCreateView
-    menu_icon = "folder"
-    menu_order = 300
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-
-    list_display = (
-        "origin",
-        "result_type",
-        "result_msg",
-        "times",
-        "created",
-        "updated",
-    )
-    list_filter = ("result_type",)
-    search_fields = (
-        "origin",
-        "result_msg",
-    )
-
-
-class CollectionPidRequestAdmin(ModelAdmin):
-    list_per_page = 10
-    model = CollectionPidRequest
-    inspect_view_enabled = True
-    menu_label = _("Collection Pid Requests")
-    create_view_class = PidRequestCreateView
-    menu_icon = "folder"
-    menu_order = 300
-    add_to_settings_menu = False
-    exclude_from_explorer = False
-
-    list_display = (
-        "collection",
-        "end_date",
-        "created",
-        "updated",
-    )
-    list_filter = []
-    search_fields = (
-        "collection__acron3",
-        "collection__name",
-    )
-
-
-class PidProviderXMLAdminCreateView(CreateView):
-    def form_valid(self, form):
-        self.object = form.save_all(self.request.user)
-        return HttpResponseRedirect(self.get_success_url())
-
-
-class PidProviderXMLAdmin(ModelAdmin):
-    list_per_page = 10
+class PidProviderXMLViewSet(CommonControlFieldViewSet):
     model = PidProviderXML
-    inspect_view_enabled = True
     menu_label = _("Pid Provider XMLs")
-    create_view_class = PidProviderXMLAdminCreateView
     menu_icon = "folder"
     menu_order = 300
     add_to_settings_menu = False
-    exclude_from_explorer = False
+    list_per_page = 10
 
-    list_display = (
+    # Configuração de listagem
+    list_display = [
         "pkg_name",
         "v3",
         "v2",
@@ -100,119 +28,141 @@ class PidProviderXMLAdmin(ModelAdmin):
         "other_pid_count",
         "created",
         "updated",
-    )
-    list_filter = (
-        "article_pub_year",
+    ]
+    list_filter = {
+        "pub_year": ["exact"],
+        "other_pid_count": ["exact", "gte", "lte"],
+        "registered_in_core": ["exact"],
+    }
+    search_fields = (
+        "pkg_name",
+        "v3",
+        "v2",
+        "aop_pid",
+        "main_doi",
         "pub_year",
+        "available_since",
+    )
+
+    # Configuração de export
+    list_export = [
+        "pkg_name",
+        "v3",
+        "v2",
+        "aop_pid",
+        "main_doi",
+        "pub_year",
+        "available_since",
         "other_pid_count",
         "registered_in_core",
-    )
-    search_fields = (
-        "pkg_name",
-        "v3",
-        "v2",
-        "aop_pid",
-        "main_doi",
-        "article_pub_year",
-        "available_since",
-    )
+    ]
+    export_filename = "pid_provider_xmls"
 
 
-class OtherPidAdminCreateView(CreateView):
-    def form_valid(self, form):
-        self.object = form.save_all(self.request.user)
-        return HttpResponseRedirect(self.get_success_url())
-
-
-class OtherPidAdmin(ModelAdmin):
-    list_per_page = 10
+class OtherPidViewSet(CommonControlFieldViewSet):
     model = OtherPid
-    inspect_view_enabled = True
     menu_label = _("Pid Changes")
-    create_view_class = OtherPidAdminCreateView
     menu_icon = "folder"
     menu_order = 300
     add_to_settings_menu = False
-    exclude_from_explorer = False
+    list_per_page = 10
 
-    list_display = (
+    # Configuração de listagem
+    list_display = [
         "pid_provider_xml",
         "pid_in_xml",
         "pid_type",
         "created",
         "updated",
-    )
-    list_filter = ("pid_type",)
+    ]
+    list_filter = {
+        "pid_type": ["exact"],
+    }
     search_fields = ("pid_in_xml", "pid_provider_xml__v3", "pid_provider_xml__pkg_name")
 
+    # Configuração de export
+    list_export = [
+        "pid_provider_xml",
+        "pid_in_xml",
+        "pid_type",
+        "created",
+        "updated",
+    ]
+    export_filename = "other_pids"
 
-class PidProviderConfigCreateView(CreateView):
-    def form_valid(self, form):
-        self.object = form.save_all(self.request.user)
-        return HttpResponseRedirect(self.get_success_url())
 
-
-class PidProviderConfigAdmin(ModelAdmin):
-    list_per_page = 10
+class PidProviderConfigViewSet(CommonControlFieldViewSet):
     model = PidProviderConfig
-    inspect_view_enabled = True
     menu_label = _("Pid Provider Config")
-    create_view_class = PidProviderConfigCreateView
     menu_icon = "folder"
     menu_order = 300
     add_to_settings_menu = False
-    exclude_from_explorer = False
+    list_per_page = 10
 
-    list_display = (
+    # Configuração de listagem
+    list_display = [
         "pid_provider_api_post_xml",
         "pid_provider_api_get_token",
-    )
+    ]
+
+    # Configuração de export
+    list_export = [
+        "pid_provider_api_post_xml",
+        "pid_provider_api_get_token",
+    ]
+    export_filename = "pid_provider_config"
 
 
-class FixPidV2CreateView(CreateView):
-    def form_valid(self, form):
-        self.object = form.save_all(self.request.user)
-        return HttpResponseRedirect(self.get_success_url())
-
-
-class FixPidV2Admin(ModelAdmin):
-    list_per_page = 10
+class FixPidV2ViewSet(CommonControlFieldViewSet):
     model = FixPidV2
-    inspect_view_enabled = True
     menu_label = _("Fix pid v2")
-    create_view_class = FixPidV2CreateView
     menu_icon = "folder"
     add_to_settings_menu = False
-    exclude_from_explorer = False
+    list_per_page = 10
 
-    list_display = (
+    # Configuração de listagem
+    list_display = [
         "pid_provider_xml",
         "correct_pid_v2",
         "fixed_in_core",
         "fixed_in_upload",
         "created",
         "updated",
-    )
-    list_filter = ("fixed_in_core", "fixed_in_upload")
+    ]
+    list_filter = {
+        "fixed_in_core": ["exact"],
+        "fixed_in_upload": ["exact"],
+    }
     search_fields = (
         "correct_pid_v2",
         "pid_provider_xml__v3",
         "pid_provider_xml__pkg_name",
     )
 
+    # Configuração de export
+    list_export = [
+        "pid_provider_xml",
+        "correct_pid_v2",
+        "fixed_in_core",
+        "fixed_in_upload",
+        "created",
+        "updated",
+    ]
+    export_filename = "fix_pid_v2"
 
-class PidProviderAdminGroup(ModelAdminGroup):
+
+# Grupo de ViewSets
+class PidProviderViewSetGroup(SnippetViewSetGroup):
     menu_label = _("Pid Provider")
-    menu_icon = "folder-open-inverse"  # change as required
+    menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("pid_provider")
     items = (
-        PidProviderConfigAdmin,
-        PidProviderXMLAdmin,
-        PidRequestAdmin,
-        OtherPidAdmin,
-        CollectionPidRequestAdmin,
-        FixPidV2Admin,
+        PidProviderConfigViewSet,
+        PidProviderXMLViewSet,
+        OtherPidViewSet,
+        FixPidV2ViewSet,
     )
 
 
-modeladmin_register(PidProviderAdminGroup)
+# Registrar o grupo de snippets
+register_snippet(PidProviderViewSetGroup)
