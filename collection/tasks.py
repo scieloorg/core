@@ -47,7 +47,7 @@ def fetch_with_schema_guess(host_or_url, timeout=10):
 
 def _send_payload(url, headers, payload):
     url_with_schema = fetch_with_schema_guess(url)
-    pattern_url = "http://172.23.0.1:8000" + settings.ENDPOINT_COLLECTION
+    pattern_url = url_with_schema + settings.ENDPOINT_COLLECTION
 
     try:
         resp = requests.post(pattern_url, json=payload, headers=headers, timeout=5)
