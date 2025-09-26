@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import lru_cache
 
 from django.db import IntegrityError, models
 from django.utils.translation import gettext_lazy as _
@@ -11,17 +12,36 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
 from core.models import (
+    BaseExporter,
+    BaseLegacyRecord,
     CommonControlField,
     Language,
     License,
     TextLanguageMixin,
     TextWithLang,
 )
+from core.utils.date_utils import get_date_range
 from journal.models import Journal
 from location.models import City
 
 from .exceptions import TocSectionGetError
 from .utils.extract_digits import _get_digits
+
+
+class AMIssue(BaseLegacyRecord):
+    """
+    Modelo que representa a coleta de dados de Issue na API Article Meta.
+
+    from:
+        https://articlemeta.scielo.org/api/v1/issue/?collection={collection}&code={code}"
+    """
+
+    pid = models.CharField(
+        _("PID"),
+        max_length=17,
+        blank=True,
+        null=True,
+    )
 
 
 class Issue(CommonControlField, ClusterableModel):
@@ -61,35 +81,44 @@ class Issue(CommonControlField, ClusterableModel):
         ),
     )
     issue_pid_suffix = models.CharField(max_length=4, null=True, blank=True)
-
+    legacy_issue = models.ManyToManyField(AMIssue, blank=True)
     autocomplete_search_field = "journal__title"
 
     def autocomplete_label(self):
         return str(self)
+
+    base_form_class = CoreAdminModelForm
 
     panels_issue = [
         AutocompletePanel("journal"),
         FieldPanel("volume"),
         FieldPanel("number"),
         FieldPanel("supplement"),
-        AutocompletePanel("city"),
-        FieldPanel("year"),
-        FieldPanel("season"),
-        FieldPanel("month"),
+    ]
+
+    panels_operation = [
         FieldPanel("order"),
-        FieldPanel("issue_pid_suffix", read_only=True),
         FieldPanel("markup_done"),
+    ]
+
+    panels_interoperability = [
+        FieldPanel("issue_pid_suffix", read_only=True),
+        AutocompletePanel("legacy_issue"),
     ]
 
     panels_title = [
         InlinePanel("issue_title", label=_("Issue title")),
     ]
 
-    panels_subtitle = [
+    panels_bibl = [
+        AutocompletePanel("city"),
+        FieldPanel("season"),
+        FieldPanel("month"),
+        FieldPanel("year"),
         InlinePanel("bibliographic_strip"),
     ]
 
-    panels_summary = [
+    panels_table_of_contents = [
         AutocompletePanel("sections"),
         AutocompletePanel("code_sections"),
     ]
@@ -102,9 +131,11 @@ class Issue(CommonControlField, ClusterableModel):
         [
             ObjectList(panels_issue, heading=_("Issue")),
             ObjectList(panels_title, heading=_("Titles")),
-            ObjectList(panels_subtitle, heading=_("Subtitle")),
-            ObjectList(panels_summary, heading=_("Sections")),
+            ObjectList(panels_operation, heading=_("Operation")),
+            ObjectList(panels_bibl, heading=_("Bibliographic Strip")),
+            ObjectList(panels_table_of_contents, heading=_("Sections")),
             ObjectList(panels_license, heading=_("License")),
+            ObjectList(panels_interoperability, heading=_("Interoperability")),
         ]
     )
 
@@ -129,19 +160,101 @@ class Issue(CommonControlField, ClusterableModel):
             ),
             models.Index(
                 fields=[
-                    "month",
-                ]
-            ),
-            models.Index(
-                fields=[
                     "supplement",
                 ]
             ),
         ]
 
+    def create_legacy_keys(self):
+        if self.legacy_issue.exists():
+            return
+        query_set = self.journal.scielojournal_set
+        if query_set.count() == 1:
+            sj = query_set.first()
+            if not self.issue_pid_suffix:
+                self.issue_pid_suffix = self.generate_issue_pid_suffix()
+                self.save()
+            pid = f"{sj.issn_scielo}{self.year}{self.issue_pid_suffix}"
+            self.legacy_issue.add(
+                AMIssue.create_or_update(pid, sj.collection, None, self.updated_by)
+            )
+
+    def get_legacy_keys(self, collection_acron_list=None, is_active=None):
+        self.create_legacy_keys()
+        params = {}
+        if collection_acron_list:
+            params["collection__acron3__in"] = collection_acron_list
+        for item in self.legacy_issue.filter(
+            collection__is_active=bool(is_active), **params
+        ):
+            yield item.legacy_keys
+
+    def select_collections(self, collection_acron_list=None, is_activate=None):
+        if not self.journal:
+            raise ValueError(f"{self} has no journal")
+        return self.journal.select_collections(collection_acron_list, is_activate)
+
+    def select_journals(self, collection_acron_list=None):
+        if not self.journal:
+            raise ValueError(f"{self} has no journal")
+        return self.journal.select_items(collection_acron_list)
+
+    @classmethod
+    def select_issues(
+        cls,
+        collection_acron_list=None,
+        journal_acron_list=None,
+        journal_pid_list=None,
+        publication_year=None,
+        volume=None,
+        number=None,
+        supplement=None,
+        from_date=None,
+        until_date=None,
+        days_to_go_back=None,
+    ):
+        """
+        Método para filtrar issues com base em múltiplos critérios.
+
+        Args:
+            collection_acron_list: Lista de acrônimos de coleções (via SciELOJournal)
+            journal_acron_list: Lista de acrônimos de journals
+            year: Ano de publicação
+            issue_folder: String no formato vXnYsZ (ex: v10n2s1)
+            from_date: Data inicial de atualização
+            until_date: Data final de atualização
+            **kwargs: Outros filtros do Django ORM
+
+        Returns:
+            QuerySet de Issues filtradas
+        """
+        params = {}
+        if collection_acron_list:
+            params["journal__scielojournal__collection__acron3__in"] = (
+                collection_acron_list
+            )
+        if journal_acron_list:
+            params["journal__scielojournal__journal_acron__in"] = journal_acron_list
+        if journal_pid_list:
+            params["journal__scielojournal__pid__in"] = journal_pid_list
+        if publication_year:
+            params["year"] = publication_year
+        if volume:
+            params["volume"] = volume
+        if number:
+            params["number"] = number
+        if supplement:
+            params["supplement"] = supplement
+        if from_date or until_date or days_to_go_back:
+            from_date_str, until_date_str = get_date_range(
+                from_date, until_date, days_to_go_back
+            )
+            params["updated__range"] = (from_date_str, until_date_str)
+        return cls.objects.filter(**params).select_related("journal").distinct()
+
     @property
     def data(self):
-        d = dict
+        d = dict()
         if self.journal:
             d.update(self.journal.data)
         d.update(
@@ -209,7 +322,9 @@ class Issue(CommonControlField, ClusterableModel):
             issue.supplement = supplement
             issue.markup_done = markup_done
             issue.order = order or issue.generate_order()
-            issue.issue_pid_suffix = issue_pid_suffix or issue.generate_issue_pid_suffix()
+            issue.issue_pid_suffix = (
+                issue_pid_suffix or issue.generate_issue_pid_suffix()
+            )
             issue.creator = user
             issue.save()
             if sections:
@@ -217,23 +332,27 @@ class Issue(CommonControlField, ClusterableModel):
 
         return issue
 
-    def __unicode__(self):
-        values= (self.volume, self.number, self.supplement)
-        labels = ("volume", "number", "suppl")
-        issue_info = ", ".join([f"{label}: {value}" for label, value in zip(labels, values) if value])
-
-        return "%s, %s, %s" % (self.journal, issue_info, self.year)
-
     def __str__(self):
-        values= (self.volume, self.number, self.supplement)
-        labels = ("volume", "number", "suppl")
-        issue_info = ", ".join([f"{label}: {value}" for label, value in zip(labels, values) if value])
+        return self.short_identification
 
-        return "%s, %s, %s" % (self.journal, issue_info, self.year)
+    @property
+    @lru_cache(maxsize=1)
+    def short_identification(self):
+        return f"{self.journal.title} {self.issue_folder} [{self.journal.collection_acrons}]"
+
+    @property
+    @lru_cache(maxsize=1)
+    def issue_folder(self):
+        values = (self.volume, self.number, self.supplement)
+        labels = ("v", "n", "s")
+        return "".join(
+            [f"{label}{value}" for label, value in zip(labels, values) if value]
+        )
 
     def articlemeta_format(self, collection):
         # Evita importacao circular
         from .formats.articlemeta_format import get_articlemeta_format_issue
+
         return get_articlemeta_format_issue(self, collection)
 
     def save(self, *args, **kwargs):
@@ -254,7 +373,7 @@ class Issue(CommonControlField, ClusterableModel):
         parts = self.number.split("spe")[-1]
         spe_val = _get_digits(parts)
         return spe_start + spe_val
-    
+
     def generate_order(self, suppl_start=1000, spe_start=2000):
         if self.supplement is not None:
             return self.generate_order_supplement(suppl_start)
@@ -269,69 +388,6 @@ class Issue(CommonControlField, ClusterableModel):
 
         number = _get_digits(self.number)
         return number or 1
-
-    base_form_class = CoreAdminModelForm
-
-
-class IssueExport(CommonControlField):
-    """
-    Controla exportações de fascículos para o ArticleMeta
-    """
-    issue = models.ForeignKey(
-        Issue,
-        on_delete=models.CASCADE,
-        related_name="exports",
-        verbose_name=_("Issue")
-    )
-    export_type = models.CharField(
-        max_length=50,
-        choices=[
-            ('articlemeta', 'ArticleMeta'),
-        ],
-        verbose_name=_("Export Type")
-    )
-    exported_at = models.DateTimeField(auto_now_add=True)
-    collection = models.ForeignKey(
-        'collection.Collection',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name=_("Collection")
-    )
-    
-    class Meta:
-        unique_together = ['issue', 'export_type', 'collection']
-        indexes = [
-            models.Index(fields=['collection', 'export_type']),
-            models.Index(fields=['exported_at']),
-        ]
-    
-    def __str__(self):
-        return f"{self.issue.number or ''}:{self.issue.volume or ''} -> {self.export_type}"
-
-    @classmethod
-    def mark_as_exported(cls, issue, export_type, collection, user=None):
-        """Marca um fascículo como exportado"""
-        obj, created = cls.objects.get_or_create(
-            issue=issue,
-            export_type=export_type,
-            collection=collection,
-            defaults={'creator': user}
-        )
-        if not created:
-            obj.exported_at = datetime.now()
-            obj.updated_by = user
-            obj.save()
-        return obj
-
-    @classmethod
-    def is_exported(cls, issue, export_type, collection):
-        """Verifica se um fascículo já foi exportado"""
-        return cls.objects.filter(
-            issue=issue,
-            export_type=export_type,
-            collection=collection
-        ).exists()
 
 
 class IssueTitle(Orderable, CommonControlField):
@@ -410,7 +466,7 @@ class TocSection(TextLanguageMixin, CommonControlField):
     @classmethod
     def create(
         cls,
-        value, 
+        value,
         language,
         user,
     ):
@@ -444,11 +500,13 @@ class TocSection(TextLanguageMixin, CommonControlField):
 
 
 class CodeSectionIssue(CommonControlField):
-    code = models.CharField(_("Code"), max_length=40, unique=True, null=True, blank=True)
+    code = models.CharField(
+        _("Code"), max_length=40, unique=True, null=True, blank=True
+    )
 
     def __str__(self):
         return f"{self.code}"
-    
+
 
 class SectionIssue(TextWithLang, CommonControlField):
     code_section = models.ForeignKey(
@@ -465,9 +523,22 @@ class SectionIssue(TextWithLang, CommonControlField):
 
     def __str__(self):
         return f"{self.code}"
-    
+
     class Meta:
         unique_together = [("code_section", "language")]
 
     def __str__(self):
         return f"{self.code_section.code} - {self.text} ({self.language.code2 if self.language else 'N/A'})"
+
+
+class IssueExporter(BaseExporter):
+    """
+    Controla exportações de fascículos para o ArticleMeta
+    """
+
+    parent = ParentalKey(
+        Issue,
+        on_delete=models.CASCADE,
+        related_name="exporter",
+        verbose_name=_("Issue"),
+    )
