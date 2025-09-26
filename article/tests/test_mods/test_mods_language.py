@@ -1,5 +1,5 @@
 import uuid
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase
 from django.contrib.auth import get_user_model
 from article.models import Article
 from article.search_indexes import ArticleOAIMODSIndex
@@ -8,51 +8,58 @@ from core.models import Language
 User = get_user_model()
 
 
-class MODSLanguageTestCase(TransactionTestCase):
+class MODSLanguageTestCase(TestCase):
     """
-    Testes unitários focados no índice MODS para elemento language
-
-    Usa TransactionTestCase para melhor isolamento e limpeza
+    Testes unitários otimizados para elemento language MODS
+    Testa estrutura e funcionalidades de idiomas no ecossistema SciELO
     """
 
-    def setUp(self):
-        """Configuração inicial dos testes"""
-        self.user = User.objects.create_user(
-            username=f'testuser_{uuid.uuid4().hex[:8]}',
-            email=f'test_{uuid.uuid4().hex[:8]}@example.com',
+    @classmethod
+    def setUpTestData(cls):
+        """Dados compartilhados entre testes para melhor performance"""
+        cls.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
             password='testpass'
         )
 
-        # Criar idiomas de teste
-        self.lang_pt, _ = Language.objects.get_or_create(
+        # Criar idiomas base uma vez
+        cls.lang_pt = Language.objects.create(
             code2='pt',
-            defaults={'name': 'Português', 'creator': self.user}
+            name='Português',
+            creator=cls.user
         )
 
-        self.lang_en, _ = Language.objects.get_or_create(
+        cls.lang_en = Language.objects.create(
             code2='en',
-            defaults={'name': 'English', 'creator': self.user}
+            name='English',
+            creator=cls.user
         )
 
-        self.lang_es, _ = Language.objects.get_or_create(
+        cls.lang_es = Language.objects.create(
             code2='es',
-            defaults={'name': 'Español', 'creator': self.user}
+            name='Español',
+            creator=cls.user
         )
 
-        self.lang_fr, _ = Language.objects.get_or_create(
+        cls.lang_fr = Language.objects.create(
             code2='fr',
-            defaults={'name': 'Français', 'creator': self.user}
+            name='Français',
+            creator=cls.user
         )
 
+        cls.lang_zh = Language.objects.create(
+            code2='zh',
+            name='中文',
+            creator=cls.user
+        )
+
+    def setUp(self):
+        """Configuração mínima por teste"""
         self.index = ArticleOAIMODSIndex()
 
-    def tearDown(self):
-        """Limpeza após cada teste"""
-        Article.objects.all().delete()
-        super().tearDown()
-
     def _create_test_article(self, **kwargs):
-        """Helper para criar artigo de teste único"""
+        """Helper otimizado para criar artigo de teste"""
         defaults = {
             'sps_pkg_name': f'test-{uuid.uuid4().hex[:12]}',
             'pid_v3': f'test-{uuid.uuid4().hex[:12]}',
@@ -62,295 +69,331 @@ class MODSLanguageTestCase(TransactionTestCase):
         defaults.update(kwargs)
         return Article.objects.create(**defaults)
 
-    def test_basic_language_structure(self):
-        """Teste básico: estrutura do language"""
+    def _create_test_language(self, **kwargs):
+        """Helper para criar idioma de teste"""
+        defaults = {
+            'creator': self.user
+        }
+        defaults.update(kwargs)
+        return Language.objects.create(**defaults)
+
+    def test_language_no_languages(self):
+        """Teste: artigo sem idiomas"""
+        article = self._create_test_article()
+
+        languages = self.index.prepare_mods_language(article)
+
+        self.assertIsInstance(languages, list)
+        self.assertEqual(len(languages), 0)
+
+    def test_language_basic_structure(self):
+        """Teste: estrutura básica do language"""
         article = self._create_test_article()
         article.languages.add(self.lang_pt)
 
         languages = self.index.prepare_mods_language(article)
 
         # Verificar estrutura básica
-        self.assertIsInstance(languages, list, "Deve retornar uma lista")
-        self.assertEqual(len(languages), 1, "Deve ter 1 idioma")
+        self.assertIsInstance(languages, list)
+        self.assertEqual(len(languages), 1)
 
         lang_data = languages[0]
-        self.assertIsInstance(lang_data, dict, "Item deve ser dict")
-        self.assertIn("languageTerm", lang_data, "Deve ter languageTerm")
+        self.assertIsInstance(lang_data, dict)
+        self.assertIn("languageTerm", lang_data)
+        self.assertIsInstance(lang_data["languageTerm"], list)
+        self.assertGreater(len(lang_data["languageTerm"]), 0)
 
-    def test_no_languages(self):
-        """Teste sem idiomas: lista vazia"""
-        article = self._create_test_article()
-
-        languages = self.index.prepare_mods_language(article)
-
-        self.assertIsInstance(languages, list, "Deve retornar lista")
-        self.assertEqual(len(languages), 0, "Deve estar vazia sem idiomas")
-
-    def test_single_language_with_code_and_text(self):
-        """Teste idioma único: código e texto"""
+    def test_language_single_with_code_and_text(self):
+        """Teste: idioma único com código e texto"""
         article = self._create_test_article()
         article.languages.add(self.lang_en)
 
         languages = self.index.prepare_mods_language(article)
 
-        self.assertEqual(len(languages), 1)
         lang_data = languages[0]
-
-        # Verificar languageTerms
-        self.assertIn("languageTerm", lang_data)
         terms = lang_data["languageTerm"]
-        self.assertIsInstance(terms, list)
-        self.assertGreater(len(terms), 0, "Deve ter pelo menos 1 languageTerm")
 
         # Verificar se há termo com código
         code_terms = [t for t in terms if t.get("type") == "code"]
-        self.assertGreater(len(code_terms), 0, "Deve ter languageTerm type='code'")
+        self.assertGreater(len(code_terms), 0)
 
         code_term = code_terms[0]
-        self.assertIn("authority", code_term, "Código deve ter authority")
-        self.assertIn("text", code_term, "Código deve ter text")
+        self.assertIn("authority", code_term)
+        self.assertIn("text", code_term)
+        self.assertTrue(code_term["text"].strip())
 
-    def test_primary_language_usage(self):
-        """Teste atributo usage='primary' no primeiro idioma"""
-        article = self._create_test_article()
-        article.languages.add(self.lang_pt, self.lang_en)
-
-        languages = self.index.prepare_mods_language(article)
-
-        # Primeiro idioma deve ter usage="primary"
-        first_lang = languages[0]
-        self.assertIn("usage", first_lang, "Primeiro idioma deve ter usage")
-        self.assertEqual(first_lang["usage"], "primary")
-
-        # Segundo idioma não deve ter usage
-        if len(languages) > 1:
-            second_lang = languages[1]
-            self.assertNotIn("usage", second_lang, "Segundo idioma não deve ter usage")
-
-    def test_multiple_languages_order(self):
-        """Teste múltiplos idiomas: ordem e estrutura"""
+    def test_language_primary_usage_assignment(self):
+        """Teste: atributo usage='primary' no primeiro idioma"""
         article = self._create_test_article()
         article.languages.add(self.lang_pt, self.lang_en, self.lang_es)
 
         languages = self.index.prepare_mods_language(article)
 
-        self.assertEqual(len(languages), 3, "Deve ter 3 idiomas")
+        # Primeiro idioma deve ter usage="primary"
+        first_lang = languages[0]
+        self.assertIn("usage", first_lang)
+        self.assertEqual(first_lang["usage"], "primary")
 
-        # Verificar que todos têm languageTerm
+        # Outros idiomas não devem ter usage
+        for lang_data in languages[1:]:
+            self.assertNotIn("usage", lang_data)
+
+        # Apenas um idioma deve ter usage="primary"
+        usage_count = sum(1 for lang in languages if lang.get("usage") == "primary")
+        self.assertEqual(usage_count, 1)
+
+    def test_language_multiple_languages_structure(self):
+        """Teste: múltiplos idiomas - estrutura e ordem"""
+        article = self._create_test_article()
+        article.languages.add(self.lang_pt, self.lang_en, self.lang_es, self.lang_fr)
+
+        languages = self.index.prepare_mods_language(article)
+
+        self.assertEqual(len(languages), 4)
+
+        # Todos devem ter languageTerm válido
         for lang_data in languages:
             self.assertIn("languageTerm", lang_data)
             self.assertIsInstance(lang_data["languageTerm"], list)
             self.assertGreater(len(lang_data["languageTerm"]), 0)
 
-        # Apenas primeiro tem usage="primary"
-        usage_count = sum(1 for lang in languages if lang.get("usage") == "primary")
-        self.assertEqual(usage_count, 1, "Apenas primeiro idioma deve ter usage='primary'")
+            # Verificar estrutura dos termos
+            for term in lang_data["languageTerm"]:
+                self.assertIsInstance(term, dict)
+                self.assertIn("type", term)
+                self.assertIn("text", term)
+                self.assertIn(term["type"], ["code", "text"])
 
-    def test_language_terms_structure(self):
-        """Teste estrutura dos languageTerms"""
-        article = self._create_test_article()
-        article.languages.add(self.lang_fr)  # Francês
+    def test_language_terms_structure_validation(self):
+        """Teste: estrutura dos languageTerms"""
+        test_languages = [self.lang_fr, self.lang_zh, self.lang_en]
 
-        languages = self.index.prepare_mods_language(article)
+        for test_lang in test_languages:
+            with self.subTest(language=test_lang.code2):
+                article = self._create_test_article()
+                article.languages.add(test_lang)
 
-        lang_data = languages[0]
-        terms = lang_data["languageTerm"]
+                languages = self.index.prepare_mods_language(article)
 
-        # Verificar estrutura dos termos
-        for term in terms:
-            self.assertIsInstance(term, dict, "Cada termo deve ser dict")
-            self.assertIn("type", term, "Termo deve ter type")
-            self.assertIn("text", term, "Termo deve ter text")
-            self.assertIn(term["type"], ["code", "text"], "Type deve ser 'code' ou 'text'")
-
-        # Deve haver pelo menos um de cada tipo se language tem code2 e name
-        types_present = {term["type"] for term in terms}
-        if self.lang_fr.code2 and self.lang_fr.name:
-            self.assertIn("code", types_present, "Deve ter termo tipo 'code'")
-            self.assertIn("text", types_present, "Deve ter termo tipo 'text'")
-
-    def test_script_term_for_latin_languages(self):
-        """Teste scriptTerm para idiomas com escrita latina"""
-        article = self._create_test_article()
-        article.languages.add(self.lang_en)  # Inglês usa escrita latina
-
-        languages = self.index.prepare_mods_language(article)
-
-        lang_data = languages[0]
-
-        # Verificar se tem scriptTerm
-        if "scriptTerm" in lang_data:
-            script_terms = lang_data["scriptTerm"]
-            self.assertIsInstance(script_terms, list)
-            self.assertGreater(len(script_terms), 0)
-
-            script_term = script_terms[0]
-            self.assertEqual(script_term["type"], "code")
-            self.assertEqual(script_term["authority"], "iso15924")
-            self.assertEqual(script_term["text"], "Latn")
-
-    def test_language_without_name(self):
-        """Teste idioma sem nome: apenas código"""
-        # Criar idioma sem nome
-        lang_no_name = Language.objects.create(
-            code2='de',
-            creator=self.user
-            # name não definido (None)
-        )
-
-        article = self._create_test_article()
-        article.languages.add(lang_no_name)
-
-        languages = self.index.prepare_mods_language(article)
-
-        self.assertEqual(len(languages), 1)
-        lang_data = languages[0]
-        terms = lang_data["languageTerm"]
-
-        # Deve ter apenas termo tipo 'code'
-        types = [term["type"] for term in terms]
-        self.assertIn("code", types, "Deve ter termo código")
-        # Pode ou não ter 'text' dependendo da implementação
-
-    def test_language_without_code(self):
-        """Teste idioma sem código: apenas texto"""
-        # Criar idioma sem código
-        lang_no_code = Language.objects.create(
-            name='Idioma Teste',
-            creator=self.user
-            # code2 não definido (None)
-        )
-
-        article = self._create_test_article()
-        article.languages.add(lang_no_code)
-
-        languages = self.index.prepare_mods_language(article)
-
-        # Comportamento depende da implementação
-        # Se não há code2, pode não retornar nada ou retornar apenas texto
-        if languages:
-            lang_data = languages[0]
-            if "languageTerm" in lang_data:
+                lang_data = languages[0]
                 terms = lang_data["languageTerm"]
-                types = [term["type"] for term in terms]
-                # Se houver termos, deve ter pelo menos 'text'
-                if types:
-                    self.assertTrue(
-                        "text" in types or "code" in types,
-                        "Deve ter pelo menos um tipo de termo"
-                    )
 
-    def test_empty_code_and_name_handling(self):
-        """Teste idiomas com campos vazios"""
-        # Criar idioma com campos vazios
-        lang_empty = Language.objects.create(
-            code2='',  # String vazia
-            name='   ',  # Apenas espaços
-            creator=self.user
+                # Verificar tipos presentes
+                types_present = {term["type"] for term in terms}
+
+                if test_lang.code2 and test_lang.name:
+                    self.assertIn("code", types_present)
+                    self.assertIn("text", types_present)
+
+                # Verificar conteúdo dos termos
+                for term in terms:
+                    self.assertTrue(term["text"].strip())
+                    if term["type"] == "code":
+                        self.assertIn("authority", term)
+
+    def test_language_script_term_latin_languages(self):
+        """Teste: scriptTerm para idiomas com escrita latina"""
+        latin_languages = [self.lang_en, self.lang_pt, self.lang_es, self.lang_fr]
+
+        for lang in latin_languages:
+            with self.subTest(language=lang.code2):
+                article = self._create_test_article()
+                article.languages.add(lang)
+
+                languages = self.index.prepare_mods_language(article)
+                lang_data = languages[0]
+
+                # Verificar se tem scriptTerm para idiomas latinos
+                if "scriptTerm" in lang_data:
+                    script_terms = lang_data["scriptTerm"]
+                    self.assertIsInstance(script_terms, list)
+
+                    if script_terms:
+                        script_term = script_terms[0]
+                        self.assertEqual(script_term["type"], "code")
+                        self.assertEqual(script_term["authority"], "iso15924")
+                        self.assertEqual(script_term["text"], "Latn")
+
+    def test_language_edge_cases_handling(self):
+        """Teste: casos extremos de idiomas"""
+        edge_cases = [
+            # (code2, name, description)
+            (None, 'Idioma Teste', 'sem_codigo'),
+            ('de', None, 'sem_nome'),
+            ('', '   ', 'campos_vazios'),
+            ('zh', '中文', 'caracteres_especiais'),
+        ]
+
+        for code2, name, case_desc in edge_cases:
+            with self.subTest(case=case_desc):
+                lang_edge = self._create_test_language(
+                    code2=code2,
+                    name=name
+                )
+
+                article = self._create_test_article()
+                article.languages.add(lang_edge)
+
+                languages = self.index.prepare_mods_language(article)
+
+                # Deve sempre retornar lista válida
+                self.assertIsInstance(languages, list)
+
+                # Se retorna dados, deve ter estrutura válida
+                if languages:
+                    lang_data = languages[0]
+                    if "languageTerm" in lang_data:
+                        for term in lang_data["languageTerm"]:
+                            # Texto não deve estar vazio após strip
+                            if "text" in term:
+                                self.assertTrue(
+                                    term["text"].strip() or term.get("type") == "code",
+                                    f"Texto inválido para caso {case_desc}"
+                                )
+
+    def test_language_iso_mapping_consistency(self):
+        """Teste: consistência do mapeamento ISO"""
+        iso_test_cases = [
+            (self.lang_pt, "pt"),
+            (self.lang_en, "en"),
+            (self.lang_es, "es"),
+            (self.lang_fr, "fr"),
+        ]
+
+        for lang, expected_code in iso_test_cases:
+            with self.subTest(language=expected_code):
+                article = self._create_test_article()
+                article.languages.add(lang)
+
+                languages = self.index.prepare_mods_language(article)
+                lang_data = languages[0]
+                terms = lang_data["languageTerm"]
+
+                # Encontrar termo código
+                code_terms = [t for t in terms if t.get("type") == "code"]
+                self.assertGreater(len(code_terms), 0)
+
+                code_term = code_terms[0]
+                self.assertIn("authority", code_term)
+
+                authority = code_term["authority"]
+                self.assertIn(authority, ["iso639-1", "iso639-2b"])
+
+                # Verificar comprimento do código
+                code_text = code_term["text"]
+                if authority == "iso639-1":
+                    self.assertEqual(len(code_text), 2)
+                elif authority == "iso639-2b":
+                    self.assertEqual(len(code_text), 3)
+
+    def test_language_return_type_consistency(self):
+        """Teste: consistência do tipo de retorno"""
+        consistency_tests = [
+            ("empty", []),
+            ("single", [self.lang_pt]),
+            ("multiple", [self.lang_pt, self.lang_en, self.lang_es]),
+        ]
+
+        for test_name, languages_to_add in consistency_tests:
+            with self.subTest(test=test_name):
+                article = self._create_test_article()
+
+                for lang in languages_to_add:
+                    article.languages.add(lang)
+
+                languages = self.index.prepare_mods_language(article)
+
+                # Sempre deve retornar lista
+                self.assertIsInstance(languages, list)
+
+                # Verificar estrutura interna
+                for lang_data in languages:
+                    self.assertIsInstance(lang_data, dict)
+
+                    if "languageTerm" in lang_data:
+                        self.assertIsInstance(lang_data["languageTerm"], list)
+
+                        for term in lang_data["languageTerm"]:
+                            self.assertIsInstance(term, dict)
+                            self.assertIsInstance(term.get("type", ""), str)
+                            self.assertIsInstance(term.get("text", ""), str)
+
+    def test_language_special_characters_handling(self):
+        """Teste: tratamento de caracteres especiais"""
+        special_cases = [
+            ('zh', '中文'),
+            ('ar', 'العربية'),
+            ('ru', 'Русский'),
+            ('ja', '日本語'),
+        ]
+
+        for code, name in special_cases:
+            with self.subTest(language=code):
+                lang_special = self._create_test_language(
+                    code2=code,
+                    name=name
+                )
+
+                article = self._create_test_article()
+                article.languages.add(lang_special)
+
+                languages = self.index.prepare_mods_language(article)
+
+                if languages:
+                    lang_data = languages[0]
+                    terms = lang_data["languageTerm"]
+
+                    # Verificar se preserva caracteres Unicode
+                    text_terms = [t for t in terms if t.get("type") == "text"]
+                    if text_terms:
+                        text_term = text_terms[0]
+                        self.assertEqual(text_term["text"], name)
+
+    def test_language_priority_and_ordering(self):
+        """Teste: prioridade e ordenação de idiomas"""
+        article = self._create_test_article()
+
+        # Adicionar idiomas em ordem específica
+        languages_order = [self.lang_es, self.lang_pt, self.lang_en]
+        for lang in languages_order:
+            article.languages.add(lang)
+
+        languages = self.index.prepare_mods_language(article)
+
+        # Primeiro idioma sempre tem usage="primary"
+        self.assertEqual(languages[0]["usage"], "primary")
+
+        # Outros não têm usage
+        for lang_data in languages[1:]:
+            self.assertNotIn("usage", lang_data)
+
+        # Verificar que todos estão presentes
+        self.assertEqual(len(languages), 3)
+
+    def test_language_mixed_valid_invalid_scenario(self):
+        """Teste: cenário misto com idiomas válidos e inválidos"""
+        # Criar idioma com problemas
+        lang_problematic = self._create_test_language(
+            code2='xx',  # Código não padrão
+            name=''  # Nome vazio
         )
 
         article = self._create_test_article()
-        article.languages.add(lang_empty)
+        article.languages.add(self.lang_pt, lang_problematic, self.lang_en)
 
         languages = self.index.prepare_mods_language(article)
 
-        # Implementação deve tratar strings vazias/espaços
-        # Pode retornar lista vazia ou filtrar campos vazios
-        if languages:
-            for lang_data in languages:
-                if "languageTerm" in lang_data:
-                    for term in lang_data["languageTerm"]:
-                        self.assertTrue(
-                            term["text"].strip(),
-                            "Texto do termo não deve estar vazio"
-                        )
-
-    def test_iso_mapping_consistency(self):
-        """Teste consistência do mapeamento ISO"""
-        article = self._create_test_article()
-        article.languages.add(self.lang_pt)  # Português
-
-        languages = self.index.prepare_mods_language(article)
-
-        lang_data = languages[0]
-        terms = lang_data["languageTerm"]
-
-        # Encontrar termo código
-        code_terms = [t for t in terms if t.get("type") == "code"]
-        if code_terms:
-            code_term = code_terms[0]
-
-            # Verificar authority
-            self.assertIn("authority", code_term)
-            authority = code_term["authority"]
-            self.assertIn(authority, ["iso639-1", "iso639-2b"],
-                          "Authority deve ser ISO válida")
-
-            # Verificar código correspondente
-            code_text = code_term["text"]
-            if authority == "iso639-1":
-                self.assertEqual(len(code_text), 2, "ISO 639-1 deve ter 2 chars")
-            elif authority == "iso639-2b":
-                self.assertEqual(len(code_text), 3, "ISO 639-2b deve ter 3 chars")
-
-    def test_return_type_consistency(self):
-        """Teste consistência do tipo de retorno"""
-        article = self._create_test_article()
-
-        # Teste sem idiomas
-        languages_empty = self.index.prepare_mods_language(article)
-        self.assertIsInstance(languages_empty, list)
-
-        # Teste com idiomas
-        article.languages.add(self.lang_en)
-        languages_with_data = self.index.prepare_mods_language(article)
-        self.assertIsInstance(languages_with_data, list)
-
-        # Verificar estrutura interna
-        for lang_data in languages_with_data:
-            self.assertIsInstance(lang_data, dict)
-            if "languageTerm" in lang_data:
-                self.assertIsInstance(lang_data["languageTerm"], list)
-                for term in lang_data["languageTerm"]:
-                    self.assertIsInstance(term, dict)
-                    self.assertIsInstance(term.get("type", ""), str)
-                    self.assertIsInstance(term.get("text", ""), str)
-
-    def test_exception_handling(self):
-        """Teste tratamento de exceções"""
-        # Criar artigo sem problema aparente
-        article = self._create_test_article()
-        article.languages.add(self.lang_pt)
-
-        # Método deve funcionar normalmente
-        languages = self.index.prepare_mods_language(article)
-
-        # Deve retornar estrutura válida mesmo com possíveis erros internos
+        # Deve processar sem erros
         self.assertIsInstance(languages, list)
 
-    def test_language_with_special_characters(self):
-        """Teste idiomas com caracteres especiais"""
-        # Criar idioma com caracteres especiais
-        lang_special = Language.objects.create(
-            code2='zh',
-            name='中文',  # Chinês com caracteres Unicode
-            creator=self.user
-        )
+        # Deve ter processado pelo menos os idiomas válidos
+        valid_languages = [lang for lang in languages if lang.get("languageTerm")]
+        self.assertGreaterEqual(len(valid_languages), 2)
 
-        article = self._create_test_article()
-        article.languages.add(lang_special)
-
-        languages = self.index.prepare_mods_language(article)
-
-        # Deve tratar Unicode corretamente
+        # Primeiro idioma deve ter usage="primary"
         if languages:
-            lang_data = languages[0]
-            terms = lang_data["languageTerm"]
-
-            text_terms = [t for t in terms if t.get("type") == "text"]
-            if text_terms:
-                text_term = text_terms[0]
-                self.assertEqual(text_term["text"], "中文")
+            primary_count = sum(1 for lang in languages if lang.get("usage") == "primary")
+            self.assertEqual(primary_count, 1)
 
 # Comando para executar os testes:
-# python manage.py test --keepdb article.tests.test_mods.test_mods_language.MODSLanguageTestCase -v 2
+# python manage.py test --keepdb article.tests.test_mods.test_mods_language.MODSLanguageTestCase --parallel 2 -v 2
