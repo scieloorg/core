@@ -16,8 +16,7 @@ namespaces = {
 }
 
 
-class PreprintArticleSaveError(Exception):
-    ...
+class PreprintArticleSaveError(Exception): ...
 
 
 def harvest_preprints(URL, user):

@@ -19,7 +19,11 @@ from journalpage.models import JournalPage
 
 from . import models
 from .button_helper import IndexedAtHelper
-from .proxys import JournalProxyEditor, JournalProxyPanelPolicy, JournalProxyPanelInstructionsForAuthors
+from .proxys import (
+    JournalProxyEditor,
+    JournalProxyPanelInstructionsForAuthors,
+    JournalProxyPanelPolicy,
+)
 from .views import import_file, validate
 
 
@@ -41,57 +45,56 @@ class OfficialJournalSnippetViewSet(SnippetViewSet):
     list_display = (
         "title",
         "initial_year",
-        "terminate_year",
         "issn_print",
         "issn_print_is_active",
         "issn_electronic",
-        "created",
         "updated",
     )
     list_filter = (
         "issn_print_is_active",
         "terminate_year",
-        "initial_year",
+        "country",
     )
     search_fields = (
         "title",
-        "initial_year",
         "issn_print",
         "issn_electronic",
         "issnl",
     )
 
 
-class JournalExportCreateView(CreateView):
+class JournalExporterCreateView(CreateView):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
-    
 
-class JournalExportSnippetViewSet(SnippetViewSet):
-    model = models.SciELOJournalExport
+
+class JournalExporterSnippetViewSet(SnippetViewSet):
+    model = models.JournalExporter
     inspect_view_enabled = True
-    add_view_class = JournalExportCreateView
-    menu_label = _("Journal Export")
+    add_view_class = JournalExporterCreateView
+    menu_label = _("Journal Exporter")
     menu_icon = "folder"
     menu_order = 300
     add_to_settings_menu = False
     exclude_from_explorer = False
 
     list_display = (
+        "parent",
+        "pid",
+        "status",
         "collection",
-        "scielo_journal",
-        "export_type",
-        "created",
+        "destination",
         "updated",
     )
     list_filter = (
         "collection",
-        "export_type",
+        "destination",
+        "status",
     )
     search_fields = (
-        "scielo_journal__title",
-        "collection__acron3",
+        "parent__title",
+        "pid",
     )
 
 
@@ -103,9 +106,10 @@ class JournalCreateView(CreateView):
 
 class FilteredJournalQuerysetMixin:
     """
-    Mixin que filtra o queryset de journals baseado nas permissões 
+    Mixin que filtra o queryset de journals baseado nas permissões
     e grupos do usuário (COLLECTION_TEAM ou JOURNAL_TEAM).
-    """    
+    """
+
     list_display = (
         "title",
         "contact_location",
@@ -124,7 +128,7 @@ class FilteredJournalQuerysetMixin:
         "official__issn_electronic",
         "contact_location__country__name",
     )
-    
+
     def get_queryset(self, request):
         qs = (
             models.Journal.objects.all()
@@ -140,23 +144,19 @@ class FilteredJournalQuerysetMixin:
         if COLLECTION_TEAM in user_groups:
             collections = getattr(user, "collections", None)
             if collections is not None:
-                return qs.filter(
-                    scielojournal__collection__in=collections
-                )
+                return qs.filter(scielojournal__collection__in=collections)
         elif JOURNAL_TEAM in user_groups:
             journals = getattr(user, "journals", None)
             if journals is not None:
                 journals_ids = journals.values_list("id", flat=True)
-                return qs.filter(
-                    id__in=journals_ids
-                )
+                return qs.filter(id__in=journals_ids)
         return qs.none()
 
 
 class JournalAdminSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
     model = models.Journal
     inspect_view_enabled = True
-    menu_label = _("Journals")
+    menu_label = _("Journals (admin)")
     add_view_class = JournalCreateView
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
@@ -168,7 +168,7 @@ class JournalAdminSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
 class JournalAdminEditorSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
     model = JournalProxyEditor
     inspect_view_enabled = True
-    menu_label = _("Journal")
+    menu_label = _("Journals")
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
     add_to_settings_menu = False
@@ -186,7 +186,10 @@ class JournalAdminPolicySnippetViewSet(FilteredJournalQuerysetMixin, SnippetView
     exclude_from_explorer = False
     list_per_page = 20
 
-class JournalAdminInstructionsForAuthorsSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
+
+class JournalAdminInstructionsForAuthorsSnippetViewSet(
+    FilteredJournalQuerysetMixin, SnippetViewSet
+):
     model = JournalProxyPanelInstructionsForAuthors
     inspect_view_enabled = True
     menu_label = _("Journal Instructions for Authors")
@@ -201,6 +204,7 @@ class SciELOJournalCreateView(CreateView):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
+
 
 class SciELOJournalAdminViewSet(SnippetViewSet):
 
@@ -254,7 +258,7 @@ class JournalSnippetViewSetGroup(SnippetViewSetGroup):
         JournalAdminSnippetViewSet,
         SciELOJournalAdminViewSet,
         JournalAdminEditorSnippetViewSet,
-        JournalExportSnippetViewSet,
+        JournalExporterSnippetViewSet,
         JournalAdminPolicySnippetViewSet,
         JournalAdminInstructionsForAuthorsSnippetViewSet,
     )
@@ -420,21 +424,26 @@ def register_calendar_url():
     ]
 
 
-@hooks.register('register_snippet_listing_buttons')
+@hooks.register("register_snippet_listing_buttons")
 def snippet_listing_buttons(snippet, user, next_url=None):
     if isinstance(snippet, models.Journal):
         journal_page = JournalPage.objects.filter(slug="journal").first()
-        scielo_journal = models.SciELOJournal.objects \
-            .only("collection__acron3", "journal_acron") \
-            .select_related("collection") \
-            .filter(journal=snippet).first()
+        scielo_journal = (
+            models.SciELOJournal.objects.only("collection__acron3", "journal_acron")
+            .select_related("collection")
+            .filter(journal=snippet)
+            .first()
+        )
         try:
-            url = journal_page.get_url() + journal_page.reverse_subpage('bibliographic', args=[scielo_journal.collection.acron3, scielo_journal.journal_acron])
+            url = journal_page.get_url() + journal_page.reverse_subpage(
+                "bibliographic",
+                args=[scielo_journal.collection.acron3, scielo_journal.journal_acron],
+            )
             yield wagtailsnippets_widgets.SnippetListingButton(
-                _(f'Preview about journal'), 
+                _(f"Preview about journal"),
                 url,
                 priority=1,
-                icon_name='view',
+                icon_name="view",
                 attrs={"target": "_blank"},
             )
         except AttributeError:

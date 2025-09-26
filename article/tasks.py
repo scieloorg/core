@@ -13,14 +13,13 @@ from article.sources.xmlsps import load_article
 from collection.models import Collection
 from config import celery_app
 from core.utils.extracts_normalized_email import extracts_normalized_email
-from core.utils.utils import fetch_data, _get_user
+from core.utils.utils import _get_user, fetch_data
 from journal.models import SciELOJournal
 from pid_provider.choices import PPXML_STATUS_DONE, PPXML_STATUS_TODO
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
 from researcher.models import ResearcherIdentifier
 from tracker.models import UnexpectedEvent
-
 
 User = get_user_model()
 
@@ -516,7 +515,7 @@ def task_export_articles_to_articlemeta(
     """
     Export articles to ArticleMeta Database with flexible filtering.
     Note that from_date and until_date filters work on the field `updated` from Article.
-    
+
     Args:
         collections: Filter by collections (e.g. ['scl', 'mex'])
         issn: Filter by journal ISSN
@@ -548,7 +547,9 @@ def task_export_articles_to_articlemeta(
 
 
 @celery_app.task(bind=True, name="task_export_article_to_articlemeta")
-def task_export_article_to_articlemeta(self, pid_v3=None, force_update=True, user_id=None, username=None):
+def task_export_article_to_articlemeta(
+    self, pid_v3=None, force_update=True, user_id=None, username=None
+):
     """
     Export a single article to ArticleMeta Database.
 
@@ -564,8 +565,5 @@ def task_export_article_to_articlemeta(self, pid_v3=None, force_update=True, use
     user = _get_user(self.request, username=username, user_id=user_id)
 
     return controller.export_article_to_articlemeta(
-        pid_v3=pid_v3,
-        user=user,
-        force_update=force_update,
-        client=None
+        pid_v3=pid_v3, user=user, force_update=force_update, client=None
     )

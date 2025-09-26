@@ -2,15 +2,22 @@
 
 from django.templatetags.static import static
 from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 from wagtail.admin.navigation import get_site_for_user
 from wagtail.admin.site_summary import SummaryItem
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import (
+    CreateView,
+    SnippetViewSet,
+    SnippetViewSetGroup,
+)
 from wagtail_modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
 
 from article.models import Article
 from collection.models import Collection
 from config.menu import WAGTAIL_MENU_APPS_ORDER, get_menu_order
-from core.models import Gender
+from core.models import ExportDestination, Gender
 from journal import models
 from journal.wagtail_hooks import (
     AdditionalIndexedAtAdmin,
@@ -155,3 +162,13 @@ def remove_menu_items(request, menu_items):
             for item in menu_items
             if item.name not in ["documents", "explorer", "reports"]
         ]
+
+
+# Registros minimalistas
+@register_snippet
+class ExportDestinationViewSet(SnippetViewSet):
+    model = ExportDestination
+    icon = "globe"
+    menu_label = _("Export Destinations")
+    list_display = ["acronym", "updated"]
+    search_fields = ["acronym"]

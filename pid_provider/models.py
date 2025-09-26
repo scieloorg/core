@@ -404,34 +404,26 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     )
     other_pid_count = models.PositiveIntegerField(default=0)
     registered_in_core = models.BooleanField(default=False)
+    collections = models.ManyToManyField(Collection, blank=True)
 
     base_form_class = CoreAdminModelForm
 
     panel_a = [
         FieldPanel("proc_status"),
-        FieldPanel("registered_in_core", read_only=True),
+        FieldPanel("collections", read_only=True),
         FieldPanel("issn_electronic", read_only=True),
         FieldPanel("issn_print", read_only=True),
         FieldPanel("pub_year", read_only=True),
-        FieldPanel("volume", read_only=True),
-        FieldPanel("number", read_only=True),
-        FieldPanel("suppl", read_only=True),
-        # FieldPanel("pkg_name", read_only=True),
-        # FieldPanel("v3", read_only=True),
+        FieldPanel("pkg_name", read_only=True),
+        FieldPanel("main_doi", read_only=True),
+        FieldPanel("v3", read_only=True),
         FieldPanel("v2", read_only=True),
         FieldPanel("aop_pid", read_only=True),
-        FieldPanel("main_doi", read_only=True),
-        FieldPanel("elocation_id", read_only=True),
-        FieldPanel("fpage", read_only=True),
-        FieldPanel("fpage_seq", read_only=True),
-        FieldPanel("lpage", read_only=True),
         FieldPanel("available_since", read_only=True),
-        # FieldPanel("z_surnames", read_only=True),
-        # FieldPanel("z_collab", read_only=True),
-        # FieldPanel("z_links", read_only=True),
-        # FieldPanel("z_partial_body", read_only=True),
+        FieldPanel("registered_in_core", read_only=True),
     ]
     panel_b = [
+        AutocompletePanel("collections", read_only=True),
         AutocompletePanel("current_version", read_only=True),
         InlinePanel("other_pid", label=_("Other PID")),
     ]
@@ -516,6 +508,10 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
     def __str__(self):
         return f"{self.pkg_name} {self.v3}"
+
+    @property
+    def collection_list(self):
+        return "|".join(c.acron3 for c in self.collections.all())
 
     @classmethod
     def get_queryset(

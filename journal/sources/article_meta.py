@@ -1,12 +1,12 @@
 import sys
 
+from collection.models import Collection
 from core.utils.rename_dictionary_keys import rename_dictionary_keys
 from core.utils.utils import fetch_data
 from journal.models import AMJournal
 from journal.sources import am_to_core
 from journal.sources.am_field_names import correspondencia_journal
 from tracker.models import UnexpectedEvent
-from collection.models import Collection
 
 
 class SciELOJournalArticleMetaCreateUpdateError(Exception):
@@ -40,7 +40,7 @@ def process_journal_article_meta(collection, limit, user):
             data_journal = fetch_data(url_journal, json=True, timeout=30, verify=True)
             obj_collection = Collection.objects.get(acron3=collection)
             AMJournal.create_or_update(
-                scielo_issn=issn,
+                pid=issn,
                 collection=obj_collection,
                 data=data_journal,
                 user=user,

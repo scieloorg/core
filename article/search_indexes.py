@@ -1,10 +1,9 @@
 from haystack import indexes
+from legendarium.formatter import descriptive_format
 
 from journal.models import SciELOJournal
 
 from .models import Article
-
-from legendarium.formatter import descriptive_format
 
 
 class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
@@ -346,9 +345,12 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         """The ISSN is on SciELO Journal models.SciELOJournal.objects.filter(journal=j)[0].issn_scielo"""
         # set com os issns
         if obj.journal:
-            return set([
-                j.issn_scielo for j in SciELOJournal.objects.filter(journal=obj.journal)
-            ])
+            return set(
+                [
+                    j.issn_scielo
+                    for j in SciELOJournal.objects.filter(journal=obj.journal)
+                ]
+            )
 
     def prepare_communities(self, obj):
         """The collection field is multi-value, so may contain N collection.
@@ -452,7 +454,7 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_sources(self, obj):
         # property no article.
         # Acta Cirúrgica Brasileira, Volume: 37, Issue: 7, Article number: e370704, Published: 10 OCT 2022
-        try: 
+        try:
             return obj.source
         except Exception as ex:
             return ""

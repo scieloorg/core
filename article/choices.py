@@ -1,6 +1,5 @@
 from django.utils.translation import gettext_lazy as _
 
-
 DATA_STATUS_PENDING = "PENDING"
 DATA_STATUS_DELETED = "DELETED"
 DATA_STATUS_MOVED = "MOVED"

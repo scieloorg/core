@@ -20,17 +20,19 @@ class PidProviderXMLViewSet(CommonControlFieldViewSet):
     # Configuração de listagem
     list_display = [
         "pkg_name",
+        "collection_list",
         "v3",
         "v2",
         "aop_pid",
         "main_doi",
         "available_since",
         "other_pid_count",
-        "created",
         "updated",
     ]
     list_filter = {
-        "pub_year": ["exact"],
+        "proc_status": ["exact"],
+        "collections": ["exact"],
+        "pub_year": ["exact", "gte", "lte"],
         "other_pid_count": ["exact", "gte", "lte"],
         "registered_in_core": ["exact"],
     }
@@ -47,6 +49,7 @@ class PidProviderXMLViewSet(CommonControlFieldViewSet):
     # Configuração de export
     list_export = [
         "pkg_name",
+        "proc_status",
         "v3",
         "v2",
         "aop_pid",
