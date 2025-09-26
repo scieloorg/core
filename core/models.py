@@ -595,15 +595,6 @@ class BaseLogo(models.Model):
         blank=True,
         verbose_name=_("Logo Image"),
     )
-
-    size = models.CharField(
-        _("Logo Size"),
-        max_length=20,
-        choices=choices.LOGO_SIZE_CHOICES,
-        default="medium",
-        help_text=_("Select the size/purpose of this logo"),
-    )
-
     language = models.ForeignKey(
         Language,
         verbose_name=_("Logo language"),
@@ -615,13 +606,12 @@ class BaseLogo(models.Model):
 
     panels = [
         FieldPanel("logo"),
-        FieldPanel("size"),
         FieldPanel("language"),
     ]
 
     class Meta:
         abstract = True
-        ordering = ["sort_order", "language", "size"]
+        ordering = ['sort_order', 'language']
 
     def __str__(self):
         return f"{self.collection} - {self.language} ({self.size})"

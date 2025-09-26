@@ -86,7 +86,12 @@
                 <!-- "Sobre o SciELO" à esquerda (muda conforme idioma) -->
                 <div>
                     <span class="about-link" style="color: #333; font-weight: 500;">
-                        <a href="{% pageurl page_about %}">{% trans 'Sobre o SciELO' %}</a>
+                        {% if page_about %}
+                            <a href="{% pageurl page_about %}">{% trans 'Sobre o SciELO' %}</a>
+                        {% else %}
+                            {% trans 'Sobre o SciELO' %}
+                        {% endif %}
+                    </span>
                     </span>
                 </div>
 
