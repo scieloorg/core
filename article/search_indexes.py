@@ -1989,21 +1989,31 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
     # MODS: part
     def prepare_mods_part(self, obj):
         """
-        Prepara elemento part do MODS
+        Prepara elemento part do MODS seguindo exemplos reais
         """
         parts = []
-
-        # Informações de paginação
         part_data = {}
 
+        # 1. EXTENT tem prioridade sobre elocation-id
         if obj.first_page and obj.last_page:
             part_data["extent"] = {
                 "unit": "page",
-                "start": obj.first_page,
-                "end": obj.last_page,
+                "start": str(obj.first_page).strip(),  # Remover espaços
+                "end": str(obj.last_page).strip()  # Remover espaços
             }
+        elif obj.first_page:
+            part_data["extent"] = {
+                "unit": "page",
+                "start": str(obj.first_page).strip()  # Remover espaços
+            }
+        # 2. DETAIL apenas se não há extent (páginas)
         elif obj.elocation_id:
-            part_data["detail"] = {"type": "elocation-id", "number": obj.elocation_id}
+            elocation = str(obj.elocation_id).strip()
+            if elocation:  # Verificar se não está vazio após strip
+                part_data["detail"] = {
+                    "type": "elocation-id",
+                    "number": elocation
+                }
 
         if part_data:
             parts.append(part_data)
