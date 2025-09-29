@@ -9,6 +9,10 @@ from django_celery_beat.models import CrontabSchedule, PeriodicTask
 User = get_user_model()
 
 
+def delete_tasks(names):
+    PeriodicTask.objects.filter(name__in=names).delete()
+
+
 def schedule_task(
     task,
     name,
