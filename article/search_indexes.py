@@ -4,7 +4,7 @@ from journal.models import SciELOJournal
 
 from .models import Article
 from .mods_mappings import (MODS_TYPE_OF_RESOURCE_MAPPING, DISPLAY_LABEL, AUDIENCE_MAPPING, ISO_639_1_TO_2B,
-                            LATIN_SCRIPT_LANGUAGES, STRUCTURAL_SECTIONS, POLICIES, MAPPING_OAI_STATUS)
+                            LATIN_SCRIPT_LANGUAGES, STRUCTURAL_SECTIONS, POLICIES, MAPPING_OAI_STATUS, FORMAT_MEDIA_TYPES)
 
 from legendarium.formatter import descriptive_format
 
@@ -538,28 +538,28 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
     # part (0-n) - Informações sobre partes do recurso
     mods_part = indexes.MultiValueField(null=True, index_fieldname="mods.part")
 
-    # # location (0-n) - Localização física ou eletrônica
-    # mods_location = indexes.MultiValueField(null=True, index_fieldname="mods.location")
-    #
-    # # ELEMENTOS MODS - PRIORIDADE MÉDIA-ALTA
-    # # physicalDescription (0-n) - Características físicas do recurso
-    # mods_physical_description = indexes.MultiValueField(
-    #     null=True, index_fieldname="mods.physicalDescription"
-    # )
-    #
-    # # recordInfo (0-n) - Informações sobre o registro de metadados
-    # mods_record_info = indexes.MultiValueField(
-    #     null=True, index_fieldname="mods.recordInfo"
-    # )
-    #
-    # # extension (0-n) - Metadados não cobertos pelos elementos padrão
-    # mods_extension = indexes.MultiValueField(
-    #     null=True, index_fieldname="mods.extension"
-    # )
-    #
-    # # note (0-n) - Informação geral em forma de nota
-    # mods_note = indexes.MultiValueField(null=True, index_fieldname="mods.note")
-    #
+    # location (0-n) - Localização física ou eletrônica
+    mods_location = indexes.MultiValueField(null=True, index_fieldname="mods.location")
+
+    # ELEMENTOS MODS - PRIORIDADE MÉDIA-ALTA
+    # physicalDescription (0-n) - Características físicas do recurso
+    mods_physical_description = indexes.MultiValueField(
+        null=True, index_fieldname="mods.physicalDescription"
+    )
+
+    # recordInfo (0-n) - Informações sobre o registro de metadados
+    mods_record_info = indexes.MultiValueField(
+        null=True, index_fieldname="mods.recordInfo"
+    )
+
+    # extension (0-n) - Metadados não cobertos pelos elementos padrão
+    mods_extension = indexes.MultiValueField(
+        null=True, index_fieldname="mods.extension"
+    )
+
+    # note (0-n) - Informação geral em forma de nota
+    mods_note = indexes.MultiValueField(null=True, index_fieldname="mods.note")
+
     # # genre (0-n) - Categoria que caracteriza estilo/forma
     # mods_genre = indexes.MultiValueField(null=True, index_fieldname="mods.genre")
     #
@@ -2023,64 +2023,326 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
     # MODS: location
     def prepare_mods_location(self, obj):
         """
-        Prepara elemento location do MODS
+        Prepara elemento location do MODS para artigos científicos
+
+        TODAS AS FONTES CONFIRMADAS nos modelos:
+        - obj.updated (CommonControlField) - DateTimeField
+        - obj.pid_v2 (Article) - campo do modelo
+        - obj.languages (Article) - ManyToMany com Language
+        - obj.journal (Article) - ForeignKey para Journal
+        - obj.journal.publisher_history (Journal) - ParentalKey reverse
+        - collection.domain (Collection.domain) - URLField
+        - collection.acron3 (Collection.acron3) - CharField
+        - organization.name (Organization) - via PublisherHistory
+        - organization.location (Organization) - ForeignKey para Location
         """
         locations = []
 
-        # URLs disponíveis
-        urls = []
-        for fmt in ["html", "pdf"]:
-            urls.extend(self._safe_get_available_urls(obj, fmt))
+        try:
+            # 1. URLs ELETRÔNICAS
+            url_locations = self._prepare_electronic_urls(obj)
+            locations.extend(url_locations)
 
-        for item in urls:
-            if isinstance(item, dict) and "url" in item:
-                location_data = {
-                    "url": {
-                        "usage": "primary display",
-                        "access": "object in context",
-                        "text": item["url"],
-                    }
-                }
-                locations.append(location_data)
+            # 2. LOCALIZAÇÃO FÍSICA DA EDITORA
+            physical_location = self._prepare_publisher_physical_location(obj)
+            if physical_location:
+                locations.append(physical_location)
+
+        except Exception:
+            pass
 
         return locations
+
+    def _prepare_electronic_urls(self, obj):
+        """
+        Prepara URLs eletrônicas - TODAS AS FONTES CONFIRMADAS
+        """
+        url_locations = []
+        collections = self._safe_get_collections(obj)
+
+        # obj.updated confirmado em CommonControlField
+        date_last_accessed = None
+        if obj.updated:
+            date_last_accessed = obj.updated.strftime("%Y-%m-%d")
+
+        for collection in collections:
+            # collection.domain e collection.acron3 confirmados em Collection model
+            if not (hasattr(collection, 'domain') and collection.domain and obj.pid_v2):
+                continue
+
+            domain = collection.domain
+            collection_label = collection.acron3 if hasattr(collection, 'acron3') else ''
+
+            # URL HTML PRINCIPAL
+            html_url = {
+                "url": {
+                    "usage": "primary display",
+                    "access": "object in context",
+                    "displayLabel": f"HTML fulltext - {collection_label}".strip() if collection_label else "HTML fulltext",
+                    "text": f"https://{domain}/scielo.php?script=sci_arttext&pid={obj.pid_v2}"
+                }
+            }
+
+            if date_last_accessed:
+                html_url["url"]["dateLastAccessed"] = date_last_accessed
+
+            url_locations.append(html_url)
+
+            # URL PDF
+            pdf_url = {
+                "url": {
+                    "access": "raw object",
+                    "displayLabel": f"PDF fulltext - {collection_label}".strip() if collection_label else "PDF fulltext",
+                    "note": "Adobe Acrobat Reader required",
+                    "text": f"https://{domain}/scielo.php?script=sci_pdf&pid={obj.pid_v2}"
+                }
+            }
+
+            if date_last_accessed:
+                pdf_url["url"]["dateLastAccessed"] = date_last_accessed
+
+            url_locations.append(pdf_url)
+
+            # URLs POR IDIOMA
+            # obj.languages confirmado em Article model
+            if obj.languages.exists() and obj.languages.count() > 1:
+                for lang in obj.languages.all():
+                    # lang.code2 e lang.name confirmados em Language model
+                    if lang.code2:
+                        lang_display = lang.name or lang.code2.upper()
+
+                        url_locations.append({
+                            "url": {
+                                "access": "object in context",
+                                "displayLabel": f"HTML - {lang_display} version",
+                                "text": f"https://{domain}/scielo.php?script=sci_arttext&pid={obj.pid_v2}&tlng={lang.code2}"
+                            }
+                        })
+
+        return url_locations
+
+    def _prepare_publisher_physical_location(self, obj):
+        """
+        Prepara localização física da editora - TODAS AS FONTES CONFIRMADAS
+        """
+        if not obj.journal:
+            return None
+
+        try:
+            # journal.publisher_history confirmado em Journal model
+            if (hasattr(obj.journal, 'publisher_history') and
+                obj.journal.publisher_history.exists()):
+
+                pub_history = obj.journal.publisher_history.select_related(
+                    'organization__location__city',
+                    'organization__location__state',
+                    'organization__location__country'
+                ).first()
+
+                # pub_history.organization confirmado em PublisherHistory model
+                if not (pub_history and pub_history.organization):
+                    return None
+
+                org = pub_history.organization
+                institution_parts = []
+
+                # org.name e org.acronym existem em Organization
+                if org.name and org.name.strip():
+                    institution_parts.append(org.name.strip())
+
+                    if org.acronym and org.acronym.strip():
+                        institution_parts.append(f"({org.acronym.strip()})")
+
+                institution_text = " ".join(institution_parts)
+
+                # org.location confirmado via ForeignKey em Organization
+                if org.location:
+                    location_parts = []
+
+                    # location.city, location.state, location.country confirmados
+                    if org.location.city and hasattr(org.location.city, 'name') and org.location.city.name:
+                        location_parts.append(org.location.city.name.strip())
+
+                    if org.location.state and hasattr(org.location.state, 'name') and org.location.state.name:
+                        location_parts.append(org.location.state.name.strip())
+
+                    if org.location.country and hasattr(org.location.country, 'name') and org.location.country.name:
+                        location_parts.append(org.location.country.name.strip())
+
+                    if location_parts:
+                        institution_text += f" ({', '.join(location_parts)})"
+
+                if institution_text and institution_text.strip():
+                    return {
+                        "physicalLocation": {
+                            "authority": "scielo",
+                            "displayLabel": "Publisher",
+                            "text": institution_text
+                        }
+                    }
+
+        except (AttributeError, TypeError):
+            pass
+
+        return None
 
     # ELEMENTOS PRIORIDADE MÉDIA-ALTA
     def prepare_mods_physical_description(self, obj):
         """
-        Prepara elemento physicalDescription do MODS
+        Prepara elemento physicalDescription do MODS para artigos científicos digitais
+
+        FONTES CONFIRMADAS:
+        - obj.format (ArticleFormat ParentalKey reverse) - formatos disponíveis
+        - obj.first_page, obj.last_page (Article) - extensão em páginas
+        - ArticleFormat.format_name - tipo de formato (crossref, pubmed, pmc)
+        - ArticleFormat.valid - se o formato é válido
         """
         physical_desc = []
 
-        # Formato digital
-        physical_desc.append({"form": "electronic", "authority": "marcform"})
+        phys_data = {}
 
-        # Tipo de mídia
-        physical_desc.append({"internetMediaType": "text/html"})
+        # 1. FORM - Sempre eletrônico para artigos digitais
+        phys_data["form"] = {
+            "authority": "marcform",
+            "text": "electronic"
+        }
+
+        # 2. INTERNET MEDIA TYPES - Tipos de mídia disponíveis
+        media_types = set()
+
+        # HTML e PDF sempre disponíveis para artigos SciELO
+        media_types.add("text/html")
+        media_types.add("application/pdf")
+
+        # Verificar formatos específicos via ArticleFormat
+        try:
+            if hasattr(obj, 'format') and obj.format.exists():
+                for article_format in obj.format.filter(valid=True):
+                    if article_format.format_name:
+                        format_name = article_format.format_name.lower()
+
+                        if format_name in FORMAT_MEDIA_TYPES:
+                            media_types.add(FORMAT_MEDIA_TYPES[format_name])
+        except Exception:
+            pass
+
+        if media_types:
+            phys_data["internetMediaType"] = sorted(list(media_types))
+
+        # 3. EXTENT - Extensão do recurso baseado em páginas
+        extent_text = None
+
+        if obj.first_page and obj.last_page:
+            try:
+                # Tentar calcular número de páginas se forem números
+                first = int(obj.first_page)
+                last = int(obj.last_page)
+                num_pages = last - first + 1
+                extent_text = f"{num_pages} pages"
+            except (ValueError, TypeError):
+                # Se não forem números, usar formato textual
+                extent_text = f"pages {obj.first_page}-{obj.last_page}"
+        elif obj.first_page:
+            extent_text = f"page {obj.first_page}"
+
+        if not extent_text:
+            extent_text = "1 online resource"
+
+        phys_data["extent"] = extent_text
+
+        # 4. DIGITAL ORIGIN - Artigos científicos nascem digitais
+        phys_data["digitalOrigin"] = "born digital"
+
+        physical_desc.append(phys_data)
 
         return physical_desc
 
     def prepare_mods_record_info(self, obj):
         """
         Prepara elemento recordInfo do MODS
+
+        FONTES CONFIRMADAS:
+        - obj.created (CommonControlField) - DateTimeField
+        - obj.updated (CommonControlField) - DateTimeField
+        - obj.pid_v3, obj.pid_v2 (Article) - CharField
+        - obj.languages.first() (Article) - ManyToMany com Language
+        - obj.journal.scielojournal_set.first().collection (Journal) - relacionamento
         """
         record_info = []
-
         record_data = {}
 
+        # 1. recordContentSource - nome da coleção
+        try:
+            if obj.journal:
+                scielo_journal = obj.journal.scielojournal_set.select_related('collection').first()
+                if scielo_journal and scielo_journal.collection:
+                    record_data["recordContentSource"] = scielo_journal.collection.main_name
+        except (AttributeError, TypeError):
+            pass
+
+        # Fallback se não conseguir obter da coleção
+        if "recordContentSource" not in record_data:
+            record_data["recordContentSource"] = "SciELO"
+
+        # 2. recordCreationDate - formato w3cdtf
         if obj.created:
-            record_data["recordCreationDate"] = obj.created.strftime("%Y-%m-%d")
+            record_data["recordCreationDate"] = {
+                "encoding": "w3cdtf",
+                "text": obj.created.strftime("%Y-%m-%d")
+            }
+
+        # 3. recordChangeDate - formato w3cdtf
         if obj.updated:
-            record_data["recordChangeDate"] = obj.updated.strftime("%Y-%m-%d")
+            record_data["recordChangeDate"] = {
+                "encoding": "w3cdtf",
+                "text": obj.updated.strftime("%Y-%m-%d")
+            }
 
-        record_data["recordIdentifier"] = obj.pid_v3 or obj.pid_v2
-        record_data["recordOrigin"] = "SciELO"
-        record_data["languageOfCataloging"] = {
-            "languageTerm": {"type": "code", "authority": "iso639-2b", "text": "por"}
-        }
+        # 4. recordIdentifier - com source SciELO
+        pid = obj.pid_v3 or obj.pid_v2
+        if pid:
+            record_data["recordIdentifier"] = {
+                "source": "SciELO",
+                "text": pid
+            }
 
-        # Remove valores None
-        record_data = {k: v for k, v in record_data.items() if v is not None}
+        # 5. recordOrigin - padrão SciELO SPS
+        record_data["recordOrigin"] = "Generated from SciELO SPS XML"
+
+        # 6. descriptionStandard - SciELO SPS
+        record_data["descriptionStandard"] = "SciELO SPS"
+
+        # 7. languageOfCataloging - idioma principal do artigo
+        try:
+            if obj.languages.exists():
+                primary_language = obj.languages.first()
+                if primary_language and primary_language.code2:
+                    # Mapear para iso639-2b
+                    from .mods_mappings import ISO_639_1_TO_2B
+                    lang_code_2b = ISO_639_1_TO_2B.get(
+                        primary_language.code2.lower(),
+                        primary_language.code2
+                    )
+
+                    record_data["languageOfCataloging"] = {
+                        "languageTerm": {
+                            "type": "code",
+                            "authority": "iso639-2b",
+                            "text": lang_code_2b
+                        }
+                    }
+        except (AttributeError, TypeError):
+            pass
+
+        # Fallback para português se não conseguir obter idioma
+        if "languageOfCataloging" not in record_data:
+            record_data["languageOfCataloging"] = {
+                "languageTerm": {
+                    "type": "code",
+                    "authority": "iso639-2b",
+                    "text": "por"
+                }
+            }
 
         if record_data:
             record_info.append(record_data)
@@ -2089,60 +2351,58 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
 
     def prepare_mods_extension(self, obj):
         """
-        Prepara elemento extension do MODS
-        Para metadados específicos do SciELO/SPS
+        Prepara elemento extension do MODS para metadados técnicos SciELO
+
+        Contém apenas informações técnicas internas que não têm correspondência
+        nos elementos MODS padrão.
+
+        FONTES CONFIRMADAS:
+        - obj.sps_pkg_name (Article) - CharField
+        - obj.data_status (Article) - CharField com choices
+        - obj.valid (Article) - BooleanField
         """
         extensions = []
 
-        # Informações específicas do SciELO
-        scielo_elements = {}
+        scielo_data = {}
 
+        # 1. SPS Package Name - identificador técnico do pacote
         if obj.sps_pkg_name:
-            scielo_elements["sps_pkg_name"] = obj.sps_pkg_name
-        if hasattr(obj, "data_status") and obj.data_status:
-            scielo_elements["data_status"] = obj.data_status
-        if hasattr(obj, "valid") and obj.valid is not None:
-            scielo_elements["valid"] = obj.valid
+            scielo_data["sps_pkg_name"] = obj.sps_pkg_name
 
-        # Financiamentos
-        if obj.fundings.exists():
-            funding_data = []
-            for funding in obj.fundings.all():
-                funding_info = {
-                    "award_id": funding.award_id,
-                    "funding_source": (
-                        funding.funding_source.name if funding.funding_source else None
-                    ),
-                }
-                # Remove valores None
-                funding_info = {k: v for k, v in funding_info.items() if v is not None}
-                funding_data.append(funding_info)
+        # 2. Data Status - status de processamento/validação
+        if obj.data_status:
+            scielo_data["data_status"] = obj.data_status
 
-            if funding_data:
-                scielo_elements["fundings"] = funding_data
+        # 3. Valid - flag de validação técnica
+        if obj.valid is not None:
+            scielo_data["valid"] = str(obj.valid).lower()
 
-        if scielo_elements:
-            scielo_extension = {
-                "namespace": "http://scielo.org/extensions",
-                "elements": scielo_elements,
-            }
-            extensions.append(scielo_extension)
+        if scielo_data:
+            extensions.append({
+                "type": "scielo",
+                "scielo": scielo_data
+            })
 
         return extensions
 
     def prepare_mods_note(self, obj):
         """
         Prepara elemento note do MODS
+
+        Para artigos científicos SciELO, notes descritivas não são
+        atualmente necessárias, pois informações relevantes já estão
+        em elementos MODS padrão (abstract, typeOfResource, etc.)
+
+        Este método existe para extensão futura caso seja necessário
+        adicionar notas descritivas específicas.
         """
         notes = []
 
-        # Informações do pacote SPS
-        if obj.sps_pkg_name:
-            notes.append({"type": "sps-package", "text": obj.sps_pkg_name})
-
-        # Status dos dados
-        if hasattr(obj, "data_status") and obj.data_status:
-            notes.append({"type": "data-status", "text": obj.data_status})
+        # Reservado para notas descritivas futuras
+        # Exemplos possíveis:
+        # - Notas sobre peer review process
+        # - Informações sobre correções publicadas
+        # - Notas sobre disponibilidade de dados suplementares
 
         return notes
 
