@@ -552,7 +552,7 @@ def task_export_article_to_articlemeta(
     """
     try:
         if not pid_v3:
-            ValueError("task_export_article_to_articlemeta requires pid_v3")
+            raise ValueError("task_export_article_to_articlemeta requires pid_v3")
 
         article = Article.objects.get(pid_v3=pid_v3)
 
