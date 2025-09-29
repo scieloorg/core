@@ -73,7 +73,7 @@ class BaseEvent(models.Model):
 
     def finish(self, completed, detail=None, errors=None, exceptions=None):
         try:
-            completed = completed or True
+            completed = completed if completed is not None else True
             detail = detail or {}
             if errors:
                 detail["errors"] = errors
