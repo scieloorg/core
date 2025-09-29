@@ -6,7 +6,7 @@ class SciELOJournalModelForm(CoreAdminModelForm):
         instance_model = super().save_all(user)
 
         if self.instance.issn_scielo is None:
-            self.issn_scielo = instance_model.journal.official.issn_electronic or instance_model.journal.official.issn_print
+            self.instance.issn_scielo = instance_model.journal.official.issn_electronic or instance_model.journal.official.issn_print
 
         self.save()
 
