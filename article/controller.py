@@ -236,7 +236,7 @@ def export_article_to_articlemeta(
                     x for x in issue_data["code_title"] if x is not None
                 ]
                 data["title"] = issue_data["title"]
-                data["code"] = pid or self.pid_v2
+                data["code"] = pid or article.pid_v2
                 data.update(external_data)
 
                 try:
