@@ -994,7 +994,7 @@ class BaseLegacyRecord(CommonControlField):
         except cls.MultipleObjectsReturned as e:
             obj = cls.filter(pid=pid, collection=collection).order_by("-update").first()
         if data:
-            obj.data = obj.data
+            obj.data = data
         obj.save()
         return obj
 
