@@ -71,7 +71,7 @@ def write_item(mongodb_collection_name, data, filter_query=None):
         response["result"] = result.raw_result
         response["upserted_id"] = result.upserted_id
         response["success"] = bool(
-            self.upserted_id or self.modified_count or result.acknowledged
+            result.upserted_id or result.modified_count or result.acknowledged
         )
         return response
     except Exception as e:
