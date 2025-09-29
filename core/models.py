@@ -842,12 +842,14 @@ class BaseExporter(CommonControlField, ClusterableModel):
         self, user, completed, events, response=None, errors=None, exceptions=None
     ):
         """Finaliza uma exportação com status e detalhes"""
-        if response and response.get("success"):
-            completed = True
         if errors or exceptions:
             completed = False
+        else:
+            completed = True
         if completed:
             self.status = choices.EXPORTATION_STATUS_DONE
+        else:
+            self.status = choices.EXPORTATION_STATUS_PENDING
 
         self.detail = {
             "response": response,
@@ -968,20 +970,32 @@ class BaseLegacyRecord(CommonControlField):
         return cls.objects.get(pid=pid, collection=collection)
 
     @classmethod
+    def create(cls, pid, collection, data=None, user=None):
+        if not pid and not collection and not user:
+            raise ValueError(f"{cls} create requires pid, collection, user")
+
+        obj = cls()
+        obj.pid = pid
+        obj.collection = collection
+        if data:
+            obj.data = data
+        obj.creator = user
+        obj.save()
+        return obj
+
+    @classmethod
     def create_or_update(cls, pid, collection, data, user):
         try:
             obj = cls.get(pid=pid, collection=collection)
             obj.updated_by = user
         except cls.DoesNotExist:
-            obj = cls.objects.create()
+            obj = cls.create(pid, collection, data, user)
             obj.creator = user
         except cls.MultipleObjectsReturned as e:
             obj = cls.filter(pid=pid, collection=collection).order_by("-update").first()
-        obj.collection = collection or obj.collection
-        obj.pid = pid or obj.pid
-        obj.data = data or obj.data
+        if data:
+            obj.data = obj.data
         obj.save()
-
         return obj
 
     @property
