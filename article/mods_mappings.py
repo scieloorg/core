@@ -68,3 +68,13 @@ MAPPING_OAI_STATUS = {
             "green": "Green open access - author self-archived version available",
             "closed": "Subscription required for full access"
         }
+
+FORMAT_MEDIA_TYPES = {
+                            'crossref': 'application/vnd.crossref.unixsd+xml',
+                            'pubmed': 'application/vnd.pubmed+xml',
+                            'pmc': 'application/vnd.pmc+xml',
+                            'xml': 'text/xml',
+                            'html': 'text/html',
+                            'pdf': 'application/pdf',
+                            'epub': 'application/epub+zip'
+                        }
