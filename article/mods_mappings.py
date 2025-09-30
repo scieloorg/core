@@ -2,6 +2,15 @@
 Mapeamentos e constantes para metadados OAI-PMH/MODS
 """
 
+MAPPING = {
+    'ORCID': 'orcid',
+    'LATTES': 'lattes',
+    'EMAIL': 'email',
+    'SCOPUS': 'scopus',
+    'RESEARCHERID': 'researcherid',
+    'GOOGLE_SCHOLAR': 'scholar',
+}
+
 MODS_TYPE_OF_RESOURCE_MAPPING = {
     "research-article": "text/digital",
     "review-article": "text/digital",
@@ -17,15 +26,6 @@ DISPLAY_LABEL = {
     'pt': 'Resumo',
     'en': 'Abstract',
     'es': 'Resumen',
-}
-
-AUDIENCE_MAPPING = {
-    "research-article": "researchers",
-    "review-article": "researchers",
-    "case-report": "practitioners",
-    "editorial": "general",
-    "letter": "general",
-    "brief-report": "practitioners",
 }
 
 ISO_639_1_TO_2B = {
@@ -70,11 +70,22 @@ MAPPING_OAI_STATUS = {
         }
 
 FORMAT_MEDIA_TYPES = {
-                            'crossref': 'application/vnd.crossref.unixsd+xml',
-                            'pubmed': 'application/vnd.pubmed+xml',
-                            'pmc': 'application/vnd.pmc+xml',
-                            'xml': 'text/xml',
-                            'html': 'text/html',
-                            'pdf': 'application/pdf',
-                            'epub': 'application/epub+zip'
-                        }
+            'crossref': 'application/vnd.crossref.unixsd+xml',
+            'pubmed': 'application/vnd.pubmed+xml',
+            'pmc': 'application/vnd.pmc+xml',
+            'xml': 'text/xml',
+            'html': 'text/html',
+            'pdf': 'application/pdf',
+            'epub': 'application/epub+zip'
+        }
+
+GENRE_DISPLAY = {
+            "research-article": "Research Article",
+            "review-article": "Review Article",
+            "case-report": "Case Report",
+            "editorial": "Editorial",
+            "letter": "Letter to the Editor",
+            "brief-report": "Brief Communication",
+            "correction": "Correction",
+            "retraction": "Retraction Notice",
+        }
