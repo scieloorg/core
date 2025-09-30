@@ -3,8 +3,9 @@ from haystack import indexes
 from journal.models import SciELOJournal
 
 from .models import Article
-from .mods_mappings import (MODS_TYPE_OF_RESOURCE_MAPPING, DISPLAY_LABEL, AUDIENCE_MAPPING, ISO_639_1_TO_2B,
-                            LATIN_SCRIPT_LANGUAGES, STRUCTURAL_SECTIONS, POLICIES, MAPPING_OAI_STATUS, FORMAT_MEDIA_TYPES)
+from .mods_mappings import (MODS_TYPE_OF_RESOURCE_MAPPING, DISPLAY_LABEL, ISO_639_1_TO_2B,
+                            LATIN_SCRIPT_LANGUAGES, STRUCTURAL_SECTIONS, POLICIES, MAPPING_OAI_STATUS,
+                            FORMAT_MEDIA_TYPES, GENRE_DISPLAY, MAPPING)
 
 from legendarium.formatter import descriptive_format
 
@@ -560,26 +561,26 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
     # note (0-n) - Informação geral em forma de nota
     mods_note = indexes.MultiValueField(null=True, index_fieldname="mods.note")
 
-    # # genre (0-n) - Categoria que caracteriza estilo/forma
-    # mods_genre = indexes.MultiValueField(null=True, index_fieldname="mods.genre")
-    #
-    # # ELEMENTOS MODS - PRIORIDADE MÉDIA
-    # # classification (0-n) - Número ou código de classificação
-    # mods_classification = indexes.MultiValueField(
-    #     null=True, index_fieldname="mods.classification"
-    # )
-    #
-    # # tableOfContents (0-n) - Sumário ou índice do conteúdo
-    # mods_table_of_contents = indexes.MultiValueField(
-    #     null=True, index_fieldname="mods.tableOfContents"
-    # )
-    #
-    # # targetAudience (0-n) - Público-alvo do recurso
-    # mods_target_audience = indexes.MultiValueField(
-    #     null=True, index_fieldname="mods.targetAudience"
-    # )
-    #
-    # # Campo compile para template XML completo
+    # genre (0-n) - Categoria que caracteriza estilo/forma
+    mods_genre = indexes.MultiValueField(null=True, index_fieldname="mods.genre")
+
+    # ELEMENTOS MODS - PRIORIDADE MÉDIA
+    # classification (0-n) - Número ou código de classificação
+    mods_classification = indexes.MultiValueField(
+        null=True, index_fieldname="mods.classification"
+    )
+
+    # tableOfContents (0-n) - Sumário ou índice do conteúdo
+    mods_table_of_contents = indexes.MultiValueField(
+        null=True, index_fieldname="mods.tableOfContents"
+    )
+
+    # targetAudience (0-n) - Público-alvo do recurso
+    mods_target_audience = indexes.MultiValueField(
+        null=True, index_fieldname="mods.targetAudience"
+    )
+
+    # Campo compile para template XML completo
     # compile = indexes.CharField(
     #     null=True, index_fieldname="item.compile", use_template=True
     # )
@@ -883,16 +884,8 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
         Returns:
             str: Tipo MODS apropriado
         """
-        mapping = {
-            'ORCID': 'orcid',
-            'LATTES': 'lattes',
-            'EMAIL': 'email',
-            'SCOPUS': 'scopus',
-            'RESEARCHERID': 'researcherid',
-            'GOOGLE_SCHOLAR': 'scholar',
-        }
 
-        return mapping.get(source_name.upper(), source_name.lower())
+        return MAPPING.get(source_name.upper(), source_name.lower())
 
     def _prepare_name_affiliation(self, researcher):
         """
@@ -2408,79 +2401,63 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
 
     def prepare_mods_genre(self, obj):
         """
-        Prepara elemento genre do MODS
+        Versão conservadora - apenas fontes confirmadas nos modelos
         """
         genres = []
 
         if obj.article_type:
-            # Mapeamento de tipos de artigo para gêneros MODS
-            genre_mapping = {
-                "research-article": "research article",
-                "review-article": "review article",
-                "case-report": "case report",
-                "editorial": "editorial",
-                "letter": "letter",
-                "brief-report": "brief report",
-                "correction": "correction",
-                "retraction": "retraction",
-            }
+            genre_text = GENRE_DISPLAY.get(
+                obj.article_type,
+                obj.article_type.replace("-", " ").title()
+            )
 
-            genre = genre_mapping.get(obj.article_type, obj.article_type)
-            genres.append({"authority": "scielo", "text": genre})
+            genres.append({
+                "authority": "scielo",
+                "text": genre_text
+            })
 
         return genres
 
     # ELEMENTOS PRIORIDADE MÉDIA
     def prepare_mods_classification(self, obj):
         """
-        Prepara elemento classification do MODS
+        MODS classification não é aplicável ao contexto SciELO.
+
+        SciELO não utiliza sistemas de classificação bibliográfica
+        tradicionais (LCC/DDC/NLM/UDC) pois:
+
+        1. É biblioteca digital sem organização física de acervo
+        2. Usa taxonomias específicas para ciência (WOS, CAPES, Subject Areas)
+        3. Não integra com sistemas ILS que exigem notações
+
+        MODS classification é projetado para bibliotecas institucionais
+        com acervos físicos ou repositórios que seguem padrões de
+        catalogação tradicional.
         """
-        classifications = []
-
-        # Áreas temáticas baseadas em seções do sumário
-        if obj.toc_sections.exists():
-            for section in obj.toc_sections.all():
-                section_text = (
-                    section.plain_text
-                    if hasattr(section, "plain_text")
-                    else str(section)
-                )
-                if section_text:
-                    classifications.append(
-                        {"authority": "scielo-toc", "text": section_text}
-                    )
-
-        # Áreas temáticas do periódico
-        if (
-            obj.journal
-            and hasattr(obj.journal, "subject")
-            and obj.journal.subject.exists()
-        ):
-            for subject_area in obj.journal.subject.all():
-                if hasattr(subject_area, "value") and subject_area.value:
-                    classifications.append(
-                        {"authority": "scielo-subject-area", "text": subject_area.value}
-                    )
-
-        return classifications
+        return []
 
     def prepare_mods_table_of_contents(self, obj):
         """
-        Prepara elemento tableOfContents do MODS
+        tableOfContents não é implementado para artigos científicos.
+
+        MODS tableOfContents é projetado para obras com estrutura
+        navegável (capítulos de livros, faixas de álbuns).
+
+        Artigos científicos têm estrutura metodológica padrão
+        (IMRaD: Introduction, Methods, Results, Discussion) que
+        não constitui um "table of contents" no sentido bibliográfico.
+
+        NOTA: obj.toc_sections representa categorias editoriais da
+        revista (ex: "Original Articles"), não sumário do artigo.
         """
-        # Por enquanto retorna lista vazia
-        # Pode ser implementado quando houver dados de sumário disponíveis
         return []
 
     def prepare_mods_target_audience(self, obj):
         """
-        Prepara elemento targetAudience do MODS
+        targetAudience não é aplicável ao contexto SciELO.
+
+        Artigos científicos são uniformemente direcionados à
+        comunidade acadêmica. Inferir audiência por article_type
+        é impreciso e não agrega valor aos metadados.
         """
-        audiences = []
-
-        # Baseado no tipo de artigo, inferir audiência
-        if obj.article_type:
-            audience = AUDIENCE_MAPPING.get(obj.article_type, "researchers")
-            audiences.append({"authority": "scielo", "text": audience})
-
-        return audiences
+        return []
