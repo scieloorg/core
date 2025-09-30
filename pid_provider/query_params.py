@@ -6,6 +6,8 @@ from pid_provider import exceptions
 
 
 def zero_to_none(data):
+    if not data:
+        return
     if not data.isdigit():
         return data
     if int(data) == 0:

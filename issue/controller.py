@@ -1,20 +1,17 @@
-from datetime import datetime
-
 import json
 import logging
 import sys
+import traceback
+from datetime import datetime
 
 import requests
 import xmltodict
-
 from django.db.models import Q
 
-from core.utils.date_utils import get_date_range
-from core.mongodb import write_to_db
+from core.mongodb import write_item
+from issue.models import Issue, IssueExporter
 from journal.models import SciELOJournal
 from tracker.models import UnexpectedEvent
-
-from .models import Issue, IssueExport
 
 
 def get_journal_xml(collection, issn):
@@ -40,11 +37,11 @@ def get_journal_xml(collection, issn):
 
 def get_issue(user, journal_xml, collection):
     issn_scielo = journal_xml["SERIAL"]["ISSN_AS_ID"]
-    
+
     if not issn_scielo:
         logging.info(f"No ISSN found for journal")
         pass
-    
+
     try:
         scielo_journal = SciELOJournal.get(
             collection=collection, issn_scielo=issn_scielo
@@ -122,132 +119,136 @@ def load(user):
 
 
 def export_issue_to_articlemeta(
-    issue_code, # FIXME: Use a different identifier instead of pk
-    force_update=True, 
-    user=None,
-    client=None,
+    user,
+    issue,
+    collection_acron_list=None,
+    force_update=None,
+    version=None,
 ):
     try:
-        issue = Issue.objects.get(pk=issue_code)
-    except Issue.DoesNotExist:
-        logging.error(f"Issue with id {issue_code} does not exist.")
-        return False
+        events = None
+        if not issue:
+            raise ValueError("export_issue_to_articlemeta requires issue")
+        for legacy_keys in issue.get_legacy_keys(collection_acron_list, is_active=True):
+            try:
+                exporter = None
+                response = None
+                events = []
+                col = legacy_keys.get("collection")
+                pid = legacy_keys.get("pid")
+                logging.info(
+                    (user, issue, "articlemeta", pid, col, version, force_update)
+                )
+                events.append("check articlemeta exportation demand")
+                exporter = IssueExporter.get_demand(
+                    user, issue, "articlemeta", pid, col, version, force_update
+                )
+                if not exporter:
+                    # não encontrou necessidade de exportar
+                    continue
 
-    if not issue.journal:
-        logging.error(f"Issue {issue_code} does not have a valid journal.")
-        return False
+                events.append("building articlemeta format for issue")
+                issue_data = issue.articlemeta_format(col.acron3)
 
-    for scielo_journal in issue.journal.scielojournal_set.all():
-        if not force_update and IssueExport.is_exported(issue, 'articlemeta', scielo_journal.collection):
-            logging.info(f"Issue {issue_code} already exported to collection {scielo_journal.collection}. Skipping.")
-            continue
-        try:
-            issue_data = issue.articlemeta_format(scielo_journal.collection.acron3)
-            issue_data['processing_date'] = datetime.strptime(issue_data['processing_date'], "%Y-%m-%d")
-        except Exception as e:
-            logging.error(f"Error converting issue data for ArticleMeta export for issue {issue_code}: {e}")
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail={
-                    "operation": "export_issue_to_articlemeta",
-                    "issue_code": issue_code,
-                    "collection": scielo_journal.collection,
-                    "force_update": force_update,
-                }
-            )
+                try:
+                    json.dumps(issue_data)
+                except Exception as e:
+                    logging.exception(e)
+                    response = str(issue_data)
+                    raise e
 
-        try:
-            write_to_db(
-                issue_data, 
-                "articlemeta", 
-                "issues", 
-                force_update=force_update,
-                client=client,
-            )
-            IssueExport.mark_as_exported(issue, 'articlemeta', scielo_journal.collection, user)
-        except Exception as e:
-            logging.error(f"Error exporting issue {issue_code} to ArticleMeta: {e}")
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail={
-                    "operation": "export_issue_to_articlemeta",
-                    "issue_code": issue_code,
-                    "collection": scielo_journal.collection,
-                    "force_update": force_update,
-                }
-            )
+                events.append("writing issue to articlemeta database")
+                response = write_item("issues", issue_data)
+                exporter.finish(
+                    user,
+                    completed=True,
+                    events=events,
+                    response=response,
+                    errors=None,
+                    exceptions=None,
+                )
+            except Exception as e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                if exporter:
+                    exporter.finish(
+                        user,
+                        completed=False,
+                        events=events,
+                        response=response,
+                        errors=None,
+                        exceptions=traceback.format_exc(),
+                    )
+                else:
+                    UnexpectedEvent.create(
+                        exception=e,
+                        exc_traceback=exc_traceback,
+                        detail={
+                            "operation": "export_article_to_articlemeta",
+                            "issue": str(issue),
+                            "collection": str(col),
+                            "events": events,
+                            "traceback": traceback.format_exc(),
+                        },
+                    )
 
-    return True
-    
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "operation": "export_issue_to_articlemeta",
+                "issue": issue,
+                "collection_acron_list": collection_acron_list,
+                "force_update": force_update,
+                "events": events,
+            },
+        )
+
 
 def bulk_export_issues_to_articlemeta(
-    collections=[],
-    issn=None,
+    user=None,
+    collection_acron_list=None,
+    journal_acron_list=None,
+    publication_year=None,
     volume=None,
     number=None,
+    supplement=None,
     from_date=None,
     until_date=None,
     days_to_go_back=None,
-    force_update=True, 
-    user=None,
-    client=None,
+    force_update=None,
+    version=None,
 ):
     """
-    Export issues to ArticleMeta.
+    Export issues to ArticleMeta Database with flexible filtering.
 
     Args:
-        collections (list): List of collections to export.
-        issn (str): ISSN of the journal to export.
-        volume (str): Volume of the issue to export.
-        number (str): Number of the issue to export.
-        from_date (str): Start date of the range to export.
-        until_date (str): End date of the range to export.
-        days_to_go_back (int): Number of days to go back from today to get the start date.
-        force_update (bool): Whether to force update existing records.
-        user (User): User object.
-        client (Client): Client object.
+        collections: List of collections acronyms (e.g., ["scl", "mex"])
+        from_date: Export articles from this date
+        until_date: Export articles until this date
+        days_to_go_back: Export articles from this number of days ago
+        force_update: Force update existing records
+        user: User object
+        client: MongoDB client object
     """
-    filters = {}
-    
-    # Collections filter
-    if collections:
-        filters['journal__scielojournal__collection__acron3__in'] = collections
+    queryset = Issue.select_issues(
+        collection_acron_list=collection_acron_list,
+        journal_acron_list=journal_acron_list,
+        publication_year=publication_year,
+        volume=volume,
+        number=number,
+        supplement=supplement,
+        from_date=from_date,
+        until_date=until_date,
+        days_to_go_back=days_to_go_back,
+    )
 
-    # Volume filter
-    if volume:
-        filters['volume'] = volume
-
-    # Number filter
-    if number:
-        filters['number'] = number
-
-    # Date range filters
-    if from_date or until_date or days_to_go_back:
-        from_date_str, until_date_str = get_date_range(from_date, until_date, days_to_go_back)
-        filters['updated__range'] = (from_date_str, until_date_str)
-
-    # Build queryset with filters
-    queryset = Issue.objects.filter(**filters)
-
-    # Add ISSN filter separately using Q objects
-    if issn:
-        queryset = queryset.filter(
-            Q(journal__official__issn_print=issn) | 
-            Q(journal__official__issn_electronic=issn)
-        )
-        
-    logging.info(f"Starting export of {queryset.count()} issues to ArticleMeta.")
-    
     for issue in queryset.iterator():
         export_issue_to_articlemeta(
-            issue_code=issue.pk,
+            user,
+            issue=issue,
+            collection_acron_list=collection_acron_list,
             force_update=force_update,
-            user=user,
-            client=client,
+            version=version,
         )
-
-    logging.info("Export completed.")

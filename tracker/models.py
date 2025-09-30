@@ -73,18 +73,25 @@ class BaseEvent(models.Model):
 
     def finish(self, completed, detail=None, errors=None, exceptions=None):
         try:
-            self.completed = completed
+            completed = completed if completed is not None else True
             detail = detail or {}
             if errors:
                 detail["errors"] = errors
+                completed = False
             if exceptions:
                 detail["exceptions"] = exceptions
-                self.completed = False
-            self.detail = detail
+                completed = False
+            self.completed = completed
+            try:
+                json.dumps(detail)
+                self.detail = detail
+            except Exception as e:
+                logging.info(f"detail {detail}")
+                self.detail = str(detail)
             self.save()
         except Exception as e:
-            logging.exception(f"Error finishing ArticleEvent: {e}")
-            raise EventSaveError(f"Unable to create article event: {e}")
+            logging.exception(f"Error finishing BaseEvent: {e}")
+            raise EventSaveError(f"Unable to create base event: {e}")
 
 
 class UnexpectedEvent(models.Model):

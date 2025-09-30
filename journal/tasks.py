@@ -10,7 +10,7 @@ from wagtail.images.models import Image
 from collection.models import Collection
 from config import celery_app
 from core.utils.rename_dictionary_keys import rename_dictionary_keys
-from core.utils.utils import fetch_data, _get_user
+from core.utils.utils import _get_user, fetch_data
 from journal import controller
 from journal.models import (
     AMJournal,
@@ -103,12 +103,15 @@ def load_journal_from_article_meta_for_one_collection(
                 "collection_acron": collection_acron,
             },
         )
+
+
 from urllib.parse import urlparse
+
 
 def _normalize_collection_domain(url, strip_www=False):
     parsed = urlparse(url if "://" in url else "http://" + url)
     host = parsed.netloc or parsed.path
-    
+
     if strip_www and host.startswith("www."):
         host = host[4:]
     return host
@@ -121,7 +124,7 @@ def _build_logo_url(collection, journal_acron):
     except Exception as e:
         logging.error(f"Error normalizing collection domain: {e}")
         return None
-    
+
     collection_acron3 = collection.acron3
 
     if collection_acron3 == "scl":
@@ -141,8 +144,10 @@ def fetch_and_process_journal_logo(
         journal = Journal.objects.prefetch_related(
             Prefetch(
                 "scielojournal_set",
-                queryset=SciELOJournal.objects.select_related("collection").filter(collection__is_active=True),
-                to_attr="active_collections"
+                queryset=SciELOJournal.objects.select_related("collection").filter(
+                    collection__is_active=True
+                ),
+                to_attr="active_collections",
             )
         ).get(id=journal_id)
         scielo_journal = journal.scielojournal_set.first()
@@ -159,9 +164,11 @@ def fetch_and_process_journal_logo(
             title=journal_acron,
             defaults={
                 "file": ContentFile(response, name=f"{journal_acron}_glogo.gif"),
-            }
+            },
         )
-        journal_logo = JournalLogo.create_or_update(journal=journal, logo=img_wagtail, user=user)
+        journal_logo = JournalLogo.create_or_update(
+            journal=journal, logo=img_wagtail, user=user
+        )
         if not journal.logo and journal.logo != img_wagtail:
             journal.logo = journal_logo.logo
         journal.save()
@@ -182,12 +189,18 @@ def fetch_and_process_journal_logo(
 
 
 @celery_app.task(bind=True)
-def fetch_and_process_journal_logos_in_collection(self, collection_acron3=None, user_id=None,username=None):
+def fetch_and_process_journal_logos_in_collection(
+    self, collection_acron3=None, user_id=None, username=None
+):
     try:
         if collection_acron3:
             if not Collection.objects.get(acron3=collection_acron3).exists():
-                raise ValueError(f"Collection with acron3 '{collection_acron3}' does not exist")
-            journals = Journal.objects.filter(scielojournal__collection__acron3=collection_acron3).values_list("id", flat=True)
+                raise ValueError(
+                    f"Collection with acron3 '{collection_acron3}' does not exist"
+                )
+            journals = Journal.objects.filter(
+                scielojournal__collection__acron3=collection_acron3
+            ).values_list("id", flat=True)
         else:
             journals = Journal.objects.values_list("id", flat=True)
 
@@ -201,17 +214,17 @@ def fetch_and_process_journal_logos_in_collection(self, collection_acron3=None, 
         tasks = []
         for journal_id in journal_ids:
             task = celery_app.signature(
-                'journal.tasks.fetch_and_process_journal_logo',
+                "journal.tasks.fetch_and_process_journal_logo",
                 kwargs={
                     "journal_id": journal_id,
                     "user_id": user_id,
                     "username": username,
-                }
+                },
             )
             tasks.append(task)
         # Executa melhor tasks sem
         job = group(tasks)
-        result  = job()
+        result = job()
         logger.info(
             f"Started processing {total_journals} journal logos "
             f"for collection {collection_acron3 or 'all'}"
@@ -239,7 +252,7 @@ def load_license_of_use_in_journal(
         collection = Collection.objects.get(acron3=collection_acron3)
         params["collection"] = collection
     if issn_scielo:
-        params["scielo_issn"] = issn_scielo
+        params["pid"] = issn_scielo
 
     journals = AMJournal.objects.filter(**params)
     for journal in journals:
@@ -286,17 +299,18 @@ def child_load_license_of_use_in_journal(
 @celery_app.task(bind=True, name="task_export_journals_to_articlemeta")
 def task_export_journals_to_articlemeta(
     self,
-    collections=[],
+    collection_acron_list=None,
+    journal_acron_list=None,
     from_date=None,
     until_date=None,
     days_to_go_back=None,
-    force_update=True,
+    force_update=None,
     user_id=None,
     username=None,
 ):
     """
     Export journals to ArticleMeta Database with flexible filtering.
-    
+
     Args:
         collections: Filter by collections acronyms (e.g., ['scl', 'mex'])
         force_update: Force update existing records
@@ -306,18 +320,25 @@ def task_export_journals_to_articlemeta(
     user = _get_user(self.request, username=username, user_id=user_id)
 
     return controller.bulk_export_journals_to_articlemeta(
-        collections=collections,
+        user=user,
+        collection_acron_list=collection_acron_list,
+        journal_acron_list=None,
         from_date=from_date,
         until_date=until_date,
         days_to_go_back=days_to_go_back,
         force_update=force_update,
-        user=user,
-        client=None,
     )
 
 
 @celery_app.task(bind=True, name="task_export_journal_to_articlemeta")
-def task_export_journal_to_articlemeta(self, issn=None, force_update=True, user_id=None, username=None):
+def task_export_journal_to_articlemeta(
+    self,
+    journal_acron,
+    collection_acron,
+    force_update=True,
+    user_id=None,
+    username=None,
+):
     """
     Export journal to ArticleMeta Database.
 
@@ -328,10 +349,9 @@ def task_export_journal_to_articlemeta(self, issn=None, force_update=True, user_
         username: Username for authentication
     """
     user = _get_user(self.request, username=username, user_id=user_id)
-
-    return controller.export_journal_to_articlemeta(
-        issn=issn,
-        force_update=force_update,
+    return controller.bulk_export_journals_to_articlemeta(
         user=user,
-        client=None,
+        collection_acron_list=[collection_acron],
+        journal_acron_list=[journal_acron],
+        force_update=force_update,
     )

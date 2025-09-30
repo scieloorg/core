@@ -41,8 +41,9 @@ from tracker.models import BaseEvent, EventSaveError, UnexpectedEvent
 
 try:
     from django_prometheus.models import ExportModelOperationsMixin
+    COLLECTION_PREFIX = "scielojournal"
 except ImportError:
-
+    COLLECTION_PREFIX = "journalproc"
     class BasePidProviderXML:
         """Base class for exportable models."""
 
@@ -404,34 +405,26 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     )
     other_pid_count = models.PositiveIntegerField(default=0)
     registered_in_core = models.BooleanField(default=False)
+    collections = models.ManyToManyField(Collection, blank=True)
 
     base_form_class = CoreAdminModelForm
 
     panel_a = [
         FieldPanel("proc_status"),
-        FieldPanel("registered_in_core", read_only=True),
+        FieldPanel("collections", read_only=True),
         FieldPanel("issn_electronic", read_only=True),
         FieldPanel("issn_print", read_only=True),
         FieldPanel("pub_year", read_only=True),
-        FieldPanel("volume", read_only=True),
-        FieldPanel("number", read_only=True),
-        FieldPanel("suppl", read_only=True),
-        # FieldPanel("pkg_name", read_only=True),
-        # FieldPanel("v3", read_only=True),
+        FieldPanel("pkg_name", read_only=True),
+        FieldPanel("main_doi", read_only=True),
+        FieldPanel("v3", read_only=True),
         FieldPanel("v2", read_only=True),
         FieldPanel("aop_pid", read_only=True),
-        FieldPanel("main_doi", read_only=True),
-        FieldPanel("elocation_id", read_only=True),
-        FieldPanel("fpage", read_only=True),
-        FieldPanel("fpage_seq", read_only=True),
-        FieldPanel("lpage", read_only=True),
         FieldPanel("available_since", read_only=True),
-        # FieldPanel("z_surnames", read_only=True),
-        # FieldPanel("z_collab", read_only=True),
-        # FieldPanel("z_links", read_only=True),
-        # FieldPanel("z_partial_body", read_only=True),
+        FieldPanel("registered_in_core", read_only=True),
     ]
     panel_b = [
+        AutocompletePanel("collections", read_only=True),
         AutocompletePanel("current_version", read_only=True),
         InlinePanel("other_pid", label=_("Other PID")),
     ]
@@ -516,6 +509,10 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
     def __str__(self):
         return f"{self.pkg_name} {self.v3}"
+
+    @property
+    def collection_list(self):
+        return "|".join(c.acron3 for c in self.collections.all())
 
     @classmethod
     def get_queryset(
@@ -827,6 +824,20 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         if registered_changed:
             registered._add_other_pid(registered_changed, user)
         registered._add_current_version(xml_adapter.xml_with_pre, user)
+        q = Q()
+        if COLLECTION_PREFIX == "scielojournal":
+            if xml_adapter.journal_issn_print:
+                q |= Q(scielojournal__journal__official__issn_print=xml_adapter.journal_issn_print)
+            if xml_adapter.journal_issn_electronic:
+                q |= Q(scielojournal__journal__official__issn_electronic=xml_adapter.journal_issn_electronic)
+        else:            
+            if xml_adapter.journal_issn_print:
+                q |= Q(journalproc__journal__official_journal__issn_print=xml_adapter.journal_issn_print)
+            if xml_adapter.journal_issn_electronic:
+                q |= Q(journalproc__journal__official_journal__issn_electronic=xml_adapter.journal_issn_electronic)
+
+        for collection in Collection.objects.filter(q):
+            registered.collections.add(collection)
         return registered
 
     @classmethod
@@ -891,19 +902,102 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             # match exato
             return cls.get_record_data(xml_adapter)
         except cls.DoesNotExist:
-            logging.error(f"Falhou match exato")
+            logging.error(f"Nenhum match exato")
             pass
         try:
-            return cls.get_record_by_main_doi(xml_adapter)
+            return cls.get_record_by_pkg_name(xml_adapter)
         except (cls.DoesNotExist, ValueError):
-            logging.error(f"Falhou match com DOI")
+            logging.error(f"Nenhum match com pkg_name")
             pass
         try:
             return cls.get_record_by_pid_v3(xml_adapter)
-        except (cls.DoesNotExist, ValueError):
-            logging.error(f"Falhou match com pid v3")
+        except ValueError:
+            pass
+        except cls.DoesNotExist:
+            logging.error(f"Nenhum match com pid v3")
+            pass
+        except PidProviderXMLPidV3ConflictError as e:
+            logging.exception(e)
+        try:
+            return cls.get_record_by_main_doi(xml_adapter)
+        except ValueError:
+            pass
+        except cls.DoesNotExist:
+            logging.error(f"Nenhum match com DOI")
             pass
         return cls.get_record_flexible_match(xml_adapter)
+
+    # @classmethod
+    # @profile_classmethod
+    # def remove_duplicated(cls, xml_adapter, matched, unmatched):
+    #     # tenta procurar pelo pid_v3
+
+    #     if not matched and not unmatched:
+    #         matched, unmatched = cls.get_records_by_pkg_name(xml_adapter)
+
+    #     if not matched and not unmatched:
+    #         # não está duplicado
+    #         return
+
+    #     if matched and unmatched:
+    #         # TODO - inconsistente
+    #         ...
+    #         # TODO
+
+    #     if unmatched:
+    #         items = []
+    #         for item in cls.objects.filter(id__in=unmatched):
+    #             try:
+    #                 items.append({
+    #                     "pid_v2": item.v2,
+    #                     "pid_v3": item.v3,
+    #                     "article_titles": item.xml_with_pre.article_titles,
+    #                     "authors": item.xml_with_pre.authors,
+    #                 })
+    #             except Exception as e:
+    #                 items.append(str(item))
+
+    #         raise exceptions.ForbiddenPidProviderXMLRegistrationError(
+    #             _(
+    #                 "{} is registered with other content {}"
+    #             ).format(xml_adapter, items)
+    #         )
+
+    #     if matched:
+    #         if len(matched) == 1:
+    #             return
+    #         for item in matched[1:]:
+    #             item.proc_status = choices.PPXML_STATUS_INVALID
+    #             item.save()
+
+    # @classmethod
+    # @profile_classmethod
+    # def get_records_by_pkg_name(cls, xml_adapter):
+    #     # tenta procurar pelo pid_v3
+    #     qs = cls.objects.filter(pkg_name=xml_adapter.pkg_name).order_by("-updated")
+    #     matched = []
+    #     unmatched = []
+    #     for item in qs.iterator():
+    #         score = item.match(xml_adapter)
+    #         if score:
+    #             matched.append((score, item.updated.isoformat(), item.id))
+    #         else:
+    #             unmatched.append(item.id)
+    #     return sorted(matched), sorted(unmatched)
+
+    @classmethod
+    @profile_classmethod
+    def get_record_by_pkg_name(cls, xml_adapter):
+        # tenta procurar pelo pid_v3
+        qs = cls.objects.filter(pkg_name=xml_adapter.pkg_name)
+        matched = []
+        for item in qs.iterator():
+            score = item.match(xml_adapter)
+            if score:
+                matched.append((score, item.updated.isoformat(), item.id))
+        if not matched:
+            raise cls.DoesNotExist
+        return cls.objects.get(id=sorted(matched)[-1][-1])
 
     @classmethod
     @profile_classmethod
@@ -929,10 +1023,13 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             .first()
         )
         if item:
-            if item.match(xml_adapter) >= 3:
+            total = item.match(xml_adapter)
+            logging.info(total)
+            if total >= 3:
                 return item
+            logging.info(item)
             raise PidProviderXMLPidV3ConflictError(
-                f"Pid v3 {xml_pid_v3} belongs to {item}"
+                f"Trying to set {xml_pid_v3} to {xml_adapter.sps_pkg_name}, but {xml_pid_v3} belongs to {item}"
             )
         raise cls.DoesNotExist
 
@@ -958,7 +1055,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         kwargs_groups = get_issue_kwargs(xml_adapter)
         matches = []
         for kwargs in kwargs_groups:
-            for item in cls.objects.filter(q1 & q2, **kwargs).order_by("-updated"):
+            for item in cls.objects.filter(q1 & q2, **kwargs):
                 total = item.match(xml_adapter)
                 if total >= 3:
                     matches.append((total, item.updated.isoformat(), item.id))
