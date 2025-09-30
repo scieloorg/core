@@ -992,9 +992,9 @@ class BaseLegacyRecord(CommonControlField):
             obj = cls.create(pid, collection, data, user)
             obj.creator = user
         except cls.MultipleObjectsReturned as e:
-            obj = cls.filter(pid=pid, collection=collection).order_by("-update").first()
+            obj = cls.objects.filter(pid=pid, collection=collection).order_by("-updated").first()
         if data:
-            obj.data = obj.data
+            obj.data = data
         obj.save()
         return obj
 
