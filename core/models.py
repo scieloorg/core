@@ -908,7 +908,7 @@ class BaseExporter(CommonControlField, ClusterableModel):
         """
         if not parent or not destination or not pid or not collection or not user:
             raise ValueError(
-                f"{cls}.get_demand requires parent ({parent}), destination ({destination}), pid ({pid}), collection ({collection})"
+                f"{cls}.get_demand requires user ({user}), parent ({parent}), destination ({destination}), pid ({pid}), collection ({collection})"
             )
         if isinstance(destination, str):
             destination = ExportDestination.get_or_create(destination, user)
