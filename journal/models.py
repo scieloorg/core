@@ -1740,7 +1740,6 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         Collection,
         verbose_name=_("Collection"),
         on_delete=models.SET_NULL,
-        related_name="+",
         null=True,
         blank=True,
     )
