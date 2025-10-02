@@ -237,6 +237,10 @@ class Collection(CommonControlField, ClusterableModel):
             )
 
     @classmethod
+    def get(cls, acron3):
+        return cls.objects.get(acron3=acron3)
+
+    @classmethod
     def create_or_update(
         cls,
         user,
@@ -302,6 +306,13 @@ class Collection(CommonControlField, ClusterableModel):
         return self.main_name or (
             self.collection_name.first().text if self.collection_name.exists() else ""
         )
+
+    @classmethod
+    def get_acronyms(cls):
+        """
+        Retorna uma lista de todos os acrônimos (acron3) das coleções.
+        """
+        return list(cls.objects.values_list("acron3", flat=True))
 
 
 class CollectionSocialNetwork(Orderable, SocialNetwork):
