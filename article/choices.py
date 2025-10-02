@@ -15,3 +15,20 @@ DATA_STATUS = (
     (DATA_STATUS_UNDEF, _("undefined")),
     (DATA_STATUS_INVALID, _("invalid")),
 )
+
+# Article types eligible for PubMed format generation
+# According to https://www.ncbi.nlm.nih.gov/books/NBK3828/#publisherhelp.What_types_of_articles_are
+PUBMED_ARTICLE_TYPES = [
+    "research-article",
+    "review-article",
+    "article-commentary",
+    "brief-report",
+    "case-report",
+    "letter",
+    "rapid-communication",
+    "reply",
+    "editorial",
+    "correction",
+    "retraction",
+    "addendum",
+]

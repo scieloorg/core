@@ -1200,14 +1200,16 @@ class ArticleFormat(CommonControlField):
                 )
             except CrossRefConfiguration.DoesNotExist:
                 break
-        cls.generate(
-            user,
-            article,
-            "pubmed",
-            article.sps_pkg_name + ".xml",
-            pubmed.pipeline_pubmed,
-            indexed_check=False,
-        )
+        # Only generate PubMed format for eligible article types
+        if article.article_type in choices.PUBMED_ARTICLE_TYPES:
+            cls.generate(
+                user,
+                article,
+                "pubmed",
+                article.sps_pkg_name + ".xml",
+                pubmed.pipeline_pubmed,
+                indexed_check=False,
+            )
         cls.generate(
             user,
             article,

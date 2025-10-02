@@ -9,7 +9,8 @@ from django.test import TestCase
 from django.utils.timezone import make_aware
 from freezegun import freeze_time
 
-from article.models import Article
+from article import choices
+from article.models import Article, ArticleFormat
 from article.tasks import (
     get_researcher_identifier_unnormalized,
     migrate_path_xml_pid_provider_to_pid_provider,
@@ -119,4 +120,96 @@ class NormalizeEmailResearcherIdentifierTest(TestCase):
                 self.assertTrue(
                     ResearcherIdentifier.objects.filter(identifier=email).exists(),
                     f"E-mail '{email}' unnormalized",
+                )
+
+
+class PubMedArticleTypeFilteringTest(TestCase):
+    """Test that PubMed format generation only happens for eligible article types"""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="testuser", password="testpass")
+
+    @patch("article.models.ArticleFormat.generate")
+    def test_pubmed_format_generated_for_research_article(self, mock_generate):
+        """Test that PubMed format is generated for research-article type"""
+        article = Article.objects.create(
+            pid_v3="test-pid-1",
+            article_type="research-article",
+            sps_pkg_name="test-pkg-1",
+        )
+
+        ArticleFormat.generate_formats(self.user, article)
+
+        # Check that generate was called for pubmed
+        pubmed_calls = [
+            call for call in mock_generate.call_args_list if call[0][2] == "pubmed"
+        ]
+        self.assertEqual(len(pubmed_calls), 1, "PubMed format should be generated")
+
+    @patch("article.models.ArticleFormat.generate")
+    def test_pubmed_format_not_generated_for_ineligible_type(self, mock_generate):
+        """Test that PubMed format is NOT generated for ineligible article types"""
+        article = Article.objects.create(
+            pid_v3="test-pid-2",
+            article_type="book-review",  # Not in PUBMED_ARTICLE_TYPES
+            sps_pkg_name="test-pkg-2",
+        )
+
+        ArticleFormat.generate_formats(self.user, article)
+
+        # Check that generate was NOT called for pubmed
+        pubmed_calls = [
+            call for call in mock_generate.call_args_list if call[0][2] == "pubmed"
+        ]
+        self.assertEqual(
+            len(pubmed_calls), 0, "PubMed format should NOT be generated"
+        )
+
+    @patch("article.models.ArticleFormat.generate")
+    def test_pmc_format_always_generated(self, mock_generate):
+        """Test that PMC format is always generated regardless of article type"""
+        # Test with ineligible type for PubMed
+        article = Article.objects.create(
+            pid_v3="test-pid-3",
+            article_type="book-review",
+            sps_pkg_name="test-pkg-3",
+        )
+
+        ArticleFormat.generate_formats(self.user, article)
+
+        # Check that generate was called for pmc
+        pmc_calls = [call for call in mock_generate.call_args_list if call[0][2] == "pmc"]
+        self.assertEqual(len(pmc_calls), 1, "PMC format should always be generated")
+
+    @patch("article.models.ArticleFormat.generate")
+    def test_pubmed_format_for_various_eligible_types(self, mock_generate):
+        """Test that PubMed format is generated for various eligible article types"""
+        eligible_types = [
+            "research-article",
+            "review-article",
+            "case-report",
+            "editorial",
+            "letter",
+        ]
+
+        for i, article_type in enumerate(eligible_types):
+            with self.subTest(article_type=article_type):
+                mock_generate.reset_mock()
+                article = Article.objects.create(
+                    pid_v3=f"test-pid-eligible-{i}",
+                    article_type=article_type,
+                    sps_pkg_name=f"test-pkg-eligible-{i}",
+                )
+
+                ArticleFormat.generate_formats(self.user, article)
+
+                pubmed_calls = [
+                    call
+                    for call in mock_generate.call_args_list
+                    if call[0][2] == "pubmed"
+                ]
+                self.assertEqual(
+                    len(pubmed_calls),
+                    1,
+                    f"PubMed format should be generated for {article_type}",
                 )
