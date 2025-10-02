@@ -600,9 +600,12 @@ class Article(
             yield item.data
 
     def check_availability(
-        self, user, collection_acron_list=None, timeout=None, is_activate=None
+        self, user, collection_acron_list=None, timeout=None, is_activate=None, force_update=False,
     ):
         try:
+            if not force_update and self.is_available(collection_acron_list):
+                return True
+            
             event = None
             event = self.add_event(user, _("check availability"))
             for collection in self.select_collections(
@@ -1279,16 +1282,15 @@ class ArticleSource(CommonControlField):
         verbose_name=_("PID Provider XML"),
         help_text=_("Related PID Provider XML instance"),
     )
-    article = models.ForeignKey(
-        Article,
+    detail = models.JSONField(null=True, blank=True, default=None)
+    am_article = models.ForeignKey(
+        AMArticle,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        verbose_name=_("Article"),
-        help_text=_("Related Article instance"),
+        verbose_name=_("Legacy Article"),
+        help_text=_("Related Legacy Article instance"),
     )
-    detail = models.JSONField(null=True, blank=True, default=None)
-
     base_form_class = CoreAdminModelForm
 
     panels = [
@@ -1296,8 +1298,8 @@ class ArticleSource(CommonControlField):
         FieldPanel("file", read_only=True),
         FieldPanel("source_date", read_only=True),
         FieldPanel("status"),
+        FieldPanel("am_article", read_only=True),
         FieldPanel("pid_provider_xml", read_only=True),
-        FieldPanel("article", read_only=True),
         FieldPanel("detail", read_only=True),
     ]
 
@@ -1323,7 +1325,6 @@ class ArticleSource(CommonControlField):
             models.Index(fields=["status"]),
             models.Index(fields=["status", "updated"]),
             models.Index(fields=["pid_provider_xml"]),
-            models.Index(fields=["article"]),
         ]
 
     def __unicode__(self):
@@ -1351,7 +1352,7 @@ class ArticleSource(CommonControlField):
         raise ValueError("ArticleSource.get requires url")
 
     @classmethod
-    def create(cls, user, url=None, source_date=None):
+    def create(cls, user, url=None, source_date=None, am_article=None):
         if not url:
             raise ValueError("ArticleSource.create requires url")
 
@@ -1360,10 +1361,11 @@ class ArticleSource(CommonControlField):
             obj.creator = user
             obj.url = url
             obj.source_date = source_date
+            obj.am_article = am_article
             obj.status = cls.StatusChoices.PENDING
             obj.save()
             try:
-                obj.create_file()
+                obj.request_xml(detail=[])
             except Exception as e:
                 pass
             return obj
@@ -1371,30 +1373,29 @@ class ArticleSource(CommonControlField):
             return cls.get(url=url)
 
     @classmethod
-    def create_or_update(cls, user, url=None, source_date=None, force_update=None):
+    def create_or_update(cls, user, url=None, source_date=None, am_article=None, force_update=None):
         try:
-            logging.info(f"ArticleSource.create_or_update {url}")
+            logging.info(f"ArticleSource.create_or_update {url} {source_date} {am_article} {force_update}")
             obj = cls.get(url=url)
 
             if (
                 force_update
                 or (source_date and source_date != obj.source_date)
-                or not obj.file
-                or not obj.file.path
-                or not os.path.isfile(obj.file.path)
+                or (am_article and am_article != obj.am_article)
+                or not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)
             ):
                 logging.info(f"updating source: {(source_date, obj.source_date)}")
-                logging.info(
-                    f"updating file: {not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)}"
-                )
-                obj.create_file()
+                logging.info(f"updating am_article: {(am_article, obj.am_article)}")
+                logging.info(f"updating file: {not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)}")
+                obj.request_xml()
                 obj.updated_by = user
                 obj.source_date = source_date
+                obj.am_article = am_article
                 obj.status = cls.StatusChoices.REPROCESS
                 obj.save()
 
         except cls.DoesNotExist:
-            obj = cls.create(user, url=url, source_date=source_date)
+            obj = cls.create(user, url=url, source_date=source_date, am_article=am_article)
         return obj
 
     @property
@@ -1406,12 +1407,19 @@ class ArticleSource(CommonControlField):
             xml_with_pre = list(XMLWithPre.create(uri=self.url))[0]
         return xml_with_pre.sps_pkg_name
 
-    def create_file(self):
-        logging.info(f"ArticleSource.create_file for {self.url}")
-        xml_with_pre = list(XMLWithPre.create(uri=self.url))[0]
-        self.save_file(
-            f"{self.sps_pkg_name}.xml", xml_with_pre.tostring(pretty_print=True)
-        )
+    def request_xml(self, detail=None, force_update=False):
+        if not self.url:
+            raise ValueError("URL is required")
+        
+        if not self.file or not self.file.path or not os.path.isfile(self.file.path) or force_update:
+            if detail:
+                detail.append("create file")
+
+            logging.info(f"ArticleSource.request_xml for {self.url}")
+            xml_with_pre = list(XMLWithPre.create(uri=self.url))[0]
+            self.save_file(
+                f"{self.sps_pkg_name}.xml", xml_with_pre.tostring(pretty_print=True)
+            )
 
     def save_file(self, filename, content):
         try:
@@ -1491,38 +1499,24 @@ class ArticleSource(CommonControlField):
             return cls.objects.filter(**params)
 
         return cls.objects.filter(
-            ~Q(article__article_availability__available=True)
-            | Q(pid_provider_xml__isnull=True)
-            | Q(file__isnull=True)
-            | Q(article__isnull=True)
-            | Q(article__valid__in=[None, False]),
+            Q(pid_provider_xml__isnull=True)
+            | Q(file__isnull=True),
             **params,
         )
 
     @property
     def is_completed(self):
-        if not self.file:
-            return False
-        if not os.path.isfile(self.file.path):
-            return False
         if not self.pid_provider_xml:
             return False
-        if not os.path.isfile(self.pid_provider_xml.current_version.file.path):
+        if not self.am_article:
             return False
-        if not self.article:
-            return False
-        if not self.article.valid:
-            return False
-        if not self.article.article_availability.filter(available=True).exists():
-            return False
-
         if self.status != ArticleSource.StatusChoices.COMPLETED:
             self.status = ArticleSource.StatusChoices.COMPLETED
             self.save()
         return True
 
-    def process_xml(
-        self, user, load_article, force_update=False, auto_solve_pid_conflict=False
+    def complete_data(
+        self, user, force_update=False, auto_solve_pid_conflict=False
     ):
         """
         Processa um arquivo XML de artigo científico, criando ou atualizando os dados necessários.
@@ -1530,12 +1524,9 @@ class ArticleSource(CommonControlField):
         Este método gerencia todo o fluxo de processamento de um XML de artigo, incluindo:
         - Download/criação do arquivo XML se necessário
         - Geração de PID (Persistent Identifier) através do PidProvider
-        - Criação do objeto Article associado
-        - Atualização do status conforme o resultado do processamento
 
         Args:
             user: Usuário responsável pelo processamento
-            load_article: Função callback para carregar/criar o artigo a partir do XML
             force_update (bool): Se True, força a atualização mesmo se os dados já existem
             auto_solve_pid_conflict (bool): Se True, resolve automaticamente conflitos de PID
 
@@ -1547,75 +1538,26 @@ class ArticleSource(CommonControlField):
             - status: Estado do processamento (PENDING, COMPLETED, ERROR)
             - file: Arquivo XML baixado/criado
             - pid_provider_xml: Objeto PidProviderXML associado
-            - article: Objeto Article criado
             - detail: Lista com detalhes do processamento
         """
 
         try:
-            # Valida se existe URL para processar
-            if not self.url:
-                raise ValueError(_("URL is required"))
-
+            # Lista para armazenar detalhes do processamento
+            detail = []
             if not force_update:
                 if self.is_completed:
                     return
 
-            # Lista para armazenar detalhes do processamento
-            detail = []
-
             # Define status inicial como pendente
             self.status = ArticleSource.StatusChoices.PENDING
 
-            # Verifica se precisa criar/baixar o arquivo XML
-            if (
-                force_update
-                or not self.file
-                or not self.file.path
-                or not os.path.isfile(self.file.path)
-            ):
-                detail.append("create file")
-                self.create_file()  # Método que baixa/cria o arquivo XML
-                detail.append("created file")
-
-            self.set_pid_provider_xml(
+            # baixa/cria o arquivo XML
+            self.request_xml(detail, force_update)
+            
+            pid_v3 = self.get_or_create_pid_v3(
                 user, detail, force_update, auto_solve_pid_conflict
             )
-            if not self.pid_provider_xml or not self.pid_provider_xml.v3:
-                raise ValueError("Missing pid_provider_xml")
-
-            # Se tem v3, pode criar o artigo
-            if (
-                force_update or 
-                not self.article or 
-                not self.article.valid
-            ):
-                logging.info("create article")
-                detail.append("create article")
-
-                # Chama a função para carregar/criar o artigo
-                self.article = load_article(
-                    user=user,
-                    xml=None,
-                    file_path=self.file.path,
-                    v3=self.pid_provider_xml.v3,
-                    pp_xml=self.pid_provider_xml,
-                )
-                # Verifica se o artigo foi criado com sucesso
-                if self.article.valid:
-                    detail.append("created valid article")
-                    self.mark_as_completed()  # Marca o processamento como concluído
-                else:
-                    detail.append("created incomplete article")
-
-            if (
-                force_update or 
-                not self.article.article_availability.filter(available=True).exists()
-            ):
-                detail.append("check availability")
-                self.article.check_availability(user)
-                detail.append("availability checked")
-
-            logging.info((self.article, self.pid_provider_xml))
+            self.mark_as_completed()  # Marca o processamento como concluído
             self.detail = detail
             self.save()
 
@@ -1633,143 +1575,11 @@ class ArticleSource(CommonControlField):
             # Marca o processamento como erro
             self.mark_as_error()
 
-    def process_xmls(
-        cls,
-        user,
-        load_article,
-        status__in=None,
-        force_update=False,
-        auto_solve_pid_conflict=False,
-    ):
-        if force_update:
-            items = cls.objects.iterator()
-        else:
-            params = {}
-            params["status__in"] = status__in or [
-                cls.StatusChoices.PENDING,
-                cls.StatusChoices.REPROCESS,
-            ]
-
-            items = cls.objects.select_related(
-                "pid_provider_xml",
-                "article",
-            ).filter(
-                Q(pid_provider_xml__isnull=True)
-                | Q(file__isnull=True)
-                | Q(article__isnull=True)
-                | Q(article__valid__in=[None, False])
-                | Q(**params),
-            )
-        logging.info(f"Process article source total: {items.count()}")
-        for item in items:
-            item.process_xml(user, load_article, force_update, auto_solve_pid_conflict)
-
-    def process_xml(
-        self, user, load_article, force_update=False, auto_solve_pid_conflict=False
-    ):
-        """
-        Processa um arquivo XML de artigo científico, criando ou atualizando os dados necessários.
-
-        Este método gerencia todo o fluxo de processamento de um XML de artigo, incluindo:
-        - Download/criação do arquivo XML se necessário
-        - Geração de PID (Persistent Identifier) através do PidProvider
-        - Criação do objeto Article associado
-        - Atualização do status conforme o resultado do processamento
-
-        Args:
-            user: Usuário responsável pelo processamento
-            load_article: Função callback para carregar/criar o artigo a partir do XML
-            force_update (bool): Se True, força a atualização mesmo se os dados já existem
-            auto_solve_pid_conflict (bool): Se True, resolve automaticamente conflitos de PID
-
-        Raises:
-            ValueError: Se a URL não estiver definida
-
-        Note:
-            O método atualiza os seguintes atributos do objeto:
-            - status: Estado do processamento (PENDING, COMPLETED, ERROR)
-            - file: Arquivo XML baixado/criado
-            - pid_provider_xml: Objeto PidProviderXML associado
-            - article: Objeto Article criado
-            - detail: Lista com detalhes do processamento
-        """
-
+    def get_or_create_pid_v3(self, user, detail, force_update, auto_solve_pid_conflict):
+        if self.pid_provider_xml:
+            if not force_update:
+                return self.pid_provider_xml.v3
         try:
-            # Valida se existe URL para processar
-            if not self.url:
-                raise ValueError(_("URL is required"))
-
-            if not force_update and self.article and self.article.valid:
-                if self.status != ArticleSource.StatusChoices.COMPLETED:
-                    self.mark_as_completed()
-                return
-
-            # Lista para armazenar detalhes do processamento
-            detail = []
-
-            # Define status inicial como pendente
-            self.status = ArticleSource.StatusChoices.PENDING
-
-            # Verifica se precisa criar/baixar o arquivo XML
-            if (
-                force_update
-                or not self.file
-                or not self.file.path
-                or not os.path.isfile(self.file.path)
-            ):
-                logging.info("create file")
-                detail.append("create file")
-                self.create_file()  # Método que baixa/cria o arquivo XML
-                detail.append("created file")
-
-            self.set_pid_provider_xml(
-                user, detail, force_update, auto_solve_pid_conflict
-            )
-            if not self.pid_provider_xml or not self.pid_provider_xml.v3:
-                raise ValueError("Missing pid_provider_xml")
-
-            # Se tem v3, pode criar o artigo
-            if force_update or not self.article or not self.article.valid:
-                logging.info("create article")
-                detail.append("create article")
-
-                # Chama a função para carregar/criar o artigo
-                self.article = load_article(
-                    user=user,
-                    xml=None,
-                    file_path=self.file.path,
-                    v3=self.pid_provider_xml.v3,
-                    pp_xml=self.pid_provider_xml,
-                )
-                # Verifica se o artigo foi criado com sucesso
-                if self.article.valid:
-                    detail.append("created valid article")
-                    self.mark_as_completed()  # Marca o processamento como concluído
-                else:
-                    detail.append("created incomplete article")
-
-            logging.info((self.article, self.pid_provider_xml))
-            self.detail = detail
-            self.save()
-
-        except Exception as e:
-            # Registra a exceção no log
-            logging.exception(e)
-
-            # Obtém informações detalhadas da exceção
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-
-            # Adiciona informações do erro aos detalhes
-            detail.append(str({"error_type": str(type(e)), "error_message": str(e)}))
-            self.detail = detail
-
-            # Marca o processamento como erro
-            self.mark_as_error()
-
-    def set_pid_provider_xml(self, user, detail, force_update, auto_solve_pid_conflict):
-        # Verifica se precisa gerar o PID para o XML
-        if force_update or not self.pid_provider_xml:
-            logging.info("create pid_provider_xml")
             detail.append("create pid_provider_xml")
 
             # Instancia o provedor de PIDs
@@ -1793,10 +1603,26 @@ class ArticleSource(CommonControlField):
             if v3:
                 # Associa o PidProviderXML ao ArticleSource
                 self.pid_provider_xml = PidProviderXML.objects.get(v3=v3)
-                detail.append("created pid_provider_xml")
+                detail.append("set pid_provider_xml")
+                return v3
             else:
                 # Registra erro se não conseguiu obter v3
                 detail.append(str(response))
+        except Exception as e:
+            logging.exception(e)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            unexpected_event = UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail=dict(
+                    function="article.models.ArticleSource.get_or_create_pid_v3",
+                    article_source_id=self.id,
+                    sps_pkg_name=self.sps_pkg_name,
+                    url=self.url,
+                ),
+            )
+            detail.append(str(unexpected_event.data))
+            raise e
 
 
 class ArticleAvailability(CommonControlField):
