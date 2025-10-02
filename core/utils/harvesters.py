@@ -1,0 +1,462 @@
+import logging
+from datetime import datetime
+from typing import Any, Dict, Generator, Optional
+from urllib.parse import urlencode
+
+from core.utils.utils import fetch_data
+
+
+class AMHarvester:
+    """
+    Harvester para coletar documentos do ArticleMeta.
+    """
+
+    def __init__(
+        self,
+        record_type: str,
+        collection_acron: str,
+        from_date: Optional[str] = None,
+        until_date: Optional[str] = None,
+        limit: int = 100,
+        timeout: int = 30,
+    ):
+        """
+        Inicializa o harvester do ArticleMeta.
+
+        Args:
+            collection_acron: Acrônimo da coleção (ex: 'scl', 'mex')
+            from_date: Data inicial no formato YYYY-MM-DD
+            until_date: Data final no formato YYYY-MM-DD
+            limit: Número de documentos por página
+            timeout: Timeout em segundos para requisições
+        """
+        self.record_type = record_type
+        self.base_url = f"https://articlemeta.scielo.org/api/v1/{self.record_type}/identifiers"
+        self.collection_acron = collection_acron
+        self.from_date = from_date or "1997-01-01"
+        self.until_date = until_date or datetime.utcnow().isoformat()[:10]
+        self.limit = limit
+        self.timeout = timeout
+
+    def harvest_documents(self) -> Generator[Dict[str, Any], None, None]:
+        """
+        Função geradora que retorna documentos do ArticleMeta.
+
+        Yields:
+            Dict contendo:
+                - pid_v2: Identificador PID v2
+                - pid_v3: Identificador PID v3 (se disponível)
+                - collection_acron: Acrônimo da coleção
+                - processing_date: Data de processamento
+                - journal_acron: Acrônimo do periódico (se disponível)
+                - publication_year: Ano de publicação (se disponível)
+                - xml_url: URL para obter o XML completo
+                - source_type: 'articlemeta'
+                - metadata: Metadados adicionais do documento
+        """
+        offset = 0
+
+        while True:
+            try:
+                # Monta parâmetros da requisição
+                params = {
+                    "collection": self.collection_acron,
+                    "limit": self.limit,
+                    "offset": offset,
+                    "from": self.from_date,
+                    "until": self.until_date,
+                }
+
+                # Remove parâmetros None
+                params = {k: v for k, v in params.items() if v is not None}
+
+                # Constrói URL
+                url = f"{self.base_url}?{urlencode(params)}"
+
+                logging.info(f"Fetching AM documents from: {url}")
+
+                # Faz requisição
+                response = fetch_data(url, json=True, timeout=self.timeout, verify=True)
+
+                # Processa objetos retornados
+                objects = response.get("objects", [])
+
+                if not objects:
+                    logging.info(
+                        f"No more documents found for collection {self.collection_acron}"
+                    )
+                    break
+
+                for item in objects:
+                    # Extrai dados básicos
+                    pid_v2 = item.get("code")
+                    if not pid_v2:
+                        logging.warning(f"Document without PID v2: {item}")
+                        continue
+
+                    # Constrói URL do XML
+                    format_param = ""
+                    if self.record_type == "article":
+                        format_param = "&format=xmlrsps"
+                    url = (
+                        f"https://articlemeta.scielo.org/api/v1/{self.record_type}?"
+                        f"collection={self.collection_acron}&code={pid_v2}{format_param}"
+                    )
+
+                    # Monta dicionário padronizado
+                    document = {
+                        "pid_v2": pid_v2,
+                        "pid_v3": item.get("pid_v3"),  # Pode não existir no AM
+                        "collection_acron": self.collection_acron,
+                        "processing_date": item.get("processing_date"),
+                        "journal_acron": item.get("journal_acronym"),
+                        "publication_year": self._extract_year(
+                            item.get("processing_date")
+                        ),
+                        "url": url,
+                        "source_type": "articlemeta",
+                        "metadata": {
+                            "raw_data": item,
+                            "harvested_at": datetime.utcnow().isoformat(),
+                        },
+                    }
+
+                    yield document
+
+                # Verifica se há próxima página
+                meta = response.get("meta", {})
+                if not meta.get("next"):
+                    logging.info(
+                        f"Reached last page for collection {self.collection_acron}"
+                    )
+                    break
+
+                offset += self.limit
+
+            except Exception as e:
+                logging.error(f"Error harvesting AM documents: {e}")
+                break
+
+    def _extract_year(self, date_str: Optional[str]) -> Optional[str]:
+        """Extrai o ano de uma string de data."""
+        if date_str and len(date_str) >= 4:
+            return date_str[:4]
+        return None
+
+
+class OPACHarvester:
+    """
+    Harvester para coletar documentos do OPAC.
+    """
+
+    def __init__(
+        self,
+        domain: str = "www.scielo.br",
+        collection_acron: str = "scl",
+        from_date: Optional[str] = None,
+        until_date: Optional[str] = None,
+        limit: int = 100,
+        timeout: int = 5,
+    ):
+        """
+        Inicializa o harvester do OPAC.
+
+        Args:
+            domain: Domínio do OPAC (ex: 'www.scielo.br')
+            collection_acron: Acrônimo da coleção (ex: 'scl')
+            from_date: Data inicial no formato YYYY-MM-DD
+            until_date: Data final no formato YYYY-MM-DD
+            limit: Número de documentos por página
+            timeout: Timeout em segundos para requisições
+        """
+        self.domain = domain
+        self.collection_acron = collection_acron
+        self.from_date = from_date or "2000-01-01"
+        self.until_date = until_date or datetime.utcnow().isoformat()[:10]
+        self.limit = limit
+        self.timeout = timeout
+
+    def harvest_documents(self) -> Generator[Dict[str, Any], None, None]:
+        """
+        Função geradora que retorna documentos do OPAC.
+
+        Yields:
+            Dict contendo:
+                - pid_v1: Identificador PID v1
+                - pid_v2: Identificador PID v2
+                - pid_v3: Identificador PID v3
+                - collection_acron: Acrônimo da coleção
+                - journal_acron: Acrônimo do periódico
+                - publication_date: Data de publicação
+                - publication_year: Ano de publicação
+                - xml_url: URL para obter o XML completo
+                - source_type: 'opac'
+                - metadata: Metadados adicionais do documento
+        """
+        page = 1
+        total_pages = None
+
+        while True:
+            try:
+                # Constrói URL
+                url = (
+                    f"https://{self.domain}/api/v1/counter_dict?"
+                    f"end_date={self.until_date}&begin_date={self.from_date}"
+                    f"&limit={self.limit}&page={page}"
+                )
+
+                logging.info(f"Fetching OPAC documents from: {url}")
+
+                # Faz requisição
+                response = fetch_data(url, json=True, timeout=self.timeout, verify=True)
+
+                # Define total de páginas na primeira iteração
+                if total_pages is None:
+                    total_pages = response.get("pages", 0)
+                    logging.info(f"Total pages to process: {total_pages}")
+
+                documents = response.get("documents", {})
+
+                if not documents:
+                    logging.info(f"No documents found on page {page}")
+                    break
+
+                for pid_v3, item in documents.items():
+                    # Valida dados mínimos
+                    if not pid_v3 or not item.get("journal_acronym"):
+                        logging.warning(f"Invalid document data: {item}")
+                        continue
+
+                    # Constrói URL do XML
+                    journal_acron = item["journal_acronym"]
+                    xml_url = f"https://{self.domain}/j/{journal_acron}/a/{pid_v3}/?format=xml"
+
+                    # Extrai data de origem
+                    origin_date = self._parse_gmt_date(
+                        item.get("update") or item.get("create")
+                    )
+
+                    # Extrai ano de publicação
+                    pub_date = item.get("publication_date", "")
+                    publication_year = pub_date[:4] if len(pub_date) >= 4 else None
+
+                    # Monta dicionário padronizado
+                    document = {
+                        "pid_v1": item.get("pid_v1"),
+                        "pid_v2": item.get("pid_v2"),
+                        "pid_v3": pid_v3,
+                        "collection_acron": self.collection_acron,
+                        "journal_acron": journal_acron,
+                        "publication_date": pub_date,
+                        "publication_year": publication_year,
+                        "url": xml_url,
+                        "source_type": "opac",
+                        "metadata": {
+                            "aop_pid": item.get("aop_pid"),
+                            "default_language": item.get("default_language"),
+                            "created_at": self._parse_gmt_date(item.get("create")),
+                            "updated_at": self._parse_gmt_date(item.get("update")),
+                            "origin_date": origin_date,
+                            "raw_data": item,
+                            "harvested_at": datetime.utcnow().isoformat(),
+                        },
+                    }
+
+                    yield document
+
+                # Verifica se deve continuar
+                page += 1
+                if total_pages and page > total_pages:
+                    logging.info(f"Completed all {total_pages} pages")
+                    break
+
+            except Exception as e:
+                logging.error(f"Error harvesting OPAC documents on page {page}: {e}")
+                break
+
+    def _parse_gmt_date(self, date_str: Optional[str]) -> Optional[str]:
+        """
+        Converte data GMT para formato ISO.
+
+        Args:
+            date_str: String de data no formato GMT (ex: "Sat, 28 Nov 2020 23:42:43 GMT")
+
+        Returns:
+            Data no formato ISO (YYYY-MM-DD) ou None se falhar
+        """
+        if not date_str:
+            return None
+
+        try:
+            dt = datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S %Z")
+            return dt.isoformat()[:10]
+        except (ValueError, TypeError) as e:
+            logging.warning(f"Failed to parse GMT date '{date_str}': {e}")
+            return None
+
+
+class HarvestingOrchestrator:
+    """
+    Orquestrador para coordenar coleta de múltiplas fontes.
+    """
+
+    @staticmethod
+    def harvest_all_sources(
+        sources: list[str] = None,
+        collections: list[str] = None,
+        from_date: str = None,
+        until_date: str = None,
+        **kwargs,
+    ) -> Generator[Dict[str, Any], None, None]:
+        """
+        Coleta documentos de múltiplas fontes e coleções.
+
+        Args:
+            sources: Lista de fontes ('articlemeta', 'opac'). Default: ambas
+            collections: Lista de acrônimos de coleções. Default: todas conhecidas
+            from_date: Data inicial no formato YYYY-MM-DD
+            until_date: Data final no formato YYYY-MM-DD
+            **kwargs: Parâmetros adicionais para os harvesters
+
+        Yields:
+            Documentos de todas as fontes e coleções especificadas
+        """
+        sources = sources or ["articlemeta", "opac"]
+        collections = collections or [
+            "arg",
+            "bol",
+            "chl",
+            "col",
+            "cri",
+            "cub",
+            "ecu",
+            "esp",
+            "mex",
+            "prt",
+            "pry",
+            "psi",
+            "rve",
+            "scl",
+            "spa",
+            "sza",
+            "ury",
+            "ven",
+            "wid",
+        ]
+
+        for source in sources:
+            for collection in collections:
+                logging.info(
+                    f"Starting harvest from {source} for collection {collection}"
+                )
+
+                if source == "articlemeta":
+                    harvester = AMHarvester(
+                        collection_acron=collection,
+                        from_date=from_date,
+                        until_date=until_date,
+                        **kwargs,
+                    )
+                elif source == "opac":
+                    # OPAC geralmente tem domínios específicos por coleção
+                    domain = HarvestingOrchestrator._get_opac_domain(collection)
+                    if domain:
+                        harvester = OPACHarvester(
+                            domain=domain,
+                            collection_acron=collection,
+                            from_date=from_date,
+                            until_date=until_date,
+                            **kwargs,
+                        )
+                    else:
+                        logging.warning(
+                            f"No OPAC domain configured for collection {collection}"
+                        )
+                        continue
+                else:
+                    logging.warning(f"Unknown source: {source}")
+                    continue
+
+                # Gera documentos do harvester
+                for document in harvester.harvest_documents():
+                    yield document
+
+    @staticmethod
+    def _get_opac_domain(collection: str) -> Optional[str]:
+        """
+        Retorna o domínio OPAC para uma coleção.
+
+        Args:
+            collection: Acrônimo da coleção
+
+        Returns:
+            Domínio do OPAC ou None se não configurado
+        """
+        # Mapeamento de coleções para domínios
+        # Ajuste conforme sua configuração real
+        domain_map = {
+            "scl": "www.scielo.br",
+            "arg": "www.scielo.org.ar",
+            "chl": "www.scielo.cl",
+            "col": "www.scielo.org.co",
+            "cub": "scielo.sld.cu",
+            "esp": "scielo.isciii.es",
+            "mex": "www.scielo.org.mx",
+            "prt": "www.scielo.mec.pt",
+            "ury": "www.scielo.edu.uy",
+            "ven": "www.scielo.org.ve",
+            # Adicione outros conforme necessário
+        }
+
+        return domain_map.get(collection)
+
+
+# Exemplo de uso
+def example_usage():
+    """
+    Exemplos de como usar os harvesters.
+    """
+
+    # Exemplo 1: Coletar do ArticleMeta
+    print("=== ArticleMeta Harvesting ===")
+    am_harvester = AMHarvester(collection_acron="scl", from_date="2024-01-01", limit=10)
+
+    for i, doc in enumerate(am_harvester.harvest_documents(), 1):
+        print(f"Document {i}:")
+        print(f"  PID v2: {doc['pid_v2']}")
+        print(f"  XML URL: {doc['xml_url']}")
+        if i >= 3:  # Limita exemplo a 3 documentos
+            break
+
+    # Exemplo 2: Coletar do OPAC
+    print("\n=== OPAC Harvesting ===")
+    opac_harvester = OPACHarvester(
+        domain="www.scielo.br", collection_acron="scl", from_date="2024-01-01", limit=10
+    )
+
+    for i, doc in enumerate(opac_harvester.harvest_documents(), 1):
+        print(f"Document {i}:")
+        print(f"  PID v3: {doc['pid_v3']}")
+        print(f"  Journal: {doc['journal_acron']}")
+        print(f"  XML URL: {doc['xml_url']}")
+        if i >= 3:  # Limita exemplo a 3 documentos
+            break
+
+    # Exemplo 3: Coletar de múltiplas fontes
+    print("\n=== Multi-source Harvesting ===")
+    orchestrator = HarvestingOrchestrator()
+
+    for i, doc in enumerate(
+        orchestrator.harvest_all_sources(
+            sources=["articlemeta"],
+            collections=["scl"],
+            from_date="2024-01-01",
+            limit=5,
+        ),
+        1,
+    ):
+        print(f"Document {i} from {doc['source_type']}:")
+        print(f"  Collection: {doc['collection_acron']}")
+        print(f"  XML URL: {doc['xml_url']}")
+        if i >= 5:  # Limita exemplo a 5 documentos
+            break
