@@ -1,6 +1,9 @@
 from haystack import indexes
 
+import re
+
 from journal.models import SciELOJournal
+from core.models import LicenseStatement
 
 from .models import Article
 from .mods_mappings import (MODS_TYPE_OF_RESOURCE_MAPPING, DISPLAY_LABEL, ISO_639_1_TO_2B,
@@ -633,33 +636,6 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
         except Exception:
             return []
 
-    def _prepare_affiliation_data(self, researcher):
-        """Prepara dados de afiliação estruturados"""
-        if not researcher.affiliation or not researcher.affiliation.institution:
-            return None
-
-        institution = researcher.affiliation.institution
-        affiliation_parts = []
-
-        # Nome da instituição
-        if institution.institution_identification:
-            affiliation_parts.append(institution.institution_identification)
-
-        # Localização estruturada
-        if institution.location:
-            location_parts = []
-            if institution.location.city:
-                location_parts.append(institution.location.city)
-            if institution.location.state:
-                location_parts.append(institution.location.state)
-            if institution.location.country:
-                location_parts.append(institution.location.country)
-
-            if location_parts:
-                affiliation_parts.append(", ".join(location_parts))
-
-        return " - ".join(affiliation_parts) if affiliation_parts else str(researcher.affiliation)
-
     # MÉTODOS DE PREPARAÇÃO OAI-PMH BÁSICOS
     def prepare_id(self, obj):
         """Identificador OAI-PMH do registro"""
@@ -870,7 +846,8 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
                 if source_name.upper() == 'ORCID':
                     identifier_data["authority"] = "orcid"
 
-                identifiers.append(identifier_data)
+                if identifier_data not in identifiers:
+                    identifiers.append(identifier_data)
 
         return identifiers
 
@@ -1302,7 +1279,8 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
         try:
             if obj.languages.exists():
                 for i, lang in enumerate(obj.languages.all()):
-                    if not (lang and lang.code2):
+                    print(i, lang.code2)
+                    if not (lang and lang.code3):
                         continue
 
                     code2 = lang.code2.strip().lower()
@@ -1476,7 +1454,6 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
         Valida formato DOI segundo padrões internacionais
         Referência: https://www.doi.org/doi_handbook/2_Numbering.html
         """
-        import re
         if not value:
             return False
 
@@ -1774,7 +1751,6 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
         FONTE: LicenseStatement.parse_url() (método estático existente)
         """
         try:
-            from core.models import LicenseStatement
             return LicenseStatement.parse_url(url)
         except Exception:
             return {}
@@ -2311,7 +2287,6 @@ class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
                 primary_language = obj.languages.first()
                 if primary_language and primary_language.code2:
                     # Mapear para iso639-2b
-                    from .mods_mappings import ISO_639_1_TO_2B
                     lang_code_2b = ISO_639_1_TO_2B.get(
                         primary_language.code2.lower(),
                         primary_language.code2
