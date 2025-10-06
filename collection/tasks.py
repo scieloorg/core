@@ -36,7 +36,7 @@ def fetch_with_schema_guess(host_or_url, timeout=10):
     for schema in ["http", "https"]:
         url = f"{schema}://{host_or_url}"
         try:
-            resp = requests.post(url, timeout=timeout)
+            resp = requests.get(url, timeout=timeout)
             resp.raise_for_status()
             return url
         except requests.exceptions.SSLError:
@@ -84,9 +84,11 @@ def build_collection_webhook_for_all(event=False, headers=None):
 
 @celery_app.task
 def build_collection_webhook(event, collection_acron, headers=None):
-    collection = Collection.objects.get(acron3=collection_acron)
+    collection = Collection.objects.get(acron3=collection_acron, is_active=True)
+    
     if not collection.domain:
         return None
+    
     serializer = CollectionSerializer(collection)
     payload = {
         "event": event,
