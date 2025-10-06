@@ -51,11 +51,10 @@ def _send_payload(url, headers, payload):
 
     try:
         resp = requests.post(pattern_url, json=payload, headers=headers, timeout=5)
-        if resp.status_code != 200:
-            logging.error(f"Erro ao enviar dados de coleção para {url}. Status: {resp.status_code}. Body: {resp.text}")  
         resp.raise_for_status()
         return resp.json()
     except Exception as e:
+        logging.error(f"Erro ao enviar dados de coleção para {url}. Status: {resp.status_code}. Body: {resp.text}")  
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
             exception=e,
