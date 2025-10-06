@@ -4,12 +4,13 @@ from datetime import datetime
 
 from django.contrib.auth import get_user_model
 
+from collection.models import Collection
+from pid_provider.models import CollectionPidRequest, PidProviderXML
+from pid_provider.provider import PidProvider
+from tracker.models import UnexpectedEvent
+
 # from django.utils.translation import gettext as _
 
-from collection.models import Collection
-from pid_provider.provider import PidProvider
-from pid_provider.models import CollectionPidRequest, PidProviderXML
-from tracker.models import UnexpectedEvent
 
 User = get_user_model()
 
@@ -57,7 +58,7 @@ def provide_pid_for_opac_and_am_xml(
             origin_date=origin_date,
             force_update=force_update,
             is_published=True,
-            detail=detail
+            detail=detail,
         )
         CollectionPidRequest.create_or_update(
             user=user,

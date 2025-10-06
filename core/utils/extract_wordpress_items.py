@@ -2,6 +2,7 @@
 Extrai itens do WordPress (páginas/posts) de um export WXR,
 incluindo conteúdo multilíngue e attachments para documentos.
 """
+
 import re
 from xml.etree import ElementTree as ET
 
@@ -87,11 +88,13 @@ def collect_categories(item):
     """Coleta categorias do item."""
     categories = []
     for cat in item.findall("category"):
-        categories.append({
-            "domain": cat.get("domain"),
-            "nicename": cat.get("nicename"),
-            "text": (cat.text or "").strip(),
-        })
+        categories.append(
+            {
+                "domain": cat.get("domain"),
+                "nicename": cat.get("nicename"),
+                "text": (cat.text or "").strip(),
+            }
+        )
     return categories
 
 
@@ -116,10 +119,7 @@ def extract_slug_i18n(metas, default_slug):
     if default_slug:
         slugs["pt-br"] = default_slug
 
-    slug_mappings = [
-        ("_wpglobus_slug_en", "en"),
-        ("_wpglobus_slug_es", "es")
-    ]
+    slug_mappings = [("_wpglobus_slug_en", "en"), ("_wpglobus_slug_es", "es")]
 
     for meta_key, lang in slug_mappings:
         value = meta_dict.get(meta_key)
@@ -175,18 +175,18 @@ def extract_multilingual_meta_fields(metas):
 
     # Campos que podem ter conteúdo multilíngue
     multilingual_meta_keys = [
-        'pageTitle',
-        'pageDescription',
-        'acordeons_0_title',
-        'acordeons_0_content',
-        'acordeons_1_title',
-        'acordeons_1_content',
+        "pageTitle",
+        "pageDescription",
+        "acordeons_0_title",
+        "acordeons_0_content",
+        "acordeons_1_title",
+        "acordeons_1_content",
         # Adicione mais campos conforme necessário
     ]
 
     for meta_key in multilingual_meta_keys:
         meta_value = meta_dict.get(meta_key)
-        if meta_value and '{:' in meta_value:
+        if meta_value and "{:" in meta_value:
             # Processar conteúdo WPGlobus
             parsed_content = split_wpglobus(meta_value)
             if parsed_content:
@@ -198,9 +198,9 @@ def extract_multilingual_meta_fields(metas):
 def get_page_template(metas):
     """Extrai o template da página."""
     for key, value in metas:
-        if key == '_wp_page_template' and value:
+        if key == "_wp_page_template" and value:
             return value
-    return 'default'
+    return "default"
 
 
 def extract_attachments(xml_root):
@@ -227,15 +227,25 @@ def extract_attachments(xml_root):
         if not attachment_url:
             # Fallback: tentar extrair do guid
             guid = get_text(item, "guid")
-            if guid and (guid.startswith('http') and any(ext in guid.lower() for ext in ['.pdf', '.doc', '.docx', '.xls', '.xlsx'])):
+            if guid and (
+                guid.startswith("http")
+                and any(
+                    ext in guid.lower()
+                    for ext in [".pdf", ".doc", ".docx", ".xls", ".xlsx"]
+                )
+            ):
                 attachment_url = guid
 
         if attachment_url:
             attachments[str(post_id)] = {
-                'url': attachment_url,
-                'filename': attachment_url.split('/')[-1] if '/' in attachment_url else attachment_url,
-                'post_id': post_id,
-                'title': get_text(item, "title") or "",
+                "url": attachment_url,
+                "filename": (
+                    attachment_url.split("/")[-1]
+                    if "/" in attachment_url
+                    else attachment_url
+                ),
+                "post_id": post_id,
+                "title": get_text(item, "title") or "",
             }
 
     return attachments
@@ -252,11 +262,11 @@ def resolve_document_urls(document_i18n, attachments):
             continue
 
         # Se já é uma URL, manter
-        if doc_value.startswith(('http://', 'https://')):
+        if doc_value.startswith(("http://", "https://")):
             resolved_docs[lang_code] = doc_value
         # Se é ID numérico, tentar resolver
         elif doc_value.isdigit() and doc_value in attachments:
-            resolved_docs[lang_code] = attachments[doc_value]['url']
+            resolved_docs[lang_code] = attachments[doc_value]["url"]
         # Senão, manter original (fallback)
         else:
             resolved_docs[lang_code] = doc_value
@@ -325,28 +335,30 @@ def extract_items(xml_path):
         # Obter template da página
         page_template = get_page_template(metas)
 
-        items.append({
-            "post_type": post_type,
-            "status": status,
-            "post_id": post_id,
-            "parent_id": parent_id,
-            "menu_order": menu_order,
-            "is_sticky": is_sticky,
-            "lang_hint": lang_hint,
-            "title": title_i18n.get("pt-br", raw_title),
-            "title_i18n": title_i18n,
-            "content": content_i18n.get("pt-br", raw_content),
-            "content_i18n": content_i18n,
-            "slug": slug,
-            "slug_i18n": slug_i18n,
-            "external_link_i18n": external_link_i18n,
-            "document_i18n": document_i18n,  # Agora com URLs reais
-            "categories": categories,
-            "metas": metas,
-            "multilingual_meta": multilingual_meta,
-            "page_template": page_template,
-            # NOVO: Informações de attachments para debug
-            "attachments_available": len(attachments),
-        })
+        items.append(
+            {
+                "post_type": post_type,
+                "status": status,
+                "post_id": post_id,
+                "parent_id": parent_id,
+                "menu_order": menu_order,
+                "is_sticky": is_sticky,
+                "lang_hint": lang_hint,
+                "title": title_i18n.get("pt-br", raw_title),
+                "title_i18n": title_i18n,
+                "content": content_i18n.get("pt-br", raw_content),
+                "content_i18n": content_i18n,
+                "slug": slug,
+                "slug_i18n": slug_i18n,
+                "external_link_i18n": external_link_i18n,
+                "document_i18n": document_i18n,  # Agora com URLs reais
+                "categories": categories,
+                "metas": metas,
+                "multilingual_meta": multilingual_meta,
+                "page_template": page_template,
+                # NOVO: Informações de attachments para debug
+                "attachments_available": len(attachments),
+            }
+        )
 
     return items

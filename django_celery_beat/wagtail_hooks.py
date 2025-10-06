@@ -36,20 +36,20 @@ class PeriodicTaskAdmin(ModelAdmin):
     celery_app = current_app
     date_hierarchy = "start_time"
     list_display = (
-        "__str__",
-        "enabled",
-        "interval",
-        "start_time",
+        "name",
+        "task",
+        "description",
+        "kwargs",
         "last_run_at",
-        "one_off",
     )
     list_filter = [
         "enabled",
         "one_off",
-        "task",
+        "interval",
+        "start_time",
     ]
     actions = ("enable_tasks", "disable_tasks", "toggle_tasks", "run_tasks")
-    search_fields = ("name",)
+    search_fields = ("name", "task")
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}

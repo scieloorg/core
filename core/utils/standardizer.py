@@ -1,6 +1,5 @@
 import logging
 
-
 ITEMS_SEP_FOR_LOCATION = [";", ", ", "|", "/"]
 PARTS_SEP_FOR_LOCATION = [" - ", "- ", " -", ", ", "(", "/"]
 

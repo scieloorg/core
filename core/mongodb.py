@@ -1,11 +1,10 @@
 from django.conf import settings
-
 from pymongo import MongoClient
 
 
 def get_client(uri=None):
     """
-    Returns a MongoClient instance. 
+    Returns a MongoClient instance.
     If no URI is provided, it uses the default MongoDB URI from settings.
 
     Args:
@@ -54,12 +53,9 @@ def write_to_db(data, database, collection, force_update=True, client=None):
             col.insert_one(data)
         else:
             col.replace_one(
-                {
-                    "code": data["code"],
-                    "collection": data["collection"]
-                },
+                {"code": data["code"], "collection": data["collection"]},
                 data,
-                upsert=True
+                upsert=True,
             )
         return True
 

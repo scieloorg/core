@@ -2,10 +2,10 @@ import csv
 import os
 
 from django.contrib.auth import get_user_model
-from django.db import models, IntegrityError
-from django.db.models import Case, When, Value, IntegerField
-from django.utils.translation import gettext_lazy as _
+from django.db import IntegrityError, models
+from django.db.models import Case, IntegerField, Value, When
 from django.utils.html import strip_tags
+from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel
 from wagtail.fields import RichTextField
 from wagtail.search import index
@@ -154,7 +154,7 @@ class Language(CommonControlField):
                 fields=[
                     "name",
                 ]
-            )
+            ),
         ]
 
     def __unicode__(self):
@@ -585,14 +585,15 @@ class BaseLogo(models.Model):
     """
     Model para armazenar diferentes versões de logos da coleção
     com suporte a múltiplos tamanhos e idiomas
-    """   
+    """
+
     logo = models.ForeignKey(
         "wagtailimages.Image",
         on_delete=models.SET_NULL,
         related_name="+",
         null=True,
         blank=True,
-        verbose_name=_("Logo Image")
+        verbose_name=_("Logo Image"),
     )
     language = models.ForeignKey(
         Language,
@@ -602,26 +603,30 @@ class BaseLogo(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
     )
-            
+
     panels = [
         FieldPanel("logo"),
         FieldPanel("language"),
     ]
-    
+
     class Meta:
         abstract = True
         ordering = ['sort_order', 'language']
 
+    def __str__(self):
+        return f"{self.collection} - {self.language} ({self.size})"
+
 
 ICON_MAP = {
-    'twitter': 'icon-twitter',
-    'instagram': 'icon-instagram',
-    'linkedin': 'icon-linkedin',
-    'github': 'icon-github',
-    'facebook': 'icon-facebook',
-    'tiktok': 'icon-tiktok',
-    'youtube': 'icon-youtube',
+    "twitter": "icon-twitter",
+    "instagram": "icon-instagram",
+    "linkedin": "icon-linkedin",
+    "github": "icon-github",
+    "facebook": "icon-facebook",
+    "tiktok": "icon-tiktok",
+    "youtube": "icon-youtube",
 }
+
 
 class SocialNetwork(models.Model):
     name = models.CharField(
@@ -658,8 +663,8 @@ class SocialNetwork(models.Model):
     def data(self):
         """Retorna um dicionário com os dados essenciais da rede social."""
         return {
-            'name': self.name,
-            'url': self.url,
+            "name": self.name,
+            "url": self.url,
         }
 
     def __str__(self):
