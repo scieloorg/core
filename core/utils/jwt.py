@@ -1,4 +1,6 @@
+import logging
 import time
+
 import jwt
 from django.conf import settings
 
@@ -16,8 +18,10 @@ def issue_jwt_for_flask(sub="service:django", claims=None):
     if claims:
         payload.update(claims)
     
-    with open(settings.JWT_PRIVATE_KEY_PATH, "rb") as f: 
-        private_key = f.read()
+    private_key = get_jwt_private_key()
+    
+    if not private_key:
+        return None
     
     token = jwt.encode(
         payload,
@@ -26,3 +30,11 @@ def issue_jwt_for_flask(sub="service:django", claims=None):
         headers={"alg": "RS256", "typ": "JWT"},
     )
     return token
+
+def get_jwt_private_key():
+    try:
+        with open(settings.JWT_PRIVATE_KEY_PATH, "rb") as f:
+            return f.read()
+    except (FileNotFoundError, IOError):
+        logging.error("JWT_PRIVATE_KEY_PATH not found")
+        return None

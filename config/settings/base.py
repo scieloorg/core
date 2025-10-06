@@ -581,12 +581,8 @@ PROFILING_LOG_HIGH_MEMORY = env.int('DJANGO_PROFILING_LOG_HIGH_MEMORY', default=
 PROFILING_LOG_ALL = env.bool('DJANGO_PROFILING_LOG_ALL', default=True)
 
 
-# JWT para dados de colleção no opac_5
+# JWT para dados de coleção no opac_5
 JWT_PRIVATE_KEY_PATH = env.str("JWT_PRIVATE_KEY_PATH", default="/app/jwt_private.pem")
-
-with open(JWT_PRIVATE_KEY_PATH, "rb") as f:
-    JWT_PRIVATE_KEY = f.read()
-
 JWT_ALG = "RS256"
 JWT_ISS = env.str("JWT_ISS", default="https://api.seu-django.com")
 JWT_AUD = env.str("JWT_AUD", default="seu-flask-servico")
