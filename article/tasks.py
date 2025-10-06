@@ -596,7 +596,7 @@ def task_load_article_from_pp_xml(
             v3=pp_xml.v3,
             pp_xml=pp_xml,
         )
-        for item in article.legacy_article.all():
+        for item in article.legacy_article.select_related('collection').all():
             pp_xml.collections.add(item.collection)
         # Verifica disponibilidade (URLs, assets, etc)
         article.check_availability(user, collection_acron_list, timeout, is_activate)
