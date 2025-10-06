@@ -24,7 +24,6 @@ from collection.models import Collection
 from config.menu import get_menu_order
 
 
-
 class ArticleAvailabilitySnippetViewSet(SnippetViewSet):
     model = ArticleAvailability
     
@@ -48,6 +47,19 @@ class CollectionFilter(SimpleListFilter):
     def queryset(self, request, queryset):
         if self.value():
             return queryset.filter(journal__scielojournal__collection__id=self.value())
+
+
+class ArticleSourceCollectionFilter(SimpleListFilter):
+    title = _("Collection")
+    parameter_name = "collection"
+
+    def lookups(self, request, model_admin):
+        collections = Collection.objects.filter(is_active=True)
+        return [(collection.id, collection.main_name) for collection in collections]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(am_article__collection__id=self.value())
 
 
 class ArticleCreateView(CreateView):
@@ -233,21 +245,11 @@ class ArticleSourceSnippetViewSet(SnippetViewSet):
     menu_order = 200
 
     # List view configuration
-    list_display = ["__str__", "status", "source_date", "article", "updated"]
-    list_filter = ["status", "source_date", "created", "updated"]
-    search_fields = ["url", "file"]
+    list_display = ["am_article", "pid_provider_xml", "status", "source_date", "updated"]
+    list_filter = ["status", "am_article__collection",]
+    search_fields = ["url", "pid_provider_xml__v3", "am_article__collection__acronym"]
     ordering = ["-updated"]
     list_per_page = 25
-
-    # Form configuration
-    form_fields_exclude = []
-
-    # Custom actions
-    def get_queryset(self, request):
-        """Optimize queryset with select_related"""
-        qs = super().get_queryset(request)
-        if qs:
-            return qs.select_related("article", "pid_provider_xml")
 
 
 # Register the snippet
