@@ -635,7 +635,7 @@ class BaseLogo(models.Model):
         ordering = ['sort_order', 'language']
 
     def __str__(self):
-        return f"{self.collection} - {self.language} ({self.size})"
+        return f"{self.collection} - {self.language}"
 
 
 ICON_MAP = {
