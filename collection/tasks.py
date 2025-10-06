@@ -25,16 +25,16 @@ def task_load_collections(self, user_id=None, username=None):
     Collection.load(user)
 
 
-def fetch_with_schema_guess(host_or_url, timeout=10):
+def fetch_with_protocol_guess(host_or_url, timeout=10):
     """
-    Algumas coleções não possuem o schema no domínio, por isso é necessário
-    tentar os schemas http e https para obter o resultado correto.
+    Algumas coleções não possuem o protocolo no domínio, por isso é necessário
+    tentar os protocolos http e https para obter o resultado correto.
     """
     if "://" in host_or_url:
         return host_or_url
     
-    for schema in ["http", "https"]:
-        url = f"{schema}://{host_or_url}"
+    for protocol in ["http", "https"]:
+        url = f"{protocol}://{host_or_url}"
         try:
             resp = requests.get(url, timeout=timeout)
             resp.raise_for_status()
@@ -46,7 +46,7 @@ def fetch_with_schema_guess(host_or_url, timeout=10):
 
 
 def _send_payload(url, headers, payload):
-    url_with_schema = fetch_with_schema_guess(url)
+    url_with_schema = fetch_with_protocol_guess(url)
     pattern_url = url_with_schema + settings.ENDPOINT_COLLECTION
 
     try:
