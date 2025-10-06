@@ -78,7 +78,7 @@ class BasePidProvider:
             force_update=force_update,
             is_published=is_published,
             origin=origin,
-            registered_in_core=self.caller == "core",
+            registered_in_core=registered_in_core or self.caller == "core",
             auto_solve_pid_conflict=auto_solve_pid_conflict,  # False = deixar sistema resolver, True = user resolve
         )
         registered["apply_xml_changes"] = self.caller == "core" and registered.get(

@@ -7,12 +7,9 @@ from wagtail.snippets.views.snippets import (
     SnippetViewSetGroup,
 )
 
-
-from .models import Issue, IssueExport
 from config.menu import get_menu_order
 from config.settings.base import COLLECTION_TEAM, JOURNAL_TEAM
-
-from .models import Issue
+from issue.models import Issue, IssueExporter
 
 
 class IssueCreateView(CreateView):
@@ -32,11 +29,8 @@ class IssueAdminSnippetViewSet(SnippetViewSet):
     exclude_from_explorer = False
 
     list_display = (
-        "journal",
-        "year",        
-        "volume",        
-        "number",
-        "supplement",
+        "short_identification",
+        "year",
         "created",
         "updated",
     )
@@ -73,39 +67,37 @@ class IssueAdminSnippetViewSet(SnippetViewSet):
             journals = getattr(user, "journals", None)
             if journals is not None:
                 journals_ids = journals.values_list("id", flat=True)
-                return qs.filter(
-                    journal__id__in=journals_ids
-                ).select_related("journal")
+                return qs.filter(journal__id__in=journals_ids).select_related("journal")
         return qs.none()
 
 
-
-class IssueExportCreateView(CreateView):
+class IssueExporterCreateView(CreateView):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
 
 
-class IssueExportAdmin(SnippetViewSet):
-    model = IssueExport
-    add_view_class = IssueExportCreateView
+class IssueExporterAdmin(SnippetViewSet):
+    model = IssueExporter
+    add_view_class = IssueExporterCreateView
     inspect_view_enabled = True
     menu_label = _("Issue Exports")
-    menu_icon = "download"
+    menu_icon = "folder-open-inverse"
     menu_order = 160
     add_to_settings_menu = False
     exclude_from_explorer = False
 
     list_display = (
-        "issue",
-        "export_type",
+        "parent",
+        "status",
         "collection",
-        "created",
+        "destination",
         "updated",
     )
     list_filter = (
-        "export_type",
         "collection",
+        "status",
+        "destination",
     )
     search_fields = (
         "issue__journal__title",
@@ -119,7 +111,10 @@ class IssueAdminSnippetViewSetGroup(SnippetViewSetGroup):
     menu_label = _("Issues")
     menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("issue")
-    items = (IssueAdminSnippetViewSet, IssueExportAdmin)
+    items = (
+        IssueAdminSnippetViewSet,
+        IssueExporterAdmin,
+    )
 
 
 register_snippet(IssueAdminSnippetViewSetGroup)

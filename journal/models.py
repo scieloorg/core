@@ -21,6 +21,8 @@ from collection.models import Collection
 from core.choices import MONTHS
 from core.forms import CoreAdminModelForm
 from core.models import (
+    BaseExporter,
+    BaseLegacyRecord,
     CommonControlField,
     FileWithLang,
     Language,
@@ -29,6 +31,7 @@ from core.models import (
     SocialNetwork,
     TextWithLang,
 )
+from core.utils import date_utils
 from core.utils.thread_context import get_current_collections, get_current_user
 from institution.models import (
     BaseHistoryItem,
@@ -37,6 +40,7 @@ from institution.models import (
     Publisher,
     Sponsor,
 )
+from journal import choices
 from journal.exceptions import (
     IndexedAtCreationOrUpdateError,
     JournalCreateOrUpdateError,
@@ -52,7 +56,8 @@ from journal.exceptions import (
     TitleInDatabaseCreationOrUpdateError,
     WosdbCreationOrUpdateError,
 )
-from location.models import Location
+from journal.forms import SciELOJournalModelForm
+from location.models import Country, Location
 from organization.dynamic_models import (
     OrgLevelCopyrightHolder,
     OrgLevelOwner,
@@ -62,8 +67,6 @@ from organization.dynamic_models import (
 from organization.models import HELP_TEXT_ORGANIZATION, Organization
 from thematic_areas.models import ThematicArea
 from vocabulary.models import Vocabulary
-
-from . import choices
 
 HELP_TEXT_INSTITUTION = _(
     "Institution data originally provided. This field is for reference only."
@@ -127,8 +130,17 @@ class OfficialJournal(CommonControlField, ClusterableModel):
     )
     issnl = models.CharField(_("ISSNL"), max_length=9, null=True, blank=True)
 
+    country = models.ForeignKey(
+        Country,
+        verbose_name=_("Country"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
     panels_titles = [
         FieldPanel("title"),
+        AutocompletePanel("country"),
         FieldPanel("iso_short_title"),
         InlinePanel("parallel_title", label=_("Parallel titles")),
         AutocompletePanel("old_title"),
@@ -189,11 +201,6 @@ class OfficialJournal(CommonControlField, ClusterableModel):
                     "issn_electronic",
                 ]
             ),
-            models.Index(
-                fields=[
-                    "issnl",
-                ]
-            ),
         ]
         ordering = ["title"]
 
@@ -203,10 +210,14 @@ class OfficialJournal(CommonControlField, ClusterableModel):
         return str(self)
 
     def __unicode__(self):
-        return f"{self.title}"
+        return f"{self.title} {self.issns} {self.country}"
 
     def __str__(self):
-        return f"{self.title}"
+        return f"{self.title} {self.issns} {self.country}"
+
+    @property
+    def issns(self):
+        return "|".join(i for i in [self.issn_electronic, self.issn_print] if i)
 
     @property
     def data(self):
@@ -590,16 +601,16 @@ class Journal(CommonControlField, ClusterableModel):
         if not collections:
             return queryset.none()
 
-        return (queryset
-            .filter(title__icontains=search_term)
+        return (
+            queryset.filter(title__icontains=search_term)
             .filter(
-                Q(scielojournal__collection__in=collections) |
-                Q(main_collection__in=collections)
+                Q(scielojournal__collection__in=collections)
+                | Q(main_collection__in=collections)
             )
             .distinct()
         )
 
-
+    base_form_class = CoreAdminModelForm
     panels_titles = [
         AutocompletePanel("official"),
         FieldPanel("title"),
@@ -852,29 +863,7 @@ class Journal(CommonControlField, ClusterableModel):
         return f"{self.title}" or f"{self.official}"
 
     def __str__(self):
-        active_collection = getattr(self, "active_collections", [])
-        # Evita que carregue em lugares em não há necessidade de mostrar acronym e issns
-        official = self.official
-        if not active_collection:
-            foundation_year = (
-                self.official.initial_year
-                if official and self.official.initial_year
-                else "Unknown"
-            )
-            return f"{self.title or self.official} | Foundation year: {foundation_year}"
-        collection_acronym = ", ".join(
-            col.collection.acron3 for col in active_collection
-        )
-        issns = []
-        if official:
-            if official.issn_print:
-                issns.append(f"Issn Print: {official.issn_print}")
-            if official.issn_electronic:
-                issns.append(f"Issn Electronic: {official.issn_electronic}")
-
-        issns_str = " - ".join(issns)
-        title = self.title
-        return f"{title} ({collection_acronym}) | ({issns_str})"
+        return f"{self.title}" or f"{self.official}"
 
     def articlemeta_format(self, collection):
         # Evita importacao circular
@@ -882,7 +871,68 @@ class Journal(CommonControlField, ClusterableModel):
 
         return get_articlemeta_format_title(self, collection)
 
-    base_form_class = CoreAdminModelForm
+    @classmethod
+    def select_items(
+        cls,
+        collection_acron_list=None,
+        journal_acron_list=None,
+        from_date=None,
+        until_date=None,
+        days_to_go_back=None,
+    ):
+        params = {}
+        if from_date or until_date or days_to_go_back:
+            from_date_str, until_date_str = date_utils.get_date_range(
+                from_date, until_date, days_to_go_back
+            )
+            params["updated__range"] = (from_date_str, until_date_str)
+        if collection_acron_list:
+            params["scielojournal__collection__acron3__in"] = collection_acron_list
+        if journal_acron_list:
+            params["journal_acron__in"] = journal_acron_list
+        return cls.objects.filter(**params)
+
+    @classmethod
+    def get_issn_list(cls, collection_acron_list=None, journal_acron_list=None):
+        qs = cls.select_items(collection_acron_list, journal_acron_list)
+        return {
+            "issn_print_list": qs.values_list(
+                "scielojournal__journal__official__issn_print", flat=True
+            ),
+            "issn_electronic_list": qs.values_list(
+                "scielojournal__journal__official__issn_electronic", flat=True
+            ),
+        }
+
+    @property
+    def collection_acrons(self):
+        acrons = []
+        for item in self.scielojournal_set.all():
+            acrons.append(item.collection.acron3)
+        return "|".join(acrons)
+
+    @classmethod
+    def get_ids(cls, collection_acron_list=None, journal_acron_list=None):
+        qs = cls.select_items(collection_acron_list, journal_acron_list)
+        return qs.values_list("id", flat=True)
+
+    def select_collections(self, collection_acron_list=None, is_active=None):
+        params = {}
+        if is_active:
+            params["collection__is_active"] = is_active
+        if collection_acron_list:
+            params["collection__acron3__in"] = collection_acron_list
+        for item in self.scielojournal_set.filter(**params):
+            yield item.collection
+
+    def get_legacy_keys(self, collection_acron_list=None, is_active=None):
+        params = {}
+        if collection_acron_list:
+            params["collection__acron3__in"] = collection_acron_list
+        for item in self.scielojournal_set.filter(
+            collection__is_active=is_active, **params
+        ):
+            yield item.legacy_keys
 
 
 class FileOpenScience(Orderable, FileWithLang, CommonControlField):
@@ -1690,7 +1740,6 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         Collection,
         verbose_name=_("Collection"),
         on_delete=models.SET_NULL,
-        related_name="+",
         null=True,
         blank=True,
     )
@@ -1719,6 +1768,8 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
     status = models.CharField(
         _("Status"), max_length=12, choices=choices.STATUS, null=True, blank=True
     )
+
+    base_form_class = SciELOJournalModelForm
 
     autocomplete_search_field = "journal_acron"
 
@@ -1751,12 +1802,10 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
     def __str__(self):
         return f"{self.collection} {self.journal_acron or self.issn_scielo}"
 
-    base_form_class = CoreAdminModelForm
-
     panels = [
         AutocompletePanel("journal"),
         FieldPanel("journal_acron"),
-        FieldPanel("issn_scielo"),
+        FieldPanel("issn_scielo", read_only=True),
         FieldPanel("status"),
         AutocompletePanel("collection"),
         InlinePanel(
@@ -1813,67 +1862,14 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         obj.save()
         return obj
 
-
-class SciELOJournalExport(CommonControlField):
-    """
-    Controla exportações de periódicos para o articlemeta
-    """
-
-    scielo_journal = models.ForeignKey(
-        SciELOJournal,
-        on_delete=models.CASCADE,
-        related_name="exports",
-        verbose_name=_("SciELO Journal"),
-    )
-    export_type = models.CharField(
-        max_length=50,
-        choices=[
-            ("articlemeta", "ArticleMeta"),
-        ],
-        verbose_name=_("Export Type"),
-    )
-    exported_at = models.DateTimeField(auto_now_add=True)
-    collection = models.ForeignKey(
-        "collection.Collection",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name=_("Collection"),
-    )
-
-    class Meta:
-        unique_together = ["scielo_journal", "export_type", "collection"]
-        indexes = [
-            models.Index(fields=["scielo_journal", "export_type"]),
-            models.Index(fields=["exported_at"]),
-        ]
-
-    def __str__(self):
-        return f"{self.scielo_journal.issn_scielo} -> {self.export_type}"
-
-    @classmethod
-    def mark_as_exported(cls, scielo_journal, export_type, collection, user=None):
-        """Marca um periódico SciELO como exportado"""
-        obj, created = cls.objects.get_or_create(
-            scielo_journal=scielo_journal,
-            export_type=export_type,
-            collection=collection,
-            defaults={"creator": user},
-        )
-        if not created:
-            obj.exported_at = datetime.now()
-            obj.updated_by = user
-            obj.save()
-        return obj
-
-    @classmethod
-    def is_exported(cls, scielo_journal, export_type, collection):
-        """Verifica se um periódico SciELO já foi exportado"""
-        return cls.objects.filter(
-            scielo_journal=scielo_journal,
-            export_type=export_type,
-            collection=collection,
-        ).exists()
+    @property
+    def legacy_keys(self):
+        return {
+            "collection": self.collection,
+            "collection_acron": self.collection.acron3,
+            "pid": self.issn_scielo,
+            "journal_acron": self.journal_acron,
+        }
 
 
 class JournalParallelTitle(TextWithLang):
@@ -2492,64 +2488,6 @@ class JournalHistory(CommonControlField, Orderable):
             obj.save()
 
 
-class AMJournal(CommonControlField):
-    """
-    Modelo que representa a coleta de dados de Journal na API Article Meta.
-
-    from:
-        https://articlemeta.scielo.org/api/v1/journal/?collection={collection}&issn={issn}"
-    """
-
-    collection = models.ForeignKey(
-        Collection,
-        verbose_name=_("Collection"),
-        on_delete=models.SET_NULL,
-        related_name="+",
-        null=True,
-        blank=True,
-    )
-    scielo_issn = models.CharField(
-        _("Scielo Issn"),
-        max_length=9,
-        blank=True,
-        null=True,
-    )
-    data = models.JSONField(
-        _("JSON File"),
-        null=True,
-        blank=True,
-    )
-
-    def __unicode__(self):
-        return f"{self.scielo_issn} | {self.collection}"
-
-    def __str__(self):
-        return f"{self.scielo_issn} | {self.collection}"
-
-    @classmethod
-    def get(cls, scielo_issn, collection):
-        if not scielo_issn and not collection:
-            raise ValueError("Param scielo_issn and collection_acron3 is required")
-        return cls.objects.get(scielo_issn=scielo_issn, collection=collection)
-
-    @classmethod
-    def create_or_update(cls, scielo_issn, collection, data, user):
-        try:
-            obj = cls.get(scielo_issn=scielo_issn, collection=collection)
-            obj.updated_by = user
-        except cls.DoesNotExist:
-            obj = cls.objects.create()
-            obj.creator = user
-        except cls.MultipleObjectsReturned as e:
-            raise (f"Error ao conseguir AMjournal {scielo_issn}: {e}")
-        obj.collection = collection or obj.collection
-        obj.scielo_issn = scielo_issn or obj.scielo_issn
-        obj.data = data or obj.data
-        obj.save()
-
-        return obj
-
-
 class TitleInDatabase(Orderable, CommonControlField):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="title_in_database", null=True
@@ -2932,3 +2870,32 @@ class TocItem(Orderable, TextWithLang, CommonControlField):
 
     def __str__(self):
         return f"{self.text} | {self.language}"
+
+
+class JournalExporter(BaseExporter):
+    """
+    Controla exportações de periódicos para o articlemeta
+    """
+
+    parent = ParentalKey(
+        Journal,
+        on_delete=models.CASCADE,
+        related_name="exporter",
+        verbose_name=_("Journal"),
+    )
+
+
+class AMJournal(BaseLegacyRecord):
+    """
+    Modelo que representa a coleta de dados de Journal na API Article Meta.
+
+    from:
+        https://articlemeta.scielo.org/api/v1/journal/?collection={collection}&issn={issn}"
+    """
+
+    pid = models.CharField(
+        _("Scielo Issn"),
+        max_length=9,
+        blank=True,
+        null=True,
+    )

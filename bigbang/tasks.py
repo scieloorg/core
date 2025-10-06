@@ -2,18 +2,26 @@ import logging
 import sys
 
 from django.contrib.auth import get_user_model
-from config import celery_app
+
+from bigbang.tasks_scheduler import schedule_tasks
+from bigbang.utils.scheduler import schedule_task
 from collection.models import Collection
-from core.models import Language, License, Gender
+from config import celery_app
+from core.models import Gender, Language, License
 from editorialboard.models import RoleModel
 from institution.models import Institution, InstitutionType
-from location.models import Country, City, State
-from journal.models import Standard, Subject, WebOfKnowledge, WebOfKnowledgeSubjectCategory, IndexedAt, DigitalPreservationAgency
-from vocabulary.models import Vocabulary
+from journal.models import (
+    DigitalPreservationAgency,
+    IndexedAt,
+    Standard,
+    Subject,
+    WebOfKnowledge,
+    WebOfKnowledgeSubjectCategory,
+)
+from location.models import City, Country, State
 from thematic_areas.models import ThematicArea
-from bigbang.utils.scheduler import schedule_task
 from tracker.models import UnexpectedEvent
-
+from vocabulary.models import Vocabulary
 
 User = get_user_model()
 
@@ -63,7 +71,10 @@ def task_start(
 
 
 @celery_app.task(bind=True)
-def task_create_tasks(self, user_id, tasks_data):
+def task_create_tasks(self, user_id=None, username=None, tasks_data=None):
+    if not task_data:
+        user = _get_user(user_id, username)
+        return schedule_tasks(user)
     for task_data in tasks_data:
         # {
         #     'task': 'pid_provider.tasks.provide_pid_for_am_xmls',

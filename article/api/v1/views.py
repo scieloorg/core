@@ -12,7 +12,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = models.Article.objects.all()
-        doi_prefix = self.request.query_params.get('doi_prefix', None)
+        doi_prefix = self.request.query_params.get("doi_prefix", None)
         if doi_prefix is not None:
             queryset = queryset.filter(doi__value__startswith=doi_prefix)
         return queryset
