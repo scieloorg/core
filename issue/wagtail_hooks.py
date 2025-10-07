@@ -21,7 +21,7 @@ class AMIssueAdminViewSet(SnippetViewSet):
 
     model = AMIssue
     inspect_view_enabled = True
-    menu_label = _("Issue Aricle Meta")
+    menu_label = _("ArticleMeta Issue")
     # add_view_class = AMIssueCreateView
     menu_icon = "folder"
     menu_order = 200
