@@ -69,7 +69,7 @@ class Issue(CommonControlField, ClusterableModel):
         blank=True,
         help_text="Ex: Jan-Abr.",
     )
-    year = models.CharField(_("Issue year"), max_length=20, null=True, blank=True)
+    year = models.CharField(_("Issue year"), max_length=4, null=True, blank=True)
     month = models.CharField(_("Issue month"), max_length=20, null=True, blank=True)
     supplement = models.CharField(_("Supplement"), max_length=20, null=True, blank=True)
     markup_done = models.BooleanField(_("Markup done"), default=False)
@@ -82,6 +82,7 @@ class Issue(CommonControlField, ClusterableModel):
     )
     issue_pid_suffix = models.CharField(max_length=4, null=True, blank=True)
     legacy_issue = models.ManyToManyField(AMIssue, blank=True)
+
     autocomplete_search_field = "journal__title"
 
     def autocomplete_label(self):
@@ -94,20 +95,15 @@ class Issue(CommonControlField, ClusterableModel):
         FieldPanel("volume"),
         FieldPanel("number"),
         FieldPanel("supplement"),
+        InlinePanel("issue_title", label=_("Issue title")),
     ]
 
     panels_operation = [
+        AutocompletePanel("license"),
         FieldPanel("order"),
         FieldPanel("markup_done"),
-    ]
-
-    panels_interoperability = [
         FieldPanel("issue_pid_suffix", read_only=True),
         AutocompletePanel("legacy_issue"),
-    ]
-
-    panels_title = [
-        InlinePanel("issue_title", label=_("Issue title")),
     ]
 
     panels_bibl = [
@@ -123,19 +119,12 @@ class Issue(CommonControlField, ClusterableModel):
         AutocompletePanel("code_sections"),
     ]
 
-    panels_license = [
-        AutocompletePanel("license"),
-    ]
-
     edit_handler = TabbedInterface(
         [
             ObjectList(panels_issue, heading=_("Issue")),
-            ObjectList(panels_title, heading=_("Titles")),
             ObjectList(panels_operation, heading=_("Operation")),
             ObjectList(panels_bibl, heading=_("Bibliographic Strip")),
             ObjectList(panels_table_of_contents, heading=_("Sections")),
-            ObjectList(panels_license, heading=_("License")),
-            ObjectList(panels_interoperability, heading=_("Interoperability")),
         ]
     )
 
@@ -165,22 +154,21 @@ class Issue(CommonControlField, ClusterableModel):
             ),
         ]
 
-    def create_legacy_keys(self):
-        if self.legacy_issue.exists():
-            return
-        query_set = self.journal.scielojournal_set
-        if query_set.count() == 1:
-            sj = query_set.first()
-            if not self.issue_pid_suffix:
-                self.issue_pid_suffix = self.generate_issue_pid_suffix()
-                self.save()
+    def create_legacy_keys(self, force_update=None):
+        if not force_update:
+            if self.legacy_issue.exists():
+                return
+
+        if not self.issue_pid_suffix:
+            self.issue_pid_suffix = self.generate_issue_pid_suffix()
+            self.save()
+
+        for sj in self.journal.scielojournal_set.all():
             pid = f"{sj.issn_scielo}{self.year}{self.issue_pid_suffix}"
-            self.legacy_issue.add(
-                AMIssue.create_or_update(pid, sj.collection, None, self.updated_by)
-            )
+            am_issue = AMIssue.create_or_update(pid, sj.collection, None, self.updated_by, status="done")
+            self.legacy_issue.add(am_issue)
 
     def get_legacy_keys(self, collection_acron_list=None, is_active=None):
-        self.create_legacy_keys()
         params = {}
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
