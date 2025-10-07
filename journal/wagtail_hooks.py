@@ -249,6 +249,16 @@ class SciELOJournalAdminViewSet(SnippetViewSet):
         return qs
 
 
+class AMJournalAdmin(SnippetViewSet):
+    model = models.AMJournal
+    menu_label = "AM Journal"
+    menu_icon = "folder"
+    menu_order = get_menu_order("amjournal")
+    list_display = ("pid", "collection", "processing_date", "status")
+    list_filter = ("collection", "status")
+    search_fields = ("pid",)
+
+
 class JournalSnippetViewSetGroup(SnippetViewSetGroup):
     menu_label = _("Journals")
     menu_icon = "folder-open-inverse"
@@ -261,6 +271,7 @@ class JournalSnippetViewSetGroup(SnippetViewSetGroup):
         JournalExporterSnippetViewSet,
         JournalAdminPolicySnippetViewSet,
         JournalAdminInstructionsForAuthorsSnippetViewSet,
+        AMJournalAdmin,
     )
 
 
@@ -383,19 +394,6 @@ class StandardAdmin(ModelAdmin):
         "code",
         "value",
     )
-
-
-# TODO
-# Futuramente mudar para JournalAdminGroup
-# com permissoes de visualizacao restrita
-class AMJournalAdmin(ModelAdmin):
-    model = models.AMJournal
-    menu_label = "AM Journal"
-    menu_icon = "folder"
-    menu_order = get_menu_order("amjournal")
-    list_display = ("scielo_issn", "collection")
-    list_filter = ("collection",)
-    search_fields = ("scielo_issn",)
 
 
 class ArticleSubmissionFormatCheckListAdmin(ModelAdmin):
