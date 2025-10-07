@@ -9,7 +9,52 @@ from wagtail.snippets.views.snippets import (
 
 from config.menu import get_menu_order
 from config.settings.base import COLLECTION_TEAM, JOURNAL_TEAM
-from issue.models import Issue, IssueExporter
+from issue.models import Issue, IssueExporter, AMIssue
+
+
+class AMIssueCreateView(CreateView):
+    def form_valid(self, form):
+        self.object = form.save_all(self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
+
+class AMIssueAdminViewSet(SnippetViewSet):
+
+    model = AMIssue
+    inspect_view_enabled = True
+    menu_label = _("Issue Aricle Meta")
+    # add_view_class = AMIssueCreateView
+    menu_icon = "folder"
+    menu_order = 200
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+
+    list_display = (
+        "pid",
+        "collection",
+        "status",
+        "processing_date",
+        "updated",
+    )
+    list_filter = (
+        "status",
+        "collection",
+    )
+    search_fields = (
+        "pid",
+        "processing_date",
+        "legacy_issue__pid",
+    )
+
+    def get_queryset(self, request):
+        qs = AMIssue.objects.select_related("collection")
+        user_groups = request.user.groups.values_list("name", flat=True)
+        if COLLECTION_TEAM in user_groups:
+            return qs.filter(collection__in=request.user.collection.all())
+        elif JOURNAL_TEAM in user_groups:
+            return qs.filter(
+                id__in=request.user.journal.all().values_list("id", flat=True)
+            )
+        return qs
 
 
 class IssueCreateView(CreateView):
@@ -113,6 +158,7 @@ class IssueAdminSnippetViewSetGroup(SnippetViewSetGroup):
     menu_order = get_menu_order("issue")
     items = (
         IssueAdminSnippetViewSet,
+        AMIssueAdminViewSet,
         IssueExporterAdmin,
     )
 
