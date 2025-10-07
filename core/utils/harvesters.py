@@ -105,14 +105,14 @@ class AMHarvester:
 
                     # Monta dicionário padronizado
                     document = {
+                        "code": pid_v2,
+                        "collection": self.collection_acron,
                         "pid_v2": pid_v2,
                         "pid_v3": item.get("pid_v3"),  # Pode não existir no AM
                         "collection_acron": self.collection_acron,
                         "processing_date": item.get("processing_date"),
                         "journal_acron": item.get("journal_acronym"),
-                        "publication_year": self._extract_year(
-                            item.get("processing_date")
-                        ),
+                        "publication_year": item.get("processing_year"),
                         "url": url,
                         "source_type": "articlemeta",
                         "metadata": {
