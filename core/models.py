@@ -939,6 +939,11 @@ class BaseLegacyRecord(CommonControlField):
         null=True,
         blank=True,
     )
+    url = models.URLField(
+        max_length=300,
+        null=True,
+        blank=True,
+    )
     data = models.JSONField(
         _("JSON File"),
         null=True,
@@ -964,6 +969,7 @@ class BaseLegacyRecord(CommonControlField):
     panels = [
         AutocompletePanel("collection"),
         FieldPanel("pid"),
+        FieldPanel("url"),
         FieldPanel("status"),
         FieldPanel("processing_date"),
         FieldPanel("data", read_only=True),
@@ -989,12 +995,14 @@ class BaseLegacyRecord(CommonControlField):
         return cls.objects.get(pid=pid, collection=collection)
 
     @classmethod
-    def create(cls, pid, collection, data=None, user=None, processing_date=None, status=None):
+    def create(cls, pid, collection, data=None, user=None, url=None, processing_date=None, status=None):
         if not pid or not collection or not user:
             raise ValueError(f"{cls.__name__} create requires pid, collection, user")
         obj = cls()
         obj.pid = pid
         obj.collection = collection
+        if url:
+            obj.url = url
         if status:
             obj.status = status
         if data:
@@ -1006,13 +1014,12 @@ class BaseLegacyRecord(CommonControlField):
         return obj
     
     @classmethod
-    def create_or_update(cls, pid, collection, data=None, user=None, status=None, processing_date=None, force_update=None):
+    def create_or_update(cls, pid, collection, data=None, user=None, url=None, status=None, processing_date=None, force_update=None):
         try:
             obj = cls.get(pid=pid, collection=collection)
             obj.updated_by = user
         except cls.DoesNotExist:
-            obj = cls.create(pid, collection, data, user, processing_date=processing_date)
-            return obj
+            return cls.create(pid, collection, data, user, url=url, processing_date=processing_date)
         except cls.MultipleObjectsReturned:
             obj = cls.objects.filter(pid=pid, collection=collection).order_by("-updated").first()
             obj.updated_by = user
@@ -1021,6 +1028,8 @@ class BaseLegacyRecord(CommonControlField):
             if not force_update:
                 return obj
 
+        if url:
+            obj.url = url
         if data:
             obj.data = data
         if status:
