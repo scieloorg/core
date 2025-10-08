@@ -72,7 +72,7 @@ def task_start(
 
 @celery_app.task(bind=True)
 def task_create_tasks(self, user_id=None, username=None, tasks_data=None):
-    if not task_data:
+    if not tasks_data:
         user = _get_user(user_id, username)
         return schedule_tasks(user)
     for task_data in tasks_data:

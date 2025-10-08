@@ -4,10 +4,9 @@ import sys
 from django.db import IntegrityError, transaction
 
 from core.models import Language
-from journal.models import SciELOJournal
 from tracker.models import UnexpectedEvent
 
-from ..models import CodeSectionIssue, Issue, SectionIssue, TocSection
+from issue.models import CodeSectionIssue, Issue, SectionIssue, TocSection
 
 
 def normalize_markup_done(markup_done):
@@ -22,7 +21,7 @@ def normalize_markup_done(markup_done):
 
 
 def get_or_create_issue(
-    issn_scielo,
+    journal,
     volume,
     number,
     data_iso,
@@ -34,14 +33,13 @@ def get_or_create_issue(
     order=None,
     issue_pid_suffix=None,    
 ):
-    scielo_journal = get_scielo_journal(issn_scielo)
     supplement = extract_value(supplement_number) or extract_value(supplement_volume)
     data = extract_value(data_iso)
     
     markup_done = normalize_markup_done(markup_done)
 
     obj = Issue.get_or_create(
-        journal=scielo_journal.journal,
+        journal=journal,
         volume=extract_value(volume),
         number=extract_value(number),
         supplement=supplement,
@@ -59,16 +57,6 @@ def get_or_create_issue(
         obj.code_sections.add(section)
 
     return obj
-
-def get_scielo_journal(issn_scielo):
-    try:
-        issn_scielo = extract_value(issn_scielo)
-        return SciELOJournal.objects.get(issn_scielo=issn_scielo)
-    except SciELOJournal.DoesNotExist:
-        logging.exception(f"Nenhum SciELOJournal encontrado com ISSN: {issn_scielo}")
-        return None
-    except SciELOJournal.MultipleObjectsReturned:
-        return SciELOJournal.objects.filter(issn_scielo=issn_scielo).first()
 
 
 def extract_date(date):

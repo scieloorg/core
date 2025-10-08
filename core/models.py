@@ -927,12 +927,20 @@ class BaseLegacyRecord(CommonControlField):
     from:
         https://articlemeta.scielo.org/api/v1/journal/?collection={collection}&issn={issn}"
     """
-
+    STATUS_CHOICES = [
+        ("pending", _("Pending")),
+        ("todo", _("To Do")),
+        ("done", _("Done")),
+    ]
     collection = models.ForeignKey(
         "collection.Collection",
         verbose_name=_("Collection"),
         on_delete=models.SET_NULL,
-        related_name="+",
+        null=True,
+        blank=True,
+    )
+    url = models.URLField(
+        max_length=300,
         null=True,
         blank=True,
     )
@@ -941,14 +949,31 @@ class BaseLegacyRecord(CommonControlField):
         null=True,
         blank=True,
     )
+    processing_date = models.CharField(
+        _("Processing Date"),
+        max_length=10,
+        null=True,
+        blank=True,
+        help_text=_("Date in YYYY-MM-DD format")
+    )
+    status = models.CharField(
+        _("Status"),
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default="todo",
+        null=True,
+        blank=True,
+    )
     base_form_class = CoreAdminModelForm
 
     panels = [
         AutocompletePanel("collection"),
         FieldPanel("pid"),
+        FieldPanel("url"),
+        FieldPanel("status"),
+        FieldPanel("processing_date"),
         FieldPanel("data", read_only=True),
     ]
-
     autocomplete_search_field = "pid"
 
     def autocomplete_label(self):
@@ -970,31 +995,47 @@ class BaseLegacyRecord(CommonControlField):
         return cls.objects.get(pid=pid, collection=collection)
 
     @classmethod
-    def create(cls, pid, collection, data=None, user=None):
-        if not pid and not collection and not user:
-            raise ValueError(f"{cls} create requires pid, collection, user")
-
+    def create(cls, pid, collection, data=None, user=None, url=None, processing_date=None, status=None):
+        if not pid or not collection or not user:
+            raise ValueError(f"{cls.__name__} create requires pid, collection, user")
         obj = cls()
         obj.pid = pid
         obj.collection = collection
+        if url:
+            obj.url = url
+        if status:
+            obj.status = status
         if data:
             obj.data = data
+        if processing_date:
+            obj.processing_date = processing_date
         obj.creator = user
         obj.save()
         return obj
-
+    
     @classmethod
-    def create_or_update(cls, pid, collection, data, user):
+    def create_or_update(cls, pid, collection, data=None, user=None, url=None, status=None, processing_date=None, force_update=None):
         try:
             obj = cls.get(pid=pid, collection=collection)
             obj.updated_by = user
         except cls.DoesNotExist:
-            obj = cls.create(pid, collection, data, user)
-            obj.creator = user
-        except cls.MultipleObjectsReturned as e:
+            return cls.create(pid, collection, data, user, url=url, processing_date=processing_date)
+        except cls.MultipleObjectsReturned:
             obj = cls.objects.filter(pid=pid, collection=collection).order_by("-updated").first()
+            obj.updated_by = user
+
+        if processing_date == obj.processing_date:
+            if not force_update:
+                return obj
+
+        if url:
+            obj.url = url
         if data:
             obj.data = data
+        if status:
+            obj.status = status or "todo"
+        if processing_date:
+            obj.processing_date = processing_date
         obj.save()
         return obj
 
@@ -1004,4 +1045,5 @@ class BaseLegacyRecord(CommonControlField):
             "collection_acron3": self.collection.acron3,
             "collection": self.collection,
             "pid": self.pid,
+            "source": "migrated" if self.data else "generated",
         }

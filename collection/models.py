@@ -308,11 +308,14 @@ class Collection(CommonControlField, ClusterableModel):
         )
 
     @classmethod
-    def get_acronyms(cls):
-        """
-        Retorna uma lista de todos os acrônimos (acron3) das coleções.
-        """
-        return list(cls.objects.values_list("acron3", flat=True))
+    def get_acronyms(cls, collection_acron_list):
+        queryset = cls.objects
+        if not collection_acron_list:
+            return queryset.values_list("acron3", flat=True)
+        
+        if not isinstance(collection_acron_list, list):
+            collection_acron_list = [collection_acron_list]
+        return queryset.filter(acron3__in=collection_acron_list).values_list("acron3", flat=True)    
 
 
 class CollectionSocialNetwork(Orderable, SocialNetwork):
