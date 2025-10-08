@@ -44,17 +44,7 @@ class AMIssueAdminViewSet(SnippetViewSet):
         "processing_date",
         "legacy_issue__pid",
     )
-
-    def get_queryset(self, request):
-        qs = AMIssue.objects.select_related("collection")
-        user_groups = request.user.groups.values_list("name", flat=True)
-        if COLLECTION_TEAM in user_groups:
-            return qs.filter(collection__in=request.user.collection.all())
-        elif JOURNAL_TEAM in user_groups:
-            return qs.filter(
-                id__in=request.user.journal.all().values_list("id", flat=True)
-            )
-        return qs
+    # Deve ficar disponível somente para ADM
 
 
 class IssueCreateView(CreateView):
