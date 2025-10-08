@@ -9,7 +9,6 @@ from config import celery_app
 from core.utils.utils import _get_user
 from collection.models import Collection
 from issue import controller
-from issue.models import Issue
 from issue.sources.article_meta import harvest_and_load_issues
 from tracker.models import UnexpectedEvent
 
@@ -36,15 +35,25 @@ def load_issue_from_article_meta(
     self,
     user_id=None, username=None, collection_acron=None, from_date=None, until_date=None, force_update=None,
 ):
-    user = _get_user(request=self.request, user_id=user_id, username=username)
+    try:
+        user = _get_user(request=self.request, user_id=user_id, username=username)
 
-    for acron3 in Collection.get_acronyms(collection_acron):
-        harvest_and_load_issues(
-            user=user,
-            collection_acron=acron3,
-            from_date=from_date,
-            until_date=until_date,
-            force_update=force_update,
+        for acron3 in Collection.get_acronyms(collection_acron):
+            harvest_and_load_issues(
+                user=user,
+                collection_acron=acron3,
+                from_date=from_date,
+                until_date=until_date,
+                force_update=force_update,
+            )
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            action="issue.tasks.load_issue_from_article_meta",
+            detail={"collection_acron": collection_acron, "from_date": from_date, "until_date": until_date, "force_update": force_update}
         )
 
 
