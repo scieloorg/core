@@ -19,16 +19,21 @@ from journal.choices import STUDY_AREA
 from journal.models import OwnerHistory, SciELOJournal
 
 
+def _get_current_locale():
+    lang = get_language()
+    try:
+        return Locale.objects.get(language_code__iexact=lang)
+    except Locale.MultipleObjectsReturned:
+        return Locale.objects.filter(language_code__iexact=lang).first()
+
+
 def get_page_about():
     try:
-        lang = get_language()
         try:
-            locale = Locale.objects.get(language_code__iexact=lang)
-        except Locale.MultipleObjectsReturned:
-            locale = Locale.objects.filter(language_code__iexact=lang).first()
+            locale = _get_current_locale()
         except Locale.DoesNotExist:
-            # Fallback para locale padrão
             locale = Locale.get_default()
+
         home_page = HomePage.objects.filter(locale=locale).first()
         page_about = (
             home_page.get_children()
@@ -229,16 +234,13 @@ class AboutScieloOrgPage(Page):
         q = request.GET.get("q", "").strip()
         search_results = []
         if q:
-            site = Site.find_for_request(request)
-            pages = Page.objects.live().public()
-            if site:
-                pages = pages.descendant_of(site.root_page, inclusive=True)
-
-            pages = pages.type(AboutScieloOrgPage)
-            search_results = list(pages.search(q))
-
-            context["q"] = q
-            context["search_results"] = search_results
+            try:
+                locale = _get_current_locale()
+            except Locale.DoesNotExist:
+                locale = Locale.get_default()
+            search_results = AboutScieloOrgPage.objects.live().filter(locale=locale).filter(title__icontains=q)
+        context["q"] = q
+        context["search_results"] = search_results
 
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
