@@ -318,6 +318,7 @@ class Collection(CommonControlField, ClusterableModel):
         return queryset.filter(acron3__in=collection_acron_list).values_list("acron3", flat=True)    
 
 
+
 class CollectionSocialNetwork(Orderable, SocialNetwork):
     page = ParentalKey(
         Collection,
@@ -349,6 +350,7 @@ class CollectionSupportingOrganization(Orderable, ClusterableModel, BaseHistory)
     class Meta:
         verbose_name = _("Supporting Organization")
         verbose_name_plural = _("Supporting Organizations")
+        ordering = ['sort_order'] # Ordena os icons no opac_5
 
     def __str__(self):
         return str(self.organization)
@@ -376,6 +378,7 @@ class CollectionExecutingOrganization(Orderable, ClusterableModel, BaseHistory):
     class Meta:
         verbose_name = _("Executing Organization")
         verbose_name_plural = _("Executing Organizations")
+        ordering = ['sort_order'] # Ordena os icons no opac_5
 
     def __str__(self):
         return str(self.organization)
@@ -393,14 +396,25 @@ class CollectionLogo(Orderable, BaseLogo):
         related_name="logos",
         verbose_name=_("Collection"),
     )
+    purpose = models.CharField(
+        max_length=20,
+        choices=choices.LOGO_PURPOSE,
+        blank=True,
+        help_text=_("Select the purpose of this logo"),
+    )
 
+    panels = [
+        FieldPanel("logo"),
+        AutocompletePanel("language"),
+        FieldPanel("purpose"),
+    ]
     class Meta:
         verbose_name = _("Collection Logo")
         verbose_name_plural = _("Collection Logos")
-        ordering = ["sort_order", "language", "size"]
+        ordering = ['sort_order', 'language']
         unique_together = [
-            ("collection", "size", "language"),
+            ('collection', 'language', 'purpose'),
         ]
 
     def __str__(self):
-        return f"{self.collection} - {self.language} ({self.size})"
+        return f"{self.collection} - {self.language} ({self.purpose})"
