@@ -16,13 +16,11 @@
             </div>
             <div class="col d-flex justify-content-end align-items-center">
                 <ul class="list-unstyled d-flex align-items-center gap-2 mb-0">
-                    {% if page_about != page %}
                     <li>
                         <a href="{% pageurl page_about %}">
                         <span class="material-icons-outlined">info</span> {% trans 'About SciELO' %}
                         </a>
                     </li>
-                    {% endif %}
 
                     {% if page %}
                         {% for translation in page.get_translations.live %}

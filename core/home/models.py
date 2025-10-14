@@ -249,7 +249,7 @@ class AboutScieloOrgPage(Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
         context["social_networks"] = get_social_networks("scl")
-        context["page_about"] = self
+        context["page_about"] = get_page_about()
         context["old_scielo_url"] = settings.SCIELO_OLD_URL
         self.search_pages(request, context)
         return context
