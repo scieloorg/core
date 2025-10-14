@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.db.models import Prefetch, Q
 from django.http import JsonResponse
@@ -10,7 +11,7 @@ from wagtail.admin.panels import FieldPanel, FieldRowPanel, InlinePanel, MultiFi
 from wagtail.contrib.forms.models import AbstractFormField
 from wagtail.contrib.forms.panels import FormSubmissionsPanel
 from wagtail.fields import RichTextField, StreamField
-from wagtail.models import Locale, Page, Site
+from wagtail.models import Locale, Page
 from wagtailcaptcha.models import WagtailCaptchaEmailForm
 
 from collection.models import Collection
@@ -101,6 +102,7 @@ class HomePage(Page):
             p for p in children_qs if isinstance(p, ListPageJournalByPublisher)
         ]
         context["social_networks"] = get_social_networks("scl")
+        context["old_scielo_url"] = settings.SCIELO_OLD_URL
         return context
 
 
@@ -139,6 +141,7 @@ class ListPageJournal(Page):
         context["journals"] = journals
         context["social_networks"] = get_social_networks("scl")
         context["page_about"] = get_page_about()
+        context["old_scielo_url"] = settings.SCIELO_OLD_URL
         return context
 
 
@@ -186,6 +189,7 @@ class ListPageJournalByPublisher(Page):
         context["social_networks"] = get_social_networks("scl")
         context["page_about"] = get_page_about()
         context["parent_page"] = context["page_about"]
+        context["old_scielo_url"] = settings.SCIELO_OLD_URL
         return context
 
 
@@ -246,6 +250,7 @@ class AboutScieloOrgPage(Page):
         context = super().get_context(request, *args, **kwargs)
         context["social_networks"] = get_social_networks("scl")
         context["page_about"] = self
+        context["old_scielo_url"] = settings.SCIELO_OLD_URL
         self.search_pages(request, context)
         return context
 
