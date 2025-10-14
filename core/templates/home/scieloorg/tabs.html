@@ -11,6 +11,20 @@ dd.dd-button {
     margin-bottom: 2px;
     margin-top: 0;
 }
+/* Estilo para os botões de periódicos */
+.dl-search-journals .btn-secondary {
+    color: #333 !important;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+.dl-search-journals .btn-secondary:hover {
+    background-color: #e8e8e8 !important;
+}
 
 </style>
 <!-- tabs -->
@@ -154,22 +168,16 @@ dd.dd-button {
                                     <dt>
                                         <h3 class="h6 fw-bold">{% trans 'List of journals' %}</h3>
                                     </dt>
-                                    <form method="post" action="{{ child.url }}">
-                                        {% csrf_token %}
-                                        <dd class="text dd-button">
-                                            <button type="submit" class="btn btn-secondary">{% trans 'In alphabetical order' %}</button>
-                                        </dd>
-                                    </form>
+                                    <dd class="text dd-button">
+                                        <a href="{{child.url}}" class="btn btn-secondary">{% trans 'In alphabetical order' %}</a>
+                                    </dd>
                                 {% endfor %}
 
                                 {# By publisher #}
                                 {% for child in list_journal_by_publisher_pages %}
-                                    <form method="post" style="display: inline;" action="{{ child.url }}">
-                                        {% csrf_token %}
-                                        <dd class="text dd-button">
-                                            <button type="submit" class="btn btn-secondary">{% trans 'Of publisher' %}</button>
-                                        </dd>
-                                    </form>
+                                    <dd class="text dd-button">
+                                        <a href="{{child.url}}" class="btn btn-secondary">{% trans 'Of publisher' %}</a>
+                                    </dd>
                                 {% endfor %}
                             </dl>
 
@@ -178,21 +186,15 @@ dd.dd-button {
                                     <h3 class="h6 fw-bold">{% trans 'List of journals by subject' %}</h3>
                                 </dt>
                                 {% for child in list_journal_pages %}
-                                    <form method="post" style="display: inline;" action="{{ child.url }}">
-                                        {% csrf_token %}
+                                    <dd class="text dd-button">
+                                        <a href="{{child.url}}" class="btn btn-secondary">{% trans 'All' %}</a>
+                                    </dd>
+                                    <!-- FIXME Translation -->
+                                    {% for category in categories %}
                                         <dd class="text dd-button">
-                                            <button type="submit" class="btn btn-secondary">{% trans 'All' %}</button></a>
+                                            <a href="{{child.url}}?category={{category}}" class="btn btn-secondary" name="category">{{category}}</a>
                                         </dd>
-                                        <dd>
-                                    </form>
-                                        <!-- FIXME Translation -->
-                                        <form method="get" style="display: inline;" action="{{ child.url }}">
-                                            {% for category in categories %}
-                                                <dd class="text dd-button">
-                                                    <button type="submit" class="btn btn-secondary" value="{{category}}" name="category">{{category}}</button>
-                                                </dd>
-                                            {% endfor%}
-                                        </form>
+                                    {% endfor%}
                                 {% endfor %}
                             </dl>
                         </div>
