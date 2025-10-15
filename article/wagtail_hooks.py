@@ -83,12 +83,13 @@ class ArticleAdmin(ModelAdmin):
         "sps_pkg_name",
         "pid_v3",
         "pid_v2",
+        "is_public",
         "valid",
         "data_status",
         "created",
         "updated",
     )
-    list_filter = ("data_status", "valid", CollectionFilter)
+    list_filter = ("is_public", "data_status", "valid", CollectionFilter)
     search_fields = (
         "titles__plain_text",
         "pid_v2",
