@@ -779,10 +779,10 @@ class Journal(CommonControlField, ClusterableModel):
         official = self.official
         issns = []
         if official:
-            if official.issn_print:
-                issns.append(f"Issn Print: {official.issn_print}")
             if official.issn_electronic:
-                issns.append(f"Issn Electronic: {official.issn_electronic}")
+                issns.append(official.issn_electronic)
+            if official.issn_print:
+                issns.append(official.issn_print)
         return issns
 
     @property
