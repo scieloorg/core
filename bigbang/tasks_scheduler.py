@@ -61,6 +61,8 @@ def schedule_tasks(username):
     """
     enabled = False
 
+    schedule_fix_article_records_status(username, enabled)
+    schedule_fix_pid_provider_xmls_status(username, enabled)
     schedule_remove_duplicate_articles(username, enabled)
     schedule_mark_articles_as_deleted_without_pp_xml(username, enabled)
     schedule_convert_xml_to_other_formats(username, enabled)
@@ -87,6 +89,7 @@ def schedule_tasks(username):
     schedule_load_journal_from_article_meta(username, enabled)
     schedule_collect_journals_from_am(username, enabled)
     schedule_bigbang_start(username, enabled)
+
 
 
 # ==============================================================================
@@ -787,5 +790,69 @@ def schedule_export_article_to_articlemeta(username, enabled=False):
         run_once=False,
         day_of_week="*",
         hour="2",
+        minute="1",
+    )
+
+def schedule_fix_article_records_status(
+    username,
+    enabled,
+):
+    """
+    Agenda a tarefa de corrigir status dos registros de artigos.
+    
+    Permite marcar artigos como inválidos, públicos ou duplicados,
+    além de deduplicar registros conforme necessário.
+    """
+    schedule_task(
+        task="proc.tasks.task_fix_article_records_status",
+        name="proc.tasks.task_fix_article_records_status",
+        kwargs=dict(
+            username=username,
+            user_id=None,
+            collection_acron_list=None,
+            journal_acron_list=None,
+            mark_as_invalid=False,
+            mark_as_public=False,
+            mark_as_duplicated=False,
+            deduplicate=False,
+        ),
+        description=_("Fix Article records status"),
+        priority=5,
+        enabled=enabled,
+        run_once=False,
+        day_of_week="*",
+        hour="*",
+        minute="30",
+    )
+
+def schedule_fix_pid_provider_xmls_status(
+    username,
+    enabled,
+):
+    """
+    Agenda a tarefa de corrigir status dos XMLs do PID Provider.
+    
+    Permite marcar XMLs como inválidos, públicos ou duplicados,
+    além de deduplicar registros conforme necessário.
+    """
+    schedule_task(
+        task="proc.tasks.task_fix_pid_provider_xmls_status",
+        name="proc.tasks.task_fix_pid_provider_xmls_status",
+        kwargs=dict(
+            username=username,
+            user_id=None,
+            collection_acron_list=None,
+            journal_acron_list=None,
+            mark_as_invalid=True,
+            mark_as_public=False,
+            mark_as_duplicated=False,
+            deduplicate=False,
+        ),
+        description=_("Fix PID Provider XMLs status"),
+        priority=5,
+        enabled=enabled,
+        run_once=False,
+        day_of_week="*",
+        hour="*",
         minute="1",
     )
