@@ -18,7 +18,7 @@ from config import celery_app
 from core.utils.extracts_normalized_email import extracts_normalized_email
 from core.utils.utils import _get_user, fetch_data
 from core.utils.harvesters import AMHarvester, OPACHarvester
-from journal.models import SciELOJournal
+from journal.models import SciELOJournal, Journal
 from pid_provider.choices import PPXML_STATUS_DONE, PPXML_STATUS_TODO
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
@@ -1056,3 +1056,231 @@ def task_select_articles_to_load_from_article_source(
             },
         )
 
+
+@celery_app.task(bind=True)
+def task_fix_article_records_status(
+    self,
+    username=None,
+    user_id=None,
+    collection_acron_list=None,
+    journal_acron_list=None,
+    mark_as_invalid=False,
+    mark_as_public=False,
+    mark_as_duplicated=False,
+    deduplicate=False,
+):
+    """
+    Marca artigos com diferentes status baseado em filtros de coleções e periódicos.
+
+    Processa artigos aplicando diferentes marcações de status conforme parâmetros.
+    Itera diretamente pelos periódicos, usando coleção apenas como filtro.
+
+    Args:
+        self: Instância da tarefa Celery
+        username (str, optional): Nome do usuário executando a tarefa
+        user_id (int, optional): ID do usuário executando a tarefa
+        collection_acron_list (list, optional): Lista de acrônimos de coleções para filtrar
+        journal_acron_list (list, optional): Lista de acrônimos de periódicos
+        mark_as_invalid (bool): Se True, marca artigos como invalid
+        mark_as_public (bool): Se True, marca artigos como public
+        mark_as_duplicated (bool): Se True, marca artigos como duplicated
+        deduplicate (bool): Se True, marca artigos como deduplicated
+
+    Returns:
+        dict: Resumo da operação com contadores
+
+    Side Effects:
+        - Altera status de artigos no banco
+        - Registra UnexpectedEvent em caso de erro
+        - Dispara subtarefas para cada periódico
+
+    Examples:
+        # Marcar artigos como invalid para coleções específicas
+        task_fix_article_records_status.delay(
+            collection_acron_list=["scl", "mex"],
+            journal_acron_list=["abc", "xyz"],
+            mark_as_invalid=True
+        )
+        
+        # Marcar artigos como public e deduplicated
+        task_fix_article_records_status.delay(
+            journal_acron_list=["abc"],
+            mark_as_public=True,
+            deduplicate=True
+        )
+    """
+    try:
+        user = _get_user(self.request, username=username, user_id=user_id)
+        
+        # Validação: ao menos uma operação deve ser especificada
+        operations = {
+            "invalid": mark_as_invalid,
+            "public": mark_as_public,
+            "duplicated": mark_as_duplicated,
+            "deduplicated": deduplicate,
+        }
+        
+        if not any(operations.values()):
+            raise ValueError("At least one marking operation must be specified")
+        
+        # Construir filtros para os periódicos
+        journal_filters = {}
+        
+        # Filtro por coleção (através do relacionamento)
+        if collection_acron_list:
+            journal_filters['collection_acron3__in'] = collection_acron_list
+        
+        # Filtro por periódico
+        if journal_acron_list:
+            journal_filters['journal_acron__in'] = journal_acron_list
+        
+        # Iterar pelos periódicos e disparar subtarefas
+        journals_processed = 0
+        for journal_id in SciELOJournal.objects.filter(**journal_filters).values_list('journal__id', flat=True).distinct():
+            task_fix_journal_articles_status.apply_async(
+                kwargs={
+                    "username": username,
+                    "user_id": user_id,
+                    "journal_id": journal_id,
+                    "mark_as_invalid": mark_as_invalid,
+                    "mark_as_public": mark_as_public,
+                    "mark_as_duplicated": mark_as_duplicated,
+                    "deduplicate": deduplicate,
+                }
+            )
+            journals_processed += 1
+        
+        return {
+            "status": "success",
+            "journals_processed": journals_processed,
+            "operations": {k: v for k, v in operations.items() if v},
+            "filters": {
+                "collections": collection_acron_list,
+                "journals": journal_acron_list
+            }
+        }
+        
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "task_fix_article_records_status",
+                "collection_acron_list": collection_acron_list,
+                "journal_acron_list": journal_acron_list,
+                "operations": {
+                    "mark_as_invalid": mark_as_invalid,
+                    "mark_as_public": mark_as_public,
+                    "mark_as_duplicated": mark_as_duplicated,
+                    "deduplicate": deduplicate,
+                }
+            },
+        )
+        raise
+
+
+@celery_app.task(bind=True)
+def task_fix_journal_articles_status(
+    self,
+    username=None,
+    user_id=None,
+    journal_id=None,
+    journal_acron=None,
+    mark_as_invalid=False,
+    mark_as_public=False,
+    mark_as_duplicated=False,
+    deduplicate=False,
+):
+    """
+    Marca artigos com diferentes status para um periódico específico.
+
+    Processa artigos do periódico aplicando as marcações de status especificadas.
+    Cada operação de marcação é executada independentemente se habilitada.
+
+    Args:
+        self: Instância da tarefa Celery
+        username (str, optional): Nome do usuário executando a tarefa
+        user_id (int, optional): ID do usuário executando a tarefa
+        journal_id (int, optional): ID do periódico (preferencial por performance)
+        journal_acron (str, optional): Acrônimo do periódico (alternativa ao journal_id)
+        mark_as_invalid (bool): Se True, marca artigos sem registro ativo como invalid
+        mark_as_public (bool): Se True, marca artigos como public
+        mark_as_duplicated (bool): Se True, marca artigos como duplicated
+        deduplicate (bool): Se True, marca artigos como deduplicated
+
+    Returns:
+        dict: Resumo das operações realizadas
+
+    Raises:
+        ValueError: Se nem journal_id nem journal_acron forem fornecidos
+
+    Side Effects:
+        - Altera status de artigos no banco
+        - Registra UnexpectedEvent em caso de erro
+        - Pode executar múltiplas operações de marcação em sequência
+
+    """
+    try:
+        # Validar que ao menos um identificador foi fornecido
+        if not journal_id and not journal_acron:
+            raise ValueError("Either journal_id or journal_acron must be provided")
+        
+        user = _get_user(self.request, username=username, user_id=user_id)
+        
+        # Buscar o periódico por ID ou acrônimo
+        journal = None
+        if journal_id:
+            journal = Journal.objects.filter(id=journal_id).first()
+        elif journal_acron:
+            journal = Journal.objects.filter(journal_acron=journal_acron).first()
+        if not journal:
+            logging.warning(f"Journal not found with acron: {journal_acron}")
+            return {
+                "status": "error",
+                "message": f"Journal not found with acron: {journal_acron}",
+                "journal_acron": journal_acron
+            }
+        
+        if mark_as_invalid:
+            Article.mark_items_as_invalid(journal)
+    
+        if mark_as_public:
+            Article.mark_items_as_public(journal)
+        
+        if mark_as_duplicated:
+            Article.mark_items_as_duplicated(journal)
+
+        if deduplicate:
+            Article.deduplicate_items(user, journal)
+
+        return {
+            "status": "success",
+            "journal_id": journal.id,
+            "journal_acron": journal.journal_acron,
+            "operations_performed": {
+                "mark_as_invalid": mark_as_invalid,
+                "mark_as_public": mark_as_public,
+                "mark_as_duplicated": mark_as_duplicated,
+                "deduplicate": deduplicate,
+            }
+        }
+  
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "task_fix_journal_articles_status",
+                "journal_id": journal_id,
+                "journal_acron": journal_acron,
+                "operations": {
+                    "mark_as_invalid": mark_as_invalid,
+                    "mark_as_public": mark_as_public,
+                    "mark_as_duplicated": mark_as_duplicated,
+                    "deduplicate": deduplicate,
+                }
+            },
+        )
+        raise
