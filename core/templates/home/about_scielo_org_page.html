@@ -42,11 +42,6 @@
     color: #fff;
 }
 
-.scielo-list-text {
-    background: #fff;
-    color: #555;
-    font-style: italic;
-}
 
 .document-highlight {
     background: #f8f9fa;
@@ -227,7 +222,7 @@
                                         aria-expanded="false"
                                         aria-controls="faq-body-{{ forloop.counter }}"
                                         id="faq-question-{{ forloop.counter }}">
-                                    <span class="faq-question-text">{{ block.value.question }} ({{ page.last_published_at }})</span>
+                                    <span class="faq-question-text">{{ block.value.question }} {% if block.value.updated %}({{ block.value.updated }}){% endif %}</span>
                                     <span class="faq-icon" aria-hidden="true"></span>
                                 </button>
                                 <div class="faq-body"
