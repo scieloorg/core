@@ -8,7 +8,7 @@ from functools import lru_cache
 
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
-from django.db.models import Q
+from django.db.models import Q, Count, Min
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -41,9 +41,11 @@ from tracker.models import BaseEvent, EventSaveError, UnexpectedEvent
 
 try:
     from django_prometheus.models import ExportModelOperationsMixin
+
     COLLECTION_PREFIX = "scielojournal"
 except ImportError:
     COLLECTION_PREFIX = "journalproc"
+
     class BasePidProviderXML:
         """Base class for exportable models."""
 
@@ -827,14 +829,22 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         q = Q()
         if COLLECTION_PREFIX == "scielojournal":
             if xml_adapter.journal_issn_print:
-                q |= Q(scielojournal__journal__official__issn_print=xml_adapter.journal_issn_print)
+                q |= Q(
+                    scielojournal__journal__official__issn_print=xml_adapter.journal_issn_print
+                )
             if xml_adapter.journal_issn_electronic:
-                q |= Q(scielojournal__journal__official__issn_electronic=xml_adapter.journal_issn_electronic)
-        else:            
+                q |= Q(
+                    scielojournal__journal__official__issn_electronic=xml_adapter.journal_issn_electronic
+                )
+        else:
             if xml_adapter.journal_issn_print:
-                q |= Q(journalproc__journal__official_journal__issn_print=xml_adapter.journal_issn_print)
+                q |= Q(
+                    journalproc__journal__official_journal__issn_print=xml_adapter.journal_issn_print
+                )
             if xml_adapter.journal_issn_electronic:
-                q |= Q(journalproc__journal__official_journal__issn_electronic=xml_adapter.journal_issn_electronic)
+                q |= Q(
+                    journalproc__journal__official_journal__issn_electronic=xml_adapter.journal_issn_electronic
+                )
 
         for collection in Collection.objects.filter(q):
             registered.collections.add(collection)
@@ -1359,6 +1369,134 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         except Exception as e:
             raise exceptions.PidProviderXMLFixPidV2Error(
                 f"Unable to fix pid v2 for {item.v3} {e} {type(e)}"
+            )
+        
+    @profile_method
+    def mark_as_waiting(self):
+        if self.proc_status != choices.PPXML_STATUS_WAIT:
+            self.proc_status = choices.PPXML_STATUS_WAIT
+            self.save()
+
+    @profile_method
+    def mark_as_done(self):
+        if self.proc_status != choices.PPXML_STATUS_DONE:
+            self.proc_status = choices.PPXML_STATUS_DONE
+            self.save()
+
+    @profile_method
+    def is_xml_file_valid(self):
+        try:
+            # verifica se xml está acessível
+            if not self.proc_status == choices.PPXML_STATUS_INVALID:
+                return bool(self.xml_with_pre.v3)
+        except XMLVersionXmlWithPreError as e:
+            self.proc_status = choices.PPXML_STATUS_INVALID
+            self.save()
+            return False
+
+    @classmethod
+    @profile_classmethod
+    def mark_items_as_invalid(cls, issns):
+        for item in cls.objects.filter(
+            Q(issn_print__in=issns) | Q(issn_electronic__in=issns),
+        ).iterator():
+            item.is_xml_file_valid()
+
+    @classmethod
+    @profile_classmethod
+    def find_duplicated_pkg_names(cls, issns):
+        # Busca em ambos os campos de ISSN
+        duplicates = (
+            cls.objects.filter(Q(issn_print__in=issns) | Q(issn_electronic__in=issns))
+            .exclude(pkg_name__isnull=True)
+            .exclude(pkg_name="")
+            .exclude(proc_status__in=[choices.PPXML_STATUS_DUPLICATED, choices.PPXML_STATUS_INVALID])
+            .values("pkg_name")
+            .annotate(count=Count("id"))
+            .filter(count__gt=1)
+        )
+        return list(set(item["pkg_name"] for item in duplicates))
+
+    @classmethod
+    @profile_classmethod
+    def mark_items_as_duplicated(cls, issns):
+        ppx_duplicated_pkg_names = PidProviderXML.find_duplicated_pkg_names(issns)
+        if not ppx_duplicated_pkg_names:
+            return
+        cls.objects.filter(pkg_name__in=ppx_duplicated_pkg_names).exclude(
+            proc_status=choices.PPXML_STATUS_DUPLICATED
+        ).update(
+            proc_status=choices.PPXML_STATUS_DUPLICATED,
+        )
+        return ppx_duplicated_pkg_names
+
+    @classmethod
+    @profile_classmethod
+    def deduplicate_items(cls, user, issns):
+        """
+        Corrige todos os artigos marcados como DATA_STATUS_DUPLICATED com base nos ISSNs fornecidos.
+
+        Args:
+            issns: Lista de ISSNs para verificar duplicatas.
+            user: Usuário que está executando a operação.
+        """
+        duplicated_pkg_names = cls.find_duplicated_pkg_names(issns)
+        for pkg_name in duplicated_pkg_names:
+            cls.fix_duplicated_pkg_name(pkg_name, user)
+        return duplicated_pkg_names
+    
+    @classmethod
+    @profile_classmethod
+    def fix_duplicated_pkg_name(cls, pkg_name, user):
+        """
+        Corrige items marcados como PPXML_STATUS_DUPLICATED com base no pkg_name fornecido.
+
+        Args:
+            pkg_name: Nome do pacote para verificar duplicatas.
+            user: Usuário que está executando a operação.
+
+        Returns:
+            int: Número de items atualizados.
+        """
+        try:
+            items = cls.objects.filter(pkg_name=pkg_name)
+            if items.count() <= 1:
+                return 0
+
+            most_recent_item = items.order_by("-updated").first()
+            if not most_recent_item:
+                return 0
+
+            logging.info(
+                f"Fixing duplicated PidProviderXML pkg_name={pkg_name} with {items.count()} items. Keeping {most_recent_item.v3} as the correct one."
+            )
+            # Mantém o artigo mais recente como o correto
+            most_recent_item.proc_status = choices.PPXML_STATUS_DEDUPLICATED
+            most_recent_item.save()
+
+            for item in items.exclude(id=most_recent_item.id):
+                for other_pid in item.other_pid.filter(pid_type="pid_v3"):
+                    OtherPid.get_or_create(
+                        user=user,
+                        pid_type=other_pid.pid_type,
+                        pid_in_xml=other_pid.pid_in_xml,
+                        version=other_pid.current_version,
+                        pid_provider_xml=most_recent_item,
+                    )
+                OtherPid.get_or_create(
+                    user=user,
+                    pid_type="pid_v3",
+                    pid_in_xml=item.v3,
+                    version=item.current_version,
+                    pid_provider_xml=most_recent_item,
+                )
+        except Exception as exception:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=exception,
+                exc_traceback=exc_traceback,
+                action="pid_provider.models.PidProviderXML.fix_duplicated_pkg_name",
+                detail=pkg_name,
             )
 
 
