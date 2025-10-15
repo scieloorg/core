@@ -8,13 +8,15 @@ from datetime import datetime
 from django.db.models import Q
 from packtools.sps.formats.am import am
 
+from article.sources.xmlsps import load_article
 from article.models import Article, ArticleExporter, ArticleFunding
+from article.choices import DATA_STATUS_DUPLICATED, DATA_STATUS_DEDUPLICATED, DATA_STATUS_PUBLIC
 from core.mongodb import write_item
 from core.utils import date_utils
 from institution.models import Sponsor
 from journal.models import Journal, SciELOJournal
-from pid_provider.choices import PPXML_STATUS_TODO
-from pid_provider.models import PidProviderXML
+from pid_provider.choices import PPXML_STATUS_TODO, PPXML_STATUS_DUPLICATED, PPXML_STATUS_DEDUPLICATED, PPXML_STATUS_INVALID
+from pid_provider.models import PidProviderXML, XMLVersionXmlWithPreError
 from tracker.models import UnexpectedEvent
 
 
@@ -179,6 +181,8 @@ def export_article_to_articlemeta(
 ) -> bool:
 
     try:
+        if not article.is_available(collection_acron_list):
+            raise ArticleIsNotAvailableError(f"Article {article} is not available. Unable to export to ArticleMeta.")
         events = []
         external_data = {
             "pid_v3": article.pid_v3,
@@ -351,4 +355,95 @@ def bulk_export_articles_to_articlemeta(
             collection_acron_list=collection_acron_list,
             force_update=force_update,
             version=version,
+        )
+
+
+def fix_journal_articles(user, journal_id):
+    try:
+        journal = Journal.objects.get(id=journal_id)
+        issns = journal.issns
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "operation": "load_journal_articles",
+                "journal_id": journal_id,
+                "articlemeta_export": articlemeta_export,
+                "traceback": traceback.format_exc(),
+            },
+        )    
+    return
+
+
+def load_journal_articles(user, journal_id, articlemeta_export=None):
+    try:
+        journal = Journal.objects.get(id=journal_id)
+        issns = journal.issns
+
+        for item in PidProviderXML.objects.filter(
+            Q(issn_print__in=issns) | Q(issn_electronic__in=issns),
+            proc_status__in=[PPXML_STATUS_TODO, PPXML_STATUS_DEDUPLICATED]
+        ).iterator():
+            load_article_from_pid_provider_xml(user, item, articlemeta_export)
+        
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "operation": "load_journal_articles",
+                "journal_id": journal_id,
+                "articlemeta_export": articlemeta_export,
+                "traceback": traceback.format_exc(),
+            },
+        )    
+    return
+
+
+def load_article_from_pid_provider_xml(user, pp_xml, articlemeta_export=None):
+    try:
+        # Carrega o artigo do arquivo XML
+        logging.info(f"Loading article from PidProviderXML {pp_xml.id}")
+        article = load_article(
+            user,
+            file_path=pp_xml.current_version.file.path,
+            v3=pp_xml.v3,
+            pp_xml=pp_xml,
+        )
+        # for item in article.legacy_article.select_related('collection').all():
+        #     pp_xml.collections.add(item.collection)
+
+        # article.check_availability(user)
+
+        # for item in Article.objects.filter(sps_pkg_name=article.sps_pkg_name).exclude(id=article.id).iterator():
+        #     item.data_status = DATA_STATUS_DUPLICATED
+        #     item.save()
+        
+        # Exporta para ArticleMeta se solicitado
+        if articlemeta_export and article.is_available():
+            collection_acron_list = articlemeta_export.get("collection_acron_list")
+            force_update = articlemeta_export.get("force_update", False)
+            version = articlemeta_export.get("version")
+            export_article_to_articlemeta(
+                user,
+                article,
+                collection_acron_list,
+                force_update,
+                version=version,
+            )
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "operation": "load_article_from_pid_provider_xml",
+                "pp_xml": str(pp_xml),
+                "articlemeta_export": articlemeta_export,
+                "traceback": traceback.format_exc(),
+            },
         )
