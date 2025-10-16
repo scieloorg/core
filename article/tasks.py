@@ -1186,6 +1186,7 @@ def task_fix_journal_articles_status(
     username=None,
     user_id=None,
     journal_id=None,
+    collection_acron=None,
     journal_acron=None,
     mark_as_invalid=False,
     mark_as_public=False,
@@ -1232,15 +1233,12 @@ def task_fix_journal_articles_status(
         journal = None
         if journal_id:
             journal = Journal.objects.filter(id=journal_id).first()
-        elif journal_acron:
-            journal = Journal.objects.filter(journal_acron=journal_acron).first()
+        elif journal_acron and collection_acron:
+            journal = SciELOJournal.objects.filter(
+                journal_acron=journal_acron, collection__acron3=collection_acron
+            ).first().journal
         if not journal:
-            logging.warning(f"Journal not found with acron: {journal_acron}")
-            return {
-                "status": "error",
-                "message": f"Journal not found with acron: {journal_acron}",
-                "journal_acron": journal_acron
-            }
+            raise ValueError("Journal not found with provided identifier")
         
         if mark_as_invalid:
             Article.mark_items_as_invalid(journal)
@@ -1257,7 +1255,8 @@ def task_fix_journal_articles_status(
         return {
             "status": "success",
             "journal_id": journal.id,
-            "journal_acron": journal.journal_acron,
+            "journal_acron": journal_acron,
+            "collection_acron": collection_acron,
             "operations_performed": {
                 "mark_as_invalid": mark_as_invalid,
                 "mark_as_public": mark_as_public,
@@ -1275,6 +1274,7 @@ def task_fix_journal_articles_status(
                 "task": "task_fix_journal_articles_status",
                 "journal_id": journal_id,
                 "journal_acron": journal_acron,
+                "collection_acron": collection_acron,
                 "operations": {
                     "mark_as_invalid": mark_as_invalid,
                     "mark_as_public": mark_as_public,
