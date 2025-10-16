@@ -150,13 +150,15 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         event = None
         xmltree = xml_with_pre.xmltree
 
+        logging.info(f"Article {pid_v3} {xml_with_pre.sps_pkg_name}")
+
         # CRIAÇÃO/OBTENÇÃO DO OBJETO PRINCIPAL
         article = Article.create_or_update(
             user=user,
             pid_v3=pid_v3,
-            doi=xml_with_pre.main_doi,
             sps_pkg_name=xml_with_pre.sps_pkg_name,
         )
+        logging.info(f"...Article {pid_v3} {xml_with_pre.sps_pkg_name}")
 
         event = article.add_event(user, _("load article"))
         # Configurar todos os campos antes de salvar (Sugestão 9)
@@ -187,6 +189,10 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         )
 
         # Salvar uma vez após definir todos os campos simples
+        logging.info(
+            f"Saving article {article.pid_v3} {xml_with_pre.sps_pkg_name} {xml_with_pre.main_doi}"
+        )
+
         article.save()
 
         # MANY-TO-MANY (requerem que o objeto esteja salvo)
@@ -238,9 +244,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
 
         event.finish(completed=not errors, errors=errors)
 
-        if article.pp_xml is pp_xml and article.pp_xml.proc_status != PPXML_STATUS_DONE:
-            pp_xml.proc_status = PPXML_STATUS_DONE
-            pp_xml.save()
+        article.check_availability(user=user)
 
         logging.info(
             f"The article {pid_v3} has been processed with {len(errors)} errors"
@@ -248,8 +252,9 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         return article
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
+
         if event:
-            event.finish(errors=errors, exceptions=traceback.format_exc())
+            event.finish(user, errors=errors, exceptions=traceback.format_exc())
             raise
         UnexpectedEvent.create(
             item=str(pp_xml or v3 or file_path or "xml"),

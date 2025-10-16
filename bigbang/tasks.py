@@ -74,7 +74,7 @@ def task_start(
 def task_create_tasks(self, user_id=None, username=None, tasks_data=None):
     if not tasks_data:
         user = _get_user(user_id, username)
-        return schedule_tasks(user)
+        return schedule_tasks(user.username)
     for task_data in tasks_data:
         # {
         #     'task': 'pid_provider.tasks.provide_pid_for_am_xmls',

@@ -3,12 +3,13 @@ import os
 import sys
 import traceback
 from datetime import datetime
-from functools import lru_cache
+from functools import lru_cache, cached_property
 
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
-from django.db.models import Q
+from django.db.models import Q, Count, Min
 from django.db.utils import DataError
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django_prometheus.models import ExportModelOperationsMixin
 from legendarium.formatter import descriptive_format
@@ -146,11 +147,13 @@ class Article(
     valid = models.BooleanField(default=False, blank=True, null=True)
     errors = models.JSONField(default=None, blank=True, null=True)
     legacy_article = models.ManyToManyField(AMArticle)
+    is_public = models.BooleanField(default=False, blank=True, null=True)
 
     base_form_class = CoreAdminModelForm
 
     # Metadados principais do artigo
     panels_identification = [
+        FieldPanel("is_public"),
         FieldPanel("data_status"),
         FieldPanel("valid"),
         FieldPanel("pid_v2", read_only=True),
@@ -249,8 +252,7 @@ class Article(
     def __str__(self):
         return self.sps_pkg_name or self.pid_v3 or f"{self.doi.first()}" or self.title
 
-    @property
-    @lru_cache(maxsize=1)
+    @cached_property
     def xml_with_pre(self):
         try:
             return self.pp_xml.xml_with_pre
@@ -268,13 +270,16 @@ class Article(
     def abstracts(self):
         return DocumentAbstract.objects.filter(article=self)
 
-    @property
+    @cached_property
     def collections(self):
         if self.journal:
+            cols = []
             for item in self.journal.scielojournal_set.all().select_related(
                 "collection"
             ):
-                yield item.collection
+                cols.append(item.collection)
+            return cols
+        return []
 
     @classmethod
     def last_created_date(cls):
@@ -337,117 +342,85 @@ class Article(
     def get_versions(
         cls,
         pid_v3=None,
-        doi=None,
         sps_pkg_name=None,
     ):
-        if not pid_v3 and not doi and not sps_pkg_name:
-            raise ValueError("Article requires params: pid_v3 or doi or sps_pkg_name")
+        if not pid_v3 and not sps_pkg_name:
+            raise ValueError("Article requires params: pid_v3 or sps_pkg_name")
         q = Q()
-        if doi:
-            q |= Q(doi__value__iexact=doi)
         if sps_pkg_name:
             q |= Q(sps_pkg_name=sps_pkg_name)
         if pid_v3:
             q |= Q(pid_v3=pid_v3)
-        return cls.objects.filter(
-            q
-        ).exclude(
-            data_status=choices.DATA_STATUS_DELETED,
-        ).order_by("-updated")
+        return (
+            cls.objects.filter(q)
+            .exclude(
+                data_status__in=choices.DATA_STATUS_EXCLUSION_LIST,
+            )
+            .order_by("-updated")
+        )
 
     @classmethod
     def get(
         cls,
         pid_v3=None,
-        doi=None,
         sps_pkg_name=None,
     ):
-        if not pid_v3 and not doi and not sps_pkg_name:
-            raise ValueError("Article requires params: pid_v3 or doi or sps_pkg_name")
-
-        versions = cls.get_versions(pid_v3=pid_v3, doi=doi, sps_pkg_name=sps_pkg_name)
-        total = versions.count()
-        if total == 0:
-            raise cls.DoesNotExist
-        if total == 1:
-            return versions.first()
-        raise cls.MultipleObjectsReturned(f"Found {total} Article {pid_v3} {doi} {sps_pkg_name}")
+        if not pid_v3 and not sps_pkg_name:
+            raise ValueError("Article requires params: pid_v3 or sps_pkg_name")
+        try:
+            return cls.objects.get(sps_pkg_name=sps_pkg_name, pid_v3=pid_v3)
+        except cls.DoesNotExist:
+            versions = cls.get_versions(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
+            total = versions.count()
+            if total == 0:
+                raise cls.DoesNotExist
+            if total == 1:
+                return versions.first()
+            raise cls.MultipleObjectsReturned(
+                f"Found {total} Article {pid_v3} {sps_pkg_name}"
+            )
 
     @classmethod
     def create(
         cls,
         user,
         pid_v3=None,
-        doi=None,
         sps_pkg_name=None,
     ):
         try:
+            logging.info(f"create: {pid_v3} {sps_pkg_name}")
             obj = cls()
             obj.pid_v3 = pid_v3
             obj.sps_pkg_name = sps_pkg_name
             obj.creator = user
             obj.save()
-            if doi:
-                obj.doi.add(DOI.create_or_update(user, doi, None))
             return obj
         except IntegrityError:
-            return cls.get(pid_v3=pid_v3, doi=doi, sps_pkg_name=sps_pkg_name)
+            return cls.get(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
 
     @classmethod
     def create_or_update(
         cls,
         user,
         pid_v3=None,
-        doi=None,
         sps_pkg_name=None,
     ):
+        logging.info(f"get_or_create: {pid_v3} {sps_pkg_name}")
         try:
-            return cls.get(doi=doi, pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
+            return cls.get(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
         except cls.DoesNotExist:
-            return cls.create(user=user, pid_v3=pid_v3, doi=doi, sps_pkg_name=sps_pkg_name)
+            return cls.create(user=user, pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
         except cls.MultipleObjectsReturned:
-            return cls.get_versions(pid_v3=pid_v3, doi=doi, sps_pkg_name=sps_pkg_name).first()
+            return cls.get_versions(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name).first()
 
     @classmethod
     def get_or_create(
         cls,
         pid_v3=None,
         user=None,
-        doi=None,
         sps_pkg_name=None,
     ):
-        return cls.create_or_update(user=user, pid_v3=pid_v3, doi=doi, sps_pkg_name=sps_pkg_name)
-
-    @classmethod
-    def mark_as_deleted_articles_without_pp_xml(cls, user):
-        """
-        Marca artigos como DATA_STATUS_DELETED quando pp_xml é None.
-
-        Args:
-            user: Usuário que está executando a operação
-
-        Returns:
-            int: Número de artigos atualizados
-        """
-        try:
-            return (
-                cls.objects.filter(pp_xml__isnull=True)
-                .exclude(data_status=choices.DATA_STATUS_DELETED)
-                .update(
-                    data_status=choices.DATA_STATUS_DELETED,
-                    updated_by=user,
-                    updated=datetime.utcnow(),
-                )
-            )
-
-        except Exception as exception:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                exception=exception,
-                exc_traceback=exc_traceback,
-                action="article.models.Article.mark_articles_as_deleted_without_pp_xml",
-                detail=None,
-            )
+        return cls.create_or_update(user=user, pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
 
     def complete_data(self, pp_xml):
         save = False
@@ -465,7 +438,9 @@ class Article(
                 save = True
             except (TypeError, ValueError, AttributeError):
                 try:
-                    self.article_license = self.license_statements.first().license.license_type
+                    self.article_license = (
+                        self.license_statements.first().license.license_type
+                    )
                     save = True
                 except (TypeError, ValueError, AttributeError):
                     pass
@@ -507,13 +482,14 @@ class Article(
         params = {}
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
-        logging.info(self.legacy_article.filter(
-            collection__is_active=is_active, **params
-        ).count())
+        logging.info(
+            self.legacy_article.filter(
+                collection__is_active=is_active, **params
+            ).count()
+        )
         for item in self.legacy_article.filter(
             collection__is_active=is_active, **params
         ):
-            logging.info((item, item.legacy_keys))
             yield item.legacy_keys
 
     def select_collections(self, collection_acron_list=None, is_activate=None):
@@ -583,8 +559,20 @@ class Article(
             q |= Q(article_license__isnull=article_license__isnull)
         return cls.objects.filter(q, **params)
 
-    @property
-    @lru_cache(maxsize=1)
+    @classmethod
+    def select_journal_articles(cls, journal=None, issns=None):
+        if not issns and not journal:
+            raise ValueError(
+                "Article.select_journal_articles requires issns or journal param"
+            )
+        if journal:
+            return cls.objects.filter(journal=journal)
+        return cls.objects.filter(
+            Q(journal__official__issn_print__in=issns)
+            | Q(journal__official__issn_electronic__in=issns)
+        )
+
+    @cached_property
     def langs(self):
         return [lang.code2 for lang in self.languages.all()]
 
@@ -600,12 +588,19 @@ class Article(
             yield item.data
 
     def check_availability(
-        self, user, collection_acron_list=None, timeout=None, is_activate=None, force_update=False,
+        self,
+        user,
+        collection_acron_list=None,
+        timeout=None,
+        is_activate=None,
+        force_update=False,
     ):
         try:
+            if not self.is_pp_xml_valid():
+                return False
             if not force_update and self.is_available(collection_acron_list):
                 return True
-            
+
             event = None
             event = self.add_event(user, _("check availability"))
             for collection in self.select_collections(
@@ -614,12 +609,13 @@ class Article(
             ):
                 url_builder = ArticleURLBuilder(
                     collection.domain,
-                    self.journal.scielojournal_set.filter(collection=collection).first().journal_acron,
+                    self.journal.scielojournal_set.filter(collection=collection)
+                    .first()
+                    .journal_acron,
                     self.pid_v2,
                     self.pid_v3,
                 )
                 for item in url_builder.get_urls(self.langs):
-                    logging.info(item)
                     ArticleAvailability.create_or_update(
                         user,
                         self,
@@ -630,9 +626,10 @@ class Article(
                         timeout=timeout,
                     )
             event.finish(
-                completed=self.is_available(),
+                completed=True,
                 detail=ArticleAvailability.get_stats(self),
             )
+            return self.is_available(collection_acron_list)
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             if event:
@@ -648,13 +645,150 @@ class Article(
             )
 
     def is_available(self, collection_acron_list=None, fmt=None):
+        if not self.is_pp_xml_valid():
+            return False
         for item in self.get_article_urls(
             collection_acron_list=collection_acron_list, fmt=fmt
         ):
+            if self.data_status != choices.DATA_STATUS_PUBLIC or not self.is_public:
+                self.data_status = choices.DATA_STATUS_PUBLIC
+                self.is_public = True
+                self.save()
+            self.pp_xml.mark_as_done()
             return True
+        self.pp_xml.mark_as_waiting()
+        return False
 
     def add_event(self, user, name):
         return ArticleEvent.create(user, self, name)
+
+    @classmethod
+    def mark_items_as_public(cls, journal=None, force_update=False, user=None):
+        # DATA_STATUS_DELETED, DATA_STATUS_MOVED, DATA_STATUS_INVALID, DATA_STATUS_DUPLICATED,
+        if force_update:
+            exclusion_list = []
+        else:
+            exclusion_list = choices.DATA_STATUS_EXCLUSION_LIST + [
+                choices.DATA_STATUS_PUBLIC
+            ]
+        for item in (
+            cls.select_journal_articles(journal=journal)
+            .exclude(
+                data_status__in=exclusion_list,
+            )
+            .iterator()
+        ):
+            item.check_availability(
+                user=user or item.updated_by, force_update=force_update
+            )
+
+    @classmethod
+    def mark_items_as_invalid(cls, journal=None):
+        qs = cls.select_journal_articles(journal=journal)
+        if qs.count() == 0:
+            return
+        for item in qs.iterator():
+            item.is_pp_xml_valid()
+
+    def is_pp_xml_valid(self):
+        if not self.pp_xml:
+            try:
+                self.pp_xml = PidProviderXML.objects.get(v3=self.pid_v3)
+            except PidProviderXML.DoesNotExist:
+                pass
+        if not self.pp_xml or not self.pp_xml.xml_with_pre:
+            if self.data_status != choices.DATA_STATUS_INVALID:
+                self.data_status = choices.DATA_STATUS_INVALID
+                self.save()
+            return None
+        return self.id
+
+    @classmethod
+    def find_duplicated_pkg_names(cls, journal):
+        # Busca em ambos os campos de ISSN
+        duplicates = (
+            cls.objects.filter(journal=journal)
+            .exclude(sps_pkg_name__isnull=True)
+            .exclude(sps_pkg_name="")
+            .exclude(data_status=choices.DATA_STATUS_DUPLICATED)
+            .values("sps_pkg_name")
+            .annotate(count=Count("id"))
+            .filter(count__gt=1)
+        )
+        return list(item["sps_pkg_name"] for item in duplicates)
+
+    @classmethod
+    def mark_items_as_duplicated(cls, journal):
+        """
+        Corrige todos os artigos marcados como DATA_STATUS_DUPLICATED com base nos ISSNs fornecidos.
+
+        Args:
+            issns: Lista de ISSNs para verificar duplicatas.
+            user: Usuário que está executando a operação.
+        """
+        article_duplicated_pkg_names = cls.find_duplicated_pkg_names(journal)
+        if not article_duplicated_pkg_names:
+            return
+        cls.objects.filter(sps_pkg_name__in=article_duplicated_pkg_names).exclude(
+            data_status=choices.DATA_STATUS_DUPLICATED
+        ).update(
+            data_status=choices.DATA_STATUS_DUPLICATED,
+        )
+        return article_duplicated_pkg_names
+
+    @classmethod
+    def deduplicate_items(cls, user, journal):
+        """
+        Corrige todos os artigos marcados como DATA_STATUS_DUPLICATED com base nos ISSNs fornecidos.
+
+        Args:
+            issns: Lista de ISSNs para verificar duplicatas.
+            user: Usuário que está executando a operação.
+        """
+        article_duplicated_pkg_names = cls.find_duplicated_pkg_names(journal)
+        for pkg_name in article_duplicated_pkg_names:
+            cls.fix_duplicated_pkg_name(pkg_name, user)
+        return article_duplicated_pkg_names
+
+    @classmethod
+    def fix_duplicated_pkg_name(cls, pkg_name, user):
+        """
+        Corrige artigos marcados como DATA_STATUS_DUPLICATED com base no pkg_name fornecido.
+
+        Args:
+            pkg_name: Nome do pacote para verificar duplicatas.
+            user: Usuário que está executando a operação.
+
+        Returns:
+            int: Número de artigos atualizados.
+        """
+        try:
+            articles = cls.objects.filter(sps_pkg_name=pkg_name).exclude(
+                data_status=choices.DATA_STATUS_DUPLICATED
+            )
+            if articles.count() <= 1:
+                return articles.first()
+
+            # Mantém o artigo mais recente como o correto
+            not_available_articles = []
+            for item in articles.order_by("-updated"):
+                if item.check_availability(user, force_update=True):
+                    return item
+                else:
+                    not_available_articles.append(item)
+
+            not_available_articles[0].data_status = choices.DATA_STATUS_DEDUPLICATED
+            not_available_articles[0].save()
+            return not_available_articles[0]
+
+        except Exception as exception:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=exception,
+                exc_traceback=exc_traceback,
+                action="article.models.Article.fix_duplicated_pkg_name",
+                detail=pkg_name,
+            )
 
 
 class ArticleFunding(CommonControlField):
@@ -1373,20 +1507,28 @@ class ArticleSource(CommonControlField):
             return cls.get(url=url)
 
     @classmethod
-    def create_or_update(cls, user, url=None, source_date=None, am_article=None, force_update=None):
+    def create_or_update(
+        cls, user, url=None, source_date=None, am_article=None, force_update=None
+    ):
         try:
-            logging.info(f"ArticleSource.create_or_update {url} {source_date} {am_article} {force_update}")
+            logging.info(
+                f"ArticleSource.create_or_update {url} {source_date} {am_article} {force_update}"
+            )
             obj = cls.get(url=url)
 
             if (
                 force_update
                 or (source_date and source_date != obj.source_date)
                 or (am_article and am_article != obj.am_article)
-                or not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)
+                or not obj.file
+                or not obj.file.path
+                or not os.path.isfile(obj.file.path)
             ):
                 logging.info(f"updating source: {(source_date, obj.source_date)}")
                 logging.info(f"updating am_article: {(am_article, obj.am_article)}")
-                logging.info(f"updating file: {not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)}")
+                logging.info(
+                    f"updating file: {not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)}"
+                )
                 obj.request_xml()
                 obj.updated_by = user
                 obj.source_date = source_date
@@ -1395,11 +1537,12 @@ class ArticleSource(CommonControlField):
                 obj.save()
 
         except cls.DoesNotExist:
-            obj = cls.create(user, url=url, source_date=source_date, am_article=am_article)
+            obj = cls.create(
+                user, url=url, source_date=source_date, am_article=am_article
+            )
         return obj
 
-    @property
-    @lru_cache(maxsize=1)
+    @cached_property
     def sps_pkg_name(self):
         try:
             xml_with_pre = list(XMLWithPre.create(path=self.file.path))[0]
@@ -1410,8 +1553,13 @@ class ArticleSource(CommonControlField):
     def request_xml(self, detail=None, force_update=False):
         if not self.url:
             raise ValueError("URL is required")
-        
-        if not self.file or not self.file.path or not os.path.isfile(self.file.path) or force_update:
+
+        if (
+            not self.file
+            or not self.file.path
+            or not os.path.isfile(self.file.path)
+            or force_update
+        ):
             if detail:
                 detail.append("create file")
 
@@ -1499,8 +1647,7 @@ class ArticleSource(CommonControlField):
             return cls.objects.filter(**params)
 
         return cls.objects.filter(
-            Q(pid_provider_xml__isnull=True)
-            | Q(file__isnull=True),
+            Q(pid_provider_xml__isnull=True) | Q(file__isnull=True),
             **params,
         )
 
@@ -1515,9 +1662,7 @@ class ArticleSource(CommonControlField):
             self.save()
         return True
 
-    def complete_data(
-        self, user, force_update=False, auto_solve_pid_conflict=False
-    ):
+    def complete_data(self, user, force_update=False, auto_solve_pid_conflict=False):
         """
         Processa um arquivo XML de artigo científico, criando ou atualizando os dados necessários.
 
@@ -1553,7 +1698,7 @@ class ArticleSource(CommonControlField):
 
             # baixa/cria o arquivo XML
             self.request_xml(detail, force_update)
-            
+
             pid_v3 = self.get_or_create_pid_v3(
                 user, detail, force_update, auto_solve_pid_conflict
             )
@@ -1650,6 +1795,7 @@ class ArticleAvailability(CommonControlField):
     url = models.URLField(max_length=500, unique=True)
     available = models.BooleanField(default=False)
     fmt = models.CharField(_("Format"), max_length=4, null=True, blank=True)
+    error = models.CharField(max_length=40, null=True, blank=True)
 
     panels = [FieldPanel("url"), FieldPanel("available", read_only=True)]
 
@@ -1675,9 +1821,9 @@ class ArticleAvailability(CommonControlField):
                 url=url,
                 fmt=fmt,
                 lang=lang,
-                available=check_url(url, timeout),
                 creator=user,
             )
+            obj.check_availability(timeout)
             obj.save()
             return obj
         except IntegrityError:
@@ -1714,8 +1860,21 @@ class ArticleAvailability(CommonControlField):
                 timeout=timeout,
             )
 
+    def check_availability(self, timeout=None):
+        try:
+            available = check_url(self.url, timeout)
+            error = None
+        except Exception as e:
+            available = False
+            error = str(type(e).__name__)
+        if available != self.available or error != self.error:
+            self.available = available
+            self.error = error
+            self.updated = timezone.now()
+        return available
+
     def update(self, user, timeout=None):
-        self.available = check_url(self.url, timeout)
+        self.check_availability(timeout)
         self.updated_by = user
         self.save()
 
@@ -1769,10 +1928,9 @@ class ArticleAvailability(CommonControlField):
 def check_url(url, timeout=None):
     try:
         fetch_data(url, timeout=timeout or 30)
-    except NonRetryableError as e:
-        return False
-    else:
         return True
+    except Exception as e:
+        raise
 
 
 class ArticleEvent(BaseEvent, CommonControlField, Orderable):

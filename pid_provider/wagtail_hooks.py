@@ -24,8 +24,7 @@ class PidProviderXMLViewSet(CommonControlFieldViewSet):
         "v3",
         "v2",
         "aop_pid",
-        "main_doi",
-        "available_since",
+        "proc_status",
         "other_pid_count",
         "updated",
     ]

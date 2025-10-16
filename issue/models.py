@@ -1,5 +1,5 @@
 from datetime import datetime
-from functools import lru_cache
+from functools import lru_cache, cached_property
 
 from django.db import IntegrityError, models
 from django.utils.translation import gettext_lazy as _
@@ -165,7 +165,9 @@ class Issue(CommonControlField, ClusterableModel):
 
         for sj in self.journal.scielojournal_set.all():
             pid = f"{sj.issn_scielo}{self.year}{self.issue_pid_suffix}"
-            am_issue = AMIssue.create_or_update(pid, sj.collection, None, self.updated_by, status="done")
+            am_issue = AMIssue.create_or_update(
+                pid, sj.collection, None, self.updated_by, status="done"
+            )
             self.legacy_issue.add(am_issue)
 
     def get_legacy_keys(self, collection_acron_list=None, is_active=None):
@@ -323,13 +325,11 @@ class Issue(CommonControlField, ClusterableModel):
     def __str__(self):
         return self.short_identification
 
-    @property
-    @lru_cache(maxsize=1)
+    @cached_property
     def short_identification(self):
         return f"{self.journal.title} {self.issue_folder} [{self.journal.collection_acrons}]"
 
-    @property
-    @lru_cache(maxsize=1)
+    @cached_property
     def issue_folder(self):
         values = (self.volume, self.number, self.supplement)
         labels = ("v", "n", "s")
