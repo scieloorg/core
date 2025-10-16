@@ -583,11 +583,9 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     @profile_property
     def xml_with_pre(self):
         try:
-            logging.info(f"Getting xml_with_pre for {self} {self.current_version}")
             return self.current_version.xml_with_pre
         except Exception as e:
-            logging.exception(e)
-            
+            logging.exception(e)            
             if self.proc_status != choices.PPXML_STATUS_INVALID:
                 self.proc_status = choices.PPXML_STATUS_INVALID
                 self.save()
