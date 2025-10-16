@@ -91,7 +91,6 @@ def schedule_tasks(username):
     schedule_bigbang_start(username, enabled)
 
 
-
 # ==============================================================================
 # AGENDAMENTO DE TAREFAS DE BIGBANG
 # ==============================================================================
@@ -793,13 +792,14 @@ def schedule_export_article_to_articlemeta(username, enabled=False):
         minute="1",
     )
 
+
 def schedule_fix_article_records_status(
     username,
     enabled,
 ):
     """
     Agenda a tarefa de corrigir status dos registros de artigos.
-    
+
     Permite marcar artigos como inválidos, públicos ou duplicados,
     além de deduplicar registros conforme necessário.
     """
@@ -825,13 +825,14 @@ def schedule_fix_article_records_status(
         minute="30",
     )
 
+
 def schedule_fix_pid_provider_xmls_status(
     username,
     enabled,
 ):
     """
     Agenda a tarefa de corrigir status dos XMLs do PID Provider.
-    
+
     Permite marcar XMLs como inválidos, públicos ou duplicados,
     além de deduplicar registros conforme necessário.
     """

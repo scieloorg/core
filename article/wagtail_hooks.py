@@ -24,12 +24,18 @@ class ArticleAvailabilitySnippetViewSet(SnippetViewSet):
     menu_label = _("Article Availability")
     menu_icon = "link"
     menu_order = 1
-    
-    list_display = ["url",  "available", "error", "updated"]
+
+    list_display = ["url", "available", "error", "updated"]
     list_filter = ["collection", "lang", "fmt", "available", "error"]
-    search_fields = ["url", "article__sps_pkg_name", "article__pid_v3", "article__pid_v2"]
+    search_fields = [
+        "url",
+        "article__sps_pkg_name",
+        "article__pid_v3",
+        "article__pid_v2",
+    ]
     icon = "link"
     menu_label = _("Article Availability")
+
 
 # register_snippet(ArticleAvailabilitySnippetViewSet)
 
@@ -39,7 +45,7 @@ class ArticleSnippetViewSet(SnippetViewSet):
     menu_label = _("Article")
     menu_icon = "folder"
     menu_order = 1
-    
+
     list_display = (
         "sps_pkg_name",
         "pid_v3",
@@ -70,7 +76,7 @@ class ArticleExporterSnippetViewSet(SnippetViewSet):
     menu_label = _("Article Export")
     menu_icon = "folder"
     menu_order = 100
-    
+
     list_display = ("parent", "collection", "destination", "status", "updated")
     list_filter = (
         "collection",
@@ -85,7 +91,7 @@ class ArticleFormatSnippetViewSet(SnippetViewSet):
     menu_label = _("Article Format")
     menu_icon = "folder"
     menu_order = 500
-    
+
     list_display = (
         "article",
         "format_name",
@@ -101,6 +107,7 @@ class ArticleFormatSnippetViewSet(SnippetViewSet):
         "version",
     )
 
+
 # register_snippet(ArticleFormatSnippetViewSet)
 
 
@@ -109,7 +116,7 @@ class ArticleFundingSnippetViewSet(SnippetViewSet):
     menu_label = _("Article Funding")
     menu_icon = "folder"
     menu_order = 200
-    
+
     list_display = ("award_id", "funding_source")
     search_fields = (
         "award_id",
@@ -126,7 +133,13 @@ class ArticleSourceSnippetViewSet(SnippetViewSet):
     menu_icon = "doc-full"
     menu_order = 200
 
-    list_display = ["am_article", "pid_provider_xml", "status", "source_date", "updated"]
+    list_display = [
+        "am_article",
+        "pid_provider_xml",
+        "status",
+        "source_date",
+        "updated",
+    ]
     list_filter = [
         "status",
         "am_article__collection",
@@ -134,6 +147,7 @@ class ArticleSourceSnippetViewSet(SnippetViewSet):
     search_fields = ["url", "pid_provider_xml__v3", "am_article__collection__acronym"]
     ordering = ["-updated"]
     list_per_page = 25
+
 
 # register_snippet(ArticleSourceSnippetViewSet)
 
@@ -150,5 +164,6 @@ class ArticleSnippetViewSetGroup(SnippetViewSetGroup):
         ArticleFundingSnippetViewSet,
         ArticleSourceSnippetViewSet,
     )
+
 
 register_snippet(ArticleSnippetViewSetGroup)

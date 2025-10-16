@@ -151,7 +151,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         xmltree = xml_with_pre.xmltree
 
         logging.info(f"Article {pid_v3} {xml_with_pre.sps_pkg_name}")
-        
+
         # CRIAÇÃO/OBTENÇÃO DO OBJETO PRINCIPAL
         article = Article.create_or_update(
             user=user,
@@ -189,8 +189,10 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         )
 
         # Salvar uma vez após definir todos os campos simples
-        logging.info(f"Saving article {article.pid_v3} {xml_with_pre.sps_pkg_name} {xml_with_pre.main_doi}")
-        
+        logging.info(
+            f"Saving article {article.pid_v3} {xml_with_pre.sps_pkg_name} {xml_with_pre.main_doi}"
+        )
+
         article.save()
 
         # MANY-TO-MANY (requerem que o objeto esteja salvo)
@@ -250,7 +252,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         return article
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        
+
         if event:
             event.finish(user, errors=errors, exceptions=traceback.format_exc())
             raise

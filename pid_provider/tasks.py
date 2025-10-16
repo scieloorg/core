@@ -136,7 +136,7 @@ def task_fix_pid_provider_xmls_status(
             journal_acron_list=["abc", "xyz"],
             mark_as_invalid=True
         )
-        
+
         # Marcar artigos como public e deduplicated
         task_fix_pid_provider_xmls_status.delay(
             journal_acron_list=["abc"],
@@ -146,31 +146,35 @@ def task_fix_pid_provider_xmls_status(
     """
     try:
         user = _get_user(self.request, username=username, user_id=user_id)
-        
+
         # Validação: ao menos uma operação deve ser especificada
         operations = {
             "invalid": mark_as_invalid,
             "duplicated": mark_as_duplicated,
             "deduplicated": deduplicate,
         }
-        
+
         if not any(operations.values()):
             raise ValueError("At least one marking operation must be specified")
-        
+
         # Construir filtros para os periódicos
         journal_filters = {}
-        
+
         # Filtro por coleção (através do relacionamento)
         if collection_acron_list:
-            journal_filters['collection_acron3__in'] = collection_acron_list
-        
+            journal_filters["collection_acron3__in"] = collection_acron_list
+
         # Filtro por periódico
         if journal_acron_list:
-            journal_filters['journal_acron__in'] = journal_acron_list
-        
+            journal_filters["journal_acron__in"] = journal_acron_list
+
         # Iterar pelos periódicos e disparar subtarefas
         journals_processed = 0
-        for journal_id in SciELOJournal.objects.filter(**journal_filters).values_list('journal__id', flat=True).distinct():
+        for journal_id in (
+            SciELOJournal.objects.filter(**journal_filters)
+            .values_list("journal__id", flat=True)
+            .distinct()
+        ):
             task_fix_journal_pid_provider_xmls_status.apply_async(
                 kwargs={
                     "username": username,
@@ -182,17 +186,17 @@ def task_fix_pid_provider_xmls_status(
                 }
             )
             journals_processed += 1
-        
+
         return {
             "status": "success",
             "journals_processed": journals_processed,
             "operations": {k: v for k, v in operations.items() if v},
             "filters": {
                 "collections": collection_acron_list,
-                "journals": journal_acron_list
-            }
+                "journals": journal_acron_list,
+            },
         }
-        
+
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
@@ -206,7 +210,7 @@ def task_fix_pid_provider_xmls_status(
                     "mark_as_invalid": mark_as_invalid,
                     "mark_as_duplicated": mark_as_duplicated,
                     "deduplicate": deduplicate,
-                }
+                },
             },
         )
         raise
@@ -257,22 +261,26 @@ def task_fix_journal_pid_provider_xmls_status(
         # Validar que ao menos um identificador foi fornecido
         if not journal_id and not journal_acron:
             raise ValueError("Either journal_id or journal_acron must be provided")
-        
+
         user = _get_user(self.request, username=username, user_id=user_id)
 
         journal = None
         if journal_id:
             journal = Journal.objects.filter(id=journal_id).first()
         elif journal_acron and collection_acron:
-            journal = SciELOJournal.objects.filter(
-                journal_acron=journal_acron, collection__acron3=collection_acron
-            ).first().journal
+            journal = (
+                SciELOJournal.objects.filter(
+                    journal_acron=journal_acron, collection__acron3=collection_acron
+                )
+                .first()
+                .journal
+            )
         if not journal:
             raise ValueError("Journal not found with provided identifier")
-        
+
         if mark_as_invalid:
             PidProviderXML.mark_items_as_invalid(journal.issns)
-    
+
         if mark_as_duplicated:
             PidProviderXML.mark_items_as_duplicated(journal.issns)
 
@@ -288,9 +296,9 @@ def task_fix_journal_pid_provider_xmls_status(
                 "mark_as_invalid": mark_as_invalid,
                 "mark_as_duplicated": mark_as_duplicated,
                 "deduplicate": deduplicate,
-            }
+            },
         }
-  
+
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
@@ -305,7 +313,7 @@ def task_fix_journal_pid_provider_xmls_status(
                     "mark_as_invalid": mark_as_invalid,
                     "mark_as_duplicated": mark_as_duplicated,
                     "deduplicate": deduplicate,
-                }
+                },
             },
         )
         raise

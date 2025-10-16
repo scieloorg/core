@@ -585,7 +585,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         try:
             return self.current_version.xml_with_pre
         except Exception as e:
-            logging.exception(e)            
+            logging.exception(e)
             if self.proc_status != choices.PPXML_STATUS_INVALID:
                 self.proc_status = choices.PPXML_STATUS_INVALID
                 self.save()
@@ -1367,7 +1367,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             raise exceptions.PidProviderXMLFixPidV2Error(
                 f"Unable to fix pid v2 for {item.v3} {e} {type(e)}"
             )
-        
+
     @profile_method
     def mark_as_waiting(self):
         if self.proc_status != choices.PPXML_STATUS_WAIT:
@@ -1391,7 +1391,6 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             except Exception as e:
                 invalid = True
 
-
     @classmethod
     @profile_classmethod
     def find_duplicated_pkg_names(cls, issns):
@@ -1400,7 +1399,12 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             cls.objects.filter(Q(issn_print__in=issns) | Q(issn_electronic__in=issns))
             .exclude(pkg_name__isnull=True)
             .exclude(pkg_name="")
-            .exclude(proc_status__in=[choices.PPXML_STATUS_DUPLICATED, choices.PPXML_STATUS_INVALID])
+            .exclude(
+                proc_status__in=[
+                    choices.PPXML_STATUS_DUPLICATED,
+                    choices.PPXML_STATUS_INVALID,
+                ]
+            )
             .values("pkg_name")
             .annotate(count=Count("id"))
             .filter(count__gt=1)
@@ -1434,7 +1438,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         for pkg_name in duplicated_pkg_names:
             cls.fix_duplicated_pkg_name(pkg_name, user)
         return duplicated_pkg_names
-    
+
     @classmethod
     @profile_classmethod
     def fix_duplicated_pkg_name(cls, pkg_name, user):

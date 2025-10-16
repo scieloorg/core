@@ -165,7 +165,9 @@ class Issue(CommonControlField, ClusterableModel):
 
         for sj in self.journal.scielojournal_set.all():
             pid = f"{sj.issn_scielo}{self.year}{self.issue_pid_suffix}"
-            am_issue = AMIssue.create_or_update(pid, sj.collection, None, self.updated_by, status="done")
+            am_issue = AMIssue.create_or_update(
+                pid, sj.collection, None, self.updated_by, status="done"
+            )
             self.legacy_issue.add(am_issue)
 
     def get_legacy_keys(self, collection_acron_list=None, is_active=None):

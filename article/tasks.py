@@ -492,15 +492,17 @@ def task_select_articles_to_load_from_pid_provider(
 
         logging.info("get_pp_xml_ids")
         # Busca PidProviderXMLs baseado nos filtros
-        logging.info(dict(
-            collection_acron_list=collection_acron_list,
-            journal_acron_list=journal_acron_list,
-            from_pub_year=from_pub_year,
-            until_pub_year=until_pub_year,
-            from_updated_date=from_updated_date,
-            until_updated_date=until_updated_date,
-            proc_status_list=proc_status_list,
-        ))
+        logging.info(
+            dict(
+                collection_acron_list=collection_acron_list,
+                journal_acron_list=journal_acron_list,
+                from_pub_year=from_pub_year,
+                until_pub_year=until_pub_year,
+                from_updated_date=from_updated_date,
+                until_updated_date=until_updated_date,
+                proc_status_list=proc_status_list,
+            )
+        )
         pp_xml_items = controller.get_pp_xml_ids(
             collection_acron_list=collection_acron_list,
             journal_acron_list=journal_acron_list,
@@ -596,7 +598,7 @@ def task_load_article_from_pp_xml(
             v3=pp_xml.v3,
             pp_xml=pp_xml,
         )
-        for item in article.legacy_article.select_related('collection').all():
+        for item in article.legacy_article.select_related("collection").all():
             pp_xml.collections.add(item.collection)
         # Verifica disponibilidade (URLs, assets, etc)
         article.check_availability(user, collection_acron_list, timeout, is_activate)
@@ -861,10 +863,7 @@ def task_select_articles_to_load_from_collection_endpoint(
 
         # Itera sobre documentos e dispara tarefas individuais
         for document in harvester.harvest_documents():
-            source_date = (
-                document.get("processing_date") or 
-                document.get("origin_date")
-            )
+            source_date = document.get("processing_date") or document.get("origin_date")
             task_load_article_from_xml_endpoint.delay(
                 username,
                 user_id,
@@ -938,7 +937,8 @@ def task_load_article_from_xml_endpoint(
 
         # Cria ou atualiza ArticleSource
         am_article = AMArticle.create_or_update(
-            pid, Collection.get(collection_acron), None, user)
+            pid, Collection.get(collection_acron), None, user
+        )
 
         article_source = ArticleSource.create_or_update(
             user=user,
@@ -952,7 +952,7 @@ def task_load_article_from_xml_endpoint(
             force_update=force_update,
             auto_solve_pid_conflict=auto_solve_pid_conflict,
         )
-        
+
         if article_source.status != ArticleSource.StatusChoices.COMPLETED:
             return
 
@@ -1101,7 +1101,7 @@ def task_fix_article_records_status(
             journal_acron_list=["abc", "xyz"],
             mark_as_invalid=True
         )
-        
+
         # Marcar artigos como public e deduplicated
         task_fix_article_records_status.delay(
             journal_acron_list=["abc"],
@@ -1111,7 +1111,7 @@ def task_fix_article_records_status(
     """
     try:
         user = _get_user(self.request, username=username, user_id=user_id)
-        
+
         # Validação: ao menos uma operação deve ser especificada
         operations = {
             "invalid": mark_as_invalid,
@@ -1119,24 +1119,28 @@ def task_fix_article_records_status(
             "duplicated": mark_as_duplicated,
             "deduplicated": deduplicate,
         }
-        
+
         if not any(operations.values()):
             raise ValueError("At least one marking operation must be specified")
-        
+
         # Construir filtros para os periódicos
         journal_filters = {}
-        
+
         # Filtro por coleção (através do relacionamento)
         if collection_acron_list:
-            journal_filters['collection__acron3__in'] = collection_acron_list
-        
+            journal_filters["collection__acron3__in"] = collection_acron_list
+
         # Filtro por periódico
         if journal_acron_list:
-            journal_filters['journal_acron__in'] = journal_acron_list
-        
+            journal_filters["journal_acron__in"] = journal_acron_list
+
         # Iterar pelos periódicos e disparar subtarefas
         journals_processed = 0
-        for journal_id in SciELOJournal.objects.filter(**journal_filters).values_list('journal__id', flat=True).distinct():
+        for journal_id in (
+            SciELOJournal.objects.filter(**journal_filters)
+            .values_list("journal__id", flat=True)
+            .distinct()
+        ):
             qs = Article.objects.filter(journal_id=journal_id)
             if qs.count() == 0:
                 continue
@@ -1152,17 +1156,17 @@ def task_fix_article_records_status(
                 }
             )
             journals_processed += 1
-        
+
         return {
             "status": "success",
             "journals_processed": journals_processed,
             "operations": {k: v for k, v in operations.items() if v},
             "filters": {
                 "collections": collection_acron_list,
-                "journals": journal_acron_list
-            }
+                "journals": journal_acron_list,
+            },
         }
-        
+
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
@@ -1177,7 +1181,7 @@ def task_fix_article_records_status(
                     "mark_as_public": mark_as_public,
                     "mark_as_duplicated": mark_as_duplicated,
                     "deduplicate": deduplicate,
-                }
+                },
             },
         )
         raise
@@ -1229,20 +1233,24 @@ def task_fix_journal_articles_status(
         # Validar que ao menos um identificador foi fornecido
         if not journal_id and not journal_acron:
             raise ValueError("Either journal_id or journal_acron must be provided")
-        
+
         user = _get_user(self.request, username=username, user_id=user_id)
-        
+
         # Buscar o periódico por ID ou acrônimo
         journal = None
         if journal_id:
             journal = Journal.objects.filter(id=journal_id).first()
         elif journal_acron and collection_acron:
-            journal = SciELOJournal.objects.filter(
-                journal_acron=journal_acron, collection__acron3=collection_acron
-            ).first().journal
+            journal = (
+                SciELOJournal.objects.filter(
+                    journal_acron=journal_acron, collection__acron3=collection_acron
+                )
+                .first()
+                .journal
+            )
         if not journal:
             raise ValueError("Journal not found with provided identifier")
-        
+
         if Article.objects.filter(journal=journal).count() == 0:
             return {
                 "status": "no_articles",
@@ -1252,10 +1260,10 @@ def task_fix_journal_articles_status(
             }
         if mark_as_invalid:
             Article.mark_items_as_invalid(journal)
-    
+
         if mark_as_public:
             Article.mark_items_as_public(journal)
-        
+
         if mark_as_duplicated:
             Article.mark_items_as_duplicated(journal)
 
@@ -1272,9 +1280,9 @@ def task_fix_journal_articles_status(
                 "mark_as_public": mark_as_public,
                 "mark_as_duplicated": mark_as_duplicated,
                 "deduplicate": deduplicate,
-            }
+            },
         }
-  
+
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
@@ -1290,7 +1298,7 @@ def task_fix_journal_articles_status(
                     "mark_as_public": mark_as_public,
                     "mark_as_duplicated": mark_as_duplicated,
                     "deduplicate": deduplicate,
-                }
+                },
             },
         )
         raise

@@ -351,12 +351,14 @@ class Article(
             q |= Q(sps_pkg_name=sps_pkg_name)
         if pid_v3:
             q |= Q(pid_v3=pid_v3)
-        return cls.objects.filter(
-            q
-        ).exclude(
-            data_status__in=choices.DATA_STATUS_EXCLUSION_LIST,
-        ).order_by("-updated")
-        
+        return (
+            cls.objects.filter(q)
+            .exclude(
+                data_status__in=choices.DATA_STATUS_EXCLUSION_LIST,
+            )
+            .order_by("-updated")
+        )
+
     @classmethod
     def get(
         cls,
@@ -374,7 +376,9 @@ class Article(
                 raise cls.DoesNotExist
             if total == 1:
                 return versions.first()
-            raise cls.MultipleObjectsReturned(f"Found {total} Article {pid_v3} {sps_pkg_name}")
+            raise cls.MultipleObjectsReturned(
+                f"Found {total} Article {pid_v3} {sps_pkg_name}"
+            )
 
     @classmethod
     def create(
@@ -434,7 +438,9 @@ class Article(
                 save = True
             except (TypeError, ValueError, AttributeError):
                 try:
-                    self.article_license = self.license_statements.first().license.license_type
+                    self.article_license = (
+                        self.license_statements.first().license.license_type
+                    )
                     save = True
                 except (TypeError, ValueError, AttributeError):
                     pass
@@ -476,9 +482,11 @@ class Article(
         params = {}
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
-        logging.info(self.legacy_article.filter(
-            collection__is_active=is_active, **params
-        ).count())
+        logging.info(
+            self.legacy_article.filter(
+                collection__is_active=is_active, **params
+            ).count()
+        )
         for item in self.legacy_article.filter(
             collection__is_active=is_active, **params
         ):
@@ -554,10 +562,15 @@ class Article(
     @classmethod
     def select_journal_articles(cls, journal=None, issns=None):
         if not issns and not journal:
-            raise ValueError("Article.select_journal_articles requires issns or journal param")
+            raise ValueError(
+                "Article.select_journal_articles requires issns or journal param"
+            )
         if journal:
             return cls.objects.filter(journal=journal)
-        return cls.objects.filter(Q(journal__official__issn_print__in=issns) | Q(journal__official__issn_electronic__in=issns))
+        return cls.objects.filter(
+            Q(journal__official__issn_print__in=issns)
+            | Q(journal__official__issn_electronic__in=issns)
+        )
 
     @cached_property
     def langs(self):
@@ -575,14 +588,19 @@ class Article(
             yield item.data
 
     def check_availability(
-        self, user, collection_acron_list=None, timeout=None, is_activate=None, force_update=False,
+        self,
+        user,
+        collection_acron_list=None,
+        timeout=None,
+        is_activate=None,
+        force_update=False,
     ):
         try:
             if not self.is_pp_xml_valid():
                 return False
             if not force_update and self.is_available(collection_acron_list):
                 return True
-            
+
             event = None
             event = self.add_event(user, _("check availability"))
             for collection in self.select_collections(
@@ -591,7 +609,9 @@ class Article(
             ):
                 url_builder = ArticleURLBuilder(
                     collection.domain,
-                    self.journal.scielojournal_set.filter(collection=collection).first().journal_acron,
+                    self.journal.scielojournal_set.filter(collection=collection)
+                    .first()
+                    .journal_acron,
                     self.pid_v2,
                     self.pid_v3,
                 )
@@ -641,20 +661,26 @@ class Article(
 
     def add_event(self, user, name):
         return ArticleEvent.create(user, self, name)
-    
+
     @classmethod
     def mark_items_as_public(cls, journal=None, force_update=False, user=None):
         # DATA_STATUS_DELETED, DATA_STATUS_MOVED, DATA_STATUS_INVALID, DATA_STATUS_DUPLICATED,
         if force_update:
             exclusion_list = []
         else:
-            exclusion_list = choices.DATA_STATUS_EXCLUSION_LIST + [choices.DATA_STATUS_PUBLIC]
-        for item in cls.select_journal_articles(
-            journal=journal
-        ).exclude(
-            data_status__in=exclusion_list,
-        ).iterator():
-            item.check_availability(user=user or item.updated_by, force_update=force_update)
+            exclusion_list = choices.DATA_STATUS_EXCLUSION_LIST + [
+                choices.DATA_STATUS_PUBLIC
+            ]
+        for item in (
+            cls.select_journal_articles(journal=journal)
+            .exclude(
+                data_status__in=exclusion_list,
+            )
+            .iterator()
+        ):
+            item.check_availability(
+                user=user or item.updated_by, force_update=force_update
+            )
 
     @classmethod
     def mark_items_as_invalid(cls, journal=None):
@@ -671,7 +697,7 @@ class Article(
             except PidProviderXML.DoesNotExist:
                 pass
         if not self.pp_xml or not self.pp_xml.xml_with_pre:
-            if self.data_status != choices.DATA_STATUS_INVALID: 
+            if self.data_status != choices.DATA_STATUS_INVALID:
                 self.data_status = choices.DATA_STATUS_INVALID
                 self.save()
             return None
@@ -682,15 +708,15 @@ class Article(
         # Busca em ambos os campos de ISSN
         duplicates = (
             cls.objects.filter(journal=journal)
-                .exclude(sps_pkg_name__isnull=True)
-                .exclude(sps_pkg_name="")
-                .exclude(data_status=choices.DATA_STATUS_DUPLICATED)
-                .values("sps_pkg_name")
-                .annotate(count=Count("id"))
-                .filter(count__gt=1)
+            .exclude(sps_pkg_name__isnull=True)
+            .exclude(sps_pkg_name="")
+            .exclude(data_status=choices.DATA_STATUS_DUPLICATED)
+            .values("sps_pkg_name")
+            .annotate(count=Count("id"))
+            .filter(count__gt=1)
         )
-        return list(item['sps_pkg_name'] for item in duplicates)
-    
+        return list(item["sps_pkg_name"] for item in duplicates)
+
     @classmethod
     def mark_items_as_duplicated(cls, journal):
         """
@@ -737,13 +763,15 @@ class Article(
             int: Número de artigos atualizados.
         """
         try:
-            articles = cls.objects.filter(sps_pkg_name=pkg_name).exclude(data_status=choices.DATA_STATUS_DUPLICATED)
+            articles = cls.objects.filter(sps_pkg_name=pkg_name).exclude(
+                data_status=choices.DATA_STATUS_DUPLICATED
+            )
             if articles.count() <= 1:
                 return articles.first()
-            
+
             # Mantém o artigo mais recente como o correto
             not_available_articles = []
-            for item in articles.order_by('-updated'):
+            for item in articles.order_by("-updated"):
                 if item.check_availability(user, force_update=True):
                     return item
                 else:
@@ -1479,20 +1507,28 @@ class ArticleSource(CommonControlField):
             return cls.get(url=url)
 
     @classmethod
-    def create_or_update(cls, user, url=None, source_date=None, am_article=None, force_update=None):
+    def create_or_update(
+        cls, user, url=None, source_date=None, am_article=None, force_update=None
+    ):
         try:
-            logging.info(f"ArticleSource.create_or_update {url} {source_date} {am_article} {force_update}")
+            logging.info(
+                f"ArticleSource.create_or_update {url} {source_date} {am_article} {force_update}"
+            )
             obj = cls.get(url=url)
 
             if (
                 force_update
                 or (source_date and source_date != obj.source_date)
                 or (am_article and am_article != obj.am_article)
-                or not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)
+                or not obj.file
+                or not obj.file.path
+                or not os.path.isfile(obj.file.path)
             ):
                 logging.info(f"updating source: {(source_date, obj.source_date)}")
                 logging.info(f"updating am_article: {(am_article, obj.am_article)}")
-                logging.info(f"updating file: {not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)}")
+                logging.info(
+                    f"updating file: {not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)}"
+                )
                 obj.request_xml()
                 obj.updated_by = user
                 obj.source_date = source_date
@@ -1501,7 +1537,9 @@ class ArticleSource(CommonControlField):
                 obj.save()
 
         except cls.DoesNotExist:
-            obj = cls.create(user, url=url, source_date=source_date, am_article=am_article)
+            obj = cls.create(
+                user, url=url, source_date=source_date, am_article=am_article
+            )
         return obj
 
     @cached_property
@@ -1515,8 +1553,13 @@ class ArticleSource(CommonControlField):
     def request_xml(self, detail=None, force_update=False):
         if not self.url:
             raise ValueError("URL is required")
-        
-        if not self.file or not self.file.path or not os.path.isfile(self.file.path) or force_update:
+
+        if (
+            not self.file
+            or not self.file.path
+            or not os.path.isfile(self.file.path)
+            or force_update
+        ):
             if detail:
                 detail.append("create file")
 
@@ -1604,8 +1647,7 @@ class ArticleSource(CommonControlField):
             return cls.objects.filter(**params)
 
         return cls.objects.filter(
-            Q(pid_provider_xml__isnull=True)
-            | Q(file__isnull=True),
+            Q(pid_provider_xml__isnull=True) | Q(file__isnull=True),
             **params,
         )
 
@@ -1620,9 +1662,7 @@ class ArticleSource(CommonControlField):
             self.save()
         return True
 
-    def complete_data(
-        self, user, force_update=False, auto_solve_pid_conflict=False
-    ):
+    def complete_data(self, user, force_update=False, auto_solve_pid_conflict=False):
         """
         Processa um arquivo XML de artigo científico, criando ou atualizando os dados necessários.
 
@@ -1658,7 +1698,7 @@ class ArticleSource(CommonControlField):
 
             # baixa/cria o arquivo XML
             self.request_xml(detail, force_update)
-            
+
             pid_v3 = self.get_or_create_pid_v3(
                 user, detail, force_update, auto_solve_pid_conflict
             )
@@ -1756,7 +1796,7 @@ class ArticleAvailability(CommonControlField):
     available = models.BooleanField(default=False)
     fmt = models.CharField(_("Format"), max_length=4, null=True, blank=True)
     error = models.CharField(max_length=40, null=True, blank=True)
-    
+
     panels = [FieldPanel("url"), FieldPanel("available", read_only=True)]
 
     @classmethod
@@ -1832,7 +1872,7 @@ class ArticleAvailability(CommonControlField):
             self.error = error
             self.updated = timezone.now()
         return available
-    
+
     def update(self, user, timeout=None):
         self.check_availability(timeout)
         self.updated_by = user

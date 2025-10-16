@@ -10,18 +10,26 @@ from packtools.sps.formats.am import am
 
 from article.sources.xmlsps import load_article
 from article.models import Article, ArticleExporter, ArticleFunding
-from article.choices import DATA_STATUS_DUPLICATED, DATA_STATUS_DEDUPLICATED, DATA_STATUS_PUBLIC
+from article.choices import (
+    DATA_STATUS_DUPLICATED,
+    DATA_STATUS_DEDUPLICATED,
+    DATA_STATUS_PUBLIC,
+)
 from core.mongodb import write_item
 from core.utils import date_utils
 from institution.models import Sponsor
 from journal.models import Journal, SciELOJournal
-from pid_provider.choices import PPXML_STATUS_TODO, PPXML_STATUS_DUPLICATED, PPXML_STATUS_DEDUPLICATED, PPXML_STATUS_INVALID
+from pid_provider.choices import (
+    PPXML_STATUS_TODO,
+    PPXML_STATUS_DUPLICATED,
+    PPXML_STATUS_DEDUPLICATED,
+    PPXML_STATUS_INVALID,
+)
 from pid_provider.models import PidProviderXML, XMLVersionXmlWithPreError
 from tracker.models import UnexpectedEvent
 
 
-class ArticleIsNotAvailableError(Exception):
-    ...
+class ArticleIsNotAvailableError(Exception): ...
 
 
 def add_collections_to_pid_provider_items():
@@ -70,7 +78,8 @@ def add_collections_to_pid_provider(pid_provider):
                 "pid_provider": str(pid_provider),
                 "traceback": traceback.format_exc(),
             },
-        )        
+        )
+
 
 def get_pp_xml_ids(
     collection_acron_list=None,
@@ -182,7 +191,9 @@ def export_article_to_articlemeta(
 
     try:
         if not article.is_available(collection_acron_list):
-            raise ArticleIsNotAvailableError(f"Article {article} is not available. Unable to export to ArticleMeta.")
+            raise ArticleIsNotAvailableError(
+                f"Article {article} is not available. Unable to export to ArticleMeta."
+            )
         events = []
         external_data = {
             "pid_v3": article.pid_v3,
@@ -374,7 +385,7 @@ def fix_journal_articles(user, journal_id):
                 "articlemeta_export": articlemeta_export,
                 "traceback": traceback.format_exc(),
             },
-        )    
+        )
     return
 
 
@@ -385,10 +396,10 @@ def load_journal_articles(user, journal_id, articlemeta_export=None):
 
         for item in PidProviderXML.objects.filter(
             Q(issn_print__in=issns) | Q(issn_electronic__in=issns),
-            proc_status__in=[PPXML_STATUS_TODO, PPXML_STATUS_DEDUPLICATED]
+            proc_status__in=[PPXML_STATUS_TODO, PPXML_STATUS_DEDUPLICATED],
         ).iterator():
             load_article_from_pid_provider_xml(user, item, articlemeta_export)
-        
+
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
@@ -400,7 +411,7 @@ def load_journal_articles(user, journal_id, articlemeta_export=None):
                 "articlemeta_export": articlemeta_export,
                 "traceback": traceback.format_exc(),
             },
-        )    
+        )
     return
 
 
@@ -422,7 +433,7 @@ def load_article_from_pid_provider_xml(user, pp_xml, articlemeta_export=None):
         # for item in Article.objects.filter(sps_pkg_name=article.sps_pkg_name).exclude(id=article.id).iterator():
         #     item.data_status = DATA_STATUS_DUPLICATED
         #     item.save()
-        
+
         # Exporta para ArticleMeta se solicitado
         if articlemeta_export and article.is_available():
             collection_acron_list = articlemeta_export.get("collection_acron_list")
