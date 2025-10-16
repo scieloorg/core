@@ -4,7 +4,7 @@ import os
 import sys
 import traceback
 from datetime import datetime
-from functools import lru_cache
+from functools import lru_cache, cached_property
 
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
@@ -152,12 +152,7 @@ class XMLVersion(CommonControlField):
         )
 
     @property
-    @lru_cache(maxsize=1)
     def xml_with_pre(self):
-        if not os.path.isfile(self.file.path):
-            raise FileNotFoundError(
-                _("Unable to read XML {} {}").format(self.file.path, self)
-            )
         try:
             for item in XMLWithPre.create(path=self.file.path):
                 return item
@@ -168,8 +163,7 @@ class XMLVersion(CommonControlField):
                 )
             )
 
-    @property
-    @lru_cache(maxsize=1)
+    @cached_property
     def xml(self):
         try:
             return self.xml_with_pre.tostring(pretty_print=True)
@@ -589,12 +583,17 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     @profile_property
     def xml_with_pre(self):
         try:
+            logging.info(f"Getting xml_with_pre for {self} {self.current_version}")
             return self.current_version.xml_with_pre
-        except AttributeError:
+        except Exception as e:
+            logging.exception(e)
+            
+            if self.proc_status != choices.PPXML_STATUS_INVALID:
+                self.proc_status = choices.PPXML_STATUS_INVALID
+                self.save()
             return None
 
-    @property
-    @lru_cache(maxsize=1)
+    @cached_property
     def is_aop(self):
         if self.volume:
             return False
@@ -1383,24 +1382,17 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             self.proc_status = choices.PPXML_STATUS_DONE
             self.save()
 
-    @profile_method
-    def is_xml_file_valid(self):
-        try:
-            # verifica se xml está acessível
-            if not self.proc_status == choices.PPXML_STATUS_INVALID:
-                return bool(self.xml_with_pre.v3)
-        except XMLVersionXmlWithPreError as e:
-            self.proc_status = choices.PPXML_STATUS_INVALID
-            self.save()
-            return False
-
     @classmethod
     @profile_classmethod
     def mark_items_as_invalid(cls, issns):
         for item in cls.objects.filter(
             Q(issn_print__in=issns) | Q(issn_electronic__in=issns),
         ).iterator():
-            item.is_xml_file_valid()
+            try:
+                invalid = bool(item.xml_with_pre)
+            except Exception as e:
+                invalid = True
+
 
     @classmethod
     @profile_classmethod
