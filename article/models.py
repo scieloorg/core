@@ -3,7 +3,7 @@ import os
 import sys
 import traceback
 from datetime import datetime, timezone
-from functools import lru_cache
+from functools import lru_cache, cached_property
 
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
@@ -251,8 +251,7 @@ class Article(
     def __str__(self):
         return self.sps_pkg_name or self.pid_v3 or f"{self.doi.first()}" or self.title
 
-    @property
-    @lru_cache(maxsize=1)
+    @cached_property
     def xml_with_pre(self):
         try:
             return self.pp_xml.xml_with_pre
@@ -270,13 +269,16 @@ class Article(
     def abstracts(self):
         return DocumentAbstract.objects.filter(article=self)
 
-    @property
+    @cached_property
     def collections(self):
         if self.journal:
+            cols = []
             for item in self.journal.scielojournal_set.all().select_related(
                 "collection"
             ):
-                yield item.collection
+                cols.append(item.collection)
+            return cols
+        return []
 
     @classmethod
     def last_created_date(cls):
@@ -479,7 +481,6 @@ class Article(
         for item in self.legacy_article.filter(
             collection__is_active=is_active, **params
         ):
-            logging.info((item, item.legacy_keys))
             yield item.legacy_keys
 
     def select_collections(self, collection_acron_list=None, is_activate=None):
@@ -551,14 +552,17 @@ class Article(
 
     @classmethod
     def select_journal_articles(cls, journal=None, issns=None):
+        logging.info(f"Selecting articles for journal {journal} issns={issns}")
         if not issns and not journal:
             raise ValueError("Article.select_journal_articles requires issns or journal param")
+
+        logging.info(f"Selecting articles for journal {journal}")
         if journal:
             return cls.objects.filter(journal=journal)
+        logging.info(f"Selecting articles for issns {issns}")
         return cls.objects.filter(Q(journal__official__issn_print__in=issns) | Q(journal__official__issn_electronic__in=issns))
 
-    @property
-    @lru_cache(maxsize=1)
+    @cached_property
     def langs(self):
         return [lang.code2 for lang in self.languages.all()]
 
@@ -648,13 +652,15 @@ class Article(
         ).exclude(
             data_status__in=exclusion_list,
         ).iterator():
-            if item.check_availability(user=user or item.updated_by, force_update=force_update):
-                yield item.id
+            item.check_availability(user=user or item.updated_by, force_update=force_update)
 
     @classmethod
     def mark_items_as_invalid(cls, journal=None):
-        for item in cls.select_journal_articles(journal=journal).iterator():
-            yield item.is_pp_xml_valid()
+        qs = cls.select_journal_articles(journal=journal)
+        if qs.count() == 0:
+            return
+        for item in qs.iterator():
+            item.is_pp_xml_valid()
 
     def is_pp_xml_valid(self):
         if not self.pp_xml:
@@ -662,9 +668,10 @@ class Article(
                 self.pp_xml = PidProviderXML.objects.get(v3=self.pid_v3)
             except PidProviderXML.DoesNotExist:
                 pass
-        if not self.pp_xml or not self.pp_xml.is_xml_file_valid():
-            self.data_status = choices.DATA_STATUS_INVALID
-            self.save()
+        if not self.pp_xml or not self.pp_xml.xml_with_pre:
+            if self.data_status != choices.DATA_STATUS_INVALID: 
+                self.data_status = choices.DATA_STATUS_INVALID
+                self.save()
             return None
         return self.id
 
@@ -1495,8 +1502,7 @@ class ArticleSource(CommonControlField):
             obj = cls.create(user, url=url, source_date=source_date, am_article=am_article)
         return obj
 
-    @property
-    @lru_cache(maxsize=1)
+    @cached_property
     def sps_pkg_name(self):
         try:
             xml_with_pre = list(XMLWithPre.create(path=self.file.path))[0]
