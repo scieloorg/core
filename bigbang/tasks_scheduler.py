@@ -804,8 +804,8 @@ def schedule_fix_article_records_status(
     além de deduplicar registros conforme necessário.
     """
     schedule_task(
-        task="proc.tasks.task_fix_article_records_status",
-        name="proc.tasks.task_fix_article_records_status",
+        task="article.tasks.task_fix_article_records_status",
+        name="article.tasks.task_fix_article_records_status",
         kwargs=dict(
             username=username,
             user_id=None,
@@ -836,15 +836,15 @@ def schedule_fix_pid_provider_xmls_status(
     além de deduplicar registros conforme necessário.
     """
     schedule_task(
-        task="proc.tasks.task_fix_pid_provider_xmls_status",
-        name="proc.tasks.task_fix_pid_provider_xmls_status",
+        task="pid_provider.tasks.task_fix_pid_provider_xmls_status",
+        name="pid_provider.tasks.task_fix_pid_provider_xmls_status",
         kwargs=dict(
             username=username,
             user_id=None,
             collection_acron_list=None,
             journal_acron_list=None,
             mark_as_invalid=True,
-            mark_as_public=False,
+            # mark_as_public=False,
             mark_as_duplicated=False,
             deduplicate=False,
         ),
