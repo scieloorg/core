@@ -1128,7 +1128,7 @@ def task_fix_article_records_status(
         
         # Filtro por coleção (através do relacionamento)
         if collection_acron_list:
-            journal_filters['collection_acron3__in'] = collection_acron_list
+            journal_filters['collection__acron3__in'] = collection_acron_list
         
         # Filtro por periódico
         if journal_acron_list:
@@ -1137,6 +1137,9 @@ def task_fix_article_records_status(
         # Iterar pelos periódicos e disparar subtarefas
         journals_processed = 0
         for journal_id in SciELOJournal.objects.filter(**journal_filters).values_list('journal__id', flat=True).distinct():
+            qs = Article.objects.filter(journal_id=journal_id)
+            if qs.count() == 0:
+                continue
             task_fix_journal_articles_status.apply_async(
                 kwargs={
                     "username": username,
@@ -1240,6 +1243,13 @@ def task_fix_journal_articles_status(
         if not journal:
             raise ValueError("Journal not found with provided identifier")
         
+        if Article.objects.filter(journal=journal).count() == 0:
+            return {
+                "status": "no_articles",
+                "journal_id": journal.id,
+                "journal_acron": journal_acron,
+                "collection_acron": collection_acron,
+            }
         if mark_as_invalid:
             Article.mark_items_as_invalid(journal)
     
