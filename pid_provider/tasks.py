@@ -101,7 +101,6 @@ def task_fix_pid_provider_xmls_status(
     collection_acron_list=None,
     journal_acron_list=None,
     mark_as_invalid=False,
-    mark_as_public=False,
     mark_as_duplicated=False,
     deduplicate=False,
 ):
@@ -151,7 +150,6 @@ def task_fix_pid_provider_xmls_status(
         # Validação: ao menos uma operação deve ser especificada
         operations = {
             "invalid": mark_as_invalid,
-            "public": mark_as_public,
             "duplicated": mark_as_duplicated,
             "deduplicated": deduplicate,
         }
@@ -179,7 +177,6 @@ def task_fix_pid_provider_xmls_status(
                     "user_id": user_id,
                     "journal_id": journal_id,
                     "mark_as_invalid": mark_as_invalid,
-                    "mark_as_public": mark_as_public,
                     "mark_as_duplicated": mark_as_duplicated,
                     "deduplicate": deduplicate,
                 }
@@ -207,7 +204,6 @@ def task_fix_pid_provider_xmls_status(
                 "journal_acron_list": journal_acron_list,
                 "operations": {
                     "mark_as_invalid": mark_as_invalid,
-                    "mark_as_public": mark_as_public,
                     "mark_as_duplicated": mark_as_duplicated,
                     "deduplicate": deduplicate,
                 }
@@ -223,8 +219,8 @@ def task_fix_journal_pid_provider_xmls_status(
     user_id=None,
     journal_id=None,
     journal_acron=None,
+    collection_acron=None,
     mark_as_invalid=False,
-    mark_as_public=False,
     mark_as_duplicated=False,
     deduplicate=False,
 ):
@@ -267,22 +263,16 @@ def task_fix_journal_pid_provider_xmls_status(
         journal = None
         if journal_id:
             journal = Journal.objects.filter(id=journal_id).first()
-        elif journal_acron:
-            journal = Journal.objects.filter(journal_acron=journal_acron).first()
+        elif journal_acron and collection_acron:
+            journal = SciELOJournal.objects.filter(
+                journal_acron=journal_acron, collection__acron3=collection_acron
+            ).first().journal
         if not journal:
-            logging.warning(f"Journal not found with acron: {journal_acron}")
-            return {
-                "status": "error",
-                "message": f"Journal not found with acron: {journal_acron}",
-                "journal_acron": journal_acron
-            }
+            raise ValueError("Journal not found with provided identifier")
         
         if mark_as_invalid:
             PidProviderXML.mark_items_as_invalid(journal.issns)
     
-        if mark_as_public:
-            PidProviderXML.mark_items_as_done(journal.issns)
-        
         if mark_as_duplicated:
             PidProviderXML.mark_items_as_duplicated(journal.issns)
 
@@ -292,10 +282,10 @@ def task_fix_journal_pid_provider_xmls_status(
         return {
             "status": "success",
             "journal_id": journal.id,
-            "journal_acron": journal.journal_acron,
+            "journal_acron": journal_acron,
+            "collection_acron": collection_acron,
             "operations_performed": {
                 "mark_as_invalid": mark_as_invalid,
-                "mark_as_public": mark_as_public,
                 "mark_as_duplicated": mark_as_duplicated,
                 "deduplicate": deduplicate,
             }
@@ -310,9 +300,9 @@ def task_fix_journal_pid_provider_xmls_status(
                 "task": "task_fix_journal_pid_provider_xmls_status",
                 "journal_id": journal_id,
                 "journal_acron": journal_acron,
+                "collection_acron": collection_acron,
                 "operations": {
                     "mark_as_invalid": mark_as_invalid,
-                    "mark_as_public": mark_as_public,
                     "mark_as_duplicated": mark_as_duplicated,
                     "deduplicate": deduplicate,
                 }
