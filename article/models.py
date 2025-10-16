@@ -2,13 +2,14 @@ import logging
 import os
 import sys
 import traceback
-from datetime import datetime, timezone
+from datetime import datetime
 from functools import lru_cache, cached_property
 
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
 from django.db.models import Q, Count, Min
 from django.db.utils import DataError
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django_prometheus.models import ExportModelOperationsMixin
 from legendarium.formatter import descriptive_format
@@ -552,14 +553,10 @@ class Article(
 
     @classmethod
     def select_journal_articles(cls, journal=None, issns=None):
-        logging.info(f"Selecting articles for journal {journal} issns={issns}")
         if not issns and not journal:
             raise ValueError("Article.select_journal_articles requires issns or journal param")
-
-        logging.info(f"Selecting articles for journal {journal}")
         if journal:
             return cls.objects.filter(journal=journal)
-        logging.info(f"Selecting articles for issns {issns}")
         return cls.objects.filter(Q(journal__official__issn_print__in=issns) | Q(journal__official__issn_electronic__in=issns))
 
     @cached_property
@@ -581,6 +578,8 @@ class Article(
         self, user, collection_acron_list=None, timeout=None, is_activate=None, force_update=False,
     ):
         try:
+            if not self.is_pp_xml_valid():
+                return False
             if not force_update and self.is_available(collection_acron_list):
                 return True
             
@@ -626,6 +625,8 @@ class Article(
             )
 
     def is_available(self, collection_acron_list=None, fmt=None):
+        if not self.is_pp_xml_valid():
+            return False
         for item in self.get_article_urls(
             collection_acron_list=collection_acron_list, fmt=fmt
         ):
@@ -644,9 +645,10 @@ class Article(
     @classmethod
     def mark_items_as_public(cls, journal=None, force_update=False, user=None):
         # DATA_STATUS_DELETED, DATA_STATUS_MOVED, DATA_STATUS_INVALID, DATA_STATUS_DUPLICATED,
-        exclusion_list = choices.DATA_STATUS_EXCLUSION_LIST
         if force_update:
-            exclusion_list += [choices.DATA_STATUS_PUBLIC]
+            exclusion_list = []
+        else:
+            exclusion_list = choices.DATA_STATUS_EXCLUSION_LIST + [choices.DATA_STATUS_PUBLIC]
         for item in cls.select_journal_articles(
             journal=journal
         ).exclude(
@@ -1753,7 +1755,8 @@ class ArticleAvailability(CommonControlField):
     url = models.URLField(max_length=500, unique=True)
     available = models.BooleanField(default=False)
     fmt = models.CharField(_("Format"), max_length=4, null=True, blank=True)
-
+    error = models.CharField(max_length=40, null=True, blank=True)
+    
     panels = [FieldPanel("url"), FieldPanel("available", read_only=True)]
 
     @classmethod
@@ -1778,9 +1781,9 @@ class ArticleAvailability(CommonControlField):
                 url=url,
                 fmt=fmt,
                 lang=lang,
-                available=check_url(url, timeout),
                 creator=user,
             )
+            obj.check_availability(timeout)
             obj.save()
             return obj
         except IntegrityError:
@@ -1817,8 +1820,21 @@ class ArticleAvailability(CommonControlField):
                 timeout=timeout,
             )
 
+    def check_availability(self, timeout=None):
+        try:
+            available = check_url(self.url, timeout)
+            error = None
+        except Exception as e:
+            available = False
+            error = str(type(e).__name__)
+        if available != self.available or error != self.error:
+            self.available = available
+            self.error = error
+            self.updated = timezone.now()
+        return available
+    
     def update(self, user, timeout=None):
-        self.available = check_url(self.url, timeout)
+        self.check_availability(timeout)
         self.updated_by = user
         self.save()
 
@@ -1872,10 +1888,9 @@ class ArticleAvailability(CommonControlField):
 def check_url(url, timeout=None):
     try:
         fetch_data(url, timeout=timeout or 30)
-    except NonRetryableError as e:
-        return False
-    else:
         return True
+    except Exception as e:
+        raise
 
 
 class ArticleEvent(BaseEvent, CommonControlField, Orderable):
