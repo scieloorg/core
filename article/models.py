@@ -675,7 +675,7 @@ class Article(
             cls.objects.filter(journal=journal)
                 .exclude(sps_pkg_name__isnull=True)
                 .exclude(sps_pkg_name="")
-                .exclude(data_status__in=choices.DATA_STATUS_DUPLICATED)
+                .exclude(data_status=choices.DATA_STATUS_DUPLICATED)
                 .values("sps_pkg_name")
                 .annotate(count=Count("id"))
                 .filter(count__gt=1)
@@ -728,7 +728,7 @@ class Article(
             int: Número de artigos atualizados.
         """
         try:
-            articles = cls.objects.filter(sps_pkg_name=pkg_name).exclude(data_status__in=choices.DATA_STATUS_DUPLICATED)
+            articles = cls.objects.filter(sps_pkg_name=pkg_name).exclude(data_status=choices.DATA_STATUS_DUPLICATED)
             if articles.count() <= 1:
                 return articles.first()
             
