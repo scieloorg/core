@@ -198,7 +198,7 @@ class Article(
     ]
     panels_errors = [
         FieldPanel("errors", read_only=True),
-        InlinePanel("events", label=_("Events"), readonly=True),
+        InlinePanel("events", label=_("Events"), can_create=False, can_delete=False),
     ]
 
     edit_handler = TabbedInterface(
