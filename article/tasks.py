@@ -1238,7 +1238,7 @@ def task_load_journal_articles(
             proc_status_list=proc_status_list,
         )
         
-        if items.count() == 0:
+        if not items.exists():
             return {
                 "status": "success",
                 "articles_found": 0,
