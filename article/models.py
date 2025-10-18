@@ -198,6 +198,7 @@ class Article(
     ]
     panels_errors = [
         FieldPanel("errors", read_only=True),
+        InlinePanel("events", label=_("Events"), readonly=True),
     ]
 
     edit_handler = TabbedInterface(
@@ -266,19 +267,29 @@ class Article(
         except AttributeError:
             return PidProvider.get_xmltree(self.pid_v3)
 
-    @property
-    def abstracts(self):
-        return DocumentAbstract.objects.filter(article=self)
-
     @cached_property
     def collections(self):
+        """
+        Returns the collections associated with this article.
+        
+        First tries to get collections from legacy_article relationships,
+        then falls back to journal relationships if no legacy articles exist.
+        
+        Returns:
+            list: List of Collection objects
+        """
+        if self.legacy_article.exists():
+            return [
+                item.collection 
+                for item in self.legacy_article.select_related("collection").all()
+            ]
+        
         if self.journal:
-            cols = []
-            for item in self.journal.scielojournal_set.all().select_related(
-                "collection"
-            ):
-                cols.append(item.collection)
-            return cols
+            return [
+                item.collection 
+                for item in self.journal.scielojournal_set.select_related("collection").all()
+            ]
+        
         return []
 
     @classmethod
