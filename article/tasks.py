@@ -108,54 +108,112 @@ def convert_xml_to_other_formats(
 
 
 @celery_app.task(bind=True)
-def task_articles_complete_data(
-    self, user_id=None, username=None, from_date=None, force_update=False
+def task_select_articles_to_complete_data(
+    self,
+    username=None,
+    user_id=None,
+    collection_acron_list=None,
+    journal_acron_list=None,
+    data_status_list=None,
+    from_pub_year=None,
+    until_pub_year=None,
+    from_updated_date=None,
+    until_updated_date=None,
+    articlemeta_export_enable=False,
 ):
+    """
+    Task para carregar artigos de uma lista selecionada de periódicos.
+    Dispara subtasks para cada periódico encontrado.
+    """
     try:
-        user = _get_user(self.request, username, user_id)
-
-        for item in Article.objects.iterator():
-            try:
-                article_complete_data.apply_async(
-                    kwargs={
-                        "user_id": user.id,
-                        "username": user.username,
-                        "item_id": item.id,
-                    }
-                )
-            except Exception as exception:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                UnexpectedEvent.create(
-                    exception=exception,
-                    exc_traceback=exc_traceback,
-                    detail={
-                        "task": "article.tasks.task_articles_complete_data",
-                        "item": str(item),
-                    },
-                )
-    except Exception as exception:
+        user = _get_user(self.request, username=username, user_id=user_id)
+        
+        # Construir filtros para os artigos
+        article_filters = {}
+        
+        # Obter IDs dos periódicos baseado nos filtros
+        journal_id_list = Journal.get_ids(
+            collection_acron_list=collection_acron_list,
+            journal_acron_list=journal_acron_list,
+        )
+        
+        if journal_id_list:
+            article_filters["journal__in"] = journal_id_list
+        
+        # Aplicar filtro de status se fornecido
+        if not data_status_list:
+            data_status_list = [
+                DATA_STATUS_PENDING,
+                DATA_STATUS_UNDEF,
+                DATA_STATUS_INVALID,
+            ]
+        article_filters["data_status__in"] = data_status_list
+        
+        # Adicionar filtros de data se fornecidos
+        if from_pub_year:
+            article_filters["pub_year__gte"] = from_pub_year
+        if until_pub_year:
+            article_filters["pub_year__lte"] = until_pub_year
+        if from_updated_date:
+            article_filters["updated__gte"] = from_updated_date
+        if until_updated_date:
+            article_filters["updated__lte"] = until_updated_date
+        
+        # Processar artigos
+        articles_processed = 0
+        articles_skipped = 0
+        
+        for article in Article.objects.filter(**article_filters).iterator():
+            if not article.pp_xml_id:
+                try:
+                    pp_xml = PidProviderXML.objects.get(v3=article.pid_v3)
+                    article.pp_xml = pp_xml
+                    article.save(update_fields=['pp_xml'])
+                except PidProviderXML.DoesNotExist:
+                    articles_skipped += 1
+                    continue
+            
+            task_load_article_from_pp_xml.delay(
+                pp_xml_id=article.pp_xml_id,
+                pid_v3=article.pid_v3,
+                user_id=user_id or user.id,
+                username=username or user.username,
+                articlemeta_export_enable=articlemeta_export_enable,
+            )
+            articles_processed += 1
+        
+        return {
+            "status": "success",
+            "message": "Complete data to articles",
+            "articles_processed": articles_processed,
+            "articles_skipped": articles_skipped,
+            "filters": {
+                "collection_acron_list": collection_acron_list,
+                "journal_acron_list": journal_acron_list,
+                "from_pub_year": from_pub_year,
+                "until_pub_year": until_pub_year,
+                "from_updated_date": from_updated_date,
+                "until_updated_date": until_updated_date,
+                "data_status_list": data_status_list,
+            },
+        }
+    except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
-            exception=exception,
+            exception=e,
             exc_traceback=exc_traceback,
             detail={
-                "task": "article.tasks.task_articles_complete_data",
+                "task": "task_select_articles_to_complete_data",
+                "collection_acron_list": collection_acron_list,
+                "journal_acron_list": journal_acron_list,
+                "data_status_list": data_status_list,
+                "from_pub_year": from_pub_year,
+                "until_pub_year": until_pub_year,
+                "from_updated_date": from_updated_date,
+                "until_updated_date": until_updated_date,
             },
         )
-
-
-@celery_app.task(bind=True)
-def article_complete_data(
-    self, user_id=None, username=None, item_id=None, force_update=None
-):
-    user = _get_user(self.request, username, user_id)
-    try:
-        item = Article.objects.get(pk=item_id)
-        if item.pid_v3 and not item.sps_pkg_name:
-            item.sps_pkg_name = PidProvider.get_sps_pkg_name(item.pid_v3)
-            item.save()
-    except Article.DoesNotExist:
-        pass
+        raise
 
 
 @celery_app.task(bind=True)
@@ -185,48 +243,6 @@ def transfer_license_statements_fk_to_article_license(
             articles_to_update, ["article_license", "updated_by"]
         )
         logging.info("The article_license of model Articles have been updated")
-
-
-def remove_duplicate_articles(pid_v3=None):
-    ids_to_exclude = []
-    try:
-        if pid_v3:
-            duplicates = (
-                Article.objects.filter(pid_v3=pid_v3)
-                .values("pid_v3")
-                .annotate(pid_v3_count=Count("pid_v3"))
-                .filter(pid_v3_count__gt=1, valid=False)
-            )
-        else:
-            duplicates = (
-                Article.objects.values("pid_v3")
-                .annotate(pid_v3_count=Count("pid_v3"))
-                .filter(pid_v3_count__gt=1, valid=False)
-            )
-        for duplicate in duplicates:
-            article_ids = (
-                Article.objects.filter(pid_v3=duplicate["pid_v3"])
-                .order_by("created")[1:]
-                .values_list("id", flat=True)
-            )
-            ids_to_exclude.extend(article_ids)
-
-        if ids_to_exclude:
-            Article.objects.filter(id__in=ids_to_exclude).delete()
-    except Exception as exception:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        UnexpectedEvent.create(
-            exception=exception,
-            exc_traceback=exc_traceback,
-            detail={
-                "task": "article.tasks.remove_duplicates_articles",
-            },
-        )
-
-
-@celery_app.task(bind=True)
-def remove_duplicate_articles_task(self, user_id=None, username=None, pid_v3=None):
-    remove_duplicate_articles(pid_v3)
 
 
 def get_researcher_identifier_unnormalized():
@@ -332,7 +348,8 @@ def task_export_article_to_articlemeta(
 @celery_app.task(bind=True, name="task_load_article_from_pp_xml")
 def task_load_article_from_pp_xml(
     self,
-    pp_xml_id,
+    pp_xml_id=None,
+    pid_v3=None,
     user_id=None,
     username=None,
     collection_acron_list=None,
@@ -372,15 +389,17 @@ def task_load_article_from_pp_xml(
     try:
         user = _get_user(self.request, username, user_id)
 
+        pp_xml = None
         # Busca o PidProviderXML com suas relações
-        pp_xml = PidProviderXML.objects.select_related("current_version").get(
-            id=pp_xml_id
-        )
+        if pp_xml_id:
+            pp_xml = PidProviderXML.objects.select_related("current_version").get(
+                id=pp_xml_id
+            )
 
         # Carrega o artigo do arquivo XML
         article = load_article(
             user,
-            v3=pp_xml.v3,
+            v3=pid_v3,
             pp_xml=pp_xml,
         )
         pp_xml.collections.set(article.collections)
@@ -408,66 +427,6 @@ def task_load_article_from_pp_xml(
                 "pp_xml_id": pp_xml_id,
                 "articlemeta_export_enable": articlemeta_export_enable,
                 "force_update": force_update,
-            },
-        )
-
-
-@celery_app.task(bind=True, name="task_complete_pid_provider_data")
-def task_complete_pid_provider_data(
-    self,
-    user_id=None,
-    username=None,
-):
-    """
-    Carrega artigos em lote a partir de registros PidProviderXML.
-
-    PidProviderXML é o sistema central de gerenciamento de PIDs (identificadores
-    persistentes) dos artigos. Esta tarefa processa XMLs armazenados no sistema
-    de PIDs.
-
-    Args:
-        self: Instância da tarefa Celery
-        user_id (int, optional): ID do usuário executando a tarefa
-        username (str, optional): Nome do usuário executando a tarefa
-        collection_acron_list (list, optional): Lista de acrônimos de coleções
-        journal_acron_list (list, optional): Lista de acrônimos de periódicos
-        from_pub_year (int, optional): Ano inicial de publicação
-        until_pub_year (int, optional): Ano final de publicação
-        from_updated_date (str, optional): Data inicial de atualização
-        until_updated_date (str, optional): Data final de atualização
-        proc_status_list (list, optional): Lista de status a processar
-            Ex: [PPXML_STATUS_TODO, PPXML_STATUS_ERROR]
-        articlemeta_export_enable (bool, optional): Exporta para ArticleMeta após carregar
-
-    Returns:
-        None
-
-    Side Effects:
-        - Dispara task_load_article_from_pp_xml para cada PidProviderXML
-        - Exporta para ArticleMeta se articlemeta_export_enable=True
-        - Registra UnexpectedEvent em caso de erro
-
-    Examples:
-        # Carregar artigos de 2024 de periódicos específicos
-        task_complete_pid_provider_data.delay(
-            journal_acron_list=["abc", "xyz"],
-            from_pub_year=2024,
-            until_pub_year=2024,
-            articlemeta_export_enable=True
-        )
-    """
-    try:
-        user = _get_user(self.request, username, user_id)
-
-        controller.add_collections_to_pid_provider_items()
-
-    except Exception as exception:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        UnexpectedEvent.create(
-            exception=exception,
-            exc_traceback=exc_traceback,
-            detail={
-                "task": "article.tasks.task_complete_pid_provider_data",
             },
         )
 
@@ -615,7 +574,7 @@ def task_select_articles_to_load_from_collection_endpoint(
         ValueError: Se collection_acron não for fornecido
 
     Side Effects:
-        - Dispara task_load_article_from_xml_endpoint para cada documento
+        - Dispara task_load_article_from_xml_url para cada documento
         - Registra UnexpectedEvent em caso de erro
 
     Notes:
@@ -649,7 +608,7 @@ def task_select_articles_to_load_from_collection_endpoint(
         # Itera sobre documentos e dispara tarefas individuais
         for document in harvester.harvest_documents():
             source_date = document.get("processing_date") or document.get("origin_date")
-            task_load_article_from_xml_endpoint.delay(
+            task_load_article_from_xml_url.delay(
                 username,
                 user_id,
                 collection_acron,
@@ -677,8 +636,8 @@ def task_select_articles_to_load_from_collection_endpoint(
         )
 
 
-@celery_app.task(bind=True, name="task_load_article_from_xml_endpoint")
-def task_load_article_from_xml_endpoint(
+@celery_app.task(bind=True, name="task_load_article_from_xml_url")
+def task_load_article_from_xml_url(
     self,
     username=None,
     user_id=None,
@@ -755,7 +714,7 @@ def task_load_article_from_xml_endpoint(
             exception=e,
             exc_traceback=exc_traceback,
             detail={
-                "task": "task_load_article_from_xml_endpoint",
+                "task": "task_load_article_from_xml_url",
                 "xml_url": xml_url,
                 "source_date": source_date,
                 "force_update": force_update,
@@ -843,7 +802,7 @@ def task_select_articles_to_load_from_article_source(
 
 
 @celery_app.task(bind=True)
-def task_fix_article_records_status(
+def task_fix_article_status(
     self,
     username=None,
     user_id=None,
@@ -909,24 +868,12 @@ def task_fix_article_records_status(
             raise ValueError("At least one marking operation must be specified")
 
         # Construir filtros para os periódicos
-        journal_filters = {}
-
-        # Filtro por coleção (através do relacionamento)
-        if collection_acron_list:
-            journal_filters["collection__acron3__in"] = collection_acron_list
-
-        # Filtro por periódico
-        if journal_acron_list:
-            journal_filters["journal_acron__in"] = journal_acron_list
+        journal_id_list = Journal.get_ids(collection_acron_list, journal_acron_list)
 
         # Iterar pelos periódicos e disparar subtarefas
         journals_processed = 0
-        for journal_id in (
-            SciELOJournal.objects.filter(**journal_filters)
-            .values_list("journal__id", flat=True)
-            .distinct()
-        ):
-            qs = Article.objects.filter(journal_id=journal_id)
+        for journal_id in journal_id_list:
+            qs = Article.objects.filter(journal__id=journal_id)
             if qs.count() == 0:
                 continue
             task_fix_journal_articles_status.apply_async(
@@ -1022,42 +969,39 @@ def task_fix_journal_articles_status(
         user = _get_user(self.request, username=username, user_id=user_id)
 
         # Buscar o periódico por ID ou acrônimo
-        journal = None
-        if journal_id:
-            journal = Journal.objects.filter(id=journal_id).first()
-        elif journal_acron and collection_acron:
-            journal = (
-                SciELOJournal.objects.filter(
-                    journal_acron=journal_acron, collection__acron3=collection_acron
-                )
-                .first()
-                .journal
+        if journal_acron and collection_acron:
+            journal_ids = Journal.get_ids(
+                [collection_acron],
+                [journal_acron],
             )
-        if not journal:
-            raise ValueError("Journal not found with provided identifier")
+        elif journal_id:
+            journal_ids = [journal_id]
+        else:
+            raise ValueError("Insufficient data to identify the journal")
 
-        if Article.objects.filter(journal=journal).count() == 0:
+        if Article.objects.filter(journal__id__in=journal_ids).count() == 0:
             return {
                 "status": "no_articles",
-                "journal_id": journal.id,
+                "journal_id": journal_id,
                 "journal_acron": journal_acron,
                 "collection_acron": collection_acron,
             }
+        journal_id = journal_ids[0]
         if mark_as_invalid:
-            Article.mark_items_as_invalid(journal)
+            Article.mark_items_as_invalid(journal_id=journal_id)
 
         if mark_as_public:
-            Article.mark_items_as_public(journal)
+            Article.mark_items_as_public(journal_id=journal_id)
 
         if mark_as_duplicated:
-            Article.mark_items_as_duplicated(journal)
+            Article.mark_items_as_duplicated(journal_id=journal_id)
 
         if deduplicate:
-            Article.deduplicate_items(user, journal)
+            Article.deduplicate_items(user, journal_id=journal_id)
 
         return {
             "status": "success",
-            "journal_id": journal.id,
+            "journal_id": journal_id,
             "journal_acron": journal_acron,
             "collection_acron": collection_acron,
             "operations_performed": {
@@ -1115,27 +1059,11 @@ def task_load_articles(
             PPXML_STATUS_INVALID,
         ]
         # Construir filtros para os periódicos
-        journal_filters = {}
-
-        # Filtro por coleção (através do relacionamento)
-        if collection_acron_list:
-            journal_filters["collection__acron3__in"] = collection_acron_list
-
-        # Filtro por periódico
-        if journal_acron_list:
-            journal_filters["journal_acron__in"] = journal_acron_list
-
-        if journal_filters:
+        items = Journal.get_journal_issns(collection_acron_list, journal_acron_list)
+        if items:
             # Iterar pelos periódicos e disparar subtarefas
             journals_processed = 0
-            for journal_issns in (
-                SciELOJournal.objects.filter(**journal_filters)
-                .values_list(
-                    "journal__official__issn_print",
-                    "journal__official__issn_electronic",
-                )
-                .distinct()
-            ):
+            for journal_issns in items:
                 # Filtrar ISSNs válidos
                 issn_list = [issn for issn in journal_issns if issn]
 
