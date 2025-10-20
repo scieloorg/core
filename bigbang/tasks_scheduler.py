@@ -23,6 +23,7 @@ def delete_outdated_tasks():
     """
     delete_tasks(
         [
+            "article.tasks.load_article_from_pp_xml",
             "article.tasks.load_articles",  # Nome completo com módulo
             "article_complete_data",
             "convert_xml_to_other_formats",
@@ -44,13 +45,13 @@ def delete_outdated_tasks():
             "task_export_articles_to_articlemeta",
             "task_get_opac_xmls",
             "task_load_article_from_article_source",
-            "task_load_articles",
             "task_mark_articles_as_deleted_without_pp_xml",
             "task_provide_pid_for_am_collection",
             "task_provide_pid_for_xml_uri",
             "task_provide_pid_for_xml_zip",
             "transfer_license_statements_fk_to_article_license",
             "load_issue_from_article_meta",
+            "article.tasks.task_mark_articles_as_deleted_without_pp_xml"
         ]
     )
 
@@ -64,7 +65,6 @@ def schedule_tasks(username):
     schedule_fix_article_records_status(username, enabled)
     schedule_fix_pid_provider_xmls_status(username, enabled)
     schedule_remove_duplicate_articles(username, enabled)
-    schedule_mark_articles_as_deleted_without_pp_xml(username, enabled)
     schedule_convert_xml_to_other_formats(username, enabled)
     schedule_convert_xml_to_other_formats_for_articles(username, enabled)
     schedule_select_emails_to_normalize(username, enabled)
@@ -72,7 +72,7 @@ def schedule_tasks(username):
     schedule_select_articles_to_complete_data(username, enabled)
     schedule_export_article_to_articlemeta(username, enabled)
     schedule_select_articles_to_export_to_articlemeta(username, enabled)
-    schedule_load_article_from_pp_xml(username, enabled)
+    schedule_load_articles(username, enabled)
     schedule_load_article_from_xml_endpoint(username, enabled)
     schedule_select_articles_to_load_from_pid_provider(username, enabled)
     schedule_select_articles_to_load_from_article_source(username, enabled)
@@ -532,19 +532,24 @@ def schedule_select_articles_to_load_from_pid_provider(username, enabled=False):
     )
 
 
-def schedule_load_article_from_pp_xml(username, enabled=False):
+def schedule_load_articles(username, enabled=False):
     """
     Agenda a tarefa de carregar um artigo específico do PidProviderXML
     """
     schedule_task(
-        task="article.tasks.task_load_article_from_pp_xml",
-        name="task_load_article_from_pp_xml",
+        task="article.tasks.task_load_articles",
+        name="article.tasks.task_load_articles",
         kwargs=dict(
-            pp_xml_id=None,
+            username=None,
             user_id=None,
-            username=username,
-            export_to_articlemeta=False,
-            force_update=False,
+            collection_acron_list=None,
+            journal_acron_list=None,
+            articlemeta_export_enable=None,
+            from_pub_year=None,
+            until_pub_year=None,
+            from_updated_date=None,
+            until_updated_date=None,
+            proc_status_list=None,
         ),
         description=_("Load article from PidProviderXML"),
         priority=TASK_PRIORITY,
@@ -638,28 +643,6 @@ def schedule_select_emails_to_normalize(username, enabled=False):
 # ==============================================================================
 # AGENDAMENTO DE TAREFAS DE LIMPEZA E MANUTENÇÃO
 # ==============================================================================
-
-
-def schedule_mark_articles_as_deleted_without_pp_xml(username, enabled=False):
-    """
-    Agenda a tarefa de marcar artigos órfãos como deletados
-    """
-    schedule_task(
-        task="article.tasks.task_mark_articles_as_deleted_without_pp_xml",
-        name="task_mark_articles_as_deleted_without_pp_xml",
-        kwargs=dict(
-            user_id=None,
-            username=username,
-        ),
-        description=_("Mark orphan articles (without PidProviderXML) as deleted"),
-        priority=TASK_PRIORITY,
-        enabled=enabled,
-        run_once=False,
-        day_of_week="0",
-        hour="2",
-        minute="1",
-    )
-
 
 def schedule_remove_duplicate_articles(username, enabled=False):
     """
