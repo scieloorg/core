@@ -238,7 +238,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user, errors=errors))
         if not errors:
             article.valid = True
-            article.data_status = choices.DATA_STATUS_VALID
+            article.data_status = choices.DATA_STATUS_COMPLETED
             article.save()  # Salvar estado final
 
         event.finish(completed=not errors, errors=errors)

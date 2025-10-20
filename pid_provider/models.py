@@ -589,6 +589,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             if self.proc_status != choices.PPXML_STATUS_INVALID:
                 self.proc_status = choices.PPXML_STATUS_INVALID
                 self.save()
+            logging.info(self.proc_status)
             return None
 
     @cached_property

@@ -369,26 +369,6 @@ def bulk_export_articles_to_articlemeta(
         )
 
 
-def fix_journal_articles(user, journal_id):
-    try:
-        journal = Journal.objects.get(id=journal_id)
-        issns = journal.issns
-
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        UnexpectedEvent.create(
-            exception=e,
-            exc_traceback=exc_traceback,
-            detail={
-                "operation": "load_journal_articles",
-                "journal_id": journal_id,
-                "articlemeta_export": articlemeta_export,
-                "traceback": traceback.format_exc(),
-            },
-        )
-    return
-
-
 def load_journal_articles(user, journal_id, articlemeta_export=None):
     try:
         journal = Journal.objects.get(id=journal_id)

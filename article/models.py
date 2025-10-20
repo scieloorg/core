@@ -198,7 +198,7 @@ class Article(
     ]
     panels_errors = [
         FieldPanel("errors", read_only=True),
-        InlinePanel("events", label=_("Events"), readonly=True),
+        InlinePanel("events", label=_("Events")),
     ]
 
     edit_handler = TabbedInterface(
@@ -350,25 +350,26 @@ class Article(
             return year
 
     @classmethod
-    def get_versions(
+    def get_by_pid_v3_or_by_sps_pkg_name(
         cls,
         pid_v3=None,
         sps_pkg_name=None,
     ):
         if not pid_v3 and not sps_pkg_name:
             raise ValueError("Article requires params: pid_v3 or sps_pkg_name")
-        q = Q()
-        if sps_pkg_name:
-            q |= Q(sps_pkg_name=sps_pkg_name)
         if pid_v3:
-            q |= Q(pid_v3=pid_v3)
-        return (
-            cls.objects.filter(q)
-            .exclude(
-                data_status__in=choices.DATA_STATUS_EXCLUSION_LIST,
-            )
-            .order_by("-updated")
-        )
+            try:
+                return cls.objects.get(pid_v3=pid_v3)
+            except cls.DoesNotExist:
+                pass
+        if sps_pkg_name:
+            items = cls.objects.filter(sps_pkg_name=sps_pkg_name).order_by("-updated")
+            if items.count() == 1:
+                return items.first()
+            if items.count() > 1:
+                items.update(data_status=choices.DATA_STATUS_DUPLICATED)
+                return items.first()
+        raise cls.DoesNotExist
 
     @classmethod
     def get(
@@ -381,15 +382,7 @@ class Article(
         try:
             return cls.objects.get(sps_pkg_name=sps_pkg_name, pid_v3=pid_v3)
         except cls.DoesNotExist:
-            versions = cls.get_versions(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
-            total = versions.count()
-            if total == 0:
-                raise cls.DoesNotExist
-            if total == 1:
-                return versions.first()
-            raise cls.MultipleObjectsReturned(
-                f"Found {total} Article {pid_v3} {sps_pkg_name}"
-            )
+            return cls.get_by_pid_v3_or_by_sps_pkg_name(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
 
     @classmethod
     def create(
@@ -421,9 +414,7 @@ class Article(
             return cls.get(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
         except cls.DoesNotExist:
             return cls.create(user=user, pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
-        except cls.MultipleObjectsReturned:
-            return cls.get_versions(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name).first()
-
+    
     @classmethod
     def get_or_create(
         cls,
@@ -612,6 +603,7 @@ class Article(
             if not force_update and self.is_available(collection_acron_list):
                 return True
 
+            self.article_availability.all().delete()
             event = None
             event = self.add_event(user, _("check availability"))
             for collection in self.select_collections(

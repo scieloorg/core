@@ -19,7 +19,7 @@ from core.utils.extracts_normalized_email import extracts_normalized_email
 from core.utils.utils import _get_user, fetch_data
 from core.utils.harvesters import AMHarvester, OPACHarvester
 from journal.models import SciELOJournal, Journal
-from pid_provider.choices import PPXML_STATUS_DONE, PPXML_STATUS_TODO
+from pid_provider.choices import PPXML_STATUS_DONE, PPXML_STATUS_TODO, PPXML_STATUS_INVALID
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
 from researcher.models import ResearcherIdentifier
@@ -1107,10 +1107,13 @@ def task_load_articles(
     Task para carregar artigos de uma lista selecionada de periódicos.
     Dispara subtasks para cada periódico encontrado.
     """
-
     try:
         user = _get_user(self.request, username=username, user_id=user_id)
 
+        proc_status_list = proc_status_list or [
+            PPXML_STATUS_TODO,
+            PPXML_STATUS_INVALID,
+        ]
         # Construir filtros para os periódicos
         journal_filters = {}
 
@@ -1179,7 +1182,6 @@ def task_load_articles(
                 until_updated_date=until_updated_date,
                 proc_status_list=proc_status_list,
             )
-
             return {
                 "status": "success",
                 "message": "Processing all articles without journal filters",
@@ -1229,10 +1231,13 @@ def task_load_journal_articles(
     Task para carregar artigos de um periódico específico.
     Dispara subtasks para cada artigo encontrado.
     """
-
     try:
         user = _get_user(self.request, username=username, user_id=user_id)
 
+        proc_status_list = proc_status_list or [
+            PPXML_STATUS_TODO,
+            PPXML_STATUS_INVALID,
+        ]
         # Buscar os XMLs usando os ISSNs do periódico
         items = PidProviderXML.get_queryset(
             issn_list=issn_list,
@@ -1242,8 +1247,7 @@ def task_load_journal_articles(
             until_updated_date=until_updated_date,
             proc_status_list=proc_status_list,
         )
-
-        if items.count() == 0:
+        if not items.exists():
             return {
                 "status": "success",
                 "articles_found": 0,
@@ -1257,10 +1261,8 @@ def task_load_journal_articles(
                     "proc_status_list": proc_status_list,
                 },
             }
-
         # Contador de artigos processados
         articles_processed = 0
-
         # Iterar sobre os itens e disparar tasks para cada artigo
         for item in items.iterator():
             task_load_article_from_pp_xml.delay(
@@ -1270,7 +1272,6 @@ def task_load_journal_articles(
                 articlemeta_export_enable=articlemeta_export_enable,
             )
             articles_processed += 1
-
         return {
             "status": "success",
             "articles_processed": articles_processed,
