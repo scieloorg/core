@@ -68,7 +68,6 @@ def schedule_tasks(username):
     schedule_convert_xml_to_other_formats(username, enabled)
     schedule_convert_xml_to_other_formats_for_articles(username, enabled)
     schedule_select_emails_to_normalize(username, enabled)
-    schedule_complete_article_data(username, enabled)
     schedule_select_articles_to_complete_data(username, enabled)
     schedule_export_article_to_articlemeta(username, enabled)
     schedule_select_articles_to_export_to_articlemeta(username, enabled)
@@ -787,8 +786,8 @@ def schedule_fix_article_records_status(
     além de deduplicar registros conforme necessário.
     """
     schedule_task(
-        task="article.tasks.task_fix_article_records_status",
-        name="article.tasks.task_fix_article_records_status",
+        task="article.tasks.task_fix_article_status",
+        name="article.tasks.task_fix_article_status",
         kwargs=dict(
             username=username,
             user_id=None,
@@ -831,6 +830,41 @@ def schedule_fix_pid_provider_xmls_status(
             # mark_as_public=False,
             mark_as_duplicated=False,
             deduplicate=False,
+        ),
+        description=_("Fix PID Provider XMLs status"),
+        priority=5,
+        enabled=enabled,
+        run_once=False,
+        day_of_week="*",
+        hour="*",
+        minute="1",
+    )
+
+
+def schedule_select_articles_to_complete_data(
+    username,
+    enabled,
+):
+    """
+    Agenda a tarefa de corrigir status dos XMLs do PID Provider.
+
+    Permite marcar XMLs como inválidos, públicos ou duplicados,
+    além de deduplicar registros conforme necessário.
+    """
+    schedule_task(
+        task="pid_provider.tasks.task_select_articles_to_complete_data",
+        name="pid_provider.tasks.task_select_articles_to_complete_data",
+        kwargs=dict(
+            username=None,
+            user_id=None,
+            collection_acron_list=None,
+            journal_acron_list=None,
+            data_status_list=None,
+            from_pub_year=None,
+            until_pub_year=None,
+            from_updated_date=None,
+            until_updated_date=None,
+            articlemeta_export_enable=False,
         ),
         description=_("Fix PID Provider XMLs status"),
         priority=5,
