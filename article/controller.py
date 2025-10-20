@@ -32,55 +32,6 @@ from tracker.models import UnexpectedEvent
 class ArticleIsNotAvailableError(Exception): ...
 
 
-def add_collections_to_pid_provider_items():
-    for item in PidProviderXML.objects.filter(
-        Q(issn_print__isnull=False) | Q(issn_electronic__isnull=False)
-    ).exclude(collections__isnull=False):
-        logging.info(item)
-        add_collections_to_pid_provider(item)
-
-
-def add_collections_to_pid_provider(pid_provider):
-    """
-    Obtém as coleções associadas ao PidProviderXML baseando-se nos ISSNs.
-
-    Args:
-        pid_provider: instância de PidProviderXML
-
-    Returns:
-        Lista de instâncias de Collection
-    """
-    # Coletar ISSNs
-    try:
-        issns = []
-        if pid_provider.issn_electronic:
-            issns.append(pid_provider.issn_electronic)
-        if pid_provider.issn_print:
-            issns.append(pid_provider.issn_print)
-
-        if not issns:
-            return []
-
-        # Buscar coleções ativas através dos journals com esses ISSNs
-        for item in SciELOJournal.objects.filter(
-            Q(journal__official__issn_print__in=issns)
-            | Q(journal__official__issn_electronic__in=issns),
-        ).distinct():
-            logging.info(item)
-            pid_provider.collections.add(item.collection)
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        UnexpectedEvent.create(
-            exception=e,
-            exc_traceback=exc_traceback,
-            detail={
-                "operation": "add_collections_to_pid_provider",
-                "pid_provider": str(pid_provider),
-                "traceback": traceback.format_exc(),
-            },
-        )
-
-
 def get_pp_xml_ids(
     collection_acron_list=None,
     journal_acron_list=None,
