@@ -3,22 +3,22 @@
 # ==============================================================================
 
 # Python utilities
-pytz==2023.3.post1  # https://github.com/stub42/pytz
-Pillow==10.2.0  # https://github.com/python-pillow/Pillow
-argon2-cffi==23.1.0  # https://github.com/hynek/argon2_cffi
-whitenoise==6.6.0  # https://github.com/evansd/whitenoise
-xmltodict==0.13.0  # https://github.com/martinblech/xmltodict.git
-lxml==4.9.4  # https://github.com/lxml/lxml
-freezegun==1.5.1  # https://pypi.org/project/freezegun/
+pytz==2025.2  # https://github.com/stub42/pytz
+Pillow==11.3.0  # https://github.com/python-pillow/Pillow
+argon2-cffi==25.1.0  # https://github.com/hynek/argon2_cffi
+whitenoise==6.11.0  # https://github.com/evansd/whitenoise
+xmltodict==1.0.2 # https://github.com/martinblech/xmltodict.git
+lxml==6.0.2  # https://github.com/lxml/lxml
+freezegun==1.5.5  # https://pypi.org/project/freezegun/
 
 
 # ==============================================================================
 # DJANGO CORE
 # ==============================================================================
 
-django==5.2.3  # https://www.djangoproject.com/
-django-environ==0.11.2  # https://github.com/joke2k/django-environ
-django-model-utils==4.4.0  # https://github.com/jazzband/django-model-utils
+django==5.2.7  # https://www.djangoproject.com/
+django-environ==0.12.0  # https://github.com/joke2k/django-environ
+django-model-utils==5.0.0  # https://github.com/jazzband/django-model-utils
 django-crispy-forms==2.4  # https://github.com/django-crispy-forms/django-crispy-forms
 crispy-bootstrap5==2025.6  # https://github.com/django-crispy-forms/crispy-bootstrap5
 django-compressor==4.5.1  # https://github.com/django-compressor/django-compressor
@@ -28,14 +28,14 @@ django-compressor==4.5.1  # https://github.com/django-compressor/django-compress
 # AUTHENTICATION & SECURITY
 # ==============================================================================
 
-django-allauth==65.10.0  # https://github.com/pennersr/django-allauth
+django-allauth==65.12.1 # https://github.com/pennersr/django-allauth
 
 # ==============================================================================
 # DJANGO REST FRAMEWORK
 # ==============================================================================
 
-djangorestframework==3.15.2  # https://django-rest-framework.readthedocs.io/
-djangorestframework-simplejwt==5.3.1  # https://django-rest-framework-simplejwt.readthedocs.io/en/latest/
+djangorestframework==3.16.1  # https://django-rest-framework.readthedocs.io/
+djangorestframework-simplejwt==5.5.1  # https://django-rest-framework-simplejwt.readthedocs.io/en/latest/
 
 
 # ==============================================================================
@@ -43,13 +43,12 @@ djangorestframework-simplejwt==5.3.1  # https://django-rest-framework-simplejwt.
 # ==============================================================================
 
 # Core
-wagtail==6.4.2  # https://github.com/wagtail/wagtail
+wagtail==7.1.1  # https://github.com/wagtail/wagtail
 
 # Wagtail Extensions
 wagtail-django-recaptcha==2.1.1  # https://pypi.org/project/wagtail-django-recaptcha/
-wagtailmenus==3.1.9  # https://github.com/rkhleics/wagtailmenus
 wagtail-localize==1.12.2  # https://github.com/wagtail/wagtail-localize
-wagtail-modeladmin==2.0.0  # https://github.com/wagtail/wagtail-modeladmin
+wagtail-modeladmin==2.2.0  # https://github.com/wagtail/wagtail-modeladmin
 wagtail-2fa-new==1.8.0  # https://pypi.org/project/wagtail-2fa-new/
 
 
@@ -57,7 +56,7 @@ wagtail-2fa-new==1.8.0  # https://pypi.org/project/wagtail-2fa-new/
 # CACHE & SESSION
 # ==============================================================================
 
-redis==5.0.1  # https://github.com/redis/redis-py
+redis==6.4.0  # https://github.com/redis/redis-py
 hiredis==2.2.3  # https://github.com/redis/hiredis-py
 django-redis==5.4.0  # https://github.com/jazzband/django-redis
 
@@ -85,45 +84,34 @@ wagtail-autocomplete==0.12.0
 git+https://github.com/django-haystack/django-haystack.git  # Django Haystack
 pysolr==3.9.0  # https://pypi.org/project/pysolr/
 
-
 # packtools
 # ------------------------------------------------------------------------------
-lxml==4.9.4 # https://github.com/lxml/lxml
-tornado>=6.3.3 # not directly required, pinned by Snyk to avoid a vulnerability
+tornado>=6.5.2 # not directly required, pinned by Snyk to avoid a vulnerability 
 git+https://git@github.com/scieloorg/packtools@4.12.7#egg=packtools
-
 
 # pymongo
 # ------------------------------------------------------------------------------
 pymongo==3.13.0
 
-
 # ==============================================================================
 # STORAGE
 # ==============================================================================
 
-minio==7.2.5  # https://min.io/docs/minio/linux/developers/python/minio-py.html
+minio==7.2.18  # https://min.io/docs/minio/linux/developers/python/minio-py.html
 
 # ==============================================================================
 # MONITORING & MAINTENANCE
 # ==============================================================================
 
 
-# PySolr
-# ------------------------------------------------------------------------------
-pysolr==3.9.0
-
-django-prometheus==2.3.1  # https://github.com/korfuri/django-prometheus
-django-maintenance-mode==0.21.1  # https://github.com/fabiocaccamo/django-maintenance-mode
-psutil==5.9.8  # Para profiling em produção
+django-prometheus==2.4.1  # https://github.com/korfuri/django-prometheus
+django-maintenance-mode==0.22.0  # https://github.com/fabiocaccamo/django-maintenance-mode
+psutil==7.1.1  # Para profiling em produção
 
 # ==============================================================================
 # INTERNATIONALIZATION
 # ==============================================================================
-
-
 django-rosetta==0.10.1  # https://github.com/mbi/django-rosetta
-
 # ==============================================================================
 # EXTERNAL INTEGRATIONS
 # ==============================================================================
@@ -132,8 +120,7 @@ django-rosetta==0.10.1  # https://github.com/mbi/django-rosetta
 Sickle==0.7.0  # https://pypi.org/project/sickle/
 
 # Retry logic
-tenacity==8.2.3  # https://pypi.org/project/tenacity/
-tornado>=6.3.3  # not directly required, pinned by Snyk to avoid a vulnerability
+tenacity==9.1.2  # https://pypi.org/project/tenacity/
 
 # ==============================================================================
 # SCIELO SPECIFIC
@@ -147,23 +134,13 @@ tornado>=6.3.3  # not directly required, pinned by Snyk to avoid a vulnerability
 # SECURITY UPDATES
 # ==============================================================================
 
-certifi>=2023.7.22  # not directly required, pinned by Snyk to avoid a vulnerability
-requests>=2.31.0  # not directly required, pinned by Snyk to avoid a vulnerability
-
-
-# django-rosetta
-# ------------------------------------------------------------------------------
-django-rosetta==0.10.1
+certifi>=2025.10.5  # not directly required, pinned by Snyk to avoid a vulnerability
+requests>=2.32.5  # not directly required, pinned by Snyk to avoid a vulnerability
 
 # feedparse
 # ------------------------------------------------------------------------------
-feedparser==6.0.11
+feedparser==6.0.12
 
 # Xlwt
 # ------------------------------------------------------------------------------
-
-wagtail-2fa-new==1.8.0  # https://pypi.org/project/wagtail-2fa-new/
-
 xlwt==1.3.0
-
-django-silk==5.3.2
