@@ -364,11 +364,12 @@ class Article(
                 pass
         if sps_pkg_name:
             items = cls.objects.filter(sps_pkg_name=sps_pkg_name).order_by("-updated")
-            if items.count() == 1:
-                return items.first()
-            if items.count() > 1:
+            objs = list(items)
+            if len(objs) == 1:
+                return objs[0]
+            if len(objs) > 1:
                 items.update(data_status=choices.DATA_STATUS_DUPLICATED)
-                return items.first()
+                return objs[0]
         raise cls.DoesNotExist
 
     @classmethod
@@ -562,13 +563,15 @@ class Article(
         return cls.objects.filter(q, **params)
 
     @classmethod
-    def select_journal_articles(cls, journal=None, issns=None):
-        if not issns and not journal:
+    def select_journal_articles(cls, journal=None, journal_id=None, issns=None):
+        if not issns and not journal and not journal_id:
             raise ValueError(
-                "Article.select_journal_articles requires issns or journal param"
+                "Article.select_journal_articles requires issns, journal or journal_id param"
             )
         if journal:
             return cls.objects.filter(journal=journal)
+        if journal_id:
+            return cls.objects.filter(journal_id=journal_id)
         return cls.objects.filter(
             Q(journal__official__issn_print__in=issns)
             | Q(journal__official__issn_electronic__in=issns)
@@ -666,7 +669,7 @@ class Article(
         return ArticleEvent.create(user, self, name)
 
     @classmethod
-    def mark_items_as_public(cls, journal=None, force_update=False, user=None):
+    def mark_items_as_public(cls, journal=None, journal_id=None, force_update=False, user=None):
         # DATA_STATUS_DELETED, DATA_STATUS_MOVED, DATA_STATUS_INVALID, DATA_STATUS_DUPLICATED,
         if force_update:
             exclusion_list = []
@@ -675,7 +678,7 @@ class Article(
                 choices.DATA_STATUS_PUBLIC
             ]
         for item in (
-            cls.select_journal_articles(journal=journal)
+            cls.select_journal_articles(journal=journal, journal_id=journal_id)
             .exclude(
                 data_status__in=exclusion_list,
             )
@@ -686,8 +689,8 @@ class Article(
             )
 
     @classmethod
-    def mark_items_as_invalid(cls, journal=None):
-        qs = cls.select_journal_articles(journal=journal)
+    def mark_items_as_invalid(cls, journal=None, journal_id=None):
+        qs = cls.select_journal_articles(journal=journal, journal_id=journal_id)
         if qs.count() == 0:
             return
         for item in qs.iterator():
@@ -707,10 +710,15 @@ class Article(
         return self.id
 
     @classmethod
-    def find_duplicated_pkg_names(cls, journal):
+    def find_duplicated_pkg_names(cls, journal=None, journal_id=None):
         # Busca em ambos os campos de ISSN
+        params = {}
+        if journal:
+            params["journal"] = journal
+        if journal_id:
+            params["journal__id"] = journal_id
         duplicates = (
-            cls.objects.filter(journal=journal)
+            cls.objects.filter(**params)
             .exclude(sps_pkg_name__isnull=True)
             .exclude(sps_pkg_name="")
             .exclude(data_status=choices.DATA_STATUS_DUPLICATED)
@@ -721,7 +729,7 @@ class Article(
         return list(item["sps_pkg_name"] for item in duplicates)
 
     @classmethod
-    def mark_items_as_duplicated(cls, journal):
+    def mark_items_as_duplicated(cls, journal=None, journal_id=None):
         """
         Corrige todos os artigos marcados como DATA_STATUS_DUPLICATED com base nos ISSNs fornecidos.
 
@@ -729,7 +737,7 @@ class Article(
             issns: Lista de ISSNs para verificar duplicatas.
             user: Usuário que está executando a operação.
         """
-        article_duplicated_pkg_names = cls.find_duplicated_pkg_names(journal)
+        article_duplicated_pkg_names = cls.find_duplicated_pkg_names(journal, journal_id)
         if not article_duplicated_pkg_names:
             return
         cls.objects.filter(sps_pkg_name__in=article_duplicated_pkg_names).exclude(
@@ -740,7 +748,7 @@ class Article(
         return article_duplicated_pkg_names
 
     @classmethod
-    def deduplicate_items(cls, user, journal):
+    def deduplicate_items(cls, user, journal=None, journal_id=None):
         """
         Corrige todos os artigos marcados como DATA_STATUS_DUPLICATED com base nos ISSNs fornecidos.
 
@@ -748,7 +756,7 @@ class Article(
             issns: Lista de ISSNs para verificar duplicatas.
             user: Usuário que está executando a operação.
         """
-        article_duplicated_pkg_names = cls.find_duplicated_pkg_names(journal)
+        article_duplicated_pkg_names = cls.find_duplicated_pkg_names(journal, journal_id)
         for pkg_name in article_duplicated_pkg_names:
             cls.fix_duplicated_pkg_name(pkg_name, user)
         return article_duplicated_pkg_names
@@ -1522,10 +1530,7 @@ class ArticleSource(CommonControlField):
             if (
                 force_update
                 or (source_date and source_date != obj.source_date)
-                or (am_article and am_article != obj.am_article)
-                or not obj.file
-                or not obj.file.path
-                or not os.path.isfile(obj.file.path)
+                or not obj.is_completed
             ):
                 logging.info(f"updating source: {(source_date, obj.source_date)}")
                 logging.info(f"updating am_article: {(am_article, obj.am_article)}")
@@ -1557,12 +1562,7 @@ class ArticleSource(CommonControlField):
         if not self.url:
             raise ValueError("URL is required")
 
-        if (
-            not self.file
-            or not self.file.path
-            or not os.path.isfile(self.file.path)
-            or force_update
-        ):
+        if force_update or not self.is_completed:
             if detail:
                 detail.append("create file")
 
@@ -1660,6 +1660,10 @@ class ArticleSource(CommonControlField):
             return False
         if not self.am_article:
             return False
+        if not self.file:
+            return False
+        if not self.file.path or not os.path.isfile(self.file.path):
+            return False
         if self.status != ArticleSource.StatusChoices.COMPLETED:
             self.status = ArticleSource.StatusChoices.COMPLETED
             self.save()
@@ -1705,10 +1709,9 @@ class ArticleSource(CommonControlField):
             pid_v3 = self.get_or_create_pid_v3(
                 user, detail, force_update, auto_solve_pid_conflict
             )
-            self.mark_as_completed()  # Marca o processamento como concluído
             self.detail = detail
-            self.save()
-
+            self.mark_as_completed()  # Marca o processamento como concluído
+            
         except Exception as e:
             # Registra a exceção no log
             logging.exception(e)
