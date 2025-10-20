@@ -25,7 +25,7 @@ class ArticleAvailabilitySnippetViewSet(SnippetViewSet):
     menu_icon = "link"
     menu_order = 1
 
-    list_display = ["url", "available", "error", "updated"]
+    list_display = ["url", "collection", "available", "error", "updated"]
     list_filter = ["collection", "lang", "fmt", "available", "error"]
     search_fields = [
         "url",
