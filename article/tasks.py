@@ -267,7 +267,7 @@ def normalize_stored_email(
     ResearcherIdentifier.objects.bulk_update(updated_list, ["identifier"])
 
 
-@celery_app.task(bind=True, name="task_export_articles_to_articlemeta")
+@celery_app.task(bind=True)
 def task_export_articles_to_articlemeta(
     self,
     collection_acron_list=None,
@@ -296,7 +296,7 @@ def task_export_articles_to_articlemeta(
     )
 
 
-@celery_app.task(bind=True, name="task_export_article_to_articlemeta")
+@celery_app.task(bind=True)
 def task_export_article_to_articlemeta(
     self,
     pid_v3=None,
@@ -345,7 +345,7 @@ def task_export_article_to_articlemeta(
         )
 
 
-@celery_app.task(bind=True, name="task_load_article_from_pp_xml")
+@celery_app.task(bind=True)
 def task_load_article_from_pp_xml(
     self,
     pp_xml_id=None,
@@ -404,17 +404,26 @@ def task_load_article_from_pp_xml(
         )
         pp_xml.collections.set(article.collections)
 
-        # Verifica disponibilidade (URLs, assets, etc)
-        article.check_availability(user, collection_acron_list, timeout, is_activate)
-
         # Exporta para ArticleMeta se solicitado
         if articlemeta_export_enable:
+            # Verifica disponibilidade (URLs, assets, etc)
+            article.check_availability(user, collection_acron_list, timeout, is_activate)
             controller.export_article_to_articlemeta(
                 user,
                 article,
                 collection_acron_list,
                 force_update,
                 version=version,
+            )
+        else:
+            task_check_article_availability.delay(
+                article_id=article.id,
+                user_id=user.id,
+                username=user.username,
+                collection_acron_list=collection_acron_list,
+                timeout=timeout,
+                is_activate=is_activate,
+                force_update=force_update,
             )
 
     except Exception as exception:
@@ -431,7 +440,7 @@ def task_load_article_from_pp_xml(
         )
 
 
-@celery_app.task(bind=True, name="task_select_articles_to_load_from_api")
+@celery_app.task(bind=True)
 def task_select_articles_to_load_from_api(
     self,
     username=None,
@@ -531,9 +540,7 @@ def task_select_articles_to_load_from_api(
         )
 
 
-@celery_app.task(
-    bind=True, name="task_select_articles_to_load_from_collection_endpoint"
-)
+@celery_app.task(bind=True)
 def task_select_articles_to_load_from_collection_endpoint(
     self,
     username=None,
@@ -636,7 +643,7 @@ def task_select_articles_to_load_from_collection_endpoint(
         )
 
 
-@celery_app.task(bind=True, name="task_load_article_from_xml_url")
+@celery_app.task(bind=True)
 def task_load_article_from_xml_url(
     self,
     username=None,
@@ -722,7 +729,7 @@ def task_load_article_from_xml_url(
         )
 
 
-@celery_app.task(bind=True, name="task_select_articles_to_load_from_article_source")
+@celery_app.task(bind=True)
 def task_select_articles_to_load_from_article_source(
     self,
     username=None,
@@ -873,7 +880,7 @@ def task_fix_article_status(
         # Iterar pelos periódicos e disparar subtarefas
         journals_processed = 0
         for journal_id in journal_id_list:
-            qs = Article.objects.filter(journal__id=journal_id)
+            qs = Article.objects.filter(journal_id=journal_id)
             if qs.count() == 0:
                 continue
             task_fix_journal_articles_status.apply_async(
@@ -1233,3 +1240,68 @@ def task_load_journal_articles(
             },
         )
         raise
+
+
+@celery_app.task(bind=True)
+def task_check_article_availability(
+    self,
+    user_id=None,
+    username=None,
+    article_id=None,
+    collection_acron_list=None,
+    timeout=None,
+    is_activate=None,
+    force_update=False,
+):
+    """
+    Carrega um artigo específico a partir de um PidProviderXML.
+
+    Processa o XML armazenado no PidProviderXML, cria/atualiza o Article
+    e opcionalmente exporta para ArticleMeta.
+
+    Args:
+        self: Instância da tarefa Celery
+        pp_xml_id (int): ID do PidProviderXML a processar (obrigatório)
+        user_id (int, optional): ID do usuário executando a tarefa
+        username (str, optional): Nome do usuário executando a tarefa
+        articlemeta_export_enable (bool, optional): Exporta para ArticleMeta após carregar
+
+    Returns:
+        None
+
+    Side Effects:
+        - Cria/atualiza Article no banco
+        - Atualiza status do PidProviderXML para DONE
+        - Verifica disponibilidade do artigo
+        - Exporta para ArticleMeta se solicitado
+        - Registra UnexpectedEvent em caso de erro
+
+    Notes:
+        - O XML é lido diretamente do arquivo armazenado no PidProviderXML
+        - A verificação de disponibilidade valida URLs e assets do artigo
+    """
+    try:
+        user = _get_user(self.request, username, user_id)
+        article = Article.objects.get(id=article_id)
+        article.check_availability(
+            user,
+            collection_acron_list=collection_acron_list,
+            timeout=timeout,
+            is_activate=is_activate,
+            force_update=force_update,
+        )
+
+    except Exception as exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=exception,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "article.tasks.task_check_article_availability",
+                "article_id": article_id,
+                "collection_acron_list": collection_acron_list,
+                "timeout": timeout,
+                "is_activate": is_activate,
+                "force_update": force_update,
+            },
+        )
