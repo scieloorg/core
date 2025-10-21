@@ -1,5 +1,5 @@
 {% load i18n wagtailcore_tags %}
-
+{% load wagtailroutablepage_tags %}
 
 <style>
 dd.dd-button {
@@ -185,14 +185,13 @@ dd.dd-button {
                                 <dt>
                                     <h3 class="h6 fw-bold">{% trans 'List of journals by subject' %}</h3>
                                 </dt>
-                                {% for child in list_journal_pages %}
+                                {% for child in list_journal_pages_by_category %}
                                     <dd class="text dd-button">
                                         <a href="{{child.url}}" class="btn btn-secondary">{% trans 'All' %}</a>
                                     </dd>
-                                    <!-- FIXME Translation -->
-                                    {% for category in categories %}
+                                    {% for slug, category in categories %}
                                         <dd class="text dd-button">
-                                            <a href="{{child.url}}?category={{category}}" class="btn btn-secondary" name="category">{{category}}</a>
+                                            <a href="{% routablepageurl child 'list_journal_by_category' slug %}"" class="btn btn-secondary" name="category">{{category}}</a>
                                         </dd>
                                     {% endfor%}
                                 {% endfor %}
