@@ -425,6 +425,12 @@ class Article(
     ):
         return cls.create_or_update(user=user, pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
 
+    def mark_as_completed(self, user=None):
+        self.valid = True
+        self.data_status = choices.DATA_STATUS_COMPLETED
+        self.save()  # Salvar estado final
+        self.pp_xml.mark_as_done()
+
     def complete_data(self, pp_xml):
         save = False
         if pp_xml:
@@ -660,9 +666,7 @@ class Article(
                 self.data_status = choices.DATA_STATUS_PUBLIC
                 self.is_public = True
                 self.save()
-            self.pp_xml.mark_as_done()
             return True
-        self.pp_xml.mark_as_waiting()
         return False
 
     def add_event(self, user, name):
