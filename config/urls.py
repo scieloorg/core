@@ -4,7 +4,6 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path, re_path
 from django.views import defaults as default_views
-from django.views.generic import TemplateView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from wagtail import urls as wagtail_urls
 from wagtail.admin import urls as wagtailadmin_urls
@@ -12,11 +11,16 @@ from wagtail.documents import urls as wagtaildocs_urls
 from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_urls
 
 from core.api.wagtail.api import api_router
-
-from core.search_site import views as search_views  # noqa isort:skip
+from core.home.views import (
+    blog_feed_json,
+    download_csv_journals_page_scielo_org,
+    download_xls_journals_page_scielo_org,
+    youtube_feed_json,
+)
 from core.users.views import filter_journals
 from core_settings.views import import_csv
-from core.home.views import blog_feed_json, youtube_feed_json, download_csv_journals_page_scielo_org, download_xls_journals_page_scielo_org
+
+from core.search_site import views as search_views  # noqa isort:skip
 
 urlpatterns = [
     # path("", TemplateView.as_view(template_name="home/home_page.html"), name="home"),
