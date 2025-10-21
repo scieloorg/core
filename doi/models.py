@@ -1,7 +1,8 @@
-from django.db import models
+from django.db import models, IntegrityError
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
+
 
 from core.choices import LANGUAGE
 from core.forms import CoreAdminModelForm
@@ -25,8 +26,10 @@ class DOI(CommonControlField):
         FieldPanel("value"),
         AutocompletePanel("language"),
     ]
+    base_form_class = CoreAdminModelForm
 
     class Meta:
+        unique_together = [("value", "language")]
         indexes = [
             models.Index(
                 fields=[
@@ -57,18 +60,32 @@ class DOI(CommonControlField):
         return "%s - %s" % (self.value, self.language) or ""
 
     @classmethod
-    def get_or_create(cls, value, language, creator):
+    def get(cls, value, language):
+        if not value:
+            raise ValueError("DOI.get requires parameters: 'value'")
         try:
             return cls.objects.get(value=value, language=language)
-        except cls.DoesNotExist:
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(value=value, language=language).first()
+
+    @classmethod
+    def create(cls, creator, value, language):
+        try:
             doi = cls()
             doi.value = value
             doi.language = language
             doi.creator = creator
             doi.save()
             return doi
+        except IntegrityError:
+            return cls.get(value, language)
 
-    base_form_class = CoreAdminModelForm
+    @classmethod
+    def get_or_create(cls, value, language, creator):
+        try:
+            return cls.get(value=value, language=language)
+        except cls.DoesNotExist:
+            return cls.create(creator, value, language)
 
 
 class DOIRegistration(CommonControlField):
