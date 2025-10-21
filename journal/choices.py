@@ -119,7 +119,7 @@ STUDY_AREA = [
     ("Exact and Earth Sciences", _("Exact and Earth Sciences")),
     ("Health Sciences", _("Health Sciences")),
     ("Human Sciences", _("Human Sciences")),
-    ("Linguistics, Letters and Arts", _("Linguistic, Literature and Arts")),
+    ("Linguistics, Letters and Arts", _("Linguistics, Literature and Arts")),
     ("Psicanalise", _("Psicanalise")),
 ]
 
