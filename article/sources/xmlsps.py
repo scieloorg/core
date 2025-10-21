@@ -160,6 +160,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         )
         logging.info(f"...Article {pid_v3} {xml_with_pre.sps_pkg_name}")
 
+        article.events.all().delete()
         event = article.add_event(user, _("load article"))
         # Configurar todos os campos antes de salvar (Sugestão 9)
         article.valid = False
@@ -284,6 +285,8 @@ def get_or_create_doi(xmltree, user, errors):
     try:
         doi_with_lang = DoiWithLang(xmltree=xmltree).data
         for doi in doi_with_lang:
+            if not doi.get("value"):
+                continue
             try:
                 lang = get_or_create_language(doi.get("lang"), user=user, errors=errors)
                 obj = DOI.get_or_create(
@@ -404,14 +407,13 @@ def get_or_create_toc_sections(xmltree, user, errors):
     data = []
     try:
         toc_sections = ArticleTocSections(xmltree=xmltree).sections
-
         for item in toc_sections:
             section_title = item.get("section")
-            section_lang = item.get("parent_lang")
 
-            if not section_title and not section_lang:
+            if not section_title:
                 continue
 
+            section_lang = item.get("parent_lang")
             try:
                 lang = get_or_create_language(section_lang, user=user, errors=errors)
                 obj = TocSection.get_or_create(
