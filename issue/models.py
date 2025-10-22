@@ -156,7 +156,7 @@ class Issue(CommonControlField, ClusterableModel):
 
     def create_legacy_keys(self, force_update=None):
         if not force_update:
-            if self.legacy_issue.exists():
+            if self.legacy_issue.count() == self.journal.scielojournal_set.count():
                 return
 
         if not self.issue_pid_suffix:
@@ -171,13 +171,15 @@ class Issue(CommonControlField, ClusterableModel):
             self.legacy_issue.add(am_issue)
 
     def get_legacy_keys(self, collection_acron_list=None, is_active=None):
+        legacy_keys = []
         params = {}
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
-        for item in self.legacy_issue.filter(
-            collection__is_active=bool(is_active), **params
-        ):
-            yield item.legacy_keys
+        if is_active:
+            params["collection__is_active"] = bool(is_active)
+        for item in self.legacy_issue.filter(**params):
+            legacy_keys.append(item.legacy_keys)
+        return legacy_keys
 
     def select_collections(self, collection_acron_list=None, is_activate=None):
         if not self.journal:
@@ -348,6 +350,7 @@ class Issue(CommonControlField, ClusterableModel):
             self.order = self.generate_order()
         if not self.issue_pid_suffix:
             self.issue_pid_suffix = self.generate_issue_pid_suffix()
+        self.create_legacy_keys()
         super().save(*args, **kwargs)
 
     def generate_issue_pid_suffix(self):
