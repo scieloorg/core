@@ -471,35 +471,45 @@ class Article(
     def is_indexed_at(self, db_acronym):
         return bool(self.journal) and self.journal.is_indexed_at(db_acronym)
 
-    def create_legacy_keys(self, collection_acron_list):
-        if self.legacy_article.count() == 0:
+    @property
+    def article_pid_suffix(self):
+        return self.pp_xml.get_article_pid_suffix()
+            
+    def create_legacy_keys(self, force_update=False):
+        if not force_update:
+            if self.legacy_article.count() == self.journal.scielojournal_set.count():
+                return
 
-            query_set = self.journal.scielojournal_set
-            logging.info(f"scileojournal total: {query_set.count()}")
-            if query_set.count() == 1:
-                if self.pid_v2:
-                    am_article = AMArticle.create_or_update(
-                        self.pid_v2,
-                        query_set.first().collection,
-                        None,
-                        self.updated_by,
-                    )
-                    self.legacy_article.add(am_article)
+        # garante que a issue tenha suas chaves legadas criadas
+        self.issue.create_legacy_keys()
+
+        for issue_key in self.issue.get_legacy_keys():
+            collection = issue_key["collection"]
+            issue_pid = issue_key["pid"]
+            if not self.pid_v2:
+                # TODO construir pid_v2 com issue_pid + article_pid_suffix
+                pid_v2 = f"S{issue_pid}{self.article_pid_suffix}"
+                if len(pid_v2) == 23:
+                    self.pid_v2 = pid_v2
+                    self.save()
+                else:
+                    continue
+            if self.pid_v2 and issue_pid in self.pid_v2:
+                am_article = AMArticle.create_or_update(
+                    self.pid_v2, collection, None, self.updated_by, status="done"
+                )
+                self.legacy_article.add(am_article)
 
     def get_legacy_keys(self, collection_acron_list=None, is_active=None):
-        self.create_legacy_keys(collection_acron_list)
         params = {}
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
-        logging.info(
-            self.legacy_article.filter(
-                collection__is_active=is_active, **params
-            ).count()
-        )
-        for item in self.legacy_article.filter(
-            collection__is_active=is_active, **params
-        ):
-            yield item.legacy_keys
+        if is_active:
+            params["is_active"] = is_active
+        legacy_keys = []
+        for item in self.legacy_article.filter(**params):
+            legacy_keys.append(item.legacy_keys)
+        return legacy_keys
 
     def select_collections(self, collection_acron_list=None, is_activate=None):
         if not self.journal:
