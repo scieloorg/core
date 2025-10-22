@@ -237,10 +237,12 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             )
         )
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user, errors=errors))
+
+        article.create_legacy_keys()
+        if not article.pid_v2:
+            add_error(errors, "load_article", "Article has no PID v2", item=article.pid_v3)
         if not errors:
-            article.valid = True
-            article.data_status = choices.DATA_STATUS_COMPLETED
-            article.save()  # Salvar estado final
+            article.mark_as_completed(user=user)
 
         event.finish(completed=not errors, errors=errors)
         logging.info(
