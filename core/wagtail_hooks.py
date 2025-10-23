@@ -154,16 +154,6 @@ def reorder_menu_items(request, menu_items):
             item.order = get_menu_order(item.label)
 
 
-@hooks.register("construct_main_menu")
-def remove_menu_items(request, menu_items):
-    if not request.user.is_superuser:
-        menu_items[:] = [
-            item
-            for item in menu_items
-            if item.name not in ["documents", "explorer", "reports"]
-        ]
-
-
 # Registros minimalistas
 @register_snippet
 class ExportDestinationViewSet(SnippetViewSet):
