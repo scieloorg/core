@@ -63,6 +63,23 @@ class AMArticle(BaseLegacyRecord):
         blank=True,
         null=True,
     )
+    new_record = models.ForeignKey(
+        "Article",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="legacy_article",
+    )
+
+    panels = [
+        AutocompletePanel("collection"),
+        FieldPanel("new_record"),
+        FieldPanel("pid"),
+        FieldPanel("status"),
+        FieldPanel("processing_date"),
+        FieldPanel("url"),
+        FieldPanel("data", read_only=True),
+    ]
 
     class Meta:
         verbose_name = _("Legacy article")
@@ -146,20 +163,22 @@ class Article(
     keywords = models.ManyToManyField(Keyword, blank=True)
     valid = models.BooleanField(default=False, blank=True, null=True)
     errors = models.JSONField(default=None, blank=True, null=True)
-    legacy_article = models.ManyToManyField(AMArticle)
     is_public = models.BooleanField(default=False, blank=True, null=True)
+    is_classic_public = models.BooleanField(default=False, blank=True, null=True)
+    is_new_public = models.BooleanField(default=False, blank=True, null=True)
 
     base_form_class = CoreAdminModelForm
 
     # Metadados principais do artigo
     panels_identification = [
-        FieldPanel("is_public"),
-        FieldPanel("data_status"),
-        FieldPanel("valid"),
+        FieldPanel("is_public", read_only=True),
+        FieldPanel("is_classic_public", read_only=True),
+        FieldPanel("is_new_public", read_only=True),
+        FieldPanel("data_status", read_only=True),
+        FieldPanel("valid", read_only=True),
         FieldPanel("pid_v2", read_only=True),
         FieldPanel("pid_v3", read_only=True),
         AutocompletePanel("doi", read_only=True),
-        AutocompletePanel("legacy_article"),
     ]
 
     # Informações de publicação
@@ -410,7 +429,7 @@ class Article(
         pid_v3=None,
         sps_pkg_name=None,
     ):
-        logging.info(f"get_or_create: {pid_v3} {sps_pkg_name}")
+        logging.info(f"Article.get_or_create: {user} {pid_v3} {sps_pkg_name}")
         try:
             return cls.get(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
         except cls.DoesNotExist:
@@ -475,28 +494,25 @@ class Article(
     def article_pid_suffix(self):
         return self.pp_xml.get_article_pid_suffix()
             
-    def create_legacy_keys(self, force_update=False):
+    def create_legacy_keys(self, user=None, force_update=False):
         if not force_update:
             if self.legacy_article.count() == self.journal.scielojournal_set.count():
                 return
 
         # garante que a issue tenha suas chaves legadas criadas
-        self.issue.create_legacy_keys()
+        self.issue.create_legacy_keys(user, force_update)
 
         for issue_key in self.issue.get_legacy_keys():
             collection = issue_key["collection"]
             issue_pid = issue_key["pid"]
             if not self.pid_v2:
-                # TODO construir pid_v2 com issue_pid + article_pid_suffix
-                pid_v2 = f"S{issue_pid}{self.article_pid_suffix}"
-                if len(pid_v2) == 23:
-                    self.pid_v2 = pid_v2
-                    self.save()
-                else:
-                    continue
+                # este valor deve vir pela importação do AM ou
+                # pelo upload (migração ou alimentação direta) 
+                # via solicitação de pid para o pid provider
+                continue
             if self.pid_v2 and issue_pid in self.pid_v2:
                 am_article = AMArticle.create_or_update(
-                    self.pid_v2, collection, None, self.updated_by, status="done"
+                    self.pid_v2, collection, None, user, status="done"
                 )
                 self.legacy_article.add(am_article)
 
@@ -506,10 +522,10 @@ class Article(
             params["collection__acron3__in"] = collection_acron_list
         if is_active:
             params["is_active"] = is_active
-        legacy_keys = []
+        data = {}
         for item in self.legacy_article.filter(**params):
-            legacy_keys.append(item.legacy_keys)
-        return legacy_keys
+            data[item.collection.acron3] = item.legacy_keys
+        return list(data.values())
 
     def select_collections(self, collection_acron_list=None, is_activate=None):
         if not self.journal:
@@ -597,7 +613,25 @@ class Article(
     def langs(self):
         return [lang.code2 for lang in self.languages.all()]
 
-    def get_article_urls(self, collection_acron_list=None, collection=None, fmt=None):
+    @property
+    def urls_data(self):
+        urls = []
+        for sj in self.journal.scielojournal_set.select_related("collection").all():
+            pid_v2 = self.legacy_article.filter(collection=sj.collection).first().pid
+            if not pid_v2:
+                continue
+            url_builder = ArticleURLBuilder(
+                sj.collection.domain,
+                sj.journal_acron,
+                pid_v2,
+                self.pid_v3,
+            )                
+            for item in url_builder.get_urls(self.langs):
+                item["collection"] = sj.collection
+                urls.append(item)
+        return urls
+
+    def get_availability(self, collection_acron_list=None, collection=None, fmt=None, params=None):
         params = {}
         if fmt:
             params["fmt"] = fmt
@@ -605,80 +639,78 @@ class Article(
             params["collection"] = collection
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
-        for item in self.article_availability.filter(available=True, **params):
-            yield item.data
+        return self.article_availability.filter(available=True, **params)
 
-    def check_availability(
-        self,
-        user,
-        collection_acron_list=None,
-        timeout=None,
-        is_activate=None,
-        force_update=False,
-    ):
+    def check_availability(self, user):
         try:
             if not self.is_pp_xml_valid():
                 return False
-            if not force_update and self.is_available(collection_acron_list):
-                return True
 
-            self.article_availability.all().delete()
             event = None
-            event = self.add_event(user, _("check availability"))
-            for collection in self.select_collections(
-                collection_acron_list,
-                is_activate=is_activate,
-            ):
-                url_builder = ArticleURLBuilder(
-                    collection.domain,
-                    self.journal.scielojournal_set.filter(collection=collection)
-                    .first()
-                    .journal_acron,
-                    self.pid_v2,
-                    self.pid_v3,
+            urls = []
+            for item in self.article_availability.all():
+                urls.append(item.url)
+
+            event = self.add_event(user, _("register urls"))
+            for item in self.urls_data:
+                if item["url"] in urls:
+                    urls.remove(item["url"])
+                ArticleAvailability.create_or_update(
+                    user,
+                    self,
+                    collection=item["collection"],
+                    url=item["url"],
+                    fmt=item["format"],
+                    lang=item.get("lang"),
                 )
-                for item in url_builder.get_urls(self.langs):
-                    ArticleAvailability.create_or_update(
-                        user,
-                        self,
-                        collection=collection,
-                        url=item["url"],
-                        fmt=item["format"],
-                        lang=item.get("lang"),
-                        timeout=timeout,
-                    )
-            event.finish(
-                completed=True,
-                detail=ArticleAvailability.get_stats(self),
-            )
-            return self.is_available(collection_acron_list)
+            if urls:
+                self.article_availability.filter(url__in=urls).delete()
+            return self.mark_as_available()
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             if event:
                 event.finish(completed=False, exceptions=traceback.format_exc())
+            else:
+                UnexpectedEvent.create(
+                    item=str(self),
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail=dict(
+                        function="article.models.Article.check_availability",
+                    ),
+                )
 
-            UnexpectedEvent.create(
-                item=str(self),
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail=dict(
-                    function="article.models.Article.check_availability",
-                ),
-            )
+    def mark_as_available(self):
+        save = False
+        public = self.classic_available().exists()
+        if self.is_classic_public != public:
+            self.is_classic_public = public
+            save = True
+        public = self.new_available().exists()
+        if self.is_new_public != public:
+            self.is_new_public = public
+            save = True
+        if self.is_classic_public or self.is_new_public:
+            if self.data_status != choices.DATA_STATUS_PUBLIC:
+                self.data_status = choices.DATA_STATUS_PUBLIC
+                save = True
+            if not self.is_public:
+                self.is_public = True
+                save = True
+        if save:
+            self.save()
+        return self.is_public
 
     def is_available(self, collection_acron_list=None, fmt=None):
-        if not self.is_pp_xml_valid():
-            return False
-        for item in self.get_article_urls(
-            collection_acron_list=collection_acron_list, fmt=fmt
-        ):
-            if self.data_status != choices.DATA_STATUS_PUBLIC or not self.is_public:
-                self.data_status = choices.DATA_STATUS_PUBLIC
-                self.is_public = True
-                self.save()
-            return True
-        return False
+        return self.get_availability(fmt=fmt, collection_acron_list=collection_acron_list).exists()
 
+    def new_available(self, collection_acron_list=None):
+        return self.get_availability(fmt="xml", collection_acron_list=collection_acron_list)
+
+    def classic_available(self, collection_acron_list=None):
+        params = {"url__contains": "/scielo.php"}
+        return self.get_availability(fmt="html", collection_acron_list=collection_acron_list, params=params)
+        
     def add_event(self, user, name):
         return ArticleEvent.create(user, self, name)
 
@@ -698,9 +730,7 @@ class Article(
             )
             .iterator()
         ):
-            item.check_availability(
-                user=user or item.updated_by, force_update=force_update
-            )
+            item.check_availability(user)
 
     @classmethod
     def mark_items_as_invalid(cls, journal=None, journal_id=None):
@@ -797,7 +827,7 @@ class Article(
             # Mantém o artigo mais recente como o correto
             not_available_articles = []
             for item in articles.order_by("-updated"):
-                if item.check_availability(user, force_update=True):
+                if item.check_availability(user):
                     return item
                 else:
                     not_available_articles.append(item)
@@ -1881,6 +1911,11 @@ class ArticleAvailability(CommonControlField):
             )
 
     def check_availability(self, timeout=None):
+        if not self.collection.is_active:
+            self.available = False
+            self.error = "CollectionInactive"
+            self.updated = timezone.now()
+            return self.available
         try:
             available = check_url(self.url, timeout)
             error = None
