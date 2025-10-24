@@ -2011,7 +2011,7 @@ msgid "Human Sciences"
 msgstr "Ciências Humanas"
 
 #: journal/choices.py:122
-msgid "Linguistic, Literature and Arts"
+msgid "Linguistics, Letters and Arts"
 msgstr "Linguística, Letras e Artes"
 
 #: journal/choices.py:123

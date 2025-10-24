@@ -1,0 +1,23 @@
+dd.dd-button {
+  margin-bottom: 1px; /* ou 2px, ou 0, conforme preferir */
+  margin-top: 0;
+}
+
+.dl-search-journals {
+    margin-bottom: 2px;
+    margin-top: 0;
+}
+/* Estilo para os botões de periódicos */
+.dl-search-journals .btn-secondary {
+    color: #333 !important;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+.dl-search-journals .btn-secondary:hover {
+    background-color: #e8e8e8 !important;
+}
