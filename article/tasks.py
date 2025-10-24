@@ -737,6 +737,7 @@ def task_select_articles_to_load_from_article_source(
     from_date=None,
     until_date=None,
     force_update=None,
+    status_list=None,
     auto_solve_pid_conflict=None,
 ):
     """
@@ -777,6 +778,7 @@ def task_select_articles_to_load_from_article_source(
             from_date,
             until_date,
             force_update,
+            status_list,
         ):
             article_source.complete_data(
                 user=user,
@@ -1283,14 +1285,7 @@ def task_check_article_availability(
     try:
         user = _get_user(self.request, username, user_id)
         article = Article.objects.get(id=article_id)
-        article.check_availability(
-            user,
-            collection_acron_list=collection_acron_list,
-            timeout=timeout,
-            is_activate=is_activate,
-            force_update=force_update,
-        )
-
+        article.check_availability(user)
     except Exception as exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
