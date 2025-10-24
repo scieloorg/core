@@ -1683,8 +1683,12 @@ class ArticleSource(CommonControlField):
         from_date=None,
         until_date=None,
         force_update=None,
+        status_list=None,
+        params=None,
     ):
-        params = {}
+        params = params or {}
+        if status_list:
+            params["status__in"] = status_list
         if from_date:
             params["updated__gte"] = from_date
         if until_date:
@@ -1915,7 +1919,13 @@ class ArticleAvailability(CommonControlField):
             self.available = False
             self.error = "CollectionInactive"
             self.updated = timezone.now()
-            return self.available
+            return self.available            
+        if self.collection.platform_status == "classic":
+            if "scielo.php" not in self.url:
+                self.available = False
+                self.error = "PlatformMismatch"
+                self.updated = timezone.now()
+                return self.available
         try:
             available = check_url(self.url, timeout)
             error = None
