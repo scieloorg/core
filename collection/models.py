@@ -86,7 +86,9 @@ class Collection(CommonControlField, ClusterableModel):
     )
     is_active = models.BooleanField(_("Is active"), null=True, blank=True)
     foundation_date = models.DateField(_("Foundation data"), null=True, blank=True)
-
+    platform_status = models.CharField(
+        _("Platform Status"), choices=choices.PLATFORM_STATUS, max_length=20, null=True, blank=True,
+    )
     autocomplete_search_field = "main_name"
 
     def autocomplete_label(self):
@@ -107,6 +109,7 @@ class Collection(CommonControlField, ClusterableModel):
         FieldPanel("has_analytics"),
         FieldPanel("collection_type"),
         FieldPanel("is_active"),
+        FieldPanel("platform_status"),
         FieldPanel("foundation_date"),
     ]
 

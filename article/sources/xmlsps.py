@@ -160,6 +160,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         )
         logging.info(f"...Article {pid_v3} {xml_with_pre.sps_pkg_name}")
 
+        article.events.all().delete()
         event = article.add_event(user, _("load article"))
         # Configurar todos os campos antes de salvar (Sugestão 9)
         article.valid = False
@@ -236,16 +237,13 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             )
         )
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user, errors=errors))
-
-        article.valid = not errors
-        if errors:
-            article.errors = _("Consult events")
-        article.save()  # Salvar estado final
+        article.create_legacy_keys(user)
+        if not article.pid_v2:
+            add_error(errors, "load_article", "Article has no PID v2", item=article.pid_v3)
+        if not errors:
+            article.mark_as_completed()
 
         event.finish(completed=not errors, errors=errors)
-
-        article.check_availability(user=user)
-
         logging.info(
             f"The article {pid_v3} has been processed with {len(errors)} errors"
         )
@@ -254,7 +252,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         exc_type, exc_value, exc_traceback = sys.exc_info()
 
         if event:
-            event.finish(user, errors=errors, exceptions=traceback.format_exc())
+            event.finish(errors=errors, exceptions=traceback.format_exc())
             raise
         UnexpectedEvent.create(
             item=str(pp_xml or v3 or file_path or "xml"),
@@ -288,6 +286,8 @@ def get_or_create_doi(xmltree, user, errors):
     try:
         doi_with_lang = DoiWithLang(xmltree=xmltree).data
         for doi in doi_with_lang:
+            if not doi.get("value"):
+                continue
             try:
                 lang = get_or_create_language(doi.get("lang"), user=user, errors=errors)
                 obj = DOI.get_or_create(
@@ -408,14 +408,13 @@ def get_or_create_toc_sections(xmltree, user, errors):
     data = []
     try:
         toc_sections = ArticleTocSections(xmltree=xmltree).sections
-
         for item in toc_sections:
             section_title = item.get("section")
-            section_lang = item.get("parent_lang")
 
-            if not section_title and not section_lang:
+            if not section_title:
                 continue
 
+            section_lang = item.get("parent_lang")
             try:
                 lang = get_or_create_language(section_lang, user=user, errors=errors)
                 obj = TocSection.get_or_create(

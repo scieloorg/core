@@ -15,7 +15,7 @@ class PidProviderXMLViewSet(CommonControlFieldViewSet):
     menu_icon = "folder"
     menu_order = 300
     add_to_settings_menu = False
-    list_per_page = 10
+    list_per_page = 20
 
     # Configuração de listagem
     list_display = [
@@ -159,10 +159,10 @@ class PidProviderViewSetGroup(SnippetViewSetGroup):
     menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("pid_provider")
     items = (
-        PidProviderConfigViewSet,
         PidProviderXMLViewSet,
         OtherPidViewSet,
         FixPidV2ViewSet,
+        PidProviderConfigViewSet,
     )
 
 

@@ -12,11 +12,6 @@ from config.settings.base import COLLECTION_TEAM, JOURNAL_TEAM
 from issue.models import Issue, IssueExporter, AMIssue
 
 
-class AMIssueCreateView(CreateView):
-    def form_valid(self, form):
-        self.object = form.save_all(self.request.user)
-        return HttpResponseRedirect(self.get_success_url())
-
 class AMIssueAdminViewSet(SnippetViewSet):
 
     model = AMIssue
@@ -31,6 +26,7 @@ class AMIssueAdminViewSet(SnippetViewSet):
     list_display = (
         "pid",
         "collection",
+        "new_record",
         "status",
         "processing_date",
         "updated",
@@ -38,11 +34,15 @@ class AMIssueAdminViewSet(SnippetViewSet):
     list_filter = (
         "status",
         "collection",
+        "new_record__year",
     )
     search_fields = (
         "pid",
         "processing_date",
-        "legacy_issue__pid",
+        "new_record__journal__title",
+        "new_record__journal__scielojournal__journal_acron",
+        "new_record__year",
+        "new_record__volume",
     )
     # Deve ficar disponível somente para ADM
 
@@ -70,6 +70,7 @@ class IssueAdminSnippetViewSet(SnippetViewSet):
         "updated",
     )
     list_filter = (
+        "journal__scielojournal__collection",
         "year",
         "month",
     )

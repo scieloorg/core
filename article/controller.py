@@ -32,117 +32,68 @@ from tracker.models import UnexpectedEvent
 class ArticleIsNotAvailableError(Exception): ...
 
 
-def add_collections_to_pid_provider_items():
-    for item in PidProviderXML.objects.filter(
-        Q(issn_print__isnull=False) | Q(issn_electronic__isnull=False)
-    ).exclude(collections__isnull=False):
-        logging.info(item)
-        add_collections_to_pid_provider(item)
+# def get_pp_xml_ids(
+#     collection_acron_list=None,
+#     journal_acron_list=None,
+#     from_pub_year=None,
+#     until_pub_year=None,
+#     from_updated_date=None,
+#     until_updated_date=None,
+#     proc_status_list=None,
+# ):
+#     return select_pp_xml(
+#         collection_acron_list,
+#         journal_acron_list,
+#         from_pub_year,
+#         until_pub_year,
+#         from_updated_date,
+#         until_updated_date,
+#         proc_status_list=proc_status_list,
+#     ).values_list("id", flat=True)
 
 
-def add_collections_to_pid_provider(pid_provider):
-    """
-    Obtém as coleções associadas ao PidProviderXML baseando-se nos ISSNs.
+# def select_pp_xml(
+#     collection_acron_list=None,
+#     journal_acron_list=None,
+#     from_pub_year=None,
+#     until_pub_year=None,
+#     from_updated_date=None,
+#     until_updated_date=None,
+#     proc_status_list=None,
+#     params=None,
+# ):
+#     params = params or {}
 
-    Args:
-        pid_provider: instância de PidProviderXML
+#     q = Q()
+#     if journal_acron_list or collection_acron_list:
+#         issns = Journal.get_issn_list(collection_acron_list, journal_acron_list)
+#         issn_print_list = issns["issn_print_list"]
+#         issn_electronic_list = issns["issn_electronic_list"]
 
-    Returns:
-        Lista de instâncias de Collection
-    """
-    # Coletar ISSNs
-    try:
-        issns = []
-        if pid_provider.issn_electronic:
-            issns.append(pid_provider.issn_electronic)
-        if pid_provider.issn_print:
-            issns.append(pid_provider.issn_print)
+#         if issn_print_list or issn_electronic_list:
+#             q = Q(issn_print__in=issn_print_list) | Q(
+#                 issn_electronic__in=issn_electronic_list
+#             )
+#         elif issn_print_list:
+#             q = Q(issn_print__in=issn_print_list)
+#         elif issn_electronic_list:
+#             q = Q(issn_electronic__in=issn_electronic_list)
 
-        if not issns:
-            return []
+#     if from_updated_date:
+#         params["updated__gte"] = from_updated_date
+#     if until_updated_date:
+#         params["updated__lte"] = until_updated_date
 
-        # Buscar coleções ativas através dos journals com esses ISSNs
-        for item in SciELOJournal.objects.filter(
-            Q(journal__official__issn_print__in=issns)
-            | Q(journal__official__issn_electronic__in=issns),
-        ).distinct():
-            logging.info(item)
-            pid_provider.collections.add(item.collection)
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        UnexpectedEvent.create(
-            exception=e,
-            exc_traceback=exc_traceback,
-            detail={
-                "operation": "add_collections_to_pid_provider",
-                "pid_provider": str(pid_provider),
-                "traceback": traceback.format_exc(),
-            },
-        )
+#     if from_pub_year:
+#         params["pub_year__gte"] = from_pub_year
+#     if until_pub_year:
+#         params["pub_year__lte"] = until_pub_year
 
+#     if proc_status_list:
+#         params["proc_status__in"] = proc_status_list
 
-def get_pp_xml_ids(
-    collection_acron_list=None,
-    journal_acron_list=None,
-    from_pub_year=None,
-    until_pub_year=None,
-    from_updated_date=None,
-    until_updated_date=None,
-    proc_status_list=None,
-):
-    return select_pp_xml(
-        collection_acron_list,
-        journal_acron_list,
-        from_pub_year,
-        until_pub_year,
-        from_updated_date,
-        until_updated_date,
-        proc_status_list=proc_status_list,
-    ).values_list("id", flat=True)
-
-
-def select_pp_xml(
-    collection_acron_list=None,
-    journal_acron_list=None,
-    from_pub_year=None,
-    until_pub_year=None,
-    from_updated_date=None,
-    until_updated_date=None,
-    proc_status_list=None,
-    params=None,
-):
-    params = params or {}
-
-    q = Q()
-    if journal_acron_list or collection_acron_list:
-        issns = Journal.get_issn_list(collection_acron_list, journal_acron_list)
-        issn_print_list = issns["issn_print_list"]
-        issn_electronic_list = issns["issn_electronic_list"]
-
-        if issn_print_list or issn_electronic_list:
-            q = Q(issn_print__in=issn_print_list) | Q(
-                issn_electronic__in=issn_electronic_list
-            )
-        elif issn_print_list:
-            q = Q(issn_print__in=issn_print_list)
-        elif issn_electronic_list:
-            q = Q(issn_electronic__in=issn_electronic_list)
-
-    if from_updated_date:
-        params["updated__gte"] = from_updated_date
-    if until_updated_date:
-        params["updated__lte"] = until_updated_date
-
-    if from_pub_year:
-        params["pub_year__gte"] = from_pub_year
-    if until_pub_year:
-        params["pub_year__lte"] = until_pub_year
-
-    if proc_status_list:
-        params["proc_status__in"] = proc_status_list
-
-    logging.info(params)
-    return PidProviderXML.objects.filter(q, **params)
+#     logging.info(params)
+#     return PidProviderXML.objects.filter(q, **params)
 
 
 def load_financial_data(row, user):
@@ -190,9 +141,13 @@ def export_article_to_articlemeta(
 ) -> bool:
 
     try:
-        if not article.is_available(collection_acron_list):
+        if not article.classic_available(collection_acron_list):
             raise ArticleIsNotAvailableError(
-                f"Article {article} is not available. Unable to export to ArticleMeta."
+                f"Article {article} (classic) is not available. Unable to export to ArticleMeta."
+            )
+        if not article.new_available(collection_acron_list):
+            raise ArticleIsNotAvailableError(
+                f"Article {article} (new) is not available. Unable to export to ArticleMeta."
             )
         events = []
         external_data = {
@@ -227,10 +182,10 @@ def export_article_to_articlemeta(
                     # não encontrou necessidade de exportar
                     continue
 
-                for avail_data in article.get_article_urls(collection=col, fmt="xml"):
-                    events.append(avail_data)
-                    if not (avail_data or {}).get("available"):
-                        raise ArticleIsNotAvailableError(str(avail_data))
+                for avail_item in article.get_availability(collection=col, fmt="xml"):
+                    events.append(avail_item.data)
+                    if not avail_item.available:
+                        raise ArticleIsNotAvailableError(str(avail_item.data))
                     break
 
                 data = {"collection": col.acron3}
@@ -366,95 +321,4 @@ def bulk_export_articles_to_articlemeta(
             collection_acron_list=collection_acron_list,
             force_update=force_update,
             version=version,
-        )
-
-
-def fix_journal_articles(user, journal_id):
-    try:
-        journal = Journal.objects.get(id=journal_id)
-        issns = journal.issns
-
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        UnexpectedEvent.create(
-            exception=e,
-            exc_traceback=exc_traceback,
-            detail={
-                "operation": "load_journal_articles",
-                "journal_id": journal_id,
-                "articlemeta_export": articlemeta_export,
-                "traceback": traceback.format_exc(),
-            },
-        )
-    return
-
-
-def load_journal_articles(user, journal_id, articlemeta_export=None):
-    try:
-        journal = Journal.objects.get(id=journal_id)
-        issns = journal.issns
-
-        for item in PidProviderXML.objects.filter(
-            Q(issn_print__in=issns) | Q(issn_electronic__in=issns),
-            proc_status__in=[PPXML_STATUS_TODO, PPXML_STATUS_DEDUPLICATED],
-        ).iterator():
-            load_article_from_pid_provider_xml(user, item, articlemeta_export)
-
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        UnexpectedEvent.create(
-            exception=e,
-            exc_traceback=exc_traceback,
-            detail={
-                "operation": "load_journal_articles",
-                "journal_id": journal_id,
-                "articlemeta_export": articlemeta_export,
-                "traceback": traceback.format_exc(),
-            },
-        )
-    return
-
-
-def load_article_from_pid_provider_xml(user, pp_xml, articlemeta_export=None):
-    try:
-        # Carrega o artigo do arquivo XML
-        logging.info(f"Loading article from PidProviderXML {pp_xml.id}")
-        article = load_article(
-            user,
-            file_path=pp_xml.current_version.file.path,
-            v3=pp_xml.v3,
-            pp_xml=pp_xml,
-        )
-        # for item in article.legacy_article.select_related('collection').all():
-        #     pp_xml.collections.add(item.collection)
-
-        # article.check_availability(user)
-
-        # for item in Article.objects.filter(sps_pkg_name=article.sps_pkg_name).exclude(id=article.id).iterator():
-        #     item.data_status = DATA_STATUS_DUPLICATED
-        #     item.save()
-
-        # Exporta para ArticleMeta se solicitado
-        if articlemeta_export and article.is_available():
-            collection_acron_list = articlemeta_export.get("collection_acron_list")
-            force_update = articlemeta_export.get("force_update", False)
-            version = articlemeta_export.get("version")
-            export_article_to_articlemeta(
-                user,
-                article,
-                collection_acron_list,
-                force_update,
-                version=version,
-            )
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        UnexpectedEvent.create(
-            exception=e,
-            exc_traceback=exc_traceback,
-            detail={
-                "operation": "load_article_from_pid_provider_xml",
-                "pp_xml": str(pp_xml),
-                "articlemeta_export": articlemeta_export,
-                "traceback": traceback.format_exc(),
-            },
         )

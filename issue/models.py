@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from functools import lru_cache, cached_property
 
@@ -42,6 +43,22 @@ class AMIssue(BaseLegacyRecord):
         blank=True,
         null=True,
     )
+    new_record = models.ForeignKey(
+        "Issue",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="legacy_issue",
+    )
+
+    panels = [
+        AutocompletePanel("collection"),
+        FieldPanel("pid"),
+        FieldPanel("status"),
+        FieldPanel("processing_date"),
+        FieldPanel("url"),
+        FieldPanel("data", read_only=True),
+    ]
 
 
 class Issue(CommonControlField, ClusterableModel):
@@ -81,7 +98,6 @@ class Issue(CommonControlField, ClusterableModel):
         ),
     )
     issue_pid_suffix = models.CharField(max_length=4, null=True, blank=True)
-    legacy_issue = models.ManyToManyField(AMIssue, blank=True)
 
     autocomplete_search_field = "journal__title"
 
@@ -103,7 +119,6 @@ class Issue(CommonControlField, ClusterableModel):
         FieldPanel("order"),
         FieldPanel("markup_done"),
         FieldPanel("issue_pid_suffix", read_only=True),
-        AutocompletePanel("legacy_issue"),
     ]
 
     panels_bibl = [
@@ -154,9 +169,9 @@ class Issue(CommonControlField, ClusterableModel):
             ),
         ]
 
-    def create_legacy_keys(self, force_update=None):
+    def create_legacy_keys(self, user=None, force_update=None):
         if not force_update:
-            if self.legacy_issue.exists():
+            if self.legacy_issue.count() == self.journal.scielojournal_set.count():
                 return
 
         if not self.issue_pid_suffix:
@@ -166,18 +181,19 @@ class Issue(CommonControlField, ClusterableModel):
         for sj in self.journal.scielojournal_set.all():
             pid = f"{sj.issn_scielo}{self.year}{self.issue_pid_suffix}"
             am_issue = AMIssue.create_or_update(
-                pid, sj.collection, None, self.updated_by, status="done"
+                pid, sj.collection, None, user, status="done", new_record=self
             )
-            self.legacy_issue.add(am_issue)
 
     def get_legacy_keys(self, collection_acron_list=None, is_active=None):
         params = {}
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
-        for item in self.legacy_issue.filter(
-            collection__is_active=bool(is_active), **params
-        ):
-            yield item.legacy_keys
+        if is_active:
+            params["collection__is_active"] = bool(is_active)
+        data = {}
+        for item in self.legacy_issue.filter(**params):
+            data[item.collection.acron3] = item.legacy_keys
+        return list(data.values())
 
     def select_collections(self, collection_acron_list=None, is_activate=None):
         if not self.journal:
@@ -349,6 +365,8 @@ class Issue(CommonControlField, ClusterableModel):
         if not self.issue_pid_suffix:
             self.issue_pid_suffix = self.generate_issue_pid_suffix()
         super().save(*args, **kwargs)
+        if self.journal:  # Só cria se tiver journal associado
+            self.create_legacy_keys(user=self.creator, force_update=True)
 
     def generate_issue_pid_suffix(self):
         return str(self.generate_order()).zfill(4)

@@ -14,6 +14,7 @@ from article.models import (
     ArticleFunding,
     ArticleSource,
     ArticleAvailability,
+    AMArticle,
 )
 from collection.models import Collection
 from config.menu import get_menu_order
@@ -25,7 +26,7 @@ class ArticleAvailabilitySnippetViewSet(SnippetViewSet):
     menu_icon = "link"
     menu_order = 1
 
-    list_display = ["url", "available", "error", "updated"]
+    list_display = ["url", "collection", "available", "error", "updated"]
     list_filter = ["collection", "lang", "fmt", "available", "error"]
     search_fields = [
         "url",
@@ -50,7 +51,8 @@ class ArticleSnippetViewSet(SnippetViewSet):
         "sps_pkg_name",
         "pid_v3",
         "pid_v2",
-        "is_public",
+        "is_classic_public",
+        "is_new_public",
         "valid",
         "data_status",
         "created",
@@ -58,6 +60,8 @@ class ArticleSnippetViewSet(SnippetViewSet):
     )
     list_filter = [
         "is_public",
+        "is_classic_public",
+        "is_new_public",
         "data_status",
         "valid",
         "journal__scielojournal__collection",
@@ -144,12 +148,42 @@ class ArticleSourceSnippetViewSet(SnippetViewSet):
         "status",
         "am_article__collection",
     ]
-    search_fields = ["url", "pid_provider_xml__v3", "am_article__collection__acronym"]
+    search_fields = ["url", "pid_provider_xml__v3", "am_article__collection__acron3"]
     ordering = ["-updated"]
     list_per_page = 25
 
 
 # register_snippet(ArticleSourceSnippetViewSet)
+
+class AMArticleSnippetViewSet(SnippetViewSet):
+    """ViewSet for AMArticle (Legacy Article) snippets"""
+    
+    model = AMArticle
+    menu_label = _("Legacy Articles")
+    menu_icon = "doc-full-inverse"
+    menu_order = 300
+    
+    list_display = [
+        "pid",
+        "collection",
+        "new_record",
+        "status",
+        "processing_date",
+        "updated",
+    ]
+    list_filter = [
+        "status",
+        "collection",
+        "processing_date",
+    ]
+    search_fields = [
+        "pid",
+        "collection__acron3",
+        "new_record__pid_v3",
+        "new_record__sps_pkg_name",
+    ]
+    ordering = ["-updated"]
+    list_per_page = 25
 
 
 class ArticleSnippetViewSetGroup(SnippetViewSetGroup):
@@ -163,6 +197,7 @@ class ArticleSnippetViewSetGroup(SnippetViewSetGroup):
         ArticleFormatSnippetViewSet,
         ArticleFundingSnippetViewSet,
         ArticleSourceSnippetViewSet,
+        AMArticleSnippetViewSet,
     )
 
 
