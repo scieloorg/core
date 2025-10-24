@@ -29,7 +29,7 @@ class DOI(CommonControlField):
     base_form_class = CoreAdminModelForm
 
     class Meta:
-        unique_together = [("value", "language")]
+        # unique_together = [("value", "language")]
         indexes = [
             models.Index(
                 fields=[
