@@ -141,11 +141,11 @@ def export_article_to_articlemeta(
 ) -> bool:
 
     try:
-        if not article.classic_is_available(collection_acron_list):
+        if not article.classic_available(collection_acron_list):
             raise ArticleIsNotAvailableError(
                 f"Article {article} (classic) is not available. Unable to export to ArticleMeta."
             )
-        if not article.new_is_available(collection_acron_list):
+        if not article.new_available(collection_acron_list):
             raise ArticleIsNotAvailableError(
                 f"Article {article} (new) is not available. Unable to export to ArticleMeta."
             )
