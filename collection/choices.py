@@ -14,3 +14,8 @@ TYPE = [
     ("books", _("Books")),
     ("data", _("Data repository")),
 ]
+PLATFORM_STATUS = [
+    ("classic", _("Classic")),
+    ("new", _("New")),
+    ("migrating", _("Migrating")),
+]
