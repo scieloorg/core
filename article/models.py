@@ -557,7 +557,7 @@ class Article(
     ):
         params = {}
         if collection_acron_list:
-            params["journal__scielojournal__collection__acron__in"] = (
+            params["journal__scielojournal__collection__acron3__in"] = (
                 collection_acron_list
             )
         if journal_acron_list:
@@ -617,7 +617,10 @@ class Article(
     def urls_data(self):
         urls = []
         for sj in self.journal.scielojournal_set.select_related("collection").all():
-            pid_v2 = self.legacy_article.filter(collection=sj.collection).first().pid
+            try:
+                pid_v2 = self.legacy_article.filter(collection=sj.collection).first().pid
+            except AttributeError:
+                pid_v2 = None
             if not pid_v2:
                 continue
             url_builder = ArticleURLBuilder(
