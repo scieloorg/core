@@ -237,12 +237,11 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             )
         )
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user, errors=errors))
-
-        article.create_legacy_keys()
+        article.create_legacy_keys(user)
         if not article.pid_v2:
             add_error(errors, "load_article", "Article has no PID v2", item=article.pid_v3)
         if not errors:
-            article.mark_as_completed(user=user)
+            article.mark_as_completed()
 
         event.finish(completed=not errors, errors=errors)
         logging.info(
@@ -253,7 +252,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         exc_type, exc_value, exc_traceback = sys.exc_info()
 
         if event:
-            event.finish(user, errors=errors, exceptions=traceback.format_exc())
+            event.finish(errors=errors, exceptions=traceback.format_exc())
             raise
         UnexpectedEvent.create(
             item=str(pp_xml or v3 or file_path or "xml"),
