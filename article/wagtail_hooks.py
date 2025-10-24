@@ -14,6 +14,7 @@ from article.models import (
     ArticleFunding,
     ArticleSource,
     ArticleAvailability,
+    AMArticle,
 )
 from collection.models import Collection
 from config.menu import get_menu_order
@@ -50,7 +51,8 @@ class ArticleSnippetViewSet(SnippetViewSet):
         "sps_pkg_name",
         "pid_v3",
         "pid_v2",
-        "is_public",
+        "is_classic_public",
+        "is_new_public",
         "valid",
         "data_status",
         "created",
@@ -58,6 +60,8 @@ class ArticleSnippetViewSet(SnippetViewSet):
     )
     list_filter = [
         "is_public",
+        "is_classic_public",
+        "is_new_public",
         "data_status",
         "valid",
         "journal__scielojournal__collection",
@@ -151,6 +155,36 @@ class ArticleSourceSnippetViewSet(SnippetViewSet):
 
 # register_snippet(ArticleSourceSnippetViewSet)
 
+class AMArticleSnippetViewSet(SnippetViewSet):
+    """ViewSet for AMArticle (Legacy Article) snippets"""
+    
+    model = AMArticle
+    menu_label = _("Legacy Articles")
+    menu_icon = "doc-full-inverse"
+    menu_order = 300
+    
+    list_display = [
+        "pid",
+        "collection",
+        "new_record",
+        "status",
+        "processing_date",
+        "updated",
+    ]
+    list_filter = [
+        "status",
+        "collection",
+        "processing_date",
+    ]
+    search_fields = [
+        "pid",
+        "collection__acronym",
+        "new_record__pid_v3",
+        "new_record__sps_pkg_name",
+    ]
+    ordering = ["-updated"]
+    list_per_page = 25
+
 
 class ArticleSnippetViewSetGroup(SnippetViewSetGroup):
     menu_label = _("Articles")
@@ -163,6 +197,7 @@ class ArticleSnippetViewSetGroup(SnippetViewSetGroup):
         ArticleFormatSnippetViewSet,
         ArticleFundingSnippetViewSet,
         ArticleSourceSnippetViewSet,
+        AMArticleSnippetViewSet,
     )
 
 
