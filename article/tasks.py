@@ -407,7 +407,7 @@ def task_load_article_from_pp_xml(
         # Exporta para ArticleMeta se solicitado
         if articlemeta_export_enable:
             # Verifica disponibilidade (URLs, assets, etc)
-            article.check_availability(user, collection_acron_list, timeout, is_activate)
+            article.check_availability(user)
             controller.export_article_to_articlemeta(
                 user,
                 article,
