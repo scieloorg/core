@@ -109,13 +109,12 @@ class ArticleURLBuilder:
                 if url:
                     yield {"lang": lang, "url": url}
         
-        # Fallback para URLs clássicas se pid_v2 existir
-        elif self.pid_v2:
+        if self.pid_v2:
             for lang in languages:
                 url = self._build_classic_url("pdf", lang)
                 if url:
                     yield {"lang": lang, "url": url}
-    
+
     def get_html_urls(self, languages):
         """
         Gera URLs para HTMLs em múltiplos idiomas.
@@ -134,12 +133,12 @@ class ArticleURLBuilder:
                     yield {"lang": lang, "url": url}
         
         # Fallback para URLs clássicas se pid_v2 existir
-        elif self.pid_v2:
+        if self.pid_v2:
             for lang in languages:
                 url = self._build_classic_url("html", lang)
                 if url:
                     yield {"lang": lang, "url": url}
-    
+
     def get_xml_url(self):
         """
         Gera URL para o XML do artigo.
