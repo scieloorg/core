@@ -148,7 +148,7 @@ class ArticleSourceSnippetViewSet(SnippetViewSet):
         "status",
         "am_article__collection",
     ]
-    search_fields = ["url", "pid_provider_xml__v3", "am_article__collection__acronym"]
+    search_fields = ["url", "pid_provider_xml__v3", "am_article__collection__acron3"]
     ordering = ["-updated"]
     list_per_page = 25
 
@@ -178,7 +178,7 @@ class AMArticleSnippetViewSet(SnippetViewSet):
     ]
     search_fields = [
         "pid",
-        "collection__acronym",
+        "collection__acron3",
         "new_record__pid_v3",
         "new_record__sps_pkg_name",
     ]
