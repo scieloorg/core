@@ -37,6 +37,7 @@ from pid_provider.query_params import (
     get_journal_q_expression,
     get_valid_query_parameters,
     zero_to_none,
+    QueryBuilderPidProviderXML,
 )
 from tracker.models import BaseEvent, EventSaveError, UnexpectedEvent
 
@@ -691,10 +692,12 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
             # consulta se documento já está registrado
             try:
-                registered = cls.get_record(xml_adapter)
+                records = cls.get_records(xml_adapter)
+                registered = cls.get_record(xml_adapter, records=records)
             except cls.DoesNotExist as exc:
                 registered = None
-            except cls.MultipleObjectsReturned as exc:
+            except (cls.MultipleObjectsReturned, exceptions.UnmatchedPidProviderXMLError) as exc:
+                response["records"] = [item.data for item in records]
                 raise exceptions.QueryDocumentMultipleObjectsReturnedError(exc)
             except (
                 exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError
@@ -923,7 +926,49 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
     @classmethod
     @profile_classmethod
-    def get_record(cls, xml_adapter):
+    def get_records(cls, xml_adapter):
+        qbuilder = QueryBuilderPidProviderXML(xml_adapter)
+        q_ids = qbuilder.identifier_queries
+        q_issue = qbuilder.issn_query & Q(**qbuilder.issue_params)
+        q_article = qbuilder.article_data_query
+        if q_article:
+            return cls.objects.filter(q_ids | q_issue | (qbuilder.issn_query & q_article)).distinct()
+        return cls.objects.filter(q_ids | q_issue).distinct()
+
+    @classmethod
+    @profile_classmethod
+    def get_record(cls, xml_adapter, records):
+        results = records
+        if not results.exists():
+            raise cls.DoesNotExist
+        matched = []
+        for item in results.iterator():
+            score = item.match(xml_adapter)
+            if score > 2:
+                matched.append((score, item.updated.isoformat(), item.id))
+
+        if results.count() > 1:
+            detail = {
+                "xml_adapter_data": xml_adapter.data,
+                "results": [item.data for item in results],
+                "matched": matched,
+            } 
+            UnexpectedEvent.create(
+                item=xml_adapter.sps_pkg_name,
+                action="PidProviderXML.get_record",
+                exception=cls.MultipleObjectsReturned,
+                detail=detail,
+            )
+
+        if not matched:
+            raise exceptions.UnmatchedPidProviderXMLError(
+                _("No matching record found for the provided XML data.")
+            )
+        return cls.objects.get(id=sorted(matched)[-1][-1])
+
+    @classmethod
+    @profile_classmethod
+    def get_record_old(cls, xml_adapter):
         try:
             # match exato
             return cls.get_record_data(xml_adapter)
@@ -952,64 +997,6 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             logging.error(f"Nenhum match com DOI")
             pass
         return cls.get_record_flexible_match(xml_adapter)
-
-    # @classmethod
-    # @profile_classmethod
-    # def remove_duplicated(cls, xml_adapter, matched, unmatched):
-    #     # tenta procurar pelo pid_v3
-
-    #     if not matched and not unmatched:
-    #         matched, unmatched = cls.get_records_by_pkg_name(xml_adapter)
-
-    #     if not matched and not unmatched:
-    #         # não está duplicado
-    #         return
-
-    #     if matched and unmatched:
-    #         # TODO - inconsistente
-    #         ...
-    #         # TODO
-
-    #     if unmatched:
-    #         items = []
-    #         for item in cls.objects.filter(id__in=unmatched):
-    #             try:
-    #                 items.append({
-    #                     "pid_v2": item.v2,
-    #                     "pid_v3": item.v3,
-    #                     "article_titles": item.xml_with_pre.article_titles,
-    #                     "authors": item.xml_with_pre.authors,
-    #                 })
-    #             except Exception as e:
-    #                 items.append(str(item))
-
-    #         raise exceptions.ForbiddenPidProviderXMLRegistrationError(
-    #             _(
-    #                 "{} is registered with other content {}"
-    #             ).format(xml_adapter, items)
-    #         )
-
-    #     if matched:
-    #         if len(matched) == 1:
-    #             return
-    #         for item in matched[1:]:
-    #             item.proc_status = choices.PPXML_STATUS_INVALID
-    #             item.save()
-
-    # @classmethod
-    # @profile_classmethod
-    # def get_records_by_pkg_name(cls, xml_adapter):
-    #     # tenta procurar pelo pid_v3
-    #     qs = cls.objects.filter(pkg_name=xml_adapter.pkg_name).order_by("-updated")
-    #     matched = []
-    #     unmatched = []
-    #     for item in qs.iterator():
-    #         score = item.match(xml_adapter)
-    #         if score:
-    #             matched.append((score, item.updated.isoformat(), item.id))
-    #         else:
-    #             unmatched.append(item.id)
-    #     return sorted(matched), sorted(unmatched)
 
     @classmethod
     @profile_classmethod
@@ -1116,15 +1103,22 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         return matches.count(True)
 
     def has_similar_title(self, xml_adapter):
-        if not xml_adapter.xml_with_pre.article_titles_texts:
+        try:
+            registered = self.xml_with_pre.article_titles_texts
+        except Exception:
+            registered = []
+        xml_adapter_titles = xml_adapter.xml_with_pre.article_titles_texts
+        if xml_adapter_titles == registered:
+            return True
+        if not xml_adapter_titles:
             return False
-        if not self.xml_with_pre.article_titles_texts:
+        if not registered:
             return False
         words1 = set()
-        for item in xml_adapter.xml_with_pre.article_titles_texts:
+        for item in xml_adapter_titles:
             words1.update(item.split())
         words2 = set()
-        for item in self.xml_with_pre.article_titles_texts:
+        for item in registered:
             words2.update(item.split())
         return is_similar(" ".join(sorted(words1)), " ".join(sorted(words2)))
 
@@ -1322,15 +1316,16 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             response["xml_adapter_data"] = xml_adapter_data
 
             try:
-                registered = cls.get_record(xml_adapter)
+                records = cls.get_records(xml_adapter)
+                registered = cls.get_record(xml_adapter, records=records)
             except cls.DoesNotExist as exc:
                 response.update(
                     {"filename": xml_with_pre.filename, "registered": False}
                 )
                 return response
-            except cls.MultipleObjectsReturned as exc:
+            except (cls.MultipleObjectsReturned, exceptions.UnmatchedPidProviderXMLError) as exc:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                response["records"] = list(cls._get_records_data(xml_adapter))
+                response["records"] = [item.data for item in records]
                 UnexpectedEvent.create(
                     item=xml_with_pre.sps_pkg_name,
                     action="PidProviderXML.is_registered",
