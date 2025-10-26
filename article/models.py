@@ -1709,6 +1709,8 @@ class ArticleSource(CommonControlField):
     def is_completed(self):
         if not self.pid_provider_xml:
             return False
+        if not self.pid_provider_xml.xml_with_pre:
+            return False
         if not self.am_article:
             return False
         if not self.file:
@@ -1754,12 +1756,14 @@ class ArticleSource(CommonControlField):
             # Define status inicial como pendente
             self.status = ArticleSource.StatusChoices.PENDING
 
-            # baixa/cria o arquivo XML
-            self.request_xml(detail, force_update)
+            if not self.file.path or not os.path.isfile(self.file.path):
+                self.request_xml(detail, force_update)
 
             pid_v3 = self.get_or_create_pid_v3(
                 user, detail, force_update, auto_solve_pid_conflict
             )
+            if not pid_v3:
+                raise ValueError("Failed to obtain or create PID v3")
             self.detail = detail
             self.mark_as_completed()  # Marca o processamento como concluído
             
@@ -1778,7 +1782,7 @@ class ArticleSource(CommonControlField):
             self.mark_as_error()
 
     def get_or_create_pid_v3(self, user, detail, force_update, auto_solve_pid_conflict):
-        if self.pid_provider_xml:
+        if self.pid_provider_xml and self.pid_provider_xml.xml_with_pre:
             if not force_update:
                 return self.pid_provider_xml.v3
         try:
@@ -1788,6 +1792,7 @@ class ArticleSource(CommonControlField):
             pp = PidProvider()
 
             # Solicita PID para o arquivo XML/ZIP
+            logging.info(f"Requesting PID for {self.file.path}")
             responses = pp.provide_pid_for_xml_zip(
                 self.file.path,
                 user,

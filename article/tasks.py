@@ -416,6 +416,8 @@ def task_load_article_from_pp_xml(
                 version=version,
             )
         else:
+            if article.is_available():
+                return
             task_check_article_availability.delay(
                 article_id=article.id,
                 user_id=user.id,
@@ -780,21 +782,33 @@ def task_select_articles_to_load_from_article_source(
             force_update,
             status_list,
         ):
-            article_source.complete_data(
-                user=user,
-                force_update=force_update,
-                auto_solve_pid_conflict=auto_solve_pid_conflict,
-            )
-            if article_source.status != ArticleSource.StatusChoices.COMPLETED:
-                return
+            
+            try:
+                # Processa o XML
+                article_source.complete_data(
+                    user=user,
+                    force_update=force_update,
+                    auto_solve_pid_conflict=auto_solve_pid_conflict,
+                )
+                if article_source.status != ArticleSource.StatusChoices.COMPLETED:
+                    continue
 
-            # Processa o XML
-            task_load_article_from_pp_xml.delay(
-                pp_xml_id=article_source.pid_provider_xml.id,
-                user_id=user_id or user.id,
-                username=username or user.username,
-                force_update=force_update,
-            )
+                task_load_article_from_pp_xml.delay(
+                    pp_xml_id=article_source.pid_provider_xml.id,
+                    user_id=user_id or user.id,
+                    username=username or user.username,
+                    force_update=force_update,
+                )
+            except Exception as exception:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=exception,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "task": "article.tasks.task_select_articles_to_load_from_article_source",
+                        "article_source_id": str(article_source.id),
+                    },
+                )   
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
