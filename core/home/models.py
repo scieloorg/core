@@ -105,7 +105,6 @@ def get_translated_categories():
     for code, label in STUDY_AREA:
         slug = "-".join(code.replace(",", "").split()).lower()
         categories.append((slug, label))
-    print(categories)
     return categories
 
 
@@ -158,9 +157,6 @@ class HomePage(Page):
         ]
         context["list_journal_pages_by_category"] = [
             p for p in children_qs if isinstance(p, ListPageJournalByCategory)
-        ]
-        context["list_journal_by_publisher_pages"] = [
-            p for p in children_qs if isinstance(p, ListPageJournalByPublisher)
         ]
         context["categories"] = get_translated_categories()
         _default_context(context)
