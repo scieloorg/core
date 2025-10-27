@@ -35,7 +35,7 @@ def _get_current_locale():
 def journal_filter_with_values(filters):
     return (
             SciELOJournal.objects.filter(filters)
-            .select_related("journal" "collection")
+            .select_related("journal", "collection")
             .values(
                 "journal__title",
                 "issn_scielo",
