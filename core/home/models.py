@@ -15,13 +15,14 @@ from wagtail.contrib.routable_page.models import RoutablePageMixin, re_path
 from wagtail.fields import RichTextField, StreamField
 from wagtail.models import Locale, Page
 from wagtailcaptcha.models import WagtailCaptchaEmailForm
-from core.home.utils.get_social_networks import get_social_networks
 
 from collection.models import Collection
+from core.home.utils.get_social_networks import get_social_networks
 from journal.choices import STUDY_AREA
 from journal.models import OwnerHistory, SciELOJournal
 
 SCIELO_STATUS_CHOICES = ["C", "D", "S"]
+
 
 def _get_current_locale():
     lang = get_language()
@@ -31,23 +32,25 @@ def _get_current_locale():
         return Locale.objects.filter(language_code__iexact=lang).first()
     except Locale.DoesNotExist:
         return Locale.get_default()
-    
+
+
 def journal_filter_with_values(filters):
     return (
-            SciELOJournal.objects.filter(filters)
-            .select_related("journal", "collection")
-            .values(
-                "journal__title",
-                "issn_scielo",
-                "collection__domain",
-                "collection__main_name",
-                "status",
-            )
-            .order_by("journal__title")
+        SciELOJournal.objects.filter(filters)
+        .select_related("journal", "collection")
+        .values(
+            "journal__title",
+            "issn_scielo",
+            "collection__domain",
+            "collection__main_name",
+            "status",
         )
+        .order_by("journal__title")
+    )
+
 
 def default_journal_filter(search_term, starts_with_letter, active_or_discontinued):
-    filters = Q(status__in=SCIELO_STATUS_CHOICES) 
+    filters = Q(status__in=SCIELO_STATUS_CHOICES)
     if search_term:
         filters &= Q(journal__title__icontains=search_term)
     if starts_with_letter:
@@ -56,16 +59,18 @@ def default_journal_filter(search_term, starts_with_letter, active_or_discontinu
         filters &= Q(status__in=active_or_discontinued)
     return filters
 
+
 def _default_context(context):
     context["social_networks"] = get_social_networks("scl")
     context["old_scielo_url"] = settings.SCIELO_OLD_URL
     context["page_about"] = get_page_about()
 
+
 def get_page_about():
     try:
         locale = _get_current_locale()
         home_page = HomePage.objects.filter(locale=locale).first()
-    
+
         if home_page:
             page_about = (
                 home_page.get_children()
@@ -85,6 +90,7 @@ def get_page_about():
 def as_item(qs, lang_code):
     return [{"obj": obj, "name": obj.get_name_for_language(lang_code)} for obj in qs]
 
+
 def slug_to_category_code(slug):
     """
     Converte slug (ex: 'agricultural-sciences') para código original (ex: 'Agricultural Sciences')
@@ -95,6 +101,7 @@ def slug_to_category_code(slug):
         if code.lower().replace(",", "") == text.lower().replace(",", ""):
             return code
     return None
+
 
 def get_translated_categories():
     """
@@ -169,7 +176,9 @@ class ListPageJournal(Page):
         search_term = request.GET.get("search_term", "")
         starts_with_letter = request.GET.get("start_with_letter", "")
         active_or_discontinued = list(request.GET.get("tab", ""))
-        filters = default_journal_filter(search_term, starts_with_letter, active_or_discontinued)
+        filters = default_journal_filter(
+            search_term, starts_with_letter, active_or_discontinued
+        )
         journals = journal_filter_with_values(filters)
 
         context["journals"] = journals
@@ -226,12 +235,14 @@ class ListPageJournalByPublisher(Page):
 class ListPageJournalByCategory(RoutablePageMixin, Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        
+
         search_term = request.GET.get("search_term", "")
         starts_with_letter = request.GET.get("start_with_letter", "")
         active_or_discontinued = list(request.GET.get("tab", ""))
 
-        filters = default_journal_filter(search_term, starts_with_letter, active_or_discontinued)
+        filters = default_journal_filter(
+            search_term, starts_with_letter, active_or_discontinued
+        )
         journals = journal_filter_with_values(filters)
 
         context["journals"] = journals
@@ -239,27 +250,29 @@ class ListPageJournalByCategory(RoutablePageMixin, Page):
         context["categories"] = get_translated_categories()
         return context
 
-    @re_path(r'^(?P<category>[\w-]+)/$', name="list_journal_by_category")
+    @re_path(r"^(?P<category>[\w-]+)/$", name="list_journal_by_category")
     def journals_by_category(self, request, category=None):
         current_lang = request.LANGUAGE_CODE
         category_code = slug_to_category_code(category)
         if not category_code:
             return redirect(self.url)
-        
+
         search_term = request.GET.get("search_term", "")
         starts_with_letter = request.GET.get("start_with_letter", "")
         active_or_discontinued = list(request.GET.get("tab", ""))
-        
-        filters = default_journal_filter(search_term, starts_with_letter, active_or_discontinued)
+
+        filters = default_journal_filter(
+            search_term, starts_with_letter, active_or_discontinued
+        )
         filters &= Q(journal__subject__code=category_code)
-        
+
         journals = journal_filter_with_values(filters)
         context = self.get_context(request)
         context["journals"] = journals
         activate(current_lang)
         context["current_category"] = gettext(category_code)
         return render(request, "home/list_page_journal_by_category.html", context)
-    
+
 
 class FAQItemBlock(blocks.StructBlock):
     question = blocks.CharBlock(required=True)
@@ -310,7 +323,11 @@ class AboutScieloOrgPage(Page):
                 locale = _get_current_locale()
             except Locale.DoesNotExist:
                 locale = Locale.get_default()
-            search_results = AboutScieloOrgPage.objects.live().filter(locale=locale).filter(title__icontains=q)
+            search_results = (
+                AboutScieloOrgPage.objects.live()
+                .filter(locale=locale)
+                .filter(title__icontains=q)
+            )
         context["q"] = q
         context["search_results"] = search_results
 
