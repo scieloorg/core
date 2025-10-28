@@ -126,3 +126,17 @@ def get_hostname():
     if not default_site:
         return None
     return f"http://{default_site.hostname}"
+
+
+def get_url_file(file):
+    """
+    Return the URL of the file.
+    Parameters:
+        file: File object
+    Returns:
+        URL of the file
+    """
+    domain = get_hostname()
+    if domain:
+        return f"{domain}{file.file.url}"
+    return None

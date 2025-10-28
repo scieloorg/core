@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from organization import models
 from wagtail.models.sites import Site
-from core.utils.utils import get_hostname
+from core.utils.utils import get_url_file
+
 
 class OrganizationSerializer(serializers.ModelSerializer):
     location = serializers.SerializerMethodField()
@@ -9,9 +10,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
     def get_logo_url(self, obj):
         if obj.logo:
-            domain = get_hostname()
-            if domain:
-                return f"{domain}{obj.logo.url}"
+            return get_url_file(obj.logo)
         return None
 
     def get_location(self, obj):

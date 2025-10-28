@@ -3,7 +3,7 @@ from wagtail.models.sites import Site
 
 from collection import models
 from core.api.v1.serializers import LanguageSerializer
-from core.utils.utils import get_hostname
+from core.utils.utils import get_url_file
 from organization.api.v1.serializers import OrganizationSerializer
 
 
@@ -61,9 +61,7 @@ class CollectionLogoSerializer(serializers.ModelSerializer):
     
     def get_logo_url(self, obj):
         if obj.logo:
-            domain = get_hostname()
-            if domain:
-                return f"{domain}{obj.logo.url}"
+            return get_url_file(obj.logo)
         return None
 
 
