@@ -13,6 +13,7 @@ from article import controller
 from article.models import Article, ArticleFormat, ArticleSource, AMArticle
 from article.sources.preprint import harvest_preprints
 from article.sources.xmlsps import load_article
+from article import choices
 from collection.models import Collection
 from config import celery_app
 from core.utils.extracts_normalized_email import extracts_normalized_email
@@ -143,9 +144,9 @@ def task_select_articles_to_complete_data(
         # Aplicar filtro de status se fornecido
         if not data_status_list:
             data_status_list = [
-                DATA_STATUS_PENDING,
-                DATA_STATUS_UNDEF,
-                DATA_STATUS_INVALID,
+                choices.DATA_STATUS_PENDING,
+                choices.DATA_STATUS_UNDEF,
+                choices.DATA_STATUS_INVALID,
             ]
         article_filters["data_status__in"] = data_status_list
         
