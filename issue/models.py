@@ -1,6 +1,4 @@
-import logging
-from datetime import datetime
-from functools import lru_cache, cached_property
+from django.utils.functional import cached_property
 
 from django.db import IntegrityError, models
 from django.utils.translation import gettext_lazy as _
@@ -341,9 +339,11 @@ class Issue(CommonControlField, ClusterableModel):
     def __str__(self):
         return self.short_identification
 
-    @cached_property
+    @property
     def short_identification(self):
-        return f"{self.journal.title} {self.issue_folder} [{self.journal.collection_acrons}]"
+        if self.journal:
+            return f"{self.journal.title} {self.issue_folder} [{self.journal.collection_acrons}]"
+        return f"{self.issue_folder}"
 
     @cached_property
     def issue_folder(self):
@@ -356,7 +356,6 @@ class Issue(CommonControlField, ClusterableModel):
     def articlemeta_format(self, collection):
         # Evita importacao circular
         from .formats.articlemeta_format import get_articlemeta_format_issue
-
         return get_articlemeta_format_issue(self, collection)
 
     def save(self, *args, **kwargs):
