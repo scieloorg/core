@@ -32,10 +32,6 @@ from core.utils.profiling_tools import (  # ajuste o import conforme sua estrutu
 from core.utils.similarity import is_similar
 from pid_provider import choices, exceptions
 from pid_provider.query_params import (
-    get_article_q_expression,
-    get_issue_kwargs,
-    get_journal_q_expression,
-    get_valid_query_parameters,
     zero_to_none,
     QueryBuilderPidProviderXML,
 )
@@ -932,8 +928,8 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         q_issue = qbuilder.issn_query & Q(**qbuilder.issue_params)
         q_article = qbuilder.article_data_query
         if q_article:
-            return cls.objects.filter(q_ids | q_issue | (qbuilder.issn_query & q_article)).distinct()
-        return cls.objects.filter(q_ids | q_issue).distinct()
+            return cls.objects.filter(qbuilder.issn_query & (q_ids | q_issue | q_article)).distinct()
+        return cls.objects.filter(qbuilder.issn_query & (q_ids | q_issue)).distinct()
 
     @classmethod
     @profile_classmethod
@@ -1009,35 +1005,6 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         for item in registered:
             words2.update(item.split())
         return is_similar(" ".join(sorted(words1)), " ".join(sorted(words2)))
-
-    @classmethod
-    @profile_classmethod
-    def _get_records_data(cls, xml_adapter):
-        """
-        Get record
-
-        Arguments
-        ---------
-        xml_adapter : PidProviderXMLAdapter
-
-        Returns
-        -------
-        PidProviderXML generator
-
-        Raises
-        ------
-        RequiredPublicationYearErrorToGetPidProviderXMLError
-            Se o ano de publicação requerido não estiver disponível.
-        RequiredISSNErrorToGetPidProviderXMLError
-            Se nem o ISSN eletrônico nem o impresso estiverem disponíveis.
-        NotEnoughParametersToGetPidProviderXMLError
-            Se os parâmetros disponíveis forem insuficientes para desambiguação.
-
-        """
-        q, param_list = get_valid_query_parameters(xml_adapter)
-        for params in param_list:
-            for item in cls.objects.filter(q, **params).order_by("-updated").iterator():
-                yield item.data
 
     @profile_method
     def _add_data(self, xml_adapter, registered_in_core):
