@@ -17,7 +17,7 @@ class AMHarvester:
         collection_acron: str,
         from_date: Optional[str] = None,
         until_date: Optional[str] = None,
-        limit: int = 100,
+        limit: int = 1000,
         timeout: int = 30,
     ):
         """
@@ -67,9 +67,6 @@ class AMHarvester:
                     "until": self.until_date,
                 }
 
-                # Remove parâmetros None
-                params = {k: v for k, v in params.items() if v is not None}
-
                 # Constrói URL
                 url = f"{self.base_url}?{urlencode(params)}"
 
@@ -94,6 +91,7 @@ class AMHarvester:
                         logging.warning(f"Document without PID v2: {item}")
                         continue
 
+                    logging.info(item)
                     # Constrói URL do XML
                     format_param = ""
                     if self.record_type == "article":
@@ -105,14 +103,14 @@ class AMHarvester:
 
                     # Monta dicionário padronizado
                     document = {
+                        "code": pid_v2,
+                        "collection": self.collection_acron,
                         "pid_v2": pid_v2,
                         "pid_v3": item.get("pid_v3"),  # Pode não existir no AM
                         "collection_acron": self.collection_acron,
                         "processing_date": item.get("processing_date"),
                         "journal_acron": item.get("journal_acronym"),
-                        "publication_year": self._extract_year(
-                            item.get("processing_date")
-                        ),
+                        "publication_year": item.get("processing_year"),
                         "url": url,
                         "source_type": "articlemeta",
                         "metadata": {
@@ -122,14 +120,6 @@ class AMHarvester:
                     }
 
                     yield document
-
-                # Verifica se há próxima página
-                meta = response.get("meta", {})
-                if not meta.get("next"):
-                    logging.info(
-                        f"Reached last page for collection {self.collection_acron}"
-                    )
-                    break
 
                 offset += self.limit
 

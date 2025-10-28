@@ -581,7 +581,6 @@ PROFILING_LOG_HIGH_MEMORY = env.int('DJANGO_PROFILING_LOG_HIGH_MEMORY', default=
 PROFILING_LOG_ALL = env.bool('DJANGO_PROFILING_LOG_ALL', default=True)
 
 
-# JWT para dados de coleção no opac_5
 JWT_PRIVATE_KEY_PATH = env.str("JWT_PRIVATE_KEY_PATH", default="/app/jwt_private.pem")
 JWT_ALG = "RS256"
 JWT_ISS = env.str("JWT_ISS", default="https://api.seu-django.com")
@@ -591,3 +590,7 @@ JWT_EXP_SECONDS = env.int("JWT_EXP_SECONDS", default=3600)
 # ENDPOINT PARA ATUALIZAÇÃO DOS DADOS DE COLEÇÃO NO OPAC_5
 ENDPOINT_COLLECTION = env.str("ENDPOINT_COLLECTION", default="/api/v1/update_collection/")
 ACTIVATE_UPDATE_COLLECTION_WEBHOOK = env.bool("ACTIVATE_UPDATE_COLLECTION_WEBHOOK", default=False)
+
+# LINK TO OLD SCIELO
+SCIELO_OLD_URL = env.str("SCIELO_OLD_URL", default="http://old.scielo.org/")
+

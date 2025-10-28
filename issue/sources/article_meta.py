@@ -1,64 +1,173 @@
 import logging
+import sys
 
+from collection.models import Collection
+from core.utils.harvesters import AMHarvester
 from core.utils import utils
 from core.utils.rename_dictionary_keys import rename_issue_dictionary_keys
+
+from issue.models import Issue, AMIssue
 from issue.utils.correspondencia import correspondencia_issue
 from issue.utils.issue_utils import get_or_create_issue
-from collection.models import Collection
-
-def process_issue_article_meta(collection, limit, user):
-    offset = 0
-    for collection_acron3 in list_of_collections_acron3(collection):
-        data = request_issue_article_meta(collection=collection_acron3, limit=limit)
-        total_limit = data["meta"]["total"]
-        while offset < total_limit:
-            for issue in data["objects"]:
-                code = issue["code"]
-                url_issue = f"https://articlemeta.scielo.org/api/v1/issue/?code={code}"
-                data_issue = utils.fetch_data(url_issue, json=True, timeout=30, verify=True)
-                issue_dict = rename_issue_dictionary_keys(
-                    [data_issue["issue"]], correspondencia_issue
-                )
-                try:
-                    get_or_create_issue(
-                        issn_scielo=issue_dict.get("scielo_issn"),
-                        volume=issue_dict.get("volume"),
-                        number=issue_dict.get("number"),
-                        supplement_volume=issue_dict.get("supplement_volume"),
-                        supplement_number=issue_dict.get("supplement_number"),
-                        data_iso=issue_dict.get("date_iso"),
-                        sections_data=issue_dict.get("sections_data"),
-                        markup_done=issue_dict.get("markup_done"),
-                        user=user,
-                    )
-                except Exception as exc:
-                    logging.exception(f"Error ao criar isssue com code: {code}. Exception: {exc}")
-            offset += 100
-            data = request_issue_article_meta(
-                collection=collection, limit=limit, offset=offset
-            )
+from journal.models import SciELOJournal
+from tracker.models import UnexpectedEvent
 
 
-def list_of_collections_acron3(collections):
-    query_collection = Collection.objects
-    if not collections:
-        collections = query_collection.values_list("acron3", flat=True)
-    elif collections:
-        if not isinstance(collections, list):
-            collections = [collections]
-        collections = query_collection.filter(acron3__in=collections).values_list("acron3", flat=True)    
-    return [collection for collection in collections]
+def harvest_and_load_issues(user, collection_acron, from_date, until_date, force_update):
+    try:
+        harvester = AMHarvester(
+            record_type="issue",
+            collection_acron=collection_acron,
+            from_date=from_date,
+            until_date=until_date,
+        )
+        collection = Collection.objects.get(acron3=collection_acron)
+        for item in harvester.harvest_documents():
+            harvest_and_load_issue(user, collection, item, force_update)
+
+        for am_issue in AMIssue.objects.filter(
+            collection__acron3=collection_acron,
+            status__in=["todo", "pending"],
+        ):
+            create_issue_from_am_issue(user, am_issue)
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            action="issue.sources.article_meta.harvest_and_load_issues",
+            detail={
+                "collection_acron": collection_acron,
+                "from_date": from_date,
+                "until_date": until_date,
+                "force_update": force_update
+            }
+        )
 
 
-def request_issue_article_meta(
-    collection="scl",
-    limit=10,
-    offset=None,
-):
-    offset = f"&offset={offset}" if offset else ""
-    url = (
-        f"https://articlemeta.scielo.org/api/v1/issue/identifiers/?collection={collection}&limit={limit}"
-        + offset
-    )
-    data = utils.fetch_data(url, json=True, timeout=30, verify=True)
-    return data
+def harvest_and_load_issue(user, collection, item, force_update):
+    try:
+        pid = item["code"]
+        url = item["url"]
+        processing_date = item["processing_date"]
+        am_issue = load_am_issue(user, collection, pid, url, processing_date, force_update)
+        if not am_issue:
+            raise ValueError(f"Unable to create am_issue for {collection} {pid} {url}")
+        create_issue_from_am_issue(user, am_issue)
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            action="issue.sources.article_meta.harvest_and_load_issue",
+            detail={"item": item, "force_update": force_update}
+        )
+
+
+def load_am_issue(user, collection, pid, url, processing_date, force_update):
+    try:
+        try:
+            data_issue = utils.fetch_data(url, json=True, timeout=30, verify=True)
+            status = "pending"
+        except Exception as e:
+            data_issue = None
+            status = "todo"
+        
+        return AMIssue.create_or_update(
+            pid=pid,
+            collection=collection,
+            data=data_issue,
+            user=user,
+            url=url,
+            status=status,
+            processing_date=processing_date,
+            force_update=force_update,
+        )
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            action="issue.sources.article_meta.load_am_issue",
+            detail={"collection": collection, "pid": pid, "force_update": force_update}
+        )
+
+
+def complete_am_issue(user, am_issue):
+    try:
+        url = am_issue.url
+        if not url:
+            url = (am_issue.data or {}).get("url")
+            am_issue.url = url
+        if not url:
+            raise ValueError(f"Unable to get data from {am_issue}: URL is missing")
+        am_issue.data = utils.fetch_data(url, json=True, timeout=30, verify=True)
+        am_issue.status = "pending"
+        am_issue.updated_by = user
+        am_issue.save()
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            action="issue.sources.article_meta.complete_am_issue",
+            detail={"am_issue": str(am_issue)}
+        )
+
+
+def create_issue_from_am_issue(user, am_issue):
+    """
+    Cria ou atualiza Issue a partir dos dados do ArticleMeta.
+    
+    Args:
+        code: PID do issue
+        data: Dados do issue (dict com chave 'issue' ou dados diretos)
+        user: Usuário responsável
+        
+    Returns:
+        Issue criado/atualizado ou None se falhar
+    """
+    try:
+        # Extrair dados do issue
+        if not am_issue.data:
+            complete_am_issue(user, am_issue)
+            
+        data = am_issue.data
+        if not data:
+            raise ValueError(f"Unable to create issue for {am_issue}") 
+
+        journal_pid = data["title"]["code"]
+        journal = SciELOJournal.objects.get(
+            collection__acron3=data["collection"],
+            issn_scielo=journal_pid,
+        ).journal
+
+        issue_data = data.get("issue") if "issue" in data else data
+        issue_dict = rename_issue_dictionary_keys(
+            [issue_data], correspondencia_issue
+        )
+        # Criar ou atualizar
+        issue = get_or_create_issue(
+            journal=journal,
+            volume=issue_dict.get("volume"),
+            number=issue_dict.get("number"),
+            supplement_volume=issue_dict.get("supplement_volume"),
+            supplement_number=issue_dict.get("supplement_number"),
+            data_iso=issue_dict.get("date_iso"),
+            sections_data=issue_dict.get("sections_data"),
+            markup_done=issue_dict.get("markup_done"),
+            user=user,
+        )
+        if issue:
+            issue.legacy_issue.add(am_issue)
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            action="issue.sources.article_meta.create_issue_from_am_issue",
+            detail={"am_issue": str(am_issue), "user": str(user)}
+        )
+        return None

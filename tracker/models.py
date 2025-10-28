@@ -71,9 +71,9 @@ class BaseEvent(models.Model):
         obj.save()
         return obj
 
-    def finish(self, completed, detail=None, errors=None, exceptions=None):
+    def finish(self, completed=None, detail=None, errors=None, exceptions=None):
         try:
-            completed = completed if completed is not None else True
+            completed = True
             detail = detail or {}
             if errors:
                 detail["errors"] = errors

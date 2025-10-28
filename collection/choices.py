@@ -22,3 +22,9 @@ LOGO_PURPOSE = [
     ("footer", _("Footer")),
     ("menu", _("Menu")),
 ]
+
+PLATFORM_STATUS = [
+    ("classic", _("Classic")),
+    ("new", _("New")),
+    ("migrating", _("Migrating")),
+]

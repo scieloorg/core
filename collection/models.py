@@ -86,7 +86,9 @@ class Collection(CommonControlField, ClusterableModel):
     )
     is_active = models.BooleanField(_("Is active"), null=True, blank=True)
     foundation_date = models.DateField(_("Foundation data"), null=True, blank=True)
-
+    platform_status = models.CharField(
+        _("Platform Status"), choices=choices.PLATFORM_STATUS, max_length=20, null=True, blank=True,
+    )
     autocomplete_search_field = "main_name"
 
     def autocomplete_label(self):
@@ -107,6 +109,7 @@ class Collection(CommonControlField, ClusterableModel):
         FieldPanel("has_analytics"),
         FieldPanel("collection_type"),
         FieldPanel("is_active"),
+        FieldPanel("platform_status"),
         FieldPanel("foundation_date"),
     ]
 
@@ -308,11 +311,14 @@ class Collection(CommonControlField, ClusterableModel):
         )
 
     @classmethod
-    def get_acronyms(cls):
-        """
-        Retorna uma lista de todos os acrônimos (acron3) das coleções.
-        """
-        return list(cls.objects.values_list("acron3", flat=True))
+    def get_acronyms(cls, collection_acron_list):
+        queryset = cls.objects
+        if not collection_acron_list:
+            return queryset.values_list("acron3", flat=True)
+        
+        if not isinstance(collection_acron_list, list):
+            collection_acron_list = [collection_acron_list]
+        return queryset.filter(acron3__in=collection_acron_list).values_list("acron3", flat=True)    
 
 
 
