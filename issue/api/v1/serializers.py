@@ -5,6 +5,17 @@ from issue import models
 from journal.models import SciELOJournal
 
 
+class AMIssueSerializer(serializers.ModelSerializer):
+    collection = serializers.CharField(source="collection.acron3")
+
+    class Meta:
+        model = models.AMIssue
+        fields = [
+            "pid",
+            "collection",
+        ]
+
+
 class TocSectionsSerializer(serializers.ModelSerializer):
     language = serializers.CharField(source="language.code2")
 
@@ -18,6 +29,7 @@ class TocSectionsSerializer(serializers.ModelSerializer):
 
 class IssueSerializer(serializers.ModelSerializer):
     journal = serializers.SerializerMethodField()
+    legacy_issue = AMIssueSerializer(many=True, read_only=True)
     sections = TocSectionsSerializer(many=True, read_only=True)
     license = LicenseStatementSerializer(many=True, read_only=True)
 
@@ -27,14 +39,17 @@ class IssueSerializer(serializers.ModelSerializer):
             "created",
             "updated",
             "journal",
+            "volume",
+            "number",
+            "supplement",
+            "year",
+            "season",
+            "month",
+            "order",
+            "issue_pid_suffix",
+            "legacy_issue",
             "sections",
             "license",
-            "number",
-            "volume",
-            "season",
-            "year",
-            "month",
-            "supplement",
         ]
 
     def get_journal(self, obj):

@@ -7,9 +7,9 @@ from django.db.models import Q
 
 from config import celery_app
 from core.utils.utils import _get_user
+from collection.models import Collection
 from issue import controller
-from issue.models import Issue
-from issue.sources.article_meta import process_issue_article_meta
+from issue.sources.article_meta import harvest_and_load_issues
 from tracker.models import UnexpectedEvent
 
 User = get_user_model()
@@ -30,14 +30,31 @@ def load_issue(user_id=None, username=None):
     controller.load(user)
 
 
-@celery_app.task()
+@celery_app.task(bind=True)
 def load_issue_from_article_meta(
-    user_id=None, username=None, collection=None, limit=None
+    self,
+    user_id=None, username=None, collection_acron=None, from_date=None, until_date=None, force_update=None,
 ):
-    user = _get_user(request=None, user_id=user_id, username=username)
-    if not isinstance(limit, int):
-        limit = 100
-    process_issue_article_meta(collection=collection, limit=limit, user=user)
+    try:
+        user = _get_user(request=self.request, user_id=user_id, username=username)
+
+        for acron3 in Collection.get_acronyms(collection_acron):
+            harvest_and_load_issues(
+                user=user,
+                collection_acron=acron3,
+                from_date=from_date,
+                until_date=until_date,
+                force_update=force_update,
+            )
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            action="issue.tasks.load_issue_from_article_meta",
+            detail={"collection_acron": collection_acron, "from_date": from_date, "until_date": until_date, "force_update": force_update}
+        )
 
 
 @celery_app.task(bind=True, name="task_export_issues_to_articlemeta")

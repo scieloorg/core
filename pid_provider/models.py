@@ -4,11 +4,12 @@ import os
 import sys
 import traceback
 from datetime import datetime
-from functools import lru_cache
+from functools import lru_cache, cached_property
+from zlib import crc32
 
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
-from django.db.models import Q
+from django.db.models import Q, Count, Min
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -36,14 +37,17 @@ from pid_provider.query_params import (
     get_journal_q_expression,
     get_valid_query_parameters,
     zero_to_none,
+    QueryBuilderPidProviderXML,
 )
 from tracker.models import BaseEvent, EventSaveError, UnexpectedEvent
 
 try:
     from django_prometheus.models import ExportModelOperationsMixin
+
     COLLECTION_PREFIX = "scielojournal"
 except ImportError:
     COLLECTION_PREFIX = "journalproc"
+
     class BasePidProviderXML:
         """Base class for exportable models."""
 
@@ -81,6 +85,10 @@ class PidProviderXMLPidV2ConflictError(Exception): ...
 
 
 class PidProviderXMLPidAOPConflictError(Exception): ...
+
+
+def string_to_5_digits(input_string):
+    return (crc32(input_string.encode()) & 0xFFFFFFFF) % 100000
 
 
 def utcnow():
@@ -150,12 +158,7 @@ class XMLVersion(CommonControlField):
         )
 
     @property
-    @lru_cache(maxsize=1)
     def xml_with_pre(self):
-        if not os.path.isfile(self.file.path):
-            raise FileNotFoundError(
-                _("Unable to read XML {} {}").format(self.file.path, self)
-            )
         try:
             for item in XMLWithPre.create(path=self.file.path):
                 return item
@@ -166,8 +169,7 @@ class XMLVersion(CommonControlField):
                 )
             )
 
-    @property
-    @lru_cache(maxsize=1)
+    @cached_property
     def xml(self):
         try:
             return self.xml_with_pre.tostring(pretty_print=True)
@@ -509,6 +511,19 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
     def __str__(self):
         return f"{self.pkg_name} {self.v3}"
+    
+    @property
+    def article_pid_suffix_source(self):
+        try:
+            return self.xml_with_pre.get_article_pid_suffix_source()
+        except AttributeError:
+            return self.elocation_id or self.fpage or self.xml_with_pre.order
+    
+    def get_article_pid_suffix(self):
+        data = self.article_pid_suffix_source
+        if not data:
+            data = self.pkg_name.split("-")[-1]
+        return string_to_5_digits(data)
 
     @property
     def collection_list(self):
@@ -588,11 +603,15 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     def xml_with_pre(self):
         try:
             return self.current_version.xml_with_pre
-        except AttributeError:
+        except Exception as e:
+            logging.exception(e)
+            if self.proc_status != choices.PPXML_STATUS_INVALID:
+                self.proc_status = choices.PPXML_STATUS_INVALID
+                self.save()
+            logging.info(self.proc_status)
             return None
 
-    @property
-    @lru_cache(maxsize=1)
+    @cached_property
     def is_aop(self):
         if self.volume:
             return False
@@ -673,10 +692,12 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
             # consulta se documento já está registrado
             try:
-                registered = cls.get_record(xml_adapter)
+                records = cls.get_records(xml_adapter)
+                registered = cls.get_record(xml_adapter, records=records)
             except cls.DoesNotExist as exc:
                 registered = None
-            except cls.MultipleObjectsReturned as exc:
+            except (cls.MultipleObjectsReturned, exceptions.UnmatchedPidProviderXMLError) as exc:
+                response["records"] = [item.data for item in records]
                 raise exceptions.QueryDocumentMultipleObjectsReturnedError(exc)
             except (
                 exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError
@@ -827,14 +848,22 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         q = Q()
         if COLLECTION_PREFIX == "scielojournal":
             if xml_adapter.journal_issn_print:
-                q |= Q(scielojournal__journal__official__issn_print=xml_adapter.journal_issn_print)
+                q |= Q(
+                    scielojournal__journal__official__issn_print=xml_adapter.journal_issn_print
+                )
             if xml_adapter.journal_issn_electronic:
-                q |= Q(scielojournal__journal__official__issn_electronic=xml_adapter.journal_issn_electronic)
-        else:            
+                q |= Q(
+                    scielojournal__journal__official__issn_electronic=xml_adapter.journal_issn_electronic
+                )
+        else:
             if xml_adapter.journal_issn_print:
-                q |= Q(journalproc__journal__official_journal__issn_print=xml_adapter.journal_issn_print)
+                q |= Q(
+                    journalproc__journal__official_journal__issn_print=xml_adapter.journal_issn_print
+                )
             if xml_adapter.journal_issn_electronic:
-                q |= Q(journalproc__journal__official_journal__issn_electronic=xml_adapter.journal_issn_electronic)
+                q |= Q(
+                    journalproc__journal__official_journal__issn_electronic=xml_adapter.journal_issn_electronic
+                )
 
         for collection in Collection.objects.filter(q):
             registered.collections.add(collection)
@@ -897,173 +926,45 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
     @classmethod
     @profile_classmethod
-    def get_record(cls, xml_adapter):
-        try:
-            # match exato
-            return cls.get_record_data(xml_adapter)
-        except cls.DoesNotExist:
-            logging.error(f"Nenhum match exato")
-            pass
-        try:
-            return cls.get_record_by_pkg_name(xml_adapter)
-        except (cls.DoesNotExist, ValueError):
-            logging.error(f"Nenhum match com pkg_name")
-            pass
-        try:
-            return cls.get_record_by_pid_v3(xml_adapter)
-        except ValueError:
-            pass
-        except cls.DoesNotExist:
-            logging.error(f"Nenhum match com pid v3")
-            pass
-        except PidProviderXMLPidV3ConflictError as e:
-            logging.exception(e)
-        try:
-            return cls.get_record_by_main_doi(xml_adapter)
-        except ValueError:
-            pass
-        except cls.DoesNotExist:
-            logging.error(f"Nenhum match com DOI")
-            pass
-        return cls.get_record_flexible_match(xml_adapter)
-
-    # @classmethod
-    # @profile_classmethod
-    # def remove_duplicated(cls, xml_adapter, matched, unmatched):
-    #     # tenta procurar pelo pid_v3
-
-    #     if not matched and not unmatched:
-    #         matched, unmatched = cls.get_records_by_pkg_name(xml_adapter)
-
-    #     if not matched and not unmatched:
-    #         # não está duplicado
-    #         return
-
-    #     if matched and unmatched:
-    #         # TODO - inconsistente
-    #         ...
-    #         # TODO
-
-    #     if unmatched:
-    #         items = []
-    #         for item in cls.objects.filter(id__in=unmatched):
-    #             try:
-    #                 items.append({
-    #                     "pid_v2": item.v2,
-    #                     "pid_v3": item.v3,
-    #                     "article_titles": item.xml_with_pre.article_titles,
-    #                     "authors": item.xml_with_pre.authors,
-    #                 })
-    #             except Exception as e:
-    #                 items.append(str(item))
-
-    #         raise exceptions.ForbiddenPidProviderXMLRegistrationError(
-    #             _(
-    #                 "{} is registered with other content {}"
-    #             ).format(xml_adapter, items)
-    #         )
-
-    #     if matched:
-    #         if len(matched) == 1:
-    #             return
-    #         for item in matched[1:]:
-    #             item.proc_status = choices.PPXML_STATUS_INVALID
-    #             item.save()
-
-    # @classmethod
-    # @profile_classmethod
-    # def get_records_by_pkg_name(cls, xml_adapter):
-    #     # tenta procurar pelo pid_v3
-    #     qs = cls.objects.filter(pkg_name=xml_adapter.pkg_name).order_by("-updated")
-    #     matched = []
-    #     unmatched = []
-    #     for item in qs.iterator():
-    #         score = item.match(xml_adapter)
-    #         if score:
-    #             matched.append((score, item.updated.isoformat(), item.id))
-    #         else:
-    #             unmatched.append(item.id)
-    #     return sorted(matched), sorted(unmatched)
+    def get_records(cls, xml_adapter):
+        qbuilder = QueryBuilderPidProviderXML(xml_adapter)
+        q_ids = qbuilder.identifier_queries
+        q_issue = qbuilder.issn_query & Q(**qbuilder.issue_params)
+        q_article = qbuilder.article_data_query
+        if q_article:
+            return cls.objects.filter(q_ids | q_issue | (qbuilder.issn_query & q_article)).distinct()
+        return cls.objects.filter(q_ids | q_issue).distinct()
 
     @classmethod
     @profile_classmethod
-    def get_record_by_pkg_name(cls, xml_adapter):
-        # tenta procurar pelo pid_v3
-        qs = cls.objects.filter(pkg_name=xml_adapter.pkg_name)
+    def get_record(cls, xml_adapter, records):
+        results = records
+        if not results.exists():
+            raise cls.DoesNotExist
         matched = []
-        for item in qs.iterator():
+        for item in results.iterator():
             score = item.match(xml_adapter)
-            if score:
+            if score > 2:
                 matched.append((score, item.updated.isoformat(), item.id))
-        if not matched:
-            raise cls.DoesNotExist
-        return cls.objects.get(id=sorted(matched)[-1][-1])
 
-    @classmethod
-    @profile_classmethod
-    def get_record_data(cls, xml_adapter):
-        q, param_list = get_valid_query_parameters(xml_adapter)
-        for params in param_list:
-            item = cls.objects.filter(q, **params).order_by("-updated").first()
-            if item:
-                return item
-        raise cls.DoesNotExist
-
-    @classmethod
-    @profile_classmethod
-    def get_record_by_pid_v3(cls, xml_adapter):
-        # tenta procurar pelo pid_v3
-        if not xml_adapter.v3:
-            raise ValueError("get_record_by_pid_v3: XML has not pid v3")
-
-        xml_pid_v3 = xml_adapter.v3
-        item = (
-            cls.objects.filter(Q(v3=xml_pid_v3) | Q(other_pid__pid_in_xml=xml_pid_v3))
-            .order_by("-updated")
-            .first()
-        )
-        if item:
-            total = item.match(xml_adapter)
-            logging.info(total)
-            if total >= 3:
-                return item
-            logging.info(item)
-            raise PidProviderXMLPidV3ConflictError(
-                f"Trying to set {xml_pid_v3} to {xml_adapter.sps_pkg_name}, but {xml_pid_v3} belongs to {item}"
+        if results.count() > 1:
+            detail = {
+                "xml_adapter_data": xml_adapter.data,
+                "results": [item.data for item in results],
+                "matched": matched,
+            } 
+            UnexpectedEvent.create(
+                item=xml_adapter.sps_pkg_name,
+                action="PidProviderXML.get_record",
+                exception=cls.MultipleObjectsReturned,
+                detail=detail,
             )
-        raise cls.DoesNotExist
 
-    @classmethod
-    @profile_classmethod
-    def get_record_by_main_doi(cls, xml_adapter):
-        # tenta procurar pelo pid_v3
-        if not xml_adapter.main_doi:
-            raise ValueError("get_record_by_main_doi: XML has no main_doi")
-
-        doi = xml_adapter.main_doi
-        item = cls.objects.filter(main_doi=doi).order_by("-updated").first()
-        if item:
-            if item.match(xml_adapter) >= 3:
-                return item
-        raise cls.DoesNotExist
-
-    @classmethod
-    @profile_classmethod
-    def get_record_flexible_match(cls, xml_adapter):
-        q1 = get_journal_q_expression(xml_adapter)
-        q2 = get_article_q_expression(xml_adapter)
-        kwargs_groups = get_issue_kwargs(xml_adapter)
-        matches = []
-        for kwargs in kwargs_groups:
-            for item in cls.objects.filter(q1 & q2, **kwargs):
-                total = item.match(xml_adapter)
-                if total >= 3:
-                    matches.append((total, item.updated.isoformat(), item.id))
-        if not matches:
-            logging.info("get_record_flexible_match: No matches")
-            raise cls.DoesNotExist
-        logging.info(f"get_record_flexible_match: {matches}")
-        return cls.objects.get(pk=sorted(matches)[-1][-1])
+        if not matched:
+            raise exceptions.UnmatchedPidProviderXMLError(
+                _("No matching record found for the provided XML data.")
+            )
+        return cls.objects.get(id=sorted(matched)[-1][-1])
 
     @profile_method
     def match(self, xml_adapter):
@@ -1090,15 +991,22 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         return matches.count(True)
 
     def has_similar_title(self, xml_adapter):
-        if not xml_adapter.xml_with_pre.article_titles_texts:
+        try:
+            registered = self.xml_with_pre.article_titles_texts
+        except Exception:
+            registered = []
+        xml_adapter_titles = xml_adapter.xml_with_pre.article_titles_texts
+        if xml_adapter_titles == registered:
+            return True
+        if not xml_adapter_titles:
             return False
-        if not self.xml_with_pre.article_titles_texts:
+        if not registered:
             return False
         words1 = set()
-        for item in xml_adapter.xml_with_pre.article_titles_texts:
+        for item in xml_adapter_titles:
             words1.update(item.split())
         words2 = set()
-        for item in self.xml_with_pre.article_titles_texts:
+        for item in registered:
             words2.update(item.split())
         return is_similar(" ".join(sorted(words1)), " ".join(sorted(words2)))
 
@@ -1296,15 +1204,16 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             response["xml_adapter_data"] = xml_adapter_data
 
             try:
-                registered = cls.get_record(xml_adapter)
+                records = cls.get_records(xml_adapter)
+                registered = cls.get_record(xml_adapter, records=records)
             except cls.DoesNotExist as exc:
                 response.update(
                     {"filename": xml_with_pre.filename, "registered": False}
                 )
                 return response
-            except cls.MultipleObjectsReturned as exc:
+            except (cls.MultipleObjectsReturned, exceptions.UnmatchedPidProviderXMLError) as exc:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                response["records"] = list(cls._get_records_data(xml_adapter))
+                response["records"] = [item.data for item in records]
                 UnexpectedEvent.create(
                     item=xml_with_pre.sps_pkg_name,
                     action="PidProviderXML.is_registered",
@@ -1359,6 +1268,131 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         except Exception as e:
             raise exceptions.PidProviderXMLFixPidV2Error(
                 f"Unable to fix pid v2 for {item.v3} {e} {type(e)}"
+            )
+
+    @profile_method
+    def mark_as_waiting(self):
+        if self.proc_status != choices.PPXML_STATUS_WAIT:
+            self.proc_status = choices.PPXML_STATUS_WAIT
+            self.save()
+
+    @profile_method
+    def mark_as_done(self):
+        if self.proc_status != choices.PPXML_STATUS_DONE:
+            self.proc_status = choices.PPXML_STATUS_DONE
+            self.save()
+
+    @classmethod
+    @profile_classmethod
+    def mark_items_as_invalid(cls, issns):
+        for item in cls.objects.filter(
+            Q(issn_print__in=issns) | Q(issn_electronic__in=issns),
+        ).iterator():
+            try:
+                invalid = bool(item.xml_with_pre)
+            except Exception as e:
+                invalid = True
+
+    @classmethod
+    @profile_classmethod
+    def find_duplicated_pkg_names(cls, issns):
+        # Busca em ambos os campos de ISSN
+        duplicates = (
+            cls.objects.filter(Q(issn_print__in=issns) | Q(issn_electronic__in=issns))
+            .exclude(pkg_name__isnull=True)
+            .exclude(pkg_name="")
+            .exclude(
+                proc_status__in=[
+                    choices.PPXML_STATUS_DUPLICATED,
+                    choices.PPXML_STATUS_INVALID,
+                ]
+            )
+            .values("pkg_name")
+            .annotate(count=Count("id"))
+            .filter(count__gt=1)
+        )
+        return list(set(item["pkg_name"] for item in duplicates))
+
+    @classmethod
+    @profile_classmethod
+    def mark_items_as_duplicated(cls, issns):
+        ppx_duplicated_pkg_names = PidProviderXML.find_duplicated_pkg_names(issns)
+        if not ppx_duplicated_pkg_names:
+            return
+        cls.objects.filter(pkg_name__in=ppx_duplicated_pkg_names).exclude(
+            proc_status=choices.PPXML_STATUS_DUPLICATED
+        ).update(
+            proc_status=choices.PPXML_STATUS_DUPLICATED,
+        )
+        return ppx_duplicated_pkg_names
+
+    @classmethod
+    @profile_classmethod
+    def deduplicate_items(cls, user, issns):
+        """
+        Corrige todos os artigos marcados como DATA_STATUS_DUPLICATED com base nos ISSNs fornecidos.
+
+        Args:
+            issns: Lista de ISSNs para verificar duplicatas.
+            user: Usuário que está executando a operação.
+        """
+        duplicated_pkg_names = cls.find_duplicated_pkg_names(issns)
+        for pkg_name in duplicated_pkg_names:
+            cls.fix_duplicated_pkg_name(pkg_name, user)
+        return duplicated_pkg_names
+
+    @classmethod
+    @profile_classmethod
+    def fix_duplicated_pkg_name(cls, pkg_name, user):
+        """
+        Corrige items marcados como PPXML_STATUS_DUPLICATED com base no pkg_name fornecido.
+
+        Args:
+            pkg_name: Nome do pacote para verificar duplicatas.
+            user: Usuário que está executando a operação.
+
+        Returns:
+            int: Número de items atualizados.
+        """
+        try:
+            items = cls.objects.filter(pkg_name=pkg_name)
+            if items.count() <= 1:
+                return 0
+
+            most_recent_item = items.order_by("-updated").first()
+            if not most_recent_item:
+                return 0
+
+            logging.info(
+                f"Fixing duplicated PidProviderXML pkg_name={pkg_name} with {items.count()} items. Keeping {most_recent_item.v3} as the correct one."
+            )
+            # Mantém o artigo mais recente como o correto
+            most_recent_item.proc_status = choices.PPXML_STATUS_DEDUPLICATED
+            most_recent_item.save()
+
+            for item in items.exclude(id=most_recent_item.id):
+                for other_pid in item.other_pid.filter(pid_type="pid_v3"):
+                    OtherPid.get_or_create(
+                        user=user,
+                        pid_type=other_pid.pid_type,
+                        pid_in_xml=other_pid.pid_in_xml,
+                        version=other_pid.current_version,
+                        pid_provider_xml=most_recent_item,
+                    )
+                OtherPid.get_or_create(
+                    user=user,
+                    pid_type="pid_v3",
+                    pid_in_xml=item.v3,
+                    version=item.current_version,
+                    pid_provider_xml=most_recent_item,
+                )
+        except Exception as exception:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=exception,
+                exc_traceback=exc_traceback,
+                action="pid_provider.models.PidProviderXML.fix_duplicated_pkg_name",
+                detail=pkg_name,
             )
 
 

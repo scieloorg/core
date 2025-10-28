@@ -779,10 +779,10 @@ class Journal(CommonControlField, ClusterableModel):
         official = self.official
         issns = []
         if official:
-            if official.issn_print:
-                issns.append(f"Issn Print: {official.issn_print}")
             if official.issn_electronic:
-                issns.append(f"Issn Electronic: {official.issn_electronic}")
+                issns.append(official.issn_electronic)
+            if official.issn_print:
+                issns.append(official.issn_print)
         return issns
 
     @property
@@ -889,8 +889,47 @@ class Journal(CommonControlField, ClusterableModel):
         if collection_acron_list:
             params["scielojournal__collection__acron3__in"] = collection_acron_list
         if journal_acron_list:
-            params["journal_acron__in"] = journal_acron_list
+            params["scielojournal__journal_acron__in"] = journal_acron_list
         return cls.objects.filter(**params)
+    
+    @classmethod
+    def get_journal_issns(
+        cls,
+        collection_acron_list=None,
+        journal_acron_list=None,
+        from_date=None,
+        until_date=None,
+        days_to_go_back=None,
+    ):
+        """
+        Versão alternativa que segue o padrão do select_items() com suporte a datas.
+        
+        Similar ao método get_issn_list() existente, mas:
+        - Retorna tuplas (issn_print, issn_electronic) ao invés de dicionário
+        - Mantém a associação entre ISSNs do mesmo periódico
+        - Suporta filtros de data como select_items()
+        
+        Args:
+            collection_acron_list (list): Lista de acrônimos de coleções
+            journal_acron_list (list): Lista de acrônimos de periódicos
+            from_date (str): Data inicial para filtro de atualização
+            until_date (str): Data final para filtro de atualização
+            days_to_go_back (int): Dias para voltar a partir de hoje
+            
+        Returns:
+            QuerySet: Tuplas de (issn_print, issn_electronic)
+        """
+        qs = cls.select_items(
+            collection_acron_list,
+            journal_acron_list,
+            from_date,
+            until_date,
+            days_to_go_back,
+        )
+        return qs.values_list(
+            "official__issn_print",
+            "official__issn_electronic"
+        ).distinct()
 
     @classmethod
     def get_issn_list(cls, collection_acron_list=None, journal_acron_list=None):
@@ -914,7 +953,7 @@ class Journal(CommonControlField, ClusterableModel):
     @classmethod
     def get_ids(cls, collection_acron_list=None, journal_acron_list=None):
         qs = cls.select_items(collection_acron_list, journal_acron_list)
-        return qs.values_list("id", flat=True)
+        return qs.values_list("id", flat=True).distinct()
 
     def select_collections(self, collection_acron_list=None, is_active=None):
         params = {}
@@ -1750,8 +1789,9 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         blank=True,
         on_delete=models.SET_NULL,
     )
-    journal_acron = models.TextField(
+    journal_acron = models.CharField(
         _("Journal Acronym"),
+        max_length=16,
         null=True,
         blank=True,
         validators=[

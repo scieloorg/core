@@ -150,14 +150,17 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         event = None
         xmltree = xml_with_pre.xmltree
 
+        logging.info(f"Article {pid_v3} {xml_with_pre.sps_pkg_name}")
+
         # CRIAÇÃO/OBTENÇÃO DO OBJETO PRINCIPAL
         article = Article.create_or_update(
             user=user,
             pid_v3=pid_v3,
-            doi=xml_with_pre.main_doi,
             sps_pkg_name=xml_with_pre.sps_pkg_name,
         )
+        logging.info(f"...Article {pid_v3} {xml_with_pre.sps_pkg_name}")
 
+        article.events.all().delete()
         event = article.add_event(user, _("load article"))
         # Configurar todos os campos antes de salvar (Sugestão 9)
         article.valid = False
@@ -187,6 +190,10 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         )
 
         # Salvar uma vez após definir todos os campos simples
+        logging.info(
+            f"Saving article {article.pid_v3} {xml_with_pre.sps_pkg_name} {xml_with_pre.main_doi}"
+        )
+
         article.save()
 
         # MANY-TO-MANY (requerem que o objeto esteja salvo)
@@ -230,24 +237,20 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             )
         )
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user, errors=errors))
-
-        article.valid = not errors
-        if errors:
-            article.errors = _("Consult events")
-        article.save()  # Salvar estado final
+        article.create_legacy_keys(user)
+        if not article.pid_v2:
+            add_error(errors, "load_article", "Article has no PID v2", item=article.pid_v3)
+        if not errors:
+            article.mark_as_completed()
 
         event.finish(completed=not errors, errors=errors)
-
-        if article.pp_xml is pp_xml and article.pp_xml.proc_status != PPXML_STATUS_DONE:
-            pp_xml.proc_status = PPXML_STATUS_DONE
-            pp_xml.save()
-
         logging.info(
             f"The article {pid_v3} has been processed with {len(errors)} errors"
         )
         return article
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
+
         if event:
             event.finish(errors=errors, exceptions=traceback.format_exc())
             raise
@@ -283,6 +286,8 @@ def get_or_create_doi(xmltree, user, errors):
     try:
         doi_with_lang = DoiWithLang(xmltree=xmltree).data
         for doi in doi_with_lang:
+            if not doi.get("value"):
+                continue
             try:
                 lang = get_or_create_language(doi.get("lang"), user=user, errors=errors)
                 obj = DOI.get_or_create(
@@ -403,14 +408,13 @@ def get_or_create_toc_sections(xmltree, user, errors):
     data = []
     try:
         toc_sections = ArticleTocSections(xmltree=xmltree).sections
-
         for item in toc_sections:
             section_title = item.get("section")
-            section_lang = item.get("parent_lang")
 
-            if not section_title and not section_lang:
+            if not section_title:
                 continue
 
+            section_lang = item.get("parent_lang")
             try:
                 lang = get_or_create_language(section_lang, user=user, errors=errors)
                 obj = TocSection.get_or_create(

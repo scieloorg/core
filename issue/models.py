@@ -1,5 +1,6 @@
+import logging
 from datetime import datetime
-from functools import lru_cache
+from functools import lru_cache, cached_property
 
 from django.db import IntegrityError, models
 from django.utils.translation import gettext_lazy as _
@@ -42,6 +43,22 @@ class AMIssue(BaseLegacyRecord):
         blank=True,
         null=True,
     )
+    new_record = models.ForeignKey(
+        "Issue",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="legacy_issue",
+    )
+
+    panels = [
+        AutocompletePanel("collection"),
+        FieldPanel("pid"),
+        FieldPanel("status"),
+        FieldPanel("processing_date"),
+        FieldPanel("url"),
+        FieldPanel("data", read_only=True),
+    ]
 
 
 class Issue(CommonControlField, ClusterableModel):
@@ -69,7 +86,7 @@ class Issue(CommonControlField, ClusterableModel):
         blank=True,
         help_text="Ex: Jan-Abr.",
     )
-    year = models.CharField(_("Issue year"), max_length=20, null=True, blank=True)
+    year = models.CharField(_("Issue year"), max_length=4, null=True, blank=True)
     month = models.CharField(_("Issue month"), max_length=20, null=True, blank=True)
     supplement = models.CharField(_("Supplement"), max_length=20, null=True, blank=True)
     markup_done = models.BooleanField(_("Markup done"), default=False)
@@ -81,7 +98,7 @@ class Issue(CommonControlField, ClusterableModel):
         ),
     )
     issue_pid_suffix = models.CharField(max_length=4, null=True, blank=True)
-    legacy_issue = models.ManyToManyField(AMIssue, blank=True)
+
     autocomplete_search_field = "journal__title"
 
     def autocomplete_label(self):
@@ -94,20 +111,14 @@ class Issue(CommonControlField, ClusterableModel):
         FieldPanel("volume"),
         FieldPanel("number"),
         FieldPanel("supplement"),
+        InlinePanel("issue_title", label=_("Issue title")),
     ]
 
     panels_operation = [
+        AutocompletePanel("license"),
         FieldPanel("order"),
         FieldPanel("markup_done"),
-    ]
-
-    panels_interoperability = [
         FieldPanel("issue_pid_suffix", read_only=True),
-        AutocompletePanel("legacy_issue"),
-    ]
-
-    panels_title = [
-        InlinePanel("issue_title", label=_("Issue title")),
     ]
 
     panels_bibl = [
@@ -123,19 +134,12 @@ class Issue(CommonControlField, ClusterableModel):
         AutocompletePanel("code_sections"),
     ]
 
-    panels_license = [
-        AutocompletePanel("license"),
-    ]
-
     edit_handler = TabbedInterface(
         [
             ObjectList(panels_issue, heading=_("Issue")),
-            ObjectList(panels_title, heading=_("Titles")),
             ObjectList(panels_operation, heading=_("Operation")),
             ObjectList(panels_bibl, heading=_("Bibliographic Strip")),
             ObjectList(panels_table_of_contents, heading=_("Sections")),
-            ObjectList(panels_license, heading=_("License")),
-            ObjectList(panels_interoperability, heading=_("Interoperability")),
         ]
     )
 
@@ -165,29 +169,31 @@ class Issue(CommonControlField, ClusterableModel):
             ),
         ]
 
-    def create_legacy_keys(self):
-        if self.legacy_issue.exists():
-            return
-        query_set = self.journal.scielojournal_set
-        if query_set.count() == 1:
-            sj = query_set.first()
-            if not self.issue_pid_suffix:
-                self.issue_pid_suffix = self.generate_issue_pid_suffix()
-                self.save()
+    def create_legacy_keys(self, user=None, force_update=None):
+        if not force_update:
+            if self.legacy_issue.count() == self.journal.scielojournal_set.count():
+                return
+
+        if not self.issue_pid_suffix:
+            self.issue_pid_suffix = self.generate_issue_pid_suffix()
+            self.save()
+
+        for sj in self.journal.scielojournal_set.all():
             pid = f"{sj.issn_scielo}{self.year}{self.issue_pid_suffix}"
-            self.legacy_issue.add(
-                AMIssue.create_or_update(pid, sj.collection, None, self.updated_by)
+            am_issue = AMIssue.create_or_update(
+                pid, sj.collection, None, user, status="done", new_record=self
             )
 
     def get_legacy_keys(self, collection_acron_list=None, is_active=None):
-        self.create_legacy_keys()
         params = {}
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
-        for item in self.legacy_issue.filter(
-            collection__is_active=bool(is_active), **params
-        ):
-            yield item.legacy_keys
+        if is_active:
+            params["collection__is_active"] = bool(is_active)
+        data = {}
+        for item in self.legacy_issue.filter(**params):
+            data[item.collection.acron3] = item.legacy_keys
+        return list(data.values())
 
     def select_collections(self, collection_acron_list=None, is_activate=None):
         if not self.journal:
@@ -335,13 +341,11 @@ class Issue(CommonControlField, ClusterableModel):
     def __str__(self):
         return self.short_identification
 
-    @property
-    @lru_cache(maxsize=1)
+    @cached_property
     def short_identification(self):
         return f"{self.journal.title} {self.issue_folder} [{self.journal.collection_acrons}]"
 
-    @property
-    @lru_cache(maxsize=1)
+    @cached_property
     def issue_folder(self):
         values = (self.volume, self.number, self.supplement)
         labels = ("v", "n", "s")
@@ -361,6 +365,8 @@ class Issue(CommonControlField, ClusterableModel):
         if not self.issue_pid_suffix:
             self.issue_pid_suffix = self.generate_issue_pid_suffix()
         super().save(*args, **kwargs)
+        if self.journal:  # Só cria se tiver journal associado
+            self.create_legacy_keys(user=self.creator, force_update=True)
 
     def generate_issue_pid_suffix(self):
         return str(self.generate_order()).zfill(4)

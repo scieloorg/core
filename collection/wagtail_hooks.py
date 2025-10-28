@@ -27,14 +27,14 @@ class CollectionAdmin(ModelAdmin):
     list_display = (
         "main_name",
         "acron3",
-        "code",
+        "platform_status",
         "status",
         "collection_type",
         "is_active",
         "updated",
-        "created",
     )
     list_filter = (
+        "platform_status",
         "status",
         "collection_type",
         "is_active",
