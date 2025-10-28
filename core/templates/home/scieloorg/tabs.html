@@ -163,7 +163,7 @@
                                     <dd class="text dd-button">
                                         <a href="{{child.url}}" class="btn btn-secondary">{% trans 'All' %}</a>
                                     </dd>
-                                    {% for slug, category in categories %}
+                                    {% for slug, category in categories.items %}
                                         <dd class="text dd-button">
                                             <a href="{% routablepageurl child 'list_journal_by_category' slug %}" class="btn btn-secondary" name="category">{{category}}</a>
                                         </dd>

@@ -16,11 +16,11 @@
             <div class="row">
                 <div class="col-12 col-sm-4">
                     <select id="categorySelect" class="form-select">
-                        <option value="">Selecione uma categoria</option>
-                        {% for slug, label in categories %}
+                        <option value="">{% trans 'Selecione uma categoria' %}</option>
+                        {% for slug, label in categories.items %}
                             <option value="{% routablepageurl page 'list_journal_by_category' slug %}"
                                     {% if current_category == label %}selected{% endif %}>
-                                {{ label }}
+                                {% trans label %}
                             </option>
                         {% endfor %}
                     </select>
