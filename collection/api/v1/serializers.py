@@ -1,8 +1,10 @@
 from rest_framework import serializers
+from wagtail.models.sites import Site
+
 from collection import models
 from core.api.v1.serializers import LanguageSerializer
+from core.utils.utils import get_hostname
 from organization.api.v1.serializers import OrganizationSerializer
-from wagtail.models.sites import Site
 
 
 class CollectionNameSerializer(serializers.ModelSerializer):
@@ -59,9 +61,9 @@ class CollectionLogoSerializer(serializers.ModelSerializer):
     
     def get_logo_url(self, obj):
         if obj.logo:
-            domain = Site.objects.get(is_default_site=True).hostname
-            domain = f"http://{domain}"
-            return f"{domain}{obj.logo.file.url}"
+            domain = get_hostname()
+            if domain:
+                return f"{domain}{obj.logo.url}"
         return None
 
 
