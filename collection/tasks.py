@@ -43,18 +43,19 @@ def fetch_with_protocol_guess(host_or_url, timeout=10):
             continue
         except requests.exceptions.RequestException:
             continue
-
+    return None
 
 def _send_payload(url, headers, payload):
-    url_with_schema = fetch_with_protocol_guess(url)
-    pattern_url = url_with_schema + settings.ENDPOINT_COLLECTION
-
+    resp = None
     try:
-        resp = requests.post(pattern_url, json=payload, headers=headers, timeout=5)
+        resp = requests.post(url, json=payload, headers=headers, timeout=5)
         resp.raise_for_status()
         return resp.json()
     except Exception as e:
-        logging.error(f"Erro ao enviar dados de coleção para {url}. Status: {resp.status_code}. Body: {resp.text}")  
+        if resp is not None:
+            logging.error(f"Erro ao enviar dados de coleção para {url}. Status: {resp.status_code}. Body: {resp.text}")  
+        else:
+            logging.error(f"Erro ao enviar dados de coleção para {url}. Exception {e}")
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
             exception=e,
@@ -64,7 +65,6 @@ def _send_payload(url, headers, payload):
                 "url": url,
                 "payload": payload,
                 "headers": headers,
-                "pattern_url": pattern_url,
             },
         )
 
@@ -84,24 +84,28 @@ def build_collection_webhook_for_all(event=False, headers=None):
 @celery_app.task
 def build_collection_webhook(event, collection_acron, headers=None):
     collection = Collection.objects.get(acron3=collection_acron, is_active=True)
+    url_with_schema = fetch_with_protocol_guess(collection.domain)
     
-    if not collection.domain:
+    if not url_with_schema:
         return None
     
+    pattern_url = url_with_schema + settings.ENDPOINT_COLLECTION
+
     serializer = CollectionSerializer(collection)
     payload = {
         "event": event,
         "results": serializer.data,
     }
-    token = issue_jwt_for_flask(
-        sub="service:django",
-        claims={"roles": ["m2m"], "scope": "ingest:write"}
-    )
 
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-    }
-    _send_payload(url=collection.domain, headers=headers, payload=payload)
+    if not headers:
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        token = issue_jwt_for_flask(
+            sub="service:django",
+            claims={"roles": ["m2m"], "scope": "ingest:write"}
+        )
+    _send_payload(url=pattern_url, headers=headers, payload=payload)
 
 
