@@ -25,7 +25,7 @@
 
           <!-- css design system -->
           <link href="{% static 'css/scielo_design_system.css' %}?v=1.1.17" rel="stylesheet">
-
+          <link href="{% static 'scieloorg/css/tabs.css' %}" rel="stylesheet">
         {% endcompress %}
 
       {% endblock %}
@@ -54,7 +54,6 @@
     </div>
 
     {% block modal %}
-       {% include 'home/scieloorg/modal.html' %}
     {% endblock modal %}
 
     {% include 'home/scieloorg/footer.html' %}
