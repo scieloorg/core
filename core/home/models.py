@@ -23,6 +23,18 @@ from journal.models import OwnerHistory, SciELOJournal
 
 SCIELO_STATUS_CHOICES = ["C", "D", "S"]
 
+slugs_to_category_code = {
+    "agricultural-sciences": "Agricultural Sciences",
+    "applied-social-sciences": "Applied Social Sciences",
+    "biological-sciences": "Biological Sciences",
+    "engineering": "Engineering",
+    "exact-and-earth-sciences": "Exact and Earth Sciences",
+    "health-sciences": "Health Sciences",
+    "human-sciences": "Human Sciences",
+    "linguistics-letters-and-arts": "Linguistics, Letters and Arts",
+    "psicanalise": "Psicanalise",
+}
+
 
 def _get_current_locale():
     lang = get_language()
@@ -91,30 +103,6 @@ def as_item(qs, lang_code):
     return [{"obj": obj, "name": obj.get_name_for_language(lang_code)} for obj in qs]
 
 
-def slug_to_category_code(slug):
-    """
-    Converte slug (ex: 'agricultural-sciences') para código original (ex: 'Agricultural Sciences')
-    """
-    words = [word.capitalize() for word in slug.split("-")]
-    text = " ".join(words)
-    for code, _ in STUDY_AREA:
-        if code.lower().replace(",", "") == text.lower().replace(",", ""):
-            return code
-    return None
-
-
-def get_translated_categories():
-    """
-    Retorna lista de categorias com slug e tradução
-    [(slug, translated_label), ...]
-    """
-    categories = []
-    for code, label in STUDY_AREA:
-        slug = "-".join(code.replace(",", "").split()).lower()
-        categories.append((slug, label))
-    return categories
-
-
 class HomePage(Page):
     subpage_types = [
         "home.AboutScieloOrgPage",
@@ -165,7 +153,7 @@ class HomePage(Page):
         context["list_journal_pages_by_category"] = [
             p for p in children_qs if isinstance(p, ListPageJournalByCategory)
         ]
-        context["categories"] = get_translated_categories()
+        context["categories"] = slugs_to_category_code
         _default_context(context)
         return context
 
@@ -247,13 +235,13 @@ class ListPageJournalByCategory(RoutablePageMixin, Page):
 
         context["journals"] = journals
         _default_context(context)
-        context["categories"] = get_translated_categories()
+        context["categories"] = slugs_to_category_code
         return context
 
     @re_path(r"^(?P<category>[\w-]+)/$", name="list_journal_by_category")
     def journals_by_category(self, request, category=None):
         current_lang = request.LANGUAGE_CODE
-        category_code = slug_to_category_code(category)
+        category_code = slugs_to_category_code.get(category)
         if not category_code:
             return redirect(self.url)
 
