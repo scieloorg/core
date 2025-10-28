@@ -1,10 +1,8 @@
-import json
 import logging
 import os
 import sys
-import traceback
 from datetime import datetime
-from functools import lru_cache, cached_property
+from functools import cached_property
 from zlib import crc32
 
 from django.core.files.base import ContentFile
@@ -16,8 +14,6 @@ from modelcluster.models import ClusterableModel
 from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
-from wagtail.fields import RichTextField
-from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from collection.models import Collection
@@ -32,14 +28,10 @@ from core.utils.profiling_tools import (  # ajuste o import conforme sua estrutu
 from core.utils.similarity import is_similar
 from pid_provider import choices, exceptions
 from pid_provider.query_params import (
-    get_article_q_expression,
-    get_issue_kwargs,
-    get_journal_q_expression,
-    get_valid_query_parameters,
     zero_to_none,
     QueryBuilderPidProviderXML,
 )
-from tracker.models import BaseEvent, EventSaveError, UnexpectedEvent
+from tracker.models import UnexpectedEvent
 
 try:
     from django_prometheus.models import ExportModelOperationsMixin
