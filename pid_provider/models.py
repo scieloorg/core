@@ -925,7 +925,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     def get_records(cls, xml_adapter):
         qbuilder = QueryBuilderPidProviderXML(xml_adapter)
         q_ids = qbuilder.identifier_queries
-        q_issue = qbuilder.issn_query & Q(**qbuilder.issue_params)
+        q_issue = Q(**qbuilder.issue_params)
         q_article = qbuilder.article_data_query
         if q_article:
             return cls.objects.filter(qbuilder.issn_query & (q_ids | q_issue | q_article)).distinct()
