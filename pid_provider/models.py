@@ -29,9 +29,10 @@ from core.utils.profiling_tools import (  # ajuste o import conforme sua estrutu
     profile_property,
     profile_staticmethod,
 )
-from core.utils.similarity import is_similar
+from core.utils.similarity import how_similar
 from pid_provider import choices, exceptions
 from pid_provider.query_params import (
+    get_score,
     zero_to_none,
     QueryBuilderPidProviderXML,
 )
@@ -113,7 +114,8 @@ class XMLVersion(CommonControlField):
     class Meta:
         ordering = ["-created"]
         indexes = [
-            models.Index(fields=["pid_provider_xml", "finger_print"]),
+            models.Index(fields=["pid_provider_xml"]),
+            models.Index(fields=["finger_print"]),
         ]
 
     def __str__(self):
@@ -426,11 +428,18 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         AutocompletePanel("current_version", read_only=True),
         InlinePanel("other_pid", label=_("Other PID")),
     ]
+    panel_c = [
+        FieldPanel("z_surnames"),
+        FieldPanel("z_collab"),
+        FieldPanel("z_links"),
+        FieldPanel("z_partial_body"),
+    ]
 
     edit_handler = TabbedInterface(
         [
             ObjectList(panel_a, heading=_("Identification")),
             ObjectList(panel_b, heading=_("Other PIDs")),
+            ObjectList(panel_c, heading=_("Data")),
         ]
     )
 
@@ -776,7 +785,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             xml_changed["pid_v3"] = valid_pid
 
         if registered:
-            if not xml_with_pre.v2:
+            if not xml_with_pre.v2 and registered.v2:
                 xml_with_pre.v2 = registered.v2
                 xml_changed["pid_v2"] = registered.v2
             if not xml_with_pre.aop_pid and registered.aop_pid:
@@ -925,11 +934,9 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     def get_records(cls, xml_adapter):
         qbuilder = QueryBuilderPidProviderXML(xml_adapter)
         q_ids = qbuilder.identifier_queries
+        q_journal = qbuilder.issn_query
         q_issue = Q(**qbuilder.issue_params)
-        q_article = qbuilder.article_data_query
-        if q_article:
-            return cls.objects.filter(qbuilder.issn_query & (q_ids | q_issue | q_article)).distinct()
-        return cls.objects.filter(qbuilder.issn_query & (q_ids | q_issue)).distinct()
+        return cls.objects.filter(q_ids | (q_journal & q_issue)).distinct()
 
     @classmethod
     @profile_classmethod
@@ -937,27 +944,32 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         results = records
         if not results.exists():
             raise cls.DoesNotExist
-        matched = []
-        for item in results.iterator():
-            score = item.match(xml_adapter)
-            if score > 2:
-                matched.append((score, item.updated.isoformat(), item.id))
+        matched = cls.best_matches(results, xml_adapter)
+        if not matched:
+            raise cls.DoesNotExist
+        return cls.objects.get(id=sorted(matched)[-1][-1])
 
-        if results.count() > 1:
-            detail = {
-                "xml_adapter_data": xml_adapter.data,
-                "results": [item.data for item in results],
-                "matched": matched,
-            } 
+    @classmethod
+    @profile_classmethod
+    def get_record_by_pid_v3(cls, xml_adapter):
+        # tenta procurar pelo pid_v3
+        if not xml_adapter.v3:
+            raise ValueError("get_record_by_pid_v3: XML has not pid v3")
+        xml_pid_v3 = xml_adapter.v3
+        results = (
+            cls.objects.filter(Q(v3=xml_pid_v3) | Q(other_pid__pid_in_xml=xml_pid_v3))
+        )
+        if not results.exists():
+            raise cls.DoesNotExist
+        matched = cls.best_matches(results, xml_adapter)
+        if not matched:
             UnexpectedEvent.create(
                 item=xml_adapter.sps_pkg_name,
-                action="PidProviderXML.get_record",
-                exception=cls.MultipleObjectsReturned,
-                detail=detail,
+                action="PidProviderXML.get_record_by_pid_v3",
+                exception=PidProviderXMLPidV3ConflictError,
+                detail={"xml_adapter": xml_adapter.data, "results": [i.data for i in results]},
             )
-
-        if not matched:
-            raise exceptions.UnmatchedPidProviderXMLError(
+            raise PidProviderXMLPidV3ConflictError(
                 _("No matching record found for the provided XML data.")
             )
         return cls.objects.get(id=sorted(matched)[-1][-1])
@@ -965,46 +977,85 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     @profile_method
     def match(self, xml_adapter):
         """
-        Verifica se esta instância representa o mesmo artigo que o xml_adapter
-        comparando campo a campo.
-
-        Parameters
-        ----------
-        xml_adapter : PidProviderXMLAdapter
-
-        Returns
-        -------
-        bool
-            True se representam o mesmo artigo
         """
-        # DOI
-        matches = []
-        matches.append(self.has_similar_title(xml_adapter))
-        matches.append(xml_adapter.z_surnames == self.z_surnames)
-        matches.append(xml_adapter.z_collab == self.z_collab)
-        matches.append(xml_adapter.z_links == self.z_links)
-        matches.append(xml_adapter.z_partial_body == self.z_partial_body)
-        return matches.count(True)
+        labels = []
+        score = self.title_similarity(xml_adapter) * 100
+        if score > 50:
+            labels.append("title")
+        if score_item := get_score(self.z_surnames, xml_adapter.z_surnames, 10, 100):
+            labels.append("z_surnames")
+            score += score_item
+        if score_item := get_score(self.z_collab, xml_adapter.z_collab, 10, 100):
+            labels.append("z_collab")
+            score += score_item
+        if score_item := get_score(self.z_links, xml_adapter.z_links, 10, 100):
+            labels.append("z_links")
+            score += score_item
+        if score_item := get_score(self.z_partial_body, xml_adapter.z_partial_body, 10, 100):
+            labels.append("z_partial_body")
+            score += score_item
+        return {"score": score, "labels": labels}
 
-    def has_similar_title(self, xml_adapter):
+    def title_similarity(self, xml_adapter):
         try:
             registered = self.xml_with_pre.article_titles_texts
         except Exception:
             registered = []
         xml_adapter_titles = xml_adapter.xml_with_pre.article_titles_texts
         if xml_adapter_titles == registered:
-            return True
+            return 1
         if not xml_adapter_titles:
-            return False
+            return 0
         if not registered:
-            return False
+            return 0
         words1 = set()
         for item in xml_adapter_titles:
             words1.update(item.split())
         words2 = set()
         for item in registered:
             words2.update(item.split())
-        return is_similar(" ".join(sorted(words1)), " ".join(sorted(words2)))
+        return how_similar(" ".join(sorted(words1)), " ".join(sorted(words2)))
+
+    @classmethod
+    def best_matches(cls, results, xml_adapter):
+        data = []
+        matched = []
+        for item in results.iterator():
+            response = item.match(xml_adapter)
+            score = response["score"]
+
+            if xml_adapter.v2:
+                if item.v2 == xml_adapter.v2:
+                    score += 100
+            elif xml_adapter.order and item.v2 and item.v2.endswith(xml_adapter.order):
+                score += 100
+            if item.v3 == xml_adapter.v3:
+                score += 100
+            if item.pkg_name == xml_adapter.pkg_name:
+                score += 100
+            if item.main_doi == xml_adapter.main_doi:
+                score += 100
+
+            _data = response
+            _data.update(item.data)
+            data.append(_data)
+
+            if score > 50:
+                matched.append((score, item.updated.isoformat(), item.id))
+
+        if results.count() > 1 or not matched:
+            detail = {
+                "xml_adapter_data": xml_adapter.data,
+                "data": data,
+                "matched": matched,
+            } 
+            UnexpectedEvent.create(
+                item=xml_adapter.sps_pkg_name,
+                action="PidProviderXML.best_matches",
+                exception=cls.MultipleObjectsReturned,
+                detail=detail,
+            )
+        return matched
 
     @profile_method
     def _add_data(self, xml_adapter, registered_in_core):
