@@ -765,7 +765,6 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         cls, xml_adapter, registered, auto_solve_pid_conflict
     ):
         xml_changed = {}
-        other_pid = {}
         xml_with_pre = xml_adapter.xml_with_pre
 
         if xml_with_pre.v3:
