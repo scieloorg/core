@@ -143,15 +143,13 @@ def export_article_to_articlemeta(
     try:
         if not article.classic_available(collection_acron_list):
             raise ArticleIsNotAvailableError(
-                f"Article {article} (classic) is not available. Unable to export to ArticleMeta."
+                f"Article {article} {collection_acron_list} (classic) is not available. Unable to export to ArticleMeta."
             )
-        if not article.new_available(collection_acron_list):
-            raise ArticleIsNotAvailableError(
-                f"Article {article} (new) is not available. Unable to export to ArticleMeta."
-            )
+        new_available = article.new_available(collection_acron_list).exists()
+        logging.info(f"Article new {article} {collection_acron_list} {new_available}")
         events = []
         external_data = {
-            "pid_v3": article.pid_v3,
+            
             # "code": article.pid_v2,
             "created_at": article.created.strftime("%Y-%m-%d"),
             "document_type": article.article_type,
@@ -160,6 +158,9 @@ def export_article_to_articlemeta(
             "publication_year": article.issue.year,
             "version": "xml",
         }
+        if new_available:
+            external_data["pid_v3"] = article.pid_v3
+
         events.append("building articlemeta format for article")
         article_data = am.build(article.xmltree, external_data)
 
@@ -182,11 +183,11 @@ def export_article_to_articlemeta(
                     # não encontrou necessidade de exportar
                     continue
 
-                for avail_item in article.get_availability(collection=col, fmt="xml"):
-                    events.append(avail_item.data)
-                    if not avail_item.available:
-                        raise ArticleIsNotAvailableError(str(avail_item.data))
-                    break
+                # for avail_item in article.get_availability(collection=col, fmt="xml"):
+                #     events.append(avail_item.data)
+                #     if not avail_item.available:
+                #         raise ArticleIsNotAvailableError(str(avail_item.data))
+                #     break
 
                 data = {"collection": col.acron3}
                 data.update(article_data)
@@ -272,6 +273,7 @@ def export_article_to_articlemeta(
 
 
 def bulk_export_articles_to_articlemeta(
+    user,
     collection_acron_list=None,
     journal_acron_list=None,
     from_pub_year=None,
@@ -280,7 +282,6 @@ def bulk_export_articles_to_articlemeta(
     until_date=None,
     days_to_go_back=None,
     force_update=True,
-    user=None,
     version=None,
 ) -> bool:
     """
@@ -315,6 +316,8 @@ def bulk_export_articles_to_articlemeta(
 
     # Iterate over queryset and export each article to ArticleMeta
     for article in queryset.iterator():
+        if force_update:
+            article.check_availability(user)
         export_article_to_articlemeta(
             user,
             article=article,
