@@ -1,9 +1,15 @@
 from haystack import indexes
 from legendarium.formatter import descriptive_format
 
+import re
+
 from journal.models import SciELOJournal
+from core.models import LicenseStatement
 
 from .models import Article
+from .mods_mappings import (MODS_TYPE_OF_RESOURCE_MAPPING, DISPLAY_LABEL, ISO_639_1_TO_2B,
+                            LATIN_SCRIPT_LANGUAGES, STRUCTURAL_SECTIONS, POLICIES, MAPPING_OAI_STATUS,
+                            FORMAT_MEDIA_TYPES, GENRE_DISPLAY, MAPPING)
 
 
 class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
@@ -464,3 +470,1971 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
     def index_queryset(self, using=None):
         return self.get_model().objects.all()
+
+
+class ArticleOAIMODSIndex(indexes.SearchIndex, indexes.Indexable):
+    """
+    Índice OAI-PMH para metadados MODS (Metadata Object Description Schema)
+
+    Este índice implementa os elementos principais do padrão MODS conforme especificação:
+    https://www.loc.gov/standards/mods/
+
+    Adiciona suporte para metadados MODS sem interferir nos índices existentes.
+    """
+
+    # CAMPOS BASE OBRIGATÓRIOS
+    text = indexes.CharField(document=True, use_template=True)
+
+    # ELEMENTOS OAI-PMH BÁSICOS
+    # Identificador OAI-PMH
+    id = indexes.CharField(index_fieldname="item.handle", null=True)
+    item_id = indexes.CharField(index_fieldname="item.id", null=True)
+    updated = indexes.CharField(index_fieldname="item.lastmodified", null=True)
+    submitter = indexes.CharField(
+        model_attr="creator", index_fieldname="item.submitter", null=True
+    )
+    deleted = indexes.CharField(index_fieldname="item.deleted", null=True)
+    public = indexes.CharField(index_fieldname="item.public", null=True)
+    collections = indexes.MultiValueField(index_fieldname="item.collections", null=True)
+    communities = indexes.MultiValueField(index_fieldname="item.communities", null=True)
+
+    # ELEMENTOS MODS - PRIORIDADE ALTA
+    # titleInfo (0-n) - Informações sobre títulos do recurso
+    mods_title_info = indexes.MultiValueField(
+        null=True, index_fieldname="mods.titleInfo"
+    )
+
+    # name (0-n) - Informações sobre nomes de pessoas e entidades
+    mods_name = indexes.MultiValueField(null=True, index_fieldname="mods.name")
+
+    # typeOfResource (0-n) - Categoria geral do recurso
+    mods_type_of_resource = indexes.CharField(
+        null=True, index_fieldname="mods.typeOfResource"
+    )
+
+    # originInfo (0-n) - Informações sobre origem, criação, publicação
+    mods_origin_info = indexes.MultiValueField(
+        null=True, index_fieldname="mods.originInfo"
+    )
+
+    # language (0-n) - Informações sobre o idioma do conteúdo
+    mods_language = indexes.MultiValueField(null=True, index_fieldname="mods.language")
+
+    # identifier (0-n) - Identificador único do recurso
+    mods_identifier = indexes.MultiValueField(
+        null=True, index_fieldname="mods.identifier"
+    )
+
+    # subject (0-n) - Assuntos, tópicos ou conceitos
+    mods_subject = indexes.MultiValueField(null=True, index_fieldname="mods.subject")
+
+    # abstract (0-n) - Resumo do conteúdo intelectual
+    mods_abstract = indexes.MultiValueField(null=True, index_fieldname="mods.abstract")
+
+    # accessCondition (0-n) - Condições de acesso e uso
+    mods_access_condition = indexes.MultiValueField(
+        null=True, index_fieldname="mods.accessCondition"
+    )
+
+    # relatedItem (0-n) - Recursos relacionados
+    mods_related_item = indexes.MultiValueField(
+        null=True, index_fieldname="mods.relatedItem"
+    )
+
+    # part (0-n) - Informações sobre partes do recurso
+    mods_part = indexes.MultiValueField(null=True, index_fieldname="mods.part")
+
+    # location (0-n) - Localização física ou eletrônica
+    mods_location = indexes.MultiValueField(null=True, index_fieldname="mods.location")
+
+    # ELEMENTOS MODS - PRIORIDADE MÉDIA-ALTA
+    # physicalDescription (0-n) - Características físicas do recurso
+    mods_physical_description = indexes.MultiValueField(
+        null=True, index_fieldname="mods.physicalDescription"
+    )
+
+    # recordInfo (0-n) - Informações sobre o registro de metadados
+    mods_record_info = indexes.MultiValueField(
+        null=True, index_fieldname="mods.recordInfo"
+    )
+
+    # extension (0-n) - Metadados não cobertos pelos elementos padrão
+    mods_extension = indexes.MultiValueField(
+        null=True, index_fieldname="mods.extension"
+    )
+
+    # note (0-n) - Informação geral em forma de nota
+    mods_note = indexes.MultiValueField(null=True, index_fieldname="mods.note")
+
+    # genre (0-n) - Categoria que caracteriza estilo/forma
+    mods_genre = indexes.MultiValueField(null=True, index_fieldname="mods.genre")
+
+    # ELEMENTOS MODS - PRIORIDADE MÉDIA
+    # classification (0-n) - Número ou código de classificação
+    mods_classification = indexes.MultiValueField(
+        null=True, index_fieldname="mods.classification"
+    )
+
+    # tableOfContents (0-n) - Sumário ou índice do conteúdo
+    mods_table_of_contents = indexes.MultiValueField(
+        null=True, index_fieldname="mods.tableOfContents"
+    )
+
+    # targetAudience (0-n) - Público-alvo do recurso
+    mods_target_audience = indexes.MultiValueField(
+        null=True, index_fieldname="mods.targetAudience"
+    )
+
+    # Campo compile para template XML completo
+    # compile = indexes.CharField(
+    #     null=True, index_fieldname="item.compile", use_template=True
+    # )
+
+    # CONFIGURAÇÃO DO ÍNDICE
+    def get_model(self):
+        return Article
+
+    def index_queryset(self, using=None):
+        """
+        Define o queryset base para indexação com otimizações.
+        Indexa todos os artigos independente do status.
+        """
+        return (
+            self.get_model()
+            .objects.select_related("journal", "issue", "license", "creator")
+            .prefetch_related(
+                "titles", "researchers__person_name", "collab",
+                "languages", "keywords", "doi", "abstracts",
+                "license_statements", "fundings__funding_source",
+                "toc_sections", "journal__scielojournal_set__collection",
+                # Otimizações MODS específicas
+                "researchers__affiliation__institution__institution_identification",
+                "researchers__researcheraka_set__researcher_identifier",
+            )
+            # Sem filtro de status - indexa todos os artigos
+        )
+
+    # MÉTODOS AUXILIARES PRIVADOS
+    def _prepare_oai_identifier(self, obj):
+        """Método auxiliar para gerar identificador OAI padrão."""
+        identifier = obj.pid_v2 or obj.pid_v3
+        if obj.doi.exists():
+            identifier = identifier or str(obj.doi.first())
+        return f"oai:scielo:{identifier}" if identifier else None
+
+    def _safe_get_collections(self, obj):
+        """Obtém collections com tratamento seguro de erros."""
+        try:
+            if hasattr(obj, 'collections') and obj.collections:
+                return list(obj.collections)
+            return []
+        except Exception:
+            return []
+
+    def _safe_get_available_urls(self, obj, fmt):
+        """Método auxiliar seguro para obter URLs disponíveis."""
+        try:
+            return obj.get_available(fmt=fmt) if hasattr(obj, "get_available") else []
+        except Exception:
+            return []
+
+    # MÉTODOS DE PREPARAÇÃO OAI-PMH BÁSICOS
+    def prepare_id(self, obj):
+        """Identificador OAI-PMH do registro"""
+        return self._prepare_oai_identifier(obj)
+
+    def prepare_item_id(self, obj):
+        """Identificador do item"""
+        return self._prepare_oai_identifier(obj)
+
+    def prepare_updated(self, obj):
+        """Data de última modificação no formato OAI-PMH"""
+        return obj.updated.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def prepare_deleted(self, obj):
+        """Flag de exclusão suave"""
+        return obj.data_status == "DELETED" if hasattr(obj, "data_status") else False
+
+    def prepare_public(self, obj):
+        """Flag de disponibilidade pública"""
+        return obj.data_status == "PUBLIC" if hasattr(obj, "data_status") else True
+
+    def prepare_collections(self, obj):
+        """Coleções baseadas nos ISSNs do periódico"""
+        if obj.journal:
+            sci_journals = SciELOJournal.objects.filter(journal=obj.journal)
+            return set([j.issn_scielo for j in sci_journals if j.issn_scielo])
+        return set()
+
+    def prepare_communities(self, obj):
+        """Comunidades baseadas nas coleções"""
+        collections = self._safe_get_collections(obj)
+        return [f"com_{col.acronym}" for col in collections if hasattr(col, "acronym")]
+
+    # MODS: titleInfo
+    def prepare_mods_title_info(self, obj):
+        """
+        Prepara elemento titleInfo do MODS
+        Inclui título principal, subtítulo e variações de título
+        """
+        titles = []
+        if obj.titles.exists():
+            for title in obj.titles.all():
+                title_data = {
+                    "title": title.plain_text,
+                    "lang": title.language.code2 if title.language else None,
+                }
+                # Remove valores None
+                title_data = {k: v for k, v in title_data.items() if v is not None}
+                titles.append(title_data)
+        return titles
+
+    # MODS: name
+    def prepare_mods_name(self, obj):
+        """
+        Prepara elemento name do MODS com estrutura completa
+
+        Implementa todos os subelementos e atributos MODS para nomes:
+        - namePart estruturado (given/family/termsOfAddress)
+        - múltiplos nameIdentifier (ORCID, LATTES, EMAIL, etc.)
+        - afiliação hierárquica estruturada
+        - role com autoridade
+        - entidades corporativas estruturadas
+        """
+        names = []
+
+        # PESQUISADORES INDIVIDUAIS
+        if obj.researchers.exists():
+            researchers = obj.researchers.select_related(
+                "person_name",
+                "affiliation__institution__institution_identification",
+                "affiliation__institution__location__city",
+                "affiliation__institution__location__state",
+                "affiliation__institution__location__country"
+            ).prefetch_related(
+                "researcheraka_set__researcher_identifier"
+            ).filter(person_name__isnull=False)
+
+            for researcher in researchers:
+                name_data = {
+                    "type": "personal",
+                    "role": {
+                        "roleTerm": {
+                            "type": "text",
+                            "authority": "marcrelator",
+                            "text": "author"
+                        }
+                    }
+                }
+
+                # NAMEPART ESTRUTURADO
+                name_parts = self._prepare_name_parts(researcher.person_name)
+                if name_parts:
+                    name_data["namePart"] = name_parts
+
+                # MÚLTIPLOS IDENTIFICADORES
+                identifiers = self._prepare_name_identifiers(researcher)
+                if identifiers:
+                    name_data["nameIdentifier"] = identifiers
+
+                # AFILIAÇÃO ESTRUTURADA
+                affiliation = self._prepare_name_affiliation(researcher)
+                if affiliation:
+                    name_data["affiliation"] = affiliation
+
+                names.append(name_data)
+
+        # AUTORES CORPORATIVOS/INSTITUCIONAIS
+        if obj.collab.exists():
+            collabs = obj.collab.select_related(
+                "affiliation__institution__institution_identification",
+                "affiliation__institution__location__city",
+                "affiliation__institution__location__state",
+                "affiliation__institution__location__country"
+            )
+
+            for collab in collabs:
+                if collab.collab:  # Verificar se tem texto de colaboração
+                    corporate_name = {
+                        "type": "corporate",
+                        "namePart": collab.collab,
+                        "role": {
+                            "roleTerm": {
+                                "type": "text",
+                                "authority": "marcrelator",
+                                "text": "author"
+                            }
+                        }
+                    }
+
+                    # Afiliação para entidade corporativa
+                    if collab.affiliation:
+                        corporate_affiliation = self._prepare_corporate_affiliation(collab.affiliation)
+                        if corporate_affiliation:
+                            corporate_name["affiliation"] = corporate_affiliation
+
+                    names.append(corporate_name)
+
+        return names
+
+    def _prepare_name_parts(self, person_name):
+        """
+        Prepara namePart estruturado conforme padrão MODS
+
+        Returns:
+            list: Lista de dicionários com type e text para cada parte do nome
+        """
+        name_parts = []
+
+        # Nome(s) próprio(s) - given names
+        if person_name.given_names:
+            name_parts.append({
+                "type": "given",
+                "text": person_name.given_names
+            })
+
+        # Sobrenome - family name
+        if person_name.last_name:
+            name_parts.append({
+                "type": "family",
+                "text": person_name.last_name
+            })
+
+        # Sufixos (Jr., Sr., III, etc.) - terms of address
+        if person_name.suffix:
+            name_parts.append({
+                "type": "termsOfAddress",
+                "text": person_name.suffix
+            })
+
+        # Se não temos partes estruturadas, usar fullname ou declared_name
+        if not name_parts:
+            name_text = person_name.fullname or person_name.declared_name
+            if name_text:
+                name_parts.append({
+                    "text": name_text
+                })
+
+        return name_parts
+
+    def _prepare_name_identifiers(self, researcher):
+        """
+        Prepara múltiplos nameIdentifier para um pesquisador
+
+        Returns:
+            list: Lista de identificadores com type e text
+        """
+        identifiers = []
+
+        # Buscar todos os identificadores via ResearcherAKA
+        researcher_akas = researcher.researcheraka_set.select_related(
+            'researcher_identifier'
+        ).all()
+
+        for aka in researcher_akas:
+            if aka.researcher_identifier and aka.researcher_identifier.identifier:
+                source_name = aka.researcher_identifier.source_name
+                identifier_value = aka.researcher_identifier.identifier
+
+                # Mapear source_name para tipos MODS apropriados
+                identifier_type = self._map_identifier_type(source_name)
+
+                identifier_data = {
+                    "type": identifier_type,
+                    "text": identifier_value
+                }
+
+                # Para ORCID, adicionar autoridade
+                if source_name.upper() == 'ORCID':
+                    identifier_data["authority"] = "orcid"
+
+                if identifier_data not in identifiers:
+                    identifiers.append(identifier_data)
+
+        return identifiers
+
+    def _map_identifier_type(self, source_name):
+        """
+        Mapeia source_name para tipos MODS padrão
+
+        Args:
+            source_name: Nome da fonte do identificador
+
+        Returns:
+            str: Tipo MODS apropriado
+        """
+
+        return MAPPING.get(source_name.upper(), source_name.lower())
+
+    def _prepare_name_affiliation(self, researcher):
+        """
+        Prepara afiliação estruturada para pesquisador individual
+
+        Returns:
+            str: Texto de afiliação estruturado hierarquicamente
+        """
+        if not researcher.affiliation:
+            return None
+
+        affiliation_parts = []
+
+        try:
+            institution = researcher.affiliation.institution
+            if not institution:
+                return None
+
+            # Nome da instituição (prioridade: identification > levels)
+            if institution.institution_identification:
+                institution_name = institution.institution_identification.name
+                if institution_name:
+                    affiliation_parts.append(institution_name)
+
+            # Níveis hierárquicos da organização
+            levels = [
+                institution.level_1,
+                institution.level_2,
+                institution.level_3
+            ]
+
+            for level in levels:
+                if level and level.strip():
+                    affiliation_parts.append(level.strip())
+
+            # Localização geográfica estruturada
+            location_parts = self._prepare_location_text(institution.location)
+            if location_parts:
+                affiliation_parts.extend(location_parts)
+
+        except Exception:
+            # Fallback para string simples se houver erro
+            return str(researcher.affiliation) if researcher.affiliation else None
+
+        return " - ".join(affiliation_parts) if affiliation_parts else None
+
+    def _prepare_corporate_affiliation(self, affiliation):
+        """
+        Prepara afiliação para entidade corporativa
+
+        Returns:
+            str: Texto de afiliação para entidade corporativa
+        """
+        if not affiliation or not affiliation.institution:
+            return None
+
+        return self._prepare_institution_text(affiliation.institution)
+
+    def _prepare_institution_text(self, institution):
+        """
+        Prepara texto estruturado de uma instituição
+
+        Returns:
+            str: Representação textual estruturada da instituição
+        """
+        parts = []
+
+        try:
+            # Nome/identificação principal
+            if institution.institution_identification:
+                if institution.institution_identification.name:
+                    parts.append(institution.institution_identification.name)
+                elif institution.institution_identification.acronym:
+                    parts.append(institution.institution_identification.acronym)
+
+            # Níveis organizacionais
+            levels = [institution.level_1, institution.level_2, institution.level_3]
+            for level in levels:
+                if level and level.strip():
+                    parts.append(level.strip())
+
+            # Localização
+            location_parts = self._prepare_location_text(institution.location)
+            if location_parts:
+                parts.extend(location_parts)
+
+        except Exception:
+            # Fallback
+            return str(institution) if institution else None
+
+        return " - ".join(parts) if parts else None
+
+    def _prepare_location_text(self, location):
+        """
+        Prepara texto de localização estruturada
+
+        Returns:
+            list: Lista de partes da localização
+        """
+        if not location:
+            return []
+
+        location_parts = []
+
+        try:
+            # Cidade
+            if location.city and location.city.name:
+                location_parts.append(location.city.name)
+
+            # Estado (preferir sigla se disponível)
+            if location.state:
+                state_text = location.state.acronym or location.state.name
+                if state_text:
+                    location_parts.append(state_text)
+
+            # País
+            if location.country and location.country.name:
+                location_parts.append(location.country.name)
+
+        except Exception:
+            # Fallback para property formatted_location se disponível
+            if hasattr(location, 'formatted_location'):
+                return [location.formatted_location]
+            elif hasattr(location, '__str__'):
+                return [str(location)]
+
+        return location_parts
+
+
+    # MODS: typeOfResource
+    def prepare_mods_type_of_resource(self, obj):
+        """
+        Prepara elemento typeOfResource do MODS
+        """
+
+        # Valor principal
+        resource_type = MODS_TYPE_OF_RESOURCE_MAPPING.get(obj.article_type, "text/digital") if obj.article_type else "text/digital"
+
+        # Estrutura base
+        type_data = {
+            "text": resource_type
+        }
+
+        # 1. ID
+        pid_for_id = obj.pid_v3 or obj.pid_v2
+        if pid_for_id:
+            type_data["ID"] = pid_for_id
+
+        # 2. lang
+        try:
+            primary_language = obj.languages.first() if obj.languages.exists() else None
+            if primary_language and hasattr(primary_language, 'code2') and primary_language.code2:
+                type_data["lang"] = primary_language.code2
+        except Exception:
+            pass
+
+        # 3. displayLabel
+        if obj.article_type:
+            display_label = obj.article_type.replace("-", " ").title()
+            type_data["displayLabel"] = display_label
+
+        return type_data
+
+    # MODS: originInfo
+    def prepare_mods_origin_info(self, obj):
+        """
+        Prepara elemento originInfo do MODS com origem de dados correta
+        """
+        origin_info = []
+        origin_data = {}
+
+        try:
+            # 1. dateIssued seguro
+            if (hasattr(obj, 'pub_date_year') and obj.pub_date_year and
+                str(obj.pub_date_year).strip()):
+
+                date_parts = [str(obj.pub_date_year)]
+
+                if (hasattr(obj, 'pub_date_month') and obj.pub_date_month and
+                    str(obj.pub_date_month).strip()):
+                    date_parts.append(str(obj.pub_date_month).zfill(2))
+
+                    if (hasattr(obj, 'pub_date_day') and obj.pub_date_day and
+                        str(obj.pub_date_day).strip()):
+                        date_parts.append(str(obj.pub_date_day).zfill(2))
+
+                origin_data["dateIssued"] = {
+                    "text": "-".join(date_parts),
+                    "encoding": "w3cdtf",
+                    "keyDate": "yes"
+                }
+
+        except (AttributeError, TypeError, ValueError):
+            pass
+
+        # 2. publisher via publisher_history (relacionamento correto)
+        publishers = []
+        try:
+            if (obj.journal and
+                hasattr(obj.journal, 'publisher_history') and
+                obj.journal.publisher_history.exists()):
+
+                for pub_history in obj.journal.publisher_history.select_related(
+                    'institution__institution__institution_identification',
+                    'organization'
+                ):
+                    try:
+                        pub_name = None
+
+                        # Tentar nova estrutura Organization primeiro
+                        if (pub_history.organization and
+                            pub_history.organization.name):
+                            pub_name = pub_history.organization.name.strip()
+
+                            if (pub_history.organization.acronym and
+                                pub_history.organization.acronym.strip()):
+                                pub_name += f" ({pub_history.organization.acronym.strip()})"
+
+                        # Fallback para estrutura Institution legada
+                        elif (pub_history.institution and
+                              pub_history.institution.institution and
+                              pub_history.institution.institution.institution_identification and
+                              pub_history.institution.institution.institution_identification.name):
+
+                            inst_id = pub_history.institution.institution.institution_identification
+                            pub_name = inst_id.name.strip()
+
+                            if inst_id.acronym and inst_id.acronym.strip():
+                                pub_name += f" ({inst_id.acronym.strip()})"
+
+                        if pub_name:
+                            publishers.append(pub_name)
+
+                    except (AttributeError, TypeError):
+                        continue
+
+            if publishers:
+                origin_data["publisher"] = publishers
+
+        except (AttributeError, TypeError):
+            pass
+
+        # 3. place via múltiplas fontes com prioridades
+        places = []
+        try:
+            # Fonte 1: contact_location do Journal (prioridade alta)
+            if (obj.journal and
+                hasattr(obj.journal, 'contact_location') and
+                obj.journal.contact_location):
+
+                location = obj.journal.contact_location
+                place_terms = self._extract_place_terms_from_location(location)
+
+                if place_terms:
+                    places.append({"placeTerm": place_terms})
+
+            # Fonte 2: Location via Publisher Organizations (se não há contact_location)
+            if not places and obj.journal and hasattr(obj.journal, 'publisher_history'):
+                for pub_history in obj.journal.publisher_history.select_related(
+                    'organization__location__city',
+                    'organization__location__state',
+                    'organization__location__country'
+                ):
+                    try:
+                        if (pub_history.organization and
+                            pub_history.organization.location):
+
+                            place_terms = self._extract_place_terms_from_location(
+                                pub_history.organization.location
+                            )
+
+                            if place_terms:
+                                places.append({"placeTerm": place_terms})
+                                break  # Usar apenas o primeiro válido
+
+                    except (AttributeError, TypeError):
+                        continue
+
+            # Fonte 3: Collections (fallback final)
+            if not places:
+                try:
+                    scielo_journals = obj.journal.scielojournal_set.select_related(
+                        'collection'
+                    ).filter(collection__is_active=True)
+
+                    for scielo_journal in scielo_journals:
+                        collection = scielo_journal.collection
+                        if (collection and
+                            hasattr(collection, 'main_name') and
+                            collection.main_name):
+                            # Usar nome da coleção como place genérico
+                            place_terms = [{
+                                "type": "text",
+                                "text": collection.main_name.strip()
+                            }]
+                            places.append({"placeTerm": place_terms})
+                            break
+
+                except (AttributeError, TypeError):
+                    pass
+
+            if places:
+                origin_data["place"] = places
+
+        except (AttributeError, TypeError):
+            pass
+
+        # 4. frequency do Journal
+        try:
+            if (obj.journal and
+                hasattr(obj.journal, 'frequency') and
+                obj.journal.frequency and
+                obj.journal.frequency.strip()):
+                origin_data["frequency"] = obj.journal.frequency.strip()
+        except (AttributeError, TypeError):
+            pass
+
+        # 5. Atributos MODS padrão
+        origin_data["eventType"] = "publication"
+
+        # Idioma principal
+        try:
+            if (hasattr(obj, 'languages') and obj.languages.exists()):
+                primary_lang = obj.languages.first()
+                if (primary_lang and
+                    hasattr(primary_lang, 'code2') and
+                    primary_lang.code2 and
+                    primary_lang.code2.strip()):
+                    origin_data["lang"] = primary_lang.code2.strip()
+        except (AttributeError, TypeError):
+            pass
+
+        if origin_data:
+            origin_info.append(origin_data)
+
+        return origin_info
+
+    def _extract_place_terms_from_location(self, location):
+        """
+        Método auxiliar para extrair placeTerm de um objeto Location
+        """
+        place_terms = []
+
+        try:
+            # Cidade
+            if (location.city and
+                hasattr(location.city, 'name') and
+                location.city.name and
+                location.city.name.strip()):
+                place_terms.append({
+                    "type": "text",
+                    "text": location.city.name.strip()
+                })
+
+            # Estado
+            if location.state:
+                if (hasattr(location.state, 'name') and
+                    location.state.name and
+                    location.state.name.strip()):
+                    place_terms.append({
+                        "type": "text",
+                        "text": location.state.name.strip()
+                    })
+
+                if (hasattr(location.state, 'acronym') and
+                    location.state.acronym and
+                    location.state.acronym.strip()):
+                    place_terms.append({
+                        "type": "code",
+                        "authority": "iso3166-2",
+                        "text": location.state.acronym.strip()
+                    })
+
+            # País
+            if location.country:
+                if (hasattr(location.country, 'name') and
+                    location.country.name and
+                    location.country.name.strip()):
+                    place_terms.append({
+                        "type": "text",
+                        "text": location.country.name.strip()
+                    })
+
+                if (hasattr(location.country, 'acronym') and
+                    location.country.acronym and
+                    location.country.acronym.strip()):
+                    place_terms.append({
+                        "type": "code",
+                        "authority": "iso3166-1-alpha-2",
+                        "text": location.country.acronym.strip()
+                    })
+
+                if (hasattr(location.country, 'acron3') and
+                    location.country.acron3 and
+                    location.country.acron3.strip()):
+                    place_terms.append({
+                        "type": "code",
+                        "authority": "iso3166-1-alpha-3",
+                        "text": location.country.acron3.strip()
+                    })
+
+        except (AttributeError, TypeError):
+            pass
+
+        return place_terms
+
+    # MODS: language
+    def prepare_mods_language(self, obj):
+        """
+        Versão otimizada com mapeamento ISO correto
+        """
+        languages = []
+
+        try:
+            if obj.languages.exists():
+                for i, lang in enumerate(obj.languages.all()):
+                    print(i, lang.code2)
+                    if not (lang and lang.code3):
+                        continue
+
+                    code2 = lang.code2.strip().lower()
+                    language_data = {"languageTerm": []}
+
+                    # Código ISO 639-2b (preferido pelo MODS)
+                    if code2 in ISO_639_1_TO_2B:
+                        language_data["languageTerm"].append({
+                            "type": "code",
+                            "authority": "iso639-2b",
+                            "text": ISO_639_1_TO_2B[code2]
+                        })
+
+                    # Nome textual
+                    if lang.name:
+                        language_data["languageTerm"].append({
+                            "type": "text",
+                            "text": lang.name.strip()
+                        })
+
+                    # Primeiro idioma é primary
+                    if i == 0:
+                        language_data["usage"] = "primary"
+
+                    # Script latino para idiomas aplicáveis
+                    if code2 in LATIN_SCRIPT_LANGUAGES:
+                        language_data["scriptTerm"] = [{
+                            "type": "code",
+                            "authority": "iso15924",
+                            "text": "Latn"
+                        }]
+
+                    if language_data["languageTerm"]:
+                        languages.append(language_data)
+
+        except (AttributeError, TypeError):
+            pass
+
+        return languages
+
+    # MODS: identifier
+    def prepare_mods_identifier(self, obj):
+        """
+        Prepara elemento identifier do MODS com taxonomia completa de identificadores SciELO
+        """
+        identifiers = []
+
+        # 1. DOIs - Padrão internacional (prioridade máxima)
+        if obj.doi.exists():
+            for doi in obj.doi.all():
+                if doi.value:
+                    identifier_data = {
+                        "type": "doi",
+                        "text": doi.value.strip()
+                    }
+
+                    if not self._is_valid_doi(doi.value):
+                        identifier_data["invalid"] = "yes"
+
+                    identifiers.append(identifier_data)
+
+        # 2. PIDs SciELO - Identificadores primários da plataforma
+        if obj.pid_v3:
+            identifiers.append({
+                "type": "local",
+                "displayLabel": "SciELO PID v3",
+                "text": obj.pid_v3
+            })
+
+        if obj.pid_v2:
+            identifiers.append({
+                "type": "local",
+                "displayLabel": "SciELO PID v2",
+                "text": obj.pid_v2
+            })
+
+        # 3. Package Identifier - Identificador técnico SPS
+        if obj.sps_pkg_name:
+            identifiers.append({
+                "type": "local",
+                "displayLabel": "SPS Package Name",
+                "text": obj.sps_pkg_name
+            })
+
+        # 4. ISSNs do Journal (via relacionamento otimizado)
+        if obj.journal and obj.journal.official:
+            official = obj.journal.official
+
+            if official.issn_print:
+                identifiers.append({
+                    "type": "issn",
+                    "displayLabel": "Print ISSN",
+                    "text": official.issn_print
+                })
+
+            if official.issn_electronic:
+                identifiers.append({
+                    "type": "issn",
+                    "displayLabel": "Electronic ISSN",
+                    "text": official.issn_electronic
+                })
+
+            if official.issnl:
+                identifiers.append({
+                    "type": "issnl",
+                    "text": official.issnl
+                })
+
+        # 5. Identificadores Collection-specific
+        collections = self._safe_get_collections(obj)
+        for collection in collections:
+            # Collection identifiers
+            if collection.acron3:
+                identifiers.append({
+                    "type": "local",
+                    "displayLabel": f"Collection Acronym",
+                    "text": collection.acron3
+                })
+
+            if collection.code:
+                identifiers.append({
+                    "type": "local",
+                    "displayLabel": f"Collection Code",
+                    "text": collection.code
+                })
+
+        # 6. SciELO Journal identifiers por collection
+        if obj.journal:
+            for scielo_journal in obj.journal.scielojournal_set.select_related('collection').filter(
+                collection__is_active=True
+            ):
+                collection_label = scielo_journal.collection.acron3
+
+                if scielo_journal.journal_acron:
+                    identifiers.append({
+                        "type": "local",
+                        "displayLabel": f"Journal Acronym ({collection_label})",
+                        "text": scielo_journal.journal_acron
+                    })
+
+                if scielo_journal.issn_scielo and scielo_journal.issn_scielo != obj.journal.official.issn_print:
+                    identifiers.append({
+                        "type": "issn",
+                        "displayLabel": f"SciELO ISSN ({collection_label})",
+                        "text": scielo_journal.issn_scielo
+                    })
+
+        # 7. Issue identifiers
+        if obj.issue:
+            if obj.issue.issue_pid_suffix:
+                identifiers.append({
+                    "type": "local",
+                    "displayLabel": "Issue PID Suffix",
+                    "text": obj.issue.issue_pid_suffix
+                })
+
+        # 8. URLs estruturados (último para não sobrecarregar)
+        for collection in collections:
+            if collection.domain and obj.pid_v2:
+                # URL canônico principal
+                identifiers.append({
+                    "type": "uri",
+                    "displayLabel": f"Canonical URL ({collection.acron3})",
+                    "text": f"https://{collection.domain}/scielo.php?script=sci_arttext&pid={obj.pid_v2}"
+                })
+
+        return identifiers
+
+    def _is_valid_doi(self, value):
+        """
+        Valida formato DOI segundo padrões internacionais
+        Referência: https://www.doi.org/doi_handbook/2_Numbering.html
+        """
+        if not value:
+            return False
+
+        # Remove espaços e converte para minúsculo para validação
+        clean_value = value.strip().lower()
+
+        # Padrão básico: 10.xxxx/xxxxx (mínimo 4 dígitos no prefixo)
+        basic_pattern = r'^10\.\d{4,}/\S+$'
+
+        return bool(re.match(basic_pattern, clean_value))
+
+    # MODS: subject
+    def prepare_mods_subject(self, obj):
+        """
+        Prepara subject MODS com todas as correlações confirmadas
+        """
+        subjects = []
+
+        # 1. Keywords do artigo (fonte primária)
+        if obj.keywords.exists():
+            for keyword in obj.keywords.all():
+                subject_data = {"topic": keyword.text}
+
+                if keyword.vocabulary:
+                    topic_data = {"text": keyword.text}
+                    if keyword.vocabulary.acronym:
+                        topic_data["authority"] = keyword.vocabulary.acronym.lower()
+                    elif keyword.vocabulary.name:
+                        topic_data["authority"] = keyword.vocabulary.name.lower().replace(" ", "-")
+                    subject_data = {"topic": topic_data}
+
+                if keyword.language and keyword.language.code2:
+                    lang_code = ISO_639_1_TO_2B.get(keyword.language.code2, keyword.language.code2)
+                    subject_data["lang"] = lang_code
+
+                subjects.append(subject_data)
+
+        # 2. Subject areas do Journal (CONFIRMADO)
+        if obj.journal and obj.journal.subject.exists():
+            for subject_area in obj.journal.subject.all():
+                if subject_area.value:
+                    subjects.append({
+                        "topic": {
+                            "authority": "scielo-subject-area",
+                            "text": subject_area.value
+                        }
+                    })
+
+        # 3. Subject descriptors do Journal (CONFIRMADO)
+        if obj.journal and obj.journal.subject_descriptor.exists():
+            for descriptor in obj.journal.subject_descriptor.all():
+                if descriptor.value:
+                    subjects.append({
+                        "topic": {
+                            "authority": "scielo-descriptor",
+                            "text": descriptor.value
+                        }
+                    })
+
+        # 4. Web of Knowledge Subject Categories (CONFIRMADO)
+        if obj.journal and obj.journal.wos_area.exists():
+            for wos_category in obj.journal.wos_area.all():
+                if wos_category.value:
+                    subjects.append({
+                        "topic": {
+                            "authority": "wos",
+                            "authorityURI": "http://apps.webofknowledge.com/",
+                            "text": wos_category.value
+                        }
+                    })
+
+        # 5. Áreas temáticas do Journal (CONFIRMADO)
+        if obj.journal and hasattr(obj.journal, 'thematic_area') and obj.journal.thematic_area.exists():
+            for thematic_area_journal in obj.journal.thematic_area.all():
+                thematic_area = thematic_area_journal.thematic_area
+
+                # Usar hierarquia: level2 > level1 > level0
+                if thematic_area.level2:
+                    topic_text = thematic_area.level2
+                elif thematic_area.level1:
+                    topic_text = thematic_area.level1
+                elif thematic_area.level0:
+                    topic_text = thematic_area.level0
+                else:
+                    continue
+
+                subjects.append({
+                    "topic": {
+                        "authority": "capes-thematic-area",
+                        "text": topic_text
+                    }
+                })
+
+        # 6. TOC Sections (apenas se semanticamente relevantes)
+        if obj.toc_sections.exists():
+            for section in obj.toc_sections.all():
+                if section.plain_text and self._is_subject_relevant_section(section.plain_text):
+                    subject_data = {
+                        "topic": {
+                            "authority": "scielo-toc",
+                            "text": section.plain_text
+                        }
+                    }
+
+                    if section.language and section.language.code2:
+                        lang_code = ISO_639_1_TO_2B.get(section.language.code2, section.language.code2)
+                        subject_data["lang"] = lang_code
+
+                    subjects.append(subject_data)
+
+        return subjects
+
+    def _is_subject_relevant_section(self, section_text):
+        """
+        Filtra seções do TOC que representam verdadeiros assuntos temáticos
+        """
+        if not section_text:
+            return False
+
+        section_lower = section_text.lower().strip()
+
+        # Excluir se for exatamente uma seção estrutural
+        if section_lower in STRUCTURAL_SECTIONS:
+            return False
+
+        # Incluir se parece ser um assunto temático
+        # (comprimento razoável, não só números/símbolos)
+        if len(section_text.strip()) >= 3 and not section_text.strip().isdigit():
+            return True
+
+        return False
+
+    # MODS: abstract
+    def prepare_mods_abstract(self, obj):
+        """
+        Prepara elemento abstract do MODS
+        """
+        abstracts = []
+        if obj.abstracts.exists():
+            for abstract in obj.abstracts.all():
+                abstract_data = {"text": abstract.plain_text}
+                if abstract.language:
+                    abstract_data["lang"] = abstract.language.code2
+
+                # DISPLAYLABEL - Rótulo multilíngue
+                if abstract.language:
+                    if abstract.language.code2 in DISPLAY_LABEL:
+                        abstract_data["displayLabel"] = DISPLAY_LABEL[abstract.language.code2]
+
+                abstracts.append(abstract_data)
+
+        return abstracts
+
+    # MODS: accessCondition
+    def prepare_mods_access_condition(self, obj):
+        """
+        Prepara elemento accessCondition do MODS com fontes completamente documentadas.
+
+        FONTES DE DADOS CONFIRMADAS:
+        1. Journal.journal_use_license.license_type (JournalLicense)
+        2. Journal.use_license.license_type (core.models.License)
+        3. Journal.open_access (choices.OA_STATUS)
+        4. LicenseStatement.url + license_p (se disponível via relacionamentos)
+        5. Collections (políticas inferidas por coleção)
+        """
+        access_conditions = []
+
+        # 1. LICENÇA ESPECÍFICA DO JOURNAL - FONTE: JournalLicense.license_type
+        if (obj.journal and
+            obj.journal.journal_use_license and
+            obj.journal.journal_use_license.license_type):
+
+            license_type = obj.journal.journal_use_license.license_type
+            condition_data = {
+                "type": "use and reproduction",
+                "text": license_type,
+                "authority": "scielo-journal-license"
+            }
+
+            # Detectar Creative Commons
+            if self._is_creative_commons_license(license_type):
+                condition_data.update({
+                    "authority": "creativecommons",
+                    "authorityURI": "https://creativecommons.org/",
+                    "displayLabel": "Creative Commons License"
+                })
+
+            access_conditions.append(condition_data)
+
+        # 2. LICENÇA GERAL - FONTE: core.models.License.license_type
+        elif (obj.journal and
+              obj.journal.use_license and
+              obj.journal.use_license.license_type):
+
+            license_type = obj.journal.use_license.license_type
+            condition_data = {
+                "type": "use and reproduction",
+                "text": license_type,
+                "authority": "scielo-core-license"
+            }
+
+            if self._is_creative_commons_license(license_type):
+                condition_data.update({
+                    "authority": "creativecommons",
+                    "authorityURI": "https://creativecommons.org/"
+                })
+
+            access_conditions.append(condition_data)
+
+        # 3. LICENSE STATEMENTS - FONTE: LicenseStatement (se implementado relacionamento)
+        license_statements = self._get_license_statements(obj)
+        for statement in license_statements:
+            condition_data = {
+                "type": "use and reproduction",
+                "text": statement.get("license_p", statement.get("url", ""))
+            }
+
+            # URL da licença
+            if statement.get("url"):
+                condition_data["xlink:href"] = statement["url"]
+
+                # Parse da URL para detectar Creative Commons
+                parsed = self._parse_license_url(statement["url"])
+                if parsed.get("license_type"):
+                    condition_data.update({
+                        "authority": "creativecommons",
+                        "authorityURI": "https://creativecommons.org/",
+                        "displayLabel": f"Creative Commons {parsed['license_type'].upper()}"
+                    })
+
+                    if parsed.get("license_version"):
+                        condition_data["displayLabel"] += f" {parsed['license_version']}"
+
+            # Idioma da declaração
+            if statement.get("language"):
+                condition_data["lang"] = statement["language"]
+
+            access_conditions.append(condition_data)
+
+        # 4. RESTRIÇÕES DE ACESSO - FONTE: Journal.open_access (choices.OA_STATUS)
+        if obj.journal and obj.journal.open_access:
+            restriction = self._map_oa_status_to_restriction(obj.journal.open_access)
+            if restriction:
+                access_conditions.append({
+                    "type": "restriction on access",
+                    "text": restriction,
+                    "authority": "scielo-oa-model",
+                    "displayLabel": f"Open Access Model: {obj.journal.open_access.title()}"
+                })
+
+        # 5. POLÍTICAS DE COLEÇÃO - FONTE: Collections relacionadas
+        collections = self._safe_get_collections(obj)
+        for collection in collections:
+            policy = self._get_collection_policy(collection)
+            if policy:
+                access_conditions.append({
+                    "type": "restriction on access",
+                    "text": policy,
+                    "authority": "scielo-collection-policy",
+                    "displayLabel": f"Collection Policy ({collection.acron3})"
+                })
+
+        return access_conditions
+
+    def _get_license_statements(self, obj):
+        """
+        Obtém LicenseStatement relacionados (se implementado).
+
+        FONTE: core.models.LicenseStatement via relacionamentos
+        Nota: Relacionamento precisa ser implementado nos modelos Article/Journal
+        """
+        statements = []
+
+        # Verificar se existe relacionamento (seria necessário adicionar aos modelos)
+        if hasattr(obj, 'license_statements') and obj.license_statements.exists():
+            for statement in obj.license_statements.all():
+                statement_data = {}
+
+                if statement.url:
+                    statement_data["url"] = statement.url
+                if statement.license_p:
+                    statement_data["license_p"] = statement.license_p
+                if statement.language:
+                    statement_data["language"] = statement.language.code2
+
+                if statement_data:
+                    statements.append(statement_data)
+
+        return statements
+
+    def _parse_license_url(self, url):
+        """
+        Parse de URL de licença usando método do LicenseStatement.
+
+        FONTE: LicenseStatement.parse_url() (método estático existente)
+        """
+        try:
+            return LicenseStatement.parse_url(url)
+        except Exception:
+            return {}
+
+    def _map_oa_status_to_restriction(self, oa_status):
+        """
+        Mapeia OA_STATUS para restrições MODS.
+
+        FONTE: journal/choices.py - OA_STATUS
+        Valores confirmados: ["", "diamond", "gold", "hybrid", "bronze", "green", "closed"]
+        """
+
+        return MAPPING_OAI_STATUS.get(oa_status)
+
+    def _is_creative_commons_license(self, license_text):
+        """Detecta Creative Commons no texto da licença."""
+        if not license_text:
+            return False
+
+        license_lower = license_text.lower()
+        cc_indicators = [
+            'creative commons', 'cc ', 'cc-', 'attribution',
+            'by-', 'cc by', 'creativecommons', 'ccby'
+        ]
+
+        return any(indicator in license_lower for indicator in cc_indicators)
+
+    def _get_collection_policy(self, collection):
+        """
+        Política de acesso por coleção SciELO.
+
+        FONTE: Collection model + conhecimento das políticas SciELO
+        """
+        if not (hasattr(collection, 'acron3') and collection.acron3):
+            return None
+
+        return POLICIES.get(collection.acron3.lower())
+
+    # MODS: relatedItem
+    def prepare_mods_related_item(self, obj):
+        """
+        Prepara elemento relatedItem do MODS baseado APENAS em relacionamentos CONFIRMADOS
+
+        FONTES CONFIRMADAS nos modelos fornecidos:
+        1. HOST: obj.issue (ForeignKey), obj.journal (ForeignKey) - models.py issue/journal
+        2. OTHER FORMAT: obj.format.all() (ArticleFormat) - models.py article
+        3. OTHER VERSION: obj.doi.all() (DOI ManyToMany) - models.py doi
+        4. PRECEDING/SUCCEEDING: obj.journal.official.old_title/new_title - models.py journal
+        5. REFERENCES: collections property e URLs SciELO padrão - models.py article
+        """
+        related_items = []
+
+        # 1. HOST: Periódico e Fascículo (CONFIRMADO em Issue e Journal models)
+        if obj.issue and obj.journal:
+            host_item = {
+                "type": "host",
+                "displayLabel": "Published in"
+            }
+
+            # Título do periódico (CONFIRMADO: Journal.title)
+            host_item["titleInfo"] = {"title": obj.journal.title}
+
+            # ISSNs via obj.journal.official (CONFIRMADO: OfficialJournal)
+            if hasattr(obj.journal, 'official') and obj.journal.official:
+                identifiers = []
+                if obj.journal.official.issn_print:
+                    identifiers.append({
+                        "type": "issn",
+                        "displayLabel": "Print ISSN",
+                        "text": obj.journal.official.issn_print
+                    })
+                if obj.journal.official.issn_electronic:
+                    identifiers.append({
+                        "type": "issn",
+                        "displayLabel": "Electronic ISSN",
+                        "text": obj.journal.official.issn_electronic
+                    })
+                if obj.journal.official.issnl:
+                    identifiers.append({
+                        "type": "issnl",
+                        "text": obj.journal.official.issnl
+                    })
+                if identifiers:
+                    host_item["identifier"] = identifiers
+
+            # Detalhes do fascículo (CONFIRMADO: Issue.volume, Issue.number, Issue.supplement)
+            part_data = {}
+            details = []
+
+            if obj.issue.volume:
+                details.append({"type": "volume", "number": obj.issue.volume})
+            if obj.issue.number:
+                details.append({"type": "issue", "number": obj.issue.number})
+            if obj.issue.supplement:
+                details.append({"type": "supplement", "number": obj.issue.supplement})
+
+            if details:
+                part_data["detail"] = details
+
+            # Data de publicação (CONFIRMADO: Issue.year, Article.pub_date_year)
+            if obj.issue.year:
+                part_data["date"] = str(obj.issue.year)
+            elif obj.pub_date_year:
+                part_data["date"] = str(obj.pub_date_year)
+
+            if part_data:
+                host_item["part"] = part_data
+
+            related_items.append(host_item)
+
+        # 2. OTHER FORMAT: Formatos disponíveis (CONFIRMADO: ArticleFormat model)
+        try:
+            if hasattr(obj, 'format') and obj.format.exists():
+                for article_format in obj.format.all():
+                    if article_format.format_name and article_format.valid:
+                        format_item = {
+                            "type": "otherFormat",
+                            "displayLabel": f"{article_format.format_name.upper()} format"
+                        }
+
+                        # URL do arquivo se disponível (CONFIRMADO: ArticleFormat.file)
+                        if article_format.file and hasattr(article_format.file, 'url'):
+                            format_item["xlink:href"] = article_format.file.url
+
+                        # Metadados específicos por formato (CONFIRMADO em tasks.py)
+                        format_mapping = {
+                            "crossref": "CrossRef XML",
+                            "pubmed": "PubMed XML",
+                            "pmc": "PMC XML"
+                        }
+                        if article_format.format_name in format_mapping:
+                            format_item["genre"] = format_mapping[article_format.format_name]
+
+                        related_items.append(format_item)
+
+        except Exception:
+            # Falha silenciosa se ArticleFormat não estiver disponível
+            pass
+
+        # 3. OTHER VERSION: Versões via DOI (CONFIRMADO: DOI model)
+        if obj.doi.exists():
+            for doi in obj.doi.all():
+                if doi.value:
+                    # DOI como versão canônica (CONFIRMADO: DOI.value)
+                    doi_item = {
+                        "type": "otherVersion",
+                        "displayLabel": "Canonical DOI version",
+                        "xlink:href": f"https://doi.org/{doi.value.strip()}"
+                    }
+
+                    # Idioma se disponível (CONFIRMADO: DOI.language)
+                    if doi.language and hasattr(doi.language, 'code2') and doi.language.code2:
+                        doi_item["lang"] = doi.language.code2
+
+                    related_items.append(doi_item)
+
+        # 4. REFERENCES: URLs das coleções (CONFIRMADO via collections property)
+        collections = self._safe_get_collections(obj)
+        for collection in collections:
+            if hasattr(collection, 'domain') and collection.domain and obj.pid_v2:
+                # URL HTML principal (CONFIRMADO: padrão URL SciELO)
+                html_item = {
+                    "type": "otherVersion",
+                    "displayLabel": f"SciELO {collection.acron3 if hasattr(collection, 'acron3') else ''} HTML",
+                    "xlink:href": f"https://{collection.domain}/scielo.php?script=sci_arttext&pid={obj.pid_v2}"
+                }
+                related_items.append(html_item)
+
+                # URL PDF (CONFIRMADO: padrão URL SciELO)
+                pdf_item = {
+                    "type": "otherFormat",
+                    "displayLabel": f"SciELO {collection.acron3 if hasattr(collection, 'acron3') else ''} PDF",
+                    "xlink:href": f"https://{collection.domain}/scielo.php?script=sci_pdf&pid={obj.pid_v2}"
+                }
+                related_items.append(pdf_item)
+
+        # 5. PRECEDING/SUCCEEDING: Títulos anterior/posterior (CONFIRMADO: OfficialJournal)
+        if obj.journal and obj.journal.official:
+            try:
+                # Título anterior (CONFIRMADO: OfficialJournal.old_title)
+                if obj.journal.official.old_title.exists():
+                    for old_title in obj.journal.official.old_title.all():
+                        if old_title.title:
+                            preceding_item = {
+                                "type": "preceding",
+                                "displayLabel": "Previous journal title",
+                                "titleInfo": {"title": old_title.title}
+                            }
+                            related_items.append(preceding_item)
+
+                # Novo título (CONFIRMADO: OfficialJournal.new_title)
+                if obj.journal.official.new_title and obj.journal.official.new_title.title:
+                    succeeding_item = {
+                        "type": "succeeding",
+                        "displayLabel": "New journal title",
+                        "titleInfo": {"title": obj.journal.official.new_title.title}
+                    }
+                    related_items.append(succeeding_item)
+
+            except Exception:
+                pass
+
+        return related_items
+
+    # MODS: part
+    def prepare_mods_part(self, obj):
+        """
+        Prepara elemento part do MODS seguindo exemplos reais
+        """
+        parts = []
+        part_data = {}
+
+        # 1. EXTENT tem prioridade sobre elocation-id
+        if obj.first_page and obj.last_page:
+            part_data["extent"] = {
+                "unit": "page",
+                "start": str(obj.first_page).strip(),  # Remover espaços
+                "end": str(obj.last_page).strip()  # Remover espaços
+            }
+        elif obj.first_page:
+            part_data["extent"] = {
+                "unit": "page",
+                "start": str(obj.first_page).strip()  # Remover espaços
+            }
+        # 2. DETAIL apenas se não há extent (páginas)
+        elif obj.elocation_id:
+            elocation = str(obj.elocation_id).strip()
+            if elocation:  # Verificar se não está vazio após strip
+                part_data["detail"] = {
+                    "type": "elocation-id",
+                    "number": elocation
+                }
+
+        if part_data:
+            parts.append(part_data)
+
+        return parts
+
+    # MODS: location
+    def prepare_mods_location(self, obj):
+        """
+        Prepara elemento location do MODS para artigos científicos
+
+        TODAS AS FONTES CONFIRMADAS nos modelos:
+        - obj.updated (CommonControlField) - DateTimeField
+        - obj.pid_v2 (Article) - campo do modelo
+        - obj.languages (Article) - ManyToMany com Language
+        - obj.journal (Article) - ForeignKey para Journal
+        - obj.journal.publisher_history (Journal) - ParentalKey reverse
+        - collection.domain (Collection.domain) - URLField
+        - collection.acron3 (Collection.acron3) - CharField
+        - organization.name (Organization) - via PublisherHistory
+        - organization.location (Organization) - ForeignKey para Location
+        """
+        locations = []
+
+        try:
+            # 1. URLs ELETRÔNICAS
+            url_locations = self._prepare_electronic_urls(obj)
+            locations.extend(url_locations)
+
+            # 2. LOCALIZAÇÃO FÍSICA DA EDITORA
+            physical_location = self._prepare_publisher_physical_location(obj)
+            if physical_location:
+                locations.append(physical_location)
+
+        except Exception:
+            pass
+
+        return locations
+
+    def _prepare_electronic_urls(self, obj):
+        """
+        Prepara URLs eletrônicas - TODAS AS FONTES CONFIRMADAS
+        """
+        url_locations = []
+        collections = self._safe_get_collections(obj)
+
+        # obj.updated confirmado em CommonControlField
+        date_last_accessed = None
+        if obj.updated:
+            date_last_accessed = obj.updated.strftime("%Y-%m-%d")
+
+        for collection in collections:
+            # collection.domain e collection.acron3 confirmados em Collection model
+            if not (hasattr(collection, 'domain') and collection.domain and obj.pid_v2):
+                continue
+
+            domain = collection.domain
+            collection_label = collection.acron3 if hasattr(collection, 'acron3') else ''
+
+            # URL HTML PRINCIPAL
+            html_url = {
+                "url": {
+                    "usage": "primary display",
+                    "access": "object in context",
+                    "displayLabel": f"HTML fulltext - {collection_label}".strip() if collection_label else "HTML fulltext",
+                    "text": f"https://{domain}/scielo.php?script=sci_arttext&pid={obj.pid_v2}"
+                }
+            }
+
+            if date_last_accessed:
+                html_url["url"]["dateLastAccessed"] = date_last_accessed
+
+            url_locations.append(html_url)
+
+            # URL PDF
+            pdf_url = {
+                "url": {
+                    "access": "raw object",
+                    "displayLabel": f"PDF fulltext - {collection_label}".strip() if collection_label else "PDF fulltext",
+                    "note": "Adobe Acrobat Reader required",
+                    "text": f"https://{domain}/scielo.php?script=sci_pdf&pid={obj.pid_v2}"
+                }
+            }
+
+            if date_last_accessed:
+                pdf_url["url"]["dateLastAccessed"] = date_last_accessed
+
+            url_locations.append(pdf_url)
+
+            # URLs POR IDIOMA
+            # obj.languages confirmado em Article model
+            if obj.languages.exists() and obj.languages.count() > 1:
+                for lang in obj.languages.all():
+                    # lang.code2 e lang.name confirmados em Language model
+                    if lang.code2:
+                        lang_display = lang.name or lang.code2.upper()
+
+                        url_locations.append({
+                            "url": {
+                                "access": "object in context",
+                                "displayLabel": f"HTML - {lang_display} version",
+                                "text": f"https://{domain}/scielo.php?script=sci_arttext&pid={obj.pid_v2}&tlng={lang.code2}"
+                            }
+                        })
+
+        return url_locations
+
+    def _prepare_publisher_physical_location(self, obj):
+        """
+        Prepara localização física da editora - TODAS AS FONTES CONFIRMADAS
+        """
+        if not obj.journal:
+            return None
+
+        try:
+            # journal.publisher_history confirmado em Journal model
+            if (hasattr(obj.journal, 'publisher_history') and
+                obj.journal.publisher_history.exists()):
+
+                pub_history = obj.journal.publisher_history.select_related(
+                    'organization__location__city',
+                    'organization__location__state',
+                    'organization__location__country'
+                ).first()
+
+                # pub_history.organization confirmado em PublisherHistory model
+                if not (pub_history and pub_history.organization):
+                    return None
+
+                org = pub_history.organization
+                institution_parts = []
+
+                # org.name e org.acronym existem em Organization
+                if org.name and org.name.strip():
+                    institution_parts.append(org.name.strip())
+
+                    if org.acronym and org.acronym.strip():
+                        institution_parts.append(f"({org.acronym.strip()})")
+
+                institution_text = " ".join(institution_parts)
+
+                # org.location confirmado via ForeignKey em Organization
+                if org.location:
+                    location_parts = []
+
+                    # location.city, location.state, location.country confirmados
+                    if org.location.city and hasattr(org.location.city, 'name') and org.location.city.name:
+                        location_parts.append(org.location.city.name.strip())
+
+                    if org.location.state and hasattr(org.location.state, 'name') and org.location.state.name:
+                        location_parts.append(org.location.state.name.strip())
+
+                    if org.location.country and hasattr(org.location.country, 'name') and org.location.country.name:
+                        location_parts.append(org.location.country.name.strip())
+
+                    if location_parts:
+                        institution_text += f" ({', '.join(location_parts)})"
+
+                if institution_text and institution_text.strip():
+                    return {
+                        "physicalLocation": {
+                            "authority": "scielo",
+                            "displayLabel": "Publisher",
+                            "text": institution_text
+                        }
+                    }
+
+        except (AttributeError, TypeError):
+            pass
+
+        return None
+
+    # ELEMENTOS PRIORIDADE MÉDIA-ALTA
+    def prepare_mods_physical_description(self, obj):
+        """
+        Prepara elemento physicalDescription do MODS para artigos científicos digitais
+
+        FONTES CONFIRMADAS:
+        - obj.format (ArticleFormat ParentalKey reverse) - formatos disponíveis
+        - obj.first_page, obj.last_page (Article) - extensão em páginas
+        - ArticleFormat.format_name - tipo de formato (crossref, pubmed, pmc)
+        - ArticleFormat.valid - se o formato é válido
+        """
+        physical_desc = []
+
+        phys_data = {}
+
+        # 1. FORM - Sempre eletrônico para artigos digitais
+        phys_data["form"] = {
+            "authority": "marcform",
+            "text": "electronic"
+        }
+
+        # 2. INTERNET MEDIA TYPES - Tipos de mídia disponíveis
+        media_types = set()
+
+        # HTML e PDF sempre disponíveis para artigos SciELO
+        media_types.add("text/html")
+        media_types.add("application/pdf")
+
+        # Verificar formatos específicos via ArticleFormat
+        try:
+            if hasattr(obj, 'format') and obj.format.exists():
+                for article_format in obj.format.filter(valid=True):
+                    if article_format.format_name:
+                        format_name = article_format.format_name.lower()
+
+                        if format_name in FORMAT_MEDIA_TYPES:
+                            media_types.add(FORMAT_MEDIA_TYPES[format_name])
+        except Exception:
+            pass
+
+        if media_types:
+            phys_data["internetMediaType"] = sorted(list(media_types))
+
+        # 3. EXTENT - Extensão do recurso baseado em páginas
+        extent_text = None
+
+        if obj.first_page and obj.last_page:
+            try:
+                # Tentar calcular número de páginas se forem números
+                first = int(obj.first_page)
+                last = int(obj.last_page)
+                num_pages = last - first + 1
+                extent_text = f"{num_pages} pages"
+            except (ValueError, TypeError):
+                # Se não forem números, usar formato textual
+                extent_text = f"pages {obj.first_page}-{obj.last_page}"
+        elif obj.first_page:
+            extent_text = f"page {obj.first_page}"
+
+        if not extent_text:
+            extent_text = "1 online resource"
+
+        phys_data["extent"] = extent_text
+
+        # 4. DIGITAL ORIGIN - Artigos científicos nascem digitais
+        phys_data["digitalOrigin"] = "born digital"
+
+        physical_desc.append(phys_data)
+
+        return physical_desc
+
+    def prepare_mods_record_info(self, obj):
+        """
+        Prepara elemento recordInfo do MODS
+
+        FONTES CONFIRMADAS:
+        - obj.created (CommonControlField) - DateTimeField
+        - obj.updated (CommonControlField) - DateTimeField
+        - obj.pid_v3, obj.pid_v2 (Article) - CharField
+        - obj.languages.first() (Article) - ManyToMany com Language
+        - obj.journal.scielojournal_set.first().collection (Journal) - relacionamento
+        """
+        record_info = []
+        record_data = {}
+
+        # 1. recordContentSource - nome da coleção
+        try:
+            if obj.journal:
+                scielo_journal = obj.journal.scielojournal_set.select_related('collection').first()
+                if scielo_journal and scielo_journal.collection:
+                    record_data["recordContentSource"] = scielo_journal.collection.main_name
+        except (AttributeError, TypeError):
+            pass
+
+        # Fallback se não conseguir obter da coleção
+        if "recordContentSource" not in record_data:
+            record_data["recordContentSource"] = "SciELO"
+
+        # 2. recordCreationDate - formato w3cdtf
+        if obj.created:
+            record_data["recordCreationDate"] = {
+                "encoding": "w3cdtf",
+                "text": obj.created.strftime("%Y-%m-%d")
+            }
+
+        # 3. recordChangeDate - formato w3cdtf
+        if obj.updated:
+            record_data["recordChangeDate"] = {
+                "encoding": "w3cdtf",
+                "text": obj.updated.strftime("%Y-%m-%d")
+            }
+
+        # 4. recordIdentifier - com source SciELO
+        pid = obj.pid_v3 or obj.pid_v2
+        if pid:
+            record_data["recordIdentifier"] = {
+                "source": "SciELO",
+                "text": pid
+            }
+
+        # 5. recordOrigin - padrão SciELO SPS
+        record_data["recordOrigin"] = "Generated from SciELO SPS XML"
+
+        # 6. descriptionStandard - SciELO SPS
+        record_data["descriptionStandard"] = "SciELO SPS"
+
+        # 7. languageOfCataloging - idioma principal do artigo
+        try:
+            if obj.languages.exists():
+                primary_language = obj.languages.first()
+                if primary_language and primary_language.code2:
+                    # Mapear para iso639-2b
+                    lang_code_2b = ISO_639_1_TO_2B.get(
+                        primary_language.code2.lower(),
+                        primary_language.code2
+                    )
+
+                    record_data["languageOfCataloging"] = {
+                        "languageTerm": {
+                            "type": "code",
+                            "authority": "iso639-2b",
+                            "text": lang_code_2b
+                        }
+                    }
+        except (AttributeError, TypeError):
+            pass
+
+        # Fallback para português se não conseguir obter idioma
+        if "languageOfCataloging" not in record_data:
+            record_data["languageOfCataloging"] = {
+                "languageTerm": {
+                    "type": "code",
+                    "authority": "iso639-2b",
+                    "text": "por"
+                }
+            }
+
+        if record_data:
+            record_info.append(record_data)
+
+        return record_info
+
+    def prepare_mods_extension(self, obj):
+        """
+        Prepara elemento extension do MODS para metadados técnicos SciELO
+
+        Contém apenas informações técnicas internas que não têm correspondência
+        nos elementos MODS padrão.
+
+        FONTES CONFIRMADAS:
+        - obj.sps_pkg_name (Article) - CharField
+        - obj.data_status (Article) - CharField com choices
+        - obj.valid (Article) - BooleanField
+        """
+        extensions = []
+
+        scielo_data = {}
+
+        # 1. SPS Package Name - identificador técnico do pacote
+        if obj.sps_pkg_name:
+            scielo_data["sps_pkg_name"] = obj.sps_pkg_name
+
+        # 2. Data Status - status de processamento/validação
+        if obj.data_status:
+            scielo_data["data_status"] = obj.data_status
+
+        # 3. Valid - flag de validação técnica
+        if obj.valid is not None:
+            scielo_data["valid"] = str(obj.valid).lower()
+
+        if scielo_data:
+            extensions.append({
+                "type": "scielo",
+                "scielo": scielo_data
+            })
+
+        return extensions
+
+    def prepare_mods_note(self, obj):
+        """
+        Prepara elemento note do MODS
+
+        Para artigos científicos SciELO, notes descritivas não são
+        atualmente necessárias, pois informações relevantes já estão
+        em elementos MODS padrão (abstract, typeOfResource, etc.)
+
+        Este método existe para extensão futura caso seja necessário
+        adicionar notas descritivas específicas.
+        """
+        notes = []
+
+        # Reservado para notas descritivas futuras
+        # Exemplos possíveis:
+        # - Notas sobre peer review process
+        # - Informações sobre correções publicadas
+        # - Notas sobre disponibilidade de dados suplementares
+
+        return notes
+
+    def prepare_mods_genre(self, obj):
+        """
+        Versão conservadora - apenas fontes confirmadas nos modelos
+        """
+        genres = []
+
+        if obj.article_type:
+            genre_text = GENRE_DISPLAY.get(
+                obj.article_type,
+                obj.article_type.replace("-", " ").title()
+            )
+
+            genres.append({
+                "authority": "scielo",
+                "text": genre_text
+            })
+
+        return genres
+
+    # ELEMENTOS PRIORIDADE MÉDIA
+    def prepare_mods_classification(self, obj):
+        """
+        MODS classification não é aplicável ao contexto SciELO.
+
+        SciELO não utiliza sistemas de classificação bibliográfica
+        tradicionais (LCC/DDC/NLM/UDC) pois:
+
+        1. É biblioteca digital sem organização física de acervo
+        2. Usa taxonomias específicas para ciência (WOS, CAPES, Subject Areas)
+        3. Não integra com sistemas ILS que exigem notações
+
+        MODS classification é projetado para bibliotecas institucionais
+        com acervos físicos ou repositórios que seguem padrões de
+        catalogação tradicional.
+        """
+        return []
+
+    def prepare_mods_table_of_contents(self, obj):
+        """
+        tableOfContents não é implementado para artigos científicos.
+
+        MODS tableOfContents é projetado para obras com estrutura
+        navegável (capítulos de livros, faixas de álbuns).
+
+        Artigos científicos têm estrutura metodológica padrão
+        (IMRaD: Introduction, Methods, Results, Discussion) que
+        não constitui um "table of contents" no sentido bibliográfico.
+
+        NOTA: obj.toc_sections representa categorias editoriais da
+        revista (ex: "Original Articles"), não sumário do artigo.
+        """
+        return []
+
+    def prepare_mods_target_audience(self, obj):
+        """
+        targetAudience não é aplicável ao contexto SciELO.
+
+        Artigos científicos são uniformemente direcionados à
+        comunidade acadêmica. Inferir audiência por article_type
+        é impreciso e não agrega valor aos metadados.
+        """
+        return []
