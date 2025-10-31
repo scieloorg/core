@@ -286,6 +286,7 @@ def task_export_articles_to_articlemeta(
     user = _get_user(self.request, username=username, user_id=user_id)
 
     return controller.bulk_export_articles_to_articlemeta(
+        user,
         collection_acron_list=collection_acron_list,
         journal_acron_list=journal_acron_list,
         from_pub_year=from_pub_year,
