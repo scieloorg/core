@@ -521,7 +521,7 @@ class Article(
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
         if is_active:
-            params["is_active"] = is_active
+            params["collection__is_active"] = is_active
         data = {}
         for item in self.legacy_article.filter(**params):
             data[item.collection.acron3] = item.legacy_keys
@@ -635,13 +635,14 @@ class Article(
         return urls
 
     def get_availability(self, collection_acron_list=None, collection=None, fmt=None, params=None):
-        params = {}
+        params = params or {}
         if fmt:
             params["fmt"] = fmt
         if collection:
             params["collection"] = collection
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
+        logging.info(f"get_availability {params}")
         return self.article_availability.filter(available=True, **params)
 
     def check_availability(self, user):
@@ -1859,7 +1860,13 @@ class ArticleAvailability(CommonControlField):
     fmt = models.CharField(_("Format"), max_length=4, null=True, blank=True)
     error = models.CharField(max_length=40, null=True, blank=True)
 
-    panels = [FieldPanel("url"), FieldPanel("available", read_only=True)]
+    panels = [
+        FieldPanel("url", read_only=True),
+        FieldPanel("collection", read_only=True),
+        FieldPanel("available", read_only=True),
+        FieldPanel("fmt", read_only=True),
+        FieldPanel("error", read_only=True),        
+    ]
 
     @classmethod
     def get(cls, article, url):
