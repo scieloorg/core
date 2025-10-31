@@ -317,7 +317,7 @@ def bulk_export_articles_to_articlemeta(
     # Iterate over queryset and export each article to ArticleMeta
     for article in queryset.iterator():
         if force_update:
-            article.check_availability()
+            article.check_availability(user)
         export_article_to_articlemeta(
             user,
             article=article,
