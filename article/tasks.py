@@ -283,19 +283,64 @@ def task_export_articles_to_articlemeta(
     user_id=None,
     username=None,
 ):
-    user = _get_user(self.request, username=username, user_id=user_id)
-
-    return controller.bulk_export_articles_to_articlemeta(
-        user,
-        collection_acron_list=collection_acron_list,
-        journal_acron_list=journal_acron_list,
-        from_pub_year=from_pub_year,
-        until_pub_year=until_pub_year,
-        from_date=from_date,
-        until_date=until_date,
-        days_to_go_back=days_to_go_back,
-        force_update=force_update,
-    )
+    """
+    Export articles to ArticleMeta Database with flexible filtering.
+    
+    Args:
+        collection_acron_list: List of collection acronyms
+        journal_acron_list: List of journal acronyms
+        year_of_publication: Specific year of publication
+        from_pub_year: Start publication year
+        until_pub_year: End publication year
+        from_date: Start date for filtering
+        until_date: End date for filtering
+        days_to_go_back: Number of days to go back
+        force_update: Force update existing records
+        user_id: User ID for authentication
+        username: Username for authentication
+    """
+    try:
+        user = _get_user(self.request, username=username, user_id=user_id)
+        
+        result = controller.bulk_export_articles_to_articlemeta(
+            user,
+            collection_acron_list=collection_acron_list,
+            journal_acron_list=journal_acron_list,
+            from_pub_year=from_pub_year,
+            until_pub_year=until_pub_year,
+            from_date=from_date,
+            until_date=until_date,
+            days_to_go_back=days_to_go_back,
+            force_update=force_update,
+        )
+        
+        return result
+        
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "task_export_articles_to_articlemeta",
+                "collection_acron_list": collection_acron_list,
+                "journal_acron_list": journal_acron_list,
+                "year_of_publication": year_of_publication,
+                "from_pub_year": from_pub_year,
+                "until_pub_year": until_pub_year,
+                "from_date": str(from_date) if from_date else None,
+                "until_date": str(until_date) if until_date else None,
+                "days_to_go_back": days_to_go_back,
+                "force_update": force_update,
+                "user_id": user_id,
+                "username": username,
+                "task_id": self.request.id if hasattr(self.request, 'id') else None,
+            },
+        )
+        
+        # Re-raise para que o Celery possa tratar a exceção adequadamente
+        raise
 
 
 @celery_app.task(bind=True)
