@@ -283,45 +283,81 @@ def bulk_export_articles_to_articlemeta(
     days_to_go_back=None,
     force_update=True,
     version=None,
-) -> bool:
+):
     """
     Bulk export articles to ArticleMeta.
 
     Args:
-        collections (list): List of collection acronyms to filter articles.
-        issn (str): ISSN to filter articles.
-        number (int): Issue number to filter articles.
-        volume (int): Issue volume to filter articles.
-        year_of_publication (int): Year of publication to filter articles.
-        from_date (str): Start date to filter articles.
-        until_date (str): End date to filter articles.
-        days_to_go_back (int): Number of days to go back from today or until_date to filter articles.
-        force_update (bool): Whether to force update the export. Defaults to True.
-        user (User): User object.
-        client (MongoDB client): MongoDB client instance. A default client will be created if not provided.
+        user: User object
+        collection_acron_list: List of collection acronyms to filter articles
+        journal_acron_list: List of journal acronyms to filter articles
+        from_pub_year: Start publication year to filter articles
+        until_pub_year: End publication year to filter articles
+        from_date: Start date to filter articles
+        until_date: End date to filter articles
+        days_to_go_back: Number of days to go back from today or until_date
+        force_update: Whether to force update the export. Defaults to True
+        version: Version identifier for export
 
     Returns:
-        bool: True if the export was successful, False otherwise.
+        bool: True if the export was successful, False otherwise
     """
-    queryset = Article.select_items(
-        collection_acron_list=collection_acron_list,
-        journal_acron_list=journal_acron_list,
-        from_pub_year=from_pub_year,
-        until_pub_year=until_pub_year,
-        from_updated_date=from_date,
-        until_updated_date=until_date,
-    )
-
-    logging.info(f"Starting export of {queryset.count()} articles to ArticleMeta.")
-
-    # Iterate over queryset and export each article to ArticleMeta
-    for article in queryset.iterator():
-        if force_update:
-            article.check_availability(user)
-        export_article_to_articlemeta(
-            user,
-            article=article,
+    try:
+        queryset = Article.select_items(
             collection_acron_list=collection_acron_list,
-            force_update=force_update,
-            version=version,
+            journal_acron_list=journal_acron_list,
+            from_pub_year=from_pub_year,
+            until_pub_year=until_pub_year,
+            from_updated_date=from_date,
+            until_updated_date=until_date,
         )
+
+        for article in queryset.iterator():
+            try:
+                if force_update:
+                    article.check_availability(user)
+                    
+                export_article_to_articlemeta(
+                    user,
+                    article=article,
+                    collection_acron_list=collection_acron_list,
+                    force_update=force_update,
+                    version=version,
+                )
+            except Exception as e:
+                # Registra erro do article mas continua processando outros
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "function": "bulk_export_articles_to_articlemeta",
+                        "article_id": article.id,
+                        "article_pid": getattr(article, "pid", None),
+                        "journal_acron": getattr(article, "journal_acron", None),
+                        "pub_year": getattr(article, "pub_year", None),
+                        "force_update": force_update,
+                    },
+                )
+                continue
+        
+        return True
+        
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "function": "bulk_export_articles_to_articlemeta",
+                "collection_acron_list": collection_acron_list,
+                "journal_acron_list": journal_acron_list,
+                "from_pub_year": from_pub_year,
+                "until_pub_year": until_pub_year,
+                "from_date": str(from_date) if from_date else None,
+                "until_date": str(until_date) if until_date else None,
+                "days_to_go_back": days_to_go_back,
+                "force_update": force_update,
+            },
+        )
+        raise
