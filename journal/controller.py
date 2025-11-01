@@ -117,27 +117,60 @@ def bulk_export_journals_to_articlemeta(
     Export journals to ArticleMeta Database with flexible filtering.
 
     Args:
-        collections: List of collections acronyms (e.g., ["scl", "mex"])
-        from_date: Export articles from this date
-        until_date: Export articles until this date
-        days_to_go_back: Export articles from this number of days ago
+        user: User object for authentication
+        collection_acron_list: List of collections acronyms (e.g., ["scl", "mex"])
+        journal_acron_list: List of journal acronyms to filter
+        from_date: Export journals modified from this date
+        until_date: Export journals modified until this date
+        days_to_go_back: Export journals modified from this number of days ago
         force_update: Force update existing records
-        user: User object
-        client: MongoDB client object
+        version: Version identifier for export
     """
-    queryset = Journal.select_items(
-        collection_acron_list=collection_acron_list,
-        journal_acron_list=journal_acron_list,
-        from_date=from_date,
-        until_date=until_date,
-        days_to_go_back=days_to_go_back,
-    )
-
-    for journal in queryset.iterator():
-        export_journal_to_articlemeta(
-            user,
-            journal=journal,
+    try:
+        queryset = Journal.select_items(
             collection_acron_list=collection_acron_list,
-            force_update=force_update,
-            version=version,
+            journal_acron_list=journal_acron_list,
+            from_date=from_date,
+            until_date=until_date,
+            days_to_go_back=days_to_go_back,
         )
+
+        for journal in queryset.iterator():
+            try:
+                export_journal_to_articlemeta(
+                    user,
+                    journal=journal,
+                    collection_acron_list=collection_acron_list,
+                    force_update=force_update,
+                    version=version,
+                )
+            except Exception as e:
+                # Registra erro do journal mas continua processando outros
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "function": "bulk_export_journals_to_articlemeta",
+                        "journal": str(journal),
+                        "force_update": force_update,
+                    },
+                )
+                continue
+                
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "function": "bulk_export_journals_to_articlemeta",
+                "collection_acron_list": collection_acron_list,
+                "journal_acron_list": journal_acron_list,
+                "from_date": str(from_date) if from_date else None,
+                "until_date": str(until_date) if until_date else None,
+                "days_to_go_back": days_to_go_back,
+                "force_update": force_update,
+            },
+        )
+        raise
