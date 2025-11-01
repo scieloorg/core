@@ -745,10 +745,8 @@ class Journal(CommonControlField, ClusterableModel):
     def is_indexed_at(self, db_acronym):
         if not db_acronym:
             raise ValueError("Journal.is_indexed_at requires db_acronym")
-        try:
-            return bool(self.indexed_at.get(acronym=db_acronym))
-        except IndexedAt.DoesNotExist:
-            return False
+        # Usar exists() é mais eficiente
+        return self.indexed_at.filter(acronym=db_acronym).exists()
 
     @property
     def journal_acrons(self):
@@ -926,7 +924,7 @@ class Journal(CommonControlField, ClusterableModel):
             until_date,
             days_to_go_back,
         )
-        return qs.values_list(
+        return qs.select_related("official").values_list(
             "official__issn_print",
             "official__issn_electronic"
         ).distinct()
@@ -935,12 +933,12 @@ class Journal(CommonControlField, ClusterableModel):
     def get_issn_list(cls, collection_acron_list=None, journal_acron_list=None):
         qs = cls.select_items(collection_acron_list, journal_acron_list)
         return {
-            "issn_print_list": qs.values_list(
-                "scielojournal__journal__official__issn_print", flat=True
-            ),
-            "issn_electronic_list": qs.values_list(
-                "scielojournal__journal__official__issn_electronic", flat=True
-            ),
+            "issn_print_list": qs.select_related('official').values_list(
+                "official__issn_print", flat=True
+            ).distinct(),
+            "issn_electronic_list": qs.select_related('official').values_list(
+                "official__issn_electronic", flat=True
+            ).distinct(),
         }
 
     @property
