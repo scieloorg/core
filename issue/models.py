@@ -22,10 +22,9 @@ from core.models import (
 from core.utils.date_utils import get_date_range
 from journal.models import Journal
 from location.models import City
-
 from .exceptions import TocSectionGetError
 from .utils.extract_digits import _get_digits
-
+from tracker.models import UnexpectedEvent
 
 class AMIssue(BaseLegacyRecord):
     """
@@ -191,6 +190,18 @@ class Issue(CommonControlField, ClusterableModel):
         data = {}
         for item in self.legacy_issue.filter(**params):
             data[item.collection.acron3] = item.legacy_keys
+        if not data:
+            UnexpectedEvent.create(
+                exception=ValueError("No legacy keys found for issue"),
+                detail={
+                    "operation": "Issue.get_legacy_keys",
+                    "issue": str(self),
+                    "collection_acron_list": collection_acron_list,
+                    "is_active": is_active,
+                    "params": params,
+                    "legacy_issue_count": self.legacy_issue.count(),
+                },
+            )
         return list(data.values())
 
     def select_collections(self, collection_acron_list=None, is_activate=None):
@@ -254,8 +265,17 @@ class Issue(CommonControlField, ClusterableModel):
                 from_date, until_date, days_to_go_back
             )
             params["updated__range"] = (from_date_str, until_date_str)
-        return cls.objects.filter(**params).select_related("journal").distinct()
-
+        queryset = cls.objects.filter(**params).select_related("journal").distinct()
+        if not queryset.exists():
+            UnexpectedEvent.create(
+                exception=ValueError("No issues found for the given filters"),
+                detail={
+                    "function": "Issue.select_issues",
+                    "prams": params,
+                },
+            )
+        return queryset
+    
     @property
     def data(self):
         d = dict()
