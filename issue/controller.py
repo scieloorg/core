@@ -129,7 +129,7 @@ def export_issue_to_articlemeta(
         events = None
         if not issue:
             raise ValueError("export_issue_to_articlemeta requires issue")
-        legacy_keys_items = list(issue.get_legacy_keys_items(collection_acron_list, is_active=True))
+        legacy_keys_items = list(issue.get_legacy_keys(collection_acron_list, is_active=True))
         if not legacy_keys_items:
             UnexpectedEvent.create(
                 exception=ValueError("No legacy keys found for issue"),
@@ -279,7 +279,7 @@ def bulk_export_issues_to_articlemeta(
                     "force_update": force_update,
                 },
             )
-
+            return
         for issue in queryset.iterator():
             try:
                 export_issue_to_articlemeta(
