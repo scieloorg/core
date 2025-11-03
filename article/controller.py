@@ -147,6 +147,27 @@ def export_article_to_articlemeta(
             )
         new_available = article.new_available(collection_acron_list).exists()
         logging.info(f"Article new {article} {collection_acron_list} {new_available}")
+
+        logging.info(
+            f"export_article_to_articlemeta: {article}, collections: {collection_acron_list}, force_update: {force_update}"
+        )
+        legacy_keys_items = list(article.get_legacy_keys(
+            collection_acron_list, is_active=True
+        ))
+        logging.info(f"Legacy keys to process: {legacy_keys_items}")
+        if not legacy_keys_items:
+            UnexpectedEvent.create(
+                exception=ValueError("No legacy keys found for article"),
+                detail={
+                    "operation": "export_article_to_articlemeta",
+                    "article": str(article),
+                    "collection_acron_list": collection_acron_list,
+                    "force_update": force_update,
+                    "events": events,
+                },
+            )
+            return
+
         events = []
         external_data = {
             
@@ -164,9 +185,7 @@ def export_article_to_articlemeta(
         events.append("building articlemeta format for article")
         article_data = am.build(article.xmltree, external_data)
 
-        for legacy_keys in article.get_legacy_keys(
-            collection_acron_list, is_active=True
-        ):
+        for legacy_keys in legacy_keys_items:
             try:
                 exporter = None
                 response = None
@@ -311,6 +330,22 @@ def bulk_export_articles_to_articlemeta(
             from_updated_date=from_date,
             until_updated_date=until_date,
         )
+        if not queryset.exists():
+            UnexpectedEvent.create(
+                exception=ValueError("No articles found for the given filters"),
+                detail={
+                    "operation": "bulk_export_articles_to_articlemeta",
+                    "collection_acron_list": collection_acron_list,
+                    "journal_acron_list": journal_acron_list,
+                    "from_pub_year": from_pub_year,
+                    "until_pub_year": until_pub_year,
+                    "from_date": str(from_date) if from_date else None,
+                    "until_date": str(until_date) if until_date else None,
+                    "days_to_go_back": days_to_go_back,
+                    "force_update": force_update,
+                },
+            )
+            return False
 
         for article in queryset.iterator():
             try:
