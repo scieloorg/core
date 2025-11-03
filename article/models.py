@@ -521,10 +521,22 @@ class Article(
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
         if is_active:
-            params["collection__is_active"] = is_active
+            params["collection__is_active"] = bool(is_active)
         data = {}
         for item in self.legacy_article.filter(**params):
             data[item.collection.acron3] = item.legacy_keys
+        if not data:
+            UnexpectedEvent.create(
+                exception=ValueError("No legacy keys found for article"),
+                detail={
+                    "operation": "Article.get_legacy_keys",
+                    "article": str(self),
+                    "collection_acron_list": collection_acron_list,
+                    "is_active": is_active,
+                    "params": params,
+                    "legacy_article_count": self.legacy_article.count(),
+                },
+            )
         return list(data.values())
 
     def select_collections(self, collection_acron_list=None, is_activate=None):
@@ -592,7 +604,30 @@ class Article(
             q |= Q(sps_pkg_name__isnull=sps_pkg_name__isnull)
         if article_license__isnull is not None:
             q |= Q(article_license__isnull=article_license__isnull)
-        return cls.objects.filter(q, **params)
+        queryset = cls.objects.filter(q, **params).distinct()
+        if not queryset.exists():
+            UnexpectedEvent.create(
+                exception=ValueError("No articles found for the given filters"),
+                detail={
+                    "function": "Article.select_items",
+                    "params": params,
+                    "collection_acron_list": collection_acron_list,
+                    "journal_acron_list": journal_acron_list,
+                    "from_pub_year": from_pub_year,
+                    "until_pub_year": until_pub_year,
+                    "volume": volume,
+                    "number": number,
+                    "supplement": supplement,
+                    "from_updated_date": str(from_updated_date) if from_updated_date else None,
+                    "until_updated_date": str(until_updated_date) if until_updated_date else None,
+                    "data_status_list": data_status_list,
+                    "valid": valid,
+                    "pp_xml__isnull": pp_xml__isnull,
+                    "sps_pkg_name__isnull": sps_pkg_name__isnull,
+                    "article_license__isnull": article_license__isnull,
+                },
+            )
+        return queryset
 
     @classmethod
     def select_journal_articles(cls, journal=None, journal_id=None, issns=None):

@@ -21,9 +21,27 @@ def export_journal_to_articlemeta(
         logging.info("....")
         if not journal:
             raise ValueError("export_journal_to_articlemeta requires journal")
-        for legacy_keys in journal.get_legacy_keys(
+        
+        logging.info(
+            f"export_journal_to_articlemeta: {journal}, collections: {collection_acron_list}, force_update: {force_update}"
+        )
+        legacy_keys_items = list(journal.get_legacy_keys(
             collection_acron_list, is_active=True
-        ):
+        ))
+        logging.info(f"Legacy keys to process: {legacy_keys_items}")
+        if not legacy_keys_items:
+            UnexpectedEvent.create(
+                exception=ValueError("No legacy keys found for journal"),
+                detail={
+                    "operation": "export_journal_to_articlemeta",
+                    "journal": str(journal),
+                    "collection_acron_list": collection_acron_list,
+                    "force_update": force_update,
+                    "events": events,
+                },
+            )
+            return
+        for legacy_keys in legacy_keys_items:
             try:
                 exporter = None
                 response = None
@@ -134,6 +152,20 @@ def bulk_export_journals_to_articlemeta(
             until_date=until_date,
             days_to_go_back=days_to_go_back,
         )
+        if not queryset.exists():
+            UnexpectedEvent.create(
+                exception=ValueError("No journals found for the given filters"),
+                detail={
+                    "function": "bulk_export_journals_to_articlemeta",
+                    "collection_acron_list": collection_acron_list,
+                    "journal_acron_list": journal_acron_list,
+                    "from_date": str(from_date) if from_date else None,
+                    "until_date": str(until_date) if until_date else None,
+                    "days_to_go_back": days_to_go_back,
+                    "force_update": force_update,
+                },
+            )
+            return
 
         for journal in queryset.iterator():
             try:

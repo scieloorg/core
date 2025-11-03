@@ -129,7 +129,20 @@ def export_issue_to_articlemeta(
         events = None
         if not issue:
             raise ValueError("export_issue_to_articlemeta requires issue")
-        for legacy_keys in issue.get_legacy_keys(collection_acron_list, is_active=True):
+        legacy_keys_items = list(issue.get_legacy_keys(collection_acron_list, is_active=True))
+        if not legacy_keys_items:
+            UnexpectedEvent.create(
+                exception=ValueError("No legacy keys found for issue"),
+                detail={
+                    "operation": "export_issue_to_articlemeta",
+                    "issue": str(issue),
+                    "collection_acron_list": collection_acron_list,
+                    "force_update": force_update,
+                    "events": events,
+                },
+            )
+            return
+        for legacy_keys in legacy_keys_items:
             try:
                 exporter = None
                 response = None
@@ -249,7 +262,24 @@ def bulk_export_issues_to_articlemeta(
             until_date=until_date,
             days_to_go_back=days_to_go_back,
         )
-
+        if not queryset.exists():
+            UnexpectedEvent.create(
+                exception=ValueError("No issues found for the given filters"),
+                detail={
+                    "function": "bulk_export_issues_to_articlemeta",
+                    "collection_acron_list": collection_acron_list,
+                    "journal_acron_list": journal_acron_list,
+                    "publication_year": publication_year,
+                    "volume": volume,
+                    "number": number,
+                    "supplement": supplement,
+                    "from_date": str(from_date) if from_date else None,
+                    "until_date": str(until_date) if until_date else None,
+                    "days_to_go_back": days_to_go_back,
+                    "force_update": force_update,
+                },
+            )
+            return
         for issue in queryset.iterator():
             try:
                 export_issue_to_articlemeta(
