@@ -235,7 +235,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
         return Article
 
     def index_queryset(self, using=None):
-        return self.get_model().objects.all()
+        return self.get_model().objects.filter(is_classic_public=True)
 
 
 class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
@@ -463,4 +463,5 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         return Article
 
     def index_queryset(self, using=None):
-        return self.get_model().objects.all()
+        return self.get_model().objects.filter(is_classic_public=True)
+
