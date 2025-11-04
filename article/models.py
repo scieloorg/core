@@ -336,11 +336,16 @@ class Article(
         """
         Return the format: Acta Cirúrgica Brasileira, Volume: 37, Issue: 7, Article number: e370704, Published: 10 OCT 2022
         """
+        if not self.journal:
+            return ""
+        if not self.issue:
+            return ""
+
         leg_dict = {
-            "title": self.journal.title if self.journal else "",
-            "pubdate": self.issue.year if self.issue else "",
-            "volume": self.issue.volume if self.issue else "",
-            "number": self.issue.number if self.issue else "",
+            "title": self.journal.title,
+            "pubdate": self.issue.year,
+            "volume": self.issue.volume,
+            "number": self.issue.number,
             "suppl": self.issue.supplement,
             "fpage": self.first_page,
             "lpage": self.last_page,
