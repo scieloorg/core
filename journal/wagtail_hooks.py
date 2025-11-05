@@ -238,21 +238,21 @@ class SciELOJournalAdminViewSet(SnippetViewSet):
     )
 
     def get_queryset(self, request):
-        qs = models.SciELOJournal.objects.select_related("journal", "collection")
+        user = request.user
+        if user.is_superuser:
+            return models.SciELOJournal.objects.select_related("journal", "collection")
+
+        if user.journal_ids:
+            return models.SciELOJournal.objects.filter(
+                journal__in=user.journal_ids
+            ).select_related("journal", "collection")
         
-        # Cache grupos do usuário para evitar múltiplas queries
-        user_groups = set(request.user.groups.values_list("name", flat=True))
+        if user.collection_ids:
+            return models.SciELOJournal.objects.filter(
+                collection__in=user.collection_ids
+            ).select_related("journal", "collection")
         
-        # Verificar grupos em ordem de probabilidade/frequência
-        if JOURNAL_TEAM in user_groups:
-            # Usar diretamente o related_name sem values_list desnecessário
-            return qs.filter(id__in=request.user.journal.values_list("id", flat=True))
-        
-        if COLLECTION_TEAM in user_groups:
-            # Prefetch das collections do usuário se necessário
-            return qs.filter(collection__in=request.user.collection.all())
-        
-        return qs
+        return models.SciELOJournal.objects.none()
 
 
 class AMJournalAdmin(SnippetViewSet):
