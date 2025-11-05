@@ -326,9 +326,7 @@ class Article(
         _data = {
             "article__pid_v2": self.pid_v2,
             "article__pid_v3": self.pid_v3,
-            "article__fundings": [f.data for f in self.fundings.iterator()],
         }
-
         return _data
 
     @property
@@ -381,33 +379,45 @@ class Article(
     ):
         if not pid_v3 and not sps_pkg_name:
             raise ValueError("Article requires params: pid_v3 or sps_pkg_name")
+        q = Q()
         if pid_v3:
-            try:
-                return cls.objects.get(pid_v3=pid_v3)
-            except cls.DoesNotExist:
-                pass
+            q |= Q(pid_v3=pid_v3)
         if sps_pkg_name:
-            items = cls.objects.filter(sps_pkg_name=sps_pkg_name).order_by("-updated")
-            objs = list(items)
-            if len(objs) == 1:
-                return objs[0]
-            if len(objs) > 1:
-                items.update(data_status=choices.DATA_STATUS_DUPLICATED)
-                return objs[0]
-        raise cls.DoesNotExist
+            q |= Q(sps_pkg_name=sps_pkg_name)
+        return cls.objects.filter(q).order_by("-updated").distinct()
 
     @classmethod
     def get(
         cls,
         pid_v3=None,
         sps_pkg_name=None,
+        handle_multiple=False,
     ):
         if not pid_v3 and not sps_pkg_name:
             raise ValueError("Article requires params: pid_v3 or sps_pkg_name")
         try:
             return cls.objects.get(sps_pkg_name=sps_pkg_name, pid_v3=pid_v3)
         except cls.DoesNotExist:
-            return cls.get_by_pid_v3_or_by_sps_pkg_name(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
+            pass
+        except cls.MultipleObjectsReturned:
+            pass
+        except Exception as e:
+            raise e
+
+        items = cls.get_by_pid_v3_or_by_sps_pkg_name(
+            pid_v3=pid_v3, sps_pkg_name=sps_pkg_name,
+        )
+        if not items.exists():
+            raise cls.DoesNotExist
+        
+        public = items.filter(is_classic_public=True)
+        if public.count() == 1:
+            return public.first()
+        if handle_multiple:
+            return public.first() or items.first()
+        raise cls.MultipleObjectsReturned(
+            f"Multiple Article found for pid_v3: {pid_v3} or sps_pkg_name: {sps_pkg_name}"
+        )
 
     @classmethod
     def create(
@@ -415,6 +425,7 @@ class Article(
         user,
         pid_v3=None,
         sps_pkg_name=None,
+        handle_multiple=True,
     ):
         try:
             logging.info(f"create: {pid_v3} {sps_pkg_name}")
@@ -425,7 +436,7 @@ class Article(
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
+            return cls.get(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name, handle_multiple=handle_multiple)
 
     @classmethod
     def create_or_update(
@@ -433,10 +444,11 @@ class Article(
         user,
         pid_v3=None,
         sps_pkg_name=None,
+        handle_multiple=False,
     ):
         logging.info(f"Article.get_or_create: {user} {pid_v3} {sps_pkg_name}")
         try:
-            return cls.get(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
+            return cls.get(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name, handle_multiple=handle_multiple)
         except cls.DoesNotExist:
             return cls.create(user=user, pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
     
@@ -455,8 +467,7 @@ class Article(
         self.save()  # Salvar estado final
         self.pp_xml.mark_as_done()
 
-    def complete_data(self, pp_xml):
-        save = False
+    def complete_data(self, pp_xml, save=False):
         if pp_xml:
             if not self.sps_pkg_name:
                 self.sps_pkg_name = pp_xml.pkg_name
@@ -480,25 +491,23 @@ class Article(
         if save:
             self.save()
 
-    def set_date_pub(self, dates):
+    def set_date_pub(self, dates, save=True):
         if dates:
             self.pub_date_day = dates.get("day")
             self.pub_date_month = dates.get("month")
             self.pub_date_year = dates.get("year")
-            self.save()
+            if save:
+                self.save()
 
-    def set_pids(self, pids):
+    def set_pids(self, pids, save=True):
         self.pid_v2 = pids.get("v2")
         self.pid_v3 = pids.get("v3")
-        self.save()
+        if save:
+            self.save()
 
     def is_indexed_at(self, db_acronym):
         return bool(self.journal) and self.journal.is_indexed_at(db_acronym)
 
-    @property
-    def article_pid_suffix(self):
-        return self.pp_xml.get_article_pid_suffix()
-            
     def create_legacy_keys(self, user=None, force_update=False):
         if not force_update:
             if self.legacy_article.count() == self.journal.scielojournal_set.count():
