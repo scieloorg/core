@@ -408,13 +408,20 @@ class Article(
             pid_v3=pid_v3, sps_pkg_name=sps_pkg_name,
         )
         if not items.exists():
-            raise cls.DoesNotExist
+            raise cls.DoesNotExist("Article not found for pid_v3: {pid_v3} or sps_pkg_name: {sps_pkg_name}")
         
         public = items.filter(is_classic_public=True)
-        if public.count() == 1:
-            return public.first()
+        public_items = list(public)
+        if len(public_items) == 1:
+            return public_items[0]
+        
+        items = list(items)
+        if len(public_items) == 0 and len(items) == 1:
+            return items[0]
+        
         if handle_multiple:
-            return public.first() or items.first()
+            return public_items[0] or items[0]
+
         raise cls.MultipleObjectsReturned(
             f"Multiple Article found for pid_v3: {pid_v3} or sps_pkg_name: {sps_pkg_name}"
         )
