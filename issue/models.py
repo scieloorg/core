@@ -308,8 +308,38 @@ class Issue(CommonControlField, ClusterableModel):
         ]
 
     @classmethod
-    def get_or_create(
+    def get(
         cls,
+        journal,
+        volume=None,
+        number=None,
+        supplement=None,
+    ):
+        """
+        Get an existing Issue based on journal and issue identification.
+        """
+        if not journal:
+            raise ValueError("Journal is required")
+        
+        params = {'journal': journal}
+        if number is not None:
+            params['number'] = number
+        if volume is not None:
+            params['volume'] = volume
+        if supplement is not None:
+            params['supplement'] = supplement
+        
+        try:
+            return cls.objects.get(**params)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(**params).first()
+        except cls.DoesNotExist:
+            raise cls.DoesNotExist(f"Issue not found with parameters: {params}")
+
+    @classmethod
+    def create(
+        cls,
+        user,
         journal,
         number,
         volume,
@@ -317,44 +347,102 @@ class Issue(CommonControlField, ClusterableModel):
         year,
         month,
         supplement,
-        user,
         markup_done=False,
         sections=None,
         issue_pid_suffix=None,
         order=None,
+        **kwargs
     ):
-        issues = cls.objects.filter(
-            creator=user,
-            journal=journal,
-            number=number,
-            volume=volume,
-            season=season,
-            year=year,
-            month=month,
-            supplement=supplement,
-        )
+        """
+        Create a new Issue instance.
+        """
+        if not user:
+            raise ValueError("User is required")
+            
+        issue = cls()
+        issue.journal = journal
+        issue.number = number
+        issue.volume = volume
+        issue.season = season
+        issue.year = year
+        issue.month = month
+        issue.supplement = supplement
+        issue.markup_done = markup_done
+        issue.creator = user
+        
+        # Set additional fields from kwargs
+        for key, value in kwargs.items():
+            if hasattr(issue, key):
+                setattr(issue, key, value)
+        
+        # Generate order and PID suffix if not provided
+        if not order:
+            issue.order = issue.generate_order()
+        else:
+            issue.order = order
+            
+        if not issue_pid_suffix:
+            issue.issue_pid_suffix = issue.generate_issue_pid_suffix()
+        else:
+            issue.issue_pid_suffix = issue_pid_suffix
+        
         try:
-            issue = issues[0]
-        except IndexError:
-            issue = cls()
-            issue.journal = journal
-            issue.number = number
-            issue.volume = volume
-            issue.season = season
-            issue.year = year
-            issue.month = month
-            issue.supplement = supplement
-            issue.markup_done = markup_done
-            issue.order = order or issue.generate_order()
-            issue.issue_pid_suffix = (
-                issue_pid_suffix or issue.generate_issue_pid_suffix()
-            )
-            issue.creator = user
             issue.save()
             if sections:
                 issue.sections.set(sections)
+            return issue
+        except IntegrityError:
+            # If creation fails due to integrity error, try to get existing
+            return cls.get(
+                journal=journal,
+                volume=volume,
+                number=number,
+                supplement=supplement
+            )
 
-        return issue
+    @classmethod
+    def get_or_create(
+        cls,
+        user,
+        journal,
+        number,
+        volume,
+        season,
+        year,
+        month,
+        supplement,
+        markup_done=False,
+        sections=None,
+        issue_pid_suffix=None,
+        order=None,
+        **kwargs
+    ):
+        """
+        Get an existing Issue or create a new one.
+        """
+        try:
+            return cls.get(
+                journal=journal,
+                number=number,
+                volume=volume,
+                supplement=supplement
+            )
+        except cls.DoesNotExist:
+            return cls.create(
+                user=user,
+                journal=journal,
+                number=number,
+                volume=volume,
+                season=season,
+                year=year,
+                month=month,
+                supplement=supplement,
+                markup_done=markup_done,
+                sections=sections,
+                issue_pid_suffix=issue_pid_suffix,
+                order=order,
+                **kwargs
+            )
 
     def __str__(self):
         return self.short_identification
