@@ -181,9 +181,8 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
 
         # FOREIGN KEYS SIMPLES
         article.journal = get_journal(xmltree=xmltree, errors=errors)
-        article.issue = get_or_create_issues(
+        article.issue = get_issue(
             xmltree=xmltree,
-            user=user,
             journal=article.journal,
             item=pid_v3,
             errors=errors,
@@ -444,6 +443,7 @@ def set_license(xmltree, article, errors):
         for xml_license in xml_licenses:
             if license := xml_license.get("link"):
                 article.article_license = license
+                break
     except Exception as e:
         add_error(errors, "set_license", e)
 
@@ -695,7 +695,7 @@ def set_pids(xmltree, article, errors):
     try:
         pids = ArticleIds(xmltree=xmltree).data
         if pids.get("v2") or pids.get("v3"):
-            article.set_pids(pids)
+            article.set_pids(pids, save=False)
     except Exception as e:
         add_error(errors, "set_pids", e)
 
@@ -712,7 +712,7 @@ def set_date_pub(xmltree, article, errors):
     try:
         obj_date = ArticleDates(xmltree=xmltree)
         dates = obj_date.article_date or obj_date.collection_date
-        article.set_date_pub(dates)
+        article.set_date_pub(dates, False)
     except Exception as e:
         add_error(errors, "set_date_pub", e)
 
@@ -787,14 +787,13 @@ def get_or_create_article_type(xmltree, user, errors):
         str: Tipo do artigo ou None se houver erro
     """
     try:
-        article_type = ArticleAndSubArticles(xmltree=xmltree).main_article_type
-        return article_type
+        return ArticleAndSubArticles(xmltree=xmltree).main_article_type
     except Exception as e:
         add_error(errors, "get_or_create_article_type", e)
         return None
 
 
-def get_or_create_issues(xmltree, user, journal, item, errors):
+def get_issue(xmltree, journal, item, errors):
     """
     Extrai e cria o fascículo (issue) a partir do XML.
 
@@ -809,34 +808,22 @@ def get_or_create_issues(xmltree, user, journal, item, errors):
         Issue: Objeto Issue criado ou None se houver erro
     """
     try:
+        issue_data = None
         issue_data = ArticleMetaIssue(xmltree=xmltree).data
-        history_dates = ArticleDates(xmltree=xmltree)
-        collection_date = history_dates.collection_date or {}
-        article_date = history_dates.article_date or {}
-
-        season = collection_date.get("season")
-        year = collection_date.get("year") or article_date.get("year")
-        month = collection_date.get("month")
-        suppl = collection_date.get("suppl")
-
-        obj = Issue.get_or_create(
+        obj = Issue.get(
             journal=journal,
             number=issue_data.get("number"),
             volume=issue_data.get("volume"),
-            season=season,
-            year=year,
-            month=month,
-            supplement=suppl,
-            user=user,
+            supplement=issue_data.get("suppl"),
         )
         return obj
     except Exception as e:
         add_error(
             errors,
-            "get_or_create_issues",
+            "get_issue",
             e,
             item=item,
-            issue=issue_data if "issue_data" in locals() else None,
+            issue=issue_data,
         )
         return None
 
