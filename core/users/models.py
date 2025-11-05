@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.urls import reverse
@@ -50,3 +51,23 @@ class User(AbstractUser):
 
         """
         return self.journal.all()
+
+    @property
+    def collection_ids(self):
+        """Get collection IDs for user.
+
+        Returns:
+            list: List of collection IDs.
+
+        """
+        return list(self.collection.values_list('id', flat=True))
+
+    @property
+    def journal_ids(self):
+        """Get journal IDs for user.
+
+        Returns:
+            list: List of journal IDs.
+
+        """
+        return list(self.journal.values_list('id', flat=True))
