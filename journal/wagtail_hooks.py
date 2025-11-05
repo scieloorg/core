@@ -131,7 +131,7 @@ class FilteredJournalQuerysetMixin:
 
     def get_queryset(self, request):
         qs = (
-            models.Journal.objects.all()
+            models.Journal.objects
             .select_related("contact_location")
             .prefetch_related("scielojournal_set")
         )
@@ -238,14 +238,20 @@ class SciELOJournalAdminViewSet(SnippetViewSet):
     )
 
     def get_queryset(self, request):
-        qs = models.SciELOJournal.objects.all().select_related("journal", "collection")
-        user_groups = request.user.groups.values_list("name", flat=True)
+        qs = models.SciELOJournal.objects.select_related("journal", "collection")
+        
+        # Cache grupos do usuário para evitar múltiplas queries
+        user_groups = set(request.user.groups.values_list("name", flat=True))
+        
+        # Verificar grupos em ordem de probabilidade/frequência
+        if JOURNAL_TEAM in user_groups:
+            # Usar diretamente o related_name sem values_list desnecessário
+            return qs.filter(id__in=request.user.journal.values_list("id", flat=True))
+        
         if COLLECTION_TEAM in user_groups:
+            # Prefetch das collections do usuário se necessário
             return qs.filter(collection__in=request.user.collection.all())
-        elif JOURNAL_TEAM in user_groups:
-            return qs.filter(
-                id__in=request.user.journal.all().values_list("id", flat=True)
-            )
+        
         return qs
 
 
