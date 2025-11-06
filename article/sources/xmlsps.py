@@ -812,6 +812,7 @@ def get_issue(xmltree, journal, item, errors):
         issue_data = ArticleMetaIssue(xmltree=xmltree).data
         obj = Issue.get(
             journal=journal,
+            year=issue_data.get("pub_year"),
             number=issue_data.get("number"),
             volume=issue_data.get("volume"),
             supplement=issue_data.get("suppl"),
