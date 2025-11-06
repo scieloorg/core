@@ -10,6 +10,16 @@ from core.utils.articlemeta_dict_utils import (
 from journal.formats.articlemeta_format import ArticlemetaJournalFormatter
 from journal.models import SciELOJournal, TitleInDatabase
 
+def get_issue_type(issue):
+    if issue.supplement:
+        return "supplement"
+    if number := issue.number:
+        if "spe" in number:
+            return "special"
+        if number == "ahead":
+            return "ahead"
+    return "regular"
+
 
 class ArticlemetaIssueFormatter:
     """Formatador para dados do Issue"""
@@ -93,14 +103,16 @@ class ArticlemetaIssueFormatter:
         # "v6": Ordem de publicação dos fascículos para apresentação na interface
 
         if hasattr(self.obj, "issue_title"):
-            add_items(
-                "v33",
-                [title for title in self.obj.issue_title.all()],
-                self.result["issue"],
-            )
+            items = [item.title for item in self.obj.issue_title.all() if item.title]
+            if items:
+                add_items(
+                    "v33",
+                    items,
+                    self.result["issue"],
+                )
 
         # Part (dado fixo)
-        self.result["v34"].append({"_": None})
+        self.result["issue"]["v34"].append({"_": None})
         self._format_volume_supplement_number_info()
         self._format_issue_type()
 
@@ -119,8 +131,7 @@ class ArticlemetaIssueFormatter:
             self.result["issue"]["v4"] = v4
 
     def _format_issue_type(self):
-        if self.obj.supplement and not self.obj.number:
-            self.result["issue_type"] = "supplement"
+        self.result["issue_type"] = get_issue_type(self.obj)
 
     def _format_publication_info(self):
         """Informações de publicação"""
