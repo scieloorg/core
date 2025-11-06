@@ -327,6 +327,7 @@ class Issue(CommonControlField, ClusterableModel):
     def get(
         cls,
         journal,
+        year,
         volume=None,
         number=None,
         supplement=None,
@@ -411,6 +412,7 @@ class Issue(CommonControlField, ClusterableModel):
             # If creation fails due to integrity error, try to get existing
             return cls.get(
                 journal=journal,
+                year=year,
                 volume=volume,
                 number=number,
                 supplement=supplement
@@ -439,8 +441,9 @@ class Issue(CommonControlField, ClusterableModel):
         try:
             return cls.get(
                 journal=journal,
-                number=number,
+                year=year,
                 volume=volume,
+                number=number,
                 supplement=supplement
             )
         except cls.DoesNotExist:
@@ -462,6 +465,10 @@ class Issue(CommonControlField, ClusterableModel):
 
     def __str__(self):
         return self.short_identification
+    
+    @property
+    def total_articles(self):
+        return self.article.count()
 
     @property
     def short_identification(self):
