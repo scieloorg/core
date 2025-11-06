@@ -1,6 +1,6 @@
 {% load humanize static i18n wagtailsettings_tags wagtailcore_tags get_journals_by_name_institutiton %}
 
-<form id="tabForm" action="{{ self.url }}" method="get">
+<form id="tabForm" action="{{ request.path }}" method="get">
     <ul class="nav">
         <li class="nav-item" role="presentation">
             <button id="tab-all" type="submit" class="ms-1 btn btn-sm btn-secondary" name="tab" value="">

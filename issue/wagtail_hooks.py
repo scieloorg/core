@@ -8,14 +8,8 @@ from wagtail.snippets.views.snippets import (
 )
 
 from config.menu import get_menu_order
-from config.settings.base import COLLECTION_TEAM, JOURNAL_TEAM
 from issue.models import Issue, IssueExporter, AMIssue
 
-
-class AMIssueCreateView(CreateView):
-    def form_valid(self, form):
-        self.object = form.save_all(self.request.user)
-        return HttpResponseRedirect(self.get_success_url())
 
 class AMIssueAdminViewSet(SnippetViewSet):
 
@@ -31,6 +25,7 @@ class AMIssueAdminViewSet(SnippetViewSet):
     list_display = (
         "pid",
         "collection",
+        "new_record",
         "status",
         "processing_date",
         "updated",
@@ -38,11 +33,15 @@ class AMIssueAdminViewSet(SnippetViewSet):
     list_filter = (
         "status",
         "collection",
+        "new_record__year",
     )
     search_fields = (
         "pid",
         "processing_date",
-        "legacy_issue__pid",
+        "new_record__journal__title",
+        "new_record__journal__scielojournal__journal_acron",
+        "new_record__year",
+        "new_record__volume",
     )
     # Deve ficar disponível somente para ADM
 
@@ -65,13 +64,17 @@ class IssueAdminSnippetViewSet(SnippetViewSet):
 
     list_display = (
         "short_identification",
+        "journal",
         "year",
-        "created",
+        "total_articles",
         "updated",
+        "updated_by",
+        "created",
+        "creator",
     )
     list_filter = (
+        "journal__scielojournal__collection",
         "year",
-        "month",
     )
     search_fields = (
         "journal__title",
@@ -85,24 +88,31 @@ class IssueAdminSnippetViewSet(SnippetViewSet):
     )
 
     def get_queryset(self, request):
-        qs = Issue.objects
+        # Base queryset com otimizações
+        qs = Issue.objects.select_related(
+            "journal",
+        )
+        
         user = request.user
+        
+        # Verificação de autenticação
+        if not user.is_authenticated:
+            return qs.none()
 
         if user.is_superuser:
             return qs.all()
 
-        user_groups = set(user.groups.values_list("name", flat=True))
-        if COLLECTION_TEAM in user_groups:
-            collections = getattr(user, "collections", None)
-            if collections is not None:
-                return qs.filter(
-                    journal__scielojournal__collection__in=collections
-                ).select_related("journal")
-        elif JOURNAL_TEAM in user_groups:
-            journals = getattr(user, "journals", None)
-            if journals is not None:
-                journals_ids = journals.values_list("id", flat=True)
-                return qs.filter(journal__id__in=journals_ids).select_related("journal")
+        # Usar as novas properties do modelo User
+        if user.has_collection_permission and user.collection_ids:
+            return qs.filter(
+                journal__scielojournal__collection__id__in=user.collection_ids
+            ).distinct()
+            
+        if user.has_journal_permission and user.journal_ids:
+            return qs.filter(
+                journal__id__in=user.journal_ids
+            ).distinct()
+        
         return qs.none()
 
 

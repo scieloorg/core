@@ -1,18 +1,6 @@
 {% load i18n wagtailcore_tags %}
+{% load wagtailroutablepage_tags %}
 
-
-<style>
-dd.dd-button {
-  margin-bottom: 1px; /* ou 2px, ou 0, conforme preferir */
-  margin-top: 0;
-}
-
-.dl-search-journals {
-    margin-bottom: 2px;
-    margin-top: 0;
-}
-
-</style>
 <!-- tabs -->
     <section>
         <div class="container">
@@ -154,22 +142,16 @@ dd.dd-button {
                                     <dt>
                                         <h3 class="h6 fw-bold">{% trans 'List of journals' %}</h3>
                                     </dt>
-                                    <form method="post" action="{{ child.url }}">
-                                        {% csrf_token %}
-                                        <dd class="text dd-button">
-                                            <button type="submit" class="btn btn-secondary">{% trans 'In alphabetical order' %}</button>
-                                        </dd>
-                                    </form>
+                                    <dd class="text dd-button">
+                                        <a href="{{child.url}}" class="btn btn-secondary">{% trans 'In alphabetical order' %}</a>
+                                    </dd>
                                 {% endfor %}
 
                                 {# By publisher #}
                                 {% for child in list_journal_by_publisher_pages %}
-                                    <form method="post" style="display: inline;" action="{{ child.url }}">
-                                        {% csrf_token %}
-                                        <dd class="text dd-button">
-                                            <button type="submit" class="btn btn-secondary">{% trans 'Of publisher' %}</button>
-                                        </dd>
-                                    </form>
+                                    <dd class="text dd-button">
+                                        <a href="{{child.url}}" class="btn btn-secondary">{% trans 'Of publisher' %}</a>
+                                    </dd>
                                 {% endfor %}
                             </dl>
 
@@ -177,22 +159,15 @@ dd.dd-button {
                                 <dt>
                                     <h3 class="h6 fw-bold">{% trans 'List of journals by subject' %}</h3>
                                 </dt>
-                                {% for child in list_journal_pages %}
-                                    <form method="post" style="display: inline;" action="{{ child.url }}">
-                                        {% csrf_token %}
+                                {% for child in list_journal_pages_by_category %}
+                                    <dd class="text dd-button">
+                                        <a href="{{child.url}}" class="btn btn-secondary">{% trans 'All' %}</a>
+                                    </dd>
+                                    {% for slug, category in categories.items %}
                                         <dd class="text dd-button">
-                                            <button type="submit" class="btn btn-secondary">{% trans 'All' %}</button></a>
+                                            <a href="{% routablepageurl child 'list_journal_by_category' slug %}" class="btn btn-secondary" name="category">{{category}}</a>
                                         </dd>
-                                        <dd>
-                                    </form>
-                                        <!-- FIXME Translation -->
-                                        <form method="get" style="display: inline;" action="{{ child.url }}">
-                                            {% for category in categories %}
-                                                <dd class="text dd-button">
-                                                    <button type="submit" class="btn btn-secondary" value="{{category}}" name="category">{{category}}</button>
-                                                </dd>
-                                            {% endfor%}
-                                        </form>
+                                    {% endfor%}
                                 {% endfor %}
                             </dl>
                         </div>
@@ -253,21 +228,12 @@ dd.dd-button {
                                     </a>
                                 </div>
                             </div>
-
-                            
                         </div>
                     </div>
-                    
                 </div>
             </div>
         </div>
-
-        
-
         {% include 'home/include/home_scielo_in_pespectiva.html' %}
         {% include 'home/include/home_scielo_youtube.html' %}
-        
-        
-        
     </section>
-    <!-- ./tabs -->
+

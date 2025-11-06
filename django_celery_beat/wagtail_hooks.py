@@ -36,10 +36,10 @@ class PeriodicTaskAdmin(ModelAdmin):
     celery_app = current_app
     date_hierarchy = "start_time"
     list_display = (
-        "name",
         "task",
         "description",
         "kwargs",
+        "schedule",
         "last_run_at",
     )
     list_filter = [

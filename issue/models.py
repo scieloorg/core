@@ -1,5 +1,4 @@
-from datetime import datetime
-from functools import lru_cache
+from django.utils.functional import cached_property
 
 from django.db import IntegrityError, models
 from django.utils.translation import gettext_lazy as _
@@ -23,10 +22,9 @@ from core.models import (
 from core.utils.date_utils import get_date_range
 from journal.models import Journal
 from location.models import City
-
 from .exceptions import TocSectionGetError
 from .utils.extract_digits import _get_digits
-
+from tracker.models import UnexpectedEvent
 
 class AMIssue(BaseLegacyRecord):
     """
@@ -42,6 +40,33 @@ class AMIssue(BaseLegacyRecord):
         blank=True,
         null=True,
     )
+    new_record = models.ForeignKey(
+        "Issue",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="legacy_issue",
+    )
+
+    class Meta:
+        verbose_name = _("Legacy issue")
+        verbose_name_plural = _("Legacy issues")
+        indexes = [
+            models.Index(
+                fields=[
+                    "pid",
+                ]
+            ),
+        ]
+
+    panels = [
+        AutocompletePanel("collection"),
+        FieldPanel("pid"),
+        FieldPanel("status"),
+        FieldPanel("processing_date"),
+        FieldPanel("url"),
+        FieldPanel("data", read_only=True),
+    ]
 
 
 class Issue(CommonControlField, ClusterableModel):
@@ -81,7 +106,6 @@ class Issue(CommonControlField, ClusterableModel):
         ),
     )
     issue_pid_suffix = models.CharField(max_length=4, null=True, blank=True)
-    legacy_issue = models.ManyToManyField(AMIssue, blank=True)
 
     autocomplete_search_field = "journal__title"
 
@@ -103,7 +127,8 @@ class Issue(CommonControlField, ClusterableModel):
         FieldPanel("order"),
         FieldPanel("markup_done"),
         FieldPanel("issue_pid_suffix", read_only=True),
-        AutocompletePanel("legacy_issue"),
+        FieldPanel("creator", read_only=True),
+        FieldPanel("updated_by", read_only=True),
     ]
 
     panels_bibl = [
@@ -152,11 +177,14 @@ class Issue(CommonControlField, ClusterableModel):
                     "supplement",
                 ]
             ),
+            models.Index(
+                fields=["markup_done"],
+            )
         ]
 
-    def create_legacy_keys(self, force_update=None):
+    def create_legacy_keys(self, user=None, force_update=None):
         if not force_update:
-            if self.legacy_issue.exists():
+            if self.legacy_issue.count() == self.journal.scielojournal_set.count():
                 return
 
         if not self.issue_pid_suffix:
@@ -165,17 +193,32 @@ class Issue(CommonControlField, ClusterableModel):
 
         for sj in self.journal.scielojournal_set.all():
             pid = f"{sj.issn_scielo}{self.year}{self.issue_pid_suffix}"
-            am_issue = AMIssue.create_or_update(pid, sj.collection, None, self.updated_by, status="done")
-            self.legacy_issue.add(am_issue)
+            am_issue = AMIssue.create_or_update(
+                pid, sj.collection, None, user, status="done", new_record=self
+            )
 
     def get_legacy_keys(self, collection_acron_list=None, is_active=None):
         params = {}
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
-        for item in self.legacy_issue.filter(
-            collection__is_active=bool(is_active), **params
-        ):
-            yield item.legacy_keys
+        if is_active:
+            params["collection__is_active"] = bool(is_active)
+        data = {}
+        for item in self.legacy_issue.filter(**params):
+            data[item.collection.acron3] = item.legacy_keys
+        if not data:
+            UnexpectedEvent.create(
+                exception=ValueError("No legacy keys found for issue"),
+                detail={
+                    "operation": "Issue.get_legacy_keys",
+                    "issue": str(self),
+                    "collection_acron_list": collection_acron_list,
+                    "is_active": is_active,
+                    "params": params,
+                    "legacy_issue_count": self.legacy_issue.count(),
+                },
+            )
+        return list(data.values())
 
     def select_collections(self, collection_acron_list=None, is_activate=None):
         if not self.journal:
@@ -238,8 +281,17 @@ class Issue(CommonControlField, ClusterableModel):
                 from_date, until_date, days_to_go_back
             )
             params["updated__range"] = (from_date_str, until_date_str)
-        return cls.objects.filter(**params).select_related("journal").distinct()
-
+        queryset = cls.objects.filter(**params).select_related("journal").distinct()
+        if not queryset.exists():
+            UnexpectedEvent.create(
+                exception=ValueError("No issues found for the given filters"),
+                detail={
+                    "function": "Issue.select_issues",
+                    "prams": params,
+                },
+            )
+        return queryset
+    
     @property
     def data(self):
         d = dict()
@@ -272,8 +324,41 @@ class Issue(CommonControlField, ClusterableModel):
         ]
 
     @classmethod
-    def get_or_create(
+    def get(
         cls,
+        journal,
+        year,
+        volume=None,
+        number=None,
+        supplement=None,
+    ):
+        """
+        Get an existing Issue based on journal and issue identification.
+        """
+        if not journal and not year:
+            raise ValueError("Journal and year are required")
+        
+        params = {'journal': journal}
+        if year is not None:
+            params['year'] = year
+        if number is not None:
+            params['number'] = number
+        if volume is not None:
+            params['volume'] = volume
+        if supplement is not None:
+            params['supplement'] = supplement
+        
+        try:
+            return cls.objects.get(**params)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(**params).first()
+        except cls.DoesNotExist:
+            raise cls.DoesNotExist(f"Issue not found with parameters: {params}")
+
+    @classmethod
+    def create(
+        cls,
+        user,
         journal,
         number,
         volume,
@@ -281,55 +366,119 @@ class Issue(CommonControlField, ClusterableModel):
         year,
         month,
         supplement,
-        user,
         markup_done=False,
         sections=None,
         issue_pid_suffix=None,
         order=None,
+        **kwargs
     ):
-        issues = cls.objects.filter(
-            creator=user,
-            journal=journal,
-            number=number,
-            volume=volume,
-            season=season,
-            year=year,
-            month=month,
-            supplement=supplement,
-        )
+        """
+        Create a new Issue instance.
+        """
+        if not user:
+            raise ValueError("User is required")
+            
+        issue = cls()
+        issue.journal = journal
+        issue.number = number
+        issue.volume = volume
+        issue.season = season
+        issue.year = year
+        issue.month = month
+        issue.supplement = supplement
+        issue.markup_done = markup_done
+        issue.creator = user
+        
+        # Set additional fields from kwargs
+        for key, value in kwargs.items():
+            if hasattr(issue, key):
+                setattr(issue, key, value)
+        
+        # Generate order and PID suffix if not provided
+        if not order:
+            issue.order = issue.generate_order()
+        else:
+            issue.order = order
+            
+        if not issue_pid_suffix:
+            issue.issue_pid_suffix = issue.generate_issue_pid_suffix()
+        else:
+            issue.issue_pid_suffix = issue_pid_suffix
+        
         try:
-            issue = issues[0]
-        except IndexError:
-            issue = cls()
-            issue.journal = journal
-            issue.number = number
-            issue.volume = volume
-            issue.season = season
-            issue.year = year
-            issue.month = month
-            issue.supplement = supplement
-            issue.markup_done = markup_done
-            issue.order = order or issue.generate_order()
-            issue.issue_pid_suffix = (
-                issue_pid_suffix or issue.generate_issue_pid_suffix()
-            )
-            issue.creator = user
             issue.save()
             if sections:
                 issue.sections.set(sections)
+            return issue
+        except IntegrityError:
+            # If creation fails due to integrity error, try to get existing
+            return cls.get(
+                journal=journal,
+                year=year,
+                volume=volume,
+                number=number,
+                supplement=supplement
+            )
 
-        return issue
+    @classmethod
+    def get_or_create(
+        cls,
+        user,
+        journal,
+        number,
+        volume,
+        season,
+        year,
+        month,
+        supplement,
+        markup_done=False,
+        sections=None,
+        issue_pid_suffix=None,
+        order=None,
+        **kwargs
+    ):
+        """
+        Get an existing Issue or create a new one.
+        """
+        try:
+            return cls.get(
+                journal=journal,
+                year=year,
+                volume=volume,
+                number=number,
+                supplement=supplement
+            )
+        except cls.DoesNotExist:
+            return cls.create(
+                user=user,
+                journal=journal,
+                number=number,
+                volume=volume,
+                season=season,
+                year=year,
+                month=month,
+                supplement=supplement,
+                markup_done=markup_done,
+                sections=sections,
+                issue_pid_suffix=issue_pid_suffix,
+                order=order,
+                **kwargs
+            )
 
     def __str__(self):
         return self.short_identification
+    
+    @property
+    def total_articles(self):
+        return self.article_set.count()
 
     @property
-    @lru_cache(maxsize=1)
     def short_identification(self):
-        return f"{self.journal.title} {self.issue_folder} [{self.journal.collection_acrons}]"
+        if self.journal:
+            return f"{self.journal.title} {self.issue_folder} [{self.journal.collection_acrons}]"
+        return f"{self.issue_folder}"
 
-    @property
-    @lru_cache(maxsize=1)
+    @cached_property
     def issue_folder(self):
         values = (self.volume, self.number, self.supplement)
         labels = ("v", "n", "s")
@@ -340,7 +489,6 @@ class Issue(CommonControlField, ClusterableModel):
     def articlemeta_format(self, collection):
         # Evita importacao circular
         from .formats.articlemeta_format import get_articlemeta_format_issue
-
         return get_articlemeta_format_issue(self, collection)
 
     def save(self, *args, **kwargs):
@@ -349,6 +497,8 @@ class Issue(CommonControlField, ClusterableModel):
         if not self.issue_pid_suffix:
             self.issue_pid_suffix = self.generate_issue_pid_suffix()
         super().save(*args, **kwargs)
+        if self.journal:  # Só cria se tiver journal associado
+            self.create_legacy_keys(user=self.creator, force_update=True)
 
     def generate_issue_pid_suffix(self):
         return str(self.generate_order()).zfill(4)

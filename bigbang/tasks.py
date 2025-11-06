@@ -3,7 +3,7 @@ import sys
 
 from django.contrib.auth import get_user_model
 
-from bigbang.tasks_scheduler import schedule_tasks
+from bigbang.tasks_scheduler import schedule_tasks, delete_outdated_tasks
 from bigbang.utils.scheduler import schedule_task
 from collection.models import Collection
 from config import celery_app
@@ -74,7 +74,7 @@ def task_start(
 def task_create_tasks(self, user_id=None, username=None, tasks_data=None):
     if not tasks_data:
         user = _get_user(user_id, username)
-        return schedule_tasks(user)
+        return schedule_tasks(user.username)
     for task_data in tasks_data:
         # {
         #     'task': 'pid_provider.tasks.provide_pid_for_am_xmls',
@@ -91,3 +91,8 @@ def task_create_tasks(self, user_id=None, username=None, tasks_data=None):
             schedule_task(**task_data)
         except Exception as e:
             logging.exception(e)
+
+
+@celery_app.task(bind=True)
+def task_delete_outdated_tasks(self, user_id=None, username=None, task_list=None):
+    return delete_outdated_tasks(task_list)

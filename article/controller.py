@@ -8,130 +8,92 @@ from datetime import datetime
 from django.db.models import Q
 from packtools.sps.formats.am import am
 
+from article.sources.xmlsps import load_article
 from article.models import Article, ArticleExporter, ArticleFunding
+from article.choices import (
+    DATA_STATUS_DUPLICATED,
+    DATA_STATUS_DEDUPLICATED,
+    DATA_STATUS_PUBLIC,
+)
 from core.mongodb import write_item
 from core.utils import date_utils
 from institution.models import Sponsor
 from journal.models import Journal, SciELOJournal
-from pid_provider.choices import PPXML_STATUS_TODO
-from pid_provider.models import PidProviderXML
+from pid_provider.choices import (
+    PPXML_STATUS_TODO,
+    PPXML_STATUS_DUPLICATED,
+    PPXML_STATUS_DEDUPLICATED,
+    PPXML_STATUS_INVALID,
+)
+from pid_provider.models import PidProviderXML, XMLVersionXmlWithPreError
 from tracker.models import UnexpectedEvent
 
 
-class ArticleIsNotAvailableError(Exception):
-    ...
+class ArticleIsNotAvailableError(Exception): ...
 
 
-def add_collections_to_pid_provider_items():
-    for item in PidProviderXML.objects.filter(
-        Q(issn_print__isnull=False) | Q(issn_electronic__isnull=False)
-    ).exclude(collections__isnull=False):
-        logging.info(item)
-        add_collections_to_pid_provider(item)
+# def get_pp_xml_ids(
+#     collection_acron_list=None,
+#     journal_acron_list=None,
+#     from_pub_year=None,
+#     until_pub_year=None,
+#     from_updated_date=None,
+#     until_updated_date=None,
+#     proc_status_list=None,
+# ):
+#     return select_pp_xml(
+#         collection_acron_list,
+#         journal_acron_list,
+#         from_pub_year,
+#         until_pub_year,
+#         from_updated_date,
+#         until_updated_date,
+#         proc_status_list=proc_status_list,
+#     ).values_list("id", flat=True)
 
 
-def add_collections_to_pid_provider(pid_provider):
-    """
-    Obtém as coleções associadas ao PidProviderXML baseando-se nos ISSNs.
+# def select_pp_xml(
+#     collection_acron_list=None,
+#     journal_acron_list=None,
+#     from_pub_year=None,
+#     until_pub_year=None,
+#     from_updated_date=None,
+#     until_updated_date=None,
+#     proc_status_list=None,
+#     params=None,
+# ):
+#     params = params or {}
 
-    Args:
-        pid_provider: instância de PidProviderXML
+#     q = Q()
+#     if journal_acron_list or collection_acron_list:
+#         issns = Journal.get_issn_list(collection_acron_list, journal_acron_list)
+#         issn_print_list = issns["issn_print_list"]
+#         issn_electronic_list = issns["issn_electronic_list"]
 
-    Returns:
-        Lista de instâncias de Collection
-    """
-    # Coletar ISSNs
-    try:
-        issns = []
-        if pid_provider.issn_electronic:
-            issns.append(pid_provider.issn_electronic)
-        if pid_provider.issn_print:
-            issns.append(pid_provider.issn_print)
+#         if issn_print_list or issn_electronic_list:
+#             q = Q(issn_print__in=issn_print_list) | Q(
+#                 issn_electronic__in=issn_electronic_list
+#             )
+#         elif issn_print_list:
+#             q = Q(issn_print__in=issn_print_list)
+#         elif issn_electronic_list:
+#             q = Q(issn_electronic__in=issn_electronic_list)
 
-        if not issns:
-            return []
+#     if from_updated_date:
+#         params["updated__gte"] = from_updated_date
+#     if until_updated_date:
+#         params["updated__lte"] = until_updated_date
 
-        # Buscar coleções ativas através dos journals com esses ISSNs
-        for item in SciELOJournal.objects.filter(
-            Q(journal__official__issn_print__in=issns)
-            | Q(journal__official__issn_electronic__in=issns),
-        ).distinct():
-            logging.info(item)
-            pid_provider.collections.add(item.collection)
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        UnexpectedEvent.create(
-            exception=e,
-            exc_traceback=exc_traceback,
-            detail={
-                "operation": "add_collections_to_pid_provider",
-                "pid_provider": str(pid_provider),
-                "traceback": traceback.format_exc(),
-            },
-        )        
+#     if from_pub_year:
+#         params["pub_year__gte"] = from_pub_year
+#     if until_pub_year:
+#         params["pub_year__lte"] = until_pub_year
 
-def get_pp_xml_ids(
-    collection_acron_list=None,
-    journal_acron_list=None,
-    from_pub_year=None,
-    until_pub_year=None,
-    from_updated_date=None,
-    until_updated_date=None,
-    proc_status_list=None,
-):
-    return select_pp_xml(
-        collection_acron_list,
-        journal_acron_list,
-        from_pub_year,
-        until_pub_year,
-        from_updated_date,
-        until_updated_date,
-        proc_status_list=proc_status_list,
-    ).values_list("id", flat=True)
+#     if proc_status_list:
+#         params["proc_status__in"] = proc_status_list
 
-
-def select_pp_xml(
-    collection_acron_list=None,
-    journal_acron_list=None,
-    from_pub_year=None,
-    until_pub_year=None,
-    from_updated_date=None,
-    until_updated_date=None,
-    proc_status_list=None,
-    params=None,
-):
-    params = params or {}
-
-    q = Q()
-    if journal_acron_list or collection_acron_list:
-        issns = Journal.get_issn_list(collection_acron_list, journal_acron_list)
-        issn_print_list = issns["issn_print_list"]
-        issn_electronic_list = issns["issn_electronic_list"]
-
-        if issn_print_list or issn_electronic_list:
-            q = Q(issn_print__in=issn_print_list) | Q(
-                issn_electronic__in=issn_electronic_list
-            )
-        elif issn_print_list:
-            q = Q(issn_print__in=issn_print_list)
-        elif issn_electronic_list:
-            q = Q(issn_electronic__in=issn_electronic_list)
-
-    if from_updated_date:
-        params["updated__gte"] = from_updated_date
-    if until_updated_date:
-        params["updated__lte"] = until_updated_date
-
-    if from_pub_year:
-        params["pub_year__gte"] = from_pub_year
-    if until_pub_year:
-        params["pub_year__lte"] = until_pub_year
-
-    if proc_status_list:
-        params["proc_status__in"] = proc_status_list
-
-    logging.info(params)
-    return PidProviderXML.objects.filter(q, **params)
+#     logging.info(params)
+#     return PidProviderXML.objects.filter(q, **params)
 
 
 def load_financial_data(row, user):
@@ -179,9 +141,36 @@ def export_article_to_articlemeta(
 ) -> bool:
 
     try:
+        if not article.classic_available(collection_acron_list):
+            raise ArticleIsNotAvailableError(
+                f"Article {article} {collection_acron_list} (classic) is not available. Unable to export to ArticleMeta."
+            )
+        new_available = article.new_available(collection_acron_list).exists()
+        logging.info(f"Article new {article} {collection_acron_list} {new_available}")
+
+        logging.info(
+            f"export_article_to_articlemeta: {article}, collections: {collection_acron_list}, force_update: {force_update}"
+        )
+        legacy_keys_items = list(article.get_legacy_keys(
+            collection_acron_list, is_active=True
+        ))
+        logging.info(f"Legacy keys to process: {legacy_keys_items}")
+        if not legacy_keys_items:
+            UnexpectedEvent.create(
+                exception=ValueError("No legacy keys found for article"),
+                detail={
+                    "operation": "export_article_to_articlemeta",
+                    "article": str(article),
+                    "collection_acron_list": collection_acron_list,
+                    "force_update": force_update,
+                    "events": events,
+                },
+            )
+            return
+
         events = []
         external_data = {
-            "pid_v3": article.pid_v3,
+            
             # "code": article.pid_v2,
             "created_at": article.created.strftime("%Y-%m-%d"),
             "document_type": article.article_type,
@@ -190,12 +179,13 @@ def export_article_to_articlemeta(
             "publication_year": article.issue.year,
             "version": "xml",
         }
+        if new_available:
+            external_data["pid_v3"] = article.pid_v3
+
         events.append("building articlemeta format for article")
         article_data = am.build(article.xmltree, external_data)
 
-        for legacy_keys in article.get_legacy_keys(
-            collection_acron_list, is_active=True
-        ):
+        for legacy_keys in legacy_keys_items:
             try:
                 exporter = None
                 response = None
@@ -212,11 +202,11 @@ def export_article_to_articlemeta(
                     # não encontrou necessidade de exportar
                     continue
 
-                for avail_data in article.get_article_urls(collection=col, fmt="xml"):
-                    events.append(avail_data)
-                    if not (avail_data or {}).get("available"):
-                        raise ArticleIsNotAvailableError(str(avail_data))
-                    break
+                # for avail_item in article.get_availability(collection=col, fmt="xml"):
+                #     events.append(avail_item.data)
+                #     if not avail_item.available:
+                #         raise ArticleIsNotAvailableError(str(avail_item.data))
+                #     break
 
                 data = {"collection": col.acron3}
                 data.update(article_data)
@@ -302,6 +292,7 @@ def export_article_to_articlemeta(
 
 
 def bulk_export_articles_to_articlemeta(
+    user,
     collection_acron_list=None,
     journal_acron_list=None,
     from_pub_year=None,
@@ -310,45 +301,98 @@ def bulk_export_articles_to_articlemeta(
     until_date=None,
     days_to_go_back=None,
     force_update=True,
-    user=None,
     version=None,
-) -> bool:
+):
     """
     Bulk export articles to ArticleMeta.
 
     Args:
-        collections (list): List of collection acronyms to filter articles.
-        issn (str): ISSN to filter articles.
-        number (int): Issue number to filter articles.
-        volume (int): Issue volume to filter articles.
-        year_of_publication (int): Year of publication to filter articles.
-        from_date (str): Start date to filter articles.
-        until_date (str): End date to filter articles.
-        days_to_go_back (int): Number of days to go back from today or until_date to filter articles.
-        force_update (bool): Whether to force update the export. Defaults to True.
-        user (User): User object.
-        client (MongoDB client): MongoDB client instance. A default client will be created if not provided.
+        user: User object
+        collection_acron_list: List of collection acronyms to filter articles
+        journal_acron_list: List of journal acronyms to filter articles
+        from_pub_year: Start publication year to filter articles
+        until_pub_year: End publication year to filter articles
+        from_date: Start date to filter articles
+        until_date: End date to filter articles
+        days_to_go_back: Number of days to go back from today or until_date
+        force_update: Whether to force update the export. Defaults to True
+        version: Version identifier for export
 
     Returns:
-        bool: True if the export was successful, False otherwise.
+        bool: True if the export was successful, False otherwise
     """
-    queryset = Article.select_items(
-        collection_acron_list=collection_acron_list,
-        journal_acron_list=journal_acron_list,
-        from_pub_year=from_pub_year,
-        until_pub_year=until_pub_year,
-        from_updated_date=from_date,
-        until_updated_date=until_date,
-    )
-
-    logging.info(f"Starting export of {queryset.count()} articles to ArticleMeta.")
-
-    # Iterate over queryset and export each article to ArticleMeta
-    for article in queryset.iterator():
-        export_article_to_articlemeta(
-            user,
-            article=article,
+    try:
+        queryset = Article.select_items(
             collection_acron_list=collection_acron_list,
-            force_update=force_update,
-            version=version,
+            journal_acron_list=journal_acron_list,
+            from_pub_year=from_pub_year,
+            until_pub_year=until_pub_year,
+            from_updated_date=from_date,
+            until_updated_date=until_date,
         )
+        if not queryset.exists():
+            UnexpectedEvent.create(
+                exception=ValueError("No articles found for the given filters"),
+                detail={
+                    "operation": "bulk_export_articles_to_articlemeta",
+                    "collection_acron_list": collection_acron_list,
+                    "journal_acron_list": journal_acron_list,
+                    "from_pub_year": from_pub_year,
+                    "until_pub_year": until_pub_year,
+                    "from_date": str(from_date) if from_date else None,
+                    "until_date": str(until_date) if until_date else None,
+                    "days_to_go_back": days_to_go_back,
+                    "force_update": force_update,
+                },
+            )
+            return False
+
+        for article in queryset.iterator():
+            try:
+                if force_update:
+                    article.check_availability(user)
+                    
+                export_article_to_articlemeta(
+                    user,
+                    article=article,
+                    collection_acron_list=collection_acron_list,
+                    force_update=force_update,
+                    version=version,
+                )
+            except Exception as e:
+                # Registra erro do article mas continua processando outros
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "function": "bulk_export_articles_to_articlemeta",
+                        "article_id": article.id,
+                        "article_pid": getattr(article, "pid", None),
+                        "journal_acron": getattr(article, "journal_acron", None),
+                        "pub_year": getattr(article, "pub_year", None),
+                        "force_update": force_update,
+                    },
+                )
+                continue
+        
+        return True
+        
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "function": "bulk_export_articles_to_articlemeta",
+                "collection_acron_list": collection_acron_list,
+                "journal_acron_list": journal_acron_list,
+                "from_pub_year": from_pub_year,
+                "until_pub_year": until_pub_year,
+                "from_date": str(from_date) if from_date else None,
+                "until_date": str(until_date) if until_date else None,
+                "days_to_go_back": days_to_go_back,
+                "force_update": force_update,
+            },
+        )
+        raise

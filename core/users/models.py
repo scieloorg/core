@@ -50,3 +50,33 @@ class User(AbstractUser):
 
         """
         return self.journal.all()
+
+    @property
+    def collection_ids(self):
+        """Get collection IDs for user.
+
+        Returns:
+            list: List of collection IDs.
+
+        """
+        return list(self.collection.values_list('id', flat=True))
+
+    @property
+    def journal_ids(self):
+        """Get journal IDs for user.
+
+        Returns:
+            list: List of journal IDs.
+
+        """
+        return list(self.journal.values_list('id', flat=True))
+
+    @property
+    def has_collection_permission(self):
+        """Verifica se o usuário tem permissões de collection."""
+        return self.groups.filter(name='COLLECTION_TEAM').exists()
+    
+    @property
+    def has_journal_permission(self):
+        """Verifica se o usuário tem permissões de journal."""
+        return self.groups.filter(name='JOURNAL_TEAM').exists()

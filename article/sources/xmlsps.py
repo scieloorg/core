@@ -150,14 +150,17 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         event = None
         xmltree = xml_with_pre.xmltree
 
+        logging.info(f"Article {pid_v3} {xml_with_pre.sps_pkg_name}")
+
         # CRIAÇÃO/OBTENÇÃO DO OBJETO PRINCIPAL
         article = Article.create_or_update(
             user=user,
             pid_v3=pid_v3,
-            doi=xml_with_pre.main_doi,
             sps_pkg_name=xml_with_pre.sps_pkg_name,
         )
+        logging.info(f"...Article {pid_v3} {xml_with_pre.sps_pkg_name}")
 
+        article.events.all().delete()
         event = article.add_event(user, _("load article"))
         # Configurar todos os campos antes de salvar (Sugestão 9)
         article.valid = False
@@ -178,15 +181,18 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
 
         # FOREIGN KEYS SIMPLES
         article.journal = get_journal(xmltree=xmltree, errors=errors)
-        article.issue = get_or_create_issues(
+        article.issue = get_issue(
             xmltree=xmltree,
-            user=user,
             journal=article.journal,
             item=pid_v3,
             errors=errors,
         )
 
         # Salvar uma vez após definir todos os campos simples
+        logging.info(
+            f"Saving article {article.pid_v3} {xml_with_pre.sps_pkg_name} {xml_with_pre.main_doi}"
+        )
+
         article.save()
 
         # MANY-TO-MANY (requerem que o objeto esteja salvo)
@@ -230,24 +236,20 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             )
         )
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user, errors=errors))
-
-        article.valid = not errors
-        if errors:
-            article.errors = _("Consult events")
-        article.save()  # Salvar estado final
+        article.create_legacy_keys(user)
+        if not article.pid_v2:
+            add_error(errors, "load_article", "Article has no PID v2", item=article.pid_v3)
+        if not errors:
+            article.mark_as_completed()
 
         event.finish(completed=not errors, errors=errors)
-
-        if article.pp_xml is pp_xml and article.pp_xml.proc_status != PPXML_STATUS_DONE:
-            pp_xml.proc_status = PPXML_STATUS_DONE
-            pp_xml.save()
-
         logging.info(
             f"The article {pid_v3} has been processed with {len(errors)} errors"
         )
         return article
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
+
         if event:
             event.finish(errors=errors, exceptions=traceback.format_exc())
             raise
@@ -283,6 +285,8 @@ def get_or_create_doi(xmltree, user, errors):
     try:
         doi_with_lang = DoiWithLang(xmltree=xmltree).data
         for doi in doi_with_lang:
+            if not doi.get("value"):
+                continue
             try:
                 lang = get_or_create_language(doi.get("lang"), user=user, errors=errors)
                 obj = DOI.get_or_create(
@@ -403,14 +407,13 @@ def get_or_create_toc_sections(xmltree, user, errors):
     data = []
     try:
         toc_sections = ArticleTocSections(xmltree=xmltree).sections
-
         for item in toc_sections:
             section_title = item.get("section")
-            section_lang = item.get("parent_lang")
 
-            if not section_title and not section_lang:
+            if not section_title:
                 continue
 
+            section_lang = item.get("parent_lang")
             try:
                 lang = get_or_create_language(section_lang, user=user, errors=errors)
                 obj = TocSection.get_or_create(
@@ -440,6 +443,7 @@ def set_license(xmltree, article, errors):
         for xml_license in xml_licenses:
             if license := xml_license.get("link"):
                 article.article_license = license
+                break
     except Exception as e:
         add_error(errors, "set_license", e)
 
@@ -691,7 +695,7 @@ def set_pids(xmltree, article, errors):
     try:
         pids = ArticleIds(xmltree=xmltree).data
         if pids.get("v2") or pids.get("v3"):
-            article.set_pids(pids)
+            article.set_pids(pids, save=False)
     except Exception as e:
         add_error(errors, "set_pids", e)
 
@@ -708,7 +712,7 @@ def set_date_pub(xmltree, article, errors):
     try:
         obj_date = ArticleDates(xmltree=xmltree)
         dates = obj_date.article_date or obj_date.collection_date
-        article.set_date_pub(dates)
+        article.set_date_pub(dates, False)
     except Exception as e:
         add_error(errors, "set_date_pub", e)
 
@@ -783,14 +787,13 @@ def get_or_create_article_type(xmltree, user, errors):
         str: Tipo do artigo ou None se houver erro
     """
     try:
-        article_type = ArticleAndSubArticles(xmltree=xmltree).main_article_type
-        return article_type
+        return ArticleAndSubArticles(xmltree=xmltree).main_article_type
     except Exception as e:
         add_error(errors, "get_or_create_article_type", e)
         return None
 
 
-def get_or_create_issues(xmltree, user, journal, item, errors):
+def get_issue(xmltree, journal, item, errors):
     """
     Extrai e cria o fascículo (issue) a partir do XML.
 
@@ -805,34 +808,23 @@ def get_or_create_issues(xmltree, user, journal, item, errors):
         Issue: Objeto Issue criado ou None se houver erro
     """
     try:
+        issue_data = None
         issue_data = ArticleMetaIssue(xmltree=xmltree).data
-        history_dates = ArticleDates(xmltree=xmltree)
-        collection_date = history_dates.collection_date or {}
-        article_date = history_dates.article_date or {}
-
-        season = collection_date.get("season")
-        year = collection_date.get("year") or article_date.get("year")
-        month = collection_date.get("month")
-        suppl = collection_date.get("suppl")
-
-        obj = Issue.get_or_create(
+        obj = Issue.get(
             journal=journal,
+            year=issue_data.get("pub_year"),
             number=issue_data.get("number"),
             volume=issue_data.get("volume"),
-            season=season,
-            year=year,
-            month=month,
-            supplement=suppl,
-            user=user,
+            supplement=issue_data.get("suppl"),
         )
         return obj
     except Exception as e:
         add_error(
             errors,
-            "get_or_create_issues",
+            "get_issue",
             e,
             item=item,
-            issue=issue_data if "issue_data" in locals() else None,
+            issue=issue_data,
         )
         return None
 

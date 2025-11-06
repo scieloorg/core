@@ -1,8 +1,18 @@
+from functools import cached_property
+
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from core.utils.profiling_tools import profile_function
 from pid_provider import exceptions
+
+
+def get_score(registered, xml_data, min_value, max_value):
+    if registered == xml_data:
+        if registered:
+            return max_value
+        return min_value
+    return 0
 
 
 def zero_to_none(data):
@@ -15,344 +25,270 @@ def zero_to_none(data):
     return data
 
 
-@profile_function
-def get_valid_query_parameters(xml_adapter):
-    return get_journal_q_expression(xml_adapter), list(get_kwargs(xml_adapter))
-
-
-@profile_function
-def get_kwargs(xml_adapter):
+class QueryBuilderPidProviderXML:
     """
-    Gera parâmetros de consulta válidos para pesquisa no banco de dados com base nos dados do adaptador XML.
-
-    Esta função constrói expressões Q do Django para filtragem por periódico e ano de publicação,
-    e gera conjuntos de parâmetros para diferentes cenários de consulta (AOP vs. artigos regulares).
-
-    Args:
-        xml_adapter: Objeto adaptador XML contendo metadados do artigo, incluindo informações do periódico,
-                     datas de publicação e detalhes do artigo.
-
-    Returns:
-        tuple: Uma tupla contendo:
-            - q (django.db.models.Q): Expressão Q combinada para filtragem por periódico e ano de publicação.
-            - kwargs (list): Lista de dicionários contendo parâmetros de consulta válidos para diferentes cenários.
-
-    Raises:
-        RequiredISSNErrorToGetPidProviderXMLError: Se nenhum ISSN for fornecido.
-        RequiredPublicationYearErrorToGetPidProviderXMLError: Se nenhum ano de publicação for fornecido.
-        NotEnoughParametersToGetPidProviderXMLError: Se os parâmetros de desambiguação forem insuficientes.
+    Construtor de queries para busca de PidProviderXML.
+    
+    Centraliza toda a lógica de construção de queries complexas
+    para buscar documentos por múltiplos critérios.
     """
-    year_param = get_pub_year_expression(xml_adapter)
-    if xml_adapter.is_aop:
-        params = {}
-        params.update(year_param)
-        params.update(get_basic_params(xml_adapter))
-        yield _get_valid_params(xml_adapter, params)
-    else:
-        params = get_issue_params(xml_adapter, filter_by_issue=True) or {}
-        params.update(year_param)
-        params.update(get_basic_params(xml_adapter, filter_by_issue=True))
-        yield _get_valid_params(xml_adapter, params)
-
-        params = get_issue_params(xml_adapter, aop_version=True) or {}
-        params.update(year_param)
-        params.update(get_basic_params(xml_adapter))
-        yield _get_valid_params(xml_adapter, params)
-
-
-@profile_function
-def get_issue_kwargs(xml_adapter):
-    year_param = get_pub_year_expression(xml_adapter)
-    if xml_adapter.is_aop:
-        params = {}
-        params.update(year_param)
-        yield params
-    else:
-        params = get_issue_params(xml_adapter, filter_by_issue=True) or {}
-        params.update(year_param)
-        yield params
-
-        params = get_issue_params(xml_adapter, aop_version=True) or {}
-        params.update(year_param)
-        yield params
-
-
-@profile_function
-def _get_valid_params(xml_adapter, params):
-    """
-    Cria um dicionário de parâmetros validado combinando parâmetros básicos e de fascículo.
-
-    Esta função interna mescla parâmetros básicos do artigo com parâmetros específicos do fascículo
-    e os valida. Se a validação falhar devido à falta de informações do autor, ela tenta
-    adicionar parâmetros de desambiguação.
-
-    Args:
-        xml_adapter: Objeto adaptador XML contendo metadados do artigo.
-        basic_params (dict): Dicionário de parâmetros de consulta básicos.
-        issue_params (dict, optional): Dicionário de parâmetros específicos do fascículo. Padrão para None.
-
-    Returns:
-        dict: Dicionário de parâmetros combinado e validado.
-
-    Raises:
-        NotEnoughParametersToGetPidProviderXMLError: Se os parâmetros de desambiguação forem insuficientes.
-    """
-    try:
-        validate_query_params(params)
-    except exceptions.RequiredAuthorErrorToGetPidProviderXMLError:
-        try:
-            params.update(get_disambiguation_params(xml_adapter))
-        except exceptions.NotEnoughParametersToGetPidProviderXMLError:
-            raise
-    return params
-
-
-@profile_function
-def get_journal_q_expression(xml_adapter):
-    """
-    Cria uma expressão Q do Django para identificação de periódico usando valores de ISSN.
-
-    Esta função constrói uma expressão Q que corresponde a artigos por ISSN eletrônico
-    ou ISSN impresso. Pelo menos um ISSN deve ser fornecido.
-
-    Args:
-        xml_adapter: Objeto adaptador XML contendo informações de ISSN do periódico.
-
-    Returns:
-        django.db.models.Q: Expressão Q para filtragem de periódico.
-
-    Raises:
-        RequiredISSNErrorToGetPidProviderXMLError: Se nem o ISSN eletrônico nem o impresso forem fornecidos.
-    """
-    if xml_adapter.journal_issn_electronic and xml_adapter.journal_issn_print:
-        return Q(issn_electronic=xml_adapter.journal_issn_electronic) | Q(
-            issn_print=xml_adapter.journal_issn_print
-        )
-
-    if xml_adapter.journal_issn_electronic:
-        return Q(issn_electronic=xml_adapter.journal_issn_electronic)
-
-    if xml_adapter.journal_issn_print:
-        return Q(issn_print=xml_adapter.journal_issn_print)
-
-    raise exceptions.RequiredISSNErrorToGetPidProviderXMLError(
-        _("Required Print or Electronic ISSN to identify XML {}").format(
-            xml_adapter.pkg_name,
-        )
-    )
-
-
-@profile_function
-def get_article_q_expression(xml_adapter):
-    """
-    Cria uma expressão Q do Django para identificação de periódico usando valores de ISSN.
-
-    Esta função constrói uma expressão Q que corresponde a artigos por ISSN eletrônico
-    ou ISSN impresso. Pelo menos um ISSN deve ser fornecido.
-
-    Args:
-        xml_adapter: Objeto adaptador XML contendo informações de ISSN do periódico.
-
-    Returns:
-        django.db.models.Q: Expressão Q para filtragem de periódico.
-
-    Raises:
-        RequiredISSNErrorToGetPidProviderXMLError: Se nem o ISSN eletrônico nem o impresso forem fornecidos.
-    """
-    q = Q()
-    if xml_adapter.z_surnames:
-        q |= Q(z_surnames=xml_adapter.z_surnames)
-    if xml_adapter.z_collab:
-        q |= Q(z_collab=xml_adapter.z_collab)
-    if xml_adapter.main_doi:
-        q |= Q(main_doi__iexact=xml_adapter.main_doi)
-    if xml_adapter.elocation_id:
-        q |= Q(elocation_id__iexact=xml_adapter.elocation_id)
-
-    if zero_to_none(xml_adapter.fpage):
-        q |= Q(fpage__iexact=xml_adapter.fpage)
-        if xml_adapter.fpage_seq:
-            q |= Q(fpage_seq__iexact=xml_adapter.fpage_seq)
-        if xml_adapter.lpage:
-            q |= Q(lpage__iexact=xml_adapter.lpage)
-
-    if xml_adapter.z_links:
-        q |= Q(z_links=xml_adapter.z_links)
-
-    if xml_adapter.z_partial_body:
-        q |= Q(z_partial_body=xml_adapter.z_partial_body)
-
-    return q
-
-
-@profile_function
-def get_pub_year_expression(xml_adapter):
-    """
-    Cria uma expressão Q do Django para filtragem por ano de publicação.
-
-    Esta função constrói uma expressão Q que corresponde a artigos por ano de publicação
-    do artigo ou ano de publicação geral. Pelo menos um ano deve ser fornecido.
-
-    Args:
-        xml_adapter: Objeto adaptador XML contendo informações de ano de publicação.
-
-    Returns:
-        django.db.models.Q: Expressão Q para filtragem por ano de publicação.
-
-    Raises:
-        RequiredPublicationYearErrorToGetPidProviderXMLError: Se nenhum ano de publicação for fornecido.
-    """
-    if xml_adapter.pub_year:
-        return {"pub_year": xml_adapter.pub_year}
-
-    raise exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError(
-        _("Required issue or article publication year {}").format(
-            xml_adapter.pkg_name,
-        )
-    )
-
-
-@profile_function
-def get_basic_params(xml_adapter, filter_by_issue=False):
-    """
-    Extrai parâmetros de consulta básicos do adaptador XML para identificação do artigo.
-
-    Esta função recupera identificadores fundamentais do artigo, incluindo sobrenomes dos autores,
-    colaborações, DOI e ID de localização eletrônica do adaptador XML.
-
-    Args:
-        xml_adapter: Objeto adaptador XML contendo metadados básicos do artigo.
-
-    Returns:
-        dict: Dicionário de parâmetros de consulta básicos, incluindo:
-            - z_surnames: Sobrenomes dos autores.
-            - z_collab: Informações de colaboração.
-            - main_doi__iexact: DOI principal (correspondência exata sem distinção entre maiúsculas e minúsculas).
-            - elocation_id__iexact: ID de localização eletrônica (correspondência exata sem distinção entre maiúsculas e minúsculas).
-    """
-    _params = {}
-    if xml_adapter.z_surnames:
-        _params["z_surnames"] = xml_adapter.z_surnames
-    if xml_adapter.z_collab:
-        _params["z_collab"] = xml_adapter.z_collab
-    if xml_adapter.main_doi:
-        _params["main_doi__iexact"] = xml_adapter.main_doi
-
-    if filter_by_issue:
-        if xml_adapter.elocation_id:
-            _params["elocation_id__iexact"] = xml_adapter.elocation_id
-
-        if xml_adapter.fpage:
-            fpage = zero_to_none(xml_adapter.fpage)
-            if fpage:
-                _params["fpage__iexact"] = fpage
-                _params["fpage_seq__iexact"] = xml_adapter.fpage_seq
-                _params["lpage__iexact"] = xml_adapter.lpage
-
-    return _params
-
-
-@profile_function
-def get_issue_params(xml_adapter, filter_by_issue=False, aop_version=False):
-    """
-    Extrai parâmetros de consulta específicos do fascículo do adaptador XML.
-
-    Esta função recupera parâmetros relacionados ao fascículo, como volume, número, suplemento
-    e informações de página. O comportamento muda dependendo se é para artigos AOP (Ahead of Print)
-    ou artigos regulares baseados em fascículos.
-
-    Args:
-        xml_adapter: Objeto adaptador XML contendo metadados do fascículo.
-        filter_by_issue (bool, optional): Se True, inclui parâmetros específicos do fascículo
-                                         como volume, número e informações de página. Padrão para False.
-        aop_version (bool, optional): Se True, define restrições nulas para artigos AOP
-                                     (sem volume, número ou suplemento). Padrão para False.
-
-    Returns:
-        dict: Dicionário de parâmetros de consulta específicos do fascículo. Para a versão AOP, inclui
-              restrições nulas; para filtragem por fascículo, inclui parâmetros de correspondência exata.
-    """
-    _params = {}
-    if aop_version:
-        _params["volume__isnull"] = True
-        _params["number__isnull"] = True
-        _params["suppl__isnull"] = True
-    elif filter_by_issue:
-        _params["volume__iexact"] = xml_adapter.volume
-        _params["number__iexact"] = xml_adapter.number
-        _params["suppl__iexact"] = xml_adapter.suppl
-    return _params
-
-
-@profile_function
-def get_disambiguation_params(xml_adapter):
-    """
-    Extrai parâmetros de desambiguação para identificação do artigo quando os parâmetros básicos são insuficientes.
-
-    Esta função fornece parâmetros adicionais (links ou conteúdo parcial do corpo) que podem ser usados
-    para desambiguar artigos quando os identificadores padrão não são suficientes para uma identificação única.
-
-    Args:
-        xml_adapter: Objeto adaptador XML contendo dados de desambiguação.
-
-    Returns:
-        dict: Dicionário contendo parâmetros de desambiguação (z_links ou z_partial_body).
-
-    Raises:
-        NotEnoughParametersToGetPidProviderXMLError: Se nem links nem conteúdo parcial do corpo
-                                                     estiverem disponíveis para desambiguação.
-    """
-    if xml_adapter.z_links:
-        return {"z_links": xml_adapter.z_links}
-
-    if xml_adapter.z_partial_body:
-        return {"z_partial_body": xml_adapter.z_partial_body}
-
-    raise exceptions.NotEnoughParametersToGetPidProviderXMLError(
-        _("No attribute enough for disambiguations {}").format(
-            xml_adapter.pkg_name,
-        )
-    )
-
-
-@profile_function
-def validate_query_params(query_params):
-    """
-    Valida se os parâmetros de consulta contêm informações suficientes para identificação do artigo.
-
-    Esta função garante que os parâmetros fornecidos incluam identificadores fortes
-    (DOI, primeira página ou ID de localização eletrônica) ou informações do autor
-    (sobrenomes ou colaboração).
-
-    Args:
-        query_params (dict): Dicionário de parâmetros de consulta a serem validados.
-
-    Returns:
-        bool: True se a validação for bem-sucedida.
-
-    Raises:
-        RequiredAuthorErrorToGetPidProviderXMLError: Se nenhuma informação do autor for fornecida
-                                                     e nenhum identificador forte estiver disponível.
-    """
-    if any(
-        [
-            query_params.get("main_doi__iexact"),
-            query_params.get("fpage__iexact"),
-            query_params.get("elocation_id__iexact"),
-        ]
-    ):
-        return True
-
-    if any(
-        [
-            query_params.get("z_surnames"),
-            query_params.get("z_collab"),
-        ]
-    ):
-        return True
-
-    raise exceptions.RequiredAuthorErrorToGetPidProviderXMLError(
-        _("Required collab or surname {}").format(
-            query_params,
-        )
-    )
+    
+    def __init__(self, xml_adapter):
+        """
+        Inicializa o construtor de queries.
+        
+        Parameters
+        ----------
+        xml_adapter : PidProviderXMLAdapter
+            Adaptador com dados do XML para busca
+        """
+        self.xml_adapter = xml_adapter
+    
+    # ========== Cached Properties para Atributos do XML Adapter ==========
+    
+    @cached_property
+    def v3(self):
+        """PID v3 do documento."""
+        return self.xml_adapter.v3
+    
+    @cached_property
+    def v2(self):
+        """PID v2 do documento."""
+        return self.xml_adapter.v2
+    
+    @cached_property
+    def aop_pid(self):
+        """PID AOP (Ahead of Print) do documento."""
+        return self.xml_adapter.aop_pid
+    
+    @cached_property
+    def pkg_name(self):
+        """Nome do pacote do documento."""
+        return self.xml_adapter.pkg_name
+    
+    @cached_property
+    def main_doi(self):
+        """DOI principal do documento."""
+        return self.xml_adapter.main_doi
+    
+    @cached_property
+    def journal_issn_electronic(self):
+        """ISSN eletrônico do periódico."""
+        return self.xml_adapter.journal_issn_electronic
+    
+    @cached_property
+    def journal_issn_print(self):
+        """ISSN impresso do periódico."""
+        return self.xml_adapter.journal_issn_print
+    
+    @cached_property
+    def elocation_id(self):
+        """Identificador de localização eletrônica."""
+        return self.xml_adapter.elocation_id
+    
+    @cached_property
+    def fpage(self):
+        """Primeira página do artigo."""
+        return self.xml_adapter.fpage
+    
+    @cached_property
+    def fpage_seq(self):
+        """Sequência da primeira página."""
+        return self.xml_adapter.fpage_seq
+    
+    @cached_property
+    def lpage(self):
+        """Última página do artigo."""
+        return self.xml_adapter.lpage
+    
+    @cached_property
+    def pub_year(self):
+        """Ano de publicação."""
+        return self.xml_adapter.pub_year
+    
+    @cached_property
+    def volume(self):
+        """Volume da publicação."""
+        return self.xml_adapter.volume
+    
+    @cached_property
+    def number(self):
+        """Número/fascículo da publicação."""
+        return self.xml_adapter.number
+    
+    @cached_property
+    def suppl(self):
+        """Suplemento da publicação."""
+        return self.xml_adapter.suppl
+    
+    @cached_property
+    def z_surnames(self):
+        """Sobrenomes dos autores concatenados."""
+        return self.xml_adapter.z_surnames
+    
+    @cached_property
+    def z_collab(self):
+        """Colaborações do artigo."""
+        return self.xml_adapter.z_collab
+    
+    @cached_property
+    def z_links(self):
+        """Links relacionados ao artigo."""
+        return self.xml_adapter.z_links
+    
+    @cached_property
+    def z_partial_body(self):
+        """Conteúdo parcial do corpo do artigo."""
+        return self.xml_adapter.z_partial_body
+
+    @cached_property
+    def order(self):
+        """Conteúdo parcial do corpo do artigo."""
+        return self.xml_adapter.order
+    
+    # ========== Queries Construídas ==========
+    
+    @cached_property
+    def identifier_queries(self):
+        """
+        Constrói queries para busca por identificadores (v3, v2, aop_pid, pkg_name, DOI).
+        
+        Busca em múltiplos campos incluindo other_pid para garantir
+        compatibilidade com diferentes formatos de PIDs.
+        
+        Returns
+        -------
+        Q
+            Query object combinando buscas por v3, v2, aop_pid, pkg_name e main_doi
+        """
+        q = Q()
+        
+        # PID v3 - máxima prioridade
+        if self.v3:
+            q |= Q(v3=self.v3)
+        
+        # PID v2
+        if self.v2:
+            q |= Q(v2=self.v2)
+        
+        # AOP PID
+        if self.aop_pid:
+            q |= Q(v2=self.aop_pid) | Q(aop_pid=self.aop_pid)
+            
+        # Package name
+        if self.pkg_name:
+            q |= Q(pkg_name=self.pkg_name)
+
+        # # DOI principal
+        # if self.main_doi:
+        #     q |= Q(main_doi=self.main_doi)
+
+        return q
+    
+    @cached_property
+    def issn_query(self):
+        """
+        Constrói query base para busca por ISSN (eletrônico ou impresso).
+        
+        Returns
+        -------
+        Q
+            Query object combinando ISSN eletrônico e impresso com operador OR
+        
+        Raises
+        ------
+        RequiredISSNErrorToGetPidProviderXMLError
+            Se nenhum ISSN (eletrônico ou impresso) estiver disponível
+        """
+        q = Q()
+        
+        if not self.journal_issn_electronic and not self.journal_issn_print:
+            raise exceptions.RequiredISSNErrorToGetPidProviderXMLError(
+                _("Required Print or Electronic ISSN to identify XML {}").format(
+                    self.pkg_name,
+                )
+            )
+        
+        if self.journal_issn_electronic:
+            q |= Q(issn_electronic=self.journal_issn_electronic)
+        
+        if self.journal_issn_print:
+            q |= Q(issn_print=self.journal_issn_print)
+        
+        return q
+           
+    @cached_property
+    def issue_params(self):
+        """
+        Constrói dicionário com metadados do fascículo e paginação do artigo.
+        
+        Retorna todos os campos sem verificar presença, permitindo
+        que o ORM do Django filtre automaticamente valores None.
+        
+        Returns
+        -------
+        dict
+            Dicionário com elocation_id, fpage, fpage_seq, lpage, 
+            pub_year, volume, number e suppl
+        """
+        data = {
+            "elocation_id": self.elocation_id,
+            "fpage": self.fpage,
+            "fpage_seq": self.fpage_seq,
+            "lpage": self.lpage,
+            "pub_year": self.pub_year,
+            "volume": self.volume,
+            "number": self.number,
+            "suppl": self.suppl,
+        }
+        if self.order:
+            data["v2__endswith"] = self.order
+        elif not self.elocation_id and not self.fpage and self.main_doi:
+            data["main_doi__iexact"] = self.main_doi
+        return data
+    
+    @cached_property
+    def article_data_query(self):
+        """
+        Constrói query para busca por dados textuais do artigo.
+        
+        Combina buscas por sobrenomes de autores, colaborações,
+        links e conteúdo parcial do corpo do artigo.
+        
+        Returns
+        -------
+        Q or None
+            Query object combinando z_surnames, z_collab, z_links e z_partial_body,
+            ou None se nenhum dado textual estiver disponível
+        """
+        # Verifica se há algum dado textual disponível
+        if not any([
+            self.z_surnames,
+            self.z_collab,
+            self.z_links,
+            self.z_partial_body,
+        ]):
+            return Q(
+                z_surnames=self.z_surnames,
+                z_collab=self.z_collab,
+                z_links=self.z_links,
+                z_partial_body=self.z_partial_body,
+            )
+        
+        q = Q()
+        
+        # Adiciona query para sobrenomes se disponível
+        if self.z_surnames:
+            q |= Q(z_surnames=self.z_surnames)
+        
+        # Adiciona queries para outros campos textuais
+        if self.z_collab:
+            q |= Q(z_collab=self.z_collab)
+        
+        if self.z_links:
+            q |= Q(z_links=self.z_links)
+        
+        if self.z_partial_body:
+            q |= Q(z_partial_body=self.z_partial_body)
+        
+        return q
