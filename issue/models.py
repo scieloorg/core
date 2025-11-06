@@ -468,7 +468,7 @@ class Issue(CommonControlField, ClusterableModel):
     
     @property
     def total_articles(self):
-        return self.article.count()
+        return self.article_set.count()
 
     @property
     def short_identification(self):
