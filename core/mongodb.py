@@ -75,5 +75,5 @@ def write_item(mongodb_collection_name, data, filter_query=None):
         )
         return response
     except Exception as e:
-        logging.exception(e)
-        raise Exception(f"Unable to create/update {filter_query}: {str(e)}")
+        logging.exception(f"unable to create/update {filter_query} ({MONGODB_DATABASE} {MONGODB_URI}) {str(e)}")
+        raise Exception(f"Unable to create/update {filter_query} {MONGODB_DATABASE}: {str(e)}")
