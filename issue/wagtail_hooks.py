@@ -65,6 +65,7 @@ class IssueAdminSnippetViewSet(SnippetViewSet):
 
     list_display = (
         "short_identification",
+        "journal",
         "year",
         "created",
         "updated",
@@ -72,7 +73,6 @@ class IssueAdminSnippetViewSet(SnippetViewSet):
     list_filter = (
         "journal__scielojournal__collection",
         "year",
-        "month",
     )
     search_fields = (
         "journal__title",

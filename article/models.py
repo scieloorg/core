@@ -264,6 +264,9 @@ class Article(
                     "pub_date_year",
                 ]
             ),
+            models.Index(fields=["pid_v2"]),
+            models.Index(fields=["is_classic_public"]),
+            models.Index(fields=["pp_xml"]),
         ]
 
     def __unicode__(self):
@@ -1923,6 +1926,13 @@ class ArticleAvailability(CommonControlField):
         FieldPanel("fmt", read_only=True),
         FieldPanel("error", read_only=True),        
     ]
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["article", "available"]),
+            models.Index(fields=["article", "collection", "fmt"]),
+        ]
+        # url já tem unique=True (cria índice automaticamente)
 
     @classmethod
     def get(cls, article, url):

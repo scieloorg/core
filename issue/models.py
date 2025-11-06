@@ -48,6 +48,17 @@ class AMIssue(BaseLegacyRecord):
         related_name="legacy_issue",
     )
 
+    class Meta:
+        verbose_name = _("Legacy issue")
+        verbose_name_plural = _("Legacy issues")
+        indexes = [
+            models.Index(
+                fields=[
+                    "pid",
+                ]
+            ),
+        ]
+
     panels = [
         AutocompletePanel("collection"),
         FieldPanel("pid"),
@@ -116,6 +127,8 @@ class Issue(CommonControlField, ClusterableModel):
         FieldPanel("order"),
         FieldPanel("markup_done"),
         FieldPanel("issue_pid_suffix", read_only=True),
+        FieldPanel("creator", read_only=True),
+        FieldPanel("updated_by", read_only=True),
     ]
 
     panels_bibl = [
@@ -164,6 +177,9 @@ class Issue(CommonControlField, ClusterableModel):
                     "supplement",
                 ]
             ),
+            models.Index(
+                fields=["markup_done"],
+            )
         ]
 
     def create_legacy_keys(self, user=None, force_update=None):
