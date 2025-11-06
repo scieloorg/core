@@ -3,6 +3,8 @@ from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
+from config.settings.base import COLLECTION_TEAM, JOURNAL_TEAM
+
 
 class User(AbstractUser):
     """
@@ -74,9 +76,9 @@ class User(AbstractUser):
     @property
     def has_collection_permission(self):
         """Verifica se o usuário tem permissões de collection."""
-        return self.groups.filter(name='COLLECTION_TEAM').exists()
+        return self.groups.filter(name=COLLECTION_TEAM).exists()
     
     @property
     def has_journal_permission(self):
         """Verifica se o usuário tem permissões de journal."""
-        return self.groups.filter(name='JOURNAL_TEAM').exists()
+        return self.groups.filter(name=JOURNAL_TEAM).exists()
