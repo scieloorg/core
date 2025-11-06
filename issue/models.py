@@ -327,6 +327,7 @@ class Issue(CommonControlField, ClusterableModel):
     def get(
         cls,
         journal,
+        year,
         volume=None,
         number=None,
         supplement=None,
@@ -334,10 +335,12 @@ class Issue(CommonControlField, ClusterableModel):
         """
         Get an existing Issue based on journal and issue identification.
         """
-        if not journal:
-            raise ValueError("Journal is required")
+        if not journal and not year:
+            raise ValueError("Journal and year are required")
         
         params = {'journal': journal}
+        if year is not None:
+            params['year'] = year
         if number is not None:
             params['number'] = number
         if volume is not None:
@@ -411,6 +414,7 @@ class Issue(CommonControlField, ClusterableModel):
             # If creation fails due to integrity error, try to get existing
             return cls.get(
                 journal=journal,
+                year=year,
                 volume=volume,
                 number=number,
                 supplement=supplement
@@ -439,8 +443,9 @@ class Issue(CommonControlField, ClusterableModel):
         try:
             return cls.get(
                 journal=journal,
-                number=number,
+                year=year,
                 volume=volume,
+                number=number,
                 supplement=supplement
             )
         except cls.DoesNotExist:
@@ -462,6 +467,10 @@ class Issue(CommonControlField, ClusterableModel):
 
     def __str__(self):
         return self.short_identification
+    
+    @property
+    def total_articles(self):
+        return self.article_set.count()
 
     @property
     def short_identification(self):

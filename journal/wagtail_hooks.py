@@ -14,7 +14,6 @@ from wagtail.snippets.views.snippets import (
 from wagtail_modeladmin.options import ModelAdmin
 
 from config.menu import get_menu_order
-from config.settings.base import COLLECTION_TEAM, JOURNAL_TEAM
 from journalpage.models import JournalPage
 
 from . import models
@@ -115,6 +114,8 @@ class FilteredJournalQuerysetMixin:
         "contact_location",
         "created",
         "updated",
+        "creator",
+        "updated_by",
     )
     list_filter = (
         "journal_use_license",
@@ -135,21 +136,21 @@ class FilteredJournalQuerysetMixin:
             .select_related("contact_location")
             .prefetch_related("scielojournal_set")
         )
-
         user = request.user
-        if user.is_superuser:
-            return qs
+        if not user.is_authenticated:
+            return qs.none()
 
-        user_groups = request.user.groups.values_list("name", flat=True)
-        if COLLECTION_TEAM in user_groups:
-            collections = getattr(user, "collections", None)
-            if collections is not None:
-                return qs.filter(scielojournal__collection__in=collections)
-        elif JOURNAL_TEAM in user_groups:
-            journals = getattr(user, "journals", None)
-            if journals is not None:
-                journals_ids = journals.values_list("id", flat=True)
-                return qs.filter(id__in=journals_ids)
+        if user.is_superuser:
+            return qs.all()
+
+        if user.has_collection_permission and user.collection_ids:
+            return qs.filter(
+                scielojournal__collection__in=user.collection_ids
+            ).distinct()
+        elif user.has_journal_permission and user.journal_ids:
+            return qs.filter(
+                scielojournal__journal__id__in=user.journal_ids
+            ).distinct()
         return qs.none()
 
 

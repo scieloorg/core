@@ -70,3 +70,13 @@ class User(AbstractUser):
 
         """
         return list(self.journal.values_list('id', flat=True))
+
+    @property
+    def has_collection_permission(self):
+        """Verifica se o usuário tem permissões de collection."""
+        return self.groups.filter(name='COLLECTION_TEAM').exists()
+    
+    @property
+    def has_journal_permission(self):
+        """Verifica se o usuário tem permissões de journal."""
+        return self.groups.filter(name='JOURNAL_TEAM').exists()
