@@ -112,7 +112,7 @@ class ArticlemetaIssueFormatter:
                 )
 
         # Part (dado fixo)
-        self.result["issue"]["v34"].append({"_": None})
+        self.result["issue"]["v34"] = [{"_": None}]
         self._format_volume_supplement_number_info()
         self._format_issue_type()
 
