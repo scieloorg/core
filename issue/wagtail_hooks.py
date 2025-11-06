@@ -111,7 +111,7 @@ class IssueAdminSnippetViewSet(SnippetViewSet):
         if user.has_journal_permission and user.journal_ids:
             return qs.filter(
                 journal__id__in=user.journal_ids
-            )
+            ).distinct()
         
         return qs.none()
 
