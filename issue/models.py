@@ -335,10 +335,12 @@ class Issue(CommonControlField, ClusterableModel):
         """
         Get an existing Issue based on journal and issue identification.
         """
-        if not journal:
-            raise ValueError("Journal is required")
+        if not journal and not year:
+            raise ValueError("Journal and year are required")
         
         params = {'journal': journal}
+        if year is not None:
+            params['year'] = year
         if number is not None:
             params['number'] = number
         if volume is not None:
