@@ -1,8 +1,9 @@
-import datetime
+from datetime import datetime, timezone
 import logging
 
 from django.conf import settings
-from pymongo import MongoClient, UpdateOne
+from pymongo import MongoClient
+
 
 MONGODB_DATABASE = settings.MONGODB_DATABASE
 MONGODB_URI = settings.MONGODB_URI
@@ -27,16 +28,6 @@ def get_client(uri=None):
 
 
 def get_mongodb_collection(mongodb_collection_name):
-    """
-    Returns a MongoClient instance.
-    If no URI is provided, it uses the default MongoDB URI from settings.
-
-    Args:
-        uri (str): MongoDB URI. If None, uses the default from settings. Default value should be something like "mongodb://localhost:27017/".
-
-    Returns:
-        MongoClient: A MongoClient instance.
-    """
     try:
         return get_client()[MONGODB_DATABASE][mongodb_collection_name]
     except Exception as e:
@@ -53,7 +44,7 @@ def write_item(mongodb_collection_name, data, filter_query=None):
             "code": data["code"],
             "collection": data["collection"],
         }
-
+        convert_dates(data)
         # A atualização define os campos, incluindo a última visita
         update_data = {
             "$set": data,
@@ -77,3 +68,30 @@ def write_item(mongodb_collection_name, data, filter_query=None):
     except Exception as e:
         logging.exception(f"unable to create/update {filter_query} ({MONGODB_DATABASE} {MONGODB_URI}) {str(e)}")
         raise Exception(f"Unable to create/update {filter_query} {MONGODB_DATABASE}: {str(e)}")
+
+
+def fix_document_processing_date(document):
+    if "processing_date" in document:
+        document["processing_date"] = datetime_fromisoformat(document["processing_date"])
+    if "created_at" in document:
+        document["created_at"] = datetime_fromisoformat(document["created_at"])
+    else:
+        document["created_at"] = datetime.now(timezone.utc)
+
+
+def datetime_fromisoformat(date_str):
+    try:
+        return datetime.fromisoformat(date_str)
+    except ValueError:
+        logging.warning(f"Invalid date format: {date_str}. Setting to current UTC time.")
+        return datetime.now(timezone.utc)
+
+
+def convert_dates(data):
+    fix_document_processing_date(data)
+    for key in ["title", "issue", "article"]:
+        try:
+            fix_document_processing_date(data[key])
+        except KeyError:
+            return
+
