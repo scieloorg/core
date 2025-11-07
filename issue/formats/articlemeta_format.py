@@ -217,17 +217,20 @@ class ArticlemetaIssueFormatter:
 
     def _format_metadata(self):
         """Metadados e relacionamentos"""
+        # tem que ser objeto datetime
+        processing_date = self.obj.updated.strftime("%Y-%m-%d")
+
         key_to_code = {
             "publication_date": self.obj.year,
             "publication_year": self.obj.year,
             "created_at": self.obj.created.strftime("%Y-%m-%d"),
-            "processing_date": self.obj.created.strftime("%Y-%m-%d"),
+            "processing_date": processing_date,
         }
         for key, value in key_to_code.items():
             self.result[key] = value
 
-        self.result["issue"]["processing_date"] = self.obj.created.strftime("%Y-%m-%d")
-        add_to_result("v91", self.obj.created.strftime("%Y%m%d"), self.result["issue"])
+        self.result["issue"]["processing_date"] = processing_date
+        add_to_result("v91", self.obj.updated.strftime("%Y%m%d"), self.result["issue"])
 
     def _format_system_info(self):
         """Informações do sistema"""
@@ -350,8 +353,7 @@ class ArticlemetaIssueFormatter:
 
     def _format_issn_code_title(self, issn_print, issn_electronic):
         self.result["code_title"] = [
-            issn_electronic,
-            issn_print,
+            item for item in [issn_electronic, issn_print] if item
         ]
 
     def _format_code_sections(self):
