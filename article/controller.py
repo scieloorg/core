@@ -356,7 +356,8 @@ def bulk_export_articles_to_articlemeta(
             try:
                 if force_update:
                     article.check_availability(user)
-                    
+                    if not article.is_classic_public:
+                        continue
                 export_article_to_articlemeta(
                     user,
                     article=article,
