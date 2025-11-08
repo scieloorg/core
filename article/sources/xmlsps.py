@@ -181,12 +181,20 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
 
         # FOREIGN KEYS SIMPLES
         article.journal = get_journal(xmltree=xmltree, errors=errors)
+        if not article.journal:
+            article.save()
+            add_error(errors, "load_article", "Journal not found", item=pid_v3)
+            raise ValueError(f"Not found journal for article: {pid_v3}")
         article.issue = get_issue(
             xmltree=xmltree,
             journal=article.journal,
             item=pid_v3,
             errors=errors,
         )
+        if not article.issue:
+            article.save()
+            add_error(errors, "load_article", "Issue not found", item=pid_v3)
+            raise ValueError(f"Not found issue for article: {pid_v3}")
 
         # Salvar uma vez após definir todos os campos simples
         logging.info(
