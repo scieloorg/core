@@ -163,7 +163,6 @@ def export_article_to_articlemeta(
                     "article": str(article),
                     "collection_acron_list": collection_acron_list,
                     "force_update": force_update,
-                    "events": events,
                 },
             )
             return
@@ -199,12 +198,6 @@ def export_article_to_articlemeta(
                 if not exporter:
                     # não encontrou necessidade de exportar
                     continue
-
-                # for avail_item in article.get_availability(collection=col, fmt="xml"):
-                #     events.append(avail_item.data)
-                #     if not avail_item.available:
-                #         raise ArticleIsNotAvailableError(str(avail_item.data))
-                #     break
 
                 data = {"collection": col.acron3}
                 data.update(article_data)
@@ -356,8 +349,8 @@ def bulk_export_articles_to_articlemeta(
             try:
                 if force_update:
                     article.check_availability(user)
-                    if not article.is_classic_public:
-                        continue
+                if not article.is_classic_public:
+                    continue
                 export_article_to_articlemeta(
                     user,
                     article=article,
