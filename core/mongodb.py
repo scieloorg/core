@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 import logging
 
 from django.conf import settings
@@ -7,7 +7,6 @@ from pymongo import MongoClient
 
 MONGODB_DATABASE = settings.MONGODB_DATABASE
 MONGODB_URI = settings.MONGODB_URI
-
 
 def get_client(uri=None):
     """
@@ -81,7 +80,10 @@ def fix_document_processing_date(document):
 
 def datetime_fromisoformat(date_str):
     try:
-        return datetime.fromisoformat(date_str)
+        dt = datetime.fromisoformat(date_str)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
     except ValueError:
         logging.warning(f"Invalid date format: {date_str}. Setting to current UTC time.")
         return datetime.now(timezone.utc)
