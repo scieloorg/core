@@ -181,12 +181,18 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
 
         # FOREIGN KEYS SIMPLES
         article.journal = get_journal(xmltree=xmltree, errors=errors)
+        if not article.journal:
+            article.save()
+            raise ValueError(f"Not found journal for article: {pid_v3}")
         article.issue = get_issue(
             xmltree=xmltree,
             journal=article.journal,
             item=pid_v3,
             errors=errors,
         )
+        if not article.issue:
+            article.save()
+            raise ValueError(f"Not found issue for article: {pid_v3}")
 
         # Salvar uma vez após definir todos os campos simples
         logging.info(
@@ -238,7 +244,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user, errors=errors))
         article.create_legacy_keys(user)
         if not article.pid_v2:
-            add_error(errors, "load_article", "Article has no PID v2", item=article.pid_v3)
+            raise ValueError(f"Article has no PID v2: {article.pid_v3}")
         if not errors:
             article.mark_as_completed()
 
@@ -249,6 +255,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         return article
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
+        add_error(errors, "load_article", e)
 
         if event:
             event.finish(errors=errors, exceptions=traceback.format_exc())
