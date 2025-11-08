@@ -255,8 +255,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         return article
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        if errors:
-            add_error(errors, "load_article", e)
+        add_error(errors, "load_article", e)
 
         if event:
             event.finish(errors=errors, exceptions=traceback.format_exc())
