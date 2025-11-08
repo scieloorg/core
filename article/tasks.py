@@ -279,7 +279,7 @@ def task_export_articles_to_articlemeta(
     from_date=None,
     until_date=None,
     days_to_go_back=None,
-    force_update=True,
+    force_update=None,
     user_id=None,
     username=None,
 ):
@@ -301,7 +301,7 @@ def task_export_articles_to_articlemeta(
     """
     try:
         user = _get_user(self.request, username=username, user_id=user_id)
-        
+
         result = controller.bulk_export_articles_to_articlemeta(
             user,
             collection_acron_list=collection_acron_list,

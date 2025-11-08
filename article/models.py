@@ -590,8 +590,9 @@ class Article(
         pp_xml__isnull=None,
         sps_pkg_name__isnull=None,
         article_license__isnull=None,
+        params=None,
     ):
-        params = {}
+        params = params or {}
         if collection_acron_list:
             params["journal__scielojournal__collection__acron3__in"] = (
                 collection_acron_list
@@ -628,30 +629,7 @@ class Article(
             q |= Q(sps_pkg_name__isnull=sps_pkg_name__isnull)
         if article_license__isnull is not None:
             q |= Q(article_license__isnull=article_license__isnull)
-        queryset = cls.objects.filter(q, **params).distinct()
-        if not queryset.exists():
-            UnexpectedEvent.create(
-                exception=ValueError("No articles found for the given filters"),
-                detail={
-                    "function": "Article.select_items",
-                    "params": params,
-                    "collection_acron_list": collection_acron_list,
-                    "journal_acron_list": journal_acron_list,
-                    "from_pub_year": from_pub_year,
-                    "until_pub_year": until_pub_year,
-                    "volume": volume,
-                    "number": number,
-                    "supplement": supplement,
-                    "from_updated_date": str(from_updated_date) if from_updated_date else None,
-                    "until_updated_date": str(until_updated_date) if until_updated_date else None,
-                    "data_status_list": data_status_list,
-                    "valid": valid,
-                    "pp_xml__isnull": pp_xml__isnull,
-                    "sps_pkg_name__isnull": sps_pkg_name__isnull,
-                    "article_license__isnull": article_license__isnull,
-                },
-            )
-        return queryset
+        return cls.objects.filter(q, **params).distinct()
 
     @classmethod
     def select_journal_articles(cls, journal=None, journal_id=None, issns=None):

@@ -163,18 +163,15 @@ def export_article_to_articlemeta(
                     "article": str(article),
                     "collection_acron_list": collection_acron_list,
                     "force_update": force_update,
-                    "events": events,
                 },
             )
             return
 
         events = []
         external_data = {
-            
-            # "code": article.pid_v2,
             "created_at": article.created.strftime("%Y-%m-%d"),
             "document_type": article.article_type,
-            "processing_date": article.updated.isoformat()[:10],
+            "processing_date": article.updated.strftime("%Y-%m-%d"),
             "publication_date": article.pub_date,
             "publication_year": article.issue.year,
             "version": "xml",
@@ -201,12 +198,6 @@ def export_article_to_articlemeta(
                 if not exporter:
                     # não encontrou necessidade de exportar
                     continue
-
-                # for avail_item in article.get_availability(collection=col, fmt="xml"):
-                #     events.append(avail_item.data)
-                #     if not avail_item.available:
-                #         raise ArticleIsNotAvailableError(str(avail_item.data))
-                #     break
 
                 data = {"collection": col.acron3}
                 data.update(article_data)
@@ -300,7 +291,7 @@ def bulk_export_articles_to_articlemeta(
     from_date=None,
     until_date=None,
     days_to_go_back=None,
-    force_update=True,
+    force_update=None,
     version=None,
 ):
     """
@@ -322,6 +313,12 @@ def bulk_export_articles_to_articlemeta(
         bool: True if the export was successful, False otherwise
     """
     try:
+        params = {}
+        if not force_update:
+            # seleciona os artigos considerados publicados
+            params = {
+                "is_classic_public": True,
+            }
         queryset = Article.select_items(
             collection_acron_list=collection_acron_list,
             journal_acron_list=journal_acron_list,
@@ -329,6 +326,7 @@ def bulk_export_articles_to_articlemeta(
             until_pub_year=until_pub_year,
             from_updated_date=from_date,
             until_updated_date=until_date,
+            params=params
         )
         if not queryset.exists():
             UnexpectedEvent.create(
@@ -351,7 +349,8 @@ def bulk_export_articles_to_articlemeta(
             try:
                 if force_update:
                     article.check_availability(user)
-                    
+                if not article.is_classic_public:
+                    continue
                 export_article_to_articlemeta(
                     user,
                     article=article,
