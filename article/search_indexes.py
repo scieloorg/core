@@ -1407,6 +1407,75 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             return obj.journal.official.issnl
         return None
 
+    def prepare_mods_origininfo_publisher(self, obj):
+        """
+        Editora(s) do periódico
+
+        JUSTIFICATIVA:
+        Identifica responsável pela publicação:
+        - Nome oficial da editora
+        - Importante para avaliação de credibilidade
+        - Necessário para citação bibliográfica completa
+        - Usado em análises de concentração editorial
+        Dublin Core dc.publisher tem limitações de estruturação.
+
+        MAPEAMENTO:
+        Dublin Core dc.publisher → MODS <originInfo><publisher>
+
+        FONTE DE DADOS:
+        - Journal.publisher_history.organization.name (prioridade)
+        - Journal.publisher_history.institution (fallback legado)
+
+        EXEMPLO XML (MODS):
+        <originInfo>
+            <publisher>Sociedade Brasileira de Medicina (SBM)</publisher>
+        </originInfo>
+
+        REFERÊNCIA OFICIAL:
+        - originInfo: https://www.loc.gov/standards/mods/userguide/origininfo.html
+        - publisher: https://www.loc.gov/standards/mods/userguide/origininfo.html#publisher
+
+        Returns:
+            list: Lista de editoras com acrônimos
+            Exemplo: ["Sociedade Brasileira de Medicina (SBM)", "Editora FIOCRUZ"]
+        """
+        publishers = []
+
+        if not (obj.journal and hasattr(obj.journal, 'publisher_history') and
+                obj.journal.publisher_history.exists()):
+            return publishers
+
+        for pub_history in obj.journal.publisher_history.select_related(
+            'institution__institution__institution_identification',
+            'organization'
+        ):
+            pub_name = None
+
+            # Tentar nova estrutura Organization primeiro
+            if pub_history.organization and pub_history.organization.name:
+                pub_name = pub_history.organization.name.strip()
+
+                if (pub_history.organization.acronym and
+                    pub_history.organization.acronym.strip()):
+                    pub_name += f" ({pub_history.organization.acronym.strip()})"
+
+            # Fallback para estrutura Institution legada
+            elif (pub_history.institution and
+                  pub_history.institution.institution and
+                  pub_history.institution.institution.institution_identification and
+                  pub_history.institution.institution.institution_identification.name):
+
+                inst_id = pub_history.institution.institution.institution_identification
+                pub_name = inst_id.name.strip()
+
+                if inst_id.acronym and inst_id.acronym.strip():
+                    pub_name += f" ({inst_id.acronym.strip()})"
+
+            if pub_name and pub_name not in publishers:
+                publishers.append(pub_name)
+
+        return publishers
+
     def get_model(self):
         return Article
 
