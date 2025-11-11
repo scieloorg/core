@@ -1124,6 +1124,45 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             return str(obj.issue.volume).strip()
         return None
 
+    def prepare_mods_relateditem_host_issue(self, obj):
+        """
+        Número do fascículo
+
+        JUSTIFICATIVA:
+        Elemento para citação bibliográfica:
+        - Identifica fascículo específico dentro do volume
+        - Necessário para localização precisa do artigo
+        - Tipicamente: número sequencial dentro do ano/volume
+
+        MAPEAMENTO:
+        Sem equivalente em Dublin Core → MODS <relatedItem><part><detail type="issue">
+
+        FONTE DE DADOS:
+        - Article.issue.number
+
+        EXEMPLO XML (MODS 3.5 - Journal Article):
+        <relatedItem type="host">
+            <part>
+                <detail type="issue">
+                    <number>2</number>
+                    <caption>no.</caption>
+                </detail>
+            </part>
+        </relatedItem>
+
+        Fonte: https://www.loc.gov/standards/mods/v3/modsjournal.xml
+
+        REFERÊNCIA OFICIAL:
+        - part: https://www.loc.gov/standards/mods/userguide/part.html
+
+        Returns:
+            str: Número do fascículo
+            Exemplo: "7"
+        """
+        if obj.issue and obj.issue.number:
+            return str(obj.issue.number).strip()
+        return None
+
     def get_model(self):
         return Article
 
