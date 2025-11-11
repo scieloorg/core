@@ -1631,6 +1631,47 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         return None
 
+    def prepare_mods_accesscondition_licenseurl(self, obj):
+        """
+        URL da licença Creative Commons
+
+        JUSTIFICATIVA:
+        Link direto para texto legal da licença:
+        - Permite verificação automática de termos
+        - URL canônica da licença CC
+        - Facilita compliance check de políticas OA
+        - Usado por harvesters para validação de direitos
+
+        MAPEAMENTO:
+        Sem equivalente em Dublin Core → MODS <accessCondition xlink:href="...">
+
+        FONTE DE DADOS:
+        - LicenseStatement.url (se disponível via relacionamento)
+
+        EXEMPLO XML (MODS):
+        <accessCondition type="use and reproduction"
+                         xlink:href="https://creativecommons.org/licenses/by/4.0/">
+            Creative Commons BY 4.0
+        </accessCondition>
+
+        REFERÊNCIA OFICIAL:
+        - accessCondition: https://www.loc.gov/standards/mods/userguide/accesscondition.html
+        - XLink: https://www.w3.org/TR/xlink11/
+
+        Returns:
+            str: URL da licença ou None
+            Exemplo: "https://creativecommons.org/licenses/by/4.0/"
+        """
+        # Tentar extrair URL se disponível via license_statements
+        if hasattr(obj, 'license_statements') and obj.license_statements.exists():
+            for statement in obj.license_statements.all():
+                if statement.url:
+                    return statement.url.strip()
+
+        # Se não tiver URL explícita, retornar None
+        # (não vamos construir URLs artificiais)
+        return None
+
     def get_model(self):
         return Article
 
