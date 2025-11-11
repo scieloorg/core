@@ -650,6 +650,66 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         return names
 
+    def prepare_mods_name_orcid(self, obj):
+        """
+        ORCIDs dos autores (flat list)
+
+        JUSTIFICATIVA:
+        Identificadores persistentes ORCID são essenciais para:
+        - Desambiguação de autores (evita homônimos)
+        - Integração com sistemas de gestão de pesquisa (CRIS)
+        - Compliance com mandatos de agências de fomento (FAPESP, CNPq, CAPES)
+        - Rastreamento de produção científica ao longo do tempo
+        - Linkagem com perfis em bases internacionais (WoS, Scopus, PubMed)
+        Dublin Core não possui campo para identificadores de pessoa.
+
+        MAPEAMENTO:
+        Sem equivalente em Dublin Core → MODS <name><nameIdentifier type="orcid">
+
+        FONTE DE DADOS:
+        - ResearcherAKA.researcher_identifier (source_name='ORCID')
+
+        EXEMPLO XML (MODS 3.7):
+        <name type="personal">
+            <namePart>Silva, João</namePart>
+            <nameIdentifier type="orcid" authority="orcid">
+                0000-0001-2345-6789
+            </nameIdentifier>
+            <role>
+                <roleTerm type="text" authority="marcrelator">author</roleTerm>
+            </role>
+        </name>
+
+        REFERÊNCIA OFICIAL:
+        - nameIdentifier: https://www.loc.gov/standards/mods/userguide/name.html#nameidentifier
+        - ORCID Registry: https://orcid.org/
+
+        Returns:
+            list: Lista de ORCIDs no formato 0000-0001-2345-6789
+            Exemplo: ["0000-0001-2345-6789", "0000-0002-8765-4321"]
+        """
+        orcids = []
+
+        if not obj.researchers.exists():
+            return orcids
+
+        researchers = obj.researchers.prefetch_related(
+            'researcheraka_set__researcher_identifier'
+        ).all()
+
+        for researcher in researchers:
+            for aka in researcher.researcheraka_set.all():
+                if (aka.researcher_identifier and
+                    aka.researcher_identifier.source_name and
+                    aka.researcher_identifier.source_name.upper() == 'ORCID' and
+                    aka.researcher_identifier.identifier):
+
+                    orcid = aka.researcher_identifier.identifier.strip()
+                    if orcid and orcid not in orcids:
+                        orcids.append(orcid)
+
+        return orcids
+
     def get_model(self):
         return Article
 
