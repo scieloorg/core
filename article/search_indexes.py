@@ -1311,6 +1311,38 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             return str(obj.elocation_id).strip()
         return None
 
+    def prepare_mods_identifier_issn_print(self, obj):
+        """
+        ISSN da versão impressa
+
+        JUSTIFICATIVA:
+        Identificador persistente da versão física do periódico:
+        - ISSN histórico (muitos periódicos nasceram impressos)
+        - Usado em indexação retrospectiva
+        - Necessário para vinculação com acervos físicos
+        - Importante para periódicos híbridos (impresso + online)
+
+        MAPEAMENTO:
+        Dublin Core dc.identifier → MODS <identifier type="issn" displayLabel="Print ISSN">
+
+        FONTE DE DADOS:
+        - Journal.official.issn_print
+
+        EXEMPLO XML (MODS):
+        <identifier type="issn" displayLabel="Print ISSN">0363-9061</identifier>
+
+        REFERÊNCIA OFICIAL:
+        - identifier: https://www.loc.gov/standards/mods/userguide/identifier.html
+        - ISSN: https://www.issn.org/understanding-the-issn/what-is-an-issn/
+
+        Returns:
+            str: ISSN impresso no formato ####-####
+            Exemplo: "1234-5678"
+        """
+        if obj.journal and obj.journal.official and obj.journal.official.issn_print:
+            return obj.journal.official.issn_print
+        return None
+
     def get_model(self):
         return Article
 
