@@ -287,6 +287,8 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     public = indexes.CharField(index_fieldname="item.public", null=True)
     collections = indexes.MultiValueField(index_fieldname="item.collections", null=True)
     communities = indexes.MultiValueField(index_fieldname="item.communities", null=True)
+
+    # Dublin Core
     titles = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.title")
     creator = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.creator")
     collab = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.collab")
@@ -305,6 +307,139 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     compile = indexes.CharField(
         null=True, index_fieldname="item.compile", use_template=True
     )
+
+    # MODS - name
+    # Nome completo dos autores
+    mods_name_text = indexes.MultiValueField(
+        null=True, index_fieldname="metadata.mods.name.text"
+    )
+
+    # ORCIDs dos autores
+    mods_name_orcid = indexes.MultiValueField(
+        null=True, index_fieldname="metadata.mods.name.orcid"
+    )
+
+    # Afiliações estruturadas
+    mods_name_affiliation = indexes.MultiValueField(
+        null=True, index_fieldname="metadata.mods.name.affiliation"
+    )
+
+    # Papéis (author, editor, etc)
+    mods_name_role = indexes.MultiValueField(
+        null=True, index_fieldname="metadata.mods.name.role"
+    )
+
+    # MODS - subjects
+    # Keywords do artigo
+    mods_subject_keyword = indexes.MultiValueField(
+        null=True, index_fieldname="metadata.mods.subject.keyword"
+    )
+
+    # Subject areas do journal
+    mods_subject_area = indexes.MultiValueField(
+        null=True, index_fieldname="metadata.mods.subject.area"
+    )
+
+    # Web of Science categories
+    mods_subject_wos = indexes.MultiValueField(
+        null=True, index_fieldname="metadata.mods.subject.wos"
+    )
+
+    # Áreas temáticas CAPES
+    mods_subject_capes = indexes.MultiValueField(
+        null=True, index_fieldname="metadata.mods.subject.capes"
+    )
+
+    # MODS - relatedItem.host
+    # Título do periódico
+    mods_relateditem_host_title = indexes.CharField(
+        null=True, index_fieldname="metadata.mods.relatedItem.host.title"
+    )
+
+    # ISSNs do periódico
+    mods_relateditem_host_issn = indexes.MultiValueField(
+        null=True, index_fieldname="metadata.mods.relatedItem.host.issn"
+    )
+
+    # Volume
+    mods_relateditem_host_volume = indexes.CharField(
+        null=True, index_fieldname="metadata.mods.relatedItem.host.volume"
+    )
+
+    # Número/Issue
+    mods_relateditem_host_issue = indexes.CharField(
+        null=True, index_fieldname="metadata.mods.relatedItem.host.issue"
+    )
+
+    # Suplemento
+    mods_relateditem_host_supplement = indexes.CharField(
+        null=True, index_fieldname="metadata.mods.relatedItem.host.supplement"
+    )
+
+    # MODS - part
+    # Página inicial
+    mods_part_page_start = indexes.CharField(
+        null=True, index_fieldname="metadata.mods.part.pages.start"
+    )
+
+    # Página final
+    mods_part_page_end = indexes.CharField(
+        null=True, index_fieldname="metadata.mods.part.pages.end"
+    )
+
+    # elocation-id (para artigos sem paginação)
+    mods_part_elocation = indexes.CharField(
+        null=True, index_fieldname="metadata.mods.part.elocation"
+    )
+
+    # MODS - identifier
+    # ISSN impresso
+    mods_identifier_issn_print = indexes.CharField(
+        null=True, index_fieldname="metadata.mods.identifier.issn.print"
+    )
+
+    # ISSN eletrônico
+    mods_identifier_issn_electronic = indexes.CharField(
+        null=True, index_fieldname="metadata.mods.identifier.issn.electronic"
+    )
+
+    # ISSN-L (linking)
+    mods_identifier_issnl = indexes.CharField(
+        null=True, index_fieldname="metadata.mods.identifier.issnl"
+    )
+
+    # MODS - originInfo
+    # Editora(s)
+    mods_origininfo_publisher = indexes.MultiValueField(
+        null=True, index_fieldname="metadata.mods.originInfo.publisher"
+    )
+
+    # Lugar de publicação
+    mods_origininfo_place = indexes.MultiValueField(
+        null=True, index_fieldname="metadata.mods.originInfo.place"
+    )
+
+    # Data estruturada (w3cdtf)
+    mods_origininfo_date = indexes.CharField(
+        null=True, index_fieldname="metadata.mods.originInfo.date"
+    )
+
+    # MODS - accessCondition
+    # Tipo de licença
+    mods_accesscondition_license = indexes.CharField(
+        null=True, index_fieldname="metadata.mods.accessCondition.license"
+    )
+
+    # URL da licença (Creative Commons)
+    mods_accesscondition_licenseurl = indexes.CharField(
+        null=True, index_fieldname="metadata.mods.accessCondition.licenseURL"
+    )
+
+    # Política de Open Access
+    mods_accesscondition_openaccess = indexes.CharField(
+        null=True, index_fieldname="metadata.mods.accessCondition.openAccess"
+    )
+
 
     def prepare_id(self, obj):
         """This field is the identifier of the record
