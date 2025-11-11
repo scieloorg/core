@@ -1580,6 +1580,57 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         return "-".join(date_parts)
 
+    def prepare_mods_accesscondition_license(self, obj):
+        """
+        Tipo de licença do artigo
+
+        JUSTIFICATIVA:
+        Especifica direitos de uso e reutilização:
+        - Creative Commons (BY, BY-NC, BY-SA, etc.)
+        - Licenças proprietárias
+        - Essencial para compliance com mandatos de Open Access
+        - Determina legalidade de text mining e reuso
+        Dublin Core dc.rights tem texto livre (menos estruturado).
+
+        MAPEAMENTO:
+        Dublin Core dc.rights → MODS <accessCondition type="use and reproduction">
+
+        FONTE DE DADOS:
+        - Article.license.license_type (prioridade)
+        - Journal.journal_use_license.license_type (fallback)
+        - Journal.use_license.license_type (fallback secundário)
+
+        EXEMPLO XML (MODS):
+        <accessCondition type="use and reproduction"
+                         authority="creativecommons"
+                         authorityURI="https://creativecommons.org/">
+            Creative Commons BY 4.0
+        </accessCondition>
+
+        REFERÊNCIA OFICIAL:
+        - accessCondition: https://www.loc.gov/standards/mods/userguide/accesscondition.html
+        - Creative Commons: https://creativecommons.org/licenses/
+
+        Returns:
+            str: Tipo de licença
+            Exemplo: "Creative Commons BY 4.0"
+        """
+        # Fonte 1: Licença do artigo
+        if obj.license and obj.license.license_type:
+            return obj.license.license_type.strip()
+
+        # Fonte 2: Licença do journal
+        if obj.journal:
+            if (obj.journal.journal_use_license and
+                obj.journal.journal_use_license.license_type):
+                return obj.journal.journal_use_license.license_type.strip()
+
+            if (obj.journal.use_license and
+                obj.journal.use_license.license_type):
+                return obj.journal.use_license.license_type.strip()
+
+        return None
+
     def get_model(self):
         return Article
 
