@@ -944,6 +944,59 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         return wos_categories
 
+    def prepare_mods_subject_capes(self, obj):
+        """
+        Áreas temáticas CAPES
+
+        JUSTIFICATIVA:
+        Taxonomia oficial brasileira para avaliação de programas de pós-graduação:
+        - Classificação de periódicos no Qualis CAPES
+        - Avaliação de produção científica de programas
+        - Estatísticas nacionais de pesquisa
+        - Compliance com políticas de fomento nacionais (CNPq, FAPESP)
+
+        MAPEAMENTO:
+        Sem equivalente em Dublin Core → MODS <subject><topic authority="capes-thematic-area">
+
+        FONTE DE DADOS:
+        - Journal.thematic_area (hierarquia: level2 > level1 > level0)
+
+        EXEMPLO XML (MODS):
+        <subject>
+            <topic authority="capes-thematic-area">Medicina II</topic>
+        </subject>
+        <subject>
+            <topic authority="capes-thematic-area">Saúde Coletiva</topic>
+        </subject>
+
+        REFERÊNCIA OFICIAL:
+        - subject: https://www.loc.gov/standards/mods/userguide/subject.html
+        - CAPES Áreas: https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/avaliacao/sobre-a-avaliacao/areas-avaliacao
+
+        Returns:
+            list: Lista de áreas CAPES (nível mais específico disponível)
+            Exemplo: ["Medicina II", "Enfermagem", "Saúde Coletiva"]
+        """
+        capes_areas = []
+
+        if obj.journal and hasattr(obj.journal, 'thematic_area') and obj.journal.thematic_area.exists():
+            for thematic_area_journal in obj.journal.thematic_area.all():
+                thematic_area = thematic_area_journal.thematic_area
+
+                # Usar hierarquia: level2 > level1 > level0
+                topic_text = None
+                if thematic_area.level2:
+                    topic_text = thematic_area.level2
+                elif thematic_area.level1:
+                    topic_text = thematic_area.level1
+                elif thematic_area.level0:
+                    topic_text = thematic_area.level0
+
+                if topic_text and topic_text.strip():
+                    capes_areas.append(topic_text.strip())
+
+        return capes_areas
+
     def get_model(self):
         return Article
 
