@@ -1163,6 +1163,43 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             return str(obj.issue.number).strip()
         return None
 
+    def prepare_mods_relateditem_host_supplement(self, obj):
+        """
+        Suplemento do fascículo
+
+        JUSTIFICATIVA:
+        Identifica fascículos especiais:
+        - Suplementos temáticos
+        - Números especiais dedicados
+        - Anais de congressos publicados como suplemento
+        Necessário para citação bibliográfica completa.
+
+        MAPEAMENTO:
+        Sem equivalente em Dublin Core → MODS <relatedItem><part><detail type="supplement">
+
+        FONTE DE DADOS:
+        - Article.issue.supplement
+
+        EXEMPLO XML (MODS):
+        <relatedItem type="host">
+            <part>
+                <detail type="supplement">
+                    <number>suppl.1</number>
+                </detail>
+            </part>
+        </relatedItem>
+
+        REFERÊNCIA OFICIAL:
+        - part: https://www.loc.gov/standards/mods/userguide/part.html
+
+        Returns:
+            str: Designação do suplemento ou None
+            Exemplo: "suppl.1"
+        """
+        if obj.issue and obj.issue.supplement:
+            return str(obj.issue.supplement).strip()
+        return None
+
     def get_model(self):
         return Article
 
