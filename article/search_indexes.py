@@ -861,6 +861,47 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         return keywords
 
+    def prepare_mods_subject_area(self, obj):
+        """
+        Subject areas do journal (SciELO)
+
+        JUSTIFICATIVA:
+        Taxonomia institucional SciELO para classificação de periódicos:
+        - Agrupa periódicos por grande área do conhecimento
+        - Facilita navegação por área temática
+        - Permite análises bibliométricas por campo científico
+        Complementa keywords do artigo com classificação editorial.
+
+        MAPEAMENTO:
+        Sem equivalente direto → MODS <subject><topic authority="scielo-subject-area">
+
+        FONTE DE DADOS:
+        - Journal.subject (valores controlados SciELO)
+
+        EXEMPLO XML (MODS):
+        <subject>
+            <topic authority="scielo-subject-area">Health Sciences</topic>
+        </subject>
+        <subject>
+            <topic authority="scielo-subject-area">Biological Sciences</topic>
+        </subject>
+
+        REFERÊNCIA OFICIAL:
+        - subject: https://www.loc.gov/standards/mods/userguide/subject.html
+
+        Returns:
+            list: Lista de áreas SciELO
+            Exemplo: ["Health Sciences", "Agricultural Sciences"]
+        """
+        areas = []
+
+        if obj.journal and obj.journal.subject.exists():
+            for subject_area in obj.journal.subject.all():
+                if subject_area.value and subject_area.value.strip():
+                    areas.append(subject_area.value.strip())
+
+        return areas
+
     def get_model(self):
         return Article
 
