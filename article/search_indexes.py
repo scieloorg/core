@@ -710,6 +710,62 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         return orcids
 
+    def prepare_mods_name_affiliation(self, obj):
+        """
+        Afiliações estruturadas dos autores (flat list)
+
+        JUSTIFICATIVA:
+        Informação essencial para:
+        - Análises bibliométricas institucionais
+        - Rastreamento de colaborações inter-institucionais
+        - Estatísticas de produção científica por país/região
+        - Validação de compliance com políticas de fomento
+        - Identificação de redes de pesquisa
+        Dublin Core não possui campo estruturado para afiliações.
+
+        MAPEAMENTO:
+        Sem equivalente em Dublin Core → MODS <name><affiliation>
+
+        FONTE DE DADOS:
+        - Researcher.affiliation.institution (nome, departamentos, localização)
+
+        EXEMPLO XML (MODS 3.5):
+        <name type="personal">
+            <namePart>Silva, João</namePart>
+            <affiliation>Universidade de São Paulo - Instituto de Física - São Paulo - SP - Brasil</affiliation>
+            <role>
+                <roleTerm type="text">author</roleTerm>
+            </role>
+        </name>
+
+        REFERÊNCIA OFICIAL:
+        - affiliation: https://www.loc.gov/standards/mods/userguide/name.html#affiliation
+
+        Returns:
+            list: Lista de afiliações hierarquicamente estruturadas
+            Exemplo: ["USP - Inst. Física - São Paulo - SP - Brasil",
+                      "UFRJ - COPPE - Rio de Janeiro - RJ - Brasil"]
+        """
+        affiliations = []
+
+        if not obj.researchers.exists():
+            return affiliations
+
+        researchers = obj.researchers.select_related(
+            'affiliation__institution__institution_identification',
+            'affiliation__institution__location__city',
+            'affiliation__institution__location__state',
+            'affiliation__institution__location__country'
+        ).all()
+
+        for researcher in researchers:
+            if researcher.affiliation:
+                affiliation_text = self._format_affiliation(researcher.affiliation)
+                if affiliation_text and affiliation_text not in affiliations:
+                    affiliations.append(affiliation_text)
+
+        return affiliations
+
     def get_model(self):
         return Article
 
