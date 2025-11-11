@@ -902,6 +902,48 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         return areas
 
+    def prepare_mods_subject_wos(self, obj):
+        """
+        Web of Science categories
+
+        JUSTIFICATIVA:
+        Classificação internacional Clarivate/Web of Science:
+        - Padrão para métricas bibliométricas (JCR, Impact Factor)
+        - Comparabilidade internacional de periódicos
+        - Essencial para análises de impacto científico
+        - Usado em rankings e avaliações institucionais
+
+        MAPEAMENTO:
+        Sem equivalente em Dublin Core → MODS <subject><topic authority="wos">
+
+        FONTE DE DADOS:
+        - Journal.wos_area (categorias atribuídas por Clarivate)
+
+        EXEMPLO XML (MODS):
+        <subject>
+            <topic authority="wos"
+                   authorityURI="http://apps.webofknowledge.com/">
+                Medicine, General &amp; Internal
+            </topic>
+        </subject>
+
+        REFERÊNCIA OFICIAL:
+        - subject: https://www.loc.gov/standards/mods/userguide/subject.html
+        - WoS Categories: http://help.prod-incites.com/inCites2Live/filterValuesGroup/researchAreaSchema.html
+
+        Returns:
+            list: Lista de categorias WoS
+            Exemplo: ["Medicine, General & Internal", "Pharmacology & Pharmacy"]
+        """
+        wos_categories = []
+
+        if obj.journal and obj.journal.wos_area.exists():
+            for wos_category in obj.journal.wos_area.all():
+                if wos_category.value and wos_category.value.strip():
+                    wos_categories.append(wos_category.value.strip())
+
+        return wos_categories
+
     def get_model(self):
         return Article
 
