@@ -594,6 +594,62 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         except Exception as ex:
             return ""
 
+
+    # métodos prepare MODS
+    def prepare_mods_name_text(self, obj):
+        """
+        Nomes completos dos autores (flat list)
+
+        JUSTIFICATIVA:
+        Complementa dc.creator (Dublin Core) com nomes estruturados no padrão MODS.
+        Enquanto dc.creator oferece apenas strings simples, este campo integra-se com
+        metadata.mods.name.orcid e metadata.mods.name.affiliation para permitir:
+        - Identificação inequívoca de autores via ORCID
+        - Rastreamento de produção científica por instituição
+        - Métricas bibliométricas precisas
+        - Descoberta avançada por autor em sistemas especializados
+
+        MAPEAMENTO:
+        Dublin Core dc.creator → MODS <name type="personal"><namePart>
+
+        FONTE DE DADOS:
+        - Article.researchers.person_name (pesquisadores individuais)
+        - Article.collab.collab (autores corporativos/institucionais)
+
+        EXEMPLO XML (MODS 3.5 - Journal Article):
+        <name type="personal">
+            <namePart type="given">Neil</namePart>
+            <namePart type="family">Brenner</namePart>
+            <role>
+                <roleTerm type="text">author</roleTerm>
+            </role>
+        </name>
+
+        Fonte: https://www.loc.gov/standards/mods/v3/modsjournal.xml
+
+        REFERÊNCIA OFICIAL:
+        - Elemento: https://www.loc.gov/standards/mods/userguide/name.html
+        - Exemplos: https://www.loc.gov/standards/mods/userguide/examples.html
+
+        Returns:
+            list: Lista de strings com nomes completos formatados
+            Exemplo: ["Brenner, Neil", "Silva, João", "Instituto Nacional de Pesquisas"]
+        """
+        names = []
+
+        # Pesquisadores individuais
+        if obj.researchers.exists():
+            researchers = obj.researchers.select_related("person_name").filter(
+                person_name__isnull=False
+            )
+            names.extend([str(researcher.person_name) for researcher in researchers])
+
+        # Autores corporativos/institucionais
+        if obj.collab.exists():
+            names.extend([collab.collab for collab in obj.collab.all() if collab.collab])
+
+        return names
+
     def get_model(self):
         return Article
 
