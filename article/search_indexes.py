@@ -766,6 +766,54 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         return affiliations
 
+    def prepare_mods_name_role(self, obj):
+        """
+        Papéis dos autores (flat list)
+
+        JUSTIFICATIVA:
+        Distingue tipos de contribuição ao recurso:
+        - Autor principal (author)
+        - Editor (editor)
+        - Tradutor (translator)
+        - Revisor (reviewer)
+        Utiliza vocabulário controlado MARC Relators para interoperabilidade.
+
+        MAPEAMENTO:
+        Dublin Core dc.creator → MODS <name><role><roleTerm authority="marcrelator">
+
+        FONTE DE DADOS:
+        - Padrão "author" para todos (artigos científicos SciELO)
+
+        EXEMPLO XML (MODS 3.5):
+        <name type="personal">
+            <namePart>Brenner, Neil</namePart>
+            <role>
+                <roleTerm type="text" authority="marcrelator">author</roleTerm>
+            </role>
+        </name>
+
+        REFERÊNCIA OFICIAL:
+        - role: https://www.loc.gov/standards/mods/userguide/name.html#role
+        - MARC Relators: https://www.loc.gov/marc/relators/
+
+        Returns:
+            list: Lista de papéis sincronizada com mods_name_text
+            Exemplo: ["author", "author", "editor"]
+        """
+        roles = []
+
+        # Pesquisadores individuais = author
+        if obj.researchers.exists():
+            researchers = obj.researchers.filter(person_name__isnull=False)
+            roles.extend(['author'] * researchers.count())
+
+        # Autores corporativos = author
+        if obj.collab.exists():
+            collabs = [c for c in obj.collab.all() if c.collab]
+            roles.extend(['author'] * len(collabs))
+
+        return roles
+
     def get_model(self):
         return Article
 
