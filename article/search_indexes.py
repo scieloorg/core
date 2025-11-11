@@ -1086,6 +1086,44 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         return issns
 
+    def prepare_mods_relateditem_host_volume(self, obj):
+        """
+        Volume do fascículo
+
+        JUSTIFICATIVA:
+        Elemento obrigatório para citação bibliográfica:
+        - Identifica ano de publicação (tipicamente volume = ano)
+        - Necessário para localização precisa do artigo
+        - Usado em todas as normas de citação (ABNT, APA, Vancouver)
+
+        MAPEAMENTO:
+        Sem equivalente em Dublin Core → MODS <relatedItem><part><detail type="volume">
+
+        FONTE DE DADOS:
+        - Article.issue.volume
+
+        EXEMPLO XML (MODS 3.5 - Journal Article):
+        <relatedItem type="host">
+            <part>
+                <detail type="volume">
+                    <number>24</number>
+                </detail>
+            </part>
+        </relatedItem>
+
+        Fonte: https://www.loc.gov/standards/mods/v3/modsjournal.xml
+
+        REFERÊNCIA OFICIAL:
+        - part: https://www.loc.gov/standards/mods/userguide/part.html
+
+        Returns:
+            str: Volume do fascículo
+            Exemplo: "37"
+        """
+        if obj.issue and obj.issue.volume:
+            return str(obj.issue.volume).strip()
+        return None
+
     def get_model(self):
         return Article
 
