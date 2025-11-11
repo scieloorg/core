@@ -1274,6 +1274,43 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             return str(obj.last_page).strip()
         return None
 
+    def prepare_mods_part_elocation(self, obj):
+        """
+        elocation-id (para artigos sem paginação tradicional)
+
+        JUSTIFICATIVA:
+        Identificador para artigos eletrônicos publicados sem páginas:
+        - Artigos em periódicos 100% eletrônicos (born-digital)
+        - Publicação contínua (continuous publishing)
+        - Substitui paginação tradicional mantendo localização única
+        - Padrão crescente em periódicos científicos modernos
+
+        MAPEAMENTO:
+        Sem equivalente em Dublin Core → MODS <part><detail type="elocation-id">
+
+        FONTE DE DADOS:
+        - Article.elocation_id (apenas se não houver first_page)
+
+        EXEMPLO XML (MODS):
+        <part>
+            <detail type="elocation-id">
+                <number>e370704</number>
+            </detail>
+        </part>
+
+        REFERÊNCIA OFICIAL:
+        - part/detail: https://www.loc.gov/standards/mods/userguide/part.html#detail
+        - elocation-id: https://jats.nlm.nih.gov/publishing/tag-library/1.3/element/elocation-id.html
+
+        Returns:
+            str: elocation-id ou None (se houver paginação tradicional)
+            Exemplo: "e370704"
+        """
+        # Só retorna elocation se NÃO houver paginação tradicional
+        if not obj.first_page and obj.elocation_id:
+            return str(obj.elocation_id).strip()
+        return None
+
     def get_model(self):
         return Article
 
