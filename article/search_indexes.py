@@ -1533,6 +1533,53 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         return places
 
+    def prepare_mods_origininfo_date(self, obj):
+        """
+        Data de publicação estruturada (w3cdtf)
+
+        JUSTIFICATIVA:
+        Data estruturada em formato ISO 8601/W3CDTF:
+        - Permite ordenação cronológica precisa
+        - Facilita filtros por período (2020-2025)
+        - Formato padrão para intercâmbio internacional
+        - Suporta granularidade variável (ano, ano-mês, ano-mês-dia)
+        Dublin Core dc.date aceita texto livre (menos estruturado).
+
+        MAPEAMENTO:
+        Dublin Core dc.date → MODS <originInfo><dateIssued encoding="w3cdtf">
+
+        FONTE DE DADOS:
+        - Article.pub_date_year, pub_date_month, pub_date_day
+
+        EXEMPLO XML (MODS):
+        <originInfo>
+            <dateIssued encoding="w3cdtf" keyDate="yes">2000</dateIssued>
+        </originInfo>
+
+        REFERÊNCIA OFICIAL:
+        - dateIssued: https://www.loc.gov/standards/mods/userguide/origininfo.html#dateissued
+        - W3CDTF: https://www.w3.org/TR/NOTE-datetime
+
+        Returns:
+            str: Data no formato YYYY ou YYYY-MM ou YYYY-MM-DD
+            Exemplo: "2023-06-15"
+        """
+        if not (hasattr(obj, 'pub_date_year') and obj.pub_date_year and
+                str(obj.pub_date_year).strip()):
+            return None
+
+        date_parts = [str(obj.pub_date_year)]
+
+        if (hasattr(obj, 'pub_date_month') and obj.pub_date_month and
+            str(obj.pub_date_month).strip()):
+            date_parts.append(str(obj.pub_date_month).zfill(2))
+
+            if (hasattr(obj, 'pub_date_day') and obj.pub_date_day and
+                str(obj.pub_date_day).strip()):
+                date_parts.append(str(obj.pub_date_day).zfill(2))
+
+        return "-".join(date_parts)
+
     def get_model(self):
         return Article
 
