@@ -997,6 +997,46 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         return capes_areas
 
+    def prepare_mods_relateditem_host_title(self, obj):
+        """
+        Título do periódico pai
+
+        JUSTIFICATIVA:
+        Essencial para citação bibliográfica adequada:
+        - Identifica o periódico que publicou o artigo
+        - Permite busca por periódico específico
+        - Necessário para geração automática de citações
+        Dublin Core não tem estrutura para relacionamento host/part.
+
+        MAPEAMENTO:
+        Sem equivalente direto → MODS <relatedItem type="host"><titleInfo><title>
+
+        FONTE DE DADOS:
+        - Article.journal.title
+
+        EXEMPLO XML (MODS 3.5 - Journal Article):
+        <relatedItem type="host">
+            <titleInfo>
+                <title>International Journal of Urban and Regional Research</title>
+            </titleInfo>
+            <originInfo>
+                <issuance>continuing</issuance>
+            </originInfo>
+        </relatedItem>
+
+        Fonte: https://www.loc.gov/standards/mods/v3/modsjournal.xml
+
+        REFERÊNCIA OFICIAL:
+        - relatedItem: https://www.loc.gov/standards/mods/userguide/relateditem.html
+
+        Returns:
+            str: Título do periódico
+            Exemplo: "Revista Brasileira de Medicina"
+        """
+        if obj.journal and obj.journal.title:
+            return obj.journal.title.strip()
+        return None
+
     def get_model(self):
         return Article
 
