@@ -1237,6 +1237,43 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             return str(obj.first_page).strip()
         return None
 
+    def prepare_mods_part_page_end(self, obj):
+        """
+        Página final do artigo
+
+        JUSTIFICATIVA:
+        Completa a informação de paginação:
+        - Permite calcular extensão do artigo
+        - Necessário para citação completa
+        - Usado em métricas de produtividade (páginas publicadas)
+
+        MAPEAMENTO:
+        Sem equivalente em Dublin Core → MODS <part><extent unit="pages"><end>
+
+        FONTE DE DADOS:
+        - Article.last_page
+
+        EXEMPLO XML (MODS 3.5 - Journal Article):
+        <part>
+            <extent unit="pages">
+                <start>361</start>
+                <end>378</end>
+            </extent>
+        </part>
+
+        Fonte: https://www.loc.gov/standards/mods/v3/modsjournal.xml
+
+        REFERÊNCIA OFICIAL:
+        - part/extent: https://www.loc.gov/standards/mods/userguide/part.html#extent
+
+        Returns:
+            str: Número da página final
+            Exemplo: "145"
+        """
+        if obj.last_page:
+            return str(obj.last_page).strip()
+        return None
+
     def get_model(self):
         return Article
 
