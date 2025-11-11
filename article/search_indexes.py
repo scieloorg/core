@@ -1672,6 +1672,44 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         # (não vamos construir URLs artificiais)
         return None
 
+    def prepare_mods_accesscondition_openaccess(self, obj):
+        """
+        Política de Open Access do periódico
+
+        JUSTIFICATIVA:
+        Classifica modelo de acesso aberto segundo taxonomia SHERPA/RoMEO:
+        - diamond: OA sem APC (autor ou leitor)
+        - gold: OA com APC (author pays)
+        - hybrid: Periódico de assinatura com opção OA
+        - bronze: Acesso livre sem licença clara
+        - green: Auto-arquivamento permitido
+        - closed: Acesso restrito por assinatura
+        Essencial para análises de compliance com políticas de fomento.
+
+        MAPEAMENTO:
+        Sem equivalente em Dublin Core → MODS <accessCondition type="restriction on access">
+
+        FONTE DE DADOS:
+        - Journal.open_access (valores do choices.OA_STATUS)
+
+        EXEMPLO XML (MODS):
+        <accessCondition type="restriction on access"
+                         authority="scielo-oa-model">
+            gold
+        </accessCondition>
+
+        REFERÊNCIA OFICIAL:
+        - accessCondition: https://www.loc.gov/standards/mods/userguide/accesscondition.html
+        - SHERPA/RoMEO: https://v2.sherpa.ac.uk/romeo/
+
+        Returns:
+            str: Tipo de OA (diamond/gold/hybrid/bronze/green/closed)
+            Exemplo: "gold"
+        """
+        if obj.journal and obj.journal.open_access:
+            return obj.journal.open_access.strip()
+        return None
+
     def get_model(self):
         return Article
 
