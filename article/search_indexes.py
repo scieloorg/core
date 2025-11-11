@@ -1343,6 +1343,38 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             return obj.journal.official.issn_print
         return None
 
+    def prepare_mods_identifier_issn_electronic(self, obj):
+        """
+        ISSN da versão eletrônica
+
+        JUSTIFICATIVA:
+        Identificador persistente da versão online do periódico:
+        - ISSN específico para versão digital
+        - Principal identificador para periódicos eletrônicos
+        - Usado em bases de dados internacionais (WoS, Scopus)
+        - Diferente do ISSN impresso (mesmo periódico, mídias distintas)
+
+        MAPEAMENTO:
+        Dublin Core dc.identifier → MODS <identifier type="issn" displayLabel="Electronic ISSN">
+
+        FONTE DE DADOS:
+        - Journal.official.issn_electronic
+
+        EXEMPLO XML (MODS):
+        <identifier type="issn" displayLabel="Electronic ISSN">1468-2427</identifier>
+
+        REFERÊNCIA OFICIAL:
+        - identifier: https://www.loc.gov/standards/mods/userguide/identifier.html
+        - ISSN-e: https://www.issn.org/understanding-the-issn/assignment-rules/the-issn-for-electronic-media/
+
+        Returns:
+            str: ISSN eletrônico no formato ####-####
+            Exemplo: "8765-4321"
+        """
+        if obj.journal and obj.journal.official and obj.journal.official.issn_electronic:
+            return obj.journal.official.issn_electronic
+        return None
+
     def get_model(self):
         return Article
 
