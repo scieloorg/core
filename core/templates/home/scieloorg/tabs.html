@@ -1,5 +1,6 @@
 {% load i18n wagtailcore_tags %}
 {% load wagtailroutablepage_tags %}
+{% load custom_tags %}
 
 <!-- tabs -->
     <section>
@@ -33,13 +34,13 @@
                                     {% if forloop.first %}
                                     <dd class="first-node-collection">
                                         <h3 class="h6 fw-bold">{% trans 'Journals' %}</h3>
-                                        <a href="http://{{col.obj.domain}}" class="flag-{{col.obj.acron3}} flag-no-data">
+                                        <a href="{{col.obj.domain|ensure_protocol}}" class="flag-{{col.obj.acron3}} flag-no-data">
                                             <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
                                     {% else %}
                                     <dd>
-                                        <a href="http://{{col.obj.domain}}" class="flag-{{col.obj.acron3}} flag-no-data">
+                                        <a href="{{col.obj.domain|ensure_protocol}}" class="flag-{{col.obj.acron3}} flag-no-data">
                                             <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
@@ -50,13 +51,13 @@
                                     {% if forloop.first %}
                                     <dd class="first-node-collection">
                                         <h3 class="h6 fw-bold">{% trans 'In development' %}</h3>
-                                        <a href="http://{{col.obj.domain}}" class="flag-{{col.obj.acron3}} flag-no-data">
+                                        <a href="{{col.obj.domain|ensure_protocol}}" class="flag-{{col.obj.acron3}} flag-no-data">
                                             <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
                                     {% else %}
                                     <dd>
-                                        <a href="http://{{col.obj.domain}}" class="flag-{{col.obj.acron3}} flag-no-data">
+                                        <a href="{{col.obj.domain|ensure_protocol}}" class="flag-{{col.obj.acron3}} flag-no-data">
                                             <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
@@ -68,13 +69,13 @@
                                         {% if forloop.first %}
                                         <dd class="first-node-collection">
                                             <h3 class="h6 fw-bold">{% trans 'Servers and Repositories' %}</h3>
-                                            <a href="http://{{col.obj.domain}}" class="scielo-servers-repos obj.scielo-servers-repos-no-data">
+                                            <a href="{{col.obj.domain|ensure_protocol}}" class="scielo-servers-repos obj.scielo-servers-repos-no-data">
                                                 <h4 class="h6">{{col.name}}</h4>
                                             </a>
                                         </dd>
                                         {% else %}
                                         <dd>
-                                            <a href="http://{{col.obj.domain}}" class="scielo-servers-repos obj.scielo-servers-repos-no-data">
+                                            <a href="{{col.obj.domain|ensure_protocol}}" class="scielo-servers-repos obj.scielo-servers-repos-no-data">
                                                 <h4 class="h6">{{col.name}}</h4>
                                             </a>
                                         </dd>
@@ -86,13 +87,13 @@
                                     {% if forloop.first %}
                                     <dd class="first-node-collection">
                                         <h3 class="h6 fw-bold">{% trans 'Books' %}</h3>
-                                        <a href="http://{{col.obj.domain}}" class="scielo-books scielo-obj.books-no-data">
+                                        <a href="{{col.obj.domain|ensure_protocol}}" class="scielo-books scielo-obj.books-no-data">
                                             <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
                                     {% else %}
                                     <dd>
-                                        <a href="http://{{col.obj.domain}}" class="scielo-books scielo-obj.books-no-data">
+                                        <a href="{{col.obj.domain|ensure_protocol}}" class="scielo-books scielo-obj.books-no-data">
                                             <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
@@ -103,13 +104,13 @@
                                     {% if forloop.first %}
                                     <dd class="first-node-collection">
                                         <h3 class="h6 fw-bold">{% trans 'Others' %}</h3>
-                                        <a href="http://{{col.obj.domain}}" class="scielo-books scielo-obj.books-no-data">
+                                        <a href="{{col.obj.domain|ensure_protocol}}" class="scielo-books scielo-obj.books-no-data">
                                             <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
                                     {% else %}
                                     <dd>
-                                        <a href="http://{{col.obj.domain}}" class="scielo-books scielo-obj.books-no-data">
+                                        <a href="{{col.obj.domain|ensure_protocol}}" class="scielo-books scielo-obj.books-no-data">
                                             <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
