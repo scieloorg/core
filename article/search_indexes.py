@@ -1476,6 +1476,63 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         return publishers
 
+    def prepare_mods_origininfo_place(self, obj):
+        """
+        Lugar(es) de publicação
+
+        JUSTIFICATIVA:
+        Localização geográfica da publicação:
+        - Cidade, estado, país da editora
+        - Usado para análises regionais de produção científica
+        - Elemento tradicional de catalogação bibliográfica
+        - Importante para contexto histórico de publicações antigas
+
+        MAPEAMENTO:
+        Dublin Core dc.coverage → MODS <originInfo><place><placeTerm>
+
+        FONTE DE DADOS:
+        - Journal.contact_location (prioridade alta)
+        - Journal.publisher_history.organization.location (fallback)
+
+        EXEMPLO XML (MODS):
+        <originInfo>
+            <place>
+                <placeTerm type="text">São Paulo, SP, Brasil</placeTerm>
+            </place>
+        </originInfo>
+
+        REFERÊNCIA OFICIAL:
+        - originInfo/place: https://www.loc.gov/standards/mods/userguide/origininfo.html#place
+
+        Returns:
+            list: Lista de localizações formatadas
+            Exemplo: ["São Paulo, SP, Brasil", "Rio de Janeiro, RJ, Brasil"]
+        """
+        places = []
+
+        if not obj.journal:
+            return places
+
+        # Fonte 1: contact_location do Journal (prioridade alta)
+        if hasattr(obj.journal, 'contact_location') and obj.journal.contact_location:
+            place_text = self._format_place_location(obj.journal.contact_location)
+            if place_text:
+                places.append(place_text)
+
+        # Fonte 2: Location via Publisher Organizations (se não há contact_location)
+        if not places and hasattr(obj.journal, 'publisher_history'):
+            for pub_history in obj.journal.publisher_history.select_related(
+                'organization__location__city',
+                'organization__location__state',
+                'organization__location__country'
+            ):
+                if pub_history.organization and pub_history.organization.location:
+                    place_text = self._format_place_location(pub_history.organization.location)
+                    if place_text and place_text not in places:
+                        places.append(place_text)
+
+        return places
+
     def get_model(self):
         return Article
 
