@@ -1710,6 +1710,93 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             return obj.journal.open_access.strip()
         return None
 
+    # métodos auxiliares privados
+    def _format_affiliation(self, affiliation):
+        """
+        Formata afiliação em string hierárquica
+
+        Args:
+            affiliation: objeto Affiliation
+
+        Returns:
+            str: "Instituição - Depto - Cidade - Estado - País"
+        """
+        if not affiliation or not affiliation.institution:
+            return None
+
+        parts = []
+        institution = affiliation.institution
+
+        try:
+            # Nome da instituição
+            if institution.institution_identification:
+                if institution.institution_identification.name:
+                    parts.append(institution.institution_identification.name.strip())
+
+            # Níveis organizacionais (departamentos, divisões)
+            for level in [institution.level_1, institution.level_2, institution.level_3]:
+                if level and level.strip():
+                    parts.append(level.strip())
+
+            # Localização geográfica
+            if institution.location:
+                location = institution.location
+
+                # Cidade
+                if location.city and hasattr(location.city, 'name') and location.city.name:
+                    parts.append(location.city.name.strip())
+
+                # Estado
+                if location.state:
+                    state_text = location.state.acronym or location.state.name
+                    if state_text:
+                        parts.append(state_text.strip())
+
+                # País
+                if location.country and location.country.name:
+                    parts.append(location.country.name.strip())
+
+        except (AttributeError, TypeError):
+            # Fallback para string simples
+            return str(affiliation) if affiliation else None
+
+        return " - ".join(parts) if parts else None
+
+    def _format_place_location(self, location):
+        """
+        Formata localização em string: "Cidade, Estado, País"
+
+        Args:
+            location: objeto Location
+
+        Returns:
+            str: "São Paulo, SP, Brasil"
+        """
+        if not location:
+            return None
+
+        parts = []
+
+        try:
+            # Cidade
+            if location.city and hasattr(location.city, 'name') and location.city.name:
+                parts.append(location.city.name.strip())
+
+            # Estado (preferir sigla)
+            if location.state:
+                state_text = location.state.acronym or location.state.name
+                if state_text:
+                    parts.append(state_text.strip())
+
+            # País
+            if location.country and location.country.name:
+                parts.append(location.country.name.strip())
+
+        except (AttributeError, TypeError):
+            return None
+
+        return ", ".join(parts) if parts else None
+
     def get_model(self):
         return Article
 
