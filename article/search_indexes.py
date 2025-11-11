@@ -814,6 +814,53 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         return roles
 
+    def prepare_mods_subject_keyword(self, obj):
+        """
+        Keywords do artigo com vocabulário controlado
+
+        JUSTIFICATIVA:
+        Complementa dc.subject com suporte a vocabulários controlados:
+        - Identifica autoridade da keyword (DeCS, MeSH, etc.)
+        - Permite buscas mais precisas por assunto
+        - Facilita agregação por taxonomias padronizadas
+        Dublin Core não diferencia keywords livres de controladas.
+
+        MAPEAMENTO:
+        Dublin Core dc.subject → MODS <subject><topic authority="...">
+
+        FONTE DE DADOS:
+        - Article.keywords.text
+        - Article.keywords.vocabulary (DeCS, MeSH, etc.)
+
+        EXEMPLO XML (MODS 3.7):
+        <subject>
+            <topic authority="lcsh" valueURI="http://id.loc.gov/authorities/subjects/sh85075538">
+                Learning disabilities
+            </topic>
+        </subject>
+        <subject>
+            <topic authority="mesh">Diabetes Mellitus</topic>
+        </subject>
+
+        Fonte: http://www.loc.gov/standards/mods/v3/mods-3-7-subject-examples.pdf
+
+        REFERÊNCIA OFICIAL:
+        - subject: https://www.loc.gov/standards/mods/userguide/subject.html
+        - topic: https://www.loc.gov/standards/mods/userguide/subject.html#topic
+
+        Returns:
+            list: Lista de keywords
+            Exemplo: ["Diabetes Mellitus", "Insulin Resistance", "Obesity"]
+        """
+        keywords = []
+
+        if obj.keywords.exists():
+            for keyword in obj.keywords.all():
+                if keyword.text and keyword.text.strip():
+                    keywords.append(keyword.text.strip())
+
+        return keywords
+
     def get_model(self):
         return Article
 
