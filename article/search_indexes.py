@@ -1037,6 +1037,55 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             return obj.journal.title.strip()
         return None
 
+    def prepare_mods_relateditem_host_issn(self, obj):
+        """
+        ISSNs do periódico (todos os tipos)
+
+        JUSTIFICATIVA:
+        Identificadores persistentes do periódico:
+        - ISSN impresso: versão física histórica
+        - ISSN eletrônico: versão online (mais comum)
+        - ISSN-L: linking ISSN (agrupa todas as versões)
+        Essenciais para citação, linkagem e descoberta de recursos.
+
+        MAPEAMENTO:
+        Sem equivalente direto → MODS <relatedItem type="host"><identifier type="issn">
+
+        FONTE DE DADOS:
+        - Journal.official.issn_print
+        - Journal.official.issn_electronic
+        - Journal.official.issnl
+
+        EXEMPLO XML (MODS):
+        <relatedItem type="host">
+            <identifier type="issn">0363-9061</identifier>
+            <identifier type="issn">1468-2427</identifier>
+        </relatedItem>
+
+        REFERÊNCIA OFICIAL:
+        - identifier: https://www.loc.gov/standards/mods/userguide/identifier.html
+        - ISSN: https://www.issn.org/
+
+        Returns:
+            list: Lista de ISSNs
+            Exemplo: ["1234-5678", "8765-4321", "1111-2222"]
+        """
+        issns = []
+
+        if obj.journal and obj.journal.official:
+            official = obj.journal.official
+
+            if official.issn_print:
+                issns.append(official.issn_print)
+
+            if official.issn_electronic:
+                issns.append(official.issn_electronic)
+
+            if official.issnl:
+                issns.append(official.issnl)
+
+        return issns
+
     def get_model(self):
         return Article
 
