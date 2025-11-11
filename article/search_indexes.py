@@ -1375,6 +1375,38 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             return obj.journal.official.issn_electronic
         return None
 
+    def prepare_mods_identifier_issnl(self, obj):
+        """
+        ISSN-L (linking ISSN)
+
+        JUSTIFICATIVA:
+        ISSN de ligação que agrupa todas as versões de um periódico:
+        - Vincula ISSN impresso, eletrônico, e outras versões
+        - Facilita identificação inequívoca do periódico
+        - Usado para agregação de métricas (todas as versões)
+        - Padrão ISO 3297:2007 para identificação de publicações seriadas
+
+        MAPEAMENTO:
+        Dublin Core dc.identifier → MODS <identifier type="issnl">
+
+        FONTE DE DADOS:
+        - Journal.official.issnl
+
+        EXEMPLO XML (MODS):
+        <identifier type="issnl">1111-2222</identifier>
+
+        REFERÊNCIA OFICIAL:
+        - identifier: https://www.loc.gov/standards/mods/userguide/identifier.html
+        - ISSN-L: https://www.issn.org/understanding-the-issn/assignment-rules/the-issn-l-for-publications-on-multiple-media/
+
+        Returns:
+            str: ISSN-L no formato ####-####
+            Exemplo: "1111-2222"
+        """
+        if obj.journal and obj.journal.official and obj.journal.official.issnl:
+            return obj.journal.official.issnl
+        return None
+
     def get_model(self):
         return Article
 
