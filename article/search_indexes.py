@@ -1,5 +1,7 @@
 from haystack import indexes
 from legendarium.formatter import descriptive_format
+from django.db.models import Prefetch
+from researcher.models import ResearcherAKA
 
 from journal.models import SciELOJournal
 
@@ -387,7 +389,7 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         null=True, index_fieldname="metadata.mods.part.pages.end"
     )
 
-    # elocation-id (para artigos sem paginação)
+    # Elocation-id (para artigos sem paginação)
     mods_part_elocation = indexes.CharField(
         null=True, index_fieldname="metadata.mods.part.elocation"
     )
@@ -439,7 +441,6 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     mods_accesscondition_openaccess = indexes.CharField(
         null=True, index_fieldname="metadata.mods.accessCondition.openAccess"
     )
-
 
     def prepare_id(self, obj):
         """This field is the identifier of the record
@@ -688,13 +689,18 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             list: Lista de ORCIDs no formato 0000-0001-2345-6789
             Exemplo: ["0000-0001-2345-6789", "0000-0002-8765-4321"]
         """
-        orcids = []
-
         if not obj.researchers.exists():
-            return orcids
+            return []
 
+        # Usar set para melhor performance na verificação de duplicatas
+        orcids_set = set()
+
+        # Otimização: Prefetch com select_related para evitar N+1 queries
         researchers = obj.researchers.prefetch_related(
-            'researcheraka_set__researcher_identifier'
+            Prefetch(
+                'researcheraka_set',
+                queryset=ResearcherAKA.objects.select_related('researcher_identifier')
+            )
         ).all()
 
         for researcher in researchers:
@@ -705,10 +711,11 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
                     aka.researcher_identifier.identifier):
 
                     orcid = aka.researcher_identifier.identifier.strip()
-                    if orcid and orcid not in orcids:
-                        orcids.append(orcid)
+                    if orcid:
+                        orcids_set.add(orcid)
 
-        return orcids
+        # Converter set para lista (ordenada para consistência)
+        return sorted(list(orcids_set))
 
     def prepare_mods_name_affiliation(self, obj):
         """
@@ -862,39 +869,10 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         return keywords
 
     def prepare_mods_subject_area(self, obj):
-        """
-        Subject areas do journal (SciELO)
-
-        JUSTIFICATIVA:
-        Taxonomia institucional SciELO para classificação de periódicos:
-        - Agrupa periódicos por grande área do conhecimento
-        - Facilita navegação por área temática
-        - Permite análises bibliométricas por campo científico
-        Complementa keywords do artigo com classificação editorial.
-
-        MAPEAMENTO:
-        Sem equivalente direto → MODS <subject><topic authority="scielo-subject-area">
-
-        FONTE DE DADOS:
-        - Journal.subject (valores controlados SciELO)
-
-        EXEMPLO XML (MODS):
-        <subject>
-            <topic authority="scielo-subject-area">Health Sciences</topic>
-        </subject>
-        <subject>
-            <topic authority="scielo-subject-area">Biological Sciences</topic>
-        </subject>
-
-        REFERÊNCIA OFICIAL:
-        - subject: https://www.loc.gov/standards/mods/userguide/subject.html
-
-        Returns:
-            list: Lista de áreas SciELO
-            Exemplo: ["Health Sciences", "Agricultural Sciences"]
-        """
+        """..."""
         areas = []
 
+        # Padronizado: .exists() direto
         if obj.journal and obj.journal.subject.exists():
             for subject_area in obj.journal.subject.all():
                 if subject_area.value and subject_area.value.strip():
@@ -903,40 +881,10 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         return areas
 
     def prepare_mods_subject_wos(self, obj):
-        """
-        Web of Science categories
-
-        JUSTIFICATIVA:
-        Classificação internacional Clarivate/Web of Science:
-        - Padrão para métricas bibliométricas (JCR, Impact Factor)
-        - Comparabilidade internacional de periódicos
-        - Essencial para análises de impacto científico
-        - Usado em rankings e avaliações institucionais
-
-        MAPEAMENTO:
-        Sem equivalente em Dublin Core → MODS <subject><topic authority="wos">
-
-        FONTE DE DADOS:
-        - Journal.wos_area (categorias atribuídas por Clarivate)
-
-        EXEMPLO XML (MODS):
-        <subject>
-            <topic authority="wos"
-                   authorityURI="http://apps.webofknowledge.com/">
-                Medicine, General &amp; Internal
-            </topic>
-        </subject>
-
-        REFERÊNCIA OFICIAL:
-        - subject: https://www.loc.gov/standards/mods/userguide/subject.html
-        - WoS Categories: http://help.prod-incites.com/inCites2Live/filterValuesGroup/researchAreaSchema.html
-
-        Returns:
-            list: Lista de categorias WoS
-            Exemplo: ["Medicine, General & Internal", "Pharmacology & Pharmacy"]
-        """
+        """..."""
         wos_categories = []
 
+        # Padronizado: .exists() direto
         if obj.journal and obj.journal.wos_area.exists():
             for wos_category in obj.journal.wos_area.all():
                 if wos_category.value and wos_category.value.strip():
@@ -979,6 +927,7 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         """
         capes_areas = []
 
+        # Padronizado: .exists() direto no related manager (sem .all() redundante)
         if obj.journal and hasattr(obj.journal, 'thematic_area') and obj.journal.thematic_area.exists():
             for thematic_area_journal in obj.journal.thematic_area.all():
                 thematic_area = thematic_area_journal.thematic_area
@@ -1075,13 +1024,13 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         if obj.journal and obj.journal.official:
             official = obj.journal.official
 
-            if official.issn_print:
+            if official.issn_print and official.issn_print not in issns:
                 issns.append(official.issn_print)
 
-            if official.issn_electronic:
+            if official.issn_electronic and official.electronic not in issns:
                 issns.append(official.issn_electronic)
 
-            if official.issnl:
+            if official.issnl and official.issnl not in issns:
                 issns.append(official.issnl)
 
         return issns
@@ -1306,9 +1255,14 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             str: elocation-id ou None (se houver paginação tradicional)
             Exemplo: "e370704"
         """
-        # Só retorna elocation se NÃO houver paginação tradicional
-        if not obj.first_page and obj.elocation_id:
-            return str(obj.elocation_id).strip()
+        # Só retorna elocation se NÃO houver paginação tradicional válida
+        # Verifica se first_page está vazio ou é só whitespace
+        has_pagination = obj.first_page and str(obj.first_page).strip()
+
+        if not has_pagination and obj.elocation_id:
+            elocation = str(obj.elocation_id).strip()
+            return elocation if elocation else None
+
         return None
 
     def prepare_mods_identifier_issn_print(self, obj):
@@ -1441,8 +1395,14 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         """
         publishers = []
 
-        if not (obj.journal and hasattr(obj.journal, 'publisher_history') and
-                obj.journal.publisher_history.exists()):
+        # Early return se não houver histórico de publishers
+        has_publisher_history = (
+            obj.journal and
+            hasattr(obj.journal, 'publisher_history') and
+            obj.journal.publisher_history.exists()
+        )
+
+        if not has_publisher_history:
             return publishers
 
         for pub_history in obj.journal.publisher_history.select_related(
@@ -1452,27 +1412,22 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             pub_name = None
 
             # Tentar nova estrutura Organization primeiro
-            if pub_history.organization and pub_history.organization.name:
-                pub_name = pub_history.organization.name.strip()
-
-                if (pub_history.organization.acronym and
-                    pub_history.organization.acronym.strip()):
-                    pub_name += f" ({pub_history.organization.acronym.strip()})"
+            if pub_history.organization:
+                name, acronym = self._get_organization_name_and_acronym(pub_history.organization)
+                if name:
+                    pub_name = self._format_name_with_acronym(name, acronym)
 
             # Fallback para estrutura Institution legada
-            elif (pub_history.institution and
-                  pub_history.institution.institution and
-                  pub_history.institution.institution.institution_identification and
-                  pub_history.institution.institution.institution_identification.name):
+            if not pub_name:
+                name, acronym = self._get_legacy_institution_name_and_acronym(pub_history)
+                if name:
+                    pub_name = self._format_name_with_acronym(name, acronym)
 
-                inst_id = pub_history.institution.institution.institution_identification
-                pub_name = inst_id.name.strip()
-
-                if inst_id.acronym and inst_id.acronym.strip():
-                    pub_name += f" ({inst_id.acronym.strip()})"
-
-            if pub_name and pub_name not in publishers:
-                publishers.append(pub_name)
+            # Check defensivo: garantir que pub_name está stripped e não é duplicado
+            if pub_name:
+                pub_name = pub_name.strip()
+                if pub_name and pub_name not in publishers:
+                    publishers.append(pub_name)
 
         return publishers
 
@@ -1514,13 +1469,24 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             return places
 
         # Fonte 1: contact_location do Journal (prioridade alta)
-        if hasattr(obj.journal, 'contact_location') and obj.journal.contact_location:
+        has_contact_location = (
+            hasattr(obj.journal, 'contact_location') and
+            obj.journal.contact_location
+        )
+
+        if has_contact_location:
             place_text = self._format_place_location(obj.journal.contact_location)
             if place_text:
                 places.append(place_text)
 
         # Fonte 2: Location via Publisher Organizations (se não há contact_location)
-        if not places and hasattr(obj.journal, 'publisher_history'):
+        has_publisher_history = (
+            not places and
+            hasattr(obj.journal, 'publisher_history') and
+            obj.journal.publisher_history.exists()
+        )
+
+        if has_publisher_history:
             for pub_history in obj.journal.publisher_history.select_related(
                 'organization__location__city',
                 'organization__location__state',
@@ -1570,13 +1536,27 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         date_parts = [str(obj.pub_date_year)]
 
+        # Validar e adicionar mês
         if (hasattr(obj, 'pub_date_month') and obj.pub_date_month and
             str(obj.pub_date_month).strip()):
-            date_parts.append(str(obj.pub_date_month).zfill(2))
+            try:
+                month_int = int(obj.pub_date_month)
+                if 1 <= month_int <= 12:
+                    date_parts.append(f"{month_int:02d}")
 
-            if (hasattr(obj, 'pub_date_day') and obj.pub_date_day and
-                str(obj.pub_date_day).strip()):
-                date_parts.append(str(obj.pub_date_day).zfill(2))
+                    # Validar e adicionar dia apenas se mês for válido
+                    if (hasattr(obj, 'pub_date_day') and obj.pub_date_day and
+                        str(obj.pub_date_day).strip()):
+                        try:
+                            day_int = int(obj.pub_date_day)
+                            if 1 <= day_int <= 31:
+                                date_parts.append(f"{day_int:02d}")
+                        except (ValueError, TypeError):
+                            # Ignora dia inválido, mantém apenas ano-mês
+                            pass
+            except (ValueError, TypeError):
+                # Ignora mês inválido, mantém apenas ano
+                pass
 
         return "-".join(date_parts)
 
@@ -1662,11 +1642,21 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             str: URL da licença ou None
             Exemplo: "https://creativecommons.org/licenses/by/4.0/"
         """
-        # Tentar extrair URL se disponível via license_statements
+        # Tentar extrair URL de license_statements (se relacionamento existir)
         if hasattr(obj, 'license_statements') and obj.license_statements.exists():
-            for statement in obj.license_statements.all():
-                if statement.url:
-                    return statement.url.strip()
+            # Coletar todas as URLs válidas
+            valid_urls = [
+                statement.url.strip()
+                for statement in obj.license_statements.all()
+                if statement.url and statement.url.strip()
+            ]
+
+            if valid_urls:
+                # Retornar a primeira URL válida encontrada
+                # Nota: Normalmente há apenas 1 LicenseStatement por artigo.
+                # Se houver múltiplos, considerar adicionar ordenação por
+                # campo de prioridade ou data se disponível no modelo.
+                return valid_urls[0]
 
         # Se não tiver URL explícita, retornar None
         # (não vamos construir URLs artificiais)
@@ -1711,6 +1701,45 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         return None
 
     # métodos auxiliares privados
+    def _format_location_parts(self, location, separator=", "):
+        """
+        Formata partes de localização com separador customizável
+
+        Args:
+            location: objeto Location
+            separator: string separadora (default: ", ")
+
+        Returns:
+            str: Localização formatada ou None
+            Exemplos:
+                separator=", " → "São Paulo, SP, Brasil"
+                separator=" - " → "São Paulo - SP - Brasil"
+        """
+        if not location:
+            return None
+
+        parts = []
+
+        try:
+            # Cidade
+            if location.city and location.city.name:
+                parts.append(location.city.name.strip())
+
+            # Estado (preferir sigla se disponível)
+            if location.state:
+                state_text = location.state.acronym or location.state.name
+                if state_text:
+                    parts.append(state_text.strip())
+
+            # País
+            if location.country and location.country.name:
+                parts.append(location.country.name.strip())
+
+        except (AttributeError, TypeError):
+            return None
+
+        return separator.join(parts) if parts else None
+
     def _format_affiliation(self, affiliation):
         """
         Formata afiliação em string hierárquica
@@ -1738,23 +1767,11 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
                 if level and level.strip():
                     parts.append(level.strip())
 
-            # Localização geográfica
+            # Localização geográfica (reutiliza método helper)
             if institution.location:
-                location = institution.location
-
-                # Cidade
-                if location.city and hasattr(location.city, 'name') and location.city.name:
-                    parts.append(location.city.name.strip())
-
-                # Estado
-                if location.state:
-                    state_text = location.state.acronym or location.state.name
-                    if state_text:
-                        parts.append(state_text.strip())
-
-                # País
-                if location.country and location.country.name:
-                    parts.append(location.country.name.strip())
+                location_str = self._format_location_parts(institution.location, separator=" - ")
+                if location_str:
+                    parts.append(location_str)
 
         except (AttributeError, TypeError):
             # Fallback para string simples
@@ -1772,30 +1789,67 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         Returns:
             str: "São Paulo, SP, Brasil"
         """
-        if not location:
+        return self._format_location_parts(location, separator=", ")
+
+    def _format_name_with_acronym(self, name, acronym):
+        """
+        Formata nome com acrônimo entre parênteses
+
+        Args:
+            name: Nome principal (ex: "Universidade de São Paulo")
+            acronym: Acrônimo (ex: "USP")
+
+        Returns:
+            str: Nome formatado (ex: "Universidade de São Paulo (USP)")
+                 ou None se name for vazio
+        """
+        if not name:
             return None
 
-        parts = []
+        result = name.strip()
+        if acronym and acronym.strip():
+            result += f" ({acronym.strip()})"
 
-        try:
-            # Cidade
-            if location.city and hasattr(location.city, 'name') and location.city.name:
-                parts.append(location.city.name.strip())
+        return result
 
-            # Estado (preferir sigla)
-            if location.state:
-                state_text = location.state.acronym or location.state.name
-                if state_text:
-                    parts.append(state_text.strip())
+    def _get_organization_name_and_acronym(self, organization):
+        """
+        Extrai nome e acrônimo de Organization
 
-            # País
-            if location.country and location.country.name:
-                parts.append(location.country.name.strip())
+        Args:
+            organization: objeto Organization
 
-        except (AttributeError, TypeError):
-            return None
+        Returns:
+            tuple: (name, acronym) ou (None, None)
+        """
+        if not organization:
+            return None, None
 
-        return ", ".join(parts) if parts else None
+        name = organization.name.strip() if organization.name else None
+        acronym = organization.acronym.strip() if organization.acronym else None
+
+        return name, acronym
+
+    def _get_legacy_institution_name_and_acronym(self, pub_history):
+        """
+        Extrai nome e acrônimo de estrutura Institution legada
+
+        Args:
+            pub_history: objeto PublisherHistory
+
+        Returns:
+            tuple: (name, acronym) ou (None, None)
+        """
+        if not (pub_history.institution and
+                pub_history.institution.institution and
+                pub_history.institution.institution.institution_identification):
+            return None, None
+
+        inst_id = pub_history.institution.institution.institution_identification
+        name = inst_id.name.strip() if inst_id.name else None
+        acronym = inst_id.acronym.strip() if inst_id.acronym else None
+
+        return name, acronym
 
     def get_model(self):
         return Article
