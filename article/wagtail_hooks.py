@@ -1,9 +1,4 @@
-from typing import Any
-
-from django.core.exceptions import PermissionDenied
-from django.db.models import Count
 from django.utils.translation import gettext_lazy as _
-from wagtail import hooks
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
 
@@ -16,7 +11,6 @@ from article.models import (
     ArticleAvailability,
     AMArticle,
 )
-from collection.models import Collection
 from config.menu import get_menu_order
 
 
