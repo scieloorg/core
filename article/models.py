@@ -293,25 +293,27 @@ class Article(
     def collections(self):
         """
         Returns the collections associated with this article.
-        
+
         First tries to get collections from legacy_article relationships,
         then falls back to journal relationships if no legacy articles exist.
-        
+
         Returns:
             list: List of Collection objects
         """
         if self.legacy_article.exists():
             return [
-                item.collection 
+                item.collection
                 for item in self.legacy_article.select_related("collection").all()
             ]
-        
+
         if self.journal:
             return [
-                item.collection 
-                for item in self.journal.scielojournal_set.select_related("collection").all()
+                item.collection
+                for item in self.journal.scielojournal_set.select_related(
+                    "collection"
+                ).all()
             ]
-        
+
         return []
 
     @classmethod
@@ -408,20 +410,23 @@ class Article(
             raise e
 
         items = cls.get_by_pid_v3_or_by_sps_pkg_name(
-            pid_v3=pid_v3, sps_pkg_name=sps_pkg_name,
+            pid_v3=pid_v3,
+            sps_pkg_name=sps_pkg_name,
         )
         if not items.exists():
-            raise cls.DoesNotExist("Article not found for pid_v3: {pid_v3} or sps_pkg_name: {sps_pkg_name}")
-        
+            raise cls.DoesNotExist(
+                "Article not found for pid_v3: {pid_v3} or sps_pkg_name: {sps_pkg_name}"
+            )
+
         public = items.filter(is_classic_public=True)
         public_items = list(public)
         if len(public_items) == 1:
             return public_items[0]
-        
+
         items = list(items)
         if len(public_items) == 0 and len(items) == 1:
             return items[0]
-        
+
         if handle_multiple:
             return public_items[0] or items[0]
 
@@ -446,7 +451,11 @@ class Article(
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name, handle_multiple=handle_multiple)
+            return cls.get(
+                pid_v3=pid_v3,
+                sps_pkg_name=sps_pkg_name,
+                handle_multiple=handle_multiple,
+            )
 
     @classmethod
     def create_or_update(
@@ -458,10 +467,14 @@ class Article(
     ):
         logging.info(f"Article.get_or_create: {user} {pid_v3} {sps_pkg_name}")
         try:
-            return cls.get(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name, handle_multiple=handle_multiple)
+            return cls.get(
+                pid_v3=pid_v3,
+                sps_pkg_name=sps_pkg_name,
+                handle_multiple=handle_multiple,
+            )
         except cls.DoesNotExist:
             return cls.create(user=user, pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
-    
+
     @classmethod
     def get_or_create(
         cls,
@@ -531,7 +544,7 @@ class Article(
             issue_pid = issue_key["pid"]
             if not self.pid_v2:
                 # este valor deve vir pela importação do AM ou
-                # pelo upload (migração ou alimentação direta) 
+                # pelo upload (migração ou alimentação direta)
                 # via solicitação de pid para o pid provider
                 continue
             if self.pid_v2 and issue_pid in self.pid_v2:
@@ -655,7 +668,9 @@ class Article(
         urls = []
         for sj in self.journal.scielojournal_set.select_related("collection").all():
             try:
-                pid_v2 = self.legacy_article.filter(collection=sj.collection).first().pid
+                pid_v2 = (
+                    self.legacy_article.filter(collection=sj.collection).first().pid
+                )
             except AttributeError:
                 pid_v2 = None
             if not pid_v2:
@@ -665,13 +680,15 @@ class Article(
                 sj.journal_acron,
                 pid_v2,
                 self.pid_v3,
-            )                
+            )
             for item in url_builder.get_urls(self.langs):
                 item["collection"] = sj.collection
                 urls.append(item)
         return urls
 
-    def get_availability(self, collection_acron_list=None, collection=None, fmt=None, params=None):
+    def get_availability(
+        self, collection_acron_list=None, collection=None, fmt=None, params=None
+    ):
         params = params or {}
         if fmt:
             params["fmt"] = fmt
@@ -743,20 +760,28 @@ class Article(
         return self.is_public
 
     def is_available(self, collection_acron_list=None, fmt=None):
-        return self.get_availability(fmt=fmt, collection_acron_list=collection_acron_list).exists()
+        return self.get_availability(
+            fmt=fmt, collection_acron_list=collection_acron_list
+        ).exists()
 
     def new_available(self, collection_acron_list=None):
-        return self.get_availability(fmt="xml", collection_acron_list=collection_acron_list)
+        return self.get_availability(
+            fmt="xml", collection_acron_list=collection_acron_list
+        )
 
     def classic_available(self, collection_acron_list=None):
         params = {"url__contains": "/scielo.php"}
-        return self.get_availability(fmt="html", collection_acron_list=collection_acron_list, params=params)
-        
+        return self.get_availability(
+            fmt="html", collection_acron_list=collection_acron_list, params=params
+        )
+
     def add_event(self, user, name):
         return ArticleEvent.create(user, self, name)
 
     @classmethod
-    def mark_items_as_public(cls, journal=None, journal_id=None, force_update=False, user=None):
+    def mark_items_as_public(
+        cls, journal=None, journal_id=None, force_update=False, user=None
+    ):
         # DATA_STATUS_DELETED, DATA_STATUS_MOVED, DATA_STATUS_INVALID, DATA_STATUS_DUPLICATED,
         if force_update:
             exclusion_list = []
@@ -822,7 +847,9 @@ class Article(
             issns: Lista de ISSNs para verificar duplicatas.
             user: Usuário que está executando a operação.
         """
-        article_duplicated_pkg_names = cls.find_duplicated_pkg_names(journal, journal_id)
+        article_duplicated_pkg_names = cls.find_duplicated_pkg_names(
+            journal, journal_id
+        )
         if not article_duplicated_pkg_names:
             return
         cls.objects.filter(sps_pkg_name__in=article_duplicated_pkg_names).exclude(
@@ -841,7 +868,9 @@ class Article(
             issns: Lista de ISSNs para verificar duplicatas.
             user: Usuário que está executando a operação.
         """
-        article_duplicated_pkg_names = cls.find_duplicated_pkg_names(journal, journal_id)
+        article_duplicated_pkg_names = cls.find_duplicated_pkg_names(
+            journal, journal_id
+        )
         for pkg_name in article_duplicated_pkg_names:
             cls.fix_duplicated_pkg_name(pkg_name, user)
         return article_duplicated_pkg_names
@@ -1804,7 +1833,7 @@ class ArticleSource(CommonControlField):
                 raise ValueError("Failed to obtain or create PID v3")
             self.detail = detail
             self.mark_as_completed()  # Marca o processamento como concluído
-            
+
         except Exception as e:
             # Registra a exceção no log
             logging.exception(e)
@@ -1902,7 +1931,7 @@ class ArticleAvailability(CommonControlField):
         FieldPanel("collection", read_only=True),
         FieldPanel("available", read_only=True),
         FieldPanel("fmt", read_only=True),
-        FieldPanel("error", read_only=True),        
+        FieldPanel("error", read_only=True),
     ]
 
     class Meta:
@@ -1978,7 +2007,7 @@ class ArticleAvailability(CommonControlField):
             self.available = False
             self.error = "CollectionInactive"
             self.updated = timezone.now()
-            return self.available            
+            return self.available
         if self.collection.platform_status == "classic":
             if "scielo.php" not in self.url:
                 self.available = False
