@@ -595,7 +595,6 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         except Exception as ex:
             return ""
 
-
     # métodos prepare MODS
     def prepare_mods_name_text(self, obj):
         """
@@ -647,7 +646,9 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         # Autores corporativos/institucionais
         if obj.collab.exists():
-            names.extend([collab.collab for collab in obj.collab.all() if collab.collab])
+            names.extend(
+                [collab.collab for collab in obj.collab.all() if collab.collab]
+            )
 
         return names
 
@@ -698,17 +699,19 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         # Otimização: Prefetch com select_related para evitar N+1 queries
         researchers = obj.researchers.prefetch_related(
             Prefetch(
-                'researcheraka_set',
-                queryset=ResearcherAKA.objects.select_related('researcher_identifier')
+                "researcheraka_set",
+                queryset=ResearcherAKA.objects.select_related("researcher_identifier"),
             )
         ).all()
 
         for researcher in researchers:
             for aka in researcher.researcheraka_set.all():
-                if (aka.researcher_identifier and
-                    aka.researcher_identifier.source_name and
-                    aka.researcher_identifier.source_name.upper() == 'ORCID' and
-                    aka.researcher_identifier.identifier):
+                if (
+                    aka.researcher_identifier
+                    and aka.researcher_identifier.source_name
+                    and aka.researcher_identifier.source_name.upper() == "ORCID"
+                    and aka.researcher_identifier.identifier
+                ):
 
                     orcid = aka.researcher_identifier.identifier.strip()
                     if orcid:
@@ -759,10 +762,10 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             return affiliations
 
         researchers = obj.researchers.select_related(
-            'affiliation__institution__institution_identification',
-            'affiliation__institution__location__city',
-            'affiliation__institution__location__state',
-            'affiliation__institution__location__country'
+            "affiliation__institution__institution_identification",
+            "affiliation__institution__location__city",
+            "affiliation__institution__location__state",
+            "affiliation__institution__location__country",
         ).all()
 
         for researcher in researchers:
@@ -812,12 +815,12 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         # Pesquisadores individuais = author
         if obj.researchers.exists():
             researchers = obj.researchers.filter(person_name__isnull=False)
-            roles.extend(['author'] * researchers.count())
+            roles.extend(["author"] * researchers.count())
 
         # Autores corporativos = author
         if obj.collab.exists():
             collabs = [c for c in obj.collab.all() if c.collab]
-            roles.extend(['author'] * len(collabs))
+            roles.extend(["author"] * len(collabs))
 
         return roles
 
@@ -928,7 +931,11 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         capes_areas = []
 
         # Padronizado: .exists() direto no related manager (sem .all() redundante)
-        if obj.journal and hasattr(obj.journal, 'thematic_area') and obj.journal.thematic_area.exists():
+        if (
+            obj.journal
+            and hasattr(obj.journal, "thematic_area")
+            and obj.journal.thematic_area.exists()
+        ):
             for thematic_area_journal in obj.journal.thematic_area.all():
                 thematic_area = thematic_area_journal.thematic_area
 
@@ -1325,7 +1332,11 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             str: ISSN eletrônico no formato ####-####
             Exemplo: "8765-4321"
         """
-        if obj.journal and obj.journal.official and obj.journal.official.issn_electronic:
+        if (
+            obj.journal
+            and obj.journal.official
+            and obj.journal.official.issn_electronic
+        ):
             return obj.journal.official.issn_electronic
         return None
 
@@ -1397,29 +1408,32 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         # Early return se não houver histórico de publishers
         has_publisher_history = (
-            obj.journal and
-            hasattr(obj.journal, 'publisher_history') and
-            obj.journal.publisher_history.exists()
+            obj.journal
+            and hasattr(obj.journal, "publisher_history")
+            and obj.journal.publisher_history.exists()
         )
 
         if not has_publisher_history:
             return publishers
 
         for pub_history in obj.journal.publisher_history.select_related(
-            'institution__institution__institution_identification',
-            'organization'
+            "institution__institution__institution_identification", "organization"
         ):
             pub_name = None
 
             # Tentar nova estrutura Organization primeiro
             if pub_history.organization:
-                name, acronym = self._get_organization_name_and_acronym(pub_history.organization)
+                name, acronym = self._get_organization_name_and_acronym(
+                    pub_history.organization
+                )
                 if name:
                     pub_name = self._format_name_with_acronym(name, acronym)
 
             # Fallback para estrutura Institution legada
             if not pub_name:
-                name, acronym = self._get_legacy_institution_name_and_acronym(pub_history)
+                name, acronym = self._get_legacy_institution_name_and_acronym(
+                    pub_history
+                )
                 if name:
                     pub_name = self._format_name_with_acronym(name, acronym)
 
@@ -1470,8 +1484,7 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         # Fonte 1: contact_location do Journal (prioridade alta)
         has_contact_location = (
-            hasattr(obj.journal, 'contact_location') and
-            obj.journal.contact_location
+            hasattr(obj.journal, "contact_location") and obj.journal.contact_location
         )
 
         if has_contact_location:
@@ -1481,19 +1494,21 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         # Fonte 2: Location via Publisher Organizations (se não há contact_location)
         has_publisher_history = (
-            not places and
-            hasattr(obj.journal, 'publisher_history') and
-            obj.journal.publisher_history.exists()
+            not places
+            and hasattr(obj.journal, "publisher_history")
+            and obj.journal.publisher_history.exists()
         )
 
         if has_publisher_history:
             for pub_history in obj.journal.publisher_history.select_related(
-                'organization__location__city',
-                'organization__location__state',
-                'organization__location__country'
+                "organization__location__city",
+                "organization__location__state",
+                "organization__location__country",
             ):
                 if pub_history.organization and pub_history.organization.location:
-                    place_text = self._format_place_location(pub_history.organization.location)
+                    place_text = self._format_place_location(
+                        pub_history.organization.location
+                    )
                     if place_text and place_text not in places:
                         places.append(place_text)
 
@@ -1530,23 +1545,32 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             str: Data no formato YYYY ou YYYY-MM ou YYYY-MM-DD
             Exemplo: "2023-06-15"
         """
-        if not (hasattr(obj, 'pub_date_year') and obj.pub_date_year and
-                str(obj.pub_date_year).strip()):
+        if not (
+            hasattr(obj, "pub_date_year")
+            and obj.pub_date_year
+            and str(obj.pub_date_year).strip()
+        ):
             return None
 
         date_parts = [str(obj.pub_date_year)]
 
         # Validar e adicionar mês
-        if (hasattr(obj, 'pub_date_month') and obj.pub_date_month and
-            str(obj.pub_date_month).strip()):
+        if (
+            hasattr(obj, "pub_date_month")
+            and obj.pub_date_month
+            and str(obj.pub_date_month).strip()
+        ):
             try:
                 month_int = int(obj.pub_date_month)
                 if 1 <= month_int <= 12:
                     date_parts.append(f"{month_int:02d}")
 
                     # Validar e adicionar dia apenas se mês for válido
-                    if (hasattr(obj, 'pub_date_day') and obj.pub_date_day and
-                        str(obj.pub_date_day).strip()):
+                    if (
+                        hasattr(obj, "pub_date_day")
+                        and obj.pub_date_day
+                        and str(obj.pub_date_day).strip()
+                    ):
                         try:
                             day_int = int(obj.pub_date_day)
                             if 1 <= day_int <= 31:
@@ -1601,12 +1625,13 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
         # Fonte 2: Licença do journal
         if obj.journal:
-            if (obj.journal.journal_use_license and
-                obj.journal.journal_use_license.license_type):
+            if (
+                obj.journal.journal_use_license
+                and obj.journal.journal_use_license.license_type
+            ):
                 return obj.journal.journal_use_license.license_type.strip()
 
-            if (obj.journal.use_license and
-                obj.journal.use_license.license_type):
+            if obj.journal.use_license and obj.journal.use_license.license_type:
                 return obj.journal.use_license.license_type.strip()
 
         return None
@@ -1643,7 +1668,7 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             Exemplo: "https://creativecommons.org/licenses/by/4.0/"
         """
         # Tentar extrair URL de license_statements (se relacionamento existir)
-        if hasattr(obj, 'license_statements') and obj.license_statements.exists():
+        if hasattr(obj, "license_statements") and obj.license_statements.exists():
             # Coletar todas as URLs válidas
             valid_urls = [
                 statement.url.strip()
@@ -1763,13 +1788,19 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
                     parts.append(institution.institution_identification.name.strip())
 
             # Níveis organizacionais (departamentos, divisões)
-            for level in [institution.level_1, institution.level_2, institution.level_3]:
+            for level in [
+                institution.level_1,
+                institution.level_2,
+                institution.level_3,
+            ]:
                 if level and level.strip():
                     parts.append(level.strip())
 
             # Localização geográfica (reutiliza método helper)
             if institution.location:
-                location_str = self._format_location_parts(institution.location, separator=" - ")
+                location_str = self._format_location_parts(
+                    institution.location, separator=" - "
+                )
                 if location_str:
                     parts.append(location_str)
 
@@ -1840,9 +1871,11 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         Returns:
             tuple: (name, acronym) ou (None, None)
         """
-        if not (pub_history.institution and
-                pub_history.institution.institution and
-                pub_history.institution.institution.institution_identification):
+        if not (
+            pub_history.institution
+            and pub_history.institution.institution
+            and pub_history.institution.institution.institution_identification
+        ):
             return None, None
 
         inst_id = pub_history.institution.institution.institution_identification
