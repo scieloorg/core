@@ -180,8 +180,10 @@ def export_article_to_articlemeta(
             external_data["pid_v3"] = article.pid_v3
 
         events.append("building articlemeta format for article")
-        article_data = am.build(article.xmltree, external_data)
 
+        text_langs = article.get_text_langs()
+        
+        article_data = None
         for legacy_keys in legacy_keys_items:
             try:
                 exporter = None
@@ -190,6 +192,9 @@ def export_article_to_articlemeta(
                 data = {}
                 col = legacy_keys.get("collection")
                 pid = legacy_keys.get("pid")
+
+                if not article_data:
+                    article_data = am.build(article.xmltree, external_data)
 
                 events.append("check articlemeta exportation demand")
                 exporter = ArticleExporter.get_demand(
@@ -201,6 +206,7 @@ def export_article_to_articlemeta(
 
                 data = {"collection": col.acron3}
                 data.update(article_data)
+                data["article"]["fulltext_langs"] = text_langs.get(col.acron3, {})
 
                 events.append("building articlemeta format for issue")
                 issue_data = article.issue.articlemeta_format(col.acron3)
