@@ -179,11 +179,9 @@ def export_article_to_articlemeta(
         if new_available:
             external_data["pid_v3"] = article.pid_v3
 
-        events.append("building articlemeta format for article")
-
         text_langs = article.get_text_langs()
         
-        article_data = None
+        article_data = {}
         for legacy_keys in legacy_keys_items:
             try:
                 exporter = None
@@ -194,6 +192,7 @@ def export_article_to_articlemeta(
                 pid = legacy_keys.get("pid")
 
                 if not article_data:
+                    events.append("building articlemeta format for article")
                     article_data = am.build(article.xmltree, external_data)
 
                 events.append("check articlemeta exportation demand")
@@ -225,6 +224,9 @@ def export_article_to_articlemeta(
                 data["title"] = issue_data["title"]
                 data["code"] = pid or article.pid_v2
                 data.update(external_data)
+
+                if not data["article"]:
+                    raise ValueError("Missing 'article' in data")
 
                 try:
                     json.dumps(data)
