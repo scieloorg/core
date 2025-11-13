@@ -59,6 +59,8 @@ class ArticleSnippetViewSet(SnippetViewSet):
         "data_status",
         "valid",
         "journal__scielojournal__collection",
+        "article_type",
+        "data_availability_status",
     ]
     search_fields = (
         "titles__plain_text",

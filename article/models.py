@@ -34,6 +34,7 @@ from core.models import (
     License,
     LicenseStatement,
     TextLanguageMixin,
+    CharFieldLangMixin,
 )
 from core.utils.utils import NonRetryableError, fetch_data
 from doi.models import DOI
@@ -166,19 +167,25 @@ class Article(
     is_public = models.BooleanField(default=False, blank=True, null=True)
     is_classic_public = models.BooleanField(default=False, blank=True, null=True)
     is_new_public = models.BooleanField(default=False, blank=True, null=True)
+    data_availability_status = models.CharField(
+        _("Data Availability Status"),
+        max_length=30,
+        null=True,
+        blank=True,
+        choices=choices.DATA_AVAILABILITY_STATUS,
+        default=choices.DATA_AVAILABILITY_STATUS_NOT_PROCESSED,
+    )
 
     base_form_class = CoreAdminModelForm
 
     # Metadados principais do artigo
     panels_identification = [
-        FieldPanel("is_public", read_only=True),
-        FieldPanel("is_classic_public", read_only=True),
-        FieldPanel("is_new_public", read_only=True),
-        FieldPanel("data_status", read_only=True),
-        FieldPanel("valid", read_only=True),
         FieldPanel("pid_v2", read_only=True),
         FieldPanel("pid_v3", read_only=True),
         AutocompletePanel("doi", read_only=True),
+        FieldPanel("article_type", read_only=True),
+        AutocompletePanel("toc_sections", read_only=True),
+        AutocompletePanel("titles", read_only=True),
     ]
 
     # Informações de publicação
@@ -193,12 +200,16 @@ class Article(
         FieldPanel("elocation_id", read_only=True),
     ]
 
+    panels_open_science = [
+        AutocompletePanel("license", read_only=True),
+        FieldPanel("data_availability_status", read_only=True),
+        InlinePanel(
+            "data_availability_statements", label=_("Data Availability Statements")
+        ),
+    ]
     # Conteúdo e classificação
     panels_content = [
-        FieldPanel("article_type", read_only=True),
-        AutocompletePanel("toc_sections", read_only=True),
         AutocompletePanel("languages", read_only=True),
-        AutocompletePanel("titles", read_only=True),
         InlinePanel("abstracts", label=_("Abstract")),
         AutocompletePanel("keywords", read_only=True),
     ]
@@ -211,9 +222,14 @@ class Article(
 
     # Licenciamento e financiamento
     panels_rights_funding = [
-        AutocompletePanel("license", read_only=True),
-        # AutocompletePanel("license_statements"),
         AutocompletePanel("fundings", read_only=True),
+    ]
+    panels_processing = [
+        FieldPanel("is_public", read_only=True),
+        FieldPanel("is_classic_public", read_only=True),
+        FieldPanel("is_new_public", read_only=True),
+        FieldPanel("data_status", read_only=True),
+        FieldPanel("valid", read_only=True),
     ]
     panels_errors = [
         FieldPanel("errors", read_only=True),
@@ -226,8 +242,10 @@ class Article(
             ObjectList(panels_publication, heading=_("Publication Details")),
             ObjectList(panels_content, heading=_("Content & Classification")),
             ObjectList(panels_authorship, heading=_("Authors & Collaborators")),
-            ObjectList(panels_rights_funding, heading=_("Rights & Funding")),
+            ObjectList(panels_open_science, heading=_("Open Science")),
+            ObjectList(panels_rights_funding, heading=_("Funding")),
             ObjectList(panels_errors, heading=_("Errors")),
+            ObjectList(panels_processing, heading=_("Processing")),
         ]
     )
 
@@ -267,6 +285,7 @@ class Article(
             models.Index(fields=["pid_v2"]),
             models.Index(fields=["is_classic_public"]),
             models.Index(fields=["pp_xml"]),
+            models.Index(fields=["data_availability_status"]),
         ]
 
     def __unicode__(self):
@@ -916,6 +935,64 @@ class Article(
             )
 
 
+class DataAvailabilityStatement(CharFieldLangMixin, CommonControlField):
+    article = ParentalKey(
+        Article,
+        on_delete=models.CASCADE,
+        related_name="data_availability_statements",
+    )
+
+    base_form_class = CoreAdminModelForm
+
+    @classmethod
+    def create_or_update(cls, user, article, language, text):
+        try:
+            obj = cls.get(article=article, language=language)
+            obj.updated_by = user
+            obj.text = text
+            obj.save()
+            return obj
+        except cls.DoesNotExist:
+            return cls.create(user, article, language, text)
+
+
+    @classmethod
+    def get(
+        cls,
+        article,
+        language,
+    ):
+        if article and language:
+            if not isinstance(language, Language):
+                language = Language.get(code2=language)
+            try:
+                return cls.objects.get(article=article, language=language)
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(article=article, language=language).first()
+        raise ValueError("DataAvailabilityStatement.get requires article parameter")
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        article,
+        language,
+        text,
+    ):
+        try:
+            if not isinstance(language, Language):
+                language = Language.get(code2=language)
+            obj = cls()
+            obj.creator = user
+            obj.text = text
+            obj.article = article
+            obj.language = language
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(article=article, language=language)
+
+
 class ArticleFunding(CommonControlField):
     award_id = models.CharField(_("Award ID"), blank=True, null=True, max_length=100)
     funding_source = models.ForeignKey(
@@ -945,6 +1022,8 @@ class ArticleFunding(CommonControlField):
         FieldPanel("award_id"),
         AutocompletePanel("funding_source"),
     ]
+
+    base_form_class = CoreAdminModelForm
 
     def __unicode__(self):
         return "%s | %s" % (self.award_id, self.funding_source)
@@ -989,8 +1068,6 @@ class ArticleFunding(CommonControlField):
                     ),
                 )
 
-    base_form_class = CoreAdminModelForm
-
 
 class DocumentTitle(TextLanguageMixin, CommonControlField):
     ...
@@ -1029,13 +1106,6 @@ class DocumentTitle(TextLanguageMixin, CommonControlField):
         obj.rich_text = rich_text or obj.rich_text
         obj.save()
         return obj
-
-
-class ArticleType(models.Model):
-    text = models.TextField(_("Text"), null=True, blank=True)
-
-    def __str__(self):
-        return self.text
 
 
 class DocumentAbstract(TextLanguageMixin, CommonControlField, Orderable):
