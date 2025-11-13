@@ -1,0 +1,72 @@
+{% load wagtailcore_tags wagtailimages_tags %}
+
+<style>
+.bibliographic-reference {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.bibliographic-reference:last-child {
+    border-bottom: none;
+}
+
+.bibliographic-reference__icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.bibliographic-reference__icon img {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    /* Filtro para aplicar cor --scielo-primary (#3867CE - azul) em SVGs */
+    filter: brightness(0) saturate(100%) invert(35%) sepia(89%) saturate(1475%) hue-rotate(208deg) brightness(93%) contrast(91%);
+}
+
+.bibliographic-reference__content {
+    flex: 1;
+    line-height: 1.6;
+    font-size: 15px;
+    color: #333;
+}
+
+.bibliographic-reference__content p {
+    margin: 0;
+}
+
+.bibliographic-reference__content a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.bibliographic-reference__content a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .bibliographic-reference {
+        gap: 0.5rem;
+    }
+    
+    .bibliographic-reference__content {
+        font-size: 14px;
+    }
+}
+</style>
+
+<div class="bibliographic-reference">
+    {% if block.value.icon %}
+    <div class="bibliographic-reference__icon">
+        {% image block.value.icon fill-42x42 %}
+    </div>
+    {% endif %}
+    
+    <div class="bibliographic-reference__content">
+       {{ block.value.reference|richtext }}
+    </div>
+</div>

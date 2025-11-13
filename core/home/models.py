@@ -7,7 +7,8 @@ from django.template.response import TemplateResponse
 from django.utils.translation import activate, get_language, gettext
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
-from wagtail import blocks
+from wagtail import blocks 
+from wagtail.images.blocks import ImageBlock
 from wagtail.admin.panels import FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel
 from wagtail.contrib.forms.models import AbstractFormField
 from wagtail.contrib.forms.panels import FormSubmissionsPanel
@@ -268,6 +269,24 @@ class FAQItemBlock(blocks.StructBlock):
     updated = blocks.DateBlock(required=False)
 
 
+class BibliographicReferenceBlock(blocks.StructBlock):
+    reference = blocks.RichTextBlock(
+        required=True,
+        label=_("Referência Bibliográfica"),
+        help_text=_("Digite a referência bibliográfica completa")
+    )
+    icon = ImageBlock(
+        required=False,
+        label=_("Ícone"),
+        help_text=_("Selecione um ícone para exibir ao lado da referência")
+    )
+    
+    class Meta:
+        icon = "doc-full"
+        label = _("Referência Bibliográfica")
+        template = "home/blocks/bibliographic_reference_block.html"
+
+
 class AboutScieloOrgPage(Page):
     subpage_types = ["home.AboutScieloOrgPage"]
 
@@ -289,6 +308,7 @@ class AboutScieloOrgPage(Page):
     list_page = StreamField(
         [
             ("faq_item", FAQItemBlock()),
+            ("bibliographic_reference", BibliographicReferenceBlock()),
         ],
         blank=True,
         use_json_field=True,
