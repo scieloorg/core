@@ -793,6 +793,25 @@ class Article(
         return self.get_availability(
             fmt="html", collection_acron_list=collection_acron_list, params=params
         )
+    
+    def get_text_langs(self, collection_acron_list=None, fmt=None):
+        by_collection = {}
+        params = {}
+        if fmt:
+            params["fmt"] = fmt
+        else:
+            params["fmt__in"] = ["html", "pdf"]
+        if collection_acron_list:
+            params["collection__acron3__in"] = collection_acron_list
+        for item in self.article_availability.filter(lang__isnull=False, **params).distinct():
+            acron3 = item.collection.acron3
+            code2 = item.lang.code2
+            fmt = item.fmt
+            by_collection.setdefault(acron3, {})
+            by_collection[acron3].setdefault(fmt, [])
+            if code2 not in by_collection[acron3][fmt]:
+                by_collection[acron3][fmt].append(code2)
+        return by_collection
 
     def add_event(self, user, name):
         return ArticleEvent.create(user, self, name)
