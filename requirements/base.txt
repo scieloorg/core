@@ -9,7 +9,8 @@ argon2-cffi==25.1.0  # https://github.com/hynek/argon2_cffi
 whitenoise==6.11.0  # https://github.com/evansd/whitenoise
 xmltodict==1.0.2 # https://github.com/martinblech/xmltodict.git
 freezegun==1.5.5  # https://pypi.org/project/freezegun/
-
+langdetect==1.0.9  # https://pypi.org/project/langdetect/
+babel==2.14.0  # https://github.com/python-babel/babel
 
 # ==============================================================================
 # DJANGO CORE
