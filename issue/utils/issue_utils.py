@@ -2,6 +2,7 @@ import logging
 import sys
 
 from django.db import IntegrityError, transaction
+from langdetect import detect
 
 from core.models import Language
 from tracker.models import UnexpectedEvent
@@ -30,6 +31,7 @@ def get_or_create_issue(
     sections_data,
     markup_done,
     user,
+    collection,
     order=None,
     issue_pid_suffix=None,    
 ):
@@ -45,16 +47,13 @@ def get_or_create_issue(
         supplement=supplement,
         year=data[:4],
         month=data[4:6],
-        sections=get_or_create_sections(sections_data, user),
         markup_done=markup_done,
         order=order,
         issue_pid_suffix=issue_pid_suffix,
         user=user,
         season=None,
     )
-    data_code_sections = get_or_create_code_sections(sections_data, user)
-    for section in data_code_sections:
-        obj.code_sections.add(section)
+    obj.add_sections(user, fix_section_data(sections_data), collection)
 
     return obj
 
@@ -139,3 +138,36 @@ def get_or_create_code_sections(sections_data, user):
                 )
     return data
 
+
+def fix_section_data(sections_data):        
+    for item in sections_data:
+        section_text = item.get("t")
+        if not section_text:
+            continue
+        lang_code2 = item.get("l")
+        if not lang_code2:
+            continue
+
+        try:
+            language = Language.get(lang_code2)
+            yield {
+                "c": item.get("c"),
+                "l": language,
+                "t": section_text,
+            }
+        except Language.DoesNotExist:
+            for text in section_text.split("/"):
+                text = text.strip()
+                if not text:
+                    continue
+                try:
+                    detected_lang = detect(text)
+                    language = Language.get(detected_lang)
+                except Language.DoesNotExist:
+                    language = Language.get("en")
+                finally:
+                    yield {
+                        "c": item.get("c"),
+                        "l": language,
+                        "t": text,
+                    }
