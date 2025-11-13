@@ -803,7 +803,7 @@ class Article(
             params["fmt__in"] = ["html", "pdf"]
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
-        for item in self.article_availability.filter(lang__isnull=False, **params).distinct():
+        for item in self.article_availability.filter(lang__isnull=False, **params).select_related('collection', 'lang').distinct():
             acron3 = item.collection.acron3
             code2 = item.lang.code2
             fmt = item.fmt
