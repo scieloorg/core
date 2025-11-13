@@ -35,3 +35,23 @@ DATA_STATUS_INCLUSION_LIST = [
     DATA_STATUS_UNDEF,
     DATA_STATUS_DEDUPLICATED,
 ]
+
+# Data availability status constants
+DATA_AVAILABILITY_STATUS_AVAILABLE = "data-available"
+DATA_AVAILABILITY_STATUS_UPON_REQUEST = "data-available-upon-request"
+DATA_AVAILABILITY_STATUS_IN_ARTICLE = "data-in-article"
+DATA_AVAILABILITY_STATUS_NOT_AVAILABLE = "data-not-available"
+DATA_AVAILABILITY_STATUS_UNINFORMED = "uninformed"
+DATA_AVAILABILITY_STATUS_ABSENT = "absent"
+DATA_AVAILABILITY_STATUS_NOT_PROCESSED = "not-processed"
+
+# Data availability status choices tuple
+DATA_AVAILABILITY_STATUS = (
+    (DATA_AVAILABILITY_STATUS_AVAILABLE, _("Os dados de pesquisa estão disponíveis em repositório.")),
+    (DATA_AVAILABILITY_STATUS_UPON_REQUEST, _("Os dados de pesquisa só estão disponíveis mediante solicitação.")),
+    (DATA_AVAILABILITY_STATUS_IN_ARTICLE, _("Os dados de pesquisa estão disponíveis no corpo do documento.")),
+    (DATA_AVAILABILITY_STATUS_NOT_AVAILABLE, _("Os dados de pesquisa não estão disponíveis.")),
+    (DATA_AVAILABILITY_STATUS_UNINFORMED, _("Uso de dados não informado; nenhum dado de pesquisa gerado ou utilizado.")),
+    (DATA_AVAILABILITY_STATUS_ABSENT, _("Informação ausente no XML")),
+    (DATA_AVAILABILITY_STATUS_NOT_PROCESSED, _("XML não processado")),
+)
