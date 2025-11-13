@@ -139,10 +139,11 @@ def create_issue_from_am_issue(user, am_issue):
             raise ValueError(f"Unable to create issue for {am_issue}") 
 
         journal_pid = data["title"]["code"]
-        journal = SciELOJournal.objects.get(
+        scielo_journal = SciELOJournal.objects.get(
             collection__acron3=data["collection"],
             issn_scielo=journal_pid,
-        ).journal
+        )
+        journal = scielo_journal.journal
 
         issue_data = data.get("issue") if "issue" in data else data
         issue_dict = rename_issue_dictionary_keys(
@@ -159,6 +160,7 @@ def create_issue_from_am_issue(user, am_issue):
             sections_data=issue_dict.get("sections_data"),
             markup_done=issue_dict.get("markup_done"),
             user=user,
+            collection=scielo_journal.collection,
         )
         if issue:
             issue.legacy_issue.add(am_issue)
