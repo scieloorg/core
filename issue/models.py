@@ -20,7 +20,7 @@ from core.models import (
     TextWithLang,
 )
 from core.utils.date_utils import get_date_range
-from journal.models import Journal
+from journal.models import Journal, JournalTableOfContents  # Adicionar JournalTableOfContents
 from location.models import City
 from .exceptions import TocSectionGetError
 from .utils.extract_digits import _get_digits
@@ -81,9 +81,7 @@ class Issue(CommonControlField, ClusterableModel):
         blank=True,
         on_delete=models.SET_NULL,
     )
-    sections = models.ManyToManyField("TocSection", blank=True)
     license = models.ManyToManyField(License, blank=True)
-    code_sections = models.ManyToManyField("SectionIssue", blank=True)
     city = models.ForeignKey(City, on_delete=models.SET_NULL, blank=True, null=True)
     number = models.CharField(_("Issue number"), max_length=20, null=True, blank=True)
     volume = models.CharField(_("Issue volume"), max_length=20, null=True, blank=True)
@@ -106,6 +104,10 @@ class Issue(CommonControlField, ClusterableModel):
         ),
     )
     issue_pid_suffix = models.CharField(max_length=4, null=True, blank=True)
+
+    # TODO: DEPRECATED - será removido em versão futura, usar table_of_contents
+    sections = models.ManyToManyField("TocSection", blank=True)
+    code_sections = models.ManyToManyField("SectionIssue", blank=True)
 
     autocomplete_search_field = "journal__title"
 
@@ -140,8 +142,11 @@ class Issue(CommonControlField, ClusterableModel):
     ]
 
     panels_table_of_contents = [
+        # TODO: DEPRECATED - remover em versão futura
         AutocompletePanel("sections"),
         AutocompletePanel("code_sections"),
+        # NOVO: substitui sections e code_sections
+        InlinePanel("table_of_contents", label=_("Table of Contents Sections")),
     ]
 
     edit_handler = TabbedInterface(
@@ -181,6 +186,9 @@ class Issue(CommonControlField, ClusterableModel):
                 fields=["markup_done"],
             )
         ]
+
+    def __str__(self):
+        return self.short_identification
 
     def create_legacy_keys(self, user=None, force_update=None):
         if not force_update:
@@ -367,7 +375,6 @@ class Issue(CommonControlField, ClusterableModel):
         month,
         supplement,
         markup_done=False,
-        sections=None,
         issue_pid_suffix=None,
         order=None,
         **kwargs
@@ -395,20 +402,11 @@ class Issue(CommonControlField, ClusterableModel):
                 setattr(issue, key, value)
         
         # Generate order and PID suffix if not provided
-        if not order:
-            issue.order = issue.generate_order()
-        else:
-            issue.order = order
-            
-        if not issue_pid_suffix:
-            issue.issue_pid_suffix = issue.generate_issue_pid_suffix()
-        else:
-            issue.issue_pid_suffix = issue_pid_suffix
+        issue.order = order or issue.generate_order()
+        issue.issue_pid_suffix = issue_pid_suffix or issue.generate_issue_pid_suffix()
         
         try:
             issue.save()
-            if sections:
-                issue.sections.set(sections)
             return issue
         except IntegrityError:
             # If creation fails due to integrity error, try to get existing
@@ -432,7 +430,6 @@ class Issue(CommonControlField, ClusterableModel):
         month,
         supplement,
         markup_done=False,
-        sections=None,
         issue_pid_suffix=None,
         order=None,
         **kwargs
@@ -459,15 +456,42 @@ class Issue(CommonControlField, ClusterableModel):
                 month=month,
                 supplement=supplement,
                 markup_done=markup_done,
-                sections=sections,
                 issue_pid_suffix=issue_pid_suffix,
                 order=order,
                 **kwargs
             )
 
-    def __str__(self):
-        return self.short_identification
-    
+    def add_sections(self, user, section_list, collection):
+        """
+        Adiciona seções ao Issue usando o novo modelo JournalTableOfContents.
+        
+        Args:
+            user: Usuário responsável pela operação
+            section_list: Lista de dicionários com dados das seções
+            collection: Coleção associada ao journal
+        """
+        for item in section_list:
+            section_title = item.get("t")
+            if not section_title:
+                continue
+            language = item.get("l")
+            if not language:
+                continue
+
+            journal_toc = JournalTableOfContents.create_or_update(
+                user,
+                self.journal,
+                collection,
+                language,
+                section_title,
+                item.get("c"),
+            )
+            IssueTableOfContents.create_or_update(
+                user=user,
+                issue=self,
+                journal_toc=journal_toc,
+            )
+            
     @property
     def total_articles(self):
         return self.article_set.count()
@@ -559,6 +583,12 @@ class BibliographicStrip(Orderable, TextWithLang, CommonControlField):
 
 class TocSection(TextLanguageMixin, CommonControlField):
     """
+    TODO: DEPRECATED - Esta classe será removida em versão futura.
+    Use JournalTableOfContents ao invés desta classe.
+    
+    Relacionamento antigo: Issue -> TocSection
+    Novo relacionamento: Issue -> IssueTableOfContents -> JournalTableOfContents
+    
     <article-categories>
         <subj-group subj-group-type="heading">
           <subject>NOMINATA</subject>
@@ -638,6 +668,14 @@ class TocSection(TextLanguageMixin, CommonControlField):
 
 
 class CodeSectionIssue(CommonControlField):
+    """
+    TODO: DEPRECATED - Esta classe será removida em versão futura.
+    Use JournalTableOfContents ao invés desta classe.
+    
+    Relacionamento antigo: Issue -> SectionIssue -> CodeSectionIssue
+    Novo relacionamento: Issue -> IssueTableOfContents -> JournalTableOfContents
+    """
+    
     code = models.CharField(
         _("Code"), max_length=40, unique=True, null=True, blank=True
     )
@@ -647,6 +685,14 @@ class CodeSectionIssue(CommonControlField):
 
 
 class SectionIssue(TextWithLang, CommonControlField):
+    """
+    TODO: DEPRECATED - Esta classe será removida em versão futura.
+    Use JournalTableOfContents ao invés desta classe.
+    
+    Relacionamento antigo: Issue -> SectionIssue (com CodeSectionIssue)
+    Novo relacionamento: Issue -> IssueTableOfContents -> JournalTableOfContents
+    """
+    
     code_section = models.ForeignKey(
         CodeSectionIssue,
         on_delete=models.SET_NULL,
@@ -680,3 +726,53 @@ class IssueExporter(BaseExporter):
         related_name="exporter",
         verbose_name=_("Issue"),
     )
+
+
+class TableOfContents(Orderable, CommonControlField):
+    """
+    Relacionamento ordenado entre Issue e JournalTableOfContents.
+    Este modelo substitui os relacionamentos antigos sections e code_sections.
+    """
+    issue = ParentalKey(
+        Issue,
+        on_delete=models.CASCADE,
+        related_name="table_of_contents",
+        verbose_name=_("Issue"),
+    )
+    journal_toc = models.ForeignKey(
+        JournalTableOfContents,
+        on_delete=models.CASCADE,
+        verbose_name=_("Table of Contents Section"),
+    )
+    
+    panels = [
+        AutocompletePanel("journal_toc"),
+    ]
+    
+    class Meta:
+        verbose_name = _("Table of Contents")
+        verbose_name_plural = _("Table of Contents")
+        unique_together = [("issue", "journal_toc")]
+    
+    def __str__(self):
+        return f"{self.issue} - {self.journal_toc}"
+
+    @classmethod
+    def get(cls, issue, journal_toc):
+        return cls.objects.get(issue=issue, journal_toc=journal_toc)
+    
+    @classmethod
+    def create(cls, user, issue, journal_toc):
+        obj = cls()
+        obj.issue = issue
+        obj.journal_toc = journal_toc
+        obj.creator = user
+        obj.save()
+        return obj
+    
+    @classmethod
+    def create_or_update(cls, user, issue, journal_toc):
+        try:
+            return cls.get(issue=issue, journal_toc=journal_toc)
+        except cls.DoesNotExist:
+            return cls.create(user=user, issue=issue, journal_toc=journal_toc)
