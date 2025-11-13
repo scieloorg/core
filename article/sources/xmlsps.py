@@ -164,10 +164,6 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         article.events.all().delete()
         event = article.add_event(user, _("load article"))
 
-        add_data_availability_status(
-            xmltree=xmltree, errors=errors, article=article, user=user
-        )
-
         # Configurar todos os campos antes de salvar (Sugestão 9)
         article.valid = False
         article.data_status = choices.DATA_STATUS_PENDING
@@ -205,6 +201,9 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             f"Saving article {article.pid_v3} {xml_with_pre.sps_pkg_name} {xml_with_pre.main_doi}"
         )
 
+        add_data_availability_status(
+            xmltree=xmltree, errors=errors, article=article, user=user
+        )
 
         # MANY-TO-MANY (requerem que o objeto esteja salvo)
         main_lang = get_or_create_main_language(
