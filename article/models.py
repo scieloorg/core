@@ -946,19 +946,15 @@ class DataAvailabilityStatement(CharFieldLangMixin, CommonControlField):
 
     @classmethod
     def create_or_update(cls, user, article, language, text):
-        language = Language.get(code2=language)
         try:
             obj = cls.get(article=article, language=language)
             obj.updated_by = user
+            obj.text = text
+            obj.save()
+            return obj
         except cls.DoesNotExist:
-            obj = cls()
-            obj.creator = user
-            obj.article = article
-            obj.language = language
+            return cls.create(user, article, language, text)
 
-        obj.text = text
-        obj.save()
-        return obj
 
     @classmethod
     def get(
@@ -967,7 +963,8 @@ class DataAvailabilityStatement(CharFieldLangMixin, CommonControlField):
         language,
     ):
         if article and language:
-            language = Language.get(code2=language)
+            if not isinstance(language, Language):
+                language = Language.get(code2=language)
             try:
                 return cls.objects.get(article=article, language=language)
             except cls.MultipleObjectsReturned:
@@ -983,6 +980,8 @@ class DataAvailabilityStatement(CharFieldLangMixin, CommonControlField):
         text,
     ):
         try:
+            if not isinstance(language, Language):
+                language = Language.get(code2=language)
             obj = cls()
             obj.creator = user
             obj.text = text
