@@ -9,6 +9,7 @@ from lxml import etree
 from packtools.sps.models.article_abstract import ArticleAbstract
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_contribs import ArticleContribs, XMLContribs
+from packtools.sps.models.article_data_availability import DataAvailability
 from packtools.sps.models.article_doi_with_lang import DoiWithLang
 from packtools.sps.models.article_ids import ArticleIds
 from packtools.sps.models.article_license import ArticleLicense
@@ -22,7 +23,7 @@ from packtools.sps.models.v2.article_toc_sections import ArticleTocSections
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article import choices
-from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle
+from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle, DataAvailabilityStatement
 from core.models import Language
 from core.utils.extracts_normalized_email import extracts_normalized_email
 from doi.models import DOI
@@ -162,6 +163,11 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
 
         article.events.all().delete()
         event = article.add_event(user, _("load article"))
+
+        add_data_availability_status(
+            xmltree=xmltree, errors=errors, article=article, user=user
+        )
+
         # Configurar todos os campos antes de salvar (Sugestão 9)
         article.valid = False
         article.data_status = choices.DATA_STATUS_PENDING
@@ -199,7 +205,6 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             f"Saving article {article.pid_v3} {xml_with_pre.sps_pkg_name} {xml_with_pre.main_doi}"
         )
 
-        article.save()
 
         # MANY-TO-MANY (requerem que o objeto esteja salvo)
         main_lang = get_or_create_main_language(
@@ -274,6 +279,42 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             ),
         )
         raise
+
+
+def add_data_availability_status(xmltree, errors, article, user):
+    """
+    Extrai a declaração de disponibilidade de dados do XML.
+
+    Args:
+        xmltree: Árvore XML do artigo
+        errors: Lista para coletar erros
+    """
+    try:
+        status = None
+        items = []
+        xml = DataAvailability(xmltree=xmltree)
+        for item in xml.items:
+            status = status or item.get("specific_use")
+            lang = item.get("parent_lang")
+            if not lang:
+                continue
+            text = item.get("text")
+            if not text:
+                continue
+            items.append({"language": lang, "text": text})
+
+        article.data_availability_status = status or choices.DATA_AVAILABILITY_STATUS_ABSENT
+        # SAVE OBRIGATÓRIO ANTES DE ADICIONAR OS ITENS M2M
+        article.save()
+        
+        for item in items:
+            DataAvailabilityStatement.create_or_update(
+                user=user,
+                article=article,
+                **item
+            )
+    except Exception as e:
+        add_error(errors, "add_data_availability_status", e)
 
 
 def get_or_create_doi(xmltree, user, errors):
