@@ -79,6 +79,31 @@ class MissionSerializer(serializers.ModelSerializer):
             return obj.language.code2
         return None    
 
+
+class JournalTableOfContentsSerializer(serializers.ModelSerializer):
+    language = serializers.SerializerMethodField()
+    collection_acron = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.JournalTableOfContents
+        fields = [
+            "text",
+            "code", 
+            "language",
+            "collection_acron",
+        ]
+
+    def get_language(self, obj):
+        if obj.language:
+            return obj.language.code2
+        return None
+
+    def get_collection_acron(self, obj):
+        if obj.collection:
+            return obj.collection.acron3
+        return None
+
+
 class JournalSerializer(serializers.ModelSerializer):
     # Serializadores para campos de relacionamento, como 'official', devem corresponder aos campos do modelo.
     official = OfficialJournalSerializer(many=False, read_only=True)
@@ -99,7 +124,10 @@ class JournalSerializer(serializers.ModelSerializer):
     copyright = serializers.SerializerMethodField()
     next_journal_title = serializers.SerializerMethodField()
     previous_journal_title = serializers.SerializerMethodField()
+    # TODO: DEPRECATED - será removido em versão futura, usar table_of_contents
     toc_items = serializers.SerializerMethodField()
+    # NOVO: substitui toc_items
+    table_of_contents = serializers.SerializerMethodField()
     wos_areas = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
 
@@ -214,6 +242,13 @@ class JournalSerializer(serializers.ModelSerializer):
             }
 
     def get_toc_items(self, obj):
+        """
+        DEPRECATED: Este método será removido em versão futura.
+        Use get_table_of_contents() que fornece dados mais estruturados.
+        
+        Relacionamento antigo: journaltocsection_set -> toc_items
+        Novo relacionamento: journaltableofcontents_set
+        """
         if queryset := obj.journaltocsection_set.all():
             data = []
             for item in queryset:
@@ -227,6 +262,23 @@ class JournalSerializer(serializers.ModelSerializer):
                         }
                     )
             return data
+
+    def get_table_of_contents(self, obj):
+        """
+        NOVO: Retorna seções do sumário usando JournalTableOfContents.
+        Substitui o get_toc_items() com dados mais estruturados.
+        """
+        if queryset := obj.journaltableofcontents_set.all():
+            data = []
+            for item in queryset:
+                data.append({
+                    "text": item.text,
+                    "code": item.code,
+                    "language": item.language.code2 if item.language else None,
+                    "collection_acron": item.collection.acron3 if item.collection else None,
+                })
+            return data
+        return []
 
     def get_wos_areas(self, obj):
         if obj.wos_area.all():
@@ -262,7 +314,8 @@ class JournalSerializer(serializers.ModelSerializer):
             "copyright",
             "subject_descriptor",
             "subject",
-            "toc_items",
+            "toc_items",  # TODO: DEPRECATED - remover em versão futura
+            "table_of_contents",  # NOVO: substitui toc_items
             "submission_online_url",
             "email",
             "contact_name",
