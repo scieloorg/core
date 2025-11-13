@@ -17,6 +17,10 @@ class AMIssueSerializer(serializers.ModelSerializer):
 
 
 class TocSectionsSerializer(serializers.ModelSerializer):
+    """
+    TODO: DEPRECATED - Será removido em versão futura.
+    Use SectionsSerializer que usa TableOfContents.
+    """
     language = serializers.CharField(source="language.code2")
 
     class Meta:
@@ -27,10 +31,41 @@ class TocSectionsSerializer(serializers.ModelSerializer):
         ]
 
 
+class SectionsSerializer(serializers.ModelSerializer):
+    """
+    Novo serializer que usa TableOfContents ao invés de TocSection.
+    Mantém o nome 'sections' para compatibilidade da API.
+    """
+    text = serializers.CharField(source="journal_toc.text")
+    code = serializers.CharField(source="journal_toc.code")
+    language = serializers.SerializerMethodField()
+    collection_acron = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.TableOfContents
+        fields = [
+            "text",
+            "code",
+            "language",
+            "collection_acron",
+            "sort_order",
+        ]
+
+    def get_language(self, obj):
+        if obj.journal_toc.language:
+            return obj.journal_toc.language.code2
+        return None
+
+    def get_collection_acron(self, obj):
+        if obj.journal_toc.collection:
+            return obj.journal_toc.collection.acron3
+        return None
+
+
 class IssueSerializer(serializers.ModelSerializer):
     journal = serializers.SerializerMethodField()
     legacy_issue = AMIssueSerializer(many=True, read_only=True)
-    sections = TocSectionsSerializer(many=True, read_only=True)
+    sections = SectionsSerializer(source="table_of_contents", many=True, read_only=True)
     license = LicenseStatementSerializer(many=True, read_only=True)
 
     class Meta:
