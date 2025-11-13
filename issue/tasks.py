@@ -1,9 +1,7 @@
 import logging
 import sys
-from datetime import datetime
 
 from django.contrib.auth import get_user_model
-from django.db.models import Q
 
 from config import celery_app
 from core.utils.utils import _get_user
@@ -15,19 +13,6 @@ from tracker.models import UnexpectedEvent
 User = get_user_model()
 
 logger = logging.getLogger(__name__)
-
-
-@celery_app.task()
-def load_issue(user_id=None, username=None):
-    """
-    Load issue record.
-
-    Sync or Async function
-    """
-
-    user = _get_user(request=None, user_id=user_id, username=username)
-
-    controller.load(user)
 
 
 @celery_app.task(bind=True)
