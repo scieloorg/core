@@ -30,6 +30,7 @@ from core.models import (
     RichTextWithLanguage,
     SocialNetwork,
     TextWithLang,
+    CharFieldLangMixin,
 )
 from core.utils import date_utils
 from core.utils.thread_context import get_current_collections, get_current_user
@@ -2898,7 +2899,151 @@ class OpenScienceCompliance(Orderable, RichTextWithLanguage, CommonControlField)
     )
 
 
+class JournalTableOfContents(CharFieldLangMixin, CommonControlField):
+    collection = models.ForeignKey(
+        Collection,
+        verbose_name=_("Collection"),
+        on_delete=models.CASCADE,
+    )
+    journal = models.ForeignKey(
+        Journal,
+        verbose_name=_("Journal"),
+        on_delete=models.CASCADE,
+    )
+    code = models.CharField(
+        max_length=20,
+        verbose_name=_("Section code"),
+        null=True,
+        blank=True,
+    )
+    panels = [
+        AutocompletePanel("journal"),
+        AutocompletePanel("collection"),
+        FieldPanel("code"),
+        AutocompletePanel("language"),
+        FieldPanel("text"),
+    ]
+    base_form_class = CoreAdminModelForm
+    
+    class Meta:
+        unique_together = [
+            ("journal", "collection", "language", "text", "code"),
+        ]
+        indexes = [
+            models.Index(
+                fields=[
+                    "journal",
+                    "collection",
+                    "language",
+                    "text",
+                    "code",
+                ]
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.text} | {self.language} | {self.code}"
+
+    def autocomplete_label(self):
+        return str(self)
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return JournalTableOfContents.objects.filter(
+            text__icontains=search_term
+        ).distinct()
+    
+    @classmethod
+    def get_by_code(cls, code):
+        if not code:
+            raise ValueError("JournalTableOfContents.get_by_code requires code parameter")
+        return cls.objects.get(code=code)
+    
+    @classmethod
+    def get_by_text_and_lang(cls, text, language):
+        if not text:
+            raise ValueError("JournalTableOfContents.get_by_text requires text parameter")
+        return cls.objects.filter(text=text, language=language)
+
+    @classmethod
+    def get(cls, journal, collection, language, text, code):
+        if not journal or not language or not text or not collection:
+            raise ValueError(
+                f"JournalTableOfContents.get requires journal ({journal}), "
+                f"language ({language}), text ({text}) and collection ({collection}) parameters"
+            )
+        filters = dict(
+            journal=journal,
+            language=language,
+            text=text,
+            collection=collection,
+            code=code,
+        )
+        try:
+            return cls.objects.get(**filters)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(**filters).first()
+        
+    @classmethod
+    def create(
+        cls,
+        user
+        journal,
+        collection,
+        language,
+        text,
+        code=None,
+    ):
+        try:
+            obj = cls(
+                journal=journal,
+                collection=collection,
+                language=language,
+                text=text,
+                code=code,
+                creator=user,
+            )
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(
+                journal=journal,
+                collection=collection,
+                language=language,
+                text=text,
+                code=code,
+            )
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        journal,
+        collection,
+        language,
+        text,
+        code=None,
+    ):
+        try:
+            return cls.get(
+                journal=journal,
+                collection=collection,
+                language=language,
+                text=text,
+                code=code,
+            )
+        except cls.DoesNotExist:
+            return cls.create(
+                user=user,
+                journal=journal,
+                collection=collection,
+                language=language,
+                text=text,
+                code=code,
+            )
+
+
 class JournalTocSection(Orderable, CommonControlField, ClusterableModel):
+    # DELETEME ME AFTER MIGRATION TO NEW MODEL JournalTableOfContents
     journal = models.ForeignKey(
         Journal,
         on_delete=models.SET_NULL,
@@ -2929,6 +3074,7 @@ class JournalTocSection(Orderable, CommonControlField, ClusterableModel):
 
 
 class TocItem(Orderable, TextWithLang, CommonControlField):
+    # DELETEME ME AFTER MIGRATION TO NEW MODEL JournalTableOfContents
     journal_toc_section = ParentalKey(
         JournalTocSection,
         on_delete=models.SET_NULL,
