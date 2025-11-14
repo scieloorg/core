@@ -66,6 +66,7 @@ class IssueAdminSnippetViewSet(SnippetViewSet):
         "short_identification",
         "journal",
         "year",
+        "issue_folder"
         "total_articles",
         "updated",
         "updated_by",
@@ -80,11 +81,8 @@ class IssueAdminSnippetViewSet(SnippetViewSet):
         "journal__title",
         "journal__official__issn_print",
         "journal__official__issn_electronic",
-        "number",
-        "volume",
+        "issue_folder",
         "year",
-        "month",
-        "supplement",
     )
 
     def get_queryset(self, request):
