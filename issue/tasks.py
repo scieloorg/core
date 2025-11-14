@@ -18,34 +18,76 @@ logger = logging.getLogger(__name__)
 @celery_app.task(bind=True)
 def load_issue_from_article_meta(
     self,
-    user_id=None, username=None, collection_acron=None, from_date=None, until_date=None, force_update=None, timeout=30,
+    user_id=None,
+    username=None,
+    collection_acron=None,
+    from_date=None,
+    until_date=None,
+    force_update=None,
+    timeout=30,
 ):
+    """
+    Carrega issues do ArticleMeta para collections específicas.
+    
+    Args:
+        user_id: ID do usuário
+        username: Nome do usuário
+        collection_acron: Acrônimo da collection ou lista de acrônimos
+        from_date: Data inicial (YYYY-MM-DD)
+        until_date: Data final (YYYY-MM-DD)
+        force_update: Forçar atualização de registros existentes
+        timeout: Timeout para requisições HTTP
+    """
     try:
         user = _get_user(request=self.request, user_id=user_id, username=username)
 
-        for acron3 in Collection.get_acronyms(collection_acron):
-            for issue_identifier in harvest_issue_identifiers(acron3, from_date, until_date, force_update, timeout):
-                try:
-                    logger.info(f"Scheduling load for issue {issue_identifier} in collection {acron3}")
-                    task_harvest_and_load_issue.delay(
-                        user_id=user.id,
-                        collection_acron=acron3,
-                        issue_identifier=issue_identifier,
-                        force_update=force_update,
-                        timeout=timeout,
-                    )
-                except Exception as e:
-                    exc_type, exc_value, exc_traceback = sys.exc_info()
-                    UnexpectedEvent.create(
-                        exception=e,
-                        exc_traceback=exc_traceback,
-                        action="issue.tasks.load_issue_from_article_meta.schedule_task_load_issue",
-                        detail={
-                            "collection_acron": acron3,
-                            "issue_identifier": issue_identifier,
-                            "force_update": force_update,
-                        }
-                    )
+        # Obter lista de acrônimos das collections
+        collection_acronyms = Collection.get_acronyms(collection_acron)
+        
+        for acron3 in collection_acronyms:
+            try:
+                logger.info(f"Harvesting issues for collection {acron3}")
+                
+                # Coletar identificadores de issues
+                for issue_identifier in harvest_issue_identifiers(
+                    acron3, from_date, until_date, force_update, timeout
+                ):
+                    try:
+                        logger.info(f"Scheduling load for issue {issue_identifier.get('code')} in collection {acron3}")
+                        
+                        # Agendar task para carregar issue específico
+                        task_harvest_and_load_issue.delay(
+                            user_id=user.id,
+                            collection_acron=acron3,
+                            issue_identifier=issue_identifier,
+                            force_update=force_update,
+                            timeout=timeout,
+                        )
+                    except Exception as e:
+                        exc_type, exc_value, exc_traceback = sys.exc_info()
+                        UnexpectedEvent.create(
+                            exception=e,
+                            exc_traceback=exc_traceback,
+                            action="issue.tasks.load_issue_from_article_meta.schedule_task_load_issue",
+                            detail={
+                                "collection_acron": acron3,
+                                "issue_identifier": issue_identifier,
+                                "force_update": force_update,
+                            }
+                        )
+            except Exception as e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    action="issue.tasks.load_issue_from_article_meta.process_collection",
+                    detail={
+                        "collection_acron": acron3,
+                        "from_date": from_date,
+                        "until_date": until_date,
+                        "force_update": force_update,
+                    }
+                )
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -53,29 +95,75 @@ def load_issue_from_article_meta(
             exception=e,
             exc_traceback=exc_traceback,
             action="issue.tasks.load_issue_from_article_meta",
-            detail={"collection_acron": collection_acron, "from_date": from_date, "until_date": until_date, "force_update": force_update}
+            detail={
+                "collection_acron": collection_acron,
+                "from_date": from_date,
+                "until_date": until_date,
+                "force_update": force_update
+            }
         )
+
 
 @celery_app.task(bind=True)
 def task_harvest_and_load_issue(
     self,
     user_id=None,
     username=None,
+    collection_acron=None,
     issue_identifier=None,
     force_update=None,
     timeout=30,
 ):
+    """
+    Carrega um issue específico do ArticleMeta.
+    
+    Args:
+        user_id: ID do usuário
+        username: Nome do usuário  
+        collection_acron: Acrônimo da collection
+        issue_identifier: Dados do identificador do issue
+        force_update: Forçar atualização de registros existentes
+        timeout: Timeout para requisições HTTP
+    """
     try:
         user = _get_user(request=self.request, user_id=user_id, username=username)
-        harvest_and_load_issue(
-            user,
-            url=issue_identifier.get("url"),
-            code=issue_identifier.get("code"),
-            collection_acron=issue_identifier.get("collection_acron"),
-            processing_date=issue_identifier.get("processing_date"),
+        
+        # Validações
+        if not issue_identifier:
+            raise ValueError("issue_identifier is required")
+        if not collection_acron:
+            raise ValueError("collection_acron is required")
+        
+        # Extrair dados do identificador
+        url = issue_identifier.get("url")
+        code = issue_identifier.get("code") 
+        processing_date = issue_identifier.get("processing_date")
+        
+        if not url:
+            raise ValueError("URL is required in issue_identifier")
+        if not code:
+            raise ValueError("Code is required in issue_identifier")
+        
+        logger.info(f"Loading issue {code} from {url}")
+        
+        # Carregar issue
+        issue = harvest_and_load_issue(
+            user=user,
+            url=url,
+            code=code,
+            collection_acron=collection_acron,
+            processing_date=processing_date,
             force_update=force_update,
             timeout=timeout,
         )
+        
+        if issue:
+            logger.info(f"Successfully loaded issue {issue}")
+        else:
+            logger.warning(f"Failed to load issue {code} from {url}")
+            
+        return issue
+        
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
@@ -83,10 +171,13 @@ def task_harvest_and_load_issue(
             exc_traceback=exc_traceback,
             action="issue.tasks.task_harvest_and_load_issue",
             detail={
+                "collection_acron": collection_acron,
                 "issue_identifier": issue_identifier,
                 "force_update": force_update,
             }
         )
+        # Re-raise para que Celery marque a task como falhada
+        raise
 
 
 @celery_app.task(bind=True, name="task_export_issues_to_articlemeta")
