@@ -16,15 +16,14 @@ from core.models import (
     CommonControlField,
     Language,
     License,
-    TextLanguageMixin,
-    TextWithLang,
+    CharFieldLangMixin
 )
 from core.utils.date_utils import get_date_range
 from journal.models import Journal, JournalTableOfContents  # Adicionar JournalTableOfContents
 from location.models import City
-from .exceptions import TocSectionGetError
 from .utils.extract_digits import _get_digits
 from tracker.models import UnexpectedEvent
+
 
 class AMIssue(BaseLegacyRecord):
     """
@@ -104,10 +103,13 @@ class Issue(CommonControlField, ClusterableModel):
         ),
     )
     issue_pid_suffix = models.CharField(max_length=4, null=True, blank=True)
-
-    # TODO: DEPRECATED - será removido em versão futura, usar table_of_contents
-    sections = models.ManyToManyField("TocSection", blank=True)
-    code_sections = models.ManyToManyField("SectionIssue", blank=True)
+    issue_folder = models.CharField(
+        _("Issue folder"),
+        max_length=20,
+        null=True,
+        blank=True,
+        help_text=_("Format: vXnYsZ (e.g., v10n2s1)"),
+    )
 
     autocomplete_search_field = "journal__title"
 
@@ -142,9 +144,6 @@ class Issue(CommonControlField, ClusterableModel):
     ]
 
     panels_table_of_contents = [
-        # TODO: DEPRECATED - remover em versão futura
-        AutocompletePanel("sections"),
-        AutocompletePanel("code_sections"),
         # NOVO: substitui sections e code_sections
         InlinePanel("table_of_contents", label=_("Table of Contents Sections")),
     ]
@@ -162,33 +161,43 @@ class Issue(CommonControlField, ClusterableModel):
         verbose_name = _("Issue")
         verbose_name_plural = _("Issues")
         indexes = [
+            # Composite indexes for common query patterns
             models.Index(
-                fields=[
-                    "number",
-                ]
+                fields=["journal", "year", "volume", "number", "supplement"],
+                name="issue_journal_identification"
             ),
             models.Index(
-                fields=[
-                    "volume",
-                ]
+                fields=["journal", "markup_done"],
+                name="issue_journal_markup_status"
             ),
+            # Single field indexes for frequent lookups
             models.Index(
-                fields=[
-                    "year",
-                ]
+                fields=["journal", "issue_folder"],
+                name="issue_journal_folder_idx"
             ),
-            models.Index(
-                fields=[
-                    "supplement",
-                ]
-            ),
-            models.Index(
-                fields=["markup_done"],
-            )
         ]
 
     def __str__(self):
         return self.short_identification
+
+    def generate_issue_folder(self):
+        """
+        Gera o identificador do issue no formato vXnYsZ.
+        
+        Returns:
+            str: String no formato vXnYsZ (ex: v10n2s1, v5n3, n2s1)
+        """
+        values = (self.volume, self.number, self.supplement)
+        labels = ("v", "n", "s")
+        return "".join(
+            [f"{label}{value}" for label, value in zip(labels, values) if value]
+        )
+
+    @property
+    def short_identification(self):
+        if self.journal:
+            return f"{self.journal.title} {self.issue_folder} [{self.journal.collection_acrons}]"
+        return f"{self.issue_folder}"
 
     def create_legacy_keys(self, user=None, force_update=None):
         if not force_update:
@@ -319,17 +328,7 @@ class Issue(CommonControlField, ClusterableModel):
 
     @property
     def bibliographic(self):
-        data = self.bibliographic_strip.all().values(
-            "text",
-            "language__code2",
-        )
-        return [
-            {
-                "text": obj.get("text"),
-                "language": obj.get("language__code2"),
-            }
-            for obj in data
-        ]
+        return [bs.data for bs in self.bibliographic_strip.all()]
 
     @classmethod
     def get(
@@ -401,9 +400,10 @@ class Issue(CommonControlField, ClusterableModel):
             if hasattr(issue, key):
                 setattr(issue, key, value)
         
-        # Generate order and PID suffix if not provided
+        # Generate computed fields if not provided
         issue.order = order or issue.generate_order()
         issue.issue_pid_suffix = issue_pid_suffix or issue.generate_issue_pid_suffix()
+        issue.issue_folder = issue.generate_issue_folder()
         
         try:
             issue.save()
@@ -461,6 +461,17 @@ class Issue(CommonControlField, ClusterableModel):
                 **kwargs
             )
 
+    def add_am_issue(self, am_issue):
+        """
+        Adiciona um AMIssue ao Issue.
+        
+        Args:
+            am_issue: Instância de AMIssue a ser associada
+        """
+        if not am_issue:
+            return
+        self.legacy_issue.add(am_issue)
+
     def add_sections(self, user, section_list, collection):
         """
         Adiciona seções ao Issue usando o novo modelo JournalTableOfContents.
@@ -486,12 +497,64 @@ class Issue(CommonControlField, ClusterableModel):
                 section_title,
                 item.get("c"),
             )
-            IssueTableOfContents.create_or_update(
+            TableOfContents.create_or_update(
                 user=user,
                 issue=self,
                 journal_toc=journal_toc,
             )
+
+    def add_bibliographic_strips(self, user, bibliographic_strips_data):
+        """
+        Adiciona tiras bibliográficas ao Issue.
+        
+        Args:
+            user: Usuário responsável pela operação
+            bibliographic_strips_data: Lista de dicionários com dados das tiras
+                                     Formato: [{"text": "text", "language": language_obj}, ...]
+        """
+        if not bibliographic_strips_data:
+            return
             
+        for item in bibliographic_strips_data:
+            text = item.get("text")
+            language = item.get("language")
+            
+            if not text or not language:
+                continue
+                
+            BibliographicStrip.get_or_create(
+                user=user,
+                issue=self,
+                language=language,
+                text=text,
+            )
+
+    def add_issue_titles(self, user, issue_titles_data):
+        """
+        Adiciona títulos ao Issue.
+        
+        Args:
+            user: Usuário responsável pela operação
+            issue_titles_data: Lista de dicionários com dados dos títulos
+                              Formato: [{"title": "title", "language": language_obj}, ...]
+        """
+        if not issue_titles_data:
+            return
+            
+        for item in issue_titles_data:
+            title = item.get("title")
+            language = item.get("language")
+            
+            if not title or not language:
+                continue
+                
+            IssueTitle.get_or_create(
+                user=user,
+                issue=self,
+                language=language,
+                title=title,
+            )
+
     @property
     def total_articles(self):
         return self.article_set.count()
@@ -502,25 +565,22 @@ class Issue(CommonControlField, ClusterableModel):
             return f"{self.journal.title} {self.issue_folder} [{self.journal.collection_acrons}]"
         return f"{self.issue_folder}"
 
-    @cached_property
-    def issue_folder(self):
-        values = (self.volume, self.number, self.supplement)
-        labels = ("v", "n", "s")
-        return "".join(
-            [f"{label}{value}" for label, value in zip(labels, values) if value]
-        )
-
     def articlemeta_format(self, collection):
         # Evita importacao circular
         from .formats.articlemeta_format import get_articlemeta_format_issue
         return get_articlemeta_format_issue(self, collection)
 
     def save(self, *args, **kwargs):
+        # Gerar campos computados se estiverem ausentes
         if not self.order:
             self.order = self.generate_order()
         if not self.issue_pid_suffix:
             self.issue_pid_suffix = self.generate_issue_pid_suffix()
+        if not self.issue_folder:
+            self.issue_folder = self.generate_issue_folder()
+            
         super().save(*args, **kwargs)
+        
         if self.journal:  # Só cria se tiver journal associado
             self.create_legacy_keys(user=self.creator, force_update=True)
 
@@ -552,7 +612,7 @@ class Issue(CommonControlField, ClusterableModel):
         return number or 1
 
 
-class IssueTitle(Orderable, CommonControlField):
+class IssueTitle(CommonControlField):
     issue = ParentalKey(
         Issue,
         on_delete=models.CASCADE,
@@ -560,7 +620,7 @@ class IssueTitle(Orderable, CommonControlField):
         blank=True,
         related_name="issue_title",
     )
-    title = models.CharField(_("Issue Title"), max_length=100, blank=True, null=True)
+    title = models.CharField(_("Issue Title"), max_length=255, blank=True, null=True)
     language = models.ForeignKey(
         Language, on_delete=models.CASCADE, blank=True, null=True
     )
@@ -568,10 +628,53 @@ class IssueTitle(Orderable, CommonControlField):
     panels = [FieldPanel("title"), AutocompletePanel("language")]
 
     def __str__(self):
-        return self.title
+        return f"{self.title} ({self.language.code2 if self.language else 'no-lang'})"
 
+    class Meta:
+        verbose_name = _("Title")
+        verbose_name_plural = _("Titles")
+        unique_together = [("issue", "language")]
+        indexes = [
+            models.Index(
+                fields=[
+                    "issue", "language"
+                ]
+            )
+        ]
 
-class BibliographicStrip(Orderable, TextWithLang, CommonControlField):
+    @property
+    def data(self):
+        return {
+            "title": self.title,
+            "language": self.language.code2 if self.language else None,
+        }
+
+    @classmethod
+    def get(cls, issue, language):
+        return cls.objects.get(issue=issue, language=language)
+    
+    @classmethod
+    def create(cls, user, issue, language, title):
+        try:
+            obj = cls()
+            obj.issue = issue
+            obj.language = language
+            obj.title = title
+            obj.creator = user
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(issue, language)
+
+    @classmethod
+    def get_or_create(cls, user, issue, language, title):
+        try:
+            return cls.get(issue, language)
+        except cls.DoesNotExist:
+            return cls.create(user, issue, language, title)   
+        
+
+class BibliographicStrip(CharFieldLangMixin, CommonControlField):
     issue = ParentalKey(
         Issue,
         on_delete=models.CASCADE,
@@ -579,140 +682,48 @@ class BibliographicStrip(Orderable, TextWithLang, CommonControlField):
         blank=True,
         related_name="bibliographic_strip",
     )
-
-
-class TocSection(TextLanguageMixin, CommonControlField):
-    """
-    TODO: DEPRECATED - Esta classe será removida em versão futura.
-    Use JournalTableOfContents ao invés desta classe.
-    
-    Relacionamento antigo: Issue -> TocSection
-    Novo relacionamento: Issue -> IssueTableOfContents -> JournalTableOfContents
-    
-    <article-categories>
-        <subj-group subj-group-type="heading">
-          <subject>NOMINATA</subject>
-        </subj-group>
-      </article-categories>
-    """
-
-    text = RichTextField(
-        max_length=100, blank=True, null=True, help_text="For JATs is subject."
-    )
-    autocomplete_search_field = "plain_text"
-
-    def autocomplete_label(self):
-        return str(self.plain_text)
-
     class Meta:
-        verbose_name = _("TocSection")
-        verbose_name_plural = _("TocSections")
-        unique_together = [("plain_text", "language")]
+        verbose_name = _("Bibliographic Strip")
+        verbose_name_plural = _("Bibliographic Strips")
+        unique_together = [("issue", "language")]
         indexes = [
             models.Index(
                 fields=[
-                    "plain_text",
+                    "issue", "language"
                 ]
-            ),
+            )
         ]
 
-    @classmethod
-    def get(
-        cls,
-        value,
-        language,
-    ):
-        if value and language:
-            try:
-                return cls.objects.get(plain_text=value, language=language)
-            except cls.MultipleObjectsReturned:
-                return cls.objects.filter(plain_text=value, language=language).first()
-        raise TocSectionGetError(
-            "TocSection.get requires value and language parameters"
-        )
+    @property
+    def data(self):
+        return {
+            "text": self.text,
+            "language": self.language.code2 if self.language else None,
+        }
 
     @classmethod
-    def create(
-        cls,
-        value,
-        language,
-        user,
-    ):
+    def get(cls, issue, language):
+        return cls.objects.get(issue=issue, language=language)
+    
+    @classmethod
+    def create(cls, user, issue, language, text):
         try:
             obj = cls()
-            obj.plain_text = value
+            obj.issue = issue
             obj.language = language
+            obj.text = text
             obj.creator = user
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(value=value, language=language)
+            return cls.get(issue, language)
 
     @classmethod
-    def get_or_create(
-        cls,
-        value,
-        language,
-        user,
-    ):
+    def get_or_create(cls, user, issue, language, text):
         try:
-            return cls.get(value=value, language=language)
+            return cls.get(issue, language)
         except cls.DoesNotExist:
-            return cls.create(value=value, language=language, user=user)
-
-    def __unicode__(self):
-        return f"{self.plain_text} - {self.language}"
-
-    def __str__(self):
-        return f"{self.plain_text} - {self.language}"
-
-
-class CodeSectionIssue(CommonControlField):
-    """
-    TODO: DEPRECATED - Esta classe será removida em versão futura.
-    Use JournalTableOfContents ao invés desta classe.
-    
-    Relacionamento antigo: Issue -> SectionIssue -> CodeSectionIssue
-    Novo relacionamento: Issue -> IssueTableOfContents -> JournalTableOfContents
-    """
-    
-    code = models.CharField(
-        _("Code"), max_length=40, unique=True, null=True, blank=True
-    )
-
-    def __str__(self):
-        return f"{self.code}"
-
-
-class SectionIssue(TextWithLang, CommonControlField):
-    """
-    TODO: DEPRECATED - Esta classe será removida em versão futura.
-    Use JournalTableOfContents ao invés desta classe.
-    
-    Relacionamento antigo: Issue -> SectionIssue (com CodeSectionIssue)
-    Novo relacionamento: Issue -> IssueTableOfContents -> JournalTableOfContents
-    """
-    
-    code_section = models.ForeignKey(
-        CodeSectionIssue,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-    )
-
-    autocomplete_search_field = "text"
-
-    def autocomplete_label(self):
-        return str(self)
-
-    def __str__(self):
-        return f"{self.code}"
-
-    class Meta:
-        unique_together = [("code_section", "language")]
-
-    def __str__(self):
-        return f"{self.code_section.code} - {self.text} ({self.language.code2 if self.language else 'N/A'})"
+            return cls.create(user, issue, language, text)        
 
 
 class IssueExporter(BaseExporter):
@@ -763,12 +774,15 @@ class TableOfContents(Orderable, CommonControlField):
     
     @classmethod
     def create(cls, user, issue, journal_toc):
-        obj = cls()
-        obj.issue = issue
-        obj.journal_toc = journal_toc
-        obj.creator = user
-        obj.save()
-        return obj
+        try:
+            obj = cls()
+            obj.issue = issue
+            obj.journal_toc = journal_toc
+            obj.creator = user
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(issue, journal_toc)
     
     @classmethod
     def create_or_update(cls, user, issue, journal_toc):
