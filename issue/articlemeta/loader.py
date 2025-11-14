@@ -30,7 +30,7 @@ def harvest_issue_identifiers(
         UnexpectedEvent.create(
             exception=e,
             exc_traceback=exc_traceback,
-            action="issue.articlemeta.harvester.harvest_and_load_am_issues",
+            action="issue.articlemeta.loader.harvest_issue_identifiers",
             detail={
                 "collection_acron": collection_acron,
                 "from_date": from_date,
@@ -77,9 +77,10 @@ def harvest_issue_data(url, timeout=30):
         UnexpectedEvent.create(
             exception=e,
             exc_traceback=exc_traceback,
-            action="issue.articlemeta.harvester.harvest_issue_data",
+            action="issue.articlemeta.loader.harvest_issue_data",
             detail={"url": url},
         )
+        item = {}
         item["data"] = None
         item["status"] = "todo"
         return item
@@ -100,7 +101,7 @@ def load_am_issue(
         if not url:
             raise ValueError("URL is required to load AMIssue")
         
-        harvested_data = {}
+        # Corrigido: não redefine harvested_data se já existe
         if do_harvesting or not harvested_data:
             harvested_data = harvest_issue_data(url, timeout=timeout)
 
@@ -120,13 +121,15 @@ def load_am_issue(
         UnexpectedEvent.create(
             exception=e,
             exc_traceback=exc_traceback,
-            action="issue.articlemeta.harvester.load_am_issue",
+            action="issue.articlemeta.loader.load_am_issue",
             detail={
-                "collection": collection.acron3,
+                "collection": collection.acron3 if collection else None,
                 "url": url,
+                "pid": pid,
                 "force_update": force_update,
             },
         )
+        return None
 
 
 def complete_am_issue(user, am_issue):
@@ -141,7 +144,7 @@ def complete_am_issue(user, am_issue):
         UnexpectedEvent.create(
             exception=e,
             exc_traceback=exc_traceback,
-            action="issue.sources.article_meta.complete_am_issue",
+            action="issue.articlemeta.loader.complete_am_issue",
             detail={"am_issue": str(am_issue)},
         )
 
@@ -152,6 +155,7 @@ def get_issue_data_from_am_issue(am_issue, user=None):
 
     Args:
         am_issue: Instância de AMIssue
+        user: Usuário para completar dados se necessário
 
     Returns:
         Dict com dados ajustados para Issue ou None se falhar
@@ -191,17 +195,31 @@ def get_issue_data_from_am_issue(am_issue, user=None):
         UnexpectedEvent.create(
             exception=e,
             exc_traceback=exc_traceback,
-            action="issue.articlemeta.harvester.get_issue_data_from_am_issue",
+            action="issue.articlemeta.loader.get_issue_data_from_am_issue",
             detail={"am_issue": str(am_issue)},
         )
         return None
 
 
 def create_issue_from_am_issue(user, am_issue):
-    issue_data = get_issue_data_from_am_issue(am_issue)
+    """
+    Cria Issue a partir de AMIssue.
+    
+    Args:
+        user: Usuário responsável
+        am_issue: Instância do AMIssue
+        
+    Returns:
+        Issue criado ou None se falhar
+    """
+    issue = None
+    
     try:
-        issue = None
-        issue = Issue.get_or_create_issue(
+        issue_data = get_issue_data_from_am_issue(am_issue, user)
+        if not issue_data:
+            raise ValueError(f"Unable to extract issue data from {am_issue}")
+            
+        issue = Issue.get_or_create(
             user,
             journal=issue_data.get("journal"),
             volume=issue_data.get("volume"),
@@ -214,46 +232,45 @@ def create_issue_from_am_issue(user, am_issue):
             issue_pid_suffix=issue_data.get("issue_pid_suffix"),
             order=issue_data.get("order"),
         )
+        
         if issue:
-            add_items(
-                issue.add_sections,
-                issue_data.get("sections_data"),
-                issue,
-                "Issue.add_sections",
-            )
-            add_items(
-                issue.add_issue_titles,
-                issue_data.get("titles"),
-                issue,
-                "Issue.add_issue_titles",
-            )
-            add_items(
-                issue.add_bibliographic_strips,
-                issue_data.get("bibliographic_strip_list"),
-                issue,
-                "Issue.add_bibliographic_strips",
-            )
-            add_items(issue.add_am_issue, am_issue, issue, "Issue.add_am_issue")
+            # Adicionar AMIssue ao Issue
+            issue.add_am_issue(user, am_issue)
+            
+            # Adicionar dados relacionados com tratamento individual de erros
+            try:
+                issue.add_sections(
+                    user,
+                    issue_data.get("sections_data"),
+                    am_issue.collection,
+                )
+            except Exception as e:
+                logging.exception(f"Error adding sections to Issue {issue}: {e}")
+                
+            try:
+                issue.add_issue_titles(
+                    user,
+                    issue_data.get("issue_titles"),
+                )
+            except Exception as e:
+                logging.exception(f"Error adding issue titles to Issue {issue}: {e}")
+                
+            try:
+                issue.add_bibliographic_strips(
+                    user,
+                    issue_data.get("bibliographic_strip_list"),
+                )
+            except Exception as e:
+                logging.exception(f"Error adding bibliographic strips to Issue {issue}: {e}")
+                
         return issue
+        
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
             exception=e,
             exc_traceback=exc_traceback,
-            action="issue.sources.article_meta.create_issue_from_am_issue",
+            action="issue.articlemeta.loader.create_issue_from_am_issue",
             detail={"am_issue": str(am_issue), "user": str(user)},
         )
         return issue
-
-
-def add_items(add_function, items, issue, action_name):
-    try:
-        add_function(items)
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        UnexpectedEvent.create(
-            exception=e,
-            exc_traceback=exc_traceback,
-            action=action_name,
-            detail={"issue": str(issue), "items": items},
-        )
