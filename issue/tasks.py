@@ -7,7 +7,7 @@ from config import celery_app
 from core.utils.utils import _get_user
 from collection.models import Collection
 from issue import controller
-from issue.sources.article_meta import harvest_and_load_issues
+from issue.articlemeta.harvester import harvest_and_load_issues
 from tracker.models import UnexpectedEvent
 
 User = get_user_model()
