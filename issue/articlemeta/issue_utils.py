@@ -1,13 +1,10 @@
 import logging
 import sys
 
-from django.db import IntegrityError, transaction
 from langdetect import detect
 
 from core.models import Language
 from tracker.models import UnexpectedEvent
-
-from issue.models import CodeSectionIssue, Issue, SectionIssue, TocSection
 
 
 def normalize_markup_done(markup_done):
@@ -21,41 +18,78 @@ def normalize_markup_done(markup_done):
     return markup_done
 
 
-def get_or_create_issue(
-    journal,
-    volume,
-    number,
-    data_iso,
-    supplement_volume,
-    supplement_number,
-    sections_data,
-    markup_done,
-    user,
-    collection,
-    order=None,
-    issue_pid_suffix=None,    
-):
+def extract_data_from_harvested_data(issue_data, pid):
+    volume = issue_data.get("volume")
+    number = issue_data.get("number")
+    supplement_volume = issue_data.get("supplement_volume")
+    supplement_number = issue_data.get("supplement_number")
+    data_iso = issue_data.get("date_iso")
+    sections_data = issue_data.get("sections_data")
+    markup_done = issue_data.get("markup_done")
+
     supplement = extract_value(supplement_number) or extract_value(supplement_volume)
     data = extract_value(data_iso)
-    
     markup_done = normalize_markup_done(markup_done)
 
-    obj = Issue.get_or_create(
-        journal=journal,
-        volume=extract_value(volume),
-        number=extract_value(number),
-        supplement=supplement,
-        year=data[:4],
-        month=data[4:6],
-        markup_done=markup_done,
-        order=order,
-        issue_pid_suffix=issue_pid_suffix,
-        user=user,
-        season=None,
-    )
-    obj.add_sections(user, fix_section_data(sections_data), collection)
+    bibliographic_strip_list = []
+    for item in issue_data.get("bibliographic_strip"):
+        """
+        {
+            "a": "2024",
+            "c": "S\u00e3o Paulo",
+            "l": "es",
+            "t": "Gal\u00e1xia (S\u00e3o Paulo)",
+            "v": "vol.49",
+            "_": ""
+        },
+        """
+        bibliographic_strip = {
+            "language": item.get("l"),
+            "title": item.get("t"),
+            "volume": item.get("v"),
+            "number": item.get("n"),
+            "supplement": item.get("s"),
+            "city": item.get("c"),
+            "season": item.get("m"),  # mes(es) abreviado(s) no idioma indicado,
+            "year": item.get("a"),
+        }
+        bibliographic_strip["text"] = format_bibliographic_strip(bibliographic_strip)
+        bibliographic_strip_list.append(bibliographic_strip)
 
-    return obj
+    issue_titles = []
+    for item in issue_data.get("issue_title", []):
+        """
+        {
+            "l": "pt",
+            "t": "Revista de Teste"
+        }
+        """
+        issue_title = {
+            "language": item.get("l"),
+            "title": item.get("t") or item.get("_"),
+        }
+        issue_titles.append(issue_title)
+    return {
+        "volume": extract_value(volume),
+        "number": extract_value(number),
+        "supplement": supplement,
+        "year": data[:4],
+        "month": data[4:6],
+        "markup_done": markup_done,
+        "order": pid[-4:],
+        "issue_pid_suffix": pid[-4:],
+        "sections_data": list(fix_section_data(sections_data)),
+        "bibliographic_strip_list": bibliographic_strip_list,
+        "titles": issue_titles,
+    }
+
+
+def format_bibliographic_strip(bibliographic_strip):
+    items = []
+    for label in ["title", "volume", "number", "supplement", "city", "season", "year"]:
+        if value := bibliographic_strip.get(label):
+            items.append(value)
+    return ", ".join(items)
 
 
 def extract_date(date):
@@ -69,7 +103,7 @@ def extract_value(value):
         return [x.get("_") for x in value][0]
 
 
-def fix_section_data(sections_data):        
+def fix_section_data(sections_data):
     for item in sections_data:
         section_text = item.get("t")
         if not section_text:
@@ -96,11 +130,10 @@ def fix_section_data(sections_data):
                     language = Language.get(detected_lang)
                 except Language.DoesNotExist:
                     language = Language.get("en")
-                finally:
-                    if not language:
-                        continue
-                    yield {
-                        "c": item.get("c"),
-                        "l": language,
-                        "t": section_text,
-                    }
+                if not language:
+                    continue
+                yield {
+                    "c": item.get("c"),
+                    "l": language,
+                    "t": section_text,
+                }
