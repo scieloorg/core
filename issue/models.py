@@ -19,7 +19,7 @@ from core.models import (
     CharFieldLangMixin
 )
 from core.utils.date_utils import get_date_range
-from journal.models import Journal, JournalTableOfContents  # Adicionar JournalTableOfContents
+from journal.models import Journal, JournalTableOfContents
 from location.models import City
 from .utils.extract_digits import _get_digits
 from tracker.models import UnexpectedEvent
@@ -131,6 +131,7 @@ class Issue(CommonControlField, ClusterableModel):
         FieldPanel("order"),
         FieldPanel("markup_done"),
         FieldPanel("issue_pid_suffix", read_only=True),
+        FieldPanel("issue_folder", read_only=True),
         FieldPanel("creator", read_only=True),
         FieldPanel("updated_by", read_only=True),
     ]
@@ -267,11 +268,13 @@ class Issue(CommonControlField, ClusterableModel):
         Args:
             collection_acron_list: Lista de acrônimos de coleções (via SciELOJournal)
             journal_acron_list: Lista de acrônimos de journals
-            year: Ano de publicação
-            issue_folder: String no formato vXnYsZ (ex: v10n2s1)
+            publication_year: Ano de publicação
+            volume: Volume do issue
+            number: Número do issue
+            supplement: Suplemento do issue
             from_date: Data inicial de atualização
             until_date: Data final de atualização
-            **kwargs: Outros filtros do Django ORM
+            days_to_go_back: Número de dias para voltar
 
         Returns:
             QuerySet de Issues filtradas
@@ -304,7 +307,7 @@ class Issue(CommonControlField, ClusterableModel):
                 exception=ValueError("No issues found for the given filters"),
                 detail={
                     "function": "Issue.select_issues",
-                    "prams": params,
+                    "params": params,
                 },
             )
         return queryset
@@ -461,16 +464,50 @@ class Issue(CommonControlField, ClusterableModel):
                 **kwargs
             )
 
-    def add_am_issue(self, am_issue):
+    def add_am_issue(self, user, am_issue):
         """
-        Adiciona um AMIssue ao Issue.
+        Adiciona relacionamento com AMIssue (legacy) ao Issue.
         
         Args:
-            am_issue: Instância de AMIssue a ser associada
+            user: Usuário responsável pela operação
+            am_issue: Instância do AMIssue a ser associada
+            
+        Returns:
+            bool: True se associação foi criada/atualizada com sucesso
         """
         if not am_issue:
-            return
-        self.legacy_issue.add(am_issue)
+            return False
+            
+        try:
+            # Verifica se já existe relacionamento
+            if am_issue in self.legacy_issue.all():
+                return True
+                
+            # Adiciona relacionamento
+            self.legacy_issue.add(am_issue)
+            
+            # Atualiza AMIssue com referência ao novo Issue
+            am_issue.new_record = self
+            am_issue.status = "completed"
+            am_issue.updated_by = user
+            am_issue.save()
+            
+            return True
+            
+        except Exception as e:
+            import sys
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "function": "Issue.add_am_issue",
+                    "issue": str(self),
+                    "am_issue": str(am_issue),
+                    "user": str(user),
+                }
+            )
+            return False
 
     def add_sections(self, user, section_list, collection):
         """
@@ -481,6 +518,9 @@ class Issue(CommonControlField, ClusterableModel):
             section_list: Lista de dicionários com dados das seções
             collection: Coleção associada ao journal
         """
+        if not section_list:
+            return
+            
         for item in section_list:
             section_title = item.get("t")
             if not section_title:
@@ -558,12 +598,6 @@ class Issue(CommonControlField, ClusterableModel):
     @property
     def total_articles(self):
         return self.article_set.count()
-
-    @property
-    def short_identification(self):
-        if self.journal:
-            return f"{self.journal.title} {self.issue_folder} [{self.journal.collection_acrons}]"
-        return f"{self.issue_folder}"
 
     def articlemeta_format(self, collection):
         # Evita importacao circular
