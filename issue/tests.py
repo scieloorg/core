@@ -10,8 +10,8 @@ from core.utils.rename_dictionary_keys import rename_issue_dictionary_keys
 from editorialboard.models import RoleModel
 from issue.formats.articlemeta_format import get_articlemeta_format_issue
 from issue.models import Issue
-from issue.utils.correspondencia import correspondencia_issue
-from issue.utils.issue_utils import get_or_create_issue
+from issue.articlemeta.correspondencia import correspondencia_issue
+from issue.articlemeta.issue_utils import get_or_create_issue
 from journal.models import (
     AMJournal,
     DigitalPreservationAgency,
