@@ -529,18 +529,13 @@ class Issue(CommonControlField, ClusterableModel):
             if not language:
                 continue
 
-            journal_toc = JournalTableOfContents.create_or_update(
-                user,
-                self.journal,
-                collection,
-                language,
-                section_title,
-                item.get("c"),
-            )
             TableOfContents.create_or_update(
                 user=user,
                 issue=self,
-                journal_toc=journal_toc,
+                collection=collection,
+                language=language,
+                title=section_title,
+                code=item.get("c"),
             )
 
     def add_bibliographic_strips(self, user, bibliographic_strips_data):
@@ -597,6 +592,8 @@ class Issue(CommonControlField, ClusterableModel):
 
     @property
     def total_articles(self):
+        if self.article_set is None:
+            return 0
         return self.article_set.count()
 
     def articlemeta_format(self, collection):
@@ -749,7 +746,7 @@ class BibliographicStrip(CharFieldLangMixin, CommonControlField):
         try:
             language = Language.get(language)
         except Language.DoesNotExist:
-            raise cls.DoesNotExist(f"IssueTitle.get requires valid language for {language}")
+            raise cls.DoesNotExist(f"{cls}.get requires valid language for {language}")
         return cls.objects.get(issue=issue, language=language)
     
     @classmethod
@@ -757,7 +754,7 @@ class BibliographicStrip(CharFieldLangMixin, CommonControlField):
         try:
             language = Language.get(language)
         except Language.DoesNotExist:
-            raise cls.DoesNotExist(f"IssueTitle.create requires valid language for {language}")
+            raise cls.DoesNotExist(f"{cls}.create requires valid language for {language}")
         try:
             obj = cls()
             obj.issue = issue
@@ -820,12 +817,33 @@ class TableOfContents(Orderable, CommonControlField):
         return f"{self.issue} - {self.journal_toc}"
 
     @classmethod
-    def get(cls, issue, journal_toc):
+    def get(cls, issue, journal_toc=None, collection=None, language=None, title=None, code=None):
+        if not issue:
+            raise cls.DoesNotExist("TableOfContents.get requires valid issue")
+        if not journal_toc:
+            journal_toc = JournalTableOfContents.get(
+                issue.journal, collection, language, title, code
+            )
+        if not journal_toc:
+            raise cls.DoesNotExist("TableOfContents.get requires valid journal_toc")
         return cls.objects.get(issue=issue, journal_toc=journal_toc)
     
     @classmethod
-    def create(cls, user, issue, journal_toc):
+    def create(cls, user, issue, journal_toc=None, collection=None, language=None, title=None, code=None):
         try:
+            if not user:
+                raise cls.DoesNotExist("TableOfContents.get requires valid user")
+            if not issue:
+                raise cls.DoesNotExist("TableOfContents.get requires valid issue")
+            if not journal_toc:
+                journal_toc = JournalTableOfContents.create_or_update(
+                    user,
+                    issue.journal,
+                    collection,
+                    language,
+                title,
+                code,
+            )
             obj = cls()
             obj.issue = issue
             obj.journal_toc = journal_toc
@@ -833,11 +851,19 @@ class TableOfContents(Orderable, CommonControlField):
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(issue, journal_toc)
-    
+            return cls.get(issue, journal_toc=journal_toc)
+
     @classmethod
-    def create_or_update(cls, user, issue, journal_toc):
+    def create_or_update(cls, user, issue, collection, language, title, code):
+        journal_toc = JournalTableOfContents.create_or_update(
+            user,
+            issue.journal,
+            collection,
+            language,
+            title,
+            code,
+        )
         try:
-            return cls.get(issue=issue, journal_toc=journal_toc)
+            return cls.get(issue, journal_toc)
         except cls.DoesNotExist:
-            return cls.create(user=user, issue=issue, journal_toc=journal_toc)
+            return cls.create(user, issue, journal_toc)
