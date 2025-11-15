@@ -685,10 +685,19 @@ class IssueTitle(CommonControlField):
 
     @classmethod
     def get(cls, issue, language):
+        try:
+            language = Language.get(language)
+        except Language.DoesNotExist:
+            raise cls.DoesNotExist(f"IssueTitle.get requires valid language for {language}")
         return cls.objects.get(issue=issue, language=language)
     
     @classmethod
     def create(cls, user, issue, language, title):
+        try:
+            language = Language.get(language)
+        except Language.DoesNotExist:
+            raise cls.DoesNotExist(f"IssueTitle.create requires valid language for {language}")
+ 
         try:
             obj = cls()
             obj.issue = issue
@@ -737,10 +746,18 @@ class BibliographicStrip(CharFieldLangMixin, CommonControlField):
 
     @classmethod
     def get(cls, issue, language):
+        try:
+            language = Language.get(language)
+        except Language.DoesNotExist:
+            raise cls.DoesNotExist(f"IssueTitle.get requires valid language for {language}")
         return cls.objects.get(issue=issue, language=language)
     
     @classmethod
     def create(cls, user, issue, language, text):
+        try:
+            language = Language.get(language)
+        except Language.DoesNotExist:
+            raise cls.DoesNotExist(f"IssueTitle.create requires valid language for {language}")
         try:
             obj = cls()
             obj.issue = issue
