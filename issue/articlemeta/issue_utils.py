@@ -43,8 +43,11 @@ def extract_data_from_harvested_data(issue_data, pid):
             "_": ""
         },
         """
+        lang = item.get("l")
+        if not lang:
+
         bibliographic_strip = {
-            "language": item.get("l"),
+            "language": lang,
             "title": item.get("t"),
             "volume": item.get("v"),
             "number": item.get("n"),
@@ -54,6 +57,8 @@ def extract_data_from_harvested_data(issue_data, pid):
             "year": item.get("a"),
         }
         bibliographic_strip["text"] = format_bibliographic_strip(bibliographic_strip)
+        if not bibliographic_strip["text"]:
+            continue
         bibliographic_strip_list.append(bibliographic_strip)
 
     issue_titles = []
@@ -80,7 +85,7 @@ def extract_data_from_harvested_data(issue_data, pid):
         "issue_pid_suffix": pid[-4:],
         "sections_data": list(fix_section_data(sections_data)),
         "bibliographic_strip_list": bibliographic_strip_list,
-        "titles": issue_titles,
+        "issue_titles": issue_titles,
     }
 
 
