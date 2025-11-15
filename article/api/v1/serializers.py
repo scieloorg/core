@@ -29,13 +29,6 @@ class TitleSerializer(serializers.ModelSerializer):
         fields = ["plain_text", "language"]  ## MUDAR NOME ??
 
 
-class ArticleTypeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.ArticleType
-        fields = [
-            "text",
-        ]
-
 
 class DocumentAbstractSerializer(serializers.ModelSerializer):
     language = LanguageSerializer(many=False, read_only=True)
@@ -68,7 +61,6 @@ class ArticleSerializer(serializers.ModelSerializer):
     researchers = ResearcherSerializer(many=True, read_only=True)
     languages = LanguageSerializer(many=True, read_only=True)
     fundings = FundingsSerializer(many=True, read_only=True)
-    article_type = ArticleTypeSerializer(many=False, read_only=True)
     toc_sections = TocSectionsSerializer(many=True, read_only=True)
     license = LicenseStatementSerializer(many=True, read_only=True)
     issue = IssueSerializer(many=False, read_only=True)

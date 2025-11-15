@@ -242,12 +242,15 @@ class ArticlemetaJournalFormatter:
 
     def _format_metadata(self):
         """Metadados diversos"""
-        add_to_result("v940", self.obj.created.strftime('%Y%m%d'), self.result)
-        add_to_result("v941", self.obj.updated.strftime('%Y%m%d'), self.result)
-        add_to_result("v942", self.obj.created.strftime('%Y%m%d'), self.result)
-        add_to_result("v943", self.obj.updated.strftime('%Y%m%d'), self.result)
+        created = self.obj.created.strftime('%Y%m%d')
+        updated = self.obj.updated.strftime('%Y%m%d')
+        add_to_result("v940", created, self.result)
+        add_to_result("v941", updated, self.result)
+        add_to_result("v942", created, self.result)
+        add_to_result("v943", updated, self.result)
 
-        self.result["processing_date"] = self.obj.created.strftime('%Y-%m-%d')
+        # tem que ser objeto datetime
+        self.result["processing_date"] = self.obj.updated.strftime('%Y-%m-%d')
         self.result["created_at"] = self.obj.created.strftime('%Y-%m-%d')
 
     def _format_issn_info(self):

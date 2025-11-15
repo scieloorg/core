@@ -6,7 +6,7 @@ from wagtail.snippets.views.snippets import SnippetViewSetGroup
 
 from config.menu import get_menu_order
 from core.viewsets import CommonControlFieldViewSet
-from pid_provider.models import FixPidV2, OtherPid, PidProviderConfig, PidProviderXML
+from pid_provider.models import XMLVersion, FixPidV2, OtherPid, PidProviderConfig, PidProviderXML
 
 
 class PidProviderXMLViewSet(CommonControlFieldViewSet):
@@ -153,6 +153,32 @@ class FixPidV2ViewSet(CommonControlFieldViewSet):
     export_filename = "fix_pid_v2"
 
 
+class XMLVersionViewSet(CommonControlFieldViewSet):
+    model = XMLVersion
+    menu_label = _("XML Versions")
+    menu_icon = "folder"
+    menu_order = 300
+    add_to_settings_menu = False
+    list_per_page = 10
+
+    # Configuração de listagem
+    list_display = [
+        "pid_provider_xml",
+        "file",
+        "finger_print",
+        "updated",
+    ]
+    search_fields = (
+        "file__path",
+        "pid_provider_xml__v3",
+        "pid_provider_xml__v2",
+        "pid_provider_xml__aop_pid",
+        "pid_provider_xml__pkg_name",
+        "pub_year",
+        "available_since",
+    )
+
+
 # Grupo de ViewSets
 class PidProviderViewSetGroup(SnippetViewSetGroup):
     menu_label = _("Pid Provider")
@@ -163,6 +189,7 @@ class PidProviderViewSetGroup(SnippetViewSetGroup):
         OtherPidViewSet,
         FixPidV2ViewSet,
         PidProviderConfigViewSet,
+        XMLVersionViewSet,
     )
 
 

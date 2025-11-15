@@ -75,31 +75,72 @@ def task_export_issues_to_articlemeta(
 ):
     """
     Export issues to ArticleMeta Database with flexible filtering.
-
+    
     Args:
-        collections: List of collections to export
-        issn: Filter by ISSN
+        collection_acron_list: List of collections to export
+        journal_acron_list: Filter by journal acronyms
+        publication_year: Filter by publication year
         volume: Filter by volume number
-        issue: Filter by issue number
+        number: Filter by issue number
+        supplement: Filter by supplement
         force_update: Force update existing records
         user_id: User ID for authentication
         username: Username for authentication
+        from_date: Start date for filtering
+        until_date: End date for filtering
+        days_to_go_back: Number of days to go back from current date
+    
+    Returns:
+        dict: Result of bulk export operation
+    
+    Raises:
+        Exception: Any unexpected error during export
     """
-    user = _get_user(request=self.request, user_id=user_id, username=username)
-
-    return controller.bulk_export_issues_to_articlemeta(
-        user,
-        collection_acron_list,
-        journal_acron_list,
-        publication_year,
-        volume,
-        number,
-        supplement,
-        from_date,
-        until_date,
-        days_to_go_back,
-        force_update,
-    )
+    try:
+        user = _get_user(request=self.request, user_id=user_id, username=username)
+        
+        result = controller.bulk_export_issues_to_articlemeta(
+            user,
+            collection_acron_list,
+            journal_acron_list,
+            publication_year,
+            volume,
+            number,
+            supplement,
+            from_date,
+            until_date,
+            days_to_go_back,
+            force_update,
+        )
+        
+        return result
+        
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "task_export_issues_to_articlemeta",
+                "collection_acron_list": collection_acron_list,
+                "journal_acron_list": journal_acron_list,
+                "publication_year": publication_year,
+                "volume": volume,
+                "number": number,
+                "supplement": supplement,
+                "force_update": force_update,
+                "from_date": str(from_date) if from_date else None,
+                "until_date": str(until_date) if until_date else None,
+                "days_to_go_back": days_to_go_back,
+                "user_id": user_id,
+                "username": username,
+                "task_id": self.request.id if hasattr(self.request, 'id') else None,
+            },
+        )
+        
+        # Re-raise para que o Celery possa tratar a exceção adequadamente
+        raise
 
 
 @celery_app.task(bind=True, name="task_export_issue_to_articlemeta")
@@ -115,16 +156,76 @@ def task_export_issue_to_articlemeta(
     user_id=None,
     username=None,
 ):
-
-    user = _get_user(request=self.request, user_id=user_id, username=username)
-
-    return controller.bulk_export_issues_to_articlemeta(
-        user,
-        collection_acron_list=[collection_acron],
-        journal_acron_list=[journal_acron],
-        publication_year=publication_year,
-        volume=volume,
-        number=number,
-        supplement=supplement,
-        force_update=force_update,
-    )
+    """
+    Export a single issue to ArticleMeta Database.
+    
+    Args:
+        collection_acron: Collection acronym (required)
+        journal_acron: Journal acronym (required)
+        publication_year: Publication year of the issue
+        volume: Volume number
+        number: Issue number
+        supplement: Supplement identifier
+        force_update: Force update existing records
+        user_id: User ID for authentication
+        username: Username for authentication
+    
+    Returns:
+        dict: Result of bulk export operation
+    
+    Raises:
+        ValueError: If required parameters are missing
+        Exception: Any unexpected error during export
+    """
+    try:
+        # Validações básicas de parâmetros obrigatórios
+        if not collection_acron:
+            raise ValueError("collection_acron is required")
+        if not journal_acron:
+            raise ValueError("journal_acron is required")
+        
+        # Validação adicional: pelo menos um identificador do issue deve ser fornecido
+        if not any([publication_year, volume, number, supplement]):
+            raise ValueError(
+                "At least one issue identifier is required: "
+                "publication_year, volume, number, or supplement"
+            )
+        
+        user = _get_user(request=self.request, user_id=user_id, username=username)
+        
+        result = controller.bulk_export_issues_to_articlemeta(
+            user,
+            collection_acron_list=[collection_acron],
+            journal_acron_list=[journal_acron],
+            publication_year=publication_year,
+            volume=volume,
+            number=number,
+            supplement=supplement,
+            force_update=force_update,
+        )
+        
+        return result    
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "task_export_issue_to_articlemeta",
+                "collection_acron": collection_acron,
+                "journal_acron": journal_acron,
+                "publication_year": publication_year,
+                "volume": volume,
+                "number": number,
+                "supplement": supplement,
+                "force_update": force_update,
+                "user_id": user_id,
+                "username": username,
+                "task_id": self.request.id if hasattr(self.request, 'id') else None,
+                "error_type": "unexpected_error",
+            },
+        )
+        
+        # Re-raise para que o Celery possa tratar a exceção adequadamente
+        raise

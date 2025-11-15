@@ -207,10 +207,10 @@ class Collection(CommonControlField, ClusterableModel):
         return d
 
     def __unicode__(self):
-        return "%s" % self.main_name or ""
+        return f"{self.main_name or self.acron3}"
 
     def __str__(self):
-        return "%s" % self.main_name or ""
+        return f"{self.main_name or self.acron3}"
 
     base_form_class = CoreAdminModelForm
 

@@ -129,7 +129,20 @@ def export_issue_to_articlemeta(
         events = None
         if not issue:
             raise ValueError("export_issue_to_articlemeta requires issue")
-        for legacy_keys in issue.get_legacy_keys(collection_acron_list, is_active=True):
+        legacy_keys_items = list(issue.get_legacy_keys(collection_acron_list, is_active=True))
+        if not legacy_keys_items:
+            UnexpectedEvent.create(
+                exception=ValueError("No legacy keys found for issue"),
+                detail={
+                    "operation": "export_issue_to_articlemeta",
+                    "issue": str(issue),
+                    "collection_acron_list": collection_acron_list,
+                    "force_update": force_update,
+                    "events": events,
+                },
+            )
+            return
+        for legacy_keys in legacy_keys_items:
             try:
                 exporter = None
                 response = None
@@ -224,31 +237,94 @@ def bulk_export_issues_to_articlemeta(
     Export issues to ArticleMeta Database with flexible filtering.
 
     Args:
-        collections: List of collections acronyms (e.g., ["scl", "mex"])
-        from_date: Export articles from this date
-        until_date: Export articles until this date
-        days_to_go_back: Export articles from this number of days ago
+        user: User object for authentication
+        collection_acron_list: List of collections acronyms (e.g., ["scl", "mex"])
+        journal_acron_list: List of journal acronyms to filter
+        publication_year: Filter by publication year
+        volume: Filter by volume number
+        number: Filter by issue number
+        supplement: Filter by supplement
+        from_date: Export issues modified from this date
+        until_date: Export issues modified until this date
+        days_to_go_back: Export issues modified from this number of days ago
         force_update: Force update existing records
-        user: User object
-        client: MongoDB client object
+        version: Version identifier for export
     """
-    queryset = Issue.select_issues(
-        collection_acron_list=collection_acron_list,
-        journal_acron_list=journal_acron_list,
-        publication_year=publication_year,
-        volume=volume,
-        number=number,
-        supplement=supplement,
-        from_date=from_date,
-        until_date=until_date,
-        days_to_go_back=days_to_go_back,
-    )
-
-    for issue in queryset.iterator():
-        export_issue_to_articlemeta(
-            user,
-            issue=issue,
+    try:
+        queryset = Issue.select_issues(
             collection_acron_list=collection_acron_list,
-            force_update=force_update,
-            version=version,
+            journal_acron_list=journal_acron_list,
+            publication_year=publication_year,
+            volume=volume,
+            number=number,
+            supplement=supplement,
+            from_date=from_date,
+            until_date=until_date,
+            days_to_go_back=days_to_go_back,
         )
+        if not queryset.exists():
+            UnexpectedEvent.create(
+                exception=ValueError("No issues found for the given filters"),
+                detail={
+                    "function": "bulk_export_issues_to_articlemeta",
+                    "collection_acron_list": collection_acron_list,
+                    "journal_acron_list": journal_acron_list,
+                    "publication_year": publication_year,
+                    "volume": volume,
+                    "number": number,
+                    "supplement": supplement,
+                    "from_date": str(from_date) if from_date else None,
+                    "until_date": str(until_date) if until_date else None,
+                    "days_to_go_back": days_to_go_back,
+                    "force_update": force_update,
+                },
+            )
+            return
+        for issue in queryset.iterator():
+            try:
+                export_issue_to_articlemeta(
+                    user,
+                    issue=issue,
+                    collection_acron_list=collection_acron_list,
+                    force_update=force_update,
+                    version=version,
+                )
+            except Exception as e:
+                # Registra erro do issue mas continua processando outros
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "function": "bulk_export_issues_to_articlemeta",
+                        "issue_id": issue.id,
+                        "journal_acron": getattr(issue, "journal_acron", None),
+                        "publication_year": getattr(issue, "publication_year", None),
+                        "volume": getattr(issue, "volume", None),
+                        "number": getattr(issue, "number", None),
+                        "supplement": getattr(issue, "supplement", None),
+                        "force_update": force_update,
+                    },
+                )
+                continue
+                
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "function": "bulk_export_issues_to_articlemeta",
+                "collection_acron_list": collection_acron_list,
+                "journal_acron_list": journal_acron_list,
+                "publication_year": publication_year,
+                "volume": volume,
+                "number": number,
+                "supplement": supplement,
+                "from_date": str(from_date) if from_date else None,
+                "until_date": str(until_date) if until_date else None,
+                "days_to_go_back": days_to_go_back,
+                "force_update": force_update,
+            },
+        )
+        raise

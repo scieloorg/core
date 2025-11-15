@@ -110,7 +110,6 @@ THIRD_PARTY_APPS = [
     # "captcha",
     "wagtailautocomplete",
     "wagtailcaptcha",
-    "wagtailmenus",
     "rest_framework",
     "haystack",
     "maintenance_mode",
@@ -264,7 +263,6 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "core.users.context_processors.allauth_settings",
                 "wagtail.contrib.settings.context_processors.settings",
-                "wagtailmenus.context_processors.wagtailmenus",
             ],
         },
     }
@@ -447,6 +445,8 @@ LANGUAGES = [
 WAGTAIL_I18N_ENABLED = True
 
 WAGTAIL_CONTENT_LANGUAGES = LANGUAGES
+
+WAGTAILIMAGES_EXTENSIONS = ["gif", "jpg", "jpeg", "png", "webp", "svg", "ico"]
 
 NOCAPTCHA = True
 

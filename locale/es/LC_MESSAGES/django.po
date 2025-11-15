@@ -2019,7 +2019,7 @@ msgid "Human Sciences"
 msgstr "Ciencias Humanas"
 
 #: journal/choices.py:122
-msgid "Linguistic, Literature and Arts"
+msgid "Linguistics, Letters and Arts"
 msgstr "Lingüística, Literatura y Artes"
 
 #: journal/choices.py:123

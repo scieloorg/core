@@ -67,6 +67,8 @@ from organization.dynamic_models import (
 from organization.models import HELP_TEXT_ORGANIZATION, Organization
 from thematic_areas.models import ThematicArea
 from vocabulary.models import Vocabulary
+from tracker.models import UnexpectedEvent
+
 
 HELP_TEXT_INSTITUTION = _(
     "Institution data originally provided. This field is for reference only."
@@ -745,10 +747,8 @@ class Journal(CommonControlField, ClusterableModel):
     def is_indexed_at(self, db_acronym):
         if not db_acronym:
             raise ValueError("Journal.is_indexed_at requires db_acronym")
-        try:
-            return bool(self.indexed_at.get(acronym=db_acronym))
-        except IndexedAt.DoesNotExist:
-            return False
+        # Usar exists() é mais eficiente
+        return self.indexed_at.filter(acronym=db_acronym).exists()
 
     @property
     def journal_acrons(self):
@@ -890,7 +890,21 @@ class Journal(CommonControlField, ClusterableModel):
             params["scielojournal__collection__acron3__in"] = collection_acron_list
         if journal_acron_list:
             params["scielojournal__journal_acron__in"] = journal_acron_list
-        return cls.objects.filter(**params)
+        queryset = cls.objects.filter(**params).distinct()
+        if not queryset.exists():
+            UnexpectedEvent.create(
+                exception=ValueError("No journals found for the given filters"),
+                detail={
+                    "operation": "Journal.select_items",
+                    "collection_acron_list": collection_acron_list,
+                    "journal_acron_list": journal_acron_list,
+                    "from_date": from_date,
+                    "until_date": until_date,
+                    "days_to_go_back": days_to_go_back,
+                    "params": params,
+                },
+            )
+        return queryset
     
     @classmethod
     def get_journal_issns(
@@ -926,7 +940,7 @@ class Journal(CommonControlField, ClusterableModel):
             until_date,
             days_to_go_back,
         )
-        return qs.values_list(
+        return qs.select_related("official").values_list(
             "official__issn_print",
             "official__issn_electronic"
         ).distinct()
@@ -935,12 +949,12 @@ class Journal(CommonControlField, ClusterableModel):
     def get_issn_list(cls, collection_acron_list=None, journal_acron_list=None):
         qs = cls.select_items(collection_acron_list, journal_acron_list)
         return {
-            "issn_print_list": qs.values_list(
-                "scielojournal__journal__official__issn_print", flat=True
-            ),
-            "issn_electronic_list": qs.values_list(
-                "scielojournal__journal__official__issn_electronic", flat=True
-            ),
+            "issn_print_list": qs.select_related('official').values_list(
+                "official__issn_print", flat=True
+            ).distinct(),
+            "issn_electronic_list": qs.select_related('official').values_list(
+                "official__issn_electronic", flat=True
+            ).distinct(),
         }
 
     @property
@@ -968,10 +982,24 @@ class Journal(CommonControlField, ClusterableModel):
         params = {}
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
-        for item in self.scielojournal_set.filter(
-            collection__is_active=is_active, **params
-        ):
-            yield item.legacy_keys
+        if is_active:
+            params["collection__is_active"] = bool(is_active)
+        data = {}
+        for item in self.scielojournal_set.filter(**params):
+            data[item.collection.acron3] = item.legacy_keys
+        if not data:
+            UnexpectedEvent.create(
+                exception=ValueError("No legacy keys found for journal"),
+                detail={
+                    "operation": "Journal.get_legacy_keys",
+                    "journal": str(self),
+                    "collection_acron_list": collection_acron_list,
+                    "is_active": is_active,
+                    "params": params,
+                    "scielojournal_count": self.scielojournal_set.count(),
+                },
+            )
+        return list(data.values())
 
 
 class FileOpenScience(Orderable, FileWithLang, CommonControlField):

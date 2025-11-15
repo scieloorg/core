@@ -1,32 +1,7 @@
 {% load i18n wagtailcore_tags %}
+{% load wagtailroutablepage_tags %}
+{% load custom_tags %}
 
-
-<style>
-dd.dd-button {
-  margin-bottom: 1px; /* ou 2px, ou 0, conforme preferir */
-  margin-top: 0;
-}
-
-.dl-search-journals {
-    margin-bottom: 2px;
-    margin-top: 0;
-}
-/* Estilo para os botões de periódicos */
-.dl-search-journals .btn-secondary {
-    color: #333 !important;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.3s ease;
-}
-.dl-search-journals .btn-secondary:hover {
-    background-color: #e8e8e8 !important;
-}
-
-</style>
 <!-- tabs -->
     <section>
         <div class="container">
@@ -59,13 +34,13 @@ dd.dd-button {
                                     {% if forloop.first %}
                                     <dd class="first-node-collection">
                                         <h3 class="h6 fw-bold">{% trans 'Journals' %}</h3>
-                                        <a href="http://{{col.obj.domain}}" class="flag-{{col.obj.acron3}} flag-no-data">
+                                        <a href="{{col.obj.domain}}" class="flag-{{col.obj.acron3}} flag-no-data">
                                             <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
                                     {% else %}
                                     <dd>
-                                        <a href="http://{{col.obj.domain}}" class="flag-{{col.obj.acron3}} flag-no-data">
+                                        <a href="{{col.obj.domain}}" class="flag-{{col.obj.acron3}} flag-no-data">
                                             <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
@@ -76,13 +51,13 @@ dd.dd-button {
                                     {% if forloop.first %}
                                     <dd class="first-node-collection">
                                         <h3 class="h6 fw-bold">{% trans 'In development' %}</h3>
-                                        <a href="http://{{col.obj.domain}}" class="flag-{{col.obj.acron3}} flag-no-data">
+                                        <a href="{{col.obj.domain}}" class="flag-{{col.obj.acron3}} flag-no-data">
                                             <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
                                     {% else %}
                                     <dd>
-                                        <a href="http://{{col.obj.domain}}" class="flag-{{col.obj.acron3}} flag-no-data">
+                                        <a href="{{col.obj.domain}}" class="flag-{{col.obj.acron3}} flag-no-data">
                                             <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
@@ -94,13 +69,13 @@ dd.dd-button {
                                         {% if forloop.first %}
                                         <dd class="first-node-collection">
                                             <h3 class="h6 fw-bold">{% trans 'Servers and Repositories' %}</h3>
-                                            <a href="http://{{col.obj.domain}}" class="scielo-servers-repos obj.scielo-servers-repos-no-data">
+                                            <a href="{{col.obj.domain}}" class="scielo-servers-repos obj.scielo-servers-repos-no-data">
                                                 <h4 class="h6">{{col.name}}</h4>
                                             </a>
                                         </dd>
                                         {% else %}
                                         <dd>
-                                            <a href="http://{{col.obj.domain}}" class="scielo-servers-repos obj.scielo-servers-repos-no-data">
+                                            <a href="{{col.obj.domain}}" class="scielo-servers-repos obj.scielo-servers-repos-no-data">
                                                 <h4 class="h6">{{col.name}}</h4>
                                             </a>
                                         </dd>
@@ -112,13 +87,13 @@ dd.dd-button {
                                     {% if forloop.first %}
                                     <dd class="first-node-collection">
                                         <h3 class="h6 fw-bold">{% trans 'Books' %}</h3>
-                                        <a href="http://{{col.obj.domain}}" class="scielo-books scielo-obj.books-no-data">
+                                        <a href="{{col.obj.domain}}" class="scielo-books scielo-obj.books-no-data">
                                             <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
                                     {% else %}
                                     <dd>
-                                        <a href="http://{{col.obj.domain}}" class="scielo-books scielo-obj.books-no-data">
+                                        <a href="{{col.obj.domain}}" class="scielo-books scielo-obj.books-no-data">
                                             <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
@@ -129,13 +104,13 @@ dd.dd-button {
                                     {% if forloop.first %}
                                     <dd class="first-node-collection">
                                         <h3 class="h6 fw-bold">{% trans 'Others' %}</h3>
-                                        <a href="http://{{col.obj.domain}}" class="scielo-books scielo-obj.books-no-data">
+                                        <a href="{{col.obj.domain}}" class="scielo-books scielo-obj.books-no-data">
                                             <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
                                     {% else %}
                                     <dd>
-                                        <a href="http://{{col.obj.domain}}" class="scielo-books scielo-obj.books-no-data">
+                                        <a href="{{col.obj.domain}}" class="scielo-books scielo-obj.books-no-data">
                                             <h4 class="h6">{{col.name}}</h4>
                                         </a>
                                     </dd>
@@ -185,14 +160,13 @@ dd.dd-button {
                                 <dt>
                                     <h3 class="h6 fw-bold">{% trans 'List of journals by subject' %}</h3>
                                 </dt>
-                                {% for child in list_journal_pages %}
+                                {% for child in list_journal_pages_by_category %}
                                     <dd class="text dd-button">
                                         <a href="{{child.url}}" class="btn btn-secondary">{% trans 'All' %}</a>
                                     </dd>
-                                    <!-- FIXME Translation -->
-                                    {% for category in categories %}
+                                    {% for slug, category in categories.items %}
                                         <dd class="text dd-button">
-                                            <a href="{{child.url}}?category={{category}}" class="btn btn-secondary" name="category">{{category}}</a>
+                                            <a href="{% routablepageurl child 'list_journal_by_category' slug %}" class="btn btn-secondary" name="category">{{category}}</a>
                                         </dd>
                                     {% endfor%}
                                 {% endfor %}
@@ -255,21 +229,12 @@ dd.dd-button {
                                     </a>
                                 </div>
                             </div>
-
-                            
                         </div>
                     </div>
-                    
                 </div>
             </div>
         </div>
-
-        
-
         {% include 'home/include/home_scielo_in_pespectiva.html' %}
         {% include 'home/include/home_scielo_youtube.html' %}
-        
-        
-        
     </section>
-    <!-- ./tabs -->
+

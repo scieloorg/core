@@ -34,6 +34,7 @@ from core.models import (
     License,
     LicenseStatement,
     TextLanguageMixin,
+    CharFieldLangMixin,
 )
 from core.utils.utils import NonRetryableError, fetch_data
 from doi.models import DOI
@@ -166,19 +167,25 @@ class Article(
     is_public = models.BooleanField(default=False, blank=True, null=True)
     is_classic_public = models.BooleanField(default=False, blank=True, null=True)
     is_new_public = models.BooleanField(default=False, blank=True, null=True)
+    data_availability_status = models.CharField(
+        _("Data Availability Status"),
+        max_length=30,
+        null=True,
+        blank=True,
+        choices=choices.DATA_AVAILABILITY_STATUS,
+        default=choices.DATA_AVAILABILITY_STATUS_NOT_PROCESSED,
+    )
 
     base_form_class = CoreAdminModelForm
 
     # Metadados principais do artigo
     panels_identification = [
-        FieldPanel("is_public", read_only=True),
-        FieldPanel("is_classic_public", read_only=True),
-        FieldPanel("is_new_public", read_only=True),
-        FieldPanel("data_status", read_only=True),
-        FieldPanel("valid", read_only=True),
         FieldPanel("pid_v2", read_only=True),
         FieldPanel("pid_v3", read_only=True),
         AutocompletePanel("doi", read_only=True),
+        FieldPanel("article_type", read_only=True),
+        AutocompletePanel("toc_sections", read_only=True),
+        AutocompletePanel("titles", read_only=True),
     ]
 
     # Informações de publicação
@@ -193,12 +200,16 @@ class Article(
         FieldPanel("elocation_id", read_only=True),
     ]
 
+    panels_open_science = [
+        AutocompletePanel("license", read_only=True),
+        FieldPanel("data_availability_status", read_only=True),
+        InlinePanel(
+            "data_availability_statements", label=_("Data Availability Statements")
+        ),
+    ]
     # Conteúdo e classificação
     panels_content = [
-        FieldPanel("article_type", read_only=True),
-        AutocompletePanel("toc_sections", read_only=True),
         AutocompletePanel("languages", read_only=True),
-        AutocompletePanel("titles", read_only=True),
         InlinePanel("abstracts", label=_("Abstract")),
         AutocompletePanel("keywords", read_only=True),
     ]
@@ -211,9 +222,14 @@ class Article(
 
     # Licenciamento e financiamento
     panels_rights_funding = [
-        AutocompletePanel("license", read_only=True),
-        # AutocompletePanel("license_statements"),
         AutocompletePanel("fundings", read_only=True),
+    ]
+    panels_processing = [
+        FieldPanel("is_public", read_only=True),
+        FieldPanel("is_classic_public", read_only=True),
+        FieldPanel("is_new_public", read_only=True),
+        FieldPanel("data_status", read_only=True),
+        FieldPanel("valid", read_only=True),
     ]
     panels_errors = [
         FieldPanel("errors", read_only=True),
@@ -226,8 +242,10 @@ class Article(
             ObjectList(panels_publication, heading=_("Publication Details")),
             ObjectList(panels_content, heading=_("Content & Classification")),
             ObjectList(panels_authorship, heading=_("Authors & Collaborators")),
-            ObjectList(panels_rights_funding, heading=_("Rights & Funding")),
+            ObjectList(panels_open_science, heading=_("Open Science")),
+            ObjectList(panels_rights_funding, heading=_("Funding")),
             ObjectList(panels_errors, heading=_("Errors")),
+            ObjectList(panels_processing, heading=_("Processing")),
         ]
     )
 
@@ -264,6 +282,10 @@ class Article(
                     "pub_date_year",
                 ]
             ),
+            models.Index(fields=["pid_v2"]),
+            models.Index(fields=["is_classic_public"]),
+            models.Index(fields=["pp_xml"]),
+            models.Index(fields=["data_availability_status"]),
         ]
 
     def __unicode__(self):
@@ -290,25 +312,27 @@ class Article(
     def collections(self):
         """
         Returns the collections associated with this article.
-        
+
         First tries to get collections from legacy_article relationships,
         then falls back to journal relationships if no legacy articles exist.
-        
+
         Returns:
             list: List of Collection objects
         """
         if self.legacy_article.exists():
             return [
-                item.collection 
+                item.collection
                 for item in self.legacy_article.select_related("collection").all()
             ]
-        
+
         if self.journal:
             return [
-                item.collection 
-                for item in self.journal.scielojournal_set.select_related("collection").all()
+                item.collection
+                for item in self.journal.scielojournal_set.select_related(
+                    "collection"
+                ).all()
             ]
-        
+
         return []
 
     @classmethod
@@ -326,9 +350,7 @@ class Article(
         _data = {
             "article__pid_v2": self.pid_v2,
             "article__pid_v3": self.pid_v3,
-            "article__fundings": [f.data for f in self.fundings.iterator()],
         }
-
         return _data
 
     @property
@@ -336,11 +358,16 @@ class Article(
         """
         Return the format: Acta Cirúrgica Brasileira, Volume: 37, Issue: 7, Article number: e370704, Published: 10 OCT 2022
         """
+        if not self.journal:
+            return ""
+        if not self.issue:
+            return ""
+
         leg_dict = {
-            "title": self.journal.title if self.journal else "",
-            "pubdate": self.issue.year if self.issue else "",
-            "volume": self.issue.volume if self.issue else "",
-            "number": self.issue.number if self.issue else "",
+            "title": self.journal.title,
+            "pubdate": self.issue.year,
+            "volume": self.issue.volume,
+            "number": self.issue.number,
             "suppl": self.issue.supplement,
             "fpage": self.first_page,
             "lpage": self.last_page,
@@ -376,33 +403,55 @@ class Article(
     ):
         if not pid_v3 and not sps_pkg_name:
             raise ValueError("Article requires params: pid_v3 or sps_pkg_name")
+        q = Q()
         if pid_v3:
-            try:
-                return cls.objects.get(pid_v3=pid_v3)
-            except cls.DoesNotExist:
-                pass
+            q |= Q(pid_v3=pid_v3)
         if sps_pkg_name:
-            items = cls.objects.filter(sps_pkg_name=sps_pkg_name).order_by("-updated")
-            objs = list(items)
-            if len(objs) == 1:
-                return objs[0]
-            if len(objs) > 1:
-                items.update(data_status=choices.DATA_STATUS_DUPLICATED)
-                return objs[0]
-        raise cls.DoesNotExist
+            q |= Q(sps_pkg_name=sps_pkg_name)
+        return cls.objects.filter(q).order_by("-updated").distinct()
 
     @classmethod
     def get(
         cls,
         pid_v3=None,
         sps_pkg_name=None,
+        handle_multiple=False,
     ):
         if not pid_v3 and not sps_pkg_name:
             raise ValueError("Article requires params: pid_v3 or sps_pkg_name")
         try:
             return cls.objects.get(sps_pkg_name=sps_pkg_name, pid_v3=pid_v3)
         except cls.DoesNotExist:
-            return cls.get_by_pid_v3_or_by_sps_pkg_name(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
+            pass
+        except cls.MultipleObjectsReturned:
+            pass
+        except Exception as e:
+            raise e
+
+        items = cls.get_by_pid_v3_or_by_sps_pkg_name(
+            pid_v3=pid_v3,
+            sps_pkg_name=sps_pkg_name,
+        )
+        if not items.exists():
+            raise cls.DoesNotExist(
+                "Article not found for pid_v3: {pid_v3} or sps_pkg_name: {sps_pkg_name}"
+            )
+
+        public = items.filter(is_classic_public=True)
+        public_items = list(public)
+        if len(public_items) == 1:
+            return public_items[0]
+
+        items = list(items)
+        if len(public_items) == 0 and len(items) == 1:
+            return items[0]
+
+        if handle_multiple:
+            return public_items[0] or items[0]
+
+        raise cls.MultipleObjectsReturned(
+            f"Multiple Article found for pid_v3: {pid_v3} or sps_pkg_name: {sps_pkg_name}"
+        )
 
     @classmethod
     def create(
@@ -410,6 +459,7 @@ class Article(
         user,
         pid_v3=None,
         sps_pkg_name=None,
+        handle_multiple=True,
     ):
         try:
             logging.info(f"create: {pid_v3} {sps_pkg_name}")
@@ -420,7 +470,11 @@ class Article(
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
+            return cls.get(
+                pid_v3=pid_v3,
+                sps_pkg_name=sps_pkg_name,
+                handle_multiple=handle_multiple,
+            )
 
     @classmethod
     def create_or_update(
@@ -428,13 +482,18 @@ class Article(
         user,
         pid_v3=None,
         sps_pkg_name=None,
+        handle_multiple=False,
     ):
         logging.info(f"Article.get_or_create: {user} {pid_v3} {sps_pkg_name}")
         try:
-            return cls.get(pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
+            return cls.get(
+                pid_v3=pid_v3,
+                sps_pkg_name=sps_pkg_name,
+                handle_multiple=handle_multiple,
+            )
         except cls.DoesNotExist:
             return cls.create(user=user, pid_v3=pid_v3, sps_pkg_name=sps_pkg_name)
-    
+
     @classmethod
     def get_or_create(
         cls,
@@ -450,8 +509,7 @@ class Article(
         self.save()  # Salvar estado final
         self.pp_xml.mark_as_done()
 
-    def complete_data(self, pp_xml):
-        save = False
+    def complete_data(self, pp_xml, save=False):
         if pp_xml:
             if not self.sps_pkg_name:
                 self.sps_pkg_name = pp_xml.pkg_name
@@ -475,25 +533,23 @@ class Article(
         if save:
             self.save()
 
-    def set_date_pub(self, dates):
+    def set_date_pub(self, dates, save=True):
         if dates:
             self.pub_date_day = dates.get("day")
             self.pub_date_month = dates.get("month")
             self.pub_date_year = dates.get("year")
-            self.save()
+            if save:
+                self.save()
 
-    def set_pids(self, pids):
+    def set_pids(self, pids, save=True):
         self.pid_v2 = pids.get("v2")
         self.pid_v3 = pids.get("v3")
-        self.save()
+        if save:
+            self.save()
 
     def is_indexed_at(self, db_acronym):
         return bool(self.journal) and self.journal.is_indexed_at(db_acronym)
 
-    @property
-    def article_pid_suffix(self):
-        return self.pp_xml.get_article_pid_suffix()
-            
     def create_legacy_keys(self, user=None, force_update=False):
         if not force_update:
             if self.legacy_article.count() == self.journal.scielojournal_set.count():
@@ -507,7 +563,7 @@ class Article(
             issue_pid = issue_key["pid"]
             if not self.pid_v2:
                 # este valor deve vir pela importação do AM ou
-                # pelo upload (migração ou alimentação direta) 
+                # pelo upload (migração ou alimentação direta)
                 # via solicitação de pid para o pid provider
                 continue
             if self.pid_v2 and issue_pid in self.pid_v2:
@@ -521,10 +577,22 @@ class Article(
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
         if is_active:
-            params["is_active"] = is_active
+            params["collection__is_active"] = bool(is_active)
         data = {}
         for item in self.legacy_article.filter(**params):
             data[item.collection.acron3] = item.legacy_keys
+        if not data:
+            UnexpectedEvent.create(
+                exception=ValueError("No legacy keys found for article"),
+                detail={
+                    "operation": "Article.get_legacy_keys",
+                    "article": str(self),
+                    "collection_acron_list": collection_acron_list,
+                    "is_active": is_active,
+                    "params": params,
+                    "legacy_article_count": self.legacy_article.count(),
+                },
+            )
         return list(data.values())
 
     def select_collections(self, collection_acron_list=None, is_activate=None):
@@ -554,8 +622,9 @@ class Article(
         pp_xml__isnull=None,
         sps_pkg_name__isnull=None,
         article_license__isnull=None,
+        params=None,
     ):
-        params = {}
+        params = params or {}
         if collection_acron_list:
             params["journal__scielojournal__collection__acron3__in"] = (
                 collection_acron_list
@@ -592,7 +661,7 @@ class Article(
             q |= Q(sps_pkg_name__isnull=sps_pkg_name__isnull)
         if article_license__isnull is not None:
             q |= Q(article_license__isnull=article_license__isnull)
-        return cls.objects.filter(q, **params)
+        return cls.objects.filter(q, **params).distinct()
 
     @classmethod
     def select_journal_articles(cls, journal=None, journal_id=None, issns=None):
@@ -618,7 +687,9 @@ class Article(
         urls = []
         for sj in self.journal.scielojournal_set.select_related("collection").all():
             try:
-                pid_v2 = self.legacy_article.filter(collection=sj.collection).first().pid
+                pid_v2 = (
+                    self.legacy_article.filter(collection=sj.collection).first().pid
+                )
             except AttributeError:
                 pid_v2 = None
             if not pid_v2:
@@ -628,20 +699,23 @@ class Article(
                 sj.journal_acron,
                 pid_v2,
                 self.pid_v3,
-            )                
+            )
             for item in url_builder.get_urls(self.langs):
                 item["collection"] = sj.collection
                 urls.append(item)
         return urls
 
-    def get_availability(self, collection_acron_list=None, collection=None, fmt=None, params=None):
-        params = {}
+    def get_availability(
+        self, collection_acron_list=None, collection=None, fmt=None, params=None
+    ):
+        params = params or {}
         if fmt:
             params["fmt"] = fmt
         if collection:
             params["collection"] = collection
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
+        logging.info(f"get_availability {params}")
         return self.article_availability.filter(available=True, **params)
 
     def check_availability(self, user):
@@ -705,20 +779,47 @@ class Article(
         return self.is_public
 
     def is_available(self, collection_acron_list=None, fmt=None):
-        return self.get_availability(fmt=fmt, collection_acron_list=collection_acron_list).exists()
+        return self.get_availability(
+            fmt=fmt, collection_acron_list=collection_acron_list
+        ).exists()
 
     def new_available(self, collection_acron_list=None):
-        return self.get_availability(fmt="xml", collection_acron_list=collection_acron_list)
+        return self.get_availability(
+            fmt="xml", collection_acron_list=collection_acron_list
+        )
 
     def classic_available(self, collection_acron_list=None):
         params = {"url__contains": "/scielo.php"}
-        return self.get_availability(fmt="html", collection_acron_list=collection_acron_list, params=params)
-        
+        return self.get_availability(
+            fmt="html", collection_acron_list=collection_acron_list, params=params
+        )
+    
+    def get_text_langs(self, collection_acron_list=None, fmt=None):
+        by_collection = {}
+        params = {}
+        if fmt:
+            params["fmt"] = fmt
+        else:
+            params["fmt__in"] = ["html", "pdf"]
+        if collection_acron_list:
+            params["collection__acron3__in"] = collection_acron_list
+        for item in self.article_availability.filter(lang__isnull=False, **params).select_related('collection', 'lang').distinct():
+            acron3 = item.collection.acron3
+            code2 = item.lang.code2
+            fmt = item.fmt
+            by_collection.setdefault(acron3, {})
+            by_collection[acron3].setdefault(fmt, [])
+            if code2 not in by_collection[acron3][fmt]:
+                by_collection[acron3][fmt].append(code2)
+        return by_collection
+
     def add_event(self, user, name):
         return ArticleEvent.create(user, self, name)
 
     @classmethod
-    def mark_items_as_public(cls, journal=None, journal_id=None, force_update=False, user=None):
+    def mark_items_as_public(
+        cls, journal=None, journal_id=None, force_update=False, user=None
+    ):
         # DATA_STATUS_DELETED, DATA_STATUS_MOVED, DATA_STATUS_INVALID, DATA_STATUS_DUPLICATED,
         if force_update:
             exclusion_list = []
@@ -784,7 +885,9 @@ class Article(
             issns: Lista de ISSNs para verificar duplicatas.
             user: Usuário que está executando a operação.
         """
-        article_duplicated_pkg_names = cls.find_duplicated_pkg_names(journal, journal_id)
+        article_duplicated_pkg_names = cls.find_duplicated_pkg_names(
+            journal, journal_id
+        )
         if not article_duplicated_pkg_names:
             return
         cls.objects.filter(sps_pkg_name__in=article_duplicated_pkg_names).exclude(
@@ -803,7 +906,9 @@ class Article(
             issns: Lista de ISSNs para verificar duplicatas.
             user: Usuário que está executando a operação.
         """
-        article_duplicated_pkg_names = cls.find_duplicated_pkg_names(journal, journal_id)
+        article_duplicated_pkg_names = cls.find_duplicated_pkg_names(
+            journal, journal_id
+        )
         for pkg_name in article_duplicated_pkg_names:
             cls.fix_duplicated_pkg_name(pkg_name, user)
         return article_duplicated_pkg_names
@@ -849,6 +954,64 @@ class Article(
             )
 
 
+class DataAvailabilityStatement(CharFieldLangMixin, CommonControlField):
+    article = ParentalKey(
+        Article,
+        on_delete=models.CASCADE,
+        related_name="data_availability_statements",
+    )
+
+    base_form_class = CoreAdminModelForm
+
+    @classmethod
+    def create_or_update(cls, user, article, language, text):
+        try:
+            obj = cls.get(article=article, language=language)
+            obj.updated_by = user
+            obj.text = text
+            obj.save()
+            return obj
+        except cls.DoesNotExist:
+            return cls.create(user, article, language, text)
+
+
+    @classmethod
+    def get(
+        cls,
+        article,
+        language,
+    ):
+        if article and language:
+            if not isinstance(language, Language):
+                language = Language.get(code2=language)
+            try:
+                return cls.objects.get(article=article, language=language)
+            except cls.MultipleObjectsReturned:
+                return cls.objects.filter(article=article, language=language).first()
+        raise ValueError("DataAvailabilityStatement.get requires article parameter")
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        article,
+        language,
+        text,
+    ):
+        try:
+            if not isinstance(language, Language):
+                language = Language.get(code2=language)
+            obj = cls()
+            obj.creator = user
+            obj.text = text
+            obj.article = article
+            obj.language = language
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(article=article, language=language)
+
+
 class ArticleFunding(CommonControlField):
     award_id = models.CharField(_("Award ID"), blank=True, null=True, max_length=100)
     funding_source = models.ForeignKey(
@@ -878,6 +1041,8 @@ class ArticleFunding(CommonControlField):
         FieldPanel("award_id"),
         AutocompletePanel("funding_source"),
     ]
+
+    base_form_class = CoreAdminModelForm
 
     def __unicode__(self):
         return "%s | %s" % (self.award_id, self.funding_source)
@@ -922,8 +1087,6 @@ class ArticleFunding(CommonControlField):
                     ),
                 )
 
-    base_form_class = CoreAdminModelForm
-
 
 class DocumentTitle(TextLanguageMixin, CommonControlField):
     ...
@@ -962,13 +1125,6 @@ class DocumentTitle(TextLanguageMixin, CommonControlField):
         obj.rich_text = rich_text or obj.rich_text
         obj.save()
         return obj
-
-
-class ArticleType(models.Model):
-    text = models.TextField(_("Text"), null=True, blank=True)
-
-    def __str__(self):
-        return self.text
 
 
 class DocumentAbstract(TextLanguageMixin, CommonControlField, Orderable):
@@ -1766,7 +1922,7 @@ class ArticleSource(CommonControlField):
                 raise ValueError("Failed to obtain or create PID v3")
             self.detail = detail
             self.mark_as_completed()  # Marca o processamento como concluído
-            
+
         except Exception as e:
             # Registra a exceção no log
             logging.exception(e)
@@ -1859,7 +2015,20 @@ class ArticleAvailability(CommonControlField):
     fmt = models.CharField(_("Format"), max_length=4, null=True, blank=True)
     error = models.CharField(max_length=40, null=True, blank=True)
 
-    panels = [FieldPanel("url"), FieldPanel("available", read_only=True)]
+    panels = [
+        FieldPanel("url", read_only=True),
+        FieldPanel("collection", read_only=True),
+        FieldPanel("available", read_only=True),
+        FieldPanel("fmt", read_only=True),
+        FieldPanel("error", read_only=True),
+    ]
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["article", "available"]),
+            models.Index(fields=["article", "collection", "fmt"]),
+        ]
+        # url já tem unique=True (cria índice automaticamente)
 
     @classmethod
     def get(cls, article, url):
@@ -1927,7 +2096,7 @@ class ArticleAvailability(CommonControlField):
             self.available = False
             self.error = "CollectionInactive"
             self.updated = timezone.now()
-            return self.available            
+            return self.available
         if self.collection.platform_status == "classic":
             if "scielo.php" not in self.url:
                 self.available = False

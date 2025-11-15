@@ -9,6 +9,7 @@ from lxml import etree
 from packtools.sps.models.article_abstract import ArticleAbstract
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_contribs import ArticleContribs, XMLContribs
+from packtools.sps.models.article_data_availability import DataAvailability
 from packtools.sps.models.article_doi_with_lang import DoiWithLang
 from packtools.sps.models.article_ids import ArticleIds
 from packtools.sps.models.article_license import ArticleLicense
@@ -22,7 +23,7 @@ from packtools.sps.models.v2.article_toc_sections import ArticleTocSections
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article import choices
-from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle
+from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle, DataAvailabilityStatement
 from core.models import Language
 from core.utils.extracts_normalized_email import extracts_normalized_email
 from doi.models import DOI
@@ -162,6 +163,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
 
         article.events.all().delete()
         event = article.add_event(user, _("load article"))
+
         # Configurar todos os campos antes de salvar (Sugestão 9)
         article.valid = False
         article.data_status = choices.DATA_STATUS_PENDING
@@ -181,20 +183,27 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
 
         # FOREIGN KEYS SIMPLES
         article.journal = get_journal(xmltree=xmltree, errors=errors)
-        article.issue = get_or_create_issues(
+        if not article.journal:
+            article.save()
+            raise ValueError(f"Not found journal for article: {pid_v3}")
+        article.issue = get_issue(
             xmltree=xmltree,
-            user=user,
             journal=article.journal,
             item=pid_v3,
             errors=errors,
         )
+        if not article.issue:
+            article.save()
+            raise ValueError(f"Not found issue for article: {pid_v3}")
 
         # Salvar uma vez após definir todos os campos simples
         logging.info(
             f"Saving article {article.pid_v3} {xml_with_pre.sps_pkg_name} {xml_with_pre.main_doi}"
         )
 
-        article.save()
+        add_data_availability_status(
+            xmltree=xmltree, errors=errors, article=article, user=user
+        )
 
         # MANY-TO-MANY (requerem que o objeto esteja salvo)
         main_lang = get_or_create_main_language(
@@ -239,7 +248,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user, errors=errors))
         article.create_legacy_keys(user)
         if not article.pid_v2:
-            add_error(errors, "load_article", "Article has no PID v2", item=article.pid_v3)
+            raise ValueError(f"Article has no PID v2: {article.pid_v3}")
         if not errors:
             article.mark_as_completed()
 
@@ -250,6 +259,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         return article
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
+        add_error(errors, "load_article", e)
 
         if event:
             event.finish(errors=errors, exceptions=traceback.format_exc())
@@ -268,6 +278,42 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             ),
         )
         raise
+
+
+def add_data_availability_status(xmltree, errors, article, user):
+    """
+    Extrai a declaração de disponibilidade de dados do XML.
+
+    Args:
+        xmltree: Árvore XML do artigo
+        errors: Lista para coletar erros
+    """
+    try:
+        status = None
+        items = []
+        xml = DataAvailability(xmltree=xmltree)
+        for item in xml.items:
+            status = status or item.get("specific_use")
+            lang = item.get("parent_lang")
+            if not lang:
+                continue
+            text = item.get("text")
+            if not text:
+                continue
+            items.append({"language": lang, "text": text})
+
+        article.data_availability_status = status or choices.DATA_AVAILABILITY_STATUS_ABSENT
+        # SAVE OBRIGATÓRIO ANTES DE ADICIONAR OS ITENS M2M
+        article.save()
+        
+        for item in items:
+            DataAvailabilityStatement.create_or_update(
+                user=user,
+                article=article,
+                **item
+            )
+    except Exception as e:
+        add_error(errors, "add_data_availability_status", e)
 
 
 def get_or_create_doi(xmltree, user, errors):
@@ -444,6 +490,7 @@ def set_license(xmltree, article, errors):
         for xml_license in xml_licenses:
             if license := xml_license.get("link"):
                 article.article_license = license
+                break
     except Exception as e:
         add_error(errors, "set_license", e)
 
@@ -695,7 +742,7 @@ def set_pids(xmltree, article, errors):
     try:
         pids = ArticleIds(xmltree=xmltree).data
         if pids.get("v2") or pids.get("v3"):
-            article.set_pids(pids)
+            article.set_pids(pids, save=False)
     except Exception as e:
         add_error(errors, "set_pids", e)
 
@@ -712,7 +759,7 @@ def set_date_pub(xmltree, article, errors):
     try:
         obj_date = ArticleDates(xmltree=xmltree)
         dates = obj_date.article_date or obj_date.collection_date
-        article.set_date_pub(dates)
+        article.set_date_pub(dates, False)
     except Exception as e:
         add_error(errors, "set_date_pub", e)
 
@@ -787,14 +834,13 @@ def get_or_create_article_type(xmltree, user, errors):
         str: Tipo do artigo ou None se houver erro
     """
     try:
-        article_type = ArticleAndSubArticles(xmltree=xmltree).main_article_type
-        return article_type
+        return ArticleAndSubArticles(xmltree=xmltree).main_article_type
     except Exception as e:
         add_error(errors, "get_or_create_article_type", e)
         return None
 
 
-def get_or_create_issues(xmltree, user, journal, item, errors):
+def get_issue(xmltree, journal, item, errors):
     """
     Extrai e cria o fascículo (issue) a partir do XML.
 
@@ -809,34 +855,23 @@ def get_or_create_issues(xmltree, user, journal, item, errors):
         Issue: Objeto Issue criado ou None se houver erro
     """
     try:
+        issue_data = None
         issue_data = ArticleMetaIssue(xmltree=xmltree).data
-        history_dates = ArticleDates(xmltree=xmltree)
-        collection_date = history_dates.collection_date or {}
-        article_date = history_dates.article_date or {}
-
-        season = collection_date.get("season")
-        year = collection_date.get("year") or article_date.get("year")
-        month = collection_date.get("month")
-        suppl = collection_date.get("suppl")
-
-        obj = Issue.get_or_create(
+        obj = Issue.get(
             journal=journal,
+            year=issue_data.get("pub_year"),
             number=issue_data.get("number"),
             volume=issue_data.get("volume"),
-            season=season,
-            year=year,
-            month=month,
-            supplement=suppl,
-            user=user,
+            supplement=issue_data.get("suppl"),
         )
         return obj
     except Exception as e:
         add_error(
             errors,
-            "get_or_create_issues",
+            "get_issue",
             e,
             item=item,
-            issue=issue_data if "issue_data" in locals() else None,
+            issue=issue_data,
         )
         return None
 

@@ -219,6 +219,25 @@ class Language(CommonControlField):
             return cls.objects.get(code2=language_iso(code2))
 
 
+class CharFieldLangMixin(models.Model):
+    text = models.CharField(_("Text"), max_length=255, null=True, blank=True)
+    language = models.ForeignKey(
+        Language,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Language"),
+        null=True,
+        blank=True,
+    )
+
+    panels = [FieldPanel("text"), AutocompletePanel("language")]
+
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return f"{self.language} {self.text}"
+
+
 class TextWithLang(models.Model):
     text = models.TextField(_("Text"), null=True, blank=True)
     language = models.ForeignKey(

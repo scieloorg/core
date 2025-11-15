@@ -232,6 +232,8 @@
                                     {{ block.value.body|richtext }}
                                 </div>
                             </div>
+                        {% elif block.block_type == 'bibliographic_reference' %}
+                            {% include "home/blocks/bibliographic_reference_block.html" %}
                         {% endif %}
                     {% endfor %}
                 {% endif %}
