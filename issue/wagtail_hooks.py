@@ -66,7 +66,7 @@ class IssueAdminSnippetViewSet(SnippetViewSet):
         "short_identification",
         "journal",
         "year",
-        "issue_folder"
+        "issue_folder",
         "total_articles",
         "updated",
         "updated_by",
