@@ -16,7 +16,7 @@ class AMIssueSerializer(serializers.ModelSerializer):
         ]
 
 
-class SectionsSerializer(serializers.ModelSerializer):
+class TableOfContentsSerializer(serializers.ModelSerializer):
     """
     Serializer que usa TableOfContents para expor dados das seções.
     Mantém o nome 'sections' para compatibilidade da API.
@@ -78,7 +78,7 @@ class BibliographicStripSerializer(serializers.ModelSerializer):
 class IssueSerializer(serializers.ModelSerializer):
     journal = serializers.SerializerMethodField()
     legacy_issue = AMIssueSerializer(many=True, read_only=True)
-    sections = SectionsSerializer(source="table_of_contents", many=True, read_only=True)
+    sections = TableOfContentsSerializer(source="table_of_contents", many=True, read_only=True)
     license = LicenseStatementSerializer(many=True, read_only=True)
     issue_titles = IssueTitleSerializer(source="issue_title", many=True, read_only=True)
     bibliographic_strips = BibliographicStripSerializer(source="bibliographic_strip", many=True, read_only=True)
