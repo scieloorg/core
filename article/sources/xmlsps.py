@@ -20,6 +20,7 @@ from packtools.sps.models.funding_group import FundingGroup
 from packtools.sps.models.journal_meta import ISSN, Title
 from packtools.sps.models.kwd_group import ArticleKeywords
 from packtools.sps.models.v2.article_toc_sections import ArticleTocSections
+from packtools.sps.models.v2.related_articles import RelatedArticles
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article import choices
@@ -246,6 +247,10 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             )
         )
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user, errors=errors))
+
+        # Adicionar artigos relacionados
+        add_related_articles(xmltree=xmltree, article=article, user=user, errors=errors)
+
         article.create_legacy_keys(user)
         if not article.pid_v2:
             raise ValueError(f"Article has no PID v2: {article.pid_v3}")
@@ -944,3 +949,46 @@ def create_or_update_sponsor(funding_name, user, item, errors):
             errors, "create_or_update_sponsor", e, item=item, funding_name=funding_name
         )
         return None
+
+
+def add_related_articles(xmltree, article, user, errors):
+    """
+    Extrai e adiciona artigos relacionados a partir do XML.
+
+    Args:
+        xmltree: Árvore XML do artigo
+        article: Objeto Article para adicionar os relacionamentos
+        user: Usuário responsável pela operação
+        errors: Lista para coletar erros
+    """
+    try:
+        related_articles = RelatedArticles(xmltree)
+        
+        for related_article_data in related_articles.related_articles():
+            try:
+                # Extrair dados do artigo relacionado
+                href = related_article_data.get("href")
+                if not href:
+                    continue
+                
+                ext_link_type = related_article_data.get("ext-link-type")
+                related_type = related_article_data.get("related-article-type")
+                
+                # Adicionar relacionamento ao artigo
+                article.add_related_article(
+                    user=user,
+                    href=href,
+                    ext_link_type=ext_link_type,
+                    related_type=related_type
+                )
+                
+            except Exception as e:
+                add_error(
+                    errors,
+                    "add_related_articles.process_item",
+                    e,
+                    related_article_data=related_article_data
+                )
+                
+    except Exception as e:
+        add_error(errors, "add_related_articles", e)
