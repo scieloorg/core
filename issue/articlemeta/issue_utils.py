@@ -45,6 +45,7 @@ def extract_data_from_harvested_data(issue_data, pid):
         """
         lang = item.get("l")
         if not lang:
+            continue
 
         bibliographic_strip = {
             "language": lang,
@@ -140,5 +141,5 @@ def fix_section_data(sections_data):
                 yield {
                     "c": item.get("c"),
                     "l": language,
-                    "t": section_text,
+                    "t": section_text, # Usar o texto completo mesmo que tenha sido dividido
                 }
