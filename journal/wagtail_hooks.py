@@ -266,6 +266,45 @@ class AMJournalAdmin(SnippetViewSet):
     search_fields = ("pid",)
 
 
+class JournalTableOfContentsViewSet(SnippetViewSet):
+    model = models.JournalTableOfContents
+    menu_label = _("Journal Table of Contents")
+    menu_icon = "list-ul"
+    menu_order = 300
+    add_to_settings_menu = False
+
+    list_display = (
+        "journal",
+        "collection", 
+        "text",
+        "language",
+        "code",
+        "created",
+        "updated",
+    )
+    list_filter = (
+        "collection",
+        "language",
+        "code",
+        "created",
+        "updated",
+    )
+    search_fields = (
+        "text",
+        "code",
+        "journal__title",
+        "collection__name",
+        "collection__acron3",
+    )
+    list_per_page = 20
+    ordering = ("journal__title", "text", "code", "collection__name")
+    
+    def get_queryset(self, request):
+        """Otimizar queryset com select_related para evitar N+1 queries"""
+        qs = super().get_queryset(request)
+        return qs.select_related("journal", "collection", "language")
+
+
 class JournalSnippetViewSetGroup(SnippetViewSetGroup):
     menu_label = _("Journals")
     menu_icon = "folder-open-inverse"
@@ -278,30 +317,12 @@ class JournalSnippetViewSetGroup(SnippetViewSetGroup):
         JournalExporterSnippetViewSet,
         JournalAdminPolicySnippetViewSet,
         JournalAdminInstructionsForAuthorsSnippetViewSet,
+        JournalTableOfContentsViewSet,
         AMJournalAdmin,
     )
 
 
 register_snippet(JournalSnippetViewSetGroup)
-
-
-class TOCSectionAdmin(ModelAdmin):
-    model = models.JournalTocSection
-    menu_label = "Table of Contents"
-    menu_icon = "folder"
-    menu_order = 500
-    search_fields = (
-        "journal__title",
-        "journal__official__issn_print",
-        "journal__official__issn_electronic",
-        "journal__contact_location__country__name",
-    )
-    list_display = ("journal", "column_toc")
-
-    def column_toc(self, obj):
-        return str(obj)
-
-    column_toc.short_description = "Table of Contents"
 
 
 class IndexedAtAdmin(ModelAdmin):
@@ -474,3 +495,4 @@ def register_ctf_permissions_2():
     model = JournalProxyPanelInstructionsForAuthors
     content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
     return Permission.objects.filter(content_type=content_type)
+

@@ -213,6 +213,8 @@ class Language(CommonControlField):
     def get(cls, code2):
         if not code2:
             raise ValueError("Language.get requires params: code2")
+        if isinstance(code2, Language):
+            return code2
         try:
             return cls.objects.get(code2=code2)
         except cls.DoesNotExist:

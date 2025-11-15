@@ -4,7 +4,7 @@ from article import models
 from core.api.v1.serializers import LanguageSerializer, LicenseStatementSerializer
 from doi.api.v1.serializers import DoiSerializer
 from institution.api.v1.serializers import SponsorSerializer
-from issue.api.v1.serializers import IssueSerializer, TocSectionsSerializer
+from issue.api.v1.serializers import IssueSerializer, TableOfContentsSerializer
 from journal.api.v1.serializers import JournalSerializer
 from researcher.api.v1.serializers import ResearcherSerializer
 from vocabulary.api.v1.serializers import KeywordSerializer
@@ -42,16 +42,6 @@ class DocumentAbstractSerializer(serializers.ModelSerializer):
         ]
 
 
-class TocSectionsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.TocSection
-        fields = [
-            # "text",
-            "plain_text",
-            # "rich_text",
-        ]
-
-
 class ArticleSerializer(serializers.ModelSerializer):
     journal = JournalSerializer(many=False, read_only=True)
     publisher = SponsorSerializer(many=True, read_only=True)
@@ -61,7 +51,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     researchers = ResearcherSerializer(many=True, read_only=True)
     languages = LanguageSerializer(many=True, read_only=True)
     fundings = FundingsSerializer(many=True, read_only=True)
-    toc_sections = TocSectionsSerializer(many=True, read_only=True)
+    toc_sections = TableOfContentsSerializer(many=True, read_only=True)
     license = LicenseStatementSerializer(many=True, read_only=True)
     issue = IssueSerializer(many=False, read_only=True)
     keywords = KeywordSerializer(many=True, read_only=True)

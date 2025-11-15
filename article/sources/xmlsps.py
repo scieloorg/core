@@ -28,7 +28,7 @@ from core.models import Language
 from core.utils.extracts_normalized_email import extracts_normalized_email
 from doi.models import DOI
 from institution.models import Sponsor
-from issue.models import Issue, TocSection
+from issue.models import Issue, TableOfContents
 from journal.models import Journal
 from location.models import Location
 from pid_provider.choices import PPXML_STATUS_DONE, PPXML_STATUS_INVALID
@@ -212,8 +212,8 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         if main_lang:
             article.languages.add(main_lang)
 
-        article.toc_sections.set(
-            get_or_create_toc_sections(xmltree=xmltree, user=user, errors=errors)
+        article.sections.set(
+            get_or_create_toc_sections(xmltree=xmltree, user=user, errors=errors, issue=article.issue)
         )
         article.titles.set(
             create_or_update_titles(
@@ -439,7 +439,7 @@ def get_or_create_fundings(xmltree, user, item, errors):
     return data
 
 
-def get_or_create_toc_sections(xmltree, user, errors):
+def get_or_create_toc_sections(xmltree, user, errors, issue):
     """
     Extrai e cria seções do sumário (TOC) a partir do XML.
 
@@ -456,19 +456,14 @@ def get_or_create_toc_sections(xmltree, user, errors):
         toc_sections = ArticleTocSections(xmltree=xmltree).sections
         for item in toc_sections:
             section_title = item.get("section")
-
             if not section_title:
                 continue
-
-            section_lang = item.get("parent_lang")
             try:
-                lang = get_or_create_language(section_lang, user=user, errors=errors)
-                obj = TocSection.get_or_create(
-                    value=section_title,
-                    language=lang,
-                    user=user,
-                )
-                data.append(obj)
+                issue_sections = TableOfContents.objects.filter(issue=issue, journal_toc__text=section_title)
+                for obj in issue_sections:
+                    data.append(obj)
+                if not issue_sections.exists():
+                    raise TableOfContents.DoesNotExist(f"Unable to find TOC section {section_title} for issue {issue}")
             except Exception as e:
                 add_error(errors, "get_or_create_toc_sections", e, item=item)
     except Exception as e:
