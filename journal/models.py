@@ -2954,24 +2954,13 @@ class JournalTableOfContents(CharFieldLangMixin, CommonControlField):
         ).distinct()
     
     @classmethod
-    def get_by_code(cls, code):
-        if not code:
-            raise ValueError("JournalTableOfContents.get_by_code requires code parameter")
-        return cls.objects.get(code=code)
-    
-    @classmethod
-    def get_by_text_and_lang(cls, text, language):
-        if not text:
-            raise ValueError("JournalTableOfContents.get_by_text requires text parameter")
-        return cls.objects.filter(text=text, language=language)
-
-    @classmethod
     def get(cls, journal, collection, language, text, code):
         if not journal or not language or not text or not collection:
             raise ValueError(
                 f"JournalTableOfContents.get requires journal ({journal}), "
                 f"language ({language}), text ({text}) and collection ({collection}) parameters"
             )
+        language = Language.get(language)
         filters = dict(
             journal=journal,
             language=language,
@@ -2987,14 +2976,15 @@ class JournalTableOfContents(CharFieldLangMixin, CommonControlField):
     @classmethod
     def create(
         cls,
-        user
+        user,
         journal,
         collection,
         language,
         text,
-        code=None,
+        code,
     ):
         try:
+            language = Language.get(language)
             obj = cls(
                 journal=journal,
                 collection=collection,
