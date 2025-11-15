@@ -40,7 +40,7 @@ from core.utils.utils import NonRetryableError, fetch_data
 from doi.models import DOI
 from doi_manager.models import CrossRefConfiguration
 from institution.models import Publisher, Sponsor
-from issue.models import Issue, TocSection
+from issue.models import Issue, TableOfContents
 from journal.models import Journal, SciELOJournal
 from pid_provider.choices import PPXML_STATUS_DONE
 from pid_provider.models import PidProviderXML
@@ -152,7 +152,7 @@ class Article(
     collab = models.ManyToManyField(InstitutionalAuthor, blank=True)
     article_type = models.CharField(max_length=50, null=True, blank=True)
     # abstracts = models.ManyToManyField("DocumentAbstract", blank=True)
-    toc_sections = models.ManyToManyField(TocSection, blank=True)
+    sections = models.ManyToManyField(TableOfContents, blank=True)
     license_statements = models.ManyToManyField(LicenseStatement, blank=True)
     license = models.ForeignKey(
         License, on_delete=models.SET_NULL, null=True, blank=True
@@ -184,7 +184,7 @@ class Article(
         FieldPanel("pid_v3", read_only=True),
         AutocompletePanel("doi", read_only=True),
         FieldPanel("article_type", read_only=True),
-        AutocompletePanel("toc_sections", read_only=True),
+        AutocompletePanel("sections", read_only=True),
         AutocompletePanel("titles", read_only=True),
     ]
 
