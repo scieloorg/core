@@ -2269,10 +2269,11 @@ class ArticleExporter(BaseExporter):
 class RelatedArticle(CommonControlField):
     """Relacionamento entre artigos via DOI."""
     
-    article = models.ForeignKey(
+    article = ParentalKey(
         Article,
         on_delete=models.CASCADE,
-        related_name="source_relations",
+        related_name="related_articles",
+        verbose_name=_("Article"),
     )
     
     href = models.CharField(
@@ -2373,7 +2374,7 @@ class RelatedArticle(CommonControlField):
             if not related_article and ext_link_type == "doi":
                 related_article = Article.objects.filter(doi__value__iexact=href).first()
 
-            obj = cls.get(article, href, related_type)
+            obj = cls.get(article, related_type, href)
             if obj.related_article != related_article:
                 obj.related_article = related_article
                 obj.updated_by = user
