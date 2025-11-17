@@ -180,6 +180,9 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         article.article_type = get_or_create_article_type(
             xmltree=xmltree, user=user, errors=errors
         )
+        add_peer_review_dates(
+            xmltree=xmltree, article=article, errors=errors
+        )
 
         # FOREIGN KEYS SIMPLES
         article.journal = get_journal(xmltree=xmltree, errors=errors)
@@ -278,6 +281,47 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             ),
         )
         raise
+
+
+def add_peer_review_dates(xmltree, article, errors):
+    """
+    Extrai e adiciona as datas e estatísticas de peer review do XML ao artigo.
+
+    Args:
+        xmltree: Árvore XML do artigo
+        article: Objeto Article para atualizar
+        errors: Lista para coletar erros
+    """
+    try:
+        dates = ArticleDates(xmltree=xmltree)
+        
+        # Obter estatísticas completas de peer review
+        peer_review_stats = dates.get_peer_reviewed_stats(serialize_dates=True)
+        
+        # Armazenar estatísticas completas em JSON
+        article.peer_review_stats = peer_review_stats
+        
+        # Extrair datas individuais em formato ISO
+        article.preprint_dateiso = peer_review_stats.get("preprint_date")
+        article.received_dateiso = peer_review_stats.get("received_date") 
+        article.accepted_dateiso = peer_review_stats.get("accepted_date")
+        
+        # Extrair intervalos em dias
+        article.days_preprint_to_received = peer_review_stats.get("days_from_preprint_to_received")
+        article.days_received_to_accepted = peer_review_stats.get("days_from_received_to_accepted")
+        article.days_accepted_to_published = peer_review_stats.get("days_from_accepted_to_published")
+        article.days_preprint_to_published = peer_review_stats.get("days_from_preprint_to_published")
+        article.days_receive_to_published = peer_review_stats.get("days_from_received_to_published")
+        
+        # Extrair flags de estimativa
+        article.days_preprint_to_received_estimated = peer_review_stats.get("estimated_days_from_preprint_to_received")
+        article.days_received_to_accepted_estimated = peer_review_stats.get("estimated_days_from_received_to_accepted")
+        article.days_accepted_to_published_estimated = peer_review_stats.get("estimated_days_from_accepted_to_published")
+        article.days_preprint_to_published_estimated = peer_review_stats.get("estimated_days_from_preprint_to_published")
+        article.days_receive_to_published_estimated = peer_review_stats.get("estimated_days_from_received_to_published")
+        
+    except Exception as e:
+        add_error(errors, "add_peer_review_dates", e)
 
 
 def add_data_availability_status(xmltree, errors, article, user):
