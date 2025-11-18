@@ -182,9 +182,27 @@ class Article(
         blank=True,
         help_text="Todas as datas e intervalos do processo de revisão por pares",
     )
-    preprint_dateiso = models.CharField(max_length=10, null=True, blank=True)
-    received_dateiso = models.CharField(max_length=10, null=True, blank=True)
-    accepted_dateiso = models.CharField(max_length=10, null=True, blank=True)
+    preprint_dateiso = models.CharField(
+        _("Preprint Date (ISO)"),
+        max_length=10,
+        null=True,
+        blank=True,
+        help_text=_("Preprint publication date in ISO format (YYYY-MM-DD)")
+    )
+    received_dateiso = models.CharField(
+        _("Received Date (ISO)"),
+        max_length=10,
+        null=True,
+        blank=True,
+        help_text=_("Date the article was received, in ISO format (YYYY-MM-DD)")
+    )
+    accepted_dateiso = models.CharField(
+        _("Accepted Date (ISO)"),
+        max_length=10,
+        null=True,
+        blank=True,
+        help_text=_("Date the article was accepted, in ISO format (YYYY-MM-DD)")
+    )
     days_preprint_to_received = models.IntegerField(null=True, blank=True)
     days_received_to_accepted = models.IntegerField(null=True, blank=True)
     days_accepted_to_published = models.IntegerField(null=True, blank=True)
