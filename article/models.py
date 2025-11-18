@@ -2469,10 +2469,9 @@ class ArticlePeerReviewStats(Article):
         ]
     )
         
-    @classmethod
-    def get_queryset(cls):
+    def get_queryset(self, request):
         """QuerySet otimizado com select_related e prefetch_related"""
-        return cls.objects.select_related(
+        return self.objects.select_related(
             'journal',
             'issue',
             'journal__official',
