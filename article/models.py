@@ -221,6 +221,7 @@ class Article(
     ]
 
     panels_open_science = [
+        InlinePanel("related_articles", label=_("Related Articles")),
         AutocompletePanel("license", read_only=True),
         FieldPanel("data_availability_status", read_only=True),
         InlinePanel(
@@ -846,6 +847,16 @@ class Article(
 
     def add_event(self, user, name):
         return ArticleEvent.create(user, self, name)
+    
+    def add_related_article(self, user, href, ext_link_type, related_type, related_article=None):            
+        return RelatedArticle.create_or_update(
+            user,
+            self,
+            href, 
+            ext_link_type,
+            related_type,
+            related_article=related_article,
+        )
 
     @classmethod
     def mark_items_as_public(
@@ -2284,6 +2295,124 @@ class ArticleExporter(BaseExporter):
         related_name="exporter",
         verbose_name=_("Article"),
     )
+
+
+class RelatedArticle(CommonControlField):
+    """Relacionamento entre artigos via DOI."""
+    
+    article = ParentalKey(
+        Article,
+        on_delete=models.CASCADE,
+        related_name="related_articles",
+        verbose_name=_("Article"),
+    )
+    
+    href = models.CharField(
+        max_length=255,
+        verbose_name=_("DOI"),
+        help_text=_("Digital Object Identifier of the related article."),
+    )
+    ext_link_type = models.CharField(
+        max_length=3,
+        verbose_name=_("Link Type"),
+        help_text=_("Type of external link."),
+    )
+    related_type = models.CharField(
+        max_length=50,
+        choices=choices.RELATED_ARTICLE_TYPE_CHOICES,
+        verbose_name=_("Related Article Type"),
+        help_text=_("Type of relationship between articles."),
+    )
+    related_article = models.ForeignKey(
+        Article,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="target_relations",
+        verbose_name=_("Related Article"),
+        help_text=_("The related article instance, if available in the system."),
+    )
+    class Meta:
+        unique_together = [('article', 'href', 'related_type')]
+        indexes = [
+            models.Index(fields=['article', 'href', 'related_type']),
+            models.Index(fields=['href']),
+        ]
+        verbose_name = _("Related Article")
+        verbose_name_plural = _("Related Articles")
+
+    panels = [
+        FieldPanel("href"),
+        FieldPanel("ext_link_type"),
+        FieldPanel("related_type"),
+        AutocompletePanel("related_article"),
+    ]
+
+    base_form_class = CoreAdminModelForm
+
+    def __str__(self):
+        return f"{self.article} -> {self.href} {self.related_article} ({self.related_type})"
+
+    @property
+    def data(self):
+        return {
+            'href': self.href,
+            'ext_link_type': self.ext_link_type,
+            'related_type': self.related_type,
+            'related_article_id': self.related_article.id if self.related_article else None,
+        }
+
+    @classmethod
+    def get(cls, article, related_type, href):
+        """Obtém um relacionamento específico."""
+        return cls.objects.get(
+            article=article,
+            href=href,
+            related_type=related_type,
+        )
+
+    @classmethod
+    def create(cls, user, article, href, ext_link_type, related_type, related_article=None):
+        """Cria um novo relacionamento entre artigos."""
+        if not user:
+            raise ValueError("User is required")
+        if not article:
+            raise ValueError("Article is required")
+        if not href:
+            raise ValueError("DOI value is required")
+        if not ext_link_type:
+            raise ValueError("External link type is required")
+        if not related_type:
+            raise ValueError("Related type is required")
+            
+        try:
+            obj = cls()
+            obj.article = article
+            obj.href = href
+            obj.ext_link_type = ext_link_type
+            obj.related_type = related_type
+            obj.related_article = related_article
+            obj.creator = user
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(article, related_type, href)
+
+    @classmethod
+    def create_or_update(cls, user, article, href, ext_link_type, related_type, related_article=None):
+        """Obtém ou cria um relacionamento entre artigos."""
+        try:
+            if not related_article and ext_link_type == "doi":
+                related_article = Article.objects.filter(doi__value__iexact=href).first()
+
+            obj = cls.get(article, related_type, href)
+            if obj.related_article != related_article:
+                obj.related_article = related_article
+                obj.updated_by = user
+                obj.save()
+            return obj
+        except cls.DoesNotExist:
+            return cls.create(user, article, href, ext_link_type, related_type, related_article)
 
 
 class ArticlePeerReviewStats(Article):
