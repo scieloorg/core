@@ -10,6 +10,7 @@ from article.models import (
     ArticleSource,
     ArticleAvailability,
     AMArticle,
+    ArticlePeerReviewStats
 )
 from config.menu import get_menu_order
 
@@ -182,6 +183,45 @@ class AMArticleSnippetViewSet(SnippetViewSet):
     list_per_page = 25
 
 
+class ArticlePeerReviewStatsSnippetViewSet(SnippetViewSet):
+    model = ArticlePeerReviewStats
+    menu_label = _("Peer Review Stats")
+    menu_icon = "chart-bar"
+    menu_order = 400
+
+    list_display = (
+        "sps_pkg_name",
+        "pid_v3",
+        "pid_v2",
+        "days_preprint_to_received",
+        "days_received_to_accepted",
+        "days_accepted_to_published",
+        "days_preprint_to_published",
+        "days_receive_to_published",
+    )
+    list_filter = [
+        "journal__scielojournal__collection",
+        "issue__year",
+        "journal",
+        "article_type",
+        # Filtros de range livre para o usuário informar valores
+        "days_preprint_to_received",
+        "days_received_to_accepted",
+        "days_accepted_to_published",
+        
+        # Filtros para flags de estimativa
+        "days_receive_to_published_estimated",
+    ]
+    search_fields = (
+        "titles__plain_text",
+        "pid_v2",
+        "sps_pkg_name",
+        "pid_v3",
+    )
+    ordering = ["-updated"]
+    list_per_page = 25
+
+
 class ArticleSnippetViewSetGroup(SnippetViewSetGroup):
     menu_label = _("Articles")
     menu_icon = "folder-open-inverse"
@@ -194,6 +234,7 @@ class ArticleSnippetViewSetGroup(SnippetViewSetGroup):
         ArticleFundingSnippetViewSet,
         ArticleSourceSnippetViewSet,
         AMArticleSnippetViewSet,
+        ArticlePeerReviewStatsSnippetViewSet,
     )
 
 

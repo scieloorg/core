@@ -176,6 +176,44 @@ class Article(
         default=choices.DATA_AVAILABILITY_STATUS_NOT_PROCESSED,
     )
 
+    peer_review_stats = models.JSONField(
+        _("Peer review statistics"),
+        default=dict,
+        blank=True,
+        help_text="Todas as datas e intervalos do processo de revisão por pares",
+    )
+    preprint_dateiso = models.CharField(
+        _("Preprint Date (ISO)"),
+        max_length=10,
+        null=True,
+        blank=True,
+        help_text=_("Preprint publication date in ISO format (YYYY-MM-DD)")
+    )
+    received_dateiso = models.CharField(
+        _("Received Date (ISO)"),
+        max_length=10,
+        null=True,
+        blank=True,
+        help_text=_("Date the article was received, in ISO format (YYYY-MM-DD)")
+    )
+    accepted_dateiso = models.CharField(
+        _("Accepted Date (ISO)"),
+        max_length=10,
+        null=True,
+        blank=True,
+        help_text=_("Date the article was accepted, in ISO format (YYYY-MM-DD)")
+    )
+    days_preprint_to_received = models.IntegerField(null=True, blank=True)
+    days_received_to_accepted = models.IntegerField(null=True, blank=True)
+    days_accepted_to_published = models.IntegerField(null=True, blank=True)
+    days_preprint_to_published = models.IntegerField(null=True, blank=True)
+    days_receive_to_published = models.IntegerField(null=True, blank=True)
+    days_preprint_to_received_estimated = models.BooleanField(null=True, blank=True)
+    days_received_to_accepted_estimated = models.BooleanField(null=True, blank=True)
+    days_accepted_to_published_estimated = models.BooleanField(null=True, blank=True)
+    days_preprint_to_published_estimated = models.BooleanField(null=True, blank=True)
+    days_receive_to_published_estimated = models.BooleanField(null=True, blank=True)
+
     base_form_class = CoreAdminModelForm
 
     # Metadados principais do artigo
@@ -285,8 +323,16 @@ class Article(
             ),
             models.Index(fields=["pid_v2"]),
             models.Index(fields=["is_classic_public"]),
+            models.Index(fields=["is_new_public"]),
             models.Index(fields=["pp_xml"]),
             models.Index(fields=["data_availability_status"]),
+            models.Index(fields=["article_type"]),
+            models.Index(fields=["days_preprint_to_received"]),
+            models.Index(fields=["days_received_to_accepted"]),
+            models.Index(fields=["days_accepted_to_published"]),
+            models.Index(fields=["days_preprint_to_published"]),
+            models.Index(fields=["days_receive_to_published"]),
+            models.Index(fields=["days_receive_to_published_estimated"]),
         ]
 
     def __unicode__(self):
@@ -2382,3 +2428,70 @@ class RelatedArticle(CommonControlField):
             return obj
         except cls.DoesNotExist:
             return cls.create(user, article, href, ext_link_type, related_type, related_article)
+
+
+class ArticlePeerReviewStats(Article):
+    """
+    Proxy model para análise de peer review com campos relacionados pré-carregados.
+    """
+    
+    class Meta:
+        proxy = True
+        verbose_name = _("Peer Review Stats")
+        verbose_name_plural = _("Peer Review Stats")
+        
+    # Informações básicas do artigo
+    panels_basic_info = [
+        FieldPanel("sps_pkg_name", read_only=True),
+        AutocompletePanel("issue", read_only=True),
+        AutocompletePanel("journal", read_only=True),
+        FieldPanel("article_type", read_only=True),
+        FieldPanel("data_availability_status", read_only=True),
+    ]
+    
+    # Datas do processo de peer review
+    panels_dates = [
+        FieldPanel("preprint_dateiso", read_only=True),
+        FieldPanel("received_dateiso", read_only=True),
+        FieldPanel("accepted_dateiso", read_only=True),
+    ]
+    
+    # Intervalos entre as datas (em dias)
+    panels_intervals = [
+        FieldPanel("days_preprint_to_received", read_only=True),
+        FieldPanel("days_preprint_to_received_estimated", read_only=True),
+        FieldPanel("days_received_to_accepted", read_only=True),
+        FieldPanel("days_received_to_accepted_estimated", read_only=True),
+        FieldPanel("days_accepted_to_published", read_only=True),
+        FieldPanel("days_accepted_to_published_estimated", read_only=True),
+        FieldPanel("days_preprint_to_published", read_only=True),
+        FieldPanel("days_preprint_to_published_estimated", read_only=True),
+        FieldPanel("days_receive_to_published", read_only=True),
+        FieldPanel("days_receive_to_published_estimated", read_only=True),
+    ]
+
+    # Estatísticas completas
+    panels_statistics = [
+        FieldPanel("peer_review_stats", read_only=True),
+    ]
+    
+    edit_handler = TabbedInterface(
+        [
+            ObjectList(panels_basic_info, heading=_("Basic Information")),
+            ObjectList(panels_dates, heading=_("Key Dates")),
+            ObjectList(panels_intervals, heading=_("Time Intervals")),
+            ObjectList(panels_statistics, heading=_("Complete Statistics")),
+        ]
+    )
+        
+    def get_queryset(self, request):
+        """QuerySet otimizado com select_related e prefetch_related"""
+        return self.objects.select_related(
+            'journal',
+            'issue',
+            'journal__official',
+        ).prefetch_related(
+            'doi',
+            'titles',
+            'languages',
+        )
