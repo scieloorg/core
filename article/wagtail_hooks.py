@@ -1,7 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
-from wagtail_rangefilter.filters import NumericRangeFilter
 
 from article.models import (
     Article,
@@ -192,8 +191,8 @@ class ArticlePeerReviewStatsSnippetViewSet(SnippetViewSet):
 
     list_display = (
         "sps_pkg_name",
-        "journal",
-        "issue",
+        "pid_v3",
+        "pid_v2",
         "days_preprint_to_received",
         "days_received_to_accepted",
         "days_accepted_to_published",
@@ -206,11 +205,12 @@ class ArticlePeerReviewStatsSnippetViewSet(SnippetViewSet):
         "journal",
         "article_type",
         # Filtros de range livre para o usuário informar valores
-        ("days_preprint_to_received", NumericRangeFilter),
-        ("days_received_to_accepted", NumericRangeFilter),
-        ("days_accepted_to_published", NumericRangeFilter),
-        ("days_preprint_to_published", NumericRangeFilter),
-        ("days_receive_to_published", NumericRangeFilter),
+        "days_preprint_to_received",
+        "days_received_to_accepted",
+        "days_accepted_to_published",
+        "days_preprint_to_published",
+        "days_receive_to_published",
+        
         # Filtros para flags de estimativa
         "days_preprint_to_received_estimated",
         "days_received_to_accepted_estimated",
