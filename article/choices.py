@@ -55,3 +55,68 @@ DATA_AVAILABILITY_STATUS = (
     (DATA_AVAILABILITY_STATUS_ABSENT, _("Informação ausente no XML")),
     (DATA_AVAILABILITY_STATUS_NOT_PROCESSED, _("XML não processado")),
 )
+
+# Constantes para cada tipo de relacionamento
+RELATED_TYPE_CORRECTED_ARTICLE = 'corrected-article'
+RELATED_TYPE_CORRECTION_FORWARD = 'correction-forward'
+RELATED_TYPE_RETRACTED_ARTICLE = 'retracted-article'
+RELATED_TYPE_RETRACTION_FORWARD = 'retraction-forward'
+RELATED_TYPE_PARTIAL_RETRACTION = 'partial-retraction'
+RELATED_TYPE_PARTIAL_RETRACTION_FORWARD = 'partial-retraction-forward'
+RELATED_TYPE_ADDENDED_ARTICLE = 'addended-article'
+RELATED_TYPE_ADDENDUM = 'addendum'
+RELATED_TYPE_EXPRESSION_OF_CONCERN = 'expression-of-concern'
+RELATED_TYPE_OBJECT_OF_CONCERN = 'object-of-concern'
+RELATED_TYPE_COMMENTARY_ARTICLE = 'commentary-article'
+RELATED_TYPE_COMMENTARY = 'commentary'
+RELATED_TYPE_REPLY_TO_COMMENTARY = 'reply-to-commentary'
+RELATED_TYPE_COMMENTARY_REPLY_OBJECT = 'commentary-reply-object'
+RELATED_TYPE_LETTER = 'letter'
+RELATED_TYPE_LETTER_OBJECT = 'letter-object'
+RELATED_TYPE_REPLY_TO_LETTER = 'reply-to-letter'
+RELATED_TYPE_LETTER_REPLY_OBJECT = 'letter-reply-object'
+RELATED_TYPE_REVIEWED_ARTICLE = 'reviewed-article'
+RELATED_TYPE_REVIEWER_REPORT = 'reviewer-report'
+RELATED_TYPE_PREPRINT = 'preprint'
+RELATED_TYPE_PUBLISHED_ARTICLE = 'published-article'
+
+# Choices para tipos de relacionamentos entre artigos
+RELATED_ARTICLE_TYPE_CHOICES = [
+    # Erratas e correções
+    (RELATED_TYPE_CORRECTED_ARTICLE, _('Errata')),
+    (RELATED_TYPE_CORRECTION_FORWARD, _('Documento corrigido pela errata')),
+    
+    # Retrações
+    (RELATED_TYPE_RETRACTED_ARTICLE, _('Retratação total')),
+    (RELATED_TYPE_RETRACTION_FORWARD, _('Documento retratado totalmente')),
+    (RELATED_TYPE_PARTIAL_RETRACTION, _('Retratação parcial')),
+    (RELATED_TYPE_PARTIAL_RETRACTION_FORWARD, _('Documento retratado parcialmente')),
+    
+    # Adendos
+    (RELATED_TYPE_ADDENDED_ARTICLE, _('Adendo')),
+    (RELATED_TYPE_ADDENDUM, _('Documento objeto do adendo')),
+    
+    # Manifestações de preocupação
+    (RELATED_TYPE_EXPRESSION_OF_CONCERN, _('Manifestação de preocupação')),
+    (RELATED_TYPE_OBJECT_OF_CONCERN, _('Documento objeto de manifestação de preocupação')),
+    
+    # Comentários e respostas
+    (RELATED_TYPE_COMMENTARY_ARTICLE, _('Comentário')),
+    (RELATED_TYPE_COMMENTARY, _('Documento comentado')),
+    (RELATED_TYPE_REPLY_TO_COMMENTARY, _('Resposta para um comentário')),
+    (RELATED_TYPE_COMMENTARY_REPLY_OBJECT, _('Comentário objeto da resposta')),
+    
+    # Cartas e respostas
+    (RELATED_TYPE_LETTER, _('Carta')),
+    (RELATED_TYPE_LETTER_OBJECT, _('Documento a que se refere a carta')),
+    (RELATED_TYPE_REPLY_TO_LETTER, _('Resposta para uma carta')),
+    (RELATED_TYPE_LETTER_REPLY_OBJECT, _('Carta objeto da resposta')),
+    
+    # Pareceres
+    (RELATED_TYPE_REVIEWED_ARTICLE, _('Parecer (revisão por pares)')),
+    (RELATED_TYPE_REVIEWER_REPORT, _('Documento com parecer (revisão por pares)')),
+    
+    # Preprints
+    (RELATED_TYPE_PREPRINT, _('Manuscrito disponibilizado em acesso aberto em servidor de preprints')),
+    (RELATED_TYPE_PUBLISHED_ARTICLE, _('Artigo publicado baseado no preprint')),
+]
