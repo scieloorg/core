@@ -479,56 +479,56 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
     def prepare_collections(self, obj):
         """The ISSN is on SciELO Journal models.SciELOJournal.objects.filter(journal=j)[0].issn_scielo"""
-        # set com os issns
         if obj.journal:
-            return set(
-                [
-                    j.issn_scielo
-                    for j in SciELOJournal.objects.filter(journal=obj.journal)
-                ]
-            )
+            issns = [
+                j.issn_scielo
+                for j in SciELOJournal.objects.filter(journal=obj.journal)
+                if j.issn_scielo
+            ]
+            return list(set(issns)) if issns else []
+        return []  # ← CRÍTICO: sempre retornar lista
 
     def prepare_communities(self, obj):
-        """The collection field is multi-value, so may contain N collection.
-        IMPORTANT: the attribute of the ``obj`` is a property with a query which
-        can return no record that is very weak.
-        """
+        """The collection field is multi-value, so may contain N collection."""
         if obj.collections:
-            if obj.collections:
-                return ["com_%s" % col for col in obj.collections]
+            try:
+                return ["com_%s" % col.acron3 for col in obj.collections if col.acron3]
+            except Exception:
+                return []
+        return []  # ← CRÍTICO: sempre retornar lista
 
     def prepare_titles(self, obj):
         """The list of titles."""
         if obj.titles:
-            return set([title.plain_text for title in obj.titles.all()])
+            return list(set([title.plain_text for title in obj.titles.all()]))
+        return []
 
     def prepare_creator(self, obj):
-        """The list of authors is the researchers on the models that related with
-        class PersonName, so we used ``select_related`` to ensure that
-        person_name is not null.
-        """
+        """..."""
         if obj.researchers:
             researchers = obj.researchers.select_related("person_name").filter(
                 person_name__isnull=False
             )
-            return set([str(researcher.person_name) for researcher in researchers])
+            return list(set([str(researcher.person_name) for researcher in researchers]))
+        return []
 
     def prepare_collab(self, obj):
         """This is the instituional author."""
         if obj.collab:
-            return set([collab.collab for collab in obj.collab.all()])
+            return list(set([collab.collab for collab in obj.collab.all()]))
+        return []
 
     def prepare_kw(self, obj):
         """The keywords of the article."""
         if obj.keywords:
-            return set([keyword.text for keyword in obj.keywords.all()])
+            return list(set([keyword.text for keyword in obj.keywords.all()]))
+        return []
 
     def prepare_description(self, obj):
-        """The abstracts of the articles
-        This is a property that filter by article ``DocumentAbstract.objects.filter(article=self)``
-        """
+        """The abstracts of the articles..."""
         if obj.abstracts:
-            return set([abs.plain_text for abs in obj.abstracts.all()])
+            return list(set([abs.plain_text for abs in obj.abstracts.all()]))
+        return []
 
     def prepare_dates(self, obj):
         """This the publication date, that is format by YYYY-MM-DD
@@ -547,7 +547,8 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_la(self, obj):
         """The language of the article."""
         if obj.languages:
-            return set([language.code2 for language in obj.languages.all()])
+            return list(set([language.code2 for language in obj.languages.all()]))
+        return []
 
     def prepare_identifier(self, obj):
         """Add the all identifier to the article:
@@ -1888,5 +1889,3 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         return Article
 
     def index_queryset(self, using=None):
-        return self.get_model().objects.filter(is_classic_public=True)
-
