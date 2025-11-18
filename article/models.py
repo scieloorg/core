@@ -305,6 +305,7 @@ class Article(
             ),
             models.Index(fields=["pid_v2"]),
             models.Index(fields=["is_classic_public"]),
+            models.Index(fields=["is_new_public"]),
             models.Index(fields=["pp_xml"]),
             models.Index(fields=["data_availability_status"]),
             models.Index(fields=["article_type"]),
@@ -313,10 +314,6 @@ class Article(
             models.Index(fields=["days_accepted_to_published"]),
             models.Index(fields=["days_preprint_to_published"]),
             models.Index(fields=["days_receive_to_published"]),
-            models.Index(fields=["days_preprint_to_received_estimated"]),
-            models.Index(fields=["days_received_to_accepted_estimated"]),
-            models.Index(fields=["days_accepted_to_published_estimated"]),
-            models.Index(fields=["days_preprint_to_published_estimated"]),
             models.Index(fields=["days_receive_to_published_estimated"]),
         ]
 

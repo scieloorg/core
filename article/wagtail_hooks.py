@@ -208,14 +208,8 @@ class ArticlePeerReviewStatsSnippetViewSet(SnippetViewSet):
         "days_preprint_to_received",
         "days_received_to_accepted",
         "days_accepted_to_published",
-        "days_preprint_to_published",
-        "days_receive_to_published",
         
         # Filtros para flags de estimativa
-        "days_preprint_to_received_estimated",
-        "days_received_to_accepted_estimated",
-        "days_accepted_to_published_estimated",
-        "days_preprint_to_published_estimated",
         "days_receive_to_published_estimated",
     ]
     search_fields = (
