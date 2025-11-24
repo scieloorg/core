@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from organization import models
 from wagtail.models.sites import Site
-from core.utils.utils import get_url_file
+from core.utils.utils import get_url_file_from_image_field
 
 
 class OrganizationSerializer(serializers.ModelSerializer):
@@ -10,7 +10,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
     def get_logo_url(self, obj):
         if obj.logo:
-            return get_url_file(obj.logo)
+            return get_url_file_from_image_field(obj.logo)
         return None
 
     def get_location(self, obj):

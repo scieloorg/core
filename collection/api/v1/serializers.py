@@ -3,7 +3,7 @@ from wagtail.models.sites import Site
 
 from collection import models
 from core.api.v1.serializers import LanguageSerializer
-from core.utils.utils import get_url_file
+from core.utils.utils import get_url_file_from_wagtail_images
 from organization.api.v1.serializers import OrganizationSerializer
 
 
@@ -61,7 +61,7 @@ class CollectionLogoSerializer(serializers.ModelSerializer):
     
     def get_logo_url(self, obj):
         if obj.logo:
-            return get_url_file(obj.logo)
+            return get_url_file_from_wagtail_images(obj.logo)
         return None
 
 

@@ -128,15 +128,31 @@ def get_hostname():
     return f"http://{default_site.hostname}"
 
 
-def get_url_file(file):
+def get_url_file_from_wagtail_images(file):
     """
-    Return the URL of the file.
+    Return the url of the file from Wagtail ImageField
     Parameters:
         file: File object
     Returns:
         URL of the file
     """
     domain = get_hostname()
+    domain = "http://172.20.0.1:8009"
     if domain:
         return f"{domain}{file.file.url}"
+    return None
+
+
+def get_url_file_from_image_field(file):
+    """
+    Return the url of the file from ImageField
+    Parameters:
+        file: ImageField object
+    Returns:
+        URL of the file
+    """
+    domain = get_hostname()
+    domain = "http://172.20.0.1:8009"
+    if domain:
+        return f"{domain}{file.url}"
     return None
