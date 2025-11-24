@@ -7,6 +7,7 @@ from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
+from django.core.exceptions import ValidationError
 
 from core.forms import CoreAdminModelForm
 from core.models import (
@@ -418,6 +419,45 @@ class CollectionLogo(Orderable, BaseLogo):
         unique_together = [
             ('collection', 'language', 'purpose'),
         ]
+
+    def clean(self):
+        validation_logo_dimensions = {
+            'homepage': {
+                'max_width': 200,
+                'max_height': 100,
+            },
+            'header': {
+                'max_width': 200,
+                'max_height': 100,
+            },
+            'logo_drop_menu': {
+                'max_width': 200,
+                'max_height': 100,
+            },
+            'footer': {
+                'max_width': 200,
+                'max_height': 100,
+            },
+            'menu': {
+                'max_width': 200,
+                'max_height': 100,
+            },
+        }
+        if self.logo:
+            self.validate_image_dimensions(self.logo, validation_logo_dimensions[self.purpose])
+
+    @staticmethod
+    def validate_image_dimensions(image, validation_logo_dimensions):
+        width = image.width
+        height = image.height
+        max_width = validation_logo_dimensions['max_width']
+        max_height = validation_logo_dimensions['max_height']
+        if width < max_width or height > max_height:
+            raise ValidationError({
+                'logo': _(f'Image dimensions ({width}x{height}px) exceed the maximum allowed size. '
+                    f' Width must be ≤ {max_width}px and height must be ≤ {max_height}px. '    
+                )
+            })
 
     def __str__(self):
         return f"{self.collection} - {self.language} ({self.purpose})"
