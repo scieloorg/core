@@ -98,14 +98,15 @@ def build_collection_webhook(event, collection_acron, headers=None):
     }
 
     if not headers:
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-        }
         token = issue_jwt_for_flask(
             sub="service:django",
             claims={"roles": ["m2m"], "scope": "ingest:write"}
         )
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+
     _send_payload(url=pattern_url, headers=headers, payload=payload)
 
 
