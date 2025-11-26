@@ -52,34 +52,6 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.RemoveField(
-            model_name="codesectionissue",
-            name="creator",
-        ),
-        migrations.RemoveField(
-            model_name="codesectionissue",
-            name="updated_by",
-        ),
-        migrations.RemoveField(
-            model_name="sectionissue",
-            name="code_section",
-        ),
-        migrations.AlterUniqueTogether(
-            name="sectionissue",
-            unique_together=None,
-        ),
-        migrations.RemoveField(
-            model_name="sectionissue",
-            name="creator",
-        ),
-        migrations.RemoveField(
-            model_name="sectionissue",
-            name="language",
-        ),
-        migrations.RemoveField(
-            model_name="sectionissue",
-            name="updated_by",
-        ),
-        migrations.RemoveField(
             model_name="issue",
             name="code_sections",
         ),
