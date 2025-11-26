@@ -293,16 +293,11 @@ class JournalTableOfContentsViewSet(SnippetViewSet):
         "text",
         "code",
         "journal__title",
-        "collection__name",
+        "collection__main_name",
         "collection__acron3",
     )
     list_per_page = 20
-    ordering = ("journal__title", "text", "code", "collection__name")
-    
-    def get_queryset(self, request):
-        """Otimizar queryset com select_related para evitar N+1 queries"""
-        qs = super().get_queryset(request)
-        return qs.select_related("journal", "collection", "language")
+    ordering = ("journal__title", "text", "code", "collection__main_name")
 
 
 class JournalSnippetViewSetGroup(SnippetViewSetGroup):
