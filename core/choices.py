@@ -234,7 +234,6 @@ SOCIAL_NETWORK_NAMES = [
     ("youtube", "Youtube"),
 ]
 
-
 LOGO_SIZE_CHOICES = [
     ("thumbnail", _("Thumbnail (150x150)")),
     ("small", _("Small (300x300)")),
