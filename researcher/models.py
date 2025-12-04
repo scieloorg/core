@@ -6,23 +6,21 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import IntegrityError, models
 from django.db.models import Q
-from django.core.exceptions import NON_FIELD_ERRORS
 from django.utils.translation import gettext_lazy as _
-from modelcluster.fields import ParentalKey, ParentalManyToManyField
+from institution.models import BaseInstitution
+from location.models import Location
+from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
+from organization.models import Organization
+from tracker.models import UnexpectedEvent
 from wagtail.admin.panels import FieldPanel, InlinePanel
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
-from core.choices import MONTHS
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField, Gender
 from core.utils.extracts_normalized_email import extracts_normalized_email
 from core.utils.standardizer import remove_extra_spaces
-from institution.models import BaseInstitution
-from location.models import Location
-from organization.models import Organization
-from tracker.models import UnexpectedEvent
 
 from . import choices
 from .exceptions import InvalidOrcidError, PersonNameCreateError
@@ -1111,16 +1109,17 @@ class ResearcherIds(CommonControlField):
         if self.source_name == "EMAIL":
             self.validate_email(self.identifier)
         if self.source_name == "LATTES":
-            ...
+            self.validate_lattes(self.identifier)
         return super().clean()
 
     def save(self, **kwargs):
-        if self.source_name == "EMAIL":
+        if self.source_name == "EMAIL" and self.identifier:
             email = extracts_normalized_email(self.identifier)
             self.validate_email(email)
             self.identifier = email
-        elif self.source_name == "LATTES":
-            self.identifier = self.validate_lattes(self.identifier)
+        elif self.source_name == "LATTES" and self.identifier:
+            clean_value = self.extract_lattes(self.identifier)
+            self.identifier = clean_value
         super().save(**kwargs)
 
     @classmethod
@@ -1188,9 +1187,32 @@ class ResearcherIds(CommonControlField):
             raise ValidationError({"identifier": f"Email {email} is not valid"})
 
     @staticmethod
+    def extract_lattes(lattes):
+        """
+        Extract the 16-digit Lattes ID from a URL or plain number.
+        
+        Supports:
+        - http://lattes.cnpq.br/1234567890123456
+        - https://lattes.cnpq.br/1234567890123456
+        - 1234567890123456
+        - 1234.5678.9012.3456
+        
+        Returns:
+        - str: The clean 16-digit Lattes ID
+        """
+        if not lattes:
+            return lattes
+        
+        url_match = re.search(r'(?:https?://)?(?:www\.)?lattes\.cnpq\.br/(\d{16})', lattes)
+        if url_match:
+            return url_match.group(1)
+        
+        return re.sub(r'[\.\-]', '', lattes)
+
+    @staticmethod
     def validate_lattes(lattes):
-        clean_value = re.sub(r'[\.\-]', '', lattes)
-        if not re.fullmatch(r'\d{16}', clean_value):
+        clean_value = ResearcherIds.extract_lattes(lattes)
+        if clean_value and not re.fullmatch(r'\d{16}', clean_value):
             raise ValidationError({"identifier": f"Lattes {lattes} is not valid"})
 
     @staticmethod
