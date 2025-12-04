@@ -49,7 +49,7 @@ wagtail==7.1.1  # https://github.com/wagtail/wagtail
 wagtail-django-recaptcha==2.1.1  # https://pypi.org/project/wagtail-django-recaptcha/
 wagtail-localize==1.12.2  # https://github.com/wagtail/wagtail-localize
 wagtail-modeladmin==2.2.0  # https://github.com/wagtail/wagtail-modeladmin
-wagtail-2fa-new==1.8.0  # https://pypi.org/project/wagtail-2fa-new/
+wagtail-2fa==1.7.1  # https://pypi.org/project/wagtail-2fa-new/
 
 # ==============================================================================
 # CACHE & SESSION
