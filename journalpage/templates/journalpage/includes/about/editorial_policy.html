@@ -5,9 +5,6 @@
 <h4 id="item-2">{% trans 'Política editorial' %}</h4>
 <!-- journal policy -->
 <h5 id="item-2-1">{% trans 'Conformidade com a Ciência Aberta' %}</h5>
-  {% if journal.url_oa %}
-    {{ journal.url_oa }}
-  {% endif %}
   {% for open_science in open_science_compliance %}
     {{ open_science.rich_text|richtext }}
   {% endfor %}
