@@ -1,0 +1,87 @@
+{% load i18n %}
+{% load wagtailcore_tags %}
+
+<hr>
+<h4 id="item-2">{% trans 'Política editorial' %}</h4>
+<!-- journal policy -->
+<h5 id="item-2-1">{% trans 'Conformidade com a Ciência Aberta' %}</h5>
+  {% if journal.url_oa %}
+    {{ journal.url_oa }}
+  {% endif %}
+  {% for open_science in open_science_compliance %}
+    {{ open_science.rich_text|richtext }}
+  {% endfor %}
+<h5 id="item-2-2">{% trans 'Dados abertos' %}</h5>
+    {% for od in open_data %}
+      {{ od.rich_text|richtext }}
+  {% endfor %}
+<h5 id="item-2-3">{% trans 'Preprint' %}</h5>
+    {% for p in preprint %}
+      {{ p.rich_text|richtext }}
+  {% endfor %}
+<h5 id="item-2-4">{% trans 'Peer review informado' %}</h5>
+<!-- processo de avaliação por pares aberto -->
+    {% for r in review %}
+      {{ r.rich_text|richtext }}
+  {% endfor %}
+<!-- Criar InlinePanel Ethics -->
+<!-- Organizar panels -->
+<h5 id="item-2-5">{% trans 'Ética' %}</h5>
+<ul type="disc">
+    {% for e in ethics %}
+        {{ e.rich_text|richtext }}
+    {% endfor %}
+</ul>
+<h5 id="item-2-5-1">{% trans 'Comitê de Ética' %}</h5>
+{% for ec in ecommittee %}
+    {{ ec.rich_text|richtext }}
+{% endfor %}
+<h5 id="item-2-5-2">{% trans 'Direitos Autorais' %}</h5>
+{% for c in copyright %}
+    {{ c.rich_text|richtext }}
+{% endfor %}
+<h5 id="item-2-5-3">{% trans 'Propriedade Intelectual' %}</h5>
+<ul type="disc">
+    {% for wr in website_responsibility %}
+        <li>
+            <strong>{% trans 'Responsabilidade do site:' %}</strong> {{ wr.rich_text|richtext }}
+        </li>
+    {% endfor %}
+    {% for wr in author_responsibility %}
+        <li>
+            <strong>{% trans 'Responsabilidade do autor:' %}</strong> {{ wr.rich_text|richtext }}
+        </li>
+    {% endfor %}
+</ul>
+<h5 id="item-2-5-4">{% trans 'Política de Ética e Más condutas' %}</h5>
+<p>
+    <strong>{% trans 'Política de retratação:' %}</strong>
+</p>
+{% for p in policies %}
+    {{ p.rich_text|richtext }}
+{% endfor %}
+<h5 id="item-2-5-5">{% trans 'Política sobre Conflito de Interesses' %}</h5>
+<ul type="disc">
+    {% for cp in conflict_policy %}
+        <li>{{ cp.rich_text|richtext }}</li>
+    {% endfor %}
+</ul>
+<h5 id="item-2-5-6">{% trans 'Questões de gênero' %}</h5>
+<ul type="disc">
+    {% for gi in gender_issues %}
+        <li>{{ gi.rich_text|richtext }}</li>
+    {% endfor %}
+</ul>
+<h5 id="item-2-6">{% trans 'Licença' %}</h5>
+<!-- informe a licença adotada pelo periódico
+                                https://br.creativecommons.org/licencas/  -->
+<br> {{ journal.journal_use_license.license_type }}
+<!-- Colocar em uma tabela ou tudo em uma linha -->
+<h5 id="item-2-7">{% trans 'Cobrança de taxas' %}</h5>
+<ul type="disc">
+    {% for fq in fee_charging %}
+        {{ fq.rich_text|richtext }}
+        <li>{% trans 'Moeda:' %} {{ fq.coin }}. {% trans 'Valor:' %} {{ fq.fee_charge }}</li>
+    {% endfor %}
+</ul>
+
