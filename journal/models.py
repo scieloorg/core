@@ -622,6 +622,9 @@ class Journal(CommonControlField, ClusterableModel):
     ]
 
     panels_scope_and_about = [
+        InlinePanel("mission", label=_("Mission"), classname="collapsed"),
+        InlinePanel("history", label=_("Brief History"), classname="collapsed"),
+        InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
         AutocompletePanel("indexed_at"),
         AutocompletePanel("additional_indexed_at"),
         AutocompletePanel("subject"),
@@ -629,9 +632,6 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
         AutocompletePanel("wos_db"),
         AutocompletePanel("wos_area"),
-        InlinePanel("mission", label=_("Mission"), classname="collapsed"),
-        InlinePanel("history", label=_("Brief History"), classname="collapsed"),
-        InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
     ]
 
     panels_institutions = [
