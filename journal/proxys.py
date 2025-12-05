@@ -59,7 +59,11 @@ class JournalProxyEditor(Journal):
 
     panels_open_science = [
         FieldPanel("open_access"),
-        FieldPanel("url_oa"),
+        InlinePanel(
+            "open_science_compliance",
+            label=_("Open Science Compliance"),
+            classname="collapsed",
+        ),
         InlinePanel(
             "file_oa", label=_("Open Science accordance form"), classname="collapsed"
         ),
@@ -67,11 +71,6 @@ class JournalProxyEditor(Journal):
         InlinePanel("open_data", label=_("Open data"), classname="collapsed"),
         InlinePanel("preprint", label=_("Preprint"), classname="collapsed"),
         InlinePanel("review", label=_("Peer review"), classname="collapsed"),
-        InlinePanel(
-            "open_science_compliance",
-            label=_("Open Science Compliance"),
-            classname="collapsed",
-        ),
     ]
 
     panels_policy = [

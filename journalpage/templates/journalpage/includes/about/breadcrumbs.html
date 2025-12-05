@@ -1,0 +1,48 @@
+{% load i18n %}
+{% load wagtailroutablepage_tags %}
+
+<!-- Only on mobile -->
+<section class="d-flex d-sm-none breadcrumb mt-3 mb-5 py-0 py-1">
+  <div class="container px-0">
+    <div class="row">
+      <div class="col">
+
+        <ol class=" breadcrumb mb-0 ps-0">
+          <li class="breadcrumb-item"><a href=""><span class="material-icons-outlined">navigate_before</span> {{ journal.title }}</a></li>
+        </ol>
+
+      </div>
+      <div class="col-3 pt-3">
+
+        <!-- share -->
+        {% include "journalpage/includes/share.html" %}
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Only on Desktop -->
+<section class="d-none d-md-flex breadcrumb mt-3 mb-5 py-0 py-1">
+  <div class="container">
+    <div class="row">
+      <div class="col">
+
+      <ol class="breadcrumb mb-0 ps-0">
+        <li class="breadcrumb-item"><a href="#" alt="Home"><span class="material-icons-outlined">home</span></a></li>
+        <li class="breadcrumb-item"><a href="#">{% trans 'Periódicos' %}</a></li>
+        <li class="breadcrumb-item"><a href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}">{{journal.title}}</a></li>
+        <li class="breadcrumb-item">{% trans 'Sobre o periódico' %}</li>
+      </ol>
+
+      </div>
+      <div class="col-3 pt-3">
+
+        <!-- share -->
+        {% include "journalpage/includes/share.html" %}
+
+      </div>
+    </div>
+  </div>
+</section>
+

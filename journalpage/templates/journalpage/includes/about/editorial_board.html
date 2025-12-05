@@ -1,0 +1,34 @@
+{% load i18n %}
+{% load custom_tags %}
+
+<hr>
+<h4 id="editors">{% trans 'CORPO EDITORIAL' %}</h4>
+<!-- Usar: instituição (mais sigla se houver), cidade, estado e país, orcid, Lattes (opcional para estrangeiros) e e-mail (divulgação opcional).
+     Considerar os papéis descritos abaixo: -->
+
+{% for role, role_display in role_editorial_board %}
+<h4 id="item-3-{{ forloop.counter }}">{{ role_display }}</h4>
+<ul type="disc">
+  {% with editorial_board|dict_key:role as members %}
+    {% for data in members %}
+      <li>
+        {{ data.researcher.fullname }}
+        {% if data.researcher_affiliation %}, {{ data.researcher_affiliation.name }}
+          {% if data.researcher_affiliation.location %}
+            , {{ data.researcher_affiliation.location.formatted_location }}
+          {% endif %}
+        {% endif %}
+        <br>
+        {% if data.researcher_orcid %}
+          ORCID <a target="_blank" href="https://orcid.org/{{ data.researcher_orcid }}">{{ data.researcher_orcid }}</a>
+        {% endif %}
+        {% if data.researcher_lattes %}
+          {% if data.researcher_orcid %} | {% endif %}
+          <a target="_blank" href="http://lattes.cnpq.br/{{ data.researcher_lattes }}">CV Lattes</a>
+        {% endif %}
+      </li>
+    {% endfor %}
+  {% endwith %}
+</ul>
+{% endfor %}
+

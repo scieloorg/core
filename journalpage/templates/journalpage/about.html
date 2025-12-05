@@ -4,567 +4,74 @@
 {% load wagtailroutablepage_tags %}
 {% load wagtailcore_tags %}
 {% load custom_tags %}
+
 {% block body_class %}journal about{% endblock %}
+
 {% block content %}
 {% include "journalpage/includes/header.html" %}
 {% include "journalpage/includes/journal_info.html" %}
 {% include "journalpage/includes/levelMenu.html" %}
 
-  {% block main_content %}
+{% block main_content %}
 
+<!-- Load About Page CSS -->
+<link rel="stylesheet" href="{% static 'journalpage/css/about.css' %}">
 
-  <style>
-    ul.scielo__menu-contexto,
-    ul.scielo__menu-contexto ul{
-      list-style: none;
-    }
-    ul.scielo__menu-contexto ul{
-      margin-bottom: 1rem;
-    }
-    ul.scielo__menu-contexto .nav-link{
-      padding:0;
-      color: gray;
-    }
-    ul.scielo__menu-contexto .nav-link.active{
-      color:#3867ce;
-    }
-    .sticky-top{
-      top: 80px;
-    }
+<!-- Breadcrumbs -->
+{% include "journalpage/includes/about/breadcrumbs.html" %}
 
-    .bd-example h5,
-    .bd-example h4{
-      margin-top: 3rem;
-    }
-    .bd-example hr{
-      margin-top: 3rem;
-    }
-    .bd-example ul{
-      margin-bottom: 3rem;
-    }
-    a{
-      word-wrap: break-word;
-    }
-  </style>
-
-    <!-- Only on mobile -->
-    <section class="d-flex d-sm-none breadcrumb mt-3 mb-5 py-0 py-1">
-      <div class="container px-0">
+<!-- Main Content Section -->
+<section class="journalContent">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 content journalSecundary">
         <div class="row">
           <div class="col">
-
-            <ol class=" breadcrumb mb-0 ps-0">
-              <li class="breadcrumb-item"><a href=""><span class="material-icons-outlined">navigate_before</span> {{ journal.title }}</a></li>
-            </ol>
-
-          </div>
-          <div class="col-3 pt-3">
-
-            <!-- share -->
-            {% include "journalpage/includes/share.html" %}
-
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Only on Desktop -->
-    <section class="d-none d-md-flex breadcrumb mt-3 mb-5 py-0 py-1">
-      <div class="container">
-        <div class="row">
-          <div class="col">
-
-          <ol class="breadcrumb mb-0 ps-0">
-            <li class="breadcrumb-item"><a href="#" alt="Home"><span class="material-icons-outlined">home</span></a></li>
-            <li class="breadcrumb-item"><a href="#">{% trans 'Periódicos' %}</a></li>
-            <li class="breadcrumb-item"><a href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}">{{journal.title}}</a></li>
-            <li class="breadcrumb-item">{% trans 'Sobre o periódico' %}</li>
-          </ol>
-
-          </div>
-          <div class="col-3 pt-3">
-
-            <!-- share -->
-            {% include "journalpage/includes/share.html" %}
-
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="journalContent">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12 content journalSecundary">
-            <!-- ini row prototipo -->
-            <div class="row">
-              <div class="col">
-                <!-- Ini template com dados do doc -->
-                <div class="bd-example">
-                  <div class="row">
-                    <div class="col-12 col-sm-9">
-                      <div data-bs-spy="scroll" data-bs-target="#navbar-example3" data-bs-offset="-200" class="" tabindex="0">
-                        <a name="about"></a>
-
-                        <h1 class="h4 pt-1" id="about">{% trans 'Sobre o periódico' %}</h1>
-                        <h5 id="item-1-1">{% trans 'Ficha Bibliográfica' %}</h5>
-
-                        <ul class="mb-4">
-                          <li>
-                            <strong>{% trans 'Título do periódico conforme registro do ISSN:' %}</strong>
-                            <i>{{ journal.official.title }}</i>
-                          </li>
-                          <li>
-                            <strong>{% trans 'Título abreviado:' %}</strong>
-                            <i>{{ journal.short_title }}</i>
-                          </li>
-                          <li>
-                            <strong>{% trans 'Publicação de:' %}</strong>
-                            {% for publisher in journal.publisher_history.all %}
-                              {% if publisher.organization %}
-                                <i>{{ publisher.organization.name }}</i>
-                              {% else %}
-                                <i>{{ publisher.institution.institution.institution_identification.name}}</i>
-                              {% endif %}
-                            {% endfor %}
-                          </li>
-                          <li>
-                            <strong>{% trans 'Periodicidade:' %}</strong>
-                            <i>{{ journal.get_frequency_display }}</i>
-                          </li>
-                          <li>
-                            <strong>{% trans 'Modalidade de publicação:' %}</strong>
-                            <i>{{ journal.get_publishing_model_display }}</i>
-                          </li>
-                          <li>
-                            <strong>{% trans 'Ano de criação do periódico:' %}</strong> {% if journal.official.initial_year %} <i>{{ journal.official.initial_year }}</i> {% endif %}
-                          </li>
-                          <li>
-                            <strong>{% trans 'Área:' %}</strong> {% for study_area in journal.subject.all %} <i>{{ study_area }}</i> {% endfor %}
-                          </li>
-                          {% if journal.official.issn_print %}
-                            <li>
-                              <strong>{% trans 'Versão impressa:' %}</strong>
-                              <i>{{ journal.official.issn_print }}</i>
-                            </li>
-                          {% endif %}
-                          {% if journal.official.issn_electronic %}
-                            <li>
-                              <strong>{% trans 'Versão on-line ISSN:' %}</strong>
-                              <i>{{ journal.official.issn_electronic }}</i>
-                            </li>
-                          {% endif %}
-                        </ul>
-                        <h5 id="item-1-2">{% trans 'Missão' %}</h5>
-                        {% for m in mission %}
-                          {{ m.rich_text|richtext }}
-                        {% endfor %}
-                        <h5 id="item-1-3">{% trans 'Breve Histórico' %}</h5>
-                        {% for bf in brief_history %}
-                          {{ bf.rich_text|richtext }}
-                        {% endfor %}
-                        <h5 id="item-1-4">{% trans 'Foco e escopo' %}</h5>
-                        {% for hs in focus_and_scope %}
-                          {{ hs.rich_text|richtext }}
-                        {% endfor %}
-                        <h5 id="item-1-5">{% trans 'Contato' %}</h5>
-
-                        <ul type="disc">
-                          <li>
-                            <strong>{% trans 'Endereço completo da unidade / instituição responsável pelo periódico:' %}</strong>
-                            <i>{{ journal.contact_address }}</i>
-                          </li>
-                          <li>
-                            <strong>{% trans 'Cidade:' %}</strong>
-                            <i>{{journal.contact_location.city}}</i>
-                          </li>
-                          <li>
-                            <strong>{% trans 'Estado:' %}</strong>
-                            <i>{{journal.contact_location.state}}</i>
-                          </li>
-                          <li>
-                            <strong>{% trans 'País:' %}</strong>
-                            <i>{{journal.contact_location.country}}</i>
-                          </li>
-                          <li>
-                            <strong>{% trans 'E-mail:' %}</strong>
-                            {% for email in journal.journal_email.all %}
-                              <i>{{email.email}}</i>
-                            {% endfor%}
-                          </li>
-                        </ul>
-                        <h5 id="item-1-6">{% trans 'Websites e Mídias Sociais' %}</h5>
-                        <ul type="disc">
-                          {% for sn in social_network %}
-                            <li>
-                              <a href="{{ sn.url }}">{{ sn.name }}</a>
-                            </li>
-                          {% endfor %}
-                        </ul>
-                        <h5 id="item-1-7">{% trans 'Fontes de indexação' %}</h5>
-                        <ul type="disc">
-                          {% for indexed_at in journal.indexed_at.all %}
-                            <li>{{ indexed_at.name }}</li>
-                          {% endfor %}
-                          {% for additional_indexed in journal.additional_indexed_at.all %}
-                            <li>{{additional_indexed.name}}</li>
-                          {% endfor%}
-                        </ul>
-                        <h5 id="item-1-8">{% trans 'Patrocinadores e agências de Fomento' %}</h5>
-                        <ul type="disc">
-                          {% for sponsor in sponsor_history %}
-                            {% if sponsor.organization %}
-                              <li>{{ sponsor.organization.name }}</li>
-                            {% else %}
-                              <li>{{ sponsor.institution.institution.institution_identification.name }}</li>
-                            {% endif %}
-                          {% endfor%}
-                        </ul>
-                        <!-- InlinePanel Preservacao Digital -->
-                        <!-- Panel Policy -->
-                        <h5 id="item-1-9">{% trans 'Preservação digital' %}</h5>
-                          {% if digital_preservation_clockss %}
-                            <!-- CLOCKSS system has permission to ingest, preserve, and serve this Archival Unit -->
-                            <div class="widget widget-Lockss widget-instance-IssueBrowseByYear_Lockss">
-
-                              <input class="at-locks-messaging" type="hidden" value="LOCKSS system has permission to collect, preserve, and serve this Archival Unit" />
-
-                              <input class="at-clockss-messaging" type="hidden" value="CLOCKSS system has permission to ingest, preserve, and serve this Archival Unit" />
-
-                            </div>
-                          {% endif%}
-                        <ul type="disc">
-                          {% for dp in digital_preservation %}
-                              <li>{{ dp.name }}</li>
-                          {% endfor %}
-                        </ul>
-                        <hr>
-                        <h4 id="item-2">{% trans 'Política editorial' %}</h4>
-                        <!-- journal policy -->
-                        <h5 id="item-2-1">{% trans 'Conformidade com a Ciência Aberta' %}</h5>
-                        <ul type="disc">
-                          {% if journal.url_oa %}
-                            {{ journal.url_oa }}
-                          {% endif %}
-                        </ul>
-                        <h5 id="item-2-2">{% trans 'Dados abertos' %}</h5>
-                        <ul type="disc">
-                            {% for od in open_data %}
-                                <li>{{ od.rich_text|richtext }}</li>
-                            {% endfor %}
-                        </ul>
-                        <h5 id="item-2-3">{% trans 'Preprint' %}</h5>
-                        <ul type="disc">
-                            {% for p in preprint %}
-                                <li>{{ p.rich_text|richtext }}</li>
-                            {% endfor %}
-                        </ul>
-                        <h5 id="item-2-4">{% trans 'Peer review informado' %}</h5>
-                        <!-- processo de avaliação por pares aberto -->
-                        <ul type="disc">
-                            {% for r in review %}
-                                <li>{{ r.rich_text|richtext }}</li>
-                            {% endfor %}
-                        </ul>
-                        <!-- Criar InlinePanel Ethics -->
-                        <!-- Organizar panels -->
-                        <h5 id="item-2-5">{% trans 'Ética' %}</h5>
-                        <ul type="disc">
-                            {% for e in ethics %}
-                                {{ e.rich_text|richtext }}
-                            {% endfor %}
-                        </ul>
-                        <h5 id="item-2-5-1">{% trans 'Comitê de Ética' %}</h5>
-                        {% for ec in ecommittee %}
-                            {{ ec.rich_text|richtext }}
-                        {% endfor %}
-                        <h5 id="item-2-5-2">{% trans 'Direitos Autorais' %}</h5>
-                        {% for c in copyright %}
-                            {{ c.rich_text|richtext }}
-                        {% endfor %}
-                        <h5 id="item-2-5-3">{% trans 'Propriedade Intelectual' %}</h5>
-                        <ul type="disc">
-                            {% for wr in website_responsibility %}
-                                <li>
-                                    <strong>{% trans 'Responsabilidade do site:' %}</strong> {{ wr.rich_text|richtext }}
-                                </li>
-                            {% endfor %}
-                            {% for wr in author_responsibility %}
-                                <li>
-                                    <strong>{% trans 'Responsabilidade do autor:' %}</strong> {{ wr.rich_text|richtext }}
-                                </li>
-                            {% endfor %}
-                        </ul>
-                        <h5 id="item-2-5-4">{% trans 'Política de Ética e Más condutas' %}</h5>
-                        <p>
-                            <strong>{% trans 'Política de retratação:' %}</strong>
-                        </p>
-                        <ul type="disc">
-                            {% for p in policies %}
-                                <li>{{ p.rich_text|richtext }}</li>
-                            {% endfor %}
-                        </ul>
-                        <h5 id="item-2-5-5">{% trans 'Política sobre Conflito de Interesses' %}</h5>
-                        <ul type="disc">
-                            {% for cp in conflict_policy %}
-                                <li>{{ cp.rich_text|richtext }}</li>
-                            {% endfor %}
-                        </ul>
-                        <h5 id="item-2-5-6">{% trans 'Questões de gênero' %}</h5>
-                        <ul type="disc">
-                            {% for gi in gender_issues %}
-                                <li>{{ gi.rich_text|richtext }}</li>
-                            {% endfor %}
-                        </ul>
-                        <h5 id="item-2-6">{% trans 'Licença' %}</h5>
-                        <!-- informe a licença adotada pelo periódico
-                                                        https://br.creativecommons.org/licencas/  -->
-                        <ul type="disc">
-                            <li>{% trans 'licença:' %} <br> {{ journal.use_license.license_type }}</li>
-                        </ul>
-                        <!-- Colocar em uma tabela ou tudo em uma linha -->
-                        <h5 id="item-2-7">{% trans 'Cobrança de taxas' %}</h5>
-                        <ul type="disc">
-                            {% for fq in fee_charging %}
-                                {{ fq.rich_text|richtext }}
-                                <li>{% trans 'Moeda:' %} {{ fq.coin }}. {% trans 'Valor:' %} {{ fq.fee_charge }}</li>
-                            {% endfor %}
-                        </ul>
-                        <hr>
-                        <h4 id="editors">{% trans 'CORPO EDITORIAL' %}</h4>
-                        <!-- Usar: instituição (mais sigla se houver), cidade, estado e país, orcid, Lattes (opcional para estrangeiros) e e-mail (divulgação opcional).
-                             Considerar os papéis descritos abaixo: -->
-
-                        {% for role, role_display in role_editorial_board %}
-                        <h4 id="item-3-{{ forloop.counter }}">{{ role_display }}</h4>
-                        <ul type="disc">
-                          {% with editorial_board|dict_key:role as members %}
-                            {% for data in members %}
-                              <li>
-                                {{ data.researcher.fullname }}
-                                {% if data.researcher_affiliation %}, {{ data.researcher_affiliation.name }}
-                                  {% if data.researcher_affiliation.location %}
-                                    , {{ data.researcher_affiliation.location.formatted_location }}
-                                  {% endif %}
-                                {% endif %}
-                                <br>
-                                {% if data.researcher_orcid %}
-                                  ORCID <a target="_blank" href="https://orcid.org/{{ data.researcher_orcid }}">{{ data.researcher_orcid }}</a>
-                                {% endif %}
-                                {% if data.researcher_lattes %}
-                                  {% if data.researcher_orcid %} | {% endif %}
-                                  <a target="_blank" href="http://lattes.cnpq.br/{{ data.researcher_lattes }}">CV Lattes</a>
-                                {% endif %}
-                              </li>
-                            {% endfor %}
-                          {% endwith %}
-                        </ul>
-                        {% endfor %}
-
-                        <hr>
-                        <h4 id="instructions">{% trans 'INSTRUÇÕES PARA OS AUTORES' %}</h4>
-                        <!-- O texto e o formato das instruções é livre e pode variar de acordo com o periódico ou com a área temática, entretanto, é necessário que sejam abordados os seguintes elementos:-->
-                        <h5 id="item-4-1">{% trans 'Tipos de documentos aceitos' %}</h5>
-                        <!-- Pode haver mais de um. Permitir adicionar novo -->
-                        <ul type="disc">
-                            {% for adt in accepted_documment_types %}
-                                {{ adt.rich_text|richtext }}
-                            {% endfor %}
-                        </ul>
-                        <h5 id="item-4-2">{% trans 'Contribuição dos Autores' %}</h5>
-                        {% for ac in authors_contributions %}
-                            {{ ac.rich_text|richtext }}
-                        {% endfor %}
-                        <!-- Tirar duvida. formato de como vai ficar -->
-                        <h5 id="item-4-3">{% trans 'Formato de envio dos artigos' %}</h5>
-                        <!-- Descrição de como as contribuições dos autores devem ser explicitadas.
-                                                        Utiliza alguma taxonomia? Qual?
-                                                        O texto do artigo apresenta as contribuições dos autores?
-                                                        De preferência utilizar a estrutura de taxonomia do CREDiT https://casrai.org/credit/
-                                                        -->
-                        <h5 id="item-4-4">{% trans 'Ativos digitais' %}</h5>
-                        {% for da in digital_assets %}
-                            {{ da.rich_text|richtext }}
-                        {% endfor %}
-                        <h5 id="item-4-5">{% trans 'Citações e referências' %}</h5>
-                        {% for cr in citations_and_references %}
-                            {{ cr.rich_text|richtext }}
-                        {% endfor %}
-                        <h5 id="item-4-6">{% trans 'Documentos Suplementares Necessários para Submissão' %}</h5>
-                        {% for sds in supp_docs_submission %}
-                            {{ sds.rich_text|richtext }}
-                        {% endfor %}
-                        <h5 id="item-4-7">{% trans 'Declaração de Financiamento' %}</h5>
-                        {% for fs in financing_statement %}
-                            {{ fs.rich_text|richtext }}
-                        {% endfor %}
-                        <h5 id="item-4-8">{% trans 'Agradecimentos' %}</h5>
-                        {% for ak in acknowledgements %}
-                            {{ ak.rich_text|richtext }}
-                        {% endfor %}
-                        <h5 id="item-4-9">{% trans 'Informações adicionais' %}</h5>
-                        {% for ai in additional_information %}
-                            {{ ai.rich_text|richtext }}
-                        {% endfor %}
-                        <p>
-                            <small>{% trans '*dados precisam estar disponíveis em alfabeto romano' %}</small>
-                        </p>
-                        <hr>
-
-                        <!-- fim /app/opac/webapp/../../data/pages/abcd/pinstruc.htm -->
-                      </div>
-                    </div>
-                    <div class="d-noe col-sm-3">
-                      <nav id="navbar-example3" class="navbar navbar-light bg-light flex-column --align-items-stretch p-3 sticky-top">
-                        <ul class="scielo__menu-contexto nav">
-                          <li>
-                            <a class="active fw-bold nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#about">{% trans 'Sobre o periódico' %}</a>
-                            <ul>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-1-1">{% trans 'Ficha Bibliográfica' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-1-2">{% trans 'Missão' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-1-3">{% trans 'Breve Histórico' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-1-4">{% trans 'Foco e escopo' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-1-5">{% trans 'Contato' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-1-6">{% trans 'Websites e Mídias Sociais' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-1-7">{% trans 'Fontes de indexação' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-1-8">{% trans 'Patrocinadores e agências de Fomento' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-1-9">{% trans 'Preservação digital' %}</a>
-                                </li>
-                              </ul>
-                          </li>
-                          <li>
-                            <a class="fw-bold nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-2" style="font-weight: bold;">{% trans 'Política editorial' %}</a>
-                            <ul>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-2-1">{% trans 'Conformidade com a Ciência Aberta' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-2-2">{% trans 'Dados abertos' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-2-3">{% trans 'Preprint' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-2-4">{% trans 'Peer review informado' %}</a>
-                                </li>
-                                <li>
-                                <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-2-5">{% trans 'Ética' %}</a>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-2-5-1">{% trans 'Comitê de Ética' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-2-5-2">{% trans 'Direitos Autorais' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-2-5-3">{% trans 'Propriedade Intelectual' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-2-5-4">{% trans 'Política de Ética e Más condutas' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-2-5-5">{% trans 'Política sobre Conflito de Interesses' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-2-5-6">{% trans 'Questões de gênero' %}</a>
-                                </li>
-                              </ul>
-                          </li>
-                          <li>
-                            <a href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#editors" class="fw-bold nav-link">{% trans 'Corpo editorial' %}</a>
-                            <ul>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-3-1">{% trans 'Editor-chefe' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-3-2">{% trans 'Editor-executivo' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-3-3">{% trans 'Editor(es) Associados ou de Seção / Área' %}</a>
-                                </li>
-                                <li>
-                                    <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-3-4">{% trans 'Equipe técnica' %}</a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                          <a href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#instructions" class="fw-bold nav-link">{% trans 'Instruções para os Autores' %}</a>
-                          <ul>
-                            <li>
-                              <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-4-1">{% trans 'Tipos de Documentos Aceitos' %}</a>
-                            </li>
-                            <li>
-                              <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-4-2">{% trans 'Contribuição dos Autores' %}</a>
-                            </li>
-                            <li>
-                              <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-4-3">{% trans 'Formato de Envio dos Artigos' %}</a>
-                            </li>
-                            <li>
-                              <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-4-4">{% trans 'Ativos Digitais' %}</a>
-                            </li>
-                            <li>
-                              <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-4-5">{% trans 'Citações e Referências' %}</a>
-                            </li>
-                            <li>
-                              <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-4-6">{% trans 'Documentos Suplementares Necessários para Submissão' %}</a>
-                            </li>
-                            <li>
-                              <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-4-7">{% trans 'Declaração de Financiamento' %}</a>
-                            </li>
-                            <li>
-                              <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-4-8">{% trans 'Agradecimentos' %}</a>
-                            </li>
-                            <li>
-                              <a class="nav-link" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-4-9">{% trans 'Informações Adicionais' %}</a>
-                            </li>
-                          </ul>
-                        </li>
-                      </ul>
-                      </nav>
-                    </div>
+            <div class="bd-example">
+              <div class="row">
+                <div class="col-12 col-sm-9">
+                  <div data-bs-spy="scroll" data-bs-target="#navbar-example3" data-bs-offset="-200" class="" tabindex="0">
+                    
+                    <!-- Bibliographic Information Section -->
+                    {% include "journalpage/includes/about/bibliographic_info.html" %}
+                    
+                    <!-- Editorial Policy Section -->
+                    {% include "journalpage/includes/about/editorial_policy.html" %}
+                    
+                    <!-- Editorial Board Section -->
+                    {% include "journalpage/includes/about/editorial_board.html" %}
+                    
+                    <!-- Author Instructions Section -->
+                    {% include "journalpage/includes/about/author_instructions.html" %}
+                    
                   </div>
                 </div>
-                <!-- Fim template com dados do doc -->
-              </div>
-            </div>
-            <!-- fim row prototipo -->
-            <div class="row d-none">
-              <div class="col-12"></div>
-              <div class="col-md-4 col-sm-4"></div>
-            </div>
-            <div class="row">
-              <div class="col">
-                <p class="page-updated-at">
-                  <small>Atualizado: {{journal.updated}}</small>
-                </p>
+                
+                <!-- Sidebar Navigation Menu -->
+                <div class="d-noe col-sm-3">
+                  {% include "journalpage/includes/about/sidebar_menu.html" %}
+                </div>
               </div>
             </div>
           </div>
         </div>
+        
+        <!-- Updated Date -->
+        <div class="row">
+          <div class="col">
+            <p class="page-updated-at">
+              <small>Atualizado: {{journal.updated}}</small>
+            </p>
+          </div>
+        </div>
       </div>
-    </section>
+    </div>
+  </div>
+</section>
 
-  {% endblock %}
+{% endblock %}
 
-  {% include "journalpage/includes/contact_footer.html" %}
-
-  {% include "journalpage/includes/footer.html" %}
-
+{% include "journalpage/includes/contact_footer.html" %}
+{% include "journalpage/includes/footer.html" %}
 
 {% endblock %}
