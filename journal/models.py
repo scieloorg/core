@@ -358,16 +358,6 @@ class Journal(CommonControlField, ClusterableModel):
         blank=True,
     )
 
-    url_oa = models.URLField(
-        _("Open Science accordance form"),
-        null=True,
-        blank=True,
-        help_text=mark_safe(
-            _(
-                """Suggested form: <a target='_blank' href='https://wp.scielo.org/wp-content/uploads/Formulario-de-Conformidade-Ciencia-Aberta.docx'>https://wp.scielo.org/wp-content/uploads/Formulario-de-Conformidade-Ciencia-Aberta.docx</a>"""
-            )
-        ),
-    )
     main_collection = models.ForeignKey(
         Collection,
         verbose_name=_("Main Collection"),
@@ -579,7 +569,7 @@ class Journal(CommonControlField, ClusterableModel):
     digital_pa = models.ManyToManyField(
         "DigitalPreservationAgency",
         blank=True,
-        verbose_name=_("DigitalPreservationAgency"),
+        verbose_name=_("Digital Preservation (SciELO)"),
     )
     doi_prefix = models.CharField(max_length=20, blank=True, null=True)
     valid = models.BooleanField(default=False, null=True, blank=True)
@@ -669,7 +659,11 @@ class Journal(CommonControlField, ClusterableModel):
 
     panels_open_science = [
         FieldPanel("open_access"),
-        FieldPanel("url_oa"),
+        InlinePanel(
+            "open_science_compliance",
+            label=_("Open Science Compliance"),
+            classname="collapsed",
+        ),
         InlinePanel(
             "file_oa", label=_("Open Science accordance form"), classname="collapsed"
         ),
@@ -677,11 +671,6 @@ class Journal(CommonControlField, ClusterableModel):
         InlinePanel("open_data", label=_("Open data"), classname="collapsed"),
         InlinePanel("preprint", label=_("Preprint"), classname="collapsed"),
         InlinePanel("review", label=_("Peer review"), classname="collapsed"),
-        InlinePanel(
-            "open_science_compliance",
-            label=_("Open Science Compliance"),
-            classname="collapsed",
-        ),
     ]
 
     panels_notes = [InlinePanel("annotation", label=_("Notes"), classname="collapsed")]
