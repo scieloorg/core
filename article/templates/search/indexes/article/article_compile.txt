@@ -26,9 +26,9 @@
                 {% for research in object.researchers.all %}
                 <element>
                     {% if research.orcid %}
-                    <field name="value" orcid="{{ research.orcid }}">{{ research.person_name }}</field>
+                    <field name="value" orcid="{{ research.orcid }}"{% if research.affiliation %} affiliation="{{ research.affiliation.institution.institution_identification.name }}{% if research.affiliation.institution.level_1 %}, {{ research.affiliation.institution.level_1 }}{% endif %}"{% endif %}>{{ research.person_name }}</field>
                     {% else %}
-                    <field name="value">{{ research.person_name }}</field>
+                    <field name="value"{% if research.affiliation %} affiliation="{{ research.affiliation.institution.institution_identification.name }}{% if research.affiliation.institution.level_1 %}, {{ research.affiliation.institution.level_1 }}{% endif %}"{% endif %}>{{ research.person_name }}</field>
                     {% endif %}
                 </element>
                 {% endfor %}
@@ -82,6 +82,26 @@
                 {% endfor %}
             </element>
 
+            <!-- ISSN print -->
+            {% if object.journal.official %}
+                {% if object.journal.official.issn_print %}
+                <element name="issn">
+                    <element>
+                        <field name="value">{{ object.journal.official.issn_print }}</field>
+                    </element>
+                </element>
+                {% endif %}
+
+                <!-- ISSN eletrônico -->
+                {% if object.journal.official.issn_electronic %}
+                <element name="eissn">
+                    <element>
+                        <field name="value">{{ object.journal.official.issn_electronic }}</field>
+                    </element>
+                </element>
+                {% endif %}
+            {% endif %}
+
             <!-- URI qualificado -->
             <element name="uri">
                 {% for collection in object.collections %}
@@ -98,7 +118,7 @@
         <element name="subject">
             <element name="none">
                 {% for kwd in object.keywords.all %}
-                <field name="value">{{ kwd.text }}</field>
+                <field name="value" vocabulary="{{ kwd.vocabulary.acronym }}">{{ kwd.text }}</field>
                 {% endfor %}
             </element>
         </element>
@@ -142,6 +162,55 @@
         {% endif %}
         {% endwith %}
 
+        <!-- ========== RELATION ========== -->
+        <element name="relation">
+            <!-- Título do periódico -->
+            <element name="ispartof">
+                <element>
+                    <field name="value">{{ object.journal.title }}</field>
+                </element>
+            </element>
+        </element>
+
+        <!-- ========== CITATION (elementos estruturados) ========== -->
+        <element name="citation">
+            <!-- Volume -->
+            {% if object.issue.volume %}
+            <element name="volume">
+                <element>
+                    <field name="value">{{ object.issue.volume }}</field>
+                </element>
+            </element>
+            {% endif %}
+
+            <!-- Número/Issue -->
+            {% if object.issue.number %}
+            <element name="issue">
+                <element>
+                    <field name="value">{{ object.issue.number }}</field>
+                </element>
+            </element>
+            {% endif %}
+
+            <!-- Página inicial -->
+            {% if object.first_page %}
+            <element name="spage">
+                <element>
+                    <field name="value">{{ object.first_page }}</field>
+                </element>
+            </element>
+            {% endif %}
+
+            <!-- Página final -->
+            {% if object.last_page %}
+            <element name="epage">
+                <element>
+                    <field name="value">{{ object.last_page }}</field>
+                </element>
+            </element>
+            {% endif %}
+        </element>
+
         <!-- ========== TYPE ========== -->
         <element name="type">
             <element name="none">
@@ -165,23 +234,43 @@
 
         <!-- ========== RIGHTS ========== -->
         <element name="rights">
+            {% if object.license %}
+            <!-- Texto da licença -->
             <element name="none">
-                <!-- Licença principal -->
-                {% if object.license %}
                 <field name="value">{{ object.license.license_type }}</field>
-                {% endif %}
-
-                <!-- Statements adicionais -->
-                {% for stmt in object.license_statements.all %}
-                <field name="value">{{ stmt.license_p|striptags }}</field>
-                {% endfor %}
             </element>
 
-            <!-- URLs dos statements -->
+            <!-- URL da licença (mapeamento Creative Commons) -->
             <element name="uri">
-                {% for stmt in object.license_statements.all %}
                 <element>
-                    <field name="value">{{ stmt.url }}</field>
+                    {% if 'CC BY 4.0' in object.license.license_type or 'CC-BY 4.0' in object.license.license_type %}
+                    <field name="value">http://creativecommons.org/licenses/by/4.0/</field>
+                    {% elif 'CC BY-NC 4.0' in object.license.license_type or 'CC-BY-NC 4.0' in object.license.license_type %}
+                    <field name="value">http://creativecommons.org/licenses/by-nc/4.0/</field>
+                    {% elif 'CC BY-SA 4.0' in object.license.license_type or 'CC-BY-SA 4.0' in object.license.license_type %}
+                    <field name="value">http://creativecommons.org/licenses/by-sa/4.0/</field>
+                    {% elif 'CC BY-ND 4.0' in object.license.license_type or 'CC-BY-ND 4.0' in object.license.license_type %}
+                    <field name="value">http://creativecommons.org/licenses/by-nd/4.0/</field>
+                    {% elif 'CC BY-NC-SA 4.0' in object.license.license_type or 'CC-BY-NC-SA 4.0' in object.license.license_type %}
+                    <field name="value">http://creativecommons.org/licenses/by-nc-sa/4.0/</field>
+                    {% elif 'CC BY-NC-ND 4.0' in object.license.license_type or 'CC-BY-NC-ND 4.0' in object.license.license_type %}
+                    <field name="value">http://creativecommons.org/licenses/by-nc-nd/4.0/</field>
+                    {% elif 'CC BY 3.0' in object.license.license_type or 'CC-BY 3.0' in object.license.license_type %}
+                    <field name="value">http://creativecommons.org/licenses/by/3.0/</field>
+                    {% elif 'CC BY-NC 3.0' in object.license.license_type or 'CC-BY-NC 3.0' in object.license.license_type %}
+                    <field name="value">http://creativecommons.org/licenses/by-nc/3.0/</field>
+                    {% endif %}
+                </element>
+            </element>
+            {% endif %}
+        </element>
+
+        <!-- ========== FUNDING ========== -->
+        <element name="description">
+            <element name="sponsorship">
+                {% for funding in object.fundings.all %}
+                <element>
+                    <field name="value">{{ funding.funding_source.institution.institution_identification.name }}{% if funding.award_id %} grant {{ funding.award_id }}{% endif %}</field>
                 </element>
                 {% endfor %}
             </element>
