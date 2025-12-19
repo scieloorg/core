@@ -1,5 +1,3 @@
-# Generated manually for location data normalization
-
 from django.db import migrations, models
 
 

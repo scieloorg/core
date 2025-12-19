@@ -19,6 +19,26 @@ from core.utils.standardizer import standardize_name, standardize_code_and_name,
 from .choices import LOCATION_STATUS
 
 
+def clean_text_data(text):
+    """
+    Utility function to clean location text data.
+    Removes HTML tags and normalizes whitespace.
+    
+    Args:
+        text: The text to clean, can be None
+        
+    Returns:
+        Cleaned text or None if input was None
+    """
+    if not text:
+        return text
+    # Remove HTML tags
+    cleaned = strip_tags(text)
+    # Remove extra spaces
+    cleaned = remove_extra_spaces(cleaned)
+    return cleaned
+
+
 class City(CommonControlField):
     """
     Represent a list of cities
@@ -106,13 +126,7 @@ class City(CommonControlField):
         """
         Pre-clean city name data: remove HTML, extra spaces, etc.
         """
-        if not name:
-            return name
-        # Remove HTML tags
-        cleaned = strip_tags(name)
-        # Remove extra spaces
-        cleaned = remove_extra_spaces(cleaned)
-        return cleaned
+        return clean_text_data(name)
 
     @staticmethod
     def standardize(text, user=None):
@@ -237,21 +251,8 @@ class State(CommonControlField):
         Pre-clean state data: remove HTML, extra spaces, etc.
         Returns tuple (cleaned_name, cleaned_acronym)
         """
-        cleaned_name = name
-        cleaned_acronym = acronym
-        
-        if name:
-            # Remove HTML tags
-            cleaned_name = strip_tags(name)
-            # Remove extra spaces
-            cleaned_name = remove_extra_spaces(cleaned_name)
-        
-        if acronym:
-            # Remove HTML tags
-            cleaned_acronym = strip_tags(acronym)
-            # Remove extra spaces
-            cleaned_acronym = remove_extra_spaces(cleaned_acronym)
-        
+        cleaned_name = clean_text_data(name)
+        cleaned_acronym = clean_text_data(acronym)
         return cleaned_name, cleaned_acronym
 
     @classmethod
@@ -544,28 +545,9 @@ class Country(CommonControlField, ClusterableModel):
         Pre-clean country data: remove HTML, extra spaces, etc.
         Returns tuple (cleaned_name, cleaned_acronym, cleaned_acron3)
         """
-        cleaned_name = name
-        cleaned_acronym = acronym
-        cleaned_acron3 = acron3
-        
-        if name:
-            # Remove HTML tags
-            cleaned_name = strip_tags(name)
-            # Remove extra spaces
-            cleaned_name = remove_extra_spaces(cleaned_name)
-        
-        if acronym:
-            # Remove HTML tags
-            cleaned_acronym = strip_tags(acronym)
-            # Remove extra spaces
-            cleaned_acronym = remove_extra_spaces(cleaned_acronym)
-        
-        if acron3:
-            # Remove HTML tags
-            cleaned_acron3 = strip_tags(acron3)
-            # Remove extra spaces
-            cleaned_acron3 = remove_extra_spaces(cleaned_acron3)
-        
+        cleaned_name = clean_text_data(name)
+        cleaned_acronym = clean_text_data(acronym)
+        cleaned_acron3 = clean_text_data(acron3)
         return cleaned_name, cleaned_acronym, cleaned_acron3
 
     @staticmethod
