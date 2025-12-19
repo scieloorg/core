@@ -264,10 +264,10 @@ class StateStatusTest(TestCase):
     def test_state_clean_data_removes_extra_spaces(self):
         """Test that clean_data removes extra spaces"""
         dirty_name = "State   Name"
-        dirty_acronym = "S T"
+        dirty_acronym = "SP "
         cleaned_name, cleaned_acronym = models.State.clean_data(dirty_name, dirty_acronym)
         self.assertEqual(cleaned_name, "State Name")
-        self.assertEqual(cleaned_acronym, "S T")
+        self.assertEqual(cleaned_acronym, "SP")
 
     def test_state_clean_data_handles_none(self):
         """Test that clean_data handles None values"""
@@ -308,14 +308,14 @@ class CountryStatusTest(TestCase):
     def test_country_clean_data_removes_extra_spaces(self):
         """Test that clean_data removes extra spaces"""
         dirty_name = "Country   Name"
-        dirty_acronym = "C N"
-        dirty_acron3 = "C N T"
+        dirty_acronym = "CN "
+        dirty_acron3 = "CNT "
         cleaned_name, cleaned_acronym, cleaned_acron3 = models.Country.clean_data(
             dirty_name, dirty_acronym, dirty_acron3
         )
         self.assertEqual(cleaned_name, "Country Name")
-        self.assertEqual(cleaned_acronym, "C N")
-        self.assertEqual(cleaned_acron3, "C N T")
+        self.assertEqual(cleaned_acronym, "CN")
+        self.assertEqual(cleaned_acron3, "CNT")
 
     def test_country_clean_data_handles_none(self):
         """Test that clean_data handles None values"""
