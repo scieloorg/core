@@ -253,6 +253,21 @@ class StateStatusTest(TestCase):
         state = models.State.create(user=user, name="Verified State", acronym="VS", status="VERIFIED")
         self.assertEqual(state.status, "VERIFIED")
 
+    def test_state_create_or_update_sets_status_on_new(self):
+        """Test that create_or_update sets status on new objects"""
+        user, created = User.objects.get_or_create(username="adm")
+        state = models.State.create_or_update(user=user, name="New State", acronym="NS", status="CLEANED")
+        self.assertEqual(state.status, "CLEANED")
+
+    def test_state_create_or_update_updates_status_on_existing(self):
+        """Test that create_or_update updates status on existing objects"""
+        user, created = User.objects.get_or_create(username="adm")
+        state = models.State.create_or_update(user=user, name="Existing State", acronym="ES", status="RAW")
+        self.assertEqual(state.status, "RAW")
+        # Update the same state with a new status
+        state = models.State.create_or_update(user=user, name="Existing State", acronym="ES", status="VERIFIED")
+        self.assertEqual(state.status, "VERIFIED")
+
     def test_state_clean_data_removes_html(self):
         """Test that clean_data removes HTML tags from name and acronym"""
         dirty_name = "<b>State Name</b>"
@@ -292,6 +307,27 @@ class CountryStatusTest(TestCase):
             user=user, name="Verified Country", acronym="VC", status="VERIFIED"
         )
         self.assertEqual(country.status, "VERIFIED")
+
+    def test_country_create_or_update_sets_status_on_new(self):
+        """Test that create_or_update sets status on new objects"""
+        user, created = User.objects.get_or_create(username="adm")
+        country = models.Country.create_or_update(
+            user=user, name="New Country", acronym="NC", status="CLEANED"
+        )
+        self.assertEqual(country.status, "CLEANED")
+
+    def test_country_create_or_update_updates_status_on_existing(self):
+        """Test that create_or_update updates status on existing objects"""
+        user, created = User.objects.get_or_create(username="adm")
+        country = models.Country.create_or_update(
+            user=user, name="Existing Country", acronym="EC", status="RAW"
+        )
+        self.assertEqual(country.status, "RAW")
+        # Update the same country with a new status
+        country = models.Country.create_or_update(
+            user=user, name="Existing Country", acronym="EC", status="MATCHED"
+        )
+        self.assertEqual(country.status, "MATCHED")
 
     def test_country_clean_data_removes_html(self):
         """Test that clean_data removes HTML tags"""

@@ -255,7 +255,7 @@ class State(CommonControlField):
         return cleaned_name, cleaned_acronym
 
     @classmethod
-    def create_or_update(cls, user, name=None, acronym=None):
+    def create_or_update(cls, user, name=None, acronym=None, status=None):
         name = remove_extra_spaces(name)
         acronym = remove_extra_spaces(acronym)
         try:
@@ -263,9 +263,11 @@ class State(CommonControlField):
             obj.updated_by = user
             obj.name = name or obj.name
             obj.acronym = acronym or obj.acronym
+            if status is not None:
+                obj.status = status
             obj.save()
         except cls.DoesNotExist:
-            obj = cls.create(user, name, acronym)
+            obj = cls.create(user, name, acronym, status or "RAW")
         return obj
 
     @staticmethod
@@ -502,7 +504,7 @@ class Country(CommonControlField, ClusterableModel):
         acron3=None,
         country_names=None,
         lang_code2=None,
-        status="RAW",
+        status=None,
     ):
         name = remove_extra_spaces(name)
         acronym = remove_extra_spaces(acronym)
@@ -512,10 +514,12 @@ class Country(CommonControlField, ClusterableModel):
         try:
             obj = cls.get(name, acronym, acron3)
             obj.updated_by = user
+            if status is not None:
+                obj.status = status
         except cls.DoesNotExist:
             obj = cls()
             obj.creator = user
-            obj.status = status
+            obj.status = status or "RAW"
 
         obj.name = name or obj.name
         obj.acronym = acronym or obj.acronym
