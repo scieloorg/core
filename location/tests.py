@@ -239,6 +239,12 @@ class CityStatusTest(TestCase):
         cleaned = models.City.clean_data(None)
         self.assertIsNone(cleaned)
 
+    def test_city_get_or_create_with_status(self):
+        """Test that get_or_create accepts status parameter"""
+        user, created = User.objects.get_or_create(username="adm")
+        city = models.City.get_or_create(user=user, name="Test City", status="CLEANED")
+        self.assertEqual(city.status, "CLEANED")
+
 
 class StateStatusTest(TestCase):
     def test_state_default_status_is_raw(self):
@@ -289,6 +295,12 @@ class StateStatusTest(TestCase):
         cleaned_name, cleaned_acronym = models.State.clean_data(None, None)
         self.assertIsNone(cleaned_name)
         self.assertIsNone(cleaned_acronym)
+
+    def test_state_get_or_create_with_status(self):
+        """Test that get_or_create accepts status parameter"""
+        user, created = User.objects.get_or_create(username="adm")
+        state = models.State.get_or_create(user=user, name="Test State", acronym="TS", status="MATCHED")
+        self.assertEqual(state.status, "MATCHED")
 
 
 class CountryStatusTest(TestCase):

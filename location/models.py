@@ -90,11 +90,11 @@ class City(CommonControlField):
                     logging.exception(e)
 
     @classmethod
-    def get_or_create(cls, user=None, name=None):
+    def get_or_create(cls, user=None, name=None, status="RAW"):
         try:
             return cls.get(name)
         except cls.DoesNotExist:
-            return cls.create(user, name)
+            return cls.create(user, name, status)
 
     @classmethod
     def get(cls, name):
@@ -214,8 +214,8 @@ class State(CommonControlField):
                 )
 
     @classmethod
-    def get_or_create(cls, user=None, name=None, acronym=None):
-        return cls.create_or_update(user, name=name, acronym=acronym)
+    def get_or_create(cls, user=None, name=None, acronym=None, status=None):
+        return cls.create_or_update(user, name=name, acronym=acronym, status=status)
 
     @classmethod
     def get(cls, name=None, acronym=None):
