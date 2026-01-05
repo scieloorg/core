@@ -176,6 +176,14 @@ class Article(
         default=choices.DATA_AVAILABILITY_STATUS_NOT_PROCESSED,
     )
 
+    invalid_data_availability_status = models.CharField(
+        _("Invalid data availability status from XML"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Armazena valores inválidos recebidos do XML")
+    )
+
     peer_review_stats = models.JSONField(
         _("Peer review statistics"),
         default=dict,
@@ -840,7 +848,7 @@ class Article(
         return self.get_availability(
             fmt="html", collection_acron_list=collection_acron_list, params=params
         )
-    
+
     def get_text_langs(self, collection_acron_list=None, fmt=None):
         by_collection = {}
         params = {}
@@ -862,12 +870,12 @@ class Article(
 
     def add_event(self, user, name):
         return ArticleEvent.create(user, self, name)
-    
-    def add_related_article(self, user, href, ext_link_type, related_type, related_article=None):            
+
+    def add_related_article(self, user, href, ext_link_type, related_type, related_article=None):
         return RelatedArticle.create_or_update(
             user,
             self,
-            href, 
+            href,
             ext_link_type,
             related_type,
             related_article=related_article,
@@ -2314,14 +2322,14 @@ class ArticleExporter(BaseExporter):
 
 class RelatedArticle(CommonControlField):
     """Relacionamento entre artigos via DOI."""
-    
+
     article = ParentalKey(
         Article,
         on_delete=models.CASCADE,
         related_name="related_articles",
         verbose_name=_("Article"),
     )
-    
+
     href = models.CharField(
         max_length=255,
         verbose_name=_("DOI"),
@@ -2399,7 +2407,7 @@ class RelatedArticle(CommonControlField):
             raise ValueError("External link type is required")
         if not related_type:
             raise ValueError("Related type is required")
-            
+
         try:
             obj = cls()
             obj.article = article
@@ -2434,12 +2442,12 @@ class ArticlePeerReviewStats(Article):
     """
     Proxy model para análise de peer review com campos relacionados pré-carregados.
     """
-    
+
     class Meta:
         proxy = True
         verbose_name = _("Peer Review Stats")
         verbose_name_plural = _("Peer Review Stats")
-        
+
     # Informações básicas do artigo
     panels_basic_info = [
         FieldPanel("sps_pkg_name", read_only=True),
@@ -2448,14 +2456,14 @@ class ArticlePeerReviewStats(Article):
         FieldPanel("article_type", read_only=True),
         FieldPanel("data_availability_status", read_only=True),
     ]
-    
+
     # Datas do processo de peer review
     panels_dates = [
         FieldPanel("preprint_dateiso", read_only=True),
         FieldPanel("received_dateiso", read_only=True),
         FieldPanel("accepted_dateiso", read_only=True),
     ]
-    
+
     # Intervalos entre as datas (em dias)
     panels_intervals = [
         FieldPanel("days_preprint_to_received", read_only=True),
@@ -2474,7 +2482,7 @@ class ArticlePeerReviewStats(Article):
     panels_statistics = [
         FieldPanel("peer_review_stats", read_only=True),
     ]
-    
+
     edit_handler = TabbedInterface(
         [
             ObjectList(panels_basic_info, heading=_("Basic Information")),
@@ -2483,7 +2491,7 @@ class ArticlePeerReviewStats(Article):
             ObjectList(panels_statistics, heading=_("Complete Statistics")),
         ]
     )
-        
+
     def get_queryset(self, request):
         """QuerySet otimizado com select_related e prefetch_related"""
         return self.objects.select_related(
