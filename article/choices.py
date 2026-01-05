@@ -44,6 +44,7 @@ DATA_AVAILABILITY_STATUS_NOT_AVAILABLE = "data-not-available"
 DATA_AVAILABILITY_STATUS_UNINFORMED = "uninformed"
 DATA_AVAILABILITY_STATUS_ABSENT = "absent"
 DATA_AVAILABILITY_STATUS_NOT_PROCESSED = "not-processed"
+DATA_AVAILABILITY_STATUS_INVALID = "invalid"
 
 # Data availability status choices tuple
 DATA_AVAILABILITY_STATUS = (
@@ -54,7 +55,11 @@ DATA_AVAILABILITY_STATUS = (
     (DATA_AVAILABILITY_STATUS_UNINFORMED, _("Uso de dados não informado; nenhum dado de pesquisa gerado ou utilizado.")),
     (DATA_AVAILABILITY_STATUS_ABSENT, _("Informação ausente no XML")),
     (DATA_AVAILABILITY_STATUS_NOT_PROCESSED, _("XML não processado")),
+    (DATA_AVAILABILITY_STATUS_INVALID, _("Valor inválido recebido do XML")),
 )
+
+# Lista com valores válidos para validação
+DATA_AVAILABILITY_STATUS_VALID_VALUES = [status[0] for status in DATA_AVAILABILITY_STATUS]
 
 # Constantes para cada tipo de relacionamento
 RELATED_TYPE_CORRECTED_ARTICLE = 'corrected-article'
@@ -85,37 +90,37 @@ RELATED_ARTICLE_TYPE_CHOICES = [
     # Erratas e correções
     (RELATED_TYPE_CORRECTED_ARTICLE, _('Errata')),
     (RELATED_TYPE_CORRECTION_FORWARD, _('Documento corrigido pela errata')),
-    
+
     # Retrações
     (RELATED_TYPE_RETRACTED_ARTICLE, _('Retratação total')),
     (RELATED_TYPE_RETRACTION_FORWARD, _('Documento retratado totalmente')),
     (RELATED_TYPE_PARTIAL_RETRACTION, _('Retratação parcial')),
     (RELATED_TYPE_PARTIAL_RETRACTION_FORWARD, _('Documento retratado parcialmente')),
-    
+
     # Adendos
     (RELATED_TYPE_ADDENDED_ARTICLE, _('Adendo')),
     (RELATED_TYPE_ADDENDUM, _('Documento objeto do adendo')),
-    
+
     # Manifestações de preocupação
     (RELATED_TYPE_EXPRESSION_OF_CONCERN, _('Manifestação de preocupação')),
     (RELATED_TYPE_OBJECT_OF_CONCERN, _('Documento objeto de manifestação de preocupação')),
-    
+
     # Comentários e respostas
     (RELATED_TYPE_COMMENTARY_ARTICLE, _('Comentário')),
     (RELATED_TYPE_COMMENTARY, _('Documento comentado')),
     (RELATED_TYPE_REPLY_TO_COMMENTARY, _('Resposta para um comentário')),
     (RELATED_TYPE_COMMENTARY_REPLY_OBJECT, _('Comentário objeto da resposta')),
-    
+
     # Cartas e respostas
     (RELATED_TYPE_LETTER, _('Carta')),
     (RELATED_TYPE_LETTER_OBJECT, _('Documento a que se refere a carta')),
     (RELATED_TYPE_REPLY_TO_LETTER, _('Resposta para uma carta')),
     (RELATED_TYPE_LETTER_REPLY_OBJECT, _('Carta objeto da resposta')),
-    
+
     # Pareceres
     (RELATED_TYPE_REVIEWED_ARTICLE, _('Parecer (revisão por pares)')),
     (RELATED_TYPE_REVIEWER_REPORT, _('Documento com parecer (revisão por pares)')),
-    
+
     # Preprints
     (RELATED_TYPE_PREPRINT, _('Manuscrito disponibilizado em acesso aberto em servidor de preprints')),
     (RELATED_TYPE_PUBLISHED_ARTICLE, _('Artigo publicado baseado no preprint')),
