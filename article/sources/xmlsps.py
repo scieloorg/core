@@ -299,32 +299,32 @@ def add_peer_review_dates(xmltree, article, errors):
     """
     try:
         dates = ArticleDates(xmltree=xmltree)
-        
+
         # Obter estatísticas completas de peer review
         peer_review_stats = dates.get_peer_reviewed_stats(serialize_dates=True)
-        
+
         # Armazenar estatísticas completas em JSON
         article.peer_review_stats = peer_review_stats
-        
+
         # Extrair datas individuais em formato ISO
         article.preprint_dateiso = peer_review_stats.get("preprint_date")
-        article.received_dateiso = peer_review_stats.get("received_date") 
+        article.received_dateiso = peer_review_stats.get("received_date")
         article.accepted_dateiso = peer_review_stats.get("accepted_date")
-        
+
         # Extrair intervalos em dias
         article.days_preprint_to_received = peer_review_stats.get("days_from_preprint_to_received")
         article.days_received_to_accepted = peer_review_stats.get("days_from_received_to_accepted")
         article.days_accepted_to_published = peer_review_stats.get("days_from_accepted_to_published")
         article.days_preprint_to_published = peer_review_stats.get("days_from_preprint_to_published")
         article.days_receive_to_published = peer_review_stats.get("days_from_received_to_published")
-        
+
         # Extrair flags de estimativa
         article.days_preprint_to_received_estimated = peer_review_stats.get("estimated_days_from_preprint_to_received")
         article.days_received_to_accepted_estimated = peer_review_stats.get("estimated_days_from_received_to_accepted")
         article.days_accepted_to_published_estimated = peer_review_stats.get("estimated_days_from_accepted_to_published")
         article.days_preprint_to_published_estimated = peer_review_stats.get("estimated_days_from_preprint_to_published")
         article.days_receive_to_published_estimated = peer_review_stats.get("estimated_days_from_received_to_published")
-        
+
     except Exception as e:
         add_error(errors, "add_peer_review_dates", e)
 
@@ -351,10 +351,16 @@ def add_data_availability_status(xmltree, errors, article, user):
                 continue
             items.append({"language": lang, "text": text})
 
-        article.data_availability_status = status or choices.DATA_AVAILABILITY_STATUS_ABSENT
+        # Valida se o status está na lista de valores aceitos
+        if status and status not in choices.DATA_AVAILABILITY_STATUS_VALID_VALUES:
+            article.invalid_data_availability_status = status
+            article.data_availability_status = choices.DATA_AVAILABILITY_STATUS_INVALID
+        else:
+            article.invalid_data_availability_status = None
+            article.data_availability_status = status or choices.DATA_AVAILABILITY_STATUS_ABSENT
         # SAVE OBRIGATÓRIO ANTES DE ADICIONAR OS ITENS M2M
         article.save()
-        
+
         for item in items:
             DataAvailabilityStatement.create_or_update(
                 user=user,
@@ -1007,17 +1013,17 @@ def add_related_articles(xmltree, article, user, errors):
     """
     try:
         related_articles = RelatedArticles(xmltree)
-        
+
         for related_article_data in related_articles.related_articles():
             try:
                 # Extrair dados do artigo relacionado
                 href = related_article_data.get("href")
                 if not href:
                     continue
-                
+
                 ext_link_type = related_article_data.get("ext-link-type")
                 related_type = related_article_data.get("related-article-type")
-                
+
                 # Adicionar relacionamento ao artigo
                 article.add_related_article(
                     user=user,
@@ -1025,7 +1031,7 @@ def add_related_articles(xmltree, article, user, errors):
                     ext_link_type=ext_link_type,
                     related_type=related_type
                 )
-                
+
             except Exception as e:
                 add_error(
                     errors,
@@ -1033,6 +1039,6 @@ def add_related_articles(xmltree, article, user, errors):
                     e,
                     related_article_data=related_article_data
                 )
-                
+
     except Exception as e:
         add_error(errors, "add_related_articles", e)
