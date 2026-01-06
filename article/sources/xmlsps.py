@@ -333,9 +333,16 @@ def add_data_availability_status(xmltree, errors, article, user):
     """
     Extrai a declaração de disponibilidade de dados do XML.
 
+    Lógica de validação:
+    - Valor inválido: preserva em invalid_data_availability_status e marca como "invalid"
+    - Valor válido explícito: limpa invalid_data_availability_status
+    - Valor ausente: mantém invalid_data_availability_status inalterado (preserva histórico)
+
     Args:
         xmltree: Árvore XML do artigo
         errors: Lista para coletar erros
+        article: Instância do modelo Article
+        user: Usuário responsável pela operação
     """
     try:
         status = None
@@ -351,13 +358,20 @@ def add_data_availability_status(xmltree, errors, article, user):
                 continue
             items.append({"language": lang, "text": text})
 
-        # Valida se o status está na lista de valores aceitos
-        if status and status not in choices.DATA_AVAILABILITY_STATUS_VALID_VALUES:
+        # Valida o status extraído do XML
+        if status is None:
+            # Valor ausente no XML (orientação mais recente do SPS)
+            # Não altera invalid_data_availability_status (preserva histórico)
+            article.data_availability_status = choices.DATA_AVAILABILITY_STATUS_ABSENT
+        elif status not in choices.DATA_AVAILABILITY_STATUS_VALID_VALUES:
+            # Valor inválido encontrado no XML
             article.invalid_data_availability_status = status
             article.data_availability_status = choices.DATA_AVAILABILITY_STATUS_INVALID
         else:
+            # Valor válido explícito presente
             article.invalid_data_availability_status = None
-            article.data_availability_status = status or choices.DATA_AVAILABILITY_STATUS_ABSENT
+            article.data_availability_status = status
+
         # SAVE OBRIGATÓRIO ANTES DE ADICIONAR OS ITENS M2M
         article.save()
 
