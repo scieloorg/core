@@ -361,8 +361,8 @@ def add_data_availability_status(xmltree, errors, article, user):
         # Valida o status extraído do XML
         if status is None:
             # Valor ausente no XML (orientação mais recente do SPS)
-            # Não altera invalid_data_availability_status (preserva histórico)
             article.data_availability_status = choices.DATA_AVAILABILITY_STATUS_ABSENT
+            article.invalid_data_availability_status = None
         elif status not in choices.DATA_AVAILABILITY_STATUS_VALID_VALUES:
             # Valor inválido encontrado no XML
             article.invalid_data_availability_status = status
