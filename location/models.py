@@ -1,21 +1,33 @@
 import csv
 import logging
 import os
+import re
 
-from django.db import models, IntegrityError
+from django.db import IntegrityError, models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
-from wagtail.fields import RichTextField
+from wagtail.admin.panels import FieldPanel, InlinePanel
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField, Language, TextWithLang
-from core.utils.standardizer import standardize_name, standardize_code_and_name, remove_extra_spaces
+from core.utils.standardizer import (
+    remove_extra_spaces,
+    standardize_code_and_name,
+    standardize_name,
+)
 
+STATUS = [
+    ("RAW", _("RAW")),
+    ("CLEANED", _("CLEANED")),
+    ("MATCHED", _("MATCHED")), # Foi correspondido com um pais oficiaul
+    ("PROCESSED", _("PROCESSED")), # Foi Sustituido por um país official em Location
+    ("OFFICIAL", _("OFFICIAL")),
+    ("REJECTED", _("REJECTED")),
+]
 
 class City(CommonControlField):
     """
@@ -26,6 +38,7 @@ class City(CommonControlField):
     """
 
     name = models.TextField(_("Name of the city"), unique=True)
+    status = models.CharField(max_length=9, choices=STATUS, default="RAW", blank=True)
 
     base_form_class = CoreAdminModelForm
     panels = [FieldPanel("name")]
@@ -40,7 +53,7 @@ class City(CommonControlField):
         indexes = [
             models.Index(fields=["name"]),
         ]
-        unique_together = [("name",)]
+        unique_together = [("name", "status")]
 
     def __unicode__(self):
         return self.name
@@ -50,13 +63,33 @@ class City(CommonControlField):
 
     @classmethod
     def load(cls, user, file_path=None):
+        import csv
+
         file_path = file_path or "./location/fixtures/cities.csv"
-        with open(file_path, "r") as fp:
-            for name in fp.readlines():
-                try:
-                    cls.get_or_create(name=name, user=user)
-                except Exception as e:
-                    logging.exception(e)
+        try:
+            with open(file_path, newline="", encoding="utf-8") as fp:
+                reader = csv.reader(fp)
+                for row in reader:
+                    if not row or not row[0].strip():
+                        continue
+                    name = remove_extra_spaces(row[0])
+                    if not name:
+                        continue
+                    try:
+                        obj, created = cls.objects.get_or_create(name=name)
+                        updated = False
+                        if obj.status != "OFFICIAL":
+                            obj.status = "OFFICIAL"
+                            updated = True
+                        if user:
+                            obj.creator = user
+                            updated = True
+                        if updated:
+                            obj.save()
+                    except Exception as e:
+                        logging.exception(f"Failed to process city '{name}': {e}")
+        except Exception as e:
+            logging.exception(f"Could not open file {file_path}: {e}")
 
     @classmethod
     def get_or_create(cls, user=None, name=None):
@@ -113,7 +146,8 @@ class State(CommonControlField):
     """
 
     name = models.TextField(_("State name"), null=True, blank=True)
-    acronym = models.CharField(_("State Acronym"), max_length=2, null=True, blank=True)
+    acronym = models.CharField(_("State Acronym"), max_length=3, null=True, blank=True)
+    status = models.CharField(max_length=9, choices=STATUS, default="RAW", blank=True)
 
     base_form_class = CoreAdminModelForm
     panels = [FieldPanel("name"), FieldPanel("acronym")]
@@ -121,11 +155,11 @@ class State(CommonControlField):
     @staticmethod
     def autocomplete_custom_queryset_filter(search_term):
         return State.objects.filter(
-            Q(name__icontains=search_term) | Q(acronym__icontains=search_term)
+            Q(name__icontains=search_term) | Q(acronym__icontains=search_term), status="OFFICIAL"
         )
 
     def autocomplete_label(self):
-        return f"{self.acronym or self.name}"
+        return str(self)
 
     class Meta:
         verbose_name = _("State")
@@ -145,10 +179,10 @@ class State(CommonControlField):
         ]
 
     def __unicode__(self):
-        return f"{self.acronym or self.name}"
+        return f"{self.name} ({self.acronym})"
 
     def __str__(self):
-        return f"{self.acronym or self.name}"
+        return f"{self.name} ({self.acronym})"
 
     @classmethod
     def load(cls, user, file_path=None):
@@ -341,6 +375,7 @@ class Country(CommonControlField, ClusterableModel):
     acron3 = models.CharField(
         _("Country Acronym (3 char)"), blank=True, null=True, max_length=3
     )
+    status = models.CharField(max_length=9, choices=STATUS, default="RAW", blank=True)
 
     base_form_class = CoreAdminModelForm
     panels = [
@@ -355,7 +390,7 @@ class Country(CommonControlField, ClusterableModel):
         return Country.objects.filter(
             Q(name__icontains=search_term)
             | Q(acronym__icontains=search_term)
-            | Q(acron3__icontains=search_term)
+            | Q(acron3__icontains=search_term), status="OFFICIAL"
         )
 
     def autocomplete_label(self):
@@ -378,10 +413,10 @@ class Country(CommonControlField, ClusterableModel):
         ]
 
     def __unicode__(self):
-        return self.name or self.acronym
+        return f"{self.name or self.acronym}"
 
     def __str__(self):
-        return self.name or self.acronym
+        return f"{self.name or self.acronym}"
 
     @classmethod
     def load(cls, user, file_path=None):
@@ -506,6 +541,7 @@ class Location(CommonControlField):
         null=True,
         blank=True,
     )
+    status = models.CharField(max_length=9, choices=STATUS, default="RAW", blank=True)
 
     base_form_class = CoreAdminModelForm
 
@@ -518,11 +554,40 @@ class Location(CommonControlField):
     # autocomplete_search_field = "country__name"
     @staticmethod
     def autocomplete_custom_queryset_filter(search_term):
-        return Location.objects.filter(
-            Q(city__name__icontains=search_term)
-            | Q(state__name__icontains=search_term)
-            | Q(country__name__icontains=search_term)
-        ).prefetch_related("city", "state", "country")
+        """
+        Permite pesquisar por termos livres ou por filtros específicos:
+        - country:Nome do país
+        - state:Nome do estado
+        - city:Nome da cidade
+        Exemplo: country:Brasil state:São Paulo
+        """
+        # Expressão regular para capturar argumentos específicos no formato key:valor (sem aspas)
+        pattern = r'\b(?P<key>country|state|city):(?P<value>[^ ]+)'
+
+        filters = {}
+        free_terms = search_term
+        for match in re.finditer(pattern, search_term):
+            key = match.group("key")
+            value = match.group("value")
+            filters[key] = value.strip()
+            free_terms = free_terms.replace(match.group(0), "")
+
+        free_terms = free_terms.strip()
+        query = Q()
+        if filters.get("country"):
+            query &= Q(country__name__icontains=filters["country"])
+        if filters.get("state"):
+            query &= Q(state__name__icontains=filters["state"], state__status="OFFICIAL")
+        if filters.get("city"):
+            query &= Q(city__name__icontains=filters["city"])
+        if free_terms:
+            term = free_terms
+            query &= (
+                Q(city__name__icontains=term)
+                | Q(state__name__icontains=term, country__status="OFFICIAL")
+                | Q(country__name__icontains=term, state__status="OFFICIAL")
+            )
+        return Location.objects.filter(query).prefetch_related("city", "state", "country")
 
     def autocomplete_label(self):
         return str(self)
@@ -679,3 +744,138 @@ class CountryFile(models.Model):
         return os.path.basename(self.attachment.name)
 
     panels = [FieldPanel("attachment")]
+
+
+class CountryMatched(CommonControlField):
+    official = models.OneToOneField(
+        Country,
+        on_delete=models.CASCADE,
+        related_name='matched_countries',
+        limit_choices_to={'status': 'VERIFIED'},
+        verbose_name=_("Official Country"),
+        help_text=_("País oficial verificado (do pycountry)")
+    )
+    
+    matched = models.ManyToManyField(
+        Country,
+        related_name='official_match',
+        limit_choices_to={'status__in': ['RAW', 'CLEANED']},
+        verbose_name=_("Matched Countries"),
+        help_text=_("Variações/duplicatas que correspondem a este país oficial"),
+        blank=True
+    )
+    
+    score = models.FloatField(
+        default=1.0,
+        help_text=_("Confiança do match (0.0 a 1.0)"),
+        
+    )
+    def matched_list(self):
+        # Retorna a lista de países correspondentes
+        matched_countries = self.matched.all()
+        if matched_countries:
+            return ", ".join([c.name for c in matched_countries])
+        return "-"
+    
+    matched_list.short_description = "Matched Countries"           
+    
+    panels = [
+        AutocompletePanel("official", read_only=True),
+        AutocompletePanel("matched"),
+        FieldPanel("score")
+    ]
+    
+    class Meta:
+        verbose_name = _("Country Match")
+        verbose_name_plural = _("Country Matches")
+
+    def __str__(self):
+        matched_count = self.matched.count()
+        return f"{self.official.name} ({matched_count} matches)"
+    
+    def apply_to_locations(self):
+        """
+        Atualiza todos os Locations que usam países matched para usar o oficial.
+        
+        Returns:
+            int: Número de locations atualizados
+        """
+        matched_countries = self.matched.filter(status="MATCHED")
+        locations = Location.objects.filter(country__in=matched_countries)
+        
+        count = locations.update(country=self.official)
+        
+        return count
+    
+    def unset_matched_countries(self):
+        unset_countries = self.matched.filter(status="PROCESSED")
+        self.matched.remove(*unset_countries)
+        return list(unset_countries.values_list("id", flat=True))
+
+
+class StateMatched(CommonControlField):
+    official = models.OneToOneField(
+        State,
+        on_delete=models.CASCADE,
+        related_name='matched_states',
+        limit_choices_to={'status': 'OFFICIAL'},
+        verbose_name=_("Official State"),
+        help_text=_("Estado oficial verificado")
+    )
+    
+    matched = models.ManyToManyField(
+        State,
+        related_name='official_match_state',
+        limit_choices_to={'status__in': ['RAW', 'CLEANED']},
+        verbose_name=_("Matched States"),
+        help_text=_("Variações/duplicatas que correspondem a este estado oficial"),
+        blank=True
+    )
+    
+    score = models.FloatField(
+        default=1.0,
+        help_text=_("Confiança do match (0.0 a 1.0)"),
+    )
+    
+    def matched_list(self):
+        """Retorna a lista de estados correspondentes"""
+        matched_states = self.matched.all()
+        if matched_states:
+            return ", ".join([s.name for s in matched_states])
+        return "-"
+    
+    matched_list.short_description = "Matched States"
+    
+    panels = [
+        AutocompletePanel("official", read_only=True),
+        AutocompletePanel("matched"),
+        FieldPanel("score")
+    ]
+    
+    class Meta:
+        verbose_name = _("State Match")
+        verbose_name_plural = _("State Matches")
+
+    def __str__(self):
+        matched_count = self.matched.count()
+        return f"{self.official.name} ({matched_count} matches)"
+    
+    def apply_to_locations(self):
+        """
+        Atualiza todos os Locations que usam estados matched para usar o oficial.
+        
+        Returns:
+            int: Número de locations atualizados
+        """
+        matched_states = self.matched.filter(status="MATCHED")
+        locations = Location.objects.filter(state__in=matched_states)
+        
+        count = locations.update(state=self.official)
+        
+        return count
+    
+    def unset_matched_states(self):
+        """Remove states já processados da lista de matched"""
+        unset_states = self.matched.filter(status="PROCESSED")
+        self.matched.remove(*unset_states)
+        return list(unset_states.values_list("id", flat=True))
