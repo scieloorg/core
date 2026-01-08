@@ -1,15 +1,9 @@
-import logging
 import re
 import sys
 from datetime import datetime
 from urllib.parse import urlparse
-from core.utils.utils import fetch_data
 
 from django.db.models import Q
-from django.core.files.base import ContentFile
-from wagtail.images.models import Image
-
-from collection.exceptions import MainCollectionNotFoundError
 from core.models import Language
 from institution.models import CopyrightHolder, Owner, Publisher, Sponsor
 from journal.models import (
@@ -39,12 +33,11 @@ from journal.models import (
     JournalLicense,
 )
 from journal import tasks
-from location.models import City, CountryName, Location, State, Country
+from location.models import City, Location, State, Country
 from vocabulary.models import Vocabulary
 
 from .am_data_extraction import (
     get_issns,
-    extract_issn_print_electronic,
     extract_value,
     extract_value_from_journal_history,
     extract_value_mission,
