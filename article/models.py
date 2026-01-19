@@ -930,7 +930,7 @@ class Article(
             params["journal"] = journal
         if journal_id:
             params["journal__id"] = journal_id
-        duplicates = (
+        return (
             cls.objects.filter(**params)
             .exclude(sps_pkg_name__isnull=True)
             .exclude(sps_pkg_name="")
@@ -938,11 +938,30 @@ class Article(
             .values("sps_pkg_name")
             .annotate(count=Count("id"))
             .filter(count__gt=1)
+            .values_list("sps_pkg_name", flat=True)
         )
-        return list(item["sps_pkg_name"] for item in duplicates)
+    
+    @classmethod
+    def find_duplicated_pid_v2(cls, journal=None, journal_id=None):
+        # Busca em ambos os campos de ISSN
+        params = {}
+        if journal:
+            params["journal"] = journal
+        if journal_id:
+            params["journal__id"] = journal_id
+        return (
+            cls.objects.filter(**params)
+            .exclude(pid_v2__isnull=True)
+            .exclude(pid_v2="")
+            .exclude(data_status=choices.DATA_STATUS_DUPLICATED)
+            .values("pid_v2")
+            .annotate(count=Count("id"))
+            .filter(count__gt=1)
+            .values_list("pid_v2", flat=True)
+        )
 
     @classmethod
-    def mark_items_as_duplicated(cls, journal=None, journal_id=None):
+    def deduplicate_items(cls, user, journal=None, journal_id=None, mark_as_duplicated=False, deduplicate=False):
         """
         Corrige todos os artigos marcados como DATA_STATUS_DUPLICATED com base nos ISSNs fornecidos.
 
@@ -950,36 +969,37 @@ class Article(
             issns: Lista de ISSNs para verificar duplicatas.
             user: Usuário que está executando a operação.
         """
+        article_duplicated_pid_v2 = cls.find_duplicated_pid_v2(
+            journal, journal_id
+        )
+        if article_duplicated_pid_v2.exists():
+            if mark_as_duplicated:
+                cls.objects.filter(spid_v2__in=article_duplicated_pid_v2).exclude(
+                    data_status=choices.DATA_STATUS_DUPLICATED
+                ).update(
+                    data_status=choices.DATA_STATUS_DUPLICATED,
+                )
+            if deduplicate:
+                for pid_v2 in article_duplicated_pid_v2:
+                    cls.fix_duplicated_items(user, None, pid_v2)
+
         article_duplicated_pkg_names = cls.find_duplicated_pkg_names(
             journal, journal_id
         )
-        if not article_duplicated_pkg_names:
-            return
-        cls.objects.filter(sps_pkg_name__in=article_duplicated_pkg_names).exclude(
-            data_status=choices.DATA_STATUS_DUPLICATED
-        ).update(
-            data_status=choices.DATA_STATUS_DUPLICATED,
-        )
+        if article_duplicated_pkg_names.exists():
+            if mark_as_duplicated:
+                cls.objects.filter(sps_pkg_name__in=article_duplicated_pkg_names).exclude(
+                    data_status=choices.DATA_STATUS_DUPLICATED
+                ).update(
+                    data_status=choices.DATA_STATUS_DUPLICATED,
+                )
+            if deduplicate:
+                for pkg_name in article_duplicated_pkg_names:
+                    cls.fix_duplicated_items(user, pkg_name, None)
         return article_duplicated_pkg_names
 
     @classmethod
-    def deduplicate_items(cls, user, journal=None, journal_id=None):
-        """
-        Corrige todos os artigos marcados como DATA_STATUS_DUPLICATED com base nos ISSNs fornecidos.
-
-        Args:
-            issns: Lista de ISSNs para verificar duplicatas.
-            user: Usuário que está executando a operação.
-        """
-        article_duplicated_pkg_names = cls.find_duplicated_pkg_names(
-            journal, journal_id
-        )
-        for pkg_name in article_duplicated_pkg_names:
-            cls.fix_duplicated_pkg_name(pkg_name, user)
-        return article_duplicated_pkg_names
-
-    @classmethod
-    def fix_duplicated_pkg_name(cls, pkg_name, user):
+    def fix_duplicated_items(cls, user, pkg_name, pid_v2):
         """
         Corrige artigos marcados como DATA_STATUS_DUPLICATED com base no pkg_name fornecido.
 
@@ -991,7 +1011,12 @@ class Article(
             int: Número de artigos atualizados.
         """
         try:
-            articles = cls.objects.filter(sps_pkg_name=pkg_name).exclude(
+            filters = Q()
+            if pkg_name:
+                filters |= Q(sps_pkg_name=pkg_name)
+            if pid_v2:
+                filters |= Q(pid_v2=pid_v2)
+            articles = cls.objects.filter(filters).exclude(
                 data_status=choices.DATA_STATUS_DUPLICATED
             )
             if articles.count() <= 1:
@@ -1014,8 +1039,8 @@ class Article(
             UnexpectedEvent.create(
                 exception=exception,
                 exc_traceback=exc_traceback,
-                action="article.models.Article.fix_duplicated_pkg_name",
-                detail=pkg_name,
+                action="article.models.Article.fix_duplicated_items",
+                detail=pkg_name or pid_v2,
             )
 
 
