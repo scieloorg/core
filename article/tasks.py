@@ -1063,11 +1063,8 @@ def task_fix_journal_articles_status(
         if mark_as_public:
             Article.mark_items_as_public(journal_id=journal_id)
 
-        if mark_as_duplicated:
-            Article.mark_items_as_duplicated(journal_id=journal_id)
-
-        if deduplicate:
-            Article.deduplicate_items(user, journal_id=journal_id)
+        if mark_as_duplicated or deduplicate:
+            Article.deduplicate_items(user, journal_id=journal_id, mark_as_duplicated=mark_as_duplicated, deduplicate=deduplicate)
 
         return {
             "status": "success",
