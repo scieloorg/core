@@ -974,7 +974,7 @@ class Article(
         )
         if article_duplicated_pid_v2.exists():
             if mark_as_duplicated:
-                cls.objects.filter(spid_v2__in=article_duplicated_pid_v2).exclude(
+                cls.objects.filter(pid_v2__in=article_duplicated_pid_v2).exclude(
                     data_status=choices.DATA_STATUS_DUPLICATED
                 ).update(
                     data_status=choices.DATA_STATUS_DUPLICATED,
