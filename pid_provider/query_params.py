@@ -63,9 +63,19 @@ class QueryBuilderPidProviderXML:
     
     @cached_property
     def pkg_name(self):
-        """Nome do pacote do documento."""
+        """Nome do pacote do documento, parâmtro usado ao instanciar XMLAdapter"""
         return self.xml_adapter.pkg_name
-    
+
+    @cached_property
+    def sps_pkg_name(self):
+        """Nome do pacote do documento (deprecated)."""
+        return self.xml_adapter.sps_pkg_name
+
+    @cached_property
+    def deprecated_sps_pkg_name(self):
+        """Nome do pacote do documento (deprecated)."""
+        return self.xml_adapter.sps_pkg_name
+
     @cached_property
     def main_doi(self):
         """DOI principal do documento."""
@@ -176,8 +186,15 @@ class QueryBuilderPidProviderXML:
             q |= Q(v2=self.aop_pid) | Q(aop_pid=self.aop_pid)
             
         # Package name
+        pkg_names = set()
         if self.pkg_name:
-            q |= Q(pkg_name=self.pkg_name)
+            pkg_names.add(self.pkg_name)
+        if self.sps_pkg_name:
+            pkg_names.add(self.sps_pkg_name)
+        if self.deprecated_sps_pkg_name:
+            pkg_names.add(self.deprecated_sps_pkg_name)
+        for pkg_name in pkg_names:
+            q |= Q(pkg_name=pkg_name)
 
         # # DOI principal
         # if self.main_doi:
