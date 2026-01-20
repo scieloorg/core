@@ -25,7 +25,7 @@ from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article import choices
 from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle, DataAvailabilityStatement
-from core.models import Language
+from core.models import Language, LicenseStatement, License
 from core.utils.extracts_normalized_email import extracts_normalized_email
 from doi.models import DOI
 from institution.models import Sponsor
@@ -174,7 +174,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         # CAMPOS SIMPLES EXTRAÍDOS DO XML
         set_pids(xmltree=xmltree, article=article, errors=errors)
         set_date_pub(xmltree=xmltree, article=article, errors=errors)
-        set_license(xmltree=xmltree, article=article, errors=errors)
+        set_license(user, xmltree=xmltree, article=article, errors=errors)
         set_first_last_page_elocation_id(
             xmltree=xmltree, article=article, errors=errors
         )
@@ -540,7 +540,7 @@ def get_or_create_toc_sections(xmltree, user, errors, issue):
     return data
 
 
-def set_license(xmltree, article, errors):
+def set_license(user, xmltree, article, errors):
     """
     Define a licença do artigo a partir do XML.
 
@@ -552,8 +552,13 @@ def set_license(xmltree, article, errors):
     try:
         xml_licenses = ArticleLicense(xmltree=xmltree).licenses
         for xml_license in xml_licenses:
-            if license := xml_license.get("link"):
-                article.article_license = license
+            if url := xml_license.get("link"):
+                data = LicenseStatement.parse_url(url)
+                article.license = License.create_or_update(
+                    user=user,
+                    license_type=data.get("license_type"),
+                    version=data.get("license_version"),
+                )
                 break
     except Exception as e:
         add_error(errors, "set_license", e)
