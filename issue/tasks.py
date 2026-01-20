@@ -159,11 +159,10 @@ def task_harvest_and_load_issue(
         
         if issue:
             logger.info(f"Successfully loaded issue {issue}")
+            return issue.id
         else:
             logger.warning(f"Failed to load issue {code} from {url}")
             
-        return issue
-        
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
