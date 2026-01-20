@@ -5,108 +5,293 @@
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.lyncode.com/xoai http://www.lyncode.com/xsd/xoai.xsd">
+
+    <!-- ================================================================== -->
+    <!-- DUBLIN CORE (OAI_DC) - Metadados básicos para interoperabilidade -->
+    <!-- ================================================================== -->
     <element name="dc">
+
+        <!-- ========== TITLE ========== -->
         <element name="title">
             <element name="none">
-            {% for title in object.titles.all %}
+                {% for title in object.titles.all %}
                 <field name="value">{{ title.plain_text }}</field>
-            {% endfor%}
+                {% endfor %}
             </element>
         </element>
-        <element name="creator">
-            <element name="none">
-            {% for research in object.researchers.all %}
-                {% if research.orcid %}
-                    <field name="value" orcid="{{research.orcid}}">{{research.person_name}}</field>
-                {% else %}
-                    <field name="value">{{research.person_name}}</field>
-                {% endif %}
-            {% endfor %}
-            </element>
-        </element>
-        <element name="subject">
-            <element name="none">
-            {% for kwd in object.keywords.all %}
-                <field name="value">{{ kwd.text }}</field>
-            {% endfor %}
-            </element>
-        </element>
-        <element name="description">
-            <element name="none">
-            {% for abs in object.abstracts.all %}
-                <field name="value">{{ abs }}</field>
-            {% endfor %}
-            <field name="value"/>
-            </element>
-        </element>
-      <element name="date">
-         <element name="none">
-            <field name="value">{{ object.updated|date:"c" }}</field>
-         </element>
-      </element>
-      <element name="type">
-         <element name="none">
-            <field name="value">{{ object.article_type }}</field>
-         </element>
-      </element>
-      <element name="identifier">
-         <element name="none">
 
-            {% for doi in object.doi.all %}
-                <field name="value">{{ doi.value }}</field>
-            {% endfor %}
+        <!-- ========== CONTRIBUTOR / AUTHOR ========== -->
+        <element name="contributor">
+            <element name="author">
+                {% for research in object.researchers.all %}
+                <element>
+                    {% if research.orcid %}
+                    <field name="value" orcid="{{ research.orcid }}"{% if research.affiliation %} affiliation="{{ research.affiliation.institution.institution_identification.name }}{% if research.affiliation.institution.level_1 %}, {{ research.affiliation.institution.level_1 }}{% endif %}"{% endif %}>{{ research.person_name }}</field>
+                    {% else %}
+                    <field name="value"{% if research.affiliation %} affiliation="{{ research.affiliation.institution.institution_identification.name }}{% if research.affiliation.institution.level_1 %}, {{ research.affiliation.institution.level_1 }}{% endif %}"{% endif %}>{{ research.person_name }}</field>
+                    {% endif %}
+                </element>
+                {% endfor %}
+            </element>
+        </element>
 
+        <!-- ========== DATE ========== -->
+        <element name="date">
+            <!-- Data de publicação (dateIssued) -->
+            {% if object.pub_date %}
+            <element name="issued">
+                <element>
+                    <field name="value">{{ object.pub_date }}</field>
+                </element>
+            </element>
+            {% endif %}
+
+            <!-- Data de acessão ao repositório (dateAccessioned) -->
+            {% if object.created %}
+            <element name="accessioned">
+                <element>
+                    <field name="value">{{ object.created|date:"c" }}</field>
+                </element>
+            </element>
+            {% endif %}
+
+            <!-- Data de disponibilização (dateAvailable) -->
+            {% if object.updated %}
+            <element name="available">
+                <element>
+                    <field name="value">{{ object.updated|date:"c" }}</field>
+                </element>
+            </element>
+            {% endif %}
+        </element>
+
+        <!-- ========== IDENTIFIER ========== -->
+        <element name="identifier">
+            <!-- PIDs -->
+            <element name="none">
                 <field name="value">{{ object.pid_v2 }}</field>
                 <field name="value">{{ object.pid_v3 }}</field>
+            </element>
 
-            {% for collection in object.collections %}
-                {% for lang in object.languages.all %}
-                    <field name="value">http://{{collection.domain}}/scielo.php?script=sci_arttext&amp;pid={{object.pid_v2}}&amp;tlng={{lang.code2}}</field>
+            <!-- DOI qualificado -->
+            <element name="doi">
+                {% for doi in object.doi.all %}
+                <element>
+                    <field name="value">{{ doi.value }}</field>
+                </element>
                 {% endfor %}
-            {% endfor %}
-                    
-         </element>
-      </element>
-      <element name="language">
-         <element name="none">
-            {% for lang in object.languages.all %}
-                <field name="value">{{ lang.code2 }}</field>
-            {% endfor %}
-         </element>
-      </element>
-      <element name="rights">
-         <element name="none">
-            {% for lic in object.license.all %}
-                <field name="value">{{ lic }}</field>
-            {% endfor %}
-         </element>
-      </element>
-      <element name="source">
-         <element name="none">
-            <field name="value">{{ object.source }}</field>
-         </element>
-      </element>
-    
-      <element name="publisher">
-         <element name="none">
-            <field name="value">{{ object.publisher.institution.institution_identification.name }}</field>
-         </element>
-      </element>
-      <element name="format">
-         <element name="none">
-            <field name="value">text/html</field>
-         </element>
-      </element>
+            </element>
+
+            <!-- ISSN print -->
+            {% if object.journal.official %}
+                {% if object.journal.official.issn_print %}
+                <element name="issn">
+                    <element>
+                        <field name="value">{{ object.journal.official.issn_print }}</field>
+                    </element>
+                </element>
+                {% endif %}
+
+                <!-- ISSN eletrônico -->
+                {% if object.journal.official.issn_electronic %}
+                <element name="eissn">
+                    <element>
+                        <field name="value">{{ object.journal.official.issn_electronic }}</field>
+                    </element>
+                </element>
+                {% endif %}
+            {% endif %}
+
+            <!-- URI qualificado -->
+            <element name="uri">
+                {% for collection in object.collections %}
+                {% for lang in object.languages.all %}
+                <element>
+                    <field name="value">http://{{ collection.domain }}/scielo.php?script=sci_arttext&amp;pid={{ object.pid_v2 }}&amp;tlng={{ lang.code2 }}</field>
+                </element>
+                {% endfor %}
+                {% endfor %}
+            </element>
+        </element>
+
+        <!-- ========== SUBJECT ========== -->
+        <element name="subject">
+            <element name="none">
+                {% for kwd in object.keywords.all %}
+                <field name="value" vocabulary="{{ kwd.vocabulary.acronym }}">{{ kwd.text }}</field>
+                {% endfor %}
+            </element>
+        </element>
+
+        <!-- ========== DESCRIPTION ========== -->
+        <element name="description">
+            <!-- Abstract específico (CRÍTICO para MODS!) -->
+            <element name="abstract">
+                {% for abs in object.abstracts.all %}
+                <element>
+                    <field name="value">{{ abs.plain_text }}</field>
+                </element>
+                {% endfor %}
+            </element>
+        </element>
+
+        <!-- ========== LANGUAGE ========== -->
+        <element name="language">
+            <!-- Idioma ISO -->
+            <element name="iso">
+                {% for lang in object.languages.all %}
+                <element>
+                    <field name="value">{{ lang.code2 }}</field>
+                </element>
+                {% endfor %}
+            </element>
+        </element>
+
+        <!-- ========== PUBLISHER ========== -->
+        {% with ph=object.journal.publisher_history.first %}
+        {% if ph %}
+        <element name="publisher">
+            <element name="none">
+                {% if ph.institution %}
+                <field name="value">{{ ph.institution.institution.institution_identification.name }}</field>
+                {% elif ph.organization %}
+                <field name="value">{{ ph.organization.name }}</field>
+                {% endif %}
+            </element>
+        </element>
+        {% endif %}
+        {% endwith %}
+
+        <!-- ========== RELATION ========== -->
+        <element name="relation">
+            <!-- Título do periódico -->
+            <element name="ispartof">
+                <element>
+                    <field name="value">{{ object.journal.title }}</field>
+                </element>
+            </element>
+        </element>
+
+        <!-- ========== CITATION (elementos estruturados) ========== -->
+        <element name="citation">
+            <!-- Volume -->
+            {% if object.issue.volume %}
+            <element name="volume">
+                <element>
+                    <field name="value">{{ object.issue.volume }}</field>
+                </element>
+            </element>
+            {% endif %}
+
+            <!-- Número/Issue -->
+            {% if object.issue.number %}
+            <element name="issue">
+                <element>
+                    <field name="value">{{ object.issue.number }}</field>
+                </element>
+            </element>
+            {% endif %}
+
+            <!-- Página inicial -->
+            {% if object.first_page %}
+            <element name="spage">
+                <element>
+                    <field name="value">{{ object.first_page }}</field>
+                </element>
+            </element>
+            {% endif %}
+
+            <!-- Página final -->
+            {% if object.last_page %}
+            <element name="epage">
+                <element>
+                    <field name="value">{{ object.last_page }}</field>
+                </element>
+            </element>
+            {% endif %}
+        </element>
+
+        <!-- ========== TYPE ========== -->
+        <element name="type">
+            <element name="none">
+                <field name="value">{{ object.article_type }}</field>
+            </element>
+        </element>
+
+        <!-- ========== FORMAT ========== -->
+        <element name="format">
+            <element name="none">
+                <field name="value">text/html</field>
+            </element>
+        </element>
+
+        <!-- ========== SOURCE ========== -->
+        <element name="source">
+            <element name="none">
+                <field name="value">{{ object.journal.title }}{% if object.issue.volume %}, v.{{ object.issue.volume }}{% endif %}{% if object.issue.number %}, n.{{ object.issue.number }}{% endif %}{% if object.first_page and object.last_page %}, p.{{ object.first_page }}-{{ object.last_page }}{% endif %}{% if object.pub_date_year %}, {{ object.pub_date_year }}{% endif %}</field>
+            </element>
+        </element>
+
+        <!-- ========== RIGHTS ========== -->
+        <element name="rights">
+            {% if object.license %}
+            <!-- Texto da licença -->
+            <element name="none">
+                <field name="value">{{ object.license.license_type }}</field>
+            </element>
+
+            <!-- URL da licença (mapeamento Creative Commons) -->
+            <element name="uri">
+                <element>
+                    {% if 'CC BY 4.0' in object.license.license_type or 'CC-BY 4.0' in object.license.license_type %}
+                    <field name="value">http://creativecommons.org/licenses/by/4.0/</field>
+                    {% elif 'CC BY-NC 4.0' in object.license.license_type or 'CC-BY-NC 4.0' in object.license.license_type %}
+                    <field name="value">http://creativecommons.org/licenses/by-nc/4.0/</field>
+                    {% elif 'CC BY-SA 4.0' in object.license.license_type or 'CC-BY-SA 4.0' in object.license.license_type %}
+                    <field name="value">http://creativecommons.org/licenses/by-sa/4.0/</field>
+                    {% elif 'CC BY-ND 4.0' in object.license.license_type or 'CC-BY-ND 4.0' in object.license.license_type %}
+                    <field name="value">http://creativecommons.org/licenses/by-nd/4.0/</field>
+                    {% elif 'CC BY-NC-SA 4.0' in object.license.license_type or 'CC-BY-NC-SA 4.0' in object.license.license_type %}
+                    <field name="value">http://creativecommons.org/licenses/by-nc-sa/4.0/</field>
+                    {% elif 'CC BY-NC-ND 4.0' in object.license.license_type or 'CC-BY-NC-ND 4.0' in object.license.license_type %}
+                    <field name="value">http://creativecommons.org/licenses/by-nc-nd/4.0/</field>
+                    {% elif 'CC BY 3.0' in object.license.license_type or 'CC-BY 3.0' in object.license.license_type %}
+                    <field name="value">http://creativecommons.org/licenses/by/3.0/</field>
+                    {% elif 'CC BY-NC 3.0' in object.license.license_type or 'CC-BY-NC 3.0' in object.license.license_type %}
+                    <field name="value">http://creativecommons.org/licenses/by-nc/3.0/</field>
+                    {% endif %}
+                </element>
+            </element>
+            {% endif %}
+        </element>
+
+        <!-- ========== FUNDING ========== -->
+        <element name="description">
+            <element name="sponsorship">
+                {% for funding in object.fundings.all %}
+                <element>
+                    <field name="value">{{ funding.funding_source.institution.institution_identification.name }}{% if funding.award_id %} grant {{ funding.award_id }}{% endif %}</field>
+                </element>
+                {% endfor %}
+            </element>
+        </element>
+
     </element>
+
+    <!-- ========== BUNDLES ========== -->
     <element name="bundles"/>
+
+    <!-- ========== OTHERS ========== -->
     <element name="others">
         <field name="handle"/>
         <field name="identifier">{{ object.pid_v2 }}</field>
         <field name="lastModifyDate">{{ object.updated|date:"c" }}</field>
     </element>
+
+    <!-- ========== REPOSITORY ========== -->
     <element name="repository">
         <field name="mail"/>
         <field name="name"/>
     </element>
-</metadata>
 
+</metadata>
