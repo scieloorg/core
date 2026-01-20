@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from core.models import Language, LicenseStatement
+from core.models import Language, LicenseStatement, License
 
 
 class LanguageSerializer(serializers.ModelSerializer):
@@ -22,4 +22,14 @@ class LicenseStatementSerializer(serializers.ModelSerializer):
             "url",
             "license_p",
             "language",
+        ]
+
+
+class LicenseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = License
+        fields = [
+            "url",
+            "license_type",
+            "version",
         ]
