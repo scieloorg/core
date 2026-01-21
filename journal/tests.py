@@ -1,6 +1,6 @@
 import json
 from unittest.mock import patch
-from deepdiff import DeepDiff
+
 from django.test import TestCase
 from django_test_migrations.migrator import Migrator
 
@@ -8,6 +8,7 @@ from collection.models import Collection
 from core.models import Gender, Language, License
 from core.users.models import User
 from editorialboard.models import RoleModel
+from journal.formats.articlemeta_format import get_articlemeta_format_title
 from journal.models import (
     AMJournal,
     DigitalPreservationAgency,
@@ -25,7 +26,6 @@ from journal.tasks import (
     child_load_license_of_use_in_journal,
     load_license_of_use_in_journal,
 )
-from journal.formats.articlemeta_format import get_articlemeta_format_title
 from thematic_areas.models import ThematicArea
 from vocabulary.models import Vocabulary
 

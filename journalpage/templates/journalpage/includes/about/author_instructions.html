@@ -1,0 +1,52 @@
+{% load i18n %}
+{% load wagtailcore_tags %}
+
+<hr>
+<h4 id="instructions">{% trans 'INSTRUÇÕES PARA OS AUTORES' %}</h4>
+<!-- O texto e o formato das instruções é livre e pode variar de acordo com o periódico ou com a área temática, entretanto, é necessário que sejam abordados os seguintes elementos:-->
+<h5 id="item-4-1">{% trans 'Tipos de documentos aceitos' %}</h5>
+<!-- Pode haver mais de um. Permitir adicionar novo -->
+<ul type="disc">
+    {% for adt in accepted_documment_types %}
+        {{ adt.rich_text|richtext }}
+    {% endfor %}
+</ul>
+<h5 id="item-4-2">{% trans 'Contribuição dos Autores' %}</h5>
+{% for ac in authors_contributions %}
+    {{ ac.rich_text|richtext }}
+{% endfor %}
+<!-- Tirar duvida. formato de como vai ficar -->
+<h5 id="item-4-3">{% trans 'Formato de envio dos artigos' %}</h5>
+<!-- Descrição de como as contribuições dos autores devem ser explicitadas.
+                                Utiliza alguma taxonomia? Qual?
+                                O texto do artigo apresenta as contribuições dos autores?
+                                De preferência utilizar a estrutura de taxonomia do CREDiT https://casrai.org/credit/
+                                -->
+<h5 id="item-4-4">{% trans 'Ativos digitais' %}</h5>
+{% for da in digital_assets %}
+    {{ da.rich_text|richtext }}
+{% endfor %}
+<h5 id="item-4-5">{% trans 'Citações e referências' %}</h5>
+{% for cr in citations_and_references %}
+    {{ cr.rich_text|richtext }}
+{% endfor %}
+<h5 id="item-4-6">{% trans 'Documentos Suplementares Necessários para Submissão' %}</h5>
+{% for sds in supp_docs_submission %}
+    {{ sds.rich_text|richtext }}
+{% endfor %}
+<h5 id="item-4-7">{% trans 'Declaração de Financiamento' %}</h5>
+{% for fs in financing_statement %}
+    {{ fs.rich_text|richtext }}
+{% endfor %}
+<h5 id="item-4-8">{% trans 'Agradecimentos' %}</h5>
+{% for ak in acknowledgements %}
+    {{ ak.rich_text|richtext }}
+{% endfor %}
+<h5 id="item-4-9">{% trans 'Informações adicionais' %}</h5>
+{% for ai in additional_information %}
+    {{ ai.rich_text|richtext }}
+{% endfor %}
+<p>
+    <small>{% trans '*dados precisam estar disponíveis em alfabeto romano' %}</small>
+</p>
+

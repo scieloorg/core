@@ -2,17 +2,22 @@ from django.http import HttpResponseRedirect
 from django.urls import include, path
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
-from wagtail_modeladmin.options import (
-    ModelAdmin,
-    ModelAdminGroup,
-    modeladmin_register,
-)
+from wagtail_modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
 from wagtail_modeladmin.views import CreateView
 
-from .button_helpers import CountryHelper
-from .models import City, Country, CountryFile, Location, State
-from .views import import_file_country, validate_country
 from config.menu import get_menu_order
+
+from .button_helpers import CountryHelper
+from .models import (
+    City,
+    Country,
+    CountryFile,
+    CountryMatched,
+    Location,
+    State,
+    StateMatched,
+)
+from .views import import_file_country, validate_country
 
 
 class LocationCreateView(CreateView):
@@ -62,6 +67,7 @@ class CityAdmin(ModelAdmin):
     exclude_from_explorer = False
     list_display = ("name",)
     search_fields = ("name",)
+    list_filter = ("status",)
     list_export = ("name",)
     export_filename = "cities"
 
@@ -86,6 +92,7 @@ class StateAdmin(ModelAdmin):
         "name",
         "acronym",
     )
+    list_filter = ("status",)
     export_filename = "states"
 
 
@@ -112,6 +119,7 @@ class CountryAdmin(ModelAdmin):
         "acronym",
         "acron3",
     )
+    list_filter = ("status",)
     export_filename = "countries"
 
 
@@ -159,3 +167,32 @@ def register_url():
             name="import_file_country",
         ),
     ]
+
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import (
+    CreateView,
+    SnippetViewSet,
+    SnippetViewSetGroup,
+)
+
+
+@register_snippet
+class CountryMatchedSnippetViewAdmin(SnippetViewSet):
+    model = CountryMatched
+    menu_label = "Correspondencia Country"
+    menu_icon = "folder"
+    search_fields = (
+        "official__name",
+    )
+    list_display = ("official", "matched_list", "score")
+
+
+@register_snippet
+class StateMatchedSnippetViewAdmin(SnippetViewSet):
+    model = StateMatched
+    menu_label = "Correspondencia State"
+    menu_icon = "folder"
+    search_fields = (
+        "official__name",
+    )
+    list_display = ("official", "matched_list", "score")

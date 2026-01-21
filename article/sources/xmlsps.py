@@ -22,17 +22,25 @@ from packtools.sps.models.kwd_group import ArticleKeywords
 from packtools.sps.models.v2.article_toc_sections import ArticleTocSections
 from packtools.sps.models.v2.related_articles import RelatedArticles
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
+from rapidfuzz import fuzz, process
 
 from article import choices
-from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle, DataAvailabilityStatement
+from article.models import (
+    Article,
+    ArticleFunding,
+    DataAvailabilityStatement,
+    DocumentAbstract,
+    DocumentTitle,
+)
 from core.models import Language
 from core.utils.extracts_normalized_email import extracts_normalized_email
 from doi.models import DOI
 from institution.models import Sponsor
 from issue.models import Issue, TableOfContents
 from journal.models import Journal
-from location.models import Location
-from pid_provider.choices import PPXML_STATUS_DONE, PPXML_STATUS_INVALID
+from location.models import City, Country, Location, State
+from location.utils import clean_acronym, clean_name
+from pid_provider.choices import PPXML_STATUS_INVALID
 from pid_provider.models import PidProviderXML
 from researcher.models import Affiliation, InstitutionalAuthor, Researcher
 from tracker.models import UnexpectedEvent
@@ -57,6 +65,215 @@ def add_error(errors, function_name, error, **kwargs):
     }
     error_dict.update(kwargs)
     errors.append(error_dict)
+
+
+def fuzzy_match_official(search_term, official_dict, threshold=85):
+    """
+    Realiza fuzzy matching genérico contra um dicionário de itens oficiais.
+    
+    Args:
+        search_term: Termo a ser buscado
+        official_dict: Dicionário {chave_busca: objeto} de itens oficiais
+        threshold: Score mínimo para considerar match (0-100)
+        
+    Returns:
+        tuple: (objeto_matched, score) ou (None, 0) se não encontrar match
+    """
+    if not official_dict or not search_term:
+        return None, 0
+    
+    result = process.extractOne(
+        search_term,
+        official_dict.keys(),
+        scorer=fuzz.WRatio,
+        score_cutoff=threshold,
+    )
+    
+    if result:
+        matched_key, score, _ = result
+        matched_obj = official_dict[matched_key]
+        return matched_obj, score
+    
+    return None, 0
+
+
+def get_country_by_acronym(country_name, user):
+    """
+    Busca país por acronym (2) sem fuzzy matching.
+    
+    Args:
+        country_name: Nome/código do país
+        user: Usuário para criação
+        
+    Returns:
+        Country: Objeto Country ou None
+    """
+    if len(country_name) == 2 and country_name.isalpha():
+        try:
+            return Country.objects.get(acronym__iexact=country_name, status="OFFICIAL")
+        except Country.DoesNotExist:
+            return None
+
+
+def normalize_country(country_name, user, errors, threshold=85):
+    """
+    Normaliza nome de país usando fuzzy matching com dados oficiais.
+    
+    Args:
+        country_name: Nome ou código do país
+        user: Usuário para criação de registros
+        errors: Lista para coletar erros
+        threshold: Score mínimo para fuzzy matching (0-100)
+        
+    Returns:
+        Country: Objeto Country normalizado ou None
+    """
+    if not country_name:
+        return None
+    
+    try:
+        country_name = str(country_name).strip()
+        
+        country_by_acronym = get_country_by_acronym(country_name, user)
+        if country_by_acronym:
+            return country_by_acronym
+        
+        cleaned_name = clean_name(country_name)
+        if not cleaned_name:
+            return None
+
+        try:
+            return Country.objects.get(name__iexact=cleaned_name, status="OFFICIAL")
+        except Country.DoesNotExist:
+            official_countries = Country.objects.filter(status="OFFICIAL")
+            official_dict = {c.name: c for c in official_countries if c.name}
+            
+            matched_country, score = fuzzy_match_official(
+                search_term=cleaned_name,
+                official_dict=official_dict,
+                threshold=threshold,
+            )
+            
+            if matched_country:
+                return matched_country
+ 
+
+        return Country.create_or_update(
+            user=user,
+            name=cleaned_name,
+        )
+    except Exception as e:
+        add_error(errors, "normalize_country", e, country_name=country_name)
+        return None
+
+
+def normalize_state(state_name, user, errors, threshold=85):
+    """
+    Normaliza nome de estado usando fuzzy matching com dados oficiais.
+    
+    Args:
+        state_name: Nome do estado
+        user: Usuário para criação de registros
+        errors: Lista para coletar erros
+        threshold: Score mínimo para fuzzy matching (0-100)
+        
+    Returns:
+        State: Objeto State normalizado ou None
+    """
+    if not state_name:
+        return None
+    
+    try:
+        cleaned_name = clean_name(state_name)
+        cleaned_acronym = clean_acronym(state_name)
+        
+        if not cleaned_name and not cleaned_acronym:
+            return None
+        try:
+            if cleaned_name and cleaned_acronym:
+                return State.objects.get(
+                    name__iexact=cleaned_name, 
+                    acronym__iexact=cleaned_acronym,
+                    status="OFFICIAL"
+                )
+            elif cleaned_name:
+                return State.objects.get(name__iexact=cleaned_name, status="OFFICIAL")
+        except State.DoesNotExist:
+            official_states = State.objects.filter(status="OFFICIAL")
+            official_dict = {s.name: s for s in official_states if s.name}
+
+            state_name = str(state_name).strip()
+
+
+            matched_state, score = fuzzy_match_official(
+                search_term=cleaned_name,
+                official_dict=official_dict,
+                threshold=threshold,
+            )
+            if matched_state:
+                return matched_state
+            
+            return State.create_or_update(
+                user=user,
+                name=cleaned_name,
+                acronym=cleaned_acronym,
+            )
+    except Exception as e:
+        add_error(errors, "normalize_state", e, state_name=state_name)
+        return None
+
+
+def normalize_city(city_name, user, errors):
+    """
+    Normaliza nome de cidade (apenas limpeza, sem fuzzy matching).
+    
+    Args:
+        city_name: Nome da cidade
+        user: Usuário para criação de registros
+        errors: Lista para coletar erros
+        
+    Returns:
+        City: Objeto City normalizado ou None
+    """
+    if not city_name:
+        return None
+    
+    try:
+        city_name = str(city_name).strip()
+        cleaned_name = clean_name(city_name)
+        if not cleaned_name:
+            return None
+
+        return City.get_or_create(name=cleaned_name, user=user)
+    except Exception as e:
+        add_error(errors, "normalize_city", e, city_name=city_name)
+        return None
+
+
+def normalize_location_data(country_name, state_name, city_name, user, errors):
+    """
+    Normaliza dados de localização usando fuzzy matching.
+    
+    Args:
+        country_name: Nome ou código do país
+        state_name: Nome do estado
+        city_name: Nome da cidade
+        user: Usuário para criação
+        errors: Lista para coletar erros
+        
+    Returns:
+        dict: {"country": Country obj, "state": State obj, "city": City obj}
+    """
+    result = {"country": None, "state": None, "city": None}
+
+    if country_name:
+        result["country"] = normalize_country(country_name, user, errors)
+    if state_name:
+        result["state"] = normalize_state(state_name, user, errors)
+    if city_name:
+        result["city"] = normalize_city(city_name, user, errors)
+    
+    return result
 
 
 def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
@@ -756,11 +973,20 @@ def get_or_create_institution_authors(xmltree, user, item, errors):
                 if collab := author.get("collab"):
                     if affs := author.get("affs"):
                         for aff in affs:
-                            location = Location.create_or_update(
-                                user=user,
+                            # Normalizar dados antes de criar location
+                            normalized_data = normalize_location_data(
                                 country_name=aff.get("country_name"),
                                 state_name=aff.get("state"),
                                 city_name=aff.get("city"),
+                                user=user,
+                                errors=errors
+                            )
+                            
+                            location = Location.create_or_update(
+                                user=user,
+                                country=normalized_data.get("country"),
+                                state=normalized_data.get("state"),
+                                city=normalized_data.get("city"),
                             )
                             affiliation = Affiliation.get_or_create(
                                 name=aff.get("orgname"),
