@@ -1,0 +1,116 @@
+{% load i18n %}
+{% load wagtailcore_tags %}
+
+<a name="about"></a>
+
+<h1 class="h4 pt-1" id="about">{% trans 'Sobre o periódico' %}</h1>
+<h5 id="item-1-1">{% trans 'Ficha Bibliográfica' %}</h5>
+    <strong>{% trans 'Título do periódico conforme registro do ISSN:' %}</strong>
+    <i>{{ journal.official.title }}</i>
+    <br>
+    <strong>{% trans 'Título abreviado:' %}</strong>
+    <i>{{ journal.short_title }}</i>
+    <br>
+    <strong>{% trans 'Publicação de:' %}</strong>
+    {% for publisher in journal.publisher_history.all %}
+      {% if publisher.organization %}
+        <i>{{ publisher.organization.name }}</i>
+      {% endif %}
+    {% endfor %}
+    <br>
+    <strong>{% trans 'Modelo de publicação:' %}</strong>
+    <i>{{ journal.get_publishing_model_display }}</i>
+    <br>
+    <strong>{% trans 'Ano de criação do periódico:' %}</strong> {% if journal.official.initial_year %} <i>{{ journal.official.initial_year }}</i> {% endif %}
+    <br>
+    <strong>{% trans 'Área:' %}</strong> {% for study_area in journal.subject.all %} <i>{{ study_area }}</i> {% endfor %}
+    <br>
+  {% if journal.official.issn_print %}
+      <strong>{% trans 'Versão impressa:' %}</strong>
+      <i>{{ journal.official.issn_print }}</i>
+      <br>
+  {% endif %}
+  {% if journal.official.issn_electronic %}
+      <strong>{% trans 'Versão on-line ISSN:' %}</strong>
+      <i>{{ journal.official.issn_electronic }}</i>
+      <br>
+  {% endif %}
+
+<h5 id="item-1-2">{% trans 'Missão' %}</h5>
+{% for m in mission %}
+  {{ m.rich_text|richtext }}
+{% endfor %}
+<h5 id="item-1-3">{% trans 'Breve Histórico' %}</h5>
+{% for bf in brief_history %}
+  {{ bf.rich_text|richtext }}
+{% endfor %}
+<h5 id="item-1-4">{% trans 'Foco e escopo' %}</h5>
+{% for hs in focus_and_scope %}
+  {{ hs.rich_text|richtext }}
+{% endfor %}
+<h5 id="item-1-5">{% trans 'Contato' %}</h5>
+  <strong>{% trans 'Endereço completo da unidade / instituição responsável pelo periódico:' %}</strong>
+  <i>{{ journal.contact_address }}</i><br>
+  <strong>{% trans 'Cidade:' %}</strong>
+  <i>{{journal.contact_location.city}}</i><br>
+  <strong>{% trans 'Estado:' %}</strong>
+  <i>{{journal.contact_location.state}}</i><br>
+  <strong>{% trans 'País:' %}</strong>
+  <i>{{journal.contact_location.country}}</i><br>
+  <strong>{% trans 'E-mail:' %}</strong>
+  {% for email in journal.journal_email.all %}
+    <i>{{email.email}}</i><br>
+  {% endfor%}
+<h5 id="item-1-6">{% trans 'Websites e Mídias Sociais' %}</h5>
+<ul type="disc">
+  {% for sn in social_network %}
+    <li>
+      <a href="{{ sn.url }}">{{ sn.name }}</a>
+    </li>
+  {% endfor %}
+</ul>
+<h5 id="item-1-7">{% trans 'Fontes de indexação' %}</h5>
+<ul type="disc">
+  {% for indexed_at in journal.indexed_at.all %}
+    <li>{{ indexed_at.name }}</li>
+  {% endfor %}
+  {% for additional_indexed in journal.additional_indexed_at.all %}
+    <li>{{additional_indexed.name}}</li>
+  {% endfor%}
+</ul>
+<h5 id="item-1-8">{% trans 'Patrocinadores e agências de Fomento' %}</h5>
+<ul type="disc">
+  {% for sponsor in sponsor_history %}
+    {% if sponsor.organization %}
+      <li>{{ sponsor.organization.name }}</li>
+    {% else %}
+      <li>{{ sponsor.institution.institution.institution_identification.name }}</li>
+    {% endif %}
+  {% endfor%}
+</ul>
+<!-- InlinePanel Preservacao Digital -->
+<!-- Panel Policy -->
+<h5 id="item-1-9">{% trans 'Preservação digital' %}</h5>
+  {% if digital_preservation_clockss %}
+    <!-- CLOCKSS system has permission to ingest, preserve, and serve this Archival Unit -->
+    <div class="widget widget-Lockss widget-instance-IssueBrowseByYear_Lockss">
+
+      <input class="at-locks-messaging" type="hidden" value="LOCKSS system has permission to collect, preserve, and serve this Archival Unit" />
+
+      <input class="at-clockss-messaging" type="hidden" value="CLOCKSS system has permission to ingest, preserve, and serve this Archival Unit" />
+
+    </div>
+  {% endif%}
+  <strong>{%  trans 'Preservação digital' %} (SciELO):</strong>
+  <br>
+  {% for dp in digital_pa %}
+      {{ dp.name }} {{ dp.acronym }} | {{ dp.url }}
+  {% endfor %}
+  <br>
+  <strong>{% trans 'Outros tipos de preservação digital:' %}</strong>
+  {% for digital_preservation in digital_preservation %}
+    {{ digital_preservation.rich_text|richtext }}
+  {% endfor %}
+
+
+

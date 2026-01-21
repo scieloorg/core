@@ -71,10 +71,12 @@ class JournalPage(RoutablePageMixin, Page):
         financing_statement = journal.financing_statement.get_object_in_preferred_language(language=language)
         acknowledgements = journal.acknowledgements.get_object_in_preferred_language(language=language)
         additional_information = journal.additional_information.get_object_in_preferred_language(language=language)
-        digital_preservation = journal.digital_pa.all()
+        digital_pa = journal.digital_pa.all()
+        digital_preservation = journal.digital_preservation.get_object_in_preferred_language(language=language)
         ethics = journal.ethics.get_object_in_preferred_language(language=language)
         fee_charging = journal.fee_charging.get_object_in_preferred_language(language=language)
         sponsor_history = journal.sponsor_history.all()
+        open_science_compliance = journal.open_science_compliance.get_object_in_preferred_language(language=language)
 
         context = {
             "journal": journal,
@@ -101,12 +103,14 @@ class JournalPage(RoutablePageMixin, Page):
             "acknowledgements": acknowledgements,
             "additional_information": additional_information,
             "digital_preservation": digital_preservation,
-            "digital_preservation_clockss": digital_preservation.filter(acronym="CLOCKSS"),
+            "digital_pa": digital_pa,
+            "digital_preservation_clockss": digital_pa.filter(acronym="CLOCKSS"),
             "ethics": ethics,
             "fee_charging": fee_charging,
             "sponsor_history": sponsor_history,
             "editorial_board": editorial_board,
             "role_editorial_board": ROLE,
+            "open_science_compliance": open_science_compliance,
             # Current e available language 
             "language": str(self.locale),
             "translations": context["available_translations"],
