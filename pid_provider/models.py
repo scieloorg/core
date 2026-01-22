@@ -1315,7 +1315,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     @profile_classmethod
     def find_duplicated_pkg_names(cls, issns):
         # Busca em ambos os campos de ISSN
-        duplicates = (
+        return (
             cls.objects.filter(Q(issn_print__in=issns) | Q(issn_electronic__in=issns))
             .exclude(pkg_name__isnull=True)
             .exclude(pkg_name="")
@@ -1328,25 +1328,31 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             .values("pkg_name")
             .annotate(count=Count("id"))
             .filter(count__gt=1)
+            .values_list("pkg_name", flat=True)
         )
-        return list(set(item["pkg_name"] for item in duplicates))
+    
+    @profile_classmethod
+    def find_duplicated_v2(cls, issns):
+        # Busca em ambos os campos de ISSN
+        return (
+            cls.objects.filter(Q(issn_print__in=issns) | Q(issn_electronic__in=issns))
+            .exclude(v2__isnull=True)
+            .exclude(v2="")
+            .exclude(
+                proc_status__in=[
+                    choices.PPXML_STATUS_DUPLICATED,
+                    choices.PPXML_STATUS_INVALID,
+                ]
+            )
+            .values("v2")
+            .annotate(count=Count("id"))
+            .filter(count__gt=1)
+            .values_list("v2", flat=True)
+        )
 
     @classmethod
     @profile_classmethod
-    def mark_items_as_duplicated(cls, issns):
-        ppx_duplicated_pkg_names = PidProviderXML.find_duplicated_pkg_names(issns)
-        if not ppx_duplicated_pkg_names:
-            return
-        cls.objects.filter(pkg_name__in=ppx_duplicated_pkg_names).exclude(
-            proc_status=choices.PPXML_STATUS_DUPLICATED
-        ).update(
-            proc_status=choices.PPXML_STATUS_DUPLICATED,
-        )
-        return ppx_duplicated_pkg_names
-
-    @classmethod
-    @profile_classmethod
-    def deduplicate_items(cls, user, issns):
+    def deduplicate_items(cls, user, issns, mark_as_duplicated=False, deduplicate=False):
         """
         Corrige todos os artigos marcados como DATA_STATUS_DUPLICATED com base nos ISSNs fornecidos.
 
@@ -1354,26 +1360,50 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             issns: Lista de ISSNs para verificar duplicatas.
             user: Usuário que está executando a operação.
         """
+        duplicated_v2 = cls.find_duplicated_v2(issns)
+        if duplicated_v2.exists():
+            if mark_as_duplicated:
+                cls.objects.filter(v2__in=duplicated_v2).exclude(
+                    proc_status=choices.PPXML_STATUS_DUPLICATED
+                ).update(
+                    proc_status=choices.PPXML_STATUS_DUPLICATED,
+                )
+            if deduplicate:
+                for v2 in duplicated_v2:
+                    cls.fix_duplicated_items(user, None, v2)
+
         duplicated_pkg_names = cls.find_duplicated_pkg_names(issns)
-        for pkg_name in duplicated_pkg_names:
-            cls.fix_duplicated_pkg_name(pkg_name, user)
-        return duplicated_pkg_names
+        if duplicated_pkg_names.exists():
+            if mark_as_duplicated:
+                cls.objects.filter(pkg_name__in=duplicated_pkg_names).exclude(
+                    proc_status=choices.PPXML_STATUS_DUPLICATED
+                ).update(
+                    proc_status=choices.PPXML_STATUS_DUPLICATED,
+                )
+            if deduplicate:
+                for pkg_name in duplicated_pkg_names:
+                    cls.fix_duplicated_items(user, pkg_name, None)
 
     @classmethod
     @profile_classmethod
-    def fix_duplicated_pkg_name(cls, pkg_name, user):
+    def fix_duplicated_items(cls, user, pkg_name, v2):
         """
         Corrige items marcados como PPXML_STATUS_DUPLICATED com base no pkg_name fornecido.
 
         Args:
-            pkg_name: Nome do pacote para verificar duplicatas.
             user: Usuário que está executando a operação.
-
+            pkg_name: Nome do pacote para verificar duplicatas.
+            v2: Valor do pid v2 para verificar duplicatas.
         Returns:
             int: Número de items atualizados.
         """
         try:
-            items = cls.objects.filter(pkg_name=pkg_name)
+            filters = Q()
+            if v2:
+                filters |= Q(v2=v2) | Q(other_pid__pid_in_xml=v2)
+            if pkg_name:
+                filters |= Q(pkg_name=pkg_name)
+            items = cls.objects.filter(filters)
             if items.count() <= 1:
                 return 0
 
@@ -1409,7 +1439,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             UnexpectedEvent.create(
                 exception=exception,
                 exc_traceback=exc_traceback,
-                action="pid_provider.models.PidProviderXML.fix_duplicated_pkg_name",
+                action="pid_provider.models.PidProviderXML.fix_duplicated_items",
                 detail=pkg_name,
             )
 
