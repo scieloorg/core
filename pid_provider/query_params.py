@@ -193,8 +193,8 @@ class QueryBuilderPidProviderXML:
             pkg_names.add(self.sps_pkg_name)
         if self.deprecated_sps_pkg_name:
             pkg_names.add(self.deprecated_sps_pkg_name)
-        for pkg_name in pkg_names:
-            q |= Q(pkg_name=pkg_name)
+        if pkg_names:
+            q |= Q(pkg_name__in=pkg_names)
 
         # # DOI principal
         # if self.main_doi:
