@@ -17,7 +17,7 @@ from wagtail_modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_r
 from article.models import Article
 from collection.models import Collection
 from config.menu import WAGTAIL_MENU_APPS_ORDER, get_menu_order
-from core.models import ExportDestination, Gender
+from core.models import ExportDestination, Gender, License
 from journal import models
 from journal.wagtail_hooks import (
     AdditionalIndexedAtAdmin,
@@ -162,3 +162,18 @@ class ExportDestinationViewSet(SnippetViewSet):
     menu_label = _("Export Destinations")
     list_display = ["acronym", "updated"]
     search_fields = ["acronym"]
+
+
+@register_snippet
+class LicenseViewSet(SnippetViewSet):
+    model = License
+    icon = "doc-full"
+    menu_label = _("Licenses")
+    menu_name = "licenses"
+    menu_order = 100
+    add_to_admin_menu = False
+    list_display = ("license_type", "version", "creator", "updated", "created")
+    list_filter = ("license_type", "version")
+    search_fields = ("license_type", "version")
+    list_export = ("license_type", "version")
+    inspect_view_enabled = True

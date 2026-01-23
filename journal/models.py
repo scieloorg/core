@@ -18,7 +18,7 @@ from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from collection.models import Collection
-from core.choices import MONTHS
+from core.choices import MONTHS, LICENSE_TYPES
 from core.forms import CoreAdminModelForm
 from core.models import (
     BaseExporter,
@@ -2825,7 +2825,7 @@ class JournalLicense(CommonControlField):
 
     @classmethod
     def load(cls, user):
-        for license_type, v in choices.LICENSE_TYPES:
+        for license_type, v in LICENSE_TYPES:
             cls.create_or_update(user, license_type)
 
     @classmethod

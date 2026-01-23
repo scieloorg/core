@@ -572,19 +572,6 @@ class Article(
             if not self.pp_xml:
                 self.pp_xml = pp_xml
                 save = True
-
-        if not self.article_license:
-            try:
-                self.article_license = self.license.license_type
-                save = True
-            except (TypeError, ValueError, AttributeError):
-                try:
-                    self.article_license = (
-                        self.license_statements.first().license.license_type
-                    )
-                    save = True
-                except (TypeError, ValueError, AttributeError):
-                    pass
         if save:
             self.save()
 
@@ -1042,6 +1029,20 @@ class Article(
                 action="article.models.Article.fix_duplicated_items",
                 detail=pkg_name or pid_v2,
             )
+
+    @property
+    def license_url(self):
+        try:
+            return self.license.url
+        except (AttributeError, TypeError):
+            pass
+        try:
+            url = self.license_statements.first().url
+            if url:
+                return url
+        except (AttributeError, TypeError):
+            pass
+        return None
 
 
 class DataAvailabilityStatement(CharFieldLangMixin, CommonControlField):

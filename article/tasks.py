@@ -16,6 +16,7 @@ from article.sources.xmlsps import load_article
 from article import choices
 from collection.models import Collection
 from config import celery_app
+from core.models import License
 from core.utils.extracts_normalized_email import extracts_normalized_email
 from core.utils.utils import _get_user, fetch_data
 from core.utils.harvesters import AMHarvester, OPACHarvester
@@ -223,27 +224,26 @@ def transfer_license_statements_fk_to_article_license(
 ):
     user = _get_user(self.request, username, user_id)
     articles_to_update = []
-    for instance in Article.objects.filter(article_license__isnull=True):
+    for instance in Article.objects.filter(license__isnull=True):
+        if not instance.license_statements.exists():
+            continue
 
-        new_license = None
-        if (
-            instance.license_statements.exists()
-            and instance.license_statements.first().url
-        ):
-            new_license = instance.license_statements.first().url
-        elif instance.license and instance.license.license_type:
-            new_license = instance.license.license_type
-
-        if new_license:
-            instance.article_license = new_license
-            instance.updated_by = user
-            articles_to_update.append(instance)
+        first = instance.license_statements.first()
+        instance.license = first.license
+        if not instance.license and first.data:
+            data = first.data
+            instance.license = License.create_or_update(user, license_type=data.get("license_type"), version=data.get("license_version"))
+            
+        if not instance.license:
+            continue
+        instance.updated_by = user
+        articles_to_update.append(instance)
 
     if articles_to_update:
         Article.objects.bulk_update(
-            articles_to_update, ["article_license", "updated_by"]
+            articles_to_update, ["license", "updated_by"]
         )
-        logging.info("The article_license of model Articles have been updated")
+        logging.info("The license of model Articles have been updated")
 
 
 def get_researcher_identifier_unnormalized():

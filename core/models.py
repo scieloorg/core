@@ -350,7 +350,8 @@ class FlexibleDate(models.Model):
 
 
 class License(CommonControlField):
-    license_type = models.CharField(max_length=255, null=True, blank=True)
+    license_type = models.CharField(max_length=16, null=True, blank=True)
+    version = models.CharField(max_length=10, null=True, blank=True)
 
     autocomplete_search_field = "license_type"
 
@@ -359,10 +360,11 @@ class License(CommonControlField):
 
     panels = [
         FieldPanel("license_type"),
+        FieldPanel("version"),
     ]
 
     class Meta:
-        unique_together = [("license_type",)]
+        unique_together = [("license_type", "version")]
         verbose_name = _("License")
         verbose_name_plural = _("Licenses")
         indexes = [
@@ -371,57 +373,72 @@ class License(CommonControlField):
                     "license_type",
                 ]
             ),
+            models.Index(
+                fields=[
+                    "version",
+                ]
+            ),
         ]
 
     def __unicode__(self):
-        return self.license_type or ""
+        return self.display_name
 
     def __str__(self):
+        return self.display_name
+
+    @property
+    def display_name(self):
+        if self.license_type and self.version:
+            return f"{self.license_type} {self.version}"
         return self.license_type or ""
 
     @classmethod
     def load(cls, user):
-        for license_type, v in choices.LICENSE_TYPES:
-            cls.create_or_update(user, license_type)
+        for license_type, text in choices.LICENSE_TYPES:
+            cls.create_or_update(user, license_type, None)
 
     @classmethod
-    def get(
-        cls,
-        license_type,
-    ):
+    def get(cls, license_type, version=None):
         if not license_type:
-            raise ValueError("License.get requires license_type parameters")
-        filters = dict(license_type__iexact=license_type)
+            raise ValueError("License.get requires license_type parameter")
+        filters = {"license_type__iexact": license_type}
+        if version:
+            filters["version"] = version
         try:
             return cls.objects.get(**filters)
         except cls.MultipleObjectsReturned:
             return cls.objects.filter(**filters).first()
 
     @classmethod
-    def create(
-        cls,
-        user,
-        license_type=None,
-    ):
+    def create(cls, user, license_type=None, version=None):
         try:
             obj = cls()
             obj.creator = user
-            obj.license_type = license_type or obj.license_type
+            obj.license_type = license_type
+            obj.version = version
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(license_type=license_type)
+            return cls.get(license_type=license_type, version=version)
 
     @classmethod
-    def create_or_update(
-        cls,
-        user,
-        license_type=None,
-    ):
+    def create_or_update(cls, user, license_type=None, version=None):
         try:
-            return cls.get(license_type=license_type)
+            return cls.get(license_type=license_type, version=version)
         except cls.DoesNotExist:
-            return cls.create(user, license_type)
+            return cls.create(user, license_type, version)
+        
+    @property
+    def url(self):
+        return f"https://creativecommons.org/licenses/{self.license_type}/{self.version or '4.0'}/"
+
+    @property
+    def data(self):
+        return {
+            "license_type": self.license_type,
+            "license_version": self.version,
+            "display_name": self.display_name,
+        }
 
 
 class LicenseStatement(CommonControlField):
@@ -441,142 +458,131 @@ class LicenseStatement(CommonControlField):
         AutocompletePanel("license"),
     ]
 
-    autocomplete_search_field = "license_p"
+    autocomplete_search_field = "url"
 
     def autocomplete_label(self):
         return str(self)
 
-    def __str__(self):
-        return f"{self.language} {self.license_p}"
-
     class Meta:
-        unique_together = [("url", "license_p", "language")]
-        verbose_name = _("License")
-        verbose_name_plural = _("Licenses")
+        verbose_name = _("License Statement")
+        verbose_name_plural = _("License Statements")
         indexes = [
-            models.Index(
-                fields=[
-                    "url",
-                ]
-            ),
+            models.Index(fields=["url"]),
+            models.Index(fields=["license", "language"]),
         ]
 
     def __unicode__(self):
-        return self.url or ""
+        return str(self)
 
     def __str__(self):
-        return self.url or ""
+        parts = []
+        if self.license:
+            parts.append(str(self.license))
+        if self.language:
+            parts.append(f"({self.language})")
+        return " ".join(parts) or self.url or ""
 
     @classmethod
-    def get(
-        cls,
-        url=None,
-        license_p=None,
-        language=None,
-    ):
-        if not url and not license_p:
-            raise ValueError("LicenseStatement.get requires url or license_p")
+    def get(cls, license, language=None):
+        if not license:
+            raise ValueError("LicenseStatement.get requires license parameter")
         try:
-            return cls.objects.get(
-                url__iexact=url, license_p__iexact=license_p, language=language
-            )
+            return cls.objects.get(license=license, language=language)
         except cls.MultipleObjectsReturned:
-            return cls.objects.filter(
-                url__iexact=url, license_p__iexact=license_p, language=language
-            ).first()
+            return cls.objects.filter(license=license, language=language).first()
 
     @classmethod
-    def create(
-        cls,
-        user,
-        url=None,
-        license_p=None,
-        language=None,
-        license=None,
-    ):
-        if not url and not license_p:
-            raise ValueError("LicenseStatement.create requires url or license_p")
+    def create(cls, user, license, language=None, url=None, license_p=None):
+        if not license:
+            raise ValueError("LicenseStatement.create requires license parameter")
         try:
             obj = cls()
             obj.creator = user
-            obj.url = url or obj.url
-            obj.license_p = license_p or obj.license_p
-            obj.language = language or obj.language
-            # instance of License
-            obj.license = license or obj.license
+            obj.license = license
+            obj.language = language
+            obj.url = url
+            obj.license_p = license_p
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(url, license_p, language)
+            return cls.get(license=license, language=language)
 
     @classmethod
-    def create_or_update(
-        cls,
-        user,
-        url=None,
-        license_p=None,
-        language=None,
-        license=None,
-    ):
+    def create_or_update(cls, user, license, language=None, url=None, license_p=None):
+        if not license:
+            raise ValueError("LicenseStatement.create_or_update requires license parameter")
         try:
-            data = dict(
-                url=url, license_p=license_p, language=language and language.code2
-            )
-            try:
-                obj = cls.get(url, license_p, language)
-                obj.updated_by = user
-                obj.url = url or obj.url
-                obj.license_p = license_p or obj.license_p
-                obj.language = language or obj.language
-                # instance of License
-                obj.license = license or obj.license
-                obj.save()
-                return obj
-            except cls.DoesNotExist:
-                return cls.create(user, url, license_p, language, license)
-        except Exception as e:
-            raise ValueError(
-                f"Unable to create or update LicenseStatement for {data}: {type(e)} {e}"
-            )
+            obj = cls.get(license=license, language=language)
+            obj.updated_by = user
+            obj.url = url or obj.url
+            obj.license_p = license_p or obj.license_p
+            obj.save()
+            return obj
+        except cls.DoesNotExist:
+            return cls.create(user, license, language, url, license_p)
 
     @staticmethod
     def parse_url(url):
-        license_type = None
-        license_version = None
-        license_language = None
+        """
+        Parse Creative Commons license URL.
+        
+        Exemplos de URLs:
+        - https://creativecommons.org/licenses/by/4.0/
+        - https://creativecommons.org/licenses/by-nc/3.0/br/
+        - https://creativecommons.org/licenses/by-sa/2.5/pt/
+        """
+        if not url:
+            return {}
 
-        url = url.lower()
-        url_parts = url.split("/")
+        url = url.lower().rstrip("/")
+        url_parts = [p for p in url.split("/") if p]
+        
         if not url_parts:
             return {}
 
         license_types = dict(choices.LICENSE_TYPES)
-        for lic_type in license_types.keys():
-            if lic_type in url_parts:
-                license_type = lic_type
+        
+        for i, part in enumerate(url_parts):
+            if part not in license_types:
+                continue
+                
+            license_type = part
+            remaining = url_parts[i + 1:]
+            license_version = None
+            license_language = None
+            
+            if remaining:
+                version_candidate = remaining[0]
+                if all(c.isdigit() or c == "." for c in version_candidate):
+                    license_version = version_candidate
+                    remaining = remaining[1:]
+            
+            if remaining:
+                lang_candidate = remaining[0]
+                if lang_candidate.isalpha() and 2 <= len(lang_candidate) <= 3:
+                    license_language = lang_candidate
+            
+            return {
+                "license_type": license_type,
+                "license_version": license_version,
+                "license_language": license_language,
+            }
 
-                try:
-                    version = url.split(f"/{license_type}/")
-                    version = version[-1].split("/")[0]
-                    isdigit = False
-                    for c in version.split("."):
-                        if c.isdigit():
-                            isdigit = True
-                            continue
-                        else:
-                            isdigit = False
-                            break
-                    if isdigit:
-                        license_version = version
-                except (AttributeError, TypeError, ValueError):
-                    pass
-                break
+        return {}
 
-        return dict(
-            license_type=license_type,
-            license_version=license_version,
-            license_language=license_language,
-        )
+    @property
+    def data(self):
+        d = {
+            "url": self.url,
+            "license_p": self.license_p,
+            "language": self.language.code2 if self.language else None,
+        }
+        if self.license:
+            d["license_type"] = self.license.license_type
+            d["license_version"] = self.license.version
+        else:
+            d.update(self.parse_url(self.url))
+        return d
 
 
 class FileWithLang(models.Model):
