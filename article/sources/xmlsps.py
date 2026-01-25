@@ -29,7 +29,8 @@ from core.models import Language, LicenseStatement, License
 from core.utils.extracts_normalized_email import extracts_normalized_email
 from doi.models import DOI
 from institution.models import Sponsor
-from issue.models import Issue, TableOfContents
+from issue.models import Issue, TableOfContents, AMIssue
+from issue.articlemeta.loader import load_issue_sections
 from journal.models import Journal
 from location.models import Location
 from pid_provider.choices import PPXML_STATUS_DONE, PPXML_STATUS_INVALID
@@ -522,19 +523,23 @@ def get_or_create_toc_sections(xmltree, user, errors, issue):
     """
     data = []
     try:
+        if not issue.table_of_contents.exists():
+            for am_issue in AMIssue.objects.filter(new_record=issue):
+                load_issue_sections(user, issue, am_issue=am_issue)
         toc_sections = ArticleTocSections(xmltree=xmltree).sections
         for item in toc_sections:
             section_title = item.get("section")
             if not section_title:
                 continue
             try:
-                issue_sections = TableOfContents.objects.filter(issue=issue, journal_toc__text=section_title)
-                for obj in issue_sections:
-                    data.append(obj)
+                issue_sections = TableOfContents.get_items_by_title(issue=issue, title=section_title)
                 if not issue_sections.exists():
                     raise TableOfContents.DoesNotExist(f"Unable to find TOC section {section_title} for issue {issue}")
+                for obj in issue_sections:
+                    data.append(obj)
             except Exception as e:
                 add_error(errors, "get_or_create_toc_sections", e, item=item)
+
     except Exception as e:
         add_error(errors, "get_or_create_toc_sections", e)
     return data
