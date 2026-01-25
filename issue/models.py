@@ -196,12 +196,22 @@ class Issue(CommonControlField, ClusterableModel):
 
     @property
     def short_identification(self):
+        """
+        Return a short textual identification for the issue.
+
+        This accessor is intentionally side-effect free with respect to the
+        database: it may populate ``self.issue_folder`` in memory if missing,
+        but it will not call ``save()``.
+        """
         if not self.issue_folder:
+            # Lazily compute the folder identifier in memory without persisting.
             self.issue_folder = self.generate_issue_folder()
-            self.save()
+
+        issue_folder = self.issue_folder or ""
+
         if self.journal:
-            return f"{self.journal.title} {self.issue_folder} [{self.journal.collection_acrons}]"
-        return f"{self.issue_folder}"
+            return f"{self.journal.title} {issue_folder} [{self.journal.collection_acrons}]"
+        return f"{issue_folder}"
 
     def create_legacy_keys(self, user=None, force_update=None):
         if not force_update:
