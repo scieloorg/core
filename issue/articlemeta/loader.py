@@ -134,7 +134,18 @@ def load_am_issue(
 
 def complete_am_issue(user, am_issue):
     try:
+        detail = {}
+
+        detail["am_issue"] = str(am_issue)
+        if not am_issue:
+            raise ValueError("am_issue is required")
+
+        detail["am_issue_url"] = str(am_issue.url)
+        if not am_issue.url:
+            raise ValueError("am_issue.url is required")
+        
         harvested_data = harvest_issue_data(am_issue.url)
+        detail["harvested_data"] = str(harvested_data)
         am_issue.status = harvested_data.get("status")
         am_issue.data = harvested_data.get("data")
         am_issue.updated_by = user
@@ -145,7 +156,7 @@ def complete_am_issue(user, am_issue):
             exception=e,
             exc_traceback=exc_traceback,
             action="issue.articlemeta.loader.complete_am_issue",
-            detail={"am_issue": str(am_issue)},
+            detail=detail,
         )
 
 
@@ -162,32 +173,38 @@ def get_issue_data_from_am_issue(am_issue, user=None):
     """
     try:
         # Extrair dados do issue
+        detail = {
+            "am_issue": str(am_issue),
+        }
+
         if not am_issue:
             raise ValueError("am_issue is required")
-        if not am_issue.data:
-            if user:
-                complete_am_issue(user, am_issue)
-
+        
         am_data = am_issue.data
         if not am_data:
-            raise ValueError(f"Unable to get issue data from {am_issue}")
-
-        journal_pid = am_data["title"]["code"]
-        if not journal_pid:
-            raise ValueError(f"Unable to get journal_pid from {am_issue}")
+            if user:
+                complete_am_issue(user, am_issue)
+                am_data = am_issue.data
+        
+        if not am_data:
+            raise ValueError(f"get_issue_data_from_am_issue: Unable to get am_issue.data from {am_issue}")
+        detail["am_data"] = str(am_data)
 
         issue_data = am_data["issue"]
         if not issue_data:
-            raise ValueError(f"Unable to get issue data from {am_issue}")
+            raise ValueError(f"get_issue_data_from_am_issue: Unable to get issue data from {am_data}")
+        detail["raw_issue_data"] = str(issue_data)
 
-        scielo_journal = SciELOJournal.objects.get(
-            collection=am_issue.collection,
-            issn_scielo=journal_pid,
-        )
         issue_dict = rename_issue_dictionary_keys([issue_data], correspondencia_issue)
+        detail["renamed_issue_data"] = str(issue_dict)
 
         # Retornar dados ajustados para Issue
         extracted_data = extract_data_from_harvested_data(issue_dict, am_issue.pid)
+
+        scielo_journal = SciELOJournal.objects.get(
+            collection=am_issue.collection,
+            issn_scielo=am_issue.pid[:9],
+        )
         extracted_data["journal"] = scielo_journal.journal
         return extracted_data
     except Exception as e:
@@ -196,7 +213,7 @@ def get_issue_data_from_am_issue(am_issue, user=None):
             exception=e,
             exc_traceback=exc_traceback,
             action="issue.articlemeta.loader.get_issue_data_from_am_issue",
-            detail={"am_issue": str(am_issue)},
+            detail=detail,
         )
         return None
 
@@ -218,7 +235,7 @@ def create_issue_from_am_issue(user, am_issue):
         issue_data = get_issue_data_from_am_issue(am_issue, user)
         if not issue_data:
             raise ValueError(f"Unable to extract issue data from {am_issue}")
-            
+                  
         issue = Issue.get_or_create(
             user,
             journal=issue_data.get("journal"),
@@ -234,34 +251,10 @@ def create_issue_from_am_issue(user, am_issue):
         )
         
         if issue:
-            # Adicionar AMIssue ao Issue
             issue.add_am_issue(user, am_issue)
-            
-            # Adicionar dados relacionados com tratamento individual de erros
-            try:
-                issue.add_sections(
-                    user,
-                    issue_data.get("sections_data"),
-                    am_issue.collection,
-                )
-            except Exception as e:
-                logging.exception(f"Error adding sections to Issue {issue}: {e}")
-                
-            try:
-                issue.add_issue_titles(
-                    user,
-                    issue_data.get("issue_titles"),
-                )
-            except Exception as e:
-                logging.exception(f"Error adding issue titles to Issue {issue}: {e}")
-                
-            try:
-                issue.add_bibliographic_strips(
-                    user,
-                    issue_data.get("bibliographic_strip_list"),
-                )
-            except Exception as e:
-                logging.exception(f"Error adding bibliographic strips to Issue {issue}: {e}")
+            load_issue_sections(user, issue, am_issue, issue_data)
+            load_issue_titles(user, issue, am_issue, issue_data)
+            load_bibliographic_strips(user, issue, am_issue, issue_data)
                 
         return issue
         
@@ -274,3 +267,169 @@ def create_issue_from_am_issue(user, am_issue):
             detail={"am_issue": str(am_issue), "user": str(user)},
         )
         return issue
+
+
+def _extract_field(field_name, field_value, issue_data, am_issue, user):
+    """
+    Extrai um campo específico dos dados do issue.
+    
+    Prioridade: field_value > issue_data > am_issue
+    
+    Args:
+        field_name: Nome do campo em issue_data
+        field_value: Valor direto do campo (opcional)
+        issue_data: Dados extraídos do AMIssue (opcional)
+        am_issue: Instância de AMIssue (opcional)
+        user: Usuário para extração
+        
+    Returns:
+        Valor do campo ou None
+        
+    Raises:
+        ValueError: Se nenhuma fonte de dados disponível
+    """
+    if field_value:
+        return field_value
+    
+    if issue_data:
+        try:
+            return issue_data[field_name]
+        except KeyError as e:
+            # Campo não encontrado em issue_data
+            pass
+    
+    if am_issue:
+        data = get_issue_data_from_am_issue(am_issue, user)
+        if not data:
+            raise ValueError(f"Unable to extract issue data from {am_issue}")
+        return data.get(field_name)
+    
+    raise ValueError(f"am_issue, issue_data or {field_name} is required")
+
+
+def load_issue_sections(user, issue, am_issue=None, issue_data=None, sections_data=None, collection=None):
+    """
+    Carrega sections para um Issue existente.
+    
+    Args:
+        user: Usuário responsável
+        issue: Instância de Issue
+        am_issue: Instância de AMIssue (opcional)
+        issue_data: Dados extraídos do AMIssue (opcional)
+        sections_data: Dados das sections (opcional, prioridade máxima)
+        collection: Collection (obrigatório se am_issue não fornecido)
+        
+    Returns:
+        bool: True se carregou com sucesso, False caso contrário
+    """
+    try:
+        if not issue:
+            raise ValueError("Issue is required")
+        
+        sections = _extract_field("sections_data", sections_data, issue_data, am_issue, user)
+        if not sections:
+            if '"v49"' in str(issue_data):
+                raise ValueError("No sections found, but issue_data contains 'v49'")
+            if '"v049"' in str(issue_data):
+                raise ValueError("No sections found, but issue_data contains 'v049'")
+            return True
+        
+        coll = collection or (am_issue.collection if am_issue else None)
+        if not coll:
+            raise ValueError("collection is required when am_issue is not provided")
+            
+        issue.add_sections(user, sections, coll)
+        return True
+        
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            action="issue.articlemeta.loader.load_issue_sections",
+            detail={
+                "issue": str(issue),
+                "am_issue": str(am_issue) if am_issue else None,
+            },
+        )
+        return False
+
+
+def load_issue_titles(user, issue, am_issue=None, issue_data=None, issue_titles=None):
+    """
+    Carrega títulos para um Issue existente.
+    
+    Args:
+        user: Usuário responsável
+        issue: Instância de Issue
+        am_issue: Instância de AMIssue (opcional)
+        issue_data: Dados extraídos do AMIssue (opcional)
+        issue_titles: Lista de títulos (opcional, prioridade máxima)
+        
+    Returns:
+        bool: True se carregou com sucesso, False caso contrário
+    """
+    try:
+        if not issue:
+            raise ValueError("Issue is required")
+        
+        titles = _extract_field("issue_titles", issue_titles, issue_data, am_issue, user)
+        if not titles:
+            logging.info("No issue titles found")
+            return True
+            
+        issue.add_issue_titles(user, titles)
+        return True
+        
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            action="issue.articlemeta.loader.load_issue_titles",
+            detail={
+                "issue": str(issue),
+                "am_issue": str(am_issue) if am_issue else None,
+            },
+        )
+        return False
+
+
+def load_bibliographic_strips(user, issue, am_issue=None, issue_data=None, bibliographic_strips=None):
+    """
+    Carrega bibliographic strips para um Issue existente.
+    
+    Args:
+        user: Usuário responsável
+        issue: Instância de Issue
+        am_issue: Instância de AMIssue (opcional)
+        issue_data: Dados extraídos do AMIssue (opcional)
+        bibliographic_strips: Lista de strips (opcional, prioridade máxima)
+        
+    Returns:
+        bool: True se carregou com sucesso, False caso contrário
+    """
+    try:
+        if not issue:
+            raise ValueError("Issue is required")
+        
+        strips = _extract_field("bibliographic_strip_list", bibliographic_strips, issue_data, am_issue, user)
+        if not strips:
+            logging.info("No bibliographic strips found")
+            return True
+            
+        issue.add_bibliographic_strips(user, strips)
+        return True
+        
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            action="issue.articlemeta.loader.load_bibliographic_strips",
+            detail={
+                "issue": str(issue),
+                "am_issue": str(am_issue) if am_issue else None,
+            },
+        )
+        return False
