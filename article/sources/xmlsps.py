@@ -523,7 +523,7 @@ def get_or_create_toc_sections(xmltree, user, errors, issue):
     """
     data = []
     try:
-        if issue.table_of_contents is None:
+        if not issue.table_of_contents.exists():
             for am_issue in AMIssue.objects.filter(new_record=issue):
                 load_issue_sections(user, issue, am_issue=am_issue)
         toc_sections = ArticleTocSections(xmltree=xmltree).sections
