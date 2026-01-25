@@ -22,6 +22,7 @@ django-model-utils==5.0.0  # https://github.com/jazzband/django-model-utils
 django-crispy-forms==2.4  # https://github.com/django-crispy-forms/django-crispy-forms
 crispy-bootstrap5==2025.6  # https://github.com/django-crispy-forms/crispy-bootstrap5
 django-compressor==4.5.1  # https://github.com/django-compressor/django-compressor
+django-otp<1.2.0
 
 
 # ==============================================================================
