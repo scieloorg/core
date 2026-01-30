@@ -1,20 +1,19 @@
 import csv
 
-from django.apps import apps
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models
-from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
-from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from wagtail.admin.panels import FieldPanel
+from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
-from core.models import BaseHistory, CommonControlField
-from core.utils.standardizer import remove_extra_spaces
+from core.models import CommonControlField
+from core.utils.standardizer import clean_xml_tag_content
 from location.models import Location
 
 from . import choices
+
 from .exceptions import (
     OrganizationCreateOrUpdateError,
     OrganizationGetError,
@@ -25,134 +24,45 @@ from .exceptions import (
 HELP_TEXT_ORGANIZATION = _("Select the standardized organization data")
 
 
+# =============================================================================
+# BASE ORGANIZATION (abstrato)
+# =============================================================================
+
 class BaseOrganization(models.Model):
     """
-    Classe base para organizações com dados básicos (nome, acrônimo, localização) (versão 2 - atual)
-
-    Usado como base para:
-    - organization.models.Organization (implementação concreta)
-    - Substitui institution.models.BaseInstitution (versão 1) gradualmente
-    - Define padrão para organizações no novo sistema
+    Classe base abstrata com campos comuns entre Organization e RawOrganization.
+    
+    Campos:
+        - name: nome da organização
+        - acronym: sigla/acrônimo
     """
-
-    name = models.TextField(_("Name"), null=False, blank=False)
-    acronym = models.TextField(_("Institution Acronym"), null=True, blank=True)
-    location = models.ForeignKey(
-        Location, on_delete=models.SET_NULL, null=True, blank=False
+    name = models.CharField(
+        _("Name"),
+        max_length=255,
+        help_text=_("Name of the organization"),
     )
-    url = models.URLField("url", blank=True, null=True)
-    logo = models.ImageField(_("Logo"), blank=True, null=True)
-
-    autocomplete_search_field = "name"
-
-    def __str__(self):
-        return f"{self.name} | {self.location}"
-
-    def autocomplete_label(self):
-        return str(self)
+    acronym = models.CharField(
+        _("Acronym"),
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text=_("Acronym (e.g., USP, FIOCRUZ)"),
+    )
 
     class Meta:
         abstract = True
-
-        # é uma classe abstrata, unique_together tem que ser definida nas subclasses
-        # unique_together = [
-        #     ("name", "acronym", "location"),
-        # ]
         indexes = [
             models.Index(
                 fields=[
                     "name",
                 ]
             ),
-            models.Index(
-                fields=[
-                    "acronym",
-                ]
-            ),
         ]
 
-    base_form_class = CoreAdminModelForm
-
-    @classmethod
-    def get(
-        cls,
-        name,
-        location,
-    ):
-        name = remove_extra_spaces(name)
-        if not name or not location:
-            raise OrganizationGetError("Organization.get requires name and location")
-
-        params = {}
-        params["name__iexact"] = name
-        params["location"] = location
-        try:
-            return cls.objects.get(**params)
-        except cls.MultipleObjectsReturned:
-            return cls.objects.filter(**params).first()
-
-    @classmethod
-    def create(
-        cls,
-        user,
-        name,
-        location,
-        acronym=None,
-        url=None,
-        logo=None,
-    ):
-        try:
-            if not user:
-                raise OrganizationCreateOrUpdateError(
-                    "User is required to create Organization"
-                )
-
-            name = remove_extra_spaces(name)
-            if not name or not location:
-                raise OrganizationCreateOrUpdateError(
-                    "Organization requires name and location"
-                )
-            obj = cls(
-                name=name,
-                acronym=acronym,
-                location=location,
-                url=url,
-                logo=logo,
-            )
-            obj.creator = user
-            obj.save()
-            return obj
-        except IntegrityError:
-            return cls.get(name=name, location=location)
-
-    @classmethod
-    def create_or_update(
-        cls,
-        user,
-        name,
-        location,
-        acronym=None,
-        logo=None,
-        url=None,
-    ):
-
-        try:
-            obj = cls.get(name=name, location=location)
-            obj.acronym = acronym
-            obj.url = url
-            obj.logo = logo
-            obj.save()
-            return obj
-
-        except cls.DoesNotExist:
-            return cls.create(
-                user,
-                name=name,
-                location=location,
-                acronym=acronym,
-                url=url,
-                logo=logo,
-            )
+    def __str__(self):
+        if self.acronym:
+            return f"{self.acronym} - {self.name}"
+        return self.name
 
 
 class Organization(BaseOrganization, CommonControlField, ClusterableModel):
@@ -170,70 +80,91 @@ class Organization(BaseOrganization, CommonControlField, ClusterableModel):
     - Substitui institution.models.Institution (versão 1) no novo sistema
     """
 
-    # Novo campo: renomeia institution_type_scielo
-    # Manter institution_type_scielo para transição gradual
+    # -------------------------------------------------------------------------
+    # Localização (normalizada via FK)
+    # -------------------------------------------------------------------------
+    
+    location = models.ForeignKey(
+        Location,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=_("Location (country, state, city)"),
+    )
+    
+    # -------------------------------------------------------------------------
+    # Identidade visual
+    # -------------------------------------------------------------------------
+    
+    url = models.URLField(
+        _("URL"),
+        null=True,
+        blank=True,
+        help_text=_("Official website"),
+    )
+    logo = models.ImageField(
+        _("Logo"),
+        null=True,
+        blank=True,
+        upload_to="organizations/logos/",
+    )
+    
+    # -------------------------------------------------------------------------
+    # Classificação
+    # -------------------------------------------------------------------------
+    
     institution_type = models.ManyToManyField(
         "OrganizationInstitutionType",
         verbose_name=_("Institution Type"),
         blank=True,
-        related_name="organizations_v3",  # diferente do antigo para evitar conflito
-        help_text=_("Replaces institution_type_scielo"),
+        related_name="organizations",
+        help_text=_("Types of institution (university, hospital, etc.)"),
     )
 
-    # futuramente deve ser substituído por data_status (True = validated)
-    is_official = models.BooleanField(
-        _("Is official"),
-        null=True,
-        blank=True,
-    )
+    # -------------------------------------------------------------------------
+    # Metadados e validação
+    # -------------------------------------------------------------------------
+    
     source = models.CharField(
         _("Source"),
         max_length=50,
         null=True,
         blank=True,
         default="user_input",
-        help_text=_(
-            "Authority that provided this organization data (e.g., scielo, mec, scimago)"
-        ),
         choices=choices.SOURCE_CHOICES,
+        help_text=_("Data source (ror, isni, manual, etc.)"),
     )
-    data_status = models.CharField(
-        _("Data Status"),
-        max_length=20,
-        choices=choices.DATA_STATUS_CHOICES,
-        default="to_evaluate",
-        help_text=_("Record data status"),
+    external_id = models.CharField(
+        _("External ID"),
+        max_length=300,
+        null=True,
+        blank=True,
+        help_text=_("Identifier from external system (e.g., ROR ID)"),
     )
-
+    
     panels = [
         FieldPanel("name"),
         FieldPanel("acronym"),
         AutocompletePanel("location"),
         AutocompletePanel("institution_type"),
         FieldPanel("source"),
-        FieldPanel("data_status"),
-        # FieldPanel("is_official"),
+        FieldPanel("external_id"),
         FieldPanel("url"),
         FieldPanel("logo"),
     ]
-
     class Meta:
         verbose_name = _("Organization")
         verbose_name_plural = _("Organizations")
-        unique_together = [("name", "acronym", "location")]  # NOVO
+        unique_together = [("name", "location", "external_id", "source")]  # NOVO
         indexes = [
             models.Index(fields=["name"]),
             models.Index(fields=["source"]),
-            models.Index(fields=["data_status"]),
+            models.Index(fields=["external_id"]),
+            models.Index(fields=["source"]),
         ]
 
     def add_source(self, source, save=False):
         self.source = source
-        if save:
-            self.save()
-
-    def add_data_status(self, data_status, save=False):
-        self.data_status = data_status
         if save:
             self.save()
 
@@ -250,6 +181,8 @@ class Organization(BaseOrganization, CommonControlField, ClusterableModel):
 class BaseOrgLevel(CommonControlField):
     """
     Classe base para níveis organizacionais hierárquicos (versão 2)
+    
+    DEPRECATED: usar BaseOrganizationalLevel em vez disso, pois classe Base não deveria usar CommonControlField
 
     Usado em:
     - Criação dinâmica de classes via create_org_level_class()
@@ -319,9 +252,9 @@ class BaseOrgLevel(CommonControlField):
         level_3,
         user,
     ):
-        level_1 = remove_extra_spaces(level_1)
-        level_2 = remove_extra_spaces(level_2)
-        level_3 = remove_extra_spaces(level_3)
+        level_1 = clean_xml_tag_content(level_1)
+        level_2 = clean_xml_tag_content(level_2)
+        level_3 = clean_xml_tag_content(level_3)
 
         try:
             return cls.get(
@@ -475,3 +408,655 @@ class OrganizationInstitutionType(CommonControlField):
             return cls.get(name=name, source=source)
         except cls.DoesNotExist:
             return cls.create(name=name, user=user, source=source)
+
+
+class BaseOrganizationalLevel(models.Model):
+    """
+    Classe base para níveis organizacionais hierárquicos (versão 3)
+    
+    Usado em:
+    - OrganizationalLevel
+    - RawOrganization.organizational_level
+    """
+
+    level_1 = models.CharField(
+        _("Level 1"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("e.g., Faculty, School, Institute"),
+    )
+    level_2 = models.CharField(
+        _("Level 2"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("e.g., Department, Division"),
+    )
+    level_3 = models.CharField(
+        _("Level 3"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("e.g., Laboratory, Graduate Program"),
+    )
+
+    class Meta:
+        abstract = True
+
+
+# =============================================================================
+# ORGANIZATIONAL LEVEL (níveis padronizados)
+# =============================================================================
+
+class OrganizationalLevel(BaseOrganizationalLevel, CommonControlField):
+    """
+    Níveis organizacionais hierárquicos padronizados.
+    
+    IMPORTANTE: organization é OBRIGATÓRIO.
+    Não faz sentido ter níveis sem saber de qual instituição.
+    Para dados brutos, usar level_* em RawOrganization.
+    
+    Usado em:
+        - RawOrganization.organizational_level (FK)
+        - Programas de pós-graduação, faculdades, departamentos
+    
+    Exemplo:
+        org = Organization.objects.get(name="USP")
+        level = OrganizationalLevel.create_or_update(
+            user=user,
+            organization=org,
+            level_1="Faculdade de Medicina",
+            level_2="Departamento de Cardiologia",
+            level_3="Programa de Pós-Graduação em Ciências Médicas",
+        )
+    """
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="organizational_levels",
+        help_text=_("Parent organization (required)"),
+    )
+    
+    autocomplete_search_field = "level_1"
+
+    class Meta:
+        verbose_name = _("Organizational Level")
+        verbose_name_plural = _("Organizational Levels")
+        unique_together = [("organization", "level_1", "level_2", "level_3")]
+        indexes = [
+            models.Index(fields=["level_1"]),
+            models.Index(fields=["level_2"]),
+            models.Index(fields=["level_3"]),
+        ]
+
+    def __str__(self):
+        parts = [str(self.organization)]
+        levels = [lvl for lvl in [self.level_1, self.level_2, self.level_3] if lvl]
+        if levels:
+            parts.append(" > ".join(levels))
+        return " | ".join(parts)
+
+    def autocomplete_label(self):
+        return str(self)
+
+    @property
+    def levels_display(self):
+        """Retorna apenas níveis concatenados (sem organization)."""
+        levels = [lvl for lvl in [self.level_1, self.level_2, self.level_3] if lvl]
+        return " > ".join(levels) if levels else ""
+
+    panels = [
+        AutocompletePanel("organization"),
+        FieldPanel("level_1"),
+        FieldPanel("level_2"),
+        FieldPanel("level_3"),
+    ]
+
+    base_form_class = CoreAdminModelForm
+
+    @classmethod
+    def get(cls, organization, level_1=None, level_2=None, level_3=None):
+        """
+        Busca nível organizacional.
+        
+        Args:
+            organization: Organization instance (obrigatório)
+            level_1, level_2, level_3: str ou None
+        """
+        if not organization:
+            raise ValueError("OrganizationalLevel.get requires organization")
+        
+        level_1 = clean_xml_tag_content(level_1)
+        level_2 = clean_xml_tag_content(level_2)
+        level_3 = clean_xml_tag_content(level_3)
+        
+        params = {"organization": organization}
+        
+        if level_1:
+            params["level_1__iexact"] = level_1
+        else:
+            params["level_1__isnull"] = True
+            
+        if level_2:
+            params["level_2__iexact"] = level_2
+        else:
+            params["level_2__isnull"] = True
+            
+        if level_3:
+            params["level_3__iexact"] = level_3
+        else:
+            params["level_3__isnull"] = True
+        
+        try:
+            return cls.objects.get(**params)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(**params).first()
+
+    @classmethod
+    def create(cls, user, organization, level_1=None, level_2=None, level_3=None):
+        """
+        Cria nível organizacional.
+        """
+        if not organization:
+            raise ValueError("OrganizationalLevel.create requires organization")
+        
+        level_1 = clean_xml_tag_content(level_1)
+        level_2 = clean_xml_tag_content(level_2)
+        level_3 = clean_xml_tag_content(level_3)
+        
+        try:
+            obj = cls(
+                creator=user,
+                organization=organization,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+            )
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(
+                organization=organization,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+            )
+
+    @classmethod
+    def create_or_update(cls, user, organization, level_1=None, level_2=None, level_3=None):
+        """
+        Cria ou retorna nível existente.
+        """
+        if not organization:
+            raise ValueError("OrganizationalLevel.create_or_update requires organization")
+        
+        try:
+            return cls.get(
+                organization=organization,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+            )
+        except cls.DoesNotExist:
+            return cls.create(
+                user=user,
+                organization=organization,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+            )
+
+
+# =============================================================================
+# RAW ORGANIZATION (dados brutos)
+# =============================================================================
+
+class RawOrganization(BaseOrganization, BaseOrganizationalLevel, CommonControlField, ClusterableModel):
+    """
+    Organização com dados brutos (como vieram da fonte).
+    
+    Armazena dados exatamente como vieram do XML, CSV, API, sem normalização.
+    Pode ser vinculado a uma Organization padronizada após processamento.
+    
+    NÃO contém url/logo - esses dados pertencem à Organization padronizada.
+    NÃO contém roles - roles são contextuais (pertencem a Journal, Article, etc.)
+    
+    Fluxo:
+        1. Importação: preenche name, acronym, country, state, city, level_*, source
+        2. Normalização: vincula organization e organizational_level
+    
+    Usado em:
+        - journal.models: ?
+        - article.models: ?
+    
+    Exemplo:
+        raw = RawOrganization.create_or_update(
+            user=user,
+            name="Univ. de São Paulo",
+            acronym="USP",
+            country="Brasil",
+            state="SP",
+            city="São Paulo",
+            level_1="Faculdade de Medicina",
+            level_2="Departamento de Cardiologia",
+            source="article_xml",
+        )
+        
+        # Após normalização:
+        raw.organization = Organization.objects.get(name="Universidade de São Paulo")
+        raw.match_status = "manual"
+        raw.save()
+    """
+    # -------------------------------------------------------------------------
+    # Original e Nome normalizado
+    # -------------------------------------------------------------------------
+    
+    original = models.CharField(
+        _("Original"),
+        max_length=300,
+        null=True,
+        blank=True,
+        help_text=_("Original text"),
+    )
+    normalized_name = models.CharField(
+        _("Normalized name"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Normalized name"),
+    )
+
+    # -------------------------------------------------------------------------
+    # Localização bruta (CharField, como veio da fonte)
+    # -------------------------------------------------------------------------
+    
+    country = models.CharField(
+        _("Country"),
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text=_("Country as received (e.g., 'Brasil', 'Brazil', 'BR')"),
+    )
+    state = models.CharField(
+        _("State"),
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text=_("State/province as received"),
+    )
+    city = models.CharField(
+        _("City"),
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text=_("City as received"),
+    )
+    
+    # -------------------------------------------------------------------------
+    # Vínculos normalizados (preenchidos após processamento)
+    # -------------------------------------------------------------------------
+    
+    organization = models.ManyToManyField(
+        Organization,
+        blank=True,
+        related_name="raw_organizations",
+        verbose_name=_("Organization"),
+        help_text=_("Standardized organization (after normalization)"),
+    )
+    organizational_level = models.ManyToManyField(
+        "OrganizationalLevel",
+        blank=True,
+        related_name="raw_organization_leves",
+        verbose_name=_("Organizational Level"),
+        help_text=_("Standardized levels (requires organization)"),
+    )
+    
+    # -------------------------------------------------------------------------
+    # Metadados
+    # -------------------------------------------------------------------------
+    
+    MATCH_STATUS_CHOICES = [
+        ("unmatched", _("Unmatched")),
+        ("auto", _("Auto-matched")),
+        ("manual", _("Manually matched")),
+    ]
+    
+    match_status = models.CharField(
+        _("Match Status"),
+        max_length=20,
+        choices=MATCH_STATUS_CHOICES,
+        default="unmatched",
+        help_text=_("Status of link to Organization"),
+    )
+
+    # -------------------------------------------------------------------------
+    # Configuração
+    # -------------------------------------------------------------------------
+
+    autocomplete_search_field = "name"
+
+    class Meta:
+        verbose_name = _("Raw Organization")
+        verbose_name_plural = _("Raw Organizations")
+        unique_together = [("name", "acronym", "country", "state", "city", "level_1", "level_2", "level_3")]
+        indexes = [
+            models.Index(fields=["name"]),
+            models.Index(fields=["country"]),
+            models.Index(fields=["state"]),
+            models.Index(fields=["city"]),
+            models.Index(fields=["match_status"]),
+        ]
+
+    def __str__(self):
+        if self.original:
+            return f"{self.original}"
+        if self.organization:
+            return f"{self.organization}"
+        return self.name
+
+    def autocomplete_label(self):
+        return f"{self}"
+
+    panels = [
+        MultiFieldPanel([
+            FieldPanel("original"),
+            FieldPanel("normalized_name"),
+            FieldPanel("name"),
+            FieldPanel("acronym"),
+        ], heading=_("Identification")),
+        
+        MultiFieldPanel([
+            FieldPanel("country"),
+            FieldPanel("state"),
+            FieldPanel("city"),
+        ], heading=_("Location (raw)")),
+        
+        MultiFieldPanel([
+            FieldPanel("level_1"),
+            FieldPanel("level_2"),
+            FieldPanel("level_3"),
+        ], heading=_("Organizational Levels (raw)")),
+        
+        MultiFieldPanel([
+            AutocompletePanel("organization"),
+            AutocompletePanel("organizational_level"),
+            FieldPanel("match_status"),
+        ], heading=_("Normalization")),
+    ]
+
+    base_form_class = CoreAdminModelForm
+
+    # -------------------------------------------------------------------------
+    # Validação
+    # -------------------------------------------------------------------------
+
+    def clean(self):
+        """Validações de integridade."""
+        super().clean()
+        
+        # organizational_level só pode existir se organization existir
+        if self.organizational_level and not self.organization:
+            raise ValidationError({
+                'organizational_level': _(
+                    "Cannot set organizational_level without organization"
+                )
+            })
+        
+        # organizational_level deve pertencer à organization
+        if (self.organizational_level and self.organization and
+            self.organizational_level.organization_id != self.organization_id):
+            raise ValidationError({
+                'organizational_level': _(
+                    "Organizational level must belong to the selected organization"
+                )
+            })
+
+    # -------------------------------------------------------------------------
+    # Properties
+    # -------------------------------------------------------------------------
+
+    @property
+    def is_matched(self):
+        """Indica se está vinculado a Organization."""
+        return self.organization_id is not None
+
+    # -------------------------------------------------------------------------
+    # Métodos de classe
+    # -------------------------------------------------------------------------
+
+    @classmethod
+    def get(cls, name, original=None, normalized_name=None, acronym=None, country=None, state=None, city=None, level_1=None, level_2=None, level_3=None):
+        """
+        Busca registro existente.
+        """
+        if not name:
+            raise ValueError("RawOrganization.get requires name")
+        
+        original = clean_xml_tag_content(original)
+        normalized_name = clean_xml_tag_content(normalized_name)
+        name = clean_xml_tag_content(name)
+        country = clean_xml_tag_content(country)
+        state = clean_xml_tag_content(state)
+        city = clean_xml_tag_content(city)
+        level_1 = clean_xml_tag_content(level_1)
+        level_2 = clean_xml_tag_content(level_2)
+        level_3 = clean_xml_tag_content(level_3)
+        
+        params = {"name__iexact": name}
+        
+        if original:
+            params["original__iexact"] = original
+        else:
+            params["original__isnull"] = True
+            
+        if normalized_name:
+            params["normalized_name__iexact"] = normalized_name
+        else:
+            params["normalized_name__isnull"] = True
+            
+        if country:
+            params["country__iexact"] = country
+        else:
+            params["country__isnull"] = True
+            
+        if state:
+            params["state__iexact"] = state
+        else:
+            params["state__isnull"] = True
+            
+        if city:
+            params["city__iexact"] = city
+        else:
+            params["city__isnull"] = True
+            
+        if level_1:
+            params["level_1__iexact"] = level_1
+        else:
+            params["level_1__isnull"] = True
+            
+        if level_2:
+            params["level_2__iexact"] = level_2
+        else:
+            params["level_2__isnull"] = True
+            
+        if level_3:
+            params["level_3__iexact"] = level_3
+        else:
+            params["level_3__isnull"] = True
+        
+        try:
+            return cls.objects.get(**params)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(**params).first()
+
+    @classmethod
+    def create(
+        cls,
+        user,
+        name,
+        original=None,
+        normalized_name=None,
+        acronym=None,
+        country=None,
+        state=None,
+        city=None,
+        level_1=None,
+        level_2=None,
+        level_3=None,
+        organization=None,
+        organizational_level=None,
+        match_status=None,
+        extra_data=None,
+    ):
+        """
+        Cria novo registro.
+        """
+        if not name:
+            raise ValueError("RawOrganization.create requires name")
+        
+        try:
+            obj = cls(
+                creator=user,
+                original=clean_xml_tag_content(original),
+                name=clean_xml_tag_content(name),
+                normalized_name=clean_xml_tag_content(normalized_name),
+                acronym=clean_xml_tag_content(acronym),
+                country=clean_xml_tag_content(country),
+                state=clean_xml_tag_content(state),
+                city=clean_xml_tag_content(city),
+                level_1=clean_xml_tag_content(level_1),
+                level_2=clean_xml_tag_content(level_2),
+                level_3=clean_xml_tag_content(level_3),
+                organization=organization,
+                organizational_level=organizational_level,
+                match_status=match_status or "unmatched",
+                extra_data=extra_data,
+            )
+            obj.full_clean()
+            obj.save()
+            return obj
+            
+        except IntegrityError:
+            return cls.get(
+                name=name,
+                original=original,
+                normalized_name=normalized_name,
+                acronym=acronym,
+                country=country,
+                state=state,
+                city=city,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+            )
+
+    @classmethod
+    def create_or_update(
+        cls,
+        user,
+        name,
+        original=None,
+        normalized_name=None,
+        acronym=None,
+        country=None,
+        state=None,
+        city=None,
+        level_1=None,
+        level_2=None,
+        level_3=None,
+        organization=None,
+        organizational_level=None,
+        match_status=None,
+        extra_data=None,
+    ):
+        """
+        Cria ou atualiza registro.
+        """
+        if not name:
+            raise ValueError("RawOrganization.create_or_update requires name")
+        
+        original = clean_xml_tag_content(original)
+        name = clean_xml_tag_content(name)
+        normalized_name = clean_xml_tag_content(normalized_name)
+        acronym = clean_xml_tag_content(acronym)
+        country = clean_xml_tag_content(country)
+        state = clean_xml_tag_content(state)
+        city = clean_xml_tag_content(city)
+        
+        try:
+            obj = cls.get(
+                name=name,
+                original=original,
+                normalized_name=normalized_name,
+                acronym=acronym,
+                country=country,
+                state=state,
+                city=city,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+            )
+            obj.updated_by = user
+            
+            # Atualiza campos se fornecidos
+            if original:
+                obj.original = clean_xml_tag_content(original)
+            if level_1:
+                obj.level_1 = clean_xml_tag_content(level_1)
+            if level_2:
+                obj.level_2 = clean_xml_tag_content(level_2)
+            if level_3:
+                obj.level_3 = clean_xml_tag_content(level_3)
+            if organization is not None:
+                obj.organization = organization
+            if organizational_level is not None:
+                obj.organizational_level = organizational_level
+            if match_status:
+                obj.match_status = match_status
+            if extra_data:
+                obj.extra_data = extra_data
+            
+            obj.full_clean()
+            obj.save()
+            return obj
+            
+        except cls.DoesNotExist:
+            return cls.create(
+                user=user,
+                name=name,
+                original=original,
+                normalized_name=normalized_name,
+                acronym=acronym,
+                country=country,
+                state=state,
+                city=city,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+                organization=organization,
+                organizational_level=organizational_level,
+                match_status=match_status,
+                extra_data=extra_data,
+            )
+
+    # -------------------------------------------------------------------------
+    # Métodos de instância
+    # -------------------------------------------------------------------------
+
+    def link_to_organization(self, user, organization, organizational_level=None, match_status="manual"):
+        """
+        Vincula a uma Organization padronizada.
+        
+        Args:
+            user: User instance
+            organization: Organization instance
+            organizational_level: OrganizationalLevel instance (opcional)
+            match_status: str - 'auto' ou 'manual'
+        """
+        self.organization = organization
+        self.organizational_level = organizational_level
+        self.match_status = match_status
+        self.updated_by = user
+        self.full_clean()
+        self.save()
