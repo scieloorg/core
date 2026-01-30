@@ -207,3 +207,169 @@ class CountryTest(TestCase):
                 self.assertIsInstance(item["country"], dict)
                 self.assertEqual("BR, MX, Chile", item["country"].get("name"))
                 self.assertEqual(None, item["country"].get("code"))
+
+
+class CityStatusTest(TestCase):
+    def test_city_default_status_is_raw(self):
+        """Test that City objects have RAW status by default"""
+        user, created = User.objects.get_or_create(username="adm")
+        city = models.City.create(user=user, name="Test City")
+        self.assertEqual(city.status, "RAW")
+
+    def test_city_status_can_be_set(self):
+        """Test that City status can be set to different values"""
+        user, created = User.objects.get_or_create(username="adm")
+        city = models.City.create(user=user, name="Verified City", status="VERIFIED")
+        self.assertEqual(city.status, "VERIFIED")
+
+    def test_city_clean_data_removes_html(self):
+        """Test that clean_data removes HTML tags"""
+        dirty_name = "<p>City Name</p>"
+        cleaned = models.City.clean_data(dirty_name)
+        self.assertEqual(cleaned, "City Name")
+
+    def test_city_clean_data_removes_extra_spaces(self):
+        """Test that clean_data removes extra spaces"""
+        dirty_name = "City   Name   with   spaces"
+        cleaned = models.City.clean_data(dirty_name)
+        self.assertEqual(cleaned, "City Name with spaces")
+
+    def test_city_clean_data_handles_none(self):
+        """Test that clean_data handles None values"""
+        cleaned = models.City.clean_data(None)
+        self.assertIsNone(cleaned)
+
+    def test_city_get_or_create_with_status(self):
+        """Test that get_or_create accepts status parameter"""
+        user, created = User.objects.get_or_create(username="adm")
+        city = models.City.get_or_create(user=user, name="Test City", status="CLEANED")
+        self.assertEqual(city.status, "CLEANED")
+
+
+class StateStatusTest(TestCase):
+    def test_state_default_status_is_raw(self):
+        """Test that State objects have RAW status by default"""
+        user, created = User.objects.get_or_create(username="adm")
+        state = models.State.create(user=user, name="Test State", acronym="TS")
+        self.assertEqual(state.status, "RAW")
+
+    def test_state_status_can_be_set(self):
+        """Test that State status can be set to different values"""
+        user, created = User.objects.get_or_create(username="adm")
+        state = models.State.create(user=user, name="Verified State", acronym="VS", status="VERIFIED")
+        self.assertEqual(state.status, "VERIFIED")
+
+    def test_state_create_or_update_sets_status_on_new(self):
+        """Test that create_or_update sets status on new objects"""
+        user, created = User.objects.get_or_create(username="adm")
+        state = models.State.create_or_update(user=user, name="New State", acronym="NS", status="CLEANED")
+        self.assertEqual(state.status, "CLEANED")
+
+    def test_state_create_or_update_updates_status_on_existing(self):
+        """Test that create_or_update updates status on existing objects"""
+        user, created = User.objects.get_or_create(username="adm")
+        state = models.State.create_or_update(user=user, name="Existing State", acronym="ES", status="RAW")
+        self.assertEqual(state.status, "RAW")
+        # Update the same state with a new status
+        state = models.State.create_or_update(user=user, name="Existing State", acronym="ES", status="VERIFIED")
+        self.assertEqual(state.status, "VERIFIED")
+
+    def test_state_clean_data_removes_html(self):
+        """Test that clean_data removes HTML tags from name and acronym"""
+        dirty_name = "<b>State Name</b>"
+        dirty_acronym = "<i>ST</i>"
+        cleaned_name, cleaned_acronym = models.State.clean_data(dirty_name, dirty_acronym)
+        self.assertEqual(cleaned_name, "State Name")
+        self.assertEqual(cleaned_acronym, "ST")
+
+    def test_state_clean_data_removes_extra_spaces(self):
+        """Test that clean_data removes extra spaces"""
+        dirty_name = "State   Name"
+        dirty_acronym = "SP "
+        cleaned_name, cleaned_acronym = models.State.clean_data(dirty_name, dirty_acronym)
+        self.assertEqual(cleaned_name, "State Name")
+        self.assertEqual(cleaned_acronym, "SP")
+
+    def test_state_clean_data_handles_none(self):
+        """Test that clean_data handles None values"""
+        cleaned_name, cleaned_acronym = models.State.clean_data(None, None)
+        self.assertIsNone(cleaned_name)
+        self.assertIsNone(cleaned_acronym)
+
+    def test_state_get_or_create_with_status(self):
+        """Test that get_or_create accepts status parameter"""
+        user, created = User.objects.get_or_create(username="adm")
+        state = models.State.get_or_create(user=user, name="Test State", acronym="TS", status="MATCHED")
+        self.assertEqual(state.status, "MATCHED")
+
+
+class CountryStatusTest(TestCase):
+    def test_country_default_status_is_raw(self):
+        """Test that Country objects have RAW status by default"""
+        user, created = User.objects.get_or_create(username="adm")
+        country = models.Country.create_or_update(
+            user=user, name="Test Country", acronym="TC"
+        )
+        self.assertEqual(country.status, "RAW")
+
+    def test_country_status_can_be_set(self):
+        """Test that Country status can be set to different values"""
+        user, created = User.objects.get_or_create(username="adm")
+        country = models.Country.create_or_update(
+            user=user, name="Verified Country", acronym="VC", status="VERIFIED"
+        )
+        self.assertEqual(country.status, "VERIFIED")
+
+    def test_country_create_or_update_sets_status_on_new(self):
+        """Test that create_or_update sets status on new objects"""
+        user, created = User.objects.get_or_create(username="adm")
+        country = models.Country.create_or_update(
+            user=user, name="New Country", acronym="NC", status="CLEANED"
+        )
+        self.assertEqual(country.status, "CLEANED")
+
+    def test_country_create_or_update_updates_status_on_existing(self):
+        """Test that create_or_update updates status on existing objects"""
+        user, created = User.objects.get_or_create(username="adm")
+        country = models.Country.create_or_update(
+            user=user, name="Existing Country", acronym="EC", status="RAW"
+        )
+        self.assertEqual(country.status, "RAW")
+        # Update the same country with a new status
+        country = models.Country.create_or_update(
+            user=user, name="Existing Country", acronym="EC", status="MATCHED"
+        )
+        self.assertEqual(country.status, "MATCHED")
+
+    def test_country_clean_data_removes_html(self):
+        """Test that clean_data removes HTML tags"""
+        dirty_name = "<strong>Country Name</strong>"
+        dirty_acronym = "<em>CN</em>"
+        dirty_acron3 = "<span>CNT</span>"
+        cleaned_name, cleaned_acronym, cleaned_acron3 = models.Country.clean_data(
+            dirty_name, dirty_acronym, dirty_acron3
+        )
+        self.assertEqual(cleaned_name, "Country Name")
+        self.assertEqual(cleaned_acronym, "CN")
+        self.assertEqual(cleaned_acron3, "CNT")
+
+    def test_country_clean_data_removes_extra_spaces(self):
+        """Test that clean_data removes extra spaces"""
+        dirty_name = "Country   Name"
+        dirty_acronym = "CN "
+        dirty_acron3 = "CNT "
+        cleaned_name, cleaned_acronym, cleaned_acron3 = models.Country.clean_data(
+            dirty_name, dirty_acronym, dirty_acron3
+        )
+        self.assertEqual(cleaned_name, "Country Name")
+        self.assertEqual(cleaned_acronym, "CN")
+        self.assertEqual(cleaned_acron3, "CNT")
+
+    def test_country_clean_data_handles_none(self):
+        """Test that clean_data handles None values"""
+        cleaned_name, cleaned_acronym, cleaned_acron3 = models.Country.clean_data(
+            None, None, None
+        )
+        self.assertIsNone(cleaned_name)
+        self.assertIsNone(cleaned_acronym)
+        self.assertIsNone(cleaned_acron3)
