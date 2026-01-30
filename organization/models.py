@@ -1,19 +1,21 @@
 import csv
 
+from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
+from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
-from core.models import CommonControlField
-from core.utils.standardizer import clean_xml_tag_content
+from core.models import BaseHistory, CommonControlField
+from core.utils.standardizer import clean_xml_tag_content, remove_extra_spaces
 from location.models import Location
 
 from . import choices
-
 from .exceptions import (
     OrganizationCreateOrUpdateError,
     OrganizationGetError,
@@ -160,8 +162,16 @@ class Organization(BaseOrganization, CommonControlField, ClusterableModel):
             models.Index(fields=["name"]),
             models.Index(fields=["source"]),
             models.Index(fields=["external_id"]),
-            models.Index(fields=["source"]),
         ]
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return cls.objects.filter(
+            Q(location__country__name__icontains=search_term) | 
+            Q(name__icontains=search_term) |
+            Q(source=search_term) |
+            Q(external_id=search_term)
+        )
 
     def add_source(self, source, save=False):
         self.source = source
@@ -734,7 +744,12 @@ class RawOrganization(BaseOrganization, BaseOrganizationalLevel, CommonControlFi
     # Configuração
     # -------------------------------------------------------------------------
 
-    autocomplete_search_field = "name"
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return cls.objects.filter(
+            Q(country__icontains=search_term) | 
+            Q(original__icontains=search_term)
+        )
 
     class Meta:
         verbose_name = _("Raw Organization")
