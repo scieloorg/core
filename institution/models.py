@@ -19,6 +19,17 @@ from .forms import ScimagoForm
 from .exceptions import InstitutionTypeGetError
 
 class Institution(CommonControlField, ClusterableModel):
+    """
+    Representa uma instituição com identificação, tipo e níveis organizacionais (versão 1 - legado)
+    
+    Usado em:
+    - bigbang.tasks: Institution.load(user) para importação em massa
+    - researcher.tasks: migrate_old_researcher_to_new_researcher - acesso via old_researcher.affiliation.institution
+    - institution.scripts.bulk_institution: models.Institution.load(user)
+    - institution.migrations: referências de FK em migrações
+    - researcher.tests: self.researcher.affiliation.institution.location.id
+    - Será substituído gradualmente por organization.models.Organization (versão 2)
+    """
     institution_identification = models.ForeignKey(
         "InstitutionIdentification", null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -362,6 +373,13 @@ class Institution(CommonControlField, ClusterableModel):
 
 
 class InstitutionHistory(models.Model):
+    """
+    Representa o histórico de uma instituição com datas de início e fim (versão 1 - legado)
+    
+    Usado em:
+    - Campos institution com initial_date e final_date
+    - Padrão de histórico para BaseHistoryItem
+    """
     institution = models.ForeignKey(
         "Institution", null=True, blank=True, related_name="+", on_delete=models.CASCADE
     )
@@ -488,6 +506,18 @@ class BaseHistoryItem(CommonControlField):
 
 
 class BaseInstitution(CommonControlField):
+    """
+    Classe base para diferentes tipos de instituições (versão 1 - legado)
+    
+    Usado como base para:
+    - Sponsor (institution.models)
+    - Publisher (institution.models) 
+    - CopyrightHolder (institution.models)
+    - Owner (institution.models)
+    - EditorialManager (institution.models)
+    - researcher.models.Affiliation (herda desta classe)
+    - Sendo substituído por organization.models.BaseOrganization (versão 2)
+    """
     institution = models.ForeignKey(
         Institution,
         on_delete=models.SET_NULL,
@@ -564,6 +594,17 @@ class BaseInstitution(CommonControlField):
 
 
 class Sponsor(BaseInstitution):
+    """
+    Representa patrocinadores de artigos e revistas (versão 1 - legado)
+    
+    Usado em:
+    - article.models: Article.sponsors (ManyToMany)
+    - article.sources.xmlsps: criação de patrocinadores a partir de XMLs
+    - article.controller: importação de sponsors
+    - journal.models: como parte de PublisherAndSponsors
+    - journal.sources.am_to_core: CopyrightHolder, Owner, Publisher, Sponsor
+    - institution.api.v1.serializers: SponsorSerializer
+    """
 
     panels = [
         AutocompletePanel("institution"),
@@ -574,6 +615,17 @@ class Sponsor(BaseInstitution):
 
 
 class Publisher(BaseInstitution):
+    """
+    Representa editoras de artigos e revistas (versão 1 - legado)
+    
+    Usado em:
+    - article.models: Article.publishers (ManyToMany)
+    - article.sources.preprint: importação de preprints
+    - book.models: Book.publisher (ForeignKey)
+    - journal.models: como parte de PublisherAndSponsors
+    - journal.sources.classic_website: criação de publishers
+    - journal.sources.am_to_core: importação do sistema legado
+    """
 
     panels = [
         AutocompletePanel("institution"),
@@ -584,6 +636,13 @@ class Publisher(BaseInstitution):
 
 
 class CopyrightHolder(BaseInstitution):
+    """
+    Representa detentores de direitos autorais (versão 1 - legado)
+    
+    Usado em:
+    - journal.sources.am_to_core: CopyrightHolder, Owner, Publisher, Sponsor
+    - Migrações do sistema anterior (AM) para o core
+    """
     panels = [
         AutocompletePanel("institution"),
     ]
@@ -593,6 +652,14 @@ class CopyrightHolder(BaseInstitution):
 
 
 class Owner(BaseInstitution):
+    """
+    Representa proprietários/mantenedores de revistas (versão 1 - legado)
+    
+    Usado em:
+    - journal.models: como parte de PublisherAndSponsors
+    - journal.sources.am_to_core: CopyrightHolder, Owner, Publisher, Sponsor
+    - journal.api.v1.serializers: OwnerSerializer para APIs
+    """
     panels = [
         AutocompletePanel("institution"),
     ]
@@ -701,6 +768,15 @@ class ScimagoFile(models.Model):
 
 
 class InstitutionIdentification(CommonControlField):
+    """
+    Representa a identificação básica de uma instituição (nome, acrônimo) (versão 1 - legado)
+    
+    Usado em:
+    - Institution.institution_identification (ForeignKey)
+    - researcher.tasks: acesso via old_researcher.affiliation.institution.institution_identification
+    - journal.api.v1.serializers: acesso via institution.institution.institution_identification.name
+    - institution.wagtail_hooks: "InstitutionIdentification" interface administrativa
+    """
     name = models.TextField(_("Name"), null=True, blank=True)
     acronym = models.TextField(_("Institution Acronym"), null=True, blank=True)
     is_official = models.BooleanField(
@@ -872,6 +948,14 @@ class InstitutionIdentification(CommonControlField):
 
 
 class InstitutionType(CommonControlField):
+    """
+    Representa tipos de instituições SciELO (versão 1 - legado)
+    
+    Usado em:
+    - Institution.institution_type_scielo (ManyToMany)
+    - bigbang.tasks: Institution, InstitutionType para importação
+    - Equivalente a organization.models.OrganizationInstitutionType (versão 2)
+    """
     name = models.TextField(verbose_name=_("Institution Type"), null=True, blank=True, unique=True,)
 
     autocomplete_search_field = "name"
