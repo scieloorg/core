@@ -11,7 +11,7 @@ from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
-from core.models import BaseHistory, CommonControlField
+from core.models import BaseDateRange, CommonControlField
 from core.utils.standardizer import clean_xml_tag_content, remove_extra_spaces
 from location.models import Location
 
@@ -1075,3 +1075,32 @@ class RawOrganization(BaseOrganization, BaseOrganizationalLevel, CommonControlFi
         self.updated_by = user
         self.full_clean()
         self.save()
+
+
+class BaseOrganizationRole(BaseDateRange):
+    # importar em Modelos para InlinePanel e usar como ParentalKey Collection, Journal, Article, etc.
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=HELP_TEXT_ORGANIZATION,
+    )
+    role = models.CharField(
+        _("Role"), max_length=50, choices=choices.ORGANIZATION_ROLES
+    )
+
+    panels = [
+        AutocompletePanel("organization"),
+        FieldPanel("role"),
+    ] + BaseDateRange.panels
+
+    class Meta:
+        abstract = True
+        verbose_name = _("Organization Role")
+        verbose_name_plural = _("Organization Roles")
+
+    def __str__(self):
+        if self.range:
+            return f"{self.organization} - {self.role} ({self.range})"
+        return f"{self.organization} - {self.role}"
