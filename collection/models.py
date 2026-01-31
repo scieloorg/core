@@ -18,7 +18,7 @@ from core.models import (
     TextWithLang,
 )
 from core.utils.utils import fetch_data
-from organization.models import HELP_TEXT_ORGANIZATION, Organization
+from organization.models import HELP_TEXT_ORGANIZATION, Organization, BaseOrganizationRole
 
 from . import choices
 
@@ -116,11 +116,9 @@ class Collection(CommonControlField, ClusterableModel):
     logo_panels = [
         InlinePanel("logos", label=_("Logos"), min_num=0),
     ]
-    supporting_organization_panels = [
-        InlinePanel("supporting_organization", label=_("Supporting Organization")),
-    ]
-    executing_organization_panels = [
-        InlinePanel("executing_organization", label=_("Executing Organization")),
+
+    organization_panels = [
+        InlinePanel("organizations", label=_("Organizations")),
     ]
 
     social_network_panels = [
@@ -136,10 +134,7 @@ class Collection(CommonControlField, ClusterableModel):
             ),
             ObjectList(logo_panels, heading=_("Logos")),
             ObjectList(
-                supporting_organization_panels, heading=_("Supporting Organizations")
-            ),
-            ObjectList(
-                executing_organization_panels, heading=_("Executing Organization")
+                organization_panels, heading=_("Organizations")
             ),
             ObjectList(social_network_panels, heading=_("Social networks")),
         ]
@@ -328,6 +323,24 @@ class CollectionSocialNetwork(Orderable, SocialNetwork):
         related_name="social_network",
         null=True,
     )
+
+
+class CollectionOrganization(BaseOrganizationRole, Orderable):
+    # substitui CollectionSupportingOrganization e CollectionExecutingOrganization
+    collection = ParentalKey(
+        Collection,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="organizations",
+    )
+    panels = BaseOrganizationRole.panels
+
+    class Meta:
+        verbose_name = _("Collection Organization")
+        verbose_name_plural = _("Collection Organizations")
+        unique_together = [
+            ("collection", "organization", "role", "initial_date", "final_date"),
+        ]
 
 
 class CollectionSupportingOrganization(Orderable, ClusterableModel, BaseHistory):
