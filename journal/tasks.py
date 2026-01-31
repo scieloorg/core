@@ -445,3 +445,186 @@ def task_export_journal_to_articlemeta(
         
         # Re-raise para que o Celery possa tratar a exceção adequadamente
         raise
+
+
+@celery_app.task(bind=True)
+def task_migrate_organization_history_for_journal(
+    self, journal_id=None, journal_acron=None, collection_acron=None,
+    user_id=None, username=None, force_update=False
+):
+    """
+    Task para migrar journal organization history de um journal específico.
+    
+    Args:
+        journal_id: ID do journal
+        journal_acron: Acrônimo do journal (requer collection_acron)
+        collection_acron: Acrônimo da collection (usado com journal_acron)
+        user_id: ID do usuário que está executando a migração
+        username: Username alternativo ao user_id
+        force_update: Se True, força a atualização mesmo se já existem dados migrados
+        
+    Returns:
+        dict: Estatísticas da migração
+    """
+    try:
+        user = _get_user(user_id, username)
+        if not user:
+            raise ValueError("User is required for migration task")
+        
+        if journal_id:
+            try:
+                journal = Journal.objects.get(id=journal_id)
+            except Journal.DoesNotExist:
+                raise ValueError(f"Journal with id {journal_id} not found")
+        elif journal_acron and collection_acron:
+            try:
+                scielo_journal = SciELOJournal.objects.select_related('journal').get(
+                    journal_acron=journal_acron,
+                    collection__acron3=collection_acron
+                )
+                journal = scielo_journal.journal
+                if not journal:
+                    raise ValueError(
+                        f"SciELO journal {journal_acron}/{collection_acron} has no associated journal"
+                    )
+            except SciELOJournal.DoesNotExist:
+                raise ValueError(
+                    f"SciELO journal with acron {journal_acron} "
+                    f"and collection {collection_acron} not found"
+                )
+        else:
+            raise ValueError(
+                "Either journal_id or both journal_acron and collection_acron are required"
+            )
+        
+        logger.info(f"Starting migration for journal {journal.id}")
+        
+        stats = journal.migrate_all_organization_history(user, force_update)
+        
+        result = {
+            "journal_id": journal.id,
+            "journal_title": journal.title,
+            "force_update": force_update,
+            "status": "success",
+            "stats": stats,
+        }
+        
+        logger.info(f"Migration completed for journal {journal.id}: {stats}")
+        
+        return result
+        
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "migrate_organization_history_for_journal",
+                "journal_id": journal_id,
+                "journal_acron": journal_acron,
+                "collection_acron": collection_acron,
+                "user_id": user_id,
+                "username": username,
+                "force_update": force_update,
+                "task_id": self.request.id if hasattr(self.request, 'id') else None,
+            },
+        )
+        
+        logger.error(f"Failed to migrate organization history for journal: {str(e)}")
+        raise
+
+
+@celery_app.task(bind=True)
+def task_migrate_organization_history_for_collection(
+    self, collection_id=None, collection_acron=None, user_id=None, username=None, 
+    force_update=False
+):
+    """
+    Task para migrar journal organization history de todos os journals de uma collection.
+    
+    Args:
+        collection_id: ID da collection
+        collection_acron: Acrônimo da collection (alternativo ao collection_id)
+        user_id: ID do usuário que está executando a migração
+        username: Username alternativo ao user_id
+        force_update: Se True, força a atualização mesmo se já existem dados migrados
+        
+    Returns:
+        dict: Estatísticas da migração por journal
+    """
+    try:
+        user = _get_user(user_id, username)
+        if not user:
+            raise ValueError("User is required for migration task")
+        
+        if collection_id:
+            try:
+                collection = Collection.objects.get(id=collection_id)
+            except Collection.DoesNotExist:
+                raise ValueError(f"Collection with id {collection_id} not found")
+        elif collection_acron:
+            try:
+                collection = Collection.objects.get(acron3=collection_acron)
+            except Collection.DoesNotExist:
+                raise ValueError(f"Collection with acron {collection_acron} not found")
+        else:
+            raise ValueError("Either collection_id or collection_acron is required")
+        
+        logger.info(f"Starting migration for collection {collection.acron3}")
+        
+        journal_ids = list(
+            SciELOJournal.objects.filter(collection=collection, journal__isnull=False)
+            .values_list('journal_id', flat=True)
+        )
+        
+        if not journal_ids:
+            logger.warning(f"No journals found for collection {collection.acron3}")
+            return {
+                "collection": collection.acron3,
+                "collection_id": collection.id,
+                "total_journals": 0,
+                "tasks_dispatched": 0,
+            }
+        
+        # Dispara subtasks para cada journal
+        for journal_id in journal_ids:
+            task_migrate_organization_history_for_journal.delay(
+                journal_id=journal_id,
+                user_id=user.id,
+                force_update=force_update,
+            )
+        
+        result = {
+            "collection": collection.acron3,
+            "collection_id": collection.id,
+            "total_journals": len(journal_ids),
+            "tasks_dispatched": len(journal_ids),
+            "force_update": force_update,
+        }
+        
+        logger.info(
+            f"Dispatched {len(journal_ids)} migration tasks for collection {collection.acron3}"
+        )
+        
+        return result
+        
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "migrate_organization_history_for_collection",
+                "collection_id": collection_id,
+                "collection_acron": collection_acron,
+                "user_id": user_id,
+                "username": username,
+                "force_update": force_update,
+                "task_id": self.request.id if hasattr(self.request, 'id') else None,
+            },
+        )
+        
+        logger.error(f"Failed to migrate organization history for collection: {str(e)}")
+        raise
