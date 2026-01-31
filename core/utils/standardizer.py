@@ -28,13 +28,25 @@ def remove_html_tags(text):
         yield part
 
 
+def has_only_alpha_or_space(text):
+    """ Verifica se o conteúdo do texto é válido como string, ou seja,
+    não é vazio e não contém números. """
+    if not text:
+        return False
+    parts = text.split()
+    for part in parts:
+        if not part.isalpha():
+            return False
+    return True
+
+
 def clean_xml_tag_content(text, assert_string=True):
     if not text:
         return text
     text = "".join(remove_html_tags(text))
     text_ = remove_extra_spaces(text)
     if assert_string:
-        if text_.isalpha():
+        if has_only_alpha_or_space(text_):
             return text_
         else:
             return None
