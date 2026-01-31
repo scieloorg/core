@@ -19,3 +19,10 @@ PLATFORM_STATUS = [
     ("new", _("New")),
     ("migrating", _("Migrating")),
 ]
+
+COLLECTION_ORGANIZATION_ROLES = [
+    ("sponsor", _("Sponsor")),
+    ("funder", _("Funder")),
+    ("partner", _("Partner")),
+    ("coordination", _("Coordination")),
+]
