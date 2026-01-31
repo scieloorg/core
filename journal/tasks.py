@@ -19,7 +19,6 @@ from journal.models import (
     JournalLogo,
     SciELOJournal,
 )
-from journal.sources import classic_website
 from journal.sources.am_data_extraction import extract_value
 from journal.sources.am_field_names import correspondencia_journal
 from journal.sources.article_meta import (
@@ -31,12 +30,6 @@ from tracker.models import UnexpectedEvent
 User = get_user_model()
 
 logger = logging.getLogger(__name__)
-
-
-@celery_app.task(bind=True)
-def load_journal_from_classic_website(self, username=None, user_id=None):
-    user = _get_user(self.request, username=username, user_id=user_id)
-    classic_website.load(user)
 
 
 @celery_app.task(bind=True)
