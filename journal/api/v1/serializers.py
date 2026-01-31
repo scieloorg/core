@@ -220,8 +220,8 @@ class JournalSerializer(serializers.ModelSerializer):
                     "acronym": org.acronym,
                     "url": org.url,
                     "location": org.location.data if org.location else None,
-                    "start_date": item.start_date,
-                    "end_date": item.end_date,
+                    "initial_date": item.initial_date,
+                    "final_date": item.final_date,
                 })
             return items
         return None
