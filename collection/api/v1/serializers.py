@@ -53,6 +53,19 @@ class CollectionLogoSerializer(serializers.ModelSerializer):
         return None
 
 
+class CollectionOrganizationSerializer(serializers.ModelSerializer):
+    """Serializer para organizações relacionadas à coleção"""
+    organization = OrganizationSerializer(read_only=True, many=False)
+    
+    class Meta:
+        model = models.CollectionOrganization
+        fields = [
+            "organization",
+            "role",
+            "initial_date",
+            "final_date",
+        ]
+
 
 class SupportingOrganizationSerializer(serializers.ModelSerializer):
     """Serializer para organizações de suporte"""
@@ -96,8 +109,11 @@ class CollectionSerializer(serializers.ModelSerializer):
     # Campos relacionados (read-only por padrão)
     collection_names = CollectionNameSerializer(source='collection_name', many=True, read_only=True)
     logos = CollectionLogoSerializer(many=True, read_only=True)
+    # FIXME - deprecated - usar CollectionOrganizationSerializer
     supporting_organizations = SupportingOrganizationSerializer(source='supporting_organization', many=True, read_only=True)
     executing_organizations = ExecutingOrganizationSerializer(source='executing_organization', many=True, read_only=True)
+    # FIXME - deprecated - usar CollectionOrganizationSerializer
+    organizations = CollectionOrganizationSerializer(source='organizations', many=True, read_only=True)
     social_networks = SocialNetworkSerializer(source='social_network', many=True, read_only=True)
     
     class Meta:
@@ -118,6 +134,9 @@ class CollectionSerializer(serializers.ModelSerializer):
             # Campos relacionados
             "collection_names",
             "logos",
+            "organizations",
+            
+            # FIXME - deprecated - usar CollectionOrganizationSerializer
             "supporting_organizations",
             "executing_organizations",
             "social_networks",
