@@ -629,6 +629,41 @@ class BaseHistory(models.Model):
     class Meta:
         abstract = True
 
+    @property
+    def initial_date_isoformat(self):
+        if self.initial_date:
+            return self.initial_date.isoformat()
+        return None
+    
+    @property
+    def final_date_isoformat(self):
+        if self.final_date:
+            return self.final_date.isoformat()
+        return None
+
+
+class BaseDateRange(models.Model):
+    initial_date = models.CharField(_("Initial Date"), max_length=10, null=True, blank=True)
+    final_date = models.CharField(_("Final Date"), max_length=10, null=True, blank=True)
+
+    panels = [
+        FieldPanel("initial_date"),
+        FieldPanel("final_date"),
+    ]
+
+    class Meta:
+        abstract = True
+
+    @property
+    def range(self):
+        if self.initial_date and self.final_date:
+            return f"{self.initial_date} - {self.final_date}"
+        elif self.initial_date:
+            return f"from {self.initial_date}"
+        elif self.final_date:
+            return f"until {self.final_date}"
+        return None
+
 
 class BaseLogo(models.Model):
     """
