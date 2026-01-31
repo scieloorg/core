@@ -94,6 +94,13 @@ class Institution(CommonControlField, ClusterableModel):
         return f"{self.institution_identification} | {self.level_1} | {self.level_2} | {self.level_3} | {self.location}"
     
     @property
+    def institution_name(self):
+        try:
+            return self.institution_identification.name
+        except (AttributeError, TypeError):
+            return None
+
+    @property
     def data(self):
         _data = self.institution_identification.data
         _data.update({
@@ -392,6 +399,13 @@ class InstitutionHistory(models.Model):
         FieldPanel("final_date"),
     ]
 
+    @property
+    def institution_name(self):
+        try:
+            return self.institution.institution_name
+        except (AttributeError, TypeError):
+            return None
+
     @classmethod
     def get_or_create(cls, institution, initial_date, final_date):
         histories = cls.objects.filter(
@@ -458,51 +472,69 @@ class BaseHistoryItem(CommonControlField):
 
     def __str__(self):
         try:
-            return self.institution.institution.institution_identification.name
+            return self.institution_name
         except AttributeError:
             return ''
-    
+
     @property
     def institution_name(self):
         try:
-            return self.institution.institution.institution_identification.name
-        except AttributeError:
+            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
+            return self.institution.institution_name
+        except (AttributeError, TypeError):
             return None
 
     @property
     def institution_city_name(self):
         try:
-            return self.institution.institution.location.city.name
+            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
+            return self.institution.location.city.name
         except AttributeError:
             return None
     
     @property
     def institution_country_name(self):
         try:
-            return self.institution.institution.location.country.name
+            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
+            return self.institution.location.country.name
         except AttributeError:
             return None 
         
     @property
     def institution_country_acronym(self):
         try:
-            return self.institution.institution.location.country.acronym
+            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
+            return self.institution.location.country.acronym
         except AttributeError:
             return None
         
     @property
     def institution_state_name(self):
         try:
-            return self.institution.institution.location.state.name
+            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
+            return self.institution.location.state.name
         except AttributeError:
             return None        
 
     @property
     def instition_state_acronym(self):
         try:
-            return self.institution.institution.location.state.acronym
+            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
+            return self.institution.location.state.acronym
         except AttributeError:
             return None
+        
+    @property
+    def initial_date_isoformat(self):
+        if self.initial_date:
+            return self.initial_date.isoformat()
+        return None
+    
+    @property
+    def final_date_isoformat(self):
+        if self.final_date:
+            return self.final_date.isoformat()
+        return None
 
 
 class BaseInstitution(CommonControlField):
@@ -534,6 +566,48 @@ class BaseInstitution(CommonControlField):
 
     def autocomplete_label(self):
         return str(self.institution)
+    
+    @property
+    def institution_name(self):
+        try:
+            return self.institution.institution_name
+        except (AttributeError, TypeError):
+            return None
+
+    @property
+    def institution_city_name(self):
+        try:
+            return self.institution.location.city.name
+        except AttributeError:
+            return None
+    
+    @property
+    def institution_country_name(self):
+        try:
+            return self.institution.location.country.name
+        except AttributeError:
+            return None 
+        
+    @property
+    def institution_country_acronym(self):
+        try:
+            return self.institution.location.country.acronym
+        except AttributeError:
+            return None
+        
+    @property
+    def institution_state_name(self):
+        try:
+            return self.institution.location.state.name
+        except AttributeError:
+            return None        
+
+    @property
+    def instition_state_acronym(self):
+        try:
+            return self.institution.location.state.acronym
+        except AttributeError:
+            return None
 
     @classmethod
     def autocomplete_custom_queryset_filter(cls, any_value):
