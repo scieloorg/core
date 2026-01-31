@@ -41,28 +41,83 @@ class JournalUseLicenseSerializer(serializers.ModelSerializer):
         ]
 
 
-class PublisherSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(
-        source="institution.institution.institution_identification.name"
-    )
-
+class JournalOrganizationSerializer(serializers.ModelSerializer):
+    organization_name = serializers.CharField(source="organization.name", read_only=True)
+    organization_acronym = serializers.CharField(source="organization.acronym", read_only=True)
+    organization_location = serializers.SerializerMethodField()
+    role_display = serializers.CharField(source="get_role_display", read_only=True)
+    journal_title = serializers.CharField(source="journal.title", read_only=True)
+    display_name = serializers.SerializerMethodField()
+    is_current = serializers.SerializerMethodField()
+    
+    def get_organization_location(self, obj):
+        if obj.organization and obj.organization.location:
+            return obj.organization.location.data
+        return None
+    
+    def get_display_name(self, obj):
+        """Retorna o nome da organização ou original_data se organização não existir"""
+        if obj.organization:
+            return obj.organization.name
+        return obj.original_data
+    
+    def get_is_current(self, obj):
+        """Verifica se a organização está ativa (sem data de fim ou data futura)"""
+        if not obj.end_date:
+            return True
+        from datetime import date
+        return obj.end_date > date.today()
+    
     class Meta:
-        model = models.PublisherHistory
+        model = models.JournalOrganization
         fields = [
-            "name",
+            "id",
+            "role",
+            "role_display", 
+            "display_name",
+            "organization_name",
+            "organization_acronym", 
+            "organization_location",
+            "journal_title",
+            "start_date",
+            "end_date",
+            "is_current",
+            "original_data",
+            "created",
+            "updated",
         ]
 
 
-class OwnerSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(
-        source="institution.institution.institution_identification.name"
-    )
+# class PublisherSerializer(serializers.ModelSerializer):
+#     """
+#     DEPRECATED: This serializer is deprecated and will be removed in a future version.
+#     Use JournalOrganizationSerializer with role="publisher" instead.
+#     """
+#     name = serializers.CharField(
+#         source="institution.institution.institution_identification.name"
+#     )
 
-    class Meta:
-        model = models.OwnerHistory
-        fields = [
-            "name",
-        ]
+#     class Meta:
+#         model = models.PublisherHistory
+#         fields = [
+#             "name",
+#         ]
+
+
+# class OwnerSerializer(serializers.ModelSerializer):
+#     """
+#     DEPRECATED: This serializer is deprecated and will be removed in a future version.
+#     Use JournalOrganizationSerializer with role="owner" instead.
+#     """
+#     name = serializers.CharField(
+#         source="institution.institution.institution_identification.name"
+#     )
+
+#     class Meta:
+#         model = models.OwnerHistory
+#         fields = [
+#             "name",
+#         ]
 
 
 class MissionSerializer(serializers.ModelSerializer):
@@ -106,45 +161,101 @@ class JournalTableOfContentsSerializer(serializers.ModelSerializer):
 
 class JournalSerializer(serializers.ModelSerializer):
     # Serializadores para campos de relacionamento, como 'official', devem corresponder aos campos do modelo.
+    # Basic journal information
     official = OfficialJournalSerializer(many=False, read_only=True)
-    subject_descriptor = SubjectDescriptorSerializer(many=True, read_only=True)
-    subject = SubjectSerializer(many=True, read_only=True)
-    text_language = LanguageSerializer(many=True, read_only=True)
-    journal_use_license = serializers.SerializerMethodField()
-    publisher = serializers.SerializerMethodField()
-    owner = serializers.SerializerMethodField()
     acronym = serializers.SerializerMethodField()
-    scielo_journal = serializers.SerializerMethodField()
-    title_in_database = serializers.SerializerMethodField()
-    url_logo = serializers.SerializerMethodField()
-    mission = MissionSerializer(many=True, read_only=True)
     other_titles = serializers.SerializerMethodField()
-    sponsor = serializers.SerializerMethodField()
-    email = serializers.SerializerMethodField()
-    copyright = serializers.SerializerMethodField()
     next_journal_title = serializers.SerializerMethodField()
     previous_journal_title = serializers.SerializerMethodField()
+    
+    # Classification and subjects
+    subject_descriptor = SubjectDescriptorSerializer(many=True, read_only=True)
+    subject = SubjectSerializer(many=True, read_only=True)
+    wos_areas = serializers.SerializerMethodField()
+    
+    # Language and content
+    text_language = LanguageSerializer(many=True, read_only=True)
+    mission = MissionSerializer(many=True, read_only=True)
     # TODO: DEPRECATED - será removido em versão futura, usar table_of_contents
     toc_items = serializers.SerializerMethodField()
     # NOVO: substitui toc_items
     table_of_contents = serializers.SerializerMethodField()
-    wos_areas = serializers.SerializerMethodField()
+    
+    # Organizations and roles
+    publisher = serializers.SerializerMethodField()
+    owner = serializers.SerializerMethodField()
+    sponsor = serializers.SerializerMethodField()
+    copyright = serializers.SerializerMethodField()
+    
+    # License and legal
+    journal_use_license = serializers.SerializerMethodField()
+    
+    # Contact information
+    email = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
+    
+    # External data and indexing
+    scielo_journal = serializers.SerializerMethodField()
+    title_in_database = serializers.SerializerMethodField()
+    
+    # Media and presentation
+    url_logo = serializers.SerializerMethodField()
 
     def get_institution_history(self, institution_history):
+        """DEPRECATED: Mantido para compatibilidade com API legacy"""
         if queryset := institution_history.all():
             return [{"name": str(item)} for item in queryset]
+    
+    def get_organization_by_role(self, obj, role):
+        """Busca organizações por role no JournalOrganization"""
+        organizations = obj.organizations.filter(role=role)
+        if organizations.exists():
+            items = []
+            for item in organizations:
+                org = item.organization
+                if not org:
+                    continue
+                items.append({
+                    "name": org.name or item.original_data,
+                    "acronym": org.acronym,
+                    "url": org.url,
+                    "location": org.location.data if org.location else None,
+                    "start_date": item.start_date,
+                    "end_date": item.end_date,
+                })
+            return items
+        return None
 
     def get_publisher(self, obj):
+        # Primeiro tenta buscar do novo modelo JournalOrganization
+        result = self.get_organization_by_role(obj, "publisher")
+        if result:
+            return result
+        # Fallback para o modelo legacy para compatibilidade
         return self.get_institution_history(obj.publisher_history)
 
     def get_owner(self, obj):
+        # Primeiro tenta buscar do novo modelo JournalOrganization
+        result = self.get_organization_by_role(obj, "owner")
+        if result:
+            return result
+        # Fallback para o modelo legacy para compatibilidade
         return self.get_institution_history(obj.owner_history)
 
     def get_sponsor(self, obj):
+        # Primeiro tenta buscar do novo modelo JournalOrganization
+        result = self.get_organization_by_role(obj, "sponsor")
+        if result:
+            return result
+        # Fallback para o modelo legacy para compatibilidade
         return self.get_institution_history(obj.sponsor_history)
 
     def get_copyright(self, obj):
+        # Primeiro tenta buscar do novo modelo JournalOrganization
+        result = self.get_organization_by_role(obj, "copyright_holder")
+        if result:
+            return result
+        # Fallback para o modelo legacy para compatibilidade
         return self.get_institution_history(obj.copyright_holder_history)
 
     def get_acronym(self, obj):
@@ -308,6 +419,7 @@ class JournalSerializer(serializers.ModelSerializer):
             "other_titles",
             "acronym",
             "journal_use_license",
+            "organizations",
             "publisher",
             "owner",
             "sponsor",
