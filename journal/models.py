@@ -65,7 +65,8 @@ from organization.dynamic_models import (
     OrgLevelPublisher,
     OrgLevelSponsor,
 )
-from organization.models import HELP_TEXT_ORGANIZATION, Organization
+from organization.models import HELP_TEXT_ORGANIZATION, Organization, BaseOrganizationRole, RawOrganization
+from organization.choices import ORGANIZATION_ROLES
 from thematic_areas.models import ThematicArea
 from vocabulary.models import Vocabulary
 from tracker.models import UnexpectedEvent
@@ -83,22 +84,22 @@ class OfficialJournal(CommonControlField, ClusterableModel):
     Class that represent the Official Journal
     """
 
-    title = models.TextField(_("ISSN Title"), null=True, blank=True)
-    iso_short_title = models.TextField(_("ISO Short Title"), null=True, blank=True)
+    title = models.CharField(_("ISSN Title"), max_length=255, null=True, blank=True)
+    iso_short_title = models.CharField(_("ISO Short Title"), max_length=255, null=True, blank=True)
     new_title = models.ForeignKey(
         "self",
         verbose_name=_("New Title"),
         on_delete=models.SET_NULL,
-        null=True,
+        null=True,  
         blank=True,
         related_name="new_title_journal",
     )
     old_title = models.ManyToManyField("self", blank=True)
-    previous_journal_titles = models.TextField(
-        _("Previous Journal titles"), null=True, blank=True
+    previous_journal_titles = models.CharField(
+        _("Previous Journal titles"), max_length=255, null=True, blank=True
     )
-    next_journal_title = models.TextField(
-        _("Next Journal Title"), null=True, blank=True
+    next_journal_title = models.CharField(
+        _("Next Journal Title"), max_length=255, null=True, blank=True
     )
     initial_year = models.CharField(
         _("Initial Year"), max_length=4, blank=True, null=True
@@ -331,8 +332,8 @@ class Journal(CommonControlField, ClusterableModel):
         blank=True,
         on_delete=models.SET_NULL,
     )
-    title = models.TextField(_("Journal Title"), null=True, blank=True)
-    short_title = models.TextField(_("Short Title"), null=True, blank=True)
+    title = models.CharField(_("Journal Title"), max_length=255, null=True, blank=True)
+    short_title = models.CharField(_("Short Title"), max_length=255, null=True, blank=True)
     logo = models.ForeignKey(
         "wagtailimages.Image",
         on_delete=models.SET_NULL,
@@ -344,8 +345,8 @@ class Journal(CommonControlField, ClusterableModel):
         _("Submission online URL"), null=True, blank=True
     )
 
-    contact_name = models.TextField(null=True, blank=True)
-    contact_address = models.TextField(_("Address"), null=True, blank=True)
+    contact_name = models.CharField(max_length=255, null=True, blank=True)
+    contact_address = models.CharField(_("Address"), max_length=255, null=True, blank=True)
     contact_location = models.ForeignKey(
         Location, on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -455,13 +456,16 @@ class Journal(CommonControlField, ClusterableModel):
         null=True,
         blank=True,
     )
-    national_code = models.TextField(
+    national_code = models.CharField(
         _("National Code"),
+        max_length=16,
         null=True,
         blank=True,
     )
-    classification = models.TextField(
+
+    classification = models.CharField(
         _("Classification"),
+        max_length=32,
         null=True,
         blank=True,
     )
@@ -507,8 +511,9 @@ class Journal(CommonControlField, ClusterableModel):
         blank=True,
         null=True,
     )
-    center_code = models.TextField(
+    center_code = models.CharField(
         _("Center code"),
+        max_length=20,
         blank=True,
         null=True,
     )
@@ -530,8 +535,9 @@ class Journal(CommonControlField, ClusterableModel):
         blank=True,
         null=True,
     )
-    subtitle = models.TextField(
+    subtitle = models.CharField(
         _("Subtitle"),
+        max_length=255,
         blank=True,
         null=True,
     )
@@ -541,8 +547,9 @@ class Journal(CommonControlField, ClusterableModel):
         blank=True,
         null=True,
     )
-    has_supplement = models.TextField(
+    has_supplement = models.CharField(
         _("Has Supplement"),
+        max_length=255,
         blank=True,
         null=True,
     )
@@ -618,7 +625,7 @@ class Journal(CommonControlField, ClusterableModel):
         AutocompletePanel("official"),
         FieldPanel("title"),
         FieldPanel("short_title"),
-        InlinePanel("other_titles", label=_("Other titles"), classname="collapsed"),
+        InlinePanel("other_titles", label=_("Other titles")),
     ]
 
     panels_scope_and_about = [
@@ -626,23 +633,23 @@ class Journal(CommonControlField, ClusterableModel):
         AutocompletePanel("additional_indexed_at"),
         AutocompletePanel("subject"),
         AutocompletePanel("subject_descriptor"),
-        InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
+        InlinePanel("thematic_area", label=_("Thematic Areas")),
         AutocompletePanel("wos_db"),
         AutocompletePanel("wos_area"),
-        InlinePanel("mission", label=_("Mission"), classname="collapsed"),
-        InlinePanel("history", label=_("Brief History"), classname="collapsed"),
-        InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
+        InlinePanel("mission", label=_("Mission")),
+        InlinePanel("history", label=_("Brief History")),
+        InlinePanel("focus", label=_("Focus and Scope")),
     ]
 
     panels_institutions = [
-        InlinePanel("owner_history", label=_("Owner"), classname="collapsed"),
-        InlinePanel("publisher_history", label=_("Publisher"), classname="collapsed"),
-        InlinePanel("sponsor_history", label=_("Sponsor"), classname="collapsed"),
-        InlinePanel(
-            "copyright_holder_history",
-            label=_("Copyright Holder"),
-            classname="collapsed",
-        ),
+        InlinePanel("organizations", label=_("Organizations")),
+        # InlinePanel("owner_history", label=_("Owner")),
+        # InlinePanel("publisher_history", label=_("Publisher")),
+        # InlinePanel("sponsor_history", label=_("Sponsor")),
+        # InlinePanel(
+        #     "copyright_holder_history",
+        #     label=_("Copyright Holder"),
+        # ),
     ]
 
     panels_website = [
@@ -653,12 +660,12 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("logo", heading=_("Logo")),
         # FieldPanel("journal_url"),
         InlinePanel(
-            "related_journal_urls", label=_("Journal Urls"), classname="collapsed"
+            "related_journal_urls", label=_("Journal Urls"),
         ),
         FieldPanel("submission_online_url"),
         FieldPanel("main_collection"),
         InlinePanel(
-            "title_in_database", label=_("Title in Database"), classname="collapsed"
+            "title_in_database", label=_("Title in Database"),
         ),
         InlinePanel("journalsocialnetwork", label=_("Social Network")),
         FieldPanel("frequency"),
@@ -671,20 +678,19 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("open_access"),
         FieldPanel("url_oa"),
         InlinePanel(
-            "file_oa", label=_("Open Science accordance form"), classname="collapsed"
+            "file_oa", label=_("Open Science accordance form"),
         ),
         FieldPanel("journal_use_license"),
-        InlinePanel("open_data", label=_("Open data"), classname="collapsed"),
-        InlinePanel("preprint", label=_("Preprint"), classname="collapsed"),
-        InlinePanel("review", label=_("Peer review"), classname="collapsed"),
+        InlinePanel("open_data", label=_("Open data")),
+        InlinePanel("preprint", label=_("Preprint")),
+        InlinePanel("review", label=_("Peer review")),
         InlinePanel(
             "open_science_compliance",
             label=_("Open Science Compliance"),
-            classname="collapsed",
         ),
     ]
 
-    panels_notes = [InlinePanel("annotation", label=_("Notes"), classname="collapsed")]
+    panels_notes = [InlinePanel("annotation", label=_("Notes"))]
 
     panels_legacy_compatibility_fields = [
         FieldPanel("alphabet"),
@@ -1002,6 +1008,211 @@ class Journal(CommonControlField, ClusterableModel):
             )
         return list(data.values())
 
+    # =========================================================================
+    # MÉTODOS DE ORGANIZAÇÃO - NOVO MODELO JournalOrganization
+    # =========================================================================
+
+    def get_organization_by_role(self, role):
+        """
+        Obtém organizações por role usando JournalOrganization.
+        
+        Args:
+            role: str - 'owner', 'publisher', 'sponsor', 'copyright_holder'
+            
+        Returns:
+            QuerySet de JournalOrganization
+        """
+        return self.organizations.filter(role=role)
+
+    def add_organization(self, user, role, organization=None, original_data=None, 
+                        start_date=None, end_date=None):
+        """
+        Adiciona uma organização ao periódico.
+        
+        Args:
+            user: User instance
+            role: str - 'owner', 'publisher', 'sponsor', 'copyright_holder'
+            organization: Organization instance (opcional)
+            original_data: str - dados originais quando organization é None
+            start_date: date - data de início
+            end_date: date - data de fim
+            
+        Returns:
+            JournalOrganization instance
+        """
+        if not role:
+            raise ValueError("add_organization requires role parameter")
+        if not organization and not original_data:
+            raise ValueError("add_organization requires organization or original_data parameter")
+            
+        journal_org = JournalOrganization.objects.create(
+            journal=self,
+            role=role,
+            organization=organization,
+            original_data=original_data,
+            start_date=start_date,
+            end_date=end_date,
+            creator=user
+        )
+        return journal_org
+
+    def update_organization(self, user, role, organization=None, original_data=None,
+                          start_date=None, end_date=None, journal_organization_id=None):
+        """
+        Atualiza uma organização do periódico.
+        
+        Args:
+            user: User instance
+            role: str - role da organização
+            organization: Organization instance (opcional)
+            original_data: str - dados originais
+            start_date: date - data de início
+            end_date: date - data de fim
+            journal_organization_id: int - ID específico para atualizar
+            
+        Returns:
+            JournalOrganization instance or None
+        """
+        if journal_organization_id:
+            try:
+                journal_org = self.organizations.get(id=journal_organization_id)
+            except JournalOrganization.DoesNotExist:
+                return None
+        else:
+            # Busca a mais recente do role
+            journal_org = self.organizations.filter(role=role).first()
+            if not journal_org:
+                return None
+        
+        journal_org.updated_by = user
+        if organization is not None:
+            journal_org.organization = organization
+        if original_data is not None:
+            journal_org.original_data = original_data
+        if start_date is not None:
+            journal_org.start_date = start_date
+        if end_date is not None:
+            journal_org.end_date = end_date
+        
+        journal_org.save()
+        return journal_org
+
+    def remove_organization(self, role, journal_organization_id=None):
+        """
+        Remove organização(ões) do periódico.
+        
+        Args:
+            role: str - role da organização
+            journal_organization_id: int - ID específico (opcional)
+            
+        Returns:
+            int - número de organizações removidas
+        """
+        if journal_organization_id:
+            count = self.organizations.filter(id=journal_organization_id, role=role).delete()[0]
+        else:
+            count = self.organizations.filter(role=role).delete()[0]
+        return count
+
+    # Métodos específicos por role
+    def add_publisher(self, user, organization=None, original_data=None, 
+                     start_date=None, end_date=None):
+        """Adiciona publisher usando JournalOrganization."""
+        return self.add_organization(user, "publisher", organization, original_data, start_date, end_date)
+
+    def add_owner(self, user, organization=None, original_data=None,
+                 start_date=None, end_date=None):
+        """Adiciona owner usando JournalOrganization."""
+        return self.add_organization(user, "owner", organization, original_data, start_date, end_date)
+
+    def add_sponsor(self, user, organization=None, original_data=None,
+                   start_date=None, end_date=None):
+        """Adiciona sponsor usando JournalOrganization."""
+        return self.add_organization(user, "sponsor", organization, original_data, start_date, end_date)
+
+    def add_copyright_holder(self, user, organization=None, original_data=None,
+                           start_date=None, end_date=None):
+        """Adiciona copyright_holder usando JournalOrganization."""
+        return self.add_organization(user, "copyright_holder", organization, original_data, start_date, end_date)
+
+    def get_publishers(self):
+        """Obtém publishers do periódico."""
+        return self.get_organization_by_role("publisher")
+
+    def get_owners(self):
+        """Obtém owners do periódico."""
+        return self.get_organization_by_role("owner")
+
+    def get_sponsors(self):
+        """Obtém sponsors do periódico."""
+        return self.get_organization_by_role("sponsor")
+
+    def get_copyright_holders(self):
+        """Obtém copyright holders do periódico."""
+        return self.get_organization_by_role("copyright_holder")
+
+    # =========================================================================
+    # MÉTODOS DE MIGRAÇÃO DOS MODELOS LEGACY
+    # =========================================================================
+
+    def migrate_all_organization_history(self, user, force_update=False):
+        """
+        Migra dados dos modelos legados (*History) para o novo JournalOrganization.
+        
+        Args:
+            user: Instância do usuário que está realizando a migração.
+            roles: Lista de strings ('publisher', 'owner', 'sponsor', 'copyright_holder').
+                   Se None, migra todos os roles disponíveis.
+        
+        Returns:
+            dict: Contagem de registros migrados por role e o total.
+        """
+        # Mapeamento: Role -> Nome da relação reversa no modelo Journal
+        roles_to_migrate = {
+            'publisher': 'publisher_history',
+            'owner': 'owner_history',
+            'sponsor': 'sponsor_history',
+            'copyright_holder': 'copyright_holder_history',
+        }
+
+        stats = {}
+        
+        for role, relation_name in roles_to_migrate.items():
+            stats[role] = {"to_migrate": 0, "migrated": 0}
+
+            # Acessa dinamicamente o related_name (ex: self.publisher_history)
+            history_queryset = getattr(self, relation_name)
+            if not history_queryset.exists():
+                continue
+
+            if force_update:
+                self.organizations.filter(role=role).delete()
+
+            if self.organizations.filter(role=role).exists():
+                # Já existem registros para este role, pula migração
+                continue
+            
+            stats[role]["to_migrate"] = history_queryset.count()
+            for history_item in history_queryset:
+
+                # Cria o registro no novo modelo consolidado
+                JournalOrganization.objects.create(
+                    journal=self,
+                    role=role,
+                    organization=history_item.organization,
+                    original_data=history_item.institution_name,
+                    start_date=history_item.initial_date_isoformat,
+                    end_date=history_item.final_date_isoformat,
+                    creator=user
+                )
+                
+            stats[role]["migrated"] = self.organizations.filter(role=role).count()
+            
+            if self.organizations.filter(role=role).count() == history_queryset.count():
+                history_queryset.delete()
+
+        return stats
+
 
 class FileOpenScience(Orderable, FileWithLang, CommonControlField):
     journal = ParentalKey(
@@ -1096,7 +1307,36 @@ class Mission(Orderable, RichTextWithLanguage, CommonControlField):
         return obj
 
 
+class JournalOrganization(BaseOrganizationRole, Orderable):
+    journal = ParentalKey(
+        Journal,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="organizations",
+    )
+    original_data = models.CharField(
+        _("Original data"), max_length=255, null=True, blank=True
+    )
+    
+    panels = [
+        FieldPanel("original_data", read_only=True),
+    ] + BaseOrganizationRole.panels
+
+    class Meta:
+        verbose_name = _("Journal Organization")
+        verbose_name_plural = _("Journal Organizations")
+        unique_together = [
+            ("journal", "role", "organization"),
+            ("journal", "role", "original_data"),
+        ]
+
+
 class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
+    """
+    DEPRECATED: This class will be replaced by JournalOrganization.
+    Use JournalOrganization with role="owner" instead.
+    """
+
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="owner_history", null=True
     )
@@ -1119,7 +1359,7 @@ class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
         AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
         InlinePanel(
-            "org_level", max_num=1, label=_("Level Owner"), classname="collapsed"
+            "org_level", max_num=1, label=_("Level Owner")
         ),
     ]
 
@@ -1129,6 +1369,10 @@ class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
 
 
 class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
+    """
+    DEPRECATED: This class will be replaced by JournalOrganization.
+    Use JournalOrganization with role="publisher" instead.
+    """
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="publisher_history", null=True
     )
@@ -1151,7 +1395,7 @@ class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
         AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
         InlinePanel(
-            "org_level", max_num=1, label=_("Level Publisher"), classname="collapsed"
+            "org_level", max_num=1, label=_("Level Publisher"),
         ),
     ]
 
@@ -1161,6 +1405,10 @@ class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
 
 
 class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
+    """
+    DEPRECATED: This class will be replaced by JournalOrganization.
+    Use JournalOrganization with role="sponsor" instead.
+    """
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, null=True, related_name="sponsor_history"
     )
@@ -1183,7 +1431,7 @@ class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
         AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
         InlinePanel(
-            "org_level", max_num=1, label=_("Level Sponsor"), classname="collapsed"
+            "org_level", max_num=1, label=_("Level Sponsor"),
         ),
     ]
 
@@ -1193,6 +1441,10 @@ class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
 
 
 class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem):
+    """
+    DEPRECATED: This class will be replaced by JournalOrganization.
+    Use JournalOrganization with role="copyright_holder" instead.
+    """
     journal = ParentalKey(
         Journal,
         on_delete=models.SET_NULL,
@@ -1218,7 +1470,7 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem):
         AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
         InlinePanel(
-            "org_level", max_num=1, label=_("Level Copyright"), classname="collapsed"
+            "org_level", max_num=1, label=_("Level Copyright"),
         ),
     ]
 
@@ -1878,7 +2130,7 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         FieldPanel("status"),
         AutocompletePanel("collection"),
         InlinePanel(
-            "journal_history", label=_("Journal History"), classname="collapsed"
+            "journal_history", label=_("Journal History"),
         ),
     ]
 
@@ -2182,7 +2434,7 @@ class WebOfKnowledgeSubjectCategory(CommonControlField):
 
 class Standard(CommonControlField):
     code = models.CharField(max_length=7, null=True, blank=True)
-    value = models.TextField(null=True, blank=True)
+    value = models.CharField(max_length=128, null=True, blank=True)
 
     def __str__(self):
         return f"{self.code} - {self.value}"
@@ -2229,10 +2481,10 @@ class Standard(CommonControlField):
 
 
 class IndexedAt(CommonControlField):
-    name = models.TextField(_("Name"), null=True, blank=False)
-    acronym = models.TextField(_("Acronym"), null=True, blank=False)
+    name = models.CharField(_("Name"), max_length=255, null=True, blank=False)
+    acronym = models.CharField(_("Acronym"), max_length=32, null=True, blank=False)
     url = models.URLField(_("URL"), max_length=500, null=True, blank=False)
-    description = models.TextField(_("Description"), null=True, blank=False)
+    description = models.CharField(_("Description"), null=True, blank=False)
     type = models.CharField(
         _("Type"), max_length=20, choices=choices.TYPE, null=True, blank=False
     )
@@ -2336,7 +2588,7 @@ class IndexedAtFile(models.Model):
 
 
 class AdditionalIndexedAt(CommonControlField):
-    name = models.TextField(_("Name"), null=True, blank=True)
+    name = models.CharField(_("Name"), max_length=255, null=True, blank=True)
 
     @classmethod
     def get(cls, name):
@@ -2568,8 +2820,9 @@ class TitleInDatabase(Orderable, CommonControlField):
         blank=True,
         null=True,
     )
-    title = models.TextField(
+    title = models.CharField(
         verbose_name=_("Title"),
+        max_length=255,
         null=True,
         blank=True,
     )
@@ -2742,7 +2995,7 @@ class JournalOtherTitle(CommonControlField):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="other_titles", null=True
     )
-    title = models.TextField(null=True, blank=True)
+    title = models.CharField(null=True, blank=True)
 
     panels = [FieldPanel("title", read_only=True)]
 
