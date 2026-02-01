@@ -19,6 +19,17 @@ from .forms import ScimagoForm
 from .exceptions import InstitutionTypeGetError
 
 class Institution(CommonControlField, ClusterableModel):
+    """
+    Representa uma instituição com identificação, tipo e níveis organizacionais (versão 1 - legado)
+    
+    Usado em:
+    - bigbang.tasks: Institution.load(user) para importação em massa
+    - researcher.tasks: migrate_old_researcher_to_new_researcher - acesso via old_researcher.affiliation.institution
+    - institution.scripts.bulk_institution: models.Institution.load(user)
+    - institution.migrations: referências de FK em migrações
+    - researcher.tests: self.researcher.affiliation.institution.location.id
+    - Será substituído gradualmente por organization.models.Organization (versão 2)
+    """
     institution_identification = models.ForeignKey(
         "InstitutionIdentification", null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -82,6 +93,13 @@ class Institution(CommonControlField, ClusterableModel):
     def __str__(self):
         return f"{self.institution_identification} | {self.level_1} | {self.level_2} | {self.level_3} | {self.location}"
     
+    @property
+    def institution_name(self):
+        try:
+            return self.institution_identification.name
+        except (AttributeError, TypeError):
+            return None
+
     @property
     def data(self):
         _data = self.institution_identification.data
@@ -362,6 +380,13 @@ class Institution(CommonControlField, ClusterableModel):
 
 
 class InstitutionHistory(models.Model):
+    """
+    Representa o histórico de uma instituição com datas de início e fim (versão 1 - legado)
+    
+    Usado em:
+    - Campos institution com initial_date e final_date
+    - Padrão de histórico para BaseHistoryItem
+    """
     institution = models.ForeignKey(
         "Institution", null=True, blank=True, related_name="+", on_delete=models.CASCADE
     )
@@ -373,6 +398,13 @@ class InstitutionHistory(models.Model):
         FieldPanel("initial_date"),
         FieldPanel("final_date"),
     ]
+
+    @property
+    def institution_name(self):
+        try:
+            return self.institution.institution_name
+        except (AttributeError, TypeError):
+            return None
 
     @classmethod
     def get_or_create(cls, institution, initial_date, final_date):
@@ -440,54 +472,84 @@ class BaseHistoryItem(CommonControlField):
 
     def __str__(self):
         try:
-            return self.institution.institution.institution_identification.name
+            return self.institution_name
         except AttributeError:
             return ''
-    
+
     @property
     def institution_name(self):
         try:
-            return self.institution.institution.institution_identification.name
-        except AttributeError:
+            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
+            return self.institution.institution_name
+        except (AttributeError, TypeError):
             return None
 
     @property
     def institution_city_name(self):
         try:
-            return self.institution.institution.location.city.name
+            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
+            return self.institution.location.city.name
         except AttributeError:
             return None
     
     @property
     def institution_country_name(self):
         try:
-            return self.institution.institution.location.country.name
+            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
+            return self.institution.location.country.name
         except AttributeError:
             return None 
         
     @property
     def institution_country_acronym(self):
         try:
-            return self.institution.institution.location.country.acronym
+            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
+            return self.institution.location.country.acronym
         except AttributeError:
             return None
         
     @property
     def institution_state_name(self):
         try:
-            return self.institution.institution.location.state.name
+            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
+            return self.institution.location.state.name
         except AttributeError:
             return None        
 
     @property
     def instition_state_acronym(self):
         try:
-            return self.institution.institution.location.state.acronym
+            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
+            return self.institution.location.state.acronym
         except AttributeError:
             return None
+        
+    @property
+    def initial_date_isoformat(self):
+        if self.initial_date:
+            return self.initial_date.isoformat()
+        return None
+    
+    @property
+    def final_date_isoformat(self):
+        if self.final_date:
+            return self.final_date.isoformat()
+        return None
 
 
 class BaseInstitution(CommonControlField):
+    """
+    Classe base para diferentes tipos de instituições (versão 1 - legado)
+    
+    Usado como base para:
+    - Sponsor (institution.models)
+    - Publisher (institution.models) 
+    - CopyrightHolder (institution.models)
+    - Owner (institution.models)
+    - EditorialManager (institution.models)
+    - researcher.models.Affiliation (herda desta classe)
+    - Sendo substituído por organization.models.BaseOrganization (versão 2)
+    """
     institution = models.ForeignKey(
         Institution,
         on_delete=models.SET_NULL,
@@ -504,6 +566,48 @@ class BaseInstitution(CommonControlField):
 
     def autocomplete_label(self):
         return str(self.institution)
+    
+    @property
+    def institution_name(self):
+        try:
+            return self.institution.institution_name
+        except (AttributeError, TypeError):
+            return None
+
+    @property
+    def institution_city_name(self):
+        try:
+            return self.institution.location.city.name
+        except AttributeError:
+            return None
+    
+    @property
+    def institution_country_name(self):
+        try:
+            return self.institution.location.country.name
+        except AttributeError:
+            return None 
+        
+    @property
+    def institution_country_acronym(self):
+        try:
+            return self.institution.location.country.acronym
+        except AttributeError:
+            return None
+        
+    @property
+    def institution_state_name(self):
+        try:
+            return self.institution.location.state.name
+        except AttributeError:
+            return None        
+
+    @property
+    def instition_state_acronym(self):
+        try:
+            return self.institution.location.state.acronym
+        except AttributeError:
+            return None
 
     @classmethod
     def autocomplete_custom_queryset_filter(cls, any_value):
@@ -564,6 +668,17 @@ class BaseInstitution(CommonControlField):
 
 
 class Sponsor(BaseInstitution):
+    """
+    Representa patrocinadores de artigos e revistas (versão 1 - legado)
+    
+    Usado em:
+    - article.models: Article.sponsors (ManyToMany)
+    - article.sources.xmlsps: criação de patrocinadores a partir de XMLs
+    - article.controller: importação de sponsors
+    - journal.models: como parte de PublisherAndSponsors
+    - journal.sources.am_to_core: CopyrightHolder, Owner, Publisher, Sponsor
+    - institution.api.v1.serializers: SponsorSerializer
+    """
 
     panels = [
         AutocompletePanel("institution"),
@@ -574,6 +689,17 @@ class Sponsor(BaseInstitution):
 
 
 class Publisher(BaseInstitution):
+    """
+    Representa editoras de artigos e revistas (versão 1 - legado)
+    
+    Usado em:
+    - article.models: Article.publishers (ManyToMany)
+    - article.sources.preprint: importação de preprints
+    - book.models: Book.publisher (ForeignKey)
+    - journal.models: como parte de PublisherAndSponsors
+    - journal.sources.classic_website: criação de publishers
+    - journal.sources.am_to_core: importação do sistema legado
+    """
 
     panels = [
         AutocompletePanel("institution"),
@@ -584,6 +710,13 @@ class Publisher(BaseInstitution):
 
 
 class CopyrightHolder(BaseInstitution):
+    """
+    Representa detentores de direitos autorais (versão 1 - legado)
+    
+    Usado em:
+    - journal.sources.am_to_core: CopyrightHolder, Owner, Publisher, Sponsor
+    - Migrações do sistema anterior (AM) para o core
+    """
     panels = [
         AutocompletePanel("institution"),
     ]
@@ -593,6 +726,14 @@ class CopyrightHolder(BaseInstitution):
 
 
 class Owner(BaseInstitution):
+    """
+    Representa proprietários/mantenedores de revistas (versão 1 - legado)
+    
+    Usado em:
+    - journal.models: como parte de PublisherAndSponsors
+    - journal.sources.am_to_core: CopyrightHolder, Owner, Publisher, Sponsor
+    - journal.api.v1.serializers: OwnerSerializer para APIs
+    """
     panels = [
         AutocompletePanel("institution"),
     ]
@@ -701,6 +842,15 @@ class ScimagoFile(models.Model):
 
 
 class InstitutionIdentification(CommonControlField):
+    """
+    Representa a identificação básica de uma instituição (nome, acrônimo) (versão 1 - legado)
+    
+    Usado em:
+    - Institution.institution_identification (ForeignKey)
+    - researcher.tasks: acesso via old_researcher.affiliation.institution.institution_identification
+    - journal.api.v1.serializers: acesso via institution.institution.institution_identification.name
+    - institution.wagtail_hooks: "InstitutionIdentification" interface administrativa
+    """
     name = models.TextField(_("Name"), null=True, blank=True)
     acronym = models.TextField(_("Institution Acronym"), null=True, blank=True)
     is_official = models.BooleanField(
@@ -872,6 +1022,14 @@ class InstitutionIdentification(CommonControlField):
 
 
 class InstitutionType(CommonControlField):
+    """
+    Representa tipos de instituições SciELO (versão 1 - legado)
+    
+    Usado em:
+    - Institution.institution_type_scielo (ManyToMany)
+    - bigbang.tasks: Institution, InstitutionType para importação
+    - Equivalente a organization.models.OrganizationInstitutionType (versão 2)
+    """
     name = models.TextField(verbose_name=_("Institution Type"), null=True, blank=True, unique=True,)
 
     autocomplete_search_field = "name"

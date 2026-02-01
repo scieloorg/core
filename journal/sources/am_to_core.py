@@ -15,19 +15,16 @@ from institution.models import CopyrightHolder, Owner, Publisher, Sponsor
 from journal.models import (
     Annotation,
     Collection,
-    CopyrightHolderHistory,
     IndexedAt,
     AdditionalIndexedAt,
     Journal,
     JournalEmail,
     JournalHistory,
+    JournalOrganization,
     JournalParallelTitle,
     Mission,
     OfficialJournal,
-    OwnerHistory,
-    PublisherHistory,
     SciELOJournal,
-    SponsorHistory,
     Standard,
     Subject,
     SubjectDescriptor,
@@ -224,44 +221,16 @@ def update_panel_institution(
     if publisher:
         for p in publisher:
             if p:
-                created_publisher = Publisher.get_or_create(
-                    name=p,
-                    acronym=None,
-                    level_1=None,
-                    level_2=None,
-                    level_3=None,
+                # Usa novo método add_publisher ao invés de PublisherHistory
+                journal.add_publisher(
                     user=user,
-                    location=location,
-                    official=None,
-                    is_official=None,
-                    url=None,
-                    institution_type=None,
+                    original_data=p,
                 )
-                publisher_history = PublisherHistory.get_or_create(
-                    institution=created_publisher,
+                # Usa novo método add_owner ao invés de OwnerHistory
+                journal.add_owner(
                     user=user,
+                    original_data=p,
                 )
-                publisher_history.journal = journal
-                publisher_history.save()
-                created_owner = Owner.get_or_create(
-                    name=p,
-                    acronym=None,
-                    level_1=None,
-                    level_2=None,
-                    level_3=None,
-                    user=user,
-                    location=location,
-                    official=None,
-                    is_official=None,
-                    url=None,
-                    institution_type=None,
-                )
-                owner_history = OwnerHistory.get_or_create(
-                    institution=created_owner,
-                    user=user,
-                )
-                owner_history.journal = journal
-                owner_history.save()
                 journal.contact_name = p
 
     get_or_create_copyright_holder(
@@ -546,33 +515,12 @@ def get_or_create_sponsor(sponsor, journal, user):
         sponsor = re.split(r"\s*[-\/,]\s*", sponsor)
     if sponsor:
         for s in sponsor:
-            ## FIXME
-            ## Sponso de diferentes formas (insta_name e insta_acronym)
-            ## Ex:
-            ## CNPq
-            ## Instituto Nacional de Estudos e Pesquisas Educacionais Anísio Teixeira
-            ## Fundação Getulio Vargas/ Escola de Administração de Empresas de São Paulo
-            ## CNPq - Conselho Nacional de Desenvolvimento Científico e Tecnológico (PIEB)
             if s:
-                created_sponsor = Sponsor.get_or_create(
-                    name=s,
-                    acronym=None,
-                    level_1=None,
-                    level_2=None,
-                    level_3=None,
+                # Usa novo método add_sponsor ao invés de SponsorHistory
+                journal.add_sponsor(
                     user=user,
-                    location=None,
-                    official=None,
-                    is_official=None,
-                    url=None,
-                    institution_type=None,
+                    original_data=s,
                 )
-                sponsor_history = SponsorHistory.get_or_create(
-                    institution=created_sponsor,
-                    user=user,
-                )
-                sponsor_history.journal = journal
-                sponsor_history.save()
 
 
 def get_or_create_subject_descriptor(subject_descriptors, journal, user):
@@ -838,6 +786,8 @@ def get_or_create_copyright_holder(journal, copyright_holder_name, user):
     """
     Ex copyright_holder_name:
         [{'_': 'Departamento de História da Universidade Federal Fluminense - UFF'}]
+    
+    UPDATED: Now uses journal.add_copyright_holder() instead of CopyrightHolderHistory
     """
     copyright_holder_name = extract_value(copyright_holder_name)
     if isinstance(copyright_holder_name, str):
@@ -846,25 +796,11 @@ def get_or_create_copyright_holder(journal, copyright_holder_name, user):
     if copyright_holder_name:
         for cp in copyright_holder_name:
             try:
-                copyright_holder = CopyrightHolder.get_or_create(
-                    name=cp,
-                    acronym=None,
-                    level_1=None,
-                    level_2=None,
-                    level_3=None,
+                # Usa novo método add_copyright_holder ao invés de CopyrightHolderHistory
+                journal.add_copyright_holder(
                     user=user,
-                    location=None,
-                    official=None,
-                    is_official=None,
-                    url=None,
-                    institution_type=None,
+                    original_data=cp,
                 )
-                copyright_holder_history = CopyrightHolderHistory.get_or_create(
-                    institution=copyright_holder,
-                    user=user,
-                )
-                copyright_holder_history.journal = journal
-                copyright_holder_history.save()
             except Exception as e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 UnexpectedEvent.create(
@@ -898,6 +834,124 @@ def create_or_update_title_in_database(user, journal, indexed_at, title, identif
         title=title,
         identifier=identifier,
     )
+
+
+def migrate_legacy_organization_history_to_journal_organization(user, journal_id=None):
+    """
+    Migra dados dos modelos *History legacy para o novo modelo JournalOrganization.
+    
+    Args:
+        user: User instance
+        journal_id: int - ID específico do journal (opcional, se None migra todos)
+        
+    Returns:
+        dict - estatísticas da migração
+    """
+    from journal.models import (
+        PublisherHistory, OwnerHistory, SponsorHistory, CopyrightHolderHistory
+    )
+    
+    if journal_id:
+        journals = Journal.objects.filter(id=journal_id)
+    else:
+        journals = Journal.objects.all()
+    
+    total_stats = {
+        'journals_processed': 0,
+        'journals_with_migrations': 0,
+        'publishers': 0,
+        'owners': 0,
+        'sponsors': 0,
+        'copyright_holders': 0,
+        'total': 0,
+        'errors': []
+    }
+    
+    for journal in journals:
+        try:
+            journal_stats = journal.migrate_all_organization_history(user)
+            
+            # Atualiza estatísticas totais
+            for key in ['publishers', 'owners', 'sponsors', 'copyright_holders', 'total']:
+                total_stats[key] += journal_stats[key]
+                
+            total_stats['journals_processed'] += 1
+            if journal_stats['total'] > 0:
+                total_stats['journals_with_migrations'] += 1
+                
+        except Exception as e:
+            error_info = {
+                'journal_id': journal.id,
+                'journal_title': str(journal),
+                'error': str(e)
+            }
+            total_stats['errors'].append(error_info)
+            
+            # Log do erro para debugging
+            UnexpectedEvent.create(
+                exception=e,
+                detail={
+                    'function': 'journal.sources.am_to_core.migrate_legacy_organization_history_to_journal_organization',
+                    'journal_id': journal.id,
+                    'journal_title': str(journal),
+                }
+            )
+    
+    return total_stats
+
+
+def cleanup_legacy_organization_history(journal_id=None, dry_run=True):
+    """
+    Remove registros dos modelos *History legacy após migração bem-sucedida.
+    
+    ATENÇÃO: Esta função remove dados permanentemente. Use dry_run=True para teste.
+    
+    Args:
+        journal_id: int - ID específico do journal (opcional)
+        dry_run: bool - Se True, apenas conta registros sem deletar
+        
+    Returns:
+        dict - estatísticas de limpeza
+    """
+    from journal.models import (
+        PublisherHistory, OwnerHistory, SponsorHistory, CopyrightHolderHistory
+    )
+    
+    if journal_id:
+        filter_kwargs = {'journal_id': journal_id}
+    else:
+        filter_kwargs = {}
+    
+    stats = {
+        'dry_run': dry_run,
+        'publishers_count': PublisherHistory.objects.filter(**filter_kwargs).count(),
+        'owners_count': OwnerHistory.objects.filter(**filter_kwargs).count(),
+        'sponsors_count': SponsorHistory.objects.filter(**filter_kwargs).count(),
+        'copyright_holders_count': CopyrightHolderHistory.objects.filter(**filter_kwargs).count(),
+    }
+    
+    stats['total_count'] = sum([
+        stats['publishers_count'],
+        stats['owners_count'], 
+        stats['sponsors_count'],
+        stats['copyright_holders_count']
+    ])
+    
+    if not dry_run and stats['total_count'] > 0:
+        # Remove registros apenas se não for dry_run
+        stats['publishers_deleted'] = PublisherHistory.objects.filter(**filter_kwargs).delete()[0]
+        stats['owners_deleted'] = OwnerHistory.objects.filter(**filter_kwargs).delete()[0]
+        stats['sponsors_deleted'] = SponsorHistory.objects.filter(**filter_kwargs).delete()[0]
+        stats['copyright_holders_deleted'] = CopyrightHolderHistory.objects.filter(**filter_kwargs).delete()[0]
+        
+        stats['total_deleted'] = sum([
+            stats['publishers_deleted'],
+            stats['owners_deleted'],
+            stats['sponsors_deleted'], 
+            stats['copyright_holders_deleted']
+        ])
+    
+    return stats
 
 
 def assign_journal_to_main_collection(journal, url_of_the_main_collection):
