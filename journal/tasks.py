@@ -511,7 +511,7 @@ def task_migrate_organization_history_for_journal(
         
         logger.info(f"Migration completed for journal {journal.id}: {stats}")
         
-        return result
+        return None
         
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -520,7 +520,7 @@ def task_migrate_organization_history_for_journal(
             exception=e,
             exc_traceback=exc_traceback,
             detail={
-                "task": "migrate_organization_history_for_journal",
+                "task": "task_migrate_organization_history_for_journal",
                 "journal_id": journal_id,
                 "journal_acron": journal_acron,
                 "collection_acron": collection_acron,
@@ -607,7 +607,7 @@ def task_migrate_organization_history_for_collection(
             f"Dispatched {len(journal_ids)} migration tasks for collection {collection.acron3}"
         )
         
-        return result
+        return None
         
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -616,7 +616,7 @@ def task_migrate_organization_history_for_collection(
             exception=e,
             exc_traceback=exc_traceback,
             detail={
-                "task": "migrate_organization_history_for_collection",
+                "task": "task_migrate_organization_history_for_collection",
                 "collection_id": collection_id,
                 "collection_acron": collection_acron,
                 "user_id": user_id,
@@ -627,4 +627,177 @@ def task_migrate_organization_history_for_collection(
         )
         
         logger.error(f"Failed to migrate organization history for collection: {str(e)}")
+        raise
+
+
+@celery_app.task(bind=True)
+def task_update_journal_organizations_for_collection(
+    self, collection_acron_list=None, user_id=None, username=None, 
+    force_update=False
+):
+    """
+    Task para atualizar organizações de todos os journals das collections especificadas.
+    Extrai os dados de publisher, copyright_holder e sponsor do AMJournal para cada journal.
+    Segue o padrão da função _register_journal_data.
+    
+    Args:
+        collection_acron_list: Lista de acrônimos das collections (ex: ['scl', 'mex'])
+        user_id: ID do usuário executando a task
+        username: Username alternativo ao user_id
+        force_update: Se True, atualiza mesmo se dados já existem
+        
+    Returns:
+        None
+    """
+    
+    try:
+        # Obter usuário
+        user = _get_user(self.request, username=username, user_id=user_id)
+        if not user:
+            raise ValueError("User is required for organizations update task")
+        
+        # Validar collection_acron_list
+        if not collection_acron_list:
+            raise ValueError("collection_acron_list is required")
+        
+        if isinstance(collection_acron_list, str):
+            collection_acron_list = [collection_acron_list]
+        
+        logger.info(f"Starting organizations update for collections {collection_acron_list}")
+        
+        # Import das dependências necessárias
+        from journal.sources.am_to_core import update_journal_organizations
+        from journal.sources.am_field_names import correspondencia_journal
+        from core.utils.rename_dictionary_keys import rename_dictionary_keys
+        
+        update_results = {}
+        total_journals = 0
+        successful_updates = 0
+        failed_updates = 0
+        
+        # Processar cada collection
+        for collection_acron in collection_acron_list:
+    
+            logger.info(f"Processing collection {collection_acron}")
+            
+            # Buscar AMJournals da collection (seguindo padrão de _register_journal_data)
+            am_journals = AMJournal.objects.filter(collection__acron3=collection_acron)
+            
+            if not am_journals.exists():
+                logger.warning(f"No AMJournal records found for collection {collection_acron}")
+                continue
+            
+            for journal_am in am_journals:
+                try:
+                    # Extrair dados do AMJournal usando correspondência (igual _register_journal_data)
+                    journal_dict = rename_dictionary_keys(
+                        journal_am.data, correspondencia_journal
+                    )
+                    
+                    # Buscar o journal correspondente pelo ISSN SciELO
+                    issn_scielo = journal_dict.get("issn_id")
+                    if not issn_scielo:
+                        logger.warning(f"No ISSN SciELO found for AMJournal {journal_am.id}")
+                        continue
+                    
+                    try:
+                        scielo_journal = SciELOJournal.objects.select_related('journal').get(
+                            issn_scielo=issn_scielo,
+                            collection__acron3=collection_acron
+                        )
+                        journal = scielo_journal.journal
+                        if not journal:
+                            logger.warning(f"SciELO journal {issn_scielo} has no associated journal")
+                            continue
+                    except SciELOJournal.DoesNotExist:
+                        logger.warning(f"SciELO journal with ISSN {issn_scielo} not found in collection {collection_acron}")
+                        continue
+                    
+                    total_journals += 1
+                    journal_key = f"{scielo_journal.journal_acron} (ID: {journal.id})"
+                    
+                    logger.info(f"Updating organizations for journal {journal_key}")
+                    
+                    # Extrair dados de organizações do AMJournal (seguindo padrão de update_panel_institution)
+                    publisher_data = journal_dict.get("publisher")
+                    copyright_holder_data = journal_dict.get("copyright_holder")
+                    sponsor_data = journal_dict.get("sponsor")
+                    
+                    # Executar atualização das organizações usando os dados do AMJournal
+                    update_journal_organizations(
+                        journal=journal,
+                        publisher=publisher_data,
+                        copyright_holder=copyright_holder_data,
+                        sponsor=sponsor_data,
+                        user=user
+                    )
+                    
+                    # Salvar o journal após as atualizações
+                    journal.save()
+                    
+                    update_results[journal_key] = {
+                        "status": "success",
+                        "journal_title": journal.title,
+                        "collection": collection_acron,
+                        "amjournal_id": journal_am.id,
+                        "data_extracted": {
+                            "publisher": publisher_data,
+                            "copyright_holder": copyright_holder_data,
+                            "sponsor": sponsor_data
+                        },
+                        "organizations_updated": {
+                            "publishers": journal.get_publishers().count(),
+                            "owners": journal.get_owners().count(), 
+                            "sponsors": journal.get_sponsors().count(),
+                            "copyright_holders": journal.get_copyright_holders().count()
+                        }
+                    }
+                    successful_updates += 1
+                    
+                    logger.info(f"Organizations update completed for journal {journal_key}")
+                    
+                except Exception as e:
+                    logger.error(f"Error processing AMJournal {journal_am.id}: {str(e)}")
+                    journal_key = f"AMJournal ID: {journal_am.id}"
+                    update_results[journal_key] = {
+                        "status": "error",
+                        "error": str(e),
+                        "collection": collection_acron,
+                        "amjournal_id": journal_am.id,
+                    }
+                    failed_updates += 1
+                    
+                    # Log o erro mas continua com os outros journals
+                    UnexpectedEvent.create(
+                        exception=e,
+                        detail={
+                            "task": "task_update_journal_organizations_for_collection",
+                            "collection_acron": collection_acron,
+                            "amjournal_id": journal_am.id,
+                            "user_id": user.id,
+                        },
+                    )
+        
+        logger.info(f"Organizations update completed for collections {collection_acron_list}. "
+                   f"Total: {total_journals}, Success: {successful_updates}, Failed: {failed_updates}")
+        
+        return None
+        
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "task_update_journal_organizations_for_collection",
+                "collection_acron_list": collection_acron_list,
+                "user_id": user_id,
+                "username": username,
+                "force_update": force_update,
+                "task_id": self.request.id if hasattr(self.request, 'id') else None,
+            },
+        )
+        
+        logger.error(f"Failed to update organizations for collections: {str(e)}")
         raise
