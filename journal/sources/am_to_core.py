@@ -238,6 +238,131 @@ def update_panel_institution(
     )
 
 
+def update_journal_organizations(
+    journal,
+    publisher,
+    copyright_holder,
+    sponsor,
+    user,
+):
+    """
+    Função focada apenas na criação/atualização das organizações do journal.
+    Utiliza os novos métodos do modelo JournalOrganization.
+    
+    Args:
+        journal: Journal instance
+        publisher: dados do publisher (string ou lista)
+        copyright_holder: dados do copyright holder (string ou lista)
+        sponsor: dados do sponsor (string ou lista)
+        user: User instance
+        
+    Examples:
+        publisher: 'Editora ABC' ou ['Editora ABC', 'Editora XYZ']
+        copyright_holder: 'Universidade Federal de...' ou [{'_': 'Universidade...'}]
+        sponsor: 'CNPq, FAPEMIG, UFMG' ou ['CNPq', 'FAPEMIG']
+    """
+    
+    # Processa Publishers
+    publisher_data = extract_value(publisher)
+    if isinstance(publisher_data, str):
+        publisher_data = re.split(r"\s*[-\/,]\s*", publisher_data)
+    
+    if publisher_data:
+        for p in publisher_data:
+            if p and p.strip():
+                try:
+                    journal.add_publisher(
+                        user=user,
+                        original_data=p.strip(),
+                    )
+                except Exception as e:
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    UnexpectedEvent.create(
+                        exception=e,
+                        exc_traceback=exc_traceback,
+                        detail={
+                            "function": "journal.sources.am_to_core.update_journal_organizations",
+                            "journal_id": journal.id,
+                            "organization_type": "publisher",
+                            "organization_data": p,
+                        },
+                    )
+
+    # Processa Owners (geralmente mesmo que publisher)
+    if publisher_data:
+        for p in publisher_data:
+            if p and p.strip():
+                try:
+                    journal.add_owner(
+                        user=user,
+                        original_data=p.strip(),
+                    )
+                except Exception as e:
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    UnexpectedEvent.create(
+                        exception=e,
+                        exc_traceback=exc_traceback,
+                        detail={
+                            "function": "journal.sources.am_to_core.update_journal_organizations",
+                            "journal_id": journal.id,
+                            "organization_type": "owner", 
+                            "organization_data": p,
+                        },
+                    )
+
+    # Processa Copyright Holders
+    copyright_holder_data = extract_value(copyright_holder)
+    if isinstance(copyright_holder_data, str):
+        copyright_holder_data = [copyright_holder_data]
+    
+    if copyright_holder_data:
+        for cp in copyright_holder_data:
+            if cp and cp.strip():
+                try:
+                    journal.add_copyright_holder(
+                        user=user,
+                        original_data=cp.strip(),
+                    )
+                except Exception as e:
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    UnexpectedEvent.create(
+                        exception=e,
+                        exc_traceback=exc_traceback,
+                        detail={
+                            "function": "journal.sources.am_to_core.update_journal_organizations",
+                            "journal_id": journal.id,
+                            "organization_type": "copyright_holder",
+                            "organization_data": cp,
+                        },
+                    )
+
+    # Processa Sponsors
+    sponsor_data = extract_value(sponsor)
+    if isinstance(sponsor_data, str):
+        sponsor_data = re.split(r"\s*[-\/,]\s*", sponsor_data)
+    
+    if sponsor_data:
+        for s in sponsor_data:
+            if s and s.strip():
+                try:
+                    journal.add_sponsor(
+                        user=user,
+                        original_data=s.strip(),
+                    )
+                except Exception as e:
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    UnexpectedEvent.create(
+                        exception=e,
+                        exc_traceback=exc_traceback,
+                        detail={
+                            "function": "journal.sources.am_to_core.update_journal_organizations",
+                            "journal_id": journal.id,
+                            "organization_type": "sponsor",
+                            "organization_data": s,
+                        },
+                    )
+
+
 def update_logo(
     journal,
 ):
