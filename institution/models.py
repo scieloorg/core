@@ -485,45 +485,48 @@ class BaseHistoryItem(CommonControlField):
             return None
 
     @property
-    def institution_city_name(self):
+    def institution_location(self):
         try:
             # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
-            return self.institution.location.city.name
+            return self.institution.institution_location
+        except AttributeError:
+            return None
+ 
+    @property
+    def institution_city_name(self):
+        try:
+            return self.institution_location.city.name
         except AttributeError:
             return None
     
     @property
     def institution_country_name(self):
         try:
-            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
-            return self.institution.location.country.name
+            return self.institution_location.country.name
         except AttributeError:
             return None 
         
     @property
     def institution_country_acronym(self):
         try:
-            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
-            return self.institution.location.country.acronym
+            return self.institution_location.country.acronym
         except AttributeError:
             return None
         
     @property
     def institution_state_name(self):
         try:
-            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
-            return self.institution.location.state.name
+            return self.institution_location.state.name
         except AttributeError:
             return None        
 
     @property
     def instition_state_acronym(self):
         try:
-            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
-            return self.institution.location.state.acronym
+            return self.institution_location.state.acronym
         except AttributeError:
             return None
-        
+
     @property
     def initial_date_isoformat(self):
         if self.initial_date:
@@ -575,37 +578,16 @@ class BaseInstitution(CommonControlField):
             return None
 
     @property
-    def institution_city_name(self):
+    def institution_location(self):
         try:
-            return self.institution.location.city.name
+            return self.institution.location
         except AttributeError:
             return None
-    
-    @property
-    def institution_country_name(self):
-        try:
-            return self.institution.location.country.name
-        except AttributeError:
-            return None 
-        
+
     @property
     def institution_country_acronym(self):
         try:
-            return self.institution.location.country.acronym
-        except AttributeError:
-            return None
-        
-    @property
-    def institution_state_name(self):
-        try:
-            return self.institution.location.state.name
-        except AttributeError:
-            return None        
-
-    @property
-    def instition_state_acronym(self):
-        try:
-            return self.institution.location.state.acronym
+            return self.institution.location.country.acron3
         except AttributeError:
             return None
 
