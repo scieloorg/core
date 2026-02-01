@@ -18,7 +18,7 @@
           <img src="{% static 'journal_about/img/logo-open-access.svg' %}" alt="Open-access" class="logo-open-access" data-bs-toggle="tooltip" data-bs-original-title="by 4.0 "> {{ journal.title }}
         </h1>
         <span class="publisher">
-          {% trans 'Publicação de' %}: <strong class="namePlublisher">{% for publisher in journal.publisher_history.all %}{{ publisher.institution.institution.institution_identification.name}}{% endfor %}</strong>
+          {% trans 'Publicação de' %}: <strong class="namePlublisher">{% for publisher in journal.publisher_names %}{{ publisher }}{% endfor %}</strong>
         </span>
         </br>
         <span class="theme">

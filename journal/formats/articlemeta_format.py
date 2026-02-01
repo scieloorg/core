@@ -13,10 +13,7 @@ class ArticlemetaJournalFormatter:
         self.collection = collection
         self.result = defaultdict(list)
         self._scielo_journal = None
-        self._publisher_history = None
         self._medline_titles = None
-        self._copyright_holder_history = None
-        self._sponsor_history = None
         self.official = getattr(self.obj, 'official', None)
 
     @property
@@ -30,30 +27,6 @@ class ArticlemetaJournalFormatter:
 
         self._scielo_journal = qs.first()
         return self._scielo_journal
-    
-    @property
-    def publisher_history(self):
-        if self._publisher_history is None:
-            self._publisher_history = self.obj.publisher_history.select_related(
-                'institution__institution', 'institution__institution__location'
-            ).all()
-        return self._publisher_history
-    
-    @property
-    def sponsor_history(self):
-        if self._sponsor_history is None:
-            self._sponsor_history = self.obj.sponsor_history.select_related(
-                'institution__institution', 'institution__institution__location'
-            ).all()
-        return self._sponsor_history
-    
-    @property
-    def copyright_holder_history(self):
-        if self._copyright_holder_history is None:
-            self._copyright_holder_history = self.obj.copyright_holder_history.select_related(
-                'institution__institution', 'institution__institution__location'
-            ).all()
-        return self._copyright_holder_history
 
     @property
     @lru_cache(maxsize=1)
@@ -192,23 +165,38 @@ class ArticlemetaJournalFormatter:
             add_to_result("v306", self.official.final_number, self.result)
 
     def _format_publisher_info(self):
-        """Informações do publisher"""
-        publishers = list(self.publisher_history)
+        """Informações do owner"""
+        try:
+            # Deixa preparado para tornar obsoleto o owner_history no modelo Journal
+            owner_data = self.obj.owner_data
+        except AttributeError:
+            owner_data = {}
+            owners = list(self.obj.owner_history.select_related(
+                'institution__institution', 'institution__institution__location'
+            ).all())
+            for p in owners:
+                owner_data["country_acronym"] = p.institution_country_acronym
+                owner_data["state_acronym"] = p.institution_state_acronym
+                owner_data["city_name"] = p.institution_city_name
+                break
+        add_items("v310", [owner_data.get("country_acronym")], self.result)
+        add_items("v320", [owner_data.get("state_acronym")], self.result)
+        add_items("v480", self.obj.owner_names, self.result)
+        add_items("v490", [owner_data.get("city_name")], self.result)
         
-        add_items("v310", [p.institution_country_acronym for p in publishers], self.result)
-        add_items("v320", [p.instition_state_acronym for p in publishers], self.result)
-        add_items("v480", [p.institution_name for p in publishers], self.result)
-        add_items("v490", [p.institution_city_name for p in publishers], self.result)
-    
     def _format_copyright_holder_info(self):
         """Informações do copyright holder"""
-        copyright_holders = list(self.copyright_holder_history)
-        add_items("v62", [p.institution_name for p in copyright_holders], self.result)
+        # Primeiro tenta buscar do novo modelo JournalOrganization
+        copyright_holders = self.obj.copyright_holders
+        if copyright_holders:
+            add_items("v62", copyright_holders, self.result)
 
     def _format_sponsor_info(self):
         """Informações do sponsor"""
-        sponsors = list(self.sponsor_history)
-        add_items("v140", [p.institution_name for p in sponsors], self.result)
+        # Primeiro tenta buscar do novo modelo JournalOrganization
+        sponsors = self.obj.sponsors
+        if sponsors:
+            add_items("v140", sponsors, self.result)
 
     def _format_indexing_info(self):
         """Informações de indexação"""

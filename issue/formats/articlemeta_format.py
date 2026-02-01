@@ -197,17 +197,12 @@ class ArticlemetaIssueFormatter:
 
     def _format_institution_info(self):
         """Informações de instituições"""
-        history = {
-            "v62": "copyright_holder_history",
-            "v140": "sponsor_history",
-            "v480": "publisher_history",
-        }
-
-        for key, attr in history.items():
-            history = getattr(self.journal, attr, None)
-            if history:
-                items = [holder.institution_name for holder in history.all()]
-                add_items(key, items, self.result["issue"])
+        if self.journal.copyright_holders:
+            add_items("v62", self.journal.copyright_holders, self.result["issue"])
+        if self.journal.sponsors:
+            add_items("v140", self.journal.sponsors, self.result["issue"])
+        if self.journal.publisher_names:
+            add_items("v480", self.journal.publisher_names, self.result["issue"])
 
     def _format_title_in_database(self):
         medline_data = self.medline_titles

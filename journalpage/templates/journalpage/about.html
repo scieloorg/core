@@ -120,12 +120,8 @@
                           </li>
                           <li>
                             <strong>{% trans 'Publicação de:' %}</strong>
-                            {% for publisher in journal.publisher_history.all %}
-                              {% if publisher.organization %}
-                                <i>{{ publisher.organization.name }}</i>
-                              {% else %}
-                                <i>{{ publisher.institution.institution.institution_identification.name}}</i>
-                              {% endif %}
+                            {% for publisher in journal.publisher_names %}
+                              <i>{{ publisher }}</i>
                             {% endfor %}
                           </li>
                           <li>
@@ -212,12 +208,8 @@
                         </ul>
                         <h5 id="item-1-8">{% trans 'Patrocinadores e agências de Fomento' %}</h5>
                         <ul type="disc">
-                          {% for sponsor in sponsor_history %}
-                            {% if sponsor.organization %}
-                              <li>{{ sponsor.organization.name }}</li>
-                            {% else %}
-                              <li>{{ sponsor.institution.institution.institution_identification.name }}</li>
-                            {% endif %}
+                          {% for sponsor in sponsors %}
+                            <li>{{ sponsor }}</li>
                           {% endfor%}
                         </ul>
                         <!-- InlinePanel Preservacao Digital -->

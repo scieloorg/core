@@ -745,6 +745,65 @@ class Journal(CommonControlField, ClusterableModel):
             ),
         ]
 
+    @property
+    def owner_names(self):
+        items = []
+        for item in self.owner_history.all():
+            if item.organization:
+                items.append(item.organization.name)
+            else:
+                items.append(item.institution_name)
+        return items
+
+    @property
+    def owner_data(self):
+        owner_data = {}
+        owners = list(self.owner_history.select_related(
+            'institution__institution', 'institution__institution__location'
+        ).all())
+        for p in owners:
+            owner_data["country_acronym"] = p.institution_country_acronym
+            owner_data["state_acronym"] = p.institution_state_acronym
+            owner_data["city_name"] = p.institution_city_name
+            break  # Usa apenas o primeiro owner
+        return owner_data
+
+    @property
+    def publisher_names(self):
+        items = []
+        for item in self.publisher_history.select_related(
+            'institution__institution', 'institution__institution__location'
+        ).all():
+            if item.organization:
+                items.append(item.organization.name)
+            else:
+                items.append(item.institution_name)
+        return items
+    
+    @property
+    def sponsors(self):
+        items = []
+        for item in self.sponsor_history.select_related(
+            'institution__institution', 'institution__institution__location'
+        ).all():
+            if item.organization:
+                items.append(item.organization.name)
+            else:
+                items.append(item.institution_name)
+        return items
+
+    @property
+    def copyright_holders(self):
+        items = []
+        for item in self.copyright_holder_history.select_related(
+            'institution__institution', 'institution__institution__location'
+        ).all():
+            if item.organization:
+                items.append(item.organization.name)
+            else:
+                items.append(item.institution_name)
+        return items
+
     def is_indexed_at(self, db_acronym):
         if not db_acronym:
             raise ValueError("Journal.is_indexed_at requires db_acronym")

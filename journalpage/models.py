@@ -74,7 +74,7 @@ class JournalPage(RoutablePageMixin, Page):
         digital_preservation = journal.digital_pa.all()
         ethics = journal.ethics.get_object_in_preferred_language(language=language)
         fee_charging = journal.fee_charging.get_object_in_preferred_language(language=language)
-        sponsor_history = journal.sponsor_history.all()
+        sponsors = journal.sponsors
 
         context = {
             "journal": journal,
@@ -104,7 +104,7 @@ class JournalPage(RoutablePageMixin, Page):
             "digital_preservation_clockss": digital_preservation.filter(acronym="CLOCKSS"),
             "ethics": ethics,
             "fee_charging": fee_charging,
-            "sponsor_history": sponsor_history,
+            "sponsors": sponsors,
             "editorial_board": editorial_board,
             "role_editorial_board": ROLE,
             # Current e available language 
