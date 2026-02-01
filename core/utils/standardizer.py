@@ -13,6 +13,45 @@ def remove_extra_spaces(text):
     # Padroniza a quantidade de espaços
     return " ".join(text.split())
 
+def remove_html_tags(text):
+    if not text:
+        return text
+    text = text.replace("<", "BREAKTAG<")
+    text = text.replace(">", ">BREAKTAG")
+    for part in text.split("BREAKTAG"):
+        if part.startswith("<") and part.endswith(">"):
+            continue
+        if part.startswith("<"):
+            continue
+        if part.endswith(">"):
+            continue
+        yield part
+
+
+def has_only_alpha_or_space(text):
+    """ Verifica se o conteúdo do texto é válido como string, ou seja,
+    não é vazio e não contém números. """
+    if not text:
+        return False
+    parts = text.split()
+    for part in parts:
+        if not part.isalpha():
+            return False
+    return True
+
+
+def clean_xml_tag_content(text, assert_string=True):
+    if not text:
+        return text
+    text = "".join(remove_html_tags(text))
+    text_ = remove_extra_spaces(text)
+    if assert_string:
+        if has_only_alpha_or_space(text_):
+            return text_
+        else:
+            return None
+    return text_
+
 
 def standardize_code_and_name(original):
     """
