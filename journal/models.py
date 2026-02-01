@@ -745,6 +745,46 @@ class Journal(CommonControlField, ClusterableModel):
             ),
         ]
 
+    @property
+    def owner_names(self):
+        items = []
+        for item in self.owner_history.all():
+            if item.organization:
+                items.append(item.organization.name)
+            else:
+                items.append(item.institution_name)
+        return items
+
+    @property
+    def publisher_names(self):
+        items = []
+        for item in self.publisher_history.all():
+            if item.organization:
+                items.append(item.organization.name)
+            else:
+                items.append(item.institution_name)
+        return items
+    
+    @property
+    def sponsors(self):
+        items = []
+        for item in self.sponsor_history.all():
+            if item.organization:
+                items.append(item.organization.name)
+            else:
+                items.append(item.institution_name)
+        return items
+
+    @property
+    def copyright_holders(self):
+        items = []
+        for item in self.copyright_holder_history.all():
+            if item.organization:
+                items.append(item.organization.name)
+            else:
+                items.append(item.institution_name)
+        return items
+
     def is_indexed_at(self, db_acronym):
         if not db_acronym:
             raise ValueError("Journal.is_indexed_at requires db_acronym")
