@@ -131,21 +131,25 @@ class JournalSerializer(serializers.ModelSerializer):
     wos_areas = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
 
+    def format_institution_names(self, names):
+        if names:
+            return [{"name": name} for name in names]
+
     def get_institution_history(self, institution_history):
         if queryset := institution_history.all():
             return [{"name": str(item)} for item in queryset]
 
     def get_publisher(self, obj):
-        return self.get_institution_history(obj.publisher_history)
+        return self.format_institution_names(obj.publisher_names)
 
     def get_owner(self, obj):
-        return self.get_institution_history(obj.owner_history)
+        return self.format_institution_names(obj.owner_names)
 
     def get_sponsor(self, obj):
-        return self.get_institution_history(obj.sponsor_history)
+        return self.format_institution_names(obj.sponsors)
 
     def get_copyright(self, obj):
-        return self.get_institution_history(obj.copyright_holder_history)
+        return self.format_institution_names(obj.copyright_holders)
 
     def get_acronym(self, obj):
         scielo_journal = obj.scielojournal_set.first()

@@ -149,13 +149,7 @@ class IssueSerializer(serializers.ModelSerializer):
                 if hasattr(obj.journal, 'journal_use_license') and obj.journal.journal_use_license
                 else None
             ),
-            "publisher": [
-                publisher.institution.institution.institution_identification.name
-                for publisher in obj.journal.publisher_history.all()
-                if (publisher.institution
-                    and publisher.institution.institution
-                    and publisher.institution.institution.institution_identification)
-            ],
+            "publisher": obj.journal.publisher_names,
             "nlmtitle": [
                 medline.name 
                 for medline in obj.journal.indexed_at.all()
