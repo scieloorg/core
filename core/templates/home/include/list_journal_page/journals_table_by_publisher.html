@@ -16,7 +16,7 @@
                     <tbody>
                         {% for publisher in publishers %}
                         <tr>
-                            <td><strong>{{ publisher.institution.institution.institution_identification.name }}</strong></td>
+                            <td><strong>{{ publisher.institution_name }}</strong></td>
                             <td>
                                 <ul class="mb-0">
                                     {% for scielojournal in publisher.journal.scielojournal_set.all %}
