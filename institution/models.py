@@ -471,15 +471,13 @@ class BaseHistoryItem(CommonControlField):
         abstract = True
 
     def __str__(self):
-        try:
-            return self.institution_name
-        except AttributeError:
-            return ''
+        return self.institution_name or ""
 
     @property
     def institution_name(self):
         try:
-            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
+            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner)
+            # BaseHistoryItem é herdada por SponsorHistory, PublisherHistory, CopyrightHolderHistory, OwnerHistory
             return self.institution.institution_name
         except (AttributeError, TypeError):
             return None
@@ -487,7 +485,8 @@ class BaseHistoryItem(CommonControlField):
     @property
     def institution_location(self):
         try:
-            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner | EditorialManager)
+            # self.institution é instância de (Sponsor | Publisher | CopyrightHolder | Owner)
+            # BaseHistoryItem é herdada por SponsorHistory, PublisherHistory, CopyrightHolderHistory, OwnerHistory
             return self.institution.institution_location
         except AttributeError:
             return None
@@ -521,7 +520,7 @@ class BaseHistoryItem(CommonControlField):
             return None        
 
     @property
-    def instition_state_acronym(self):
+    def institution_state_acronym(self):
         try:
             return self.institution_location.state.acronym
         except AttributeError:
@@ -587,7 +586,7 @@ class BaseInstitution(CommonControlField):
     @property
     def institution_country_acronym(self):
         try:
-            return self.institution.location.country.acron3
+            return self.institution_location.country.acron3
         except AttributeError:
             return None
 
