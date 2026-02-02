@@ -227,16 +227,18 @@ def update_panel_institution(
                 journal.add_publisher(
                     user=user,
                     original_data=p,
+                    location=location,
                 )
                 # Usa novo método add_owner ao invés de OwnerHistory  
                 journal.add_owner(
                     user=user,
                     original_data=p,
+                    location=location,
                 )
                 journal.contact_name = p
 
     get_or_create_copyright_holder(
-        journal=journal, copyright_holder_name=copyright_holder, user=user
+        journal=journal, copyright_holder_name=copyright_holder, user=user, location=location
     )
 
 
@@ -504,7 +506,7 @@ def get_or_create_mission(mission, journal, user):
             )
 
 
-def get_or_create_sponsor(sponsor, journal, user):
+def get_or_create_sponsor(sponsor, journal, user, location=None):
     """
     Ex sponsor:
         Ex 1: ['CNPq', 'FAPEMIG', 'UFMG', 'CAPES', 'Escola de Música da UFMG']
@@ -529,6 +531,7 @@ def get_or_create_sponsor(sponsor, journal, user):
                 journal.add_sponsor(
                     user=user,
                     original_data=s,
+                    location=location,
                 )
 
 
@@ -791,7 +794,7 @@ def get_or_create_journal_history(scielo_journal, journal_history):
             )
 
 
-def get_or_create_copyright_holder(journal, copyright_holder_name, user):
+def get_or_create_copyright_holder(journal, copyright_holder_name, user, location=None):
     """
     Ex copyright_holder_name:
         [{'_': 'Departamento de História da Universidade Federal Fluminense - UFF'}]
@@ -809,6 +812,7 @@ def get_or_create_copyright_holder(journal, copyright_holder_name, user):
                 journal.add_copyright_holder(
                     user=user,
                     original_data=cp,
+                    location=location,
                 )
             except Exception as e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -866,3 +870,87 @@ def assign_journal_to_main_collection(journal, url_of_the_main_collection):
                     "cleaned_domain_query": url_parse,
                 },
             )
+
+
+def create_location_and_add_institutions(
+    journal,
+    publisher=None,
+    copyright_holder=None,
+    sponsor=None,
+    address=None,
+    publisher_country=None,
+    publisher_state=None,
+    publisher_city=None,
+    user=None,
+):
+    """
+    Função centralizada para criar location e adicionar todas as instituições ao journal.
+    
+    Args:
+        journal: O objeto Journal
+        publisher: Dados do publisher (string ou lista)
+        copyright_holder: Dados do copyright holder  
+        sponsor: Dados do sponsor (string ou lista)
+        address: Endereço para criação do location
+        publisher_country: País do publisher
+        publisher_state: Estado do publisher  
+        publisher_city: Cidade do publisher
+        user: Usuário responsável pela criação
+        
+    Returns:
+        location: Objeto Location criado/atualizado
+    """
+    if not user:
+        raise ValueError("User parameter is required")
+    
+    # Cria ou atualiza o location
+    location = create_or_update_location(
+        journal=journal,
+        address=address,
+        publisher_country=publisher_country,
+        publisher_state=publisher_state,
+        publisher_city=publisher_city,
+        user=user,
+    )
+    
+    # Adiciona publisher(s) e owner(s) se fornecido
+    if publisher:
+        publisher_data = extract_value(publisher)
+        if isinstance(publisher_data, str):
+            publisher_data = re.split(r"\s*[-\/,]\s*", publisher_data)
+        
+        if publisher_data:
+            for p in publisher_data:
+                if p:
+                    # Adiciona publisher
+                    journal.add_publisher(
+                        user=user,
+                        original_data=p,
+                        location=location,
+                    )
+                    # Adiciona owner (mesmo dado do publisher por padrão)
+                    journal.add_owner(
+                        user=user,
+                        original_data=p,
+                        location=location,
+                    )
+    
+    # Adiciona sponsor(s) se fornecido
+    if sponsor:
+        get_or_create_sponsor(
+            journal=journal, 
+            sponsor=sponsor, 
+            user=user, 
+            location=location
+        )
+    
+    # Adiciona copyright holder(s) se fornecido
+    if copyright_holder:
+        get_or_create_copyright_holder(
+            journal=journal, 
+            copyright_holder_name=copyright_holder, 
+            user=user, 
+            location=location
+        )
+    
+    return location

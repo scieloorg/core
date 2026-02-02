@@ -1062,7 +1062,7 @@ class Journal(CommonControlField, ClusterableModel):
         return list(data.values())
 
     def add_publisher(self, user, organization=None, original_data=None, 
-                     initial_date=None, final_date=None):
+                     initial_date=None, final_date=None, location=None):
         """Adiciona publisher usando PublisherHistory."""
         created_publisher = None
         if original_data:
@@ -1074,7 +1074,7 @@ class Journal(CommonControlField, ClusterableModel):
                 level_2=None,
                 level_3=None,
                 user=user,
-                location=None,  # Pode ser ajustado conforme necessário
+                location=location,
                 official=None,
                 is_official=None,
                 url=None,
@@ -1095,7 +1095,7 @@ class Journal(CommonControlField, ClusterableModel):
         return publisher_history
 
     def add_owner(self, user, organization=None, original_data=None,
-                 initial_date=None, final_date=None):
+                 initial_date=None, final_date=None, location=None):
         """Adiciona owner usando OwnerHistory."""
         created_owner = None
         if original_data:
@@ -1107,7 +1107,7 @@ class Journal(CommonControlField, ClusterableModel):
                 level_2=None,
                 level_3=None,
                 user=user,
-                location=None,  # Pode ser ajustado conforme necessário
+                location=location,
                 official=None,
                 is_official=None,
                 url=None,
@@ -1128,7 +1128,7 @@ class Journal(CommonControlField, ClusterableModel):
         return owner_history
 
     def add_sponsor(self, user, organization=None, original_data=None,
-                   initial_date=None, final_date=None):
+                   initial_date=None, final_date=None, location=None):
         """Adiciona sponsor usando SponsorHistory."""
         created_sponsor = None
         if original_data:
@@ -1140,7 +1140,7 @@ class Journal(CommonControlField, ClusterableModel):
                 level_2=None,
                 level_3=None,
                 user=user,
-                location=None,  # Pode ser ajustado conforme necessário
+                location=location,
                 official=None,
                 is_official=None,
                 url=None,
@@ -1161,7 +1161,7 @@ class Journal(CommonControlField, ClusterableModel):
         return sponsor_history
 
     def add_copyright_holder(self, user, organization=None, original_data=None,
-                           initial_date=None, final_date=None):
+                           initial_date=None, final_date=None, location=None):
         """Adiciona copyright_holder usando CopyrightHolderHistory."""
         created_copyright_holder = None
         if original_data:
@@ -1173,7 +1173,7 @@ class Journal(CommonControlField, ClusterableModel):
                 level_2=None,
                 level_3=None,
                 user=user,
-                location=None,  # Pode ser ajustado conforme necessário
+                location=location,
                 official=None,
                 is_official=None,
                 url=None,
