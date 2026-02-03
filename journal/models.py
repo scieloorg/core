@@ -57,7 +57,9 @@ from journal.exceptions import (
     TitleInDatabaseCreationOrUpdateError,
     WosdbCreationOrUpdateError,
 )
-from journal.forms import SciELOJournalModelForm
+from journal.forms import (
+    SciELOJournalModelForm,
+)
 from location.models import Country, Location
 from organization.dynamic_models import (
     OrgLevelCopyrightHolder,
@@ -69,7 +71,6 @@ from organization.models import HELP_TEXT_ORGANIZATION, Organization
 from thematic_areas.models import ThematicArea
 from vocabulary.models import Vocabulary
 from tracker.models import UnexpectedEvent
-
 
 HELP_TEXT_INSTITUTION = _(
     "Institution data originally provided. This field is for reference only."
@@ -758,9 +759,11 @@ class Journal(CommonControlField, ClusterableModel):
     @property
     def owner_data(self):
         owner_data = {}
-        owners = list(self.owner_history.select_related(
-            'institution__institution', 'institution__institution__location'
-        ).all())
+        owners = list(
+            self.owner_history.select_related(
+                "institution__institution", "institution__institution__location"
+            ).all()
+        )
         for p in owners:
             owner_data["country_acronym"] = p.institution_country_acronym
             owner_data["state_acronym"] = p.institution_state_acronym
@@ -772,19 +775,19 @@ class Journal(CommonControlField, ClusterableModel):
     def publisher_names(self):
         items = []
         for item in self.publisher_history.select_related(
-            'institution__institution', 'institution__institution__location'
+            "institution__institution", "institution__institution__location"
         ).all():
             if item.organization:
                 items.append(item.organization.name)
             else:
                 items.append(item.institution_name)
         return items
-    
+
     @property
     def sponsors(self):
         items = []
         for item in self.sponsor_history.select_related(
-            'institution__institution', 'institution__institution__location'
+            "institution__institution", "institution__institution__location"
         ).all():
             if item.organization:
                 items.append(item.organization.name)
@@ -796,7 +799,7 @@ class Journal(CommonControlField, ClusterableModel):
     def copyright_holders(self):
         items = []
         for item in self.copyright_holder_history.select_related(
-            'institution__institution', 'institution__institution__location'
+            "institution__institution", "institution__institution__location"
         ).all():
             if item.organization:
                 items.append(item.organization.name)
@@ -965,7 +968,7 @@ class Journal(CommonControlField, ClusterableModel):
                 },
             )
         return queryset
-    
+
     @classmethod
     def get_journal_issns(
         cls,
@@ -977,19 +980,19 @@ class Journal(CommonControlField, ClusterableModel):
     ):
         """
         Versão alternativa que segue o padrão do select_items() com suporte a datas.
-        
+
         Similar ao método get_issn_list() existente, mas:
         - Retorna tuplas (issn_print, issn_electronic) ao invés de dicionário
         - Mantém a associação entre ISSNs do mesmo periódico
         - Suporta filtros de data como select_items()
-        
+
         Args:
             collection_acron_list (list): Lista de acrônimos de coleções
             journal_acron_list (list): Lista de acrônimos de periódicos
             from_date (str): Data inicial para filtro de atualização
             until_date (str): Data final para filtro de atualização
             days_to_go_back (int): Dias para voltar a partir de hoje
-            
+
         Returns:
             QuerySet: Tuplas de (issn_print, issn_electronic)
         """
@@ -1000,21 +1003,22 @@ class Journal(CommonControlField, ClusterableModel):
             until_date,
             days_to_go_back,
         )
-        return qs.select_related("official").values_list(
-            "official__issn_print",
-            "official__issn_electronic"
-        ).distinct()
+        return (
+            qs.select_related("official")
+            .values_list("official__issn_print", "official__issn_electronic")
+            .distinct()
+        )
 
     @classmethod
     def get_issn_list(cls, collection_acron_list=None, journal_acron_list=None):
         qs = cls.select_items(collection_acron_list, journal_acron_list)
         return {
-            "issn_print_list": qs.select_related('official').values_list(
-                "official__issn_print", flat=True
-            ).distinct(),
-            "issn_electronic_list": qs.select_related('official').values_list(
-                "official__issn_electronic", flat=True
-            ).distinct(),
+            "issn_print_list": qs.select_related("official")
+            .values_list("official__issn_print", flat=True)
+            .distinct(),
+            "issn_electronic_list": qs.select_related("official")
+            .values_list("official__issn_electronic", flat=True)
+            .distinct(),
         }
 
     @property
@@ -1060,6 +1064,134 @@ class Journal(CommonControlField, ClusterableModel):
                 },
             )
         return list(data.values())
+
+    def _add_institution_history(
+        self,
+        institution_class,
+        history_class,
+        user,
+        original_data=None,
+        organization=None,
+        initial_date=None,
+        final_date=None,
+        location=None,
+    ):
+        """Adiciona instituição usando InstitutionHistory genérico."""
+        if not original_data and not organization:
+            raise ValueError("Either original_data or organization must be provided")
+
+        created_institution = None
+        if original_data:
+            # Cria/busca a Institution baseado nos dados originais
+            created_institution = institution_class.get_or_create(
+                name=original_data,
+                acronym=None,
+                level_1=None,
+                level_2=None,
+                level_3=None,
+                user=user,
+                location=location,
+                official=None,
+                is_official=None,
+                url=None,
+                institution_type=None,
+            )
+
+        # Cria/busca o InstitutionHistory
+        institution_history = history_class.get_or_create(
+            institution=created_institution,
+            initial_date=initial_date,
+            final_date=final_date,
+            user=user,
+        )
+        institution_history.journal = self
+        institution_history.organization = organization
+        institution_history.save()
+        return institution_history
+
+    def add_publisher(
+        self,
+        user,
+        organization=None,
+        original_data=None,
+        initial_date=None,
+        final_date=None,
+        location=None,
+    ):
+        """Adiciona publisher usando PublisherHistory."""
+        return self._add_institution_history(
+            institution_class=Publisher,
+            history_class=PublisherHistory,
+            user=user,
+            organization=organization,
+            original_data=original_data,
+            initial_date=initial_date,
+            final_date=final_date,
+            location=location,
+        )
+
+    def add_owner(
+        self,
+        user,
+        organization=None,
+        original_data=None,
+        initial_date=None,
+        final_date=None,
+        location=None,
+    ):
+        """Adiciona owner usando OwnerHistory."""
+        return self._add_institution_history(
+            institution_class=Owner,
+            history_class=OwnerHistory,
+            user=user,
+            organization=organization,
+            original_data=original_data,
+            initial_date=initial_date,
+            final_date=final_date,
+            location=location,
+        )
+
+    def add_sponsor(
+        self,
+        user,
+        organization=None,
+        original_data=None,
+        initial_date=None,
+        final_date=None,
+        location=None,
+    ):
+        """Adiciona sponsor usando SponsorHistory."""
+        return self._add_institution_history(
+            institution_class=Sponsor,
+            history_class=SponsorHistory,
+            user=user,
+            organization=organization,
+            original_data=original_data,
+            initial_date=initial_date,
+            final_date=final_date,
+            location=location,
+        )
+
+    def add_copyright_holder(
+        self,
+        user,
+        organization=None,
+        original_data=None,
+        initial_date=None,
+        final_date=None,
+        location=None,
+    ):
+        """Adiciona copyright_holder usando CopyrightHolderHistory."""
+        return self._add_institution_history(
+            institution_class=CopyrightHolder,
+            history_class=CopyrightHolderHistory,
+            user=user,
+            organization=organization,
+            original_data=original_data,
+            initial_date=initial_date,
+            final_date=final_date,
+            location=location,
+        )
 
 
 class FileOpenScience(Orderable, FileWithLang, CommonControlField):
@@ -1174,6 +1306,8 @@ class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
         help_text=HELP_TEXT_ORGANIZATION,
     )
 
+    base_form_class = SciELOJournalModelForm
+
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
@@ -1206,6 +1340,8 @@ class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
         help_text=HELP_TEXT_ORGANIZATION,
     )
 
+    base_form_class = SciELOJournalModelForm
+
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
@@ -1237,6 +1373,8 @@ class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
         blank=True,
         help_text=HELP_TEXT_ORGANIZATION,
     )
+
+    base_form_class = SciELOJournalModelForm
 
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
@@ -1272,6 +1410,8 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem):
         blank=True,
         help_text=HELP_TEXT_ORGANIZATION,
     )
+
+    base_form_class = SciELOJournalModelForm
 
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
@@ -1383,11 +1523,9 @@ class Copyright(Orderable, RichTextWithLanguage, CommonControlField):
     rich_text = RichTextField(
         null=True,
         blank=True,
-        help_text=_(
-            """Describe the policy used by the journal on copyright issues.
+        help_text=_("""Describe the policy used by the journal on copyright issues.
             We recommend that this section be in accordance with the recommendations of the SciELO criteria,
-            item 5.2.10.1.2. - Copyright"""
-        ),
+            item 5.2.10.1.2. - Copyright"""),
     )
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="copyright", null=True
@@ -1580,14 +1718,12 @@ class AuthorsContributions(Orderable, RichTextWithLanguage, CommonControlField):
         null=True,
         blank=True,
         help_text=mark_safe(
-            _(
-                """Description of how authors contributions should be specified.
+            _("""Description of how authors contributions should be specified.
         Does it use any taxonomy? If yes, which one?
         Does the article text explicitly state the authors contributions?
         Preferably, use the CREDiT taxonomy structure: <a target='_blank'
             href='https://casrai.org/credit/'>https://casrai.org/credit/</a>
-        """
-            )
+        """)
         ),
     )
 
@@ -2983,7 +3119,7 @@ class JournalTableOfContents(CharFieldLangMixin, CommonControlField):
         FieldPanel("text"),
     ]
     base_form_class = CoreAdminModelForm
-    
+
     class Meta:
         unique_together = [
             ("journal", "collection", "language", "text", "code"),
@@ -3011,7 +3147,7 @@ class JournalTableOfContents(CharFieldLangMixin, CommonControlField):
         return JournalTableOfContents.objects.filter(
             text__icontains=search_term
         ).distinct()
-    
+
     @classmethod
     def get(cls, journal, collection, language, text, code):
         if not journal or not language or not text or not collection:
@@ -3031,7 +3167,7 @@ class JournalTableOfContents(CharFieldLangMixin, CommonControlField):
             return cls.objects.get(**filters)
         except cls.MultipleObjectsReturned:
             return cls.objects.filter(**filters).first()
-        
+
     @classmethod
     def create(
         cls,
@@ -3062,6 +3198,7 @@ class JournalTableOfContents(CharFieldLangMixin, CommonControlField):
                 text=text,
                 code=code,
             )
+
     @classmethod
     def create_or_update(
         cls,
