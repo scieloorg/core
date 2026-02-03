@@ -59,10 +59,6 @@ from journal.exceptions import (
 )
 from journal.forms import (
     SciELOJournalModelForm,
-    OwnerHistoryForm,
-    PublisherHistoryForm,
-    SponsorHistoryForm,
-    CopyrightHolderHistoryForm,
 )
 from location.models import Country, Location
 from organization.dynamic_models import (
@@ -1346,7 +1342,7 @@ class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
         help_text=HELP_TEXT_ORGANIZATION,
     )
 
-    base_form_class = OwnerHistoryForm
+    base_form_class = SciELOJournalModelForm
 
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
@@ -1380,7 +1376,7 @@ class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
         help_text=HELP_TEXT_ORGANIZATION,
     )
 
-    base_form_class = PublisherHistoryForm
+    base_form_class = SciELOJournalModelForm
 
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
@@ -1414,7 +1410,7 @@ class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
         help_text=HELP_TEXT_ORGANIZATION,
     )
 
-    base_form_class = SponsorHistoryForm
+    base_form_class = SciELOJournalModelForm
 
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
@@ -1451,7 +1447,7 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem):
         help_text=HELP_TEXT_ORGANIZATION,
     )
 
-    base_form_class = CopyrightHolderHistoryForm
+    base_form_class = SciELOJournalModelForm
 
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
