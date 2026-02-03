@@ -57,7 +57,13 @@ from journal.exceptions import (
     TitleInDatabaseCreationOrUpdateError,
     WosdbCreationOrUpdateError,
 )
-from journal.forms import SciELOJournalModelForm
+from journal.forms import (
+    SciELOJournalModelForm,
+    OwnerHistoryForm,
+    PublisherHistoryForm, 
+    SponsorHistoryForm,
+    CopyrightHolderHistoryForm,
+)
 from location.models import Country, Location
 from organization.dynamic_models import (
     OrgLevelCopyrightHolder,
@@ -1306,6 +1312,8 @@ class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
         help_text=HELP_TEXT_ORGANIZATION,
     )
 
+    base_form_class = OwnerHistoryForm
+
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
@@ -1338,6 +1346,8 @@ class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
         help_text=HELP_TEXT_ORGANIZATION,
     )
 
+    base_form_class = PublisherHistoryForm
+
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
         AutocompletePanel("organization"),
@@ -1369,6 +1379,8 @@ class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
         blank=True,
         help_text=HELP_TEXT_ORGANIZATION,
     )
+
+    base_form_class = SponsorHistoryForm
 
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
@@ -1404,6 +1416,8 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem):
         blank=True,
         help_text=HELP_TEXT_ORGANIZATION,
     )
+
+    base_form_class = CopyrightHolderHistoryForm
 
     panels = BaseHistoryItem.panels + [
         AutocompletePanel("institution", read_only=True),
