@@ -1065,20 +1065,25 @@ class Journal(CommonControlField, ClusterableModel):
             )
         return list(data.values())
 
-    def add_publisher(
+    def _add_institution_history(
         self,
+        institution_class,
+        history_class,
         user,
-        organization=None,
         original_data=None,
+        organization=None,
         initial_date=None,
         final_date=None,
         location=None,
     ):
-        """Adiciona publisher usando PublisherHistory."""
-        created_publisher = None
+        """Adiciona instituição usando InstitutionHistory genérico."""
+        if not original_data and not organization:
+            raise ValueError("Either original_data or organization must be provided")
+
+        created_institution = None
         if original_data:
-            # Cria/busca o Publisher baseado nos dados originais
-            created_publisher = Publisher.get_or_create(
+            # Cria/busca a Institution baseado nos dados originais
+            created_institution = institution_class.get_or_create(
                 name=original_data,
                 acronym=None,
                 level_1=None,
@@ -1091,20 +1096,39 @@ class Journal(CommonControlField, ClusterableModel):
                 url=None,
                 institution_type=None,
             )
-        if not created_publisher and not organization:
-            raise ValueError("Either original_data or organization must be provided")
 
-        # Cria/busca o PublisherHistory
-        publisher_history = PublisherHistory.get_or_create(
-            institution=created_publisher,
+        # Cria/busca o InstitutionHistory
+        institution_history = history_class.get_or_create(
+            institution=created_institution,
             initial_date=initial_date,
             final_date=final_date,
             user=user,
         )
-        publisher_history.journal = self
-        publisher_history.organization = organization
-        publisher_history.save()
-        return publisher_history
+        institution_history.journal = self
+        institution_history.organization = organization
+        institution_history.save()
+        return institution_history
+
+    def add_publisher(
+        self,
+        user,
+        organization=None,
+        original_data=None,
+        initial_date=None,
+        final_date=None,
+        location=None,
+    ):
+        """Adiciona publisher usando PublisherHistory."""
+        return self._add_institution_history(
+            institution_class=Publisher,
+            history_class=PublisherHistory,
+            user=user,
+            organization=organization,
+            original_data=original_data,
+            initial_date=initial_date,
+            final_date=final_date,
+            location=location,
+        )
 
     def add_owner(
         self,
@@ -1116,36 +1140,16 @@ class Journal(CommonControlField, ClusterableModel):
         location=None,
     ):
         """Adiciona owner usando OwnerHistory."""
-        created_owner = None
-        if original_data:
-            # Cria/busca o Owner baseado nos dados originais
-            created_owner = Owner.get_or_create(
-                name=original_data,
-                acronym=None,
-                level_1=None,
-                level_2=None,
-                level_3=None,
-                user=user,
-                location=location,
-                official=None,
-                is_official=None,
-                url=None,
-                institution_type=None,
-            )
-        if not created_owner and not organization:
-            raise ValueError("Either original_data or organization must be provided")
-
-        # Cria/busca o OwnerHistory
-        owner_history = OwnerHistory.get_or_create(
-            institution=created_owner,
+        return self._add_institution_history(
+            institution_class=Owner,
+            history_class=OwnerHistory,
+            user=user,
+            organization=organization,
+            original_data=original_data,
             initial_date=initial_date,
             final_date=final_date,
-            user=user,
+            location=location,
         )
-        owner_history.journal = self
-        owner_history.organization = organization
-        owner_history.save()
-        return owner_history
 
     def add_sponsor(
         self,
@@ -1157,36 +1161,16 @@ class Journal(CommonControlField, ClusterableModel):
         location=None,
     ):
         """Adiciona sponsor usando SponsorHistory."""
-        created_sponsor = None
-        if original_data:
-            # Cria/busca o Sponsor baseado nos dados originais
-            created_sponsor = Sponsor.get_or_create(
-                name=original_data,
-                acronym=None,
-                level_1=None,
-                level_2=None,
-                level_3=None,
-                user=user,
-                location=location,
-                official=None,
-                is_official=None,
-                url=None,
-                institution_type=None,
-            )
-        if not created_sponsor and not organization:
-            raise ValueError("Either original_data or organization must be provided")
-
-        # Cria/busca o SponsorHistory
-        sponsor_history = SponsorHistory.get_or_create(
-            institution=created_sponsor,
+        return self._add_institution_history(
+            institution_class=Sponsor,
+            history_class=SponsorHistory,
+            user=user,
+            organization=organization,
+            original_data=original_data,
             initial_date=initial_date,
             final_date=final_date,
-            user=user,
+            location=location,
         )
-        sponsor_history.journal = self
-        sponsor_history.organization = organization
-        sponsor_history.save()
-        return sponsor_history
 
     def add_copyright_holder(
         self,
@@ -1198,36 +1182,16 @@ class Journal(CommonControlField, ClusterableModel):
         location=None,
     ):
         """Adiciona copyright_holder usando CopyrightHolderHistory."""
-        created_copyright_holder = None
-        if original_data:
-            # Cria/busca o CopyrightHolder baseado nos dados originais
-            created_copyright_holder = CopyrightHolder.get_or_create(
-                name=original_data,
-                acronym=None,
-                level_1=None,
-                level_2=None,
-                level_3=None,
-                user=user,
-                location=location,
-                official=None,
-                is_official=None,
-                url=None,
-                institution_type=None,
-            )
-        if not created_copyright_holder and not organization:
-            raise ValueError("Either original_data or organization must be provided")
-
-        # Cria/busca o CopyrightHolderHistory
-        copyright_holder_history = CopyrightHolderHistory.get_or_create(
-            institution=created_copyright_holder,
+        return self._add_institution_history(
+            institution_class=CopyrightHolder,
+            history_class=CopyrightHolderHistory,
+            user=user,
+            organization=organization,
+            original_data=original_data,
             initial_date=initial_date,
             final_date=final_date,
-            user=user,
+            location=location,
         )
-        copyright_holder_history.journal = self
-        copyright_holder_history.organization = organization
-        copyright_holder_history.save()
-        return copyright_holder_history
 
 
 class FileOpenScience(Orderable, FileWithLang, CommonControlField):
