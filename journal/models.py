@@ -1097,12 +1097,12 @@ class Journal(CommonControlField, ClusterableModel):
         # Cria/busca o PublisherHistory
         publisher_history = PublisherHistory.get_or_create(
             institution=created_publisher,
-            organization=organization,
             initial_date=initial_date,
             final_date=final_date,
             user=user,
         )
         publisher_history.journal = self
+        publisher_history.organization = organization
         publisher_history.save()
         return publisher_history
 
@@ -1138,12 +1138,12 @@ class Journal(CommonControlField, ClusterableModel):
         # Cria/busca o OwnerHistory
         owner_history = OwnerHistory.get_or_create(
             institution=created_owner,
-            organization=organization,
             initial_date=initial_date,
             final_date=final_date,
             user=user,
         )
         owner_history.journal = self
+        owner_history.organization = organization
         owner_history.save()
         return owner_history
 
@@ -1179,12 +1179,12 @@ class Journal(CommonControlField, ClusterableModel):
         # Cria/busca o SponsorHistory
         sponsor_history = SponsorHistory.get_or_create(
             institution=created_sponsor,
-            organization=organization,
             initial_date=initial_date,
             final_date=final_date,
             user=user,
         )
         sponsor_history.journal = self
+        sponsor_history.organization = organization
         sponsor_history.save()
         return sponsor_history
 
@@ -1220,12 +1220,12 @@ class Journal(CommonControlField, ClusterableModel):
         # Cria/busca o CopyrightHolderHistory
         copyright_holder_history = CopyrightHolderHistory.get_or_create(
             institution=created_copyright_holder,
-            organization=organization,
             initial_date=initial_date,
             final_date=final_date,
             user=user,
         )
         copyright_holder_history.journal = self
+        copyright_holder_history.organization = organization
         copyright_holder_history.save()
         return copyright_holder_history
 
