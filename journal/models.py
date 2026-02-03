@@ -58,7 +58,7 @@ from journal.exceptions import (
     WosdbCreationOrUpdateError,
 )
 from journal.forms import (
-    OwnerHistoryForm,
+    SciELOJournalModelForm,
     OwnerHistoryForm,
     PublisherHistoryForm,
     SponsorHistoryForm,
