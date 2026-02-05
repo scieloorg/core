@@ -1075,6 +1075,7 @@ class Journal(CommonControlField, ClusterableModel):
         initial_date=None,
         final_date=None,
         location=None,
+        raw_text=None,
     ):
         """Adiciona instituição usando InstitutionHistory genérico."""
         if not original_data and not organization:
@@ -1106,6 +1107,8 @@ class Journal(CommonControlField, ClusterableModel):
         )
         institution_history.journal = self
         institution_history.organization = organization
+        # Populate raw_text from raw_text parameter or original_data
+        institution_history.raw_text = raw_text if raw_text is not None else original_data
         institution_history.save()
         return institution_history
 
@@ -1117,6 +1120,7 @@ class Journal(CommonControlField, ClusterableModel):
         initial_date=None,
         final_date=None,
         location=None,
+        raw_text=None,
     ):
         """Adiciona publisher usando PublisherHistory."""
         return self._add_institution_history(
@@ -1128,6 +1132,7 @@ class Journal(CommonControlField, ClusterableModel):
             initial_date=initial_date,
             final_date=final_date,
             location=location,
+            raw_text=raw_text,
         )
 
     def add_owner(
@@ -1138,6 +1143,7 @@ class Journal(CommonControlField, ClusterableModel):
         initial_date=None,
         final_date=None,
         location=None,
+        raw_text=None,
     ):
         """Adiciona owner usando OwnerHistory."""
         return self._add_institution_history(
@@ -1149,6 +1155,7 @@ class Journal(CommonControlField, ClusterableModel):
             initial_date=initial_date,
             final_date=final_date,
             location=location,
+            raw_text=raw_text,
         )
 
     def add_sponsor(
@@ -1159,6 +1166,7 @@ class Journal(CommonControlField, ClusterableModel):
         initial_date=None,
         final_date=None,
         location=None,
+        raw_text=None,
     ):
         """Adiciona sponsor usando SponsorHistory."""
         return self._add_institution_history(
@@ -1170,6 +1178,7 @@ class Journal(CommonControlField, ClusterableModel):
             initial_date=initial_date,
             final_date=final_date,
             location=location,
+            raw_text=raw_text,
         )
 
     def add_copyright_holder(
@@ -1180,6 +1189,7 @@ class Journal(CommonControlField, ClusterableModel):
         initial_date=None,
         final_date=None,
         location=None,
+        raw_text=None,
     ):
         """Adiciona copyright_holder usando CopyrightHolderHistory."""
         return self._add_institution_history(
@@ -1191,6 +1201,7 @@ class Journal(CommonControlField, ClusterableModel):
             initial_date=initial_date,
             final_date=final_date,
             location=location,
+            raw_text=raw_text,
         )
 
 
