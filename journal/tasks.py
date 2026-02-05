@@ -395,26 +395,27 @@ def task_replace_institution_by_raw_institution(
     user = _get_user(self.request, username=username, user_id=user_id)
     
     try:
-        # Build queryset for AMJournal records
-        queryset = AMJournal.objects.all()
-        
+        params = {}
         # Filter by collection if provided
         if collection_acron_list:
             from collection.models import Collection
             collections = Collection.objects.filter(acron3__in=collection_acron_list)
-            queryset = queryset.filter(collection__in=collections)
+            params["collection__in"] = collections
         
         # Filter by journal ISSN if provided
         if journal_issns:
-            queryset = queryset.filter(pid__in=journal_issns)
+            params["pid__in"] = journal_issns
         
         processed_count = 0
         error_count = 0
         
-        for am_journal in queryset.iterator():
+        for am_journal in AMJournal.objects.filter(**params).iterator():
             try:
+                # Extract data from AMJournal
+                data = am_journal.data
+
                 # Skip if no data
-                if not am_journal.data:
+                if not data:
                     continue
                 
                 # Get the corresponding journal
@@ -430,9 +431,6 @@ def task_replace_institution_by_raw_institution(
                         f"collection={am_journal.collection}"
                     )
                     continue
-                
-                # Extract data from AMJournal
-                data = am_journal.data
                 
                 # Extract publisher/owner data
                 publisher = extract_value(data.get("publisher_name"))
@@ -452,90 +450,58 @@ def task_replace_institution_by_raw_institution(
                         publisher = [publisher]
                     
                     # Filter non-empty publisher names
-                    publisher_names = [p for p in publisher if p]
-                    
-                    if publisher_names:
-                        # Update PublisherHistory records - use __in for single query
-                        pub_hist_list = list(journal.publisher_history.filter(
-                            institution__institution_name__in=publisher_names
-                        ))
-                        # Create a mapping of institution names to publisher data
-                        for pub_hist in pub_hist_list:
-                            pub_hist.raw_institution_name = pub_hist.institution.institution_name
-                            pub_hist.raw_country_name = publisher_country
-                            pub_hist.raw_state_name = publisher_state
-                            pub_hist.raw_city_name = publisher_city
-                        
-                        if pub_hist_list:
-                            from journal.models import PublisherHistory
-                            PublisherHistory.objects.bulk_update(
-                                pub_hist_list,
-                                ['raw_institution_name', 'raw_country_name', 
-                                 'raw_state_name', 'raw_city_name']
-                            )
-                        
-                        # Update OwnerHistory records - use __in for single query
-                        own_hist_list = list(journal.owner_history.filter(
-                            institution__institution_name__in=publisher_names
-                        ))
-                        for own_hist in own_hist_list:
-                            own_hist.raw_institution_name = own_hist.institution.institution_name
-                            own_hist.raw_country_name = publisher_country
-                            own_hist.raw_state_name = publisher_state
-                            own_hist.raw_city_name = publisher_city
-                        
-                        if own_hist_list:
-                            from journal.models import OwnerHistory
-                            OwnerHistory.objects.bulk_update(
-                                own_hist_list,
-                                ['raw_institution_name', 'raw_country_name', 
-                                 'raw_state_name', 'raw_city_name']
-                            )
+                    for _publisher in publisher:
+                        if not _publisher:
+                            continue
+                        journal.add_publisher(
+                            user=user,
+                            original_data=_publisher,
+                            location=None,
+                            raw_institution_name=_publisher,
+                            raw_country_name=publisher_country,
+                            raw_state_name=publisher_state,
+                            raw_city_name=publisher_city,
+                        )
+                        journal.add_owner(
+                            user=user,
+                            original_data=_publisher,
+                            location=None,
+                            raw_institution_name=_publisher,
+                            raw_country_name=publisher_country,
+                            raw_state_name=publisher_state,
+                            raw_city_name=publisher_city,
+                        )
                 
                 # Update SponsorHistory records
                 if sponsor:
                     if isinstance(sponsor, str):
                         sponsor = [sponsor]
                     
-                    # Filter non-empty sponsor names
-                    sponsor_names = [s for s in sponsor if s]
-                    
-                    if sponsor_names:
-                        spon_hist_list = list(journal.sponsor_history.filter(
-                            institution__institution_name__in=sponsor_names
-                        ))
-                        for spon_hist in spon_hist_list:
-                            spon_hist.raw_institution_name = spon_hist.institution.institution_name
-                        
-                        if spon_hist_list:
-                            from journal.models import SponsorHistory
-                            SponsorHistory.objects.bulk_update(
-                                spon_hist_list,
-                                ['raw_institution_name']
-                            )
+                    for _sponsor in sponsor:
+                        if not _sponsor:
+                            continue
+                        journal.add_sponsor(
+                            user=user,
+                            original_data=_sponsor,
+                            location=None,
+                            raw_institution_name=_sponsor,
+                        )
                 
                 # Update CopyrightHolderHistory records
                 if copyright_holder:
                     if isinstance(copyright_holder, str):
                         copyright_holder = [copyright_holder]
                     
-                    # Filter non-empty copyright holder names
-                    cp_names = [cp for cp in copyright_holder if cp]
-                    
-                    if cp_names:
-                        cp_hist_list = list(journal.copyright_holder_history.filter(
-                            institution__institution_name__in=cp_names
-                        ))
-                        for cp_hist in cp_hist_list:
-                            cp_hist.raw_institution_name = cp_hist.institution.institution_name
-                        
-                        if cp_hist_list:
-                            from journal.models import CopyrightHolderHistory
-                            CopyrightHolderHistory.objects.bulk_update(
-                                cp_hist_list,
-                                ['raw_institution_name']
-                            )
-                
+                    for _copyright_holder in copyright_holder:
+                        if not _copyright_holder:
+                            continue
+                        journal.add_copyright_holder(
+                            user=user,
+                            original_data=_copyright_holder,
+                            location=None,
+                            raw_institution_name=_copyright_holder,
+                        )
+
                 processed_count += 1
                 
             except Exception as e:
