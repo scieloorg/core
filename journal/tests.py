@@ -285,3 +285,89 @@ class TestFetchAndProcessJournalLogosInCollection(TestCase):
         # The task should complete without raising an exception
         # and should call group with the task signatures
         self.assertTrue(mock_group.called)
+
+
+class RawOrganizationMixinTestCase(TestCase):
+    """Test cases for RawOrganizationMixin functionality"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        self.user = User.objects.create_user(username="testuser")
+        self.collection = Collection.objects.create(
+            name="Test Collection",
+            acron3="TST",
+        )
+        self.journal = Journal.objects.create(
+            title="Test Journal",
+        )
+
+    def test_add_publisher_with_raw_organization_fields(self):
+        """Test that add_publisher accepts and saves raw organization fields"""
+        publisher_history = self.journal.add_publisher(
+            user=self.user,
+            original_data="Test Publisher",
+            raw_institution_name="Test Publisher Inc.",
+            raw_country_name="Brazil",
+            raw_country_code="BR",
+            raw_state_name="São Paulo",
+            raw_state_acron="SP",
+            raw_city_name="São Paulo",
+        )
+        
+        self.assertIsNotNone(publisher_history)
+        self.assertEqual(publisher_history.raw_institution_name, "Test Publisher Inc.")
+        self.assertEqual(publisher_history.raw_country_name, "Brazil")
+        self.assertEqual(publisher_history.raw_country_code, "BR")
+        self.assertEqual(publisher_history.raw_state_name, "São Paulo")
+        self.assertEqual(publisher_history.raw_state_acron, "SP")
+        self.assertEqual(publisher_history.raw_city_name, "São Paulo")
+
+    def test_add_owner_with_raw_organization_fields(self):
+        """Test that add_owner accepts and saves raw organization fields"""
+        owner_history = self.journal.add_owner(
+            user=self.user,
+            original_data="Test Owner",
+            raw_institution_name="Test Owner Institution",
+            raw_country_name="Argentina",
+        )
+        
+        self.assertIsNotNone(owner_history)
+        self.assertEqual(owner_history.raw_institution_name, "Test Owner Institution")
+        self.assertEqual(owner_history.raw_country_name, "Argentina")
+
+    def test_add_sponsor_with_raw_organization_fields(self):
+        """Test that add_sponsor accepts and saves raw organization fields"""
+        sponsor_history = self.journal.add_sponsor(
+            user=self.user,
+            original_data="Test Sponsor",
+            raw_institution_name="Test Sponsor Foundation",
+        )
+        
+        self.assertIsNotNone(sponsor_history)
+        self.assertEqual(sponsor_history.raw_institution_name, "Test Sponsor Foundation")
+
+    def test_add_copyright_holder_with_raw_organization_fields(self):
+        """Test that add_copyright_holder accepts and saves raw organization fields"""
+        copyright_history = self.journal.add_copyright_holder(
+            user=self.user,
+            original_data="Test Copyright Holder",
+            raw_institution_name="Test Copyright Holder Corp",
+            raw_text="Full copyright text",
+        )
+        
+        self.assertIsNotNone(copyright_history)
+        self.assertEqual(copyright_history.raw_institution_name, "Test Copyright Holder Corp")
+        self.assertEqual(copyright_history.raw_text, "Full copyright text")
+
+    def test_backward_compatibility_without_raw_fields(self):
+        """Test that existing code without raw fields still works"""
+        # This tests backward compatibility
+        publisher_history = self.journal.add_publisher(
+            user=self.user,
+            original_data="Legacy Publisher",
+        )
+        
+        self.assertIsNotNone(publisher_history)
+        # Raw fields should be None if not provided
+        self.assertIsNone(publisher_history.raw_institution_name)
+        self.assertIsNone(publisher_history.raw_country_name)
