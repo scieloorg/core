@@ -454,24 +454,40 @@ def task_replace_institution_by_raw_institution(
                     for p in publisher:
                         if p:
                             # Update PublisherHistory records
-                            for pub_hist in journal.publisher_history.filter(
+                            pub_hist_list = list(journal.publisher_history.filter(
                                 institution__institution_name=p
-                            ):
+                            ))
+                            for pub_hist in pub_hist_list:
                                 pub_hist.raw_institution_name = p
                                 pub_hist.raw_country_name = publisher_country
                                 pub_hist.raw_state_name = publisher_state
                                 pub_hist.raw_city_name = publisher_city
-                                pub_hist.save()
+                            
+                            if pub_hist_list:
+                                from journal.models import PublisherHistory
+                                PublisherHistory.objects.bulk_update(
+                                    pub_hist_list,
+                                    ['raw_institution_name', 'raw_country_name', 
+                                     'raw_state_name', 'raw_city_name']
+                                )
                             
                             # Update OwnerHistory records
-                            for own_hist in journal.owner_history.filter(
+                            own_hist_list = list(journal.owner_history.filter(
                                 institution__institution_name=p
-                            ):
+                            ))
+                            for own_hist in own_hist_list:
                                 own_hist.raw_institution_name = p
                                 own_hist.raw_country_name = publisher_country
                                 own_hist.raw_state_name = publisher_state
                                 own_hist.raw_city_name = publisher_city
-                                own_hist.save()
+                            
+                            if own_hist_list:
+                                from journal.models import OwnerHistory
+                                OwnerHistory.objects.bulk_update(
+                                    own_hist_list,
+                                    ['raw_institution_name', 'raw_country_name', 
+                                     'raw_state_name', 'raw_city_name']
+                                )
                 
                 # Update SponsorHistory records
                 if sponsor:
@@ -480,11 +496,18 @@ def task_replace_institution_by_raw_institution(
                     
                     for s in sponsor:
                         if s:
-                            for spon_hist in journal.sponsor_history.filter(
+                            spon_hist_list = list(journal.sponsor_history.filter(
                                 institution__institution_name=s
-                            ):
+                            ))
+                            for spon_hist in spon_hist_list:
                                 spon_hist.raw_institution_name = s
-                                spon_hist.save()
+                            
+                            if spon_hist_list:
+                                from journal.models import SponsorHistory
+                                SponsorHistory.objects.bulk_update(
+                                    spon_hist_list,
+                                    ['raw_institution_name']
+                                )
                 
                 # Update CopyrightHolderHistory records
                 if copyright_holder:
@@ -493,11 +516,18 @@ def task_replace_institution_by_raw_institution(
                     
                     for cp in copyright_holder:
                         if cp:
-                            for cp_hist in journal.copyright_holder_history.filter(
+                            cp_hist_list = list(journal.copyright_holder_history.filter(
                                 institution__institution_name=cp
-                            ):
+                            ))
+                            for cp_hist in cp_hist_list:
                                 cp_hist.raw_institution_name = cp
-                                cp_hist.save()
+                            
+                            if cp_hist_list:
+                                from journal.models import CopyrightHolderHistory
+                                CopyrightHolderHistory.objects.bulk_update(
+                                    cp_hist_list,
+                                    ['raw_institution_name']
+                                )
                 
                 processed_count += 1
                 
