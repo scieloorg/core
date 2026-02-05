@@ -381,7 +381,7 @@ class RawOrganizationMixin(models.Model):
                 final_date=final_date,
                 institution=institution,
             )
-         except cls.DoesNotExist:
+        except cls.DoesNotExist:
             return cls.create(
                 raw_text=raw_text,
                 initial_date=initial_date,
