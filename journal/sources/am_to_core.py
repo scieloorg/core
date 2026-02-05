@@ -227,15 +227,19 @@ def update_panel_institution(
     if publisher:
         for p in publisher:
             if p:
+                raw_country_name=extract_value(publisher_country)
+                raw_state_name=extract_value(publisher_state)
+                raw_city_name=extract_value(publisher_city)
+            
                 # Usa novo método add_publisher ao invés de PublisherHistory
                 journal.add_publisher(
                     user=user,
                     original_data=p,
                     location=location,
                     raw_institution_name=p,
-                    raw_country_name=extract_value(publisher_country),
-                    raw_state_name=extract_value(publisher_state),
-                    raw_city_name=extract_value(publisher_city),
+                    raw_country_name=raw_country_name,
+                    raw_state_name=raw_state_name,
+                    raw_city_name=raw_city_name,
                 )
                 # Usa novo método add_owner ao invés de OwnerHistory
                 journal.add_owner(
@@ -243,9 +247,9 @@ def update_panel_institution(
                     original_data=p,
                     location=location,
                     raw_institution_name=p,
-                    raw_country_name=extract_value(publisher_country),
-                    raw_state_name=extract_value(publisher_state),
-                    raw_city_name=extract_value(publisher_city),
+                    raw_country_name=raw_country_name,
+                    raw_state_name=raw_state_name,
+                    raw_city_name=raw_city_name,
                 )
                 journal.contact_name = p
 

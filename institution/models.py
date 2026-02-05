@@ -458,14 +458,22 @@ class BaseHistoryItem(CommonControlField):
                 final_date=final_date,
             )
         except cls.DoesNotExist:
-            history = cls()
-            history.institution = institution
-            history.creator = user
-
-            history.initial_date = initial_date
-            history.final_date = final_date
-            history.save()
-            return history
+            return cls.create(
+                institution=institution,
+                initial_date=initial_date,
+                final_date=final_date,
+                user=user,
+            )
+        
+    @classmethod
+    def create(cls, institution, initial_date=None, final_date=None, user=None):
+        history = cls()
+        history.institution = institution
+        history.creator = user
+        history.initial_date = initial_date
+        history.final_date = final_date
+        history.save()
+        return history
 
     class Meta:
         abstract = True
@@ -537,6 +545,18 @@ class BaseHistoryItem(CommonControlField):
         if self.final_date:
             return self.final_date.isoformat()
         return None
+
+    @property
+    def data(self):
+        """
+        Retorna um dicionário com os dados essenciais da organização.
+        Prioriza os campos raw_* sobre o campo institution (deprecated).
+        """
+        _data = {}
+        _data["country_acronym"] = self.institution_country_acronym
+        _data["state_acronym"] = self.institution_state_acronym
+        _data["city_name"] = self.institution_city_name
+        return _data
 
 
 class BaseInstitution(CommonControlField):
