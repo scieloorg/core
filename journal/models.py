@@ -751,61 +751,39 @@ class Journal(CommonControlField, ClusterableModel):
     def owner_names(self):
         items = []
         for item in self.owner_history.all():
-            if item.organization:
-                items.append(item.organization.name)
-            else:
-                items.append(item.institution_name)
+            items.append(item.institution_name)
         return items
 
     @property
     def owner_data(self):
-        owner_data = {}
         owners = list(
             self.owner_history.select_related(
                 "institution__institution", "institution__institution__location"
             ).all()
         )
         for p in owners:
-            owner_data["country_acronym"] = p.institution_country_acronym
-            owner_data["state_acronym"] = p.institution_state_acronym
-            owner_data["city_name"] = p.institution_city_name
-            break  # Usa apenas o primeiro owner
-        return owner_data
+            return p.data
+        return {}
 
     @property
     def publisher_names(self):
         items = []
-        for item in self.publisher_history.select_related(
-            "institution__institution", "institution__institution__location"
-        ).all():
-            if item.organization:
-                items.append(item.organization.name)
-            else:
-                items.append(item.institution_name)
+        for item in self.publisher_history.all():
+            items.append(item.institution_name)
         return items
 
     @property
     def sponsors(self):
         items = []
-        for item in self.sponsor_history.select_related(
-            "institution__institution", "institution__institution__location"
-        ).all():
-            if item.organization:
-                items.append(item.organization.name)
-            else:
-                items.append(item.institution_name)
+        for item in self.sponsor_history.all():
+            items.append(item.institution_name)
         return items
 
     @property
     def copyright_holders(self):
         items = []
-        for item in self.copyright_holder_history.select_related(
-            "institution__institution", "institution__institution__location"
-        ).all():
-            if item.organization:
-                items.append(item.organization.name)
-            else:
-                items.append(item.institution_name)
+        for item in self.copyright_holder_history.all():
+            items.append(item.institution_name)
         return items
 
     def is_indexed_at(self, db_acronym):
@@ -1076,7 +1054,6 @@ class Journal(CommonControlField, ClusterableModel):
         initial_date=None,
         final_date=None,
         location=None,
-        raw_text=None,
         raw_institution_name=None,
         raw_country_name=None,
         raw_country_code=None,
@@ -1116,7 +1093,7 @@ class Journal(CommonControlField, ClusterableModel):
         institution_history.organization = organization
         
         # Populate RawOrganizationMixin fields
-        institution_history.raw_text = raw_text
+        institution_history.raw_text = original_data
         institution_history.raw_institution_name = raw_institution_name
         institution_history.raw_country_name = raw_country_name
         institution_history.raw_country_code = raw_country_code
@@ -1135,7 +1112,6 @@ class Journal(CommonControlField, ClusterableModel):
         initial_date=None,
         final_date=None,
         location=None,
-        raw_text=None,
         raw_institution_name=None,
         raw_country_name=None,
         raw_country_code=None,
@@ -1153,7 +1129,6 @@ class Journal(CommonControlField, ClusterableModel):
             initial_date=initial_date,
             final_date=final_date,
             location=location,
-            raw_text=raw_text,
             raw_institution_name=raw_institution_name,
             raw_country_name=raw_country_name,
             raw_country_code=raw_country_code,
@@ -1170,7 +1145,6 @@ class Journal(CommonControlField, ClusterableModel):
         initial_date=None,
         final_date=None,
         location=None,
-        raw_text=None,
         raw_institution_name=None,
         raw_country_name=None,
         raw_country_code=None,
@@ -1188,7 +1162,6 @@ class Journal(CommonControlField, ClusterableModel):
             initial_date=initial_date,
             final_date=final_date,
             location=location,
-            raw_text=raw_text,
             raw_institution_name=raw_institution_name,
             raw_country_name=raw_country_name,
             raw_country_code=raw_country_code,
@@ -1205,7 +1178,6 @@ class Journal(CommonControlField, ClusterableModel):
         initial_date=None,
         final_date=None,
         location=None,
-        raw_text=None,
         raw_institution_name=None,
         raw_country_name=None,
         raw_country_code=None,
@@ -1223,7 +1195,6 @@ class Journal(CommonControlField, ClusterableModel):
             initial_date=initial_date,
             final_date=final_date,
             location=location,
-            raw_text=raw_text,
             raw_institution_name=raw_institution_name,
             raw_country_name=raw_country_name,
             raw_country_code=raw_country_code,
@@ -1240,7 +1211,6 @@ class Journal(CommonControlField, ClusterableModel):
         initial_date=None,
         final_date=None,
         location=None,
-        raw_text=None,
         raw_institution_name=None,
         raw_country_name=None,
         raw_country_code=None,
@@ -1258,7 +1228,6 @@ class Journal(CommonControlField, ClusterableModel):
             initial_date=initial_date,
             final_date=final_date,
             location=location,
-            raw_text=raw_text,
             raw_institution_name=raw_institution_name,
             raw_country_name=raw_country_name,
             raw_country_code=raw_country_code,
@@ -1361,7 +1330,7 @@ class Mission(Orderable, RichTextWithLanguage, CommonControlField):
         return obj
 
 
-class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem, RawOrganizationMixin):
+class OwnerHistory(Orderable, ClusterableModel, RawOrganizationMixin, BaseHistoryItem):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="owner_history", null=True
     )
@@ -1395,7 +1364,7 @@ class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem, RawOrganization
         return OrgLevelOwner
 
 
-class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem, RawOrganizationMixin):
+class PublisherHistory(Orderable, ClusterableModel, RawOrganizationMixin, BaseHistoryItem):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="publisher_history", null=True
     )
@@ -1429,7 +1398,7 @@ class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem, RawOrganiza
         return OrgLevelPublisher
 
 
-class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem, RawOrganizationMixin):
+class SponsorHistory(Orderable, ClusterableModel, RawOrganizationMixin, BaseHistoryItem):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, null=True, related_name="sponsor_history"
     )
@@ -1463,7 +1432,7 @@ class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem, RawOrganizati
         return OrgLevelSponsor
 
 
-class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem, RawOrganizationMixin):
+class CopyrightHolderHistory(Orderable, ClusterableModel, RawOrganizationMixin, BaseHistoryItem):
     journal = ParentalKey(
         Journal,
         on_delete=models.SET_NULL,
