@@ -334,6 +334,104 @@ class RawOrganizationMixin(models.Model):
     class Meta:
         abstract = True
 
+    @classmethod
+    def get(
+        cls,
+        raw_text=None,
+        initial_date=None,
+        final_date=None,
+        institution=None,
+    ):
+        """
+        Sobrepõe BaseHistoryItem.get para dar prioridade ao raw_text.
+        Mantém compatibilidade com institution para casos legados.
+        """
+        if not raw_text and not institution:
+            raise ValueError(
+                "RawOrganizationMixin.get requires at least raw_text or institution parameter"
+            )
+        params = {}
+        if raw_text:
+            params["raw_text"] = raw_text
+        if initial_date:
+            params["initial_date"] = initial_date
+        if final_date:
+            params["final_date"] = final_date
+        if institution:
+            params["institution"] = institution
+        return cls.objects.get(**params)
+
+    @classmethod
+    def get_or_create(
+        cls,
+        raw_text=None,
+        initial_date=None,
+        final_date=None,
+        institution=None,
+        user=None,
+    ):
+        """
+        Sobrepõe BaseHistoryItem.get_or_create para dar prioridade ao raw_text.
+        Mantém compatibilidade com institution para casos legados.
+        """
+        try:
+            return cls.get(
+                raw_text=raw_text,
+                initial_date=initial_date,
+                final_date=final_date,
+                institution=institution,
+            )
+         except cls.DoesNotExist:
+            return cls.create(
+                raw_text=raw_text,
+                initial_date=initial_date,
+                final_date=final_date,
+                institution=institution,
+                user=user,
+            )
+        
+    @classmethod
+    def create(cls, raw_text, initial_date=None, final_date=None, user=None, institution=None):
+        history = cls()
+        history.raw_text = raw_text
+        history.creator = user
+        history.initial_date = initial_date
+        history.final_date = final_date
+        if institution:
+            history.institution = institution
+        history.save()
+        return history
+
+    @property
+    def institution_name(self):
+        """
+        Retorna o nome da instituição, priorizando raw_text/raw_institution_name
+        sobre o campo institution deprecated.
+        """
+        if self.raw_institution_name:
+            return self.raw_institution_name
+        if self.raw_text:
+            return self.raw_text
+        if hasattr(self, 'institution') and self.institution:
+            # Fallback para o campo institution (deprecated)
+            try:
+                return self.institution.institution_name
+            except (AttributeError, TypeError):
+                return None
+        return None
+
+    @property
+    def data(self):
+        """
+        Retorna um dicionário com os dados essenciais da organização.
+        Prioriza os campos raw_* sobre o campo institution (deprecated).
+        """
+        _data = {}
+        _data["country_acronym"] = self.raw_country_code
+        _data["state_acronym"] = self.raw_state_acron
+        _data["city_name"] = self.raw_city_name
+        return _data
+
 
 class LanguageFallbackManager(models.Manager):
     def get_object_in_preferred_language(self, language):
