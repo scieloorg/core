@@ -232,12 +232,20 @@ def update_panel_institution(
                     user=user,
                     original_data=p,
                     location=location,
+                    raw_institution_name=p,
+                    raw_country_name=extract_value(publisher_country),
+                    raw_state_name=extract_value(publisher_state),
+                    raw_city_name=extract_value(publisher_city),
                 )
                 # Usa novo método add_owner ao invés de OwnerHistory
                 journal.add_owner(
                     user=user,
                     original_data=p,
                     location=location,
+                    raw_institution_name=p,
+                    raw_country_name=extract_value(publisher_country),
+                    raw_state_name=extract_value(publisher_state),
+                    raw_city_name=extract_value(publisher_city),
                 )
                 journal.contact_name = p
 
@@ -541,6 +549,7 @@ def get_or_create_sponsor(sponsor, journal, user, location=None):
                     user=user,
                     original_data=s,
                     location=location,
+                    raw_institution_name=s,
                 )
 
 
@@ -822,6 +831,7 @@ def get_or_create_copyright_holder(journal, copyright_holder_name, user, locatio
                     user=user,
                     original_data=cp,
                     location=location,
+                    raw_institution_name=cp,
                 )
             except Exception as e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -936,12 +946,20 @@ def create_location_and_add_institutions(
                         user=user,
                         original_data=p,
                         location=location,
+                        raw_institution_name=p,
+                        raw_country_name=extract_value(publisher_country),
+                        raw_state_name=extract_value(publisher_state),
+                        raw_city_name=extract_value(publisher_city),
                     )
                     # Adiciona owner (mesmo dado do publisher por padrão)
                     journal.add_owner(
                         user=user,
                         original_data=p,
                         location=location,
+                        raw_institution_name=p,
+                        raw_country_name=extract_value(publisher_country),
+                        raw_state_name=extract_value(publisher_state),
+                        raw_city_name=extract_value(publisher_city),
                     )
 
     # Adiciona sponsor(s) se fornecido
