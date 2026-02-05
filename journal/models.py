@@ -31,6 +31,7 @@ from core.models import (
     SocialNetwork,
     TextWithLang,
     CharFieldLangMixin,
+    RawOrganizationMixin,
 )
 from core.utils import date_utils
 from core.utils.thread_context import get_current_collections, get_current_user
@@ -1075,6 +1076,13 @@ class Journal(CommonControlField, ClusterableModel):
         initial_date=None,
         final_date=None,
         location=None,
+        raw_text=None,
+        raw_institution_name=None,
+        raw_country_name=None,
+        raw_country_code=None,
+        raw_state_name=None,
+        raw_state_acron=None,
+        raw_city_name=None,
     ):
         """Adiciona instituição usando InstitutionHistory genérico."""
         if not original_data and not organization:
@@ -1106,6 +1114,16 @@ class Journal(CommonControlField, ClusterableModel):
         )
         institution_history.journal = self
         institution_history.organization = organization
+        
+        # Populate RawOrganizationMixin fields
+        institution_history.raw_text = raw_text
+        institution_history.raw_institution_name = raw_institution_name
+        institution_history.raw_country_name = raw_country_name
+        institution_history.raw_country_code = raw_country_code
+        institution_history.raw_state_name = raw_state_name
+        institution_history.raw_state_acron = raw_state_acron
+        institution_history.raw_city_name = raw_city_name
+        
         institution_history.save()
         return institution_history
 
@@ -1117,6 +1135,13 @@ class Journal(CommonControlField, ClusterableModel):
         initial_date=None,
         final_date=None,
         location=None,
+        raw_text=None,
+        raw_institution_name=None,
+        raw_country_name=None,
+        raw_country_code=None,
+        raw_state_name=None,
+        raw_state_acron=None,
+        raw_city_name=None,
     ):
         """Adiciona publisher usando PublisherHistory."""
         return self._add_institution_history(
@@ -1128,6 +1153,13 @@ class Journal(CommonControlField, ClusterableModel):
             initial_date=initial_date,
             final_date=final_date,
             location=location,
+            raw_text=raw_text,
+            raw_institution_name=raw_institution_name,
+            raw_country_name=raw_country_name,
+            raw_country_code=raw_country_code,
+            raw_state_name=raw_state_name,
+            raw_state_acron=raw_state_acron,
+            raw_city_name=raw_city_name,
         )
 
     def add_owner(
@@ -1138,6 +1170,13 @@ class Journal(CommonControlField, ClusterableModel):
         initial_date=None,
         final_date=None,
         location=None,
+        raw_text=None,
+        raw_institution_name=None,
+        raw_country_name=None,
+        raw_country_code=None,
+        raw_state_name=None,
+        raw_state_acron=None,
+        raw_city_name=None,
     ):
         """Adiciona owner usando OwnerHistory."""
         return self._add_institution_history(
@@ -1149,6 +1188,13 @@ class Journal(CommonControlField, ClusterableModel):
             initial_date=initial_date,
             final_date=final_date,
             location=location,
+            raw_text=raw_text,
+            raw_institution_name=raw_institution_name,
+            raw_country_name=raw_country_name,
+            raw_country_code=raw_country_code,
+            raw_state_name=raw_state_name,
+            raw_state_acron=raw_state_acron,
+            raw_city_name=raw_city_name,
         )
 
     def add_sponsor(
@@ -1159,6 +1205,13 @@ class Journal(CommonControlField, ClusterableModel):
         initial_date=None,
         final_date=None,
         location=None,
+        raw_text=None,
+        raw_institution_name=None,
+        raw_country_name=None,
+        raw_country_code=None,
+        raw_state_name=None,
+        raw_state_acron=None,
+        raw_city_name=None,
     ):
         """Adiciona sponsor usando SponsorHistory."""
         return self._add_institution_history(
@@ -1170,6 +1223,13 @@ class Journal(CommonControlField, ClusterableModel):
             initial_date=initial_date,
             final_date=final_date,
             location=location,
+            raw_text=raw_text,
+            raw_institution_name=raw_institution_name,
+            raw_country_name=raw_country_name,
+            raw_country_code=raw_country_code,
+            raw_state_name=raw_state_name,
+            raw_state_acron=raw_state_acron,
+            raw_city_name=raw_city_name,
         )
 
     def add_copyright_holder(
@@ -1180,6 +1240,13 @@ class Journal(CommonControlField, ClusterableModel):
         initial_date=None,
         final_date=None,
         location=None,
+        raw_text=None,
+        raw_institution_name=None,
+        raw_country_name=None,
+        raw_country_code=None,
+        raw_state_name=None,
+        raw_state_acron=None,
+        raw_city_name=None,
     ):
         """Adiciona copyright_holder usando CopyrightHolderHistory."""
         return self._add_institution_history(
@@ -1191,6 +1258,13 @@ class Journal(CommonControlField, ClusterableModel):
             initial_date=initial_date,
             final_date=final_date,
             location=location,
+            raw_text=raw_text,
+            raw_institution_name=raw_institution_name,
+            raw_country_name=raw_country_name,
+            raw_country_code=raw_country_code,
+            raw_state_name=raw_state_name,
+            raw_state_acron=raw_state_acron,
+            raw_city_name=raw_city_name,
         )
 
 
@@ -1287,7 +1361,7 @@ class Mission(Orderable, RichTextWithLanguage, CommonControlField):
         return obj
 
 
-class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
+class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem, RawOrganizationMixin):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="owner_history", null=True
     )
@@ -1321,7 +1395,7 @@ class OwnerHistory(Orderable, ClusterableModel, BaseHistoryItem):
         return OrgLevelOwner
 
 
-class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
+class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem, RawOrganizationMixin):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="publisher_history", null=True
     )
@@ -1355,7 +1429,7 @@ class PublisherHistory(Orderable, ClusterableModel, BaseHistoryItem):
         return OrgLevelPublisher
 
 
-class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
+class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem, RawOrganizationMixin):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, null=True, related_name="sponsor_history"
     )
@@ -1389,7 +1463,7 @@ class SponsorHistory(Orderable, ClusterableModel, BaseHistoryItem):
         return OrgLevelSponsor
 
 
-class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem):
+class CopyrightHolderHistory(Orderable, ClusterableModel, BaseHistoryItem, RawOrganizationMixin):
     journal = ParentalKey(
         Journal,
         on_delete=models.SET_NULL,

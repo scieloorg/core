@@ -366,6 +366,185 @@ def task_export_journals_to_articlemeta(
         raise
 
 
+@celery_app.task(bind=True, name="task_replace_institution_by_raw_institution")
+def task_replace_institution_by_raw_institution(
+    self,
+    username=None,
+    user_id=None,
+    collection_acron_list=None,
+    journal_issns=None,
+):
+    """
+    Task to populate RawOrganizationMixin fields from AMJournal records.
+    
+    This task extracts institution data from journal.models.AMJournal records and
+    populates the raw organization fields in PublisherHistory, OwnerHistory,
+    CopyrightHolderHistory, and SponsorHistory.
+    
+    Args:
+        username: User name for authentication
+        user_id: User ID for authentication
+        collection_acron_list: List of collection acronyms to filter journals
+        journal_issns: List of journal ISSNs to filter journals
+    
+    Returns:
+        Dict with processing statistics
+    """
+    from journal.sources.am_data_extraction import extract_value
+    
+    user = _get_user(self.request, username=username, user_id=user_id)
+    
+    try:
+        # Build queryset for AMJournal records
+        queryset = AMJournal.objects.all()
+        
+        # Filter by collection if provided
+        if collection_acron_list:
+            from collection.models import Collection
+            collections = Collection.objects.filter(acron3__in=collection_acron_list)
+            queryset = queryset.filter(collection__in=collections)
+        
+        # Filter by journal ISSN if provided
+        if journal_issns:
+            queryset = queryset.filter(pid__in=journal_issns)
+        
+        processed_count = 0
+        error_count = 0
+        
+        for am_journal in queryset.iterator():
+            try:
+                # Skip if no data
+                if not am_journal.data:
+                    continue
+                
+                # Get the corresponding journal
+                try:
+                    scielo_journal = SciELOJournal.objects.get(
+                        issn_scielo=am_journal.pid,
+                        collection=am_journal.collection
+                    )
+                    journal = scielo_journal.journal
+                except SciELOJournal.DoesNotExist:
+                    logger.warning(
+                        f"SciELOJournal not found for pid={am_journal.pid}, "
+                        f"collection={am_journal.collection}"
+                    )
+                    continue
+                
+                # Extract data from AMJournal
+                data = am_journal.data
+                
+                # Extract publisher/owner data
+                publisher = extract_value(data.get("publisher_name"))
+                publisher_country = extract_value(data.get("publisher_country"))
+                publisher_state = extract_value(data.get("publisher_state"))
+                publisher_city = extract_value(data.get("publisher_city"))
+                
+                # Extract sponsor data
+                sponsor = extract_value(data.get("sponsors"))
+                
+                # Extract copyright holder data
+                copyright_holder = extract_value(data.get("copyrighter"))
+                
+                # Update PublisherHistory and OwnerHistory records
+                if publisher:
+                    if isinstance(publisher, str):
+                        publisher = [publisher]
+                    
+                    for p in publisher:
+                        if p:
+                            # Update PublisherHistory records
+                            for pub_hist in journal.publisher_history.filter(
+                                institution__institution_name=p
+                            ):
+                                pub_hist.raw_institution_name = p
+                                pub_hist.raw_country_name = publisher_country
+                                pub_hist.raw_state_name = publisher_state
+                                pub_hist.raw_city_name = publisher_city
+                                pub_hist.save()
+                            
+                            # Update OwnerHistory records
+                            for own_hist in journal.owner_history.filter(
+                                institution__institution_name=p
+                            ):
+                                own_hist.raw_institution_name = p
+                                own_hist.raw_country_name = publisher_country
+                                own_hist.raw_state_name = publisher_state
+                                own_hist.raw_city_name = publisher_city
+                                own_hist.save()
+                
+                # Update SponsorHistory records
+                if sponsor:
+                    if isinstance(sponsor, str):
+                        sponsor = [sponsor]
+                    
+                    for s in sponsor:
+                        if s:
+                            for spon_hist in journal.sponsor_history.filter(
+                                institution__institution_name=s
+                            ):
+                                spon_hist.raw_institution_name = s
+                                spon_hist.save()
+                
+                # Update CopyrightHolderHistory records
+                if copyright_holder:
+                    if isinstance(copyright_holder, str):
+                        copyright_holder = [copyright_holder]
+                    
+                    for cp in copyright_holder:
+                        if cp:
+                            for cp_hist in journal.copyright_holder_history.filter(
+                                institution__institution_name=cp
+                            ):
+                                cp_hist.raw_institution_name = cp
+                                cp_hist.save()
+                
+                processed_count += 1
+                
+            except Exception as e:
+                error_count += 1
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "task": "task_replace_institution_by_raw_institution",
+                        "am_journal_id": am_journal.id,
+                        "pid": am_journal.pid,
+                        "collection": str(am_journal.collection) if am_journal.collection else None,
+                    },
+                )
+                logger.error(
+                    f"Error processing AMJournal {am_journal.id}: {e}"
+                )
+        
+        result = {
+            "processed_count": processed_count,
+            "error_count": error_count,
+        }
+        
+        logger.info(
+            f"task_replace_institution_by_raw_institution completed: {result}"
+        )
+        
+        return result
+        
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "task_replace_institution_by_raw_institution",
+                "collection_acron_list": collection_acron_list,
+                "journal_issns": journal_issns,
+                "user_id": user_id,
+                "username": username,
+            },
+        )
+        raise
+
+
 @celery_app.task(bind=True, name="task_export_journal_to_articlemeta")
 def task_export_journal_to_articlemeta(
     self,

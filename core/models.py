@@ -277,6 +277,64 @@ class TextLanguageMixin(models.Model):
         abstract = True
 
 
+class RawOrganizationMixin(models.Model):
+    """
+    Mixin for storing raw, unstructured organization data.
+    Intended to replace references to institution.models.Institution.
+    """
+    raw_text = models.TextField(
+        _("Raw Text"),
+        null=True,
+        blank=True,
+        help_text=_("Free text, unstructured organization data"),
+    )
+    raw_institution_name = models.CharField(
+        _("Raw Institution Name"),
+        max_length=510,
+        null=True,
+        blank=True,
+        help_text=_("Raw institution name as provided"),
+    )
+    raw_country_name = models.CharField(
+        _("Raw Country Name"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Raw country name as provided"),
+    )
+    raw_country_code = models.CharField(
+        _("Raw Country Code"),
+        max_length=3,
+        null=True,
+        blank=True,
+        help_text=_("Raw country code (ISO) as provided"),
+    )
+    raw_state_name = models.CharField(
+        _("Raw State Name"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Raw state name as provided"),
+    )
+    raw_state_acron = models.CharField(
+        _("Raw State Acronym"),
+        max_length=10,
+        null=True,
+        blank=True,
+        help_text=_("Raw state acronym as provided"),
+    )
+    raw_city_name = models.CharField(
+        _("Raw City Name"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Raw city name as provided"),
+    )
+
+    class Meta:
+        abstract = True
+
+
 class LanguageFallbackManager(models.Manager):
     def get_object_in_preferred_language(self, language):
         mission = self.filter(language=language)
