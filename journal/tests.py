@@ -393,7 +393,7 @@ class MigrateInstitutionDataToRawInstitutionTestCase(TestCase):
             SponsorHistory,
             CopyrightHolderHistory,
         )
-        
+
         self.user = User.objects.create_user(username="testuser", password="testpass")
         self.journal = Journal.objects.create(
             title="Test Journal",
