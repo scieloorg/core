@@ -634,3 +634,153 @@ def task_export_journal_to_articlemeta(
         
         # Re-raise para que o Celery possa tratar a exceção adequadamente
         raise
+
+
+@celery_app.task(bind=True, name="migrate_institution_data_to_raw_institution")
+def migrate_institution_data_to_raw_institution(
+    self,
+    username=None,
+    user_id=None,
+):
+    """
+    Task to migrate data from institution field to RawOrganizationMixin fields
+    in History models (PublisherHistory, OwnerHistory, SponsorHistory, CopyrightHolderHistory).
+    
+    This task:
+    1. Iterates through all History records that have an institution field populated
+    2. Copies data from institution to the corresponding raw_* fields
+    3. Sets institution = None after migration
+    
+    Args:
+        username: User name for authentication
+        user_id: User ID for authentication
+    
+    Returns:
+        Dict with migration statistics
+    """
+    from journal.models import (
+        PublisherHistory,
+        OwnerHistory,
+        SponsorHistory,
+        CopyrightHolderHistory,
+    )
+    
+    user = _get_user(self.request, username=username, user_id=user_id)
+    
+    try:
+        stats = {
+            "PublisherHistory": {"migrated": 0, "errors": 0},
+            "OwnerHistory": {"migrated": 0, "errors": 0},
+            "SponsorHistory": {"migrated": 0, "errors": 0},
+            "CopyrightHolderHistory": {"migrated": 0, "errors": 0},
+        }
+        
+        # Define the history classes to process
+        history_classes = [
+            PublisherHistory,
+            OwnerHistory,
+            SponsorHistory,
+            CopyrightHolderHistory,
+        ]
+        
+        for history_class in history_classes:
+            class_name = history_class.__name__
+            logger.info(f"Processing {class_name}...")
+            
+            # Get all records that have institution populated
+            records = history_class.objects.filter(institution__isnull=False)
+            
+            for record in records:
+                try:
+                    institution = record.institution.institution
+                    
+                    # Skip if institution is None
+                    if not institution:
+                        continue
+                    
+                    # Extract data from institution
+                    institution_identification = institution.institution_identification
+                    
+                    # Populate raw_* fields
+                    if institution_identification:
+                        # Set raw_institution_name from name or acronym
+                        if institution_identification.name:
+                            record.raw_institution_name = institution_identification.name
+                        elif institution_identification.acronym:
+                            record.raw_institution_name = institution_identification.acronym
+                    
+                    # Set location-related fields
+                    if institution.location:
+                        location = institution.location
+                        
+                        if location.city:
+                            record.raw_city_name = location.city.name
+                        
+                        if location.state:
+                            record.raw_state_name = location.state.name
+                            record.raw_state_acron = location.state.acronym
+                        
+                        if location.country:
+                            record.raw_country_name = location.country.name
+                            record.raw_country_code = location.country.acron3
+                    
+                    # Build raw_text with all available information
+                    text_parts = []
+                    if institution_identification:
+                        if institution_identification.name:
+                            text_parts.append(institution_identification.name)
+                        if institution_identification.acronym:
+                            text_parts.append(f"({institution_identification.acronym})")
+                    
+                    if institution.level_1:
+                        text_parts.append(institution.level_1)
+                    if institution.level_2:
+                        text_parts.append(institution.level_2)
+                    if institution.level_3:
+                        text_parts.append(institution.level_3)
+                    
+                    if text_parts:
+                        record.raw_text = " | ".join(text_parts)
+                    
+                    # Set institution to None
+                    record.institution = None
+                    
+                    # Save the record
+                    record.save()
+                    
+                    stats[class_name]["migrated"] += 1
+                    
+                except Exception as e:
+                    stats[class_name]["errors"] += 1
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    UnexpectedEvent.create(
+                        exception=e,
+                        exc_traceback=exc_traceback,
+                        detail={
+                            "task": "migrate_institution_data_to_raw_institution",
+                            "model": class_name,
+                            "record_id": record.id,
+                        },
+                    )
+                    logger.error(
+                        f"Error migrating {class_name} record {record.id}: {e}"
+                    )
+        
+        logger.info(
+            f"Migration completed: {stats}"
+        )
+        
+        return stats
+        
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "migrate_institution_data_to_raw_institution",
+                "user_id": user_id,
+                "username": username,
+            },
+        )
+        raise

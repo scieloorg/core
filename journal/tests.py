@@ -371,3 +371,301 @@ class RawOrganizationMixinTestCase(TestCase):
         # Raw fields should be None if not provided
         self.assertIsNone(publisher_history.raw_institution_name)
         self.assertIsNone(publisher_history.raw_country_name)
+
+
+class MigrateInstitutionDataToRawInstitutionTestCase(TestCase):
+    """Test cases for migrate_institution_data_to_raw_institution task"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        from institution.models import (
+            Institution,
+            InstitutionIdentification,
+            Publisher,
+            Owner,
+            Sponsor,
+            CopyrightHolder,
+        )
+        from location.models import City, State, Country, Location
+        from journal.models import (
+            PublisherHistory,
+            OwnerHistory,
+            SponsorHistory,
+            CopyrightHolderHistory,
+        )
+        
+        self.user = User.objects.create_user(username="testuser", password="testpass")
+        self.journal = Journal.objects.create(
+            title="Test Journal",
+            creator=self.user,
+        )
+        
+        # Create country, state, and city
+        self.country = Country.objects.create(
+            name="Brazil",
+            acron3="BRA",
+        )
+        self.state = State.objects.create(
+            name="São Paulo",
+            acronym="SP",
+            region="Southeast",
+        )
+        self.city = City.objects.create(
+            name="São Paulo",
+            state=self.state,
+        )
+        self.location = Location.objects.create(
+            country=self.country,
+            state=self.state,
+            city=self.city,
+        )
+        
+        # Create institution identification
+        self.institution_identification = InstitutionIdentification.objects.create(
+            name="Test University",
+            acronym="TU",
+            creator=self.user,
+        )
+        
+        # Create institution
+        self.institution = Institution.objects.create(
+            institution_identification=self.institution_identification,
+            location=self.location,
+            level_1="Faculty of Science",
+            level_2="Department of Physics",
+            level_3="Research Lab",
+            creator=self.user,
+        )
+        
+        # Create Publisher, Owner, Sponsor, CopyrightHolder
+        self.publisher = Publisher.objects.create(
+            institution=self.institution,
+            creator=self.user,
+        )
+        self.owner = Owner.objects.create(
+            institution=self.institution,
+            creator=self.user,
+        )
+        self.sponsor = Sponsor.objects.create(
+            institution=self.institution,
+            creator=self.user,
+        )
+        self.copyright_holder = CopyrightHolder.objects.create(
+            institution=self.institution,
+            creator=self.user,
+        )
+        
+        # Create History records with institution
+        self.publisher_history = PublisherHistory.objects.create(
+            journal=self.journal,
+            institution=self.publisher,
+            initial_date="2020-01-01",
+            creator=self.user,
+        )
+        self.owner_history = OwnerHistory.objects.create(
+            journal=self.journal,
+            institution=self.owner,
+            initial_date="2020-01-01",
+            creator=self.user,
+        )
+        self.sponsor_history = SponsorHistory.objects.create(
+            journal=self.journal,
+            institution=self.sponsor,
+            initial_date="2020-01-01",
+            creator=self.user,
+        )
+        self.copyright_holder_history = CopyrightHolderHistory.objects.create(
+            journal=self.journal,
+            institution=self.copyright_holder,
+            initial_date="2020-01-01",
+            creator=self.user,
+        )
+
+    def test_migrate_publisher_history(self):
+        """Test migration of PublisherHistory institution data to raw fields"""
+        from journal.tasks import migrate_institution_data_to_raw_institution
+        
+        # Run the migration task
+        result = migrate_institution_data_to_raw_institution(
+            username=self.user.username,
+        )
+        
+        # Verify the result
+        self.assertEqual(result["PublisherHistory"]["migrated"], 1)
+        self.assertEqual(result["PublisherHistory"]["errors"], 0)
+        
+        # Refresh the record from database
+        self.publisher_history.refresh_from_db()
+        
+        # Verify that institution is None
+        self.assertIsNone(self.publisher_history.institution)
+        
+        # Verify that raw fields are populated
+        self.assertEqual(self.publisher_history.raw_institution_name, "Test University")
+        self.assertEqual(self.publisher_history.raw_country_name, "Brazil")
+        self.assertEqual(self.publisher_history.raw_country_code, "BRA")
+        self.assertEqual(self.publisher_history.raw_state_name, "São Paulo")
+        self.assertEqual(self.publisher_history.raw_state_acron, "SP")
+        self.assertEqual(self.publisher_history.raw_city_name, "São Paulo")
+        
+        # Verify raw_text
+        expected_text = "Test University | (TU) | Faculty of Science | Department of Physics | Research Lab"
+        self.assertEqual(self.publisher_history.raw_text, expected_text)
+
+    def test_migrate_owner_history(self):
+        """Test migration of OwnerHistory institution data to raw fields"""
+        from journal.tasks import migrate_institution_data_to_raw_institution
+        
+        # Run the migration task
+        result = migrate_institution_data_to_raw_institution(
+            username=self.user.username,
+        )
+        
+        # Verify the result
+        self.assertEqual(result["OwnerHistory"]["migrated"], 1)
+        self.assertEqual(result["OwnerHistory"]["errors"], 0)
+        
+        # Refresh the record from database
+        self.owner_history.refresh_from_db()
+        
+        # Verify that institution is None
+        self.assertIsNone(self.owner_history.institution)
+        
+        # Verify that raw fields are populated
+        self.assertEqual(self.owner_history.raw_institution_name, "Test University")
+        self.assertEqual(self.owner_history.raw_country_name, "Brazil")
+
+    def test_migrate_sponsor_history(self):
+        """Test migration of SponsorHistory institution data to raw fields"""
+        from journal.tasks import migrate_institution_data_to_raw_institution
+        
+        # Run the migration task
+        result = migrate_institution_data_to_raw_institution(
+            username=self.user.username,
+        )
+        
+        # Verify the result
+        self.assertEqual(result["SponsorHistory"]["migrated"], 1)
+        self.assertEqual(result["SponsorHistory"]["errors"], 0)
+        
+        # Refresh the record from database
+        self.sponsor_history.refresh_from_db()
+        
+        # Verify that institution is None
+        self.assertIsNone(self.sponsor_history.institution)
+        
+        # Verify that raw fields are populated
+        self.assertEqual(self.sponsor_history.raw_institution_name, "Test University")
+
+    def test_migrate_copyright_holder_history(self):
+        """Test migration of CopyrightHolderHistory institution data to raw fields"""
+        from journal.tasks import migrate_institution_data_to_raw_institution
+        
+        # Run the migration task
+        result = migrate_institution_data_to_raw_institution(
+            username=self.user.username,
+        )
+        
+        # Verify the result
+        self.assertEqual(result["CopyrightHolderHistory"]["migrated"], 1)
+        self.assertEqual(result["CopyrightHolderHistory"]["errors"], 0)
+        
+        # Refresh the record from database
+        self.copyright_holder_history.refresh_from_db()
+        
+        # Verify that institution is None
+        self.assertIsNone(self.copyright_holder_history.institution)
+        
+        # Verify that raw fields are populated
+        self.assertEqual(self.copyright_holder_history.raw_institution_name, "Test University")
+
+    def test_migrate_all_history_models(self):
+        """Test that all four history models are migrated"""
+        from journal.tasks import migrate_institution_data_to_raw_institution
+        
+        # Run the migration task
+        result = migrate_institution_data_to_raw_institution(
+            username=self.user.username,
+        )
+        
+        # Verify that all models were processed
+        self.assertIn("PublisherHistory", result)
+        self.assertIn("OwnerHistory", result)
+        self.assertIn("SponsorHistory", result)
+        self.assertIn("CopyrightHolderHistory", result)
+        
+        # Verify that all records were migrated
+        self.assertEqual(result["PublisherHistory"]["migrated"], 1)
+        self.assertEqual(result["OwnerHistory"]["migrated"], 1)
+        self.assertEqual(result["SponsorHistory"]["migrated"], 1)
+        self.assertEqual(result["CopyrightHolderHistory"]["migrated"], 1)
+
+    def test_migrate_with_partial_institution_data(self):
+        """Test migration when institution has partial data"""
+        from institution.models import Institution, InstitutionIdentification
+        from journal.models import PublisherHistory
+        from institution.models import Publisher
+        
+        # Create institution with only name, no location
+        institution_id = InstitutionIdentification.objects.create(
+            name="Simple Institution",
+            creator=self.user,
+        )
+        institution = Institution.objects.create(
+            institution_identification=institution_id,
+            creator=self.user,
+        )
+        publisher = Publisher.objects.create(
+            institution=institution,
+            creator=self.user,
+        )
+        
+        # Create history record
+        publisher_history = PublisherHistory.objects.create(
+            journal=self.journal,
+            institution=publisher,
+            initial_date="2021-01-01",
+            creator=self.user,
+        )
+        
+        # Run migration
+        from journal.tasks import migrate_institution_data_to_raw_institution
+        result = migrate_institution_data_to_raw_institution(
+            username=self.user.username,
+        )
+        
+        # Verify that records were migrated (2 for this test + 1 from setUp)
+        self.assertEqual(result["PublisherHistory"]["migrated"], 2)
+        
+        # Refresh and verify
+        publisher_history.refresh_from_db()
+        self.assertIsNone(publisher_history.institution)
+        self.assertEqual(publisher_history.raw_institution_name, "Simple Institution")
+        # Location fields should be None
+        self.assertIsNone(publisher_history.raw_country_name)
+        self.assertIsNone(publisher_history.raw_city_name)
+
+    def test_migrate_history_without_institution(self):
+        """Test that migration skips history records without institution"""
+        from journal.models import PublisherHistory
+        
+        # Create history record without institution
+        publisher_history = PublisherHistory.objects.create(
+            journal=self.journal,
+            initial_date="2022-01-01",
+            creator=self.user,
+        )
+        
+        # Run migration
+        from journal.tasks import migrate_institution_data_to_raw_institution
+        result = migrate_institution_data_to_raw_institution(
+            username=self.user.username,
+        )
+        
+        # The migration should process existing records with institution
+        # but skip the one without institution
+        # Verify that the new record still has institution=None and no raw data
+        publisher_history.refresh_from_db()
+        self.assertIsNone(publisher_history.institution)
+        self.assertIsNone(publisher_history.raw_institution_name)
+
