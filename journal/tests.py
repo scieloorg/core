@@ -23,6 +23,7 @@ from journal.models import (
 from journal.tasks import (
     _register_journal_data,
     child_load_license_of_use_in_journal,
+    fetch_and_process_journal_logos_in_collection,
     load_license_of_use_in_journal,
 )
 from journal.formats.articlemeta_format import get_articlemeta_format_title
@@ -245,3 +246,42 @@ class TestAPIJournalArticleMeta(TestCase):
                     result_sorted, expected_sorted,
                     f"Key {key} not equal. Expected: {expected_sorted}, Result: {result_sorted}"
         )
+
+
+class TestFetchAndProcessJournalLogosInCollection(TestCase):
+    def setUp(self):
+        self.user = User.objects.create(username="teste", password="teste")
+        self.collection = Collection.objects.create(
+            creator=self.user, acron3="scl", is_active=True
+        )
+        self.journal = Journal.objects.create(creator=self.user, title="Test Journal")
+        self.scielo_journal = SciELOJournal.objects.create(
+            issn_scielo="1516-635X",
+            collection=self.collection,
+            journal=self.journal,
+            journal_acron="abdc",
+        )
+
+    def test_fetch_and_process_journal_logos_with_invalid_collection(self):
+        """Test that ValueError is raised when collection does not exist"""
+        with self.assertRaises(ValueError) as context:
+            fetch_and_process_journal_logos_in_collection(
+                collection_acron3="invalid_acron",
+                username=self.user.username,
+            )
+        self.assertIn("does not exist", str(context.exception))
+
+    @patch("journal.tasks.group")
+    def test_fetch_and_process_journal_logos_with_valid_collection(self, mock_group):
+        """Test that task executes with valid collection"""
+        # Mock the group to avoid actually running the celery tasks
+        mock_group.return_value.return_value = None
+        
+        result = fetch_and_process_journal_logos_in_collection(
+            collection_acron3=self.collection.acron3,
+            username=self.user.username,
+        )
+        
+        # The task should complete without raising an exception
+        # and should call group with the task signatures
+        self.assertTrue(mock_group.called)

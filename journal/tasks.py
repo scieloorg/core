@@ -194,7 +194,7 @@ def fetch_and_process_journal_logos_in_collection(
 ):
     try:
         if collection_acron3:
-            if not Collection.objects.get(acron3=collection_acron3).exists():
+            if not Collection.objects.filter(acron3=collection_acron3).exists():
                 raise ValueError(
                     f"Collection with acron3 '{collection_acron3}' does not exist"
                 )
