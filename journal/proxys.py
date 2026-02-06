@@ -108,6 +108,9 @@ class JournalProxyEditor(Journal):
             label=_("Copyright Holder"),
             classname="collapsed",
         ),
+        
+        # Administrative Notes (Notas Administrativas)
+        InlinePanel("annotation", label=_("Notes"), classname="collapsed"),
     ]
 
     # TAB 2: EDITORIAL POLICY (Política Editorial)
