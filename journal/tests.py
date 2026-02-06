@@ -868,7 +868,7 @@ class TaskMigrateInstitutionHistoryTestCase(TestCase):
         self.assertEqual(result["total_journals"], 1)
         self.assertEqual(result["migrated_publishers"], 1)
         
-        # Verify journal1 was migrated but journal2 was not
+        # Verify self.journal was migrated but journal2 was not
         self.assertIsNone(self.journal.publisher_history.first().institution)
         self.assertIsNotNone(journal2.publisher_history.first().institution)
 
@@ -917,7 +917,7 @@ class TaskMigrateInstitutionHistoryTestCase(TestCase):
         self.assertEqual(result["total_journals"], 1)
         self.assertEqual(result["migrated_publishers"], 1)
         
-        # Verify journal1 was migrated but journal2 was not
+        # Verify self.journal was migrated but journal2 was not
         self.assertIsNone(self.journal.publisher_history.first().institution)
         self.assertIsNotNone(journal2.publisher_history.first().institution)
 
