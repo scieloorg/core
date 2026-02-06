@@ -64,6 +64,7 @@ class JournalProxyEditor(Journal):
             "file_oa", label=_("Open Science accordance form"), classname="collapsed"
         ),
         FieldPanel("journal_use_license"),
+        InlinePanel("open_access_text", label=_("Open Access"), classname="collapsed"),
         InlinePanel("open_data", label=_("Open data"), classname="collapsed"),
         InlinePanel("preprint", label=_("Preprint"), classname="collapsed"),
         InlinePanel("review", label=_("Peer review"), classname="collapsed"),

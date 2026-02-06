@@ -676,6 +676,7 @@ class Journal(CommonControlField, ClusterableModel):
             "file_oa", label=_("Open Science accordance form"), classname="collapsed"
         ),
         FieldPanel("journal_use_license"),
+        InlinePanel("open_access_text", label=_("Open Access"), classname="collapsed"),
         InlinePanel("open_data", label=_("Open data"), classname="collapsed"),
         InlinePanel("preprint", label=_("Preprint"), classname="collapsed"),
         InlinePanel("review", label=_("Peer review"), classname="collapsed"),
@@ -1630,6 +1631,20 @@ class OpenData(Orderable, RichTextWithLanguage, CommonControlField):
     )
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="open_data", null=True
+    )
+
+
+class OpenAccess(Orderable, RichTextWithLanguage, CommonControlField):
+    rich_text = RichTextField(
+        null=True,
+        blank=True,
+        help_text=_(
+            """Open access refers to the practice of making research publications freely available to the public without subscription or payment barriers. 
+            This ensures that research findings are accessible to anyone with an internet connection, promoting the dissemination of knowledge and fostering collaboration and innovation."""
+        ),
+    )
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="open_access_text", null=True
     )
 
 
