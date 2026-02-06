@@ -14,14 +14,10 @@ from core.utils.utils import _get_user, fetch_data
 from journal import controller
 from journal.models import (
     AMJournal,
-    CopyrightHolderHistory,
     Journal,
     JournalLicense,
     JournalLogo,
-    OwnerHistory,
-    PublisherHistory,
     SciELOJournal,
-    SponsorHistory,
 )
 from journal.sources import classic_website
 from journal.sources.am_data_extraction import extract_value
@@ -699,46 +695,27 @@ def task_migrate_institution_history_to_raw_institution(
             try:
                 journal = Journal.objects.get(id=journal_id)
                 
-                # Check if journal has any history items with institution set
-                has_publisher = PublisherHistory.objects.filter(
-                    journal=journal,
-                    institution__isnull=False
-                ).exists()
-                has_owner = OwnerHistory.objects.filter(
-                    journal=journal,
-                    institution__isnull=False
-                ).exists()
-                has_sponsor = SponsorHistory.objects.filter(
-                    journal=journal,
-                    institution__isnull=False
-                ).exists()
-                has_copyright_holder = CopyrightHolderHistory.objects.filter(
-                    journal=journal,
-                    institution__isnull=False
-                ).exists()
+                # Process all history types directly - the methods handle checking if there's data to migrate
+                total_migrated = 0
                 
-                # Only process if there are items to migrate
-                if has_publisher or has_owner or has_sponsor or has_copyright_holder:
-                    # Process PublisherHistory
-                    if has_publisher:
-                        migrated = journal.migrate_publisher_history_to_raw()
-                        stats["publisher_history_migrated"] += len(migrated or [])
-                    
-                    # Process OwnerHistory
-                    if has_owner:
-                        migrated = journal.migrate_owner_history_to_raw()
-                        stats["owner_history_migrated"] += len(migrated or [])
-                    
-                    # Process SponsorHistory
-                    if has_sponsor:
-                        migrated = journal.migrate_sponsor_history_to_raw()
-                        stats["sponsor_history_migrated"] += len(migrated or [])
-                    
-                    # Process CopyrightHolderHistory
-                    if has_copyright_holder:
-                        migrated = journal.migrate_copyright_holder_history_to_raw()
-                        stats["copyright_holder_history_migrated"] += len(migrated or [])
-                    
+                migrated = journal.migrate_publisher_history_to_raw()
+                stats["publisher_history_migrated"] += len(migrated or [])
+                total_migrated += len(migrated or [])
+                
+                migrated = journal.migrate_owner_history_to_raw()
+                stats["owner_history_migrated"] += len(migrated or [])
+                total_migrated += len(migrated or [])
+                
+                migrated = journal.migrate_sponsor_history_to_raw()
+                stats["sponsor_history_migrated"] += len(migrated or [])
+                total_migrated += len(migrated or [])
+                
+                migrated = journal.migrate_copyright_holder_history_to_raw()
+                stats["copyright_holder_history_migrated"] += len(migrated or [])
+                total_migrated += len(migrated or [])
+                
+                # Only count as processed if at least one history item was migrated
+                if total_migrated > 0:
                     stats["journals_processed"] += 1
                 
             except Exception as e:
