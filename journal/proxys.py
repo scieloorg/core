@@ -14,16 +14,18 @@ class JournalProxyEditor(Journal):
     ]
 
     panels_scope_and_about = [
-        AutocompletePanel("indexed_at"),
-        AutocompletePanel("additional_indexed_at", read_only=True),
-        AutocompletePanel("subject", read_only=True),
-        AutocompletePanel("subject_descriptor", read_only=True),
-        InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
-        AutocompletePanel("wos_db", read_only=True),
-        AutocompletePanel("wos_area", read_only=True),
         InlinePanel("mission", label=_("Mission"), classname="collapsed"),
         InlinePanel("history", label=_("Brief History"), classname="collapsed"),
         InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
+        AutocompletePanel("subject", read_only=True),
+        InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
+        AutocompletePanel("subject_descriptor", read_only=True),
+        AutocompletePanel("wos_area", read_only=True),
+        AutocompletePanel("wos_db", read_only=True),
+        AutocompletePanel("indexed_at"),
+        AutocompletePanel("additional_indexed_at", read_only=True),
+        AutocompletePanel("vocabulary"),
+        InlinePanel("title_in_database", label=_("Title in Database"), classname="collapsed"),
     ]
 
     panels_institutions = [
@@ -49,12 +51,10 @@ class JournalProxyEditor(Journal):
         ),
         FieldPanel("submission_online_url"),
         FieldPanel("main_collection", read_only=True),
-        InlinePanel("title_in_database", label=_("Title in Database"), classname="collapsed"),
         InlinePanel("journalsocialnetwork", label=_("Social Network")),
         FieldPanel("frequency"),
         FieldPanel("publishing_model"),
         FieldPanel("standard"),
-        AutocompletePanel("vocabulary"),
     ]
 
     panels_open_science = [
