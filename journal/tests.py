@@ -699,7 +699,7 @@ class TestTaskMigrateInstitutionHistoryToRawInstitution(TestCase):
         from location.models import City, Country, Location, State
         
         # Create user
-        self.user = User.objects.create(username="testuser", password="testpass")
+        self.user = User.objects.create_user(username="testuser", password="testpass")
         
         # Create collection
         self.collection = Collection.objects.create(

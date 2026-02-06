@@ -722,22 +722,22 @@ def task_migrate_institution_history_to_raw_institution(
                     # Process PublisherHistory
                     if has_publisher:
                         migrated = journal.migrate_publisher_history_to_raw()
-                        stats["publisher_history_migrated"] += len(migrated)
+                        stats["publisher_history_migrated"] += len(migrated or [])
                     
                     # Process OwnerHistory
                     if has_owner:
                         migrated = journal.migrate_owner_history_to_raw()
-                        stats["owner_history_migrated"] += len(migrated)
+                        stats["owner_history_migrated"] += len(migrated or [])
                     
                     # Process SponsorHistory
                     if has_sponsor:
                         migrated = journal.migrate_sponsor_history_to_raw()
-                        stats["sponsor_history_migrated"] += len(migrated)
+                        stats["sponsor_history_migrated"] += len(migrated or [])
                     
                     # Process CopyrightHolderHistory
                     if has_copyright_holder:
                         migrated = journal.migrate_copyright_holder_history_to_raw()
-                        stats["copyright_holder_history_migrated"] += len(migrated)
+                        stats["copyright_holder_history_migrated"] += len(migrated or [])
                     
                     stats["journals_processed"] += 1
                 
