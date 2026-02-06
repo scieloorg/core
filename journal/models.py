@@ -708,10 +708,10 @@ class Journal(CommonControlField, ClusterableModel):
 
     edit_handler = TabbedInterface(
         [
-            ObjectList(panels_titles, heading=_("Titles")),
-            ObjectList(panels_scope_and_about, heading=_("Scope and about")),
+            ObjectList(panels_titles, heading=_("Title")),
             ObjectList(panels_institutions, heading=_("Institutions")),
             ObjectList(panels_website, heading=_("Website")),
+            ObjectList(panels_scope_and_about, heading=_("Focus and Scope")),
             ObjectList(panels_open_science, heading=_("Open Science")),
             ObjectList(
                 panels_legacy_compatibility_fields, heading=_("Legacy Compatibility")
