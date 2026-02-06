@@ -812,7 +812,6 @@ class TaskMigrateInstitutionHistoryTestCase(TestCase):
         self.assertIsNone(self.journal.owner_history.first().institution)
         self.assertIsNone(self.journal.sponsor_history.first().institution)
         self.assertIsNone(self.journal.copyright_holder_history.first().institution)
-        self.assertIsNone(self.journal.copyright_holder_history.first().institution)
         
         # Verify raw fields are populated
         self.assertEqual(
