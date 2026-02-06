@@ -3024,7 +3024,7 @@ msgstr "Histórico do Periódico"
 
 #: journal/proxys.py:281 journal/proxys.py:286 journal/proxys.py:287
 msgid "Journal Policy"
-msgstr "Política do Periódico"
+msgstr "Política Editorial"
 
 #: journal/proxys.py:348
 msgid "Instructions for Authors"
@@ -3046,7 +3046,7 @@ msgstr "URLs do Periódico"
 #, fuzzy
 #| msgid "Journal Policy"
 msgid "Journal Policies"
-msgstr "Política do Periódico"
+msgstr "Política Editorial"
 
 #: journal/wagtail_hooks.py:399
 msgid "Article Submission Format Check List"

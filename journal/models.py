@@ -3281,6 +3281,22 @@ class EditorialPolicy(Orderable, RichTextWithLanguage, CommonControlField):
     )
 
 
+class ArtificialIntelligence(Orderable, RichTextWithLanguage, CommonControlField):
+    """
+    Artificial Intelligence Policy
+    """
+    rich_text = RichTextField(
+        null=True,
+        blank=True,
+        help_text=_(
+            "Describe the journal's policy on the use of Artificial Intelligence in the preparation, review, and publication of manuscripts."
+        ),
+    )
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="artificial_intelligence", null=True
+    )
+
+
 class OpenScienceCompliance(Orderable, RichTextWithLanguage, CommonControlField):
     journal = ParentalKey(
         Journal,

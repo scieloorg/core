@@ -137,6 +137,11 @@ class JournalProxyEditor(Journal):
             label=_("Editorial Policy"),
             classname="collapsed",
         ),
+        InlinePanel(
+            "artificial_intelligence",
+            label=_("Artificial Intelligence"),
+            classname="collapsed",
+        ),
     ]
     panels_notes = [InlinePanel("annotation", label=_("Notes"), classname="collapsed")]
 
@@ -276,6 +281,11 @@ class JournalProxyPanelPolicy(Journal):
         InlinePanel(
             "editorial_policy",
             label=_("Editorial Policy"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "artificial_intelligence",
+            label=_("Artificial Intelligence"),
             classname="collapsed",
         ),
     ]
