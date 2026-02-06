@@ -624,16 +624,20 @@ class Journal(CommonControlField, ClusterableModel):
     ]
 
     panels_scope_and_about = [
-        AutocompletePanel("indexed_at"),
-        AutocompletePanel("additional_indexed_at"),
-        AutocompletePanel("subject"),
-        AutocompletePanel("subject_descriptor"),
-        InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
-        AutocompletePanel("wos_db"),
-        AutocompletePanel("wos_area"),
         InlinePanel("mission", label=_("Mission"), classname="collapsed"),
         InlinePanel("history", label=_("Brief History"), classname="collapsed"),
         InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
+        AutocompletePanel("subject"),
+        InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
+        AutocompletePanel("subject_descriptor"),
+        AutocompletePanel("wos_area"),
+        AutocompletePanel("wos_db"),
+        AutocompletePanel("indexed_at"),
+        AutocompletePanel("additional_indexed_at"),
+        AutocompletePanel("vocabulary"),
+        InlinePanel(
+            "title_in_database", label=_("Title in Database"), classname="collapsed"
+        ),
     ]
 
     panels_institutions = [
@@ -659,14 +663,10 @@ class Journal(CommonControlField, ClusterableModel):
         ),
         FieldPanel("submission_online_url"),
         FieldPanel("main_collection"),
-        InlinePanel(
-            "title_in_database", label=_("Title in Database"), classname="collapsed"
-        ),
         InlinePanel("journalsocialnetwork", label=_("Social Network")),
         FieldPanel("frequency"),
         FieldPanel("publishing_model"),
         FieldPanel("standard"),
-        AutocompletePanel("vocabulary"),
     ]
 
     panels_open_science = [
