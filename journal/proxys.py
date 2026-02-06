@@ -118,14 +118,8 @@ class JournalProxyEditor(Journal):
     # fees, ethics, conflicts, software, AI, gender, copyright, and intellectual property
     
     panels_editorial_policy = [
-        # Preprints - already in Open Science but can reference editorial policy
-        # (kept in About Journal to avoid duplication)
-        
         # Peer Review Process (Processo de Avaliação por Pares)
         InlinePanel("review", label=_("Peer review"), classname="collapsed"),
-        
-        # Open Data - cross-reference (already in About Journal)
-        # (kept in About Journal to avoid duplication)
         
         # Fee Charging (Cobrança de Taxas)
         InlinePanel(
