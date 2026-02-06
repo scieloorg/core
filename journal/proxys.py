@@ -21,46 +21,43 @@ class JournalProxyEditor(Journal):
         AutocompletePanel("official", read_only=True),
         FieldPanel("title", read_only=True),
         FieldPanel("short_title"),
-        InlinePanel("other_titles", label=_("Other titles"), classname="collapsed"),
+        InlinePanel("other_titles", label=_("Other titles")),
         
         # Brief History (Breve Histórico)
-        InlinePanel("history", label=_("Brief History"), classname="collapsed"),
+        InlinePanel("history", label=_("Brief History")),
         
         # Open Access (Acesso Aberto)
         FieldPanel("open_access"),
-        InlinePanel("open_access_text", label=_("Open Access"), classname="collapsed"),
+        InlinePanel("open_access_text", label=_("Open Access")),
         
         # Open Science Compliance (Conformidade com a Ciência Aberta)
         FieldPanel("url_oa"),
         InlinePanel(
-            "file_oa", label=_("Open Science accordance form"), classname="collapsed"
+            "file_oa", label=_("Open Science accordance form")
         ),
         InlinePanel(
             "open_science_compliance",
             label=_("Open Science Compliance"),
-            classname="collapsed",
         ),
-        InlinePanel("open_data", label=_("Open data"), classname="collapsed"),
-        InlinePanel("preprint", label=_("Preprint"), classname="collapsed"),
+        InlinePanel("open_data", label=_("Open data")),
+        InlinePanel("preprint", label=_("Preprint")),
         FieldPanel("journal_use_license"),
         
         # Ethics in Publication (Ética na Publicação)
         InlinePanel(
             "ethics",
             label=_("Ethics"),
-            classname="collapsed",
         ),
         InlinePanel(
             "ecommittee",
             label=_("Ethics Committee"),
-            classname="collapsed",
         ),
         
         # Focus and Scope (Foco e Escopo)
-        InlinePanel("mission", label=_("Mission"), classname="collapsed"),
-        InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
+        InlinePanel("mission", label=_("Mission")),
+        InlinePanel("focus", label=_("Focus and Scope")),
         AutocompletePanel("subject"),
-        InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
+        InlinePanel("thematic_area", label=_("Thematic Areas")),
         AutocompletePanel("subject_descriptor"),
         AutocompletePanel("vocabulary"),
         
@@ -69,13 +66,12 @@ class JournalProxyEditor(Journal):
         InlinePanel(
             "digital_preservation",
             label=_("Digital Preservation"),
-            classname="collapsed",
         ),
         
         # Indexing Sources (Fontes de Indexação)
         AutocompletePanel("indexed_at"),
         AutocompletePanel("additional_indexed_at"),
-        InlinePanel("title_in_database", label=_("Title in Database"), classname="collapsed"),
+        InlinePanel("title_in_database", label=_("Title in Database")),
         AutocompletePanel("wos_area"),
         AutocompletePanel("wos_db"),
         
@@ -87,7 +83,7 @@ class JournalProxyEditor(Journal):
         
         # Websites and Social Media (Websites e Mídias Sociais)
         InlinePanel(
-            "related_journal_urls", label=_("Journal Urls"), classname="collapsed"
+            "related_journal_urls", label=_("Journal Urls")
         ),
         InlinePanel("journalsocialnetwork", label=_("Social Network")),
         FieldPanel("submission_online_url"),
@@ -100,13 +96,12 @@ class JournalProxyEditor(Journal):
         AutocompletePanel("contact_location"),
         
         # Institutions (Instituições)
-        InlinePanel("owner_history", label=_("Owner"), classname="collapsed"),
-        InlinePanel("publisher_history", label=_("Publisher"), classname="collapsed"),
-        InlinePanel("sponsor_history", label=_("Sponsor"), classname="collapsed"),
+        InlinePanel("owner_history", label=_("Owner")),
+        InlinePanel("publisher_history", label=_("Publisher")),
+        InlinePanel("sponsor_history", label=_("Sponsor")),
         InlinePanel(
             "copyright_holder_history",
             label=_("Copyright Holder"),
-            classname="collapsed",
         ),
     ]
 
@@ -116,74 +111,64 @@ class JournalProxyEditor(Journal):
     
     panels_editorial_policy = [
         # Peer Review Process (Processo de Avaliação por Pares)
-        InlinePanel("review", label=_("Peer review"), classname="collapsed"),
+        InlinePanel("review", label=_("Peer review")),
         
         # Fee Charging (Cobrança de Taxas)
         InlinePanel(
             "fee_charging",
             label=_("Fee Charging"),
-            classname="collapsed",
         ),
         
         # Ethics and Misconduct (Ética e Más Condutas)
         InlinePanel(
             "policies",
             label=_("Retraction Policy | Ethics and Misconduct Policy"),
-            classname="collapsed",
         ),
         
         # Conflict of Interest (Conflito de Interesses)
         InlinePanel(
             "conflict_policy",
             label=_("Conflict of interest policy"),
-            classname="collapsed",
         ),
         
         # Verification Software (Software de Verificação)
         InlinePanel(
             "software_adoption",
             label=_("Similarity Verification Software Adoption"),
-            classname="collapsed",
         ),
         
         # Artificial Intelligence (Inteligência Artificial)
         InlinePanel(
             "artificial_intelligence",
             label=_("Artificial Intelligence"),
-            classname="collapsed",
         ),
         
         # Gender Issues (Questões de Gênero)
         InlinePanel(
             "gender_issues",
             label=_("Gender Issues"),
-            classname="collapsed",
         ),
         
         # Copyright (Direitos Autorais)
         InlinePanel(
             "copyright",
             label=_("Copyright"),
-            classname="collapsed",
         ),
         
         # Intellectual Property (Propriedade Intelectual)
         InlinePanel(
             "website_responsibility",
             label=_("Intellectual Property / Terms of use / Website responsibility"),
-            classname="collapsed",
         ),
         InlinePanel(
             "author_responsibility",
             label=_("Intellectual Property / Terms of use / Author responsibility"),
-            classname="collapsed",
         ),
         
         # General Editorial Policy (Política Editorial Geral)
         InlinePanel(
             "editorial_policy",
             label=_("Editorial Policy"),
-            classname="collapsed",
         ),
     ]
 
@@ -202,14 +187,12 @@ class JournalProxyEditor(Journal):
         InlinePanel(
             "accepted_documment_types",
             label=_("Accepted Document Types"),
-            classname="collapsed",
         ),
         
         # Author Contributions (Contribuição dos Autores)
         InlinePanel(
             "authors_contributions",
             label=_("Authors Contributions"),
-            classname="collapsed",
         ),
         FieldPanel("author_name"),
         
@@ -217,7 +200,6 @@ class JournalProxyEditor(Journal):
         InlinePanel(
             "preparing_manuscript",
             label=_("Preparing Manuscript"),
-            classname="collapsed",
         ),
         FieldPanel("manuscript_length"),
         FieldPanel("format_check_list"),
@@ -228,42 +210,36 @@ class JournalProxyEditor(Journal):
         InlinePanel(
             "digital_assets",
             label=_("Digital Assets"),
-            classname="collapsed",
         ),
         
         # Citations and References (Citações e Referências)
         InlinePanel(
             "citations_and_references",
             label=_("Citations and References"),
-            classname="collapsed",
         ),
         
         # Supplementary Documents (Documentos Suplementares)
         InlinePanel(
             "supp_docs_submission",
             label=_("Supplementary Documents Required for Submission"),
-            classname="collapsed",
         ),
         
         # Funding Statement (Declaração de Financiamento)
         InlinePanel(
             "financing_statement",
             label=_("Financing Statement"),
-            classname="collapsed",
         ),
         
         # Acknowledgements (Agradecimentos)
         InlinePanel(
             "acknowledgements",
             label=_("Acknowledgements"),
-            classname="collapsed",
         ),
         
         # Additional Information (Informações Adicionais)
         InlinePanel(
             "additional_information",
             label=_("Additional Information"),
-            classname="collapsed",
         ),
     ]
 
@@ -287,68 +263,55 @@ class JournalProxyPanelPolicy(Journal):
         InlinePanel(
             "ethics",
             label=_("Ethics"),
-            classname="collapsed",
         ),
         InlinePanel(
             "ecommittee",
             label=_("Ethics Committee"),
-            classname="collapsed",
         ),
         InlinePanel(
             "copyright",
             label=_("Copyright"),
-            classname="collapsed",
         ),
         InlinePanel(
             "website_responsibility",
             label=_("Intellectual Property / Terms of use / Website responsibility"),
-            classname="collapsed",
         ),
         InlinePanel(
             "author_responsibility",
             label=_("Intellectual Property / Terms of use / Author responsibility"),
-            classname="collapsed",
         ),
         InlinePanel(
             "policies",
             label=_("Retraction Policy | Ethics and Misconduct Policy"),
-            classname="collapsed",
         ),
         AutocompletePanel("digital_pa"),
         InlinePanel(
             "digital_preservation",
             label=_("Digital Preservation"),
-            classname="collapsed",
         ),
         InlinePanel(
             "conflict_policy",
             label=_("Conflict of interest policy"),
-            classname="collapsed",
         ),
         InlinePanel(
             "software_adoption",
             label=_("Similarity Verification Software Adoption"),
-            classname="collapsed",
         ),
         InlinePanel(
             "gender_issues",
             label=_("Gender Issues"),
-            classname="collapsed",
         ),
         InlinePanel(
             "fee_charging",
             label=_("Fee Charging"),
-            classname="collapsed",
         ),
         InlinePanel(
             "editorial_policy",
             label=_("Editorial Policy"),
-            classname="collapsed",
         ),
         InlinePanel(
             "artificial_intelligence",
             label=_("Artificial Intelligence"),
-            classname="collapsed",
         ),
     ]
     panels_editorial_board = [
@@ -372,47 +335,38 @@ class JournalProxyPanelInstructionsForAuthors(Journal):
         InlinePanel(
             "accepted_documment_types",
             label=_("Accepted Document Types"),
-            classname="collapsed",
         ),
         InlinePanel(
             "authors_contributions",
             label=_("Authors Contributions"),
-            classname="collapsed",
         ),
         InlinePanel(
             "preparing_manuscript",
             label=_("Preparing Manuscript"),
-            classname="collapsed",
         ),
         InlinePanel(
             "digital_assets",
             label=_("Digital Assets"),
-            classname="collapsed",
         ),
         InlinePanel(
             "citations_and_references",
             label=_("Citations and References"),
-            classname="collapsed",
         ),
         InlinePanel(
             "supp_docs_submission",
             label=_("Supplementary Documents Required for Submission"),
-            classname="collapsed",
         ),
         InlinePanel(
             "financing_statement",
             label=_("Financing Statement"),
-            classname="collapsed",
         ),
         InlinePanel(
             "acknowledgements",
             label=_("Acknowledgements"),
-            classname="collapsed",
         ),
         InlinePanel(
             "additional_information",
             label=_("Additional Information"),
-            classname="collapsed",
         ),
         FieldPanel("author_name"),
         FieldPanel("manuscript_length"),
