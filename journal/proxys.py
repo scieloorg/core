@@ -18,8 +18,8 @@ class JournalProxyEditor(Journal):
     
     panels_about_journal = [
         # Basic Identification
-        AutocompletePanel("official"),
-        FieldPanel("title"),
+        AutocompletePanel("official", read_only=True),
+        FieldPanel("title", read_only=True),
         FieldPanel("short_title"),
         InlinePanel("other_titles", label=_("Other titles"), classname="collapsed"),
         
