@@ -1,5 +1,5 @@
 import json
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from django.test import TestCase
 from django_test_migrations.migrator import Migrator
 
@@ -24,6 +24,7 @@ from journal.tasks import (
     child_load_license_of_use_in_journal,
     fetch_and_process_journal_logos_in_collection,
     load_license_of_use_in_journal,
+    task_migrate_institution_history_to_raw_institution,
 )
 from journal.formats.articlemeta_format import get_articlemeta_format_title
 from thematic_areas.models import ThematicArea
@@ -764,7 +765,6 @@ class TaskMigrateInstitutionHistoryTestCase(TestCase):
             SponsorHistory,
             CopyrightHolderHistory,
         )
-        from journal.tasks import task_migrate_institution_history_to_raw_institution
         
         # Create history records with institution data
         PublisherHistory.objects.create(
@@ -788,9 +788,13 @@ class TaskMigrateInstitutionHistoryTestCase(TestCase):
             creator=self.user,
         )
         
+        # Create mock self with request attribute for Celery task
+        mock_self = MagicMock()
+        mock_self.request = MagicMock()
+        
         # Run the task
         result = task_migrate_institution_history_to_raw_institution(
-            task_migrate_institution_history_to_raw_institution,
+            mock_self,
             username="testuser",
             collection_acron_list=["scl"],
         )
@@ -808,6 +812,7 @@ class TaskMigrateInstitutionHistoryTestCase(TestCase):
         self.assertIsNone(self.journal.owner_history.first().institution)
         self.assertIsNone(self.journal.sponsor_history.first().institution)
         self.assertIsNone(self.journal.copyright_holder_history.first().institution)
+        self.assertIsNone(self.journal.copyright_holder_history.first().institution)
         
         # Verify raw fields are populated
         self.assertEqual(
@@ -818,7 +823,6 @@ class TaskMigrateInstitutionHistoryTestCase(TestCase):
     def test_task_filters_by_collection(self):
         """Test that task filters journals by collection"""
         from journal.models import PublisherHistory
-        from journal.tasks import task_migrate_institution_history_to_raw_institution
         
         # Create another collection and journal
         collection2 = Collection.objects.create(
@@ -850,9 +854,13 @@ class TaskMigrateInstitutionHistoryTestCase(TestCase):
             creator=self.user,
         )
         
+        # Create mock self with request attribute for Celery task
+        mock_self = MagicMock()
+        mock_self.request = MagicMock()
+        
         # Run task only for "scl" collection
         result = task_migrate_institution_history_to_raw_institution(
-            task_migrate_institution_history_to_raw_institution,
+            mock_self,
             username="testuser",
             collection_acron_list=["scl"],
         )
@@ -868,7 +876,6 @@ class TaskMigrateInstitutionHistoryTestCase(TestCase):
     def test_task_filters_by_issn(self):
         """Test that task filters journals by ISSN"""
         from journal.models import PublisherHistory
-        from journal.tasks import task_migrate_institution_history_to_raw_institution
         
         # Create another journal in same collection
         journal2 = Journal.objects.create(
@@ -895,9 +902,13 @@ class TaskMigrateInstitutionHistoryTestCase(TestCase):
             creator=self.user,
         )
         
+        # Create mock self with request attribute for Celery task
+        mock_self = MagicMock()
+        mock_self.request = MagicMock()
+        
         # Run task only for specific ISSN
         result = task_migrate_institution_history_to_raw_institution(
-            task_migrate_institution_history_to_raw_institution,
+            mock_self,
             username="testuser",
             collection_acron_list=["scl"],
             journal_issns=["1234-5678"],
@@ -914,7 +925,6 @@ class TaskMigrateInstitutionHistoryTestCase(TestCase):
     def test_task_skips_history_without_institution(self):
         """Test that task only migrates history records with institution != None"""
         from journal.models import PublisherHistory
-        from journal.tasks import task_migrate_institution_history_to_raw_institution
         
         # Create history without institution
         PublisherHistory.objects.create(
@@ -923,9 +933,13 @@ class TaskMigrateInstitutionHistoryTestCase(TestCase):
             creator=self.user,
         )
         
+        # Create mock self with request attribute for Celery task
+        mock_self = MagicMock()
+        mock_self.request = MagicMock()
+        
         # Run the task
         result = task_migrate_institution_history_to_raw_institution(
-            task_migrate_institution_history_to_raw_institution,
+            mock_self,
             username="testuser",
             collection_acron_list=["scl"],
         )
