@@ -675,3 +675,233 @@ class HistoryMigrationTestCase(TestCase):
         
         # Verify institution is None
         self.assertIsNone(publisher_history.institution)
+
+
+class TestTaskMigrateInstitutionHistoryToRawInstitution(TestCase):
+    """Test the task_migrate_institution_history_to_raw_institution task"""
+    
+    def setUp(self):
+        """Set up test fixtures"""
+        from institution.models import (
+            CopyrightHolder,
+            Institution,
+            InstitutionIdentification,
+            Owner,
+            Publisher,
+            Sponsor,
+        )
+        from journal.models import (
+            CopyrightHolderHistory,
+            OwnerHistory,
+            PublisherHistory,
+            SponsorHistory,
+        )
+        from location.models import City, Country, Location, State
+        
+        # Create user
+        self.user = User.objects.create(username="testuser", password="testpass")
+        
+        # Create collection
+        self.collection = Collection.objects.create(
+            acron3="scl",
+            name="SciELO Brazil",
+            creator=self.user,
+        )
+        
+        # Create location
+        self.country = Country.objects.create(
+            name="Brazil",
+            acron3="BRA",
+            creator=self.user,
+        )
+        self.state = State.objects.create(
+            name="São Paulo",
+            acronym="SP",
+            region="Southeast",
+            creator=self.user,
+        )
+        self.city = City.objects.create(
+            name="São Paulo",
+            creator=self.user,
+        )
+        self.location = Location.objects.create(
+            country=self.country,
+            state=self.state,
+            city=self.city,
+            creator=self.user,
+        )
+        
+        # Create institution
+        self.institution_id = InstitutionIdentification.objects.create(
+            name="Test University",
+            acronym="TU",
+            creator=self.user,
+        )
+        self.institution = Institution.objects.create(
+            institution_identification=self.institution_id,
+            location=self.location,
+            creator=self.user,
+        )
+        
+        # Create Publisher, Owner, Sponsor, CopyrightHolder
+        self.publisher = Publisher.objects.create(
+            institution=self.institution,
+            creator=self.user,
+        )
+        self.owner = Owner.objects.create(
+            institution=self.institution,
+            creator=self.user,
+        )
+        self.sponsor = Sponsor.objects.create(
+            institution=self.institution,
+            creator=self.user,
+        )
+        self.copyright_holder = CopyrightHolder.objects.create(
+            institution=self.institution,
+            creator=self.user,
+        )
+        
+        # Create journal
+        self.journal = Journal.objects.create(
+            title="Test Journal",
+            creator=self.user,
+        )
+        
+        # Create SciELOJournal
+        self.scielo_journal = SciELOJournal.objects.create(
+            journal=self.journal,
+            collection=self.collection,
+            issn_scielo="1234-5678",
+            journal_acron="testj",
+            creator=self.user,
+        )
+        
+        # Create history items with institution set
+        self.publisher_history = PublisherHistory.objects.create(
+            journal=self.journal,
+            institution=self.publisher,
+            creator=self.user,
+        )
+        self.owner_history = OwnerHistory.objects.create(
+            journal=self.journal,
+            institution=self.owner,
+            creator=self.user,
+        )
+        self.sponsor_history = SponsorHistory.objects.create(
+            journal=self.journal,
+            institution=self.sponsor,
+            creator=self.user,
+        )
+        self.copyright_holder_history = CopyrightHolderHistory.objects.create(
+            journal=self.journal,
+            institution=self.copyright_holder,
+            creator=self.user,
+        )
+    
+    def test_task_migrate_with_collection_filter(self):
+        """Test task with collection filter"""
+        from journal.tasks import task_migrate_institution_history_to_raw_institution
+        from journal.models import (
+            PublisherHistory,
+            OwnerHistory,
+            SponsorHistory,
+            CopyrightHolderHistory,
+        )
+        
+        # Call task with collection filter
+        result = task_migrate_institution_history_to_raw_institution(
+            username=self.user.username,
+            collection_acron_list=["scl"],
+        )
+        
+        # Verify statistics
+        self.assertEqual(result["journals_processed"], 1)
+        self.assertEqual(result["publisher_history_migrated"], 1)
+        self.assertEqual(result["owner_history_migrated"], 1)
+        self.assertEqual(result["sponsor_history_migrated"], 1)
+        self.assertEqual(result["copyright_holder_history_migrated"], 1)
+        self.assertEqual(result["errors"], 0)
+        
+        # Verify all history items have None institution
+        self.publisher_history.refresh_from_db()
+        self.owner_history.refresh_from_db()
+        self.sponsor_history.refresh_from_db()
+        self.copyright_holder_history.refresh_from_db()
+        
+        self.assertIsNone(self.publisher_history.institution)
+        self.assertIsNone(self.owner_history.institution)
+        self.assertIsNone(self.sponsor_history.institution)
+        self.assertIsNone(self.copyright_holder_history.institution)
+        
+        # Verify raw fields are populated
+        self.assertEqual(self.publisher_history.raw_institution_name, "Test University")
+        self.assertEqual(self.owner_history.raw_institution_name, "Test University")
+        self.assertEqual(self.sponsor_history.raw_institution_name, "Test University")
+        self.assertEqual(self.copyright_holder_history.raw_institution_name, "Test University")
+    
+    def test_task_migrate_with_issn_filter(self):
+        """Test task with ISSN filter"""
+        from journal.tasks import task_migrate_institution_history_to_raw_institution
+        
+        # Call task with ISSN filter
+        result = task_migrate_institution_history_to_raw_institution(
+            username=self.user.username,
+            collection_acron_list=["scl"],
+            journal_issns=["1234-5678"],
+        )
+        
+        # Verify statistics
+        self.assertEqual(result["journals_processed"], 1)
+        self.assertEqual(result["publisher_history_migrated"], 1)
+    
+    def test_task_migrate_with_no_matching_collection(self):
+        """Test task with collection that doesn't match"""
+        from journal.tasks import task_migrate_institution_history_to_raw_institution
+        
+        # Call task with non-matching collection
+        result = task_migrate_institution_history_to_raw_institution(
+            username=self.user.username,
+            collection_acron_list=["xyz"],  # Non-existent collection
+        )
+        
+        # Verify no journals processed
+        self.assertEqual(result["journals_processed"], 0)
+        
+        # Verify history items still have institution set
+        self.publisher_history.refresh_from_db()
+        self.assertIsNotNone(self.publisher_history.institution)
+    
+    def test_task_migrate_with_journal_without_institution(self):
+        """Test task with journal that has no history items with institution"""
+        from journal.tasks import task_migrate_institution_history_to_raw_institution
+        from journal.models import PublisherHistory
+        
+        # Create another journal without institution in history
+        journal2 = Journal.objects.create(
+            title="Test Journal 2",
+            creator=self.user,
+        )
+        scielo_journal2 = SciELOJournal.objects.create(
+            journal=journal2,
+            collection=self.collection,
+            issn_scielo="8765-4321",
+            journal_acron="testj2",
+            creator=self.user,
+        )
+        
+        # Create history without institution
+        PublisherHistory.objects.create(
+            journal=journal2,
+            institution=None,
+            creator=self.user,
+        )
+        
+        # Call task
+        result = task_migrate_institution_history_to_raw_institution(
+            username=self.user.username,
+            collection_acron_list=["scl"],
+        )
+        
+        # Should only process journal1 (the one with institution)
+        self.assertEqual(result["journals_processed"], 1)
+
