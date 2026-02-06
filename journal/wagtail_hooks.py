@@ -1,5 +1,6 @@
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Prefetch
 from django.http import HttpResponseRedirect
 from django.urls import path
 from django.utils.translation import gettext_lazy as _
@@ -133,8 +134,99 @@ class FilteredJournalQuerysetMixin:
     def get_queryset(self, request):
         qs = (
             models.Journal.objects
-            .select_related("contact_location")
-            .prefetch_related("scielojournal_set")
+            # ForeignKey relationships - use select_related for forward ForeignKey lookups
+            .select_related(
+                "official",
+                "contact_location",
+                "contact_location__country",
+                "main_collection",
+                "standard",
+                "vocabulary",
+                "journal_use_license",
+                "use_license",
+                "logo",
+                "creator",
+                "updated_by",
+            )
+            # Many-to-Many and reverse ForeignKey relationships - use prefetch_related
+            .prefetch_related(
+                # M2M fields
+                "indexed_at",
+                "additional_indexed_at",
+                "subject",
+                "subject_descriptor",
+                "wos_db",
+                "wos_area",
+                "text_language",
+                "abstract_language",
+                "format_check_list",
+                "digital_pa",
+                # Inline panels with nested selects for better performance
+                Prefetch(
+                    "owner_history",
+                    queryset=models.OwnerHistory.objects.select_related(
+                        "institution", "organization", "organization__location"
+                    )
+                ),
+                Prefetch(
+                    "publisher_history",
+                    queryset=models.PublisherHistory.objects.select_related(
+                        "institution", "organization", "organization__location"
+                    )
+                ),
+                Prefetch(
+                    "sponsor_history",
+                    queryset=models.SponsorHistory.objects.select_related(
+                        "institution", "organization", "organization__location"
+                    )
+                ),
+                Prefetch(
+                    "copyright_holder_history",
+                    queryset=models.CopyrightHolderHistory.objects.select_related(
+                        "institution", "organization", "organization__location"
+                    )
+                ),
+                # Other inline panels (reverse ForeignKeys via ParentalKey)
+                "other_titles",
+                "thematic_area",
+                "thematic_area__thematic_area",
+                "mission",
+                "history",
+                "focus",
+                "journal_email",
+                "related_journal_urls",
+                "title_in_database",
+                "journalsocialnetwork",
+                "file_oa",
+                "open_data",
+                "preprint",
+                "review",
+                "open_science_compliance",
+                "ethics",
+                "ecommittee",
+                "copyright",
+                "website_responsibility",
+                "author_responsibility",
+                "policies",
+                "digital_preservation",
+                "conflict_policy",
+                "software_adoption",
+                "gender_issues",
+                "fee_charging",
+                "editorial_policy",
+                "accepted_documment_types",
+                "authors_contributions",
+                "preparing_manuscript",
+                "digital_assets",
+                "citations_and_references",
+                "supp_docs_submission",
+                "financing_statement",
+                "acknowledgements",
+                "additional_information",
+                "annotation",
+                "scielojournal_set",
+                "scielojournal_set__collection",
+            )
         )
         user = request.user
         if not user.is_authenticated:
