@@ -99,13 +99,19 @@ class JournalExporterSnippetViewSet(SnippetViewSet):
     )
 
 
-class JournalCreateView(CreateView):
+class JournalFormValidMixin:
+    """Mixin for handling form_valid in Journal views"""
+
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
 
 
-class JournalEditView(EditView):
+class JournalCreateView(JournalFormValidMixin, CreateView):
+    pass
+
+
+class JournalEditView(JournalFormValidMixin, EditView):
     """
     Custom EditView for Journal that migrates institution data to raw_* fields
     when presenting the form for editing.
@@ -123,35 +129,49 @@ class JournalEditView(EditView):
         """
         obj = super().get_object(queryset)
 
-        # Check and migrate publisher_history
-        for history_item in obj.publisher_history.all():
-            if not history_item.raw_text and history_item.institution:
-                obj.migrate_publisher_history_to_raw()
-                break
+        # Check and migrate publisher_history if needed
+        if (
+            obj.publisher_history.filter(
+                raw_text__isnull=True, institution__isnull=False
+            ).exists()
+            or obj.publisher_history.filter(
+                raw_text="", institution__isnull=False
+            ).exists()
+        ):
+            obj.migrate_publisher_history_to_raw()
 
-        # Check and migrate owner_history
-        for history_item in obj.owner_history.all():
-            if not history_item.raw_text and history_item.institution:
-                obj.migrate_owner_history_to_raw()
-                break
+        # Check and migrate owner_history if needed
+        if (
+            obj.owner_history.filter(
+                raw_text__isnull=True, institution__isnull=False
+            ).exists()
+            or obj.owner_history.filter(raw_text="", institution__isnull=False).exists()
+        ):
+            obj.migrate_owner_history_to_raw()
 
-        # Check and migrate sponsor_history
-        for history_item in obj.sponsor_history.all():
-            if not history_item.raw_text and history_item.institution:
-                obj.migrate_sponsor_history_to_raw()
-                break
+        # Check and migrate sponsor_history if needed
+        if (
+            obj.sponsor_history.filter(
+                raw_text__isnull=True, institution__isnull=False
+            ).exists()
+            or obj.sponsor_history.filter(
+                raw_text="", institution__isnull=False
+            ).exists()
+        ):
+            obj.migrate_sponsor_history_to_raw()
 
-        # Check and migrate copyright_holder_history
-        for history_item in obj.copyright_holder_history.all():
-            if not history_item.raw_text and history_item.institution:
-                obj.migrate_copyright_holder_history_to_raw()
-                break
+        # Check and migrate copyright_holder_history if needed
+        if (
+            obj.copyright_holder_history.filter(
+                raw_text__isnull=True, institution__isnull=False
+            ).exists()
+            or obj.copyright_holder_history.filter(
+                raw_text="", institution__isnull=False
+            ).exists()
+        ):
+            obj.migrate_copyright_holder_history_to_raw()
 
         return obj
-
-    def form_valid(self, form):
-        self.object = form.save_all(self.request.user)
-        return HttpResponseRedirect(self.get_success_url())
 
 
 class FilteredJournalQuerysetMixin:
