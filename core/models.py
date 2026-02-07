@@ -331,6 +331,16 @@ class RawOrganizationMixin(models.Model):
         help_text=_("Raw city name as provided"),
     )
 
+    panels = [
+        FieldPanel("raw_text"),
+        FieldPanel("raw_institution_name"),
+        FieldPanel("raw_country_name"),
+        FieldPanel("raw_country_code"),
+        FieldPanel("raw_state_name"),
+        FieldPanel("raw_state_acron"),
+        FieldPanel("raw_city_name"),
+    ]
+
     class Meta:
         abstract = True
 

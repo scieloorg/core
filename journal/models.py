@@ -1490,9 +1490,11 @@ class OwnerHistory(Orderable, ClusterableModel, RawOrganizationMixin, BaseHistor
 
     base_form_class = SciELOJournalModelForm
 
-    panels = BaseHistoryItem.panels + [
-        AutocompletePanel("institution", read_only=True),
+    panels = [
         AutocompletePanel("organization"),
+        *RawOrganizationMixin.panels,
+        *BaseHistoryItem.panels,
+        AutocompletePanel("institution", read_only=True),
         InlinePanel(
             "org_level", max_num=1, label=_("Level Owner"), classname="collapsed"
         ),
@@ -1524,9 +1526,11 @@ class PublisherHistory(Orderable, ClusterableModel, RawOrganizationMixin, BaseHi
 
     base_form_class = SciELOJournalModelForm
 
-    panels = BaseHistoryItem.panels + [
-        AutocompletePanel("institution", read_only=True),
+    panels = [
         AutocompletePanel("organization"),
+        *RawOrganizationMixin.panels,
+        *BaseHistoryItem.panels,
+        AutocompletePanel("institution", read_only=True),
         InlinePanel(
             "org_level", max_num=1, label=_("Level Publisher"), classname="collapsed"
         ),
@@ -1558,9 +1562,11 @@ class SponsorHistory(Orderable, ClusterableModel, RawOrganizationMixin, BaseHist
 
     base_form_class = SciELOJournalModelForm
 
-    panels = BaseHistoryItem.panels + [
-        AutocompletePanel("institution", read_only=True),
+    panels = [
         AutocompletePanel("organization"),
+        *RawOrganizationMixin.panels,
+        *BaseHistoryItem.panels,
+        AutocompletePanel("institution", read_only=True),
         InlinePanel(
             "org_level", max_num=1, label=_("Level Sponsor"), classname="collapsed"
         ),
@@ -1595,9 +1601,11 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, RawOrganizationMixin, 
 
     base_form_class = SciELOJournalModelForm
 
-    panels = BaseHistoryItem.panels + [
-        AutocompletePanel("institution", read_only=True),
+    panels = [
         AutocompletePanel("organization"),
+        *RawOrganizationMixin.panels,
+        *BaseHistoryItem.panels,
+        AutocompletePanel("institution", read_only=True),
         InlinePanel(
             "org_level", max_num=1, label=_("Level Copyright"), classname="collapsed"
         ),
