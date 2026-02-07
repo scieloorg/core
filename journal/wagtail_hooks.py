@@ -121,37 +121,17 @@ class JournalEditView(JournalFormValidMixin, EditView):
         """
         Override get_object to migrate history data before presenting the form.
 
-        When presenting the form, check if publisher_history.raw_text,
-        owner_history.raw_text, copyright_holder_history.raw_text, or
-        sponsor_history.raw_text is empty. If so, and their respective
-        .institution is not None, execute the corresponding
-        migrate_*_history_to_raw method.
+        When presenting the form, migrate institution data to raw_* fields for
+        publisher_history, owner_history, copyright_holder_history, and sponsor_history.
+        The migrate methods internally check if migration is needed.
         """
         obj = super().get_object(queryset)
 
-        # Check and migrate publisher_history if needed
-        if obj.publisher_history.filter(
-            raw_text__in=(None, ""), institution__isnull=False
-        ).exists():
-            obj.migrate_publisher_history_to_raw()
-
-        # Check and migrate owner_history if needed
-        if obj.owner_history.filter(
-            raw_text__in=(None, ""), institution__isnull=False
-        ).exists():
-            obj.migrate_owner_history_to_raw()
-
-        # Check and migrate sponsor_history if needed
-        if obj.sponsor_history.filter(
-            raw_text__in=(None, ""), institution__isnull=False
-        ).exists():
-            obj.migrate_sponsor_history_to_raw()
-
-        # Check and migrate copyright_holder_history if needed
-        if obj.copyright_holder_history.filter(
-            raw_text__in=(None, ""), institution__isnull=False
-        ).exists():
-            obj.migrate_copyright_holder_history_to_raw()
+        # Migrate history data (methods internally check if migration is needed)
+        obj.migrate_publisher_history_to_raw()
+        obj.migrate_owner_history_to_raw()
+        obj.migrate_sponsor_history_to_raw()
+        obj.migrate_copyright_holder_history_to_raw()
 
         return obj
 
