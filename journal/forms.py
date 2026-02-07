@@ -18,25 +18,33 @@ class JournalModelForm(CoreAdminModelForm):
         Automatically migrates history data from institution to raw_text fields
         when presenting the form, if raw_text is empty but institution is not None.
         """
-        # Check and migrate publisher_history
-        for history_item in self.instance.publisher_history.all():
-            if not history_item.raw_text and history_item.institution:
-                self.instance._migrate_history_to_raw(history_item)
-        
-        # Check and migrate owner_history
-        for history_item in self.instance.owner_history.all():
-            if not history_item.raw_text and history_item.institution:
-                self.instance._migrate_history_to_raw(history_item)
-        
-        # Check and migrate sponsor_history
-        for history_item in self.instance.sponsor_history.all():
-            if not history_item.raw_text and history_item.institution:
-                self.instance._migrate_history_to_raw(history_item)
-        
-        # Check and migrate copyright_holder_history
-        for history_item in self.instance.copyright_holder_history.all():
-            if not history_item.raw_text and history_item.institution:
-                self.instance._migrate_history_to_raw(history_item)
+        # List of related history managers to process
+        history_manager_names = [
+            "publisher_history",
+            "owner_history",
+            "sponsor_history",
+            "copyright_holder_history",
+        ]
+
+        for manager_name in history_manager_names:
+            related_manager = getattr(self.instance, manager_name, None)
+            if related_manager is None:
+                continue
+
+            # Use select_related to avoid N+1 queries
+            queryset = related_manager.all().select_related(
+                "institution",
+                "institution__institution",
+                "institution__institution__institution_identification",
+                "institution__institution__location",
+                "institution__institution__location__country",
+                "institution__institution__location__state",
+                "institution__institution__location__city",
+            )
+
+            for history_item in queryset:
+                if not history_item.raw_text and history_item.institution:
+                    self.instance._migrate_history_to_raw(history_item)
 
 
 class SciELOJournalModelForm(CoreAdminModelForm):

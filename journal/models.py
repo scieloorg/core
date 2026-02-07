@@ -1257,16 +1257,18 @@ class Journal(CommonControlField, ClusterableModel):
             
         institution_obj = history_item.institution.institution
         if not institution_obj:
-            # Não há dados de instituição para migrar
-            history_item.institution = None
-            history_item.save()
+            # Não há dados de instituição para migrar - não limpar institution para evitar perda de dados
             return history_item
+        
+        # Track if any raw field was populated
+        any_field_populated = False
         
         # Extrair dados da instituição
         # Nome da instituição
         if institution_obj.institution_identification:
             if institution_obj.institution_identification.name:
                 history_item.raw_institution_name = institution_obj.institution_identification.name
+                any_field_populated = True
             
             # Construir texto completo da instituição
             parts = []
@@ -1283,6 +1285,7 @@ class Journal(CommonControlField, ClusterableModel):
             
             if parts:
                 history_item.raw_text = " - ".join(parts)
+                any_field_populated = True
         
         # Extrair dados de localização
         if institution_obj.location:
@@ -1291,6 +1294,7 @@ class Journal(CommonControlField, ClusterableModel):
             # País
             if hasattr(location, 'country') and location.country:
                 history_item.raw_country_name = location.country.name
+                any_field_populated = True
                 if hasattr(location.country, 'acron3'):
                     history_item.raw_country_code = location.country.acron3
                 elif hasattr(location.country, 'acronym'):
@@ -1299,16 +1303,19 @@ class Journal(CommonControlField, ClusterableModel):
             # Estado
             if hasattr(location, 'state') and location.state:
                 history_item.raw_state_name = location.state.name
+                any_field_populated = True
                 if hasattr(location.state, 'acronym'):
                     history_item.raw_state_acron = location.state.acronym
             
             # Cidade
             if hasattr(location, 'city') and location.city:
                 history_item.raw_city_name = location.city.name
+                any_field_populated = True
         
-        # Limpar o campo institution
-        history_item.institution = None
-        history_item.save()
+        # Only clear institution if at least one raw field was populated
+        if any_field_populated:
+            history_item.institution = None
+            history_item.save()
         
         return history_item
 
