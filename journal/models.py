@@ -1490,13 +1490,7 @@ class OwnerHistory(Orderable, ClusterableModel, RawOrganizationMixin, BaseHistor
 
     base_form_class = SciELOJournalModelForm
 
-    panels = BaseHistoryItem.panels + [
-        AutocompletePanel("institution", read_only=True),
-        AutocompletePanel("organization"),
-        InlinePanel(
-            "org_level", max_num=1, label=_("Level Owner"), classname="collapsed"
-        ),
-    ]
+    panels = [AutocompletePanel("organization")] + RawOrganizationMixin.panels
 
     @classmethod
     def get_org_level_model(cls):
@@ -1524,13 +1518,7 @@ class PublisherHistory(Orderable, ClusterableModel, RawOrganizationMixin, BaseHi
 
     base_form_class = SciELOJournalModelForm
 
-    panels = BaseHistoryItem.panels + [
-        AutocompletePanel("institution", read_only=True),
-        AutocompletePanel("organization"),
-        InlinePanel(
-            "org_level", max_num=1, label=_("Level Publisher"), classname="collapsed"
-        ),
-    ]
+    panels = [AutocompletePanel("organization")] + RawOrganizationMixin.panels
 
     @classmethod
     def get_org_level_model(cls):
@@ -1558,13 +1546,7 @@ class SponsorHistory(Orderable, ClusterableModel, RawOrganizationMixin, BaseHist
 
     base_form_class = SciELOJournalModelForm
 
-    panels = BaseHistoryItem.panels + [
-        AutocompletePanel("institution", read_only=True),
-        AutocompletePanel("organization"),
-        InlinePanel(
-            "org_level", max_num=1, label=_("Level Sponsor"), classname="collapsed"
-        ),
-    ]
+    panels = [AutocompletePanel("organization")] + RawOrganizationMixin.panels
 
     @classmethod
     def get_org_level_model(cls):
@@ -1595,13 +1577,7 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, RawOrganizationMixin, 
 
     base_form_class = SciELOJournalModelForm
 
-    panels = BaseHistoryItem.panels + [
-        AutocompletePanel("institution", read_only=True),
-        AutocompletePanel("organization"),
-        InlinePanel(
-            "org_level", max_num=1, label=_("Level Copyright"), classname="collapsed"
-        ),
-    ]
+    panels = [AutocompletePanel("organization")] + RawOrganizationMixin.panels
 
     @classmethod
     def get_org_level_model(cls):
