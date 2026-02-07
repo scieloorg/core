@@ -1490,10 +1490,7 @@ class OwnerHistory(Orderable, ClusterableModel, RawOrganizationMixin, BaseHistor
 
     base_form_class = SciELOJournalModelForm
 
-    panels = [
-        AutocompletePanel("organization"),
-        *RawOrganizationMixin.panels,
-    ]
+    panels = [AutocompletePanel("organization")] + RawOrganizationMixin.panels
 
     @classmethod
     def get_org_level_model(cls):
@@ -1521,10 +1518,7 @@ class PublisherHistory(Orderable, ClusterableModel, RawOrganizationMixin, BaseHi
 
     base_form_class = SciELOJournalModelForm
 
-    panels = [
-        AutocompletePanel("organization"),
-        *RawOrganizationMixin.panels,
-    ]
+    panels = [AutocompletePanel("organization")] + RawOrganizationMixin.panels
 
     @classmethod
     def get_org_level_model(cls):
@@ -1552,10 +1546,7 @@ class SponsorHistory(Orderable, ClusterableModel, RawOrganizationMixin, BaseHist
 
     base_form_class = SciELOJournalModelForm
 
-    panels = [
-        AutocompletePanel("organization"),
-        *RawOrganizationMixin.panels,
-    ]
+    panels = [AutocompletePanel("organization")] + RawOrganizationMixin.panels
 
     @classmethod
     def get_org_level_model(cls):
@@ -1586,10 +1577,7 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, RawOrganizationMixin, 
 
     base_form_class = SciELOJournalModelForm
 
-    panels = [
-        AutocompletePanel("organization"),
-        *RawOrganizationMixin.panels,
-    ]
+    panels = [AutocompletePanel("organization")] + RawOrganizationMixin.panels
 
     @classmethod
     def get_org_level_model(cls):
