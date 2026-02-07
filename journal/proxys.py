@@ -48,7 +48,7 @@ class JournalProxyEditor(Journal):
         InlinePanel("related_journal_urls", label=_("Journal Urls")),
         FieldPanel("submission_online_url"),
         FieldPanel("main_collection"),
-        InlinePanel("journalsocialnetwork", label=_("Social Network")),
+        InlinePanel("social_networks", label=_("Social Network")),
         FieldPanel("frequency"),
         FieldPanel("publishing_model"),
         FieldPanel("standard"),
@@ -57,12 +57,12 @@ class JournalProxyEditor(Journal):
     panels_open_science = [
         FieldPanel("open_access"),
         FieldPanel("url_oa"),
-        InlinePanel("file_oa", label=_("Open Science accordance form")),
+        InlinePanel("open_science_form_files", label=_("Open Science accordance form")),
         FieldPanel("journal_use_license"),
         InlinePanel("open_access_text", label=_("Open Access")),
         InlinePanel("open_data", label=_("Open data")),
         InlinePanel("preprint", label=_("Preprint")),
-        InlinePanel("review", label=_("Peer review")),
+        InlinePanel("peer_review", label=_("Peer review")),
         InlinePanel(
             "open_science_compliance",
             label=_("Open Science Compliance"),
@@ -75,7 +75,7 @@ class JournalProxyEditor(Journal):
             label=_("Ethics"),
         ),
         InlinePanel(
-            "ecommittee",
+            "ethics_committee",
             label=_("Ethics Committee"),
         ),
         InlinePanel(
@@ -124,11 +124,11 @@ class JournalProxyEditor(Journal):
             label=_("Artificial Intelligence"),
         ),
     ]
-    panels_notes = [InlinePanel("annotation", label=_("Notes"))]
+    panels_notes = [InlinePanel("notes", label=_("Notes"))]
 
     panels_instructions_for_authors = [
         InlinePanel(
-            "accepted_documment_types",
+            "accepted_document_types",
             label=_("Accepted Document Types"),
         ),
         InlinePanel(
@@ -203,7 +203,7 @@ class JournalProxyPanelPolicy(Journal):
             classname="collapsed",
         ),
         InlinePanel(
-            "ecommittee",
+            "ethics_committee",
             label=_("Ethics Committee"),
             classname="collapsed",
         ),
@@ -283,7 +283,7 @@ class JournalProxyPanelPolicy(Journal):
 class JournalProxyPanelInstructionsForAuthors(Journal):
     panels_instructions_for_authors = [
         InlinePanel(
-            "accepted_documment_types",
+            "accepted_document_types",
             label=_("Accepted Document Types"),
             classname="collapsed",
         ),
@@ -372,7 +372,7 @@ class JournalProxyAdminOnly(Journal):
         FieldPanel("acronym_letters"),
     ]
 
-    panels_notes = [InlinePanel("annotation", label=_("Notes"))]
+    panels_notes = [InlinePanel("notes", label=_("Notes"))]
 
     edit_handler = TabbedInterface(
         [
