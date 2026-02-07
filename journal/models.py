@@ -59,6 +59,7 @@ from journal.exceptions import (
     WosdbCreationOrUpdateError,
 )
 from journal.forms import (
+    JournalModelForm,
     SciELOJournalModelForm,
 )
 from location.models import Country, Location
@@ -615,7 +616,7 @@ class Journal(CommonControlField, ClusterableModel):
             .distinct()
         )
 
-    base_form_class = CoreAdminModelForm
+    base_form_class = JournalModelForm
     panels_titles = [
         AutocompletePanel("official"),
         FieldPanel("title"),

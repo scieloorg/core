@@ -675,3 +675,293 @@ class HistoryMigrationTestCase(TestCase):
         
         # Verify institution is None
         self.assertIsNone(publisher_history.institution)
+
+
+class JournalFormAutoMigrationTestCase(TestCase):
+    """Test cases for auto-migration of *History data when Journal form is initialized"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        from institution.models import (
+            Publisher,
+            Owner,
+            Sponsor,
+            CopyrightHolder,
+            Institution,
+            InstitutionIdentification,
+        )
+        from location.models import Country, State, City, Location
+        
+        self.user = User.objects.create_user(username="testuser")
+        self.journal = Journal.objects.create(
+            title="Test Journal",
+            creator=self.user,
+        )
+        
+        # Create location data
+        self.country = Country.objects.create(
+            name="Brazil",
+            acron3="BRA",
+        )
+        self.state = State.objects.create(
+            name="São Paulo",
+            acronym="SP",
+        )
+        self.city = City.objects.create(
+            name="São Paulo",
+        )
+        self.location = Location.objects.create(
+            country=self.country,
+            state=self.state,
+            city=self.city,
+            creator=self.user,
+        )
+        
+        # Create institution identification
+        self.institution_id = InstitutionIdentification.objects.create(
+            name="Test University",
+            acronym="TU",
+            creator=self.user,
+        )
+        
+        # Create institution
+        self.institution = Institution.objects.create(
+            institution_identification=self.institution_id,
+            location=self.location,
+            level_1="Faculty of Science",
+            creator=self.user,
+        )
+        
+        # Create Publisher, Owner, Sponsor, CopyrightHolder instances
+        self.publisher = Publisher.objects.create(
+            institution=self.institution,
+            creator=self.user,
+        )
+        self.owner = Owner.objects.create(
+            institution=self.institution,
+            creator=self.user,
+        )
+        self.sponsor = Sponsor.objects.create(
+            institution=self.institution,
+            creator=self.user,
+        )
+        self.copyright_holder = CopyrightHolder.objects.create(
+            institution=self.institution,
+            creator=self.user,
+        )
+
+    def test_auto_migrate_publisher_history_on_form_init(self):
+        """Test that publisher_history data is auto-migrated when form is initialized"""
+        from journal.models import PublisherHistory
+        from journal.forms import JournalModelForm
+        
+        # Create a PublisherHistory with institution but empty raw_text
+        publisher_history = PublisherHistory.objects.create(
+            journal=self.journal,
+            institution=self.publisher,
+            creator=self.user,
+        )
+        
+        # Verify institution is set and raw_text is empty
+        self.assertIsNotNone(publisher_history.institution)
+        self.assertFalse(publisher_history.raw_text)
+        
+        # Initialize the form with the journal instance
+        form = JournalModelForm(instance=self.journal)
+        
+        # Reload from database
+        publisher_history.refresh_from_db()
+        
+        # Verify institution is now None
+        self.assertIsNone(publisher_history.institution)
+        
+        # Verify raw fields are populated
+        self.assertTrue(publisher_history.raw_text)
+        self.assertEqual(publisher_history.raw_institution_name, "Test University")
+        self.assertEqual(publisher_history.raw_country_name, "Brazil")
+
+    def test_auto_migrate_owner_history_on_form_init(self):
+        """Test that owner_history data is auto-migrated when form is initialized"""
+        from journal.models import OwnerHistory
+        from journal.forms import JournalModelForm
+        
+        # Create an OwnerHistory with institution but empty raw_text
+        owner_history = OwnerHistory.objects.create(
+            journal=self.journal,
+            institution=self.owner,
+            creator=self.user,
+        )
+        
+        # Verify institution is set and raw_text is empty
+        self.assertIsNotNone(owner_history.institution)
+        self.assertFalse(owner_history.raw_text)
+        
+        # Initialize the form with the journal instance
+        form = JournalModelForm(instance=self.journal)
+        
+        # Reload from database
+        owner_history.refresh_from_db()
+        
+        # Verify institution is now None
+        self.assertIsNone(owner_history.institution)
+        
+        # Verify raw fields are populated
+        self.assertTrue(owner_history.raw_text)
+        self.assertEqual(owner_history.raw_institution_name, "Test University")
+
+    def test_auto_migrate_sponsor_history_on_form_init(self):
+        """Test that sponsor_history data is auto-migrated when form is initialized"""
+        from journal.models import SponsorHistory
+        from journal.forms import JournalModelForm
+        
+        # Create a SponsorHistory with institution but empty raw_text
+        sponsor_history = SponsorHistory.objects.create(
+            journal=self.journal,
+            institution=self.sponsor,
+            creator=self.user,
+        )
+        
+        # Verify institution is set and raw_text is empty
+        self.assertIsNotNone(sponsor_history.institution)
+        self.assertFalse(sponsor_history.raw_text)
+        
+        # Initialize the form with the journal instance
+        form = JournalModelForm(instance=self.journal)
+        
+        # Reload from database
+        sponsor_history.refresh_from_db()
+        
+        # Verify institution is now None
+        self.assertIsNone(sponsor_history.institution)
+        
+        # Verify raw fields are populated
+        self.assertTrue(sponsor_history.raw_text)
+        self.assertEqual(sponsor_history.raw_institution_name, "Test University")
+
+    def test_auto_migrate_copyright_holder_history_on_form_init(self):
+        """Test that copyright_holder_history data is auto-migrated when form is initialized"""
+        from journal.models import CopyrightHolderHistory
+        from journal.forms import JournalModelForm
+        
+        # Create a CopyrightHolderHistory with institution but empty raw_text
+        copyright_holder_history = CopyrightHolderHistory.objects.create(
+            journal=self.journal,
+            institution=self.copyright_holder,
+            creator=self.user,
+        )
+        
+        # Verify institution is set and raw_text is empty
+        self.assertIsNotNone(copyright_holder_history.institution)
+        self.assertFalse(copyright_holder_history.raw_text)
+        
+        # Initialize the form with the journal instance
+        form = JournalModelForm(instance=self.journal)
+        
+        # Reload from database
+        copyright_holder_history.refresh_from_db()
+        
+        # Verify institution is now None
+        self.assertIsNone(copyright_holder_history.institution)
+        
+        # Verify raw fields are populated
+        self.assertTrue(copyright_holder_history.raw_text)
+        self.assertEqual(copyright_holder_history.raw_institution_name, "Test University")
+
+    def test_no_migration_when_raw_text_exists(self):
+        """Test that no migration occurs when raw_text already has content"""
+        from journal.models import PublisherHistory
+        from journal.forms import JournalModelForm
+        
+        # Create a PublisherHistory with institution AND existing raw_text
+        publisher_history = PublisherHistory.objects.create(
+            journal=self.journal,
+            institution=self.publisher,
+            raw_text="Existing Raw Text",
+            creator=self.user,
+        )
+        
+        original_institution = publisher_history.institution
+        
+        # Initialize the form with the journal instance
+        form = JournalModelForm(instance=self.journal)
+        
+        # Reload from database
+        publisher_history.refresh_from_db()
+        
+        # Verify institution is still set (not migrated)
+        self.assertEqual(publisher_history.institution, original_institution)
+        
+        # Verify raw_text is unchanged
+        self.assertEqual(publisher_history.raw_text, "Existing Raw Text")
+
+    def test_no_migration_when_institution_is_none(self):
+        """Test that no migration occurs when institution is None"""
+        from journal.models import PublisherHistory
+        from journal.forms import JournalModelForm
+        
+        # Create a PublisherHistory without institution
+        publisher_history = PublisherHistory.objects.create(
+            journal=self.journal,
+            institution=None,
+            creator=self.user,
+        )
+        
+        # Initialize the form with the journal instance
+        form = JournalModelForm(instance=self.journal)
+        
+        # Reload from database
+        publisher_history.refresh_from_db()
+        
+        # Verify institution is still None
+        self.assertIsNone(publisher_history.institution)
+        
+        # Verify raw_text is still empty
+        self.assertFalse(publisher_history.raw_text)
+
+    def test_auto_migrate_multiple_history_items_on_form_init(self):
+        """Test that all history items are auto-migrated when form is initialized"""
+        from journal.models import PublisherHistory, OwnerHistory, SponsorHistory, CopyrightHolderHistory
+        from journal.forms import JournalModelForm
+        
+        # Create multiple history items with institution but empty raw_text
+        publisher_history = PublisherHistory.objects.create(
+            journal=self.journal,
+            institution=self.publisher,
+            creator=self.user,
+        )
+        owner_history = OwnerHistory.objects.create(
+            journal=self.journal,
+            institution=self.owner,
+            creator=self.user,
+        )
+        sponsor_history = SponsorHistory.objects.create(
+            journal=self.journal,
+            institution=self.sponsor,
+            creator=self.user,
+        )
+        copyright_holder_history = CopyrightHolderHistory.objects.create(
+            journal=self.journal,
+            institution=self.copyright_holder,
+            creator=self.user,
+        )
+        
+        # Initialize the form with the journal instance
+        form = JournalModelForm(instance=self.journal)
+        
+        # Reload all from database
+        publisher_history.refresh_from_db()
+        owner_history.refresh_from_db()
+        sponsor_history.refresh_from_db()
+        copyright_holder_history.refresh_from_db()
+        
+        # Verify all institutions are now None
+        self.assertIsNone(publisher_history.institution)
+        self.assertIsNone(owner_history.institution)
+        self.assertIsNone(sponsor_history.institution)
+        self.assertIsNone(copyright_holder_history.institution)
+        
+        # Verify all raw fields are populated
+        self.assertTrue(publisher_history.raw_text)
+        self.assertTrue(owner_history.raw_text)
+        self.assertTrue(sponsor_history.raw_text)
+        self.assertTrue(copyright_holder_history.raw_text)
