@@ -946,3 +946,256 @@ class TaskMigrateInstitutionHistoryTestCase(TestCase):
         # Verify no records were migrated (since institution is None)
         self.assertEqual(result["total_journals"], 1)
         self.assertEqual(result["migrated_publishers"], 0)
+
+
+class TestJournalEditView(TestCase):
+    """Test cases for JournalEditView that auto-migrates institution data to raw fields"""
+    
+    def setUp(self):
+        """Set up test data"""
+        from institution.models import (
+            Owner,
+            Publisher,
+            Sponsor,
+            CopyrightHolder,
+            Institution,
+            InstitutionIdentification,
+        )
+        from location.models import Location, City, State, Country
+        
+        self.user = User.objects.create(username="testuser", password="testpass")
+        
+        # Create location
+        self.country = Country.objects.create(
+            name="Brazil",
+            acron3="BRA",
+            creator=self.user
+        )
+        self.state = State.objects.create(
+            name="São Paulo",
+            acronym="SP",
+            country=self.country,
+            creator=self.user
+        )
+        self.city = City.objects.create(
+            name="São Paulo",
+            state=self.state,
+            creator=self.user
+        )
+        self.location = Location.objects.create(
+            city=self.city,
+            state=self.state,
+            country=self.country,
+            creator=self.user
+        )
+        
+        # Create institution
+        self.inst_identification = InstitutionIdentification.objects.create(
+            name="Test University",
+            acronym="TU",
+            creator=self.user
+        )
+        self.institution = Institution.objects.create(
+            institution_identification=self.inst_identification,
+            location=self.location,
+            level_1="Faculty of Science",
+            creator=self.user
+        )
+        
+        # Create journal
+        self.journal = Journal.objects.create(
+            title="Test Journal",
+            creator=self.user
+        )
+        
+        # Create institution records
+        self.publisher = Publisher.objects.create(
+            institution=self.institution,
+            creator=self.user
+        )
+        self.owner = Owner.objects.create(
+            institution=self.institution,
+            creator=self.user
+        )
+        self.sponsor = Sponsor.objects.create(
+            institution=self.institution,
+            creator=self.user
+        )
+        self.copyright_holder = CopyrightHolder.objects.create(
+            institution=self.institution,
+            creator=self.user
+        )
+    
+    def test_edit_view_migrates_publisher_history(self):
+        """Test that JournalEditView migrates publisher_history on get_object"""
+        from journal.models import PublisherHistory
+        from journal.wagtail_hooks import JournalEditView
+        from unittest.mock import Mock
+        
+        # Create PublisherHistory with institution but no raw_text
+        publisher_history = PublisherHistory.objects.create(
+            journal=self.journal,
+            institution=self.publisher,
+            creator=self.user
+        )
+        
+        # Verify institution is set and raw_text is empty
+        self.assertIsNotNone(publisher_history.institution)
+        self.assertFalse(publisher_history.raw_text)
+        
+        # Simulate JournalEditView.get_object()
+        view = JournalEditView()
+        view.kwargs = {'pk': self.journal.pk}
+        obj = view.get_object()
+        
+        # Reload publisher_history from database
+        publisher_history.refresh_from_db()
+        
+        # Verify migration occurred
+        self.assertIsNone(publisher_history.institution)
+        self.assertTrue(publisher_history.raw_text)
+        self.assertIn("Test University", publisher_history.raw_text)
+    
+    def test_edit_view_migrates_owner_history(self):
+        """Test that JournalEditView migrates owner_history on get_object"""
+        from journal.models import OwnerHistory
+        from journal.wagtail_hooks import JournalEditView
+        
+        # Create OwnerHistory with institution but no raw_text
+        owner_history = OwnerHistory.objects.create(
+            journal=self.journal,
+            institution=self.owner,
+            creator=self.user
+        )
+        
+        # Verify institution is set and raw_text is empty
+        self.assertIsNotNone(owner_history.institution)
+        self.assertFalse(owner_history.raw_text)
+        
+        # Simulate JournalEditView.get_object()
+        view = JournalEditView()
+        view.kwargs = {'pk': self.journal.pk}
+        obj = view.get_object()
+        
+        # Reload owner_history from database
+        owner_history.refresh_from_db()
+        
+        # Verify migration occurred
+        self.assertIsNone(owner_history.institution)
+        self.assertTrue(owner_history.raw_text)
+        self.assertIn("Test University", owner_history.raw_text)
+    
+    def test_edit_view_migrates_sponsor_history(self):
+        """Test that JournalEditView migrates sponsor_history on get_object"""
+        from journal.models import SponsorHistory
+        from journal.wagtail_hooks import JournalEditView
+        
+        # Create SponsorHistory with institution but no raw_text
+        sponsor_history = SponsorHistory.objects.create(
+            journal=self.journal,
+            institution=self.sponsor,
+            creator=self.user
+        )
+        
+        # Verify institution is set and raw_text is empty
+        self.assertIsNotNone(sponsor_history.institution)
+        self.assertFalse(sponsor_history.raw_text)
+        
+        # Simulate JournalEditView.get_object()
+        view = JournalEditView()
+        view.kwargs = {'pk': self.journal.pk}
+        obj = view.get_object()
+        
+        # Reload sponsor_history from database
+        sponsor_history.refresh_from_db()
+        
+        # Verify migration occurred
+        self.assertIsNone(sponsor_history.institution)
+        self.assertTrue(sponsor_history.raw_text)
+        self.assertIn("Test University", sponsor_history.raw_text)
+    
+    def test_edit_view_migrates_copyright_holder_history(self):
+        """Test that JournalEditView migrates copyright_holder_history on get_object"""
+        from journal.models import CopyrightHolderHistory
+        from journal.wagtail_hooks import JournalEditView
+        
+        # Create CopyrightHolderHistory with institution but no raw_text
+        copyright_history = CopyrightHolderHistory.objects.create(
+            journal=self.journal,
+            institution=self.copyright_holder,
+            creator=self.user
+        )
+        
+        # Verify institution is set and raw_text is empty
+        self.assertIsNotNone(copyright_history.institution)
+        self.assertFalse(copyright_history.raw_text)
+        
+        # Simulate JournalEditView.get_object()
+        view = JournalEditView()
+        view.kwargs = {'pk': self.journal.pk}
+        obj = view.get_object()
+        
+        # Reload copyright_history from database
+        copyright_history.refresh_from_db()
+        
+        # Verify migration occurred
+        self.assertIsNone(copyright_history.institution)
+        self.assertTrue(copyright_history.raw_text)
+        self.assertIn("Test University", copyright_history.raw_text)
+    
+    def test_edit_view_skips_when_raw_text_already_populated(self):
+        """Test that JournalEditView skips migration if raw_text is already populated"""
+        from journal.models import PublisherHistory
+        from journal.wagtail_hooks import JournalEditView
+        
+        # Create PublisherHistory with both institution and raw_text
+        publisher_history = PublisherHistory.objects.create(
+            journal=self.journal,
+            institution=self.publisher,
+            raw_text="Existing raw text",
+            creator=self.user
+        )
+        
+        # Verify both fields are set
+        self.assertIsNotNone(publisher_history.institution)
+        self.assertEqual(publisher_history.raw_text, "Existing raw text")
+        
+        # Simulate JournalEditView.get_object()
+        view = JournalEditView()
+        view.kwargs = {'pk': self.journal.pk}
+        obj = view.get_object()
+        
+        # Reload publisher_history from database
+        publisher_history.refresh_from_db()
+        
+        # Verify migration did NOT occur (raw_text unchanged, institution still present)
+        self.assertIsNotNone(publisher_history.institution)
+        self.assertEqual(publisher_history.raw_text, "Existing raw text")
+    
+    def test_edit_view_skips_when_no_institution(self):
+        """Test that JournalEditView skips migration if institution is None"""
+        from journal.models import PublisherHistory
+        from journal.wagtail_hooks import JournalEditView
+        
+        # Create PublisherHistory without institution
+        publisher_history = PublisherHistory.objects.create(
+            journal=self.journal,
+            institution=None,
+            creator=self.user
+        )
+        
+        # Verify institution is None and raw_text is empty
+        self.assertIsNone(publisher_history.institution)
+        self.assertFalse(publisher_history.raw_text)
+        
+        # Simulate JournalEditView.get_object()
+        view = JournalEditView()
+        view.kwargs = {'pk': self.journal.pk}
+        obj = view.get_object()
+        
+        # Reload publisher_history from database
+        publisher_history.refresh_from_db()
+        
+        # Verify migration did NOT occur (both still empty/None)
+        self.assertIsNone(publisher_history.institution)
+        self.assertFalse(publisher_history.raw_text)

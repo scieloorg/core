@@ -9,6 +9,7 @@ from wagtail.snippets import widgets as wagtailsnippets_widgets
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import (
     CreateView,
+    EditView,
     SnippetViewSet,
     SnippetViewSetGroup,
 )
@@ -99,6 +100,55 @@ class JournalExporterSnippetViewSet(SnippetViewSet):
 
 
 class JournalCreateView(CreateView):
+    def form_valid(self, form):
+        self.object = form.save_all(self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class JournalEditView(EditView):
+    """
+    Custom EditView for Journal that migrates institution data to raw_* fields
+    when presenting the form for editing.
+    """
+    
+    def get_object(self, queryset=None):
+        """
+        Override get_object to migrate history data before presenting the form.
+        
+        When presenting the form, check if publisher_history.raw_text,
+        owner_history.raw_text, copyright_holder_history.raw_text, or
+        sponsor_history.raw_text is empty. If so, and their respective
+        .institution is not None, execute the corresponding
+        migrate_*_history_to_raw method.
+        """
+        obj = super().get_object(queryset)
+        
+        # Check and migrate publisher_history
+        for history_item in obj.publisher_history.all():
+            if not history_item.raw_text and history_item.institution:
+                obj.migrate_publisher_history_to_raw()
+                break
+        
+        # Check and migrate owner_history
+        for history_item in obj.owner_history.all():
+            if not history_item.raw_text and history_item.institution:
+                obj.migrate_owner_history_to_raw()
+                break
+        
+        # Check and migrate sponsor_history
+        for history_item in obj.sponsor_history.all():
+            if not history_item.raw_text and history_item.institution:
+                obj.migrate_sponsor_history_to_raw()
+                break
+        
+        # Check and migrate copyright_holder_history
+        for history_item in obj.copyright_holder_history.all():
+            if not history_item.raw_text and history_item.institution:
+                obj.migrate_copyright_holder_history_to_raw()
+                break
+        
+        return obj
+    
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
@@ -251,6 +301,7 @@ class JournalAdminSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
     inspect_view_enabled = True
     menu_label = _("Journals (admin)")
     add_view_class = JournalCreateView
+    edit_view_class = JournalEditView
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
     add_to_settings_menu = False
@@ -262,6 +313,7 @@ class JournalAdminEditorSnippetViewSet(FilteredJournalQuerysetMixin, SnippetView
     model = JournalProxyEditor
     inspect_view_enabled = True
     menu_label = _("Journals")
+    edit_view_class = JournalEditView
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
     add_to_settings_menu = False
@@ -273,6 +325,7 @@ class JournalAdminPolicySnippetViewSet(FilteredJournalQuerysetMixin, SnippetView
     model = JournalProxyPanelPolicy
     inspect_view_enabled = True
     menu_label = _("Journal Policies")
+    edit_view_class = JournalEditView
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
     add_to_settings_menu = False
@@ -286,6 +339,7 @@ class JournalAdminInstructionsForAuthorsSnippetViewSet(
     model = JournalProxyPanelInstructionsForAuthors
     inspect_view_enabled = True
     menu_label = _("Journal Instructions for Authors")
+    edit_view_class = JournalEditView
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
     add_to_settings_menu = False
