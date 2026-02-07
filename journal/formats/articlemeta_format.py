@@ -96,7 +96,7 @@ class ArticlemetaJournalFormatter:
         add_to_result("v117", self.obj.standard.code if self.obj.standard and self.obj.standard.code else None, self.result)
         add_items("v350", [lang.code2 for lang in self.obj.text_language.all()], self.result)
         add_items("v360", [lang.code2 for lang in self.obj.abstract_language.all()], self.result)
-        add_items("v900", [annotation.notes for annotation in self.obj.annotation.all()], self.result)
+        add_items("v900", [annotation.notes for annotation in self.obj.notes.all()], self.result)
 
     def _format_contact_address_info(self):
         address = self.obj.contact_address
