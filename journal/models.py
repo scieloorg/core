@@ -714,10 +714,6 @@ class Journal(CommonControlField, ClusterableModel):
             ObjectList(panels_website, heading=_("Website")),
             ObjectList(panels_scope_and_about, heading=_("Focus and Scope")),
             ObjectList(panels_open_science, heading=_("Open Science")),
-            ObjectList(
-                panels_legacy_compatibility_fields, heading=_("Legacy Compatibility")
-            ),
-            ObjectList(panels_notes, heading=_("Notes")),
         ]
     )
 

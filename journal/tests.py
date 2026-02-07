@@ -1186,3 +1186,60 @@ class TestJournalEditView(TestCase):
         # Verify migration did NOT occur (both still empty/None)
         self.assertIsNone(publisher_history.institution)
         self.assertFalse(publisher_history.raw_text)
+
+
+class JournalTabStructureTestCase(TestCase):
+    """Test the tab structure of Journal models and proxies."""
+
+    def test_journal_main_tabs_exclude_admin_only_tabs(self):
+        """Test that main Journal model excludes Legacy Compatibility and Notes tabs."""
+        from journal.models import Journal
+        
+        # Get the tabs from edit_handler
+        tabs = Journal.edit_handler.children
+        tab_headings = [tab.heading for tab in tabs]
+        
+        # Verify expected tabs are present
+        self.assertIn("Title", tab_headings)
+        self.assertIn("Institutions", tab_headings)
+        self.assertIn("Website", tab_headings)
+        self.assertIn("Focus and Scope", tab_headings)
+        self.assertIn("Open Science", tab_headings)
+        
+        # Verify admin-only tabs are NOT present
+        self.assertNotIn("Legacy Compatibility", tab_headings)
+        self.assertNotIn("Notes", tab_headings)
+
+    def test_journal_proxy_editor_tab_order(self):
+        """Test that JournalProxyEditor has correct tab order."""
+        from journal.proxys import JournalProxyEditor
+        
+        # Get the tabs from edit_handler
+        tabs = JournalProxyEditor.edit_handler.children
+        tab_headings = [tab.heading for tab in tabs]
+        
+        # Verify tab order
+        expected_order = [
+            "Title",
+            "Institutions",
+            "Website",
+            "Focus and Scope",
+            "Open Science",
+            "Editorial Policy",
+            "Instructions for Authors",
+            "Editorial Board",
+        ]
+        
+        self.assertEqual(tab_headings, expected_order)
+
+    def test_journal_proxy_admin_only_tabs(self):
+        """Test that JournalProxyAdminOnly has only Legacy Compatibility and Notes tabs."""
+        from journal.proxys import JournalProxyAdminOnly
+        
+        # Get the tabs from edit_handler
+        tabs = JournalProxyAdminOnly.edit_handler.children
+        tab_headings = [tab.heading for tab in tabs]
+        
+        # Verify only admin tabs are present
+        expected_tabs = ["Legacy Compatibility", "Notes"]
+        self.assertEqual(tab_headings, expected_tabs)

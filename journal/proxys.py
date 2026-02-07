@@ -346,3 +346,44 @@ class JournalProxyPanelInstructionsForAuthors(Journal):
         proxy = True
         verbose_name = _("Journal Instructions for Authors")
         verbose_name_plural = _("Journal Instructions for Authors")
+
+
+class JournalProxyAdminOnly(Journal):
+    """
+    Admin-only proxy model for Legacy Compatibility and Notes tabs.
+    Only accessible to superusers.
+    """
+
+    panels_legacy_compatibility_fields = [
+        FieldPanel("alphabet"),
+        FieldPanel("classification"),
+        FieldPanel("national_code"),
+        FieldPanel("type_of_literature"),
+        FieldPanel("treatment_level"),
+        FieldPanel("level_of_publication"),
+        FieldPanel("center_code"),
+        FieldPanel("identification_number"),
+        FieldPanel("ftp"),
+        FieldPanel("user_subscription"),
+        FieldPanel("subtitle"),
+        FieldPanel("section"),
+        FieldPanel("has_supplement"),
+        FieldPanel("is_supplement"),
+        FieldPanel("acronym_letters"),
+    ]
+
+    panels_notes = [InlinePanel("annotation", label=_("Notes"))]
+
+    edit_handler = TabbedInterface(
+        [
+            ObjectList(
+                panels_legacy_compatibility_fields, heading=_("Legacy Compatibility")
+            ),
+            ObjectList(panels_notes, heading=_("Notes")),
+        ]
+    )
+
+    class Meta:
+        proxy = True
+        verbose_name = _("Journal (Admin Only)")
+        verbose_name_plural = _("Journals (Admin Only)")

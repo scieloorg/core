@@ -24,6 +24,7 @@ from .proxys import (
     JournalProxyEditor,
     JournalProxyPanelInstructionsForAuthors,
     JournalProxyPanelPolicy,
+    JournalProxyAdminOnly,
 )
 from .views import import_file, validate
 
@@ -327,6 +328,31 @@ class JournalAdminInstructionsForAuthorsSnippetViewSet(
     list_per_page = 20
 
 
+class JournalAdminOnlySnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
+    """
+    ViewSet for admin-only journal tabs (Legacy Compatibility and Notes).
+    Only accessible to superusers.
+    """
+    model = JournalProxyAdminOnly
+    inspect_view_enabled = True
+    menu_label = _("Journals (Admin Only)")
+    edit_view_class = JournalEditView
+    menu_icon = "folder"
+    menu_order = get_menu_order("journal")
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_per_page = 20
+
+    def get_queryset(self, request):
+        # Only allow superusers to access this viewset
+        user = request.user
+        if not user.is_authenticated or not user.is_superuser:
+            return models.Journal.objects.none()
+
+        # For superusers, return all journals with optimizations
+        return super().get_queryset(request)
+
+
 class SciELOJournalCreateView(CreateView):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
@@ -438,6 +464,7 @@ class JournalSnippetViewSetGroup(SnippetViewSetGroup):
         JournalExporterSnippetViewSet,
         JournalAdminPolicySnippetViewSet,
         JournalAdminInstructionsForAuthorsSnippetViewSet,
+        JournalAdminOnlySnippetViewSet,
         JournalTableOfContentsViewSet,
         AMJournalAdmin,
     )
@@ -614,5 +641,12 @@ def register_ctf_permissions_1():
 @hooks.register("register_permissions")
 def register_ctf_permissions_2():
     model = JournalProxyPanelInstructionsForAuthors
+    content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
+    return Permission.objects.filter(content_type=content_type)
+
+
+@hooks.register("register_permissions")
+def register_journal_admin_only_permissions():
+    model = JournalProxyAdminOnly
     content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
     return Permission.objects.filter(content_type=content_type)
