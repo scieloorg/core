@@ -110,11 +110,11 @@ class JournalEditView(EditView):
     Custom EditView for Journal that migrates institution data to raw_* fields
     when presenting the form for editing.
     """
-    
+
     def get_object(self, queryset=None):
         """
         Override get_object to migrate history data before presenting the form.
-        
+
         When presenting the form, check if publisher_history.raw_text,
         owner_history.raw_text, copyright_holder_history.raw_text, or
         sponsor_history.raw_text is empty. If so, and their respective
@@ -122,33 +122,33 @@ class JournalEditView(EditView):
         migrate_*_history_to_raw method.
         """
         obj = super().get_object(queryset)
-        
+
         # Check and migrate publisher_history
         for history_item in obj.publisher_history.all():
             if not history_item.raw_text and history_item.institution:
                 obj.migrate_publisher_history_to_raw()
                 break
-        
+
         # Check and migrate owner_history
         for history_item in obj.owner_history.all():
             if not history_item.raw_text and history_item.institution:
                 obj.migrate_owner_history_to_raw()
                 break
-        
+
         # Check and migrate sponsor_history
         for history_item in obj.sponsor_history.all():
             if not history_item.raw_text and history_item.institution:
                 obj.migrate_sponsor_history_to_raw()
                 break
-        
+
         # Check and migrate copyright_holder_history
         for history_item in obj.copyright_holder_history.all():
             if not history_item.raw_text and history_item.institution:
                 obj.migrate_copyright_holder_history_to_raw()
                 break
-        
+
         return obj
-    
+
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
@@ -216,25 +216,25 @@ class FilteredJournalQuerysetMixin:
                     "owner_history",
                     queryset=models.OwnerHistory.objects.select_related(
                         "institution", "organization", "organization__location"
-                    )
+                    ),
                 ),
                 Prefetch(
                     "publisher_history",
                     queryset=models.PublisherHistory.objects.select_related(
                         "institution", "organization", "organization__location"
-                    )
+                    ),
                 ),
                 Prefetch(
                     "sponsor_history",
                     queryset=models.SponsorHistory.objects.select_related(
                         "institution", "organization", "organization__location"
-                    )
+                    ),
                 ),
                 Prefetch(
                     "copyright_holder_history",
                     queryset=models.CopyrightHolderHistory.objects.select_related(
                         "institution", "organization", "organization__location"
-                    )
+                    ),
                 ),
                 # Other inline panels (reverse ForeignKeys via ParentalKey)
                 "other_titles",
@@ -290,9 +290,7 @@ class FilteredJournalQuerysetMixin:
                 scielojournal__collection__in=user.collection_ids
             ).distinct()
         elif user.has_journal_permission and user.journal_ids:
-            return qs.filter(
-                scielojournal__journal__id__in=user.journal_ids
-            ).distinct()
+            return qs.filter(scielojournal__journal__id__in=user.journal_ids).distinct()
         return qs.none()
 
 
@@ -393,12 +391,12 @@ class SciELOJournalAdminViewSet(SnippetViewSet):
             return models.SciELOJournal.objects.filter(
                 journal__in=user.journal_ids
             ).select_related("journal", "collection")
-        
+
         if user.collection_ids:
             return models.SciELOJournal.objects.filter(
                 collection__in=user.collection_ids
             ).select_related("journal", "collection")
-        
+
         return models.SciELOJournal.objects.none()
 
 
@@ -421,7 +419,7 @@ class JournalTableOfContentsViewSet(SnippetViewSet):
 
     list_display = (
         "journal",
-        "collection", 
+        "collection",
         "text",
         "language",
         "code",
@@ -636,4 +634,3 @@ def register_ctf_permissions_2():
     model = JournalProxyPanelInstructionsForAuthors
     content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
     return Permission.objects.filter(content_type=content_type)
-
