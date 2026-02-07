@@ -9,6 +9,7 @@ from wagtail.snippets import widgets as wagtailsnippets_widgets
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import (
     CreateView,
+    EditView,
     SnippetViewSet,
     SnippetViewSetGroup,
 )
@@ -98,10 +99,41 @@ class JournalExporterSnippetViewSet(SnippetViewSet):
     )
 
 
-class JournalCreateView(CreateView):
+class JournalFormValidMixin:
+    """Mixin for handling form_valid in Journal views"""
+
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
+
+
+class JournalCreateView(JournalFormValidMixin, CreateView):
+    pass
+
+
+class JournalEditView(JournalFormValidMixin, EditView):
+    """
+    Custom EditView for Journal that migrates institution data to raw_* fields
+    when presenting the form for editing.
+    """
+
+    def get_object(self, queryset=None):
+        """
+        Override get_object to migrate history data before presenting the form.
+
+        When presenting the form, migrate institution data to raw_* fields for
+        publisher_history, owner_history, copyright_holder_history, and sponsor_history.
+        The migrate methods internally check if migration is needed.
+        """
+        obj = super().get_object(queryset)
+
+        # Migrate history data (methods internally check if migration is needed)
+        obj.migrate_publisher_history_to_raw()
+        obj.migrate_owner_history_to_raw()
+        obj.migrate_sponsor_history_to_raw()
+        obj.migrate_copyright_holder_history_to_raw()
+
+        return obj
 
 
 class FilteredJournalQuerysetMixin:
@@ -166,25 +198,25 @@ class FilteredJournalQuerysetMixin:
                     "owner_history",
                     queryset=models.OwnerHistory.objects.select_related(
                         "institution", "organization", "organization__location"
-                    )
+                    ),
                 ),
                 Prefetch(
                     "publisher_history",
                     queryset=models.PublisherHistory.objects.select_related(
                         "institution", "organization", "organization__location"
-                    )
+                    ),
                 ),
                 Prefetch(
                     "sponsor_history",
                     queryset=models.SponsorHistory.objects.select_related(
                         "institution", "organization", "organization__location"
-                    )
+                    ),
                 ),
                 Prefetch(
                     "copyright_holder_history",
                     queryset=models.CopyrightHolderHistory.objects.select_related(
                         "institution", "organization", "organization__location"
-                    )
+                    ),
                 ),
                 # Other inline panels (reverse ForeignKeys via ParentalKey)
                 "other_titles",
@@ -240,9 +272,7 @@ class FilteredJournalQuerysetMixin:
                 scielojournal__collection__in=user.collection_ids
             ).distinct()
         elif user.has_journal_permission and user.journal_ids:
-            return qs.filter(
-                scielojournal__journal__id__in=user.journal_ids
-            ).distinct()
+            return qs.filter(scielojournal__journal__id__in=user.journal_ids).distinct()
         return qs.none()
 
 
@@ -251,6 +281,7 @@ class JournalAdminSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
     inspect_view_enabled = True
     menu_label = _("Journals (admin)")
     add_view_class = JournalCreateView
+    edit_view_class = JournalEditView
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
     add_to_settings_menu = False
@@ -262,6 +293,7 @@ class JournalAdminEditorSnippetViewSet(FilteredJournalQuerysetMixin, SnippetView
     model = JournalProxyEditor
     inspect_view_enabled = True
     menu_label = _("Journals")
+    edit_view_class = JournalEditView
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
     add_to_settings_menu = False
@@ -273,6 +305,7 @@ class JournalAdminPolicySnippetViewSet(FilteredJournalQuerysetMixin, SnippetView
     model = JournalProxyPanelPolicy
     inspect_view_enabled = True
     menu_label = _("Journal Policies")
+    edit_view_class = JournalEditView
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
     add_to_settings_menu = False
@@ -286,6 +319,7 @@ class JournalAdminInstructionsForAuthorsSnippetViewSet(
     model = JournalProxyPanelInstructionsForAuthors
     inspect_view_enabled = True
     menu_label = _("Journal Instructions for Authors")
+    edit_view_class = JournalEditView
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
     add_to_settings_menu = False
@@ -339,12 +373,12 @@ class SciELOJournalAdminViewSet(SnippetViewSet):
             return models.SciELOJournal.objects.filter(
                 journal__in=user.journal_ids
             ).select_related("journal", "collection")
-        
+
         if user.collection_ids:
             return models.SciELOJournal.objects.filter(
                 collection__in=user.collection_ids
             ).select_related("journal", "collection")
-        
+
         return models.SciELOJournal.objects.none()
 
 
@@ -367,7 +401,7 @@ class JournalTableOfContentsViewSet(SnippetViewSet):
 
     list_display = (
         "journal",
-        "collection", 
+        "collection",
         "text",
         "language",
         "code",
@@ -582,4 +616,3 @@ def register_ctf_permissions_2():
     model = JournalProxyPanelInstructionsForAuthors
     content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
     return Permission.objects.filter(content_type=content_type)
-
