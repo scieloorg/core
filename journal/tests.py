@@ -1,5 +1,5 @@
 import json
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from django.test import TestCase
 from django_test_migrations.migrator import Migrator
 
@@ -24,6 +24,7 @@ from journal.tasks import (
     child_load_license_of_use_in_journal,
     fetch_and_process_journal_logos_in_collection,
     load_license_of_use_in_journal,
+    task_migrate_institution_history_to_raw_institution,
 )
 from journal.formats.articlemeta_format import get_articlemeta_format_title
 from thematic_areas.models import ThematicArea
@@ -675,3 +676,273 @@ class HistoryMigrationTestCase(TestCase):
         
         # Verify institution is None
         self.assertIsNone(publisher_history.institution)
+
+
+class TaskMigrateInstitutionHistoryTestCase(TestCase):
+    """Test cases for task_migrate_institution_history_to_raw_institution task"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        from institution.models import (
+            Publisher,
+            Owner,
+            Sponsor,
+            CopyrightHolder,
+            Institution,
+            InstitutionIdentification,
+        )
+        from location.models import Country, Location
+        
+        self.user = User.objects.create_user(username="testuser")
+        
+        # Create collection
+        self.collection = Collection.objects.create(
+            acron3="scl",
+            name="SciELO Brazil",
+            creator=self.user,
+        )
+        
+        # Create journal
+        self.journal = Journal.objects.create(
+            title="Test Journal",
+            creator=self.user,
+        )
+        
+        # Create SciELOJournal to link journal with collection
+        self.scielo_journal = SciELOJournal.objects.create(
+            journal=self.journal,
+            collection=self.collection,
+            issn_scielo="1234-5678",
+            journal_acron="testj",
+            creator=self.user,
+        )
+        
+        # Create location and institution
+        self.country = Country.objects.create(
+            name="Brazil",
+            acron3="BRA",
+        )
+        self.location = Location.objects.create(
+            country=self.country,
+            creator=self.user,
+        )
+        
+        self.institution_id = InstitutionIdentification.objects.create(
+            name="Test University",
+            acronym="TU",
+            creator=self.user,
+        )
+        
+        self.institution = Institution.objects.create(
+            institution_identification=self.institution_id,
+            location=self.location,
+            creator=self.user,
+        )
+        
+        # Create Publisher, Owner, Sponsor, CopyrightHolder instances
+        self.publisher = Publisher.objects.create(
+            institution=self.institution,
+            creator=self.user,
+        )
+        self.owner = Owner.objects.create(
+            institution=self.institution,
+            creator=self.user,
+        )
+        self.sponsor = Sponsor.objects.create(
+            institution=self.institution,
+            creator=self.user,
+        )
+        self.copyright_holder = CopyrightHolder.objects.create(
+            institution=self.institution,
+            creator=self.user,
+        )
+
+    def test_task_migrates_all_history_types(self):
+        """Test that task migrates all four history types"""
+        from journal.models import (
+            PublisherHistory,
+            OwnerHistory,
+            SponsorHistory,
+            CopyrightHolderHistory,
+        )
+        
+        # Create history records with institution data
+        PublisherHistory.objects.create(
+            journal=self.journal,
+            institution=self.publisher,
+            creator=self.user,
+        )
+        OwnerHistory.objects.create(
+            journal=self.journal,
+            institution=self.owner,
+            creator=self.user,
+        )
+        SponsorHistory.objects.create(
+            journal=self.journal,
+            institution=self.sponsor,
+            creator=self.user,
+        )
+        CopyrightHolderHistory.objects.create(
+            journal=self.journal,
+            institution=self.copyright_holder,
+            creator=self.user,
+        )
+        
+        # Create mock self with request attribute for Celery task
+        mock_self = MagicMock()
+        mock_self.request = MagicMock()
+        
+        # Run the task
+        result = task_migrate_institution_history_to_raw_institution(
+            mock_self,
+            username="testuser",
+            collection_acron_list=["scl"],
+        )
+        
+        # Verify all history records were migrated
+        self.assertEqual(result["total_journals"], 1)
+        self.assertEqual(result["migrated_publishers"], 1)
+        self.assertEqual(result["migrated_owners"], 1)
+        self.assertEqual(result["migrated_sponsors"], 1)
+        self.assertEqual(result["migrated_copyright_holders"], 1)
+        self.assertEqual(result["error_count"], 0)
+        
+        # Verify institution fields are None
+        self.assertIsNone(self.journal.publisher_history.first().institution)
+        self.assertIsNone(self.journal.owner_history.first().institution)
+        self.assertIsNone(self.journal.sponsor_history.first().institution)
+        self.assertIsNone(self.journal.copyright_holder_history.first().institution)
+        
+        # Verify raw fields are populated
+        self.assertEqual(
+            self.journal.publisher_history.first().raw_institution_name,
+            "Test University"
+        )
+
+    def test_task_filters_by_collection(self):
+        """Test that task filters journals by collection"""
+        from journal.models import PublisherHistory
+        
+        # Create another collection and journal
+        collection2 = Collection.objects.create(
+            acron3="mex",
+            name="SciELO Mexico",
+            creator=self.user,
+        )
+        journal2 = Journal.objects.create(
+            title="Another Journal",
+            creator=self.user,
+        )
+        SciELOJournal.objects.create(
+            journal=journal2,
+            collection=collection2,
+            issn_scielo="8765-4321",
+            journal_acron="testj2",
+            creator=self.user,
+        )
+        
+        # Create history for both journals
+        PublisherHistory.objects.create(
+            journal=self.journal,
+            institution=self.publisher,
+            creator=self.user,
+        )
+        PublisherHistory.objects.create(
+            journal=journal2,
+            institution=self.publisher,
+            creator=self.user,
+        )
+        
+        # Create mock self with request attribute for Celery task
+        mock_self = MagicMock()
+        mock_self.request = MagicMock()
+        
+        # Run task only for "scl" collection
+        result = task_migrate_institution_history_to_raw_institution(
+            mock_self,
+            username="testuser",
+            collection_acron_list=["scl"],
+        )
+        
+        # Verify only one journal was processed
+        self.assertEqual(result["total_journals"], 1)
+        self.assertEqual(result["migrated_publishers"], 1)
+        
+        # Verify self.journal was migrated but journal2 was not
+        self.assertIsNone(self.journal.publisher_history.first().institution)
+        self.assertIsNotNone(journal2.publisher_history.first().institution)
+
+    def test_task_filters_by_issn(self):
+        """Test that task filters journals by ISSN"""
+        from journal.models import PublisherHistory
+        
+        # Create another journal in same collection
+        journal2 = Journal.objects.create(
+            title="Another Journal",
+            creator=self.user,
+        )
+        SciELOJournal.objects.create(
+            journal=journal2,
+            collection=self.collection,
+            issn_scielo="8765-4321",
+            journal_acron="testj2",
+            creator=self.user,
+        )
+        
+        # Create history for both journals
+        PublisherHistory.objects.create(
+            journal=self.journal,
+            institution=self.publisher,
+            creator=self.user,
+        )
+        PublisherHistory.objects.create(
+            journal=journal2,
+            institution=self.publisher,
+            creator=self.user,
+        )
+        
+        # Create mock self with request attribute for Celery task
+        mock_self = MagicMock()
+        mock_self.request = MagicMock()
+        
+        # Run task only for specific ISSN
+        result = task_migrate_institution_history_to_raw_institution(
+            mock_self,
+            username="testuser",
+            collection_acron_list=["scl"],
+            journal_issns=["1234-5678"],
+        )
+        
+        # Verify only one journal was processed
+        self.assertEqual(result["total_journals"], 1)
+        self.assertEqual(result["migrated_publishers"], 1)
+        
+        # Verify self.journal was migrated but journal2 was not
+        self.assertIsNone(self.journal.publisher_history.first().institution)
+        self.assertIsNotNone(journal2.publisher_history.first().institution)
+
+    def test_task_skips_history_without_institution(self):
+        """Test that task only migrates history records with institution != None"""
+        from journal.models import PublisherHistory
+        
+        # Create history without institution
+        PublisherHistory.objects.create(
+            journal=self.journal,
+            institution=None,
+            creator=self.user,
+        )
+        
+        # Create mock self with request attribute for Celery task
+        mock_self = MagicMock()
+        mock_self.request = MagicMock()
+        
+        # Run the task
+        result = task_migrate_institution_history_to_raw_institution(
+            mock_self,
+            username="testuser",
+            collection_acron_list=["scl"],
+        )
+        
+        # Verify no records were migrated (since institution is None)
+        self.assertEqual(result["total_journals"], 1)
+        self.assertEqual(result["migrated_publishers"], 0)

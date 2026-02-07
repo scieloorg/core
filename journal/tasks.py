@@ -634,3 +634,147 @@ def task_export_journal_to_articlemeta(
         
         # Re-raise para que o Celery possa tratar a exceção adequadamente
         raise
+
+@celery_app.task(bind=True, name="task_migrate_institution_history_to_raw_institution")
+def task_migrate_institution_history_to_raw_institution(
+    self,
+    username=None,
+    user_id=None,
+    collection_acron_list=None,
+    journal_issns=None,
+):
+    """
+    Task to migrate Institution data to RawOrganization for a given list of collections.
+    
+    This task migrates data from Institution to RawOrganization for PublisherHistory,
+    OwnerHistory, SponsorHistory, and CopyrightHolderHistory records that have
+    institution != None.
+    
+    Args:
+        username: User name for authentication
+        user_id: User ID for authentication
+        collection_acron_list: List of collection acronyms to filter journals (e.g., ['scl', 'mex'])
+        journal_issns: Optional list of journal ISSNs to filter journals
+    
+    Returns:
+        Dict with processing statistics including:
+            - total_journals: Number of journals processed
+            - migrated_publishers: Total publisher history records migrated
+            - migrated_owners: Total owner history records migrated
+            - migrated_sponsors: Total sponsor history records migrated
+            - migrated_copyright_holders: Total copyright holder history records migrated
+            - error_count: Number of errors encountered
+    """
+    user = _get_user(self.request, username=username, user_id=user_id)
+    
+    try:
+        # Build query parameters
+        params = {}
+        
+        # Filter by collection acronyms if provided
+        if collection_acron_list:
+            params["scielojournal__collection__acron3__in"] = collection_acron_list
+        
+        # Filter by journal ISSNs if provided
+        if journal_issns:
+            params["scielojournal__issn_scielo__in"] = journal_issns
+        
+        # Initialize counters
+        total_journals = 0
+        migrated_publishers = 0
+        migrated_owners = 0
+        migrated_sponsors = 0
+        migrated_copyright_holders = 0
+        error_count = 0
+        
+        # Get journals matching the filters
+        journals = Journal.objects.filter(**params).distinct()
+        
+        for journal in journals.iterator():
+            try:
+                # Check and migrate publisher_history records with institution != None
+                if journal.publisher_history.filter(institution__isnull=False).exists():
+                    migrated_items = journal.migrate_publisher_history_to_raw()
+                    migrated_publishers += len(migrated_items)
+                    logger.info(
+                        f"Migrated {len(migrated_items)} publisher history records "
+                        f"for journal {journal.id}"
+                    )
+                
+                # Check and migrate owner_history records with institution != None
+                if journal.owner_history.filter(institution__isnull=False).exists():
+                    migrated_items = journal.migrate_owner_history_to_raw()
+                    migrated_owners += len(migrated_items)
+                    logger.info(
+                        f"Migrated {len(migrated_items)} owner history records "
+                        f"for journal {journal.id}"
+                    )
+                
+                # Check and migrate sponsor_history records with institution != None
+                if journal.sponsor_history.filter(institution__isnull=False).exists():
+                    migrated_items = journal.migrate_sponsor_history_to_raw()
+                    migrated_sponsors += len(migrated_items)
+                    logger.info(
+                        f"Migrated {len(migrated_items)} sponsor history records "
+                        f"for journal {journal.id}"
+                    )
+                
+                # Check and migrate copyright_holder_history records with institution != None
+                if journal.copyright_holder_history.filter(institution__isnull=False).exists():
+                    migrated_items = journal.migrate_copyright_holder_history_to_raw()
+                    migrated_copyright_holders += len(migrated_items)
+                    logger.info(
+                        f"Migrated {len(migrated_items)} copyright holder history records "
+                        f"for journal {journal.id}"
+                    )
+                
+                total_journals += 1
+                
+            except Exception as e:
+                error_count += 1
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "task": "task_migrate_institution_history_to_raw_institution",
+                        "journal_id": journal.id,
+                        "journal_title": journal.title,
+                    },
+                )
+                logger.error(
+                    f"Error migrating history for journal {journal.id}: {e}"
+                )
+        
+        result = {
+            "total_journals": total_journals,
+            "migrated_publishers": migrated_publishers,
+            "migrated_owners": migrated_owners,
+            "migrated_sponsors": migrated_sponsors,
+            "migrated_copyright_holders": migrated_copyright_holders,
+            "error_count": error_count,
+        }
+        
+        logger.info(
+            f"task_migrate_institution_history_to_raw_institution completed: {result}"
+        )
+        
+        return result
+        
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "task_migrate_institution_history_to_raw_institution",
+                "collection_acron_list": collection_acron_list,
+                "journal_issns": journal_issns,
+                "user_id": user_id,
+                "username": username,
+                "task_id": self.request.id if hasattr(self.request, 'id') else None,
+            },
+        )
+        
+        # Re-raise para que o Celery possa tratar a exceção adequadamente
+        raise
