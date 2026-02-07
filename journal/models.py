@@ -1493,11 +1493,6 @@ class OwnerHistory(Orderable, ClusterableModel, RawOrganizationMixin, BaseHistor
     panels = [
         AutocompletePanel("organization"),
         *RawOrganizationMixin.panels,
-        *BaseHistoryItem.panels,
-        AutocompletePanel("institution", read_only=True),
-        InlinePanel(
-            "org_level", max_num=1, label=_("Level Owner"), classname="collapsed"
-        ),
     ]
 
     @classmethod
@@ -1529,11 +1524,6 @@ class PublisherHistory(Orderable, ClusterableModel, RawOrganizationMixin, BaseHi
     panels = [
         AutocompletePanel("organization"),
         *RawOrganizationMixin.panels,
-        *BaseHistoryItem.panels,
-        AutocompletePanel("institution", read_only=True),
-        InlinePanel(
-            "org_level", max_num=1, label=_("Level Publisher"), classname="collapsed"
-        ),
     ]
 
     @classmethod
@@ -1565,11 +1555,6 @@ class SponsorHistory(Orderable, ClusterableModel, RawOrganizationMixin, BaseHist
     panels = [
         AutocompletePanel("organization"),
         *RawOrganizationMixin.panels,
-        *BaseHistoryItem.panels,
-        AutocompletePanel("institution", read_only=True),
-        InlinePanel(
-            "org_level", max_num=1, label=_("Level Sponsor"), classname="collapsed"
-        ),
     ]
 
     @classmethod
@@ -1604,11 +1589,6 @@ class CopyrightHolderHistory(Orderable, ClusterableModel, RawOrganizationMixin, 
     panels = [
         AutocompletePanel("organization"),
         *RawOrganizationMixin.panels,
-        *BaseHistoryItem.panels,
-        AutocompletePanel("institution", read_only=True),
-        InlinePanel(
-            "org_level", max_num=1, label=_("Level Copyright"), classname="collapsed"
-        ),
     ]
 
     @classmethod
