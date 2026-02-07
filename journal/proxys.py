@@ -45,9 +45,7 @@ class JournalProxyEditor(Journal):
         InlinePanel("journal_email", label=_("Contact e-mail")),
         FieldPanel("logo", heading=_("Logo")),
         # FieldPanel("journal_url"),
-        InlinePanel(
-            "related_journal_urls", label=_("Journal Urls")
-        ),
+        InlinePanel("related_journal_urls", label=_("Journal Urls")),
         FieldPanel("submission_online_url"),
         FieldPanel("main_collection"),
         InlinePanel("journalsocialnetwork", label=_("Social Network")),
@@ -59,9 +57,7 @@ class JournalProxyEditor(Journal):
     panels_open_science = [
         FieldPanel("open_access"),
         FieldPanel("url_oa"),
-        InlinePanel(
-            "file_oa", label=_("Open Science accordance form")
-        ),
+        InlinePanel("file_oa", label=_("Open Science accordance form")),
         FieldPanel("journal_use_license"),
         InlinePanel("open_access_text", label=_("Open Access")),
         InlinePanel("open_data", label=_("Open data")),
@@ -186,10 +182,13 @@ class JournalProxyEditor(Journal):
             ObjectList(panels_scope_and_about, heading=_("Focus and Scope")),
             ObjectList(panels_open_science, heading=_("Open Science")),
             ObjectList(panels_policy, heading=_("Editorial Policy")),
-            ObjectList(panels_instructions_for_authors, heading=_("Instructions for Authors")),
+            ObjectList(
+                panels_instructions_for_authors, heading=_("Instructions for Authors")
+            ),
             ObjectList(panels_editorial_board, heading=_("Editorial Board")),
         ]
     )
+
     class Meta:
         proxy = True
         verbose_name = _("Journal Editor")
@@ -274,11 +273,11 @@ class JournalProxyPanelPolicy(Journal):
             ObjectList(panels_policy, heading=_("Journal Policy")),
         ]
     )
+
     class Meta:
         proxy = True
         verbose_name = _("Journal Policy")
         verbose_name_plural = _("Journal Policy")
-
 
 
 class JournalProxyPanelInstructionsForAuthors(Journal):
@@ -342,6 +341,7 @@ class JournalProxyPanelInstructionsForAuthors(Journal):
             )
         ]
     )
+
     class Meta:
         proxy = True
         verbose_name = _("Journal Instructions for Authors")
