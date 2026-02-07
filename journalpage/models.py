@@ -63,7 +63,7 @@ class JournalPage(RoutablePageMixin, Page):
         policies = journal.policies.get_object_in_preferred_language(language=language)
         conflict_policy = journal.conflict_policy.get_object_in_preferred_language(language=language)
         gender_issues = journal.gender_issues.get_object_in_preferred_language(language=language)
-        accepted_documment_types = journal.accepted_document_types.get_object_in_preferred_language(language=language)
+        accepted_document_types = journal.accepted_document_types.get_object_in_preferred_language(language=language)
         authors_contributions = journal.authors_contributions.get_object_in_preferred_language(language=language)
         digital_assets = journal.digital_assets.get_object_in_preferred_language(language=language)
         citations_and_references = journal.citations_and_references.get_object_in_preferred_language(language=language)
@@ -92,7 +92,7 @@ class JournalPage(RoutablePageMixin, Page):
             "policies": policies,
             "conflict_policy": conflict_policy,
             "gender_issues": gender_issues,
-            "accepted_documment_types": accepted_documment_types,
+            "accepted_document_types": accepted_document_types,
             "authors_contributions": authors_contributions,
             "digital_assets": digital_assets,
             "citations_and_references": citations_and_references,
