@@ -348,7 +348,7 @@ class JournalAdminOnlySnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSe
         user = request.user
         if not user.is_authenticated or not user.is_superuser:
             return models.Journal.objects.none()
-        
+
         # For superusers, return all journals with optimizations
         return super().get_queryset(request)
 
@@ -646,7 +646,7 @@ def register_ctf_permissions_2():
 
 
 @hooks.register("register_permissions")
-def register_ctf_permissions_3():
+def register_journal_admin_only_permissions():
     model = JournalProxyAdminOnly
     content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
     return Permission.objects.filter(content_type=content_type)
