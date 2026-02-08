@@ -7,11 +7,11 @@ from .models import Journal
 
 class JournalProxyEditor(Journal):
     panels_titles = [
-        # about_the_journal - 08 - Ficha Bibliográfica - F - Ano de criação do periódico / ISSN
+        # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - F - Ano de criação do periódico / ISSN
         AutocompletePanel("official", read_only=True),
-        # about_the_journal - 08 - Ficha Bibliográfica - A - Título do periódico
+        # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - A - Título do periódico
         FieldPanel("title", read_only=True),
-        # about_the_journal - 08 - Ficha Bibliográfica - B - Título abreviado do periódico
+        # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - B - Título abreviado do periódico
         FieldPanel("short_title"),
         # InlinePanel("other_titles", label=_("Other titles")),
     ]
@@ -19,10 +19,10 @@ class JournalProxyEditor(Journal):
     panels_scope_and_about = [
         # InlinePanel("mission", label=_("Mission")),
 
-        # about_the_journal - 01 - brief history
+        # SOBRE O PERIÓDICO - 01 - brief history
         InlinePanel("history", label=_("Brief History")),
 
-        # about_the_journal - 05 - focus and scope
+        # SOBRE O PERIÓDICO - 05 - focus and scope
         InlinePanel("focus", label=_("Focus and Scope")),
         # AutocompletePanel("subject"),
         # InlinePanel("thematic_area", label=_("Thematic Areas")),
@@ -30,9 +30,9 @@ class JournalProxyEditor(Journal):
         # AutocompletePanel("wos_area"),
         # AutocompletePanel("wos_db"),
 
-        # about_the_journal - 07a - Fontes de Indexação padronizadas
+        # SOBRE O PERIÓDICO - 07a - Fontes de Indexação padronizadas
         AutocompletePanel("indexed_at"),
-        # about_the_journal - 07b - Fontes de Indexação adicionais / não padronizadas
+        # SOBRE O PERIÓDICO - 07b - Fontes de Indexação adicionais / não padronizadas
         AutocompletePanel("additional_indexed_at"),
 
         # AutocompletePanel("vocabulary"),
@@ -40,9 +40,9 @@ class JournalProxyEditor(Journal):
     ]
 
     panels_institutions = [
-        # about_the_journal - 08 - Ficha Bibliográfica - C1 - Publicação de
+        # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - C1 - Publicação de
         InlinePanel("owner_history", label=_("Owner")),
-        # about_the_journal - 08 - Ficha Bibliográfica - C2 - Publicação de
+        # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - C2 - Publicação de
         InlinePanel("publisher_history", label=_("Publisher")),
         
         # POLÍTICA EDITORIAL - 14 - Patrocinadores e Agências de Fomento 
@@ -54,33 +54,33 @@ class JournalProxyEditor(Journal):
     ]
 
     panels_website = [
-        # about_the_journal - 10a - Contato
+        # SOBRE O PERIÓDICO - 10a - Contato
         FieldPanel("contact_name"),
-        # about_the_journal - 10b - Contato
+        # SOBRE O PERIÓDICO - 10b - Contato
         FieldPanel("contact_address"),
-        # about_the_journal - 10c - Contato
+        # SOBRE O PERIÓDICO - 10c - Contato
         AutocompletePanel("contact_location"),
-        # about_the_journal - 10d - Contato
+        # SOBRE O PERIÓDICO - 10d - Contato
         InlinePanel("journal_email", label=_("Contact e-mail")),
 
-        # about_the_journal - 09d - Websites
+        # SOBRE O PERIÓDICO - 09d - Websites
         FieldPanel("logo", heading=_("Logo")),
-        # about_the_journal - 09c - Websites
+        # SOBRE O PERIÓDICO - 09c - Websites
         FieldPanel("journal_url"),
         
         # InlinePanel("related_journal_urls", label=_("Journal Urls")),
         
-        # about_the_journal - 09b - Websites
+        # SOBRE O PERIÓDICO - 09b - Websites
         FieldPanel("submission_online_url"),
         # FieldPanel("main_collection"),
 
-        # about_the_journal - 09 - Websites e Mídias Sociais
-        InlinePanel("journalsocialnetwork", label=_("Social Network")),
+        # SOBRE O PERIÓDICO - 09 - Websites e Mídias Sociais
+        InlinePanel("social_networks", label=_("Social Network")),
 
-        # about_the_journal - 08 - Ficha Bibliográfica - D - Periodicidade
+        # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - D - Periodicidade
         FieldPanel("frequency"),
 
-        # about_the_journal - 08 - Ficha Bibliográfica - E - Modalidade de publicação
+        # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - E - Modalidade de publicação
         FieldPanel("publishing_model"),
         # FieldPanel("standard"),
     ]
@@ -88,14 +88,14 @@ class JournalProxyEditor(Journal):
     panels_open_science = [
         # FieldPanel("open_access"),
 
-        # about_the_journal - 02 - journal declares it is open access
+        # SOBRE O PERIÓDICO - 02 - journal declares it is open access
         InlinePanel("open_access_text", label=_("Open Access")),
         # FieldPanel("url_oa"),
 
-        # about_the_journal - 03a - Conformidade com a Ciência Aberta - formulário de auto declaração
+        # SOBRE O PERIÓDICO - 03a - Conformidade com a Ciência Aberta - formulário de auto declaração
         InlinePanel("file_oa", label=_("Open Science accordance form")),
 
-        # about_the_journal - 04 - Ética na Publicação
+        # SOBRE O PERIÓDICO - 04 - Ética na Publicação
         InlinePanel(
             "ethics",
             label=_("Ethics"),
@@ -111,8 +111,8 @@ class JournalProxyEditor(Journal):
         InlinePanel("preprint", label=_("Preprint")),
 
         # POLÍTICA EDITORIAL - 02 - Peer review
-        InlinePanel("review", label=_("Peer review")),
-
+        InlinePanel("peer_review", label=_("Peer review")),
+        
         # about_the_journal - 03b - Conformidade com a Ciência Aberta - declaração de conformidade
         InlinePanel(
             "open_science_compliance",
@@ -124,7 +124,7 @@ class JournalProxyEditor(Journal):
 
         # POLÍTICA EDITORIAL - 10 - Comitê de Ética
         InlinePanel(
-            "ecommittee",
+            "ethics_committee",
             label=_("Ethics Committee"),
         ),
         # POLÍTICA EDITORIAL - 11a - detentor dos direitos autorais
@@ -196,12 +196,12 @@ class JournalProxyEditor(Journal):
             label=_("Artificial Intelligence"),
         ),
     ]
-    # panels_notes = [InlinePanel("annotation", label=_("Notes"))]
+    # panels_notes = [InlinePanel("notes", label=_("Notes"))]
 
     panels_instructions_for_authors = [
         # INSTRUÇÕES AOS AUTORES - 01 - Tipos de documentos aceitos
         InlinePanel(
-            "accepted_documment_types",
+            "accepted_document_types",
             label=_("Accepted Document Types"),
         ),
         # INSTRUÇÕES AOS AUTORES - 02 - Contribuição dos Autores
@@ -294,7 +294,7 @@ class JournalProxyPanelPolicy(Journal):
             classname="collapsed",
         ),
         InlinePanel(
-            "ecommittee",
+            "ethics_committee",
             label=_("Ethics Committee"),
             classname="collapsed",
         ),
@@ -374,7 +374,7 @@ class JournalProxyPanelPolicy(Journal):
 class JournalProxyPanelInstructionsForAuthors(Journal):
     panels_instructions_for_authors = [
         InlinePanel(
-            "accepted_documment_types",
+            "accepted_document_types",
             label=_("Accepted Document Types"),
             classname="collapsed",
         ),
@@ -463,7 +463,7 @@ class JournalProxyAdminOnly(Journal):
         FieldPanel("acronym_letters"),
     ]
 
-    panels_notes = [InlinePanel("annotation", label=_("Notes"))]
+    panels_notes = [InlinePanel("notes", label=_("Notes"))]
 
     edit_handler = TabbedInterface(
         [

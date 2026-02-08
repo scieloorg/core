@@ -359,7 +359,7 @@
                         <h5 id="item-4-1">{% trans 'Tipos de documentos aceitos' %}</h5>
                         <!-- Pode haver mais de um. Permitir adicionar novo -->
                         <ul type="disc">
-                            {% for adt in accepted_documment_types %}
+                            {% for adt in accepted_document_types %}
                                 {{ adt.rich_text|richtext }}
                             {% endfor %}
                         </ul>

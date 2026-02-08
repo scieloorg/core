@@ -663,7 +663,7 @@ class Journal(CommonControlField, ClusterableModel):
         ),
         FieldPanel("submission_online_url"),
         FieldPanel("main_collection"),
-        InlinePanel("journalsocialnetwork", label=_("Social Network")),
+        InlinePanel("social_networks", label=_("Social Network")),
         FieldPanel("frequency"),
         FieldPanel("publishing_model"),
         FieldPanel("standard"),
@@ -673,13 +673,13 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("open_access"),
         FieldPanel("url_oa"),
         InlinePanel(
-            "file_oa", label=_("Open Science accordance form"), classname="collapsed"
+            "open_science_form_files", label=_("Open Science accordance form"), classname="collapsed"
         ),
         FieldPanel("journal_use_license"),
         InlinePanel("open_access_text", label=_("Open Access"), classname="collapsed"),
         InlinePanel("open_data", label=_("Open data"), classname="collapsed"),
         InlinePanel("preprint", label=_("Preprint"), classname="collapsed"),
-        InlinePanel("review", label=_("Peer review"), classname="collapsed"),
+        InlinePanel("peer_review", label=_("Peer review"), classname="collapsed"),
         InlinePanel(
             "open_science_compliance",
             label=_("Open Science Compliance"),
@@ -687,7 +687,7 @@ class Journal(CommonControlField, ClusterableModel):
         ),
     ]
 
-    panels_notes = [InlinePanel("annotation", label=_("Notes"), classname="collapsed")]
+    panels_notes = [InlinePanel("notes", label=_("Notes"), classname="collapsed")]
 
     panels_legacy_compatibility_fields = [
         FieldPanel("alphabet"),
@@ -1374,7 +1374,7 @@ class Journal(CommonControlField, ClusterableModel):
 
 class FileOpenScience(Orderable, FileWithLang, CommonControlField):
     journal = ParentalKey(
-        Journal, on_delete=models.SET_NULL, related_name="file_oa", null=True
+        Journal, on_delete=models.SET_NULL, related_name="open_science_form_files", null=True
     )
     file = models.ForeignKey(
         "wagtaildocs.Document",
@@ -1584,7 +1584,7 @@ class JournalSocialNetwork(Orderable, SocialNetwork):
     page = ParentalKey(
         Journal,
         on_delete=models.SET_NULL,
-        related_name="journalsocialnetwork",
+        related_name="social_networks",
         null=True,
     )
 
@@ -1669,7 +1669,7 @@ class Review(Orderable, RichTextWithLanguage, CommonControlField):
         null=True, blank=True, help_text=_("Brief description of the review flow")
     )
     journal = ParentalKey(
-        Journal, on_delete=models.SET_NULL, related_name="review", null=True
+        Journal, on_delete=models.SET_NULL, related_name="peer_review", null=True
     )
 
 
@@ -1683,7 +1683,7 @@ class Ecommittee(Orderable, RichTextWithLanguage, CommonControlField):
         ),
     )
     journal = ParentalKey(
-        Journal, on_delete=models.SET_NULL, related_name="ecommittee", null=True
+        Journal, on_delete=models.SET_NULL, related_name="ethics_committee", null=True
     )
 
 
@@ -1861,7 +1861,7 @@ class AcceptedDocumentTypes(Orderable, RichTextWithLanguage, CommonControlField)
     journal = ParentalKey(
         Journal,
         on_delete=models.SET_NULL,
-        related_name="accepted_documment_types",
+        related_name="accepted_document_types",
         null=True,
     )
     rich_text = RichTextField(
@@ -2744,7 +2744,7 @@ class AdditionalIndexedAt(CommonControlField):
 
 class Annotation(CommonControlField):
     journal = ParentalKey(
-        Journal, on_delete=models.SET_NULL, related_name="annotation", null=True
+        Journal, on_delete=models.SET_NULL, related_name="notes", null=True
     )
     notes = models.TextField(_("Notes"), blank=True, null=True)
     creation_date = models.DateField(_("Creation Date"), blank=True, null=True)
