@@ -93,7 +93,7 @@ class JournalProxyEditor(Journal):
         # FieldPanel("url_oa"),
 
         # SOBRE O PERIÓDICO - 03a - Conformidade com a Ciência Aberta - formulário de auto declaração
-        InlinePanel("file_oa", label=_("Open Science accordance form")),
+        InlinePanel("open_science_form_files", label=_("Open Science accordance form")),
 
         # SOBRE O PERIÓDICO - 04 - Ética na Publicação
         InlinePanel(
