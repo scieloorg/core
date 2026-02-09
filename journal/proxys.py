@@ -224,6 +224,9 @@ class JournalProxyEditor(Journal):
             label=_("Authors Contributions"),
         ),
         
+        # INSTRUÇÕES AOS AUTORES - 03 - Formato de Envio dos Artigos
+        FieldPanel("format_check_list"),
+        
         # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # INSTRUÇÕES AOS AUTORES - 0? - 
         # InlinePanel(
@@ -270,9 +273,6 @@ class JournalProxyEditor(Journal):
         # Campos não devem ficar visíveis para o perfil da equipe editorial / editores
         # FieldPanel("author_name"),
         # FieldPanel("manuscript_length"),
-
-        # INSTRUÇÕES AOS AUTORES - 03 - Formato de Envio dos Artigos
-        FieldPanel("format_check_list"),
         
         # Campos não devem ficar visíveis para o perfil da equipe editorial / editores
         # AutocompletePanel("text_language"),
