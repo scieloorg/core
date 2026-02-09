@@ -7,7 +7,6 @@ from .models import Journal
 
 class JournalProxyEditor(Journal):
     panels_titles = [
-        # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - A - Título do periódico
         FieldPanel("title", read_only=True),
         # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - B - Título abreviado do periódico
         FieldPanel("short_title"),
