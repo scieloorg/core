@@ -48,9 +48,6 @@ class JournalProxyEditor(Journal):
         InlinePanel("owner_history", label=_("Owner")),
         # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - C2 - Publicação de
         InlinePanel("publisher_history", label=_("Publisher")),
-        
-        # POLÍTICA EDITORIAL - 14 - Patrocinadores e Agências de Fomento 
-        InlinePanel("sponsor_history", label=_("Sponsor")),
         # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # InlinePanel(
         #     "copyright_holder_history",
@@ -132,7 +129,6 @@ class JournalProxyEditor(Journal):
     ]
 
     panels_policy = [
-
         # POLÍTICA EDITORIAL - 10 - Comitê de Ética
         InlinePanel(
             "ethics_committee",
@@ -192,6 +188,8 @@ class JournalProxyEditor(Journal):
             "fee_charging",
             label=_("Fee Charging"),
         ),
+        # POLÍTICA EDITORIAL - 14 - Patrocinadores e Agências de Fomento 
+        InlinePanel("sponsor_history", label=_("Sponsor")),
         # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # InlinePanel(
         #     "editorial_policy",
