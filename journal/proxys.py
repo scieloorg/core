@@ -13,6 +13,10 @@ class JournalProxyEditor(Journal):
         FieldPanel("title", read_only=True),
         # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - B - Título abreviado do periódico
         FieldPanel("short_title"),
+        # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - D - Periodicidade
+        FieldPanel("frequency"),
+        # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - E - Modalidade de publicação
+        FieldPanel("publishing_model"),
         # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # InlinePanel("other_titles", label=_("Other titles")),
     ]
@@ -80,12 +84,6 @@ class JournalProxyEditor(Journal):
 
         # SOBRE O PERIÓDICO - 09 - Websites e Mídias Sociais
         InlinePanel("social_networks", label=_("Social Network")),
-
-        # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - D - Periodicidade
-        FieldPanel("frequency"),
-
-        # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - E - Modalidade de publicação
-        FieldPanel("publishing_model"),
         # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # FieldPanel("standard"),
     ]
