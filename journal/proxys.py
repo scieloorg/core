@@ -100,6 +100,12 @@ class JournalProxyEditor(Journal):
 
         # SOBRE O PERIÓDICO - 03a - Conformidade com a Ciência Aberta - formulário de auto declaração
         InlinePanel("open_science_form_files", label=_("Open Science accordance form")),
+        
+        # about_the_journal - 03b - Conformidade com a Ciência Aberta - declaração de conformidade
+        InlinePanel(
+            "open_science_compliance",
+            label=_("Open Science Compliance"),
+        ),
 
         # SOBRE O PERIÓDICO - 04 - Ética na Publicação
         InlinePanel(
@@ -110,12 +116,6 @@ class JournalProxyEditor(Journal):
         # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # POLÍTICA EDITORIAL - 11b - Direitos Autorais / AUTORES CEDEM PARA PUBLICAR EM CC-BY
         # FieldPanel("journal_use_license"),
-        
-        # about_the_journal - 03b - Conformidade com a Ciência Aberta - declaração de conformidade
-        InlinePanel(
-            "open_science_compliance",
-            label=_("Open Science Compliance"),
-        ),
     ]
 
     panels_policy = [
