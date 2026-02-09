@@ -7,6 +7,8 @@ from .models import Journal
 
 class JournalProxyEditor(Journal):
     panels_titles = [
+        # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - F - Ano de criação do periódico / ISSN
+        AutocompletePanel("official", read_only=True),
         FieldPanel("title", read_only=True),
         # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - B - Título abreviado do periódico
         FieldPanel("short_title"),
@@ -14,15 +16,12 @@ class JournalProxyEditor(Journal):
         FieldPanel("frequency"),
         # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - E - Modalidade de publicação
         FieldPanel("publishing_model"),
-        # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - F - Ano de criação do periódico / ISSN
-        AutocompletePanel("official", read_only=True),
         # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # InlinePanel("other_titles", label=_("Other titles")),
     ]
 
     panels_scope_and_about = [
-        # Campo não deve ficar visível para o perfil da equipe editorial / editores
-        # InlinePanel("mission", label=_("Mission")),
+        InlinePanel("mission", label=_("Mission")),
 
         # SOBRE O PERIÓDICO - 01 - brief history
         InlinePanel("history", label=_("Brief History")),
@@ -51,11 +50,6 @@ class JournalProxyEditor(Journal):
         InlinePanel("owner_history", label=_("Owner")),
         # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - C2 - Publicação de
         InlinePanel("publisher_history", label=_("Publisher")),
-        # Campo não deve ficar visível para o perfil da equipe editorial / editores
-        # InlinePanel(
-        #     "copyright_holder_history",
-        #     label=_("Copyright Holder"),
-        # ),
     ]
 
     panels_website = [
@@ -186,6 +180,10 @@ class JournalProxyEditor(Journal):
         InlinePanel(
             "copyright",
             label=_("Copyright"),
+        ),
+        InlinePanel(
+            "copyright_holder_history",
+            label=_("Copyright Holder"),
         ),
 
         # POLÍTICA EDITORIAL - 12 - Propriedade Intelectual e Termos de uso - Responsabilidade do site
