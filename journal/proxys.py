@@ -109,15 +109,6 @@ class JournalProxyEditor(Journal):
         # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # POLÍTICA EDITORIAL - 11b - Direitos Autorais / AUTORES CEDEM PARA PUBLICAR EM CC-BY
         # FieldPanel("journal_use_license"),
-
-        # POLÍTICA EDITORIAL - 03 - Dados Abertos
-        InlinePanel("open_data", label=_("Open data")),
-
-        # POLÍTICA EDITORIAL - 01 - Preprints
-        InlinePanel("preprint", label=_("Preprint")),
-
-        # POLÍTICA EDITORIAL - 02 - Peer review
-        InlinePanel("peer_review", label=_("Peer review")),
         
         # about_the_journal - 03b - Conformidade com a Ciência Aberta - declaração de conformidade
         InlinePanel(
@@ -127,6 +118,15 @@ class JournalProxyEditor(Journal):
     ]
 
     panels_policy = [
+        # POLÍTICA EDITORIAL - 01 - Preprints
+        InlinePanel("preprint", label=_("Preprint")),
+
+        # POLÍTICA EDITORIAL - 02 - Peer review
+        InlinePanel("peer_review", label=_("Peer review")),
+
+        # POLÍTICA EDITORIAL - 03 - Dados Abertos
+        InlinePanel("open_data", label=_("Open data")),
+
         # POLÍTICA EDITORIAL - 10 - Comitê de Ética
         InlinePanel(
             "ethics_committee",
