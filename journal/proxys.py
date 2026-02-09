@@ -60,6 +60,23 @@ class JournalProxyEditor(Journal):
     ]
 
     panels_website = [
+        # SOBRE O PERIÓDICO - 09 - Websites e Mídias Sociais
+        InlinePanel("social_networks", label=_("Social Network")),
+        
+        # SOBRE O PERIÓDICO - 09b - Websites
+        FieldPanel("submission_online_url"),
+        
+        # SOBRE O PERIÓDICO - 09c - Websites
+        FieldPanel("journal_url"),
+        
+        # SOBRE O PERIÓDICO - 09d - Websites
+        FieldPanel("logo", heading=_("Logo")),
+        
+        # Campo não deve ficar visível para o perfil da equipe editorial / editores
+        # InlinePanel("related_journal_urls", label=_("Journal Urls")),
+        # Campo não deve ficar visível para o perfil da equipe editorial / editores
+        # FieldPanel("main_collection"),
+        
         # SOBRE O PERIÓDICO - 10a - Contato
         FieldPanel("contact_name"),
         # SOBRE O PERIÓDICO - 10b - Contato
@@ -68,22 +85,6 @@ class JournalProxyEditor(Journal):
         AutocompletePanel("contact_location"),
         # SOBRE O PERIÓDICO - 10d - Contato
         InlinePanel("journal_email", label=_("Contact e-mail")),
-
-        # SOBRE O PERIÓDICO - 09d - Websites
-        FieldPanel("logo", heading=_("Logo")),
-        # SOBRE O PERIÓDICO - 09c - Websites
-        FieldPanel("journal_url"),
-        
-        # Campo não deve ficar visível para o perfil da equipe editorial / editores
-        # InlinePanel("related_journal_urls", label=_("Journal Urls")),
-        
-        # SOBRE O PERIÓDICO - 09b - Websites
-        FieldPanel("submission_online_url"),
-        # Campo não deve ficar visível para o perfil da equipe editorial / editores
-        # FieldPanel("main_collection"),
-
-        # SOBRE O PERIÓDICO - 09 - Websites e Mídias Sociais
-        InlinePanel("social_networks", label=_("Social Network")),
         # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # FieldPanel("standard"),
     ]
