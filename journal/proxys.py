@@ -13,10 +13,12 @@ class JournalProxyEditor(Journal):
         FieldPanel("title", read_only=True),
         # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - B - Título abreviado do periódico
         FieldPanel("short_title"),
+        # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # InlinePanel("other_titles", label=_("Other titles")),
     ]
 
     panels_scope_and_about = [
+        # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # InlinePanel("mission", label=_("Mission")),
 
         # SOBRE O PERIÓDICO - 01 - brief history
@@ -24,6 +26,7 @@ class JournalProxyEditor(Journal):
 
         # SOBRE O PERIÓDICO - 05 - focus and scope
         InlinePanel("focus", label=_("Focus and Scope")),
+        # Campos não devem ficar visíveis para o perfil da equipe editorial / editores
         # AutocompletePanel("subject"),
         # InlinePanel("thematic_area", label=_("Thematic Areas")),
         # AutocompletePanel("subject_descriptor"),
@@ -35,6 +38,7 @@ class JournalProxyEditor(Journal):
         # SOBRE O PERIÓDICO - 07b - Fontes de Indexação adicionais / não padronizadas
         AutocompletePanel("additional_indexed_at"),
 
+        # Campos não devem ficar visíveis para o perfil da equipe editorial / editores
         # AutocompletePanel("vocabulary"),
         # InlinePanel("title_in_database", label=_("Title in Database")),
     ]
@@ -47,6 +51,7 @@ class JournalProxyEditor(Journal):
         
         # POLÍTICA EDITORIAL - 14 - Patrocinadores e Agências de Fomento 
         InlinePanel("sponsor_history", label=_("Sponsor")),
+        # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # InlinePanel(
         #     "copyright_holder_history",
         #     label=_("Copyright Holder"),
@@ -68,10 +73,12 @@ class JournalProxyEditor(Journal):
         # SOBRE O PERIÓDICO - 09c - Websites
         FieldPanel("journal_url"),
         
+        # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # InlinePanel("related_journal_urls", label=_("Journal Urls")),
         
         # SOBRE O PERIÓDICO - 09b - Websites
         FieldPanel("submission_online_url"),
+        # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # FieldPanel("main_collection"),
 
         # SOBRE O PERIÓDICO - 09 - Websites e Mídias Sociais
@@ -82,14 +89,17 @@ class JournalProxyEditor(Journal):
 
         # SOBRE O PERIÓDICO - 08 - Ficha Bibliográfica - E - Modalidade de publicação
         FieldPanel("publishing_model"),
+        # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # FieldPanel("standard"),
     ]
 
     panels_open_science = [
+        # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # FieldPanel("open_access"),
 
         # SOBRE O PERIÓDICO - 02 - journal declares it is open access
         InlinePanel("open_access_text", label=_("Open Access")),
+        # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # FieldPanel("url_oa"),
 
         # SOBRE O PERIÓDICO - 03a - Conformidade com a Ciência Aberta - formulário de auto declaração
@@ -101,6 +111,7 @@ class JournalProxyEditor(Journal):
             label=_("Ethics"),
         ),
 
+        # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # POLÍTICA EDITORIAL - 11b - Direitos Autorais / AUTORES CEDEM PARA PUBLICAR EM CC-BY
         # FieldPanel("journal_use_license"),
 
@@ -151,6 +162,7 @@ class JournalProxyEditor(Journal):
             label=_("Retraction Policy | Ethics and Misconduct Policy"),
         ),
 
+        # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # AutocompletePanel("digital_pa"),
         # about_the_journal - 06 - Preservação Digital - texto + link - poderia estar fixo no template html?
         InlinePanel(
@@ -180,6 +192,7 @@ class JournalProxyEditor(Journal):
             "fee_charging",
             label=_("Fee Charging"),
         ),
+        # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # InlinePanel(
         #     "editorial_policy",
         #     label=_("Editorial Policy"),
@@ -210,6 +223,7 @@ class JournalProxyEditor(Journal):
             label=_("Authors Contributions"),
         ),
         
+        # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # INSTRUÇÕES AOS AUTORES - 0? - 
         # InlinePanel(
         #     "preparing_manuscript",
@@ -228,6 +242,7 @@ class JournalProxyEditor(Journal):
             label=_("Citations and References"),
         ),
 
+        # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # INSTRUÇÕES AOS AUTORES - 0? - 
         # InlinePanel(
         #     "supp_docs_submission",
@@ -240,6 +255,7 @@ class JournalProxyEditor(Journal):
             label=_("Financing Statement"),
         ),
 
+        # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # INSTRUÇÕES AOS AUTORES - 0? - 
         # InlinePanel(
         #     "acknowledgements",
@@ -250,12 +266,14 @@ class JournalProxyEditor(Journal):
             "additional_information",
             label=_("Additional Information"),
         ),
+        # Campos não devem ficar visíveis para o perfil da equipe editorial / editores
         # FieldPanel("author_name"),
         # FieldPanel("manuscript_length"),
 
         # INSTRUÇÕES AOS AUTORES - 03 - Formato de Envio dos Artigos
         FieldPanel("format_check_list"),
         
+        # Campos não devem ficar visíveis para o perfil da equipe editorial / editores
         # AutocompletePanel("text_language"),
         # AutocompletePanel("abstract_language"),
     ]
