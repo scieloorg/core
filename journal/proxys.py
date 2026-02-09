@@ -128,27 +128,10 @@ class JournalProxyEditor(Journal):
         # POLÍTICA EDITORIAL - 03 - Dados Abertos
         InlinePanel("open_data", label=_("Open data")),
 
-        # POLÍTICA EDITORIAL - 10 - Comitê de Ética
+        # POLÍTICA EDITORIAL - 04 - Cobrança de Taxas
         InlinePanel(
-            "ethics_committee",
-            label=_("Ethics Committee"),
-        ),
-        # POLÍTICA EDITORIAL - 11a - detentor dos direitos autorais
-        InlinePanel(
-            "copyright",
-            label=_("Copyright"),
-        ),
-
-        # POLÍTICA EDITORIAL - 12 - Propriedade Intelectual e Termos de uso - Responsabilidade do site
-        InlinePanel(
-            "website_responsibility",
-            label=_("Intellectual Property / Terms of use / Website responsibility"),
-        ),
-        
-        # POLÍTICA EDITORIAL - 13 - Propriedade Intelectual e Termos de uso - Responsabilidade do autor
-        InlinePanel(
-            "author_responsibility",
-            label=_("Intellectual Property / Terms of use / Author responsibility"),
+            "fee_charging",
+            label=_("Fee Charging"),
         ),
 
         # POLÍTICA EDITORIAL - 05 - Política de Ética e Más condutas, Errata e Retratação
@@ -177,24 +160,6 @@ class JournalProxyEditor(Journal):
             label=_("Similarity Verification Software Adoption"),
         ),
 
-        # POLÍTICA EDITORIAL - 09 - Questões de Sexo e Gênero
-        InlinePanel(
-            "gender_issues",
-            label=_("Gender Issues"),
-        ),
-        # POLÍTICA EDITORIAL - 04 - Cobrança de Taxas
-        InlinePanel(
-            "fee_charging",
-            label=_("Fee Charging"),
-        ),
-        # POLÍTICA EDITORIAL - 14 - Patrocinadores e Agências de Fomento 
-        InlinePanel("sponsor_history", label=_("Sponsor")),
-        # Campo não deve ficar visível para o perfil da equipe editorial / editores
-        # InlinePanel(
-        #     "editorial_policy",
-        #     label=_("Editorial Policy"),
-        # ),
-
         # POLÍTICA EDITORIAL - 08 - Adoção de softwares uso de recursos de Inteligência Artificial
         # Uso por autores
         # Responsabilidade e transparência
@@ -205,6 +170,45 @@ class JournalProxyEditor(Journal):
             "artificial_intelligence",
             label=_("Artificial Intelligence"),
         ),
+
+        # POLÍTICA EDITORIAL - 09 - Questões de Sexo e Gênero
+        InlinePanel(
+            "gender_issues",
+            label=_("Gender Issues"),
+        ),
+
+        # POLÍTICA EDITORIAL - 10 - Comitê de Ética
+        InlinePanel(
+            "ethics_committee",
+            label=_("Ethics Committee"),
+        ),
+        
+        # POLÍTICA EDITORIAL - 11a - detentor dos direitos autorais
+        InlinePanel(
+            "copyright",
+            label=_("Copyright"),
+        ),
+
+        # POLÍTICA EDITORIAL - 12 - Propriedade Intelectual e Termos de uso - Responsabilidade do site
+        InlinePanel(
+            "website_responsibility",
+            label=_("Intellectual Property / Terms of use / Website responsibility"),
+        ),
+        
+        # POLÍTICA EDITORIAL - 13 - Propriedade Intelectual e Termos de uso - Responsabilidade do autor
+        InlinePanel(
+            "author_responsibility",
+            label=_("Intellectual Property / Terms of use / Author responsibility"),
+        ),
+
+        # POLÍTICA EDITORIAL - 14 - Patrocinadores e Agências de Fomento 
+        InlinePanel("sponsor_history", label=_("Sponsor")),
+        
+        # Campo não deve ficar visível para o perfil da equipe editorial / editores
+        # InlinePanel(
+        #     "editorial_policy",
+        #     label=_("Editorial Policy"),
+        # ),
     ]
     # panels_notes = [InlinePanel("notes", label=_("Notes"))]
 
