@@ -82,8 +82,9 @@ class BaseManagerMixin:
             obj.save()
             return obj
         except IntegrityError:
-            # If integrity error, try to get existing object
-            return cls._base_get(**kwargs)
+            # If integrity error, try to get existing object using proper lookup kwargs
+            lookup_kwargs = cls._get_lookup_kwargs(**kwargs)
+            return cls.objects.get(**lookup_kwargs)
 
     @classmethod
     def _base_get_or_create(cls, user, **kwargs):
@@ -989,7 +990,17 @@ class ResearcherIds(BaseManagerMixin, CommonControlField):
     def create(cls, user, researcher, identifier, source_name):
         """Create ResearcherIds with validation and error handling."""
         try:
-            return cls._base_create(user, researcher=researcher, identifier=identifier, source_name=source_name)
+            obj = cls(
+                creator=user,
+                researcher=researcher,
+                identifier=identifier,
+                source_name=source_name,
+            )
+            obj.save()
+            return obj
+        except IntegrityError:
+            # If integrity error, try to get existing object
+            return cls.get(researcher=researcher, identifier=identifier, source_name=source_name)
         except ValidationError:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
