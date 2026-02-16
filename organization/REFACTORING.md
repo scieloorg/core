@@ -4,6 +4,22 @@
 
 The `BaseOrganization` class has been refactored to improve code organization and reusability by separating concerns into focused mixin classes.
 
+## Design Decisions
+
+### 1. hasattr() check in BaseOrganization.__str__()
+**Decision**: Use `hasattr()` to check for location field before accessing it.
+
+**Rationale**: BaseOrganization is an abstract base class that may be inherited by multiple concrete implementations. While Organization includes a location field, future subclasses might not. The hasattr() check provides defensive programming and flexibility without breaking encapsulation.
+
+**Alternative Considered**: Override `__str__()` in Organization. Rejected because it would require duplicating the logic in every subclass that includes location.
+
+### 2. autocomplete_label() method in OrganizationNameMixin
+**Decision**: Keep `autocomplete_label()` method that delegates to `__str__()`.
+
+**Rationale**: This is a Wagtail framework convention. Wagtail's autocomplete functionality expects this method. It's used consistently across the entire codebase (see article, location, issue, etc. models). Removing it would break Wagtail integration.
+
+**Pattern Usage**: This pattern appears in 20+ models throughout the codebase, confirming it's the expected approach.
+
 ## Changes Made
 
 ### 1. New Mixin Classes (in `core/models.py`)
