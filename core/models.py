@@ -475,6 +475,10 @@ class OrganizationNameMixin(models.Model):
         """Returns the label for autocomplete fields."""
         return str(self)
 
+    def __str__(self):
+        """String representation using the organization name."""
+        return self.name or ""
+
 
 class VisualIdentityMixin(models.Model):
     """

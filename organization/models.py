@@ -49,11 +49,11 @@ class BaseOrganization(OrganizationNameMixin, VisualIdentityMixin, models.Model)
         """
         String representation showing name and location if available.
         
-        Note: The conditional check for location allows this base class to be
-        used by subclasses that may not define a location field, while still
-        providing a good string representation for those that do (like Organization).
+        Note: Checks for location attribute and value to support subclasses
+        that may not define a location field, while providing better string
+        representation for those that do (like Organization).
         """
-        if hasattr(self, 'location') and self.location:
+        if hasattr(self, 'location') and self.location is not None:
             return f"{self.name} | {self.location}"
         return self.name
 
