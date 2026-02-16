@@ -31,6 +31,51 @@ from .forms import ResearcherForm
 ORCID_REGEX = re.compile(r'\b(?:https?://)?(?:www\.)?(?:orcid\.org/)?(\d{4}-\d{4}-\d{4}-\d{3}[0-9X])\b')
 
 
+class ResearchNameMixin(models.Model):
+    """
+    Mixin that contains name-related fields for researchers
+    """
+
+    given_names = models.CharField(
+        _("Given names"), max_length=128, blank=False, null=True
+    )
+    last_name = models.CharField(_("Last name"), max_length=64, blank=False, null=True)
+    suffix = models.CharField(_("Suffix"), max_length=16, blank=True, null=True)
+    # nome sem padrão definido ou nome completo
+    fullname = models.CharField(_("Full Name"), max_length=255, blank=False, null=True)
+    declared_name = models.CharField(
+        _("Declared Name"), max_length=255, blank=True, null=True
+    )
+
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return f"{self.fullname}"
+
+    @staticmethod
+    def join_names(given_names, last_name, suffix):
+        return " ".join(filter(None, [given_names, last_name, suffix]))
+
+
+class GenderMixin(models.Model):
+    """
+    Mixin that contains gender-related fields
+    """
+
+    gender = models.ForeignKey(Gender, blank=True, null=True, on_delete=models.SET_NULL)
+    gender_identification_status = models.CharField(
+        _("Gender identification status"),
+        max_length=255,
+        choices=choices.GENDER_IDENTIFICATION_STATUS,
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        abstract = True
+
+
 class Researcher(CommonControlField):
     """
     Class that represent the Researcher
@@ -637,51 +682,6 @@ class InstitutionalAuthor(CommonControlField):
 
     def __str__(self):
         return f"{self.collab}"
-
-
-class ResearchNameMixin(models.Model):
-    """
-    Mixin that contains name-related fields for researchers
-    """
-
-    given_names = models.CharField(
-        _("Given names"), max_length=128, blank=False, null=True
-    )
-    last_name = models.CharField(_("Last name"), max_length=64, blank=False, null=True)
-    suffix = models.CharField(_("Suffix"), max_length=16, blank=True, null=True)
-    # nome sem padrão definido ou nome completo
-    fullname = models.CharField(_("Full Name"), max_length=255, blank=False, null=True)
-    declared_name = models.CharField(
-        _("Declared Name"), max_length=255, blank=True, null=True
-    )
-
-    class Meta:
-        abstract = True
-
-    def __str__(self):
-        return f"{self.fullname}"
-
-    @staticmethod
-    def join_names(given_names, last_name, suffix):
-        return " ".join(filter(None, [given_names, last_name, suffix]))
-
-
-class GenderMixin(models.Model):
-    """
-    Mixin that contains gender-related fields
-    """
-
-    gender = models.ForeignKey(Gender, blank=True, null=True, on_delete=models.SET_NULL)
-    gender_identification_status = models.CharField(
-        _("Gender identification status"),
-        max_length=255,
-        choices=choices.GENDER_IDENTIFICATION_STATUS,
-        null=True,
-        blank=True,
-    )
-
-    class Meta:
-        abstract = True
 
 
 class ResearcherOrcid(CommonControlField, ClusterableModel):
