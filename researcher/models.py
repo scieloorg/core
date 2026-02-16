@@ -31,6 +31,71 @@ from .forms import ResearcherForm
 ORCID_REGEX = re.compile(r'\b(?:https?://)?(?:www\.)?(?:orcid\.org/)?(\d{4}-\d{4}-\d{4}-\d{3}[0-9X])\b')
 
 
+class BaseManagerMixin:
+    """
+    Base mixin providing reusable get, create, and get_or_create methods.
+    Reduces code duplication across model classes by implementing common patterns.
+    """
+
+    @classmethod
+    def _get_lookup_kwargs(cls, **kwargs):
+        """
+        Override this method to customize lookup fields for get operation.
+        Returns dict of fields to use in objects.get().
+        """
+        return kwargs
+
+    @classmethod
+    def _get_create_kwargs(cls, user, **kwargs):
+        """
+        Override this method to customize fields for create operation.
+        Returns dict of fields to use when creating object.
+        """
+        return {'creator': user, **kwargs}
+
+    @classmethod
+    def _handle_multiple_objects(cls, **kwargs):
+        """
+        Handle MultipleObjectsReturned by returning first match.
+        """
+        return cls.objects.filter(**kwargs).first()
+
+    @classmethod
+    def _base_get(cls, **kwargs):
+        """
+        Base implementation of get method with MultipleObjectsReturned handling.
+        """
+        lookup_kwargs = cls._get_lookup_kwargs(**kwargs)
+        try:
+            return cls.objects.get(**lookup_kwargs)
+        except cls.MultipleObjectsReturned:
+            return cls._handle_multiple_objects(**lookup_kwargs)
+
+    @classmethod
+    def _base_create(cls, user, **kwargs):
+        """
+        Base implementation of create method with IntegrityError handling.
+        """
+        create_kwargs = cls._get_create_kwargs(user, **kwargs)
+        try:
+            obj = cls(**create_kwargs)
+            obj.save()
+            return obj
+        except IntegrityError:
+            # If integrity error, try to get existing object
+            return cls._base_get(**kwargs)
+
+    @classmethod
+    def _base_get_or_create(cls, user, **kwargs):
+        """
+        Base implementation of get_or_create pattern.
+        """
+        try:
+            return cls._base_get(**kwargs)
+        except cls.DoesNotExist:
+            return cls._base_create(user, **kwargs)
+
+
 class ResearchNameMixin(models.Model):
     """
     Mixin that contains name-related fields for researchers
@@ -76,7 +141,7 @@ class GenderMixin(models.Model):
         abstract = True
 
 
-class Researcher(CommonControlField):
+class Researcher(BaseManagerMixin, CommonControlField):
     """
     Class that represent the Researcher
     """
@@ -146,45 +211,19 @@ class Researcher(CommonControlField):
         return f"{self.person_name}"
 
     @classmethod
-    def get(
-        cls,
-        person_name,
-        affiliation,
-    ):
-        try:
-            return cls.objects.get(
-                person_name=person_name,
-                affiliation=affiliation,
-            )
-        except cls.MultipleObjectsReturned:
-            return cls.objects.filter(
-                person_name=person_name,
-                affiliation=affiliation,
-            ).first()
+    def get(cls, person_name, affiliation):
+        """Get Researcher by person_name and affiliation."""
+        return cls._base_get(person_name=person_name, affiliation=affiliation)
 
     @classmethod
-    def create(
-        cls,
-        user,
-        person_name,
-        affiliation,
-    ):
-        try:
-            obj = cls()
-            obj.creator = user
-            obj.person_name = person_name
-            obj.affiliation = affiliation
-            obj.save()
-            return obj
-        except IntegrityError:
-            return cls.get(person_name, affiliation)
+    def create(cls, user, person_name, affiliation):
+        """Create Researcher with person_name and affiliation."""
+        return cls._base_create(user, person_name=person_name, affiliation=affiliation)
 
     @classmethod
     def _create_or_update(cls, user, person_name, affiliation):
-        try:
-            return cls.get(person_name, affiliation)
-        except cls.DoesNotExist:
-            return cls.create(user, person_name, affiliation)
+        """Internal helper for create_or_update method."""
+        return cls._base_get_or_create(user, person_name=person_name, affiliation=affiliation)
 
     @classmethod
     def create_or_update(
@@ -464,7 +503,7 @@ class PersonName(ResearchNameMixin, GenderMixin, CommonControlField):
             )
 
 
-class ResearcherIdentifier(CommonControlField, ClusterableModel):
+class ResearcherIdentifier(BaseManagerMixin, CommonControlField, ClusterableModel):
     """
     Class that represent the Researcher with any id
     """
@@ -499,55 +538,29 @@ class ResearcherIdentifier(CommonControlField, ClusterableModel):
         ]
 
     @classmethod
-    def _get(
-        cls,
-        identifier,
-        source_name,
-    ):
-        if source_name and identifier:
-            try:
-                return cls.objects.get(
-                    source_name=source_name,
-                    identifier=identifier,
-                )
-            except cls.MultipleObjectsReturned:
-                return cls.objects.filter(
-                    source_name=source_name,
-                    identifier=identifier,
-                ).first()
-        raise ValueError("ResearcherIdentifier.get requires source_name and identifier")
+    def _get_lookup_kwargs(cls, identifier, source_name, **kwargs):
+        """Validate and return lookup kwargs for ResearcherIdentifier."""
+        if not source_name or not identifier:
+            raise ValueError("ResearcherIdentifier.get requires source_name and identifier")
+        return {'source_name': source_name, 'identifier': identifier}
 
     @classmethod
-    def _create(
-        cls,
-        user,
-        identifier,
-        source_name,
-    ):
-        try:
-            obj = cls()
-            obj.creator = user
-            obj.identifier = identifier
-            obj.source_name = source_name
-            obj.save()
-            return obj
-        except IntegrityError:
-            return cls.get(identifier, source_name)
+    def _get(cls, identifier, source_name):
+        """Get ResearcherIdentifier by identifier and source_name."""
+        return cls._base_get(identifier=identifier, source_name=source_name)
 
     @classmethod
-    def get_or_create(
-        cls,
-        user,
-        identifier,
-        source_name,
-    ):
-        try:
-            return cls._get(identifier, source_name)
-        except cls.DoesNotExist:
-            return cls._create(user, identifier, source_name)
+    def _create(cls, user, identifier, source_name):
+        """Create ResearcherIdentifier with identifier and source_name."""
+        return cls._base_create(user, identifier=identifier, source_name=source_name)
+
+    @classmethod
+    def get_or_create(cls, user, identifier, source_name):
+        """Get or create ResearcherIdentifier."""
+        return cls._base_get_or_create(user, identifier=identifier, source_name=source_name)
 
 
-class ResearcherAKA(CommonControlField, Orderable):
+class ResearcherAKA(BaseManagerMixin, CommonControlField, Orderable):
     researcher_identifier = ParentalKey(
         ResearcherIdentifier,
         blank=True,
@@ -566,67 +579,22 @@ class ResearcherAKA(CommonControlField, Orderable):
     ]
 
     @classmethod
-    def get(
-        cls,
-        researcher_identifier,
-        researcher,
-    ):
-        if researcher and researcher_identifier:
-            return cls.objects.get(
-                researcher=researcher,
-                researcher_identifier=researcher_identifier,
-            )
-        raise ValueError(
-            "ResearcherIdentifier.get requires researcher and researcher_identifier"
-        )
+    def get(cls, researcher_identifier, researcher):
+        """Get ResearcherAKA by researcher_identifier and researcher."""
+        return cls._base_get(researcher_identifier=researcher_identifier, researcher=researcher)
 
     @classmethod
-    def get(
-        cls,
-        researcher_identifier,
-        researcher,
-    ):
-        try:
-            return cls.objects.get(
-                researcher_identifier=researcher_identifier, researcher=researcher
-            )
-        except cls.MultipleObjectsReturned:
-            return cls.objects.filter(
-                researcher_identifier=researcher_identifier,
-                researcher=researcher,
-            ).first()
+    def create(cls, user, researcher_identifier, researcher):
+        """Create ResearcherAKA with researcher_identifier and researcher."""
+        return cls._base_create(user, researcher_identifier=researcher_identifier, researcher=researcher)
 
     @classmethod
-    def create(
-        cls,
-        user,
-        researcher_identifier,
-        researcher,
-    ):
-        try:
-            obj = cls()
-            obj.creator = user
-            obj.researcher_identifier = researcher_identifier
-            obj.researcher = researcher
-            obj.save()
-            return obj
-        except IntegrityError:
-            return cls.get(researcher_identifier, researcher)
-
-    @classmethod
-    def get_or_create(
-        cls,
-        user,
-        researcher_identifier,
-        researcher,
-    ):
-        try:
-            return cls.get(researcher_identifier, researcher)
-        except cls.DoesNotExist:
-            return cls.create(user, researcher_identifier, researcher)
+    def get_or_create(cls, user, researcher_identifier, researcher):
+        """Get or create ResearcherAKA."""
+        return cls._base_get_or_create(user, researcher_identifier=researcher_identifier, researcher=researcher)
 
 
-class InstitutionalAuthor(CommonControlField):
+class InstitutionalAuthor(BaseManagerMixin, CommonControlField):
     collab = models.CharField(_("Collab"), max_length=255, blank=True, null=True)
     affiliation = models.ForeignKey(
         "Affiliation", on_delete=models.SET_NULL, null=True, blank=True
@@ -641,50 +609,32 @@ class InstitutionalAuthor(CommonControlField):
         unique_together = [("collab", "affiliation")]
 
     @classmethod
-    def get(
-        cls,
-        collab,
-        affiliation,
-    ):
+    def _get_lookup_kwargs(cls, collab, affiliation, **kwargs):
+        """Validate and return lookup kwargs for InstitutionalAuthor."""
         if not collab:
             raise ValueError("InstitutionalAuthor.get requires collab paramenter")
-        return cls.objects.get(collab__iexact=collab, affiliation=affiliation)
+        return {'collab__iexact': collab, 'affiliation': affiliation}
 
     @classmethod
-    def create(
-        cls,
-        collab,
-        affiliation,
-        user,
-    ):
-        try:
-            obj = cls(
-                collab=collab,
-                affiliation=affiliation,
-                creator=user,
-            )
-            obj.save()
-            return obj
-        except IntegrityError:
-            return cls.get(collab=collab, affiliation=affiliation)
+    def get(cls, collab, affiliation):
+        """Get InstitutionalAuthor by collab and affiliation."""
+        return cls._base_get(collab=collab, affiliation=affiliation)
 
     @classmethod
-    def get_or_create(
-        cls,
-        collab,
-        affiliation,
-        user,
-    ):
-        try:
-            return cls.get(collab=collab, affiliation=affiliation)
-        except cls.DoesNotExist:
-            return cls.create(collab=collab, affiliation=affiliation, user=user)
+    def create(cls, collab, affiliation, user):
+        """Create InstitutionalAuthor with collab and affiliation."""
+        return cls._base_create(user, collab=collab, affiliation=affiliation)
+
+    @classmethod
+    def get_or_create(cls, collab, affiliation, user):
+        """Get or create InstitutionalAuthor."""
+        return cls._base_get_or_create(user, collab=collab, affiliation=affiliation)
 
     def __str__(self):
         return f"{self.collab}"
 
 
-class ResearcherOrcid(CommonControlField, ClusterableModel):
+class ResearcherOrcid(BaseManagerMixin, CommonControlField, ClusterableModel):
     orcid = models.CharField(max_length=64, unique=True, null=True)
 
     panels = [ 
@@ -726,7 +676,6 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
             raise ValueError(
                 "Researcher.get_by_orcid requires orcid parameter"
             )
-
         return cls.objects.get(orcid=orcid)
 
     def clean(self):
@@ -739,49 +688,31 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
         super().save(**kwargs)
 
     @classmethod
-    def get(
-        cls,
-        orcid,
-    ):
+    def get(cls, orcid):
+        """Get ResearcherOrcid by orcid."""
         return cls.get_by_orcid(orcid)
 
     @classmethod
-    def create(
-        cls,
-        user,
-        orcid,
-    ):
-        try:
-            obj = cls()
-            obj.creator = user
-            obj.orcid = orcid
-            obj.save()
-            return obj
-        except IntegrityError:
-            return cls.get_by_orcid(orcid)
+    def create(cls, user, orcid):
+        """Create ResearcherOrcid with orcid."""
+        return cls._base_create(user, orcid=orcid)
 
     @classmethod
-    def get_or_create(
-        cls,
-        user,
-        orcid,
-    ):
+    def get_or_create(cls, user, orcid):
+        """Get or create ResearcherOrcid with validation."""
         try:
             cls.validate_orcid(orcid)
             return cls.get_by_orcid(orcid)
         except cls.DoesNotExist:
             return cls.create(user, orcid)
         except (InvalidOrcidError, ValueError) as e:
-            data = dict(
-                orcid=orcid,
-            )
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
                 exception=e,
                 exc_traceback=exc_traceback,
                 detail={
                     "task": "researcher.models.ResearcherOrcid.get_or_create",
-                    "data": data,
+                    "data": {'orcid': orcid},
                 },
             )
 
@@ -849,7 +780,7 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
         return ORCID_REGEX.match(orcid).group(1)
 
 
-class NewResearcher(ResearchNameMixin, GenderMixin, CommonControlField, ClusterableModel):
+class NewResearcher(BaseManagerMixin, ResearchNameMixin, GenderMixin, CommonControlField, ClusterableModel):
     orcid = ParentalKey(
         ResearcherOrcid,
         related_name="researcher_orcid",
@@ -925,79 +856,43 @@ class NewResearcher(ResearchNameMixin, GenderMixin, CommonControlField, Clustera
     @classmethod
     def get(cls, suffix, given_names, last_name, orcid=None, affiliation=None):
         """
-        Try to find the researcher by the ORCID identifier.
-        If the researcher is found and the names match, return the researcher.
+        Try to find the researcher by the ORCID identifier or by name and affiliation.
         """
         if not given_names or not last_name:
-            raise ValueError(
-                "Researcher.get requires given_names, last_name parameters"
-            )
+            raise ValueError("Researcher.get requires given_names, last_name parameters")
+        
         fullname = cls.join_names(given_names, last_name, suffix)
         if orcid:
-                researcher = cls.objects.get(
-                    orcid=orcid,
-                    fullname__iexact=fullname,
-                )
-                return researcher
+            return cls.objects.get(orcid=orcid, fullname__iexact=fullname)
         return cls.objects.get(fullname__iexact=fullname, affiliation=affiliation)
 
     @classmethod
-    def create(
-        cls,
-        user,
-        given_names,
-        last_name,
-        suffix,
-        affiliation,
-        orcid,
-        gender,
-        gender_identification_status,
-    ):
+    def create(cls, user, given_names, last_name, suffix, affiliation, orcid, gender, gender_identification_status):
+        """Create NewResearcher with all required fields."""
+        return cls._base_create(
+            user,
+            given_names=given_names,
+            last_name=last_name,
+            suffix=suffix,
+            gender=gender,
+            gender_identification_status=gender_identification_status,
+            orcid=orcid,
+            affiliation=affiliation,
+        )
+
+    @classmethod
+    def get_or_create(cls, user, given_names, last_name, suffix, affiliation, orcid=None, gender=None, gender_identification_status=None):
+        """Get or create NewResearcher with error handling."""
         try:
-            obj = cls(
-                creator=user,
-                given_names=given_names,
-                last_name=last_name,
-                suffix=suffix,
-                gender=gender,
-                gender_identification_status=gender_identification_status,
-                orcid=orcid,
-                affiliation=affiliation,
-            )
-            obj.save()
-            return obj
-        except IntegrityError:
             return cls.get(
                 given_names=given_names,
                 last_name=last_name,
-                affiliation=affiliation,
-                suffix=suffix,
-                orcid=orcid,
-            )
-
-    @classmethod
-    def get_or_create(
-        cls,
-        user,
-        given_names,
-        last_name,
-        suffix,
-        affiliation,
-        orcid=None,
-        gender=None,
-        gender_identification_status=None,
-    ):
-        try:
-            obj = cls.get(
-                given_names=given_names,
-                last_name=last_name,
                 suffix=suffix,
                 affiliation=affiliation,
                 orcid=orcid,
             )
-            return obj
         except cls.DoesNotExist:
-            obj = cls.create(
+            return cls.create(
                 user=user,
                 given_names=given_names,
                 last_name=last_name,
@@ -1007,25 +902,23 @@ class NewResearcher(ResearchNameMixin, GenderMixin, CommonControlField, Clustera
                 gender=gender,
                 gender_identification_status=gender_identification_status,
             )
-            return obj
         except ValueError as e:
-            data = dict(
-                given_names=given_names,
-                last_name=last_name,
-                suffix=suffix,
-            )
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
                 exception=e,
                 exc_traceback=exc_traceback,
                 detail={
                     "task": "researcher.models.get_or_create",
-                    "data": data,
+                    "data": {
+                        'given_names': given_names,
+                        'last_name': last_name,
+                        'suffix': suffix,
+                    },
                 },
             )
 
 
-class ResearcherIds(CommonControlField):
+class ResearcherIds(BaseManagerMixin, CommonControlField):
     """
     Class that represent any id of a researcher
     """
@@ -1065,19 +958,16 @@ class ResearcherIds(CommonControlField):
         return f"{self.source_name}: {self.identifier}"
 
     @classmethod
-    def get(
-        cls,
-        researcher,
-        identifier,
-        source_name,
-    ):
-        if researcher and source_name and identifier:
-            return cls.objects.get(
-                researcher=researcher,
-                source_name=source_name,
-                identifier=identifier,
-            )
-        raise ValueError("ResearcherIdentifier.get requires source_name and identifier")
+    def _get_lookup_kwargs(cls, researcher, identifier, source_name, **kwargs):
+        """Validate and return lookup kwargs for ResearcherIds."""
+        if not researcher or not source_name or not identifier:
+            raise ValueError("ResearcherIdentifier.get requires source_name and identifier")
+        return {'researcher': researcher, 'source_name': source_name, 'identifier': identifier}
+
+    @classmethod
+    def get(cls, researcher, identifier, source_name):
+        """Get ResearcherIds by researcher, identifier and source_name."""
+        return cls._base_get(researcher=researcher, identifier=identifier, source_name=source_name)
 
     def clean(self):
         if self.source_name == "EMAIL":
@@ -1096,24 +986,10 @@ class ResearcherIds(CommonControlField):
         super().save(**kwargs)
 
     @classmethod
-    def create(
-        cls,
-        user,
-        researcher,
-        identifier,
-        source_name,
-    ):
+    def create(cls, user, researcher, identifier, source_name):
+        """Create ResearcherIds with validation and error handling."""
         try:
-            obj = cls(
-                creator=user,
-                researcher=researcher,
-                identifier=identifier,
-                source_name=source_name,
-            )
-            obj.save()
-            return obj
-        except IntegrityError:
-            return cls.get(identifier, source_name)
+            return cls._base_create(user, researcher=researcher, identifier=identifier, source_name=source_name)
         except ValidationError:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
@@ -1127,30 +1003,16 @@ class ResearcherIds(CommonControlField):
             )
 
     @classmethod
-    def get_or_create(
-        cls,
-        user,
-        researcher, 
-        identifier,
-        source_name,
-    ):
+    def get_or_create(cls, user, researcher, identifier, source_name):
+        """Get or create ResearcherIds with validation."""
         try:
             if source_name == "EMAIL":
                 cls.validate_email(identifier)
             elif source_name == "LATTES":
                 cls.validate_lattes(identifier)
-            return cls.get(
-                identifier=identifier, 
-                source_name=source_name, 
-                researcher=researcher
-            )
+            return cls.get(researcher=researcher, identifier=identifier, source_name=source_name)
         except cls.DoesNotExist:
-            return cls.create(
-                user=user, 
-                researcher=researcher, 
-                identifier=identifier, 
-                source_name=source_name
-            )
+            return cls.create(user=user, researcher=researcher, identifier=identifier, source_name=source_name)
 
     @staticmethod
     def validate_email(email):
