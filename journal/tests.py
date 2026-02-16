@@ -26,7 +26,6 @@ from journal.tasks import (
     child_load_license_of_use_in_journal,
     fetch_and_process_journal_logos_in_collection,
     load_license_of_use_in_journal,
-    task_migrate_institution_history_to_raw_institution,
 )
 from thematic_areas.models import ThematicArea
 from vocabulary.models import Vocabulary
