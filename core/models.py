@@ -443,6 +443,54 @@ class RawOrganizationMixin(models.Model):
         return _data
 
 
+class OrganizationNameMixin(models.Model):
+    """
+    Mixin that provides organization name and acronym fields.
+    
+    Fields:
+        name: The organization's full name
+        acronym: The organization's acronym
+    """
+    name = models.TextField(_("Name"), null=False, blank=False)
+    acronym = models.TextField(_("Institution Acronym"), null=True, blank=True)
+
+    autocomplete_search_field = "name"
+
+    class Meta:
+        abstract = True
+        indexes = [
+            models.Index(
+                fields=[
+                    "name",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "acronym",
+                ]
+            ),
+        ]
+
+    def autocomplete_label(self):
+        """Returns the label for autocomplete fields."""
+        return str(self)
+
+
+class VisualIdentityMixin(models.Model):
+    """
+    Mixin that provides visual identity fields for organizations.
+    
+    Fields:
+        logo: The organization's logo image
+        url: The organization's website URL
+    """
+    url = models.URLField("url", blank=True, null=True)
+    logo = models.ImageField(_("Logo"), blank=True, null=True)
+
+    class Meta:
+        abstract = True
+
+
 class LanguageFallbackManager(models.Manager):
     def get_object_in_preferred_language(self, language):
         mission = self.filter(language=language)

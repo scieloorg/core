@@ -10,7 +10,12 @@ from wagtail.admin.panels import FieldPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.forms import CoreAdminModelForm
-from core.models import BaseHistory, CommonControlField
+from core.models import (
+    BaseHistory,
+    CommonControlField,
+    OrganizationNameMixin,
+    VisualIdentityMixin,
+)
 from core.utils.standardizer import remove_extra_spaces
 from location.models import Location
 
@@ -25,42 +30,26 @@ from .exceptions import (
 HELP_TEXT_ORGANIZATION = _("Select the standardized organization data")
 
 
-class BaseOrganization(models.Model):
-    name = models.TextField(_("Name"), null=False, blank=False)
-    acronym = models.TextField(_("Institution Acronym"), null=True, blank=True)
-    location = models.ForeignKey(
-        Location, on_delete=models.SET_NULL, null=True, blank=False
-    )
-    url = models.URLField("url", blank=True, null=True)
-    logo = models.ImageField(_("Logo"), blank=True, null=True)
+class BaseOrganization(OrganizationNameMixin, VisualIdentityMixin, models.Model):
+    """
+    Base abstract model for organizations.
+    
+    This class combines OrganizationNameMixin (name, acronym) and VisualIdentityMixin (logo, url).
+    Subclasses should add their own location field as needed.
+    
+    Note: location has been moved from BaseOrganization to concrete implementations.
+    """
 
-    autocomplete_search_field = "name"
-
-    def __str__(self):
-        return f"{self.name} | {self.location}"
-
-    def autocomplete_label(self):
-        return str(self)
+    base_form_class = CoreAdminModelForm
 
     class Meta:
         abstract = True
-        unique_together = [
-            ("name", "acronym", "location"),
-        ]
-        indexes = [
-            models.Index(
-                fields=[
-                    "name",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "acronym",
-                ]
-            ),
-        ]
 
-    base_form_class = CoreAdminModelForm
+    def __str__(self):
+        """String representation showing name and location if available."""
+        if hasattr(self, 'location') and self.location:
+            return f"{self.name} | {self.location}"
+        return self.name
 
     @classmethod
     def get(
@@ -167,6 +156,15 @@ class BaseOrganization(models.Model):
 
 
 class Organization(BaseOrganization, CommonControlField, ClusterableModel):
+    """
+    Concrete organization model with location and institution type information.
+    
+    Inherits name and acronym from OrganizationNameMixin,
+    and logo and url from VisualIdentityMixin through BaseOrganization.
+    """
+    location = models.ForeignKey(
+        Location, on_delete=models.SET_NULL, null=True, blank=False
+    )
     institution_type_mec = models.CharField(
         _("Institution Type (MEC)"),
         choices=choices.inst_type,
@@ -184,6 +182,11 @@ class Organization(BaseOrganization, CommonControlField, ClusterableModel):
         null=True,
         blank=True,
     )
+
+    class Meta:
+        unique_together = [
+            ("name", "acronym", "location"),
+        ]
 
     panels = [
         FieldPanel("name"),
