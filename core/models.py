@@ -451,7 +451,7 @@ class OrganizationNameMixin(models.Model):
         name: The organization's full name
         acronym: The organization's acronym
     """
-    name = models.CharField(_("Name"), max_length=255, null=False, blank=False)
+    name = models.CharField(_("Name"), max_length=255)
     acronym = models.CharField(_("Institution Acronym"), max_length=20, null=True, blank=True)
 
     autocomplete_search_field = "name"
