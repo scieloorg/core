@@ -46,7 +46,13 @@ class BaseOrganization(OrganizationNameMixin, VisualIdentityMixin, models.Model)
         abstract = True
 
     def __str__(self):
-        """String representation showing name and location if available."""
+        """
+        String representation showing name and location if available.
+        
+        Note: The conditional check for location allows this base class to be
+        used by subclasses that may not define a location field, while still
+        providing a good string representation for those that do (like Organization).
+        """
         if hasattr(self, 'location') and self.location:
             return f"{self.name} | {self.location}"
         return self.name
@@ -184,6 +190,8 @@ class Organization(BaseOrganization, CommonControlField, ClusterableModel):
     )
 
     class Meta:
+        # Note: unique_together uses fields inherited from mixins
+        # (name, acronym from OrganizationNameMixin) plus location field
         unique_together = [
             ("name", "acronym", "location"),
         ]
