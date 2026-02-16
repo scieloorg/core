@@ -433,7 +433,7 @@ def task_replace_institution_by_raw_institution(
                     continue
                 
                 # Extract publisher/owner data
-                publisher = extract_value(data.get("publisher_name"))
+                publisher = extract_value(data.get("publisher"))
                 publisher_country = extract_value(data.get("publisher_country"))
                 publisher_state = extract_value(data.get("publisher_state"))
                 publisher_city = extract_value(data.get("publisher_city"))
