@@ -113,6 +113,10 @@ class JournalCreateView(JournalFormValidMixin, CreateView):
 
 
 class JournalEditView(JournalFormValidMixin, EditView):
+    """
+    Custom EditView for Journal that uses JournalFormValidMixin to handle form_valid.
+    The mixin ensures proper form handling by calling form.save_all(request.user).
+    """
     pass
 
 
