@@ -1,4 +1,5 @@
 {% load static compress %}
+{% load i18n %}
 
 <section class="journalContacts pt-4 pb-4">
     <div class="container">
@@ -15,7 +16,7 @@
               {% endif %}
               {% if journal.journal_email.all %}
                 {% for email in journal.journal_email.all %}
-                  <strong>E-mail:</strong> {{ email.email }}
+                  <strong>{% trans 'E-mail' %}:</strong> {{ email.email }}
                 {% endfor%}
               {% endif %}
             </div>
@@ -25,7 +26,7 @@
         <div class="col-12 col-sm-4 text-center text-sm-start pt-4 pt-sm-0">
           <a href="#" data-toggle="tooltip" title="RSS do número mais recente do periódico" target="_blank"><span class="material-icons-outlined">rss_feed</span></a>
           <span>
-            Acompanhe os números deste periódico no seu leitor de RSS
+            {% trans 'Acompanhe os números deste periódico no seu leitor de RSS' %}
           </span>
             {% for sn in journal.social_networks %}
                 <a href="{{sn.account}}" data-toggle="tooltip" title="{{sn.network|title}}">
@@ -42,7 +43,7 @@
                     >
                     </span>
                     {% if loop.last %}
-                        <span class="text">Siga este periódico nas redes sociais</span>
+                        <span class="text">{% trans 'Siga este periódico nas redes sociais' %}</span>
                     {% endif %}
             {% endfor %}
         </div>

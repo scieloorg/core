@@ -1,4 +1,5 @@
 {% load static compress %}
+{% load i18n %}
 
 <footer>
     <section class="address-scielo pt-4 pb-4 mt-5">
@@ -54,7 +55,7 @@
               <a href="#">
                 <img src="{% static 'journal_about/img/logo-open-access.svg' %}" alt="Open Access" class="logo-open-access">
               </a>
-              <a href="#">Leia</a> a Declaração de Acesso Aberto
+              <a href="#">{% trans 'Leia' %}</a> {% trans 'a Declaração de Acesso Aberto' %}
             </p>
           </div>
         </div>
