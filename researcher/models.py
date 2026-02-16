@@ -861,6 +861,7 @@ class NewResearcher(ResearchNameMixin, GenderMixin, CommonControlField, Clustera
     )
 
     panels = [
+        FieldPanel("declared_name"),
         FieldPanel("given_names"),
         FieldPanel("last_name"),
         FieldPanel("suffix"),
