@@ -268,9 +268,9 @@ class Organization(BaseOrganization, CommonControlField, ClusterableModel):
 
 
 class BaseOrgLevel(CommonControlField):
-    level_1 = models.TextField(_("Organization Level 1"), null=True, blank=True)
-    level_2 = models.TextField(_("Organization Level 2"), null=True, blank=True)
-    level_3 = models.TextField(_("Organization Level 3"), null=True, blank=True)
+    level_1 = models.CharField(_("Organization Level 1"), max_length=255, null=True, blank=True)
+    level_2 = models.CharField(_("Organization Level 2"), max_length=255, null=True, blank=True)
+    level_3 = models.CharField(_("Organization Level 3"), max_length=255, null=True, blank=True)
 
     class Meta:
         abstract = True
@@ -379,8 +379,9 @@ class BaseOrgLevel(CommonControlField):
 
 
 class OrganizationInstitutionType(CommonControlField):
-    name = models.TextField(
+    name = models.CharField(
         verbose_name=_("Institution Type"),
+        max_length=100,
         null=True,
         blank=True,
         unique=True,
