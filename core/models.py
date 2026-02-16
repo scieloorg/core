@@ -477,7 +477,7 @@ class OrganizationNameMixin(models.Model):
 
     def __str__(self):
         """String representation using the organization name."""
-        return self.name or ""
+        return self.name
 
 
 class VisualIdentityMixin(models.Model):
