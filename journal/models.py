@@ -1092,10 +1092,27 @@ class Journal(CommonControlField, ClusterableModel):
         # Populate RawOrganizationMixin fields
         institution_history.raw_text = original_data
         institution_history.raw_institution_name = raw_institution_name
-        institution_history.raw_country_name = raw_country_name
-        institution_history.raw_country_code = raw_country_code
-        institution_history.raw_state_name = raw_state_name
-        institution_history.raw_state_acron = raw_state_acron
+
+        if raw_country_code and raw_country_name:
+            institution_history.raw_country_name = raw_country_name
+            institution_history.raw_country_code = raw_country_code
+        elif raw_country_name or raw_country_code:
+            raw_country = raw_country_name or raw_country_code
+            if raw_country.upper() == raw_country and len(raw_country) == 2:
+                institution_history.raw_country_code = raw_country
+            else:
+                institution_history.raw_country_name = raw_country
+
+        if raw_state_acron and raw_state_name:
+            institution_history.raw_state_name = raw_state_name
+            institution_history.raw_state_acron = raw_state_acron
+        elif raw_state_name or raw_state_acron:
+            raw_state = raw_state_name or raw_state_acron
+            if raw_state.upper() == raw_state and len(raw_state) == 2:
+                institution_history.raw_state_acron = raw_state
+            else:
+                institution_history.raw_state_name = raw_state
+
         institution_history.raw_city_name = raw_city_name
         
         institution_history.save()
