@@ -333,19 +333,15 @@
                           {% with editorial_board|dict_key:role as members %}
                             {% for data in members %}
                               <li>
-                                {{ data.researcher.fullname }}
-                                {% if data.researcher_affiliation %}, {{ data.researcher_affiliation.name }}
-                                  {% if data.researcher_affiliation.location %}
-                                    , {{ data.researcher_affiliation.location.formatted_location }}
-                                  {% endif %}
-                                {% endif %}
+                                {{ data.fullname }}
+                                {% if data.researcher_affiliation %}, {{ data.researcher_affiliation }}{% endif %}
                                 <br>
-                                {% if data.researcher_orcid %}
-                                  ORCID <a target="_blank" href="https://orcid.org/{{ data.researcher_orcid }}">{{ data.researcher_orcid }}</a>
+                                {% if data.researcher_orcid %} 
+                                  <a href="https://orcid.org/{{ data.researcher_orcid }}" target="_blank">{{ data.researcher_orcid }}</a>
                                 {% endif %}
+                                {% if data.researcher_orcid and data.researcher_lattes %} | {% endif %}
                                 {% if data.researcher_lattes %}
-                                  {% if data.researcher_orcid %} | {% endif %}
-                                  <a target="_blank" href="http://lattes.cnpq.br/{{ data.researcher_lattes }}">CV Lattes</a>
+                                  <a href="http://lattes.cnpq.br/{{ data.researcher_lattes }}" target="_blank">lattes</a>
                                 {% endif %}
                               </li>
                             {% endfor %}
