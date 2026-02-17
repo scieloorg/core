@@ -2482,12 +2482,13 @@ class ContribCollab(CollabMixin, CommonControlField):
         return " - ".join(parts)
 
     @classmethod
-    def get(cls, article, affiliation=None, **kwargs):
+    def get(cls, article, collab, affiliation=None, **kwargs):
         """
-        Get a contrib collab by article and affiliation or other parameters.
+        Get a contrib collab by article, collab, and affiliation or other parameters.
         
         Args:
-            article: Article instance
+            article: Article instance (required)
+            collab: Collaboration name (required)
             affiliation: ArticleAffiliation instance (optional)
             **kwargs: Additional filter parameters
             
@@ -2495,13 +2496,15 @@ class ContribCollab(CollabMixin, CommonControlField):
             ContribCollab instance
             
         Raises:
-            ValueError: If article is not provided
+            ValueError: If article or collab is not provided
             cls.DoesNotExist: If no matching instance found
         """
         if not article:
             raise ValueError("ContribCollab.get requires article parameter")
+        if not collab:
+            raise ValueError("ContribCollab.get requires collab parameter")
         
-        params = {"article": article}
+        params = {"article": article, "collab": collab}
         if affiliation:
             params["affiliation"] = affiliation
         params.update(kwargs)
@@ -2512,30 +2515,38 @@ class ContribCollab(CollabMixin, CommonControlField):
             return cls.objects.filter(**params).first()
 
     @classmethod
-    def create(cls, user, article, affiliation=None, **kwargs):
+    def create(cls, user, article, collab, affiliation=None, **kwargs):
         """
         Create a new contrib collab.
         
         Args:
             user: User creating the instance
-            article: Article instance
+            article: Article instance (required)
+            collab: Collaboration name (required)
             affiliation: ArticleAffiliation instance (optional)
-            **kwargs: Additional field values including collab
+            **kwargs: Additional field values
             
         Returns:
             New ContribCollab instance
+            
+        Raises:
+            ValueError: If article or collab is not provided
         """
         if not article:
             raise ValueError("ContribCollab.create requires article parameter")
+        if not collab:
+            raise ValueError("ContribCollab.create requires collab parameter")
         
         obj = cls()
         obj.article = article
+        obj.collab = collab
         if affiliation:
             obj.affiliation = affiliation
         
-        # Set collab field if provided
-        if 'collab' in kwargs:
-            obj.collab = kwargs['collab']
+        # Set any additional fields from kwargs
+        for key, value in kwargs.items():
+            if hasattr(obj, key):
+                setattr(obj, key, value)
         
         if user:
             obj.creator = user
@@ -2544,52 +2555,47 @@ class ContribCollab(CollabMixin, CommonControlField):
         return obj
 
     @classmethod
-    def create_or_update(cls, user, article, affiliation=None, **kwargs):
+    def create_or_update(cls, user, article, collab, affiliation=None, **kwargs):
         """
         Create a new contrib collab or update an existing one.
         
-        Lookup strategy (in priority order):
-        1. If affiliation is provided, lookup by article + affiliation
-        2. Otherwise, lookup by article + collab if provided in kwargs
-        
-        IMPORTANT: The lookup strategy prioritizes affiliation over collab.
-        If you provide both affiliation and collab, and a record exists for
-        article+affiliation with a different collab value, it will UPDATE
-        the existing record's collab field. If you want to preserve different
-        collab values for the same article+affiliation, use create() directly.
+        Lookup strategy: Uses article + collab + affiliation (if provided) to find existing record.
+        If a record exists with these identifiers, it will be updated. Otherwise, a new one is created.
         
         Args:
             user: User creating/updating the instance
             article: Article instance (required)
+            collab: Collaboration name (required)
             affiliation: ArticleAffiliation instance (optional, used for lookup)
-            **kwargs: Additional field values, including 'collab'
+            **kwargs: Additional field values
             
         Returns:
             ContribCollab instance (created or updated)
             
         Raises:
-            ValueError: If article is not provided
+            ValueError: If article or collab is not provided
         """
         if not article:
             raise ValueError("ContribCollab.create_or_update requires article parameter")
+        if not collab:
+            raise ValueError("ContribCollab.create_or_update requires collab parameter")
         
         try:
             # Build lookup parameters
-            lookup_params = {"article": article}
+            lookup_params = {"article": article, "collab": collab}
             if affiliation:
                 lookup_params["affiliation"] = affiliation
-            elif 'collab' in kwargs and kwargs['collab']:
-                lookup_params["collab"] = kwargs['collab']
             
-            obj = cls.get(**lookup_params)
+            obj = cls.get(article=article, collab=collab, affiliation=affiliation, **kwargs)
             
             # Update fields
-            if affiliation:
+            if affiliation is not None:
                 obj.affiliation = affiliation
             
-            # Update collab field
-            if 'collab' in kwargs:
-                obj.collab = kwargs['collab']
+            # Update any additional fields from kwargs
+            for key, value in kwargs.items():
+                if hasattr(obj, key):
+                    setattr(obj, key, value)
             
             if user:
                 obj.updated_by = user
@@ -2598,7 +2604,7 @@ class ContribCollab(CollabMixin, CommonControlField):
             return obj
             
         except cls.DoesNotExist:
-            return cls.create(user=user, article=article, affiliation=affiliation, **kwargs)
+            return cls.create(user=user, article=article, collab=collab, affiliation=affiliation, **kwargs)
 
 
 class ArticleEvent(BaseEvent, CommonControlField, Orderable):

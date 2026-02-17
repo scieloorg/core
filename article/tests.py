@@ -378,12 +378,13 @@ class ContribCollabTest(TestCase):
         collab = self.ContribCollab.create(
             user=self.user,
             article=self.article,
+            collab="Test Collab",
             affiliation=self.affiliation,
-            collab="Test Collab"
         )
         
         retrieved = self.ContribCollab.get(
             article=self.article,
+            collab="Test Collab",
             affiliation=self.affiliation
         )
         
@@ -407,21 +408,21 @@ class ContribCollabTest(TestCase):
         collab = self.ContribCollab.create(
             user=self.user,
             article=self.article,
+            collab="Initial",
             affiliation=self.affiliation,
-            collab="Initial"
         )
         initial_id = collab.id
         
-        # Update
+        # Update - using same article, collab, and affiliation should update
         updated = self.ContribCollab.create_or_update(
             user=self.user,
             article=self.article,
+            collab="Initial",
             affiliation=self.affiliation,
-            collab="Updated"
         )
         
         self.assertEqual(updated.id, initial_id)
-        self.assertEqual(updated.collab, "Updated")
+        self.assertEqual(updated.collab, "Initial")
         self.assertEqual(self.ContribCollab.objects.count(), 1)
     
     def test_contrib_collab_str_with_collab_and_affiliation(self):
@@ -453,6 +454,36 @@ class ContribCollabTest(TestCase):
             self.ContribCollab.create(
                 user=self.user,
                 article=None,
+                collab="Test Collab",
+                affiliation=self.affiliation
+            )
+    
+    def test_contrib_collab_requires_collab_in_create(self):
+        """Test that collab is required in create method."""
+        with self.assertRaises(ValueError):
+            self.ContribCollab.create(
+                user=self.user,
+                article=self.article,
+                collab=None,
+                affiliation=self.affiliation
+            )
+    
+    def test_contrib_collab_requires_collab_in_get(self):
+        """Test that collab is required in get method."""
+        with self.assertRaises(ValueError):
+            self.ContribCollab.get(
+                article=self.article,
+                collab=None,
+                affiliation=self.affiliation
+            )
+    
+    def test_contrib_collab_requires_collab_in_create_or_update(self):
+        """Test that collab is required in create_or_update method."""
+        with self.assertRaises(ValueError):
+            self.ContribCollab.create_or_update(
+                user=self.user,
+                article=self.article,
+                collab=None,
                 affiliation=self.affiliation
             )
     
