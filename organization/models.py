@@ -207,6 +207,15 @@ class Organization(BaseOrganization, CommonControlField, ClusterableModel):
         # FieldPanel("is_official"),
     ]
 
+    @property
+    def display_name(self):
+        items = []
+        if self.name:
+            items.append(self.name)
+        if self.location:
+            items.append(str(self.location))
+        return ", ".join(items)
+
     def update_institutions(
         self,
         user,
