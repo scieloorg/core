@@ -370,7 +370,7 @@ class OrganizationDivisionTest(TestCase):
         self.assertEqual(division.level_1, "Faculty of Science")
         self.assertEqual(division.level_2, "Department of Physics")
         self.assertEqual(division.level_3, "Laboratory of Quantum Computing")
-        
+
         # Verify only one division was created
         self.assertEqual(OrganizationDivision.objects.count(), 1)
 
@@ -446,7 +446,7 @@ class OrganizationDivisionTest(TestCase):
         self.assertEqual(division.level_1, "Faculty of Science")
         self.assertIsNone(division.level_2)
         self.assertIsNone(division.level_3)
-        
+
         expected_str = f"{self.organization.name} - Faculty of Science"
         self.assertEqual(str(division), expected_str)
 
