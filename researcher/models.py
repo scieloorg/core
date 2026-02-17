@@ -234,6 +234,31 @@ class AffiliationMixin(RawOrganizationMixin):
             return cls.create(user=user, organization=organization, **kwargs)
 
 
+class CollabMixin(models.Model):
+    """
+    Abstract mixin for collaboration data.
+    
+    Provides a collab field to store collaboration information such as
+    research group names, consortium names, or institutional collaborative
+    initiatives.
+    
+    Examples:
+        - "Brazilian Research Network on Climate Change"
+        - "COVID-19 Research Consortium"
+        - "University Collaboration for Sustainability"
+    """
+    collab = models.CharField(
+        _("Collaboration"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Name of the research group, consortium, or collaborative initiative"),
+    )
+
+    class Meta:
+        abstract = True
+
+
 class Researcher(CommonControlField):
     """
     Class that represent the Researcher

@@ -299,3 +299,234 @@ class ArticleAffiliationTest(TestCase):
         self.assertFalse(
             self.ArticleAffiliation.objects.filter(id=affiliation_id).exists()
         )
+
+
+class ContribCollabTest(TestCase):
+    """Tests for ContribCollab model."""
+    
+    def setUp(self):
+        """Set up test data."""
+        from article.models import ArticleAffiliation, ContribCollab
+        from location.models import Country, Location
+        from organization.models import Organization
+        
+        self.user = User.objects.create_user(username="testuser", password="testpass")
+        
+        # Create a location
+        self.country = Country.objects.create(
+            name="Brazil",
+            acron2="BR",
+            acron3="BRA"
+        )
+        self.location = Location.objects.create(
+            country=self.country,
+            state_name="São Paulo",
+            state_acronym="SP",
+            city_name="São Paulo"
+        )
+        
+        # Create an organization
+        self.organization = Organization.objects.create(
+            name="Universidade de São Paulo",
+            acronym="USP",
+            location=self.location,
+            creator=self.user
+        )
+        
+        # Create an article
+        self.article = Article.objects.create(creator=self.user)
+        
+        # Create an affiliation
+        self.affiliation = ArticleAffiliation.create(
+            user=self.user,
+            article=self.article,
+            organization=self.organization
+        )
+        
+        self.ContribCollab = ContribCollab
+    
+    def test_contrib_collab_create_with_affiliation(self):
+        """Test creating ContribCollab with affiliation."""
+        collab = self.ContribCollab.create(
+            user=self.user,
+            article=self.article,
+            affiliation=self.affiliation,
+            collab="Research Group"
+        )
+        
+        self.assertIsNotNone(collab.id)
+        self.assertEqual(collab.article, self.article)
+        self.assertEqual(collab.affiliation, self.affiliation)
+        self.assertEqual(collab.collab, "Research Group")
+        self.assertEqual(collab.creator, self.user)
+    
+    def test_contrib_collab_create_without_affiliation(self):
+        """Test creating ContribCollab without affiliation."""
+        collab = self.ContribCollab.create(
+            user=self.user,
+            article=self.article,
+            collab="Independent Researcher"
+        )
+        
+        self.assertIsNotNone(collab.id)
+        self.assertEqual(collab.article, self.article)
+        self.assertIsNone(collab.affiliation)
+        self.assertEqual(collab.collab, "Independent Researcher")
+    
+    def test_contrib_collab_get(self):
+        """Test getting a ContribCollab."""
+        collab = self.ContribCollab.create(
+            user=self.user,
+            article=self.article,
+            collab="Test Collab",
+            affiliation=self.affiliation,
+        )
+        
+        retrieved = self.ContribCollab.get(
+            article=self.article,
+            collab="Test Collab",
+            affiliation=self.affiliation
+        )
+        
+        self.assertEqual(retrieved.id, collab.id)
+    
+    def test_contrib_collab_create_or_update_creates(self):
+        """Test create_or_update creates new contrib collab."""
+        collab = self.ContribCollab.create_or_update(
+            user=self.user,
+            article=self.article,
+            affiliation=self.affiliation,
+            collab="Initial Collab"
+        )
+        
+        self.assertIsNotNone(collab.id)
+        self.assertEqual(self.ContribCollab.objects.count(), 1)
+    
+    def test_contrib_collab_create_or_update_updates(self):
+        """Test create_or_update updates existing contrib collab."""
+        # Create initial
+        collab = self.ContribCollab.create(
+            user=self.user,
+            article=self.article,
+            collab="Initial",
+            affiliation=self.affiliation,
+        )
+        initial_id = collab.id
+        
+        # Update - using same article, collab, and affiliation should update
+        updated = self.ContribCollab.create_or_update(
+            user=self.user,
+            article=self.article,
+            collab="Initial",
+            affiliation=self.affiliation,
+        )
+        
+        self.assertEqual(updated.id, initial_id)
+        self.assertEqual(updated.collab, "Initial")
+        self.assertEqual(self.ContribCollab.objects.count(), 1)
+    
+    def test_contrib_collab_str_with_collab_and_affiliation(self):
+        """Test string representation with collab and affiliation."""
+        collab = self.ContribCollab.create(
+            user=self.user,
+            article=self.article,
+            affiliation=self.affiliation,
+            collab="Test Group"
+        )
+        
+        self.assertIn(str(self.article), str(collab))
+        self.assertIn("Test Group", str(collab))
+    
+    def test_contrib_collab_str_with_collab_only(self):
+        """Test string representation with collab only."""
+        collab = self.ContribCollab.create(
+            user=self.user,
+            article=self.article,
+            collab="Solo Collab"
+        )
+        
+        self.assertIn(str(self.article), str(collab))
+        self.assertIn("Solo Collab", str(collab))
+    
+    def test_contrib_collab_requires_article(self):
+        """Test that article is required."""
+        with self.assertRaises(ValueError):
+            self.ContribCollab.create(
+                user=self.user,
+                article=None,
+                collab="Test Collab",
+                affiliation=self.affiliation
+            )
+    
+    def test_contrib_collab_requires_collab_in_create(self):
+        """Test that collab is required in create method."""
+        with self.assertRaises(ValueError):
+            self.ContribCollab.create(
+                user=self.user,
+                article=self.article,
+                collab=None,
+                affiliation=self.affiliation
+            )
+    
+    def test_contrib_collab_requires_collab_in_get(self):
+        """Test that collab is required in get method."""
+        with self.assertRaises(ValueError):
+            self.ContribCollab.get(
+                article=self.article,
+                collab=None,
+                affiliation=self.affiliation
+            )
+    
+    def test_contrib_collab_requires_collab_in_create_or_update(self):
+        """Test that collab is required in create_or_update method."""
+        with self.assertRaises(ValueError):
+            self.ContribCollab.create_or_update(
+                user=self.user,
+                article=self.article,
+                collab=None,
+                affiliation=self.affiliation
+            )
+    
+    def test_contrib_collab_parental_key_cascade(self):
+        """Test that deleting article cascades to contrib collab."""
+        collab = self.ContribCollab.create(
+            user=self.user,
+            article=self.article,
+            affiliation=self.affiliation,
+            collab="Test"
+        )
+        
+        article_id = self.article.id
+        collab_id = collab.id
+        
+        # Delete article
+        self.article.delete()
+        
+        # Check contrib collab is also deleted
+        self.assertFalse(
+            self.ContribCollab.objects.filter(id=collab_id).exists()
+        )
+    
+    def test_contrib_collab_affiliation_set_null(self):
+        """Test that deleting affiliation sets it to null in contrib collab."""
+        collab = self.ContribCollab.create(
+            user=self.user,
+            article=self.article,
+            affiliation=self.affiliation,
+            collab="Test"
+        )
+        
+        affiliation_id = self.affiliation.id
+        collab_id = collab.id
+        
+        # Delete affiliation
+        self.affiliation.delete()
+        
+        # Refresh from db
+        collab.refresh_from_db()
+        
+        # Check that collab still exists but affiliation is None
+        self.assertTrue(
+            self.ContribCollab.objects.filter(id=collab_id).exists()
+        )
+        self.assertIsNone(collab.affiliation)
