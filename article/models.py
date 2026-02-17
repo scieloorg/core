@@ -45,7 +45,7 @@ from journal.models import Journal, SciELOJournal
 from pid_provider.choices import PPXML_STATUS_DONE
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
-from researcher.models import InstitutionalAuthor, Researcher
+from researcher.models import AffiliationMixin, InstitutionalAuthor, Researcher
 from tracker.models import BaseEvent, EventSaveError, UnexpectedEvent
 from vocabulary.models import Keyword
 
@@ -2264,6 +2264,163 @@ def check_url(url, timeout=None):
         return True
     except Exception as e:
         raise
+
+
+class ArticleAffiliation(AffiliationMixin, CommonControlField):
+    """
+    Represents an affiliation associated with an article.
+    
+    Inherits from AffiliationMixin (which provides raw organization fields and
+    organization FK) and CommonControlField (for audit fields).
+    """
+    article = ParentalKey(
+        Article,
+        on_delete=models.CASCADE,
+        related_name="affiliations",
+        verbose_name=_("Article"),
+    )
+
+    panels = [
+        AutocompletePanel("article"),
+        AutocompletePanel("organization"),
+        FieldPanel("raw_text"),
+        FieldPanel("raw_institution_name"),
+        FieldPanel("raw_country_name"),
+        FieldPanel("raw_country_code"),
+        FieldPanel("raw_state_name"),
+        FieldPanel("raw_state_acron"),
+        FieldPanel("raw_city_name"),
+    ]
+
+    base_form_class = CoreAdminModelForm
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["article"]),
+            models.Index(fields=["organization"]),
+        ]
+
+    def __str__(self):
+        if self.organization:
+            return f"{self.article} - {self.organization}"
+        elif self.raw_institution_name:
+            return f"{self.article} - {self.raw_institution_name}"
+        elif self.raw_text:
+            return f"{self.article} - {self.raw_text}"
+        return f"{self.article} - Affiliation"
+
+    @classmethod
+    def get(cls, article, organization=None, **kwargs):
+        """
+        Get an article affiliation by article and organization or other parameters.
+        
+        Args:
+            article: Article instance
+            organization: Organization instance (optional)
+            **kwargs: Additional filter parameters
+            
+        Returns:
+            ArticleAffiliation instance
+            
+        Raises:
+            ValueError: If article is not provided
+            cls.DoesNotExist: If no matching instance found
+        """
+        if not article:
+            raise ValueError("ArticleAffiliation.get requires article parameter")
+        
+        params = {"article": article}
+        if organization:
+            params["organization"] = organization
+        params.update(kwargs)
+        
+        try:
+            return cls.objects.get(**params)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(**params).first()
+
+    @classmethod
+    def create(cls, user, article, organization=None, **kwargs):
+        """
+        Create a new article affiliation.
+        
+        Args:
+            user: User creating the instance
+            article: Article instance
+            organization: Organization instance (optional)
+            **kwargs: Additional field values including raw fields
+            
+        Returns:
+            New ArticleAffiliation instance
+        """
+        if not article:
+            raise ValueError("ArticleAffiliation.create requires article parameter")
+        
+        obj = cls()
+        obj.article = article
+        if organization:
+            obj.organization = organization
+        
+        # Set raw fields if provided
+        for field in ['raw_text', 'raw_institution_name', 'raw_country_name',
+                      'raw_country_code', 'raw_state_name', 'raw_state_acron',
+                      'raw_city_name']:
+            if field in kwargs:
+                setattr(obj, field, kwargs[field])
+        
+        if user:
+            obj.creator = user
+        
+        obj.save()
+        return obj
+
+    @classmethod
+    def create_or_update(cls, user, article, organization=None, **kwargs):
+        """
+        Create a new article affiliation or update an existing one.
+        
+        Args:
+            user: User creating/updating the instance
+            article: Article instance
+            organization: Organization instance (optional, used for lookup)
+            **kwargs: Additional field values
+            
+        Returns:
+            ArticleAffiliation instance (created or updated)
+        """
+        if not article:
+            raise ValueError("ArticleAffiliation.create_or_update requires article parameter")
+        
+        try:
+            # Build lookup parameters
+            lookup_params = {"article": article}
+            if organization:
+                lookup_params["organization"] = organization
+            elif 'raw_text' in kwargs and kwargs['raw_text']:
+                lookup_params["raw_text"] = kwargs['raw_text']
+            elif 'raw_institution_name' in kwargs and kwargs['raw_institution_name']:
+                lookup_params["raw_institution_name"] = kwargs['raw_institution_name']
+            
+            obj = cls.get(**lookup_params)
+            
+            # Update fields
+            if organization:
+                obj.organization = organization
+            
+            for field in ['raw_text', 'raw_institution_name', 'raw_country_name',
+                         'raw_country_code', 'raw_state_name', 'raw_state_acron',
+                         'raw_city_name']:
+                if field in kwargs:
+                    setattr(obj, field, kwargs[field])
+            
+            if user:
+                obj.updated_by = user
+            
+            obj.save()
+            return obj
+            
+        except cls.DoesNotExist:
+            return cls.create(user=user, article=article, organization=organization, **kwargs)
 
 
 class ArticleEvent(BaseEvent, CommonControlField, Orderable):

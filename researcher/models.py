@@ -16,7 +16,7 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core.choices import MONTHS
 from core.forms import CoreAdminModelForm
-from core.models import CommonControlField, Gender
+from core.models import CommonControlField, Gender, RawOrganizationMixin
 from core.utils.extracts_normalized_email import extracts_normalized_email
 from core.utils.standardizer import remove_extra_spaces
 from institution.models import BaseInstitution
@@ -76,6 +76,153 @@ class GenderMixin(models.Model):
 
     class Meta:
         abstract = True
+
+
+class AffiliationMixin(RawOrganizationMixin):
+    """
+    Mixin for affiliation data that combines raw organization information
+    with a reference to a structured Organization.
+    
+    Inherits raw organization fields from RawOrganizationMixin and adds
+    a foreign key to the Organization model.
+    """
+    organization = models.ForeignKey(
+        Organization,
+        verbose_name=_("Organization"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=_("Structured organization reference"),
+    )
+
+    class Meta:
+        abstract = True
+
+    @classmethod
+    def get(cls, organization=None, **kwargs):
+        """
+        Get an affiliation by organization or raw fields.
+        
+        Args:
+            organization: Organization instance
+            **kwargs: Additional filter parameters
+            
+        Returns:
+            Instance of the class
+            
+        Raises:
+            ValueError: If no valid search parameters provided
+            cls.DoesNotExist: If no matching instance found
+        """
+        if not organization and not kwargs:
+            raise ValueError(
+                f"{cls.__name__}.get requires at least organization or other parameters"
+            )
+        
+        params = {}
+        if organization:
+            params["organization"] = organization
+        params.update(kwargs)
+        
+        try:
+            return cls.objects.get(**params)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(**params).first()
+
+    @classmethod
+    def create(cls, user=None, organization=None, **kwargs):
+        """
+        Create a new affiliation instance.
+        
+        Args:
+            user: User creating the instance
+            organization: Organization instance
+            **kwargs: Additional field values including raw fields
+            
+        Returns:
+            New instance of the class
+        """
+        obj = cls()
+        if organization:
+            obj.organization = organization
+        
+        # Set raw fields if provided
+        for field in ['raw_text', 'raw_institution_name', 'raw_country_name', 
+                      'raw_country_code', 'raw_state_name', 'raw_state_acron', 
+                      'raw_city_name']:
+            if field in kwargs:
+                setattr(obj, field, kwargs[field])
+        
+        # Set any additional fields from kwargs
+        for key, value in kwargs.items():
+            if hasattr(obj, key) and key not in ['raw_text', 'raw_institution_name', 
+                                                   'raw_country_name', 'raw_country_code', 
+                                                   'raw_state_name', 'raw_state_acron', 
+                                                   'raw_city_name']:
+                setattr(obj, key, value)
+        
+        if user:
+            obj.creator = user
+        
+        obj.save()
+        return obj
+
+    @classmethod
+    def create_or_update(cls, user=None, organization=None, **kwargs):
+        """
+        Create a new affiliation or update an existing one.
+        
+        Args:
+            user: User creating/updating the instance
+            organization: Organization instance (used for lookup)
+            **kwargs: Additional field values
+            
+        Returns:
+            Instance of the class (created or updated)
+        """
+        try:
+            # Try to get existing instance
+            lookup_params = {}
+            if organization:
+                lookup_params['organization'] = organization
+            
+            # Add any other unique identifying fields from kwargs
+            for key in kwargs:
+                if key in ['raw_text', 'raw_institution_name'] and kwargs[key]:
+                    lookup_params[key] = kwargs[key]
+                    break
+            
+            if lookup_params:
+                obj = cls.get(**lookup_params)
+                
+                # Update fields
+                if organization:
+                    obj.organization = organization
+                
+                for field in ['raw_text', 'raw_institution_name', 'raw_country_name',
+                             'raw_country_code', 'raw_state_name', 'raw_state_acron',
+                             'raw_city_name']:
+                    if field in kwargs:
+                        setattr(obj, field, kwargs[field])
+                
+                for key, value in kwargs.items():
+                    if hasattr(obj, key) and key not in ['raw_text', 'raw_institution_name',
+                                                          'raw_country_name', 'raw_country_code',
+                                                          'raw_state_name', 'raw_state_acron',
+                                                          'raw_city_name']:
+                        setattr(obj, key, value)
+                
+                if user:
+                    obj.updated_by = user
+                
+                obj.save()
+                return obj
+            else:
+                # No lookup params, create new
+                return cls.create(user=user, organization=organization, **kwargs)
+                
+        except cls.DoesNotExist:
+            return cls.create(user=user, organization=organization, **kwargs)
 
 
 class Researcher(CommonControlField):
