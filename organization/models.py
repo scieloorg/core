@@ -646,14 +646,7 @@ class NormAffiliation(CommonControlField):
                 level_3=level_3,
             )
             
-            # Update fields
-            obj.organization = organization if organization is not None else obj.organization
-            obj.location = location if location is not None else obj.location
-            obj.level_1 = level_1 if level_1 is not None else obj.level_1
-            obj.level_2 = level_2 if level_2 is not None else obj.level_2
-            obj.level_3 = level_3 if level_3 is not None else obj.level_3
-            
-            # Update other fields
+            # Update other fields from kwargs
             for key, value in kwargs.items():
                 if hasattr(obj, key):
                     setattr(obj, key, value)
