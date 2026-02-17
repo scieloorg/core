@@ -2580,7 +2580,8 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
         Args:
             article: Article instance
             organization: Organization instance (optional)
-            **kwargs: Additional filter parameters
+            **kwargs: Additional filter parameters including raw_level_1, raw_level_2, 
+                     raw_level_3, normalized, and any raw organization fields
             
         Returns:
             ArticleAffiliation instance

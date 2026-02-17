@@ -530,3 +530,329 @@ class ContribCollabTest(TestCase):
             self.ContribCollab.objects.filter(id=collab_id).exists()
         )
         self.assertIsNone(collab.affiliation)
+
+
+class NormAffiliationTest(TestCase):
+    """Test cases for NormAffiliation model"""
+
+    def setUp(self):
+        from article.models import NormAffiliation
+        from location.models import Location, City, State, Country
+        from organization.models import Organization
+        
+        self.NormAffiliation = NormAffiliation
+        self.user = User.objects.create_user(username="testuser", password="testpass")
+        
+        # Create location components
+        self.country = Country.create(user=self.user, name="Brazil", acron2="BR", acron3="BRA")
+        self.state = State.create(user=self.user, name="São Paulo", acronym="SP")
+        self.city = City.create(user=self.user, name="São Paulo")
+        
+        # Create location
+        self.location = Location._create(
+            user=self.user,
+            country=self.country,
+            state=self.state,
+            city=self.city
+        )
+        
+        # Create organization
+        self.organization = Organization.create(
+            user=self.user,
+            name="University of São Paulo",
+            acronym="USP",
+            location=self.location
+        )
+
+    def test_create_norm_affiliation(self):
+        """Test creating a NormAffiliation instance"""
+        norm_aff = self.NormAffiliation.create(
+            user=self.user,
+            organization=self.organization,
+            location=self.location,
+            level_1="Faculty of Medicine",
+            level_2="Department of Surgery",
+            level_3="Cardiovascular Unit"
+        )
+        
+        self.assertIsNotNone(norm_aff.id)
+        self.assertEqual(norm_aff.organization, self.organization)
+        self.assertEqual(norm_aff.location, self.location)
+        self.assertEqual(norm_aff.level_1, "Faculty of Medicine")
+        self.assertEqual(norm_aff.level_2, "Department of Surgery")
+        self.assertEqual(norm_aff.level_3, "Cardiovascular Unit")
+        self.assertEqual(norm_aff.creator, self.user)
+
+    def test_get_norm_affiliation(self):
+        """Test retrieving a NormAffiliation instance"""
+        norm_aff = self.NormAffiliation.create(
+            user=self.user,
+            organization=self.organization,
+            location=self.location,
+            level_1="Faculty of Sciences",
+            level_2="Department of Physics"
+        )
+        
+        retrieved = self.NormAffiliation.get(
+            organization=self.organization,
+            location=self.location,
+            level_1="Faculty of Sciences",
+            level_2="Department of Physics"
+        )
+        
+        self.assertEqual(retrieved.id, norm_aff.id)
+
+    def test_create_or_update_creates_new(self):
+        """Test create_or_update creates new instance when not exists"""
+        norm_aff = self.NormAffiliation.create_or_update(
+            user=self.user,
+            organization=self.organization,
+            location=self.location,
+            level_1="Faculty of Engineering",
+            level_2="Department of Civil Engineering"
+        )
+        
+        self.assertIsNotNone(norm_aff.id)
+        self.assertEqual(norm_aff.level_1, "Faculty of Engineering")
+
+    def test_create_or_update_updates_existing(self):
+        """Test create_or_update updates existing instance"""
+        # Create initial instance
+        norm_aff = self.NormAffiliation.create(
+            user=self.user,
+            organization=self.organization,
+            location=self.location,
+            level_1="Faculty of Law",
+            level_2="Department of Criminal Law"
+        )
+        original_id = norm_aff.id
+        
+        # Update with same unique key
+        updated = self.NormAffiliation.create_or_update(
+            user=self.user,
+            organization=self.organization,
+            location=self.location,
+            level_1="Faculty of Law",
+            level_2="Department of Criminal Law",
+            level_3="Criminal Procedure Unit"  # Add level_3
+        )
+        
+        self.assertEqual(updated.id, original_id)
+        self.assertEqual(updated.level_3, "Criminal Procedure Unit")
+
+    def test_unique_together_constraint(self):
+        """Test unique_together constraint on NormAffiliation"""
+        # Create first instance
+        self.NormAffiliation.create(
+            user=self.user,
+            organization=self.organization,
+            location=self.location,
+            level_1="Faculty of Arts",
+            level_2="Department of History"
+        )
+        
+        # Try to create duplicate - should use create_or_update in practice
+        # but direct create would raise IntegrityError
+        from django.db import IntegrityError
+        with self.assertRaises(IntegrityError):
+            norm_aff2 = self.NormAffiliation(
+                organization=self.organization,
+                location=self.location,
+                level_1="Faculty of Arts",
+                level_2="Department of History",
+                creator=self.user
+            )
+            norm_aff2.save()
+
+    def test_str_method(self):
+        """Test __str__ method of NormAffiliation"""
+        norm_aff = self.NormAffiliation.create(
+            user=self.user,
+            organization=self.organization,
+            location=self.location,
+            level_1="Faculty of Medicine"
+        )
+        
+        str_repr = str(norm_aff)
+        self.assertIn("University of São Paulo", str_repr)
+        self.assertIn("Faculty of Medicine", str_repr)
+
+
+class ArticleAffiliationWithLevelsTest(TestCase):
+    """Test cases for ArticleAffiliation with level fields"""
+
+    def setUp(self):
+        from article.models import Article, ArticleAffiliation, NormAffiliation
+        from location.models import Location, City, State, Country
+        from organization.models import Organization
+        
+        self.ArticleAffiliation = ArticleAffiliation
+        self.NormAffiliation = NormAffiliation
+        self.user = User.objects.create_user(username="testuser", password="testpass")
+        
+        # Create article
+        self.article = Article.objects.create(pid_v3="test-article-001")
+        
+        # Create location components
+        self.country = Country.create(user=self.user, name="Brazil", acron2="BR", acron3="BRA")
+        self.state = State.create(user=self.user, name="Rio de Janeiro", acronym="RJ")
+        self.city = City.create(user=self.user, name="Rio de Janeiro")
+        
+        # Create location
+        self.location = Location._create(
+            user=self.user,
+            country=self.country,
+            state=self.state,
+            city=self.city
+        )
+        
+        # Create organization
+        self.organization = Organization.create(
+            user=self.user,
+            name="Federal University of Rio de Janeiro",
+            acronym="UFRJ",
+            location=self.location
+        )
+
+    def test_create_with_raw_level_fields(self):
+        """Test creating ArticleAffiliation with raw level fields"""
+        aff = self.ArticleAffiliation.create(
+            user=self.user,
+            article=self.article,
+            organization=self.organization,
+            raw_level_1="Instituto de Química",
+            raw_level_2="Departamento de Química Orgânica",
+            raw_level_3="Laboratório de Síntese"
+        )
+        
+        self.assertEqual(aff.raw_level_1, "Instituto de Química")
+        self.assertEqual(aff.raw_level_2, "Departamento de Química Orgânica")
+        self.assertEqual(aff.raw_level_3, "Laboratório de Síntese")
+
+    def test_create_or_update_with_level_fields(self):
+        """Test create_or_update with level fields"""
+        # Create
+        aff = self.ArticleAffiliation.create_or_update(
+            user=self.user,
+            article=self.article,
+            organization=self.organization,
+            raw_level_1="Faculty of Science"
+        )
+        original_id = aff.id
+        
+        # Update
+        aff_updated = self.ArticleAffiliation.create_or_update(
+            user=self.user,
+            article=self.article,
+            organization=self.organization,
+            raw_level_1="Faculty of Science",
+            raw_level_2="Department of Biology"
+        )
+        
+        self.assertEqual(aff_updated.id, original_id)
+        self.assertEqual(aff_updated.raw_level_2, "Department of Biology")
+
+    def test_get_with_level_fields(self):
+        """Test getting ArticleAffiliation using level fields"""
+        aff = self.ArticleAffiliation.create(
+            user=self.user,
+            article=self.article,
+            organization=self.organization,
+            raw_level_1="Medical School",
+            raw_level_2="Surgery Department"
+        )
+        
+        retrieved = self.ArticleAffiliation.get(
+            article=self.article,
+            raw_level_1="Medical School"
+        )
+        
+        self.assertEqual(retrieved.id, aff.id)
+
+    def test_set_normalized(self):
+        """Test set_normalized method"""
+        aff = self.ArticleAffiliation.create(
+            user=self.user,
+            article=self.article,
+            organization=self.organization,
+            raw_level_1="Instituto de Física"
+        )
+        
+        aff.set_normalized(
+            user=self.user,
+            organization=self.organization,
+            location=self.location,
+            level_1="Institute of Physics",
+            level_2="Department of Theoretical Physics"
+        )
+        
+        self.assertIsNotNone(aff.normalized)
+        self.assertEqual(aff.normalized.level_1, "Institute of Physics")
+        self.assertEqual(aff.normalized.level_2, "Department of Theoretical Physics")
+
+    def test_update_normalized(self):
+        """Test update_normalized method"""
+        aff = self.ArticleAffiliation.create(
+            user=self.user,
+            article=self.article,
+            organization=self.organization
+        )
+        
+        # First update - creates normalized
+        aff.update_normalized(
+            user=self.user,
+            organization=self.organization,
+            location=self.location,
+            level_1="Engineering School"
+        )
+        
+        norm_id = aff.normalized.id
+        
+        # Second update - updates existing
+        aff.update_normalized(
+            user=self.user,
+            level_2="Mechanical Engineering Department"
+        )
+        
+        self.assertEqual(aff.normalized.id, norm_id)
+        self.assertEqual(aff.normalized.level_2, "Mechanical Engineering Department")
+
+    def test_clear_normalized(self):
+        """Test clear_normalized method"""
+        aff = self.ArticleAffiliation.create(
+            user=self.user,
+            article=self.article,
+            organization=self.organization
+        )
+        
+        aff.set_normalized(
+            user=self.user,
+            organization=self.organization,
+            location=self.location,
+            level_1="School of Arts"
+        )
+        
+        self.assertIsNotNone(aff.normalized)
+        
+        aff.clear_normalized(user=self.user)
+        
+        self.assertIsNone(aff.normalized)
+
+    def test_normalized_field_in_create(self):
+        """Test creating ArticleAffiliation with normalized field"""
+        norm_aff = self.NormAffiliation.create(
+            user=self.user,
+            organization=self.organization,
+            location=self.location,
+            level_1="Faculty of Education"
+        )
+        
+        aff = self.ArticleAffiliation.create(
+            user=self.user,
+            article=self.article,
+            organization=self.organization,
+            normalized=norm_aff
+        )
+        
+        self.assertEqual(aff.normalized, norm_aff)
+
