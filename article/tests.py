@@ -536,7 +536,7 @@ class NormAffiliationTest(TestCase):
     """Test cases for NormAffiliation model"""
 
     def setUp(self):
-        from article.models import NormAffiliation
+        from organization.models import NormAffiliation
         from location.models import Location, City, State, Country
         from organization.models import Organization
         
@@ -682,7 +682,8 @@ class ArticleAffiliationWithLevelsTest(TestCase):
     """Test cases for ArticleAffiliation with level fields"""
 
     def setUp(self):
-        from article.models import Article, ArticleAffiliation, NormAffiliation
+        from article.models import Article, ArticleAffiliation
+        from organization.models import NormAffiliation
         from location.models import Location, City, State, Country
         from organization.models import Organization
         
