@@ -538,7 +538,7 @@ class NormAffiliation(CommonControlField):
         return " - ".join(parts) if parts else "NormAffiliation"
 
     @classmethod
-    def get(cls, organization=None, location=None, level_1=None, level_2=None, level_3=None, **kwargs):
+    def get(cls, organization=None, location=None, level_1=None, level_2=None, level_3=None):
         """
         Get a normalized affiliation by its identifying fields.
         
@@ -548,7 +548,6 @@ class NormAffiliation(CommonControlField):
             level_1: First level of division (optional)
             level_2: Second level of division (optional)
             level_3: Third level of division (optional)
-            **kwargs: Additional filter parameters
             
         Returns:
             NormAffiliation instance
@@ -557,7 +556,7 @@ class NormAffiliation(CommonControlField):
             ValueError: If no valid search parameters provided
             cls.DoesNotExist: If no matching instance found
         """
-        if not any([organization, location, level_1, level_2, level_3]) and not kwargs:
+        if not any([organization, location, level_1, level_2, level_3]):
             raise ValueError(
                 "NormAffiliation.get requires at least one parameter"
             )
@@ -573,7 +572,6 @@ class NormAffiliation(CommonControlField):
             params["level_2"] = level_2
         if level_3 is not None:
             params["level_3"] = level_3
-        params.update(kwargs)
         
         try:
             return cls.objects.get(**params)
