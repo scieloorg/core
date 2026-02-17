@@ -45,6 +45,8 @@ from journal.models import Journal, SciELOJournal
 from pid_provider.choices import PPXML_STATUS_DONE
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
+from location.models import Location
+from organization.models import Organization
 from researcher.models import AffiliationMixin, CollabMixin, InstitutionalAuthor, Researcher
 from tracker.models import BaseEvent, EventSaveError, UnexpectedEvent
 from vocabulary.models import Keyword
@@ -2266,6 +2268,229 @@ def check_url(url, timeout=None):
         raise
 
 
+class NormAffiliation(CommonControlField):
+    """
+    Represents normalized/standardized organization division data.
+    
+    This model stores standardized forms of organization division information,
+    allowing for consistent representation of organizational hierarchies across
+    different affiliations.
+    
+    Fields:
+        organization: Reference to the standardized Organization
+        location: Reference to the standardized Location
+        level_1: First level of organization division (e.g., Department)
+        level_2: Second level of organization division (e.g., Unit)
+        level_3: Third level of organization division (e.g., Section)
+    """
+    organization = models.ForeignKey(
+        Organization,
+        verbose_name=_("Organization"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=_("Standardized organization reference"),
+    )
+    location = models.ForeignKey(
+        Location,
+        verbose_name=_("Location"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=_("Standardized location reference"),
+    )
+    level_1 = models.CharField(
+        _("Level 1"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("First level of organization division"),
+    )
+    level_2 = models.CharField(
+        _("Level 2"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Second level of organization division"),
+    )
+    level_3 = models.CharField(
+        _("Level 3"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Third level of organization division"),
+    )
+
+    base_form_class = CoreAdminModelForm
+
+    panels = [
+        AutocompletePanel("organization"),
+        AutocompletePanel("location"),
+        FieldPanel("level_1"),
+        FieldPanel("level_2"),
+        FieldPanel("level_3"),
+    ]
+
+    class Meta:
+        unique_together = [
+            ("organization", "location", "level_1", "level_2", "level_3"),
+        ]
+        indexes = [
+            models.Index(fields=["organization"]),
+            models.Index(fields=["location"]),
+        ]
+
+    def __str__(self):
+        parts = []
+        if self.organization:
+            parts.append(str(self.organization))
+        if self.location:
+            parts.append(str(self.location))
+        levels = [self.level_1, self.level_2, self.level_3]
+        for level in levels:
+            if level:
+                parts.append(level)
+        return " - ".join(parts) if parts else "NormAffiliation"
+
+    @classmethod
+    def get(cls, organization=None, location=None, level_1=None, level_2=None, level_3=None, **kwargs):
+        """
+        Get a normalized affiliation by its identifying fields.
+        
+        Args:
+            organization: Organization instance (optional)
+            location: Location instance (optional)
+            level_1: First level of division (optional)
+            level_2: Second level of division (optional)
+            level_3: Third level of division (optional)
+            **kwargs: Additional filter parameters
+            
+        Returns:
+            NormAffiliation instance
+            
+        Raises:
+            ValueError: If no valid search parameters provided
+            cls.DoesNotExist: If no matching instance found
+        """
+        if not any([organization, location, level_1, level_2, level_3]) and not kwargs:
+            raise ValueError(
+                "NormAffiliation.get requires at least one parameter"
+            )
+        
+        params = {}
+        if organization is not None:
+            params["organization"] = organization
+        if location is not None:
+            params["location"] = location
+        if level_1 is not None:
+            params["level_1"] = level_1
+        if level_2 is not None:
+            params["level_2"] = level_2
+        if level_3 is not None:
+            params["level_3"] = level_3
+        params.update(kwargs)
+        
+        try:
+            return cls.objects.get(**params)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(**params).first()
+
+    @classmethod
+    def create(cls, user, organization=None, location=None, level_1=None, level_2=None, level_3=None, **kwargs):
+        """
+        Create a new normalized affiliation.
+        
+        Args:
+            user: User creating the instance
+            organization: Organization instance (optional)
+            location: Location instance (optional)
+            level_1: First level of division (optional)
+            level_2: Second level of division (optional)
+            level_3: Third level of division (optional)
+            **kwargs: Additional field values
+            
+        Returns:
+            New NormAffiliation instance
+        """
+        obj = cls()
+        obj.organization = organization
+        obj.location = location
+        obj.level_1 = level_1
+        obj.level_2 = level_2
+        obj.level_3 = level_3
+        
+        # Set any additional fields from kwargs
+        for key, value in kwargs.items():
+            if hasattr(obj, key):
+                setattr(obj, key, value)
+        
+        if user:
+            obj.creator = user
+        
+        obj.save()
+        return obj
+
+    @classmethod
+    def create_or_update(cls, user, organization=None, location=None, level_1=None, level_2=None, level_3=None, **kwargs):
+        """
+        Create a new normalized affiliation or update an existing one.
+        
+        Lookup strategy:
+        Uses the unique_together fields (organization, location, level_1, level_2, level_3)
+        to find an existing instance.
+        
+        Args:
+            user: User creating/updating the instance
+            organization: Organization instance (optional)
+            location: Location instance (optional)
+            level_1: First level of division (optional)
+            level_2: Second level of division (optional)
+            level_3: Third level of division (optional)
+            **kwargs: Additional field values
+            
+        Returns:
+            NormAffiliation instance (created or updated)
+        """
+        try:
+            # Try to get existing instance using unique_together fields
+            obj = cls.get(
+                organization=organization,
+                location=location,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+            )
+            
+            # Update fields
+            obj.organization = organization if organization is not None else obj.organization
+            obj.location = location if location is not None else obj.location
+            obj.level_1 = level_1 if level_1 is not None else obj.level_1
+            obj.level_2 = level_2 if level_2 is not None else obj.level_2
+            obj.level_3 = level_3 if level_3 is not None else obj.level_3
+            
+            # Update other fields
+            for key, value in kwargs.items():
+                if hasattr(obj, key):
+                    setattr(obj, key, value)
+            
+            if user:
+                obj.updated_by = user
+            
+            obj.save()
+            return obj
+            
+        except cls.DoesNotExist:
+            return cls.create(
+                user=user,
+                organization=organization,
+                location=location,
+                level_1=level_1,
+                level_2=level_2,
+                level_3=level_3,
+                **kwargs
+            )
+
+
 class ArticleAffiliation(AffiliationMixin, CommonControlField):
     """
     Represents an affiliation associated with an article.
@@ -2279,6 +2504,39 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
         related_name="affiliations",
         verbose_name=_("Article"),
     )
+    
+    # Raw level fields for organization division
+    raw_level_1 = models.CharField(
+        _("Raw Level 1"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Raw first level of organization division"),
+    )
+    raw_level_2 = models.CharField(
+        _("Raw Level 2"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Raw second level of organization division"),
+    )
+    raw_level_3 = models.CharField(
+        _("Raw Level 3"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Raw third level of organization division"),
+    )
+    
+    # Normalized affiliation reference
+    normalized = models.ForeignKey(
+        NormAffiliation,
+        verbose_name=_("Normalized Affiliation"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=_("Reference to normalized affiliation data"),
+    )
 
     panels = [
         AutocompletePanel("article"),
@@ -2290,6 +2548,10 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
         FieldPanel("raw_state_name"),
         FieldPanel("raw_state_acron"),
         FieldPanel("raw_city_name"),
+        FieldPanel("raw_level_1"),
+        FieldPanel("raw_level_2"),
+        FieldPanel("raw_level_3"),
+        AutocompletePanel("normalized"),
     ]
 
     base_form_class = CoreAdminModelForm
@@ -2298,6 +2560,7 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
         indexes = [
             models.Index(fields=["article"]),
             models.Index(fields=["organization"]),
+            models.Index(fields=["normalized"]),
         ]
 
     def __str__(self):
@@ -2348,7 +2611,7 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
             user: User creating the instance
             article: Article instance
             organization: Organization instance (optional)
-            **kwargs: Additional field values including raw fields
+            **kwargs: Additional field values including raw fields and level fields
             
         Returns:
             New ArticleAffiliation instance
@@ -2365,6 +2628,15 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
         for field in cls.RAW_ORGANIZATION_FIELDS:
             if field in kwargs:
                 setattr(obj, field, kwargs[field])
+        
+        # Set raw level fields if provided
+        for field in ['raw_level_1', 'raw_level_2', 'raw_level_3']:
+            if field in kwargs:
+                setattr(obj, field, kwargs[field])
+        
+        # Set normalized field if provided
+        if 'normalized' in kwargs:
+            obj.normalized = kwargs['normalized']
         
         if user:
             obj.creator = user
@@ -2386,7 +2658,7 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
             user: User creating/updating the instance
             article: Article instance
             organization: Organization instance (optional, used for lookup)
-            **kwargs: Additional field values
+            **kwargs: Additional field values including level fields
             
         Returns:
             ArticleAffiliation instance (created or updated)
@@ -2415,6 +2687,15 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
                 if field in kwargs:
                     setattr(obj, field, kwargs[field])
             
+            # Update raw level fields
+            for field in ['raw_level_1', 'raw_level_2', 'raw_level_3']:
+                if field in kwargs:
+                    setattr(obj, field, kwargs[field])
+            
+            # Update normalized field
+            if 'normalized' in kwargs:
+                obj.normalized = kwargs['normalized']
+            
             if user:
                 obj.updated_by = user
             
@@ -2423,6 +2704,82 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
             
         except cls.DoesNotExist:
             return cls.create(user=user, article=article, organization=organization, **kwargs)
+
+    def set_normalized(self, user, organization=None, location=None, level_1=None, level_2=None, level_3=None):
+        """
+        Set the normalized affiliation for this article affiliation.
+        
+        This method creates or retrieves a NormAffiliation instance and links it to
+        this ArticleAffiliation.
+        
+        Args:
+            user: User performing the operation
+            organization: Organization instance (optional)
+            location: Location instance (optional)
+            level_1: First level of division (optional)
+            level_2: Second level of division (optional)
+            level_3: Third level of division (optional)
+            
+        Returns:
+            The updated ArticleAffiliation instance
+        """
+        norm_aff = NormAffiliation.create_or_update(
+            user=user,
+            organization=organization,
+            location=location,
+            level_1=level_1,
+            level_2=level_2,
+            level_3=level_3,
+        )
+        self.normalized = norm_aff
+        self.updated_by = user
+        self.save()
+        return self
+
+    def update_normalized(self, user, **kwargs):
+        """
+        Update the normalized affiliation linked to this article affiliation.
+        
+        If no normalized affiliation exists, creates one. Otherwise updates the
+        existing one.
+        
+        Args:
+            user: User performing the operation
+            **kwargs: Fields to update in NormAffiliation (organization, location, 
+                     level_1, level_2, level_3)
+            
+        Returns:
+            The updated ArticleAffiliation instance
+        """
+        if self.normalized:
+            # Update existing normalized affiliation
+            for key, value in kwargs.items():
+                if hasattr(self.normalized, key):
+                    setattr(self.normalized, key, value)
+            self.normalized.updated_by = user
+            self.normalized.save()
+        else:
+            # Create new normalized affiliation
+            self.normalized = NormAffiliation.create(user=user, **kwargs)
+        
+        self.updated_by = user
+        self.save()
+        return self
+
+    def clear_normalized(self, user):
+        """
+        Remove the link to the normalized affiliation.
+        
+        Args:
+            user: User performing the operation
+            
+        Returns:
+            The updated ArticleAffiliation instance
+        """
+        self.normalized = None
+        self.updated_by = user
+        self.save()
+        return self
 
 
 class ContribCollab(CollabMixin, CommonControlField):
