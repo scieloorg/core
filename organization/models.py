@@ -619,8 +619,8 @@ class NormAffiliation(CommonControlField):
         Create a new normalized affiliation or update an existing one.
         
         Lookup strategy:
-        Uses the unique_together fields (organization, location, level_1, level_2, level_3)
-        to find an existing instance.
+        Tries to find an existing record by progressively matching non-None unique_together fields.
+        This allows updating records to add new level values without requiring exact matches.
         
         Args:
             user: User creating/updating the instance
@@ -634,28 +634,68 @@ class NormAffiliation(CommonControlField):
         Returns:
             NormAffiliation instance (created or updated)
         """
+        # Build lookup dict with only non-None values from unique_together fields
+        lookup = {}
+        if organization is not None:
+            lookup["organization"] = organization
+        if location is not None:
+            lookup["location"] = location
+        if level_1 is not None:
+            lookup["level_1"] = level_1
+        if level_2 is not None:
+            lookup["level_2"] = level_2
+        if level_3 is not None:
+            lookup["level_3"] = level_3
+        
         try:
-            # Try to get existing instance using unique_together fields
-            obj = cls.get(
+            # Try to find existing instance using non-None fields
+            if lookup:
+                # Get all matching records
+                matches = cls.objects.filter(**lookup)
+                
+                # If we have exactly one match, update it
+                if matches.count() == 1:
+                    obj = matches.first()
+                    
+                    # Update the unique_together fields to the new values
+                    if organization is not None:
+                        obj.organization = organization
+                    if location is not None:
+                        obj.location = location
+                    if level_1 is not None:
+                        obj.level_1 = level_1
+                    if level_2 is not None:
+                        obj.level_2 = level_2
+                    if level_3 is not None:
+                        obj.level_3 = level_3
+                    
+                    # Update other fields from kwargs
+                    for key, value in kwargs.items():
+                        if hasattr(obj, key):
+                            setattr(obj, key, value)
+                    
+                    if user:
+                        obj.updated_by = user
+                    
+                    obj.save()
+                    return obj
+                elif matches.count() > 1:
+                    # Multiple matches - can't determine which to update, return first
+                    return matches.first()
+            
+            # No match found or no lookup params - create new
+            return cls.create(
+                user=user,
                 organization=organization,
                 location=location,
                 level_1=level_1,
                 level_2=level_2,
                 level_3=level_3,
+                **kwargs
             )
             
-            # Update other fields from kwargs
-            for key, value in kwargs.items():
-                if hasattr(obj, key):
-                    setattr(obj, key, value)
-            
-            if user:
-                obj.updated_by = user
-            
-            obj.save()
-            return obj
-            
-        except cls.DoesNotExist:
+        except Exception:
+            # Fall back to create
             return cls.create(
                 user=user,
                 organization=organization,

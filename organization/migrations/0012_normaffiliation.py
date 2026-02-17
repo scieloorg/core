@@ -29,9 +29,7 @@ class Migration(migrations.Migration):
                 ('organization', models.ForeignKey(blank=True, help_text='Standardized organization reference', null=True, on_delete=django.db.models.deletion.SET_NULL, to='organization.organization', verbose_name='Organization')),
                 ('updated_by', models.ForeignKey(blank=True, editable=False, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='%(class)s_last_mod_user', to=settings.AUTH_USER_MODEL, verbose_name='Updater')),
             ],
-            options={
-                'abstract': False,
-            },
+            options={},
         ),
         # Add indexes for NormAffiliation
         migrations.AddIndex(

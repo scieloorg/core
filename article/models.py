@@ -2338,6 +2338,7 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
             models.Index(fields=["article"]),
             models.Index(fields=["organization"]),
             models.Index(fields=["normalized"]),
+            models.Index(fields=["article", "organization"]),
         ]
 
     def __str__(self):
@@ -2518,8 +2519,8 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
         """
         Update the normalized affiliation linked to this article affiliation.
         
-        If no normalized affiliation exists, creates one. Otherwise updates the
-        existing one.
+        If no normalized affiliation exists, creates one. If updating would violate
+        the unique_together constraint, reuses an existing matching NormAffiliation.
         
         Args:
             user: User performing the operation
@@ -2530,12 +2531,46 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
             The updated ArticleAffiliation instance
         """
         if self.normalized:
-            # Update existing normalized affiliation
-            for key, value in kwargs.items():
-                if hasattr(self.normalized, key):
-                    setattr(self.normalized, key, value)
-            self.normalized.updated_by = user
-            self.normalized.save()
+            # Check if we're updating any unique_together fields
+            unique_fields = ('organization', 'location', 'level_1', 'level_2', 'level_3')
+            updating_unique = any(field in kwargs for field in unique_fields)
+            
+            if updating_unique:
+                # Build the target combination of unique_together values
+                target_values = {}
+                for field in unique_fields:
+                    if field in kwargs:
+                        target_values[field] = kwargs[field]
+                    else:
+                        target_values[field] = getattr(self.normalized, field, None)
+                
+                # Check if another NormAffiliation with this combination already exists
+                from django.db.models import Q
+                existing = NormAffiliation.objects.filter(
+                    organization=target_values['organization'],
+                    location=target_values['location'],
+                    level_1=target_values['level_1'],
+                    level_2=target_values['level_2'],
+                    level_3=target_values['level_3'],
+                ).exclude(pk=self.normalized.pk).first()
+                
+                if existing:
+                    # Reuse the existing NormAffiliation instead of updating
+                    self.normalized = existing
+                else:
+                    # Safe to update the current normalized affiliation
+                    for key, value in kwargs.items():
+                        if hasattr(self.normalized, key):
+                            setattr(self.normalized, key, value)
+                    self.normalized.updated_by = user
+                    self.normalized.save()
+            else:
+                # Only updating non-unique fields, safe to update directly
+                for key, value in kwargs.items():
+                    if hasattr(self.normalized, key):
+                        setattr(self.normalized, key, value)
+                self.normalized.updated_by = user
+                self.normalized.save()
         else:
             # Create new normalized affiliation
             self.normalized = NormAffiliation.create(user=user, **kwargs)
