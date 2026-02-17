@@ -57,13 +57,14 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
     def __str__(self):
         if not self.researcher:
             return "None"
-        
-        roles = [
-            role.role.std_role or role.role.declared_role
-            for role in self.role_editorial_board.all()
-            if role and role.role
+        return f"{self.researcher.fullname} {', '.join(self.role_names)}"
+
+    @property
+    def role_names(self):
+        return [
+            role.role_name
+            for role in self.role_editorial_board.filter(role__role__isnull=False)
         ]
-        return f"{self.researcher.fullname} {roles}"
 
     @staticmethod
     def autocomplete_custom_queryset_filter(search_term):
@@ -161,6 +162,23 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
         except Journal.DoesNotExist as e:
             logging.info(f"EditorialBoard {journal_title} {e}")
 
+    @classmethod
+    def get_editorial_board_with_role(cls, journal):
+        editorial_board_by_latest_role = {}
+        editorial_board_members = cls.objects.filter(journal=journal) \
+            .prefetch_related(
+                "role_editorial_board",
+                "researcher__orcid",
+                "researcher__affiliation__location"
+            )
+        for member in editorial_board_members:
+            member_role = member.role_editorial_board.filter(
+                role__role__std_role__isnull=False
+            ).order_by("-initial_year").first()
+            researcher = member.researcher
+            editorial_board_by_latest_role[member_role.role_name].append(researcher.data)
+        return editorial_board_by_latest_role
+
 
 class RoleEditorialBoard(CommonControlField, Orderable):
     editorial_board = ParentalKey(
@@ -180,6 +198,13 @@ class RoleEditorialBoard(CommonControlField, Orderable):
 
     def __str__(self):
         return f"{self.role}"
+
+    @property
+    def role_name(self):
+        try:
+            return self.role.std_role or self.role.declared_role
+        except AttributeError:
+            return None
 
     @classmethod
     def get(
