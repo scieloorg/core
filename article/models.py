@@ -45,7 +45,7 @@ from journal.models import Journal, SciELOJournal
 from pid_provider.choices import PPXML_STATUS_DONE
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
-from researcher.models import AffiliationMixin, InstitutionalAuthor, Researcher
+from researcher.models import AffiliationMixin, CollabMixin, InstitutionalAuthor, Researcher
 from tracker.models import BaseEvent, EventSaveError, UnexpectedEvent
 from vocabulary.models import Keyword
 
@@ -2423,6 +2423,162 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
             
         except cls.DoesNotExist:
             return cls.create(user=user, article=article, organization=organization, **kwargs)
+
+
+class ContribCollab(CollabMixin, CommonControlField):
+    """
+    Represents a collaboration associated with an article contributor.
+    
+    Inherits from CollabMixin (which provides the collab field) and
+    CommonControlField (for audit fields).
+    """
+    article = ParentalKey(
+        Article,
+        on_delete=models.CASCADE,
+        related_name="contrib_collabs",
+        verbose_name=_("Article"),
+    )
+
+    affiliation = models.ForeignKey(
+        ArticleAffiliation,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="contrib_collabs",
+        verbose_name=_("Affiliation"),
+    )
+
+    panels = [
+        AutocompletePanel("article"),
+        AutocompletePanel("affiliation"),
+        FieldPanel("collab"),
+    ]
+
+    base_form_class = CoreAdminModelForm
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["article"]),
+            models.Index(fields=["affiliation"]),
+        ]
+
+    def __str__(self):
+        parts = [str(self.article)]
+        if self.collab:
+            parts.append(self.collab)
+        if self.affiliation:
+            parts.append(str(self.affiliation))
+        return " - ".join(parts)
+
+    @classmethod
+    def get(cls, article, affiliation=None, **kwargs):
+        """
+        Get a contrib collab by article and affiliation or other parameters.
+        
+        Args:
+            article: Article instance
+            affiliation: ArticleAffiliation instance (optional)
+            **kwargs: Additional filter parameters
+            
+        Returns:
+            ContribCollab instance
+            
+        Raises:
+            ValueError: If article is not provided
+            cls.DoesNotExist: If no matching instance found
+        """
+        if not article:
+            raise ValueError("ContribCollab.get requires article parameter")
+        
+        params = {"article": article}
+        if affiliation:
+            params["affiliation"] = affiliation
+        params.update(kwargs)
+        
+        try:
+            return cls.objects.get(**params)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(**params).first()
+
+    @classmethod
+    def create(cls, user, article, affiliation=None, **kwargs):
+        """
+        Create a new contrib collab.
+        
+        Args:
+            user: User creating the instance
+            article: Article instance
+            affiliation: ArticleAffiliation instance (optional)
+            **kwargs: Additional field values including collab
+            
+        Returns:
+            New ContribCollab instance
+        """
+        if not article:
+            raise ValueError("ContribCollab.create requires article parameter")
+        
+        obj = cls()
+        obj.article = article
+        if affiliation:
+            obj.affiliation = affiliation
+        
+        # Set collab field if provided
+        if 'collab' in kwargs:
+            obj.collab = kwargs['collab']
+        
+        if user:
+            obj.creator = user
+        
+        obj.save()
+        return obj
+
+    @classmethod
+    def create_or_update(cls, user, article, affiliation=None, **kwargs):
+        """
+        Create a new contrib collab or update an existing one.
+        
+        Lookup strategy (in priority order):
+        1. If affiliation is provided, lookup by article + affiliation
+        2. Otherwise, lookup by article + collab if provided
+        
+        Args:
+            user: User creating/updating the instance
+            article: Article instance
+            affiliation: ArticleAffiliation instance (optional, used for lookup)
+            **kwargs: Additional field values
+            
+        Returns:
+            ContribCollab instance (created or updated)
+        """
+        if not article:
+            raise ValueError("ContribCollab.create_or_update requires article parameter")
+        
+        try:
+            # Build lookup parameters
+            lookup_params = {"article": article}
+            if affiliation:
+                lookup_params["affiliation"] = affiliation
+            elif 'collab' in kwargs and kwargs['collab']:
+                lookup_params["collab"] = kwargs['collab']
+            
+            obj = cls.get(**lookup_params)
+            
+            # Update fields
+            if affiliation:
+                obj.affiliation = affiliation
+            
+            # Update collab field
+            if 'collab' in kwargs:
+                obj.collab = kwargs['collab']
+            
+            if user:
+                obj.updated_by = user
+            
+            obj.save()
+            return obj
+            
+        except cls.DoesNotExist:
+            return cls.create(user=user, article=article, affiliation=affiliation, **kwargs)
 
 
 class ArticleEvent(BaseEvent, CommonControlField, Orderable):
