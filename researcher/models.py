@@ -28,7 +28,9 @@ from . import choices
 from .exceptions import InvalidOrcidError, PersonNameCreateError
 from .forms import ResearcherForm
 
-ORCID_REGEX = re.compile(r'\b(?:https?://)?(?:www\.)?(?:orcid\.org/)?(\d{4}-\d{4}-\d{4}-\d{3}[0-9X])\b')
+ORCID_REGEX = re.compile(
+    r"\b(?:https?://)?(?:www\.)?(?:orcid\.org/)?(\d{4}-\d{4}-\d{4}-\d{3}[0-9X])\b"
+)
 
 
 class ResearchNameMixin(models.Model):
@@ -144,6 +146,42 @@ class Researcher(CommonControlField):
         if self.affiliation:
             return f"{self.person_name} ({self.affiliation})"
         return f"{self.person_name}"
+
+    @property
+    def formatted_affiliation(self):
+        """Retorna afiliação formatada completa com localização"""
+        if not self.affiliation:
+            return ""
+
+        result = self.affiliation.name
+        if self.affiliation.location and self.affiliation.location.formatted_location:
+            result += f", {self.affiliation.location.formatted_location}"
+
+        return result
+
+    @property
+    def orcid_display(self):
+        """Retorna ORCID formatado com link"""
+        if not self.orcid:
+            return ""
+        return f'ORCID <a target="_blank" href="https://orcid.org/{self.orcid}">{self.orcid}</a>'
+
+    @property
+    def lattes_display(self):
+        """Retorna CV Lattes formatado com link"""
+        if not self.lattes:
+            return ""
+        return f'<a target="_blank" href="http://lattes.cnpq.br/{self.lattes}">CV Lattes</a>'
+
+    @property
+    def external_links(self):
+        """Retorna links externos (ORCID e Lattes) formatados"""
+        links = []
+        if self.orcid:
+            links.append(self.orcid_display)
+        if self.lattes:
+            links.append(self.lattes_display)
+        return " | ".join(links)
 
     @classmethod
     def get(
@@ -687,14 +725,14 @@ class InstitutionalAuthor(CommonControlField):
 class ResearcherOrcid(CommonControlField, ClusterableModel):
     orcid = models.CharField(max_length=64, unique=True, null=True)
 
-    panels = [ 
+    panels = [
         FieldPanel("orcid"),
         InlinePanel("researcher_orcid", label="Researcher", classname="collapsed"),
     ]
 
     def __str__(self):
         return f"{self.orcid}"
-    
+
     def get_fullname_researcher(self):
         """
         Function to display the researcher name(s) in the admin interface.
@@ -702,7 +740,9 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
         if self.researcher_orcid.count() == 1:
             return str(self.researcher_orcid.all().first())
         elif self.researcher_orcid.count() > 1:
-            researcher_names = ", ".join(str(researcher) for researcher in self.researcher_orcid.all())
+            researcher_names = ", ".join(
+                str(researcher) for researcher in self.researcher_orcid.all()
+            )
             return f"({researcher_names})"
         return None
 
@@ -723,9 +763,7 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
         Try to find the researcher by the ORCID identifier.
         """
         if not orcid:
-            raise ValueError(
-                "Researcher.get_by_orcid requires orcid parameter"
-            )
+            raise ValueError("Researcher.get_by_orcid requires orcid parameter")
 
         return cls.objects.get(orcid=orcid)
 
@@ -797,7 +835,7 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
             - "orcid.org/0000-0002-1825-0097"
             - "0000-0002-1825-0097"
         - Se o dígito verificador (checksum) está correto conforme a especificação ORCID (ISO/IEC 7064 mod 11-2).
-        
+
         Parâmetros:
         - orcid (str): O ORCID informado, em qualquer um dos formatos aceitos.
 
@@ -822,7 +860,7 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
     def orcid_checksum_is_valid(orcid):
         """
         Verifica o dígito verificador (checksum) de um ORCID.
-        
+
         Parâmetros:
         - orcid (str): O ORCID em qualquer formato aceito (URL completa, domínio + id, ou apenas o id
           no formato 0000-0000-0000-0000).
@@ -838,7 +876,7 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
             total = (total + int(d)) * 2
         remainder = total % 11
         checksum = (12 - remainder) % 11
-        expected = 'X' if checksum == 10 else str(checksum)
+        expected = "X" if checksum == 10 else str(checksum)
         return expected == check
 
     @staticmethod
@@ -849,16 +887,16 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
         return ORCID_REGEX.match(orcid).group(1)
 
 
-class NewResearcher(ResearchNameMixin, GenderMixin, CommonControlField, ClusterableModel):
+class NewResearcher(
+    ResearchNameMixin, GenderMixin, CommonControlField, ClusterableModel
+):
     orcid = ParentalKey(
         ResearcherOrcid,
         related_name="researcher_orcid",
         on_delete=models.CASCADE,
         null=True,
     )
-    affiliation = models.ForeignKey(
-        Organization, on_delete=models.SET_NULL, null=True
-    )
+    affiliation = models.ForeignKey(Organization, on_delete=models.SET_NULL, null=True)
 
     panels = [
         FieldPanel("declared_name"),
@@ -873,13 +911,15 @@ class NewResearcher(ResearchNameMixin, GenderMixin, CommonControlField, Clustera
     base_form_class = CoreAdminModelForm
 
     autocomplete_search_field = "fullname"
-    
+
     def autocomplete_label(self):
         return str(self)
 
     @staticmethod
     def autocomplete_custom_queryset_filter(search_term):
-        return NewResearcher.objects.filter(fullname__icontains=search_term).prefetch_related("affiliation", "orcid")
+        return NewResearcher.objects.filter(
+            fullname__icontains=search_term
+        ).prefetch_related("affiliation", "orcid")
 
     class Meta:
         unique_together = [
@@ -913,10 +953,33 @@ class NewResearcher(ResearchNameMixin, GenderMixin, CommonControlField, Clustera
         ]
 
     def __str__(self):
-        orcid = self.orcid.orcid if self.orcid else None
-        if orcid:
-            return f"{self.fullname} ({orcid})"
+        if self.researcher_orcid:
+            return f"{self.fullname} ({self.researcher_orcid})"
         return self.fullname
+
+    @property
+    def researcher_affiliation(self):
+        """Retorna afiliação formatada completa com localização"""
+        try:
+            return self.affiliation.display_name
+        except (AttributeError, TypeError):
+            return ""
+
+    @property
+    def researcher_orcid(self):
+        """Retorna ORCID formatado com link"""
+        try:
+            return self.orcid.orcid
+        except (AttributeError, TypeError):
+            return None
+
+    @property
+    def researcher_lattes(self):
+        """Retorna o identificador Lattes do pesquisador"""
+        try:
+            return self.researcher_ids.filter(source_name="LATTES").first().identifier
+        except (AttributeError, TypeError):
+            return None
 
     def save(self, **kwargs):
         self.fullname = self.join_names(self.given_names, self.last_name, self.suffix)
@@ -934,11 +997,11 @@ class NewResearcher(ResearchNameMixin, GenderMixin, CommonControlField, Clustera
             )
         fullname = cls.join_names(given_names, last_name, suffix)
         if orcid:
-                researcher = cls.objects.get(
-                    orcid=orcid,
-                    fullname__iexact=fullname,
-                )
-                return researcher
+            researcher = cls.objects.get(
+                orcid=orcid,
+                fullname__iexact=fullname,
+            )
+            return researcher
         return cls.objects.get(fullname__iexact=fullname, affiliation=affiliation)
 
     @classmethod
@@ -1024,6 +1087,20 @@ class NewResearcher(ResearchNameMixin, GenderMixin, CommonControlField, Clustera
                 },
             )
 
+    @property
+    def data(self):
+        return {
+            "given_names": self.given_names,
+            "last_name": self.last_name,
+            "suffix": self.suffix,
+            "fullname": self.fullname,
+            "declared_name": self.declared_name,
+            "researcher": self.fullname,
+            "researcher_affiliation": self.researcher_affiliation,
+            "researcher_orcid": self.researcher_orcid,
+            "researcher_lattes": self.researcher_lattes,
+        }
+
 
 class ResearcherIds(CommonControlField):
     """
@@ -1047,7 +1124,9 @@ class ResearcherIds(CommonControlField):
 
     @staticmethod
     def autocomplete_custom_queryset_filter(any_value):
-        return ResearcherIds.objects.filter(identifier__icontains=any_value).prefetch_related("researcher")
+        return ResearcherIds.objects.filter(
+            identifier__icontains=any_value
+        ).prefetch_related("researcher")
 
     def autocomplete_label(self):
         return f"{self.identifier} {self.source_name}"
@@ -1130,7 +1209,7 @@ class ResearcherIds(CommonControlField):
     def get_or_create(
         cls,
         user,
-        researcher, 
+        researcher,
         identifier,
         source_name,
     ):
@@ -1140,16 +1219,14 @@ class ResearcherIds(CommonControlField):
             elif source_name == "LATTES":
                 cls.validate_lattes(identifier)
             return cls.get(
-                identifier=identifier, 
-                source_name=source_name, 
-                researcher=researcher
+                identifier=identifier, source_name=source_name, researcher=researcher
             )
         except cls.DoesNotExist:
             return cls.create(
-                user=user, 
-                researcher=researcher, 
-                identifier=identifier, 
-                source_name=source_name
+                user=user,
+                researcher=researcher,
+                identifier=identifier,
+                source_name=source_name,
             )
 
     @staticmethod
@@ -1161,8 +1238,8 @@ class ResearcherIds(CommonControlField):
 
     @staticmethod
     def validate_lattes(lattes):
-        clean_value = re.sub(r'[\.\-]', '', lattes)
-        if not re.fullmatch(r'\d{16}', clean_value):
+        clean_value = re.sub(r"[\.\-]", "", lattes)
+        if not re.fullmatch(r"\d{16}", clean_value):
             raise ValidationError({"identifier": f"Lattes {lattes} is not valid"})
 
     @staticmethod
