@@ -2427,7 +2427,18 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
 
 class ContribCollab(CollabMixin, CommonControlField):
     """
-    Represents a collaboration associated with an article contributor.
+    Represents a collaboration (research group or consortium) associated with 
+    an article contributor's affiliation.
+    
+    This model is used to track when contributors work as part of a larger
+    collaboration, such as research groups, consortiums, or multi-institutional
+    initiatives. It links a collaboration name to a specific article and 
+    optionally to an affiliation.
+    
+    Use cases:
+        - Research consortiums (e.g., "COVID-19 Research Network")
+        - Multi-institutional research groups
+        - Collaborative initiatives credited in publications
     
     Inherits from CollabMixin (which provides the collab field) and
     CommonControlField (for audit fields).
@@ -2539,16 +2550,25 @@ class ContribCollab(CollabMixin, CommonControlField):
         
         Lookup strategy (in priority order):
         1. If affiliation is provided, lookup by article + affiliation
-        2. Otherwise, lookup by article + collab if provided
+        2. Otherwise, lookup by article + collab if provided in kwargs
+        
+        IMPORTANT: The lookup strategy prioritizes affiliation over collab.
+        If you provide both affiliation and collab, and a record exists for
+        article+affiliation with a different collab value, it will UPDATE
+        the existing record's collab field. If you want to preserve different
+        collab values for the same article+affiliation, use create() directly.
         
         Args:
             user: User creating/updating the instance
-            article: Article instance
+            article: Article instance (required)
             affiliation: ArticleAffiliation instance (optional, used for lookup)
-            **kwargs: Additional field values
+            **kwargs: Additional field values, including 'collab'
             
         Returns:
             ContribCollab instance (created or updated)
+            
+        Raises:
+            ValueError: If article is not provided
         """
         if not article:
             raise ValueError("ContribCollab.create_or_update requires article parameter")
