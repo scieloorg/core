@@ -2,7 +2,7 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from .exceptions import OrganizationCreateOrUpdateError
-from .models import Organization, OrganizationInstitutionType
+from .models import Organization, OrganizationInstitutionType, OrganizationDivision
 from .tasks import (
     task_children_migrate_data,
     task_migrate_date_institution_to_organization_publisher,
@@ -298,3 +298,175 @@ class OrganizationTaskTest(TestCase):
         self.assertEqual(organization.count(), 1)
         self.assertEqual(publisher_history.count(), 1)
         self.assertEqual(publisher_history.first().organization, organization.first())
+
+
+class OrganizationDivisionTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create(username="teste", password="teste")
+        self.location = Location.create_or_update(
+            user=self.user,
+            city_name="Fortaleza",
+            state_name="Ceará",
+            state_acronym="CE",
+            country_name="Brasil",
+            country_acronym="BR",
+        )
+        self.organization = Organization.create_or_update(
+            user=self.user,
+            name="Test Organization",
+            acronym="TO",
+            location=self.location,
+        )
+
+    def test_create_organization_division(self):
+        """Test creating an organization division"""
+        division = OrganizationDivision.create(
+            organization=self.organization,
+            level_1="Faculty of Science",
+            level_2="Department of Physics",
+            level_3="Laboratory of Quantum Computing",
+            user=self.user,
+        )
+
+        self.assertEqual(division.organization, self.organization)
+        self.assertEqual(division.level_1, "Faculty of Science")
+        self.assertEqual(division.level_2, "Department of Physics")
+        self.assertEqual(division.level_3, "Laboratory of Quantum Computing")
+        self.assertEqual(division.creator, self.user)
+
+    def test_get_organization_division(self):
+        """Test getting an existing organization division"""
+        OrganizationDivision.create(
+            organization=self.organization,
+            level_1="Faculty of Science",
+            level_2="Department of Physics",
+            level_3="Laboratory of Quantum Computing",
+            user=self.user,
+        )
+
+        division = OrganizationDivision.get(
+            organization=self.organization,
+            level_1="Faculty of Science",
+            level_2="Department of Physics",
+            level_3="Laboratory of Quantum Computing",
+        )
+
+        self.assertIsNotNone(division)
+        self.assertEqual(division.level_1, "Faculty of Science")
+        self.assertEqual(division.level_2, "Department of Physics")
+        self.assertEqual(division.level_3, "Laboratory of Quantum Computing")
+
+    def test_create_or_update_organization_division_create(self):
+        """Test create_or_update when division doesn't exist"""
+        division = OrganizationDivision.create_or_update(
+            organization=self.organization,
+            level_1="Faculty of Science",
+            level_2="Department of Physics",
+            level_3="Laboratory of Quantum Computing",
+            user=self.user,
+        )
+
+        self.assertEqual(division.organization, self.organization)
+        self.assertEqual(division.level_1, "Faculty of Science")
+        self.assertEqual(division.level_2, "Department of Physics")
+        self.assertEqual(division.level_3, "Laboratory of Quantum Computing")
+        
+        # Verify only one division was created
+        self.assertEqual(OrganizationDivision.objects.count(), 1)
+
+    def test_create_or_update_organization_division_update(self):
+        """Test create_or_update when division already exists"""
+        # Create the division first
+        division1 = OrganizationDivision.create_or_update(
+            organization=self.organization,
+            level_1="Faculty of Science",
+            level_2="Department of Physics",
+            level_3="Laboratory of Quantum Computing",
+            user=self.user,
+        )
+
+        # Try to create the same division again
+        division2 = OrganizationDivision.create_or_update(
+            organization=self.organization,
+            level_1="Faculty of Science",
+            level_2="Department of Physics",
+            level_3="Laboratory of Quantum Computing",
+            user=self.user,
+        )
+
+        # Should return the same division, not create a new one
+        self.assertEqual(division1.id, division2.id)
+        self.assertEqual(OrganizationDivision.objects.count(), 1)
+
+    def test_unique_together_constraint(self):
+        """Test unique_together constraint"""
+        OrganizationDivision.create(
+            organization=self.organization,
+            level_1="Faculty of Science",
+            level_2="Department of Physics",
+            level_3="Laboratory of Quantum Computing",
+            user=self.user,
+        )
+
+        # Try to create another division with the same organization and levels
+        # This should raise an IntegrityError if not caught
+        from django.db import IntegrityError
+        with self.assertRaises(IntegrityError):
+            OrganizationDivision.objects.create(
+                organization=self.organization,
+                level_1="Faculty of Science",
+                level_2="Department of Physics",
+                level_3="Laboratory of Quantum Computing",
+                creator=self.user,
+            )
+
+    def test_organization_division_string_representation(self):
+        """Test string representation of organization division"""
+        division = OrganizationDivision.create(
+            organization=self.organization,
+            level_1="Faculty of Science",
+            level_2="Department of Physics",
+            level_3="Laboratory of Quantum Computing",
+            user=self.user,
+        )
+
+        expected_str = f"{self.organization.name} - Faculty of Science | Department of Physics | Laboratory of Quantum Computing"
+        self.assertEqual(str(division), expected_str)
+
+    def test_organization_division_partial_levels(self):
+        """Test creating division with only some levels"""
+        division = OrganizationDivision.create(
+            organization=self.organization,
+            level_1="Faculty of Science",
+            level_2=None,
+            level_3=None,
+            user=self.user,
+        )
+
+        self.assertEqual(division.level_1, "Faculty of Science")
+        self.assertIsNone(division.level_2)
+        self.assertIsNone(division.level_3)
+        
+        expected_str = f"{self.organization.name} - Faculty of Science"
+        self.assertEqual(str(division), expected_str)
+
+    def test_multiple_divisions_same_organization(self):
+        """Test creating multiple divisions for the same organization"""
+        division1 = OrganizationDivision.create(
+            organization=self.organization,
+            level_1="Faculty of Science",
+            level_2="Department of Physics",
+            level_3=None,
+            user=self.user,
+        )
+
+        division2 = OrganizationDivision.create(
+            organization=self.organization,
+            level_1="Faculty of Arts",
+            level_2="Department of Literature",
+            level_3=None,
+            user=self.user,
+        )
+
+        self.assertEqual(OrganizationDivision.objects.filter(organization=self.organization).count(), 2)
+        self.assertNotEqual(division1.id, division2.id)

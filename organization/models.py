@@ -451,3 +451,38 @@ class OrganizationInstitutionType(CommonControlField):
 
     def __str__(self):
         return f"{self.name}"
+
+
+class OrganizationDivision(BaseOrgLevel):
+    """
+    Organization Division model representing hierarchical levels within an organization.
+    
+    This model inherits level_1, level_2, and level_3 from BaseOrgLevel and adds
+    a foreign key relationship to the Organization model. It includes methods for
+    getting, creating, and creating or updating division records.
+    """
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="divisions",
+        verbose_name=_("Organization"),
+    )
+
+    class Meta:
+        unique_together = [
+            ("level_1", "level_2", "level_3", "organization"),
+        ]
+        verbose_name = _("Organization Division")
+        verbose_name_plural = _("Organization Divisions")
+
+    panels = [
+        AutocompletePanel("organization"),
+        FieldPanel("level_1"),
+        FieldPanel("level_2"),
+        FieldPanel("level_3"),
+    ]
+
+    def __str__(self):
+        data = [level for level in [self.level_1, self.level_2, self.level_3] if level]
+        division_str = " | ".join(data) if data else "No levels"
+        return f"{self.organization.name} - {division_str}"
