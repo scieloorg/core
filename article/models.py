@@ -2361,10 +2361,8 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
         if organization:
             obj.organization = organization
         
-        # Set raw fields if provided
-        for field in ['raw_text', 'raw_institution_name', 'raw_country_name',
-                      'raw_country_code', 'raw_state_name', 'raw_state_acron',
-                      'raw_city_name']:
+        # Set raw organization fields if provided (using parent class constant)
+        for field in cls.RAW_ORGANIZATION_FIELDS:
             if field in kwargs:
                 setattr(obj, field, kwargs[field])
         
@@ -2378,6 +2376,11 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
     def create_or_update(cls, user, article, organization=None, **kwargs):
         """
         Create a new article affiliation or update an existing one.
+        
+        Lookup strategy (in priority order):
+        1. If organization is provided, lookup by article + organization
+        2. Otherwise, lookup by article + raw_text if provided
+        3. Otherwise, lookup by article + raw_institution_name if provided
         
         Args:
             user: User creating/updating the instance
@@ -2407,9 +2410,8 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
             if organization:
                 obj.organization = organization
             
-            for field in ['raw_text', 'raw_institution_name', 'raw_country_name',
-                         'raw_country_code', 'raw_state_name', 'raw_state_acron',
-                         'raw_city_name']:
+            # Update raw organization fields (using parent class constant)
+            for field in cls.RAW_ORGANIZATION_FIELDS:
                 if field in kwargs:
                     setattr(obj, field, kwargs[field])
             

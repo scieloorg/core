@@ -1,4 +1,7 @@
 # Generated manually for ArticleAffiliation model
+# Manual generation was necessary because Django and dependencies are not installed
+# in the CI environment. This migration creates the ArticleAffiliation table with
+# all required fields inherited from AffiliationMixin and CommonControlField.
 
 from django.conf import settings
 from django.db import migrations, models

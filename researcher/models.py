@@ -86,6 +86,17 @@ class AffiliationMixin(RawOrganizationMixin):
     Inherits raw organization fields from RawOrganizationMixin and adds
     a foreign key to the Organization model.
     """
+    # List of raw organization field names inherited from RawOrganizationMixin
+    RAW_ORGANIZATION_FIELDS = [
+        'raw_text',
+        'raw_institution_name',
+        'raw_country_name',
+        'raw_country_code',
+        'raw_state_name',
+        'raw_state_acron',
+        'raw_city_name',
+    ]
+    
     organization = models.ForeignKey(
         Organization,
         verbose_name=_("Organization"),
@@ -146,19 +157,14 @@ class AffiliationMixin(RawOrganizationMixin):
         if organization:
             obj.organization = organization
         
-        # Set raw fields if provided
-        for field in ['raw_text', 'raw_institution_name', 'raw_country_name', 
-                      'raw_country_code', 'raw_state_name', 'raw_state_acron', 
-                      'raw_city_name']:
+        # Set raw organization fields if provided
+        for field in cls.RAW_ORGANIZATION_FIELDS:
             if field in kwargs:
                 setattr(obj, field, kwargs[field])
         
-        # Set any additional fields from kwargs
+        # Set any additional fields from kwargs (excluding raw fields)
         for key, value in kwargs.items():
-            if hasattr(obj, key) and key not in ['raw_text', 'raw_institution_name', 
-                                                   'raw_country_name', 'raw_country_code', 
-                                                   'raw_state_name', 'raw_state_acron', 
-                                                   'raw_city_name']:
+            if hasattr(obj, key) and key not in cls.RAW_ORGANIZATION_FIELDS:
                 setattr(obj, key, value)
         
         if user:
@@ -171,6 +177,11 @@ class AffiliationMixin(RawOrganizationMixin):
     def create_or_update(cls, user=None, organization=None, **kwargs):
         """
         Create a new affiliation or update an existing one.
+        
+        Lookup strategy (in priority order):
+        1. If organization is provided, lookup by organization
+        2. Otherwise, lookup by raw_text if provided
+        3. Otherwise, lookup by raw_institution_name if provided
         
         Args:
             user: User creating/updating the instance
@@ -186,11 +197,12 @@ class AffiliationMixin(RawOrganizationMixin):
             if organization:
                 lookup_params['organization'] = organization
             
-            # Add any other unique identifying fields from kwargs
-            for key in kwargs:
-                if key in ['raw_text', 'raw_institution_name'] and kwargs[key]:
-                    lookup_params[key] = kwargs[key]
-                    break
+            # If no organization, use raw fields for lookup (in priority order)
+            if not lookup_params:
+                for key in ['raw_text', 'raw_institution_name']:
+                    if key in kwargs and kwargs[key]:
+                        lookup_params[key] = kwargs[key]
+                        break
             
             if lookup_params:
                 obj = cls.get(**lookup_params)
@@ -199,17 +211,14 @@ class AffiliationMixin(RawOrganizationMixin):
                 if organization:
                     obj.organization = organization
                 
-                for field in ['raw_text', 'raw_institution_name', 'raw_country_name',
-                             'raw_country_code', 'raw_state_name', 'raw_state_acron',
-                             'raw_city_name']:
+                # Update raw organization fields
+                for field in cls.RAW_ORGANIZATION_FIELDS:
                     if field in kwargs:
                         setattr(obj, field, kwargs[field])
                 
+                # Update other fields (excluding raw fields)
                 for key, value in kwargs.items():
-                    if hasattr(obj, key) and key not in ['raw_text', 'raw_institution_name',
-                                                          'raw_country_name', 'raw_country_code',
-                                                          'raw_state_name', 'raw_state_acron',
-                                                          'raw_city_name']:
+                    if hasattr(obj, key) and key not in cls.RAW_ORGANIZATION_FIELDS:
                         setattr(obj, key, value)
                 
                 if user:
