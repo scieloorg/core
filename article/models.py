@@ -47,7 +47,7 @@ from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
 from location.models import Location
 from organization.models import Organization, NormAffiliation
-from researcher.models import AffiliationMixin, CollabMixin, InstitutionalAuthor, Researcher
+from researcher.models import AffiliationMixin, CollabMixin, InstitutionalAuthor, Researcher, ResearchNameMixin
 from tracker.models import BaseEvent, EventSaveError, UnexpectedEvent
 from vocabulary.models import Keyword
 
@@ -2775,6 +2775,319 @@ class ContribCollab(CollabMixin, CommonControlField):
             
         except cls.DoesNotExist:
             return cls.create(user=user, article=article, collab=collab, affiliation=affiliation, **kwargs)
+
+
+class ContribPerson(ResearchNameMixin, CommonControlField):
+    """
+    Represents a person contributor associated with an article.
+    
+    This model tracks individual contributors to an article, including their
+    personal information (name, ORCID, email) and affiliation details.
+    
+    Inherits from ResearchNameMixin (which provides name-related fields like
+    given_names, last_name, suffix, fullname, declared_name) and CommonControlField
+    (for audit fields).
+    """
+    article = ParentalKey(
+        Article,
+        on_delete=models.CASCADE,
+        related_name="contrib_persons",
+        verbose_name=_("Article"),
+    )
+    
+    affiliation = models.ForeignKey(
+        ArticleAffiliation,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="contrib_persons",
+        verbose_name=_("Affiliation"),
+    )
+    
+    orcid = models.CharField(
+        _("ORCID"),
+        max_length=19,
+        null=True,
+        blank=True,
+        help_text=_("ORCID identifier (e.g., 0000-0002-1825-0097)"),
+    )
+    
+    email = models.EmailField(
+        _("Email"),
+        max_length=254,
+        null=True,
+        blank=True,
+    )
+    
+    panels = [
+        AutocompletePanel("article"),
+        FieldPanel("declared_name"),
+        FieldPanel("given_names"),
+        FieldPanel("last_name"),
+        FieldPanel("suffix"),
+        FieldPanel("fullname"),
+        FieldPanel("orcid"),
+        FieldPanel("email"),
+        AutocompletePanel("affiliation"),
+    ]
+    
+    base_form_class = CoreAdminModelForm
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=["article"]),
+            models.Index(fields=["affiliation"]),
+            models.Index(fields=["orcid"]),
+        ]
+    
+    def __str__(self):
+        parts = [str(self.article)]
+        if self.fullname:
+            parts.append(self.fullname)
+        elif self.declared_name:
+            parts.append(self.declared_name)
+        if self.affiliation:
+            parts.append(str(self.affiliation))
+        return " - ".join(parts)
+    
+    @classmethod
+    def get(cls, article, fullname=None, orcid=None, **kwargs):
+        """
+        Get a contrib person by article and identifying parameters.
+        
+        Args:
+            article: Article instance (required)
+            fullname: Full name of the person (optional)
+            orcid: ORCID identifier (optional)
+            **kwargs: Additional filter parameters
+            
+        Returns:
+            ContribPerson instance
+            
+        Raises:
+            ValueError: If article is not provided
+            cls.DoesNotExist: If no matching instance found
+        """
+        if not article:
+            raise ValueError("ContribPerson.get requires article parameter")
+        
+        params = {"article": article}
+        if fullname:
+            params["fullname"] = fullname
+        if orcid:
+            params["orcid"] = orcid
+        params.update(kwargs)
+        
+        try:
+            return cls.objects.get(**params)
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(**params).first()
+    
+    @classmethod
+    def create(cls, user, article, **kwargs):
+        """
+        Create a new contrib person.
+        
+        Args:
+            user: User creating the instance
+            article: Article instance (required)
+            **kwargs: Field values (fullname, given_names, last_name, suffix, 
+                     declared_name, orcid, email, affiliation)
+            
+        Returns:
+            New ContribPerson instance
+            
+        Raises:
+            ValueError: If article is not provided
+        """
+        if not article:
+            raise ValueError("ContribPerson.create requires article parameter")
+        
+        obj = cls()
+        obj.article = article
+        
+        # Set fields from kwargs
+        for key, value in kwargs.items():
+            if hasattr(obj, key):
+                setattr(obj, key, value)
+        
+        if user:
+            obj.creator = user
+        
+        obj.save()
+        return obj
+    
+    @classmethod
+    def create_or_update(cls, user, article, **kwargs):
+        """
+        Create a new contrib person or update an existing one.
+        
+        Lookup strategy: Uses article + fullname + orcid (if provided) to find 
+        existing record. If a record exists with these identifiers, it will be 
+        updated. Otherwise, a new one is created.
+        
+        Args:
+            user: User creating/updating the instance
+            article: Article instance (required)
+            **kwargs: Field values including fullname, orcid, etc.
+            
+        Returns:
+            ContribPerson instance (created or updated)
+            
+        Raises:
+            ValueError: If article is not provided
+        """
+        if not article:
+            raise ValueError("ContribPerson.create_or_update requires article parameter")
+        
+        try:
+            # Build lookup parameters - use fullname and orcid if available
+            lookup_params = {"article": article}
+            if kwargs.get("fullname"):
+                lookup_params["fullname"] = kwargs["fullname"]
+            if kwargs.get("orcid"):
+                lookup_params["orcid"] = kwargs["orcid"]
+            
+            # Only try to get if we have identifying parameters beyond article
+            if len(lookup_params) > 1:
+                obj = cls.get(**lookup_params)
+                
+                # Update fields
+                for key, value in kwargs.items():
+                    if hasattr(obj, key):
+                        setattr(obj, key, value)
+                
+                if user:
+                    obj.updated_by = user
+                
+                obj.save()
+                return obj
+            else:
+                # If no identifying parameters, just create
+                return cls.create(user=user, article=article, **kwargs)
+            
+        except cls.DoesNotExist:
+            return cls.create(user=user, article=article, **kwargs)
+    
+    def add_orcid(self, user, orcid):
+        """
+        Add or update the ORCID identifier for this contributor.
+        
+        Args:
+            user: User performing the operation
+            orcid: ORCID identifier string
+            
+        Returns:
+            The updated ContribPerson instance
+        """
+        self.orcid = orcid
+        self.updated_by = user
+        self.save()
+        return self
+    
+    def add_raw_affiliation(self, user, raw_text=None, raw_institution_name=None, 
+                           raw_country_name=None, raw_country_code=None, 
+                           raw_state_name=None, raw_state_acron=None, 
+                           raw_city_name=None, raw_level_1=None, 
+                           raw_level_2=None, raw_level_3=None):
+        """
+        Add or update raw affiliation data for this contributor.
+        
+        Creates or updates an ArticleAffiliation with raw affiliation information
+        and links it to this ContribPerson.
+        
+        Args:
+            user: User performing the operation
+            raw_text: Raw affiliation text (optional)
+            raw_institution_name: Raw institution name (optional)
+            raw_country_name: Raw country name (optional)
+            raw_country_code: Raw country code (optional)
+            raw_state_name: Raw state name (optional)
+            raw_state_acron: Raw state acronym (optional)
+            raw_city_name: Raw city name (optional)
+            raw_level_1: Raw first level division (optional)
+            raw_level_2: Raw second level division (optional)
+            raw_level_3: Raw third level division (optional)
+            
+        Returns:
+            The updated ContribPerson instance
+        """
+        # Build kwargs for ArticleAffiliation
+        aff_kwargs = {}
+        if raw_text:
+            aff_kwargs["raw_text"] = raw_text
+        if raw_institution_name:
+            aff_kwargs["raw_institution_name"] = raw_institution_name
+        if raw_country_name:
+            aff_kwargs["raw_country_name"] = raw_country_name
+        if raw_country_code:
+            aff_kwargs["raw_country_code"] = raw_country_code
+        if raw_state_name:
+            aff_kwargs["raw_state_name"] = raw_state_name
+        if raw_state_acron:
+            aff_kwargs["raw_state_acron"] = raw_state_acron
+        if raw_city_name:
+            aff_kwargs["raw_city_name"] = raw_city_name
+        if raw_level_1:
+            aff_kwargs["raw_level_1"] = raw_level_1
+        if raw_level_2:
+            aff_kwargs["raw_level_2"] = raw_level_2
+        if raw_level_3:
+            aff_kwargs["raw_level_3"] = raw_level_3
+        
+        # Create or update the affiliation
+        affiliation = ArticleAffiliation.create_or_update(
+            user=user,
+            article=self.article,
+            **aff_kwargs
+        )
+        
+        # Link it to this contrib person
+        self.affiliation = affiliation
+        self.updated_by = user
+        self.save()
+        return self
+    
+    def add_normalized_affiliation(self, user, organization=None, location=None,
+                                   level_1=None, level_2=None, level_3=None):
+        """
+        Add normalized affiliation data to this contributor's affiliation.
+        
+        This method completes the affiliation.normalized field by creating or
+        updating a NormAffiliation and linking it to the ArticleAffiliation.
+        If this ContribPerson doesn't have an affiliation yet, one will be created.
+        
+        Args:
+            user: User performing the operation
+            organization: Organization instance (optional)
+            location: Location instance (optional)
+            level_1: First level of organization division (optional)
+            level_2: Second level of organization division (optional)
+            level_3: Third level of organization division (optional)
+            
+        Returns:
+            The updated ContribPerson instance
+        """
+        # If no affiliation exists, create one first
+        if not self.affiliation:
+            self.affiliation = ArticleAffiliation.create(
+                user=user,
+                article=self.article
+            )
+        
+        # Add normalized affiliation to the ArticleAffiliation
+        self.affiliation.add_normalized_affiliation(
+            user=user,
+            organization=organization,
+            location=location,
+            level_1=level_1,
+            level_2=level_2,
+            level_3=level_3
+        )
+        
+        self.updated_by = user
+        self.save()
+        return self
 
 
 class ArticleEvent(BaseEvent, CommonControlField, Orderable):
