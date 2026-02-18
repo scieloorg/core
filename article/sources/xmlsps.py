@@ -24,7 +24,17 @@ from packtools.sps.models.v2.related_articles import RelatedArticles
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article import choices
-from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle, DataAvailabilityStatement
+from article.models import (
+    Article,
+    AMArticle,
+    ArticleExporter,
+    ArticleFunding,
+    ArticleSource,
+    ContribCollab,
+    DataAvailabilityStatement,
+    DocumentAbstract,
+    DocumentTitle,
+)
 from core.models import Language, LicenseStatement, License
 from core.utils.extracts_normalized_email import extracts_normalized_email
 from doi.models import DOI
@@ -756,8 +766,6 @@ def get_or_create_institution_authors(xmltree, article, user, item, errors):
     Returns:
         list: Lista de objetos ContribCollab criados
     """
-    from article.models import ContribCollab
-    
     data = []
     try:
         authors = ArticleContribs(xmltree=xmltree).contribs
