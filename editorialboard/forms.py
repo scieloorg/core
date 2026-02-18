@@ -6,8 +6,44 @@ from organization.models import Organization
 from researcher.models import NewResearcher, ResearcherIds, ResearcherOrcid
 
 import logging
+import re
 
 logger = logging.getLogger(__name__)
+
+# Constants for researcher identifier types
+IDENTIFIER_TYPE_LATTES = 'LATTES'
+IDENTIFIER_TYPE_EMAIL = 'EMAIL'
+
+# ORCID format regex
+ORCID_REGEX = re.compile(r'^(\d{4}-\d{4}-\d{4}-\d{3}[0-9X])$')
+
+
+def clean_orcid(orcid_input):
+    """
+    Clean and validate ORCID identifier.
+    
+    Args:
+        orcid_input: Raw ORCID input (may include URL)
+        
+    Returns:
+        Cleaned ORCID in format XXXX-XXXX-XXXX-XXXX
+        
+    Raises:
+        ValidationError: If ORCID format is invalid
+    """
+    if not orcid_input:
+        return None
+    
+    # Remove URL prefixes
+    orcid = orcid_input.strip().replace('https://orcid.org/', '').replace('http://orcid.org/', '')
+    
+    # Validate format
+    if not ORCID_REGEX.match(orcid):
+        raise ValidationError(
+            f"Invalid ORCID format: {orcid}. Expected format: 0000-0000-0000-0000"
+        )
+    
+    return orcid
 
 
 class EditorialboardForm(WagtailAdminModelForm):
@@ -44,7 +80,7 @@ class EditorialboardForm(WagtailAdminModelForm):
                 if inst.manual_institution_name:
                     location = None
                     if inst.manual_institution_city or inst.manual_institution_country:
-                        # Try to find existing location
+                        # Try to find existing location with combined query for accuracy
                         location_params = {}
                         if inst.manual_institution_city:
                             location_params['city_name__iexact'] = inst.manual_institution_city
@@ -55,6 +91,7 @@ class EditorialboardForm(WagtailAdminModelForm):
                         
                         if location_params:
                             try:
+                                # Use combined filter to match all location components
                                 location = Location.objects.filter(**location_params).first()
                                 if not location:
                                     logger.warning(
@@ -85,17 +122,19 @@ class EditorialboardForm(WagtailAdminModelForm):
                 # Create or get ORCID if provided
                 orcid_obj = None
                 if inst.manual_orcid:
-                    # Clean ORCID format
-                    orcid_cleaned = inst.manual_orcid.strip().replace('https://orcid.org/', '').replace('http://orcid.org/', '')
                     try:
+                        orcid_cleaned = clean_orcid(inst.manual_orcid)
                         orcid_obj, created = ResearcherOrcid.objects.get_or_create(
                             orcid=orcid_cleaned,
                             defaults={'creator': user}
                         )
                         if created:
                             logger.info(f"Created ORCID: {orcid_cleaned}")
+                    except ValidationError as e:
+                        logger.error(f"Invalid ORCID format: {e}")
+                        raise
                     except Exception as e:
-                        logger.error(f"Error creating ORCID {orcid_cleaned}: {e}")
+                        logger.error(f"Error creating ORCID: {e}")
                 
                 # Create or get researcher
                 researcher = NewResearcher.get_or_create(
@@ -114,7 +153,7 @@ class EditorialboardForm(WagtailAdminModelForm):
                     try:
                         lattes_id, created = ResearcherIds.objects.get_or_create(
                             researcher=researcher,
-                            source_name='LATTES',
+                            source_name=IDENTIFIER_TYPE_LATTES,
                             identifier=inst.manual_lattes,
                             defaults={'creator': user}
                         )
@@ -128,7 +167,7 @@ class EditorialboardForm(WagtailAdminModelForm):
                     try:
                         email_id, created = ResearcherIds.objects.get_or_create(
                             researcher=researcher,
-                            source_name='EMAIL',
+                            source_name=IDENTIFIER_TYPE_EMAIL,
                             identifier=inst.manual_email,
                             defaults={'creator': user}
                         )

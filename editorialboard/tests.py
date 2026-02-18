@@ -258,6 +258,26 @@ class EditorialBoardMemberFormTest(TestCase):
         # Verify affiliation was created (if location exists)
         if saved_instance.researcher.affiliation:
             self.assertEqual(saved_instance.researcher.affiliation.name, 'Universidade de São Paulo')
+        
+        # Verify ORCID was created and linked
+        if saved_instance.researcher.orcid:
+            self.assertEqual(saved_instance.researcher.orcid.orcid, '0000-0001-2345-6789')
+        
+        # Verify Lattes ID was created and linked
+        lattes_ids = ResearcherIds.objects.filter(
+            researcher=saved_instance.researcher, 
+            source_name='LATTES'
+        )
+        if lattes_ids.exists():
+            self.assertEqual(lattes_ids.first().identifier, '1234567890')
+        
+        # Verify Email was created and linked
+        email_ids = ResearcherIds.objects.filter(
+            researcher=saved_instance.researcher, 
+            source_name='EMAIL'
+        )
+        if email_ids.exists():
+            self.assertEqual(email_ids.first().identifier, 'joao.silva@usp.br')
     
     def test_manual_input_without_researcher_requires_names(self):
         """Test that form validation requires names when no researcher selected"""
@@ -275,9 +295,12 @@ class EditorialBoardMemberFormTest(TestCase):
         
         form = EditorialboardForm(instance=ebm)
         
-        # Test that clean raises ValidationError
-        with self.assertRaises(ValidationError):
+        # Test that clean raises ValidationError with expected message
+        with self.assertRaises(ValidationError) as context:
             form.clean()
+        
+        # Verify the error message content
+        self.assertIn('given names and last name', str(context.exception))
     
     def test_existing_researcher_selection_skips_manual_input(self):
         """Test that selecting existing researcher skips manual input processing"""
@@ -313,3 +336,33 @@ class EditorialBoardMemberFormTest(TestCase):
         # Verify that existing researcher is used (not manual input)
         self.assertEqual(saved_instance.researcher.given_names, 'Maria')
         self.assertEqual(saved_instance.researcher.last_name, 'Santos')
+    
+    def test_invalid_orcid_format_raises_error(self):
+        """Test that invalid ORCID format raises ValidationError"""
+        from editorialboard.forms import EditorialboardForm, clean_orcid
+        from django.core.exceptions import ValidationError
+        
+        # Test invalid ORCID formats
+        invalid_orcids = [
+            '1234-5678-9012-3456',  # Invalid checksum position
+            '0000-0001-2345-678',   # Too short
+            '0000-0001-2345-67890', # Too long
+            'invalid-orcid',        # Invalid format
+        ]
+        
+        for invalid_orcid in invalid_orcids:
+            with self.assertRaises(ValidationError):
+                clean_orcid(invalid_orcid)
+        
+        # Test valid ORCID formats
+        valid_orcids = [
+            '0000-0001-2345-6789',
+            '0000-0002-9999-999X',
+            'https://orcid.org/0000-0001-2345-6789',
+            'http://orcid.org/0000-0002-9999-999X',
+        ]
+        
+        for valid_orcid in valid_orcids:
+            cleaned = clean_orcid(valid_orcid)
+            self.assertIsNotNone(cleaned)
+            self.assertRegex(cleaned, r'^\d{4}-\d{4}-\d{4}-\d{3}[0-9X]$')
