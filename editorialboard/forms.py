@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.forms import WagtailAdminModelForm
 
@@ -61,28 +62,45 @@ class EditorialboardForm(WagtailAdminModelForm):
         return cleaned_data
     
     def _find_location(self, inst):
-        """Find existing location from manual input fields."""
+        """Find existing location from manual input fields using Location model."""
         # Guard: No location data provided
-        if not (inst.manual_institution_city or inst.manual_institution_country):
-            return None
-        
-        location_params = {}
-        if inst.manual_institution_city:
-            location_params['city_name__iexact'] = inst.manual_institution_city
-        if inst.manual_institution_state:
-            location_params['state_name__iexact'] = inst.manual_institution_state
-        if inst.manual_institution_country:
-            location_params['country_name__iexact'] = inst.manual_institution_country
-        
-        # Guard: No valid parameters
-        if not location_params:
+        if not (inst.manual_institution_city or inst.manual_institution_state or inst.manual_institution_country):
             return None
         
         try:
-            location = Location.objects.filter(**location_params).first()
+            # Use Location.create_or_update to find existing location
+            # Pass None for user to only search, not create
+            location = Location.objects.filter(
+                city__name__iexact=inst.manual_institution_city if inst.manual_institution_city else None,
+                state__name__iexact=inst.manual_institution_state if inst.manual_institution_state else None,
+                country__name__iexact=inst.manual_institution_country if inst.manual_institution_country else None,
+            ).first()
+            
+            if location:
+                return location
+                
+            # Try using Location's query method
+            query = Q()
+            if inst.manual_institution_city:
+                query &= Q(city__name__iexact=inst.manual_institution_city)
+            if inst.manual_institution_state:
+                query &= Q(state__name__iexact=inst.manual_institution_state)
+            if inst.manual_institution_country:
+                query &= Q(country__name__iexact=inst.manual_institution_country)
+            
+            if query:
+                location = Location.objects.filter(query).first()
+            
             if not location:
+                location_parts = []
+                if inst.manual_institution_city:
+                    location_parts.append(f"city={inst.manual_institution_city}")
+                if inst.manual_institution_state:
+                    location_parts.append(f"state={inst.manual_institution_state}")
+                if inst.manual_institution_country:
+                    location_parts.append(f"country={inst.manual_institution_country}")
                 logger.warning(
-                    f"Location not found for: {location_params}. "
+                    f"Location not found for: {', '.join(location_parts)}. "
                     "Affiliation will not be created. Please add location manually."
                 )
             return location
@@ -139,24 +157,6 @@ class EditorialboardForm(WagtailAdminModelForm):
             logger.error(f"Error creating ORCID: {e}")
             return None
     
-    def _add_researcher_identifier(self, researcher, source_name, identifier, user):
-        """Add an identifier (Lattes or Email) to researcher."""
-        # Guard: No identifier provided
-        if not identifier or not researcher:
-            return
-        
-        try:
-            researcher_id, created = ResearcherIds.objects.get_or_create(
-                researcher=researcher,
-                source_name=source_name,
-                identifier=identifier,
-                defaults={'creator': user}
-            )
-            if created:
-                logger.info(f"Added {source_name} ID: {identifier}")
-        except Exception as e:
-            logger.error(f"Error adding {source_name} ID: {e}")
-    
     def _create_researcher_from_manual_fields(self, inst, user):
         """Create researcher and related records from manual input fields."""
         # Find or create affiliation
@@ -177,9 +177,12 @@ class EditorialboardForm(WagtailAdminModelForm):
         )
         logger.info(f"Created/updated researcher: {researcher}")
         
-        # Add identifiers
-        self._add_researcher_identifier(researcher, 'LATTES', inst.manual_lattes, user)
-        self._add_researcher_identifier(researcher, 'EMAIL', inst.manual_email, user)
+        # Add identifiers using instance methods
+        if inst.manual_lattes:
+            researcher.add_lattes_id(inst.manual_lattes, user)
+        
+        if inst.manual_email:
+            researcher.add_email(inst.manual_email, user)
         
         return researcher
     

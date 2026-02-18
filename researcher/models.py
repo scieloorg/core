@@ -1281,6 +1281,58 @@ class NewResearcher(
             "researcher_orcid": self.researcher_orcid,
             "researcher_lattes": self.researcher_lattes,
         }
+    
+    def add_lattes_id(self, lattes_id, user=None):
+        """
+        Add a Lattes CV identifier to this researcher.
+        
+        Args:
+            lattes_id: Lattes CV identifier string
+            user: User creating the record (optional)
+            
+        Returns:
+            ResearcherIds instance or None if lattes_id is empty
+        """
+        if not lattes_id:
+            return None
+        
+        try:
+            researcher_id, created = ResearcherIds.objects.get_or_create(
+                researcher=self,
+                source_name='LATTES',
+                identifier=lattes_id,
+                defaults={'creator': user} if user else {}
+            )
+            return researcher_id
+        except Exception as e:
+            logging.error(f"Error adding Lattes ID {lattes_id}: {e}")
+            return None
+    
+    def add_email(self, email, user=None):
+        """
+        Add an email identifier to this researcher.
+        
+        Args:
+            email: Email address string
+            user: User creating the record (optional)
+            
+        Returns:
+            ResearcherIds instance or None if email is empty
+        """
+        if not email:
+            return None
+        
+        try:
+            researcher_id, created = ResearcherIds.objects.get_or_create(
+                researcher=self,
+                source_name='EMAIL',
+                identifier=email,
+                defaults={'creator': user} if user else {}
+            )
+            return researcher_id
+        except Exception as e:
+            logging.error(f"Error adding email {email}: {e}")
+            return None
 
 
 class ResearcherIds(CommonControlField):
