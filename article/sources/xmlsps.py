@@ -774,7 +774,6 @@ def create_or_update_contrib_collabs(xmltree, article, user, item, errors):
                     obj = ContribCollab.create_or_update(
                         article=article,
                         collab=collab,
-                        affiliation=None,
                         user=user,
                     )
                     data.append(obj)
