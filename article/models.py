@@ -2806,7 +2806,7 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
     
     orcid = models.CharField(
         _("ORCID"),
-        max_length=19,  # ORCID format: 0000-0002-1825-0097 (16 characters + 3 hyphens)
+        max_length=19,  # ORCID format: 0000-0002-1825-0097 (19 chars: 16 digits + 3 hyphens)
         null=True,
         blank=True,
         help_text=_("ORCID identifier (e.g., 0000-0002-1825-0097)"),
