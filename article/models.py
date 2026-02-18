@@ -2851,18 +2851,18 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         return " - ".join(parts)
     
     @classmethod
-    def get(cls, article, declared_name=None, given_names=None, last_name=None, 
-            suffix=None, orcid=None):
+    def get(cls, article, declared_name=None, orcid=None, given_names=None, 
+            last_name=None, suffix=None):
         """
         Get a contrib person by article and identifying parameters.
         
         Args:
             article: Article instance (required)
             declared_name: Declared name of the person (optional)
+            orcid: ORCID identifier (optional)
             given_names: Given names (optional)
             last_name: Last name (optional)
             suffix: Name suffix (optional)
-            orcid: ORCID identifier (optional)
             
         Returns:
             ContribPerson instance
@@ -2877,14 +2877,14 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         params = {"article": article}
         if declared_name:
             params["declared_name"] = declared_name
+        if orcid:
+            params["orcid"] = orcid
         if given_names:
             params["given_names"] = given_names
         if last_name:
             params["last_name"] = last_name
         if suffix:
             params["suffix"] = suffix
-        if orcid:
-            params["orcid"] = orcid
         
         try:
             return cls.objects.get(**params)
@@ -2948,9 +2948,10 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         """
         Create a new contrib person or update an existing one.
         
-        Lookup strategy: Uses article + declared_name + given_names + last_name + 
-        suffix + orcid (when provided) to find existing record. If a record exists 
-        with these identifiers, it will be updated. Otherwise, a new one is created.
+        Lookup strategy: Uses article + declared_name + orcid + given_names + 
+        last_name + suffix (when provided) to find existing record. If a record 
+        exists with these identifiers, it will be updated. Otherwise, a new one 
+        is created.
         
         Args:
             user: User creating/updating the instance
@@ -2972,35 +2973,8 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         if not article:
             raise ValueError("ContribPerson.create_or_update requires article parameter")
         
-        # Check if we have any identifying parameters beyond article
-        has_identifying_params = any([
-            declared_name, given_names, last_name, suffix, orcid
-        ])
-        
-        if not has_identifying_params:
-            # No identifying parameters, just create
-            return cls.create(
-                user=user,
-                article=article,
-                declared_name=declared_name,
-                given_names=given_names,
-                last_name=last_name,
-                suffix=suffix,
-                orcid=orcid,
-                email=email,
-                affiliation=affiliation
-            )
-        
         try:
-            # Try to get existing record using identifying parameters
-            obj = cls.get(
-                article=article,
-                declared_name=declared_name,
-                given_names=given_names,
-                last_name=last_name,
-                suffix=suffix,
-                orcid=orcid
-            )
+            obj = cls.get(article, declared_name, orcid, given_names, last_name, suffix)
             
             # Update fields (including those used in lookup for consistency)
             if declared_name is not None:
