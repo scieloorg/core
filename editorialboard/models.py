@@ -17,6 +17,7 @@ from journal.models import Journal
 from researcher.models import NewResearcher
 
 from . import choices
+from .forms import EditorialboardForm
 
 
 class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
@@ -36,6 +37,84 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
     )
     area = models.TextField(null=True, blank=True)
     
+    # Manual input fields for creating/updating researcher data
+    manual_given_names = models.CharField(
+        _("Given names"),
+        max_length=128,
+        blank=True,
+        null=True,
+        help_text=_("Enter given names if researcher is not in the database"),
+    )
+    manual_last_name = models.CharField(
+        _("Last name"),
+        max_length=64,
+        blank=True,
+        null=True,
+        help_text=_("Enter last name if researcher is not in the database"),
+    )
+    manual_suffix = models.CharField(
+        _("Suffix"),
+        max_length=16,
+        blank=True,
+        null=True,
+        help_text=_("Enter suffix (e.g., Jr., Sr., III) if applicable"),
+    )
+    manual_institution_name = models.CharField(
+        _("Institution name"),
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_("Enter institution name if not in the database"),
+    )
+    manual_institution_acronym = models.CharField(
+        _("Institution acronym"),
+        max_length=64,
+        blank=True,
+        null=True,
+        help_text=_("Enter institution acronym if applicable"),
+    )
+    manual_institution_city = models.CharField(
+        _("Institution city"),
+        max_length=128,
+        blank=True,
+        null=True,
+        help_text=_("Enter institution city"),
+    )
+    manual_institution_state = models.CharField(
+        _("Institution state"),
+        max_length=128,
+        blank=True,
+        null=True,
+        help_text=_("Enter institution state/province"),
+    )
+    manual_institution_country = models.CharField(
+        _("Institution country"),
+        max_length=128,
+        blank=True,
+        null=True,
+        help_text=_("Enter institution country"),
+    )
+    manual_orcid = models.CharField(
+        _("ORCID"),
+        max_length=64,
+        blank=True,
+        null=True,
+        help_text=_("Enter ORCID identifier (e.g., 0000-0000-0000-0000)"),
+    )
+    manual_lattes = models.CharField(
+        _("Lattes CV"),
+        max_length=64,
+        blank=True,
+        null=True,
+        help_text=_("Enter Lattes CV identifier"),
+    )
+    manual_email = models.EmailField(
+        _("Email"),
+        blank=True,
+        null=True,
+        help_text=_("Enter email address"),
+    )
+    
     class Meta:
         unique_together = [("journal", "researcher")]
         indexes = [
@@ -48,11 +127,22 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
 
     panels = [
         AutocompletePanel("researcher"),
+        FieldPanel("manual_given_names"),
+        FieldPanel("manual_last_name"),
+        FieldPanel("manual_suffix"),
+        FieldPanel("manual_institution_name"),
+        FieldPanel("manual_institution_acronym"),
+        FieldPanel("manual_institution_city"),
+        FieldPanel("manual_institution_state"),
+        FieldPanel("manual_institution_country"),
+        FieldPanel("manual_orcid"),
+        FieldPanel("manual_lattes"),
+        FieldPanel("manual_email"),
         FieldPanel("image"),
         InlinePanel("role_editorial_board", label=_("Role")),
     ]
 
-    base_form_class = CoreAdminModelForm
+    base_form_class = EditorialboardForm
 
     def __str__(self):
         if not self.researcher:
