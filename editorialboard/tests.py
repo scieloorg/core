@@ -201,3 +201,115 @@ John;Doe;Revista XXXX;Jr;John Doe;lattes;0000-0000-0000-0000;john@doe.com;M;City
         self.assertEqual(EditorialBoardMember.objects.first().role_editorial_board.first().role.declared_role, "Editor")
         self.assertEqual(EditorialBoardMember.objects.first().role_editorial_board.first().initial_year, "2020")
         self.assertEqual(EditorialBoardMember.objects.first().role_editorial_board.first().final_year, "2020")
+
+
+class EditorialBoardMemberFormTest(TestCase):
+    """Tests for the manual input form functionality"""
+    
+    def setUp(self):
+        self.user = User.objects.create(username="user")
+        self.journal = Journal.objects.create(title="Revista Test")
+        self.location = Location.create_or_update(
+            self.user,
+            city_name="São Paulo",
+            country_text="Brasil",
+            country_acronym="BR",
+            country_name="Brasil",
+            state_name="São Paulo",
+            state_acronym="SP",
+        )
+    
+    def test_manual_input_creates_researcher(self):
+        """Test that manual input creates a new researcher"""
+        from editorialboard.forms import EditorialboardForm
+        
+        # Create form data with manual fields
+        form_data = {
+            'manual_given_names': 'João',
+            'manual_last_name': 'Silva',
+            'manual_suffix': 'Jr.',
+            'manual_institution_name': 'Universidade de São Paulo',
+            'manual_institution_acronym': 'USP',
+            'manual_institution_city': 'São Paulo',
+            'manual_institution_state': 'São Paulo',
+            'manual_institution_country': 'Brasil',
+            'manual_orcid': '0000-0001-2345-6789',
+            'manual_lattes': '1234567890',
+            'manual_email': 'joao.silva@usp.br',
+        }
+        
+        # Create editorial board member
+        ebm = EditorialBoardMember(journal=self.journal)
+        for key, value in form_data.items():
+            setattr(ebm, key, value)
+        
+        # Create the form
+        form = EditorialboardForm(instance=ebm)
+        
+        # Manually call save_all to test the logic
+        saved_instance = form.save_all(self.user)
+        
+        # Verify researcher was created
+        self.assertIsNotNone(saved_instance.researcher)
+        self.assertEqual(saved_instance.researcher.given_names, 'João')
+        self.assertEqual(saved_instance.researcher.last_name, 'Silva')
+        self.assertEqual(saved_instance.researcher.suffix, 'Jr.')
+        
+        # Verify affiliation was created (if location exists)
+        if saved_instance.researcher.affiliation:
+            self.assertEqual(saved_instance.researcher.affiliation.name, 'Universidade de São Paulo')
+    
+    def test_manual_input_without_researcher_requires_names(self):
+        """Test that form validation requires names when no researcher selected"""
+        from editorialboard.forms import EditorialboardForm
+        from django.core.exceptions import ValidationError
+        
+        # Create form data without required fields
+        form_data = {
+            'manual_institution_name': 'Universidade de São Paulo',
+        }
+        
+        ebm = EditorialBoardMember(journal=self.journal)
+        for key, value in form_data.items():
+            setattr(ebm, key, value)
+        
+        form = EditorialboardForm(instance=ebm)
+        
+        # Test that clean raises ValidationError
+        with self.assertRaises(ValidationError):
+            form.clean()
+    
+    def test_existing_researcher_selection_skips_manual_input(self):
+        """Test that selecting existing researcher skips manual input processing"""
+        from editorialboard.forms import EditorialboardForm
+        
+        # Create an existing researcher
+        organization = Organization.create_or_update(
+            user=self.user,
+            name="Test University",
+            acronym="TU",
+            location=self.location,
+        )
+        
+        existing_researcher = NewResearcher.get_or_create(
+            self.user,
+            given_names="Maria",
+            last_name="Santos",
+            suffix="",
+            affiliation=organization,
+        )
+        
+        # Create form data with both researcher and manual fields
+        ebm = EditorialBoardMember(
+            journal=self.journal,
+            researcher=existing_researcher,
+            manual_given_names='João',
+            manual_last_name='Silva',
+        )
+        
+        form = EditorialboardForm(instance=ebm)
+        saved_instance = form.save_all(self.user)
+        
+        # Verify that existing researcher is used (not manual input)
+        self.assertEqual(saved_instance.researcher.given_names, 'Maria')
+        self.assertEqual(saved_instance.researcher.last_name, 'Santos')
