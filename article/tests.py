@@ -857,3 +857,317 @@ class ArticleAffiliationWithLevelsTest(TestCase):
         
         self.assertEqual(aff.normalized, norm_aff)
 
+
+class ContribPersonTest(TestCase):
+    """Tests for ContribPerson model."""
+    
+    def setUp(self):
+        """Set up test data."""
+        from article.models import ArticleAffiliation, ContribPerson
+        from location.models import Country, Location
+        from organization.models import Organization, NormAffiliation
+        
+        self.user = User.objects.create_user(username="testuser", password="testpass")
+        
+        # Create a location
+        self.country = Country.objects.create(
+            name="Brazil",
+            acron2="BR",
+            acron3="BRA"
+        )
+        self.location = Location.objects.create(
+            country=self.country,
+            state_name="São Paulo",
+            state_acronym="SP",
+            city_name="São Paulo"
+        )
+        
+        # Create an organization
+        self.organization = Organization.objects.create(
+            name="Universidade de São Paulo",
+            acronym="USP",
+            location=self.location,
+            creator=self.user
+        )
+        
+        # Create an article
+        self.article = Article.objects.create(creator=self.user)
+        
+        # Create an affiliation
+        self.affiliation = ArticleAffiliation.create(
+            user=self.user,
+            article=self.article,
+            organization=self.organization
+        )
+        
+        self.ContribPerson = ContribPerson
+        self.ArticleAffiliation = ArticleAffiliation
+        self.NormAffiliation = NormAffiliation
+    
+    def test_contrib_person_create_basic(self):
+        """Test creating ContribPerson with basic fields."""
+        person = self.ContribPerson.create(
+            user=self.user,
+            article=self.article,
+            declared_name="John Smith",
+            given_names="John",
+            last_name="Smith"
+        )
+        
+        self.assertIsNotNone(person.id)
+        self.assertEqual(person.article, self.article)
+        self.assertEqual(person.declared_name, "John Smith")
+        self.assertEqual(person.given_names, "John")
+        self.assertEqual(person.last_name, "Smith")
+        self.assertEqual(person.creator, self.user)
+    
+    def test_contrib_person_create_with_orcid_and_email(self):
+        """Test creating ContribPerson with ORCID and email."""
+        person = self.ContribPerson.create(
+            user=self.user,
+            article=self.article,
+            declared_name="Jane Doe",
+            orcid="0000-0002-1825-0097",
+            email="jane.doe@example.com"
+        )
+        
+        self.assertEqual(person.orcid, "0000-0002-1825-0097")
+        self.assertEqual(person.email, "jane.doe@example.com")
+    
+    def test_contrib_person_create_with_affiliation(self):
+        """Test creating ContribPerson with affiliation."""
+        person = self.ContribPerson.create(
+            user=self.user,
+            article=self.article,
+            declared_name="John Smith",
+            affiliation=self.affiliation
+        )
+        
+        self.assertEqual(person.affiliation, self.affiliation)
+    
+    def test_contrib_person_get(self):
+        """Test getting a ContribPerson."""
+        person = self.ContribPerson.create(
+            user=self.user,
+            article=self.article,
+            declared_name="John Smith"
+        )
+        
+        retrieved = self.ContribPerson.get(
+            article=self.article,
+            declared_name="John Smith"
+        )
+        
+        self.assertEqual(retrieved.id, person.id)
+    
+    def test_contrib_person_get_by_orcid(self):
+        """Test getting a ContribPerson by ORCID."""
+        person = self.ContribPerson.create(
+            user=self.user,
+            article=self.article,
+            declared_name="John Smith",
+            orcid="0000-0002-1825-0097"
+        )
+        
+        retrieved = self.ContribPerson.get(
+            article=self.article,
+            orcid="0000-0002-1825-0097"
+        )
+        
+        self.assertEqual(retrieved.id, person.id)
+    
+    def test_contrib_person_create_or_update_creates(self):
+        """Test create_or_update creates new person."""
+        person = self.ContribPerson.create_or_update(
+            user=self.user,
+            article=self.article,
+            declared_name="John Smith",
+            given_names="John",
+            last_name="Smith"
+        )
+        
+        self.assertIsNotNone(person.id)
+        self.assertEqual(self.ContribPerson.objects.count(), 1)
+    
+    def test_contrib_person_create_or_update_updates(self):
+        """Test create_or_update updates existing person."""
+        # Create initial
+        person = self.ContribPerson.create(
+            user=self.user,
+            article=self.article,
+            declared_name="John Smith",
+            email="old@example.com"
+        )
+        initial_id = person.id
+        
+        # Update
+        updated = self.ContribPerson.create_or_update(
+            user=self.user,
+            article=self.article,
+            declared_name="John Smith",
+            email="new@example.com"
+        )
+        
+        self.assertEqual(updated.id, initial_id)
+        self.assertEqual(updated.email, "new@example.com")
+        self.assertEqual(self.ContribPerson.objects.count(), 1)
+    
+    def test_contrib_person_str_with_fullname(self):
+        """Test string representation with fullname."""
+        person = self.ContribPerson.create(
+            user=self.user,
+            article=self.article,
+            declared_name="John Smith"
+        )
+        
+        self.assertIn("John Smith", str(person))
+    
+    def test_contrib_person_str_with_declared_name(self):
+        """Test string representation with declared name."""
+        person = self.ContribPerson.create(
+            user=self.user,
+            article=self.article,
+            declared_name="Dr. John Smith"
+        )
+        
+        self.assertIn("Dr. John Smith", str(person))
+    
+    def test_contrib_person_requires_article(self):
+        """Test that article is required."""
+        with self.assertRaises(ValueError):
+            self.ContribPerson.create(
+                user=self.user,
+                article=None,
+                declared_name="John Smith"
+            )
+    
+    def test_contrib_person_parental_key_cascade(self):
+        """Test that deleting article cascades to person."""
+        person = self.ContribPerson.create(
+            user=self.user,
+            article=self.article,
+            declared_name="John Smith"
+        )
+        
+        person_id = person.id
+        
+        # Delete article
+        self.article.delete()
+        
+        # Check person is also deleted
+        self.assertFalse(
+            self.ContribPerson.objects.filter(id=person_id).exists()
+        )
+    
+    def test_add_orcid(self):
+        """Test add_orcid method."""
+        person = self.ContribPerson.create(
+            user=self.user,
+            article=self.article,
+            declared_name="John Smith"
+        )
+        
+        person.add_orcid(self.user, "0000-0002-1825-0097")
+        
+        person.refresh_from_db()
+        self.assertEqual(person.orcid, "0000-0002-1825-0097")
+        self.assertEqual(person.updated_by, self.user)
+    
+    def test_add_raw_affiliation(self):
+        """Test add_raw_affiliation method."""
+        person = self.ContribPerson.create(
+            user=self.user,
+            article=self.article,
+            declared_name="John Smith"
+        )
+        
+        person.add_raw_affiliation(
+            user=self.user,
+            raw_text="Department of Biology, Test University",
+            raw_institution_name="Test University",
+            raw_country_name="Brazil",
+            raw_country_code="BR"
+        )
+        
+        person.refresh_from_db()
+        self.assertIsNotNone(person.affiliation)
+        self.assertEqual(person.affiliation.raw_institution_name, "Test University")
+        self.assertEqual(person.affiliation.raw_country_name, "Brazil")
+    
+    def test_add_raw_affiliation_updates_existing(self):
+        """Test add_raw_affiliation when person already has an affiliation."""
+        person = self.ContribPerson.create(
+            user=self.user,
+            article=self.article,
+            declared_name="John Smith",
+            affiliation=self.affiliation
+        )
+        
+        person.add_raw_affiliation(
+            user=self.user,
+            raw_institution_name="Updated University"
+        )
+        
+        person.refresh_from_db()
+        self.assertIsNotNone(person.affiliation)
+        # Verify the raw data was set on the affiliation
+        self.assertEqual(person.affiliation.raw_institution_name, "Updated University")
+    
+    def test_add_normalized_affiliation_creates_affiliation(self):
+        """Test add_normalized_affiliation creates affiliation if missing."""
+        person = self.ContribPerson.create(
+            user=self.user,
+            article=self.article,
+            declared_name="John Smith"
+        )
+        
+        self.assertIsNone(person.affiliation)
+        
+        person.add_normalized_affiliation(
+            user=self.user,
+            organization=self.organization,
+            location=self.location
+        )
+        
+        person.refresh_from_db()
+        self.assertIsNotNone(person.affiliation)
+        self.assertIsNotNone(person.affiliation.normalized)
+    
+    def test_add_normalized_affiliation_updates_existing(self):
+        """Test add_normalized_affiliation updates existing affiliation."""
+        person = self.ContribPerson.create(
+            user=self.user,
+            article=self.article,
+            declared_name="John Smith",
+            affiliation=self.affiliation
+        )
+        
+        person.add_normalized_affiliation(
+            user=self.user,
+            organization=self.organization,
+            location=self.location,
+            level_1="Faculty of Science"
+        )
+        
+        person.refresh_from_db()
+        self.assertIsNotNone(person.affiliation.normalized)
+        self.assertEqual(person.affiliation.normalized.organization, self.organization)
+        self.assertEqual(person.affiliation.normalized.level_1, "Faculty of Science")
+    
+    def test_contrib_person_all_name_fields(self):
+        """Test ContribPerson with all name fields from ResearchNameMixin."""
+        person = self.ContribPerson.create(
+            user=self.user,
+            article=self.article,
+            given_names="John Robert",
+            last_name="Smith",
+            suffix="Jr.",
+            declared_name="Dr. John R. Smith Jr."
+        )
+        
+        self.assertEqual(person.given_names, "John Robert")
+        self.assertEqual(person.last_name, "Smith")
+        self.assertEqual(person.suffix, "Jr.")
+        self.assertEqual(person.declared_name, "Dr. John R. Smith Jr.")
+
+
