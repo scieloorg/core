@@ -719,7 +719,7 @@ def create_or_update_contrib_persons(xmltree, article, user, item, errors):
                     for aff in affs:
                         raw_email = author.get("email") or aff.get("email")
                         email = extracts_normalized_email(raw_email=raw_email)
-                        
+
                         # Create ArticleAffiliation from XML affiliation data
                         affiliation = ArticleAffiliation.create_or_update(
                             user=user,
@@ -732,7 +732,7 @@ def create_or_update_contrib_persons(xmltree, article, user, item, errors):
                             raw_state_name=aff.get("state"),
                             raw_city_name=aff.get("city"),
                         )
-                        
+
                         # Create ContribPerson with affiliation
                         obj = ContribPerson.create_or_update(
                             user=user,
