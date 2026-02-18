@@ -2875,21 +2875,19 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             parts.append(self.last_name)
         
         if suffix_position == "end" and self.suffix:
-            if use_comma_separator and parts:
-                parts[-1] = parts[-1] + ","
             parts.append(self.suffix)
         
         if self.given_names:
-            if use_comma_separator and parts:
-                parts[-1] = parts[-1] + ","
             parts.append(self.given_names)
         
         if suffix_position == "after_given" and self.suffix:
-            if use_comma_separator and parts:
-                parts[-1] = parts[-1] + ","
             parts.append(self.suffix)
         
-        return " ".join(parts)
+        if use_comma_separator:
+            sep = ", "
+        else:
+            sep = " "
+        return sep.join(parts)
     
     @property
     def names(self):
