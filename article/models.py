@@ -2842,24 +2842,27 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
     
     def __str__(self):
         parts = [str(self.article)]
-        if self.fullname:
-            parts.append(self.fullname)
-        elif self.declared_name:
+        if self.declared_name:
             parts.append(self.declared_name)
+        elif self.fullname:
+            parts.append(self.fullname)
         if self.affiliation:
             parts.append(str(self.affiliation))
         return " - ".join(parts)
     
     @classmethod
-    def get(cls, article, fullname=None, orcid=None, **kwargs):
+    def get(cls, article, declared_name=None, given_names=None, last_name=None, 
+            suffix=None, orcid=None):
         """
         Get a contrib person by article and identifying parameters.
         
         Args:
             article: Article instance (required)
-            fullname: Full name of the person (optional)
+            declared_name: Declared name of the person (optional)
+            given_names: Given names (optional)
+            last_name: Last name (optional)
+            suffix: Name suffix (optional)
             orcid: ORCID identifier (optional)
-            **kwargs: Additional filter parameters
             
         Returns:
             ContribPerson instance
@@ -2872,11 +2875,16 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             raise ValueError("ContribPerson.get requires article parameter")
         
         params = {"article": article}
-        if fullname:
-            params["fullname"] = fullname
+        if declared_name:
+            params["declared_name"] = declared_name
+        if given_names:
+            params["given_names"] = given_names
+        if last_name:
+            params["last_name"] = last_name
+        if suffix:
+            params["suffix"] = suffix
         if orcid:
             params["orcid"] = orcid
-        params.update(kwargs)
         
         try:
             return cls.objects.get(**params)
@@ -2884,15 +2892,22 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             return cls.objects.filter(**params).first()
     
     @classmethod
-    def create(cls, user, article, **kwargs):
+    def create(cls, user, article, declared_name=None, given_names=None, 
+               last_name=None, suffix=None, orcid=None, email=None, 
+               affiliation=None):
         """
         Create a new contrib person.
         
         Args:
             user: User creating the instance
             article: Article instance (required)
-            **kwargs: Field values (fullname, given_names, last_name, suffix, 
-                     declared_name, orcid, email, affiliation)
+            declared_name: Declared name of the person (optional)
+            given_names: Given names (optional)
+            last_name: Last name (optional)
+            suffix: Name suffix (optional)
+            orcid: ORCID identifier (optional)
+            email: Email address (optional)
+            affiliation: ArticleAffiliation instance (optional)
             
         Returns:
             New ContribPerson instance
@@ -2905,11 +2920,20 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         
         obj = cls()
         obj.article = article
-        
-        # Set fields from kwargs
-        for key, value in kwargs.items():
-            if hasattr(obj, key):
-                setattr(obj, key, value)
+        if declared_name:
+            obj.declared_name = declared_name
+        if given_names:
+            obj.given_names = given_names
+        if last_name:
+            obj.last_name = last_name
+        if suffix:
+            obj.suffix = suffix
+        if orcid:
+            obj.orcid = orcid
+        if email:
+            obj.email = email
+        if affiliation:
+            obj.affiliation = affiliation
         
         if user:
             obj.creator = user
@@ -2918,18 +2942,26 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         return obj
     
     @classmethod
-    def create_or_update(cls, user, article, **kwargs):
+    def create_or_update(cls, user, article, declared_name=None, given_names=None,
+                        last_name=None, suffix=None, orcid=None, email=None,
+                        affiliation=None):
         """
         Create a new contrib person or update an existing one.
         
-        Lookup strategy: Uses article + fullname + orcid (if provided) to find 
+        Lookup strategy: Uses article + declared_name + orcid (if provided) to find 
         existing record. If a record exists with these identifiers, it will be 
         updated. Otherwise, a new one is created.
         
         Args:
             user: User creating/updating the instance
             article: Article instance (required)
-            **kwargs: Field values including fullname, orcid, etc.
+            declared_name: Declared name of the person (optional)
+            given_names: Given names (optional)
+            last_name: Last name (optional)
+            suffix: Name suffix (optional)
+            orcid: ORCID identifier (optional)
+            email: Email address (optional)
+            affiliation: ArticleAffiliation instance (optional)
             
         Returns:
             ContribPerson instance (created or updated)
@@ -2941,33 +2973,50 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             raise ValueError("ContribPerson.create_or_update requires article parameter")
         
         try:
-            # Build lookup parameters - use fullname and orcid if available
-            lookup_params = {"article": article}
-            if kwargs.get("fullname"):
-                lookup_params["fullname"] = kwargs["fullname"]
-            if kwargs.get("orcid"):
-                lookup_params["orcid"] = kwargs["orcid"]
+            # Build lookup parameters - use declared_name and orcid if available
+            obj = cls.get(
+                article=article,
+                declared_name=declared_name,
+                given_names=given_names,
+                last_name=last_name,
+                suffix=suffix,
+                orcid=orcid
+            )
             
-            # Only try to get if we have identifying parameters beyond article
-            if len(lookup_params) > 1:
-                obj = cls.get(**lookup_params)
-                
-                # Update fields
-                for key, value in kwargs.items():
-                    if hasattr(obj, key):
-                        setattr(obj, key, value)
-                
-                if user:
-                    obj.updated_by = user
-                
-                obj.save()
-                return obj
-            else:
-                # If no identifying parameters, just create
-                return cls.create(user=user, article=article, **kwargs)
+            # Update fields
+            if declared_name is not None:
+                obj.declared_name = declared_name
+            if given_names is not None:
+                obj.given_names = given_names
+            if last_name is not None:
+                obj.last_name = last_name
+            if suffix is not None:
+                obj.suffix = suffix
+            if orcid is not None:
+                obj.orcid = orcid
+            if email is not None:
+                obj.email = email
+            if affiliation is not None:
+                obj.affiliation = affiliation
+            
+            if user:
+                obj.updated_by = user
+            
+            obj.save()
+            return obj
             
         except cls.DoesNotExist:
-            return cls.create(user=user, article=article, **kwargs)
+            return cls.create(
+                user=user,
+                article=article,
+                declared_name=declared_name,
+                given_names=given_names,
+                last_name=last_name,
+                suffix=suffix,
+                orcid=orcid,
+                email=email,
+                affiliation=affiliation
+            )
     
     def add_orcid(self, user, orcid):
         """

@@ -909,14 +909,14 @@ class ContribPersonTest(TestCase):
         person = self.ContribPerson.create(
             user=self.user,
             article=self.article,
-            fullname="John Smith",
+            declared_name="John Smith",
             given_names="John",
             last_name="Smith"
         )
         
         self.assertIsNotNone(person.id)
         self.assertEqual(person.article, self.article)
-        self.assertEqual(person.fullname, "John Smith")
+        self.assertEqual(person.declared_name, "John Smith")
         self.assertEqual(person.given_names, "John")
         self.assertEqual(person.last_name, "Smith")
         self.assertEqual(person.creator, self.user)
@@ -926,7 +926,7 @@ class ContribPersonTest(TestCase):
         person = self.ContribPerson.create(
             user=self.user,
             article=self.article,
-            fullname="Jane Doe",
+            declared_name="Jane Doe",
             orcid="0000-0002-1825-0097",
             email="jane.doe@example.com"
         )
@@ -939,7 +939,7 @@ class ContribPersonTest(TestCase):
         person = self.ContribPerson.create(
             user=self.user,
             article=self.article,
-            fullname="John Smith",
+            declared_name="John Smith",
             affiliation=self.affiliation
         )
         
@@ -950,12 +950,12 @@ class ContribPersonTest(TestCase):
         person = self.ContribPerson.create(
             user=self.user,
             article=self.article,
-            fullname="John Smith"
+            declared_name="John Smith"
         )
         
         retrieved = self.ContribPerson.get(
             article=self.article,
-            fullname="John Smith"
+            declared_name="John Smith"
         )
         
         self.assertEqual(retrieved.id, person.id)
@@ -965,7 +965,7 @@ class ContribPersonTest(TestCase):
         person = self.ContribPerson.create(
             user=self.user,
             article=self.article,
-            fullname="John Smith",
+            declared_name="John Smith",
             orcid="0000-0002-1825-0097"
         )
         
@@ -981,7 +981,7 @@ class ContribPersonTest(TestCase):
         person = self.ContribPerson.create_or_update(
             user=self.user,
             article=self.article,
-            fullname="John Smith",
+            declared_name="John Smith",
             given_names="John",
             last_name="Smith"
         )
@@ -995,7 +995,7 @@ class ContribPersonTest(TestCase):
         person = self.ContribPerson.create(
             user=self.user,
             article=self.article,
-            fullname="John Smith",
+            declared_name="John Smith",
             email="old@example.com"
         )
         initial_id = person.id
@@ -1004,7 +1004,7 @@ class ContribPersonTest(TestCase):
         updated = self.ContribPerson.create_or_update(
             user=self.user,
             article=self.article,
-            fullname="John Smith",
+            declared_name="John Smith",
             email="new@example.com"
         )
         
@@ -1017,7 +1017,7 @@ class ContribPersonTest(TestCase):
         person = self.ContribPerson.create(
             user=self.user,
             article=self.article,
-            fullname="John Smith"
+            declared_name="John Smith"
         )
         
         self.assertIn("John Smith", str(person))
@@ -1038,7 +1038,7 @@ class ContribPersonTest(TestCase):
             self.ContribPerson.create(
                 user=self.user,
                 article=None,
-                fullname="John Smith"
+                declared_name="John Smith"
             )
     
     def test_contrib_person_parental_key_cascade(self):
@@ -1046,7 +1046,7 @@ class ContribPersonTest(TestCase):
         person = self.ContribPerson.create(
             user=self.user,
             article=self.article,
-            fullname="John Smith"
+            declared_name="John Smith"
         )
         
         person_id = person.id
@@ -1064,7 +1064,7 @@ class ContribPersonTest(TestCase):
         person = self.ContribPerson.create(
             user=self.user,
             article=self.article,
-            fullname="John Smith"
+            declared_name="John Smith"
         )
         
         person.add_orcid(self.user, "0000-0002-1825-0097")
@@ -1078,7 +1078,7 @@ class ContribPersonTest(TestCase):
         person = self.ContribPerson.create(
             user=self.user,
             article=self.article,
-            fullname="John Smith"
+            declared_name="John Smith"
         )
         
         person.add_raw_affiliation(
@@ -1099,7 +1099,7 @@ class ContribPersonTest(TestCase):
         person = self.ContribPerson.create(
             user=self.user,
             article=self.article,
-            fullname="John Smith",
+            declared_name="John Smith",
             affiliation=self.affiliation
         )
         
@@ -1118,7 +1118,7 @@ class ContribPersonTest(TestCase):
         person = self.ContribPerson.create(
             user=self.user,
             article=self.article,
-            fullname="John Smith"
+            declared_name="John Smith"
         )
         
         self.assertIsNone(person.affiliation)
@@ -1138,7 +1138,7 @@ class ContribPersonTest(TestCase):
         person = self.ContribPerson.create(
             user=self.user,
             article=self.article,
-            fullname="John Smith",
+            declared_name="John Smith",
             affiliation=self.affiliation
         )
         
@@ -1162,14 +1162,12 @@ class ContribPersonTest(TestCase):
             given_names="John Robert",
             last_name="Smith",
             suffix="Jr.",
-            fullname="John Robert Smith Jr.",
             declared_name="Dr. John R. Smith Jr."
         )
         
         self.assertEqual(person.given_names, "John Robert")
         self.assertEqual(person.last_name, "Smith")
         self.assertEqual(person.suffix, "Jr.")
-        self.assertEqual(person.fullname, "John Robert Smith Jr.")
         self.assertEqual(person.declared_name, "Dr. John R. Smith Jr.")
 
 
