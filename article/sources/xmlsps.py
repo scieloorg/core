@@ -247,7 +247,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
                 xmltree=xmltree, user=user, item=pid_v3, errors=errors
             )
         )
-        get_or_create_institution_authors(
+        create_or_update_contrib_collabs(
             xmltree=xmltree, article=article, user=user, item=pid_v3, errors=errors
         )
         article.fundings.set(
@@ -749,7 +749,7 @@ def create_or_update_researchers(xmltree, user, item, errors):
     return data
 
 
-def get_or_create_institution_authors(xmltree, article, user, item, errors):
+def create_or_update_contrib_collabs(xmltree, article, user, item, errors):
     """
     Extrai e cria colaborações (ContribCollab) a partir do XML.
 
@@ -781,13 +781,13 @@ def get_or_create_institution_authors(xmltree, article, user, item, errors):
             except Exception as e:
                 add_error(
                     errors,
-                    "get_or_create_institution_authors",
+                    "create_or_update_contrib_collabs",
                     e,
                     item=item,
                     author=author,
                 )
     except Exception as e:
-        add_error(errors, "get_or_create_institution_authors", e, item=item)
+        add_error(errors, "create_or_update_contrib_collabs", e, item=item)
     return data
 
 
