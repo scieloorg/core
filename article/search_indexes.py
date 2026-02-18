@@ -187,7 +187,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
             return [f"{research.orcid}" for research in obj.researchers.all()]
 
     def prepare_collab(self, obj):
-        if obj.contrib_collabs:
+        if obj.contrib_collabs.exists():
             return [contrib_collab.collab for contrib_collab in obj.contrib_collabs.all()]
 
     def prepare_au(self, obj):
@@ -379,7 +379,7 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
 
     def prepare_collab(self, obj):
         """This is the instituional author."""
-        if obj.contrib_collabs:
+        if obj.contrib_collabs.exists():
             return set([contrib_collab.collab for contrib_collab in obj.contrib_collabs.all()])
 
     def prepare_kw(self, obj):
