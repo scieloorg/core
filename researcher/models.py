@@ -27,10 +27,7 @@ from tracker.models import UnexpectedEvent
 from . import choices
 from .exceptions import InvalidOrcidError, PersonNameCreateError
 from .forms import ResearcherForm
-
-ORCID_REGEX = re.compile(
-    r"\b(?:https?://)?(?:www\.)?(?:orcid\.org/)?(\d{4}-\d{4}-\d{4}-\d{3}[0-9X])\b"
-)
+from .utils import ORCID_REGEX, clean_orcid, extract_orcid_number
 
 
 class ResearchNameMixin(models.Model):
@@ -1064,8 +1061,10 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
     def extract_orcid_number(orcid):
         """
         Extract the ORCID number from orcid url.
+        
+        Uses the shared clean_orcid utility function.
         """
-        return ORCID_REGEX.match(orcid).group(1)
+        return extract_orcid_number(orcid)
 
 
 class NewResearcher(
@@ -1477,4 +1476,9 @@ class ResearcherIds(CommonControlField):
 
     @staticmethod
     def clean_orcid(orcid):
-        return re.sub(r"https?://orcid\.org/", "", orcid).strip("/")
+        """
+        Clean ORCID by removing URL prefixes.
+        
+        Uses the shared clean_orcid utility function.
+        """
+        return clean_orcid(orcid)

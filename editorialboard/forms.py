@@ -5,42 +5,11 @@ from wagtail.admin.forms import WagtailAdminModelForm
 from location.models import Location
 from organization.models import Organization
 from researcher.models import NewResearcher, ResearcherIds, ResearcherOrcid
+from researcher.utils import clean_orcid
 
 import logging
-import re
 
 logger = logging.getLogger(__name__)
-
-# ORCID format regex
-ORCID_REGEX = re.compile(r'^(\d{4}-\d{4}-\d{4}-\d{3}[0-9X])$')
-
-
-def clean_orcid(orcid_input):
-    """
-    Clean and validate ORCID identifier.
-    
-    Args:
-        orcid_input: Raw ORCID input (may include URL)
-        
-    Returns:
-        Cleaned ORCID in format XXXX-XXXX-XXXX-XXXX
-        
-    Raises:
-        ValidationError: If ORCID format is invalid
-    """
-    if not orcid_input:
-        return None
-    
-    # Remove URL prefixes
-    orcid = orcid_input.strip().replace('https://orcid.org/', '').replace('http://orcid.org/', '')
-    
-    # Validate format
-    if not ORCID_REGEX.match(orcid):
-        raise ValidationError(
-            _("Invalid ORCID format: %(orcid)s. Expected format: 0000-0000-0000-0000") % {'orcid': orcid}
-        )
-    
-    return orcid
 
 
 class EditorialboardForm(WagtailAdminModelForm):
