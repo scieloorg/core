@@ -2898,11 +2898,7 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         Returns:
             Name string or None if no name information available
         """
-        if self.fullname:
-            return self.fullname
-        if self.declared_name:
-            return self.declared_name
-        return self.get_formatted_fullname(use_comma_separator=False, suffix_position="end")
+        return self.fullname or self.declared_name or self.get_formatted_fullname(use_comma_separator=False, suffix_position="end")
     
     @classmethod
     def get(cls, article, declared_name=None, orcid=None, given_names=None, 
