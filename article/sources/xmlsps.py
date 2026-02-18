@@ -771,21 +771,21 @@ def create_or_update_contrib_collabs(xmltree, article, user, item, errors):
             try:
                 if collab := author.get("collab"):
                     affiliation = None
-                    # Process affiliation data if present
+                    # Process affiliation data if present (taking the first affiliation)
                     if affs := author.get("affs"):
-                        for aff in affs:
-                            # Create ArticleAffiliation from XML affiliation data
-                            affiliation = ArticleAffiliation.create_or_update(
-                                user=user,
-                                article=article,
-                                raw_institution_name=aff.get("orgname"),
-                                raw_level_1=aff.get("orgdiv1"),
-                                raw_level_2=aff.get("orgdiv2"),
-                                raw_country_name=aff.get("country_name"),
-                                raw_state_name=aff.get("state"),
-                                raw_city_name=aff.get("city"),
-                            )
-                    
+                        aff = affs[0]  # Use first affiliation
+                        # Create ArticleAffiliation from XML affiliation data
+                        affiliation = ArticleAffiliation.create_or_update(
+                            user=user,
+                            article=article,
+                            raw_institution_name=aff.get("orgname"),
+                            raw_level_1=aff.get("orgdiv1"),
+                            raw_level_2=aff.get("orgdiv2"),
+                            raw_country_name=aff.get("country_name"),
+                            raw_state_name=aff.get("state"),
+                            raw_city_name=aff.get("city"),
+                        )
+
                     # Create ContribCollab with affiliation
                     obj = ContribCollab.create_or_update(
                         article=article,
