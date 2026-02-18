@@ -133,7 +133,6 @@ Migration file: `editorialboard/migrations/0011_add_manual_input_fields.py`
 **Forms:** `editorialboard/forms.py`
 - `EditorialboardForm` - Custom form with dual input logic
 - `clean_orcid()` - ORCID validation helper
-- Constants: `IDENTIFIER_TYPE_LATTES`, `IDENTIFIER_TYPE_EMAIL`
 
 **Tests:** `editorialboard/tests.py`
 - `EditorialBoardMemberFormTest` - Tests for manual input functionality

@@ -10,10 +10,6 @@ import re
 
 logger = logging.getLogger(__name__)
 
-# Constants for researcher identifier types
-IDENTIFIER_TYPE_LATTES = 'LATTES'
-IDENTIFIER_TYPE_EMAIL = 'EMAIL'
-
 # ORCID format regex
 ORCID_REGEX = re.compile(r'^(\d{4}-\d{4}-\d{4}-\d{3}[0-9X])$')
 
@@ -153,7 +149,7 @@ class EditorialboardForm(WagtailAdminModelForm):
                     try:
                         lattes_id, created = ResearcherIds.objects.get_or_create(
                             researcher=researcher,
-                            source_name=IDENTIFIER_TYPE_LATTES,
+                            source_name='LATTES',
                             identifier=inst.manual_lattes,
                             defaults={'creator': user}
                         )
@@ -167,7 +163,7 @@ class EditorialboardForm(WagtailAdminModelForm):
                     try:
                         email_id, created = ResearcherIds.objects.get_or_create(
                             researcher=researcher,
-                            source_name=IDENTIFIER_TYPE_EMAIL,
+                            source_name='EMAIL',
                             identifier=inst.manual_email,
                             defaults={'creator': user}
                         )
