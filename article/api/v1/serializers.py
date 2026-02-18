@@ -6,7 +6,8 @@ from doi.api.v1.serializers import DoiSerializer
 from institution.api.v1.serializers import SponsorSerializer
 from issue.api.v1.serializers import IssueSerializer, TableOfContentsSerializer
 from journal.api.v1.serializers import JournalSerializer
-from researcher.api.v1.serializers import ResearcherSerializer
+# ResearcherSerializer no longer used - replaced by ContribPersonSerializer
+# from researcher.api.v1.serializers import ResearcherSerializer
 from vocabulary.api.v1.serializers import KeywordSerializer
 
 
@@ -67,13 +68,30 @@ class ContribCollabSerializer(serializers.ModelSerializer):
         ]
 
 
+class ContribPersonSerializer(serializers.ModelSerializer):
+    affiliation = ArticleAffiliationSerializer(many=False, read_only=True)
+
+    class Meta:
+        model = models.ContribPerson
+        fields = [
+            "declared_name",
+            "given_names",
+            "last_name",
+            "suffix",
+            "fullname",
+            "orcid",
+            "email",
+            "affiliation",
+        ]
+
+
 class ArticleSerializer(serializers.ModelSerializer):
     journal = JournalSerializer(many=False, read_only=True)
     publisher = SponsorSerializer(many=True, read_only=True)
     titles = TitleSerializer(many=True, read_only=True)
     doi = DoiSerializer(many=True, read_only=True)
     abstracts = DocumentAbstractSerializer(many=True, read_only=True)
-    researchers = ResearcherSerializer(many=True, read_only=True)
+    contrib_persons = ContribPersonSerializer(many=True, read_only=True)
     contrib_collabs = ContribCollabSerializer(many=True, read_only=True)
     languages = LanguageSerializer(many=True, read_only=True)
     fundings = FundingsSerializer(many=True, read_only=True)
@@ -93,7 +111,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             "pid_v2",
             "pid_v3",
             "abstracts",
-            "researchers",
+            "contrib_persons",
             "contrib_collabs",
             "languages",
             "pub_date_day",

@@ -47,7 +47,7 @@ from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
 from location.models import Location
 from organization.models import Organization, NormAffiliation
-from researcher.models import AffiliationMixin, CollabMixin, Researcher, ResearchNameMixin
+from researcher.models import AffiliationMixin, CollabMixin, ResearchNameMixin
 from tracker.models import BaseEvent, EventSaveError, UnexpectedEvent
 from vocabulary.models import Keyword
 
@@ -150,7 +150,8 @@ class Article(
     )
     languages = models.ManyToManyField(Language, blank=True)
     titles = models.ManyToManyField("DocumentTitle", blank=True)
-    researchers = models.ManyToManyField(Researcher, blank=True)
+    # researchers field replaced by contrib_persons (ContribPerson model)
+    # researchers = models.ManyToManyField(Researcher, blank=True)
     article_type = models.CharField(max_length=50, null=True, blank=True)
     # abstracts = models.ManyToManyField("DocumentAbstract", blank=True)
     sections = models.ManyToManyField(TableOfContents, blank=True)
@@ -264,7 +265,7 @@ class Article(
 
     # Autoria e colaboração
     panels_authorship = [
-        AutocompletePanel("researchers", read_only=True),
+        InlinePanel("contrib_persons", label=_("Contributors")),
         InlinePanel("contrib_collabs", label=_("Collaborations")),
     ]
 

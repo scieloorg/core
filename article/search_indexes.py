@@ -179,20 +179,20 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
             return [title.plain_text for title in obj.titles.all()]
 
     def prepare_orcid(self, obj):
-        if obj.researchers:
-            return [research.orcid for research in obj.researchers.all()]
+        if obj.contrib_persons.exists():
+            return [person.orcid for person in obj.contrib_persons.all() if person.orcid]
 
     def prepare_au_orcid(self, obj):
-        if obj.researchers:
-            return [f"{research.orcid}" for research in obj.researchers.all()]
+        if obj.contrib_persons.exists():
+            return [f"{person.orcid}" for person in obj.contrib_persons.all() if person.orcid]
 
     def prepare_collab(self, obj):
         if obj.contrib_collabs.exists():
             return [contrib_collab.collab for contrib_collab in obj.contrib_collabs.all()]
 
     def prepare_au(self, obj):
-        if obj.researchers:
-            return [research.get_full_name for research in obj.researchers.all()]
+        if obj.contrib_persons.exists():
+            return [person.fullname or person.declared_name for person in obj.contrib_persons.all() if person.fullname or person.declared_name]
 
     def prepare_kw(self, obj):
         if obj.keywords:
@@ -367,15 +367,13 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             return set([title.plain_text for title in obj.titles.all()])
 
     def prepare_creator(self, obj):
-        """The list of authors is the researchers on the models that related with
-        class PersonName, so we used ``select_related`` to ensure that
-        person_name is not null.
-        """
-        if obj.researchers:
-            researchers = obj.researchers.select_related("person_name").filter(
-                person_name__isnull=False
-            )
-            return set([str(researcher.person_name) for researcher in researchers])
+        """The list of authors is the contrib_persons on the models."""
+        if obj.contrib_persons.exists():
+            return set([
+                person.fullname or person.declared_name
+                for person in obj.contrib_persons.all()
+                if person.fullname or person.declared_name
+            ])
 
     def prepare_collab(self, obj):
         """This is the instituional author."""

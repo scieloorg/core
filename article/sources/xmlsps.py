@@ -29,6 +29,7 @@ from article.models import (
     ArticleAffiliation,
     ArticleFunding,
     ContribCollab,
+    ContribPerson,
     DataAvailabilityStatement,
     DocumentAbstract,
     DocumentTitle,
@@ -43,7 +44,8 @@ from journal.models import Journal
 from location.models import Location
 from pid_provider.choices import PPXML_STATUS_DONE, PPXML_STATUS_INVALID
 from pid_provider.models import PidProviderXML
-from researcher.models import Affiliation, Researcher
+# Researcher no longer used - replaced by ContribPerson
+# from researcher.models import Affiliation, Researcher
 from tracker.models import UnexpectedEvent
 from vocabulary.models import Keyword
 
@@ -243,10 +245,9 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
                 xmltree=xmltree, user=user, item=pid_v3, errors=errors
             )
         )
-        article.researchers.set(
-            create_or_update_researchers(
-                xmltree=xmltree, user=user, item=pid_v3, errors=errors
-            )
+        # Create contrib_persons (replaces researchers)
+        create_or_update_contrib_persons(
+            xmltree=xmltree, article=article, user=user, item=pid_v3, errors=errors
         )
         create_or_update_contrib_collabs(
             xmltree=xmltree, article=article, user=user, item=pid_v3, errors=errors
@@ -655,27 +656,28 @@ def create_or_update_abstract(xmltree, user, article, item, errors):
     return data
 
 
-def create_or_update_researchers(xmltree, user, item, errors):
+def create_or_update_contrib_persons(xmltree, article, user, item, errors):
     """
-    Extrai e cria pesquisadores/autores a partir do XML.
+    Extrai e cria contribuidores (ContribPerson) a partir do XML.
 
-    Processa informações de autores incluindo nomes, ORCID, Lattes,
+    Processa informações de autores incluindo nomes, ORCID,
     afiliações e emails.
 
     Args:
         xmltree: Árvore XML do artigo
+        article: Instância do artigo
         user: Usuário criador
         item: Identificador do item (para log)
         errors: Lista para coletar erros
 
     Returns:
-        list: Lista de objetos Researcher criados
+        list: Lista de objetos ContribPerson criados
     """
     article_lang = None
     try:
         article_lang = ArticleAndSubArticles(xmltree=xmltree).main_lang
     except Exception as e:
-        add_error(errors, "create_or_update_researchers.get_main_lang", e)
+        add_error(errors, "create_or_update_contrib_persons.get_main_lang", e)
 
     data = []
     try:
@@ -696,57 +698,65 @@ def create_or_update_researchers(xmltree, user, item, errors):
                 contrib_ids = author.get("contrib_ids", None)
                 if contrib_ids is not None:
                     orcid = contrib_ids.get("orcid")
-                    lattes = contrib_ids.get("lattes")
                 else:
                     orcid = None
-                    lattes = None
-
-                researcher_data = {
-                    "user": user,
-                    "given_names": given_names,
-                    "last_name": surname,
-                    "suffix": suffix,
-                    "lang": article_lang,
-                    "orcid": orcid,
-                    "lattes": lattes,
-                    "gender": author.get("gender"),
-                    "gender_identification_status": author.get(
-                        "gender_identification_status"
-                    ),
-                }
 
                 affs = author.get("affs", [])
                 if not affs:
-                    obj = Researcher.create_or_update(**researcher_data)
+                    # Create ContribPerson without affiliation
+                    obj = ContribPerson.create_or_update(
+                        user=user,
+                        article=article,
+                        given_names=given_names,
+                        last_name=surname,
+                        suffix=suffix,
+                        orcid=orcid,
+                        email=author.get("email"),
+                        affiliation=None,
+                    )
                     data.append(obj)
                 else:
                     for aff in affs:
                         raw_email = author.get("email") or aff.get("email")
                         email = extracts_normalized_email(raw_email=raw_email)
-                        aff_data = {
-                            **researcher_data,
-                            "aff_name": aff.get("orgname"),
-                            "aff_div1": aff.get("orgdiv1"),
-                            "aff_div2": aff.get("orgdiv2"),
-                            "aff_city_name": aff.get("city"),
-                            "aff_country_acronym": aff.get("country_code"),
-                            "aff_country_name": aff.get("country_name"),
-                            "aff_state_text": aff.get("state"),
-                            "email": email,
-                        }
-                        obj = Researcher.create_or_update(**aff_data)
+                        
+                        # Create ArticleAffiliation from XML affiliation data
+                        affiliation = ArticleAffiliation.create_or_update(
+                            user=user,
+                            article=article,
+                            raw_institution_name=aff.get("orgname"),
+                            raw_level_1=aff.get("orgdiv1"),
+                            raw_level_2=aff.get("orgdiv2"),
+                            raw_country_name=aff.get("country_name"),
+                            raw_country_code=aff.get("country_code"),
+                            raw_state_name=aff.get("state"),
+                            raw_city_name=aff.get("city"),
+                        )
+                        
+                        # Create ContribPerson with affiliation
+                        obj = ContribPerson.create_or_update(
+                            user=user,
+                            article=article,
+                            given_names=given_names,
+                            last_name=surname,
+                            suffix=suffix,
+                            orcid=orcid,
+                            email=email,
+                            affiliation=affiliation,
+                        )
                         data.append(obj)
             except Exception as e:
                 add_error(
                     errors,
-                    "create_or_update_researchers",
+                    "create_or_update_contrib_persons",
                     e,
                     item=item,
                     author=author,
                     affiliation=author.get("affs", []),
                 )
     except Exception as e:
-        add_error(errors, "create_or_update_researchers", e, item=item)
+        add_error(errors, "create_or_update_contrib_persons", e, item=item)
+    return data
     return data
 
 
