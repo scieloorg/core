@@ -14,6 +14,7 @@ from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from core.utils.standardizer import remove_extra_spaces
 from journal.models import Journal
+from location.models import Country
 from researcher.models import NewResearcher
 
 from . import choices
@@ -87,12 +88,13 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
         null=True,
         help_text=_("Enter institution state/province"),
     )
-    manual_institution_country = models.CharField(
-        _("Institution country"),
-        max_length=128,
+    manual_institution_country = models.ForeignKey(
+        Country,
+        verbose_name=_("Institution country"),
+        on_delete=models.SET_NULL,
         blank=True,
         null=True,
-        help_text=_("Enter institution country"),
+        help_text=_("Select institution country from the list"),
     )
     manual_orcid = models.CharField(
         _("ORCID"),
@@ -141,7 +143,7 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
                 FieldPanel("manual_institution_acronym"),
                 FieldPanel("manual_institution_city"),
                 FieldPanel("manual_institution_state"),
-                FieldPanel("manual_institution_country"),
+                AutocompletePanel("manual_institution_country"),
             ],
             heading=_("Manual Entry - Institution (if not in database)"),
         ),

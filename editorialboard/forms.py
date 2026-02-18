@@ -68,13 +68,13 @@ class EditorialboardForm(WagtailAdminModelForm):
         
         try:
             # Try to find/create location using Location.create_or_update
-            # This will find existing or create new location components as needed
+            # Country is now a ForeignKey, so we use the object directly
             location = Location.create_or_update(
                 user=None,  # Pass None to avoid setting creator on new records
-                country=None,
-                country_name=inst.manual_institution_country,
-                country_acron3=None,
-                country_acronym=None,
+                country=inst.manual_institution_country,  # Use the Country object directly
+                country_name=inst.manual_institution_country.name if inst.manual_institution_country else None,
+                country_acron3=inst.manual_institution_country.acron3 if inst.manual_institution_country else None,
+                country_acronym=inst.manual_institution_country.acronym if inst.manual_institution_country else None,
                 country_text=None,
                 state=None,
                 state_name=inst.manual_institution_state,
