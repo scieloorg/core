@@ -35,7 +35,7 @@ from journal.models import Journal
 from location.models import Location
 from pid_provider.choices import PPXML_STATUS_DONE, PPXML_STATUS_INVALID
 from pid_provider.models import PidProviderXML
-from researcher.models import Affiliation, InstitutionalAuthor, Researcher
+from researcher.models import Affiliation, Researcher
 from tracker.models import UnexpectedEvent
 from vocabulary.models import Keyword
 
@@ -240,10 +240,8 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
                 xmltree=xmltree, user=user, item=pid_v3, errors=errors
             )
         )
-        article.collab.set(
-            get_or_create_institution_authors(
-                xmltree=xmltree, user=user, item=pid_v3, errors=errors
-            )
+        get_or_create_institution_authors(
+            xmltree=xmltree, article=article, user=user, item=pid_v3, errors=errors
         )
         article.fundings.set(
             get_or_create_fundings(
@@ -744,50 +742,34 @@ def create_or_update_researchers(xmltree, user, item, errors):
     return data
 
 
-def get_or_create_institution_authors(xmltree, user, item, errors):
+def get_or_create_institution_authors(xmltree, article, user, item, errors):
     """
-    Extrai e cria autores institucionais (colaborações) a partir do XML.
+    Extrai e cria colaborações (ContribCollab) a partir do XML.
 
     Args:
         xmltree: Árvore XML do artigo
+        article: Instância do artigo
         user: Usuário criador
         item: Identificador do item (para log)
         errors: Lista para coletar erros
 
     Returns:
-        list: Lista de objetos InstitutionalAuthor criados
+        list: Lista de objetos ContribCollab criados
     """
+    from article.models import ContribCollab
+    
     data = []
     try:
         authors = ArticleContribs(xmltree=xmltree).contribs
         for author in authors:
             try:
-                affiliation = None
                 if collab := author.get("collab"):
-                    if affs := author.get("affs"):
-                        for aff in affs:
-                            location = Location.create_or_update(
-                                user=user,
-                                country_name=aff.get("country_name"),
-                                state_name=aff.get("state"),
-                                city_name=aff.get("city"),
-                            )
-                            affiliation = Affiliation.get_or_create(
-                                name=aff.get("orgname"),
-                                acronym=None,
-                                level_1=aff.get("orgdiv1"),
-                                level_2=aff.get("orgdiv2"),
-                                level_3=None,
-                                location=location,
-                                official=None,
-                                is_official=None,
-                                url=None,
-                                institution_type=None,
-                                user=user,
-                            )
-                    obj = InstitutionalAuthor.get_or_create(
+                    # Create ContribCollab without affiliation for now
+                    # In the future, ArticleAffiliation can be linked here
+                    obj = ContribCollab.create_or_update(
+                        article=article,
                         collab=collab,
-                        affiliation=affiliation,
+                        affiliation=None,
                         user=user,
                     )
                     data.append(obj)
