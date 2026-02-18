@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 from wagtail.admin.forms import WagtailAdminModelForm
 
 from location.models import Location
@@ -36,7 +37,7 @@ def clean_orcid(orcid_input):
     # Validate format
     if not ORCID_REGEX.match(orcid):
         raise ValidationError(
-            f"Invalid ORCID format: {orcid}. Expected format: 0000-0000-0000-0000"
+            _("Invalid ORCID format: %(orcid)s. Expected format: 0000-0000-0000-0000") % {'orcid': orcid}
         )
     
     return orcid
@@ -54,7 +55,7 @@ class EditorialboardForm(WagtailAdminModelForm):
             
             if not manual_given_names or not manual_last_name:
                 raise ValidationError(
-                    "Either select a researcher from the database or provide at least given names and last name."
+                    _("Either select a researcher from the database or provide at least given names and last name.")
                 )
         
         return cleaned_data
@@ -206,7 +207,7 @@ class EditorialboardForm(WagtailAdminModelForm):
         except Exception as e:
             logger.error(f"Error creating researcher from manual fields: {e}", exc_info=True)
             raise ValidationError(
-                f"Error creating researcher from manual fields: {str(e)}"
+                _("Error creating researcher from manual fields: %(error)s") % {'error': str(e)}
             )
 
         self.save()
