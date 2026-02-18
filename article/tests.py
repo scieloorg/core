@@ -1103,8 +1103,6 @@ class ContribPersonTest(TestCase):
             affiliation=self.affiliation
         )
         
-        initial_aff_id = person.affiliation.id
-        
         person.add_raw_affiliation(
             user=self.user,
             raw_institution_name="Updated University"
