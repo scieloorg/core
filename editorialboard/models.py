@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from wagtail.admin.panels import FieldPanel, InlinePanel
+from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
@@ -127,17 +127,32 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
 
     panels = [
         AutocompletePanel("researcher"),
-        FieldPanel("manual_given_names"),
-        FieldPanel("manual_last_name"),
-        FieldPanel("manual_suffix"),
-        FieldPanel("manual_institution_name"),
-        FieldPanel("manual_institution_acronym"),
-        FieldPanel("manual_institution_city"),
-        FieldPanel("manual_institution_state"),
-        FieldPanel("manual_institution_country"),
-        FieldPanel("manual_orcid"),
-        FieldPanel("manual_lattes"),
-        FieldPanel("manual_email"),
+        MultiFieldPanel(
+            [
+                FieldPanel("manual_given_names"),
+                FieldPanel("manual_last_name"),
+                FieldPanel("manual_suffix"),
+            ],
+            heading=_("Manual Entry - Name (if researcher not in database)"),
+        ),
+        MultiFieldPanel(
+            [
+                FieldPanel("manual_institution_name"),
+                FieldPanel("manual_institution_acronym"),
+                FieldPanel("manual_institution_city"),
+                FieldPanel("manual_institution_state"),
+                FieldPanel("manual_institution_country"),
+            ],
+            heading=_("Manual Entry - Institution (if not in database)"),
+        ),
+        MultiFieldPanel(
+            [
+                FieldPanel("manual_orcid"),
+                FieldPanel("manual_lattes"),
+                FieldPanel("manual_email"),
+            ],
+            heading=_("Manual Entry - Identifiers"),
+        ),
         FieldPanel("image"),
         InlinePanel("role_editorial_board", label=_("Role")),
     ]
@@ -145,9 +160,12 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
     base_form_class = EditorialboardForm
 
     def __str__(self):
-        if not self.researcher:
-            return "None"
-        return f"{self.researcher.fullname} {', '.join(self.role_names)}"
+        if self.researcher:
+            return f"{self.researcher.fullname} {', '.join(self.role_names)}"
+        elif self.manual_given_names or self.manual_last_name:
+            name = f"{self.manual_given_names or ''} {self.manual_last_name or ''}".strip()
+            return f"{name} {', '.join(self.role_names)}" if name else "Editorial Board Member"
+        return "Editorial Board Member"
 
     @property
     def role_names(self):
