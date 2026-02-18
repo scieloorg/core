@@ -26,10 +26,7 @@ from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 from article import choices
 from article.models import (
     Article,
-    AMArticle,
-    ArticleExporter,
     ArticleFunding,
-    ArticleSource,
     ContribCollab,
     DataAvailabilityStatement,
     DocumentAbstract,
