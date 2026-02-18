@@ -37,14 +37,11 @@ def harvest_preprints(URL, user):
                 get_or_create_titles(titles=article_info.get("title"), user=user)
             )
 
-            try:
-                year = article.issue.year
-            except AttributeError:
-                year = None
-            article.researchers.set(
-                get_or_create_researches(
-                    user, authors=article_info.get("authors"), year=year
-                )
+            # Create contrib_persons (replaces researchers)
+            get_or_create_contrib_persons(
+                article=article,
+                user=user,
+                authors=article_info.get("authors")
             )
             article.keywords.set(
                 get_or_create_keyword(keywords=article_info.get("subject"), user=user)
@@ -260,22 +257,25 @@ def set_dates(article, date):
     article.set_date_pub(date)
 
 
-def get_or_create_researches(user, authors, year):
+def get_or_create_contrib_persons(article, user, authors):
+    """
+    Create or update ContribPerson objects for preprint authors.
+    
+    In preprint, currently only these fields exist:
+    given_names, surname, declared_name
+    """
     data = []
     for author in authors:
-        # em preprint, por enquanto existem apenas:
-        # given_names, surname, declared_name
-        obj = models.Researcher.create_or_update(
+        obj = models.ContribPerson.create_or_update(
             user=user,
+            article=article,
             given_names=author.get("given_names"),
             last_name=author.get("surname"),
             declared_name=author.get("declared_name"),
             email=author.get("email"),
-            affiliation=author.get("affiliation"),
             suffix=author.get("suffix"),
             orcid=author.get("orcid"),
-            lattes=author.get("lattes"),
-            year=year,
+            affiliation=None,  # Affiliation not available in preprint
         )
         data.append(obj)
     return data
