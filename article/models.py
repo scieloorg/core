@@ -2883,10 +2883,7 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         if suffix_position == "after_given" and self.suffix:
             parts.append(self.suffix)
         
-        if use_comma_separator:
-            sep = ", "
-        else:
-            sep = " "
+        sep = ", " if use_comma_separator else " "
         return sep.join(parts)
     
     @property
