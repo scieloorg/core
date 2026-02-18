@@ -2948,9 +2948,9 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         """
         Create a new contrib person or update an existing one.
         
-        Lookup strategy: Uses article + declared_name + orcid (if provided) to find 
-        existing record. If a record exists with these identifiers, it will be 
-        updated. Otherwise, a new one is created.
+        Lookup strategy: Uses article + declared_name + given_names + last_name + 
+        suffix + orcid (when provided) to find existing record. If a record exists 
+        with these identifiers, it will be updated. Otherwise, a new one is created.
         
         Args:
             user: User creating/updating the instance
@@ -2972,8 +2972,27 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         if not article:
             raise ValueError("ContribPerson.create_or_update requires article parameter")
         
+        # Check if we have any identifying parameters beyond article
+        has_identifying_params = any([
+            declared_name, given_names, last_name, suffix, orcid
+        ])
+        
+        if not has_identifying_params:
+            # No identifying parameters, just create
+            return cls.create(
+                user=user,
+                article=article,
+                declared_name=declared_name,
+                given_names=given_names,
+                last_name=last_name,
+                suffix=suffix,
+                orcid=orcid,
+                email=email,
+                affiliation=affiliation
+            )
+        
         try:
-            # Build lookup parameters - use declared_name and orcid if available
+            # Try to get existing record using identifying parameters
             obj = cls.get(
                 article=article,
                 declared_name=declared_name,
@@ -2983,7 +3002,7 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
                 orcid=orcid
             )
             
-            # Update fields
+            # Update fields (including those used in lookup for consistency)
             if declared_name is not None:
                 obj.declared_name = declared_name
             if given_names is not None:
