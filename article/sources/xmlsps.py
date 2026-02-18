@@ -24,7 +24,15 @@ from packtools.sps.models.v2.related_articles import RelatedArticles
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article import choices
-from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle, DataAvailabilityStatement
+from article.models import (
+    Article,
+    ArticleAffiliation,
+    ArticleFunding,
+    ContribCollab,
+    DataAvailabilityStatement,
+    DocumentAbstract,
+    DocumentTitle,
+)
 from core.models import Language, LicenseStatement, License
 from core.utils.extracts_normalized_email import extracts_normalized_email
 from doi.models import DOI
@@ -35,7 +43,7 @@ from journal.models import Journal
 from location.models import Location
 from pid_provider.choices import PPXML_STATUS_DONE, PPXML_STATUS_INVALID
 from pid_provider.models import PidProviderXML
-from researcher.models import Affiliation, InstitutionalAuthor, Researcher
+from researcher.models import Affiliation, Researcher
 from tracker.models import UnexpectedEvent
 from vocabulary.models import Keyword
 
@@ -240,10 +248,8 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
                 xmltree=xmltree, user=user, item=pid_v3, errors=errors
             )
         )
-        article.collab.set(
-            get_or_create_institution_authors(
-                xmltree=xmltree, user=user, item=pid_v3, errors=errors
-            )
+        create_or_update_contrib_collabs(
+            xmltree=xmltree, article=article, user=user, item=pid_v3, errors=errors
         )
         article.fundings.set(
             get_or_create_fundings(
@@ -744,48 +750,47 @@ def create_or_update_researchers(xmltree, user, item, errors):
     return data
 
 
-def get_or_create_institution_authors(xmltree, user, item, errors):
+def create_or_update_contrib_collabs(xmltree, article, user, item, errors):
     """
-    Extrai e cria autores institucionais (colaborações) a partir do XML.
+    Extrai e cria colaborações (ContribCollab) a partir do XML.
 
     Args:
         xmltree: Árvore XML do artigo
+        article: Instância do artigo
         user: Usuário criador
         item: Identificador do item (para log)
         errors: Lista para coletar erros
 
     Returns:
-        list: Lista de objetos InstitutionalAuthor criados
+        list: Lista de objetos ContribCollab criados
     """
     data = []
     try:
         authors = ArticleContribs(xmltree=xmltree).contribs
         for author in authors:
             try:
-                affiliation = None
                 if collab := author.get("collab"):
+                    affiliation = None
+                    # Process affiliation data if present
+                    # Note: ContribCollab supports only one affiliation per instance,
+                    # so we use the first affiliation when multiple are present in XML
                     if affs := author.get("affs"):
-                        for aff in affs:
-                            location = Location.create_or_update(
-                                user=user,
-                                country_name=aff.get("country_name"),
-                                state_name=aff.get("state"),
-                                city_name=aff.get("city"),
-                            )
-                            affiliation = Affiliation.get_or_create(
-                                name=aff.get("orgname"),
-                                acronym=None,
-                                level_1=aff.get("orgdiv1"),
-                                level_2=aff.get("orgdiv2"),
-                                level_3=None,
-                                location=location,
-                                official=None,
-                                is_official=None,
-                                url=None,
-                                institution_type=None,
-                                user=user,
-                            )
-                    obj = InstitutionalAuthor.get_or_create(
+                        aff = affs[0]  # Use first affiliation
+                        # Create ArticleAffiliation from XML affiliation data
+                        affiliation = ArticleAffiliation.create_or_update(
+                            user=user,
+                            article=article,
+                            raw_institution_name=aff.get("orgname"),
+                            raw_level_1=aff.get("orgdiv1"),
+                            raw_level_2=aff.get("orgdiv2"),
+                            raw_country_name=aff.get("country_name"),
+                            raw_state_name=aff.get("state"),
+                            raw_city_name=aff.get("city"),
+                        )
+
+                    # Create ContribCollab with affiliation
+                    obj = ContribCollab.create_or_update(
+                        article=article,
                         collab=collab,
                         affiliation=affiliation,
                         user=user,
@@ -794,13 +799,13 @@ def get_or_create_institution_authors(xmltree, user, item, errors):
             except Exception as e:
                 add_error(
                     errors,
-                    "get_or_create_institution_authors",
+                    "create_or_update_contrib_collabs",
                     e,
                     item=item,
                     author=author,
                 )
     except Exception as e:
-        add_error(errors, "get_or_create_institution_authors", e, item=item)
+        add_error(errors, "create_or_update_contrib_collabs", e, item=item)
     return data
 
 
