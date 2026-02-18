@@ -562,16 +562,11 @@ class NormAffiliation(CommonControlField):
             )
         
         params = {}
-        if organization is not None:
-            params["organization"] = organization
-        if location is not None:
-            params["location"] = location
-        if level_1 is not None:
-            params["level_1"] = level_1
-        if level_2 is not None:
-            params["level_2"] = level_2
-        if level_3 is not None:
-            params["level_3"] = level_3
+        params["organization"] = organization
+        params["location"] = location
+        params["level_1"] = level_1
+        params["level_2"] = level_2
+        params["level_3"] = level_3
         
         try:
             return cls.objects.get(**params)
