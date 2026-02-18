@@ -26,6 +26,7 @@ from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 from article import choices
 from article.models import (
     Article,
+    ArticleAffiliation,
     ArticleFunding,
     ContribCollab,
     DataAvailabilityStatement,
@@ -769,11 +770,27 @@ def create_or_update_contrib_collabs(xmltree, article, user, item, errors):
         for author in authors:
             try:
                 if collab := author.get("collab"):
-                    # Create ContribCollab without affiliation for now
-                    # In the future, ArticleAffiliation can be linked here
+                    affiliation = None
+                    # Process affiliation data if present
+                    if affs := author.get("affs"):
+                        for aff in affs:
+                            # Create ArticleAffiliation from XML affiliation data
+                            affiliation = ArticleAffiliation.create_or_update(
+                                user=user,
+                                article=article,
+                                raw_institution_name=aff.get("orgname"),
+                                raw_level_1=aff.get("orgdiv1"),
+                                raw_level_2=aff.get("orgdiv2"),
+                                raw_country_name=aff.get("country_name"),
+                                raw_state_name=aff.get("state"),
+                                raw_city_name=aff.get("city"),
+                            )
+                    
+                    # Create ContribCollab with affiliation
                     obj = ContribCollab.create_or_update(
                         article=article,
                         collab=collab,
+                        affiliation=affiliation,
                         user=user,
                     )
                     data.append(obj)
