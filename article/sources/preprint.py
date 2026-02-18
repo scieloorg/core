@@ -38,6 +38,8 @@ def harvest_preprints(URL, user):
             )
 
             # Create contrib_persons (replaces researchers)
+            # Clear existing contrib_persons to avoid duplication on reharvest
+            article.contrib_persons.all().delete()
             get_or_create_contrib_persons(
                 article=article,
                 user=user,

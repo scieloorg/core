@@ -246,6 +246,8 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             )
         )
         # Create contrib_persons (replaces researchers)
+        # Clear existing contrib_persons to avoid duplication on reload
+        article.contrib_persons.all().delete()
         create_or_update_contrib_persons(
             xmltree=xmltree, article=article, user=user, item=pid_v3, errors=errors
         )
@@ -716,6 +718,10 @@ def create_or_update_contrib_persons(xmltree, article, user, item, errors):
                     )
                     data.append(obj)
                 else:
+                    # When an author has multiple affiliations in XML, we create one 
+                    # ContribPerson record per affiliation. This is intentional as per 
+                    # SciELO's data model where each author-affiliation combination 
+                    # should be tracked separately.
                     for aff in affs:
                         raw_email = author.get("email") or aff.get("email")
                         email = extracts_normalized_email(raw_email=raw_email)

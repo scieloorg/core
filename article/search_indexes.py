@@ -192,7 +192,7 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
 
     def prepare_au(self, obj):
         if obj.contrib_persons.exists():
-            return [person.fullname or person.declared_name for person in obj.contrib_persons.all() if person.fullname or person.declared_name]
+            return [person.names for person in obj.contrib_persons.all() if person.names]
 
     def prepare_kw(self, obj):
         if obj.keywords:
@@ -370,9 +370,9 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         """The list of authors is the contrib_persons on the models."""
         if obj.contrib_persons.exists():
             return set([
-                person.fullname or person.declared_name
+                person.names
                 for person in obj.contrib_persons.all()
-                if person.fullname or person.declared_name
+                if person.names
             ])
 
     def prepare_collab(self, obj):

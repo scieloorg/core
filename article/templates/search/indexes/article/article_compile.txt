@@ -17,9 +17,9 @@
             <element name="none">
             {% for person in object.contrib_persons.all %}
                 {% if person.orcid %}
-                    <field name="value" orcid="{{person.orcid}}">{{person.fullname|default:person.declared_name}}</field>
+                    <field name="value" orcid="{{person.orcid}}">{{person.names}}</field>
                 {% else %}
-                    <field name="value">{{person.fullname|default:person.declared_name}}</field>
+                    <field name="value">{{person.names}}</field>
                 {% endif %}
             {% endfor %}
             </element>

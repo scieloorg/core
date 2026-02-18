@@ -2842,13 +2842,65 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
     
     def __str__(self):
         parts = [str(self.article)]
-        if self.declared_name:
-            parts.append(self.declared_name)
-        elif self.fullname:
-            parts.append(self.fullname)
+        if self.names:
+            parts.append(self.names)
         if self.affiliation:
             parts.append(str(self.affiliation))
         return " - ".join(parts)
+    
+    def get_formatted_fullname(self, use_separator=True, suffix_position="end"):
+        """
+        Get formatted full name from name components.
+        
+        Args:
+            use_separator: If True, adds comma after last_name (default: True)
+            suffix_position: Position of suffix - "end" for "last_name, suffix, given_names" (default)
+                           or "after_given" for "last_name, given_names, suffix"
+        
+        Returns:
+            Formatted name string or None if no name components available
+        """
+        if not any([self.last_name, self.given_names, self.suffix]):
+            return None
+        
+        parts = []
+        
+        if self.last_name:
+            parts.append(self.last_name)
+        
+        if suffix_position == "end" and self.suffix:
+            if use_separator and parts:
+                parts[-1] = parts[-1] + ","
+            parts.append(self.suffix)
+        
+        if self.given_names:
+            if use_separator and parts:
+                parts[-1] = parts[-1] + ","
+            parts.append(self.given_names)
+        
+        if suffix_position == "after_given" and self.suffix:
+            if use_separator and parts:
+                parts[-1] = parts[-1] + ","
+            parts.append(self.suffix)
+        
+        return " ".join(parts)
+    
+    @property
+    def names(self):
+        """
+        Get the best available name representation.
+        
+        Returns fullname if available, otherwise declared_name if available,
+        otherwise returns formatted name from components (given_names + last_name + suffix).
+        
+        Returns:
+            Name string or None if no name information available
+        """
+        if self.fullname:
+            return self.fullname
+        if self.declared_name:
+            return self.declared_name
+        return self.get_formatted_fullname(use_separator=False, suffix_position="end")
     
     @classmethod
     def get(cls, article, declared_name=None, orcid=None, given_names=None, 
