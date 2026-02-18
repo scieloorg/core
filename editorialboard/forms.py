@@ -1,5 +1,4 @@
 from django.core.exceptions import ValidationError
-from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.forms import WagtailAdminModelForm
 
@@ -68,44 +67,36 @@ class EditorialboardForm(WagtailAdminModelForm):
             return None
         
         try:
-            # Use Location.create_or_update to find existing location
-            # Pass None for user to only search, not create
-            location = Location.objects.filter(
-                city__name__iexact=inst.manual_institution_city if inst.manual_institution_city else None,
-                state__name__iexact=inst.manual_institution_state if inst.manual_institution_state else None,
-                country__name__iexact=inst.manual_institution_country if inst.manual_institution_country else None,
-            ).first()
+            # Try to find/create location using Location.create_or_update
+            # This will find existing or create new location components as needed
+            location = Location.create_or_update(
+                user=None,  # Pass None to avoid setting creator on new records
+                country=None,
+                country_name=inst.manual_institution_country,
+                country_acron3=None,
+                country_acronym=None,
+                country_text=None,
+                state=None,
+                state_name=inst.manual_institution_state,
+                state_acronym=None,
+                state_text=None,
+                city=None,
+                city_name=inst.manual_institution_city,
+                lang=None,
+            )
             
             if location:
+                logger.info(f"Found/created location: {location}")
                 return location
-                
-            # Try using Location's query method
-            query = Q()
-            if inst.manual_institution_city:
-                query &= Q(city__name__iexact=inst.manual_institution_city)
-            if inst.manual_institution_state:
-                query &= Q(state__name__iexact=inst.manual_institution_state)
-            if inst.manual_institution_country:
-                query &= Q(country__name__iexact=inst.manual_institution_country)
             
-            if query:
-                location = Location.objects.filter(query).first()
-            
-            if not location:
-                location_parts = []
-                if inst.manual_institution_city:
-                    location_parts.append(f"city={inst.manual_institution_city}")
-                if inst.manual_institution_state:
-                    location_parts.append(f"state={inst.manual_institution_state}")
-                if inst.manual_institution_country:
-                    location_parts.append(f"country={inst.manual_institution_country}")
-                logger.warning(
-                    f"Location not found for: {', '.join(location_parts)}. "
-                    "Affiliation will not be created. Please add location manually."
-                )
-            return location
+            logger.warning(
+                f"Location not found for: city={inst.manual_institution_city}, "
+                f"state={inst.manual_institution_state}, country={inst.manual_institution_country}. "
+                "Affiliation will not be created. Please add location manually."
+            )
+            return None
         except Exception as e:
-            logger.error(f"Error finding location: {e}")
+            logger.error(f"Error finding/creating location: {e}")
             return None
     
     def _create_affiliation(self, inst, location, user):
