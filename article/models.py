@@ -2874,22 +2874,24 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         if not article:
             raise ValueError("ContribPerson.get requires article parameter")
         
-        params = {"article": article}
-        if declared_name:
-            params["declared_name"] = declared_name
-        if orcid:
-            params["orcid"] = orcid
-        if given_names:
-            params["given_names"] = given_names
-        if last_name:
-            params["last_name"] = last_name
-        if suffix:
-            params["suffix"] = suffix
-        
         try:
-            return cls.objects.get(**params)
+            return cls.objects.get(
+                article=article,
+                declared_name=declared_name,
+                orcid=orcid,
+                given_names=given_names,
+                last_name=last_name,
+                suffix=suffix
+            )
         except cls.MultipleObjectsReturned:
-            return cls.objects.filter(**params).first()
+            return cls.objects.filter(
+                article=article,
+                declared_name=declared_name,
+                orcid=orcid,
+                given_names=given_names,
+                last_name=last_name,
+                suffix=suffix
+            ).first()
     
     @classmethod
     def create(cls, user, article, declared_name=None, given_names=None, 
