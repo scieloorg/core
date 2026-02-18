@@ -45,6 +45,8 @@ from journal.models import Journal, SciELOJournal
 from pid_provider.choices import PPXML_STATUS_DONE
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
+from location.models import Location
+from organization.models import Organization, NormAffiliation
 from researcher.models import AffiliationMixin, CollabMixin, InstitutionalAuthor, Researcher
 from tracker.models import BaseEvent, EventSaveError, UnexpectedEvent
 from vocabulary.models import Keyword
@@ -2279,6 +2281,39 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
         related_name="affiliations",
         verbose_name=_("Article"),
     )
+    
+    # Raw level fields for organization division
+    raw_level_1 = models.CharField(
+        _("Raw Level 1"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Raw first level of organization division"),
+    )
+    raw_level_2 = models.CharField(
+        _("Raw Level 2"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Raw second level of organization division"),
+    )
+    raw_level_3 = models.CharField(
+        _("Raw Level 3"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Raw third level of organization division"),
+    )
+    
+    # Normalized affiliation reference
+    normalized = models.ForeignKey(
+        NormAffiliation,
+        verbose_name=_("Normalized Affiliation"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=_("Reference to normalized affiliation data"),
+    )
 
     panels = [
         AutocompletePanel("article"),
@@ -2290,6 +2325,10 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
         FieldPanel("raw_state_name"),
         FieldPanel("raw_state_acron"),
         FieldPanel("raw_city_name"),
+        FieldPanel("raw_level_1"),
+        FieldPanel("raw_level_2"),
+        FieldPanel("raw_level_3"),
+        AutocompletePanel("normalized"),
     ]
 
     base_form_class = CoreAdminModelForm
@@ -2298,6 +2337,8 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
         indexes = [
             models.Index(fields=["article"]),
             models.Index(fields=["organization"]),
+            models.Index(fields=["normalized"]),
+            models.Index(fields=["article", "organization"]),
         ]
 
     def __str__(self):
@@ -2317,7 +2358,8 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
         Args:
             article: Article instance
             organization: Organization instance (optional)
-            **kwargs: Additional filter parameters
+            **kwargs: Additional filter parameters including raw_level_1, raw_level_2, 
+                     raw_level_3, normalized, and any raw organization fields
             
         Returns:
             ArticleAffiliation instance
@@ -2348,7 +2390,7 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
             user: User creating the instance
             article: Article instance
             organization: Organization instance (optional)
-            **kwargs: Additional field values including raw fields
+            **kwargs: Additional field values including raw fields and level fields
             
         Returns:
             New ArticleAffiliation instance
@@ -2365,6 +2407,15 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
         for field in cls.RAW_ORGANIZATION_FIELDS:
             if field in kwargs:
                 setattr(obj, field, kwargs[field])
+        
+        # Set raw level fields if provided
+        for field in ['raw_level_1', 'raw_level_2', 'raw_level_3']:
+            if field in kwargs:
+                setattr(obj, field, kwargs[field])
+        
+        # Set normalized field if provided
+        if 'normalized' in kwargs:
+            obj.normalized = kwargs['normalized']
         
         if user:
             obj.creator = user
@@ -2386,7 +2437,7 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
             user: User creating/updating the instance
             article: Article instance
             organization: Organization instance (optional, used for lookup)
-            **kwargs: Additional field values
+            **kwargs: Additional field values including level fields
             
         Returns:
             ArticleAffiliation instance (created or updated)
@@ -2415,6 +2466,15 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
                 if field in kwargs:
                     setattr(obj, field, kwargs[field])
             
+            # Update raw level fields
+            for field in ['raw_level_1', 'raw_level_2', 'raw_level_3']:
+                if field in kwargs:
+                    setattr(obj, field, kwargs[field])
+            
+            # Update normalized field
+            if 'normalized' in kwargs:
+                obj.normalized = kwargs['normalized']
+            
             if user:
                 obj.updated_by = user
             
@@ -2423,6 +2483,116 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
             
         except cls.DoesNotExist:
             return cls.create(user=user, article=article, organization=organization, **kwargs)
+
+    def set_normalized(self, user, organization=None, location=None, level_1=None, level_2=None, level_3=None):
+        """
+        Set the normalized affiliation for this article affiliation.
+        
+        This method creates or retrieves a NormAffiliation instance and links it to
+        this ArticleAffiliation.
+        
+        Args:
+            user: User performing the operation
+            organization: Organization instance (optional)
+            location: Location instance (optional)
+            level_1: First level of division (optional)
+            level_2: Second level of division (optional)
+            level_3: Third level of division (optional)
+            
+        Returns:
+            The updated ArticleAffiliation instance
+        """
+        norm_aff = NormAffiliation.create_or_update(
+            user=user,
+            organization=organization,
+            location=location,
+            level_1=level_1,
+            level_2=level_2,
+            level_3=level_3,
+        )
+        self.normalized = norm_aff
+        self.updated_by = user
+        self.save()
+        return self
+
+    def update_normalized(self, user, **kwargs):
+        """
+        Update the normalized affiliation linked to this article affiliation.
+        
+        If no normalized affiliation exists, creates one. If updating would violate
+        the unique_together constraint, reuses an existing matching NormAffiliation.
+        
+        Args:
+            user: User performing the operation
+            **kwargs: Fields to update in NormAffiliation (organization, location, 
+                     level_1, level_2, level_3)
+            
+        Returns:
+            The updated ArticleAffiliation instance
+        """
+        if self.normalized:
+            # Check if we're updating any unique_together fields
+            unique_fields = ('organization', 'location', 'level_1', 'level_2', 'level_3')
+            updating_unique = any(field in kwargs for field in unique_fields)
+            
+            if updating_unique:
+                # Build the target combination of unique_together values
+                target_values = {}
+                for field in unique_fields:
+                    if field in kwargs:
+                        target_values[field] = kwargs[field]
+                    else:
+                        target_values[field] = getattr(self.normalized, field, None)
+                
+                # Check if another NormAffiliation with this combination already exists
+                from django.db.models import Q
+                existing = NormAffiliation.objects.filter(
+                    organization=target_values['organization'],
+                    location=target_values['location'],
+                    level_1=target_values['level_1'],
+                    level_2=target_values['level_2'],
+                    level_3=target_values['level_3'],
+                ).exclude(pk=self.normalized.pk).first()
+                
+                if existing:
+                    # Reuse the existing NormAffiliation instead of updating
+                    self.normalized = existing
+                else:
+                    # Safe to update the current normalized affiliation
+                    for key, value in kwargs.items():
+                        if hasattr(self.normalized, key):
+                            setattr(self.normalized, key, value)
+                    self.normalized.updated_by = user
+                    self.normalized.save()
+            else:
+                # Only updating non-unique fields, safe to update directly
+                for key, value in kwargs.items():
+                    if hasattr(self.normalized, key):
+                        setattr(self.normalized, key, value)
+                self.normalized.updated_by = user
+                self.normalized.save()
+        else:
+            # Create new normalized affiliation
+            self.normalized = NormAffiliation.create(user=user, **kwargs)
+        
+        self.updated_by = user
+        self.save()
+        return self
+
+    def clear_normalized(self, user):
+        """
+        Remove the link to the normalized affiliation.
+        
+        Args:
+            user: User performing the operation
+            
+        Returns:
+            The updated ArticleAffiliation instance
+        """
+        self.normalized = None
+        self.updated_by = user
+        self.save()
+        return self
 
 
 class ContribCollab(CollabMixin, CommonControlField):
