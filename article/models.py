@@ -2920,19 +2920,19 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         
         obj = cls()
         obj.article = article
-        if declared_name:
+        if declared_name is not None:
             obj.declared_name = declared_name
-        if given_names:
+        if given_names is not None:
             obj.given_names = given_names
-        if last_name:
+        if last_name is not None:
             obj.last_name = last_name
-        if suffix:
+        if suffix is not None:
             obj.suffix = suffix
-        if orcid:
+        if orcid is not None:
             obj.orcid = orcid
-        if email:
+        if email is not None:
             obj.email = email
-        if affiliation:
+        if affiliation is not None:
             obj.affiliation = affiliation
         
         if user:
