@@ -47,7 +47,7 @@ from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
 from location.models import Location
 from organization.models import Organization, NormAffiliation
-from researcher.models import AffiliationMixin, CollabMixin, Researcher, ResearchNameMixin
+from researcher.models import AffiliationMixin, CollabMixin, ResearchNameMixin
 from tracker.models import BaseEvent, EventSaveError, UnexpectedEvent
 from vocabulary.models import Keyword
 
@@ -150,7 +150,8 @@ class Article(
     )
     languages = models.ManyToManyField(Language, blank=True)
     titles = models.ManyToManyField("DocumentTitle", blank=True)
-    researchers = models.ManyToManyField(Researcher, blank=True)
+    # researchers field replaced by contrib_persons (ContribPerson model)
+    # researchers = models.ManyToManyField(Researcher, blank=True)
     article_type = models.CharField(max_length=50, null=True, blank=True)
     # abstracts = models.ManyToManyField("DocumentAbstract", blank=True)
     sections = models.ManyToManyField(TableOfContents, blank=True)
@@ -264,7 +265,7 @@ class Article(
 
     # Autoria e colaboração
     panels_authorship = [
-        AutocompletePanel("researchers", read_only=True),
+        InlinePanel("contrib_persons", label=_("Contributors")),
         InlinePanel("contrib_collabs", label=_("Collaborations")),
     ]
 
@@ -2841,13 +2842,63 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
     
     def __str__(self):
         parts = [str(self.article)]
-        if self.declared_name:
-            parts.append(self.declared_name)
-        elif self.fullname:
-            parts.append(self.fullname)
+        if self.names:
+            parts.append(self.names)
         if self.affiliation:
             parts.append(str(self.affiliation))
         return " - ".join(parts)
+    
+    def get_formatted_fullname(self, use_comma_separator=True, suffix_position="end"):
+        """
+        Get formatted full name from name components.
+        
+        Args:
+            use_comma_separator: If True, adds comma separator after last_name and other parts (default: True)
+            suffix_position: Position of suffix - "end" for "last_name, suffix, given_names" (default)
+                           or "after_given" for "last_name, given_names, suffix"
+        
+        Returns:
+            Formatted name string or None if no name components available
+            
+        Raises:
+            ValueError: If suffix_position is not "end" or "after_given"
+        """
+        if suffix_position not in ("end", "after_given"):
+            raise ValueError(f"suffix_position must be 'end' or 'after_given', got '{suffix_position}'")
+        
+        if not any([self.last_name, self.given_names, self.suffix]):
+            return None
+        
+        parts = []
+        
+        if self.last_name:
+            parts.append(self.last_name)
+        
+        if suffix_position == "end" and self.suffix:
+            parts.append(self.suffix)
+        
+        if self.given_names:
+            parts.append(self.given_names)
+        
+        if suffix_position == "after_given" and self.suffix:
+            parts.append(self.suffix)
+        
+        sep = ", " if use_comma_separator else " "
+        return sep.join(parts)
+    
+    @property
+    def names(self):
+        """
+        Get the best available name representation.
+        
+        Returns fullname if available, otherwise declared_name if available,
+        otherwise returns formatted name from components without comma separators
+        (e.g., "Silva Jr Paulo" instead of "Silva, Jr, Paulo").
+        
+        Returns:
+            Name string or None if no name information available
+        """
+        return self.fullname or self.declared_name or self.get_formatted_fullname(use_comma_separator=False, suffix_position="end")
     
     @classmethod
     def get(cls, article, declared_name=None, orcid=None, given_names=None, 

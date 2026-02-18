@@ -15,11 +15,11 @@
         </element>
         <element name="creator">
             <element name="none">
-            {% for research in object.researchers.all %}
-                {% if research.orcid %}
-                    <field name="value" orcid="{{research.orcid}}">{{research.person_name}}</field>
+            {% for person in object.contrib_persons.all %}
+                {% if person.orcid %}
+                    <field name="value" orcid="{{person.orcid}}">{{person.names}}</field>
                 {% else %}
-                    <field name="value">{{research.person_name}}</field>
+                    <field name="value">{{person.names}}</field>
                 {% endif %}
             {% endfor %}
             </element>
