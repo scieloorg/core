@@ -42,6 +42,31 @@ class DocumentAbstractSerializer(serializers.ModelSerializer):
         ]
 
 
+class ArticleAffiliationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.ArticleAffiliation
+        fields = [
+            "raw_institution_name",
+            "raw_level_1",
+            "raw_level_2",
+            "raw_level_3",
+            "raw_country_name",
+            "raw_state_name",
+            "raw_city_name",
+        ]
+
+
+class ContribCollabSerializer(serializers.ModelSerializer):
+    affiliation = ArticleAffiliationSerializer(many=False, read_only=True)
+
+    class Meta:
+        model = models.ContribCollab
+        fields = [
+            "collab",
+            "affiliation",
+        ]
+
+
 class ArticleSerializer(serializers.ModelSerializer):
     journal = JournalSerializer(many=False, read_only=True)
     publisher = SponsorSerializer(many=True, read_only=True)
@@ -49,6 +74,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     doi = DoiSerializer(many=True, read_only=True)
     abstracts = DocumentAbstractSerializer(many=True, read_only=True)
     researchers = ResearcherSerializer(many=True, read_only=True)
+    contrib_collabs = ContribCollabSerializer(many=True, read_only=True)
     languages = LanguageSerializer(many=True, read_only=True)
     fundings = FundingsSerializer(many=True, read_only=True)
     toc_sections = TableOfContentsSerializer(many=True, read_only=True)
@@ -68,6 +94,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             "pid_v3",
             "abstracts",
             "researchers",
+            "contrib_collabs",
             "languages",
             "pub_date_day",
             "pub_date_month",
