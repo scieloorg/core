@@ -1095,7 +1095,7 @@ class ContribPersonTest(TestCase):
         self.assertEqual(person.affiliation.raw_country_name, "Brazil")
     
     def test_add_raw_affiliation_updates_existing(self):
-        """Test add_raw_affiliation with existing affiliation on person."""
+        """Test add_raw_affiliation when person already has an affiliation."""
         person = self.ContribPerson.create(
             user=self.user,
             article=self.article,
@@ -1111,7 +1111,6 @@ class ContribPersonTest(TestCase):
         )
         
         person.refresh_from_db()
-        # add_raw_affiliation creates or updates via ArticleAffiliation.create_or_update
         self.assertIsNotNone(person.affiliation)
     
     def test_add_normalized_affiliation_creates_affiliation(self):
