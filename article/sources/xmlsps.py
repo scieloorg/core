@@ -771,7 +771,9 @@ def create_or_update_contrib_collabs(xmltree, article, user, item, errors):
             try:
                 if collab := author.get("collab"):
                     affiliation = None
-                    # Process affiliation data if present (taking the first affiliation)
+                    # Process affiliation data if present
+                    # Note: ContribCollab supports only one affiliation per instance,
+                    # so we use the first affiliation when multiple are present in XML
                     if affs := author.get("affs"):
                         aff = affs[0]  # Use first affiliation
                         # Create ArticleAffiliation from XML affiliation data
