@@ -1112,6 +1112,8 @@ class ContribPersonTest(TestCase):
         
         person.refresh_from_db()
         self.assertIsNotNone(person.affiliation)
+        # Verify the raw data was set on the affiliation
+        self.assertEqual(person.affiliation.raw_institution_name, "Updated University")
     
     def test_add_normalized_affiliation_creates_affiliation(self):
         """Test add_normalized_affiliation creates affiliation if missing."""

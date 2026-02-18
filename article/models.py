@@ -3074,6 +3074,8 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
                 user=user,
                 article=self.article
             )
+            # Save to persist the relationship before using it
+            self.save()
         
         # Add normalized affiliation to the ArticleAffiliation
         self.affiliation.add_normalized_affiliation(
