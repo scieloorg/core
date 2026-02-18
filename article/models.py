@@ -2848,18 +2848,24 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             parts.append(str(self.affiliation))
         return " - ".join(parts)
     
-    def get_formatted_fullname(self, use_separator=True, suffix_position="end"):
+    def get_formatted_fullname(self, use_comma_separator=True, suffix_position="end"):
         """
         Get formatted full name from name components.
         
         Args:
-            use_separator: If True, adds comma after last_name (default: True)
+            use_comma_separator: If True, adds comma separator after last_name and other parts (default: True)
             suffix_position: Position of suffix - "end" for "last_name, suffix, given_names" (default)
                            or "after_given" for "last_name, given_names, suffix"
         
         Returns:
             Formatted name string or None if no name components available
+            
+        Raises:
+            ValueError: If suffix_position is not "end" or "after_given"
         """
+        if suffix_position not in ("end", "after_given"):
+            raise ValueError(f"suffix_position must be 'end' or 'after_given', got '{suffix_position}'")
+        
         if not any([self.last_name, self.given_names, self.suffix]):
             return None
         
@@ -2869,17 +2875,17 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             parts.append(self.last_name)
         
         if suffix_position == "end" and self.suffix:
-            if use_separator and parts:
+            if use_comma_separator and parts:
                 parts[-1] = parts[-1] + ","
             parts.append(self.suffix)
         
         if self.given_names:
-            if use_separator and parts:
+            if use_comma_separator and parts:
                 parts[-1] = parts[-1] + ","
             parts.append(self.given_names)
         
         if suffix_position == "after_given" and self.suffix:
-            if use_separator and parts:
+            if use_comma_separator and parts:
                 parts[-1] = parts[-1] + ","
             parts.append(self.suffix)
         
@@ -2891,7 +2897,8 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         Get the best available name representation.
         
         Returns fullname if available, otherwise declared_name if available,
-        otherwise returns formatted name from components (given_names + last_name + suffix).
+        otherwise returns formatted name from components without comma separators
+        (e.g., "Silva Jr Paulo" instead of "Silva, Jr, Paulo").
         
         Returns:
             Name string or None if no name information available
@@ -2900,7 +2907,7 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             return self.fullname
         if self.declared_name:
             return self.declared_name
-        return self.get_formatted_fullname(use_separator=False, suffix_position="end")
+        return self.get_formatted_fullname(use_comma_separator=False, suffix_position="end")
     
     @classmethod
     def get(cls, article, declared_name=None, orcid=None, given_names=None, 
