@@ -1297,11 +1297,11 @@ class NewResearcher(
             return None
         
         try:
-            researcher_id, created = ResearcherIds.objects.get_or_create(
+            researcher_id = ResearcherIds.get_or_create(
+                user=user,
                 researcher=self,
-                source_name='LATTES',
                 identifier=lattes_id,
-                defaults={'creator': user} if user else {}
+                source_name='LATTES',
             )
             return researcher_id
         except Exception as e:
@@ -1323,11 +1323,11 @@ class NewResearcher(
             return None
         
         try:
-            researcher_id, created = ResearcherIds.objects.get_or_create(
+            researcher_id = ResearcherIds.get_or_create(
+                user=user,
                 researcher=self,
-                source_name='EMAIL',
                 identifier=email,
-                defaults={'creator': user} if user else {}
+                source_name='EMAIL',
             )
             return researcher_id
         except Exception as e:
