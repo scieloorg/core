@@ -2940,8 +2940,11 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         if user:
             obj.creator = user
         
-        obj.save()
-        return obj
+        try:
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(article, declared_name, orcid, given_names, last_name, suffix)
     
     @classmethod
     def create_or_update(cls, user, article, declared_name=None, given_names=None,
