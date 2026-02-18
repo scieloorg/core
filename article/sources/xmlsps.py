@@ -757,7 +757,6 @@ def create_or_update_contrib_persons(xmltree, article, user, item, errors):
     except Exception as e:
         add_error(errors, "create_or_update_contrib_persons", e, item=item)
     return data
-    return data
 
 
 def create_or_update_contrib_collabs(xmltree, article, user, item, errors):

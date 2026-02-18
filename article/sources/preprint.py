@@ -261,8 +261,10 @@ def get_or_create_contrib_persons(article, user, authors):
     """
     Create or update ContribPerson objects for preprint authors.
     
-    In preprint, currently only these fields exist:
-    given_names, surname, declared_name
+    Note: In preprint processing, only basic name fields (given_names, surname, 
+    declared_name) are currently extracted from the OAI-DC format. Affiliation 
+    data is not available in the preprint metadata structure, so affiliation 
+    is set to None.
     """
     data = []
     for author in authors:
@@ -275,7 +277,7 @@ def get_or_create_contrib_persons(article, user, authors):
             email=author.get("email"),
             suffix=author.get("suffix"),
             orcid=author.get("orcid"),
-            affiliation=None,  # Affiliation not available in preprint
+            affiliation=None,  # Affiliation data not available in preprint OAI-DC metadata
         )
         data.append(obj)
     return data
