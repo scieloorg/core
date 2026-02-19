@@ -207,6 +207,8 @@ class EditorialBoardMemberFormTest(TestCase):
     """Tests for the manual input form functionality"""
     
     def setUp(self):
+        from location.models import Country
+        
         self.user = User.objects.create(username="user")
         self.journal = Journal.objects.create(title="Revista Test")
         self.location = Location.create_or_update(
@@ -218,6 +220,8 @@ class EditorialBoardMemberFormTest(TestCase):
             state_name="São Paulo",
             state_acronym="SP",
         )
+        # Get the Country object for tests
+        self.country = self.location.country
     
     def test_manual_input_creates_researcher(self):
         """Test that manual input creates a new researcher"""
@@ -232,9 +236,9 @@ class EditorialBoardMemberFormTest(TestCase):
             'manual_institution_acronym': 'USP',
             'manual_institution_city': 'São Paulo',
             'manual_institution_state': 'São Paulo',
-            'manual_institution_country': 'Brasil',
+            'manual_institution_country': self.country,  # Use Country object
             'manual_orcid': '0000-0001-2345-6789',
-            'manual_lattes': '1234567890',
+            'manual_lattes': '1234567890123456',  # Valid 16-digit Lattes ID
             'manual_email': 'joao.silva@usp.br',
         }
         
@@ -339,7 +343,8 @@ class EditorialBoardMemberFormTest(TestCase):
     
     def test_invalid_orcid_format_raises_error(self):
         """Test that invalid ORCID format raises ValidationError"""
-        from editorialboard.forms import EditorialboardForm, clean_orcid
+        from editorialboard.forms import EditorialboardForm
+        from researcher.utils import clean_orcid
         from django.core.exceptions import ValidationError
         
         # Test invalid ORCID formats

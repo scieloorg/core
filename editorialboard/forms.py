@@ -29,7 +29,7 @@ class EditorialboardForm(WagtailAdminModelForm):
         
         return cleaned_data
     
-    def _find_location(self, inst):
+    def _find_location(self, inst, user):
         """Find existing location from manual input fields using Location model."""
         # Guard: No location data provided
         if not (inst.manual_institution_city or inst.manual_institution_state or inst.manual_institution_country):
@@ -39,7 +39,7 @@ class EditorialboardForm(WagtailAdminModelForm):
             # Try to find/create location using Location.create_or_update
             # Country is now a ForeignKey, so we use the object directly
             location = Location.create_or_update(
-                user=None,  # Pass None to avoid setting creator on new records
+                user=user,
                 country=inst.manual_institution_country,  # Use the Country object directly
                 country_name=inst.manual_institution_country.name if inst.manual_institution_country else None,
                 country_acron3=inst.manual_institution_country.acron3 if inst.manual_institution_country else None,
@@ -120,7 +120,7 @@ class EditorialboardForm(WagtailAdminModelForm):
     def _create_researcher_from_manual_fields(self, inst, user):
         """Create researcher and related records from manual input fields."""
         # Find or create affiliation
-        location = self._find_location(inst)
+        location = self._find_location(inst, user)
         affiliation = self._create_affiliation(inst, location, user)
         
         # Create or get ORCID

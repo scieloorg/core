@@ -95,13 +95,16 @@ The `EditorialboardForm` handles both input modes:
 
 The system will automatically:
 - Create a researcher record
-- Link institution (if location exists in database)
+- Create or link the institution's location (city and state) based on the selected country
+- Create institution affiliation using the location
 - Add ORCID, Lattes, and Email identifiers
 
 #### Important Notes
 
-- **Location Requirement**: For institution affiliation to be created, the location (city + state + country) must already exist in the database
+- **Country Selection**: The country must be selected from the existing dropdown options (ForeignKey relationship)
+- **Location Creation**: If the combination of city + state + selected country doesn't exist, the system will automatically create the missing location records
 - **ORCID Format**: Must be in format `0000-0000-0000-0000` or include URL `https://orcid.org/0000-0000-0000-0000`
+- **Lattes Format**: Must be exactly 16 digits (with or without dots and hyphens)
 - **Priority**: If both researcher and manual fields are filled, the selected researcher takes priority
 
 ### For Developers
@@ -119,11 +122,15 @@ python manage.py test editorialboard.tests.EditorialBoardMemberFormTest
 #### Database Migration
 
 ```bash
-# Apply migration
+# Apply migrations
 python manage.py migrate editorialboard
 ```
 
-Migration file: `editorialboard/migrations/0011_add_manual_input_fields.py`
+Migration files:
+- `editorialboard/migrations/0011_add_manual_input_fields.py` - Adds manual input fields to EditorialBoardMember model
+- `editorialboard/migrations/0012_change_country_to_foreignkey.py` - Changes manual_institution_country from CharField to ForeignKey(Country)
+
+**Important:** Migration 0012 is a schema change that replaces the text-based country field with a ForeignKey relationship. Any existing data in the manual_institution_country CharField will be lost during this migration. Ensure proper data backup before migrating in production environments.
 
 #### Code Structure
 
@@ -132,7 +139,6 @@ Migration file: `editorialboard/migrations/0011_add_manual_input_fields.py`
 
 **Forms:** `editorialboard/forms.py`
 - `EditorialboardForm` - Custom form with dual input logic
-- `clean_orcid()` - ORCID validation helper
 
 **Tests:** `editorialboard/tests.py`
 - `EditorialBoardMemberFormTest` - Tests for manual input functionality
