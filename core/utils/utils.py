@@ -10,7 +10,7 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
-from urllib3.util import Retry
+from wagtail.models.sites import Site
 
 from config.settings.base import FETCH_DATA_TIMEOUT
 
@@ -113,3 +113,46 @@ def formated_date_api_params(query_params):
             except (ValueError, AttributeError):
                 continue
     return formated_date
+
+
+def get_default_site():
+    try:
+        return Site.objects.get(is_default_site=True)
+    except Site.DoesNotExist:
+        return None
+
+def get_hostname():
+    default_site = get_default_site()
+    if not default_site:
+        return None
+    return f"http://{default_site.hostname}"
+
+
+def get_url_file_from_wagtail_images(file):
+    """
+    Return the url of the file from Wagtail ImageField
+    Parameters:
+        file: File object
+    Returns:
+        URL of the file
+    """
+    domain = get_hostname()
+    domain = "http://172.20.0.1:8009"
+    if domain:
+        return f"{domain}{file.file.url}"
+    return None
+
+
+def get_url_file_from_image_field(file):
+    """
+    Return the url of the file from ImageField
+    Parameters:
+        file: ImageField object
+    Returns:
+        URL of the file
+    """
+    domain = get_hostname()
+    domain = "http://172.20.0.1:8009"
+    if domain:
+        return f"{domain}{file.url}"
+    return None
