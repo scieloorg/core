@@ -12,7 +12,6 @@ from wagtail.snippets.views.snippets import (
     SnippetViewSet,
     SnippetViewSetGroup,
 )
-from wagtail_modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
 
 from article.models import Article
 from collection.models import Collection
@@ -106,12 +105,11 @@ def add_items_summary_items(request, items):
     items.append(ArticleSummaryItem(request))
 
 
-class GenderAdmin(ModelAdmin):
+class GenderAdmin(SnippetViewSet):
     model = Gender
     menu_icon = "folder"
     menu_order = 600
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = (
         "code",
         "gender",
@@ -123,7 +121,7 @@ class GenderAdmin(ModelAdmin):
     )
 
 
-class ListCodesAdminGroup(ModelAdminGroup):
+class ListCodesAdminGroup(SnippetViewSetGroup):
     menu_label = "List of codes"
     menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("core")
@@ -144,7 +142,7 @@ class ListCodesAdminGroup(ModelAdminGroup):
     )
 
 
-modeladmin_register(ListCodesAdminGroup)
+register_snippet(ListCodesAdminGroup)
 
 
 @hooks.register("construct_main_menu")

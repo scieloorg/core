@@ -1,19 +1,17 @@
-from wagtail_modeladmin.options import (
-    ModelAdmin,
-    modeladmin_register,
-)
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import SnippetViewSet
 from django.utils.translation import gettext_lazy as _
 
 from .models import ReportCSV
 from config.menu import get_menu_order
 
-class ReportCSVAdmin(ModelAdmin):
+@register_snippet
+class ReportCSVAdmin(SnippetViewSet):
     model = ReportCSV
     menu_label = _("Report CSV")
     menu_icon = "folder"
     menu_order = get_menu_order("report")
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = (
         "journal",
         "title",
@@ -40,5 +38,3 @@ class ReportCSVAdmin(ModelAdmin):
 
     link_download.short_descriptions = 'Download'
     link_download.allow_tags = True
-
-modeladmin_register(ReportCSVAdmin)

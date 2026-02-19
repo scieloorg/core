@@ -2,12 +2,8 @@ from django.http import HttpResponseRedirect
 from django.urls import include, path
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
-from wagtail_modeladmin.options import (
-    ModelAdmin,
-    ModelAdminGroup,
-    modeladmin_register,
-)
-from wagtail_modeladmin.views import CreateView, EditView
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import CreateView, EditView, SnippetViewSet, SnippetViewSetGroup
 
 from config.menu import get_menu_order
 from .button_helpers import GenericThematicAreaHelper, ThematicAreaHelper
@@ -37,16 +33,13 @@ class GenericThematicAreaFileCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class GenericThematicAreaAdmin(ModelAdmin):
+class GenericThematicAreaAdmin(SnippetViewSet):
     model = GenericThematicArea
-    create_view_class = GenericThematicAreaCreateView
+    add_view_class = GenericThematicAreaCreateView
     menu_label = _("Generic Thematic Area")
     menu_icon = "folder"
     menu_order = 100
-    add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
-    exclude_from_explorer = (
-        False  # or True to exclude pages of this type from Wagtail's explorer view
-    )
+    add_to_settings_menu = False
     list_display = (
         "text",
         "language",
@@ -74,16 +67,15 @@ class GenericThematicAreaAdmin(ModelAdmin):
     export_filename = "generic_thematic_areas"
 
 
-class GenericThematicAreaFileAdmin(ModelAdmin):
+class GenericThematicAreaFileAdmin(SnippetViewSet):
     model = GenericThematicAreaFile
     ordering = ("-updated",)
-    create_view_class = GenericThematicAreaFileCreateView
+    add_view_class = GenericThematicAreaFileCreateView
     button_helper_class = GenericThematicAreaHelper
     menu_label = _("Generic Thematic Areas Upload")
     menu_icon = "folder"
     menu_order = 200
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = (
         "attachment",
         "line_count",
@@ -96,7 +88,7 @@ class GenericThematicAreaFileAdmin(ModelAdmin):
     search_fields = ("attachment__title",)
 
 
-class GenericThematicAreaAdminGroup(ModelAdminGroup):
+class GenericThematicAreaAdminGroup(SnippetViewSetGroup):
     menu_label = _("Generic Thematic Areas")
     menu_icon = "folder-open-inverse"
     menu_order = 600
@@ -106,7 +98,7 @@ class GenericThematicAreaAdminGroup(ModelAdminGroup):
     )
 
 
-# modeladmin_register(GenericThematicAreaAdminGroup)
+# register_snippet(GenericThematicAreaAdminGroup)
 
 
 @hooks.register("register_admin_urls")
@@ -137,16 +129,13 @@ class ThematicAreaFileCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class ThematicAreaAdmin(ModelAdmin):
+class ThematicAreaAdmin(SnippetViewSet):
     model = ThematicArea
-    create_view_class = ThematicAreaCreateView
+    add_view_class = ThematicAreaCreateView
     menu_label = _("Thematic Area")
     menu_icon = "folder"
     menu_order = 100
-    add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
-    exclude_from_explorer = (
-        False  # or True to exclude pages of this type from Wagtail's explorer view
-    )
+    add_to_settings_menu = False
     list_display = (
         "level0",
         "level1",
@@ -171,16 +160,15 @@ class ThematicAreaAdmin(ModelAdmin):
     export_filename = "thematic_areas"
 
 
-class ThematicAreaFileAdmin(ModelAdmin):
+class ThematicAreaFileAdmin(SnippetViewSet):
     model = ThematicAreaFile
     ordering = ("-updated",)
-    create_view_class = ThematicAreaFileCreateView
+    add_view_class = ThematicAreaFileCreateView
     button_helper_class = ThematicAreaHelper
     menu_label = _("Thematic Areas Upload")
     menu_icon = "folder"
     menu_order = 200
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = (
         "attachment",
         "line_count",
@@ -193,7 +181,7 @@ class ThematicAreaFileAdmin(ModelAdmin):
     search_fields = ("attachment__title",)
 
 
-class ThematicAreaAdminGroup(ModelAdminGroup):
+class ThematicAreaAdminGroup(SnippetViewSetGroup):
     menu_label = _("Thematic Areas")
     menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("thematic_areas")
@@ -203,7 +191,7 @@ class ThematicAreaAdminGroup(ModelAdminGroup):
     )
 
 
-# modeladmin_register(ThematicAreaAdminGroup)
+# register_snippet(ThematicAreaAdminGroup)
 
 
 @hooks.register("register_admin_urls")
