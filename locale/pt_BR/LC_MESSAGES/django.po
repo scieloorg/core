@@ -6124,6 +6124,17 @@ msgstr "Configuração de Validação"
 msgid "SciELO Publishing Schema"
 msgstr "Esquema de Publicação SciELO"
 
+
+# editorialboard/forms.py translations
+msgid "Invalid ORCID format: %(orcid)s. Expected format: 0000-0000-0000-0000"
+msgstr "Formato ORCID inválido: %(orcid)s. Formato esperado: 0000-0000-0000-0000"
+
+msgid "Either select a researcher from the database or provide at least given names and last name."
+msgstr "Selecione um pesquisador do banco de dados ou forneça pelo menos o nome e sobrenome."
+
+msgid "Error creating researcher from manual fields: %(error)s"
+msgstr "Erro ao criar pesquisador a partir dos campos manuais: %(error)s"
+
 #~ msgid "RoleModel"
 #~ msgstr "Modelo de Função"
 

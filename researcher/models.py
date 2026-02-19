@@ -27,10 +27,7 @@ from tracker.models import UnexpectedEvent
 from . import choices
 from .exceptions import InvalidOrcidError, PersonNameCreateError
 from .forms import ResearcherForm
-
-ORCID_REGEX = re.compile(
-    r"\b(?:https?://)?(?:www\.)?(?:orcid\.org/)?(\d{4}-\d{4}-\d{4}-\d{3}[0-9X])\b"
-)
+from .utils import ORCID_REGEX, clean_orcid, extract_orcid_number
 
 
 class ResearchNameMixin(models.Model):
@@ -1064,8 +1061,10 @@ class ResearcherOrcid(CommonControlField, ClusterableModel):
     def extract_orcid_number(orcid):
         """
         Extract the ORCID number from orcid url.
+        
+        Uses the shared clean_orcid utility function.
         """
-        return ORCID_REGEX.match(orcid).group(1)
+        return extract_orcid_number(orcid)
 
 
 class NewResearcher(
@@ -1281,6 +1280,58 @@ class NewResearcher(
             "researcher_orcid": self.researcher_orcid,
             "researcher_lattes": self.researcher_lattes,
         }
+    
+    def add_lattes_id(self, lattes_id, user=None):
+        """
+        Add a Lattes CV identifier to this researcher.
+        
+        Args:
+            lattes_id: Lattes CV identifier string
+            user: User creating the record (optional)
+            
+        Returns:
+            ResearcherIds instance or None if lattes_id is empty
+        """
+        if not lattes_id:
+            return None
+        
+        try:
+            researcher_id = ResearcherIds.get_or_create(
+                user=user,
+                researcher=self,
+                identifier=lattes_id,
+                source_name='LATTES',
+            )
+            return researcher_id
+        except Exception as e:
+            logging.error(f"Error adding Lattes ID {lattes_id}: {e}")
+            return None
+    
+    def add_email(self, email, user=None):
+        """
+        Add an email identifier to this researcher.
+        
+        Args:
+            email: Email address string
+            user: User creating the record (optional)
+            
+        Returns:
+            ResearcherIds instance or None if email is empty
+        """
+        if not email:
+            return None
+        
+        try:
+            researcher_id = ResearcherIds.get_or_create(
+                user=user,
+                researcher=self,
+                identifier=email,
+                source_name='EMAIL',
+            )
+            return researcher_id
+        except Exception as e:
+            logging.error(f"Error adding email {email}: {e}")
+            return None
 
 
 class ResearcherIds(CommonControlField):
@@ -1425,4 +1476,9 @@ class ResearcherIds(CommonControlField):
 
     @staticmethod
     def clean_orcid(orcid):
-        return re.sub(r"https?://orcid\.org/", "", orcid).strip("/")
+        """
+        Clean ORCID by removing URL prefixes.
+        
+        Uses the shared clean_orcid utility function.
+        """
+        return clean_orcid(orcid)
