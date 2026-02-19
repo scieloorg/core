@@ -22,7 +22,6 @@ class CollectionAdmin(SnippetViewSet):
     menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("collection")
     add_to_settings_menu = False
-
     list_display = (
         "main_name",
         "acron3",
