@@ -1,25 +1,20 @@
 from django.http import HttpResponseRedirect
 from django.utils.translation import gettext_lazy as _
-from wagtail_modeladmin.options import (
-    ModelAdmin,
-    ModelAdminGroup,
-    modeladmin_register,
-)
-from wagtail_modeladmin.views import CreateView
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
 
 from config.menu import get_menu_order
 
 from .models import UnexpectedEvent, Hello
 
 
-class UnexpectedEventModelAdmin(ModelAdmin):
+class UnexpectedEventModelAdmin(SnippetViewSet):
     model = UnexpectedEvent
     inspect_view_enabled = True
     menu_label = _("Unexpected Events")
     menu_icon = "folder"
     menu_order = 200
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_per_page = 10
 
     list_display = (
@@ -47,14 +42,13 @@ class UnexpectedEventModelAdmin(ModelAdmin):
     )
 
 
-class HelloModelAdmin(ModelAdmin):
+class HelloModelAdmin(SnippetViewSet):
     model = Hello
     inspect_view_enabled = True
     menu_label = _("Hello events")
     menu_icon = "folder"
     menu_order = 200
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_per_page = 10
 
     list_display = (
@@ -78,11 +72,11 @@ class HelloModelAdmin(ModelAdmin):
     )
 
 
-class UnexpectedEventModelAdminGroup(ModelAdminGroup):
+class UnexpectedEventModelAdminGroup(SnippetViewSetGroup):
     menu_icon = "folder"
     menu_label = _("Unexpected errors")
     menu_order = get_menu_order("tracker")
     items = (UnexpectedEventModelAdmin, HelloModelAdmin)
 
 
-modeladmin_register(UnexpectedEventModelAdminGroup)
+register_snippet(UnexpectedEventModelAdminGroup)

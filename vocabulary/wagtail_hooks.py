@@ -1,11 +1,7 @@
 from django.http import HttpResponseRedirect
 from django.utils.translation import gettext_lazy as _
-from wagtail_modeladmin.options import (
-    ModelAdmin,
-    ModelAdminGroup,
-    modeladmin_register,
-)
-from wagtail_modeladmin.views import CreateView
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import CreateView, SnippetViewSet, SnippetViewSetGroup
 from config.menu import get_menu_order
 
 from .models import Keyword, Vocabulary
@@ -17,15 +13,14 @@ class VocabularyCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class VocabularyAdmin(ModelAdmin):
+class VocabularyAdmin(SnippetViewSet):
     model = Vocabulary
     inspect_view_enabled = True
     menu_label = _("Vocabulary")
-    create_view_class = VocabularyCreateView
+    add_view_class = VocabularyCreateView
     menu_icon = "folder"
     menu_order = 100
     add_to_settings_menu = False
-    exclude_from_explorer = False
 
     list_display = (
         "name",
@@ -43,15 +38,14 @@ class KeywordCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class KeywordAdmin(ModelAdmin):
+class KeywordAdmin(SnippetViewSet):
     model = Keyword
     inspect_view_enabled = True
     menu_label = _("Keyword")
-    create_view_class = KeywordCreateView
+    add_view_class = KeywordCreateView
     menu_icon = "folder"
     menu_order = 200
     add_to_settings_menu = False
-    exclude_from_explorer = False
 
     list_display = (
         "text",
@@ -65,11 +59,11 @@ class KeywordAdmin(ModelAdmin):
     )
 
 
-class VocabularyGroup(ModelAdminGroup):
+class VocabularyGroup(SnippetViewSetGroup):
     menu_label = _("Vocabulary")
-    menu_icon = "folder-open-inverse"  # change as required
+    menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("vocabulary")
     items = (VocabularyAdmin, KeywordAdmin)
 
 
-modeladmin_register(VocabularyGroup)
+register_snippet(VocabularyGroup)

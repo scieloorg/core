@@ -13,7 +13,6 @@ from wagtail.snippets.views.snippets import (
     SnippetViewSet,
     SnippetViewSetGroup,
 )
-from wagtail_modeladmin.options import ModelAdmin
 
 from config.menu import get_menu_order
 from journalpage.models import JournalPage
@@ -456,13 +455,12 @@ class JournalSnippetViewSetGroup(SnippetViewSetGroup):
 register_snippet(JournalSnippetViewSetGroup)
 
 
-class IndexedAtAdmin(ModelAdmin):
+class IndexedAtAdmin(SnippetViewSet):
     model = models.IndexedAt
     menu_label = "Indexed At"
     menu_icon = "folder"
     menu_order = 100
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = ("name", "acronym", "url", "description", "type")
     list_filter = ("type",)
     search_fields = ("name", "acronym")
@@ -470,36 +468,33 @@ class IndexedAtAdmin(ModelAdmin):
     export_filename = "indexed_at"
 
 
-class AdditionalIndexedAtAdmin(ModelAdmin):
+class AdditionalIndexedAtAdmin(SnippetViewSet):
     model = models.AdditionalIndexedAt
     menu_label = "Additional Indexed At"
     menu_icon = "folder"
     menu_order = 110
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = ("name",)
     search_fields = ("name",)
 
 
-class IndexedAtFileAdmin(ModelAdmin):
+class IndexedAtFileAdmin(SnippetViewSet):
     model = models.IndexedAtFile
     button_helper_class = IndexedAtHelper
     menu_label = "Indexed At Upload"
     menu_icon = "folder"
     menu_order = 200
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = ("attachment", "line_count", "is_valid")
     list_filter = ("is_valid",)
     search_fields = ("attachment",)
 
 
-class WebOfKnowledgeAdmin(ModelAdmin):
+class WebOfKnowledgeAdmin(SnippetViewSet):
     model = models.WebOfKnowledge
     menu_icon = "folder"
     menu_order = 100
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = (
         "code",
         "value",
@@ -511,12 +506,11 @@ class WebOfKnowledgeAdmin(ModelAdmin):
     )
 
 
-class SubjectAdmin(ModelAdmin):
+class SubjectAdmin(SnippetViewSet):
     model = models.Subject
     menu_icon = "folder"
     menu_order = 300
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = (
         "code",
         "value",
@@ -528,22 +522,20 @@ class SubjectAdmin(ModelAdmin):
     )
 
 
-class WosAreaAdmin(ModelAdmin):
+class WosAreaAdmin(SnippetViewSet):
     model = models.WebOfKnowledgeSubjectCategory
     menu_icon = "folder"
     menu_order = 400
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = ("value",)
     search_fields = ("value",)
 
 
-class StandardAdmin(ModelAdmin):
+class StandardAdmin(SnippetViewSet):
     model = models.Standard
     menu_icon = "folder"
     menu_order = 500
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = (
         "code",
         "value",
@@ -555,7 +547,7 @@ class StandardAdmin(ModelAdmin):
     )
 
 
-class ArticleSubmissionFormatCheckListAdmin(ModelAdmin):
+class ArticleSubmissionFormatCheckListAdmin(SnippetViewSet):
     model = models.ArticleSubmissionFormatCheckList
     menu_label = _("Article Submission Format Check List")
     menu_icon = "folder"

@@ -2,12 +2,8 @@ from django.http import HttpResponseRedirect
 from django.urls import include, path
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
-from wagtail_modeladmin.options import (
-    ModelAdmin,
-    ModelAdminGroup,
-    modeladmin_register,
-)
-from wagtail_modeladmin.views import CreateView
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import CreateView, SnippetViewSet, SnippetViewSetGroup
 
 from .button_helpers import CountryHelper
 from .models import City, Country, CountryFile, Location, State
@@ -21,16 +17,13 @@ class LocationCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class LocationAdmin(ModelAdmin):
+class LocationAdmin(SnippetViewSet):
     model = Location
-    create_view_class = LocationCreateView
+    add_view_class = LocationCreateView
     menu_label = _("Location")
     menu_icon = "folder"
     menu_order = 700
-    add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
-    exclude_from_explorer = (
-        False  # or True to exclude pages of this type from Wagtail's explorer view
-    )
+    add_to_settings_menu = False
     list_display = (
         "country",
         "state",
@@ -52,28 +45,26 @@ class LocationAdmin(ModelAdmin):
     export_filename = "locations"
 
 
-class CityAdmin(ModelAdmin):
+class CityAdmin(SnippetViewSet):
     model = City
-    create_view_class = LocationCreateView
+    add_view_class = LocationCreateView
     menu_label = _("City")
     menu_icon = "folder"
     menu_order = 700
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = ("name",)
     search_fields = ("name",)
     list_export = ("name",)
     export_filename = "cities"
 
 
-class StateAdmin(ModelAdmin):
+class StateAdmin(SnippetViewSet):
     model = State
-    create_view_class = LocationCreateView
+    add_view_class = LocationCreateView
     menu_label = _("State")
     menu_icon = "folder"
     menu_order = 700
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = (
         "name",
         "acronym",
@@ -89,14 +80,13 @@ class StateAdmin(ModelAdmin):
     export_filename = "states"
 
 
-class CountryAdmin(ModelAdmin):
+class CountryAdmin(SnippetViewSet):
     model = Country
-    create_view_class = LocationCreateView
+    add_view_class = LocationCreateView
     menu_label = _("Country")
     menu_icon = "folder"
     menu_order = 700
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = (
         "name",
         "acronym",
@@ -115,21 +105,19 @@ class CountryAdmin(ModelAdmin):
     export_filename = "countries"
 
 
-class CountryFileAdmin(ModelAdmin):
+class CountryFileAdmin(SnippetViewSet):
     model = CountryFile
     button_helper_class = CountryHelper
     menu_label = "Country Upload"
     menu_icon = "folder"
     menu_order = 200
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = ("attachment", "line_count", "is_valid")
     list_filter = ("is_valid",)
     search_fields = ("attachment",)
 
 
-# modeladmin_register(LocationAdmin)
-class LocationAdminGroup(ModelAdminGroup):
+class LocationAdminGroup(SnippetViewSetGroup):
     menu_label = _("Location")
     menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("location")
@@ -142,7 +130,7 @@ class LocationAdminGroup(ModelAdminGroup):
     )
 
 
-modeladmin_register(LocationAdminGroup)
+register_snippet(LocationAdminGroup)
 
 
 @hooks.register("register_admin_urls")
