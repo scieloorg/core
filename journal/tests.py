@@ -1,5 +1,5 @@
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 from django.test import TestCase
 from django_test_migrations.migrator import Migrator
@@ -385,5 +385,103 @@ class RawOrganizationMixinTestCase(TestCase):
         # Raw fields should be None if not provided
         self.assertIsNone(publisher_history.raw_institution_name)
         self.assertIsNone(publisher_history.raw_country_name)
+
+
+from journal.sources.classic_website import get_issn, get_journal_xml
+
+
+class TestClassicWebsiteGetIssn(TestCase):
+    @patch("journal.sources.classic_website.requests.get")
+    @patch("journal.sources.classic_website.xmltodict.parse")
+    def test_get_issn_url_does_not_have_double_http_prefix(self, mock_parse, mock_get):
+        """get_issn must not prepend http:// when domain already contains it"""
+        mock_response = Mock()
+        mock_response.text = ""
+        mock_get.return_value = mock_response
+        mock_parse.return_value = {"SERIALLIST": {"LIST": {"SERIAL": []}}}
+
+        list(get_issn("http://www.scielo.org.pe"))
+
+        called_url = mock_get.call_args[0][0]
+        self.assertNotIn("http://http://", called_url)
+        self.assertTrue(called_url.startswith("http://www.scielo.org.pe/"))
+
+    @patch("journal.sources.classic_website.requests.get")
+    @patch("journal.sources.classic_website.xmltodict.parse")
+    def test_get_issn_url_strips_trailing_slash(self, mock_parse, mock_get):
+        """get_issn must not produce double slash when domain has trailing slash"""
+        mock_response = Mock()
+        mock_response.text = ""
+        mock_get.return_value = mock_response
+        mock_parse.return_value = {"SERIALLIST": {"LIST": {"SERIAL": []}}}
+
+        list(get_issn("http://www.scielo.org.pe/"))
+
+        called_url = mock_get.call_args[0][0]
+        self.assertNotIn("//scielo.php", called_url)
+
+    @patch("journal.sources.classic_website.requests.get")
+    @patch("journal.sources.classic_website.xmltodict.parse")
+    def test_get_issn_url_with_https_domain(self, mock_parse, mock_get):
+        """get_issn must not produce double https:// when domain uses https://"""
+        mock_response = Mock()
+        mock_response.text = ""
+        mock_get.return_value = mock_response
+        mock_parse.return_value = {"SERIALLIST": {"LIST": {"SERIAL": []}}}
+
+        list(get_issn("https://www.scielo.br"))
+
+        called_url = mock_get.call_args[0][0]
+        self.assertNotIn("http://https://", called_url)
+        self.assertTrue(called_url.startswith("https://www.scielo.br/"))
+
+
+class TestClassicWebsiteGetJournalXml(TestCase):
+    @patch("journal.sources.classic_website.requests.get")
+    @patch("journal.sources.classic_website.xmltodict.parse")
+    def test_get_journal_xml_url_does_not_have_double_http_prefix(
+        self, mock_parse, mock_get
+    ):
+        """get_journal_xml must not prepend http:// when domain already contains it"""
+        mock_response = Mock()
+        mock_response.text = ""
+        mock_get.return_value = mock_response
+        mock_parse.return_value = {}
+
+        get_journal_xml("http://www.scielo.org.pe", "2709-3689")
+
+        called_url = mock_get.call_args[0][0]
+        self.assertNotIn("http://http://", called_url)
+        self.assertTrue(called_url.startswith("http://www.scielo.org.pe/"))
+
+    @patch("journal.sources.classic_website.requests.get")
+    @patch("journal.sources.classic_website.xmltodict.parse")
+    def test_get_journal_xml_url_strips_trailing_slash(self, mock_parse, mock_get):
+        """get_journal_xml must not produce double slash when domain has trailing slash"""
+        mock_response = Mock()
+        mock_response.text = ""
+        mock_get.return_value = mock_response
+        mock_parse.return_value = {}
+
+        get_journal_xml("http://www.scielo.org.pe/", "2709-3689")
+
+        called_url = mock_get.call_args[0][0]
+        self.assertNotIn("//scielo.php", called_url)
+
+    @patch("journal.sources.classic_website.requests.get")
+    @patch("journal.sources.classic_website.xmltodict.parse")
+    def test_get_journal_xml_url_with_https_domain(self, mock_parse, mock_get):
+        """get_journal_xml must not produce double https:// when domain uses https://"""
+        mock_response = Mock()
+        mock_response.text = ""
+        mock_get.return_value = mock_response
+        mock_parse.return_value = {}
+
+        get_journal_xml("https://www.scielo.br", "0034-8910")
+
+        called_url = mock_get.call_args[0][0]
+        self.assertNotIn("http://https://", called_url)
+        self.assertTrue(called_url.startswith("https://www.scielo.br/"))
+
 
 
