@@ -19,7 +19,7 @@ from tracker.models import UnexpectedEvent
 def get_issn(collection):
     try:
         collections = requests.get(
-            f"http://{collection}/scielo.php?script=sci_alphabetic&lng=es&nrm=iso&debug=xml",
+            f"{collection.rstrip('/')}/scielo.php?script=sci_alphabetic&lng=es&nrm=iso&debug=xml",
             timeout=10,
         )
         data = xmltodict.parse(collections.text)
@@ -52,7 +52,7 @@ def get_issn(collection):
 def get_journal_xml(collection, issn):
     try:
         official_journal = requests.get(
-            f"http://{collection}/scielo.php?script=sci_serial&pid={issn}&lng=es&nrm=iso&debug=xml",
+            f"{collection.rstrip('/')}/scielo.php?script=sci_serial&pid={issn}&lng=es&nrm=iso&debug=xml",
             timeout=10,
         )
         return xmltodict.parse(official_journal.text)

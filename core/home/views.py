@@ -75,7 +75,7 @@ def _get_scielo_journals_data():
                 "",
             )
             scielo_url = (
-                f"http://{domain}/scielo.php?script=sci_serial&pid={issn_scielo}&lng=en"
+                f"{domain.rstrip('/')}/scielo.php?script=sci_serial&pid={issn_scielo}&lng=en"
             )
             formatted_data.append(
                 {
