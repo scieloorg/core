@@ -25,7 +25,7 @@
                                         {% elif scielojournal.status in "DS" %}
                                             <span class="material-icons align-middle fs-5" style="color: #c63800;">fiber_manual_record</span>
                                         {% endif %}
-                                        <a target="_blank" href="http://{{ scielojournal.collection.domain }}/scielo.php?script=sci_serial&pid={{ scielojournal.issn_scielo }}&lng=en">{{ scielojournal.journal.title }}</a><span style="color: #888; font-size: 0.9em; opacity: 0.7; padding: 4px 8px;">{{ scielojournal.collection.main_name }}</span> 
+                                        <a target="_blank" href="{{ scielojournal.collection.domain }}/scielo.php?script=sci_serial&pid={{ scielojournal.issn_scielo }}&lng=en">{{ scielojournal.journal.title }}</a><span style="color: #888; font-size: 0.9em; opacity: 0.7; padding: 4px 8px;">{{ scielojournal.collection.main_name }}</span> 
                                     {% endfor %}
                                 </ul>
                             </td>
