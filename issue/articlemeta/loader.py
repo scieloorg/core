@@ -69,7 +69,7 @@ def harvest_and_load_issue(user, url, code, collection_acron, processing_date, f
 def harvest_issue_data(url, timeout=30):
     try:
         item = {}
-        item["data"] = utils.fetch_data(url, json=True, timeout=timeout, verify=True)
+        item["data"] = utils.fetch_data(url, json=True, timeout=timeout, verify=False)
         item["status"] = "pending"
         return item
     except Exception as e:

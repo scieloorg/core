@@ -25,7 +25,7 @@ def _get_collection_journals(offset=None, limit=None, collection=None):
         f"https://articlemeta.scielo.org/api/v1/journal/identifiers/?collection={collection}&limit={limit}"
         + offset
     )
-    data = fetch_data(url, json=True, timeout=30, verify=True)
+    data = fetch_data(url, json=True, timeout=30, verify=False)
     return data
 
 
@@ -37,7 +37,7 @@ def process_journal_article_meta(collection, limit, user):
         for journal in data["objects"]:
             issn = journal["code"]
             url_journal = f"https://articlemeta.scielo.org/api/v1/journal/?collection={collection}&issn={issn}"
-            data_journal = fetch_data(url_journal, json=True, timeout=30, verify=True)
+            data_journal = fetch_data(url_journal, json=True, timeout=30, verify=False)
             obj_collection = Collection.objects.get(acron3=collection)
             AMJournal.create_or_update(
                 pid=issn,
