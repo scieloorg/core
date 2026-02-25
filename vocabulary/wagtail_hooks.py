@@ -57,13 +57,3 @@ class KeywordAdmin(SnippetViewSet):
         "language__code2",
         "vocabulary__name",
     )
-
-
-class VocabularyGroup(SnippetViewSetGroup):
-    menu_label = _("Vocabulary")
-    menu_icon = "folder-open-inverse"
-    menu_order = get_menu_order("vocabulary")
-    items = (VocabularyAdmin, KeywordAdmin)
-
-
-register_snippet(VocabularyGroup)
