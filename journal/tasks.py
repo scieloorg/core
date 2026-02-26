@@ -1,6 +1,8 @@
 import logging
 import sys
+from io import BytesIO
 
+from PIL import Image as PilImage
 from celery import group
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
@@ -16,7 +18,6 @@ from journal.models import (
     AMJournal,
     Journal,
     JournalLicense,
-    JournalLogo,
     SciELOJournal,
 )
 from journal.sources import classic_website
@@ -119,18 +120,14 @@ def _normalize_collection_domain(url, strip_www=False):
 
 def _build_logo_url(collection, journal_acron):
     """Build logo URL based on collection type."""
-    try:
-        domain = _normalize_collection_domain(collection.domain)
-    except Exception as e:
-        logging.error(f"Error normalizing collection domain: {e}")
-        return None
-
+    # collection.domain contém https:// ou http://
+    domain = collection.domain
     collection_acron3 = collection.acron3
 
     if collection_acron3 == "scl":
-        return f"https://{domain}/media/images/{journal_acron}_glogo.gif"
+        return f"{domain}/media/images/{journal_acron}_glogo.gif"
     else:
-        return f"http://{domain}/img/revistas/{journal_acron}/glogo.gif"
+        return f"{domain}/img/revistas/{journal_acron}/glogo.gif"
 
 
 @celery_app.task(bind=True)
@@ -140,6 +137,13 @@ def fetch_and_process_journal_logo(
     user_id=None,
     username=None,
 ):
+    EXT_MAP = {
+        'JPEG': '.jpg',
+        'GIF': '.gif',
+        'PNG': '.png',
+        'WEBP': '.webp',
+        'ICO': '.ico',
+    }
     try:
         journal = Journal.objects.prefetch_related(
             Prefetch(
@@ -159,18 +163,34 @@ def fetch_and_process_journal_logo(
         if not url_logo:
             return None
 
-        response = fetch_data(url_logo, json=False, timeout=30, verify=True)
+        logger.info(f"Fetching logo for journal {journal_id} from URL: {url_logo}")
+        response = fetch_data(url_logo, json=False, timeout=30)
+
+        # Detecta formato real
+        try:
+            img_bytes = BytesIO(response)
+            with PilImage.open(img_bytes) as pil_img:
+                real_format = pil_img.format  # 'JPEG', 'GIF', etc
+                correct_ext = EXT_MAP.get(real_format, '.jpg')
+            
+        except Exception as e:
+            logger.warning(f"Could not detect image format for {journal_acron}: {e}. Falling back to .jpg")
+            correct_ext = '.jpg'
+        finally:
+            try:
+                img_bytes.seek(0)  # reset após leitura do Pillow
+            except Exception:
+                pass
+        
+        logo_fiename = f"{journal_acron}_logo{correct_ext}"
+
         img_wagtail, created = Image.objects.get_or_create(
             title=journal_acron,
             defaults={
-                "file": ContentFile(response, name=f"{journal_acron}_glogo.gif"),
+                "file": ContentFile(response, name=logo_fiename),
             },
         )
-        journal_logo = JournalLogo.create_or_update(
-            journal=journal, logo=img_wagtail, user=user
-        )
-        if not journal.logo and journal.logo != img_wagtail:
-            journal.logo = journal_logo.logo
+        journal.logo = img_wagtail
         journal.save()
         logger.info(f"Successfully processed logo for journal {journal_id}")
     except Exception as e:
