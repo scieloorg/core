@@ -22,6 +22,9 @@ COPY ./requirements .
 # Update pip
 RUN python -m pip install --upgrade pip
 
+# Garante setuptools disponível
+RUN pip install --upgrade setuptools
+
 # Create Python Dependency and Sub-Dependency Wheels.
 RUN pip wheel --wheel-dir /usr/src/app/wheels  \
   -r ${BUILD_ENVIRONMENT}.txt
