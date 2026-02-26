@@ -1,10 +1,19 @@
+import logging
+import sys
+
+import requests
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 
 from collection.models import Collection
 from config import celery_app
+from core.utils.jwt import issue_jwt_for_flask
+
+from .api.v1.serializers import CollectionSerializer
 
 User = get_user_model()
+from tracker.models import UnexpectedEvent
 
 
 @celery_app.task(bind=True)
@@ -14,3 +23,90 @@ def task_load_collections(self, user_id=None, username=None):
     if username:
         user = User.objects.get(username=username)
     Collection.load(user)
+
+
+def fetch_with_protocol_guess(host_or_url, timeout=10):
+    """
+    Algumas coleções não possuem o protocolo no domínio, por isso é necessário
+    tentar os protocolos http e https para obter o resultado correto.
+    """
+    if "://" in host_or_url:
+        return host_or_url
+    
+    for protocol in ["http", "https"]:
+        url = f"{protocol}://{host_or_url}"
+        try:
+            resp = requests.get(url, timeout=timeout)
+            resp.raise_for_status()
+            return url
+        except requests.exceptions.SSLError:
+            continue
+        except requests.exceptions.RequestException:
+            continue
+    return None
+
+def _send_payload(url, headers, payload):
+    resp = None
+    try:
+        resp = requests.post(url, json=payload, headers=headers, timeout=5)
+        resp.raise_for_status()
+        return resp.json()
+    except Exception as e:
+        if resp is not None:
+            logging.error(f"Erro ao enviar dados de coleção para {url}. Status: {resp.status_code}. Body: {resp.text}")  
+        else:
+            logging.error(f"Erro ao enviar dados de coleção para {url}. Exception {e}")
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "collection.tasks.build_collection_webhook",
+                "url": url,
+                "payload": payload,
+                "headers": headers,
+            },
+        )
+
+
+@celery_app.task
+def build_collection_webhook_for_all(event=False, headers=None):
+    collections = Collection.objects.filter(domain__isnull=False, is_active=True)
+    for collection in collections:
+        build_collection_webhook.apply_async(
+            kwargs=dict(
+                event=event,
+                collection_acron=collection.acron3,
+                headers=headers,
+            )
+        )
+
+@celery_app.task
+def build_collection_webhook(event, collection_acron, headers=None):
+    collection = Collection.objects.get(acron3=collection_acron, is_active=True)
+    url_with_schema = fetch_with_protocol_guess(collection.domain)
+    
+    if not url_with_schema:
+        return None
+    
+    pattern_url = url_with_schema + settings.ENDPOINT_COLLECTION
+
+    serializer = CollectionSerializer(collection)
+    payload = {
+        "event": event,
+        "results": serializer.data,
+    }
+
+    if not headers:
+        token = issue_jwt_for_flask(
+            sub="service:django",
+            claims={"roles": ["m2m"], "scope": "ingest:write"}
+        )
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+
+    _send_payload(url=pattern_url, headers=headers, payload=payload)
+
+

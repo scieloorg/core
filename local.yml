@@ -20,6 +20,7 @@ services:
     env_file:
       - ./.envs/.local/.django
       - ./.envs/.local/.postgres
+      - ./.envs/.local/.jwt
     ports:
       - "8009:8000"
     command: /start

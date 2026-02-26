@@ -3,6 +3,7 @@ from wagtail.models.sites import Site
 
 from core.api.v1.serializers import LanguageSerializer
 from journal import models
+from core.utils.utils import get_url_file_from_wagtail_images
 
 
 class OfficialJournalSerializer(serializers.ModelSerializer):
@@ -197,9 +198,7 @@ class JournalSerializer(serializers.ModelSerializer):
 
     def get_url_logo(self, obj):
         if obj.logo:
-            domain = Site.objects.get(is_default_site=True).hostname
-            domain = f"http://{domain}"
-            return f"{domain}{obj.logo.file.url}"
+            return get_url_file_from_wagtail_images(obj.logo)
         return None
 
     def get_email(self, obj):

@@ -14,6 +14,15 @@ TYPE = [
     ("books", _("Books")),
     ("data", _("Data repository")),
 ]
+
+LOGO_PURPOSE = [
+    ("homepage", _("Homepage")),
+    ("header", _("Header")),
+    ("logo_drop_menu", _("Logo drop menu")),
+    ("footer", _("Footer")),
+    ("menu", _("Menu")),
+]
+
 PLATFORM_STATUS = [
     ("classic", _("Classic")),
     ("new", _("New")),
