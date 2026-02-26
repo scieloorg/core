@@ -2,7 +2,7 @@
 
 <li>
     {% icon name="site" %}
-    <a href="{% url 'collection_collection_modeladmin_index'%}">
+    <a href="{% url 'wagtailsnippets_collection_collection:list'%}">
         {% blocktrans trimmed count counter=total_collection with total_collection|intcomma as total %}
             <span>{{ total_collection }}</span> Collection 
         {% plural %}
