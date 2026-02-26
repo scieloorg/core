@@ -82,7 +82,7 @@ wagtail-autocomplete==0.12.0
 
 # Solr integration
 git+https://github.com/django-haystack/django-haystack.git  # Django Haystack
-pysolr==3.9.0  # https://pypi.org/project/pysolr/
+pysolr>=3.11.0  # https://pypi.org/project/pysolr/
 
 # packtools
 # ------------------------------------------------------------------------------
