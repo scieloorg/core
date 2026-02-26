@@ -3,6 +3,7 @@
 # ==============================================================================
 
 # Python utilities
+setuptools>=78.1.1  # https://pypi.org/project/setuptools/ - provides pkg_resources
 pytz==2025.2  # https://github.com/stub42/pytz
 Pillow==11.3.0  # https://github.com/python-pillow/Pillow
 argon2-cffi==25.1.0  # https://github.com/hynek/argon2_cffi
