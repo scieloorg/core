@@ -121,9 +121,17 @@ def _normalize_collection_domain(url, strip_www=False):
 def _build_logo_url(collection, journal_acron):
     """Build logo URL based on collection type."""
     # collection.domain contém https:// ou http://
+    if not collection.domain:
+        logger.warning(f"Collection {collection.acron3} has no domain defined")
+        return None
+    if not journal_acron:
+        logger.warning(f"Journal with collection {collection.acron3} has no acronym defined")
+        return None
     domain = collection.domain
+    if not domain:
+        logger.warning(f"Collection {collection.acron3} has no domain defined")
+        return None
     collection_acron3 = collection.acron3
-
     if collection_acron3 == "scl":
         return f"{domain}/media/images/{journal_acron}_glogo.gif"
     else:
@@ -187,7 +195,7 @@ def fetch_and_process_journal_logo(
         img_wagtail, created = Image.objects.get_or_create(
             title=journal_acron,
             defaults={
-                "file": ContentFile(response, name=logo_filename),
+                "file": ContentFile(img_bytes.read(), name=logo_filename),
             },
         )
         journal.logo = img_wagtail
