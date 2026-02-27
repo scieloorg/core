@@ -805,9 +805,11 @@ class Journal(CommonControlField, ClusterableModel):
         if root_url:
             return f"{root_url}{rendition.url}"
         # fallback
-        site = Site.objects.get(is_default_site=True)
-        # Garantir que o root_url esteja devidamente informado
-        return f"{site.root_url}{rendition.url}"
+        try:
+            site = Site.objects.get(is_default_site=True)
+            return f"{site.root_url}{rendition.url}"
+        except Site.DoesNotExist:
+            return rendition.url
 
     @classmethod
     def get_journal_queryset_with_active_collections(cls):
