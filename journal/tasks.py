@@ -182,12 +182,12 @@ def fetch_and_process_journal_logo(
             except Exception:
                 pass
         
-        logo_fiename = f"{journal_acron}_logo{correct_ext}"
+        logo_filename = f"{journal_acron}_logo{correct_ext}"
 
         img_wagtail, created = Image.objects.get_or_create(
             title=journal_acron,
             defaults={
-                "file": ContentFile(response, name=logo_fiename),
+                "file": ContentFile(response, name=logo_filename),
             },
         )
         journal.logo = img_wagtail
