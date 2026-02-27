@@ -16,6 +16,7 @@ from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInte
 from wagtail.fields import RichTextField
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
+from wagtail.models.sites import Site
 
 from collection.models import Collection
 from core.choices import MONTHS, LICENSE_TYPES
@@ -796,6 +797,19 @@ class Journal(CommonControlField, ClusterableModel):
             .filter(collection__is_active=True)
             .values_list("collection__acron3", flat=True)
         )
+    
+    def get_url_logo(self, root_url=None):
+        if not self.logo:
+            return None
+        rendition = self.logo.get_rendition('original')
+        if root_url:
+            return f"{root_url}{rendition.url}"
+        # fallback
+        try:
+            site = Site.objects.get(is_default_site=True)
+            return f"{site.root_url}{rendition.url}"
+        except Site.DoesNotExist:
+            return rendition.url
 
     @classmethod
     def get_journal_queryset_with_active_collections(cls):
@@ -2921,64 +2935,6 @@ class DataRepository(Orderable, CommonControlField):
         null=True,
         help_text=_("Enter the URI of the data repository."),
     )
-
-
-class JournalLogo(CommonControlField):
-    journal = models.ForeignKey(
-        Journal, on_delete=models.CASCADE, null=True, blank=True
-    )
-    logo = models.ForeignKey(
-        "wagtailimages.Image",
-        on_delete=models.SET_NULL,
-        related_name="+",
-        null=True,
-        blank=True,
-    )
-
-    class Meta:
-        unique_together = [("journal", "logo")]
-
-    @classmethod
-    def get(
-        cls,
-        journal,
-        logo,
-    ):
-        if not journal and not logo:
-            raise ValueError("JournalLogo.get requires journal and logo paramenters")
-        return cls.objects.get(journal=journal, logo=logo)
-
-    @classmethod
-    def create(
-        cls,
-        journal,
-        logo,
-        user,
-    ):
-        try:
-            obj = cls(
-                journal=journal,
-                logo=logo,
-                creator=user,
-            )
-            obj.save()
-            return obj
-        except IntegrityError:
-            return cls.get(journal=journal, logo=logo)
-
-    @classmethod
-    def create_or_update(
-        cls,
-        journal,
-        logo,
-        user,
-    ):
-        try:
-            obj = cls.get(journal=journal, logo=logo)
-            obj.save()
-            return obj
-        except cls.DoesNotExist:
-            return cls.create(journal=journal, logo=logo, user=user)
 
 
 class JournalOtherTitle(CommonControlField):
