@@ -801,15 +801,18 @@ class Journal(CommonControlField, ClusterableModel):
     def get_url_logo(self, root_url=None):
         if not self.logo:
             return None
-        rendition = self.logo.get_rendition('original')
+
+        if not self.logo.file or not os.path.exists(self.logo.file.path):
+            return None
+
+        url = self.logo.file.url
         if root_url:
-            return f"{root_url}{rendition.url}"
-        # fallback
+            return f"{root_url}{url}"
         try:
             site = Site.objects.get(is_default_site=True)
-            return f"{site.root_url}{rendition.url}"
+            return f"{site.root_url}{url}"
         except Site.DoesNotExist:
-            return rendition.url
+            return url
 
     @classmethod
     def get_journal_queryset_with_active_collections(cls):
