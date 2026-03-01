@@ -20,6 +20,7 @@ from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre, generate_finger_p
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
+from packtools.sps.libs.requester import NonRetryableError
 
 from article import choices
 from article.utils.url_builder import ArticleURLBuilder
@@ -50,6 +51,11 @@ from organization.models import Organization, NormAffiliation
 from researcher.models import AffiliationMixin, CollabMixin, ResearchNameMixin
 from tracker.models import BaseEvent, EventSaveError, UnexpectedEvent
 from vocabulary.models import Keyword
+
+
+class RequestXMLException(Exception):
+    """Exceção personalizada para erros na requisição de XML"""
+    pass
 
 
 class AMArticle(BaseLegacyRecord):
@@ -1686,6 +1692,8 @@ class ArticleSource(CommonControlField):
         COMPLETED = "completed", _("Completed")
         ERROR = "error", _("Error")
         REPROCESS = "reprocess", _("Reprocess")
+        URL_ERROR = "url_error", _("URL Error")
+        XML_ERROR = "xml_error", _("XML Error")
 
     url = models.URLField(
         verbose_name=_("Article URL"),
@@ -1805,8 +1813,10 @@ class ArticleSource(CommonControlField):
             obj.am_article = am_article
             obj.status = cls.StatusChoices.PENDING
             obj.save()
+
+            detail = []
             try:
-                obj.request_xml(detail=[])
+                obj.request_xml(detail)
             except Exception as e:
                 pass
             return obj
@@ -1833,12 +1843,16 @@ class ArticleSource(CommonControlField):
                 logging.info(
                     f"updating file: {not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)}"
                 )
-                obj.request_xml()
-                obj.updated_by = user
-                obj.source_date = source_date
-                obj.am_article = am_article
-                obj.status = cls.StatusChoices.REPROCESS
-                obj.save()
+                try:
+                    obj.request_xml()
+                except RequestXMLException as e:
+                    return obj
+
+            obj.updated_by = user
+            obj.source_date = source_date
+            obj.am_article = am_article
+            obj.status = cls.StatusChoices.REPROCESS
+            obj.save()
 
         except cls.DoesNotExist:
             obj = cls.create(
@@ -1863,10 +1877,18 @@ class ArticleSource(CommonControlField):
                 detail.append("create file")
 
             logging.info(f"ArticleSource.request_xml for {self.url}")
-            xml_with_pre = list(XMLWithPre.create(uri=self.url))[0]
-            self.save_file(
-                f"{self.sps_pkg_name}.xml", xml_with_pre.tostring(pretty_print=True)
-            )
+            try:
+                xml_with_pre = list(XMLWithPre.create(path=self.file.path))[0]
+                self.save_file(
+                    f"{self.sps_pkg_name}.xml", xml_with_pre.tostring(pretty_print=True)
+                )
+            except NonRetryableError:
+                self.mark_as_url_error()
+                raise RequestXMLException("Non-retryable error while requesting XML")
+            except Exception as e:
+                logging.exception(e)
+                self.mark_as_xml_error()
+                raise RequestXMLException("Error while requesting XML")
 
     def save_file(self, filename, content):
         try:
@@ -1889,6 +1911,16 @@ class ArticleSource(CommonControlField):
     def mark_as_error(self):
         """Marca como erro"""
         self.status = self.StatusChoices.ERROR
+        self.save()
+
+    def mark_as_url_error(self):
+        """Marca como erro de URL"""
+        self.status = self.StatusChoices.URL_ERROR
+        self.save()
+
+    def mark_as_xml_error(self):
+        """Marca como erro de XML"""
+        self.status = self.StatusChoices.XML_ERROR
         self.save()
 
     def mark_for_reprocess(self):
@@ -2004,8 +2036,8 @@ class ArticleSource(CommonControlField):
 
             # Define status inicial como pendente
             self.status = ArticleSource.StatusChoices.PENDING
-
-            if not self.file.path or not os.path.isfile(self.file.path):
+            
+            if not self.file or not self.file.path or not os.path.isfile(self.file.path):
                 self.request_xml(detail, force_update)
 
             pid_v3 = self.get_or_create_pid_v3(
@@ -2016,6 +2048,14 @@ class ArticleSource(CommonControlField):
             self.detail = detail
             self.mark_as_completed()  # Marca o processamento como concluído
 
+        except RequestXMLException as e:
+            # erros específicos de XML ou URL foram tratado em request_xml, aqui só registra o erro e marca como erro
+            # Obtém informações detalhadas da exceção
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            # Adiciona informações do erro aos detalhes
+            detail.append(str({"error_type": str(type(e)), "error_message": str(e)}))
+            self.detail = detail
+            self.save()
         except Exception as e:
             # Registra a exceção no log
             logging.exception(e)
@@ -2031,9 +2071,13 @@ class ArticleSource(CommonControlField):
             self.mark_as_error()
 
     def get_or_create_pid_v3(self, user, detail, force_update, auto_solve_pid_conflict):
-        if self.pid_provider_xml and self.pid_provider_xml.xml_with_pre:
-            if not force_update:
-                return self.pid_provider_xml.v3
+        try:
+            if self.pid_provider_xml and self.pid_provider_xml.xml_with_pre:
+                if not force_update:
+                    return self.pid_provider_xml.v3
+        except Exception as e:
+            logging.info(f"Error getting PID provider XML: {e}. Try to create a new one.")
+
         try:
             detail.append("create pid_provider_xml")
 

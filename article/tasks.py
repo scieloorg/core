@@ -436,6 +436,7 @@ def task_load_article_from_pp_xml(
     try:
         user = _get_user(self.request, username, user_id)
 
+        logging.info(f"Starting task_load_article_from_pp_xml with pp_xml_id={pp_xml_id}, pid_v3={pid_v3}, user_id={user_id}, username={username}, articlemeta_export_enable={articlemeta_export_enable}, force_update={force_update}")
         pp_xml = None
         # Busca o PidProviderXML com suas relações
         if pp_xml_id:
@@ -739,7 +740,7 @@ def task_load_article_from_xml_url(
         am_article = AMArticle.create_or_update(
             pid, Collection.get(collection_acron), None, user
         )
-
+        logging.info(f"Processing XML URL: {xml_url} for PID: {pid} (AMArticle ID: {am_article.id})")
         article_source = ArticleSource.create_or_update(
             user=user,
             url=xml_url,
@@ -747,6 +748,7 @@ def task_load_article_from_xml_url(
             force_update=force_update,
             am_article=am_article,
         )
+        logging.info(f"ArticleSource complete_data: {article_source.id} and status: {article_source.status}")
         article_source.complete_data(
             user=user,
             force_update=force_update,
