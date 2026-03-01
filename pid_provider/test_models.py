@@ -802,3 +802,228 @@ class PidProviderXMLRegisterTest(TestCase):
         self.assertIsNone(result["updated"])
         self.assertIsNotNone(result["created"])
         mock_pid_request_save.assert_not_called()
+
+
+class XMLURLTest(TestCase):
+    """Tests for XMLURL model"""
+    
+    def setUp(self):
+        self.user = User.objects.create_user(username="testuser", password="testpass")
+        self.test_url = "http://example.com/article.xml"
+        self.test_pid = "ABC123XYZ456"
+        
+    def test_create_xmlurl(self):
+        """Test creating a new XMLURL instance"""
+        xmlurl = models.XMLURL.create(
+            user=self.user,
+            url=self.test_url,
+            status="pending",
+            pid=self.test_pid,
+        )
+        
+        self.assertIsNotNone(xmlurl)
+        self.assertEqual(xmlurl.url, self.test_url)
+        self.assertEqual(xmlurl.status, "pending")
+        self.assertEqual(xmlurl.pid, self.test_pid)
+        self.assertEqual(xmlurl.creator, self.user)
+        
+    def test_get_xmlurl(self):
+        """Test getting an XMLURL by URL"""
+        models.XMLURL.create(
+            user=self.user,
+            url=self.test_url,
+            status="pending",
+            pid=self.test_pid,
+        )
+        
+        xmlurl = models.XMLURL.get(url=self.test_url)
+        self.assertIsNotNone(xmlurl)
+        self.assertEqual(xmlurl.url, self.test_url)
+        
+    def test_create_or_update_existing(self):
+        """Test updating an existing XMLURL"""
+        # Create initial record
+        xmlurl = models.XMLURL.create(
+            user=self.user,
+            url=self.test_url,
+            status="pending",
+            pid=None,
+        )
+        
+        # Update it
+        updated_xmlurl = models.XMLURL.create_or_update(
+            user=self.user,
+            url=self.test_url,
+            status="success",
+            pid=self.test_pid,
+        )
+        
+        self.assertEqual(updated_xmlurl.id, xmlurl.id)
+        self.assertEqual(updated_xmlurl.status, "success")
+        self.assertEqual(updated_xmlurl.pid, self.test_pid)
+        self.assertEqual(updated_xmlurl.updated_by, self.user)
+        
+    def test_create_or_update_new(self):
+        """Test creating a new XMLURL when it doesn't exist"""
+        xmlurl = models.XMLURL.create_or_update(
+            user=self.user,
+            url=self.test_url,
+            status="pending",
+            pid=self.test_pid,
+        )
+        
+        self.assertIsNotNone(xmlurl)
+        self.assertEqual(xmlurl.url, self.test_url)
+        self.assertEqual(xmlurl.status, "pending")
+        
+    def test_save_file_with_string_content(self):
+        """Test save_file method with string XML content"""
+        xmlurl = models.XMLURL.create(
+            user=self.user,
+            url=self.test_url,
+            status="pending",
+            pid=self.test_pid,
+        )
+        
+        xml_content = "<article><title>Test Article</title></article>"
+        result = xmlurl.save_file(xml_content, filename="test.xml")
+        
+        self.assertTrue(result)
+        self.assertTrue(xmlurl.zipfile.name)
+        
+    def test_save_file_with_bytes_content(self):
+        """Test save_file method with bytes XML content"""
+        xmlurl = models.XMLURL.create(
+            user=self.user,
+            url=self.test_url,
+            status="pending",
+            pid=self.test_pid,
+        )
+        
+        xml_content = b"<article><title>Test Article</title></article>"
+        result = xmlurl.save_file(xml_content, filename="test.xml")
+        
+        self.assertTrue(result)
+        self.assertTrue(xmlurl.zipfile.name)
+        
+    def test_save_file_default_filename(self):
+        """Test save_file method with default filename"""
+        xmlurl = models.XMLURL.create(
+            user=self.user,
+            url=self.test_url,
+            status="pending",
+            pid=self.test_pid,
+        )
+        
+        xml_content = "<article><title>Test Article</title></article>"
+        result = xmlurl.save_file(xml_content)
+        
+        self.assertTrue(result)
+        self.assertTrue(xmlurl.zipfile.name)
+        
+    def test_str_method(self):
+        """Test __str__ method"""
+        xmlurl = models.XMLURL.create(
+            user=self.user,
+            url=self.test_url,
+            status="pending",
+            pid=self.test_pid,
+        )
+        
+        expected_str = f"{self.test_url} - pending"
+        self.assertEqual(str(xmlurl), expected_str)
+
+
+class BasePidProviderXMLURITest(TestCase):
+    """Tests for BasePidProvider.provide_pid_for_xml_uri method"""
+    
+    def setUp(self):
+        self.user = User.objects.create_user(username="testuser", password="testpass")
+        
+    @patch("pid_provider.base_pid_provider.XMLWithPre.create")
+    def test_provide_pid_for_xml_uri_fetch_failure(self, mock_create):
+        """Test exception type a) - Failure to obtain XML"""
+        from pid_provider.base_pid_provider import BasePidProvider
+        
+        # Mock XMLWithPre.create to raise an exception
+        mock_create.side_effect = Exception("Connection timeout")
+        
+        provider = BasePidProvider()
+        result = provider.provide_pid_for_xml_uri(
+            xml_uri="http://example.com/article.xml",
+            name="test.xml",
+            user=self.user,
+        )
+        
+        # Should return error details
+        self.assertIn("error_msg", result)
+        self.assertIn("error_type", result)
+        
+        # Should create XMLURL with failed status
+        xmlurl = models.XMLURL.get(url="http://example.com/article.xml")
+        self.assertEqual(xmlurl.status, "xml_fetch_failed")
+        self.assertIsNone(xmlurl.pid)
+        
+    @patch("pid_provider.base_pid_provider.XMLWithPre.create")
+    @patch.object(models.PidProviderXML, "register")
+    def test_provide_pid_for_xml_uri_success(self, mock_register, mock_create):
+        """Test successful processing with XMLURL creation"""
+        from pid_provider.base_pid_provider import BasePidProvider
+        
+        # Mock XMLWithPre.create
+        xml_with_pre = _get_xml_with_pre("<article><title>Test</title></article>")
+        mock_create.return_value = [xml_with_pre]
+        
+        # Mock successful registration
+        mock_register.return_value = {
+            "v3": "test_v3_pid",
+            "v2": "test_v2_pid",
+            "created": datetime.now(),
+        }
+        
+        provider = BasePidProvider()
+        result = provider.provide_pid_for_xml_uri(
+            xml_uri="http://example.com/article.xml",
+            name="test.xml",
+            user=self.user,
+        )
+        
+        # Should return success response
+        self.assertEqual(result.get("v3"), "test_v3_pid")
+        
+        # Should create XMLURL with success status
+        xmlurl = models.XMLURL.get(url="http://example.com/article.xml")
+        self.assertEqual(xmlurl.status, "success")
+        self.assertEqual(xmlurl.pid, "test_v3_pid")
+        
+    @patch("pid_provider.base_pid_provider.XMLWithPre.create")
+    @patch.object(models.PidProviderXML, "register")
+    def test_provide_pid_for_xml_uri_registration_failure(self, mock_register, mock_create):
+        """Test exception type b) - XML obtained but registration failed"""
+        from pid_provider.base_pid_provider import BasePidProvider
+        
+        # Mock XMLWithPre.create
+        xml_with_pre = _get_xml_with_pre("<article><title>Test</title></article>")
+        mock_create.return_value = [xml_with_pre]
+        
+        # Mock failed registration
+        mock_register.return_value = {
+            "error_type": "ValidationError",
+            "error_message": "Invalid XML structure",
+            "v3": "test_v3_pid",
+        }
+        
+        provider = BasePidProvider()
+        result = provider.provide_pid_for_xml_uri(
+            xml_uri="http://example.com/article2.xml",
+            name="test2.xml",
+            user=self.user,
+        )
+        
+        # Should return error response
+        self.assertIn("error_type", result)
+        
+        # Should create XMLURL with failed status and save zipfile
+        xmlurl = models.XMLURL.get(url="http://example.com/article2.xml")
+        self.assertEqual(xmlurl.status, "pid_provider_xml_failed")
+        self.assertEqual(xmlurl.pid, "test_v3_pid")
