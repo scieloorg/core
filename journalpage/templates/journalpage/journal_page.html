@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
 {% block content %}
 <section class="journalContent">
@@ -13,7 +14,7 @@ color: #7F7A71;
 }
 </style>
 <span class="page-updated-at">
-  (Atualizado: 14/07/2022)
+  ({% trans 'Atualizado' %}: 14/07/2022)
 </span>
           <div class="row">
               <div class="col-md-12 col-sm-12">
@@ -22,102 +23,102 @@ color: #7F7A71;
                     <div class="col-12 col-sm-9">
                       <div data-bs-spy="scroll" data-bs-target="#navbar-example3" data-bs-offset="-200" class="" tabindex="0">
                         <a name="about"></a>
-                        <h1 class="h4 pt-1" id="item-1">Sobre o periódico</h1>
-                        <h5 id="item-1-1">Ficha Bibliográfica</h5>
+                        <h1 class="h4 pt-1" id="item-1">{% trans 'Sobre o periódico' %}</h1>
+                        <h5 id="item-1-1">{% trans 'Ficha Bibliográfica' %}</h5>
                         <ul class="mb-4">
                           <li>
-                            <strong>Título do periódico conforme registro do ISSN:</strong>
+                            <strong>{% trans 'Título do periódico conforme registro do ISSN' %}:</strong>
                             <i>Memórias do instituto Oswaldo Cruz</i>
                           </li>
                           <li>
-                            <strong>Título abreviado:</strong>
+                            <strong>{% trans 'Título abreviado' %}:</strong>
                             <i>Mem. Inst. Oswaldo Cruz</i>
                           </li>
                           <li>
-                            <strong>Publicação de:</strong>
+                            <strong>{% trans 'Publicação de' %}:</strong>
                             <i>Fundação Oswaldo Cruz - FIOCRUZ</i>
                           </li>
                           <li>
-                            <strong>Periodicidade:</strong>
+                            <strong>{% trans 'Periodicidade' %}:</strong>
                             <i>Anual</i>
                           </li>
                           <li>
-                            <strong>Modalidade de publicação:</strong>
+                            <strong>{% trans 'Modalidade de publicação' %}:</strong>
                             <i>Contínua</i>
                           </li>
                           <li>
-                            <strong>Ano de criação do periódico:</strong>
+                            <strong>{% trans 'Ano de criação do periódico' %}:</strong>
                             <i></i>
                           </li>
                           <li>
-                            <strong>Área:</strong>
+                            <strong>{% trans 'Área' %}:</strong>
                             <i>Ciências biológicas, Ciências Da Saúde</i>
                           </li>
                           <li>
-                            <strong>Versão impressa:</strong>
+                            <strong>{% trans 'Versão impressa' %}:</strong>
                             <i>ISSN: 0074-0276</i>
                           </li>
                           <li>
-                            <strong>Versão on-line ISSN:</strong>
+                            <strong>{% trans 'Versão on-line ISSN' %}:</strong>
                             <i>1678-8060</i>
                           </li>
                         </ul>
-                        <h5 id="item-1-2">Missão</h5>
+                        <h5 id="item-1-2">{% trans 'Missão' %}</h5>
                         <!-- importada automaticamente de articlemeta -->
                         <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
                         <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
                         <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
-                        <h5 id="item-1-3">Breve Histórico</h5>
+                        <h5 id="item-1-3">{% trans 'Breve Histórico' %}</h5>
                         <!-- insira aqui um breve histórico com acontecimentos e marcos da trajetória do periódico. -->
                         <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
                         <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
                         <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
-                        <h5 id="item-1-4">Foco e escopo</h5>
+                        <h5 id="item-1-4">{% trans 'Foco e escopo' %}</h5>
                         <!-- insira aqui o foco e o escopo do periódico -->
                         <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
                         <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
                         <p>This is some placeholder content for the scrollspy page. Note that as you scroll down the page, the appropriate navigation link is highlighted. It's repeated throughout the component example. We keep adding some more example copy here to emphasize the scrolling and highlighting.</p>
-                        <h5 id="item-1-5">Contato</h5>
+                        <h5 id="item-1-5">{% trans 'Contato' %}</h5>
                         <!-- endereço completo da unidade / instituição responsável pelo periódico. Importante ter os campos: logradouro, número, cidade, estado, país, código postal, e-mail, telefone -->
                         <ul type="disc">
                           <li>
-                            <strong>Endereço completo da unidade / instituição responsável pelo periódico:</strong>
+                            <strong>{% trans 'Endereço completo da unidade / instituição responsável pelo periódico' %}:</strong>
                             <i>Inserir endereço aqui</i>
                           </li>
                           <li>
-                            <strong>Logradouro:</strong>
+                            <strong>{% trans 'Logradouro' %}:</strong>
                             <i>Inserir logradouro aqui</i>
                           </li>
                           <li>
-                            <strong>Número:</strong>
+                            <strong>{% trans 'Número' %}:</strong>
                             <i>Inserir número aqui</i>
                           </li>
                           <li>
-                            <strong>Cidade:</strong>
+                            <strong>{% trans 'Cidade' %}:</strong>
                             <i>Inserir cidade aqui</i>
                           </li>
                           <li>
-                            <strong>Estado:</strong>
+                            <strong>{% trans 'Estado' %}:</strong>
                             <i>Inserir estado aqui</i>
                           </li>
                           <li>
-                            <strong>País:</strong>
+                            <strong>{% trans 'País' %}:</strong>
                             <i>Inserir país aqui</i>
                           </li>
                           <li>
-                            <strong>Código postal:</strong>
+                            <strong>{% trans 'Código postal' %}:</strong>
                             <i>Inserir codigo postal aqui</i>
                           </li>
                           <li>
-                            <strong>E-mail:</strong>
+                            <strong>{% trans 'E-mail' %}:</strong>
                             <i>Inserir e-mail aqui</i>
                           </li>
                           <li>
-                            <strong>Telefone:</strong>
+                            <strong>{% trans 'Telefone' %}:</strong>
                             <i>Inserir telefone aqui</i>
                           </li>
                         </ul>
-                        <h5 id="item-1-6">Websites e Mídias Sociais</h5>
+                        <h5 id="item-1-6">{% trans 'Websites e Mídias Sociais' %}</h5>
                         <ul type="disc">
                           <li>
                             <a href="http://www.scielo.br/mioc">www.scielo.br/mioc</a>
@@ -138,32 +139,32 @@ color: #7F7A71;
                             <a href="#">Outros</a>
                           </li>
                         </ul>
-                        <h5 id="item-1-7">Fontes de indexação</h5>
+                        <h5 id="item-1-7">{% trans 'Fontes de indexação' %}</h5>
                         <ul type="disc">
                           <li> DOAJ </li>
                           <li> Scopus </li>
                           <li> Wos </li>
                         </ul>
-                        <h5 id="item-1-8">Patrocinadores e agências de Fomento</h5>
+                        <h5 id="item-1-8">{% trans 'Patrocinadores e agências de Fomento' %}</h5>
                         <ul type="disc">
                           <li> item 1 </li>
                           <li> item 2... </li>
                         </ul>
-                        <h5 id="item-1-9">Preservação digital</h5>
+                        <h5 id="item-1-9">{% trans 'Preservação digital' %}</h5>
                         <ul type="disc">
                           <li> item 1 </li>
                           <li> item 2... </li>
                         </ul>
                         <hr>
-                        <h4 id="item-2">Política editorial</h4>
+                        <h4 id="item-2">{% trans 'Política editorial' %}</h4>
                         <!-- journal policy -->
-                        <h5 id="item-2-1">Conformidade com a Ciência Aberta</h5>
+                        <h5 id="item-2-1">{% trans 'Conformidade com a Ciência Aberta' %}</h5>
                         <ul type="disc">
                           <li> Este periódico adota o formulário SciELO conformidade com a Ciência Aberta disponível neste link: <a href="https://wp.scielo.org/wp-content/uploads/Formulario-de-Conformidade-Ciencia-Aberta.docx">https://wp.scielo.org/wp-content/uploads/Formulario-de-Conformidade-Ciencia-Aberta.docx</a>
                           </li>
                           <li> item 2... </li>
                         </ul>
-                        <h5 id="item-2-2">Dados abertos</h5>
+                        <h5 id="item-2-2">{% trans 'Dados abertos' %}</h5>
                         <p>Campo descritivo</p>
                         <ul type="disc">
                           <li> help_text: Esta trata "do compartilhamento dos dados, códigos métodos e outros materiais utilizados e resultantes das pesquisas que geralmente ficam subjacentes nos textos dos artigos publicados pelos periódicos". Guia TOP: <a href="https://wp.scielo.org/wp-content/uploads/Guia_TOP_pt.pdf">https://wp.scielo.org/wp-content/uploads/Guia_TOP_pt.pdf</a>
@@ -176,54 +177,54 @@ color: #7F7A71;
                           <li> help text: (“Um preprint é definido como um manuscrito pronto para submissão a um periódico e que é depositado em servidores de preprints confiáveis antes ou em paralelo à submissão a um periódico. Essa prática se junta à da publicação contínua como mecanismos para acelerar a comunicação das pesquisas. Os preprints compartilham com os periódicos o ineditismo na publicação dos artigos e inibem o uso do procedimento duplo cego na avaliação dos manuscritos. O uso dos preprints é uma opção e escolha dos autores e cabe aos periódicos adaptarem suas políticas para aceitar a submissão de manuscritos previamente depositados em um servidor de preprint reconhecido pelo periódico”). </li>
                           <li> item 2... </li>
                         </ul>
-                        <h5 id="item-2-4">Peer review informado</h5>
+                        <h5 id="item-2-4">{% trans 'Peer review informado' %}</h5>
                         <!-- processo de avaliação por pares aberto -->
                         <p>Campo descritivo</p>
                         <ul type="disc">
                           <li> help text : Descrição resumida do fluxo de avaliação. Ex: Opções de abertura (“O SciELO considera três opções de avanço da abertura. A primeira é a publicação no artigo final do nome ou nomes dos editores responsáveis pela avaliação. A segunda é oferecer aos pareceristas a opção de dialogar diretamente com o autor correspondente com abertura ou não das identidades. A terceira é oferecer a opção de publicar os pareceres de aprovação de artigos com ou sem a identificação dos pareceristas. Os pareceres constituem um novo tipo de literatura na metodologia SciELO e recebem tratamento similar aos artigos de pesquisa”). </li>
                           <li> item 2... </li>
                         </ul>
-                        <h5 id="item-2-5">Ética</h5>
+                        <h5 id="item-2-5">{% trans 'Ética' %}</h5>
                         <p>Campo descritivo</p>
                         <ul type="disc">
                           <li> help text: Informar sobre boas práticas e questões éticas adotadas pelo periódico; qual comitê aprova as pesquisas; se adota, apoia ou segue o COPE. Exemplo utilizado pela Animal Reproduction: “Autores, editores e revisores devem seguir o mais alto nível de ética em toda a pesquisa, aquisição e processamento de dados, até a redação, avaliação e publicação do manuscrito. Durante as etapas de avaliação autores, revisores e editores devem comunicar o Editor-chefe sempre que observarem a existência de um potencial conflito de interesses que possa influenciar na elaboração ou avaliação de manuscritos. A Animal Reproduction considera potenciais conflitos de interesses eventos de natureza pessoal, comercial, política ou acadêmica, envolvendo ou não compensações financeiras. Os Editores da Animal Reproduction tomarão medidas ativas se qualquer suspeita ética ou de má conduta for identificada durante a avaliação ou após a publicação dos manuscritos. Sempre que necessário, as questões serão investigadas de acordo com os fluxogramas disponíveis do Comitê de Ética da Publicação (COPE) em https://publicationethics.org/.” (Recomendação Animal Reproduction) </li>
                           <li> item 2... </li>
                         </ul>
-                        <h5 id="item-2-5-1">Comitê de Ética</h5>
+                        <h5 id="item-2-5-1">{% trans 'Comitê de Ética' %}</h5>
                         <p>Os autores devem anexar uma declaração de aprovação do comitê de ética da instituição responsável por aprovar a pesquisa</p>
-                        <h5 id="item-2-5-2">Direitos Autorais</h5>
+                        <h5 id="item-2-5-2">{% trans 'Direitos Autorais' %}</h5>
                         <p>Descrever a política que o periódico utiliza para a questão dos direitos autorais. Recomendamos que esta seção esteja de acordo com as recomendações dos critérios SciELO, item 5.2.10.1.2. Direitos do autor – copyright</p>
-                        <h5 id="item-2-5-3">Propriedade Intelectual</h5>
+                        <h5 id="item-2-5-3">{% trans 'Propriedade Intelectual' %}</h5>
                         <p>Descritivo</p>
                         <ul type="disc">
                           <li>
-                            <strong>Responsabilidade do site:</strong> EX. DOAJ: Os termos de direitos autorais aplicados ao conteúdo publicado devem ser claramente declarados e separados dos termos de direitos autorais aplicados ao site.
+                            <strong>{% trans 'Responsabilidade do site' %}:</strong> EX. DOAJ: Os termos de direitos autorais aplicados ao conteúdo publicado devem ser claramente declarados e separados dos termos de direitos autorais aplicados ao site.
                           </li>
                           <li>
                             <strong>Responsabilidade do autor:</strong> A declaração de responsabilidade do autor sobre o conteúdo publicado no periódico quem detém os direitos autorais Ex. DOAJ: Os termos de direitos autorais não devem contradizer os termos de licenciamento ou os termos da política de acesso aberto.“Todos os direitos reservados” nunca é apropriado para conteúdo de acesso aberto.
                           </li>
                         </ul>
-                        <h5 id="item-2-5-4">Política de Ética e Más condutas</h5>
+                        <h5 id="item-2-5-4">{% trans 'Política de Ética e Más condutas' %}</h5>
                         <p>
-                          <strong>Política de retratação:</strong>
+                          <strong>{% trans 'Política de retratação' %}:</strong>
                         </p>
                         <ul type="disc">
                           <li> Descreva aqui como o periódico vai lidar com questões éticas e/ou que possam prejudicar a reputação do periódico. Qual a posição do periódico referente a política de retratação que o periódico adotará nos casos de má conduta. Guia de boas Práticas: <a href="https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-Praticas-para-o-Fortalecimento-da-Etica-na-Publicacao-Cientifica.pdf">https://wp.scielo.org/wp-content/uploads/Guia-de-Boas-Praticas-para-o-Fortalecimento-da-Etica-na-Publicacao-Cientifica.pdf</a>
                           </li>
                         </ul>
-                        <h5 id="item-2-5-5">Política sobre Conflito de Interesses</h5>
+                        <h5 id="item-2-5-5">{% trans 'Política sobre Conflito de Interesses' %}</h5>
                         <p>Texto descritivo</p>
                         <ul type="disc">
                           <li> item 1 </li>
                           <li> item 2... </li>
                         </ul>
-                        <h5 id="item-2-5-6">Questões de gênero</h5>
+                        <h5 id="item-2-5-6">{% trans 'Questões de gênero' %}</h5>
                         <p>Texto descritivo</p>
                         <ul type="disc">
                           <li> item 1 </li>
                           <li> item 2... </li>
                         </ul>
-                        <h5 id="item-2-6">Licença</h5>
+                        <h5 id="item-2-6">{% trans 'Licença' %}</h5>
                         <!-- informe a licença adotada pelo periódico
                                                 https://br.creativecommons.org/licencas/  -->
                         <p> Texto descritivo. Exemplo utilizado pela Animal Reproduction: “Todo o conteúdo da revista e os artigos publicados pela revista Animal Reproduction, exceto onde especificado de outra forma, estão licenciados sob a licença Creative Commons Attribution. Autores de artigos publicados pela Animal Reproduction mantêm os direitos autorais de seus trabalhos, licenciando-os sob a licença Creative Commons Attribution, que permite que os artigos sejam reutilizados e distribuídos sem restrição, desde que o trabalho original seja corretamente citado. A Animal Reproduction encoraja os Autores a autoarquivar seus manuscritos aceitos, publicando-os em blogs pessoais, repositórios institucionais e mídias sociais acadêmicas, bem como postando-os em suas mídias sociais pessoais, desde que seja incluída a citação completa à versão do website da revista.” (Recomendação Animal Reproduction) </p>
@@ -231,7 +232,7 @@ color: #7F7A71;
                           <li> lececção: <br> cc-by <br> cc-by-nc <br> cc-by-cn-nd <br>
                           </li>
                         </ul>
-                        <h5 id="item-2-7">Cobrança de taxas</h5>
+                        <h5 id="item-2-7">{% trans 'Cobrança de taxas' %}</h5>
                         <!-- Descreva aqui quaisquer cobranças aos autores relacionadas à submissão ou publicação dos trabalhos.
                                                 APC
                                                 Para publicação de artigos 
@@ -245,21 +246,21 @@ color: #7F7A71;
                           <li> item 2... </li>
                         </ul>
                         <hr>
-                        <h4 id="item-3">CORPO EDITORIAL</h4>
+                        <h4 id="item-3">{% trans 'CORPO EDITORIAL' %}</h4>
                         <!-- Usar: instituição (mais sigla se houver), cidade, estado e país, orcid, Lattes (opcional para estrangeiros) e e-mail (divulgação opcional).
                                                 Considerar os papéis descritos abaixo:-->
-                        <h5 id="item-3-1">Editor-Chefe</h5>
+                        <h5 id="item-3-1">{% trans 'Editor-Chefe' %}</h5>
                         <!-- Pode haver mais de um. Permitir adicionar novo -->
                         <ul type="disc">
                           <li> Abel L Packer, Universidade de São Paulo (USP), São Paulo, SP, Brasil Orcid <a href="https://orcid.org/0000-0001-9610-5728">0000-0001-9610-5728</a> | <a href="http://lattes.cnpq.br/6603329734556632">CV Lattes</a> | <a href="mailto:abel@scielo.org">abel@scielo.org</a>
                           </li>
                         </ul>
-                        <h5 id="item-3-2">Editor Executivo</h5>
+                        <h5 id="item-3-2">{% trans 'Editor Executivo' %}</h5>
                         <!-- Pode haver mais de um. Permitir adicionar novo -->
                         <ul type="disc">
                           <li> Fulano 1 </li>
                         </ul>
-                        <h5 id="item-3-3">Editor(es) Associados ou de Seção / Área</h5>
+                        <h5 id="item-3-3">{% trans 'Editor(es) Associados ou de Seção / Área' %}</h5>
                         <!-- Pode haver mais de um. Permitir adicionar novo -->
                         <p>
                           <strong>Área 1</strong>
@@ -292,70 +293,70 @@ color: #7F7A71;
                                         https://www.gov.br/capes/pt-br/centrais-de-conteudo/TabelaAreasConhecimento_072012_atualizada_2017_v2.pdf
                                         ">https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/avaliacao/sobre-a-avaliacao/areas-avaliacao/sobre-as-areas-de-avaliacao/sobre-as-areas-de-avaliacao#areas https://www.gov.br/capes/pt-br/centrais-de-conteudo/TabelaAreasConhecimento_072012_atualizada_2017_v2.pdf </a>
                         </p>
-                        <h5 id="item-3-4">Equipe técnica</h5>
+                        <h5 id="item-3-4">{% trans 'Equipe técnica' %}</h5>
                         <ul type="disc">
                           <li> Nome, atribuição, e-mail </li>
                         </ul>
                         <hr>
-                        <h4 id="item-4">INSTRUÇÕES PARA OS AUTORES</h4>
+                        <h4 id="item-4">{% trans 'INSTRUÇÕES PARA OS AUTORES' %}</h4>
                         <!-- O texto e o formato das instruções é livre e pode variar de acordo com o periódico ou com a área temática, entretanto, é necessário que sejam abordados os seguintes elementos:-->
-                        <h5 id="item-4-1">Tipos de documentos aceitos</h5>
+                        <h5 id="item-4-1">{% trans 'Tipos de documentos aceitos' %}</h5>
                         <!-- Pode haver mais de um. Permitir adicionar novo -->
                         <ul type="disc">
                           <li> Artigo Original </li>
                           <li> Artigo Original </li>
                           <li> Artigo Original </li>
                         </ul>
-                        <h5 id="item-4-2">Contribuição dos Autores</h5>
+                        <h5 id="item-4-2">{% trans 'Contribuição dos Autores' %}</h5>
                         <!-- Descrição de como as contribuições dos autores devem ser explicitadas.
                                                 Utiliza alguma taxonomia? Qual?
                                                 O texto do artigo apresenta as contribuições dos autores?
                                                 De preferência utilizar a estrutura de taxonomia do CREDiT https://casrai.org/credit/
                                                 -->
                         <p> Texto descritivo </p>
-                        <h5 id="item-4-3">Formato de envio dos artigos</h5>
+                        <h5 id="item-4-3">{% trans 'Formato de envio dos artigos' %}</h5>
                         <!-- Descrição de como as contribuições dos autores devem ser explicitadas.
                                                 Utiliza alguma taxonomia? Qual?
                                                 O texto do artigo apresenta as contribuições dos autores?
                                                 De preferência utilizar a estrutura de taxonomia do CREDiT https://casrai.org/credit/
                                                 -->
                         <p> Texto descritivo </p>
-                        <h5 id="item-4-4">Ativos digitais</h5>
+                        <h5 id="item-4-4">{% trans 'Ativos digitais' %}</h5>
                         <!-- Descrição de como as contribuições dos autores devem ser explicitadas.
                                                 Utiliza alguma taxonomia? Qual?
                                                 O texto do artigo apresenta as contribuições dos autores?
                                                 De preferência utilizar a estrutura de taxonomia do CREDiT https://casrai.org/credit/
                                                 -->
                         <p> Texto descritivo </p>
-                        <h5 id="item-4-5">Citações e referências</h5>
+                        <h5 id="item-4-5">{% trans 'Citações e referências' %}</h5>
                         <!-- Descrição de como as contribuições dos autores devem ser explicitadas.
                                                 Utiliza alguma taxonomia? Qual?
                                                 O texto do artigo apresenta as contribuições dos autores?
                                                 De preferência utilizar a estrutura de taxonomia do CREDiT https://casrai.org/credit/
                                                 -->
                         <p> Texto descritivo </p>
-                        <h5 id="item-4-6">Documentos Suplementares Necessários para Submissão</h5>
+                        <h5 id="item-4-6">{% trans 'Documentos Suplementares Necessários para Submissão' %}</h5>
                         <!-- Descrição de como as contribuições dos autores devem ser explicitadas.
                                                 Utiliza alguma taxonomia? Qual?
                                                 O texto do artigo apresenta as contribuições dos autores?
                                                 De preferência utilizar a estrutura de taxonomia do CREDiT https://casrai.org/credit/
                                                 -->
                         <p> Texto descritivo </p>
-                        <h5 id="item-4-7">Declaração de Financiamento</h5>
+                        <h5 id="item-4-7">{% trans 'Declaração de Financiamento' %}</h5>
                         <!-- Descrição de como as contribuições dos autores devem ser explicitadas.
                                                 Utiliza alguma taxonomia? Qual?
                                                 O texto do artigo apresenta as contribuições dos autores?
                                                 De preferência utilizar a estrutura de taxonomia do CREDiT https://casrai.org/credit/
                                                 -->
                         <p> Texto descritivo </p>
-                        <h5 id="item-4-8">Agradecimentos</h5>
+                        <h5 id="item-4-8">{% trans 'Agradecimentos' %}</h5>
                         <!-- Descrição de como as contribuições dos autores devem ser explicitadas.
                                                 Utiliza alguma taxonomia? Qual?
                                                 O texto do artigo apresenta as contribuições dos autores?
                                                 De preferência utilizar a estrutura de taxonomia do CREDiT https://casrai.org/credit/
                                                 -->
                         <p> Texto descritivo </p>
-                        <h5 id="item-4-9">Informações adicionais</h5>
+                        <h5 id="item-4-9">{% trans 'Informações adicionais' %}</h5>
                         <!-- Descrição de como as contribuições dos autores devem ser explicitadas.
                                                 Utiliza alguma taxonomia? Qual?
                                                 O texto do artigo apresenta as contribuições dos autores?
@@ -374,123 +375,123 @@ color: #7F7A71;
                       <nav id="navbar-example3" class="navbar navbar-light bg-light flex-column --align-items-stretch p-3 sticky-top">
                         <ul class="scielo__menu-contexto nav">
                           <li>
-                            <a class="active fw-bold nav-link" href="#item-1">Sobre o periódico</a>
+                            <a class="active fw-bold nav-link" href="#item-1">{% trans 'Sobre o periódico' %}</a>
                             <ul>
                               <li>
-                                <a class="nav-link" href="#item-1-1">Ficha Bibliográfica</a>
+                                <a class="nav-link" href="#item-1-1">{% trans 'Ficha Bibliográfica' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-1-2">Missão</a>
+                                <a class="nav-link" href="#item-1-2">{% trans 'Missão' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-1-3">Breve Histórico</a>
+                                <a class="nav-link" href="#item-1-3">{% trans 'Breve Histórico' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-1-4">Foco e escopo</a>
+                                <a class="nav-link" href="#item-1-4">{% trans 'Foco e escopo' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-1-5">Contato</a>
+                                <a class="nav-link" href="#item-1-5">{% trans 'Contato' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-1-6">Websites e Mídias Sociais</a>
+                                <a class="nav-link" href="#item-1-6">{% trans 'Websites e Mídias Sociais' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-1-7">Fontes de indexação</a>
+                                <a class="nav-link" href="#item-1-7">{% trans 'Fontes de indexação' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-1-8">Patrocinadores e agências de Fomento</a>
+                                <a class="nav-link" href="#item-1-8">{% trans 'Patrocinadores e agências de Fomento' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-1-9">Preservação digital</a>
+                                <a class="nav-link" href="#item-1-9">{% trans 'Preservação digital' %}</a>
                               </li>
                             </ul>
                           </li>
                           <li>
-                            <a class="fw-bold nav-link" href="#item-2" style="font-weight: bold;">Política editorial</a>
+                            <a class="fw-bold nav-link" href="#item-2" style="font-weight: bold;">{% trans 'Política editorial' %}</a>
                             <ul>
                               <li>
-                                <a class="nav-link" href="#item-2-1">Conformidade com a Ciência Aberta</a>
+                                <a class="nav-link" href="#item-2-1">{% trans 'Conformidade com a Ciência Aberta' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-2-2">Dados abertos</a>
+                                <a class="nav-link" href="#item-2-2">{% trans 'Dados abertos' %}</a>
                               </li>
                               <li>
                                 <a class="nav-link" href="#item-2-3">Preprint</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-2-4">Peer review informado</a>
+                                <a class="nav-link" href="#item-2-4">{% trans 'Peer review informado' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-2-5">Ética</a>
+                                <a class="nav-link" href="#item-2-5">{% trans 'Ética' %}</a>
                                 <ul>
                                   <li>
-                                    <a class="nav-link" href="#item-2-5-1">Comitê de Ética</a>
+                                    <a class="nav-link" href="#item-2-5-1">{% trans 'Comitê de Ética' %}</a>
                                   </li>
                                   <li>
-                                    <a class="nav-link" href="#item-2-5-2">Direitos Autorais</a>
+                                    <a class="nav-link" href="#item-2-5-2">{% trans 'Direitos Autorais' %}</a>
                                   </li>
                                   <li>
-                                    <a class="nav-link" href="#item-2-5-3">Propriedade Intelectual</a>
+                                    <a class="nav-link" href="#item-2-5-3">{% trans 'Propriedade Intelectual' %}</a>
                                   </li>
                                   <li>
-                                    <a class="nav-link" href="#item-2-5-4">Política de Ética e Más condutas</a>
+                                    <a class="nav-link" href="#item-2-5-4">{% trans 'Política de Ética e Más condutas' %}</a>
                                   </li>
                                   <li>
-                                    <a class="nav-link" href="#item-2-5-5">Política sobre Conflito de Interesses</a>
+                                    <a class="nav-link" href="#item-2-5-5">{% trans 'Política sobre Conflito de Interesses' %}</a>
                                   </li>
                                   <li>
-                                    <a class="nav-link" href="#item-2-5-6">Questões de gênero</a>
+                                    <a class="nav-link" href="#item-2-5-6">{% trans 'Questões de gênero' %}</a>
                                   </li>
                                 </ul>
                               </li>
                             </ul>
                           </li>
                           <li>
-                            <a href="#item-3" class="fw-bold nav-link">Corpo editorial</a>
+                            <a href="#item-3" class="fw-bold nav-link">{% trans 'Corpo editorial' %}</a>
                             <ul>
                               <li>
-                                <a class="nav-link" href="#item-3-1">Editor-chefe</a>
+                                <a class="nav-link" href="#item-3-1">{% trans 'Editor-chefe' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-3-2">Editor-executivo</a>
+                                <a class="nav-link" href="#item-3-2">{% trans 'Editor-executivo' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-3-3">Editor(es) Associados ou de Seção / Área</a>
+                                <a class="nav-link" href="#item-3-3">{% trans 'Editor(es) Associados ou de Seção / Área' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-3-4">Equipe técnica</a>
+                                <a class="nav-link" href="#item-3-4">{% trans 'Equipe técnica' %}</a>
                               </li>
                             </ul>
                           </li>
                           <li>
-                            <a href="#item-4" class="fw-bold nav-link">Instruções para os autores</a>
+                            <a href="#item-4" class="fw-bold nav-link">{% trans 'Instruções para os autores' %}</a>
                             <ul>
                               <li>
-                                <a class="nav-link" href="#item-4-1">Tipos de documentos aceitos</a>
+                                <a class="nav-link" href="#item-4-1">{% trans 'Tipos de documentos aceitos' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-4-2">Contribuição dos Autores</a>
+                                <a class="nav-link" href="#item-4-2">{% trans 'Contribuição dos Autores' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-4-3">Formato de envio dos artigos</a>
+                                <a class="nav-link" href="#item-4-3">{% trans 'Formato de envio dos artigos' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-4-4">Ativos digitais</a>
+                                <a class="nav-link" href="#item-4-4">{% trans 'Ativos digitais' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-4-5">Citações e referências</a>
+                                <a class="nav-link" href="#item-4-5">{% trans 'Citações e referências' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-4-6">Documentos Suplementares Necessários para Submissão</a>
+                                <a class="nav-link" href="#item-4-6">{% trans 'Documentos Suplementares Necessários para Submissão' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-4-7">Declaração de Financiamento</a>
+                                <a class="nav-link" href="#item-4-7">{% trans 'Declaração de Financiamento' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-4-8">Agradecimentos</a>
+                                <a class="nav-link" href="#item-4-8">{% trans 'Agradecimentos' %}</a>
                               </li>
                               <li>
-                                <a class="nav-link" href="#item-4-9">Informações adicionais</a>
+                                <a class="nav-link" href="#item-4-9">{% trans 'Informações adicionais' %}</a>
                               </li>
                             </ul>
                           </li>

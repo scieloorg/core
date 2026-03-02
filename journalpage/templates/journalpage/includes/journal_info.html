@@ -50,7 +50,7 @@
         <!-- Ini - Se houver um outro título-->
         {% if journal.next_title %}
           <span class="otherTitle">
-            <span>Novo título:</span>
+            <span>{% trans 'Novo título' %}:</span>
               {% if journal.url_next_journal %}
                 <a href="#" class="NewCollectionLink">
                     {{ journal.next_title }}
@@ -67,7 +67,7 @@
         <!-- Ini - Se houver um outro título antigo -->
         {% if journal.previous_journal_ref %}
           <span class="otherTitle">
-            <span>Título anterior:</span>
+            <span>{% trans 'Título anterior' %}:</span>
               {% if journal.url_previous_journal %}
                 <a href="#" class="NewCollectionLink">
                     {{ journal.previous_journal_ref }}
@@ -84,7 +84,7 @@
       <div class="col-3 pt-5">
         <div class="list-group">
             {% if journal.online_submission_url and journal.current_status == 'current' %}
-              <a class="list-group-item" href="{{ journal.online_submission_url }}" target="_blank"><span class="material-icons-outlined">launch</span> Submissão de manuscritos</a>
+              <a class="list-group-item" href="{{ journal.online_submission_url }}" target="_blank"><span class="material-icons-outlined">launch</span> {% trans 'Submissão de manuscritos' %}</a>
             {% endif %}
               <a class="list-group-item" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-1"><span class="material-icons-outlined">info</span> {% trans 'Sobre o periódico' %}</a>
               <a class="list-group-item" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-3"><span class="material-icons-outlined">people</span> {% trans 'Corpo Editorial' %}</a>
@@ -92,13 +92,13 @@
               <a class="list-group-item" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}#item-2"><span class="material-icons-outlined">article</span> {% trans 'Política editorial' %}</a>
             {% if journal.enable_contact %}
                 <a class="list-group-item" href="javascript:;" class="contact_modal_id" data-url="#">
-                  <span class="glyphBtn contact"></span> Contato
+                  <span class="glyphBtn contact"></span> {% trans 'Contato' %}
                 </a>
             {% endif %}
             {% if journal.social_networks %}
                 <a class="list-group-item" href="#followus">
                   <span class="glyphBtn otherNetworks"></span>
-                  Siga-nos
+                  {% trans 'Siga-nos' %}
                 </a>
             {% endif %}
           </ul>
