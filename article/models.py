@@ -579,17 +579,6 @@ class Article(
         self.save()  # Salvar estado final
         self.pp_xml.mark_as_done()
 
-    def complete_data(self, pp_xml, save=False):
-        if pp_xml:
-            if not self.sps_pkg_name:
-                self.sps_pkg_name = pp_xml.pkg_name
-                save = True
-            if not self.pp_xml:
-                self.pp_xml = pp_xml
-                save = True
-        if save:
-            self.save()
-
     def set_date_pub(self, dates, save=True):
         if dates:
             self.pub_date_day = dates.get("day")
@@ -913,10 +902,8 @@ class Article(
 
     def is_pp_xml_valid(self):
         if not self.pp_xml:
-            try:
-                self.pp_xml = PidProviderXML.objects.get(v3=self.pid_v3)
-            except PidProviderXML.DoesNotExist:
-                pass
+            self.pp_xml = PidProviderXML.get_by_pid_v3(pid_v3=self.pid_v3)
+
         if not self.pp_xml or not self.pp_xml.xml_with_pre:
             if self.data_status != choices.DATA_STATUS_INVALID:
                 self.data_status = choices.DATA_STATUS_INVALID
@@ -2000,7 +1987,7 @@ class ArticleSource(CommonControlField):
             return False
         try:
             if not self.pid_provider_xml.xml_with_pre:
-                logoging.info(f"Not completed: ArticleSource {self.url} has pid_provider_xml but no xml_with_pre")
+                logging.info(f"Not completed: ArticleSource {self.url} has pid_provider_xml but no xml_with_pre")
                 return False
         except Exception:
             pass
@@ -2085,10 +2072,9 @@ class ArticleSource(CommonControlField):
             v3 = response.get("v3")
             if v3:
                 # Associa o PidProviderXML ao ArticleSource
-                self.pid_provider_xml = PidProviderXML.objects.get(v3=v3)
+                self.pid_provider_xml = PidProviderXML.get_by_pid_v3(v3)
                 if not self.pid_provider_xml:
                     raise UnableToRegisterPIDError("Failed to obtain or create PID v3")
-
                 detail.append("set pid_provider_xml")
             else:
                 # Registra erro se não conseguiu obter v3
