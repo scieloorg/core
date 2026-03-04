@@ -1888,10 +1888,14 @@ class ArticleSource(CommonControlField):
             self.save_file(
                 f"{xml_with_pre.sps_pkg_name}.xml", xml_with_pre.tostring(pretty_print=True)
             )
-        except NonRetryableError:
-            raise RequestXMLException("Non-retryable error while requesting XML")
+        except NonRetryableError as e:
+            raise RequestXMLException(
+                f"Non-retryable error while requesting XML: {e}"
+            ) from e
         except Exception as e:
-            raise XMLException("Error while requesting XML")
+            raise XMLException(
+                f"Error while requesting XML: {e}"
+            ) from e
 
     def save_file(self, filename, content):
         try:
