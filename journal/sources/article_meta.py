@@ -42,23 +42,22 @@ def _fetch_and_store_journal(collection, issn, obj_collection, user):
 
 def process_journal_article_meta(collection, limit, user, journal_issn_list=None):
     obj_collection = Collection.objects.get(acron3=collection)
-    if journal_issn_list:
+    if journal_issn_list is not None:
         for issn in journal_issn_list:
             _fetch_and_store_journal(collection, issn, obj_collection, user)
-    else:
-        offset = 0
-        data = _get_collection_journals(collection=collection, limit=limit)
-        total_limit = data["meta"]["total"]
-        while offset < total_limit:
-            for journal in data["objects"]:
-                _fetch_and_store_journal(collection, journal["code"], obj_collection, user)
+        return
 
-            offset += 10
-            data = _get_collection_journals(
-                collection=collection, limit=limit, offset=offset
-            )
+    offset = 0
+    data = _get_collection_journals(collection=collection, limit=limit)
+    total_limit = data["meta"]["total"]
+    while offset < total_limit:
+        for journal in data["objects"]:
+            _fetch_and_store_journal(collection, journal["code"], obj_collection, user)
 
-
+        offset += 10
+        data = _get_collection_journals(
+            collection=collection, limit=limit, offset=offset
+        )
 def _register_journal_data(user, collection_acron3, journal_issn_list=None):
     journals = AMJournal.objects.filter(collection__acron3=collection_acron3)
     if journal_issn_list:
