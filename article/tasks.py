@@ -167,15 +167,15 @@ def task_select_articles_to_complete_data(
         
         for article in Article.objects.filter(**article_filters).iterator():
             if not article.pp_xml:
-                try:
-                    article.pp_xml = PidProviderXML.objects.get(v3=article.pid_v3)
+                article.pp_xml = PidProviderXML.get_by_pid_v3(pid_v3=article.pid_v3)
+                if article.pp_xml:
                     article.save(update_fields=['pp_xml'])
-                except PidProviderXML.DoesNotExist:
+                else:
                     articles_skipped += 1
                     continue
             
             task_load_article_from_pp_xml.delay(
-                pp_xml=article.pp_xml.id,
+                pp_xml_id=article.pp_xml.id,
                 pid_v3=article.pid_v3,
                 user_id=user_id or user.id,
                 username=username or user.username,
