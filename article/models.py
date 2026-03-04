@@ -57,6 +57,13 @@ class RequestXMLException(Exception):
     """Exceção personalizada para erros na requisição de XML"""
     pass
 
+class XMLException(Exception):
+    """Exceção personalizada para erros na requisição de XML"""
+    pass
+
+class UnableToRegisterPIDError(Exception):
+    """Exceção personalizada para erros ao registrar PID"""
+    pass
 
 class AMArticle(BaseLegacyRecord):
     """
@@ -1801,7 +1808,7 @@ class ArticleSource(CommonControlField):
         raise ValueError("ArticleSource.get requires url")
 
     @classmethod
-    def create(cls, user, url=None, source_date=None, am_article=None):
+    def create(cls, user, url=None, source_date=None, am_article=None, auto_solve_pid_conflict=False, force_update=False):
         if not url:
             raise ValueError("ArticleSource.create requires url")
 
@@ -1812,13 +1819,7 @@ class ArticleSource(CommonControlField):
             obj.source_date = source_date
             obj.am_article = am_article
             obj.status = cls.StatusChoices.PENDING
-            obj.save()
-
-            detail = []
-            try:
-                obj.request_xml(detail)
-            except Exception as e:
-                pass
+            obj.add_pid_provider(user, force_update, auto_solve_pid_conflict=auto_solve_pid_conflict)
             return obj
         except IntegrityError:
             return cls.get(url=url)
@@ -1843,10 +1844,7 @@ class ArticleSource(CommonControlField):
                 logging.info(
                     f"updating file: {not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)}"
                 )
-                try:
-                    obj.request_xml()
-                except RequestXMLException as e:
-                    return obj
+                obj.add_pid_provider(user, force_update, auto_solve_pid_conflict=auto_solve_pid_conflict)
 
             obj.updated_by = user
             obj.source_date = source_date
@@ -1861,34 +1859,44 @@ class ArticleSource(CommonControlField):
         return obj
 
     @cached_property
+    def xml_with_pre(self):
+        if self.pid_provider_xml:
+            try:
+                return self.pid_provider_xml.xml_with_pre
+            except AttributeError:
+                pass
+        if self.file and self.file.path and os.path.isfile(self.file.path):
+            try:
+                return XMLWithPre.from_file(self.file.path)
+            except Exception as e:
+                pass
+        if self.url:
+            try:
+                return list(XMLWithPre.create(uri=self.url))[0]
+            except Exception as e:
+                pass
+
+    @cached_property
     def sps_pkg_name(self):
         try:
-            xml_with_pre = list(XMLWithPre.create(path=self.file.path))[0]
-        except:
-            xml_with_pre = list(XMLWithPre.create(uri=self.url))[0]
-        return xml_with_pre.sps_pkg_name
+            return self.xml_with_pre.sps_pkg_name
+        except Exception:
+            pass
 
-    def request_xml(self, detail=None, force_update=False):
+    def request_xml(self, detail):
         if not self.url:
             raise ValueError("URL is required")
 
-        if force_update or not self.is_completed:
-            if detail:
-                detail.append("create file")
-
-            logging.info(f"ArticleSource.request_xml for {self.url}")
-            try:
-                xml_with_pre = list(XMLWithPre.create(path=self.file.path))[0]
-                self.save_file(
-                    f"{self.sps_pkg_name}.xml", xml_with_pre.tostring(pretty_print=True)
-                )
-            except NonRetryableError:
-                self.mark_as_url_error()
-                raise RequestXMLException("Non-retryable error while requesting XML")
-            except Exception as e:
-                logging.exception(e)
-                self.mark_as_xml_error()
-                raise RequestXMLException("Error while requesting XML")
+        logging.info(f"ArticleSource.request_xml for {self.url}")
+        try:
+            xml_with_pre = list(XMLWithPre.create(uri=self.url))[0]
+            self.save_file(
+                f"{xml_with_pre.sps_pkg_name}.xml", xml_with_pre.tostring(pretty_print=True)
+            )
+        except NonRetryableError:
+            raise RequestXMLException("Non-retryable error while requesting XML")
+        except Exception as e:
+            raise XMLException("Error while requesting XML")
 
     def save_file(self, filename, content):
         try:
@@ -1990,8 +1998,11 @@ class ArticleSource(CommonControlField):
     def is_completed(self):
         if not self.pid_provider_xml:
             return False
-        if not self.pid_provider_xml.xml_with_pre:
-            return False
+        try:
+            if not self.pid_provider_xml.xml_with_pre:
+                return False
+        except Exception:
+            pass
         if not self.am_article:
             return False
         if not self.file:
@@ -2003,50 +2014,26 @@ class ArticleSource(CommonControlField):
             self.save()
         return True
 
-    def complete_data(self, user, force_update=False, auto_solve_pid_conflict=False):
-        """
-        Processa um arquivo XML de artigo científico, criando ou atualizando os dados necessários.
-
-        Este método gerencia todo o fluxo de processamento de um XML de artigo, incluindo:
-        - Download/criação do arquivo XML se necessário
-        - Geração de PID (Persistent Identifier) através do PidProvider
-
-        Args:
-            user: Usuário responsável pelo processamento
-            force_update (bool): Se True, força a atualização mesmo se os dados já existem
-            auto_solve_pid_conflict (bool): Se True, resolve automaticamente conflitos de PID
-
-        Raises:
-            ValueError: Se a URL não estiver definida
-
-        Note:
-            O método atualiza os seguintes atributos do objeto:
-            - status: Estado do processamento (PENDING, COMPLETED, ERROR)
-            - file: Arquivo XML baixado/criado
-            - pid_provider_xml: Objeto PidProviderXML associado
-            - detail: Lista com detalhes do processamento
-        """
-
+    def add_pid_provider(self, user, force_update=False, auto_solve_pid_conflict=False):
         try:
             # Lista para armazenar detalhes do processamento
             detail = []
-            if not force_update:
-                if self.is_completed:
-                    return
-
-            # Define status inicial como pendente
             self.status = ArticleSource.StatusChoices.PENDING
-            
-            if not self.file or not self.file.path or not os.path.isfile(self.file.path):
-                self.request_xml(detail, force_update)
-
-            pid_v3 = self.get_or_create_pid_v3(
+            self.request_xml(detail)
+            self.request_pid(
                 user, detail, force_update, auto_solve_pid_conflict
             )
-            if not pid_v3:
-                raise ValueError("Failed to obtain or create PID v3")
             self.detail = detail
             self.mark_as_completed()  # Marca o processamento como concluído
+
+        except XMLException as e:
+            # erros específicos de XML ou URL foram tratado em request_xml, aqui só registra o erro e marca como erro
+            # Obtém informações detalhadas da exceção
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            # Adiciona informações do erro aos detalhes
+            detail.append(str({"error_type": str(type(e)), "error_message": str(e)}))
+            self.detail = detail
+            self.mark_as_xml_error()
 
         except RequestXMLException as e:
             # erros específicos de XML ou URL foram tratado em request_xml, aqui só registra o erro e marca como erro
@@ -2055,29 +2042,17 @@ class ArticleSource(CommonControlField):
             # Adiciona informações do erro aos detalhes
             detail.append(str({"error_type": str(type(e)), "error_message": str(e)}))
             self.detail = detail
-            self.save()
+            self.mark_as_url_error()
+
         except Exception as e:
-            # Registra a exceção no log
             logging.exception(e)
-
-            # Obtém informações detalhadas da exceção
             exc_type, exc_value, exc_traceback = sys.exc_info()
-
             # Adiciona informações do erro aos detalhes
             detail.append(str({"error_type": str(type(e)), "error_message": str(e)}))
             self.detail = detail
-
-            # Marca o processamento como erro
             self.mark_as_error()
 
-    def get_or_create_pid_v3(self, user, detail, force_update, auto_solve_pid_conflict):
-        try:
-            if self.pid_provider_xml and self.pid_provider_xml.xml_with_pre:
-                if not force_update:
-                    return self.pid_provider_xml.v3
-        except Exception as e:
-            logging.info(f"Error getting PID provider XML: {e}. Try to create a new one.")
-
+    def request_pid(self, user, detail, force_update, auto_solve_pid_conflict):
         try:
             detail.append("create pid_provider_xml")
 
@@ -2099,12 +2074,13 @@ class ArticleSource(CommonControlField):
             # Obtém a primeira resposta (assumindo apenas uma)
             response = list(responses)[0]
             v3 = response.get("v3")
-
             if v3:
                 # Associa o PidProviderXML ao ArticleSource
                 self.pid_provider_xml = PidProviderXML.objects.get(v3=v3)
+                if not self.pid_provider_xml:
+                    raise UnableToRegisterPIDError("Failed to obtain or create PID v3")
+
                 detail.append("set pid_provider_xml")
-                return v3
             else:
                 # Registra erro se não conseguiu obter v3
                 detail.append(str(response))
@@ -2115,14 +2091,13 @@ class ArticleSource(CommonControlField):
                 exception=e,
                 exc_traceback=exc_traceback,
                 detail=dict(
-                    function="article.models.ArticleSource.get_or_create_pid_v3",
+                    function="article.models.ArticleSource.request_pid",
                     article_source_id=self.id,
-                    sps_pkg_name=self.sps_pkg_name,
                     url=self.url,
                 ),
             )
             detail.append(str(unexpected_event.data))
-            raise e
+            raise UnableToRegisterPIDError(str(e))
 
 
 class ArticleAvailability(CommonControlField):
