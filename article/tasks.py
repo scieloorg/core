@@ -444,12 +444,14 @@ def task_load_article_from_pp_xml(
             )
 
         # Carrega o artigo do arquivo XML
+        logging.info(f"Loading article from PidProviderXML with ID: {pp_xml_id}")
         article = load_article(
             user,
             v3=pid_v3,
             pp_xml=pp_xml,
         )
         pp_xml.collections.set(article.collections)
+        logging.info(f"Article loaded successfully with PID v3: {article.pid_v3}")
 
         # Exporta para ArticleMeta se solicitado
         if articlemeta_export_enable:
@@ -752,12 +754,11 @@ def task_load_article_from_xml_url(
             return
 
         # Processa o XML
-        task_load_article_from_pp_xml.delay(
+        task_load_article_from_pp_xml(
             pp_xml_id=article_source.pid_provider_xml.id,
             user_id=user_id or user.id,
             username=username or user.username,
             force_update=force_update,
-            auto_solve_pid_conflict=auto_solve_pid_conflict,
         )
 
     except Exception as e:
@@ -841,7 +842,6 @@ def task_select_articles_to_load_from_article_source(
                     user_id=user_id or user.id,
                     username=username or user.username,
                     force_update=force_update,
-                    auto_solve_pid_conflict=auto_solve_pid_conflict,
                 )
             except Exception as exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -1342,6 +1342,7 @@ def task_check_article_availability(
         article = Article.objects.get(id=article_id)
         article.check_availability(user)
     except Exception as exception:
+        logging.exception(f"Error processing article ID {article_id}: {str(exception)}")
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
             exception=exception,
