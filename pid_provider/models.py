@@ -1272,14 +1272,16 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     @classmethod
     def get_by_pid_v3(cls, pid_v3, partial_pid_v2=None, pid_v2=None):
         params = {}
+        if pid_v3:
+            params["v3"] = pid_v3
         if pid_v2:
             params["v2"] = pid_v2
         if partial_pid_v2:
             params["v2__contains"] = partial_pid_v2
         try:
-            return cls.objects.get(v3=pid_v3, **params)
+            return cls.objects.get(**params)
         except cls.MultipleObjectsReturned as e:
-            return cls.objects.filter(v3=pid_v3, **params).order_by("-updated").first()
+            return cls.objects.filter(**params).order_by("-updated").first()
 
     @classmethod
     @profile_classmethod
