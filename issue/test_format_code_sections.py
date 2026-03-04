@@ -123,4 +123,4 @@ class TestFormatCodeSections(SimpleTestCase):
 
         formatter.obj.table_of_contents.all.assert_called_once()
         # Confirm the old attribute (code_sections) was never called as a manager
-        formatter.obj.code_sections.assert_not_called()
+        formatter.obj.code_sections.all.assert_not_called()
