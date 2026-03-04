@@ -29,30 +29,34 @@ def _get_collection_journals(offset=None, limit=None, collection=None):
     return data
 
 
-def process_journal_article_meta(collection, limit, user, journal_issn_list=None):
-    offset = 0
-    journal_issn_set = set(journal_issn_list) if journal_issn_list else None
-    data = _get_collection_journals(collection=collection, limit=limit)
-    total_limit = data["meta"]["total"]
-    while offset < total_limit:
-        for journal in data["objects"]:
-            issn = journal["code"]
-            if journal_issn_set and issn not in journal_issn_set:
-                continue
-            url_journal = f"https://articlemeta.scielo.org/api/v1/journal/?collection={collection}&issn={issn}"
-            data_journal = fetch_data(url_journal, json=True, timeout=30, verify=False)
-            obj_collection = Collection.objects.get(acron3=collection)
-            AMJournal.create_or_update(
-                pid=issn,
-                collection=obj_collection,
-                data=data_journal,
-                user=user,
-            )
+def _fetch_and_store_journal(collection, issn, obj_collection, user):
+    url_journal = f"https://articlemeta.scielo.org/api/v1/journal/?collection={collection}&issn={issn}"
+    data_journal = fetch_data(url_journal, json=True, timeout=30, verify=False)
+    AMJournal.create_or_update(
+        pid=issn,
+        collection=obj_collection,
+        data=data_journal,
+        user=user,
+    )
 
-        offset += 10
-        data = _get_collection_journals(
-            collection=collection, limit=limit, offset=offset
-        )
+
+def process_journal_article_meta(collection, limit, user, journal_issn_list=None):
+    obj_collection = Collection.objects.get(acron3=collection)
+    if journal_issn_list:
+        for issn in journal_issn_list:
+            _fetch_and_store_journal(collection, issn, obj_collection, user)
+    else:
+        offset = 0
+        data = _get_collection_journals(collection=collection, limit=limit)
+        total_limit = data["meta"]["total"]
+        while offset < total_limit:
+            for journal in data["objects"]:
+                _fetch_and_store_journal(collection, journal["code"], obj_collection, user)
+
+            offset += 10
+            data = _get_collection_journals(
+                collection=collection, limit=limit, offset=offset
+            )
 
 
 def _register_journal_data(user, collection_acron3, journal_issn_list=None):
