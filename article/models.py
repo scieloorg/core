@@ -1826,7 +1826,7 @@ class ArticleSource(CommonControlField):
 
     @classmethod
     def create_or_update(
-        cls, user, url=None, source_date=None, am_article=None, force_update=None
+        cls, user, url=None, source_date=None, am_article=None, force_update=None,auto_solve_pid_conflict=False
     ):
         try:
             logging.info(
@@ -2019,12 +2019,16 @@ class ArticleSource(CommonControlField):
             # Lista para armazenar detalhes do processamento
             detail = []
             self.status = ArticleSource.StatusChoices.PENDING
+            logging.info(f"Starting PID provider process for {self.url}")
             self.request_xml(detail)
+            logging.info(f"XML requested successfully for {self.url}")
             self.request_pid(
                 user, detail, force_update, auto_solve_pid_conflict
             )
+            logging.info(f"PID requested successfully for {self.pid_provider_xml}")
             self.detail = detail
             self.mark_as_completed()  # Marca o processamento como concluído
+            logging.info(f"ArticleSource {self.status}")
 
         except XMLException as e:
             # erros específicos de XML ou URL foram tratado em request_xml, aqui só registra o erro e marca como erro
@@ -2034,7 +2038,7 @@ class ArticleSource(CommonControlField):
             detail.append(str({"error_type": str(type(e)), "error_message": str(e)}))
             self.detail = detail
             self.mark_as_xml_error()
-
+            logging.info(f"ArticleSource {self.url} marked as XML error")
         except RequestXMLException as e:
             # erros específicos de XML ou URL foram tratado em request_xml, aqui só registra o erro e marca como erro
             # Obtém informações detalhadas da exceção
@@ -2043,7 +2047,7 @@ class ArticleSource(CommonControlField):
             detail.append(str({"error_type": str(type(e)), "error_message": str(e)}))
             self.detail = detail
             self.mark_as_url_error()
-
+            logging.info(f"ArticleSource {self.url} marked as URL error")
         except Exception as e:
             logging.exception(e)
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -2359,6 +2363,25 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
             models.Index(fields=["normalized"]),
             models.Index(fields=["article", "organization"]),
         ]
+
+    def autocomplete_label(self):
+        if self.organization:
+            return f"{self.article} - {self.organization}"
+        if self.raw_institution_name:
+            return f"{self.article} - {self.raw_institution_name}"
+        if self.raw_text:
+            return f"{self.article} - {self.raw_text}"
+        return f"{self.article} - Affiliation"
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return ArticleAffiliation.objects.filter(
+            Q(raw_text__icontains=search_term)
+            | Q(raw_institution_name__icontains=search_term)
+            | Q(raw_country_name__icontains=search_term)
+            | Q(raw_state_name__icontains=search_term)
+            | Q(raw_city_name__icontains=search_term)
+        )
 
     def __str__(self):
         if self.organization:
