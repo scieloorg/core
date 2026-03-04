@@ -166,17 +166,16 @@ def task_select_articles_to_complete_data(
         articles_skipped = 0
         
         for article in Article.objects.filter(**article_filters).iterator():
-            if not article.pp_xml_id:
+            if not article.pp_xml:
                 try:
-                    pp_xml = PidProviderXML.objects.get(v3=article.pid_v3)
-                    article.pp_xml = pp_xml
+                    article.pp_xml = PidProviderXML.objects.get(v3=article.pid_v3)
                     article.save(update_fields=['pp_xml'])
                 except PidProviderXML.DoesNotExist:
                     articles_skipped += 1
                     continue
             
             task_load_article_from_pp_xml.delay(
-                pp_xml_id=article.pp_xml_id,
+                pp_xml=article.pp_xml.id,
                 pid_v3=article.pid_v3,
                 user_id=user_id or user.id,
                 username=username or user.username,
@@ -747,14 +746,8 @@ def task_load_article_from_xml_url(
             source_date=source_date,
             force_update=force_update,
             am_article=am_article,
-        )
-        logging.info(f"ArticleSource complete_data: {article_source.id} and status: {article_source.status}")
-        article_source.complete_data(
-            user=user,
-            force_update=force_update,
             auto_solve_pid_conflict=auto_solve_pid_conflict,
         )
-
         if article_source.status != ArticleSource.StatusChoices.COMPLETED:
             return
 
@@ -764,6 +757,7 @@ def task_load_article_from_xml_url(
             user_id=user_id or user.id,
             username=username or user.username,
             force_update=force_update,
+            auto_solve_pid_conflict=auto_solve_pid_conflict,
         )
 
     except Exception as e:
@@ -834,7 +828,7 @@ def task_select_articles_to_load_from_article_source(
             
             try:
                 # Processa o XML
-                article_source.complete_data(
+                article_source.add_pid_provider(
                     user=user,
                     force_update=force_update,
                     auto_solve_pid_conflict=auto_solve_pid_conflict,
@@ -847,6 +841,7 @@ def task_select_articles_to_load_from_article_source(
                     user_id=user_id or user.id,
                     username=username or user.username,
                     force_update=force_update,
+                    auto_solve_pid_conflict=auto_solve_pid_conflict,
                 )
             except Exception as exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
