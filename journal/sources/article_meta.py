@@ -54,14 +54,16 @@ def process_journal_article_meta(collection, limit, user, journal_issn_list=None
         for journal in data["objects"]:
             _fetch_and_store_journal(collection, journal["code"], obj_collection, user)
 
-        offset += 10
+        offset += limit or 10
         data = _get_collection_journals(
             collection=collection, limit=limit, offset=offset
         )
+
+
 def _register_journal_data(user, collection_acron3, journal_issn_list=None):
     journals = AMJournal.objects.filter(collection__acron3=collection_acron3)
     if journal_issn_list:
-        journals = journals.filter(scielo_issn__in=journal_issn_list)
+        journals = journals.filter(pid__in=journal_issn_list)
     for journal_am in journals:
         try:
             journal_dict = rename_dictionary_keys(

@@ -51,6 +51,10 @@ def load_journal_from_article_meta(
     journal_issn_list=None,
 ):
     try:
+        if journal_issn_list and not collection_acron:
+            raise ValueError(
+                "collection_acron is required when journal_issn_list is provided"
+            )
         if collection_acron:
             items = Collection.objects.filter(
                 collection_type="journals", acron3=collection_acron
