@@ -42,7 +42,7 @@ def _fetch_and_store_journal(collection, issn, obj_collection, user):
 
 def process_journal_article_meta(collection, limit, user, journal_issn_list=None):
     obj_collection = Collection.objects.get(acron3=collection)
-    if journal_issn_list is not None:
+    if journal_issn_list:
         for issn in journal_issn_list:
             _fetch_and_store_journal(collection, issn, obj_collection, user)
         return
