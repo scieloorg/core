@@ -353,7 +353,7 @@ class ArticlemetaIssueFormatter:
 
     def _format_code_sections(self):
         data = []
-        for toc in self.obj.table_of_contents.all():
+        for toc in self.obj.table_of_contents.select_related("journal_toc__language").all():
             journal_toc = toc.journal_toc
             code = getattr(journal_toc, "code", None)
             lang = getattr(journal_toc.language, "code2", None) if journal_toc.language else None

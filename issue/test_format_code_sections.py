@@ -23,7 +23,7 @@ def _make_formatter(toc_items):
     formatter.result["issue"] = {}
 
     mock_obj = MagicMock()
-    mock_obj.table_of_contents.all.return_value = toc_items
+    mock_obj.table_of_contents.select_related.return_value.all.return_value = toc_items
     formatter.obj = mock_obj
     return formatter
 
@@ -121,6 +121,7 @@ class TestFormatCodeSections(SimpleTestCase):
         formatter = _make_formatter([])
         formatter._format_code_sections()
 
-        formatter.obj.table_of_contents.all.assert_called_once()
+        formatter.obj.table_of_contents.select_related.assert_called_once_with("journal_toc__language")
+        formatter.obj.table_of_contents.select_related.return_value.all.assert_called_once()
         # Confirm the old attribute (code_sections) was never called as a manager
         formatter.obj.code_sections.all.assert_not_called()
