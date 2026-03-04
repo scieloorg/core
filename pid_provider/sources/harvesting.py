@@ -34,14 +34,9 @@ def provide_pid_for_opac_and_am_xml(
         name = f"{pid_v3 or pid_v2 or datetime.now().isoformat().replace(':', '')}.xml"
 
         if not force_update:
-            try:
-                if pid_v3:
-                    pid_xml = PidProviderXML.objects.get(v3=pid_v3)
-                if pid_v2:
-                    pid_xml = PidProviderXML.objects.get(v2=pid_v2)
+            pid_xml = PidProviderXML.get_by_pid_v3(pid_v3=pid_v3, pid_v2=pid_v2)
+            if pid_xml:
                 return pid_xml.data
-            except PidProviderXML.DoesNotExist:
-                pass
 
         detail = dict(
             pid_v2=pid_v2,
