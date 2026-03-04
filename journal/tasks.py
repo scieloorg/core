@@ -42,7 +42,13 @@ def load_journal_from_classic_website(self, username=None, user_id=None):
 
 @celery_app.task(bind=True)
 def load_journal_from_article_meta(
-    self, username=None, user_id=None, limit=None, collection_acron=None, load_data=None
+    self,
+    username=None,
+    user_id=None,
+    limit=None,
+    collection_acron=None,
+    load_data=None,
+    journal_issn_list=None,
 ):
     try:
         if collection_acron:
@@ -60,6 +66,7 @@ def load_journal_from_article_meta(
                     collection_acron=item.acron3,
                     limit=limit,
                     load_data=load_data,
+                    journal_issn_list=journal_issn_list,
                 )
             )
     except Exception as e:
@@ -81,6 +88,7 @@ def load_journal_from_article_meta_for_one_collection(
     collection_acron=None,
     limit=None,
     load_data=None,
+    journal_issn_list=None,
 ):
     user = _get_user(self.request, username=username, user_id=user_id)
     try:
@@ -90,10 +98,17 @@ def load_journal_from_article_meta_for_one_collection(
         # Carrega os dados em Journal a partir de AMJournal.
         if load_data:
             process_journal_article_meta(
-                collection=collection_acron, limit=limit, user=user
+                collection=collection_acron,
+                limit=limit,
+                user=user,
+                journal_issn_list=journal_issn_list,
             )
         else:
-            _register_journal_data(user=user, collection_acron3=collection_acron)
+            _register_journal_data(
+                user=user,
+                collection_acron3=collection_acron,
+                journal_issn_list=journal_issn_list,
+            )
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(

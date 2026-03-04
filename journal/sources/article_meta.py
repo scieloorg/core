@@ -29,13 +29,16 @@ def _get_collection_journals(offset=None, limit=None, collection=None):
     return data
 
 
-def process_journal_article_meta(collection, limit, user):
+def process_journal_article_meta(collection, limit, user, journal_issn_list=None):
     offset = 0
+    journal_issn_set = set(journal_issn_list) if journal_issn_list else None
     data = _get_collection_journals(collection=collection, limit=limit)
     total_limit = data["meta"]["total"]
     while offset < total_limit:
         for journal in data["objects"]:
             issn = journal["code"]
+            if journal_issn_set and issn not in journal_issn_set:
+                continue
             url_journal = f"https://articlemeta.scielo.org/api/v1/journal/?collection={collection}&issn={issn}"
             data_journal = fetch_data(url_journal, json=True, timeout=30, verify=False)
             obj_collection = Collection.objects.get(acron3=collection)
@@ -52,8 +55,10 @@ def process_journal_article_meta(collection, limit, user):
         )
 
 
-def _register_journal_data(user, collection_acron3):
+def _register_journal_data(user, collection_acron3, journal_issn_list=None):
     journals = AMJournal.objects.filter(collection__acron3=collection_acron3)
+    if journal_issn_list:
+        journals = journals.filter(scielo_issn__in=journal_issn_list)
     for journal_am in journals:
         try:
             journal_dict = rename_dictionary_keys(
