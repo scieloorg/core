@@ -24,17 +24,28 @@ from packtools.sps.models.v2.related_articles import RelatedArticles
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article import choices
-from article.models import Article, ArticleFunding, DocumentAbstract, DocumentTitle, DataAvailabilityStatement
-from core.models import Language
+from article.models import (
+    Article,
+    ArticleAffiliation,
+    ArticleFunding,
+    ContribCollab,
+    ContribPerson,
+    DataAvailabilityStatement,
+    DocumentAbstract,
+    DocumentTitle,
+)
+from core.models import Language, LicenseStatement, License
 from core.utils.extracts_normalized_email import extracts_normalized_email
 from doi.models import DOI
 from institution.models import Sponsor
-from issue.models import Issue, TableOfContents
+from issue.models import Issue, TableOfContents, AMIssue
+from issue.articlemeta.loader import load_issue_sections
 from journal.models import Journal
 from location.models import Location
 from pid_provider.choices import PPXML_STATUS_DONE, PPXML_STATUS_INVALID
 from pid_provider.models import PidProviderXML
-from researcher.models import Affiliation, InstitutionalAuthor, Researcher
+# Researcher no longer used - replaced by ContribPerson
+# from researcher.models import Affiliation, Researcher
 from tracker.models import UnexpectedEvent
 from vocabulary.models import Keyword
 
@@ -174,7 +185,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         # CAMPOS SIMPLES EXTRAÍDOS DO XML
         set_pids(xmltree=xmltree, article=article, errors=errors)
         set_date_pub(xmltree=xmltree, article=article, errors=errors)
-        set_license(xmltree=xmltree, article=article, errors=errors)
+        set_license(user, xmltree=xmltree, article=article, errors=errors)
         set_first_last_page_elocation_id(
             xmltree=xmltree, article=article, errors=errors
         )
@@ -234,15 +245,14 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
                 xmltree=xmltree, user=user, item=pid_v3, errors=errors
             )
         )
-        article.researchers.set(
-            create_or_update_researchers(
-                xmltree=xmltree, user=user, item=pid_v3, errors=errors
-            )
+        # Create contrib_persons (replaces researchers)
+        # Clear existing contrib_persons to avoid duplication on reload
+        article.contrib_persons.all().delete()
+        create_or_update_contrib_persons(
+            xmltree=xmltree, article=article, user=user, item=pid_v3, errors=errors
         )
-        article.collab.set(
-            get_or_create_institution_authors(
-                xmltree=xmltree, user=user, item=pid_v3, errors=errors
-            )
+        create_or_update_contrib_collabs(
+            xmltree=xmltree, article=article, user=user, item=pid_v3, errors=errors
         )
         article.fundings.set(
             get_or_create_fundings(
@@ -299,32 +309,32 @@ def add_peer_review_dates(xmltree, article, errors):
     """
     try:
         dates = ArticleDates(xmltree=xmltree)
-        
+
         # Obter estatísticas completas de peer review
         peer_review_stats = dates.get_peer_reviewed_stats(serialize_dates=True)
-        
+
         # Armazenar estatísticas completas em JSON
         article.peer_review_stats = peer_review_stats
-        
+
         # Extrair datas individuais em formato ISO
         article.preprint_dateiso = peer_review_stats.get("preprint_date")
-        article.received_dateiso = peer_review_stats.get("received_date") 
+        article.received_dateiso = peer_review_stats.get("received_date")
         article.accepted_dateiso = peer_review_stats.get("accepted_date")
-        
+
         # Extrair intervalos em dias
         article.days_preprint_to_received = peer_review_stats.get("days_from_preprint_to_received")
         article.days_received_to_accepted = peer_review_stats.get("days_from_received_to_accepted")
         article.days_accepted_to_published = peer_review_stats.get("days_from_accepted_to_published")
         article.days_preprint_to_published = peer_review_stats.get("days_from_preprint_to_published")
         article.days_receive_to_published = peer_review_stats.get("days_from_received_to_published")
-        
+
         # Extrair flags de estimativa
         article.days_preprint_to_received_estimated = peer_review_stats.get("estimated_days_from_preprint_to_received")
         article.days_received_to_accepted_estimated = peer_review_stats.get("estimated_days_from_received_to_accepted")
         article.days_accepted_to_published_estimated = peer_review_stats.get("estimated_days_from_accepted_to_published")
         article.days_preprint_to_published_estimated = peer_review_stats.get("estimated_days_from_preprint_to_published")
         article.days_receive_to_published_estimated = peer_review_stats.get("estimated_days_from_received_to_published")
-        
+
     except Exception as e:
         add_error(errors, "add_peer_review_dates", e)
 
@@ -333,9 +343,16 @@ def add_data_availability_status(xmltree, errors, article, user):
     """
     Extrai a declaração de disponibilidade de dados do XML.
 
+    Lógica de validação:
+    - Valor inválido: preserva em invalid_data_availability_status e marca como "invalid"
+    - Valor válido explícito: limpa invalid_data_availability_status
+    - Valor ausente: mantém invalid_data_availability_status inalterado (preserva histórico)
+
     Args:
         xmltree: Árvore XML do artigo
         errors: Lista para coletar erros
+        article: Instância do modelo Article
+        user: Usuário responsável pela operação
     """
     try:
         status = None
@@ -351,10 +368,23 @@ def add_data_availability_status(xmltree, errors, article, user):
                 continue
             items.append({"language": lang, "text": text})
 
-        article.data_availability_status = status or choices.DATA_AVAILABILITY_STATUS_ABSENT
+        # Valida o status extraído do XML
+        if status is None:
+            # Valor ausente no XML (orientação mais recente do SPS)
+            article.data_availability_status = choices.DATA_AVAILABILITY_STATUS_ABSENT
+            article.invalid_data_availability_status = None
+        elif status not in choices.DATA_AVAILABILITY_STATUS_VALID_VALUES:
+            # Valor inválido encontrado no XML
+            article.invalid_data_availability_status = status
+            article.data_availability_status = choices.DATA_AVAILABILITY_STATUS_INVALID
+        else:
+            # Valor válido explícito presente
+            article.invalid_data_availability_status = None
+            article.data_availability_status = status
+
         # SAVE OBRIGATÓRIO ANTES DE ADICIONAR OS ITENS M2M
         article.save()
-        
+
         for item in items:
             DataAvailabilityStatement.create_or_update(
                 user=user,
@@ -502,25 +532,29 @@ def get_or_create_toc_sections(xmltree, user, errors, issue):
     """
     data = []
     try:
+        if not issue.table_of_contents.exists():
+            for am_issue in AMIssue.objects.filter(new_record=issue):
+                load_issue_sections(user, issue, am_issue=am_issue)
         toc_sections = ArticleTocSections(xmltree=xmltree).sections
         for item in toc_sections:
             section_title = item.get("section")
             if not section_title:
                 continue
             try:
-                issue_sections = TableOfContents.objects.filter(issue=issue, journal_toc__text=section_title)
-                for obj in issue_sections:
-                    data.append(obj)
+                issue_sections = TableOfContents.get_items_by_title(issue=issue, title=section_title)
                 if not issue_sections.exists():
                     raise TableOfContents.DoesNotExist(f"Unable to find TOC section {section_title} for issue {issue}")
+                for obj in issue_sections:
+                    data.append(obj)
             except Exception as e:
                 add_error(errors, "get_or_create_toc_sections", e, item=item)
+
     except Exception as e:
         add_error(errors, "get_or_create_toc_sections", e)
     return data
 
 
-def set_license(xmltree, article, errors):
+def set_license(user, xmltree, article, errors):
     """
     Define a licença do artigo a partir do XML.
 
@@ -532,8 +566,13 @@ def set_license(xmltree, article, errors):
     try:
         xml_licenses = ArticleLicense(xmltree=xmltree).licenses
         for xml_license in xml_licenses:
-            if license := xml_license.get("link"):
-                article.article_license = license
+            if url := xml_license.get("link"):
+                data = LicenseStatement.parse_url(url)
+                article.license = License.create_or_update(
+                    user=user,
+                    license_type=data.get("license_type"),
+                    version=data.get("license_version"),
+                )
                 break
     except Exception as e:
         add_error(errors, "set_license", e)
@@ -619,27 +658,28 @@ def create_or_update_abstract(xmltree, user, article, item, errors):
     return data
 
 
-def create_or_update_researchers(xmltree, user, item, errors):
+def create_or_update_contrib_persons(xmltree, article, user, item, errors):
     """
-    Extrai e cria pesquisadores/autores a partir do XML.
+    Extrai e cria contribuidores (ContribPerson) a partir do XML.
 
-    Processa informações de autores incluindo nomes, ORCID, Lattes,
+    Processa informações de autores incluindo nomes, ORCID,
     afiliações e emails.
 
     Args:
         xmltree: Árvore XML do artigo
+        article: Instância do artigo
         user: Usuário criador
         item: Identificador do item (para log)
         errors: Lista para coletar erros
 
     Returns:
-        list: Lista de objetos Researcher criados
+        list: Lista de objetos ContribPerson criados
     """
     article_lang = None
     try:
         article_lang = ArticleAndSubArticles(xmltree=xmltree).main_lang
     except Exception as e:
-        add_error(errors, "create_or_update_researchers.get_main_lang", e)
+        add_error(errors, "create_or_update_contrib_persons.get_main_lang", e)
 
     data = []
     try:
@@ -660,102 +700,112 @@ def create_or_update_researchers(xmltree, user, item, errors):
                 contrib_ids = author.get("contrib_ids", None)
                 if contrib_ids is not None:
                     orcid = contrib_ids.get("orcid")
-                    lattes = contrib_ids.get("lattes")
                 else:
                     orcid = None
-                    lattes = None
-
-                researcher_data = {
-                    "user": user,
-                    "given_names": given_names,
-                    "last_name": surname,
-                    "suffix": suffix,
-                    "lang": article_lang,
-                    "orcid": orcid,
-                    "lattes": lattes,
-                    "gender": author.get("gender"),
-                    "gender_identification_status": author.get(
-                        "gender_identification_status"
-                    ),
-                }
 
                 affs = author.get("affs", [])
                 if not affs:
-                    obj = Researcher.create_or_update(**researcher_data)
+                    # Create ContribPerson without affiliation
+                    obj = ContribPerson.create_or_update(
+                        user=user,
+                        article=article,
+                        given_names=given_names,
+                        last_name=surname,
+                        suffix=suffix,
+                        orcid=orcid,
+                        email=author.get("email"),
+                        affiliation=None,
+                    )
                     data.append(obj)
                 else:
+                    # When an author has multiple affiliations in XML, we create one 
+                    # ContribPerson record per affiliation. This is intentional as per 
+                    # SciELO's data model where each author-affiliation combination 
+                    # should be tracked separately.
                     for aff in affs:
                         raw_email = author.get("email") or aff.get("email")
                         email = extracts_normalized_email(raw_email=raw_email)
-                        aff_data = {
-                            **researcher_data,
-                            "aff_name": aff.get("orgname"),
-                            "aff_div1": aff.get("orgdiv1"),
-                            "aff_div2": aff.get("orgdiv2"),
-                            "aff_city_name": aff.get("city"),
-                            "aff_country_acronym": aff.get("country_code"),
-                            "aff_country_name": aff.get("country_name"),
-                            "aff_state_text": aff.get("state"),
-                            "email": email,
-                        }
-                        obj = Researcher.create_or_update(**aff_data)
+
+                        # Create ArticleAffiliation from XML affiliation data
+                        affiliation = ArticleAffiliation.create_or_update(
+                            user=user,
+                            article=article,
+                            raw_institution_name=aff.get("orgname"),
+                            raw_level_1=aff.get("orgdiv1"),
+                            raw_level_2=aff.get("orgdiv2"),
+                            raw_country_name=aff.get("country_name"),
+                            raw_country_code=aff.get("country_code"),
+                            raw_state_name=aff.get("state"),
+                            raw_city_name=aff.get("city"),
+                        )
+
+                        # Create ContribPerson with affiliation
+                        obj = ContribPerson.create_or_update(
+                            user=user,
+                            article=article,
+                            given_names=given_names,
+                            last_name=surname,
+                            suffix=suffix,
+                            orcid=orcid,
+                            email=email,
+                            affiliation=affiliation,
+                        )
                         data.append(obj)
             except Exception as e:
                 add_error(
                     errors,
-                    "create_or_update_researchers",
+                    "create_or_update_contrib_persons",
                     e,
                     item=item,
                     author=author,
                     affiliation=author.get("affs", []),
                 )
     except Exception as e:
-        add_error(errors, "create_or_update_researchers", e, item=item)
+        add_error(errors, "create_or_update_contrib_persons", e, item=item)
     return data
 
 
-def get_or_create_institution_authors(xmltree, user, item, errors):
+def create_or_update_contrib_collabs(xmltree, article, user, item, errors):
     """
-    Extrai e cria autores institucionais (colaborações) a partir do XML.
+    Extrai e cria colaborações (ContribCollab) a partir do XML.
 
     Args:
         xmltree: Árvore XML do artigo
+        article: Instância do artigo
         user: Usuário criador
         item: Identificador do item (para log)
         errors: Lista para coletar erros
 
     Returns:
-        list: Lista de objetos InstitutionalAuthor criados
+        list: Lista de objetos ContribCollab criados
     """
     data = []
     try:
         authors = ArticleContribs(xmltree=xmltree).contribs
         for author in authors:
             try:
-                affiliation = None
                 if collab := author.get("collab"):
+                    affiliation = None
+                    # Process affiliation data if present
+                    # Note: ContribCollab supports only one affiliation per instance,
+                    # so we use the first affiliation when multiple are present in XML
                     if affs := author.get("affs"):
-                        for aff in affs:
-                            location = Location.create_or_update(
-                                user=user,
-                                country_name=aff.get("country_name"),
-                                state_name=aff.get("state"),
-                                city_name=aff.get("city"),
-                            )
-                            affiliation = Affiliation.get_or_create(
-                                name=aff.get("orgname"),
-                                acronym=None,
-                                level_1=aff.get("orgdiv1"),
-                                level_2=aff.get("orgdiv2"),
-                                level_3=None,
-                                location=location,
-                                official=None,
-                                is_official=None,
-                                url=None,
-                                institution_type=None,
-                                user=user,
-                            )
-                    obj = InstitutionalAuthor.get_or_create(
+                        aff = affs[0]  # Use first affiliation
+                        # Create ArticleAffiliation from XML affiliation data
+                        affiliation = ArticleAffiliation.create_or_update(
+                            user=user,
+                            article=article,
+                            raw_institution_name=aff.get("orgname"),
+                            raw_level_1=aff.get("orgdiv1"),
+                            raw_level_2=aff.get("orgdiv2"),
+                            raw_country_name=aff.get("country_name"),
+                            raw_state_name=aff.get("state"),
+                            raw_city_name=aff.get("city"),
+                        )
+
+                    # Create ContribCollab with affiliation
+                    obj = ContribCollab.create_or_update(
+                        article=article,
                         collab=collab,
                         affiliation=affiliation,
                         user=user,
@@ -764,13 +814,13 @@ def get_or_create_institution_authors(xmltree, user, item, errors):
             except Exception as e:
                 add_error(
                     errors,
-                    "get_or_create_institution_authors",
+                    "create_or_update_contrib_collabs",
                     e,
                     item=item,
                     author=author,
                 )
     except Exception as e:
-        add_error(errors, "get_or_create_institution_authors", e, item=item)
+        add_error(errors, "create_or_update_contrib_collabs", e, item=item)
     return data
 
 
@@ -1007,17 +1057,17 @@ def add_related_articles(xmltree, article, user, errors):
     """
     try:
         related_articles = RelatedArticles(xmltree)
-        
+
         for related_article_data in related_articles.related_articles():
             try:
                 # Extrair dados do artigo relacionado
                 href = related_article_data.get("href")
                 if not href:
                     continue
-                
+
                 ext_link_type = related_article_data.get("ext-link-type")
                 related_type = related_article_data.get("related-article-type")
-                
+
                 # Adicionar relacionamento ao artigo
                 article.add_related_article(
                     user=user,
@@ -1025,7 +1075,7 @@ def add_related_articles(xmltree, article, user, errors):
                     ext_link_type=ext_link_type,
                     related_type=related_type
                 )
-                
+
             except Exception as e:
                 add_error(
                     errors,
@@ -1033,6 +1083,6 @@ def add_related_articles(xmltree, article, user, errors):
                     e,
                     related_article_data=related_article_data
                 )
-                
+
     except Exception as e:
         add_error(errors, "add_related_articles", e)

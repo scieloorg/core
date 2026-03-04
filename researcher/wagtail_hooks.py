@@ -2,9 +2,7 @@ from django.http import HttpResponseRedirect
 from django.utils.translation import gettext_lazy as _
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import CreateView as CreateViewAdmin
-from wagtail.snippets.views.snippets import EditView, SnippetViewSet
-from wagtail_modeladmin.options import ModelAdmin, ModelAdminGroup
-from wagtail_modeladmin.views import CreateView
+from wagtail.snippets.views.snippets import EditView, SnippetViewSet, SnippetViewSetGroup
 
 from config.menu import get_menu_order
 
@@ -17,20 +15,19 @@ from .models import (
 )
 
 
-class ResearcherCreateView(CreateView):
+class ResearcherCreateView(CreateViewAdmin):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
 
 
-class ResearcherAdmin(ModelAdmin):
+class ResearcherAdmin(SnippetViewSet):
     model = Researcher
-    create_view_class = ResearcherCreateView
+    add_view_class = ResearcherCreateView
     menu_label = _("Researcher")
     menu_icon = "folder"
     menu_order = 9
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = (
         "person_name",
         "affiliation",
@@ -45,20 +42,19 @@ class ResearcherAdmin(ModelAdmin):
     )
 
 
-class ResearcherIdentifierCreateView(CreateView):
+class ResearcherIdentifierCreateView(CreateViewAdmin):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
 
 
-class ResearcherIdentifierAdmin(ModelAdmin):
+class ResearcherIdentifierAdmin(SnippetViewSet):
     model = ResearcherIdentifier
-    create_view_class = ResearcherIdentifierCreateView
+    add_view_class = ResearcherIdentifierCreateView
     menu_label = _("Researcher Identifier")
     menu_icon = "folder"
     menu_order = 9
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = (
         "identifier",
         "source_name",
@@ -69,13 +65,12 @@ class ResearcherIdentifierAdmin(ModelAdmin):
     search_fields = ("identifier",)
 
 
-class AffiliationAdmin(ModelAdmin):
+class AffiliationAdmin(SnippetViewSet):
     model = Affiliation
     menu_label = _("Affiliation")
     menu_icon = "folder"
     menu_order = 9
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = (
         # "institution",
         "created",
@@ -83,20 +78,19 @@ class AffiliationAdmin(ModelAdmin):
     )
 
 
-class PersonNameCreateView(CreateView):
+class PersonNameCreateView(CreateViewAdmin):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
 
 
-class PersonNameAdmin(ModelAdmin):
+class PersonNameAdmin(SnippetViewSet):
     model = PersonName
-    create_view_class = PersonNameCreateView
+    add_view_class = PersonNameCreateView
     menu_label = _("PersonName")
     menu_icon = "folder"
     menu_order = 9
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = (
         "declared_name",
         "fullname",
@@ -108,9 +102,9 @@ class PersonNameAdmin(ModelAdmin):
     search_fields = ("fullname", "declared_name")
 
 
-class ResearcherAdminGroup(ModelAdminGroup):
+class ResearcherAdminGroup(SnippetViewSetGroup):
     menu_label = _("Researchers")
-    menu_icon = "folder-open-inverse"  # change as required
+    menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("researcher")
     items = (
         ResearcherIdentifierAdmin,
@@ -118,6 +112,9 @@ class ResearcherAdminGroup(ModelAdminGroup):
         PersonNameAdmin,
         AffiliationAdmin,
     )
+
+
+register_snippet(ResearcherAdminGroup)
 
 
 class ResearcherOrcidFormValidationMixin:

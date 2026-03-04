@@ -22,6 +22,11 @@ COPY ./requirements .
 # Update pip
 RUN python -m pip install --upgrade pip
 
+# Garante setuptools disponível
+# ==80.10.2
+RUN pip install --upgrade setuptools
+RUN pip install --upgrade pysolr
+
 # Create Python Dependency and Sub-Dependency Wheels.
 RUN pip wheel --wheel-dir /usr/src/app/wheels  \
   -r ${BUILD_ENVIRONMENT}.txt

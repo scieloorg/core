@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from wagtail.admin.panels import FieldPanel, InlinePanel
+from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
@@ -14,9 +14,11 @@ from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from core.utils.standardizer import remove_extra_spaces
 from journal.models import Journal
+from location.models import Country
 from researcher.models import NewResearcher
 
 from . import choices
+from .forms import EditorialboardForm
 
 
 class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
@@ -36,6 +38,85 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
     )
     area = models.TextField(null=True, blank=True)
     
+    # Manual input fields for creating/updating researcher data
+    manual_given_names = models.CharField(
+        _("Given names"),
+        max_length=128,
+        blank=True,
+        null=True,
+        help_text=_("Enter given names if researcher is not in the database"),
+    )
+    manual_last_name = models.CharField(
+        _("Last name"),
+        max_length=64,
+        blank=True,
+        null=True,
+        help_text=_("Enter last name if researcher is not in the database"),
+    )
+    manual_suffix = models.CharField(
+        _("Suffix"),
+        max_length=16,
+        blank=True,
+        null=True,
+        help_text=_("Enter suffix (e.g., Jr., Sr., III) if applicable"),
+    )
+    manual_institution_name = models.CharField(
+        _("Institution name"),
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_("Enter institution name if not in the database"),
+    )
+    manual_institution_acronym = models.CharField(
+        _("Institution acronym"),
+        max_length=64,
+        blank=True,
+        null=True,
+        help_text=_("Enter institution acronym if applicable"),
+    )
+    manual_institution_city = models.CharField(
+        _("Institution city"),
+        max_length=128,
+        blank=True,
+        null=True,
+        help_text=_("Enter institution city"),
+    )
+    manual_institution_state = models.CharField(
+        _("Institution state"),
+        max_length=128,
+        blank=True,
+        null=True,
+        help_text=_("Enter institution state/province"),
+    )
+    manual_institution_country = models.ForeignKey(
+        Country,
+        verbose_name=_("Institution country"),
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        help_text=_("Select institution country from the list"),
+    )
+    manual_orcid = models.CharField(
+        _("ORCID"),
+        max_length=64,
+        blank=True,
+        null=True,
+        help_text=_("Enter ORCID identifier (e.g., 0000-0000-0000-0000)"),
+    )
+    manual_lattes = models.CharField(
+        _("Lattes CV"),
+        max_length=64,
+        blank=True,
+        null=True,
+        help_text=_("Enter Lattes CV identifier"),
+    )
+    manual_email = models.EmailField(
+        _("Email"),
+        blank=True,
+        null=True,
+        help_text=_("Enter email address"),
+    )
+    
     class Meta:
         unique_together = [("journal", "researcher")]
         indexes = [
@@ -48,22 +129,52 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
 
     panels = [
         AutocompletePanel("researcher"),
+        MultiFieldPanel(
+            [
+                FieldPanel("manual_given_names"),
+                FieldPanel("manual_last_name"),
+                FieldPanel("manual_suffix"),
+            ],
+            heading=_("Manual Entry - Name (if researcher not in database)"),
+        ),
+        MultiFieldPanel(
+            [
+                FieldPanel("manual_institution_name"),
+                FieldPanel("manual_institution_acronym"),
+                FieldPanel("manual_institution_city"),
+                FieldPanel("manual_institution_state"),
+                AutocompletePanel("manual_institution_country"),
+            ],
+            heading=_("Manual Entry - Institution (if not in database)"),
+        ),
+        MultiFieldPanel(
+            [
+                FieldPanel("manual_orcid"),
+                FieldPanel("manual_lattes"),
+                FieldPanel("manual_email"),
+            ],
+            heading=_("Manual Entry - Identifiers"),
+        ),
         FieldPanel("image"),
         InlinePanel("role_editorial_board", label=_("Role")),
     ]
 
-    base_form_class = CoreAdminModelForm
+    base_form_class = EditorialboardForm
 
     def __str__(self):
-        if not self.researcher:
-            return "None"
-        
-        roles = [
-            role.role.std_role or role.role.declared_role
-            for role in self.role_editorial_board.all()
-            if role and role.role
+        if self.researcher:
+            return f"{self.researcher.fullname} {', '.join(self.role_names)}"
+        elif self.manual_given_names or self.manual_last_name:
+            name = f"{self.manual_given_names or ''} {self.manual_last_name or ''}".strip()
+            return f"{name} {', '.join(self.role_names)}" if name else "Editorial Board Member"
+        return "Editorial Board Member"
+
+    @property
+    def role_names(self):
+        return [
+            role.role_name
+            for role in self.role_editorial_board.filter(role__role__isnull=False)
         ]
-        return f"{self.researcher.fullname} {roles}"
 
     @staticmethod
     def autocomplete_custom_queryset_filter(search_term):
@@ -161,6 +272,23 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
         except Journal.DoesNotExist as e:
             logging.info(f"EditorialBoard {journal_title} {e}")
 
+    @classmethod
+    def get_editorial_board_with_role(cls, journal):
+        editorial_board_by_latest_role = {}
+        editorial_board_members = cls.objects.filter(journal=journal) \
+            .prefetch_related(
+                "role_editorial_board",
+                "researcher__orcid",
+                "researcher__affiliation__location"
+            )
+        for member in editorial_board_members:
+            member_role = member.role_editorial_board.filter(
+                role__role__std_role__isnull=False
+            ).order_by("-initial_year").first()
+            researcher = member.researcher
+            editorial_board_by_latest_role[member_role.role_name].append(researcher.data)
+        return editorial_board_by_latest_role
+
 
 class RoleEditorialBoard(CommonControlField, Orderable):
     editorial_board = ParentalKey(
@@ -180,6 +308,13 @@ class RoleEditorialBoard(CommonControlField, Orderable):
 
     def __str__(self):
         return f"{self.role}"
+
+    @property
+    def role_name(self):
+        try:
+            return self.role.std_role or self.role.declared_role
+        except AttributeError:
+            return None
 
     @classmethod
     def get(

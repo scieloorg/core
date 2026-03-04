@@ -1,5 +1,6 @@
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Prefetch
 from django.http import HttpResponseRedirect
 from django.urls import path
 from django.utils.translation import gettext_lazy as _
@@ -8,10 +9,10 @@ from wagtail.snippets import widgets as wagtailsnippets_widgets
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import (
     CreateView,
+    EditView,
     SnippetViewSet,
     SnippetViewSetGroup,
 )
-from wagtail_modeladmin.options import ModelAdmin
 
 from config.menu import get_menu_order
 from journalpage.models import JournalPage
@@ -22,6 +23,7 @@ from .proxys import (
     JournalProxyEditor,
     JournalProxyPanelInstructionsForAuthors,
     JournalProxyPanelPolicy,
+    JournalProxyAdminOnly,
 )
 from .views import import_file, validate
 
@@ -97,10 +99,24 @@ class JournalExporterSnippetViewSet(SnippetViewSet):
     )
 
 
-class JournalCreateView(CreateView):
+class JournalFormValidMixin:
+    """Mixin for handling form_valid in Journal views"""
+
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
         return HttpResponseRedirect(self.get_success_url())
+
+
+class JournalCreateView(JournalFormValidMixin, CreateView):
+    pass
+
+
+class JournalEditView(JournalFormValidMixin, EditView):
+    """
+    Custom EditView for Journal that uses JournalFormValidMixin to handle form_valid.
+    The mixin ensures proper form handling by calling form.save_all(request.user).
+    """
+    pass
 
 
 class FilteredJournalQuerysetMixin:
@@ -133,8 +149,99 @@ class FilteredJournalQuerysetMixin:
     def get_queryset(self, request):
         qs = (
             models.Journal.objects
-            .select_related("contact_location")
-            .prefetch_related("scielojournal_set")
+            # ForeignKey relationships - use select_related for forward ForeignKey lookups
+            .select_related(
+                "official",
+                "contact_location",
+                "contact_location__country",
+                "main_collection",
+                "standard",
+                "vocabulary",
+                "journal_use_license",
+                "use_license",
+                "logo",
+                "creator",
+                "updated_by",
+            )
+            # Many-to-Many and reverse ForeignKey relationships - use prefetch_related
+            .prefetch_related(
+                # M2M fields
+                "indexed_at",
+                "additional_indexed_at",
+                "subject",
+                "subject_descriptor",
+                "wos_db",
+                "wos_area",
+                "text_language",
+                "abstract_language",
+                "format_check_list",
+                "digital_pa",
+                # Inline panels with nested selects for better performance
+                Prefetch(
+                    "owner_history",
+                    queryset=models.OwnerHistory.objects.select_related(
+                        "institution", "organization", "organization__location"
+                    ),
+                ),
+                Prefetch(
+                    "publisher_history",
+                    queryset=models.PublisherHistory.objects.select_related(
+                        "institution", "organization", "organization__location"
+                    ),
+                ),
+                Prefetch(
+                    "sponsor_history",
+                    queryset=models.SponsorHistory.objects.select_related(
+                        "institution", "organization", "organization__location"
+                    ),
+                ),
+                Prefetch(
+                    "copyright_holder_history",
+                    queryset=models.CopyrightHolderHistory.objects.select_related(
+                        "institution", "organization", "organization__location"
+                    ),
+                ),
+                # Other inline panels (reverse ForeignKeys via ParentalKey)
+                "other_titles",
+                "thematic_area",
+                "thematic_area__thematic_area",
+                "mission",
+                "history",
+                "focus",
+                "journal_email",
+                "related_journal_urls",
+                "title_in_database",
+                "social_networks",
+                "open_science_form_files",
+                "open_data",
+                "preprint",
+                "peer_review",
+                "open_science_compliance",
+                "ethics",
+                "ethics_committee",
+                "copyright",
+                "website_responsibility",
+                "author_responsibility",
+                "policies",
+                "digital_preservation",
+                "conflict_policy",
+                "software_adoption",
+                "gender_issues",
+                "fee_charging",
+                "editorial_policy",
+                "accepted_document_types",
+                "authors_contributions",
+                "preparing_manuscript",
+                "digital_assets",
+                "citations_and_references",
+                "supp_docs_submission",
+                "financing_statement",
+                "acknowledgements",
+                "additional_information",
+                "notes",
+                "scielojournal_set",
+                "scielojournal_set__collection",
+            )
         )
         user = request.user
         if not user.is_authenticated:
@@ -148,9 +255,7 @@ class FilteredJournalQuerysetMixin:
                 scielojournal__collection__in=user.collection_ids
             ).distinct()
         elif user.has_journal_permission and user.journal_ids:
-            return qs.filter(
-                scielojournal__journal__id__in=user.journal_ids
-            ).distinct()
+            return qs.filter(scielojournal__journal__id__in=user.journal_ids).distinct()
         return qs.none()
 
 
@@ -159,6 +264,7 @@ class JournalAdminSnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
     inspect_view_enabled = True
     menu_label = _("Journals (admin)")
     add_view_class = JournalCreateView
+    edit_view_class = JournalEditView
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
     add_to_settings_menu = False
@@ -170,6 +276,7 @@ class JournalAdminEditorSnippetViewSet(FilteredJournalQuerysetMixin, SnippetView
     model = JournalProxyEditor
     inspect_view_enabled = True
     menu_label = _("Journals")
+    edit_view_class = JournalEditView
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
     add_to_settings_menu = False
@@ -181,6 +288,7 @@ class JournalAdminPolicySnippetViewSet(FilteredJournalQuerysetMixin, SnippetView
     model = JournalProxyPanelPolicy
     inspect_view_enabled = True
     menu_label = _("Journal Policies")
+    edit_view_class = JournalEditView
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
     add_to_settings_menu = False
@@ -194,11 +302,37 @@ class JournalAdminInstructionsForAuthorsSnippetViewSet(
     model = JournalProxyPanelInstructionsForAuthors
     inspect_view_enabled = True
     menu_label = _("Journal Instructions for Authors")
+    edit_view_class = JournalEditView
     menu_icon = "folder"
     menu_order = get_menu_order("journal")
     add_to_settings_menu = False
     exclude_from_explorer = False
     list_per_page = 20
+
+
+class JournalAdminOnlySnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSet):
+    """
+    ViewSet for admin-only journal tabs (Legacy Compatibility and Notes).
+    Only accessible to superusers.
+    """
+    model = JournalProxyAdminOnly
+    inspect_view_enabled = True
+    menu_label = _("Journals (Admin Only)")
+    edit_view_class = JournalEditView
+    menu_icon = "folder"
+    menu_order = get_menu_order("journal")
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_per_page = 20
+
+    def get_queryset(self, request):
+        # Only allow superusers to access this viewset
+        user = request.user
+        if not user.is_authenticated or not user.is_superuser:
+            return models.Journal.objects.none()
+
+        # For superusers, return all journals with optimizations
+        return super().get_queryset(request)
 
 
 class SciELOJournalCreateView(CreateView):
@@ -247,12 +381,12 @@ class SciELOJournalAdminViewSet(SnippetViewSet):
             return models.SciELOJournal.objects.filter(
                 journal__in=user.journal_ids
             ).select_related("journal", "collection")
-        
+
         if user.collection_ids:
             return models.SciELOJournal.objects.filter(
                 collection__in=user.collection_ids
             ).select_related("journal", "collection")
-        
+
         return models.SciELOJournal.objects.none()
 
 
@@ -275,7 +409,7 @@ class JournalTableOfContentsViewSet(SnippetViewSet):
 
     list_display = (
         "journal",
-        "collection", 
+        "collection",
         "text",
         "language",
         "code",
@@ -293,16 +427,11 @@ class JournalTableOfContentsViewSet(SnippetViewSet):
         "text",
         "code",
         "journal__title",
-        "collection__name",
+        "collection__main_name",
         "collection__acron3",
     )
     list_per_page = 20
-    ordering = ("journal__title", "text", "code", "collection__name")
-    
-    def get_queryset(self, request):
-        """Otimizar queryset com select_related para evitar N+1 queries"""
-        qs = super().get_queryset(request)
-        return qs.select_related("journal", "collection", "language")
+    ordering = ("journal__title", "text", "code", "collection__main_name")
 
 
 class JournalSnippetViewSetGroup(SnippetViewSetGroup):
@@ -317,6 +446,7 @@ class JournalSnippetViewSetGroup(SnippetViewSetGroup):
         JournalExporterSnippetViewSet,
         JournalAdminPolicySnippetViewSet,
         JournalAdminInstructionsForAuthorsSnippetViewSet,
+        JournalAdminOnlySnippetViewSet,
         JournalTableOfContentsViewSet,
         AMJournalAdmin,
     )
@@ -325,13 +455,12 @@ class JournalSnippetViewSetGroup(SnippetViewSetGroup):
 register_snippet(JournalSnippetViewSetGroup)
 
 
-class IndexedAtAdmin(ModelAdmin):
+class IndexedAtAdmin(SnippetViewSet):
     model = models.IndexedAt
     menu_label = "Indexed At"
     menu_icon = "folder"
     menu_order = 100
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = ("name", "acronym", "url", "description", "type")
     list_filter = ("type",)
     search_fields = ("name", "acronym")
@@ -339,36 +468,33 @@ class IndexedAtAdmin(ModelAdmin):
     export_filename = "indexed_at"
 
 
-class AdditionalIndexedAtAdmin(ModelAdmin):
+class AdditionalIndexedAtAdmin(SnippetViewSet):
     model = models.AdditionalIndexedAt
     menu_label = "Additional Indexed At"
     menu_icon = "folder"
     menu_order = 110
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = ("name",)
     search_fields = ("name",)
 
 
-class IndexedAtFileAdmin(ModelAdmin):
+class IndexedAtFileAdmin(SnippetViewSet):
     model = models.IndexedAtFile
     button_helper_class = IndexedAtHelper
     menu_label = "Indexed At Upload"
     menu_icon = "folder"
     menu_order = 200
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = ("attachment", "line_count", "is_valid")
     list_filter = ("is_valid",)
     search_fields = ("attachment",)
 
 
-class WebOfKnowledgeAdmin(ModelAdmin):
+class WebOfKnowledgeAdmin(SnippetViewSet):
     model = models.WebOfKnowledge
     menu_icon = "folder"
     menu_order = 100
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = (
         "code",
         "value",
@@ -380,12 +506,11 @@ class WebOfKnowledgeAdmin(ModelAdmin):
     )
 
 
-class SubjectAdmin(ModelAdmin):
+class SubjectAdmin(SnippetViewSet):
     model = models.Subject
     menu_icon = "folder"
     menu_order = 300
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = (
         "code",
         "value",
@@ -397,22 +522,20 @@ class SubjectAdmin(ModelAdmin):
     )
 
 
-class WosAreaAdmin(ModelAdmin):
+class WosAreaAdmin(SnippetViewSet):
     model = models.WebOfKnowledgeSubjectCategory
     menu_icon = "folder"
     menu_order = 400
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = ("value",)
     search_fields = ("value",)
 
 
-class StandardAdmin(ModelAdmin):
+class StandardAdmin(SnippetViewSet):
     model = models.Standard
     menu_icon = "folder"
     menu_order = 500
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = (
         "code",
         "value",
@@ -424,7 +547,7 @@ class StandardAdmin(ModelAdmin):
     )
 
 
-class ArticleSubmissionFormatCheckListAdmin(ModelAdmin):
+class ArticleSubmissionFormatCheckListAdmin(SnippetViewSet):
     model = models.ArticleSubmissionFormatCheckList
     menu_label = _("Article Submission Format Check List")
     menu_icon = "folder"
@@ -496,3 +619,9 @@ def register_ctf_permissions_2():
     content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
     return Permission.objects.filter(content_type=content_type)
 
+
+@hooks.register("register_permissions")
+def register_journal_admin_only_permissions():
+    model = JournalProxyAdminOnly
+    content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
+    return Permission.objects.filter(content_type=content_type)

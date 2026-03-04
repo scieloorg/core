@@ -1,6 +1,6 @@
 import json
-from unittest.mock import patch
-from deepdiff import DeepDiff
+from unittest.mock import MagicMock, Mock, patch
+
 from django.test import TestCase
 from django_test_migrations.migrator import Migrator
 
@@ -8,6 +8,7 @@ from collection.models import Collection
 from core.models import Gender, Language, License
 from core.users.models import User
 from editorialboard.models import RoleModel
+from journal.formats.articlemeta_format import get_articlemeta_format_title
 from journal.models import (
     AMJournal,
     DigitalPreservationAgency,
@@ -23,9 +24,9 @@ from journal.models import (
 from journal.tasks import (
     _register_journal_data,
     child_load_license_of_use_in_journal,
+    fetch_and_process_journal_logos_in_collection,
     load_license_of_use_in_journal,
 )
-from journal.formats.articlemeta_format import get_articlemeta_format_title
 from thematic_areas.models import ThematicArea
 from vocabulary.models import Vocabulary
 
@@ -160,20 +161,25 @@ class TestLoadLicenseOfUseInJournal(TestCase):
         self.assertEqual(journal_license.count(), 0)
         self.assertEqual(self.journal.journal_use_license, None)
 
+
 import json
+
 
 def sort_any(obj):
     if isinstance(obj, dict):
         return {k: sort_any(v.lower()) for k, v in sorted(obj.items())}
     elif isinstance(obj, list):
         if all(isinstance(i, dict) for i in obj):
-            return sorted((sort_any(i) for i in obj), key=lambda x: json.dumps(x, sort_keys=True))
+            return sorted(
+                (sort_any(i) for i in obj), key=lambda x: json.dumps(x, sort_keys=True)
+            )
         elif all(not isinstance(i, dict) for i in obj):
             return sorted(obj)
         else:
             return [sort_any(i) for i in obj]
     else:
         return obj
+
 
 class TestAPIJournalArticleMeta(TestCase):
     def setUp(self):
@@ -189,7 +195,9 @@ class TestAPIJournalArticleMeta(TestCase):
             is_active=True,
             domain="www.scielo.br",
         )
-        self.data_json_journal_scl = json.loads(open("./journal/fixture/tests/data_journal_scl_0034-8910.json").read())
+        self.data_json_journal_scl = json.loads(
+            open("./journal/fixture/tests/data_journal_scl_0034-8910.json").read()
+        )
         self.user = User.objects.create(username="teste", password="teste")
         self.am_journal_scl = AMJournal.objects.create(
             collection=Collection.objects.get(acron3="scl"),
@@ -207,7 +215,9 @@ class TestAPIJournalArticleMeta(TestCase):
         _register_journal_data(self.user, self.collection_scl.acron3)
         _register_journal_data(self.user, self.collection_spa.acron3)
         self.set_journals()
-        self.include_articlemeta_metadata(data_json=self.data_json_journal_scl[0], journal=self.journal_scl)
+        self.include_articlemeta_metadata(
+            data_json=self.data_json_journal_scl[0], journal=self.journal_scl
+        )
 
     def load_modules(self):
         Language.load(self.user)
@@ -222,14 +232,14 @@ class TestAPIJournalArticleMeta(TestCase):
         License.load(self.user)
         DigitalPreservationAgency.load(self.user)
         Gender.load(self.user)
-    
+
     def include_articlemeta_metadata(self, data_json, journal):
-        data_json["created_at"] = journal.created.strftime('%Y-%m-%d')
-        data_json["processing_date"] = journal.created.strftime('%Y-%m-%d')
-        data_json["v940"] = [{"_": journal.created.strftime('%Y%m%d')}]
-        data_json["v941"] = [{"_": journal.updated.strftime('%Y%m%d')}]
-        data_json["v942"] = [{"_": journal.created.strftime('%Y%m%d')}]
-        data_json["v943"] = [{"_": journal.updated.strftime('%Y%m%d')}]
+        data_json["created_at"] = journal.created.strftime("%Y-%m-%d")
+        data_json["processing_date"] = journal.created.strftime("%Y-%m-%d")
+        data_json["v940"] = [{"_": journal.created.strftime("%Y%m%d")}]
+        data_json["v941"] = [{"_": journal.updated.strftime("%Y%m%d")}]
+        data_json["v942"] = [{"_": journal.created.strftime("%Y%m%d")}]
+        data_json["v943"] = [{"_": journal.updated.strftime("%Y%m%d")}]
         if "v691" in data_json:
             del data_json["v691"]
 
@@ -242,6 +252,236 @@ class TestAPIJournalArticleMeta(TestCase):
                 expected_sorted = sort_any(expected)
                 result_sorted = sort_any(result)
                 self.assertEqual(
-                    result_sorted, expected_sorted,
-                    f"Key {key} not equal. Expected: {expected_sorted}, Result: {result_sorted}"
+                    result_sorted,
+                    expected_sorted,
+                    f"Key {key} not equal. Expected: {expected_sorted}, Result: {result_sorted}",
+                )
+
+
+# class TestFetchAndProcessJournalLogosInCollection(TestCase):
+#     def setUp(self):
+#         self.user = User.objects.create(username="teste", password="teste")
+#         self.collection = Collection.objects.create(
+#             creator=self.user, acron3="scl", is_active=True
+#         )
+#         self.journal = Journal.objects.create(creator=self.user, title="Test Journal")
+#         self.scielo_journal = SciELOJournal.objects.create(
+#             issn_scielo="1516-635X",
+#             collection=self.collection,
+#             journal=self.journal,
+#             journal_acron="abdc",
+#         )
+
+#     def test_fetch_and_process_journal_logos_with_invalid_collection(self):
+#         """Test that ValueError is raised when collection does not exist"""
+#         with self.assertRaises(ValueError) as context:
+#             fetch_and_process_journal_logos_in_collection(
+#                 collection_acron3="invalid_acron",
+#                 username=self.user.username,
+#             )
+#         self.assertIn("does not exist", str(context.exception))
+
+#     @patch("journal.tasks.group")
+#     def test_fetch_and_process_journal_logos_with_valid_collection(self, mock_group):
+#         """Test that task executes with valid collection"""
+#         # Mock the group to avoid actually running the celery tasks
+#         mock_group.return_value.return_value = None
+
+#         result = fetch_and_process_journal_logos_in_collection(
+#             collection_acron3=self.collection.acron3,
+#             username=self.user.username,
+#         )
+
+#         # The task should complete without raising an exception
+#         # and should call group with the task signatures
+#         self.assertTrue(mock_group.called)
+
+
+class RawOrganizationMixinTestCase(TestCase):
+    """Test cases for RawOrganizationMixin functionality"""
+
+    def setUp(self):
+        """Set up test fixtures"""
+        self.user = User.objects.create_user(username="testuser")
+        self.collection = Collection.objects.create(
+            name="Test Collection",
+            acron3="TST",
         )
+        self.journal = Journal.objects.create(
+            title="Test Journal",
+        )
+
+    def test_add_publisher_with_raw_organization_fields(self):
+        """Test that add_publisher accepts and saves raw organization fields"""
+        publisher_history = self.journal.add_publisher(
+            user=self.user,
+            original_data="Test Publisher",
+            raw_institution_name="Test Publisher Inc.",
+            raw_country_name="Brazil",
+            raw_country_code="BR",
+            raw_state_name="São Paulo",
+            raw_state_acron="SP",
+            raw_city_name="São Paulo",
+        )
+
+        self.assertIsNotNone(publisher_history)
+        self.assertEqual(publisher_history.raw_institution_name, "Test Publisher Inc.")
+        self.assertEqual(publisher_history.raw_country_name, "Brazil")
+        self.assertEqual(publisher_history.raw_country_code, "BR")
+        self.assertEqual(publisher_history.raw_state_name, "São Paulo")
+        self.assertEqual(publisher_history.raw_state_acron, "SP")
+        self.assertEqual(publisher_history.raw_city_name, "São Paulo")
+
+    def test_add_owner_with_raw_organization_fields(self):
+        """Test that add_owner accepts and saves raw organization fields"""
+        owner_history = self.journal.add_owner(
+            user=self.user,
+            original_data="Test Owner",
+            raw_institution_name="Test Owner Institution",
+            raw_country_name="Argentina",
+        )
+
+        self.assertIsNotNone(owner_history)
+        self.assertEqual(owner_history.raw_institution_name, "Test Owner Institution")
+        self.assertEqual(owner_history.raw_country_name, "Argentina")
+
+    def test_add_sponsor_with_raw_organization_fields(self):
+        """Test that add_sponsor accepts and saves raw organization fields"""
+        sponsor_history = self.journal.add_sponsor(
+            user=self.user,
+            original_data="Test Sponsor",
+            raw_institution_name="Test Sponsor Foundation",
+        )
+
+        self.assertIsNotNone(sponsor_history)
+        self.assertEqual(
+            sponsor_history.raw_institution_name, "Test Sponsor Foundation"
+        )
+
+    def test_add_copyright_holder_with_raw_organization_fields(self):
+        """Test that add_copyright_holder accepts and saves raw organization fields"""
+        copyright_history = self.journal.add_copyright_holder(
+            user=self.user,
+            original_data="Test Copyright Holder",
+            raw_institution_name="Test Copyright Holder Corp",
+            raw_text="Full copyright text",
+        )
+
+        self.assertIsNotNone(copyright_history)
+        self.assertEqual(
+            copyright_history.raw_institution_name, "Test Copyright Holder Corp"
+        )
+        self.assertEqual(copyright_history.raw_text, "Full copyright text")
+
+    def test_backward_compatibility_without_raw_fields(self):
+        """Test that existing code without raw fields still works"""
+        # This tests backward compatibility
+        publisher_history = self.journal.add_publisher(
+            user=self.user,
+            original_data="Legacy Publisher",
+        )
+
+        self.assertIsNotNone(publisher_history)
+        # Raw fields should be None if not provided
+        self.assertIsNone(publisher_history.raw_institution_name)
+        self.assertIsNone(publisher_history.raw_country_name)
+
+
+from journal.sources.classic_website import get_issn, get_journal_xml
+
+
+class TestClassicWebsiteGetIssn(TestCase):
+    @patch("journal.sources.classic_website.requests.get")
+    @patch("journal.sources.classic_website.xmltodict.parse")
+    def test_get_issn_url_does_not_have_double_http_prefix(self, mock_parse, mock_get):
+        """get_issn must not prepend http:// when domain already contains it"""
+        mock_response = Mock()
+        mock_response.text = ""
+        mock_get.return_value = mock_response
+        mock_parse.return_value = {"SERIALLIST": {"LIST": {"SERIAL": []}}}
+
+        list(get_issn("http://www.scielo.org.pe"))
+
+        called_url = mock_get.call_args[0][0]
+        self.assertNotIn("http://http://", called_url)
+        self.assertTrue(called_url.startswith("http://www.scielo.org.pe/"))
+
+    @patch("journal.sources.classic_website.requests.get")
+    @patch("journal.sources.classic_website.xmltodict.parse")
+    def test_get_issn_url_strips_trailing_slash(self, mock_parse, mock_get):
+        """get_issn must not produce double slash when domain has trailing slash"""
+        mock_response = Mock()
+        mock_response.text = ""
+        mock_get.return_value = mock_response
+        mock_parse.return_value = {"SERIALLIST": {"LIST": {"SERIAL": []}}}
+
+        list(get_issn("http://www.scielo.org.pe/"))
+
+        called_url = mock_get.call_args[0][0]
+        self.assertNotIn("//scielo.php", called_url)
+
+    @patch("journal.sources.classic_website.requests.get")
+    @patch("journal.sources.classic_website.xmltodict.parse")
+    def test_get_issn_url_with_https_domain(self, mock_parse, mock_get):
+        """get_issn must not produce double https:// when domain uses https://"""
+        mock_response = Mock()
+        mock_response.text = ""
+        mock_get.return_value = mock_response
+        mock_parse.return_value = {"SERIALLIST": {"LIST": {"SERIAL": []}}}
+
+        list(get_issn("https://www.scielo.br"))
+
+        called_url = mock_get.call_args[0][0]
+        self.assertNotIn("http://https://", called_url)
+        self.assertTrue(called_url.startswith("https://www.scielo.br/"))
+
+
+class TestClassicWebsiteGetJournalXml(TestCase):
+    @patch("journal.sources.classic_website.requests.get")
+    @patch("journal.sources.classic_website.xmltodict.parse")
+    def test_get_journal_xml_url_does_not_have_double_http_prefix(
+        self, mock_parse, mock_get
+    ):
+        """get_journal_xml must not prepend http:// when domain already contains it"""
+        mock_response = Mock()
+        mock_response.text = ""
+        mock_get.return_value = mock_response
+        mock_parse.return_value = {}
+
+        get_journal_xml("http://www.scielo.org.pe", "2709-3689")
+
+        called_url = mock_get.call_args[0][0]
+        self.assertNotIn("http://http://", called_url)
+        self.assertTrue(called_url.startswith("http://www.scielo.org.pe/"))
+
+    @patch("journal.sources.classic_website.requests.get")
+    @patch("journal.sources.classic_website.xmltodict.parse")
+    def test_get_journal_xml_url_strips_trailing_slash(self, mock_parse, mock_get):
+        """get_journal_xml must not produce double slash when domain has trailing slash"""
+        mock_response = Mock()
+        mock_response.text = ""
+        mock_get.return_value = mock_response
+        mock_parse.return_value = {}
+
+        get_journal_xml("http://www.scielo.org.pe/", "2709-3689")
+
+        called_url = mock_get.call_args[0][0]
+        self.assertNotIn("//scielo.php", called_url)
+
+    @patch("journal.sources.classic_website.requests.get")
+    @patch("journal.sources.classic_website.xmltodict.parse")
+    def test_get_journal_xml_url_with_https_domain(self, mock_parse, mock_get):
+        """get_journal_xml must not produce double https:// when domain uses https://"""
+        mock_response = Mock()
+        mock_response.text = ""
+        mock_get.return_value = mock_response
+        mock_parse.return_value = {}
+
+        get_journal_xml("https://www.scielo.br", "0034-8910")
+
+        called_url = mock_get.call_args[0][0]
+        self.assertNotIn("http://https://", called_url)
+        self.assertTrue(called_url.startswith("https://www.scielo.br/"))
+
+
+

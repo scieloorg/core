@@ -1,11 +1,7 @@
 from django.http import HttpResponseRedirect
 from django.utils.translation import gettext_lazy as _
-from wagtail_modeladmin.options import (
-    ModelAdmin,
-    ModelAdminGroup,
-    modeladmin_register,
-)
-from wagtail_modeladmin.views import CreateView
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import CreateView, SnippetViewSet, SnippetViewSetGroup
 
 from book.models import Book
 from config.menu import get_menu_order
@@ -17,16 +13,13 @@ class BookCreateView(CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class BookAdmin(ModelAdmin):
+class BookAdmin(SnippetViewSet):
     model = Book
-    create_view_class = BookCreateView
+    add_view_class = BookCreateView
     menu_label = _("Books")
     menu_icon = "folder"
     menu_order = 900
-    add_to_settings_menu = False  # or True to add your model to the Settings sub-menu
-    exclude_from_explorer = (
-        False  # or True to exclude pages of this type from Wagtail's explorer view
-    )
+    add_to_settings_menu = False
 
     list_display = (
         "title",
@@ -42,11 +35,11 @@ class BookAdmin(ModelAdmin):
     search_fields = ("doi", "title", "isbn", "eisbn", "synopsis")
 
 
-class BookAdminGroup(ModelAdminGroup):
+class BookAdminGroup(SnippetViewSetGroup):
     menu_label = _("Books")
-    menu_icon = "folder-open-inverse"  # change as required
-    menu_order = get_menu_order("book")  # will put in 3rd place (000 being 1st, 100 2nd)
+    menu_icon = "folder-open-inverse"
+    menu_order = get_menu_order("book")
     items = (BookAdmin,)
 
 
-modeladmin_register(BookAdminGroup)
+register_snippet(BookAdminGroup)

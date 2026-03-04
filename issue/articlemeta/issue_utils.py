@@ -24,7 +24,7 @@ def extract_data_from_harvested_data(issue_data, pid):
     supplement_volume = issue_data.get("supplement_volume")
     supplement_number = issue_data.get("supplement_number")
     data_iso = issue_data.get("date_iso")
-    sections_data = issue_data.get("sections_data")
+    sections_data = issue_data.get("sections_data") or []
     markup_done = issue_data.get("markup_done")
 
     supplement = extract_value(supplement_number) or extract_value(supplement_volume)
@@ -32,7 +32,7 @@ def extract_data_from_harvested_data(issue_data, pid):
     markup_done = normalize_markup_done(markup_done)
 
     bibliographic_strip_list = []
-    for item in issue_data.get("bibliographic_strip"):
+    for item in issue_data.get("bibliographic_strip") or []:
         """
         {
             "a": "2024",

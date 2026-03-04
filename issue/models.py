@@ -196,9 +196,22 @@ class Issue(CommonControlField, ClusterableModel):
 
     @property
     def short_identification(self):
+        """
+        Return a short textual identification for the issue.
+
+        This accessor is intentionally side-effect free with respect to the
+        database: it may populate ``self.issue_folder`` in memory if missing,
+        but it will not call ``save()``.
+        """
+        if not self.issue_folder:
+            # Lazily compute the folder identifier in memory without persisting.
+            self.issue_folder = self.generate_issue_folder()
+
+        issue_folder = self.issue_folder or ""
+
         if self.journal:
-            return f"{self.journal.title} {self.issue_folder} [{self.journal.collection_acrons}]"
-        return f"{self.issue_folder}"
+            return f"{self.journal.title} {issue_folder} [{self.journal.collection_acrons}]"
+        return f"{issue_folder}"
 
     def create_legacy_keys(self, user=None, force_update=None):
         if not force_update:
@@ -359,11 +372,25 @@ class Issue(CommonControlField, ClusterableModel):
             params['supplement'] = supplement
         
         try:
-            return cls.objects.get(**params)
+            issue = cls.objects.get(**params)
         except cls.MultipleObjectsReturned:
-            return cls.objects.filter(**params).first()
+            issue = cls.objects.filter(**params).order_by("-updated").first()
         except cls.DoesNotExist:
             raise cls.DoesNotExist(f"Issue not found with parameters: {params}")
+        
+        save = False
+        if not issue.issue_folder:
+            issue.issue_folder = issue.generate_issue_folder()
+            save = True
+        if not issue.issue_pid_suffix:
+            issue.issue_pid_suffix = issue.generate_issue_pid_suffix()
+            save = True
+        if not issue.order:
+            issue.order = issue.generate_order()
+            save = True
+        if save:
+            issue.save()
+        return issue
 
     @classmethod
     def create(
@@ -792,6 +819,7 @@ class TableOfContents(Orderable, CommonControlField):
     Relacionamento ordenado entre Issue e JournalTableOfContents.
     Este modelo substitui os relacionamentos antigos sections e code_sections.
     """
+    # use .sort_order field from Orderable base class para obter a ordem
     issue = ParentalKey(
         Issue,
         on_delete=models.CASCADE,
@@ -816,6 +844,17 @@ class TableOfContents(Orderable, CommonControlField):
     def __str__(self):
         return f"{self.issue} - {self.journal_toc}"
 
+    @classmethod
+    def get_items_by_title(cls, issue, title):
+        if not issue:
+            raise ValueError("TableOfContents.get_items_by_title requires valid issue")
+        if not title:
+            raise ValueError("TableOfContents.get_items_by_title requires valid title")
+        title = title.strip()
+        if issue.table_of_contents is None:
+            raise cls.DoesNotExist("TableOfContents.get_items_by_title requires valid issue")
+        return cls.objects.filter(issue=issue, journal_toc__text__iexact=title).order_by("sort_order")
+    
     @classmethod
     def get(cls, issue, journal_toc=None, collection=None, language=None, title=None, code=None):
         if not issue:

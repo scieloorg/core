@@ -1,6 +1,8 @@
 import logging
 import sys
+from io import BytesIO
 
+from PIL import Image as PilImage
 from celery import group
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
@@ -16,7 +18,6 @@ from journal.models import (
     AMJournal,
     Journal,
     JournalLicense,
-    JournalLogo,
     SciELOJournal,
 )
 from journal.sources import classic_website
@@ -41,9 +42,19 @@ def load_journal_from_classic_website(self, username=None, user_id=None):
 
 @celery_app.task(bind=True)
 def load_journal_from_article_meta(
-    self, username=None, user_id=None, limit=None, collection_acron=None, load_data=None
+    self,
+    username=None,
+    user_id=None,
+    limit=None,
+    collection_acron=None,
+    load_data=None,
+    journal_issn_list=None,
 ):
     try:
+        if journal_issn_list and not collection_acron:
+            raise ValueError(
+                "collection_acron is required when journal_issn_list is provided"
+            )
         if collection_acron:
             items = Collection.objects.filter(
                 collection_type="journals", acron3=collection_acron
@@ -59,6 +70,7 @@ def load_journal_from_article_meta(
                     collection_acron=item.acron3,
                     limit=limit,
                     load_data=load_data,
+                    journal_issn_list=journal_issn_list,
                 )
             )
     except Exception as e:
@@ -80,6 +92,7 @@ def load_journal_from_article_meta_for_one_collection(
     collection_acron=None,
     limit=None,
     load_data=None,
+    journal_issn_list=None,
 ):
     user = _get_user(self.request, username=username, user_id=user_id)
     try:
@@ -89,10 +102,17 @@ def load_journal_from_article_meta_for_one_collection(
         # Carrega os dados em Journal a partir de AMJournal.
         if load_data:
             process_journal_article_meta(
-                collection=collection_acron, limit=limit, user=user
+                collection=collection_acron,
+                limit=limit,
+                user=user,
+                journal_issn_list=journal_issn_list,
             )
         else:
-            _register_journal_data(user=user, collection_acron3=collection_acron)
+            _register_journal_data(
+                user=user,
+                collection_acron3=collection_acron,
+                journal_issn_list=journal_issn_list,
+            )
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
@@ -119,18 +139,22 @@ def _normalize_collection_domain(url, strip_www=False):
 
 def _build_logo_url(collection, journal_acron):
     """Build logo URL based on collection type."""
-    try:
-        domain = _normalize_collection_domain(collection.domain)
-    except Exception as e:
-        logging.error(f"Error normalizing collection domain: {e}")
+    # collection.domain contém https:// ou http://
+    if not collection.domain:
+        logger.warning(f"Collection {collection.acron3} has no domain defined")
         return None
-
+    if not journal_acron:
+        logger.warning(f"Journal with collection {collection.acron3} has no acronym defined")
+        return None
+    domain = collection.domain
+    if not domain:
+        logger.warning(f"Collection {collection.acron3} has no domain defined")
+        return None
     collection_acron3 = collection.acron3
-
     if collection_acron3 == "scl":
-        return f"https://{domain}/media/images/{journal_acron}_glogo.gif"
+        return f"{domain}/media/images/{journal_acron}_glogo.gif"
     else:
-        return f"http://{domain}/img/revistas/{journal_acron}/glogo.gif"
+        return f"{domain}/img/revistas/{journal_acron}/glogo.gif"
 
 
 @celery_app.task(bind=True)
@@ -140,6 +164,13 @@ def fetch_and_process_journal_logo(
     user_id=None,
     username=None,
 ):
+    EXT_MAP = {
+        'JPEG': '.jpg',
+        'GIF': '.gif',
+        'PNG': '.png',
+        'WEBP': '.webp',
+        'ICO': '.ico',
+    }
     try:
         journal = Journal.objects.prefetch_related(
             Prefetch(
@@ -159,18 +190,34 @@ def fetch_and_process_journal_logo(
         if not url_logo:
             return None
 
-        response = fetch_data(url_logo, json=False, timeout=30, verify=True)
+        logger.info(f"Fetching logo for journal {journal_id} from URL: {url_logo}")
+        response = fetch_data(url_logo, json=False, timeout=30)
+
+        # Detecta formato real
+        try:
+            img_bytes = BytesIO(response)
+            with PilImage.open(img_bytes) as pil_img:
+                real_format = pil_img.format  # 'JPEG', 'GIF', etc
+                correct_ext = EXT_MAP.get(real_format, '.jpg')
+            
+        except Exception as e:
+            logger.warning(f"Could not detect image format for {journal_acron}: {e}. Falling back to .jpg")
+            correct_ext = '.jpg'
+        finally:
+            try:
+                img_bytes.seek(0)  # reset após leitura do Pillow
+            except Exception:
+                pass
+        
+        logo_filename = f"{journal_acron}_logo{correct_ext}"
+
         img_wagtail, created = Image.objects.get_or_create(
             title=journal_acron,
             defaults={
-                "file": ContentFile(response, name=f"{journal_acron}_glogo.gif"),
+                "file": ContentFile(img_bytes.read(), name=logo_filename),
             },
         )
-        journal_logo = JournalLogo.create_or_update(
-            journal=journal, logo=img_wagtail, user=user
-        )
-        if not journal.logo and journal.logo != img_wagtail:
-            journal.logo = journal_logo.logo
+        journal.logo = img_wagtail
         journal.save()
         logger.info(f"Successfully processed logo for journal {journal_id}")
     except Exception as e:
@@ -194,7 +241,7 @@ def fetch_and_process_journal_logos_in_collection(
 ):
     try:
         if collection_acron3:
-            if not Collection.objects.get(acron3=collection_acron3).exists():
+            if not Collection.objects.filter(acron3=collection_acron3).exists():
                 raise ValueError(
                     f"Collection with acron3 '{collection_acron3}' does not exist"
                 )
@@ -366,6 +413,188 @@ def task_export_journals_to_articlemeta(
         raise
 
 
+@celery_app.task(bind=True, name="task_replace_institution_by_raw_institution")
+def task_replace_institution_by_raw_institution(
+    self,
+    username=None,
+    user_id=None,
+    collection_acron_list=None,
+    journal_issns=None,
+):
+    """
+    Task to populate RawOrganizationMixin fields from AMJournal records.
+    
+    This task extracts institution data from journal.models.AMJournal records and
+    populates the raw organization fields in PublisherHistory, OwnerHistory,
+    CopyrightHolderHistory, and SponsorHistory.
+    
+    Args:
+        username: User name for authentication
+        user_id: User ID for authentication
+        collection_acron_list: List of collection acronyms to filter journals
+        journal_issns: List of journal ISSNs to filter journals
+    
+    Returns:
+        Dict with processing statistics
+    """
+    from journal.sources.am_data_extraction import extract_value
+    
+    user = _get_user(self.request, username=username, user_id=user_id)
+    
+    try:
+        params = {}
+        # Filter by collection if provided
+        if collection_acron_list:
+            from collection.models import Collection
+            collections = Collection.objects.filter(acron3__in=collection_acron_list)
+            params["collection__in"] = collections
+        
+        # Filter by journal ISSN if provided
+        if journal_issns:
+            params["pid__in"] = journal_issns
+        
+        processed_count = 0
+        error_count = 0
+        
+        for am_journal in AMJournal.objects.filter(**params).iterator():
+            try:
+                # Extract data from AMJournal
+                data = am_journal.data
+
+                # Skip if no data
+                if not data:
+                    continue
+                
+                # Get the corresponding journal
+                try:
+                    scielo_journal = SciELOJournal.objects.get(
+                        issn_scielo=am_journal.pid,
+                        collection=am_journal.collection
+                    )
+                    journal = scielo_journal.journal
+                except SciELOJournal.DoesNotExist:
+                    logger.warning(
+                        f"SciELOJournal not found for pid={am_journal.pid}, "
+                        f"collection={am_journal.collection}"
+                    )
+                    continue
+                
+                # Extract publisher/owner data
+                publisher = extract_value(data.get("publisher"))
+                publisher_country = extract_value(data.get("publisher_country"))
+                publisher_state = extract_value(data.get("publisher_state"))
+                publisher_city = extract_value(data.get("publisher_city"))
+                
+                # Extract sponsor data
+                sponsor = extract_value(data.get("sponsors"))
+                
+                # Extract copyright holder data
+                copyright_holder = extract_value(data.get("copyrighter"))
+                
+                # Update PublisherHistory and OwnerHistory records
+                if publisher:
+                    if isinstance(publisher, str):
+                        publisher = [publisher]
+                    
+                    # Filter non-empty publisher names
+                    for _publisher in publisher:
+                        if not _publisher:
+                            continue
+                        journal.add_publisher(
+                            user=user,
+                            original_data=_publisher,
+                            location=None,
+                            raw_institution_name=_publisher,
+                            raw_country_name=publisher_country,
+                            raw_state_name=publisher_state,
+                            raw_city_name=publisher_city,
+                        )
+                        journal.add_owner(
+                            user=user,
+                            original_data=_publisher,
+                            location=None,
+                            raw_institution_name=_publisher,
+                            raw_country_name=publisher_country,
+                            raw_state_name=publisher_state,
+                            raw_city_name=publisher_city,
+                        )
+                
+                # Update SponsorHistory records
+                if sponsor:
+                    if isinstance(sponsor, str):
+                        sponsor = [sponsor]
+                    
+                    for _sponsor in sponsor:
+                        if not _sponsor:
+                            continue
+                        journal.add_sponsor(
+                            user=user,
+                            original_data=_sponsor,
+                            location=None,
+                            raw_institution_name=_sponsor,
+                        )
+                
+                # Update CopyrightHolderHistory records
+                if copyright_holder:
+                    if isinstance(copyright_holder, str):
+                        copyright_holder = [copyright_holder]
+                    
+                    for _copyright_holder in copyright_holder:
+                        if not _copyright_holder:
+                            continue
+                        journal.add_copyright_holder(
+                            user=user,
+                            original_data=_copyright_holder,
+                            location=None,
+                            raw_institution_name=_copyright_holder,
+                        )
+
+                processed_count += 1
+                
+            except Exception as e:
+                error_count += 1
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "task": "task_replace_institution_by_raw_institution",
+                        "am_journal_id": am_journal.id,
+                        "pid": am_journal.pid,
+                        "collection": str(am_journal.collection) if am_journal.collection else None,
+                    },
+                )
+                logger.error(
+                    f"Error processing AMJournal {am_journal.id}: {e}"
+                )
+        
+        result = {
+            "processed_count": processed_count,
+            "error_count": error_count,
+        }
+        
+        logger.info(
+            f"task_replace_institution_by_raw_institution completed: {result}"
+        )
+        
+        return result
+        
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "task_replace_institution_by_raw_institution",
+                "collection_acron_list": collection_acron_list,
+                "journal_issns": journal_issns,
+                "user_id": user_id,
+                "username": username,
+            },
+        )
+        raise
+
+
 @celery_app.task(bind=True, name="task_export_journal_to_articlemeta")
 def task_export_journal_to_articlemeta(
     self,
@@ -452,3 +681,5 @@ def task_export_journal_to_articlemeta(
         
         # Re-raise para que o Celery possa tratar a exceção adequadamente
         raise
+
+

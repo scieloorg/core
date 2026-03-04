@@ -73,7 +73,7 @@ class AMHarvester:
                 logging.info(f"Fetching AM documents from: {url}")
 
                 # Faz requisição
-                response = fetch_data(url, json=True, timeout=self.timeout, verify=True)
+                response = fetch_data(url, json=True, timeout=self.timeout, verify=False)
 
                 # Processa objetos retornados
                 objects = response.get("objects", [])
@@ -198,7 +198,8 @@ class OPACHarvester:
                 logging.info(f"Fetching OPAC documents from: {url}")
 
                 # Faz requisição
-                response = fetch_data(url, json=True, timeout=self.timeout, verify=True)
+                # verify=False é necessário para evitar erros de SSL em ambientes onde o certificado do OPAC não é reconhecido
+                response = fetch_data(url, json=True, timeout=self.timeout, verify=False)
 
                 # Define total de páginas na primeira iteração
                 if total_pages is None:

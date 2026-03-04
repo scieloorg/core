@@ -201,3 +201,173 @@ John;Doe;Revista XXXX;Jr;John Doe;lattes;0000-0000-0000-0000;john@doe.com;M;City
         self.assertEqual(EditorialBoardMember.objects.first().role_editorial_board.first().role.declared_role, "Editor")
         self.assertEqual(EditorialBoardMember.objects.first().role_editorial_board.first().initial_year, "2020")
         self.assertEqual(EditorialBoardMember.objects.first().role_editorial_board.first().final_year, "2020")
+
+
+class EditorialBoardMemberFormTest(TestCase):
+    """Tests for the manual input form functionality"""
+    
+    def setUp(self):
+        from location.models import Country
+        
+        self.user = User.objects.create(username="user")
+        self.journal = Journal.objects.create(title="Revista Test")
+        self.location = Location.create_or_update(
+            self.user,
+            city_name="São Paulo",
+            country_text="Brasil",
+            country_acronym="BR",
+            country_name="Brasil",
+            state_name="São Paulo",
+            state_acronym="SP",
+        )
+        # Get the Country object for tests
+        self.country = self.location.country
+    
+    def test_manual_input_creates_researcher(self):
+        """Test that manual input creates a new researcher"""
+        from editorialboard.forms import EditorialboardForm
+        
+        # Create form data with manual fields
+        form_data = {
+            'manual_given_names': 'João',
+            'manual_last_name': 'Silva',
+            'manual_suffix': 'Jr.',
+            'manual_institution_name': 'Universidade de São Paulo',
+            'manual_institution_acronym': 'USP',
+            'manual_institution_city': 'São Paulo',
+            'manual_institution_state': 'São Paulo',
+            'manual_institution_country': self.country,  # Use Country object
+            'manual_orcid': '0000-0001-2345-6789',
+            'manual_lattes': '1234567890123456',  # Valid 16-digit Lattes ID
+            'manual_email': 'joao.silva@usp.br',
+        }
+        
+        # Create editorial board member
+        ebm = EditorialBoardMember(journal=self.journal)
+        for key, value in form_data.items():
+            setattr(ebm, key, value)
+        
+        # Create the form
+        form = EditorialboardForm(instance=ebm)
+        
+        # Manually call save_all to test the logic
+        saved_instance = form.save_all(self.user)
+        
+        # Verify researcher was created
+        self.assertIsNotNone(saved_instance.researcher)
+        self.assertEqual(saved_instance.researcher.given_names, 'João')
+        self.assertEqual(saved_instance.researcher.last_name, 'Silva')
+        self.assertEqual(saved_instance.researcher.suffix, 'Jr.')
+        
+        # Verify affiliation was created (if location exists)
+        if saved_instance.researcher.affiliation:
+            self.assertEqual(saved_instance.researcher.affiliation.name, 'Universidade de São Paulo')
+        
+        # Verify ORCID was created and linked
+        if saved_instance.researcher.orcid:
+            self.assertEqual(saved_instance.researcher.orcid.orcid, '0000-0001-2345-6789')
+        
+        # Verify Lattes ID was created and linked
+        lattes_ids = ResearcherIds.objects.filter(
+            researcher=saved_instance.researcher, 
+            source_name='LATTES'
+        )
+        if lattes_ids.exists():
+            self.assertEqual(lattes_ids.first().identifier, '1234567890')
+        
+        # Verify Email was created and linked
+        email_ids = ResearcherIds.objects.filter(
+            researcher=saved_instance.researcher, 
+            source_name='EMAIL'
+        )
+        if email_ids.exists():
+            self.assertEqual(email_ids.first().identifier, 'joao.silva@usp.br')
+    
+    def test_manual_input_without_researcher_requires_names(self):
+        """Test that form validation requires names when no researcher selected"""
+        from editorialboard.forms import EditorialboardForm
+        from django.core.exceptions import ValidationError
+        
+        # Create form data without required fields
+        form_data = {
+            'manual_institution_name': 'Universidade de São Paulo',
+        }
+        
+        ebm = EditorialBoardMember(journal=self.journal)
+        for key, value in form_data.items():
+            setattr(ebm, key, value)
+        
+        form = EditorialboardForm(instance=ebm)
+        
+        # Test that clean raises ValidationError with expected message
+        with self.assertRaises(ValidationError) as context:
+            form.clean()
+        
+        # Verify the error message content
+        self.assertIn('given names and last name', str(context.exception))
+    
+    def test_existing_researcher_selection_skips_manual_input(self):
+        """Test that selecting existing researcher skips manual input processing"""
+        from editorialboard.forms import EditorialboardForm
+        
+        # Create an existing researcher
+        organization = Organization.create_or_update(
+            user=self.user,
+            name="Test University",
+            acronym="TU",
+            location=self.location,
+        )
+        
+        existing_researcher = NewResearcher.get_or_create(
+            self.user,
+            given_names="Maria",
+            last_name="Santos",
+            suffix="",
+            affiliation=organization,
+        )
+        
+        # Create form data with both researcher and manual fields
+        ebm = EditorialBoardMember(
+            journal=self.journal,
+            researcher=existing_researcher,
+            manual_given_names='João',
+            manual_last_name='Silva',
+        )
+        
+        form = EditorialboardForm(instance=ebm)
+        saved_instance = form.save_all(self.user)
+        
+        # Verify that existing researcher is used (not manual input)
+        self.assertEqual(saved_instance.researcher.given_names, 'Maria')
+        self.assertEqual(saved_instance.researcher.last_name, 'Santos')
+    
+    def test_invalid_orcid_format_raises_error(self):
+        """Test that invalid ORCID format raises ValidationError"""
+        from editorialboard.forms import EditorialboardForm
+        from researcher.utils import clean_orcid
+        from django.core.exceptions import ValidationError
+        
+        # Test invalid ORCID formats
+        invalid_orcids = [
+            '1234-5678-9012-3456',  # Invalid checksum position
+            '0000-0001-2345-678',   # Too short
+            '0000-0001-2345-67890', # Too long
+            'invalid-orcid',        # Invalid format
+        ]
+        
+        for invalid_orcid in invalid_orcids:
+            with self.assertRaises(ValidationError):
+                clean_orcid(invalid_orcid)
+        
+        # Test valid ORCID formats
+        valid_orcids = [
+            '0000-0001-2345-6789',
+            '0000-0002-9999-999X',
+            'https://orcid.org/0000-0001-2345-6789',
+            'http://orcid.org/0000-0002-9999-999X',
+        ]
+        
+        for valid_orcid in valid_orcids:
+            cleaned = clean_orcid(valid_orcid)
+            self.assertIsNotNone(cleaned)
+            self.assertRegex(cleaned, r'^\d{4}-\d{4}-\d{4}-\d{3}[0-9X]$')

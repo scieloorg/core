@@ -1,12 +1,13 @@
 from rest_framework import serializers
 
 from article import models
-from core.api.v1.serializers import LanguageSerializer, LicenseStatementSerializer
+from core.api.v1.serializers import LanguageSerializer, LicenseStatementSerializer, LicenseSerializer
 from doi.api.v1.serializers import DoiSerializer
 from institution.api.v1.serializers import SponsorSerializer
 from issue.api.v1.serializers import IssueSerializer, TableOfContentsSerializer
 from journal.api.v1.serializers import JournalSerializer
-from researcher.api.v1.serializers import ResearcherSerializer
+# ResearcherSerializer no longer used - replaced by ContribPersonSerializer
+# from researcher.api.v1.serializers import ResearcherSerializer
 from vocabulary.api.v1.serializers import KeywordSerializer
 
 
@@ -42,17 +43,61 @@ class DocumentAbstractSerializer(serializers.ModelSerializer):
         ]
 
 
+class ArticleAffiliationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.ArticleAffiliation
+        fields = [
+            "raw_institution_name",
+            "raw_level_1",
+            "raw_level_2",
+            "raw_level_3",
+            "raw_country_name",
+            "raw_state_name",
+            "raw_city_name",
+        ]
+
+
+class ContribCollabSerializer(serializers.ModelSerializer):
+    affiliation = ArticleAffiliationSerializer(many=False, read_only=True)
+
+    class Meta:
+        model = models.ContribCollab
+        fields = [
+            "collab",
+            "affiliation",
+        ]
+
+
+class ContribPersonSerializer(serializers.ModelSerializer):
+    affiliation = ArticleAffiliationSerializer(many=False, read_only=True)
+
+    class Meta:
+        model = models.ContribPerson
+        fields = [
+            "declared_name",
+            "given_names",
+            "last_name",
+            "suffix",
+            "fullname",
+            "orcid",
+            "email",
+            "affiliation",
+        ]
+
+
 class ArticleSerializer(serializers.ModelSerializer):
     journal = JournalSerializer(many=False, read_only=True)
     publisher = SponsorSerializer(many=True, read_only=True)
     titles = TitleSerializer(many=True, read_only=True)
     doi = DoiSerializer(many=True, read_only=True)
     abstracts = DocumentAbstractSerializer(many=True, read_only=True)
-    researchers = ResearcherSerializer(many=True, read_only=True)
+    contrib_persons = ContribPersonSerializer(many=True, read_only=True)
+    contrib_collabs = ContribCollabSerializer(many=True, read_only=True)
     languages = LanguageSerializer(many=True, read_only=True)
     fundings = FundingsSerializer(many=True, read_only=True)
     toc_sections = TableOfContentsSerializer(many=True, read_only=True)
-    license = LicenseStatementSerializer(many=True, read_only=True)
+    license = LicenseSerializer(many=False, read_only=True)
+    license_statements = LicenseStatementSerializer(many=True, read_only=True)
     issue = IssueSerializer(many=False, read_only=True)
     keywords = KeywordSerializer(many=True, read_only=True)
 
@@ -66,7 +111,8 @@ class ArticleSerializer(serializers.ModelSerializer):
             "pid_v2",
             "pid_v3",
             "abstracts",
-            "researchers",
+            "contrib_persons",
+            "contrib_collabs",
             "languages",
             "pub_date_day",
             "pub_date_month",
@@ -75,6 +121,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             "article_type",
             "toc_sections",
             "license",
+            "license_statements",
             "issue",
             "first_page",
             "last_page",

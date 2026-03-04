@@ -286,3 +286,4 @@ core/media/
 .ipython/
 .env
 !.envs/.local/
+src/

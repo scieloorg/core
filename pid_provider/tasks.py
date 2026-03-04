@@ -281,11 +281,8 @@ def task_fix_journal_pid_provider_xmls_status(
         if mark_as_invalid:
             PidProviderXML.mark_items_as_invalid(journal.issns)
 
-        if mark_as_duplicated:
-            PidProviderXML.mark_items_as_duplicated(journal.issns)
-
-        if deduplicate:
-            PidProviderXML.deduplicate_items(user, journal.issns)
+        if mark_as_duplicated or deduplicate:
+            PidProviderXML.deduplicate_items(user, journal.issns, mark_as_duplicated=mark_as_duplicated, deduplicate=deduplicate)
 
         return {
             "status": "success",

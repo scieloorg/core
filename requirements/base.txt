@@ -22,6 +22,7 @@ django-model-utils==5.0.0  # https://github.com/jazzband/django-model-utils
 django-crispy-forms==2.4  # https://github.com/django-crispy-forms/django-crispy-forms
 crispy-bootstrap5==2025.6  # https://github.com/django-crispy-forms/crispy-bootstrap5
 django-compressor==4.5.1  # https://github.com/django-compressor/django-compressor
+django-otp<1.2.0
 
 
 # ==============================================================================
@@ -49,7 +50,7 @@ wagtail==7.1.1  # https://github.com/wagtail/wagtail
 wagtail-django-recaptcha==2.1.1  # https://pypi.org/project/wagtail-django-recaptcha/
 wagtail-localize==1.12.2  # https://github.com/wagtail/wagtail-localize
 wagtail-modeladmin==2.2.0  # https://github.com/wagtail/wagtail-modeladmin
-wagtail-2fa-new==1.8.0  # https://pypi.org/project/wagtail-2fa-new/
+wagtail-2fa==1.7.1  # https://pypi.org/project/wagtail-2fa-new/
 
 # ==============================================================================
 # CACHE & SESSION
@@ -81,13 +82,13 @@ wagtail-autocomplete==0.12.0
 
 # Solr integration
 git+https://github.com/django-haystack/django-haystack.git  # Django Haystack
-pysolr==3.9.0  # https://pypi.org/project/pysolr/
+pysolr>=3.11.0  # https://pypi.org/project/pysolr/
 
 # packtools
 # ------------------------------------------------------------------------------
 tornado>=6.5.2 # not directly required, pinned by Snyk to avoid a vulnerability 
 lxml==6.0.2  # https://github.com/lxml/lxml
-git+https://git@github.com/scieloorg/packtools@4.13.1#egg=packtools
+git+https://git@github.com/scieloorg/packtools@4.15.0#egg=packtools
 
 # pymongo
 # ------------------------------------------------------------------------------

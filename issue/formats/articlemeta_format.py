@@ -197,17 +197,12 @@ class ArticlemetaIssueFormatter:
 
     def _format_institution_info(self):
         """Informações de instituições"""
-        history = {
-            "v62": "copyright_holder_history",
-            "v140": "sponsor_history",
-            "v480": "publisher_history",
-        }
-
-        for key, attr in history.items():
-            history = getattr(self.journal, attr, None)
-            if history:
-                items = [holder.institution_name for holder in history.all()]
-                add_items(key, items, self.result["issue"])
+        if self.journal.copyright_holders:
+            add_items("v62", self.journal.copyright_holders, self.result["issue"])
+        if self.journal.sponsors:
+            add_items("v140", self.journal.sponsors, self.result["issue"])
+        if self.journal.publisher_names:
+            add_items("v480", self.journal.publisher_names, self.result["issue"])
 
     def _format_title_in_database(self):
         medline_data = self.medline_titles
@@ -358,18 +353,18 @@ class ArticlemetaIssueFormatter:
 
     def _format_code_sections(self):
         data = []
-        for section in self.obj.code_sections.all():
-            code = getattr(section.code_section, "code", None)
-            lang = getattr(section.language, "code2", None)
-            text = section.text
+        for toc in self.obj.table_of_contents.select_related("journal_toc__language").all():
+            journal_toc = toc.journal_toc
+            code = getattr(journal_toc, "code", None)
+            lang = getattr(journal_toc.language, "code2", None) if journal_toc.language else None
+            text = journal_toc.text
             if code:
-                item = {"c": code}
-                item["_"] = ""
+                item = {"c": code, "_": ""}
                 if lang:
                     item["l"] = lang
                 if text:
                     item["t"] = text
-            data.append(item)
+                data.append(item)
         if data:
             self.result["issue"]["v49"] = data
 

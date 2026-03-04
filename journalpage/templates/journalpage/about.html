@@ -120,12 +120,8 @@
                           </li>
                           <li>
                             <strong>{% trans 'Publicação de:' %}</strong>
-                            {% for publisher in journal.publisher_history.all %}
-                              {% if publisher.organization %}
-                                <i>{{ publisher.organization.name }}</i>
-                              {% else %}
-                                <i>{{ publisher.institution.institution.institution_identification.name}}</i>
-                              {% endif %}
+                            {% for publisher in journal.publisher_names %}
+                              <i>{{ publisher }}</i>
                             {% endfor %}
                           </li>
                           <li>
@@ -212,12 +208,8 @@
                         </ul>
                         <h5 id="item-1-8">{% trans 'Patrocinadores e agências de Fomento' %}</h5>
                         <ul type="disc">
-                          {% for sponsor in sponsor_history %}
-                            {% if sponsor.organization %}
-                              <li>{{ sponsor.organization.name }}</li>
-                            {% else %}
-                              <li>{{ sponsor.institution.institution.institution_identification.name }}</li>
-                            {% endif %}
+                          {% for sponsor in sponsors %}
+                            <li>{{ sponsor }}</li>
                           {% endfor%}
                         </ul>
                         <!-- InlinePanel Preservacao Digital -->
@@ -341,19 +333,15 @@
                           {% with editorial_board|dict_key:role as members %}
                             {% for data in members %}
                               <li>
-                                {{ data.researcher.fullname }}
-                                {% if data.researcher_affiliation %}, {{ data.researcher_affiliation.name }}
-                                  {% if data.researcher_affiliation.location %}
-                                    , {{ data.researcher_affiliation.location.formatted_location }}
-                                  {% endif %}
-                                {% endif %}
+                                {{ data.fullname }}
+                                {% if data.researcher_affiliation %}, {{ data.researcher_affiliation }}{% endif %}
                                 <br>
-                                {% if data.researcher_orcid %}
-                                  ORCID <a target="_blank" href="https://orcid.org/{{ data.researcher_orcid }}">{{ data.researcher_orcid }}</a>
+                                {% if data.researcher_orcid %} 
+                                  <a href="https://orcid.org/{{ data.researcher_orcid }}" target="_blank">{{ data.researcher_orcid }}</a>
                                 {% endif %}
+                                {% if data.researcher_orcid and data.researcher_lattes %} | {% endif %}
                                 {% if data.researcher_lattes %}
-                                  {% if data.researcher_orcid %} | {% endif %}
-                                  <a target="_blank" href="http://lattes.cnpq.br/{{ data.researcher_lattes }}">CV Lattes</a>
+                                  <a href="http://lattes.cnpq.br/{{ data.researcher_lattes }}" target="_blank">lattes</a>
                                 {% endif %}
                               </li>
                             {% endfor %}
@@ -367,7 +355,7 @@
                         <h5 id="item-4-1">{% trans 'Tipos de documentos aceitos' %}</h5>
                         <!-- Pode haver mais de um. Permitir adicionar novo -->
                         <ul type="disc">
-                            {% for adt in accepted_documment_types %}
+                            {% for adt in accepted_document_types %}
                                 {{ adt.rich_text|richtext }}
                             {% endfor %}
                         </ul>

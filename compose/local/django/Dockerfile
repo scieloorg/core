@@ -22,6 +22,9 @@ COPY ./requirements .
 # Update pip
 RUN python -m pip install --upgrade pip
 
+# Garante setuptools disponível
+RUN pip install --upgrade setuptools
+
 # Create Python Dependency and Sub-Dependency Wheels.
 RUN pip wheel --wheel-dir /usr/src/app/wheels  \
   -r ${BUILD_ENVIRONMENT}.txt
@@ -32,6 +35,7 @@ FROM python AS python-run-stage
 
 ARG BUILD_ENVIRONMENT=local
 ARG APP_HOME=/app
+ARG APP_UID=1000
 
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -81,5 +85,11 @@ RUN chmod +x /start-flower
 
 # copy application code to WORKDIR
 COPY . ${APP_HOME}
+
+RUN groupadd --gid ${APP_UID} django \
+  && useradd --uid ${APP_UID} --gid django --shell /bin/bash --create-home django \
+  && chown -R django:django ${APP_HOME}
+
+USER django
 
 ENTRYPOINT ["/entrypoint"]

@@ -12,12 +12,11 @@ from wagtail.snippets.views.snippets import (
     SnippetViewSet,
     SnippetViewSetGroup,
 )
-from wagtail_modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
 
 from article.models import Article
 from collection.models import Collection
 from config.menu import WAGTAIL_MENU_APPS_ORDER, get_menu_order
-from core.models import ExportDestination, Gender
+from core.models import ExportDestination, Gender, License
 from journal import models
 from journal.wagtail_hooks import (
     AdditionalIndexedAtAdmin,
@@ -106,12 +105,11 @@ def add_items_summary_items(request, items):
     items.append(ArticleSummaryItem(request))
 
 
-class GenderAdmin(ModelAdmin):
+class GenderAdmin(SnippetViewSet):
     model = Gender
     menu_icon = "folder"
     menu_order = 600
     add_to_settings_menu = False
-    exclude_from_explorer = False
     list_display = (
         "code",
         "gender",
@@ -123,7 +121,7 @@ class GenderAdmin(ModelAdmin):
     )
 
 
-class ListCodesAdminGroup(ModelAdminGroup):
+class ListCodesAdminGroup(SnippetViewSetGroup):
     menu_label = "List of codes"
     menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("core")
@@ -144,7 +142,7 @@ class ListCodesAdminGroup(ModelAdminGroup):
     )
 
 
-modeladmin_register(ListCodesAdminGroup)
+register_snippet(ListCodesAdminGroup)
 
 
 @hooks.register("construct_main_menu")
@@ -162,3 +160,18 @@ class ExportDestinationViewSet(SnippetViewSet):
     menu_label = _("Export Destinations")
     list_display = ["acronym", "updated"]
     search_fields = ["acronym"]
+
+
+@register_snippet
+class LicenseViewSet(SnippetViewSet):
+    model = License
+    icon = "doc-full"
+    menu_label = _("Licenses")
+    menu_name = "licenses"
+    menu_order = 100
+    add_to_admin_menu = False
+    list_display = ("license_type", "version", "creator", "updated", "created")
+    list_filter = ("license_type", "version")
+    search_fields = ("license_type", "version")
+    list_export = ("license_type", "version")
+    inspect_view_enabled = True
