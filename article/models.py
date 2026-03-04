@@ -1808,7 +1808,7 @@ class ArticleSource(CommonControlField):
         raise ValueError("ArticleSource.get requires url")
 
     @classmethod
-    def create(cls, user, url=None, source_date=None, am_article=None, auto_solve_pid_conflict=False, force_update=False):
+    def create(cls, user, url=None, source_date=None, am_article=None, force_update=None, auto_solve_pid_conflict=False):
         if not url:
             raise ValueError("ArticleSource.create requires url")
 
@@ -1826,37 +1826,32 @@ class ArticleSource(CommonControlField):
 
     @classmethod
     def create_or_update(
-        cls, user, url=None, source_date=None, am_article=None, force_update=None,auto_solve_pid_conflict=False
+        cls, user, url=None, source_date=None, am_article=None, force_update=None, auto_solve_pid_conflict=False
     ):
         try:
             logging.info(
                 f"ArticleSource.create_or_update {url} {source_date} {am_article} {force_update}"
             )
             obj = cls.get(url=url)
-
             if (
                 force_update
                 or (source_date and source_date != obj.source_date)
                 or not obj.is_completed
             ):
-                logging.info(f"updating source: {(source_date, obj.source_date)}")
-                logging.info(f"updating am_article: {(am_article, obj.am_article)}")
-                logging.info(
-                    f"updating file: {not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)}"
-                )
+                obj.updated_by = user
+                obj.source_date = source_date
+                obj.am_article = am_article
                 obj.add_pid_provider(user, force_update, auto_solve_pid_conflict=auto_solve_pid_conflict)
-
-            obj.updated_by = user
-            obj.source_date = source_date
-            obj.am_article = am_article
-            obj.status = cls.StatusChoices.REPROCESS
-            obj.save()
-
+            return obj
         except cls.DoesNotExist:
-            obj = cls.create(
-                user, url=url, source_date=source_date, am_article=am_article
+            return cls.create(
+                user,
+                url=url,
+                source_date=source_date,
+                am_article=am_article,
+                force_update=force_update,
+                auto_solve_pid_conflict=auto_solve_pid_conflict
             )
-        return obj
 
     @cached_property
     def xml_with_pre(self):
@@ -1997,21 +1992,27 @@ class ArticleSource(CommonControlField):
     @property
     def is_completed(self):
         if not self.pid_provider_xml:
+            logging.info(f"Not completed: ArticleSource {self.url} has no pid_provider_xml")
             return False
         try:
             if not self.pid_provider_xml.xml_with_pre:
+                logoging.info(f"Not completed: ArticleSource {self.url} has pid_provider_xml but no xml_with_pre")
                 return False
         except Exception:
             pass
         if not self.am_article:
+            logging.info(f"Not completed: ArticleSource {self.url} has no am_article")
             return False
         if not self.file:
+            logging.info(f"Not completed: ArticleSource {self.url} has no file")
             return False
         if not self.file.path or not os.path.isfile(self.file.path):
+            logging.info(f"Not completed: ArticleSource {self.url} has file path invalid or file does not exist")
             return False
         if self.status != ArticleSource.StatusChoices.COMPLETED:
             self.status = ArticleSource.StatusChoices.COMPLETED
             self.save()
+        logging.info(f"Completed: ArticleSource {self.url} is completed")
         return True
 
     def add_pid_provider(self, user, force_update=False, auto_solve_pid_conflict=False):
