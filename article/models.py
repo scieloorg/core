@@ -860,7 +860,7 @@ class Article(
     def add_event(self, user, name):
         return ArticleEvent.create(user, self, name)
 
-    def add_related_article(self, user, href, ext_link_type, related_type, related_article=None):
+    def add_related_article(self, user, href, ext_link_type, related_type, related_article=None, crossref_update_type=None):
         return RelatedArticle.create_or_update(
             user,
             self,
@@ -868,6 +868,7 @@ class Article(
             ext_link_type,
             related_type,
             related_article=related_article,
+            crossref_update_type=crossref_update_type,
         )
 
     @classmethod
@@ -3304,6 +3305,18 @@ class RelatedArticle(CommonControlField):
         verbose_name=_("Related Article"),
         help_text=_("The related article instance, if available in the system."),
     )
+    crossref_update_type = models.CharField(
+        max_length=50,
+        choices=choices.CROSSREF_UPDATE_TYPE_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name=_("CrossRef Update Type"),
+        help_text=_(
+            "Crossref CrossMark update type corresponding to this related article. "
+            "Derived from the JATS related-article-type or explicitly set via custom-meta."
+        ),
+    )
+
     class Meta:
         unique_together = [('article', 'href', 'related_type')]
         indexes = [
@@ -3317,6 +3330,7 @@ class RelatedArticle(CommonControlField):
         FieldPanel("href"),
         FieldPanel("ext_link_type"),
         FieldPanel("related_type"),
+        FieldPanel("crossref_update_type"),
         AutocompletePanel("related_article"),
     ]
 
@@ -3331,6 +3345,7 @@ class RelatedArticle(CommonControlField):
             'href': self.href,
             'ext_link_type': self.ext_link_type,
             'related_type': self.related_type,
+            'crossref_update_type': self.crossref_update_type,
             'related_article_id': self.related_article.id if self.related_article else None,
         }
 
@@ -3344,7 +3359,7 @@ class RelatedArticle(CommonControlField):
         )
 
     @classmethod
-    def create(cls, user, article, href, ext_link_type, related_type, related_article=None):
+    def create(cls, user, article, href, ext_link_type, related_type, related_article=None, crossref_update_type=None):
         """Cria um novo relacionamento entre artigos."""
         if not user:
             raise ValueError("User is required")
@@ -3364,6 +3379,7 @@ class RelatedArticle(CommonControlField):
             obj.ext_link_type = ext_link_type
             obj.related_type = related_type
             obj.related_article = related_article
+            obj.crossref_update_type = crossref_update_type
             obj.creator = user
             obj.save()
             return obj
@@ -3371,20 +3387,26 @@ class RelatedArticle(CommonControlField):
             return cls.get(article, related_type, href)
 
     @classmethod
-    def create_or_update(cls, user, article, href, ext_link_type, related_type, related_article=None):
+    def create_or_update(cls, user, article, href, ext_link_type, related_type, related_article=None, crossref_update_type=None):
         """Obtém ou cria um relacionamento entre artigos."""
         try:
             if not related_article and ext_link_type == "doi":
                 related_article = Article.objects.filter(doi__value__iexact=href).first()
 
             obj = cls.get(article, related_type, href)
+            updated = False
             if obj.related_article != related_article:
                 obj.related_article = related_article
+                updated = True
+            if obj.crossref_update_type != crossref_update_type:
+                obj.crossref_update_type = crossref_update_type
+                updated = True
+            if updated:
                 obj.updated_by = user
                 obj.save()
             return obj
         except cls.DoesNotExist:
-            return cls.create(user, article, href, ext_link_type, related_type, related_article)
+            return cls.create(user, article, href, ext_link_type, related_type, related_article, crossref_update_type)
 
 
 class ArticlePeerReviewStats(Article):

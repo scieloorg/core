@@ -1068,12 +1068,16 @@ def add_related_articles(xmltree, article, user, errors):
                 ext_link_type = related_article_data.get("ext-link-type")
                 related_type = related_article_data.get("related-article-type")
 
+                # Determina o crossref_update_type a partir do mapeamento JATS→Crossref
+                crossref_update_type = choices.JATS_TO_CROSSREF_UPDATE_TYPE.get(related_type)
+
                 # Adicionar relacionamento ao artigo
                 article.add_related_article(
                     user=user,
                     href=href,
                     ext_link_type=ext_link_type,
-                    related_type=related_type
+                    related_type=related_type,
+                    crossref_update_type=crossref_update_type,
                 )
 
             except Exception as e:

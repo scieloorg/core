@@ -393,6 +393,51 @@ def task_export_article_to_articlemeta(
 
 
 @celery_app.task(bind=True)
+def task_export_crossmark_article_to_articlemeta(
+    self,
+    pid_v3=None,
+    collection_acron_list=None,
+    user_id=None,
+    username=None,
+):
+    """
+    Export crossmark data for a single article to the ``crossmark_article``
+    MongoDB collection.
+
+    Args:
+        pid_v3: Article PID v3 (required)
+        collection_acron_list: Optional list of collection acronyms
+        user_id: User ID
+        username: Username
+    """
+    try:
+        if not pid_v3:
+            raise ValueError(
+                "task_export_crossmark_article_to_articlemeta requires pid_v3"
+            )
+
+        article = Article.objects.get(pid_v3=pid_v3)
+        user = _get_user(self.request, username=username, user_id=user_id)
+
+        return controller.export_crossmark_article_to_articlemeta(
+            user,
+            article,
+            collection_acron_list=collection_acron_list,
+        )
+
+    except Exception as exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=exception,
+            exc_traceback=exc_traceback,
+            detail={
+                "task": "article.tasks.task_export_crossmark_article_to_articlemeta",
+                "pid_v3": pid_v3,
+            },
+        )
+
+
+@celery_app.task(bind=True)
 def task_load_article_from_pp_xml(
     self,
     pp_xml_id=None,

@@ -11,6 +11,13 @@ class CrossRefConfiguration(CommonControlField):
     depositor_name = models.CharField(_("Depositor Name"), null=True, blank=True, max_length=64)
     depositor_email_address = models.EmailField(_("Depositor e-mail"), null=True, blank=True, max_length=64)
     registrant = models.CharField(_("Registrant"), null=True, blank=True, max_length=64)
+    crossmark_policy = models.URLField(
+        _("CrossMark Policy URL"),
+        null=True,
+        blank=True,
+        max_length=255,
+        help_text=_("URL of the CrossMark policy page for this journal."),
+    )
 
     base_form_class = CoreAdminModelForm
     panels = [
@@ -18,6 +25,7 @@ class CrossRefConfiguration(CommonControlField):
         FieldPanel("depositor_email_address"),
         FieldPanel("registrant"),
         FieldPanel("prefix"),
+        FieldPanel("crossmark_policy"),
     ]
 
     @property
@@ -34,3 +42,10 @@ class CrossRefConfiguration(CommonControlField):
             return cls.objects.get(prefix=prefix).data
         except cls.DoesNotExist:
             return cls().data
+
+    @classmethod
+    def get_crossmark_policy(cls, prefix):
+        try:
+            return cls.objects.get(prefix=prefix).crossmark_policy
+        except cls.DoesNotExist:
+            return None
