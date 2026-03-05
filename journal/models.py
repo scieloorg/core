@@ -585,6 +585,22 @@ class Journal(CommonControlField, ClusterableModel):
         verbose_name=_("DigitalPreservationAgency"),
     )
     doi_prefix = models.CharField(max_length=20, blank=True, null=True)
+    crossmark_policy_doi = models.CharField(
+        _("Crossmark Policy DOI"),
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text=_(
+            "DOI of the crossmark update policy page for this journal"
+        ),
+    )
+    crossmark_doi_is_active = models.BooleanField(
+        verbose_name=_("Crossmark DOI is active"),
+        default=False,
+        help_text=_(
+            "Indicates whether the crossmark policy DOI page is active"
+        ),
+    )
     valid = models.BooleanField(default=False, null=True, blank=True)
 
     autocomplete_search_field = "title"
@@ -1661,6 +1677,46 @@ class ConflictPolicy(Orderable, RichTextWithLanguage, CommonControlField):
     journal = ParentalKey(
         Journal, on_delete=models.SET_NULL, related_name="conflict_policy", null=True
     )
+
+
+class UpdatePolicy(Orderable, RichTextWithLanguage, CommonControlField):
+    """
+    Update Policy (Crossmark) - policies for correction, retraction, withdrawal
+    and other update types registered with Crossmark.
+    """
+
+    policy_type = models.CharField(
+        _("Policy Type"),
+        max_length=30,
+        choices=choices.UPDATE_POLICY_TYPE,
+        null=True,
+        blank=True,
+        help_text=_(
+            "Type of update policy (e.g. correction, retraction, withdrawal)"
+        ),
+    )
+    url = models.URLField(
+        _("Policy URL"),
+        null=True,
+        blank=True,
+        help_text=_(
+            "URL of the policy page describing how the journal handles this type of update"
+        ),
+    )
+    journal = ParentalKey(
+        Journal, on_delete=models.SET_NULL, related_name="update_policy", null=True
+    )
+
+    panels = [
+        FieldPanel("policy_type"),
+        AutocompletePanel("language"),
+        FieldPanel("rich_text"),
+        FieldPanel("url"),
+    ]
+
+    class Meta:
+        verbose_name = _("Update Policy")
+        verbose_name_plural = _("Update Policies")
 
 
 class SimilarityVerificationSoftwareAdoption(
