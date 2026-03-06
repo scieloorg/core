@@ -585,22 +585,6 @@ class Journal(CommonControlField, ClusterableModel):
         verbose_name=_("DigitalPreservationAgency"),
     )
     doi_prefix = models.CharField(max_length=20, blank=True, null=True)
-    crossmark_policy_doi = models.CharField(
-        _("Crossmark Policy DOI"),
-        max_length=100,
-        blank=True,
-        null=True,
-        help_text=_(
-            "DOI of the crossmark update policy page for this journal"
-        ),
-    )
-    crossmark_doi_is_active = models.BooleanField(
-        verbose_name=_("Crossmark DOI is active"),
-        default=False,
-        help_text=_(
-            "Indicates whether the crossmark policy DOI page is active"
-        ),
-    )
     valid = models.BooleanField(default=False, null=True, blank=True)
 
     autocomplete_search_field = "title"
@@ -760,6 +744,10 @@ class Journal(CommonControlField, ClusterableModel):
                 ]
             ),
         ]
+
+    @property
+    def crossmark_doi_is_active(self):
+        return self.crossmark_policy.filter(is_active=True).exists()
 
     @property
     def owner_names(self):
@@ -1679,44 +1667,46 @@ class ConflictPolicy(Orderable, RichTextWithLanguage, CommonControlField):
     )
 
 
-class UpdatePolicy(Orderable, RichTextWithLanguage, CommonControlField):
+class CrossmarkPolicy(Orderable, RichTextWithLanguage, CommonControlField):
     """
     Update Policy (Crossmark) - policies for correction, retraction, withdrawal
     and other update types registered with Crossmark.
     """
-
-    policy_type = models.CharField(
-        _("Policy Type"),
-        max_length=30,
-        choices=choices.UPDATE_POLICY_TYPE,
+    doi = models.CharField(
+        max_length=255,
         null=True,
         blank=True,
+    )
+    is_active = models.BooleanField(
+        verbose_name=_("Crossmark DOI is active"),
+        default=False,
         help_text=_(
-            "Type of update policy (e.g. correction, retraction, withdrawal)"
+            "Indicates whether the crossmark policy DOI page is active"
         ),
     )
     url = models.URLField(
         _("Policy URL"),
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
         help_text=_(
             "URL of the policy page describing how the journal handles this type of update"
         ),
     )
     journal = ParentalKey(
-        Journal, on_delete=models.SET_NULL, related_name="update_policy", null=True
+        Journal, on_delete=models.CASCADE, related_name="crossmark_policy", null=False
     )
 
     panels = [
-        FieldPanel("policy_type"),
+        FieldPanel("doi"),
+        FieldPanel("is_active"),
         AutocompletePanel("language"),
         FieldPanel("rich_text"),
         FieldPanel("url"),
     ]
 
     class Meta:
-        verbose_name = _("Update Policy")
-        verbose_name_plural = _("Update Policies")
+        verbose_name = _("Crossmark Policy")
+        verbose_name_plural = _("Crossmark Policies")
 
 
 class SimilarityVerificationSoftwareAdoption(
