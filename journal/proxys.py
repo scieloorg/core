@@ -192,6 +192,12 @@ class JournalProxyEditor(Journal):
 
         # POLÍTICA EDITORIAL - 14 - Patrocinadores e Agências de Fomento 
         InlinePanel("sponsor_history", label=_("Sponsor")),
+
+        # POLÍTICA EDITORIAL - 15 - Política de Atualização (Crossmark)
+        InlinePanel(
+            "crossmark_policy",
+            label=_("Update Policy (Crossmark)"),
+        ),
         
         # Campos não devem ficar visíveis para o perfil da equipe editorial / editores
         # AutocompletePanel("digital_pa"),
@@ -355,6 +361,11 @@ class JournalProxyPanelPolicy(Journal):
         InlinePanel(
             "artificial_intelligence",
             label=_("Artificial Intelligence"),
+            classname="collapsed",
+        ),
+        InlinePanel(
+            "crossmark_policy",
+            label=_("Update Policy (Crossmark)"),
             classname="collapsed",
         ),
     ]
