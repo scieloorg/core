@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("doi_manager", "0003_alter_crossrefconfiguration_created_and_more"),
-        ("journal", "0056_delete_journallogo"),
+        ("journal", "0057_crossmarkpolicy"),
     ]
 
     operations = [
