@@ -164,3 +164,12 @@ COINS = [
     ("NZD", "New Zealand Dollar"),
     ("BRL", "Brazilian Real"),
 ]
+
+UPDATE_POLICY_TYPE = [
+    ("correction", _("Correction")),
+    ("retraction", _("Retraction")),
+    ("partial-retraction", _("Partial Retraction")),
+    ("withdrawal", _("Withdrawal")),
+    ("expression-of-concern", _("Expression of Concern")),
+    ("other", _("Other")),
+]
