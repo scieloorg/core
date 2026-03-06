@@ -195,11 +195,9 @@ class JournalProxyEditor(Journal):
 
         # POLÍTICA EDITORIAL - 15 - Política de Atualização (Crossmark)
         InlinePanel(
-            "update_policy",
+            "crossmark_policy",
             label=_("Update Policy (Crossmark)"),
         ),
-        FieldPanel("crossmark_policy_doi"),
-        FieldPanel("crossmark_doi_is_active"),
         
         # Campos não devem ficar visíveis para o perfil da equipe editorial / editores
         # AutocompletePanel("digital_pa"),
@@ -366,12 +364,10 @@ class JournalProxyPanelPolicy(Journal):
             classname="collapsed",
         ),
         InlinePanel(
-            "update_policy",
+            "crossmark_policy",
             label=_("Update Policy (Crossmark)"),
             classname="collapsed",
         ),
-        FieldPanel("crossmark_policy_doi"),
-        FieldPanel("crossmark_doi_is_active"),
     ]
     panels_editorial_board = [
         InlinePanel("editorial_board_member_journal", label=_("Editorial Board")),
