@@ -584,7 +584,13 @@ class Journal(CommonControlField, ClusterableModel):
         blank=True,
         verbose_name=_("DigitalPreservationAgency"),
     )
-    doi_prefix = models.CharField(max_length=20, blank=True, null=True)
+    crossref_configuration = models.ForeignKey(
+        "doi_manager.CrossRefConfiguration",
+        verbose_name=_("CrossRef Configuration"),
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
     valid = models.BooleanField(default=False, null=True, blank=True)
 
     autocomplete_search_field = "title"

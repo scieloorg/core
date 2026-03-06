@@ -129,6 +129,7 @@ class JournalSerializer(serializers.ModelSerializer):
     table_of_contents = serializers.SerializerMethodField()
     wos_areas = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
+    doi_prefix = serializers.SerializerMethodField()
 
     def format_institution_names(self, names):
         if names:
@@ -291,6 +292,11 @@ class JournalSerializer(serializers.ModelSerializer):
     def get_location(self, obj):
         if obj.contact_location:
             return obj.contact_location.data
+
+    def get_doi_prefix(self, obj):
+        if obj.crossref_configuration:
+            return obj.crossref_configuration.prefix
+        return None
 
     def get_journal_use_license(self, obj):
         if obj.journal_use_license:
