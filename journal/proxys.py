@@ -18,6 +18,8 @@ class JournalProxyEditor(Journal):
         FieldPanel("publishing_model"),
         # Campo não deve ficar visível para o perfil da equipe editorial / editores
         # InlinePanel("other_titles", label=_("Other titles")),
+        # CrossRef configuration for DOI deposit
+        AutocompletePanel("crossref_configuration"),
     ]
 
     panels_scope_and_about = [

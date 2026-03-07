@@ -628,6 +628,7 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("title"),
         FieldPanel("short_title"),
         InlinePanel("other_titles", label=_("Other titles"), classname="collapsed"),
+        AutocompletePanel("crossref_configuration"),
     ]
 
     panels_scope_and_about = [

@@ -7,10 +7,53 @@ from core.models import CommonControlField
 
 
 class CrossRefConfiguration(CommonControlField):
-    prefix = models.CharField(_("Prefix"), null=True, blank=True, max_length=10)
-    depositor_name = models.CharField(_("Depositor Name"), null=True, blank=True, max_length=64)
-    depositor_email_address = models.EmailField(_("Depositor e-mail"), null=True, blank=True, max_length=64)
-    registrant = models.CharField(_("Registrant"), null=True, blank=True, max_length=64)
+    prefix = models.CharField(
+        _("Prefix"),
+        null=True,
+        blank=True,
+        max_length=10,
+        help_text=_("DOI prefix assigned to the journal (e.g. 10.1590)."),
+    )
+    depositor_name = models.CharField(
+        _("Depositor Name"),
+        null=True,
+        blank=True,
+        max_length=64,
+        help_text=_("Name of the organization depositing the DOI metadata with CrossRef."),
+    )
+    depositor_email_address = models.EmailField(
+        _("Depositor e-mail"),
+        null=True,
+        blank=True,
+        max_length=64,
+        help_text=_("E-mail address of the depositor, used by CrossRef for deposit notifications."),
+    )
+    registrant = models.CharField(
+        _("Registrant"),
+        null=True,
+        blank=True,
+        max_length=64,
+        help_text=_("Name of the registrant organization responsible for the DOI prefix."),
+    )
+    password = models.CharField(
+        _("Password"),
+        null=True,
+        blank=True,
+        max_length=64,
+        help_text=_("Password for authenticating with the CrossRef deposit API."),
+    )
+
+    autocomplete_search_field = "prefix"
+
+    def autocomplete_label(self):
+        return str(self)
+
+    def __str__(self):
+        if self.prefix:
+            return self.prefix
+        if self.depositor_name:
+            return self.depositor_name
+        return _("CrossRef Configuration")
 
     base_form_class = CoreAdminModelForm
     panels = [
@@ -18,6 +61,7 @@ class CrossRefConfiguration(CommonControlField):
         FieldPanel("depositor_email_address"),
         FieldPanel("registrant"),
         FieldPanel("prefix"),
+        FieldPanel("password"),
     ]
 
     @property
