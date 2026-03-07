@@ -1,7 +1,6 @@
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseRedirect
-from django.urls import path
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 from wagtail.snippets.models import register_snippet
@@ -11,7 +10,6 @@ from config.menu import get_menu_order
 from core.viewsets import CommonControlFieldViewSet
 
 from .models import CrossRefConfiguration
-from .views import create_crossref_configuration
 
 
 class CrossRefConfigurationCreateView(CreateView):
@@ -59,17 +57,6 @@ class CrossRefConfigurationViewSet(CommonControlFieldViewSet):
 
 
 register_snippet(CrossRefConfigurationViewSet)
-
-
-@hooks.register("register_admin_urls")
-def register_doi_manager_urls():
-    return [
-        path(
-            "doi-manager/crossref-configuration/create-for-journal/<int:journal_pk>/",
-            create_crossref_configuration,
-            name="doi_manager_create_crossref_configuration",
-        ),
-    ]
 
 
 @hooks.register("register_permissions")
