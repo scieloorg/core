@@ -5,7 +5,7 @@ from core.utils.utils import formated_date_api_params
 from core.validators import validate_params
 from journal import models
 
-from .serializers import JournalSerializer
+from .serializers import CrossmarkPolicySerializer, JournalSerializer
 
 
 class ArticleMetaFormatSerializer(serializers.ModelSerializer):
@@ -83,3 +83,35 @@ class JournalViewSet(GenericJournalViewSet):
         if format_param == "articlemeta":
             return ArticleMetaFormatSerializer
         return JournalSerializer
+
+class CrossmarkPolicyViewSet(viewsets.ModelViewSet):
+    serializer_class = CrossmarkPolicySerializer
+    http_method_names = ["get"]
+    queryset = models.CrossmarkPolicy.objects.all()
+
+    def get_queryset(self):
+        query_params = self.request.query_params
+
+        validate_params(
+            self.request,
+            "issn",
+            "collection",
+            "journal_acronym",
+            "page",
+            "",
+        )
+
+        params = {}
+        if issn := query_params.get("issn"):
+            params["journal__official__issn_electronic"] = issn
+            params2 = {"journal__official__issn_print": issn}
+            return (
+                super().get_queryset().filter(**params)
+                | super().get_queryset().filter(**params2)
+            ).distinct()
+        if collection := query_params.get("collection"):
+            params["journal__scielojournal__collection__acron3"] = collection
+        if journal_acronym := query_params.get("journal_acronym"):
+            params["journal__scielojournal__journal_acron"] = journal_acronym
+
+        return super().get_queryset().filter(**params).distinct()
