@@ -85,6 +85,70 @@ class JournalViewSet(GenericJournalViewSet):
         return JournalSerializer
 
 class CrossmarkPolicyViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that exposes CrossmarkPolicy data for journals.
+
+    Supports the following query parameters:
+      - issn: filter by any ISSN (eissn or pissn)
+      - collection: filter by collection acronym (acron3)
+      - journal_acronym: filter by SciELO journal acronym
+
+    **GET /api/v1/crossmarkpolicy/** — list all crossmark policies
+
+    Example response:
+    ```json
+    {
+        "count": 2,
+        "next": null,
+        "previous": null,
+        "results": [
+            {
+                "id": 1,
+                "doi": "10.1234/crossmark-policy",
+                "is_active": true,
+                "language": "pt",
+                "rich_text": "<p>Política de atualização do periódico.</p>",
+                "url": "https://www.scielo.br/about/policies",
+                "journal": 42,
+                "journal_issn_print": "1234-5678",
+                "journal_issn_electronic": "9876-5432",
+                "journal_acronym": "bjmbr"
+            },
+            {
+                "id": 2,
+                "doi": null,
+                "is_active": false,
+                "language": "en",
+                "rich_text": "<p>Journal update policy.</p>",
+                "url": "https://www.scielo.br/about/policies-en",
+                "journal": 42,
+                "journal_issn_print": "1234-5678",
+                "journal_issn_electronic": "9876-5432",
+                "journal_acronym": "bjmbr"
+            }
+        ]
+    }
+    ```
+
+    **GET /api/v1/crossmarkpolicy/{id}/** — retrieve a specific crossmark policy
+
+    Example response:
+    ```json
+    {
+        "id": 1,
+        "doi": "10.1234/crossmark-policy",
+        "is_active": true,
+        "language": "pt",
+        "rich_text": "<p>Política de atualização do periódico.</p>",
+        "url": "https://www.scielo.br/about/policies",
+        "journal": 42,
+        "journal_issn_print": "1234-5678",
+        "journal_issn_electronic": "9876-5432",
+        "journal_acronym": "bjmbr"
+    }
+    ```
+    """
+
     serializer_class = CrossmarkPolicySerializer
     http_method_names = ["get"]
     queryset = models.CrossmarkPolicy.objects.all()
