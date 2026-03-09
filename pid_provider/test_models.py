@@ -1009,7 +1009,7 @@ class BasePidProviderXMLURITest(TestCase):
         # Mock failed registration
         mock_register.return_value = {
             "error_type": "ValidationError",
-            "error_message": "Invalid XML structure",
+            "error_msg": "Invalid XML structure",
             "v3": "test_v3_pid",
         }
         
