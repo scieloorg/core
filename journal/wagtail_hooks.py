@@ -138,6 +138,7 @@ class FilteredJournalQuerysetMixin:
         "publishing_model",
         "subject",
         "main_collection",
+        "official__country",
     )
     search_fields = (
         "title",
