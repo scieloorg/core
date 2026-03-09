@@ -145,11 +145,14 @@ class CrossmarkPolicySerializer(serializers.ModelSerializer):
         collection and/or journal_acronym filters, if provided.
         Falls back to the first related SciELOJournal when no specific match
         is found.
+
+        Filters are applied in Python over the prefetched scielojournal_set
+        to avoid N+1 queries.
         """
         if not obj.journal:
             return None
 
-        scielo_journals = obj.journal.scielojournal_set.all()
+        scielo_journals = list(obj.journal.scielojournal_set.all())
 
         request = self.context.get("request")
         if request is not None:
@@ -157,21 +160,21 @@ class CrossmarkPolicySerializer(serializers.ModelSerializer):
             collection_param = params.get("collection")
             journal_acronym_param = params.get("journal_acronym")
 
-            # If a collection filter is present, try to narrow by collection.
+            # Narrow by collection if the filter is present.
             if collection_param:
-                # Collection model is expected to expose an "acron3" field,
-                # consistent with JournalTableOfContentsSerializer.
-                scielo_journals = scielo_journals.filter(
-                    collection__acron3=collection_param
-                )
+                scielo_journals = [
+                    sj for sj in scielo_journals
+                    if sj.collection and sj.collection.acron3 == collection_param
+                ]
 
-            # If a specific journal acronym is requested, narrow by it as well.
+            # Narrow by journal acronym if the filter is present.
             if journal_acronym_param:
-                scielo_journals = scielo_journals.filter(
-                    journal_acron=journal_acronym_param
-                )
+                scielo_journals = [
+                    sj for sj in scielo_journals
+                    if sj.journal_acron == journal_acronym_param
+                ]
 
-        scielo_journal = scielo_journals.first()
+        scielo_journal = scielo_journals[0] if scielo_journals else None
         return scielo_journal.journal_acron if scielo_journal else None
 class JournalSerializer(serializers.ModelSerializer):
     # Serializadores para campos de relacionamento, como 'official', devem corresponder aos campos do modelo.

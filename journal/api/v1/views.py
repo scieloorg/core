@@ -1,5 +1,5 @@
 from rest_framework import serializers, viewsets
-from django.db.models import F, Q
+from django.db.models import F, Prefetch, Q
 
 from core.utils.utils import formated_date_api_params
 from core.validators import validate_params
@@ -21,8 +21,17 @@ class GenericJournalViewSet(viewsets.ModelViewSet):
     serializer_class = JournalSerializer
     http_method_names = ["get"]
     queryset = models.Journal.objects.prefetch_related(
-        "crossmark_policy",
-        "crossmark_policy__language",
+        Prefetch(
+            "crossmark_policy",
+            queryset=models.CrossmarkPolicy.objects
+            .select_related("language", "journal__official")
+            .prefetch_related(
+                Prefetch(
+                    "journal__scielojournal_set",
+                    queryset=models.SciELOJournal.objects.select_related("collection"),
+                )
+            ),
+        )
     )
 
 
@@ -157,7 +166,12 @@ class CrossmarkPolicyViewSet(viewsets.ModelViewSet):
     queryset = (
         models.CrossmarkPolicy.objects
         .select_related("language", "journal", "journal__official")
-        .prefetch_related("journal__scielojournal_set")
+        .prefetch_related(
+            Prefetch(
+                "journal__scielojournal_set",
+                queryset=models.SciELOJournal.objects.select_related("collection"),
+            )
+        )
     )
 
     def get_queryset(self):
@@ -169,7 +183,6 @@ class CrossmarkPolicyViewSet(viewsets.ModelViewSet):
             "collection",
             "journal_acronym",
             "page",
-            "",
         )
 
         params = {}
