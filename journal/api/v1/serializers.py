@@ -152,7 +152,8 @@ class CrossmarkPolicySerializer(serializers.ModelSerializer):
         if not obj.journal:
             return None
 
-        scielo_journals = list(obj.journal.scielojournal_set.all())
+        all_scielo_journals = list(obj.journal.scielojournal_set.all())
+        filtered = all_scielo_journals
 
         request = self.context.get("request")
         if request is not None:
@@ -162,19 +163,20 @@ class CrossmarkPolicySerializer(serializers.ModelSerializer):
 
             # Narrow by collection if the filter is present.
             if collection_param:
-                scielo_journals = [
-                    sj for sj in scielo_journals
+                filtered = [
+                    sj for sj in filtered
                     if sj.collection and sj.collection.acron3 == collection_param
                 ]
 
             # Narrow by journal acronym if the filter is present.
             if journal_acronym_param:
-                scielo_journals = [
-                    sj for sj in scielo_journals
+                filtered = [
+                    sj for sj in filtered
                     if sj.journal_acron == journal_acronym_param
                 ]
 
-        scielo_journal = scielo_journals[0] if scielo_journals else None
+        # Fall back to the first unfiltered entry when filters yield no match.
+        scielo_journal = (filtered or all_scielo_journals or [None])[0]
         return scielo_journal.journal_acron if scielo_journal else None
 class JournalSerializer(serializers.ModelSerializer):
     # Serializadores para campos de relacionamento, como 'official', devem corresponder aos campos do modelo.
