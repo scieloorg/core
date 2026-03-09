@@ -173,6 +173,7 @@ class JournalSerializer(serializers.ModelSerializer):
     wos_areas = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
     doi_prefix = serializers.SerializerMethodField()
+    crossmark_policy = CrossmarkPolicySerializer(many=True, read_only=True)
 
     def format_institution_names(self, names):
         if names:
@@ -379,4 +380,5 @@ class JournalSerializer(serializers.ModelSerializer):
             "url_logo",
             "mission",
             "wos_areas",
+            "crossmark_policy",
         ]
