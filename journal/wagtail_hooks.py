@@ -5,6 +5,7 @@ from django.http import HttpResponseRedirect
 from django.urls import path
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
+from wagtail.admin.panels import AutocompletePanel, FieldPanel
 from wagtail.snippets import widgets as wagtailsnippets_widgets
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import (
@@ -434,7 +435,7 @@ class JournalTableOfContentsViewSet(SnippetViewSet):
     ordering = ("journal__title", "text", "code", "collection__main_name")
 
 
-class CrossmarkPolicyJournalFilterMixin(JournalFormValidMixin):
+class CrossmarkPolicyJournalFilterMixin:
     """Restricts the journal field queryset based on user permissions to prevent
     users from creating/editing policies for journals outside their scope."""
 
@@ -456,11 +457,15 @@ class CrossmarkPolicyJournalFilterMixin(JournalFormValidMixin):
 
 
 class CrossmarkPolicyCreateView(CrossmarkPolicyJournalFilterMixin, CreateView):
-    pass
+    def form_valid(self, form):
+        self.object = form.save_all(self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class CrossmarkPolicyEditView(CrossmarkPolicyJournalFilterMixin, EditView):
-    pass
+    def form_valid(self, form):
+        self.object = form.save_all(self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class CrossmarkPolicyAdmin(SnippetViewSet):
@@ -474,6 +479,15 @@ class CrossmarkPolicyAdmin(SnippetViewSet):
     add_to_settings_menu = False
     exclude_from_explorer = False
     list_per_page = 20
+
+    panels = [
+        AutocompletePanel("journal"),
+        FieldPanel("doi"),
+        FieldPanel("is_active"),
+        AutocompletePanel("language"),
+        FieldPanel("rich_text"),
+        FieldPanel("url"),
+    ]
 
     list_display = (
         "journal",

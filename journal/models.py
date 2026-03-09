@@ -1705,7 +1705,6 @@ class CrossmarkPolicy(Orderable, RichTextWithLanguage, CommonControlField):
     base_form_class = CoreAdminModelForm
 
     panels = [
-        AutocompletePanel("journal"),
         FieldPanel("doi"),
         FieldPanel("is_active"),
         AutocompletePanel("language"),
