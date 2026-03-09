@@ -5,6 +5,7 @@ from django.http import HttpResponseRedirect
 from django.urls import path
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
+from wagtail.admin.panels import AutocompletePanel, FieldPanel
 from wagtail.snippets import widgets as wagtailsnippets_widgets
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import (
@@ -435,6 +436,97 @@ class JournalTableOfContentsViewSet(SnippetViewSet):
     ordering = ("journal__title", "text", "code", "collection__main_name")
 
 
+class CrossmarkPolicyJournalFilterMixin:
+    """Restricts the journal field queryset based on user permissions to prevent
+    users from creating/editing policies for journals outside their scope."""
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        user = self.request.user
+        if not user.is_superuser:
+            if user.has_collection_permission and user.collection_ids:
+                form.fields["journal"].queryset = models.Journal.objects.filter(
+                    scielojournal__collection__in=user.collection_ids
+                ).distinct()
+            elif user.has_journal_permission and user.journal_ids:
+                form.fields["journal"].queryset = models.Journal.objects.filter(
+                    id__in=user.journal_ids
+                ).distinct()
+            else:
+                form.fields["journal"].queryset = models.Journal.objects.none()
+        return form
+
+
+class CrossmarkPolicyCreateView(CrossmarkPolicyJournalFilterMixin, CreateView):
+    def form_valid(self, form):
+        self.object = form.save_all(self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class CrossmarkPolicyEditView(CrossmarkPolicyJournalFilterMixin, EditView):
+    def form_valid(self, form):
+        self.object = form.save_all(self.request.user)
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class CrossmarkPolicyAdmin(SnippetViewSet):
+    model = models.CrossmarkPolicy
+    menu_label = _("Crossmark Policies")
+    add_view_class = CrossmarkPolicyCreateView
+    edit_view_class = CrossmarkPolicyEditView
+    inspect_view_enabled = True
+    menu_icon = "folder"
+    menu_order = get_menu_order("journal")
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_per_page = 20
+
+    panels = [
+        AutocompletePanel("journal"),
+        FieldPanel("doi"),
+        FieldPanel("is_active"),
+        AutocompletePanel("language"),
+        FieldPanel("rich_text"),
+        FieldPanel("url"),
+    ]
+
+    list_display = (
+        "journal",
+        "doi",
+        "is_active",
+        "url",
+        "created",
+        "updated",
+    )
+    list_filter = ("is_active",)
+    search_fields = (
+        "doi",
+        "url",
+        "journal__title",
+    )
+
+    def get_queryset(self, request):
+        qs = models.CrossmarkPolicy.objects.select_related(
+            "journal",
+        )
+        user = request.user
+        if not user.is_authenticated:
+            return qs.none()
+
+        if user.is_superuser:
+            return qs.all()
+
+        if user.has_collection_permission and user.collection_ids:
+            return qs.filter(
+                journal__scielojournal__collection__in=user.collection_ids
+            ).distinct()
+        elif user.has_journal_permission and user.journal_ids:
+            return qs.filter(
+                journal__id__in=user.journal_ids
+            ).distinct()
+        return qs.none()
+
+
 class JournalSnippetViewSetGroup(SnippetViewSetGroup):
     menu_label = _("Journals")
     menu_icon = "folder-open-inverse"
@@ -449,6 +541,7 @@ class JournalSnippetViewSetGroup(SnippetViewSetGroup):
         JournalAdminInstructionsForAuthorsSnippetViewSet,
         JournalAdminOnlySnippetViewSet,
         JournalTableOfContentsViewSet,
+        CrossmarkPolicyAdmin,
         AMJournalAdmin,
     )
 
@@ -625,4 +718,10 @@ def register_ctf_permissions_2():
 def register_journal_admin_only_permissions():
     model = JournalProxyAdminOnly
     content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
+    return Permission.objects.filter(content_type=content_type)
+
+
+@hooks.register("register_permissions")
+def register_crossmark_policy_permissions():
+    content_type = ContentType.objects.get_for_model(models.CrossmarkPolicy)
     return Permission.objects.filter(content_type=content_type)

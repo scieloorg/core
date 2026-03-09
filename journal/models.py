@@ -1702,6 +1702,8 @@ class CrossmarkPolicy(Orderable, RichTextWithLanguage, CommonControlField):
         Journal, on_delete=models.CASCADE, related_name="crossmark_policy", null=False
     )
 
+    base_form_class = CoreAdminModelForm
+
     panels = [
         FieldPanel("doi"),
         FieldPanel("is_active"),
