@@ -103,6 +103,81 @@ class JournalTableOfContentsSerializer(serializers.ModelSerializer):
         return None
 
 
+class CrossmarkPolicySerializer(serializers.ModelSerializer):
+    language = serializers.SerializerMethodField()
+    journal_issn_print = serializers.SerializerMethodField()
+    journal_issn_electronic = serializers.SerializerMethodField()
+    journal_acronym = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.CrossmarkPolicy
+        fields = [
+            "id",
+            "doi",
+            "is_active",
+            "language",
+            "rich_text",
+            "url",
+            "journal",
+            "journal_issn_print",
+            "journal_issn_electronic",
+            "journal_acronym",
+        ]
+
+    def get_language(self, obj):
+        if obj.language:
+            return obj.language.code2
+        return None
+
+    def get_journal_issn_print(self, obj):
+        if obj.journal and obj.journal.official:
+            return obj.journal.official.issn_print
+        return None
+
+    def get_journal_issn_electronic(self, obj):
+        if obj.journal and obj.journal.official:
+            return obj.journal.official.issn_electronic
+        return None
+
+    def get_journal_acronym(self, obj):
+        """
+        Return the journal acronym corresponding to the current request's
+        collection and/or journal_acronym filters, if provided.
+        Falls back to the first related SciELOJournal when no specific match
+        is found.
+
+        Filters are applied in Python over the prefetched scielojournal_set
+        to avoid N+1 queries.
+        """
+        if not obj.journal:
+            return None
+
+        all_scielo_journals = list(obj.journal.scielojournal_set.all())
+        filtered = all_scielo_journals
+
+        request = self.context.get("request")
+        if request is not None:
+            params = request.query_params
+            collection_param = params.get("collection")
+            journal_acronym_param = params.get("journal_acronym")
+
+            # Narrow by collection if the filter is present.
+            if collection_param:
+                filtered = [
+                    sj for sj in filtered
+                    if sj.collection and sj.collection.acron3 == collection_param
+                ]
+
+            # Narrow by journal acronym if the filter is present.
+            if journal_acronym_param:
+                filtered = [
+                    sj for sj in filtered
+                    if sj.journal_acron == journal_acronym_param
+                ]
+
+        # Fall back to the first unfiltered entry when filters yield no match.
+        scielo_journal = filtered[0] if filtered else (all_scielo_journals[0] if all_scielo_journals else None)
+        return scielo_journal.journal_acron if scielo_journal else None
 class JournalSerializer(serializers.ModelSerializer):
     # Serializadores para campos de relacionamento, como 'official', devem corresponder aos campos do modelo.
     official = OfficialJournalSerializer(many=False, read_only=True)
@@ -130,6 +205,7 @@ class JournalSerializer(serializers.ModelSerializer):
     wos_areas = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
     doi_prefix = serializers.SerializerMethodField()
+    crossmark_policy = CrossmarkPolicySerializer(many=True, read_only=True)
 
     def format_institution_names(self, names):
         if names:
@@ -336,4 +412,5 @@ class JournalSerializer(serializers.ModelSerializer):
             "url_logo",
             "mission",
             "wos_areas",
+            "crossmark_policy",
         ]
