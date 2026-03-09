@@ -112,7 +112,10 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         )
 
     if not pp_xml and v3:
-        pp_xml = PidProviderXML.get_by_pid_v3(pid_v3=v3)
+        try:
+            pp_xml = PidProviderXML.get_by_pid_v3(pid_v3=v3)
+        except PidProviderXML.DoesNotExist:
+            pp_xml = None
 
     try:
         if pp_xml:
