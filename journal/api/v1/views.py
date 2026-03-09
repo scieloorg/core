@@ -20,7 +20,10 @@ class ArticleMetaFormatSerializer(serializers.ModelSerializer):
 class GenericJournalViewSet(viewsets.ModelViewSet):
     serializer_class = JournalSerializer
     http_method_names = ["get"]
-    queryset = models.Journal.objects.all()
+    queryset = models.Journal.objects.prefetch_related(
+        "crossmark_policy",
+        "crossmark_policy__language",
+    )
 
 
 class JournalViewSet(GenericJournalViewSet):
@@ -154,7 +157,7 @@ class CrossmarkPolicyViewSet(viewsets.ModelViewSet):
     queryset = (
         models.CrossmarkPolicy.objects
         .select_related("language", "journal", "journal__official")
-        .prefetch_related("journal__scielojournal")
+        .prefetch_related("journal__scielojournal_set")
     )
 
     def get_queryset(self):
