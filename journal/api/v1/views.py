@@ -165,7 +165,7 @@ class CrossmarkPolicyViewSet(viewsets.ModelViewSet):
     http_method_names = ["get"]
     queryset = (
         models.CrossmarkPolicy.objects
-        .select_related("language", "journal", "journal__official")
+        .select_related("language", "journal__official")
         .prefetch_related(
             Prefetch(
                 "journal__scielojournal_set",
