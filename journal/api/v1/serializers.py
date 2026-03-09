@@ -140,12 +140,39 @@ class CrossmarkPolicySerializer(serializers.ModelSerializer):
         return None
 
     def get_journal_acronym(self, obj):
-        if obj.journal:
-            scielo_journal = obj.journal.scielojournal_set.first()
-            return scielo_journal.journal_acron if scielo_journal else None
-        return None
+        """
+        Return the journal acronym corresponding to the current request's
+        collection and/or journal_acronym filters, if provided.
+        Falls back to the first related SciELOJournal when no specific match
+        is found.
+        """
+        if not obj.journal:
+            return None
 
+        scielo_journals = obj.journal.scielojournal_set.all()
 
+        request = self.context.get("request")
+        if request is not None:
+            params = request.query_params
+            collection_param = params.get("collection")
+            journal_acronym_param = params.get("journal_acronym")
+
+            # If a collection filter is present, try to narrow by collection.
+            if collection_param:
+                # Collection model is expected to expose an "acron3" field,
+                # consistent with JournalTableOfContentsSerializer.
+                scielo_journals = scielo_journals.filter(
+                    collection__acron3=collection_param
+                )
+
+            # If a specific journal acronym is requested, narrow by it as well.
+            if journal_acronym_param:
+                scielo_journals = scielo_journals.filter(
+                    journal_acron=journal_acronym_param
+                )
+
+        scielo_journal = scielo_journals.first()
+        return scielo_journal.journal_acron if scielo_journal else None
 class JournalSerializer(serializers.ModelSerializer):
     # Serializadores para campos de relacionamento, como 'official', devem corresponder aos campos do modelo.
     official = OfficialJournalSerializer(many=False, read_only=True)
