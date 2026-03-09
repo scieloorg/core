@@ -3,6 +3,16 @@ Context processors para a aplicação home.
 """
 from core.home.models import HomePage
 
+from .models import _get_current_locale
+
+
+def get_homepage_with_language_locale():
+    locale = _get_current_locale()
+    try:
+        return HomePage.objects.get(locale=locale)
+    except HomePage.DoesNotExist:
+        return HomePage.objects.live().first()
+
 
 def sponsors(request):
     """
@@ -12,8 +22,7 @@ def sponsors(request):
     no footer de todas as páginas do site.
     """
     try:
-        # Busca a primeira HomePage ativa
-        homepage = HomePage.objects.live().first()
+        homepage = get_homepage_with_language_locale()
         if homepage:
             return {
                 'footer_sponsors': homepage.sponsors.select_related('logo').all()
