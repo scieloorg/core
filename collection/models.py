@@ -269,7 +269,11 @@ class Collection(CommonControlField, ClusterableModel):
         obj.main_name = main_name
         obj.acron2 = acron2
         obj.code = code
-        obj.domain = domain
+        # Adicionar https:// ao domain se não tiver protocolo
+        if domain and not domain.startswith(('http://', 'https://')):
+            obj.domain = f"https://{domain}"
+        else:
+            obj.domain = domain
         obj.status = status
         obj.has_analytics = has_analytics
         obj.collection_type = collection_type
