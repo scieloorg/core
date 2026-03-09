@@ -434,6 +434,66 @@ class JournalTableOfContentsViewSet(SnippetViewSet):
     ordering = ("journal__title", "text", "code", "collection__main_name")
 
 
+class CrossmarkPolicyCreateView(JournalFormValidMixin, CreateView):
+    pass
+
+
+class CrossmarkPolicyEditView(JournalFormValidMixin, EditView):
+    pass
+
+
+class CrossmarkPolicyAdmin(SnippetViewSet):
+    model = models.CrossmarkPolicy
+    menu_label = _("Crossmark Policies")
+    add_view_class = CrossmarkPolicyCreateView
+    edit_view_class = CrossmarkPolicyEditView
+    inspect_view_enabled = True
+    menu_icon = "folder"
+    menu_order = get_menu_order("journal")
+    add_to_settings_menu = False
+    exclude_from_explorer = False
+    list_per_page = 20
+
+    list_display = (
+        "journal",
+        "doi",
+        "is_active",
+        "url",
+        "created",
+        "updated",
+    )
+    list_filter = ("is_active",)
+    search_fields = (
+        "doi",
+        "url",
+        "journal__title",
+    )
+
+    def get_queryset(self, request):
+        qs = models.CrossmarkPolicy.objects.select_related(
+            "journal",
+            "language",
+            "creator",
+            "updated_by",
+        )
+        user = request.user
+        if not user.is_authenticated:
+            return qs.none()
+
+        if user.is_superuser:
+            return qs.all()
+
+        if user.has_collection_permission and user.collection_ids:
+            return qs.filter(
+                journal__scielojournal__collection__in=user.collection_ids
+            ).distinct()
+        elif user.has_journal_permission and user.journal_ids:
+            return qs.filter(
+                journal__id__in=user.journal_ids
+            ).distinct()
+        return qs.none()
+
+
 class JournalSnippetViewSetGroup(SnippetViewSetGroup):
     menu_label = _("Journals")
     menu_icon = "folder-open-inverse"
@@ -448,6 +508,7 @@ class JournalSnippetViewSetGroup(SnippetViewSetGroup):
         JournalAdminInstructionsForAuthorsSnippetViewSet,
         JournalAdminOnlySnippetViewSet,
         JournalTableOfContentsViewSet,
+        CrossmarkPolicyAdmin,
         AMJournalAdmin,
     )
 
@@ -624,4 +685,10 @@ def register_ctf_permissions_2():
 def register_journal_admin_only_permissions():
     model = JournalProxyAdminOnly
     content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
+    return Permission.objects.filter(content_type=content_type)
+
+
+@hooks.register("register_permissions")
+def register_crossmark_policy_permissions():
+    content_type = ContentType.objects.get_for_model(models.CrossmarkPolicy)
     return Permission.objects.filter(content_type=content_type)
