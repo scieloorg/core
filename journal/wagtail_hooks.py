@@ -434,11 +434,32 @@ class JournalTableOfContentsViewSet(SnippetViewSet):
     ordering = ("journal__title", "text", "code", "collection__main_name")
 
 
-class CrossmarkPolicyCreateView(JournalFormValidMixin, CreateView):
+class CrossmarkPolicyJournalFilterMixin(JournalFormValidMixin):
+    """Restricts the journal field queryset based on user permissions to prevent
+    users from creating/editing policies for journals outside their scope."""
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        user = self.request.user
+        if not user.is_superuser:
+            if user.has_collection_permission and user.collection_ids:
+                form.fields["journal"].queryset = models.Journal.objects.filter(
+                    scielojournal__collection__in=user.collection_ids
+                ).distinct()
+            elif user.has_journal_permission and user.journal_ids:
+                form.fields["journal"].queryset = models.Journal.objects.filter(
+                    id__in=user.journal_ids
+                ).distinct()
+            else:
+                form.fields["journal"].queryset = models.Journal.objects.none()
+        return form
+
+
+class CrossmarkPolicyCreateView(CrossmarkPolicyJournalFilterMixin, CreateView):
     pass
 
 
-class CrossmarkPolicyEditView(JournalFormValidMixin, EditView):
+class CrossmarkPolicyEditView(CrossmarkPolicyJournalFilterMixin, EditView):
     pass
 
 
