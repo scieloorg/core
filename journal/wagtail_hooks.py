@@ -472,9 +472,6 @@ class CrossmarkPolicyAdmin(SnippetViewSet):
     def get_queryset(self, request):
         qs = models.CrossmarkPolicy.objects.select_related(
             "journal",
-            "language",
-            "creator",
-            "updated_by",
         )
         user = request.user
         if not user.is_authenticated:
