@@ -176,7 +176,7 @@ class CrossmarkPolicySerializer(serializers.ModelSerializer):
                 ]
 
         # Fall back to the first unfiltered entry when filters yield no match.
-        scielo_journal = (filtered or all_scielo_journals or [None])[0]
+        scielo_journal = filtered[0] if filtered else (all_scielo_journals[0] if all_scielo_journals else None)
         return scielo_journal.journal_acron if scielo_journal else None
 class JournalSerializer(serializers.ModelSerializer):
     # Serializadores para campos de relacionamento, como 'official', devem corresponder aos campos do modelo.
