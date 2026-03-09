@@ -1,11 +1,11 @@
 from rest_framework import serializers, viewsets
-from django.db.models import F
+from django.db.models import F, Prefetch, Q
 
 from core.utils.utils import formated_date_api_params
 from core.validators import validate_params
 from journal import models
 
-from .serializers import JournalSerializer
+from .serializers import CrossmarkPolicySerializer, JournalSerializer
 
 
 class ArticleMetaFormatSerializer(serializers.ModelSerializer):
@@ -20,7 +20,19 @@ class ArticleMetaFormatSerializer(serializers.ModelSerializer):
 class GenericJournalViewSet(viewsets.ModelViewSet):
     serializer_class = JournalSerializer
     http_method_names = ["get"]
-    queryset = models.Journal.objects.all()
+    queryset = models.Journal.objects.prefetch_related(
+        Prefetch(
+            "crossmark_policy",
+            queryset=models.CrossmarkPolicy.objects
+            .select_related("language", "journal__official")
+            .prefetch_related(
+                Prefetch(
+                    "journal__scielojournal_set",
+                    queryset=models.SciELOJournal.objects.select_related("collection"),
+                )
+            ),
+        )
+    )
 
 
 class JournalViewSet(GenericJournalViewSet):
@@ -83,3 +95,109 @@ class JournalViewSet(GenericJournalViewSet):
         if format_param == "articlemeta":
             return ArticleMetaFormatSerializer
         return JournalSerializer
+
+class CrossmarkPolicyViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that exposes CrossmarkPolicy data for journals.
+
+    Supports the following query parameters:
+      - issn: filter by any ISSN (eissn or pissn)
+      - collection: filter by collection acronym (acron3)
+      - journal_acronym: filter by SciELO journal acronym
+
+    **GET /api/v1/crossmarkpolicy/** — list all crossmark policies
+
+    Example response:
+    ```json
+    {
+        "count": 2,
+        "next": null,
+        "previous": null,
+        "results": [
+            {
+                "id": 1,
+                "doi": "10.1234/crossmark-policy",
+                "is_active": true,
+                "language": "pt",
+                "rich_text": "<p>Política de atualização do periódico.</p>",
+                "url": "https://www.scielo.br/about/policies",
+                "journal": 42,
+                "journal_issn_print": "1234-5678",
+                "journal_issn_electronic": "9876-5432",
+                "journal_acronym": "bjmbr"
+            },
+            {
+                "id": 2,
+                "doi": null,
+                "is_active": false,
+                "language": "en",
+                "rich_text": "<p>Journal update policy.</p>",
+                "url": "https://www.scielo.br/about/policies-en",
+                "journal": 42,
+                "journal_issn_print": "1234-5678",
+                "journal_issn_electronic": "9876-5432",
+                "journal_acronym": "bjmbr"
+            }
+        ]
+    }
+    ```
+
+    **GET /api/v1/crossmarkpolicy/{id}/** — retrieve a specific crossmark policy
+
+    Example response:
+    ```json
+    {
+        "id": 1,
+        "doi": "10.1234/crossmark-policy",
+        "is_active": true,
+        "language": "pt",
+        "rich_text": "<p>Política de atualização do periódico.</p>",
+        "url": "https://www.scielo.br/about/policies",
+        "journal": 42,
+        "journal_issn_print": "1234-5678",
+        "journal_issn_electronic": "9876-5432",
+        "journal_acronym": "bjmbr"
+    }
+    ```
+    """
+
+    serializer_class = CrossmarkPolicySerializer
+    http_method_names = ["get"]
+    queryset = (
+        models.CrossmarkPolicy.objects
+        .select_related("language", "journal__official")
+        .prefetch_related(
+            Prefetch(
+                "journal__scielojournal_set",
+                queryset=models.SciELOJournal.objects.select_related("collection"),
+            )
+        )
+    )
+
+    def get_queryset(self):
+        query_params = self.request.query_params
+
+        validate_params(
+            self.request,
+            "issn",
+            "collection",
+            "journal_acronym",
+            "page",
+        )
+
+        params = {}
+        issn_filter = None
+        if issn := query_params.get("issn"):
+            issn_filter = (
+                Q(journal__official__issn_electronic=issn)
+                | Q(journal__official__issn_print=issn)
+            )
+        if collection := query_params.get("collection"):
+            params["journal__scielojournal__collection__acron3"] = collection
+        if journal_acronym := query_params.get("journal_acronym"):
+            params["journal__scielojournal__journal_acron"] = journal_acronym
+
+        qs = super().get_queryset().filter(**params)
+        if issn_filter is not None:
+            qs = qs.filter(issn_filter)
+        return qs.distinct()
