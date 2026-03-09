@@ -151,7 +151,11 @@ class CrossmarkPolicyViewSet(viewsets.ModelViewSet):
 
     serializer_class = CrossmarkPolicySerializer
     http_method_names = ["get"]
-    queryset = models.CrossmarkPolicy.objects.all()
+    queryset = (
+        models.CrossmarkPolicy.objects
+        .select_related("language", "journal", "journal__official")
+        .prefetch_related("journal__scielojournal")
+    )
 
     def get_queryset(self):
         query_params = self.request.query_params
