@@ -1,5 +1,5 @@
 from rest_framework import serializers, viewsets
-from django.db.models import F
+from django.db.models import F, Q
 
 from core.utils.utils import formated_date_api_params
 from core.validators import validate_params
@@ -170,16 +170,18 @@ class CrossmarkPolicyViewSet(viewsets.ModelViewSet):
         )
 
         params = {}
+        issn_filter = None
         if issn := query_params.get("issn"):
-            params["journal__official__issn_electronic"] = issn
-            params2 = {"journal__official__issn_print": issn}
-            return (
-                super().get_queryset().filter(**params)
-                | super().get_queryset().filter(**params2)
-            ).distinct()
+            issn_filter = (
+                Q(journal__official__issn_electronic=issn)
+                | Q(journal__official__issn_print=issn)
+            )
         if collection := query_params.get("collection"):
             params["journal__scielojournal__collection__acron3"] = collection
         if journal_acronym := query_params.get("journal_acronym"):
             params["journal__scielojournal__journal_acron"] = journal_acronym
 
-        return super().get_queryset().filter(**params).distinct()
+        qs = super().get_queryset().filter(**params)
+        if issn_filter is not None:
+            qs = qs.filter(issn_filter)
+        return qs.distinct()
