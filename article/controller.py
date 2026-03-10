@@ -17,6 +17,7 @@ from article.choices import (
 )
 from core.mongodb import write_item
 from core.utils import date_utils
+from doi_manager.models import CrossRefConfiguration
 from institution.models import Sponsor
 from journal.models import Journal, SciELOJournal
 from pid_provider.choices import (
@@ -403,3 +404,136 @@ def bulk_export_articles_to_articlemeta(
             },
         )
         raise
+
+
+def build_crossmark_data(article, collection):
+    """
+    Builds the crossmark data structure for a given article and collection,
+    ready to be written to the ``crossmark_article`` MongoDB collection.
+
+    The document contains:
+    - ``code``: article PID (v2)
+    - ``collection``: collection acronym
+    - ``doi``: article DOI value (first available)
+    - ``crossmark_policy``: CrossMark policy URL from CrossRef configuration
+    - ``updates``: list of Crossref update entries derived from the article's
+      related articles that have a ``crossref_update_type`` set
+
+    Args:
+        article: Article instance
+        collection: Collection instance with ``acron3`` attribute
+
+    Returns:
+        dict: crossmark data document, or ``None`` if there are no updates to export
+    """
+    # Resolve article DOI
+    doi_value = None
+    doi_obj = article.doi.first()
+    if doi_obj:
+        doi_value = doi_obj.value
+
+    # Resolve CrossMark policy URL via the journal DOI prefix.
+    # DOIs follow the format "prefix/suffix" where the prefix is the registrant
+    # identifier (e.g. "10.1590").
+    crossmark_policy = None
+    if doi_value:
+        prefix = doi_value.split("/")[0] if "/" in doi_value else None
+        if prefix:
+            crossmark_policy = CrossRefConfiguration.get_crossmark_policy(prefix)
+
+    # Build update list from related articles that carry a crossref_update_type
+    updates = []
+    for related in article.related_articles.filter(
+        crossref_update_type__isnull=False
+    ).select_related("related_article"):
+        update_entry = {
+            "update_type": related.crossref_update_type,
+            "doi": related.href,
+        }
+        # Attach publication date from the related article when available
+        if related.related_article:
+            ra = related.related_article
+            if ra.pub_date_year:
+                date_entry = {"year": ra.pub_date_year}
+                if ra.pub_date_month:
+                    date_entry["month"] = ra.pub_date_month
+                update_entry["date"] = date_entry
+        updates.append(update_entry)
+
+    if not updates:
+        return None
+
+    return {
+        "code": article.pid_v2,
+        "collection": collection.acron3,
+        "doi": doi_value,
+        "crossmark_policy": crossmark_policy,
+        "updates": updates,
+    }
+
+
+def export_crossmark_article_to_articlemeta(
+    user,
+    article,
+    collection_acron_list=None,
+):
+    """
+    Exports crossmark data for the given article to the ``crossmark_article``
+    MongoDB collection.
+
+    A separate document per (code, collection) pair is upserted so that
+    crossmark data does not interfere with the main ``articles`` collection.
+
+    Args:
+        user: User object
+        article: Article instance
+        collection_acron_list: Optional list of collection acronyms to restrict
+            the export
+
+    Returns:
+        None
+    """
+    try:
+        legacy_keys_items = list(
+            article.get_legacy_keys(collection_acron_list, is_active=True)
+        )
+        if not legacy_keys_items:
+            return
+
+        for legacy_keys in legacy_keys_items:
+            try:
+                col = legacy_keys.get("collection")
+                if col is None:
+                    continue
+
+                data = build_crossmark_data(article, col)
+                if not data:
+                    continue
+
+                write_item("crossmark_article", data)
+
+            except Exception as e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "operation": "export_crossmark_article_to_articlemeta",
+                        "article": str(article),
+                        "legacy_keys": str(legacy_keys),
+                        "traceback": traceback.format_exc(),
+                    },
+                )
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail={
+                "operation": "export_crossmark_article_to_articlemeta",
+                "article": str(article),
+                "collection_acron_list": collection_acron_list,
+                "traceback": traceback.format_exc(),
+            },
+        )

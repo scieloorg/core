@@ -67,6 +67,47 @@ DATA_AVAILABILITY_STATUS_VALID_VALUES = [
     DATA_AVAILABILITY_STATUS_UNINFORMED,
 ]
 
+# Crossref update type constants (used in CrossMark)
+CROSSREF_UPDATE_TYPE_ADDENDUM = 'addendum'
+CROSSREF_UPDATE_TYPE_CLARIFICATION = 'clarification'
+CROSSREF_UPDATE_TYPE_CORRECTION = 'correction'
+CROSSREF_UPDATE_TYPE_CORRIGENDUM = 'corrigendum'
+CROSSREF_UPDATE_TYPE_ERRATUM = 'erratum'
+CROSSREF_UPDATE_TYPE_EXPRESSION_OF_CONCERN = 'expression_of_concern'
+CROSSREF_UPDATE_TYPE_NEW_EDITION = 'new_edition'
+CROSSREF_UPDATE_TYPE_NEW_VERSION = 'new_version'
+CROSSREF_UPDATE_TYPE_PARTIAL_RETRACTION = 'partial_retraction'
+CROSSREF_UPDATE_TYPE_REMOVAL = 'removal'
+CROSSREF_UPDATE_TYPE_RETRACTION = 'retraction'
+CROSSREF_UPDATE_TYPE_WITHDRAWAL = 'withdrawal'
+
+CROSSREF_UPDATE_TYPE_CHOICES = [
+    (CROSSREF_UPDATE_TYPE_ADDENDUM, _('Addendum')),
+    (CROSSREF_UPDATE_TYPE_CLARIFICATION, _('Clarification')),
+    (CROSSREF_UPDATE_TYPE_CORRECTION, _('Correction')),
+    (CROSSREF_UPDATE_TYPE_CORRIGENDUM, _('Corrigendum')),
+    (CROSSREF_UPDATE_TYPE_ERRATUM, _('Erratum')),
+    (CROSSREF_UPDATE_TYPE_EXPRESSION_OF_CONCERN, _('Expression of Concern')),
+    (CROSSREF_UPDATE_TYPE_NEW_EDITION, _('New Edition')),
+    (CROSSREF_UPDATE_TYPE_NEW_VERSION, _('New Version')),
+    (CROSSREF_UPDATE_TYPE_PARTIAL_RETRACTION, _('Partial Retraction')),
+    (CROSSREF_UPDATE_TYPE_REMOVAL, _('Removal')),
+    (CROSSREF_UPDATE_TYPE_RETRACTION, _('Retraction')),
+    (CROSSREF_UPDATE_TYPE_WITHDRAWAL, _('Withdrawal')),
+]
+
+# Mapping from JATS related-article-type to Crossref update type
+# Based on semantic correspondence; ambiguous cases use the closest equivalent
+JATS_TO_CROSSREF_UPDATE_TYPE = {
+    'retracted-article': CROSSREF_UPDATE_TYPE_RETRACTION,
+    'partial-retraction': CROSSREF_UPDATE_TYPE_PARTIAL_RETRACTION,
+    'expression-of-concern': CROSSREF_UPDATE_TYPE_EXPRESSION_OF_CONCERN,
+    'addendum': CROSSREF_UPDATE_TYPE_ADDENDUM,
+    'withdrawn-article': CROSSREF_UPDATE_TYPE_WITHDRAWAL,
+    'corrected-article': CROSSREF_UPDATE_TYPE_CORRECTION,
+    'updated-article': CROSSREF_UPDATE_TYPE_NEW_VERSION,
+}
+
 # Constantes para cada tipo de relacionamento
 RELATED_TYPE_CORRECTED_ARTICLE = 'corrected-article'
 RELATED_TYPE_CORRECTION_FORWARD = 'correction-forward'

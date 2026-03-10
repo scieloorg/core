@@ -1171,3 +1171,236 @@ class ContribPersonTest(TestCase):
         self.assertEqual(person.declared_name, "Dr. John R. Smith Jr.")
 
 
+
+
+class RelatedArticleCrossrefUpdateTypeTest(TestCase):
+    """Tests for crossref_update_type field and JATS-to-Crossref mapping."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.user = User.objects.create_user(username="testuser_cmark", password="x")
+
+        from article.models import Article
+        from journal.models import Journal, SciELOJournal
+        from collection.models import Collection
+
+        self.article = Article.objects.create(pid_v3="crossmark-test-v3")
+
+    def test_crossref_update_type_choices_in_choices_module(self):
+        from article import choices
+        self.assertIn(
+            choices.CROSSREF_UPDATE_TYPE_RETRACTION,
+            [c[0] for c in choices.CROSSREF_UPDATE_TYPE_CHOICES],
+        )
+        self.assertIn(
+            choices.CROSSREF_UPDATE_TYPE_ADDENDUM,
+            [c[0] for c in choices.CROSSREF_UPDATE_TYPE_CHOICES],
+        )
+
+    def test_jats_to_crossref_mapping_retracted_article(self):
+        from article import choices
+        result = choices.JATS_TO_CROSSREF_UPDATE_TYPE.get("retracted-article")
+        self.assertEqual(result, choices.CROSSREF_UPDATE_TYPE_RETRACTION)
+
+    def test_jats_to_crossref_mapping_partial_retraction(self):
+        from article import choices
+        result = choices.JATS_TO_CROSSREF_UPDATE_TYPE.get("partial-retraction")
+        self.assertEqual(result, choices.CROSSREF_UPDATE_TYPE_PARTIAL_RETRACTION)
+
+    def test_jats_to_crossref_mapping_expression_of_concern(self):
+        from article import choices
+        result = choices.JATS_TO_CROSSREF_UPDATE_TYPE.get("expression-of-concern")
+        self.assertEqual(result, choices.CROSSREF_UPDATE_TYPE_EXPRESSION_OF_CONCERN)
+
+    def test_jats_to_crossref_mapping_addendum(self):
+        from article import choices
+        result = choices.JATS_TO_CROSSREF_UPDATE_TYPE.get("addendum")
+        self.assertEqual(result, choices.CROSSREF_UPDATE_TYPE_ADDENDUM)
+
+    def test_jats_to_crossref_mapping_withdrawn_article(self):
+        from article import choices
+        result = choices.JATS_TO_CROSSREF_UPDATE_TYPE.get("withdrawn-article")
+        self.assertEqual(result, choices.CROSSREF_UPDATE_TYPE_WITHDRAWAL)
+
+    def test_jats_to_crossref_mapping_corrected_article(self):
+        from article import choices
+        result = choices.JATS_TO_CROSSREF_UPDATE_TYPE.get("corrected-article")
+        self.assertEqual(result, choices.CROSSREF_UPDATE_TYPE_CORRECTION)
+
+    def test_create_related_article_with_crossref_update_type(self):
+        from article import choices
+        from article.models import RelatedArticle
+
+        obj = RelatedArticle.create(
+            user=self.user,
+            article=self.article,
+            href="10.1590/retraction-test-001",
+            ext_link_type="doi",
+            related_type=choices.RELATED_TYPE_RETRACTED_ARTICLE,
+            crossref_update_type=choices.CROSSREF_UPDATE_TYPE_RETRACTION,
+        )
+        self.assertEqual(obj.crossref_update_type, choices.CROSSREF_UPDATE_TYPE_RETRACTION)
+        self.assertEqual(obj.related_type, choices.RELATED_TYPE_RETRACTED_ARTICLE)
+
+    def test_create_related_article_without_crossref_update_type(self):
+        from article import choices
+        from article.models import RelatedArticle
+
+        obj = RelatedArticle.create(
+            user=self.user,
+            article=self.article,
+            href="10.1590/letter-test-001",
+            ext_link_type="doi",
+            related_type=choices.RELATED_TYPE_LETTER,
+        )
+        self.assertIsNone(obj.crossref_update_type)
+
+    def test_create_or_update_sets_crossref_update_type(self):
+        from article import choices
+        from article.models import RelatedArticle
+
+        obj = RelatedArticle.create_or_update(
+            user=self.user,
+            article=self.article,
+            href="10.1590/addendum-test-001",
+            ext_link_type="doi",
+            related_type=choices.RELATED_TYPE_ADDENDUM,
+            crossref_update_type=choices.CROSSREF_UPDATE_TYPE_ADDENDUM,
+        )
+        self.assertEqual(obj.crossref_update_type, choices.CROSSREF_UPDATE_TYPE_ADDENDUM)
+
+    def test_create_or_update_updates_crossref_update_type(self):
+        from article import choices
+        from article.models import RelatedArticle
+
+        obj = RelatedArticle.create_or_update(
+            user=self.user,
+            article=self.article,
+            href="10.1590/correction-test-001",
+            ext_link_type="doi",
+            related_type=choices.RELATED_TYPE_CORRECTED_ARTICLE,
+        )
+        self.assertIsNone(obj.crossref_update_type)
+
+        # Now update with the crossref_update_type
+        updated = RelatedArticle.create_or_update(
+            user=self.user,
+            article=self.article,
+            href="10.1590/correction-test-001",
+            ext_link_type="doi",
+            related_type=choices.RELATED_TYPE_CORRECTED_ARTICLE,
+            crossref_update_type=choices.CROSSREF_UPDATE_TYPE_CORRECTION,
+        )
+        self.assertEqual(updated.crossref_update_type, choices.CROSSREF_UPDATE_TYPE_CORRECTION)
+
+    def test_related_article_data_property_includes_crossref_update_type(self):
+        from article import choices
+        from article.models import RelatedArticle
+
+        obj = RelatedArticle.create(
+            user=self.user,
+            article=self.article,
+            href="10.1590/erratum-test-001",
+            ext_link_type="doi",
+            related_type=choices.RELATED_TYPE_CORRECTED_ARTICLE,
+            crossref_update_type=choices.CROSSREF_UPDATE_TYPE_ERRATUM,
+        )
+        data = obj.data
+        self.assertIn("crossref_update_type", data)
+        self.assertEqual(data["crossref_update_type"], choices.CROSSREF_UPDATE_TYPE_ERRATUM)
+
+
+class CrossRefConfigurationCrossmarkPolicyTest(TestCase):
+    """Tests for the crossmark_policy field on CrossRefConfiguration."""
+
+    def test_get_crossmark_policy_returns_url(self):
+        from doi_manager.models import CrossRefConfiguration
+
+        config = CrossRefConfiguration.objects.create(
+            prefix="10.1590",
+            crossmark_policy="https://www.scielo.br/crossmark-policy",
+        )
+        result = CrossRefConfiguration.get_crossmark_policy("10.1590")
+        self.assertEqual(result, "https://www.scielo.br/crossmark-policy")
+
+    def test_get_crossmark_policy_returns_none_when_not_found(self):
+        from doi_manager.models import CrossRefConfiguration
+
+        result = CrossRefConfiguration.get_crossmark_policy("99.9999")
+        self.assertIsNone(result)
+
+
+class BuildCrossmarkDataTest(TestCase):
+    """Tests for build_crossmark_data helper in controller."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        self.user = User.objects.create_user(username="testuser_bcd", password="x")
+
+        from article.models import Article
+        self.article = Article.objects.create(pid_v3="crossmark-build-v3", pid_v2="S0000-00002025000100001")
+
+    def test_returns_none_when_no_updates(self):
+        from article.controller import build_crossmark_data
+        from collection.models import Collection
+
+        col = Collection.objects.create(acron3="scl")
+        result = build_crossmark_data(self.article, col)
+        self.assertIsNone(result)
+
+    def test_returns_data_with_update(self):
+        from article import choices
+        from article.controller import build_crossmark_data
+        from article.models import RelatedArticle
+        from collection.models import Collection
+
+        col = Collection.objects.create(acron3="scl2")
+
+        RelatedArticle.create(
+            user=self.user,
+            article=self.article,
+            href="10.1590/retraction-001",
+            ext_link_type="doi",
+            related_type=choices.RELATED_TYPE_RETRACTED_ARTICLE,
+            crossref_update_type=choices.CROSSREF_UPDATE_TYPE_RETRACTION,
+        )
+
+        result = build_crossmark_data(self.article, col)
+        self.assertIsNotNone(result)
+        self.assertEqual(result["code"], self.article.pid_v2)
+        self.assertEqual(result["collection"], "scl2")
+        self.assertEqual(len(result["updates"]), 1)
+        self.assertEqual(result["updates"][0]["update_type"], choices.CROSSREF_UPDATE_TYPE_RETRACTION)
+        self.assertEqual(result["updates"][0]["doi"], "10.1590/retraction-001")
+
+    def test_updates_include_date_when_related_article_has_pub_year(self):
+        from article import choices
+        from article.controller import build_crossmark_data
+        from article.models import Article, RelatedArticle
+        from collection.models import Collection
+
+        col = Collection.objects.create(acron3="scl3")
+
+        related = Article.objects.create(
+            pid_v3="erratum-v3-test",
+            pub_date_year="2024",
+            pub_date_month="06",
+        )
+        RelatedArticle.create(
+            user=self.user,
+            article=self.article,
+            href="10.1590/erratum-002",
+            ext_link_type="doi",
+            related_type=choices.RELATED_TYPE_CORRECTED_ARTICLE,
+            crossref_update_type=choices.CROSSREF_UPDATE_TYPE_ERRATUM,
+            related_article=related,
+        )
+
+        result = build_crossmark_data(self.article, col)
+        self.assertIsNotNone(result)
+        update = result["updates"][0]
+        self.assertIn("date", update)
+        self.assertEqual(update["date"]["year"], "2024")
+        self.assertEqual(update["date"]["month"], "06")
