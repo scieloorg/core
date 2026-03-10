@@ -395,7 +395,7 @@ class SciELOJournalAdminViewSet(SnippetViewSet):
 
 class AMJournalAdmin(SnippetViewSet):
     model = models.AMJournal
-    menu_label = "AM Journal"
+    menu_label = _("AM Journal")
     menu_icon = "folder"
     menu_order = get_menu_order("amjournal")
     list_display = ("pid", "collection", "processing_date", "status")
@@ -552,7 +552,7 @@ register_snippet(JournalSnippetViewSetGroup)
 
 class IndexedAtAdmin(SnippetViewSet):
     model = models.IndexedAt
-    menu_label = "Indexed At"
+    menu_label = _("Indexed At")
     menu_icon = "folder"
     menu_order = 100
     add_to_settings_menu = False
@@ -565,7 +565,7 @@ class IndexedAtAdmin(SnippetViewSet):
 
 class AdditionalIndexedAtAdmin(SnippetViewSet):
     model = models.AdditionalIndexedAt
-    menu_label = "Additional Indexed At"
+    menu_label = _("Additional Indexed At")
     menu_icon = "folder"
     menu_order = 110
     add_to_settings_menu = False
@@ -576,7 +576,7 @@ class AdditionalIndexedAtAdmin(SnippetViewSet):
 class IndexedAtFileAdmin(SnippetViewSet):
     model = models.IndexedAtFile
     button_helper_class = IndexedAtHelper
-    menu_label = "Indexed At Upload"
+    menu_label = _("Indexed At Upload")
     menu_icon = "folder"
     menu_order = 200
     add_to_settings_menu = False
