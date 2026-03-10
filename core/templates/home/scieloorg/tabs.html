@@ -134,7 +134,7 @@
                                     
                                     <form action="{{ child.url }}" method="get">
                                         <div class="input-group mb-3">
-                                            <input type="text" name="search_term" class="form-control" placeholder="Search journals: Enter one or more words" aria-label="Search journals: Enter one or more words" autofocus>
+                                            <input type="text" name="search_term" class="form-control" placeholder="{% trans 'Search journals: Enter one or more words' %}" aria-label="{% trans 'Search journals: Enter one or more words' %}" autofocus>
                                             <button type="submit" class="btn btn-primary btn-lg scielo__btn-with-icon--only">
                                                 <i class="material-icons-outlined">search</i>
                                             </button>
