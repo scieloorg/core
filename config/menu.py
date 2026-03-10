@@ -25,6 +25,7 @@ WAGTAIL_MENU_APPS_ORDER = [
 
     "article_subm",
 
+    "doi_manager",
     "pid_provider",
     "django_celery_beat",
     "xml_validation",
