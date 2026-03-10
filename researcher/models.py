@@ -1492,8 +1492,8 @@ class ResearcherIds(CommonControlField):
 
     @staticmethod
     def validate_lattes(lattes):
-        clean_value = re.sub(r"[\.\-]", "", lattes)
-        if not re.fullmatch(r"\d{16}", clean_value):
+        clean_value = ResearcherIds.extract_lattes(lattes)
+        if clean_value and not re.fullmatch(r'\d{16}', clean_value):
             raise ValidationError({"identifier": f"Lattes {lattes} is not valid"})
 
     @staticmethod

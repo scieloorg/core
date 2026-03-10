@@ -7,14 +7,14 @@ from django.template.response import TemplateResponse
 from django.utils.translation import activate, get_language, gettext
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
-from wagtail import blocks 
-from wagtail.images.blocks import ImageBlock
+from wagtail import blocks
 from wagtail.admin.panels import FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel
 from wagtail.contrib.forms.models import AbstractFormField
 from wagtail.contrib.forms.panels import FormSubmissionsPanel
 from wagtail.contrib.routable_page.models import RoutablePageMixin, re_path
 from wagtail.fields import RichTextField, StreamField
-from wagtail.models import Locale, Page
+from wagtail.images.blocks import ImageBlock
+from wagtail.models import Locale, Orderable, Page
 from wagtailcaptcha.models import WagtailCaptchaEmailForm
 
 from collection.models import Collection
@@ -104,12 +104,74 @@ def as_item(qs, lang_code):
     return [{"obj": obj, "name": obj.get_name_for_language(lang_code)} for obj in qs]
 
 
+class HomePageSponsor(Orderable):
+    """
+    Modelo para armazenar patrocinadores (logos) do footer da HomePage.
+    Permite adicionar múltiplos patrocinadores com ordem personalizada.
+    """
+    page = ParentalKey(
+        "HomePage",
+        on_delete=models.CASCADE,
+        related_name="sponsors",
+        verbose_name=_("Page"),
+    )
+    name = models.CharField(
+        _("Sponsor Name"),
+        max_length=255,
+        help_text=_("Nome do patrocinador (ex: FAPESP, CAPES)"),
+    )
+    logo = models.ForeignKey(
+        "wagtailimages.Image",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("Logo"),
+        help_text=_("Logo do patrocinador"),
+    )
+    url = models.URLField(
+        _("Website URL"),
+        blank=True,
+        null=True,
+        help_text=_("URL do site do patrocinador"),
+    )
+    alt_text = models.CharField(
+        _("Alt Text"),
+        max_length=255,
+        blank=True,
+        help_text=_("Texto alternativo para acessibilidade (se vazio, usa o nome)"),
+    )
+
+    panels = [
+        FieldPanel("name"),
+        FieldPanel("logo"),
+        FieldPanel("url"),
+        FieldPanel("alt_text"),
+    ]
+
+    class Meta:
+        verbose_name = _("Sponsor")
+        verbose_name_plural = _("Sponsors")
+        ordering = ["sort_order"]
+
+    def __str__(self):
+        return self.name
+
+    def get_alt_text(self):
+        """Retorna o alt_text ou o name como fallback"""
+        return self.alt_text or self.name
+
+
 class HomePage(Page):
     subpage_types = [
         "home.AboutScieloOrgPage",
         "home.ListPageJournal",
         "home.ListPageJournalByPublisher",
         "home.ListPageJournalByCategory",
+    ]
+
+    content_panels = Page.content_panels + [
+        InlinePanel("sponsors", label=_("Footer Sponsors"), heading=_("Patrocinadores do Footer")),
     ]
 
     def get_context(self, request, *args, **kwargs):

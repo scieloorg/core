@@ -43,10 +43,10 @@ class City(CommonControlField):
         unique_together = [("name",)]
 
     def __unicode__(self):
-        return self.name
+        return f"{self.name}"
 
     def __str__(self):
-        return self.name
+        return f"{self.name}"
 
     @classmethod
     def load(cls, user, file_path=None):
@@ -378,10 +378,10 @@ class Country(CommonControlField, ClusterableModel):
         ]
 
     def __unicode__(self):
-        return self.name or self.acronym
+        return f"{self.name or self.acronym}"
 
     def __str__(self):
-        return self.name or self.acronym
+        return f"{self.name or self.acronym}"
 
     @classmethod
     def load(cls, user, file_path=None):
