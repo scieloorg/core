@@ -419,7 +419,7 @@ class FormPage(WagtailCaptchaEmailForm):
     intro = RichTextField(blank=True, help_text=_("Texto de introdução ao formulário."))
     thank_you_text = RichTextField(
         blank=True,
-        help_text=_("Adicione a mensagem que será exibido após o envio do formulário."),
+        help_text=_("Adicione a mensagem que será exibida após o envio do formulário."),
     )
 
     def serve(self, request, *args, **kwargs):
