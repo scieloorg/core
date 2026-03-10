@@ -1,4 +1,6 @@
+from django.urls import path
 from django.utils.translation import gettext_lazy as _
+from wagtail import hooks
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
 
@@ -12,6 +14,7 @@ from article.models import (
     AMArticle,
     ArticlePeerReviewStats
 )
+from article.views import data_availability_chart
 from config.menu import get_menu_order
 
 
@@ -239,3 +242,14 @@ class ArticleSnippetViewSetGroup(SnippetViewSetGroup):
 
 
 register_snippet(ArticleSnippetViewSetGroup)
+
+
+@hooks.register("register_admin_urls")
+def register_article_admin_urls():
+    return [
+        path(
+            "article/data-availability-chart/",
+            data_availability_chart,
+            name="data_availability_chart",
+        ),
+    ]

@@ -1171,3 +1171,57 @@ class ContribPersonTest(TestCase):
         self.assertEqual(person.declared_name, "Dr. John R. Smith Jr.")
 
 
+class DataAvailabilityChartViewTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="chartuser", password="testpass")
+        Article.objects.create(
+            pid_v3="pid_chart_1",
+            pub_date_year="2022",
+            data_availability_status="data-available",
+        )
+        Article.objects.create(
+            pid_v3="pid_chart_2",
+            pub_date_year="2022",
+            data_availability_status="data-not-available",
+        )
+        Article.objects.create(
+            pid_v3="pid_chart_3",
+            pub_date_year="2023",
+            data_availability_status="data-available",
+        )
+
+    def test_redirects_when_not_logged_in(self):
+        response = self.client.get("/admin/article/data-availability-chart/")
+        self.assertEqual(response.status_code, 302)
+
+    def test_returns_200_for_authenticated_user(self):
+        self.client.login(username="chartuser", password="testpass")
+        response = self.client.get("/admin/article/data-availability-chart/")
+        self.assertEqual(response.status_code, 200)
+
+    def test_context_contains_chart_data(self):
+        self.client.login(username="chartuser", password="testpass")
+        response = self.client.get("/admin/article/data-availability-chart/")
+        self.assertIn("years_json", response.context)
+        self.assertIn("series_json", response.context)
+
+    def test_context_years_are_sorted(self):
+        import json
+
+        self.client.login(username="chartuser", password="testpass")
+        response = self.client.get("/admin/article/data-availability-chart/")
+        years = json.loads(response.context["years_json"])
+        self.assertEqual(years, sorted(years))
+
+    def test_template_used(self):
+        self.client.login(username="chartuser", password="testpass")
+        response = self.client.get("/admin/article/data-availability-chart/")
+        self.assertTemplateUsed(response, "article/data_availability_chart.html")
+
+    def test_empty_database(self):
+        Article.objects.all().delete()
+        self.client.login(username="chartuser", password="testpass")
+        response = self.client.get("/admin/article/data-availability-chart/")
+        self.assertEqual(response.status_code, 200)
+
+
