@@ -89,7 +89,7 @@ class Issue(CommonControlField, ClusterableModel):
         max_length=20,
         null=True,
         blank=True,
-        help_text="Ex: Jan-Abr.",
+        help_text=_("Ex: Jan-Abr."),
     )
     year = models.CharField(_("Issue year"), max_length=4, null=True, blank=True)
     month = models.CharField(_("Issue month"), max_length=20, null=True, blank=True)

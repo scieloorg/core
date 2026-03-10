@@ -488,7 +488,7 @@ class VisualIdentityMixin(models.Model):
         logo: The organization's logo image
         url: The organization's website URL
     """
-    url = models.URLField("url", blank=True, null=True)
+    url = models.URLField(_("URL"), blank=True, null=True)
     logo = models.ImageField(_("Logo"), blank=True, null=True)
 
     class Meta:

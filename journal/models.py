@@ -2015,8 +2015,8 @@ class DigitalPreservationAgency(CommonControlField):
         return str(self)
 
     class Meta:
-        verbose_name = "Digitial Preservation Agency"
-        verbose_name_plural = "Digital Preservation Agencies"
+        verbose_name = _("Digital Preservation Agency")
+        verbose_name_plural = _("Digital Preservation Agencies")
         unique_together = [
             (
                 "name",
