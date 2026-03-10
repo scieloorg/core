@@ -1,0 +1,54 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n %}
+
+{% block titletag %}{% trans "Data Availability" %}{% endblock %}
+
+{% block content %}
+  <div style="padding: 20px;">
+    <h1>{% trans "Data Availability" %}</h1>
+    <p>{% trans "Evolution of articles by data availability status per year." %}</p>
+    <div id="data-availability-chart" style="width: 100%; height: 600px;"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script>
+    (function () {
+      var chartDom = document.getElementById('data-availability-chart');
+      var myChart = echarts.init(chartDom);
+
+      var years = {{ years_json|safe }};
+      var series = {{ series_json|safe }};
+
+      var option = {
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow' }
+        },
+        legend: {
+          type: 'scroll',
+          bottom: 0
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '15%',
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          data: years
+        },
+        yAxis: {
+          type: 'value',
+          name: '{% trans "Articles" %}'
+        },
+        series: series
+      };
+
+      myChart.setOption(option);
+      window.addEventListener('resize', function () {
+        myChart.resize();
+      });
+    })();
+  </script>
+{% endblock %}
