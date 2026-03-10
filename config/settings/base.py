@@ -262,6 +262,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "core.users.context_processors.allauth_settings",
                 "wagtail.contrib.settings.context_processors.settings",
+                "core.home.context_processors.sponsors",
             ],
         },
     }
@@ -348,7 +349,7 @@ LOGGING = {
     },
     "loggers": {
         "profiling": {  # <-- Logger usado pelo decorador
-            "handlers": ["profiling_file"],
+            "handlers": ["console"],
             "level": "DEBUG",
             "propagate": False,
         },

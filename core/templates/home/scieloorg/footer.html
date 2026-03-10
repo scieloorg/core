@@ -1,3 +1,4 @@
+{% load wagtailimages_tags %}
 <!-- footer -->
 <footer class="d-none" style="border: 10px solid blue;">
     <div class="collectionSignature">
@@ -64,55 +65,52 @@ E-mail: scielo@scielo.org</p>
 			<div class="row">
 				<div class="col text-center mt-4 mb-4">
 
+				{% if footer_sponsors %}
+					{% for sponsor in footer_sponsors %}
+						{% if sponsor.url %}
+							<a href="{{ sponsor.url }}" target="_blank" class="mx-4 my-2 d-inline-block" title="{{ sponsor.name }}">
+								{% if sponsor.logo %}
+									{% image sponsor.logo max-200x200 alt=sponsor.get_alt_text %}
+								{% else %}
+									<span>{{ sponsor.name }}</span>
+								{% endif %}
+							</a>
+						{% else %}
+							<div class="mx-4 my-2 d-inline-block" title="{{ sponsor.name }}">
+								{% if sponsor.logo %}
+									{% image sponsor.logo max-200x200 alt=sponsor.get_alt_text %}
+								{% else %}
+									<span>{{ sponsor.name }}</span>
+								{% endif %}
+							</div>
+						{% endif %}
+					{% endfor %}
+				{% else %}
+					{# Fallback para os logos fixos caso não haja patrocinadores cadastrados #}
+					<a href="http://www.capes.gov.br/" target="_blank" class="mx-4 my-2 d-inline-block">
+						<img src="https://www.scielo.br/media/images/CAPES.png" alt="CAPES">
+					</a>
 
+					<a href="http://www.cnpq.br/" target="_blank" class="mx-4 my-2 d-inline-block">
+						<img src="https://www.scielo.br/media/images/CNPq.png" alt="CNPq">
+					</a>
 
-						<a href="http://www.capes.gov.br/" target="_blank" class="mx-4 my-2 d-inline-block">
+					<a href="http://www.fapesp.br/" target="_blank" class="mx-4 my-2 d-inline-block">
+						<img src="https://www.scielo.br/media/images/FAPESP.png" alt="FAPESP">
+					</a>
 
-								<img src="https://www.scielo.br/media/images/CAPES.png" alt="CAPES">
+					<a href="http://bvsalud.org/" target="_blank" class="mx-4 my-2 d-inline-block">
+						<img src="https://www.scielo.br/media/images/BVS.png" alt="BVS">
+					</a>
 
-						</a>
+					<a href="http://regional.bvsalud.org/bvs/bireme/homepage.htm" target="_blank" class="mx-4 my-2 d-inline-block">
+						<img src="https://www.scielo.br/media/images/BIREME.png" alt="BIREME">
+					</a>
 
-
-
-						<a href="http://www.cnpq.br/" target="_blank" class="mx-4 my-2 d-inline-block">
-
-								<img src="https://www.scielo.br/media/images/CNPq.png" alt="CNPq">
-
-						</a>
-
-
-
-						<a href="http://www.fapesp.br/" target="_blank" class="mx-4 my-2 d-inline-block">
-
-								<img src="https://www.scielo.br/media/images/FAPESP.png" alt="FAPESP">
-
-						</a>
-
-
-
-						<a href="http://bvsalud.org/" target="_blank" class="mx-4 my-2 d-inline-block">
-
-								<img src="https://www.scielo.br/media/images/BVS.png" alt="BVS">
-
-						</a>
-
-
-
-						<a href="http://regional.bvsalud.org/bvs/bireme/homepage.htm" target="_blank" class="mx-4 my-2 d-inline-block">
-
-								<img src="https://www.scielo.br/media/images/BIREME.png" alt="BIREME">
-
-						</a>
-
-
-
-						<a href="https://www.fapunifesp.edu.br/" target="_blank" class="mx-4 my-2 d-inline-block">
-
-								<img src="https://www.scielo.br/media/images/FAP-UNIFESP.png" alt="FAP-UNIFESP">
-
-						</a>
-
-
+					<a href="https://www.fapunifesp.edu.br/" target="_blank" class="mx-4 my-2 d-inline-block">
+						<img src="https://www.scielo.br/media/images/FAP-UNIFESP.png" alt="FAP-UNIFESP">
+					</a>
+				{% endif %}
 
 				</div>
 			</div>
