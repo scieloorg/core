@@ -14,8 +14,6 @@ def data_availability_chart(request):
     View that renders a chart showing the evolution (by year) of articles
     regarding their data availability status.
     """
-    status_labels = dict(choices.DATA_AVAILABILITY_STATUS)
-
     qs = (
         Article.objects.filter(
             pub_date_year__isnull=False,
