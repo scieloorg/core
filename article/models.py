@@ -267,6 +267,7 @@ class Article(
     panels_authorship = [
         InlinePanel("contrib_persons", label=_("Contributors")),
         InlinePanel("contrib_collabs", label=_("Collaborations")),
+        InlinePanel("editors", label=_("Editors")),
     ]
 
     # Licenciamento e financiamento
@@ -3187,6 +3188,218 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         self.updated_by = user
         self.save()
         return self
+
+
+class ArticleEditor(CommonControlField):
+    """
+    Represents an editor responsible for the peer review of an article.
+
+    Stores semi-structured information about editors extracted from the XML
+    (e.g., from <author-notes>). The data may not always be fully structured,
+    so the model accommodates both structured and unstructured name data.
+
+    Fields:
+        article: ParentalKey to Article (CASCADE)
+        name: Editor's name (may be unstructured)
+        orcid: ORCID identifier
+        role: Editor's role (e.g., "editor", "academic-editor", "section-editor")
+        institution: Editor's institution (semi-structured)
+    """
+
+    article = ParentalKey(
+        Article,
+        on_delete=models.CASCADE,
+        related_name="editors",
+        verbose_name=_("Article"),
+    )
+
+    name = models.CharField(
+        _("Name"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Editor's name (may be unstructured)"),
+    )
+
+    orcid = models.CharField(
+        _("ORCID"),
+        max_length=19,
+        null=True,
+        blank=True,
+        help_text=_("ORCID identifier (e.g., 0000-0002-1825-0097)"),
+    )
+
+    role = models.CharField(
+        _("Role"),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_("Editor's role (e.g., editor, academic-editor, section-editor)"),
+    )
+
+    institution = models.CharField(
+        _("Institution"),
+        max_length=510,
+        null=True,
+        blank=True,
+        help_text=_("Editor's institution (semi-structured)"),
+    )
+
+    panels = [
+        FieldPanel("name"),
+        FieldPanel("orcid"),
+        FieldPanel("role"),
+        FieldPanel("institution"),
+    ]
+
+    base_form_class = CoreAdminModelForm
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["article"]),
+            models.Index(fields=["orcid"]),
+        ]
+
+    def __str__(self):
+        parts = [str(self.article)]
+        if self.name:
+            parts.append(self.name)
+        if self.role:
+            parts.append(self.role)
+        return " - ".join(parts)
+
+    @classmethod
+    def get(cls, article, name=None, orcid=None, role=None):
+        """
+        Get an editor by article and identifying parameters.
+
+        Args:
+            article: Article instance (required)
+            name: Editor's name (optional)
+            orcid: ORCID identifier (optional)
+            role: Editor's role (optional)
+
+        Returns:
+            ArticleEditor instance
+
+        Raises:
+            ValueError: If article is not provided
+            cls.DoesNotExist: If no matching instance found
+        """
+        if not article:
+            raise ValueError("ArticleEditor.get requires article parameter")
+
+        try:
+            return cls.objects.get(
+                article=article,
+                name=name,
+                orcid=orcid,
+                role=role,
+            )
+        except cls.MultipleObjectsReturned:
+            return cls.objects.filter(
+                article=article,
+                name=name,
+                orcid=orcid,
+                role=role,
+            ).first()
+
+    @classmethod
+    def create(cls, user, article, name=None, orcid=None, role=None, institution=None):
+        """
+        Create a new editor.
+
+        Args:
+            user: User creating the instance
+            article: Article instance (required)
+            name: Editor's name (optional)
+            orcid: ORCID identifier (optional)
+            role: Editor's role (optional)
+            institution: Editor's institution (optional)
+
+        Returns:
+            New ArticleEditor instance
+
+        Raises:
+            ValueError: If article is not provided
+        """
+        if not article:
+            raise ValueError("ArticleEditor.create requires article parameter")
+
+        obj = cls()
+        obj.article = article
+        if name is not None:
+            obj.name = name
+        if orcid is not None:
+            obj.orcid = orcid
+        if role is not None:
+            obj.role = role
+        if institution is not None:
+            obj.institution = institution
+
+        if user:
+            obj.creator = user
+
+        try:
+            obj.save()
+            return obj
+        except IntegrityError:
+            return cls.get(article, name, orcid, role)
+
+    @classmethod
+    def create_or_update(cls, user, article, name=None, orcid=None, role=None,
+                         institution=None):
+        """
+        Create a new editor or update an existing one.
+
+        Lookup strategy: Uses article + name + orcid + role to find existing
+        record. If a record exists with these identifiers, it will be updated.
+        Otherwise, a new one is created.
+
+        Args:
+            user: User creating/updating the instance
+            article: Article instance (required)
+            name: Editor's name (optional)
+            orcid: ORCID identifier (optional)
+            role: Editor's role (optional)
+            institution: Editor's institution (optional)
+
+        Returns:
+            ArticleEditor instance (created or updated)
+
+        Raises:
+            ValueError: If article is not provided
+        """
+        if not article:
+            raise ValueError("ArticleEditor.create_or_update requires article parameter")
+
+        try:
+            obj = cls.get(article, name, orcid, role)
+
+            if name is not None:
+                obj.name = name
+            if orcid is not None:
+                obj.orcid = orcid
+            if role is not None:
+                obj.role = role
+            if institution is not None:
+                obj.institution = institution
+
+            if user:
+                obj.updated_by = user
+
+            obj.save()
+            return obj
+
+        except cls.DoesNotExist:
+            return cls.create(
+                user=user,
+                article=article,
+                name=name,
+                orcid=orcid,
+                role=role,
+                institution=institution,
+            )
 
 
 class ArticleEvent(BaseEvent, CommonControlField, Orderable):
