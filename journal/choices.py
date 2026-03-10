@@ -2,12 +2,12 @@ from django.utils.translation import gettext_lazy as _
 
 OA_STATUS = [
     ("", ""),
-    ("diamond", "Diamond"),
-    ("gold", "Gold"),
-    ("hybrid", "Hybrid"),
-    ("bronze", "Bronze"),
-    ("green", "Green"),
-    ("closed", "Closed"),
+    ("diamond", _("Diamond")),
+    ("gold", _("Gold")),
+    ("hybrid", _("Hybrid")),
+    ("bronze", _("Bronze")),
+    ("green", _("Green")),
+    ("closed", _("Closed")),
 ]
 
 STATUS = [
@@ -152,17 +152,17 @@ INDEXING_INTERRUPTION_REASON = [
 ]
 
 COINS = [
-    ("USD", "US Dollar"),
-    ("EUR", "Euro"),
-    ("JPY", "Japanese Yen"),
-    ("GBP", "British Pound Sterling"),
-    ("AUD", "Australian Dollar"),
-    ("CAD", "Canadian Dollar"),
-    ("CHF", "Swiss Franc"),
-    ("CNY", "Chinese Yuan"),
-    ("SEK", "Swedish Krona"),
-    ("NZD", "New Zealand Dollar"),
-    ("BRL", "Brazilian Real"),
+    ("USD", _("US Dollar")),
+    ("EUR", _("Euro")),
+    ("JPY", _("Japanese Yen")),
+    ("GBP", _("British Pound Sterling")),
+    ("AUD", _("Australian Dollar")),
+    ("CAD", _("Canadian Dollar")),
+    ("CHF", _("Swiss Franc")),
+    ("CNY", _("Chinese Yuan")),
+    ("SEK", _("Swedish Krona")),
+    ("NZD", _("New Zealand Dollar")),
+    ("BRL", _("Brazilian Real")),
 ]
 
 UPDATE_POLICY_TYPE = [

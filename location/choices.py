@@ -1,8 +1,10 @@
+from django.utils.translation import gettext_lazy as _
+
 regions = (
     ("", ""),
-    ("Norte", "Norte"),
-    ("Nordeste", "Nordeste"),
-    ("Centro-Oeste", "Centro-Oeste"),
-    ("Sudeste", "Sudeste"),
-    ("Sul", "Sul"),
+    ("Norte", _("Norte")),
+    ("Nordeste", _("Nordeste")),
+    ("Centro-Oeste", _("Centro-Oeste")),
+    ("Sudeste", _("Sudeste")),
+    ("Sul", _("Sul")),
 )
