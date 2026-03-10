@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.messages.middleware import MessageMiddleware
 from django.contrib.sessions.middleware import SessionMiddleware
+from django.db.models import Prefetch
 from django.http import HttpRequest, HttpResponseRedirect
 from django.test import RequestFactory
 from django.urls import reverse
@@ -12,6 +13,7 @@ from core.users.forms import UserAdminChangeForm
 from core.users.models import User
 from core.users.tests.factories import UserFactory
 from core.users.views import UserRedirectView, UserUpdateView, user_detail_view
+from core.users.viewsets import CustomUserEditView
 
 pytestmark = pytest.mark.django_db
 
@@ -96,3 +98,36 @@ class TestUserDetailView:
         assert isinstance(response, HttpResponseRedirect)
         assert response.status_code == 302
         assert response.url == f"{login_url}?next=/fake-url/"
+
+
+class TestCustomUserEditView:
+    def test_get_queryset_prefetches_relations(self, user: User, rf: RequestFactory):
+        view = CustomUserEditView()
+        request = rf.get("/fake-url/")
+        request.user = user
+        view.request = request
+
+        queryset = view.get_queryset()
+
+        prefetch_lookups = queryset._prefetch_related_lookups
+        lookup_names = []
+        for lookup in prefetch_lookups:
+            if isinstance(lookup, Prefetch):
+                lookup_names.append(lookup.prefetch_through)
+            else:
+                lookup_names.append(lookup)
+
+        assert "journal" in lookup_names
+        assert "collection" in lookup_names
+        assert "groups" in lookup_names
+        assert "user_permissions" in lookup_names
+
+    def test_get_queryset_returns_all_users(self, user: User, rf: RequestFactory):
+        view = CustomUserEditView()
+        request = rf.get("/fake-url/")
+        request.user = user
+        view.request = request
+
+        queryset = view.get_queryset()
+
+        assert user in queryset
