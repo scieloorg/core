@@ -445,7 +445,7 @@ class FormPage(WagtailCaptchaEmailForm):
                     return JsonResponse(
                         {
                             "alert": "error",
-                            "message": _("Erro ao tentar enviar a <strong>formulário!</strong> Verifique os campos obrigatórios. Errors: %s")
+                            "message": _("Erro ao tentar enviar o <strong>formulário!</strong> Verifique os campos obrigatórios. Errors: %s")
                             % form.errors,
                         }
                     )
