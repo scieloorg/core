@@ -4,6 +4,7 @@ import os
 
 from django.db import models, IntegrityError
 from django.db.models import Q
+from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -15,6 +16,27 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField, Language, TextWithLang
 from core.utils.standardizer import standardize_name, standardize_code_and_name, remove_extra_spaces
+from .choices import LOCATION_STATUS
+
+
+def clean_text_data(text):
+    """
+    Utility function to clean location text data.
+    Removes HTML tags and normalizes whitespace.
+    
+    Args:
+        text: The text to clean, can be None
+        
+    Returns:
+        Cleaned text or None if input was None
+    """
+    if not text:
+        return text
+    # Remove HTML tags
+    cleaned = strip_tags(text)
+    # Remove extra spaces
+    cleaned = remove_extra_spaces(cleaned)
+    return cleaned
 
 
 class City(CommonControlField):
@@ -23,12 +45,21 @@ class City(CommonControlField):
 
     Fields:
         name
+        status: Processing status (RAW, CLEANED, MATCHED, VERIFIED, REJECTED)
     """
 
     name = models.TextField(_("Name of the city"), unique=True)
+    status = models.CharField(
+        _("Status"),
+        max_length=10,
+        choices=LOCATION_STATUS,
+        default="RAW",
+        blank=True,
+        null=True,
+    )
 
     base_form_class = CoreAdminModelForm
-    panels = [FieldPanel("name")]
+    panels = [FieldPanel("name"), FieldPanel("status")]
     autocomplete_search_field = "name"
 
     def autocomplete_label(self):
@@ -59,11 +90,11 @@ class City(CommonControlField):
                     logging.exception(e)
 
     @classmethod
-    def get_or_create(cls, user=None, name=None):
+    def get_or_create(cls, user=None, name=None, status="RAW"):
         try:
             return cls.get(name)
         except cls.DoesNotExist:
-            return cls.create(user, name)
+            return cls.create(user, name, status)
 
     @classmethod
     def get(cls, name):
@@ -76,18 +107,26 @@ class City(CommonControlField):
             return cls.objects.filter(name__iexact=name).first()
 
     @classmethod
-    def create(cls, user=None, name=None):
+    def create(cls, user=None, name=None, status="RAW"):
         name = remove_extra_spaces(name)
         if not name:
             raise ValueError("City.get_or_create requires name")
         try:
             city = City()
             city.name = name
+            city.status = status
             city.creator = user
             city.save()
             return city
         except IntegrityError:
             return cls.get(name)
+
+    @classmethod
+    def clean_data(cls, name):
+        """
+        Pre-clean city name data: remove HTML, extra spaces, etc.
+        """
+        return clean_text_data(name)
 
     @staticmethod
     def standardize(text, user=None):
@@ -110,13 +149,22 @@ class State(CommonControlField):
     Fields:
         name
         acronym
+        status: Processing status (RAW, CLEANED, MATCHED, VERIFIED, REJECTED)
     """
 
     name = models.TextField(_("State name"), null=True, blank=True)
     acronym = models.CharField(_("State Acronym"), max_length=2, null=True, blank=True)
+    status = models.CharField(
+        _("Status"),
+        max_length=10,
+        choices=LOCATION_STATUS,
+        default="RAW",
+        blank=True,
+        null=True,
+    )
 
     base_form_class = CoreAdminModelForm
-    panels = [FieldPanel("name"), FieldPanel("acronym")]
+    panels = [FieldPanel("name"), FieldPanel("acronym"), FieldPanel("status")]
 
     @staticmethod
     def autocomplete_custom_queryset_filter(search_term):
@@ -166,8 +214,8 @@ class State(CommonControlField):
                 )
 
     @classmethod
-    def get_or_create(cls, user=None, name=None, acronym=None):
-        return cls.create_or_update(user, name=name, acronym=acronym)
+    def get_or_create(cls, user=None, name=None, acronym=None, status=None):
+        return cls.create_or_update(user, name=name, acronym=acronym, status=status)
 
     @classmethod
     def get(cls, name=None, acronym=None):
@@ -181,7 +229,7 @@ class State(CommonControlField):
         raise ValueError("State.get requires name or acronym")
 
     @classmethod
-    def create(cls, user, name=None, acronym=None):
+    def create(cls, user, name=None, acronym=None, status="RAW"):
         name = remove_extra_spaces(name)
         acronym = remove_extra_spaces(acronym)
         if name or acronym:
@@ -189,6 +237,7 @@ class State(CommonControlField):
                 obj = cls()
                 obj.name = name
                 obj.acronym = acronym
+                obj.status = status
                 obj.creator = user
                 obj.save()
                 return obj
@@ -197,7 +246,17 @@ class State(CommonControlField):
         raise ValueError("State.create requires name or acronym")
 
     @classmethod
-    def create_or_update(cls, user, name=None, acronym=None):
+    def clean_data(cls, name=None, acronym=None):
+        """
+        Pre-clean state data: remove HTML, extra spaces, etc.
+        Returns tuple (cleaned_name, cleaned_acronym)
+        """
+        cleaned_name = clean_text_data(name)
+        cleaned_acronym = clean_text_data(acronym)
+        return cleaned_name, cleaned_acronym
+
+    @classmethod
+    def create_or_update(cls, user, name=None, acronym=None, status=None):
         name = remove_extra_spaces(name)
         acronym = remove_extra_spaces(acronym)
         try:
@@ -205,9 +264,11 @@ class State(CommonControlField):
             obj.updated_by = user
             obj.name = name or obj.name
             obj.acronym = acronym or obj.acronym
+            if status is not None:
+                obj.status = status
             obj.save()
         except cls.DoesNotExist:
-            obj = cls.create(user, name, acronym)
+            obj = cls.create(user, name, acronym, status or "RAW")
         return obj
 
     @staticmethod
@@ -332,6 +393,8 @@ class Country(CommonControlField, ClusterableModel):
     Fields:
         name
         acronym
+        acron3
+        status: Processing status (RAW, CLEANED, MATCHED, VERIFIED, REJECTED)
     """
 
     name = models.CharField(_("Country Name"), blank=True, null=True, max_length=255)
@@ -341,12 +404,21 @@ class Country(CommonControlField, ClusterableModel):
     acron3 = models.CharField(
         _("Country Acronym (3 char)"), blank=True, null=True, max_length=3
     )
+    status = models.CharField(
+        _("Status"),
+        max_length=10,
+        choices=LOCATION_STATUS,
+        default="RAW",
+        blank=True,
+        null=True,
+    )
 
     base_form_class = CoreAdminModelForm
     panels = [
         FieldPanel("name"),
         FieldPanel("acronym"),
         FieldPanel("acron3"),
+        FieldPanel("status"),
         InlinePanel("country_name", label=_("Country names")),
     ]
 
@@ -433,6 +505,7 @@ class Country(CommonControlField, ClusterableModel):
         acron3=None,
         country_names=None,
         lang_code2=None,
+        status=None,
     ):
         name = remove_extra_spaces(name)
         acronym = remove_extra_spaces(acronym)
@@ -442,9 +515,12 @@ class Country(CommonControlField, ClusterableModel):
         try:
             obj = cls.get(name, acronym, acron3)
             obj.updated_by = user
+            if status is not None:
+                obj.status = status
         except cls.DoesNotExist:
             obj = cls()
             obj.creator = user
+            obj.status = status or "RAW"
 
         obj.name = name or obj.name
         obj.acronym = acronym or obj.acronym
@@ -462,6 +538,17 @@ class Country(CommonControlField, ClusterableModel):
                 country=obj, language=language, text=text, user=user
             )
         return obj
+
+    @classmethod
+    def clean_data(cls, name=None, acronym=None, acron3=None):
+        """
+        Pre-clean country data: remove HTML, extra spaces, etc.
+        Returns tuple (cleaned_name, cleaned_acronym, cleaned_acron3)
+        """
+        cleaned_name = clean_text_data(name)
+        cleaned_acronym = clean_text_data(acronym)
+        cleaned_acron3 = clean_text_data(acron3)
+        return cleaned_name, cleaned_acronym, cleaned_acron3
 
     @staticmethod
     def standardize(text, user=None):
