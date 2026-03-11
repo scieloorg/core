@@ -42,3 +42,4 @@ elastic-apm==6.21.4.post8347027212  # https://pypi.org/project/elastic-apm/
 # ==============================================================================
 
 setuptools>=68.2.2  # not directly required, pinned by Snyk to avoid a vulnerability
+django>=4.2.26 # not directly required, pinned by Snyk to avoid a vulnerability
