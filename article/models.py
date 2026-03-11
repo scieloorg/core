@@ -3,7 +3,7 @@ import os
 import sys
 import traceback
 from datetime import datetime
-from functools import lru_cache, cached_property
+from functools import cached_property
 
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
@@ -902,7 +902,10 @@ class Article(
 
     def is_pp_xml_valid(self):
         if not self.pp_xml:
-            self.pp_xml = PidProviderXML.get_by_pid_v3(pid_v3=self.pid_v3)
+            try:
+                self.pp_xml = PidProviderXML.get_by_pid_v3(pid_v3=self.pid_v3)
+            except PidProviderXML.DoesNotExist:
+                self.pp_xml = None
 
         if not self.pp_xml or not self.pp_xml.xml_with_pre:
             if self.data_status != choices.DATA_STATUS_INVALID:
@@ -2007,35 +2010,71 @@ class ArticleSource(CommonControlField):
         return True
 
     def add_pid_provider(self, user, force_update=False, auto_solve_pid_conflict=False):
+        """
+        Executa o pipeline de obtenção de XML e registro de PID para este
+        ArticleSource. Evita refazer etapas já concluídas, a menos que
+        ``force_update=True``.
+
+        Etapas:
+            1. request_xml  — baixa o XML da URL e salva em ``self.file``
+               • Pula se ``self.file`` já existe em disco E ``force_update`` é False
+            2. request_pid  — registra o XML no PidProvider e associa ``self.pid_provider_xml``
+               • Pula se ``self.pid_provider_xml`` já está associado E ``force_update`` é False
+
+        Se uma etapa anterior falhou (ex: tem arquivo mas não tem
+        pid_provider_xml), somente a etapa faltante é executada.
+        """
         try:
-            # Lista para armazenar detalhes do processamento
             detail = []
             self.status = ArticleSource.StatusChoices.PENDING
-            logging.info(f"Starting PID provider process for {self.url}")
-            self.request_xml(detail)
-            logging.info(f"XML requested successfully for {self.url}")
-            self.request_pid(
-                user, detail, force_update, auto_solve_pid_conflict
+
+            # --- Etapa 1: request_xml ---
+            has_valid_file = (
+                self.file
+                and self.file.name
+                and os.path.isfile(self.file.path)
             )
-            logging.info(f"PID requested successfully for {self.pid_provider_xml}")
+
+            if force_update or not has_valid_file:
+                logging.info(f"Requesting XML for {self.url}")
+                self.request_xml(detail)
+                logging.info(f"XML requested successfully for {self.url}")
+            else:
+                logging.info(
+                    f"Skipping request_xml: file already exists for {self.url}"
+                )
+                detail.append("request_xml skipped (file already exists)")
+
+            # --- Etapa 2: request_pid ---
+            has_pid_provider = self.pid_provider_xml is not None
+
+            if force_update or not has_pid_provider:
+                logging.info(f"Requesting PID for {self.url}")
+                self.request_pid(
+                    user, detail, force_update, auto_solve_pid_conflict
+                )
+                logging.info(
+                    f"PID requested successfully for {self.pid_provider_xml}"
+                )
+            else:
+                logging.info(
+                    f"Skipping request_pid: pid_provider_xml already set "
+                    f"for {self.url}"
+                )
+                detail.append("request_pid skipped (pid_provider_xml already set)")
+
             self.detail = detail
-            self.mark_as_completed()  # Marca o processamento como concluído
+            self.mark_as_completed()
             logging.info(f"ArticleSource {self.status}")
 
         except XMLException as e:
-            # erros específicos de XML ou URL foram tratado em request_xml, aqui só registra o erro e marca como erro
-            # Obtém informações detalhadas da exceção
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            # Adiciona informações do erro aos detalhes
             detail.append(str({"error_type": str(type(e)), "error_message": str(e)}))
             self.detail = detail
             self.mark_as_xml_error()
             logging.info(f"ArticleSource {self.url} marked as XML error")
         except RequestXMLException as e:
-            # erros específicos de XML ou URL foram tratado em request_xml, aqui só registra o erro e marca como erro
-            # Obtém informações detalhadas da exceção
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            # Adiciona informações do erro aos detalhes
             detail.append(str({"error_type": str(type(e)), "error_message": str(e)}))
             self.detail = detail
             self.mark_as_url_error()
@@ -2043,7 +2082,6 @@ class ArticleSource(CommonControlField):
         except Exception as e:
             logging.exception(e)
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            # Adiciona informações do erro aos detalhes
             detail.append(str({"error_type": str(type(e)), "error_message": str(e)}))
             self.detail = detail
             self.mark_as_error()
