@@ -288,7 +288,7 @@ msgstr "Localización"
 #: core/templates/home/include/list_journal_page/journals_table_by_publisher.html:11
 #: institution/wagtail_hooks.py:246 journal/models.py:625 journal/proxys.py:31
 msgid "Publisher"
-msgstr "Editor"
+msgstr "Entidad Editora"
 
 #: book/models.py:78
 msgid "SciELO Book"
