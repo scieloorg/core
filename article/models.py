@@ -133,17 +133,17 @@ class Article(
         max_length=10,
         null=True,
         blank=True,
-        help_text="Dia de publicação no site.",
+        help_text=_("Dia de publicação no site."),
     )
     pub_date_month = models.CharField(
         _("pub date month"),
         max_length=10,
         null=True,
         blank=True,
-        help_text="Mês de publicação no site.",
+        help_text=_("Mês de publicação no site."),
     )
     pub_date_year = models.CharField(
-        max_length=4, null=True, blank=True, help_text="Ano de publicação no site."
+        max_length=4, null=True, blank=True, help_text=_("Ano de publicação no site.")
     )
     fundings = models.ManyToManyField(
         "ArticleFunding", verbose_name=_("Fundings"), blank=True
@@ -190,7 +190,7 @@ class Article(
         _("Peer review statistics"),
         default=dict,
         blank=True,
-        help_text="Todas as datas e intervalos do processo de revisão por pares",
+        help_text=_("Todas as datas e intervalos do processo de revisão por pares"),
     )
     preprint_dateiso = models.CharField(
         _("Preprint Date (ISO)"),

@@ -173,7 +173,7 @@ class ScimagoAdmin(ModelAdmin):
 class ScimagoFileAdmin(ModelAdmin):
     model = ScimagoFile
     button_helper_class = ScimagoHelper
-    menu_label = "Scimago Upload"
+    menu_label = _("Scimago Upload")
     menu_icon = "folder"
     menu_order = 200
     add_to_settings_menu = False

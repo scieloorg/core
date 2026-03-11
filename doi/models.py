@@ -89,7 +89,7 @@ class DOI(CommonControlField):
 
 
 class DOIRegistration(CommonControlField):
-    doi = models.ManyToManyField(DOI, verbose_name="DOI", blank=True)
+    doi = models.ManyToManyField(DOI, verbose_name=_("DOI"), blank=True)
     submission_date = models.DateField(
         _("Submission Date"), max_length=20, null=True, blank=True
     )

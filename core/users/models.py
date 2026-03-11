@@ -15,8 +15,8 @@ class User(AbstractUser):
 
     #: First and last name do not cover name patterns around the globe
     name = models.CharField(_("Name of User"), blank=True, max_length=255)
-    first_name = models.CharField(max_length=150, blank=True, verbose_name="first name")
-    last_name = models.CharField(max_length=150, blank=True, verbose_name="last name")
+    first_name = models.CharField(max_length=150, blank=True, verbose_name=_("first name"))
+    last_name = models.CharField(max_length=150, blank=True, verbose_name=_("last name"))
     journal = models.ManyToManyField(
         "journal.Journal", verbose_name=_("Journal"), blank=True
     )

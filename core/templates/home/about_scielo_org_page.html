@@ -168,7 +168,7 @@
         <div class="container">
             {% if q %}
                 <p style="margin-top:10px;">
-                    Resultados para: <strong>{{ q }}</strong>
+                    {% trans "Resultados para:" %} <strong>{{ q }}</strong>
                 </p>
                 {% if search_results %}
                     <div class="search-results">
@@ -179,7 +179,7 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <p>Nenhum resultado encontrado.</p>
+                    <p>{% trans "Nenhum resultado encontrado." %}</p>
                 {% endif %}
             {% else %}
                 {% if page.external_link %}
@@ -188,7 +188,7 @@
                   window.location.href = "{{ page.external_link }}";
                     </script>
                     <p style="text-align: center; margin: 40px 0;">
-                        Redirecionando para <a href="{{ page.external_link }}"
+                        {% trans "Redirecionando para" %} <a href="{{ page.external_link }}"
     target="_blank"
     rel="noopener noreferrer">{{ page.external_link }}</a>...
                     </p>

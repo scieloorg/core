@@ -122,7 +122,7 @@ class GenderAdmin(SnippetViewSet):
 
 
 class ListCodesAdminGroup(SnippetViewSetGroup):
-    menu_label = "List of codes"
+    menu_label = _("List of codes")
     menu_icon = "folder-open-inverse"
     menu_order = get_menu_order("core")
     items = (

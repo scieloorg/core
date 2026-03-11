@@ -408,7 +408,7 @@ class AboutScieloOrgPage(Page):
         return context
 
     class Meta:
-        verbose_name = "Página Sobre SciELO"
+        verbose_name = _("Página Sobre SciELO")
 
 
 class FormField(AbstractFormField):
@@ -416,10 +416,10 @@ class FormField(AbstractFormField):
 
 
 class FormPage(WagtailCaptchaEmailForm):
-    intro = RichTextField(blank=True, help_text="Texto de introdução ao formulário.")
+    intro = RichTextField(blank=True, help_text=_("Texto de introdução ao formulário."))
     thank_you_text = RichTextField(
         blank=True,
-        help_text="Adicione a mensagem que será exibido após o envio do formulário.",
+        help_text=_("Adicione a mensagem que será exibida após o envio do formulário."),
     )
 
     def serve(self, request, *args, **kwargs):
@@ -437,7 +437,7 @@ class FormPage(WagtailCaptchaEmailForm):
                             "message": (
                                 self.thank_you_text
                                 if self.thank_you_text
-                                else "Formulário enviado com sucesso!"
+                                else _("Formulário enviado com sucesso!")
                             ),
                         }
                     )
@@ -445,7 +445,7 @@ class FormPage(WagtailCaptchaEmailForm):
                     return JsonResponse(
                         {
                             "alert": "error",
-                            "message": "Erro ao tentar enviar a <strong>formulário!</strong> Verifique os campos obrigatórios. Errors: %s"
+                            "message": _("Erro ao tentar enviar o <strong>formulário!</strong> Verifique os campos obrigatórios. Errors: %s")
                             % form.errors,
                         }
                     )
@@ -463,8 +463,8 @@ class FormPage(WagtailCaptchaEmailForm):
         return TemplateResponse(request, self.get_template(request), context)
 
     class Meta:
-        verbose_name = "Página com formulário."
-        verbose_name_plural = "Páginas com formulários."
+        verbose_name = _("Página com formulário.")
+        verbose_name_plural = _("Páginas com formulários.")
 
     content_panels = WagtailCaptchaEmailForm.content_panels + [
         FormSubmissionsPanel(),

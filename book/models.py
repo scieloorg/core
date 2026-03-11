@@ -44,9 +44,9 @@ class Book(CommonControlField, ClusterableModel):
 
     title = models.TextField(_("Title"), null=True, blank=True)
     synopsis = models.TextField(_("Synopsis"), null=True, blank=True)
-    isbn = models.CharField("ISBN", max_length=13, null=True, blank=True)
+    isbn = models.CharField(_("ISBN"), max_length=13, null=True, blank=True)
     eisbn = models.CharField(_("Electronic ISBN"), max_length=13, null=True, blank=True)
-    doi = models.CharField("DOI", max_length=256, null=True, blank=True)  # FK DOI
+    doi = models.CharField(_("DOI"), max_length=256, null=True, blank=True)  # FK DOI
     year = models.IntegerField(_("Year"), null=True, blank=True)
     identifier = models.URLField(max_length=200, null=True, blank=True)
     researchers = models.ManyToManyField(

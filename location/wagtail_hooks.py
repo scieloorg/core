@@ -108,7 +108,7 @@ class CountryAdmin(SnippetViewSet):
 class CountryFileAdmin(SnippetViewSet):
     model = CountryFile
     button_helper_class = CountryHelper
-    menu_label = "Country Upload"
+    menu_label = _("Country Upload")
     menu_icon = "folder"
     menu_order = 200
     add_to_settings_menu = False

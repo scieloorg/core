@@ -49,7 +49,7 @@ class Institution(CommonControlField, ClusterableModel):
     level_1 = models.TextField(_("Organization Level 1"), null=True, blank=True)
     level_2 = models.TextField(_("Organization Level 2"), null=True, blank=True)
     level_3 = models.TextField(_("Organization Level 3"), null=True, blank=True)
-    url = models.URLField("url", blank=True, null=True)
+    url = models.URLField(_("URL"), blank=True, null=True)
 
     logo = models.ImageField(_("Logo"), blank=True, null=True)
 
@@ -756,7 +756,7 @@ class Scimago(CommonControlField, ClusterableModel):
     country = models.ForeignKey(
         Country, null=True, blank=True, on_delete=models.SET_NULL
     )
-    url = models.URLField("url", blank=True, null=True)
+    url = models.URLField(_("URL"), blank=True, null=True)
 
     panels = [
         FieldPanel("institution"),
