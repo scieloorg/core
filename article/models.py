@@ -741,7 +741,7 @@ class Article(
             if not pid_v2:
                 continue
             url_builder = ArticleURLBuilder(
-                sj.collection.domain,
+                sj.collection.base_url,
                 sj.journal_acron,
                 pid_v2,
                 self.pid_v3,
@@ -764,10 +764,13 @@ class Article(
         logging.info(f"get_availability {params}")
         return self.article_availability.filter(available=True, **params)
 
-    def check_availability(self, user):
+    def check_availability(self, user, force_update=False):
         try:
             if not self.is_pp_xml_valid():
                 return False
+
+            if not force_update and self.is_available():
+                return True
 
             event = None
             urls = []
