@@ -35,13 +35,11 @@ def provide_pid_for_opac_and_am_xml(
 
         if not force_update:
             try:
-                if pid_v3:
-                    pid_xml = PidProviderXML.objects.get(v3=pid_v3)
-                if pid_v2:
-                    pid_xml = PidProviderXML.objects.get(v2=pid_v2)
-                return pid_xml.data
+                pid_xml = PidProviderXML.get_by_pid_v3(pid_v3=pid_v3, pid_v2=pid_v2)
+                if pid_xml:
+                    return pid_xml.data
             except PidProviderXML.DoesNotExist:
-                pass
+                pid_xml = None
 
         detail = dict(
             pid_v2=pid_v2,
@@ -84,3 +82,4 @@ def provide_pid_for_opac_and_am_xml(
                 ),
             },
         )
+        return None
