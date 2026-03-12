@@ -476,7 +476,8 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         """This the publication date, that is format by YYYY-MM-DD
         In the model this field is seperated into pub_date_day, pub_date_month and pub_date_year
         """
-        return obj.pub_date
+        if obj.pub_date:
+            return set([obj.pub_date])
 
     def prepare_la(self, obj):
         """The language of the article."""
