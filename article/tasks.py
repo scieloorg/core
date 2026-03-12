@@ -800,6 +800,7 @@ def task_dispatch_articles(
             if item_kwargs is None:
                 skipped += 1
                 continue
+            logging.info(f"Dispatching article with kwargs: {item_kwargs}")
             task_process_article_pipeline.delay(**item_kwargs, **common_kwargs)
             dispatched += 1
 
@@ -960,8 +961,9 @@ def task_process_article_pipeline(
         article = load_article(user, pp_xml=pp_xml)
         pp_xml.collections.set(article.collections)
 
+        article.check_availability(user, force_update=export_to_articlemeta or force_update)
+        
         if export_to_articlemeta:
-            article.check_availability(user)
             task_export_article_to_articlemeta.delay(
                 pid_v3=article.pid_v3,
                 collection_acron_list=collection_acron_list,
