@@ -398,7 +398,7 @@ class AMJournalAdmin(SnippetViewSet):
     menu_label = _("AM Journal")
     menu_icon = "folder"
     menu_order = get_menu_order("amjournal")
-    list_display = ("pid", "collection", "processing_date", "status")
+    list_display = ("pid", "collection", "processing_date", "status", "updated")
     list_filter = ("collection", "status")
     search_fields = ("pid",)
 
@@ -556,7 +556,7 @@ class IndexedAtAdmin(SnippetViewSet):
     menu_icon = "folder"
     menu_order = 100
     add_to_settings_menu = False
-    list_display = ("name", "acronym", "url", "description", "type")
+    list_display = ("name", "acronym", "url", "description", "type", "updated")
     list_filter = ("type",)
     search_fields = ("name", "acronym")
     list_export = ("name", "acronym", "url", "description", "type")
@@ -569,7 +569,7 @@ class AdditionalIndexedAtAdmin(SnippetViewSet):
     menu_icon = "folder"
     menu_order = 110
     add_to_settings_menu = False
-    list_display = ("name",)
+    list_display = ("name", "updated")
     search_fields = ("name",)
 
 
@@ -593,6 +593,7 @@ class WebOfKnowledgeAdmin(SnippetViewSet):
     list_display = (
         "code",
         "value",
+        "updated",
     )
 
     search_fields = (
@@ -609,6 +610,7 @@ class SubjectAdmin(SnippetViewSet):
     list_display = (
         "code",
         "value",
+        "updated",
     )
 
     search_fields = (
@@ -622,7 +624,7 @@ class WosAreaAdmin(SnippetViewSet):
     menu_icon = "folder"
     menu_order = 400
     add_to_settings_menu = False
-    list_display = ("value",)
+    list_display = ("value", "updated")
     search_fields = ("value",)
 
 
@@ -634,6 +636,7 @@ class StandardAdmin(SnippetViewSet):
     list_display = (
         "code",
         "value",
+        "updated",
     )
 
     search_fields = (
