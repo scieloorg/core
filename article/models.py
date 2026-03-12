@@ -3,7 +3,7 @@ import os
 import sys
 import traceback
 from datetime import datetime
-from functools import lru_cache, cached_property
+from functools import cached_property
 
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
@@ -20,6 +20,7 @@ from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre, generate_finger_p
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
+from packtools.sps.libs.requester import NonRetryableError
 
 from article import choices
 from article.utils.url_builder import ArticleURLBuilder
@@ -51,6 +52,18 @@ from researcher.models import AffiliationMixin, CollabMixin, ResearchNameMixin
 from tracker.models import BaseEvent, EventSaveError, UnexpectedEvent
 from vocabulary.models import Keyword
 
+
+class RequestXMLException(Exception):
+    """Exceção personalizada para erros na requisição de XML"""
+    pass
+
+class XMLException(Exception):
+    """Exceção personalizada para erros na requisição de XML"""
+    pass
+
+class UnableToRegisterPIDError(Exception):
+    """Exceção personalizada para erros ao registrar PID"""
+    pass
 
 class AMArticle(BaseLegacyRecord):
     """
@@ -566,17 +579,6 @@ class Article(
         self.save()  # Salvar estado final
         self.pp_xml.mark_as_done()
 
-    def complete_data(self, pp_xml, save=False):
-        if pp_xml:
-            if not self.sps_pkg_name:
-                self.sps_pkg_name = pp_xml.pkg_name
-                save = True
-            if not self.pp_xml:
-                self.pp_xml = pp_xml
-                save = True
-        if save:
-            self.save()
-
     def set_date_pub(self, dates, save=True):
         if dates:
             self.pub_date_day = dates.get("day")
@@ -739,7 +741,7 @@ class Article(
             if not pid_v2:
                 continue
             url_builder = ArticleURLBuilder(
-                sj.collection.domain,
+                sj.collection.base_url,
                 sj.journal_acron,
                 pid_v2,
                 self.pid_v3,
@@ -762,10 +764,13 @@ class Article(
         logging.info(f"get_availability {params}")
         return self.article_availability.filter(available=True, **params)
 
-    def check_availability(self, user):
+    def check_availability(self, user, force_update=False):
         try:
             if not self.is_pp_xml_valid():
                 return False
+
+            if not force_update and self.is_available():
+                return True
 
             event = None
             urls = []
@@ -901,9 +906,10 @@ class Article(
     def is_pp_xml_valid(self):
         if not self.pp_xml:
             try:
-                self.pp_xml = PidProviderXML.objects.get(v3=self.pid_v3)
+                self.pp_xml = PidProviderXML.get_by_pid_v3(pid_v3=self.pid_v3)
             except PidProviderXML.DoesNotExist:
-                pass
+                self.pp_xml = None
+
         if not self.pp_xml or not self.pp_xml.xml_with_pre:
             if self.data_status != choices.DATA_STATUS_INVALID:
                 self.data_status = choices.DATA_STATUS_INVALID
@@ -1686,6 +1692,8 @@ class ArticleSource(CommonControlField):
         COMPLETED = "completed", _("Completed")
         ERROR = "error", _("Error")
         REPROCESS = "reprocess", _("Reprocess")
+        URL_ERROR = "url_error", _("URL Error")
+        XML_ERROR = "xml_error", _("XML Error")
 
     url = models.URLField(
         verbose_name=_("Article URL"),
@@ -1793,7 +1801,7 @@ class ArticleSource(CommonControlField):
         raise ValueError("ArticleSource.get requires url")
 
     @classmethod
-    def create(cls, user, url=None, source_date=None, am_article=None):
+    def create(cls, user, url=None, source_date=None, am_article=None, force_update=None, auto_solve_pid_conflict=False):
         if not url:
             raise ValueError("ArticleSource.create requires url")
 
@@ -1804,69 +1812,83 @@ class ArticleSource(CommonControlField):
             obj.source_date = source_date
             obj.am_article = am_article
             obj.status = cls.StatusChoices.PENDING
-            obj.save()
-            try:
-                obj.request_xml(detail=[])
-            except Exception as e:
-                pass
+            obj.add_pid_provider(user, force_update, auto_solve_pid_conflict=auto_solve_pid_conflict)
             return obj
         except IntegrityError:
             return cls.get(url=url)
 
     @classmethod
     def create_or_update(
-        cls, user, url=None, source_date=None, am_article=None, force_update=None
+        cls, user, url=None, source_date=None, am_article=None, force_update=None, auto_solve_pid_conflict=False
     ):
         try:
             logging.info(
                 f"ArticleSource.create_or_update {url} {source_date} {am_article} {force_update}"
             )
             obj = cls.get(url=url)
-
             if (
                 force_update
                 or (source_date and source_date != obj.source_date)
                 or not obj.is_completed
             ):
-                logging.info(f"updating source: {(source_date, obj.source_date)}")
-                logging.info(f"updating am_article: {(am_article, obj.am_article)}")
-                logging.info(
-                    f"updating file: {not obj.file or not obj.file.path or not os.path.isfile(obj.file.path)}"
-                )
-                obj.request_xml()
                 obj.updated_by = user
                 obj.source_date = source_date
                 obj.am_article = am_article
-                obj.status = cls.StatusChoices.REPROCESS
-                obj.save()
-
+                obj.add_pid_provider(user, force_update, auto_solve_pid_conflict=auto_solve_pid_conflict)
+            return obj
         except cls.DoesNotExist:
-            obj = cls.create(
-                user, url=url, source_date=source_date, am_article=am_article
+            return cls.create(
+                user,
+                url=url,
+                source_date=source_date,
+                am_article=am_article,
+                force_update=force_update,
+                auto_solve_pid_conflict=auto_solve_pid_conflict
             )
-        return obj
+
+    @cached_property
+    def xml_with_pre(self):
+        if self.pid_provider_xml:
+            try:
+                return self.pid_provider_xml.xml_with_pre
+            except AttributeError:
+                pass
+        if self.file and self.file.path and os.path.isfile(self.file.path):
+            try:
+                return XMLWithPre.from_file(self.file.path)
+            except Exception as e:
+                pass
+        if self.url:
+            try:
+                return list(XMLWithPre.create(uri=self.url))[0]
+            except Exception as e:
+                pass
 
     @cached_property
     def sps_pkg_name(self):
         try:
-            xml_with_pre = list(XMLWithPre.create(path=self.file.path))[0]
-        except:
-            xml_with_pre = list(XMLWithPre.create(uri=self.url))[0]
-        return xml_with_pre.sps_pkg_name
+            return self.xml_with_pre.sps_pkg_name
+        except Exception:
+            pass
 
-    def request_xml(self, detail=None, force_update=False):
+    def request_xml(self, detail):
         if not self.url:
             raise ValueError("URL is required")
 
-        if force_update or not self.is_completed:
-            if detail:
-                detail.append("create file")
-
-            logging.info(f"ArticleSource.request_xml for {self.url}")
+        logging.info(f"ArticleSource.request_xml for {self.url}")
+        try:
             xml_with_pre = list(XMLWithPre.create(uri=self.url))[0]
             self.save_file(
-                f"{self.sps_pkg_name}.xml", xml_with_pre.tostring(pretty_print=True)
+                f"{xml_with_pre.sps_pkg_name}.xml", xml_with_pre.tostring(pretty_print=True)
             )
+        except NonRetryableError as e:
+            raise RequestXMLException(
+                f"Non-retryable error while requesting XML: {e}"
+            ) from e
+        except Exception as e:
+            raise XMLException(
+                f"Error while requesting XML: {e}"
+            ) from e
 
     def save_file(self, filename, content):
         try:
@@ -1889,6 +1911,16 @@ class ArticleSource(CommonControlField):
     def mark_as_error(self):
         """Marca como erro"""
         self.status = self.StatusChoices.ERROR
+        self.save()
+
+    def mark_as_url_error(self):
+        """Marca como erro de URL"""
+        self.status = self.StatusChoices.URL_ERROR
+        self.save()
+
+    def mark_as_xml_error(self):
+        """Marca como erro de XML"""
+        self.status = self.StatusChoices.XML_ERROR
         self.save()
 
     def mark_for_reprocess(self):
@@ -1957,83 +1989,107 @@ class ArticleSource(CommonControlField):
     @property
     def is_completed(self):
         if not self.pid_provider_xml:
+            logging.info(f"Not completed: ArticleSource {self.url} has no pid_provider_xml")
             return False
-        if not self.pid_provider_xml.xml_with_pre:
-            return False
+        try:
+            if not self.pid_provider_xml.xml_with_pre:
+                logging.info(f"Not completed: ArticleSource {self.url} has pid_provider_xml but no xml_with_pre")
+                return False
+        except Exception:
+            pass
         if not self.am_article:
+            logging.info(f"Not completed: ArticleSource {self.url} has no am_article")
             return False
         if not self.file:
+            logging.info(f"Not completed: ArticleSource {self.url} has no file")
             return False
         if not self.file.path or not os.path.isfile(self.file.path):
+            logging.info(f"Not completed: ArticleSource {self.url} has file path invalid or file does not exist")
             return False
         if self.status != ArticleSource.StatusChoices.COMPLETED:
             self.status = ArticleSource.StatusChoices.COMPLETED
             self.save()
+        logging.info(f"Completed: ArticleSource {self.url} is completed")
         return True
 
-    def complete_data(self, user, force_update=False, auto_solve_pid_conflict=False):
+    def add_pid_provider(self, user, force_update=False, auto_solve_pid_conflict=False):
         """
-        Processa um arquivo XML de artigo científico, criando ou atualizando os dados necessários.
+        Executa o pipeline de obtenção de XML e registro de PID para este
+        ArticleSource. Evita refazer etapas já concluídas, a menos que
+        ``force_update=True``.
 
-        Este método gerencia todo o fluxo de processamento de um XML de artigo, incluindo:
-        - Download/criação do arquivo XML se necessário
-        - Geração de PID (Persistent Identifier) através do PidProvider
+        Etapas:
+            1. request_xml  — baixa o XML da URL e salva em ``self.file``
+               • Pula se ``self.file`` já existe em disco E ``force_update`` é False
+            2. request_pid  — registra o XML no PidProvider e associa ``self.pid_provider_xml``
+               • Pula se ``self.pid_provider_xml`` já está associado E ``force_update`` é False
 
-        Args:
-            user: Usuário responsável pelo processamento
-            force_update (bool): Se True, força a atualização mesmo se os dados já existem
-            auto_solve_pid_conflict (bool): Se True, resolve automaticamente conflitos de PID
-
-        Raises:
-            ValueError: Se a URL não estiver definida
-
-        Note:
-            O método atualiza os seguintes atributos do objeto:
-            - status: Estado do processamento (PENDING, COMPLETED, ERROR)
-            - file: Arquivo XML baixado/criado
-            - pid_provider_xml: Objeto PidProviderXML associado
-            - detail: Lista com detalhes do processamento
+        Se uma etapa anterior falhou (ex: tem arquivo mas não tem
+        pid_provider_xml), somente a etapa faltante é executada.
         """
-
         try:
-            # Lista para armazenar detalhes do processamento
             detail = []
-            if not force_update:
-                if self.is_completed:
-                    return
-
-            # Define status inicial como pendente
             self.status = ArticleSource.StatusChoices.PENDING
 
-            if not self.file.path or not os.path.isfile(self.file.path):
-                self.request_xml(detail, force_update)
-
-            pid_v3 = self.get_or_create_pid_v3(
-                user, detail, force_update, auto_solve_pid_conflict
+            # --- Etapa 1: request_xml ---
+            has_valid_file = (
+                self.file
+                and self.file.name
+                and os.path.isfile(self.file.path)
             )
-            if not pid_v3:
-                raise ValueError("Failed to obtain or create PID v3")
+
+            if force_update or not has_valid_file:
+                logging.info(f"Requesting XML for {self.url}")
+                self.request_xml(detail)
+                logging.info(f"XML requested successfully for {self.url}")
+            else:
+                logging.info(
+                    f"Skipping request_xml: file already exists for {self.url}"
+                )
+                detail.append("request_xml skipped (file already exists)")
+
+            # --- Etapa 2: request_pid ---
+            has_pid_provider = self.pid_provider_xml is not None
+
+            if force_update or not has_pid_provider:
+                logging.info(f"Requesting PID for {self.url}")
+                self.request_pid(
+                    user, detail, force_update, auto_solve_pid_conflict
+                )
+                logging.info(
+                    f"PID requested successfully for {self.pid_provider_xml}"
+                )
+            else:
+                logging.info(
+                    f"Skipping request_pid: pid_provider_xml already set "
+                    f"for {self.url}"
+                )
+                detail.append("request_pid skipped (pid_provider_xml already set)")
+
             self.detail = detail
-            self.mark_as_completed()  # Marca o processamento como concluído
+            self.mark_as_completed()
+            logging.info(f"ArticleSource {self.status}")
 
-        except Exception as e:
-            # Registra a exceção no log
-            logging.exception(e)
-
-            # Obtém informações detalhadas da exceção
+        except XMLException as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-
-            # Adiciona informações do erro aos detalhes
             detail.append(str({"error_type": str(type(e)), "error_message": str(e)}))
             self.detail = detail
-
-            # Marca o processamento como erro
+            self.mark_as_xml_error()
+            logging.info(f"ArticleSource {self.url} marked as XML error")
+        except RequestXMLException as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            detail.append(str({"error_type": str(type(e)), "error_message": str(e)}))
+            self.detail = detail
+            self.mark_as_url_error()
+            logging.info(f"ArticleSource {self.url} marked as URL error")
+        except Exception as e:
+            logging.exception(e)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            detail.append(str({"error_type": str(type(e)), "error_message": str(e)}))
+            self.detail = detail
             self.mark_as_error()
 
-    def get_or_create_pid_v3(self, user, detail, force_update, auto_solve_pid_conflict):
-        if self.pid_provider_xml and self.pid_provider_xml.xml_with_pre:
-            if not force_update:
-                return self.pid_provider_xml.v3
+    def request_pid(self, user, detail, force_update, auto_solve_pid_conflict):
         try:
             detail.append("create pid_provider_xml")
 
@@ -2055,12 +2111,12 @@ class ArticleSource(CommonControlField):
             # Obtém a primeira resposta (assumindo apenas uma)
             response = list(responses)[0]
             v3 = response.get("v3")
-
             if v3:
                 # Associa o PidProviderXML ao ArticleSource
-                self.pid_provider_xml = PidProviderXML.objects.get(v3=v3)
+                self.pid_provider_xml = PidProviderXML.get_by_pid_v3(v3)
+                if not self.pid_provider_xml:
+                    raise UnableToRegisterPIDError("Failed to obtain or create PID v3")
                 detail.append("set pid_provider_xml")
-                return v3
             else:
                 # Registra erro se não conseguiu obter v3
                 detail.append(str(response))
@@ -2071,14 +2127,13 @@ class ArticleSource(CommonControlField):
                 exception=e,
                 exc_traceback=exc_traceback,
                 detail=dict(
-                    function="article.models.ArticleSource.get_or_create_pid_v3",
+                    function="article.models.ArticleSource.request_pid",
                     article_source_id=self.id,
-                    sps_pkg_name=self.sps_pkg_name,
                     url=self.url,
                 ),
             )
             detail.append(str(unexpected_event.data))
-            raise e
+            raise UnableToRegisterPIDError(str(e))
 
 
 class ArticleAvailability(CommonControlField):
@@ -2340,6 +2395,25 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
             models.Index(fields=["normalized"]),
             models.Index(fields=["article", "organization"]),
         ]
+
+    def autocomplete_label(self):
+        if self.organization:
+            return f"{self.article} - {self.organization}"
+        if self.raw_institution_name:
+            return f"{self.article} - {self.raw_institution_name}"
+        if self.raw_text:
+            return f"{self.article} - {self.raw_text}"
+        return f"{self.article} - Affiliation"
+
+    @staticmethod
+    def autocomplete_custom_queryset_filter(search_term):
+        return ArticleAffiliation.objects.filter(
+            Q(raw_text__icontains=search_term)
+            | Q(raw_institution_name__icontains=search_term)
+            | Q(raw_country_name__icontains=search_term)
+            | Q(raw_state_name__icontains=search_term)
+            | Q(raw_city_name__icontains=search_term)
+        )
 
     def __str__(self):
         if self.organization:

@@ -152,12 +152,13 @@
 
     <!-- Field to journal CNPQ subject areas -->
     <field name="subject_areas"  type="string" indexed="true" stored="true"  multiValued="true"/>
+    <field name="indexed_at" type="string" indexed="true" stored="true" multiValued="true"/>
 
    <!-- Dynamic field definitions -->
    <dynamicField name="*"  type="text" indexed="true" stored="true"  multiValued="false"/>
   
    <!-- <dynamicField name="*" type="ignored" /> -->
-
+   
  </fields>
 
  <!-- Field to use to determine and enforce document uniqueness.

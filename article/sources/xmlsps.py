@@ -111,11 +111,14 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             "load_article() requires params: pp_xml or v3 or file_path or xml"
         )
 
+    if not pp_xml and v3:
+        try:
+            pp_xml = PidProviderXML.get_by_pid_v3(pid_v3=v3)
+        except PidProviderXML.DoesNotExist:
+            pp_xml = None
+
     try:
         if pp_xml:
-            xml_with_pre = pp_xml.xml_with_pre
-        elif v3:
-            pp_xml = PidProviderXML.objects.get(v3=v3)
             xml_with_pre = pp_xml.xml_with_pre
         elif file_path:
             for xml_with_pre in XMLWithPre.create(file_path):
@@ -163,15 +166,16 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         event = None
         xmltree = xml_with_pre.xmltree
 
-        logging.info(f"Article {pid_v3} {xml_with_pre.sps_pkg_name}")
+        sps_pkg_name = xml_with_pre.sps_pkg_name
+        logging.info(f"Article {pid_v3} {sps_pkg_name}")
 
         # CRIAÇÃO/OBTENÇÃO DO OBJETO PRINCIPAL
         article = Article.create_or_update(
             user=user,
             pid_v3=pid_v3,
-            sps_pkg_name=xml_with_pre.sps_pkg_name,
+            sps_pkg_name=sps_pkg_name,
         )
-        logging.info(f"...Article {pid_v3} {xml_with_pre.sps_pkg_name}")
+        logging.info(f"...Article {pid_v3} {sps_pkg_name}")
 
         article.events.all().delete()
         event = article.add_event(user, _("load article"))
@@ -180,7 +184,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         article.valid = False
         article.data_status = choices.DATA_STATUS_PENDING
         article.pp_xml = pp_xml
-        article.sps_pkg_name = xml_with_pre.sps_pkg_name
+        article.sps_pkg_name = sps_pkg_name
 
         # CAMPOS SIMPLES EXTRAÍDOS DO XML
         set_pids(xmltree=xmltree, article=article, errors=errors)
@@ -213,7 +217,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
 
         # Salvar uma vez após definir todos os campos simples
         logging.info(
-            f"Saving article {article.pid_v3} {xml_with_pre.sps_pkg_name} {xml_with_pre.main_doi}"
+            f"Saving article {article.pid_v3} {sps_pkg_name} {xml_with_pre.main_doi}"
         )
 
         add_data_availability_status(
