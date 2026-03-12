@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(bind=True)
-def load_issue_from_article_meta(
+def load_issue_from_articlemeta(
     self,
     user_id=None,
     username=None,
@@ -71,7 +71,7 @@ def load_issue_from_article_meta(
                         UnexpectedEvent.create(
                             exception=e,
                             exc_traceback=exc_traceback,
-                            action="issue.tasks.load_issue_from_article_meta.schedule_task_load_issue",
+                            action="issue.tasks.load_issue_from_articlemeta.schedule_task_load_issue",
                             detail={
                                 "collection_acron": acron3,
                                 "issue_identifier": issue_identifier,
@@ -83,7 +83,7 @@ def load_issue_from_article_meta(
                 UnexpectedEvent.create(
                     exception=e,
                     exc_traceback=exc_traceback,
-                    action="issue.tasks.load_issue_from_article_meta.process_collection",
+                    action="issue.tasks.load_issue_from_articlemeta.process_collection",
                     detail={
                         "collection_acron": acron3,
                         "from_date": from_date,
@@ -97,7 +97,7 @@ def load_issue_from_article_meta(
         UnexpectedEvent.create(
             exception=e,
             exc_traceback=exc_traceback,
-            action="issue.tasks.load_issue_from_article_meta",
+            action="issue.tasks.load_issue_from_articlemeta",
             detail={
                 "collection_acron": collection_acron,
                 "from_date": from_date,
