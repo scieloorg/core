@@ -5,7 +5,7 @@ from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSetGroup
 
 from config.menu import get_menu_order
-from core.viewsets import CommonControlFieldViewSet
+from core.views import CommonControlFieldViewSet
 from pid_provider.models import XMLVersion, FixPidV2, OtherPid, PidProviderConfig, PidProviderXML
 
 
