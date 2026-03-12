@@ -1,5 +1,4 @@
 import csv
-import itertools
 import json
 import logging
 import sys
