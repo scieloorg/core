@@ -924,7 +924,9 @@ def task_process_article_pipeline(
                 pid, Collection.get(collection_acron), None, user
             )
             if not am_article:
-                raise ValueError("Failed to create or update AMArticle with pid: {pid} and collection: {collection_acron}")
+                raise ValueError(
+                    f"Failed to create or update AMArticle with pid: {pid} and collection: {collection_acron}"
+                )
 
             article_source = ArticleSource.create_or_update(
                 user=user,
