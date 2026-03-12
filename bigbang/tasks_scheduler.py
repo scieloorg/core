@@ -31,6 +31,18 @@ def delete_outdated_tasks(task_list=None):
         "article.tasks.task_convert_xml_to_other_formats_for_articles",
         "article.tasks.convert_xml_to_other_formats",
         "article.tasks.task_load_article_from_xml_endpoint",
+        "article.tasks.task_select_articles_to_complete_data",
+        "article.tasks.task_select_articles_to_load_from_api",
+        "article.tasks.task_select_articles_to_load_from_collection_endpoint",
+        "article.tasks.task_select_articles_to_load_from_article_source",
+        "article.tasks.task_load_articles",
+        "article.tasks.task_load_journal_articles",
+        "article.tasks.task_load_article_from_xml_url",
+        "article.tasks.task_create_article_source",
+        "article.tasks.task_create_pid_provider_xml",
+        "article.tasks.task_fix_journal_articles_status",
+        "article.tasks.task_select_articles_to_export_to_articlemeta",
+        "issue.tasks.load_issue_from_article_meta",
         
         # Tarefas de Article sem namespace (legacy)
         "article_complete_data",
@@ -47,6 +59,17 @@ def delete_outdated_tasks(task_list=None):
         "task_load_article_from_article_source",
         "task_mark_articles_as_deleted_without_pp_xml",
         "transfer_license_statements_fk_to_article_license",
+        "task_select_articles_to_complete_data",
+        "task_select_articles_to_load_from_api",
+        "task_select_articles_to_load_from_collection_endpoint",
+        "task_select_articles_to_load_from_article_source",
+        "task_load_articles",
+        "task_load_journal_articles",
+        "task_load_article_from_xml_url",
+        "task_create_article_source",
+        "task_create_pid_provider_xml",
+        "task_fix_journal_articles_status",
+        "task_select_articles_to_export_to_articlemeta",
     ]
     delete_tasks(task_list)
 
@@ -61,18 +84,17 @@ def schedule_tasks(username):
     """
     enabled = False
 
+    delete_outdated_tasks()
+
     # Tarefas de Article mantidas
-    schedule_task_select_articles_to_complete_data(username, enabled)
+    schedule_task_dispatch_articles(username, enabled)
     schedule_task_export_articles_to_articlemeta(username, enabled)
-    schedule_task_select_articles_to_load_from_api(username, enabled)
-    schedule_task_select_articles_to_load_from_article_source(username, enabled)
     schedule_task_fix_article_status(username, enabled)
-    schedule_task_load_articles(username, enabled)
     
     # Tarefas de issue
     schedule_export_issue_to_articlemeta(username, enabled)
     schedule_export_issues_to_articlemeta(username, enabled)
-    schedule_load_issue_from_article_meta(username, enabled)
+    schedule_load_issue_from_articlemeta(username, enabled)
     
     # Tarefas de journal
     schedule_export_journal_to_articlemeta(username, enabled)
@@ -87,42 +109,46 @@ def schedule_tasks(username):
 
     # Tarefas de bigbang
     schedule_bigbang_start(username, enabled)
-    schedule_bigbang_delete_outdated_tasks(username, enabled)
 
 
 # ==============================================================================
 # TAREFAS DE ARTICLE MANTIDAS
 # ==============================================================================
 
-def schedule_task_select_articles_to_complete_data(username, enabled=False):
+def schedule_task_dispatch_articles(username, enabled=False):
     """
-    Agenda a tarefa de completar dados de artigos incompletos
+    Agenda a tarefa orquestradora de despacho de artigos para o pipeline.
+    Substitui as antigas tarefas de seleção (complete_data, load_from_api,
+    load_from_article_source, load_articles).
     """
     schedule_task(
-        task="article.tasks.task_select_articles_to_complete_data",
-        name="article.tasks.task_select_articles_to_complete_data",
+        task="article.tasks.task_dispatch_articles",
+        name="article.tasks.task_dispatch_articles",
         kwargs=dict(
-            user_id=None,
             username=username,
-            collection_acron_list=[],
-            journal_acron_list=[],
+            user_id=None,
+            collection_acron_list=None,
+            journal_acron_list=None,
             from_pub_year=None,
             until_pub_year=None,
+            from_date=None,
+            until_date=None,
             force_update=False,
-            from_updated_date=None,
-            until_updated_date=None,
-            data_status_list=[],
-            valid=None,
-            pp_xml__isnull=True,
-            sps_pkg_name__isnull=True,
-            article_license__isnull=True,
+            export_to_articlemeta=False,
+            auto_solve_pid_conflict=False,
+            proc_status_list=None,
+            data_status_list=None,
+            limit=None,
+            timeout=None,
+            opac_url=None,
+            article_source_status_list=None,
         ),
-        description=_("Complete missing data for articles"),
+        description=_("Dispatch articles to processing pipeline"),
         priority=TASK_PRIORITY,
         enabled=enabled,
         run_once=False,
         day_of_week="*",
-        hour="6",
+        hour="2",
         minute="1",
     )
 
@@ -132,8 +158,8 @@ def schedule_task_export_articles_to_articlemeta(username, enabled=False):
     Agenda a tarefa de exportar artigos em lote para ArticleMeta
     """
     schedule_task(
-        task="article.tasks.task_select_articles_to_export_to_articlemeta",
-        name="article.tasks.task_select_articles_to_export_to_articlemeta",
+        task="article.tasks.task_export_articles_to_articlemeta",
+        name="article.tasks.task_export_articles_to_articlemeta",
         kwargs=dict(
             collection_acron_list=[],
             issn=None,
@@ -157,58 +183,7 @@ def schedule_task_export_articles_to_articlemeta(username, enabled=False):
     )
 
 
-def schedule_task_select_articles_to_load_from_api(username, enabled=False):
-    """
-    Agenda a tarefa de carregar artigos de múltiplas coleções via API
-    """
-    schedule_task(
-        task="article.tasks.task_select_articles_to_load_from_api",
-        name="article.tasks.task_select_articles_to_load_from_api",
-        kwargs=dict(
-            username=username,
-            user_id=None,
-            collection_acron_list=["scl"],
-            from_date="2024-01-01",
-            until_date="2024-02-31",
-            limit=100,
-            timeout=10,
-            force_update=False,
-            auto_solve_pid_conflict=False,
-            opac_url=None,
-        ),
-        description=_("Load articles from multiple collections via API"),
-        priority=TASK_PRIORITY,
-        enabled=enabled,
-        run_once=False,
-        day_of_week="*",
-        hour="3",
-        minute="1",
-    )
 
-
-def schedule_task_select_articles_to_load_from_article_source(username, enabled=False):
-    """
-    Agenda a tarefa de processar ArticleSources pendentes
-    """
-    schedule_task(
-        task="article.tasks.task_select_articles_to_load_from_article_source",
-        name="task_select_articles_to_load_from_article_source",
-        kwargs=dict(
-            username=username,
-            user_id=None,
-            from_date="2024-01-01",
-            until_date="2024-12-31",
-            force_update=False,
-            auto_solve_pid_conflict=False,
-        ),
-        description=_("Process pending ArticleSources"),
-        priority=TASK_PRIORITY,
-        enabled=enabled,
-        run_once=False,
-        day_of_week="*",
-        hour="*/6",
-        minute="30",
-    )
 
 
 def schedule_task_fix_article_status(username, enabled=False):
@@ -238,35 +213,6 @@ def schedule_task_fix_article_status(username, enabled=False):
         day_of_week="*",
         hour="*",
         minute="30",
-    )
-
-
-def schedule_task_load_articles(username, enabled=False):
-    """
-    Agenda a tarefa de carregar artigos do PidProviderXML
-    """
-    schedule_task(
-        task="article.tasks.task_load_articles",
-        name="article.tasks.task_load_articles",
-        kwargs=dict(
-            username=None,
-            user_id=None,
-            collection_acron_list=None,
-            journal_acron_list=None,
-            articlemeta_export_enable=None,
-            from_pub_year=None,
-            until_pub_year=None,
-            from_updated_date=None,
-            until_updated_date=None,
-            proc_status_list=None,
-        ),
-        description=_("Load articles from PidProviderXML"),
-        priority=TASK_PRIORITY,
-        enabled=enabled,
-        run_once=False,
-        day_of_week="*",
-        hour="2",
-        minute="1",
     )
 
 
@@ -462,24 +408,21 @@ def schedule_export_journal_to_articlemeta(username, enabled=False):
 # TAREFAS DE ISSUE
 # ==============================================================================
 
-def schedule_load_issue_from_article_meta(username, enabled=False):
+def schedule_load_issue_from_articlemeta(username, enabled=False):
     """
     Agenda a tarefa de carregar issues do ArticleMeta
     """
     schedule_task(
-        task="issue.tasks.task_load_issue_from_article_meta",
-        name="task_load_issue_from_article_meta",
+        task="issue.tasks.load_issue_from_articlemeta",
+        name="load_issue_from_articlemeta",
         kwargs=dict(
             user_id=None,
             username=username,
-            collection="scl",
-            issn_scielo="0034-8910",
+            collection_acron=None,
             from_date=None,
             until_date=None,
-            limit=None,
-            force_update=False,
-            timeout=None,
-            reset=None,
+            force_update=None,
+            timeout=30,
         ),
         description=_("Load issues from ArticleMeta"),
         priority=TASK_PRIORITY,
