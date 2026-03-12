@@ -1,4 +1,5 @@
 import logging
+from functools import cached_property
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -185,6 +186,13 @@ class Collection(CommonControlField, ClusterableModel):
                 ]
             ),
         ]
+
+    @cached_property
+    def base_url(self):
+        """Retorna o domain pronto para compor URLs, adicionando protocolo se ausente."""
+        if self.domain and not self.domain.startswith(("http://", "https://")):
+            return f"https://{self.domain}"
+        return self.domain
 
     @property
     def data(self):
