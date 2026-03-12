@@ -627,7 +627,7 @@ msgid "Localization"
 msgstr "Localización"
 
 msgid "Publisher"
-msgstr "Editor"
+msgstr "Entidad Editora"
 
 msgid "SciELO Book"
 msgstr "Libro SciELO"
