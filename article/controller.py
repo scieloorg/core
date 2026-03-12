@@ -462,11 +462,21 @@ class ArticleIteratorBuilder:
         self.opac_url = opac_url
         self.force_update = force_update
 
+        self._iter_from_harvest_count = 0
+        self._iter_from_article_source_count = 0
+        self._iter_from_pid_provider_count = 0
+        self._iter_from_article_count = 0
+
     def __iter__(self):
         yield from self._iter_from_harvest()
         yield from self._iter_from_article_source()
         yield from self._iter_from_pid_provider()
         yield from self._iter_from_article()
+
+        logging.info(f"Iterators summary: harvest={self._iter_from_harvest_count}, "
+                     f"article_source={self._iter_from_article_source_count}, "
+                     f"pid_provider={self._iter_from_pid_provider_count}, "
+                     f"article={self._iter_from_article_count}")
 
     # ------------------------------------------------------------------
     # Iteradores de seleção
@@ -490,8 +500,10 @@ class ArticleIteratorBuilder:
                 until_updated_date=self.until_date,
                 proc_status_list=self.proc_status_list or [PPXML_STATUS_TODO, PPXML_STATUS_INVALID],
             )
+            self._iter_from_pid_provider_count += qs.count()
             for item in qs.iterator():
                 yield {"pp_xml_id": item.id}
+        logging.info(f"_iter_from_pid_provider: yielded {self._iter_from_pid_provider_count} items")
 
     def _iter_from_article(self):
         """
@@ -520,7 +532,9 @@ class ArticleIteratorBuilder:
         if self.until_date:
             filters["updated__lte"] = self.until_date
 
-        for article in Article.objects.filter(**filters).iterator():
+        articles = Article.objects.filter(**filters)
+        self._iter_from_article_count += articles.count()
+        for article in articles.iterator():
             if not article.pp_xml:
                 try:
                     article.pp_xml = PidProviderXML.get_by_pid_v3(pid_v3=article.pid_v3)
@@ -530,31 +544,44 @@ class ArticleIteratorBuilder:
                     yield None
                     continue
             yield {"pp_xml_id": article.pp_xml.id}
+        logging.info(f"_iter_from_article: yielded {self._iter_from_article_count} articles")
 
     def _iter_from_harvest(self):
         """Itera documentos coletados via OPAC ou ArticleMeta."""
+
         if Collection.objects.count() == 0:
             Collection.load(self.user)
 
+        count = 0
         for collection_acron in self.collection_acron_list or list(Collection.get_acronyms()):
+            logging.info(collection_acron)
             harvester = self._build_harvester(collection_acron)
+            logging.info(harvester)
             for document in harvester.harvest_documents():
+                count += 1
                 yield {
                     "xml_url": document["url"],
                     "collection_acron": collection_acron,
                     "pid": document["pid_v2"],
                     "source_date": document.get("processing_date") or document.get("origin_date"),
                 }
+        
+        self._iter_from_harvest_count = count
+        logging.info(f"Harvest iterator yielded {count} documents")
 
     def _iter_from_article_source(self):
         """Itera ArticleSources pendentes ou com erro."""
+        count = 0
         for article_source in ArticleSource.get_queryset_to_complete_data(
             self.from_date,
             self.until_date,
             self.force_update,
             self.article_source_status_list,
         ):
+            count += 1
             yield {"article_source_id": article_source.id}
+        self._iter_from_article_source_count += count
+        logging.info(f"ArticleSource iterator yielded {count} items")
 
     # ------------------------------------------------------------------
     # Helpers privados
