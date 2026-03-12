@@ -627,15 +627,15 @@ class Journal(CommonControlField, ClusterableModel):
         AutocompletePanel("official"),
         FieldPanel("title"),
         FieldPanel("short_title"),
-        InlinePanel("other_titles", label=_("Other titles"), classname="collapsed"),
+        InlinePanel("other_titles", label=_("Other titles")),
     ]
 
     panels_scope_and_about = [
-        InlinePanel("mission", label=_("Mission"), classname="collapsed"),
-        InlinePanel("history", label=_("Brief History"), classname="collapsed"),
-        InlinePanel("focus", label=_("Focus and Scope"), classname="collapsed"),
+        InlinePanel("mission", label=_("Mission")),
+        InlinePanel("history", label=_("Brief History")),
+        InlinePanel("focus", label=_("Focus and Scope")),
         AutocompletePanel("subject"),
-        InlinePanel("thematic_area", label=_("Thematic Areas"), classname="collapsed"),
+        InlinePanel("thematic_area", label=_("Thematic Areas")),
         AutocompletePanel("subject_descriptor"),
         AutocompletePanel("wos_area"),
         AutocompletePanel("wos_db"),
@@ -643,14 +643,14 @@ class Journal(CommonControlField, ClusterableModel):
         AutocompletePanel("additional_indexed_at"),
         AutocompletePanel("vocabulary"),
         InlinePanel(
-            "title_in_database", label=_("Title in Database"), classname="collapsed"
+            "title_in_database", label=_("Title in Database")
         ),
     ]
 
     panels_institutions = [
-        InlinePanel("owner_history", label=_("Owner"), classname="collapsed"),
-        InlinePanel("publisher_history", label=_("Publisher"), classname="collapsed"),
-        InlinePanel("sponsor_history", label=_("Sponsor"), classname="collapsed"),
+        InlinePanel("owner_history", label=_("Owner")),
+        InlinePanel("publisher_history", label=_("Publisher")),
+        InlinePanel("sponsor_history", label=_("Sponsor")),
         InlinePanel(
             "copyright_holder_history",
             label=_("Copyright Holder"),
@@ -666,7 +666,7 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("logo", heading=_("Logo")),
         # FieldPanel("journal_url"),
         InlinePanel(
-            "related_journal_urls", label=_("Journal Urls"), classname="collapsed"
+            "related_journal_urls", label=_("Journal Urls")
         ),
         FieldPanel("submission_online_url"),
         FieldPanel("main_collection"),
@@ -680,13 +680,13 @@ class Journal(CommonControlField, ClusterableModel):
         FieldPanel("open_access"),
         FieldPanel("url_oa"),
         InlinePanel(
-            "open_science_form_files", label=_("Open Science accordance form"), classname="collapsed"
+            "open_science_form_files", label=_("Open Science accordance form")
         ),
         FieldPanel("journal_use_license"),
-        InlinePanel("open_access_text", label=_("Open Access"), classname="collapsed"),
-        InlinePanel("open_data", label=_("Open data"), classname="collapsed"),
-        InlinePanel("preprint", label=_("Preprint"), classname="collapsed"),
-        InlinePanel("peer_review", label=_("Peer review"), classname="collapsed"),
+        InlinePanel("open_access_text", label=_("Open Access")),
+        InlinePanel("open_data", label=_("Open data")),
+        InlinePanel("preprint", label=_("Preprint")),
+        InlinePanel("peer_review", label=_("Peer review")),
         InlinePanel(
             "open_science_compliance",
             label=_("Open Science Compliance"),
@@ -694,7 +694,7 @@ class Journal(CommonControlField, ClusterableModel):
         ),
     ]
 
-    panels_notes = [InlinePanel("notes", label=_("Notes"), classname="collapsed")]
+    panels_notes = [InlinePanel("notes", label=_("Notes"))]
 
     panels_legacy_compatibility_fields = [
         FieldPanel("alphabet"),
@@ -2192,7 +2192,7 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
         FieldPanel("status"),
         AutocompletePanel("collection"),
         InlinePanel(
-            "journal_history", label=_("Journal History"), classname="collapsed"
+            "journal_history", label=_("Journal History")
         ),
     ]
 
@@ -2269,6 +2269,9 @@ class JournalParallelTitle(TextWithLang):
         AutocompletePanel("language"),
     ]
 
+    class Meta:
+        unique_together = ("official_journal", "text", "language")
+
     def __unicode__(self):
         return "%s (%s)" % (self.text, self.language)
 
@@ -2276,18 +2279,109 @@ class JournalParallelTitle(TextWithLang):
         return "%s (%s)" % (self.text, self.language)
 
     @classmethod
-    def create_or_update(cls, official_journal, text, language=None):
-        if language:
-            for item in official_journal.parallel_titles.filter(
+    def get(cls, official_journal, text, language=None):
+        """
+        Recupera um JournalParallelTitle existente, tratando múltiplos objetos.
+        
+        Args:
+            official_journal: Instância do OfficialJournal
+            text: Texto do título paralelo
+            language: Idioma do título (opcional)
+            
+        Returns:
+            JournalParallelTitle: Primeiro objeto encontrado
+            
+        Raises:
+            cls.DoesNotExist: Se nenhum objeto for encontrado
+        """
+        try:
+            return cls.objects.get(
+                official_journal=official_journal,
+                text=text,
                 language=language
-            ).iterator():
-                item.delete()
-                break
-        obj = cls()
-        obj.official_journal = official_journal
-        obj.text = text
-        obj.language = language
+            )
+        except cls.MultipleObjectsReturned:
+            # Se houver múltiplos objetos, pega o primeiro e remove os duplicados
+            obj = cls.objects.filter(
+                official_journal=official_journal,
+                text=text,
+                language=language
+            ).first()
+            
+            # Remove os duplicados
+            cls.objects.filter(
+                official_journal=official_journal,
+                text=text,
+                language=language
+            ).exclude(id=obj.id).delete()
+            
+            return obj
+
+    @classmethod
+    def create(cls, official_journal, text, language=None, user=None):
+        """
+        Cria um novo JournalParallelTitle, removendo duplicados se existirem.
+        
+        Args:
+            official_journal: Instância do OfficialJournal
+            text: Texto do título paralelo
+            language: Idioma do título (opcional)
+            user: Usuário criador (opcional)
+            
+        Returns:
+            JournalParallelTitle: Objeto criado
+        """
+        # Remove duplicados existentes
+        cls.objects.filter(
+            official_journal=official_journal,
+            text=text,
+            language=language
+        ).delete()
+        
+        obj = cls(
+            official_journal=official_journal,
+            text=text,
+            language=language
+        )
+        if user:
+            obj.creator = user
         obj.save()
+        return obj
+
+    @classmethod
+    def create_or_update(cls, official_journal, text, language=None, user=None):
+        """
+        Cria ou atualiza um JournalParallelTitle.
+        
+        Args:
+            official_journal: Instância do OfficialJournal
+            text: Texto do título paralelo
+            language: Idioma do título (opcional)
+            user: Usuário (opcional)
+            
+        Returns:
+            JournalParallelTitle: Objeto criado ou atualizado
+        """
+        try:
+            # Tenta recuperar objeto existente
+            obj = cls.get(official_journal=official_journal, text=text, language=language)
+            
+            # Atualiza campos se necessário
+            if user and not obj.creator:
+                obj.creator = user
+            if user:
+                obj.updated_by = user
+            obj.save()
+            
+            return obj
+        except cls.DoesNotExist:
+            # Cria novo objeto se não existir
+            return cls.create(
+                official_journal=official_journal,
+                text=text, 
+                language=language,
+                user=user
+            )
 
 
 class SubjectDescriptor(CommonControlField):
