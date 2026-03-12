@@ -45,6 +45,25 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
     ta_cluster = indexes.CharField(null=True)
     year_cluster = indexes.CharField(null=True)
 
+    # ISSNs — busca direta por ISSN
+    issn = indexes.MultiValueField(null=True)
+
+    # Licença do artigo
+    license = indexes.CharField(null=True)
+
+    # Afiliações (países e instituições para filtro geográfico/institucional)
+    aff_country = indexes.MultiValueField(null=True)
+    aff_institution = indexes.MultiValueField(null=True)
+
+    # Status OA do periódico
+    open_access = indexes.CharField(null=True)
+
+    # Bases de indexação do periódico
+    indexed_at = indexes.MultiValueField(null=True)
+
+    # Crossmark ativo
+    crossmark_active = indexes.BooleanField(null=True)
+
     def prepare(self, obj):
         """ "
         Here add the title to with dynamic fields.
@@ -77,9 +96,9 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
             for collection in collections:
                 for lang in obj.languages.all():
                     data["fulltext_pdf_%s" % (lang.code2)] = (
-                        "http://%s/scielo.php?script=sci_pdf&pid=%s&tlng=%s"
+                        "%s/scielo.php?script=sci_pdf&pid=%s&tlng=%s"
                         % (
-                            collection.domain,
+                            collection.base_url,
                             obj.pid_v2,
                             lang.code2,
                         )
@@ -91,15 +110,43 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
             for collection in collections:
                 for lang in obj.languages.all():
                     data["fulltext_html_%s" % (lang.code2)] = (
-                        "http://%s/scielo.php?script=sci_arttext&pid=%s&tlng=%s"
+                        "%s/scielo.php?script=sci_arttext&pid=%s&tlng=%s"
                         % (
-                            collection.domain,
+                            collection.base_url,
                             obj.pid_v2,
                             lang.code2,
                         )
                     )
 
         return data
+
+    def prepare_issn(self, obj):
+        if obj.journal and obj.journal.official:
+            issns = []
+            if obj.journal.official.issn_electronic:
+                issns.append(obj.journal.official.issn_electronic)
+            if obj.journal.official.issn_print:
+                issns.append(obj.journal.official.issn_print)
+            if obj.journal.official.issnl:
+                issns.append(obj.journal.official.issnl)
+            return issns or None
+
+    def prepare_license(self, obj):
+        if obj.license and obj.license.license_type:
+            return obj.license.license_type
+
+    def prepare_open_access(self, obj):
+        if obj.journal:
+            return obj.journal.open_access
+
+    def prepare_indexed_at(self, obj):
+        if obj.journal:
+            return [i.acronym for i in obj.journal.indexed_at.all() if i.acronym]
+
+    def prepare_crossmark_active(self, obj):
+        if obj.journal:
+            return obj.journal.crossmark_doi_is_active
+        return False
 
     def prepare_ids(self, obj):
         """
@@ -130,8 +177,8 @@ class ArticleIndex(indexes.SearchIndex, indexes.Indexable):
         if obj.journal:
             for collection in collections:
                 urls.append(
-                    "http://%s/scielo.php?script=sci_arttext&pid=%s"
-                    % (collection.domain, obj.pid_v2)
+                    "%s/scielo.php?script=sci_arttext&pid=%s"
+                    % (collection.base_url, obj.pid_v2)
                 )
 
         return urls
@@ -305,6 +352,39 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
     compile = indexes.CharField(
         null=True, index_fieldname="item.compile", use_template=True
     )
+    # ISSNs — item.collections já tem o ISSN SciELO, mas falta o ISSN oficial
+    issn = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.relation")
+
+    # Publisher — sempre vazio nos dados reais
+    publisher = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.publisher")
+
+    # ORCID como campo pesquisável separado
+    orcid = indexes.MultiValueField(null=True, index_fieldname="metadata.dc.contributor.orcid")
+
+    # Format — presente no item.compile mas não como campo Solr direto
+    format_ = indexes.CharField(null=True, index_fieldname="metadata.dc.format")
+
+    def prepare_publisher(self, obj):
+        if obj.journal:
+            names = obj.journal.publisher_names
+            return names if names else None
+
+    def prepare_issn(self, obj):
+        if obj.journal and obj.journal.official:
+            issns = []
+            for attr in ("issn_electronic", "issn_print", "issnl"):
+                v = getattr(obj.journal.official, attr, None)
+                if v:
+                    issns.append(v)
+            return issns or None
+
+    def prepare_orcid(self, obj):
+        if obj.contrib_persons.exists():
+            return [
+                p.orcid
+                for p in obj.contrib_persons.all()
+                if p.orcid
+            ] or None
 
     def prepare_id(self, obj):
         """This field is the identifier of the record
@@ -396,15 +476,7 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         """This the publication date, that is format by YYYY-MM-DD
         In the model this field is seperated into pub_date_day, pub_date_month and pub_date_year
         """
-        return [
-            "-".join(
-                [
-                    obj.pub_date_year or "",
-                    obj.pub_date_month or "",
-                    obj.pub_date_day or "",
-                ]
-            ),
-        ]
+        return obj.pub_date
 
     def prepare_la(self, obj):
         """The language of the article."""
@@ -426,9 +498,9 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             for collection in collections:
                 for lang in obj.languages.all():
                     idents.add(
-                        "http://%s/scielo.php?script=sci_arttext&pid=%s&tlng=%s"
+                        "%s/scielo.php?script=sci_arttext&pid=%s&tlng=%s"
                         % (
-                            collection.domain,
+                            collection.base_url,
                             obj.pid_v2,
                             lang.code2,
                         )
