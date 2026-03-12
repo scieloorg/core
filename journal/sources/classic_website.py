@@ -179,8 +179,8 @@ def create_journal(user, journal_xml, collection):
 def load(user):
     for collection in Collection.objects.all().iterator():
         try:
-            for issn in get_issn(collection.domain):
-                journal_xml = get_journal_xml(collection.domain, issn)
+            for issn in get_issn(collection.base_url):
+                journal_xml = get_journal_xml(collection.base_url, issn)
                 create_journal(user, journal_xml, collection)
         except:
             pass

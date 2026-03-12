@@ -2269,6 +2269,9 @@ class JournalParallelTitle(TextWithLang):
         AutocompletePanel("language"),
     ]
 
+    class Meta:
+        unique_together = ("official_journal", "text", "language")
+
     def __unicode__(self):
         return "%s (%s)" % (self.text, self.language)
 
@@ -2276,18 +2279,109 @@ class JournalParallelTitle(TextWithLang):
         return "%s (%s)" % (self.text, self.language)
 
     @classmethod
-    def create_or_update(cls, official_journal, text, language=None):
-        if language:
-            for item in official_journal.parallel_titles.filter(
+    def get(cls, official_journal, text, language=None):
+        """
+        Recupera um JournalParallelTitle existente, tratando múltiplos objetos.
+        
+        Args:
+            official_journal: Instância do OfficialJournal
+            text: Texto do título paralelo
+            language: Idioma do título (opcional)
+            
+        Returns:
+            JournalParallelTitle: Primeiro objeto encontrado
+            
+        Raises:
+            cls.DoesNotExist: Se nenhum objeto for encontrado
+        """
+        try:
+            return cls.objects.get(
+                official_journal=official_journal,
+                text=text,
                 language=language
-            ).iterator():
-                item.delete()
-                break
-        obj = cls()
-        obj.official_journal = official_journal
-        obj.text = text
-        obj.language = language
+            )
+        except cls.MultipleObjectsReturned:
+            # Se houver múltiplos objetos, pega o primeiro e remove os duplicados
+            obj = cls.objects.filter(
+                official_journal=official_journal,
+                text=text,
+                language=language
+            ).first()
+            
+            # Remove os duplicados
+            cls.objects.filter(
+                official_journal=official_journal,
+                text=text,
+                language=language
+            ).exclude(id=obj.id).delete()
+            
+            return obj
+
+    @classmethod
+    def create(cls, official_journal, text, language=None, user=None):
+        """
+        Cria um novo JournalParallelTitle, removendo duplicados se existirem.
+        
+        Args:
+            official_journal: Instância do OfficialJournal
+            text: Texto do título paralelo
+            language: Idioma do título (opcional)
+            user: Usuário criador (opcional)
+            
+        Returns:
+            JournalParallelTitle: Objeto criado
+        """
+        # Remove duplicados existentes
+        cls.objects.filter(
+            official_journal=official_journal,
+            text=text,
+            language=language
+        ).delete()
+        
+        obj = cls(
+            official_journal=official_journal,
+            text=text,
+            language=language
+        )
+        if user:
+            obj.creator = user
         obj.save()
+        return obj
+
+    @classmethod
+    def create_or_update(cls, official_journal, text, language=None, user=None):
+        """
+        Cria ou atualiza um JournalParallelTitle.
+        
+        Args:
+            official_journal: Instância do OfficialJournal
+            text: Texto do título paralelo
+            language: Idioma do título (opcional)
+            user: Usuário (opcional)
+            
+        Returns:
+            JournalParallelTitle: Objeto criado ou atualizado
+        """
+        try:
+            # Tenta recuperar objeto existente
+            obj = cls.get(official_journal=official_journal, text=text, language=language)
+            
+            # Atualiza campos se necessário
+            if user and not obj.creator:
+                obj.creator = user
+            if user:
+                obj.updated_by = user
+            obj.save()
+            
+            return obj
+        except cls.DoesNotExist:
+            # Cria novo objeto se não existir
+            return cls.create(
+                official_journal=official_journal,
+                text=text, 
+                language=language,
+                user=user
+            )
 
 
 class SubjectDescriptor(CommonControlField):

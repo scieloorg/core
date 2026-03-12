@@ -7,5 +7,6 @@ def run(username, collection=None):
             "username": username,
             "collection_acron": collection,
             "load_data": False,
+            "verify": True,
         }
     )

@@ -267,6 +267,7 @@ def update_logo(
         if not journal:
             return None
         
+        logging.info(f"Attempting to update logo for journal: {journal.title} (ID: {journal.id}) - Current logo URL: {journal.get_url_logo()}")
         if logo_url := journal.get_url_logo():
             return logo_url
 
@@ -795,9 +796,12 @@ def get_or_update_parallel_titles(of_journal, parallel_titles):
         if isinstance(titles, str):
             titles = [titles]
         for title in titles:
-            JournalParallelTitle.objects.get_or_create(
+            # Usa create_or_update em vez de get_or_create para evitar MultipleObjectsReturned
+            from journal.models import JournalParallelTitle
+            JournalParallelTitle.create_or_update(
                 official_journal=of_journal,
                 text=title,
+                language=None  # Definindo explicitamente como None
             )
 
 

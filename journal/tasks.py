@@ -49,6 +49,7 @@ def load_journal_from_article_meta(
     collection_acron=None,
     load_data=None,
     journal_issn_list=None,
+    verify=True,
 ):
     try:
         if journal_issn_list and not collection_acron:
@@ -71,6 +72,7 @@ def load_journal_from_article_meta(
                     limit=limit,
                     load_data=load_data,
                     journal_issn_list=journal_issn_list,
+                    verify=verify,
                 )
             )
     except Exception as e:
@@ -93,6 +95,7 @@ def load_journal_from_article_meta_for_one_collection(
     limit=None,
     load_data=None,
     journal_issn_list=None,
+    verify=True,
 ):
     user = _get_user(self.request, username=username, user_id=user_id)
     try:
@@ -100,19 +103,28 @@ def load_journal_from_article_meta_for_one_collection(
         # Carrega os dados obtidos de article meta em AMJournal
         # Se load_data igual a Fase
         # Carrega os dados em Journal a partir de AMJournal.
+        kwargs = {}
+        if collection_acron:
+            kwargs["collection__acron3"] = collection_acron
+        if journal_issn_list:
+            kwargs["pid__in"] = journal_issn_list
+
+        if not AMJournal.objects.filter(**kwargs).exists():
+            load_data = True
+
         if load_data:
             process_journal_article_meta(
                 collection=collection_acron,
                 limit=limit,
                 user=user,
                 journal_issn_list=journal_issn_list,
+                verify=verify,
             )
-        else:
-            _register_journal_data(
-                user=user,
-                collection_acron3=collection_acron,
-                journal_issn_list=journal_issn_list,
-            )
+        _register_journal_data(
+            user=user,
+            collection_acron3=collection_acron,
+            journal_issn_list=journal_issn_list,
+        )
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
@@ -139,17 +151,16 @@ def _normalize_collection_domain(url, strip_www=False):
 
 def _build_logo_url(collection, journal_acron):
     """Build logo URL based on collection type."""
-    # collection.domain contém https:// ou http://
-    if not collection.domain:
+    if not collection:
+        logger.warning("No collection provided for journal logo URL construction")
+        return None
+    if not collection.base_url:
         logger.warning(f"Collection {collection.acron3} has no domain defined")
         return None
     if not journal_acron:
         logger.warning(f"Journal with collection {collection.acron3} has no acronym defined")
         return None
-    domain = collection.domain
-    if not domain:
-        logger.warning(f"Collection {collection.acron3} has no domain defined")
-        return None
+    domain = collection.base_url
     collection_acron3 = collection.acron3
     if collection_acron3 == "scl":
         return f"{domain}/media/images/{journal_acron}_glogo.gif"
@@ -230,7 +241,7 @@ def fetch_and_process_journal_logo(
                 "function": "journal.tasks.fetch_and_process_journal_logo",
                 "journal_title": journal.title,
                 "url_logo": url_logo,
-                "domain": collection.domain,
+                "domain": collection.base_url if collection else None,
             },
         )
 

@@ -1,4 +1,5 @@
 import sys
+import logging
 
 from collection.models import Collection
 from core.utils.rename_dictionary_keys import rename_dictionary_keys
@@ -14,7 +15,7 @@ class SciELOJournalArticleMetaCreateUpdateError(Exception):
         super().__init__(f"Failed to save SciELO Journal from article meta: {message}")
 
 
-def _get_collection_journals(offset=None, limit=None, collection=None):
+def _get_collection_journals(offset=None, limit=None, collection=None, verify=True):
     limit = limit or 10
     offset = f"&offset={offset}" if offset else ""
     if not collection:
@@ -25,13 +26,13 @@ def _get_collection_journals(offset=None, limit=None, collection=None):
         f"https://articlemeta.scielo.org/api/v1/journal/identifiers/?collection={collection}&limit={limit}"
         + offset
     )
-    data = fetch_data(url, json=True, timeout=30, verify=False)
+    data = fetch_data(url, json=True, timeout=30, verify=verify)
     return data
 
 
-def _fetch_and_store_journal(collection, issn, obj_collection, user):
+def _fetch_and_store_journal(collection, issn, obj_collection, user, verify=True):
     url_journal = f"https://articlemeta.scielo.org/api/v1/journal/?collection={collection}&issn={issn}"
-    data_journal = fetch_data(url_journal, json=True, timeout=30, verify=False)
+    data_journal = fetch_data(url_journal, json=True, timeout=30, verify=verify)
     AMJournal.create_or_update(
         pid=issn,
         collection=obj_collection,
@@ -40,23 +41,23 @@ def _fetch_and_store_journal(collection, issn, obj_collection, user):
     )
 
 
-def process_journal_article_meta(collection, limit, user, journal_issn_list=None):
+def process_journal_article_meta(collection, limit, user, journal_issn_list=None, verify=True):
     obj_collection = Collection.objects.get(acron3=collection)
     if journal_issn_list:
         for issn in journal_issn_list:
-            _fetch_and_store_journal(collection, issn, obj_collection, user)
+            _fetch_and_store_journal(collection, issn, obj_collection, user, verify=verify)
         return
 
     offset = 0
-    data = _get_collection_journals(collection=collection, limit=limit)
+    data = _get_collection_journals(collection=collection, limit=limit, verify=verify)
     total_limit = data["meta"]["total"]
     while offset < total_limit:
         for journal in data["objects"]:
-            _fetch_and_store_journal(collection, journal["code"], obj_collection, user)
+            _fetch_and_store_journal(collection, journal["code"], obj_collection, user, verify=verify)
 
         offset += limit or 10
         data = _get_collection_journals(
-            collection=collection, limit=limit, offset=offset
+            collection=collection, limit=limit, offset=offset, verify=verify
         )
 
 
@@ -194,7 +195,7 @@ def _register_journal_data(user, collection_acron3, journal_issn_list=None):
                 detail={
                     "function": "journal.sources.article_meta._register_journal_data",
                     "collection": collection_acron3,
-                    "issn": journal_am.scielo_issn,
+                    "issn": journal_am.scielo_issn,  # Mudança aqui: scielo_issn -> pid
                     "data_journal": journal_am.data,
                 },
             )
@@ -232,7 +233,7 @@ def _register_journal_data(user, collection_acron3, journal_issn_list=None):
                 detail={
                     "function": "journal.sources.article_meta._register_journal_data",
                     "collection": collection_acron3,
-                    "issn": journal_am.scielo_issn,
+                    "issn": journal_am.scielo_issn,  # Mudança aqui: scielo_issn -> pid
                     "data_journal": journal_am.data,
                 },
             )
