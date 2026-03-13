@@ -50,6 +50,8 @@ def load_journal_from_article_meta(
     load_data=None,
     journal_issn_list=None,
     verify=True,
+    issn=None,
+    stop=None,
 ):
     try:
         if journal_issn_list and not collection_acron:
@@ -73,6 +75,8 @@ def load_journal_from_article_meta(
                     load_data=load_data,
                     journal_issn_list=journal_issn_list,
                     verify=verify,
+                    issn=issn,
+                    stop=stop,
                 )
             )
     except Exception as e:
@@ -96,6 +100,8 @@ def load_journal_from_article_meta_for_one_collection(
     load_data=None,
     journal_issn_list=None,
     verify=True,
+    issn=None,
+    stop=None,
 ):
     user = _get_user(self.request, username=username, user_id=user_id)
     try:
@@ -119,6 +125,8 @@ def load_journal_from_article_meta_for_one_collection(
                 user=user,
                 journal_issn_list=journal_issn_list,
                 verify=verify,
+                issn=issn,
+                stop=stop,
             )
         _register_journal_data(
             user=user,
