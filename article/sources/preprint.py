@@ -19,10 +19,16 @@ namespaces = {
 class PreprintArticleSaveError(Exception): ...
 
 
-def harvest_preprints(URL, user):
+def harvest_preprints(URL, user, verify=True, timeout=30, stop=None):
     sickle = Sickle(URL)
     recs = sickle.ListRecords(metadataPrefix="oai_dc")
+    
+    count = 0
     for rec in recs:
+        if stop and count >= stop:
+            logging.info(f"Reached stop limit of {stop} preprints")
+            break
+            
         article_info = get_info_article(rec)
         identifier = get_doi(article_info["identifier"])
         doi = get_or_create_doi(doi=identifier, user=user)
@@ -73,6 +79,8 @@ def harvest_preprints(URL, user):
             # acessíveis na área administrativa
             # para que o usuário fique sabendo quais itens falharam
             raise PreprintArticleSaveError(e)
+        
+        count += 1
 
 
 def get_info_article(rec):
