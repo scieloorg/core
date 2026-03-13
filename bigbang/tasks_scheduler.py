@@ -141,7 +141,10 @@ def schedule_task_dispatch_articles(username, enabled=False):
             limit=None,
             timeout=None,
             opac_url=None,
+            verify=True,
+            issn=None,
             article_source_status_list=None,
+            stop=None,
         ),
         description=_("Dispatch articles to processing pipeline"),
         priority=TASK_PRIORITY,
@@ -271,7 +274,7 @@ def schedule_load_journal_from_article_meta(username, enabled=False):
     """
     Agenda a tarefa de carga de dados de journals obtidos do AM e Core.
     
-    Configura verify=True para verificação SSL nas requisições HTTP.
+    Configura verify=True para verificação SSL e limit=100 para limitar coleta.
     """
     schedule_task(
         task="journal.tasks.load_journal_from_article_meta",
@@ -280,6 +283,9 @@ def schedule_load_journal_from_article_meta(username, enabled=False):
             load_data=False,
             collection_acron="scl",
             verify=True,
+            limit=1000,
+            issn=None,
+            stop=None,
         ),
         description=_("Carga de dados de journals obtidos do AM e Core"),
         priority=1,
@@ -295,7 +301,7 @@ def schedule_collect_journals_from_am(username, enabled=False):
     """
     Agenda a tarefa de coleta de journals da fonte AM.
     
-    Configura verify=True para verificação SSL nas requisições HTTP.
+    Configura verify=True para verificação SSL e limit=100 para limitar coleta.
     """
     schedule_task(
         task="journal.tasks.load_journal_from_article_meta",
@@ -304,6 +310,9 @@ def schedule_collect_journals_from_am(username, enabled=False):
             load_data=True,
             collection_acron="scl",
             verify=True,
+            limit=1000,
+            issn=None,
+            stop=None,
         ),
         description=_("Coleta de journals da fonte AM"),
         priority=1,
@@ -416,7 +425,9 @@ def schedule_export_journal_to_articlemeta(username, enabled=False):
 
 def schedule_load_issue_from_articlemeta(username, enabled=False):
     """
-    Agenda a tarefa de carregar issues do ArticleMeta
+    Agenda a tarefa de carregar issues do ArticleMeta.
+    
+    Configura verify=True para verificação SSL e limit=100 para limitar coleta.
     """
     schedule_task(
         task="issue.tasks.load_issue_from_articlemeta",
@@ -429,6 +440,10 @@ def schedule_load_issue_from_articlemeta(username, enabled=False):
             until_date=None,
             force_update=None,
             timeout=30,
+            verify=True,
+            limit=1000,
+            issn=None,
+            stop=None,
         ),
         description=_("Load issues from ArticleMeta"),
         priority=TASK_PRIORITY,

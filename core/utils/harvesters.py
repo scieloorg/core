@@ -19,6 +19,9 @@ class AMHarvester:
         until_date: Optional[str] = None,
         limit: Optional[int] = None,
         timeout: int = 30,
+        verify: bool = True,
+        issn: Optional[str] = None,
+        stop: Optional[int] = None,
     ):
         """
         Inicializa o harvester do ArticleMeta.
@@ -29,6 +32,9 @@ class AMHarvester:
             until_date: Data final no formato YYYY-MM-DD
             limit: Número de documentos por página
             timeout: Timeout em segundos para requisições
+            verify: Verificação SSL para requisições HTTPS
+            issn: ISSN para filtrar documents de um journal específico
+            stop: Número máximo de documentos a retornar (opcional)
         """
         self.record_type = record_type
         self.base_url = f"https://articlemeta.scielo.org/api/v1/{self.record_type}/identifiers"
@@ -37,6 +43,9 @@ class AMHarvester:
         self.until_date = until_date or datetime.utcnow().isoformat()[:10]
         self.limit = limit or 1000
         self.timeout = timeout
+        self.verify = verify
+        self.issn = issn
+        self.stop = stop
 
     def harvest_documents(self) -> Generator[Dict[str, Any], None, None]:
         """
@@ -55,6 +64,7 @@ class AMHarvester:
                 - metadata: Metadados adicionais do documento
         """
         offset = 0
+        count = 0
 
         while True:
             try:
@@ -66,6 +76,10 @@ class AMHarvester:
                     "from": self.from_date,
                     "until": self.until_date,
                 }
+                
+                # Adiciona ISSN se fornecido
+                if self.record_type in ("issue", "article") and self.issn:
+                    params["issn"] = self.issn
 
                 # Constrói URL
                 url = f"{self.base_url}?{urlencode(params)}"
@@ -73,7 +87,7 @@ class AMHarvester:
                 logging.info(f"Fetching AM documents from: {url}")
 
                 # Faz requisição
-                response = fetch_data(url, json=True, timeout=self.timeout, verify=False)
+                response = fetch_data(url, json=True, timeout=self.timeout, verify=self.verify)
 
                 # Processa objetos retornados
                 objects = response.get("objects", [])
@@ -85,6 +99,10 @@ class AMHarvester:
                     break
 
                 for item in objects:
+                    if self.stop and count >= self.stop:
+                        logging.info(f"Reached stop limit of {self.stop} documents")
+                        return
+                    
                     # Extrai dados básicos
                     pid_v2 = item.get("code")
                     if not pid_v2:
@@ -120,6 +138,7 @@ class AMHarvester:
                     }
 
                     yield document
+                    count += 1
 
                 offset += self.limit
 
@@ -147,6 +166,9 @@ class OPACHarvester:
         until_date: Optional[str] = None,
         limit: int = 100,
         timeout: int = 5,
+        verify: bool = True,
+        stop: Optional[int] = None,
+        issn: Optional[str] = None,
     ):
         """
         Inicializa o harvester do OPAC.
@@ -158,13 +180,20 @@ class OPACHarvester:
             until_date: Data final no formato YYYY-MM-DD
             limit: Número de documentos por página
             timeout: Timeout em segundos para requisições
+            verify: Verificação SSL para requisições HTTPS
+            issn: ISSN do periódico (opcional)
         """
+        if not domain.startswith("http"):
+            domain = f"https://{domain}"
         self.domain = domain
         self.collection_acron = collection_acron
         self.from_date = from_date or "2000-01-01"
         self.until_date = until_date or datetime.utcnow().isoformat()[:10]
         self.limit = limit or 100
-        self.timeout = timeout or 5
+        self.timeout = timeout
+        self.verify = verify
+        self.stop = stop
+        self.issn = issn
 
     def harvest_documents(self) -> Generator[Dict[str, Any], None, None]:
         """
@@ -185,6 +214,7 @@ class OPACHarvester:
         """
         page = 1
         total_pages = None
+        count = 0        
 
         while True:
             try:
@@ -194,12 +224,13 @@ class OPACHarvester:
                     f"end_date={self.until_date}&begin_date={self.from_date}"
                     f"&limit={self.limit}&page={page}"
                 )
+                if self.issn:
+                    url += f"&journal_id={self.issn}"
 
                 logging.info(f"Fetching OPAC documents from: {url}")
 
                 # Faz requisição
-                # verify=False é necessário para evitar erros de SSL em ambientes onde o certificado do OPAC não é reconhecido
-                response = fetch_data(url, json=True, timeout=self.timeout, verify=False)
+                response = fetch_data(url, json=True, timeout=self.timeout, verify=self.verify)
 
                 # Define total de páginas na primeira iteração
                 if total_pages is None:
@@ -213,6 +244,10 @@ class OPACHarvester:
                     break
 
                 for pid_v3, item in documents.items():
+                    if self.stop and count >= self.stop:
+                        logging.info(f"Reached stop limit of {self.stop} documents")
+                        return
+                        
                     # Valida dados mínimos
                     if not pid_v3 or not item.get("journal_acronym"):
                         logging.warning(f"Invalid document data: {item}")
@@ -254,6 +289,7 @@ class OPACHarvester:
                     }
 
                     yield document
+                    count += 1
 
                 # Verifica se deve continuar
                 page += 1

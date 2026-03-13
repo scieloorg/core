@@ -28,6 +28,10 @@ def load_issue_from_articlemeta(
     until_date=None,
     force_update=None,
     timeout=30,
+    verify=True,
+    limit=None,
+    issn=None,
+    stop=None,
 ):
     """
     Carrega issues do ArticleMeta para collections específicas.
@@ -40,6 +44,10 @@ def load_issue_from_articlemeta(
         until_date: Data final (YYYY-MM-DD)
         force_update: Forçar atualização de registros existentes
         timeout: Timeout para requisições HTTP
+        verify: Verificação SSL para requisições HTTP
+        limit: Limite de itens a coletar
+        issn: ISSN para filtrar para um journal específico
+        stop: Número máximo de itens a processar (opcional)
     """
     try:
         user = _get_user(request=self.request, user_id=user_id, username=username)
@@ -53,7 +61,15 @@ def load_issue_from_articlemeta(
                 
                 # Coletar identificadores de issues
                 for issue_identifier in harvest_issue_identifiers(
-                    acron3, from_date, until_date, force_update, timeout
+                    collection_acron=acron3,
+                    from_date=from_date,
+                    until_date=until_date, 
+                    force_update=force_update,
+                    timeout=timeout,
+                    verify=verify,
+                    limit=limit,
+                    issn=issn,
+                    stop=stop,
                 ):
                     try:
                         logger.info(f"Scheduling load for issue {issue_identifier.get('code')} in collection {acron3}")
@@ -65,6 +81,9 @@ def load_issue_from_articlemeta(
                             issue_identifier=issue_identifier,
                             force_update=force_update,
                             timeout=timeout,
+                            verify=verify,
+                            limit=limit,
+                            stop=stop,
                         )
                     except Exception as e:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -116,6 +135,9 @@ def task_harvest_and_load_issue(
     issue_identifier=None,
     force_update=None,
     timeout=30,
+    verify=True,
+    limit=None,
+    stop=None,
 ):
     """
     Carrega um issue específico do ArticleMeta.
@@ -127,6 +149,9 @@ def task_harvest_and_load_issue(
         issue_identifier: Dados do identificador do issue
         force_update: Forçar atualização de registros existentes
         timeout: Timeout para requisições HTTP
+        verify: Verificação SSL para requisições HTTP
+        limit: Limite de itens (mantido para consistência)
+        stop: Número máximo de itens a processar (opcional)
     """
     try:
         user = _get_user(request=self.request, user_id=user_id, username=username)
@@ -158,6 +183,9 @@ def task_harvest_and_load_issue(
             processing_date=processing_date,
             force_update=force_update,
             timeout=timeout,
+            verify=verify,
+            limit=limit,
+            stop=stop,
         )
         
         if issue:
@@ -372,6 +400,7 @@ def task_update_issues_from_amissue(
     supplement=None,
     force_update=False,
     only_without_new_record=False,
+    verify=True,
 ):
     """
     Atualiza Issues a partir de registros AMIssue com filtros específicos.
@@ -390,6 +419,7 @@ def task_update_issues_from_amissue(
         supplement: Suplemento para filtrar Issues
         force_update: Forçar atualização de Issues existentes
         only_without_new_record: Processar apenas AMIssue sem new_record associado
+        verify: Verificação SSL para requisições HTTP (default: True)
     
     Returns:
         dict: Resultado da operação com estatísticas
@@ -465,7 +495,7 @@ def task_update_issues_from_amissue(
                 stats["processed"] += 1
                 
                 # Extrair dados do AMIssue para aplicar filtros adicionais
-                issue_data = get_issue_data_from_am_issue(am_issue, user)
+                issue_data = get_issue_data_from_am_issue(am_issue, user, verify)
                 if not issue_data:
                     stats["errors"] += 1
                     stats["error_details"].append({
@@ -502,9 +532,9 @@ def task_update_issues_from_amissue(
                     logger.info(f"Updating existing Issue {existing_issue.id} from AMIssue {am_issue.id}")
                     
                     # Recarregar dados do AMIssue no Issue
-                    load_issue_sections(user, existing_issue, am_issue, issue_data, collection=am_issue.collection)
-                    load_issue_titles(user, existing_issue, am_issue, issue_data)
-                    load_bibliographic_strips(user, existing_issue, am_issue, issue_data)
+                    load_issue_sections(user, existing_issue, am_issue, issue_data, collection=am_issue.collection, verify=verify)
+                    load_issue_titles(user, existing_issue, am_issue, issue_data, verify=verify)
+                    load_bibliographic_strips(user, existing_issue, am_issue, issue_data, verify=verify)
                     
                     stats["updated"] += 1
                     
@@ -512,7 +542,7 @@ def task_update_issues_from_amissue(
                     # Criar novo Issue
                     logger.info(f"Creating new Issue from AMIssue {am_issue.id}")
                     
-                    issue = create_issue_from_am_issue(user, am_issue)
+                    issue = create_issue_from_am_issue(user, am_issue, verify)
                     if issue:
                         stats["created"] += 1
                     else:
