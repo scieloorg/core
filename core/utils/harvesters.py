@@ -78,7 +78,7 @@ class AMHarvester:
                 }
                 
                 # Adiciona ISSN se fornecido
-                if self.issn:
+                if self.record_type in ("issue", "article") and self.issn:
                     params["issn"] = self.issn
 
                 # Constrói URL
@@ -168,6 +168,7 @@ class OPACHarvester:
         timeout: int = 5,
         verify: bool = True,
         stop: Optional[int] = None,
+        issn: Optional[str] = None,
     ):
         """
         Inicializa o harvester do OPAC.
@@ -180,6 +181,7 @@ class OPACHarvester:
             limit: Número de documentos por página
             timeout: Timeout em segundos para requisições
             verify: Verificação SSL para requisições HTTPS
+            issn: ISSN do periódico (opcional)
         """
         if not domain.startswith("http"):
             domain = f"https://{domain}"
@@ -191,7 +193,7 @@ class OPACHarvester:
         self.timeout = timeout
         self.verify = verify
         self.stop = stop
-        self.stop = stop
+        self.issn = issn
 
     def harvest_documents(self) -> Generator[Dict[str, Any], None, None]:
         """
@@ -212,7 +214,7 @@ class OPACHarvester:
         """
         page = 1
         total_pages = None
-        count = 0
+        count = 0        
 
         while True:
             try:
@@ -222,6 +224,8 @@ class OPACHarvester:
                     f"end_date={self.until_date}&begin_date={self.from_date}"
                     f"&limit={self.limit}&page={page}"
                 )
+                if self.issn:
+                    url += f"&journal_id={self.issn}"
 
                 logging.info(f"Fetching OPAC documents from: {url}")
 
