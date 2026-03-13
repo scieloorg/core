@@ -561,7 +561,7 @@ class ArticleIteratorBuilder:
         """Itera documentos coletados via OPAC ou ArticleMeta."""
 
         if Collection.objects.count() == 0:
-            Collection.load(self.user)
+            Collection.load(self.user, verify=self.verify)
 
         count = 0
         for collection_acron in self.collection_acron_list or list(Collection.get_acronyms()):
