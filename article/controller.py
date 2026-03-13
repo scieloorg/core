@@ -498,7 +498,8 @@ class ArticleIteratorBuilder:
             issn_list = [i for i in journal_issns if i] if journal_issns else None
             if journal_issns and not issn_list:
                 continue
-            qs = PidProviderXML.get_queryset(
+
+            kwargs = dict(
                 issn_list=issn_list,
                 from_pub_year=self.from_pub_year,
                 until_pub_year=self.until_pub_year,
@@ -506,10 +507,14 @@ class ArticleIteratorBuilder:
                 until_updated_date=self.until_date,
                 proc_status_list=self.proc_status_list or [PPXML_STATUS_TODO, PPXML_STATUS_INVALID],
             )
-            self._iter_from_pid_provider_count += qs.count()
+            qs = PidProviderXML.get_queryset(**kwargs)
+            total = qs.count()
+
+            logging.info(f"PidProviderXML queryset total: {total}, kwargs: {kwargs}")
+
+            self._iter_from_pid_provider_count += total
             for item in qs.iterator():
                 yield {"pp_xml_id": item.id}
-        logging.info(f"_iter_from_pid_provider: yielded {self._iter_from_pid_provider_count} items")
 
     def _iter_from_article(self):
         """
