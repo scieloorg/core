@@ -51,7 +51,7 @@ def load_funding_data(user, file_path):
 
 
 @celery_app.task(bind=True, name=_('load_preprints'))
-def load_preprint(self, user_id, oai_pmh_preprint_uri):
+def load_preprint(self, user_id, oai_pmh_preprint_uri, verify=True, timeout=30, stop=None):
     """
     Coleta e carrega preprints de um endpoint OAI-PMH específico.
 
@@ -62,6 +62,9 @@ def load_preprint(self, user_id, oai_pmh_preprint_uri):
         self: Instância da tarefa Celery
         user_id (int): ID do usuário executando a tarefa (obrigatório)
         oai_pmh_preprint_uri (str): URI do endpoint OAI-PMH para coleta (obrigatório)
+        verify (bool): Verificação SSL para requisições HTTP
+        timeout (int): Timeout para requisições HTTP
+        stop (int, optional): Número máximo de preprints a processar
 
     Returns:
         None
@@ -89,7 +92,7 @@ def load_preprint(self, user_id, oai_pmh_preprint_uri):
     """
     user = User.objects.get(pk=user_id)
     ## fazer filtro para não coletar tudo sempre
-    harvest_preprints(oai_pmh_preprint_uri, user)
+    harvest_preprints(oai_pmh_preprint_uri, user, verify=verify, timeout=timeout, stop=stop)
 
 
 @celery_app.task(bind=True)
@@ -643,6 +646,7 @@ def task_check_article_availability(
     article_id=None,
     collection_acron_list=None,
     timeout=None,
+    verify=True,
     is_activate=None,
     force_update=False,
 ):
@@ -659,6 +663,7 @@ def task_check_article_availability(
         article_id (int, optional): ID do artigo a verificar (obrigatório)
         collection_acron_list (list, optional): Lista de acrônimos de coleções para filtro
         timeout (int, optional): Timeout em segundos para verificações HTTP
+        verify (bool): Verificação SSL para requisições HTTP
         is_activate (bool, optional): Se deve ativar artigo após verificação
         force_update (bool): Força nova verificação mesmo se recente
 
@@ -719,6 +724,9 @@ def task_dispatch_articles(
     limit=None,
     timeout=None,
     opac_url=None,
+    verify=True,
+    issn=None,
+    stop=None,
     # --- ativa article_source ---
     article_source_status_list=None,
 ):
@@ -747,6 +755,9 @@ def task_dispatch_articles(
         limit (int, optional): Limite máximo de artigos a processar
         timeout (int, optional): Timeout para operações HTTP
         opac_url (str, optional): URL base do OPAC para harvest
+        verify (bool): Verificação SSL para requisições HTTP
+        issn (str, optional): ISSN para filtrar por journal específico
+        stop (int, optional): Número máximo de itens a processar
         article_source_status_list (list, optional): Status do article_source para filtro
 
     Returns:
@@ -795,8 +806,15 @@ def task_dispatch_articles(
             limit=limit,
             timeout=timeout,
             opac_url=opac_url,
+            verify=verify,
+            issn=issn,
+            stop=stop,
             force_update=force_update,
         ):
+            if stop and dispatched >= stop:
+                logging.info(f"Reached stop limit of {stop} articles")
+                break
+                
             if item_kwargs is None:
                 skipped += 1
                 continue
@@ -937,7 +955,7 @@ def task_process_article_pipeline(
                 am_article=am_article,
                 auto_solve_pid_conflict=auto_solve_pid_conflict,
             )
-            pp_xml_id = article_source.pid_provider_xml.id
+            pp_xml_id = article_source.pid_provider_xml.id if article_source.pid_provider_xml else None
         
         if article_source_id:
             article_source = ArticleSource.objects.get(id=article_source_id)
@@ -946,7 +964,7 @@ def task_process_article_pipeline(
                 force_update=force_update,
                 auto_solve_pid_conflict=auto_solve_pid_conflict,
             )
-            pp_xml_id = article_source.pid_provider_xml.id
+            pp_xml_id = article_source.pid_provider_xml.id if article_source.pid_provider_xml else None
 
         if not pp_xml_id:
             raise ValueError(
