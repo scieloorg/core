@@ -445,6 +445,9 @@ class ArticleIteratorBuilder:
         limit=None,
         timeout=None,
         opac_url=None,
+        verify=True,
+        issn=None,
+        stop=None,
         force_update=None,
     ):
         self.user = user
@@ -460,6 +463,9 @@ class ArticleIteratorBuilder:
         self.limit = limit
         self.timeout = timeout
         self.opac_url = opac_url
+        self.verify = verify
+        self.issn = issn
+        self.stop = stop
         self.force_update = force_update
 
         self._iter_from_harvest_count = 0
@@ -594,6 +600,9 @@ class ArticleIteratorBuilder:
             until_date=self.until_date,
             limit=self.limit,
             timeout=self.timeout,
+            verify=self.verify,
+            issn=self.issn,
+            stop=self.stop,
         )
         if collection_acron == "scl":
             return OPACHarvester(self.opac_url or "www.scielo.br", collection_acron, **kwargs)
