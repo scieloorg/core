@@ -811,14 +811,9 @@ def task_dispatch_articles(
             stop=stop,
             force_update=force_update,
         ):
-            if stop and dispatched >= stop:
-                logging.info(f"Reached stop limit of {stop} articles")
-                break
-                
             if item_kwargs is None:
                 skipped += 1
                 continue
-            logging.info(f"Dispatching article with kwargs: {item_kwargs}")
             task_process_article_pipeline.delay(**item_kwargs, **common_kwargs)
             dispatched += 1
 
