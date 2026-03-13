@@ -28,6 +28,10 @@ def load_issue_from_articlemeta(
     until_date=None,
     force_update=None,
     timeout=30,
+    verify=True,
+    limit=None,
+    issn=None,
+    stop=None,
 ):
     """
     Carrega issues do ArticleMeta para collections específicas.
@@ -40,6 +44,10 @@ def load_issue_from_articlemeta(
         until_date: Data final (YYYY-MM-DD)
         force_update: Forçar atualização de registros existentes
         timeout: Timeout para requisições HTTP
+        verify: Verificação SSL para requisições HTTP
+        limit: Limite de itens a coletar
+        issn: ISSN para filtrar para um journal específico
+        stop: Número máximo de itens a processar (opcional)
     """
     try:
         user = _get_user(request=self.request, user_id=user_id, username=username)
@@ -53,7 +61,15 @@ def load_issue_from_articlemeta(
                 
                 # Coletar identificadores de issues
                 for issue_identifier in harvest_issue_identifiers(
-                    acron3, from_date, until_date, force_update, timeout
+                    collection_acron=acron3,
+                    from_date=from_date,
+                    until_date=until_date, 
+                    force_update=force_update,
+                    timeout=timeout,
+                    verify=verify,
+                    limit=limit,
+                    issn=issn,
+                    stop=stop,
                 ):
                     try:
                         logger.info(f"Scheduling load for issue {issue_identifier.get('code')} in collection {acron3}")
@@ -65,6 +81,9 @@ def load_issue_from_articlemeta(
                             issue_identifier=issue_identifier,
                             force_update=force_update,
                             timeout=timeout,
+                            verify=verify,
+                            limit=limit,
+                            stop=stop,
                         )
                     except Exception as e:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -116,6 +135,9 @@ def task_harvest_and_load_issue(
     issue_identifier=None,
     force_update=None,
     timeout=30,
+    verify=True,
+    limit=None,
+    stop=None,
 ):
     """
     Carrega um issue específico do ArticleMeta.
@@ -127,6 +149,9 @@ def task_harvest_and_load_issue(
         issue_identifier: Dados do identificador do issue
         force_update: Forçar atualização de registros existentes
         timeout: Timeout para requisições HTTP
+        verify: Verificação SSL para requisições HTTP
+        limit: Limite de itens (mantido para consistência)
+        stop: Número máximo de itens a processar (opcional)
     """
     try:
         user = _get_user(request=self.request, user_id=user_id, username=username)
@@ -158,6 +183,9 @@ def task_harvest_and_load_issue(
             processing_date=processing_date,
             force_update=force_update,
             timeout=timeout,
+            verify=verify,
+            limit=limit,
+            stop=stop,
         )
         
         if issue:
