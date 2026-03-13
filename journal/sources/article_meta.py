@@ -3,6 +3,7 @@ import logging
 
 from collection.models import Collection
 from core.utils.rename_dictionary_keys import rename_dictionary_keys
+from core.utils.harvesters import AMHarvester
 from core.utils.utils import fetch_data
 from journal.models import AMJournal
 from journal.sources import am_to_core
@@ -15,19 +16,62 @@ class SciELOJournalArticleMetaCreateUpdateError(Exception):
         super().__init__(f"Failed to save SciELO Journal from article meta: {message}")
 
 
-def _get_collection_journals(offset=None, limit=None, collection=None, verify=True):
-    limit = limit or 10
-    offset = f"&offset={offset}" if offset else ""
+def _get_collection_journals(offset=None, limit=None, collection=None, verify=True, issn=None, stop=None):
+    """Usa AMHarvester para coletar journals de forma consistente."""
     if not collection:
         raise ValueError(
             "journal.sources.article_meta._get_collection_journals requires collection"
         )
-    url = (
-        f"https://articlemeta.scielo.org/api/v1/journal/identifiers/?collection={collection}&limit={limit}"
-        + offset
+    
+    # Usar AMHarvester para coleta consistente
+    harvester = AMHarvester(
+        record_type="journal",
+        collection_acron=collection,
+        limit=limit or 1000,
+        verify=verify,
+        issn=issn,
+        stop=stop,
     )
-    data = fetch_data(url, json=True, timeout=30, verify=verify)
-    return data
+    
+    # Simular estrutura de resposta original para compatibilidade
+    all_objects = []
+    total_collected = 0
+    target_limit = limit or 1000
+    
+    # Se offset for especificado, precisamos pular registros
+    records_to_skip = offset or 0
+    current_skip = 0
+    
+    for journal in harvester.harvest_documents():
+        # Pular registros até chegar no offset
+        if current_skip < records_to_skip:
+            current_skip += 1
+            continue
+            
+        # Adicionar registro convertido para formato esperado
+        journal_obj = {
+            "code": journal["code"],
+            "title": journal.get("title", ""),
+            "issn": journal.get("pid_v2", ""),  # ISSN está no código  
+            "collection": journal["collection_acron"],
+            "processing_date": journal.get("processing_date"),
+        }
+        all_objects.append(journal_obj)
+        total_collected += 1
+        
+        # Parar quando atingir o limite
+        if total_collected >= target_limit:
+            break
+    
+    # Retornar estrutura compatível com código existente
+    return {
+        "objects": all_objects,
+        "meta": {
+            "total": len(all_objects) + records_to_skip,  # Aproximação
+            "limit": target_limit,
+            "offset": records_to_skip,
+        }
+    }
 
 
 def _fetch_and_store_journal(collection, issn, obj_collection, user, verify=True):
@@ -41,23 +85,33 @@ def _fetch_and_store_journal(collection, issn, obj_collection, user, verify=True
     )
 
 
-def process_journal_article_meta(collection, limit, user, journal_issn_list=None, verify=True):
+def process_journal_article_meta(collection, limit, user, journal_issn_list=None, verify=True, issn=None, stop=None):
     obj_collection = Collection.objects.get(acron3=collection)
     if journal_issn_list:
+        processed_count = 0
         for issn in journal_issn_list:
+            if stop and processed_count >= stop:
+                logging.info(f"Reached stop limit of {stop} journals")
+                break
             _fetch_and_store_journal(collection, issn, obj_collection, user, verify=verify)
+            processed_count += 1
         return
 
     offset = 0
-    data = _get_collection_journals(collection=collection, limit=limit, verify=verify)
+    processed_count = 0
+    data = _get_collection_journals(collection=collection, limit=limit, verify=verify, issn=issn, stop=stop)
     total_limit = data["meta"]["total"]
-    while offset < total_limit:
+    while offset < total_limit and (not stop or processed_count < stop):
         for journal in data["objects"]:
+            if stop and processed_count >= stop:
+                logging.info(f"Reached stop limit of {stop} journals")
+                break
             _fetch_and_store_journal(collection, journal["code"], obj_collection, user, verify=verify)
+            processed_count += 1
 
-        offset += limit or 10
+        offset += limit or 1000
         data = _get_collection_journals(
-            collection=collection, limit=limit, offset=offset, verify=verify
+            collection=collection, limit=limit, offset=offset, verify=verify, issn=issn, stop=stop
         )
 
 
@@ -195,7 +249,7 @@ def _register_journal_data(user, collection_acron3, journal_issn_list=None):
                 detail={
                     "function": "journal.sources.article_meta._register_journal_data",
                     "collection": collection_acron3,
-                    "issn": journal_am.scielo_issn,  # Mudança aqui: scielo_issn -> pid
+                    "issn": journal_am.pid,
                     "data_journal": journal_am.data,
                 },
             )
@@ -233,7 +287,7 @@ def _register_journal_data(user, collection_acron3, journal_issn_list=None):
                 detail={
                     "function": "journal.sources.article_meta._register_journal_data",
                     "collection": collection_acron3,
-                    "issn": journal_am.scielo_issn,  # Mudança aqui: scielo_issn -> pid
+                    "issn": journal_am.pid,
                     "data_journal": journal_am.data,
                 },
             )
