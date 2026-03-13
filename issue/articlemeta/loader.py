@@ -14,7 +14,7 @@ from tracker.models import UnexpectedEvent
 
 
 def harvest_issue_identifiers(
-    collection_acron, from_date, until_date, force_update, timeout=30
+    collection_acron, from_date, until_date, force_update, timeout=30, verify=True, limit=None, issn=None, stop=None
 ):
     try:
         harvester = AMHarvester(
@@ -22,8 +22,19 @@ def harvest_issue_identifiers(
             collection_acron=collection_acron,
             from_date=from_date,
             until_date=until_date,
+            limit=limit,
+            timeout=timeout,
+            verify=verify,
+            issn=issn,
+            stop=stop,
         )
-        yield from harvester.harvest_documents()
+        
+        count = 0
+        for document in harvester.harvest_documents():
+            if stop and count >= stop:
+                break
+            yield document
+            count += 1
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -40,7 +51,7 @@ def harvest_issue_identifiers(
         )
 
 
-def harvest_and_load_issue(user, url, code, collection_acron, processing_date, force_update, timeout=30):
+def harvest_and_load_issue(user, url, code, collection_acron, processing_date, force_update, timeout=30, verify=True, limit=None, stop=None):
     if not url:
         raise ValueError("URL is required to harvest and load issue")
 
@@ -50,7 +61,7 @@ def harvest_and_load_issue(user, url, code, collection_acron, processing_date, f
     if not collection_acron:
         raise ValueError("Collection acronym is required to harvest and load issue")
     
-    harvested_data = harvest_issue_data(url, timeout=timeout)
+    harvested_data = harvest_issue_data(url, timeout=timeout, verify=verify)
     am_issue = load_am_issue(
         user,
         Collection.objects.get(acron3=collection_acron),
@@ -60,16 +71,17 @@ def harvest_and_load_issue(user, url, code, collection_acron, processing_date, f
         harvested_data,
         force_update=force_update,
         timeout=timeout,
+        verify=verify,
     )
     if not am_issue:
         raise ValueError(f"Unable to create am_issue for {url}")
     return create_issue_from_am_issue(user, am_issue)
 
 
-def harvest_issue_data(url, timeout=30):
+def harvest_issue_data(url, timeout=30, verify=True):
     try:
         item = {}
-        item["data"] = utils.fetch_data(url, json=True, timeout=timeout, verify=False)
+        item["data"] = utils.fetch_data(url, json=True, timeout=timeout, verify=verify)
         item["status"] = "pending"
         return item
     except Exception as e:
@@ -96,6 +108,7 @@ def load_am_issue(
     force_update,
     do_harvesting=False,
     timeout=30,
+    verify=True,
 ):
     try:
         if not url:
@@ -103,7 +116,7 @@ def load_am_issue(
         
         # Corrigido: não redefine harvested_data se já existe
         if do_harvesting or not harvested_data:
-            harvested_data = harvest_issue_data(url, timeout=timeout)
+            harvested_data = harvest_issue_data(url, timeout=timeout, verify=verify)
 
         return AMIssue.create_or_update(
             pid=pid,
@@ -132,7 +145,7 @@ def load_am_issue(
         return None
 
 
-def complete_am_issue(user, am_issue):
+def complete_am_issue(user, am_issue, verify=True):
     try:
         detail = {}
 
@@ -144,7 +157,7 @@ def complete_am_issue(user, am_issue):
         if not am_issue.url:
             raise ValueError("am_issue.url is required")
         
-        harvested_data = harvest_issue_data(am_issue.url)
+        harvested_data = harvest_issue_data(am_issue.url, verify=verify)
         detail["harvested_data"] = str(harvested_data)
         am_issue.status = harvested_data.get("status")
         am_issue.data = harvested_data.get("data")
@@ -183,7 +196,7 @@ def get_issue_data_from_am_issue(am_issue, user=None):
         am_data = am_issue.data
         if not am_data:
             if user:
-                complete_am_issue(user, am_issue)
+                complete_am_issue(user, am_issue, verify=True)
                 am_data = am_issue.data
         
         if not am_data:
