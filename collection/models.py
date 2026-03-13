@@ -223,12 +223,12 @@ class Collection(CommonControlField, ClusterableModel):
     base_form_class = CoreAdminModelForm
 
     @classmethod
-    def load(cls, user, collections_data=None):
+    def load(cls, user, collections_data=None, verify=True):
         if not collections_data:
             collections_data = fetch_data(
                 "https://articlemeta.scielo.org/api/v1/collection/identifiers/",
                 json=True,
-                verify=False,
+                verify=verify,
             )
 
         for collection_data in collections_data:
