@@ -232,7 +232,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
             article.languages.add(main_lang)
 
         article.sections.set(
-            get_or_create_toc_sections(xmltree=xmltree, user=user, errors=errors, issue=article.issue)
+            get_or_create_toc_sections(xmltree=xmltree, user=user, errors=errors, issue=article.issue, verify=True)
         )
         article.titles.set(
             create_or_update_titles(
@@ -522,7 +522,7 @@ def get_or_create_fundings(xmltree, user, item, errors):
     return data
 
 
-def get_or_create_toc_sections(xmltree, user, errors, issue):
+def get_or_create_toc_sections(xmltree, user, errors, issue, verify=True):
     """
     Extrai e cria seções do sumário (TOC) a partir do XML.
 
@@ -538,7 +538,7 @@ def get_or_create_toc_sections(xmltree, user, errors, issue):
     try:
         if not issue.table_of_contents.exists():
             for am_issue in AMIssue.objects.filter(new_record=issue):
-                load_issue_sections(user, issue, am_issue=am_issue)
+                load_issue_sections(user, issue, am_issue=am_issue, verify=verify)
         toc_sections = ArticleTocSections(xmltree=xmltree).sections
         for item in toc_sections:
             section_title = item.get("section")
