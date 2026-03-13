@@ -75,7 +75,7 @@ def harvest_and_load_issue(user, url, code, collection_acron, processing_date, f
     )
     if not am_issue:
         raise ValueError(f"Unable to create am_issue for {url}")
-    return create_issue_from_am_issue(user, am_issue)
+    return create_issue_from_am_issue(user, am_issue, verify)
 
 
 def harvest_issue_data(url, timeout=30, verify=True):
@@ -173,13 +173,14 @@ def complete_am_issue(user, am_issue, verify=True):
         )
 
 
-def get_issue_data_from_am_issue(am_issue, user=None):
+def get_issue_data_from_am_issue(am_issue, user=None, verify=True):
     """
     Extrai e ajusta dados do AMIssue para criação de Issue.
 
     Args:
         am_issue: Instância de AMIssue
         user: Usuário para completar dados se necessário
+        verify: Verificar certificados SSL (default: True)
 
     Returns:
         Dict com dados ajustados para Issue ou None se falhar
@@ -196,7 +197,7 @@ def get_issue_data_from_am_issue(am_issue, user=None):
         am_data = am_issue.data
         if not am_data:
             if user:
-                complete_am_issue(user, am_issue, verify=True)
+                complete_am_issue(user, am_issue, verify=verify)
                 am_data = am_issue.data
         
         if not am_data:
@@ -231,7 +232,7 @@ def get_issue_data_from_am_issue(am_issue, user=None):
         return None
 
 
-def create_issue_from_am_issue(user, am_issue):
+def create_issue_from_am_issue(user, am_issue, verify=True):
     """
     Cria Issue a partir de AMIssue.
     
@@ -245,7 +246,7 @@ def create_issue_from_am_issue(user, am_issue):
     issue = None
     
     try:
-        issue_data = get_issue_data_from_am_issue(am_issue, user)
+        issue_data = get_issue_data_from_am_issue(am_issue, user, verify)
         if not issue_data:
             raise ValueError(f"Unable to extract issue data from {am_issue}")
                   
@@ -265,9 +266,9 @@ def create_issue_from_am_issue(user, am_issue):
         
         if issue:
             issue.add_am_issue(user, am_issue)
-            load_issue_sections(user, issue, am_issue, issue_data)
-            load_issue_titles(user, issue, am_issue, issue_data)
-            load_bibliographic_strips(user, issue, am_issue, issue_data)
+            load_issue_sections(user, issue, am_issue, issue_data, verify=verify)
+            load_issue_titles(user, issue, am_issue, issue_data, verify=verify)
+            load_bibliographic_strips(user, issue, am_issue, issue_data, verify=verify)
                 
         return issue
         
@@ -282,7 +283,7 @@ def create_issue_from_am_issue(user, am_issue):
         return issue
 
 
-def _extract_field(field_name, field_value, issue_data, am_issue, user):
+def _extract_field(field_name, field_value, issue_data, am_issue, user, verify=True):
     """
     Extrai um campo específico dos dados do issue.
     
@@ -312,7 +313,7 @@ def _extract_field(field_name, field_value, issue_data, am_issue, user):
             pass
     
     if am_issue:
-        data = get_issue_data_from_am_issue(am_issue, user)
+        data = get_issue_data_from_am_issue(am_issue, user, verify)
         if not data:
             raise ValueError(f"Unable to extract issue data from {am_issue}")
         return data.get(field_name)
@@ -320,7 +321,7 @@ def _extract_field(field_name, field_value, issue_data, am_issue, user):
     raise ValueError(f"am_issue, issue_data or {field_name} is required")
 
 
-def load_issue_sections(user, issue, am_issue=None, issue_data=None, sections_data=None, collection=None):
+def load_issue_sections(user, issue, am_issue=None, issue_data=None, sections_data=None, collection=None, verify=True):
     """
     Carrega sections para um Issue existente.
     
@@ -339,7 +340,7 @@ def load_issue_sections(user, issue, am_issue=None, issue_data=None, sections_da
         if not issue:
             raise ValueError("Issue is required")
         
-        sections = _extract_field("sections_data", sections_data, issue_data, am_issue, user)
+        sections = _extract_field("sections_data", sections_data, issue_data, am_issue, user, verify)
         if not sections:
             if '"v49"' in str(issue_data):
                 raise ValueError("No sections found, but issue_data contains 'v49'")
@@ -368,7 +369,7 @@ def load_issue_sections(user, issue, am_issue=None, issue_data=None, sections_da
         return False
 
 
-def load_issue_titles(user, issue, am_issue=None, issue_data=None, issue_titles=None):
+def load_issue_titles(user, issue, am_issue=None, issue_data=None, issue_titles=None, verify=True):
     """
     Carrega títulos para um Issue existente.
     
@@ -386,7 +387,7 @@ def load_issue_titles(user, issue, am_issue=None, issue_data=None, issue_titles=
         if not issue:
             raise ValueError("Issue is required")
         
-        titles = _extract_field("issue_titles", issue_titles, issue_data, am_issue, user)
+        titles = _extract_field("issue_titles", issue_titles, issue_data, am_issue, user, verify)
         if not titles:
             logging.info("No issue titles found")
             return True
@@ -408,7 +409,7 @@ def load_issue_titles(user, issue, am_issue=None, issue_data=None, issue_titles=
         return False
 
 
-def load_bibliographic_strips(user, issue, am_issue=None, issue_data=None, bibliographic_strips=None):
+def load_bibliographic_strips(user, issue, am_issue=None, issue_data=None, bibliographic_strips=None, verify=True):
     """
     Carrega bibliographic strips para um Issue existente.
     
@@ -426,7 +427,7 @@ def load_bibliographic_strips(user, issue, am_issue=None, issue_data=None, bibli
         if not issue:
             raise ValueError("Issue is required")
         
-        strips = _extract_field("bibliographic_strip_list", bibliographic_strips, issue_data, am_issue, user)
+        strips = _extract_field("bibliographic_strip_list", bibliographic_strips, issue_data, am_issue, user, verify)
         if not strips:
             logging.info("No bibliographic strips found")
             return True
