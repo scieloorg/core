@@ -38,11 +38,12 @@ def task_start(
     self,
     user_id=None,
     username=None,
+    verify=True,
 ):
     try:
         user = _get_user(user_id, username)
         Language.load(user)
-        Collection.load(user)
+        Collection.load(user, verify=verify)
         Vocabulary.load(user)
         Standard.load(user)
         Subject.load(user)
