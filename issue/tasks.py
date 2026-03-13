@@ -400,6 +400,7 @@ def task_update_issues_from_amissue(
     supplement=None,
     force_update=False,
     only_without_new_record=False,
+    verify=True,
 ):
     """
     Atualiza Issues a partir de registros AMIssue com filtros específicos.
@@ -418,6 +419,7 @@ def task_update_issues_from_amissue(
         supplement: Suplemento para filtrar Issues
         force_update: Forçar atualização de Issues existentes
         only_without_new_record: Processar apenas AMIssue sem new_record associado
+        verify: Verificação SSL para requisições HTTP (default: True)
     
     Returns:
         dict: Resultado da operação com estatísticas
@@ -493,7 +495,7 @@ def task_update_issues_from_amissue(
                 stats["processed"] += 1
                 
                 # Extrair dados do AMIssue para aplicar filtros adicionais
-                issue_data = get_issue_data_from_am_issue(am_issue, user)
+                issue_data = get_issue_data_from_am_issue(am_issue, user, verify)
                 if not issue_data:
                     stats["errors"] += 1
                     stats["error_details"].append({
@@ -530,9 +532,9 @@ def task_update_issues_from_amissue(
                     logger.info(f"Updating existing Issue {existing_issue.id} from AMIssue {am_issue.id}")
                     
                     # Recarregar dados do AMIssue no Issue
-                    load_issue_sections(user, existing_issue, am_issue, issue_data, collection=am_issue.collection)
-                    load_issue_titles(user, existing_issue, am_issue, issue_data)
-                    load_bibliographic_strips(user, existing_issue, am_issue, issue_data)
+                    load_issue_sections(user, existing_issue, am_issue, issue_data, collection=am_issue.collection, verify=verify)
+                    load_issue_titles(user, existing_issue, am_issue, issue_data, verify=verify)
+                    load_bibliographic_strips(user, existing_issue, am_issue, issue_data, verify=verify)
                     
                     stats["updated"] += 1
                     
@@ -540,7 +542,7 @@ def task_update_issues_from_amissue(
                     # Criar novo Issue
                     logger.info(f"Creating new Issue from AMIssue {am_issue.id}")
                     
-                    issue = create_issue_from_am_issue(user, am_issue)
+                    issue = create_issue_from_am_issue(user, am_issue, verify)
                     if issue:
                         stats["created"] += 1
                     else:
