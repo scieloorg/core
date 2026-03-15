@@ -19,7 +19,7 @@ RAW_ORG_FIELDS = [
 ]
 
 
-def _has_raw_data_filter():
+def _build_raw_data_filter():
     """Build a Q filter matching instances where any RawOrganizationMixin field is filled."""
     q_filter = Q()
     for field in RAW_ORG_FIELDS:
@@ -57,7 +57,7 @@ def task_delete_unlinked_institutions_and_locations(self):
 
         # Step 1: For *History instances with any RawOrganizationMixin field
         # filled, set institution = None
-        raw_data_q = _has_raw_data_filter()
+        raw_data_q = _build_raw_data_filter()
         for history_class in history_classes:
             updated = history_class.objects.filter(
                 raw_data_q,
