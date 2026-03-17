@@ -2,8 +2,6 @@ import os
 import sys
 import logging
 
-from django.contrib.auth import get_user_model
-
 from config import celery_app
 from core.utils.profiling_tools import (
     profile_function,
@@ -17,10 +15,14 @@ from tracker.models import UnexpectedEvent
 # from django.utils.translation import gettext_lazy as _
 
 
-User = get_user_model()
-
-
 @celery_app.task(bind=True)
+def task_provide_pid_for_xml_zip(
+    self,
+    username=None,
+    user_id=None,
+    zip_filename=None,
+):
+    return _provide_pid_for_xml_zip(username, user_id, zip_filename)
 def task_provide_pid_for_xml_zip(
     self,
     username=None,
