@@ -16,17 +16,15 @@ DATABASES["default"] = env.db("DATABASE_URL")  # noqa F405
 DATABASES["default"]["ATOMIC_REQUESTS"] = True  # noqa F405
 DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=0) or env.int("DJANGO_CONN_MAX_AGE", default=60)  # noqa F405
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = env.bool('DJANGO_CONN_HEALTH_CHECKS', True)
-DATABASES["default"]["ENGINE"] = 'django_prometheus.db.backends.postgresql'
-# Melhoria: Usando variáveis de ambiente para OPTIONS e POOL_OPTIONS com defaults
+DATABASES["default"]["ENGINE"] = 'dj_db_conn_pool.backends.postgresql'
 DATABASES["default"]["OPTIONS"] = {
     "connect_timeout": env.int("DB_CONNECT_TIMEOUT", default=10),
-    # Adicione outras opções de conexão aqui se necessário
 }
 DATABASES["default"]["POOL_OPTIONS"] = {
     'POOL_SIZE': env.int("DB_POOL_SIZE", default=10),
-    'MAX_OVERFLOW': env.int("DB_MAX_OVERFLOW", default=20),
+    'MAX_OVERFLOW': env.int("DB_MAX_OVERFLOW", default=5),
     'RECYCLE': env.int("DB_RECYCLE", default=300),
-    # Adicione outras opções do pool aqui se necessário
+    'PRE_PING': True,
 }
 # CACHES
 # ------------------------------------------------------------------------------
