@@ -853,7 +853,8 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         registered._add_issue(xml_adapter)
 
         # Primeiro save: necessário para obter PK (se novo) antes de criar XMLVersion / OtherPid
-        registered.save()
+        if registered.pk is None:
+            registered.save()
 
         if registered_changed:
             registered._add_other_pid(registered_changed, user)
