@@ -107,24 +107,22 @@ class BaseOrganization(OrganizationNameMixin, VisualIdentityMixin, models.Model)
             return cls.get(name=name, acronym=acronym, location=location)
 
     def update_logo(obj, user, logo=None):
-        update = False
+        """Atualiza logo no objeto sem salvar. Retorna True se houve mudança."""
         if logo is not None and obj.logo != logo:
             obj.logo = logo
-            update = True
-        if update:
             if hasattr(obj, "updated_by") and user:
                 obj.updated_by = user
-            obj.save()
+            return True
+        return False
 
     def update_url(obj, user, url=None):
-        update = False
+        """Atualiza url no objeto sem salvar. Retorna True se houve mudança."""
         if url is not None and obj.url != url:
             obj.url = url
-            update = True
-        if update:
             if hasattr(obj, "updated_by") and user:
                 obj.updated_by = user
-            obj.save()
+            return True
+        return False
 
     @classmethod
     def create_or_update(
@@ -146,8 +144,10 @@ class BaseOrganization(OrganizationNameMixin, VisualIdentityMixin, models.Model)
 
         try:
             obj = cls.get(name=name, acronym=acronym, location=location)
-            obj.update_logo(user, logo)
-            obj.update_url(user, url)
+            changed_logo = obj.update_logo(user, logo)
+            changed_url = obj.update_url(user, url)
+            if changed_logo or changed_url:
+                obj.save()
             return obj
 
         except cls.DoesNotExist:
@@ -238,13 +238,15 @@ class Organization(BaseOrganization, CommonControlField, ClusterableModel):
 
         if updated:
             self.updated_by = user
-            self.save()
+            # Não faz save() aqui; chamador é responsável por salvar
 
         if institution_type_scielo is not None:
             if isinstance(institution_type_scielo, list):
                 self.institution_type_scielo.set(institution_type_scielo)
             else:
                 self.institution_type_scielo.add(institution_type_scielo)
+
+        return updated
 
     @classmethod
     def create_or_update(
@@ -269,9 +271,11 @@ class Organization(BaseOrganization, CommonControlField, ClusterableModel):
             url=url,
             logo=logo,
         )
-        obj.update_institutions(
+        inst_changed = obj.update_institutions(
             user, institution_type_mec, institution_type_scielo, is_official
         )
+        if inst_changed:
+            obj.save()
 
         return obj
 
