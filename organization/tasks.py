@@ -22,6 +22,7 @@ def task_migrate_date_institution_to_organization_publisher(
     objects = model_cls.objects.select_related(
         "institution__institution__location",
         "institution__institution__institution_identification",
+        "institution__institution__institution_identification__official",
     ).filter(
         institution__institution__institution_identification__is_official=True,
         institution__institution__location__city__isnull=False,
