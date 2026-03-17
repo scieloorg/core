@@ -8,6 +8,7 @@ from config import celery_app
 from core.utils.profiling_tools import (
     profile_function,
 )  # ajuste o import conforme sua estrutura
+from core.utils.utils import _get_user
 from pid_provider.provider import PidProvider
 from pid_provider.models import PidProviderXML
 from journal.models import Journal, SciELOJournal
@@ -17,16 +18,6 @@ from tracker.models import UnexpectedEvent
 
 
 User = get_user_model()
-
-
-def _get_user(request, username=None, user_id=None):
-    try:
-        return User.objects.get(pk=request.user.id)
-    except AttributeError:
-        if user_id:
-            return User.objects.get(pk=user_id)
-        if username:
-            return User.objects.get(username=username)
 
 
 @celery_app.task(bind=True)
