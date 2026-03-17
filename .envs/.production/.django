@@ -52,17 +52,13 @@ FETCH_DATA_TIMEOUT=10
 # Exemplo: 10 segundos
 DB_CONNECT_TIMEOUT=10
 
-# --- Opções de Pool de Conexões ---
-# (Aplicável se você estiver usando uma biblioteca de pool de conexões integrada ao Django,
-# como django-db-connection-pool, que reconheça POOL_OPTIONS.)
+# --- Opções de Pool de Conexões (django-db-connection-pool) ---
 
-# Tamanho mínimo do pool de conexões
-# Exemplo: 10 conexões
+# Tamanho do pool de conexões por worker
 DB_POOL_SIZE=10
 
 # Número máximo de conexões extras que o pool pode criar em caso de pico
-# Exemplo: 20 conexões de "overflow"
-DB_MAX_OVERFLOW=20
+DB_MAX_OVERFLOW=5
 
 # Tempo máximo (em segundos) que uma conexão pode viver antes de ser reciclada
 # Ajuda a evitar conexões "stale" ou "bad". Exemplo: 300 segundos (5 minutos)
