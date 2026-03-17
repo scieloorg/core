@@ -299,22 +299,28 @@ class Researcher(CommonControlField):
     @property
     def orcid(self):
         try:
-            for item in ResearcherAKA.objects.filter(
-                researcher=self,
-                researcher_identifier__source_name__iexact="ORCID",
-            ):
-                return item.researcher_identifier.identifier
+            return (
+                ResearcherAKA.objects.filter(
+                    researcher=self,
+                    researcher_identifier__source_name__iexact="ORCID",
+                )
+                .values_list("researcher_identifier__identifier", flat=True)
+                .first()
+            )
         except Exception as e:
             return None
 
     @property
     def lattes(self):
         try:
-            for item in ResearcherAKA.objects.filter(
-                researcher=self,
-                researcher_identifier__source_name__iexact="LATTES",
-            ):
-                return item.researcher_identifier.identifier
+            return (
+                ResearcherAKA.objects.filter(
+                    researcher=self,
+                    researcher_identifier__source_name__iexact="LATTES",
+                )
+                .values_list("researcher_identifier__identifier", flat=True)
+                .first()
+            )
         except Exception as e:
             return None
 
