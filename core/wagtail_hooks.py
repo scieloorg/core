@@ -175,3 +175,6 @@ class LicenseViewSet(SnippetViewSet):
     search_fields = ("license_type", "version")
     list_export = ("license_type", "version")
     inspect_view_enabled = True
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("creator")
