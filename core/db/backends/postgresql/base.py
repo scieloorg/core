@@ -14,4 +14,12 @@ from django_prometheus.db.backends.postgresql.base import (
 
 
 class DatabaseWrapper(PGDatabaseWrapperMixin, PrometheusDatabaseWrapper):
+    """
+    PostgreSQL backend with connection pooling and Prometheus monitoring.
+
+    MRO: PGDatabaseWrapperMixin is first so its get_new_connection() manages
+    the SQLAlchemy QueuePool. When the pool needs a new connection, it calls
+    through to PrometheusDatabaseWrapper which adds metrics tracking.
+    """
+
     pass

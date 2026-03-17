@@ -24,7 +24,7 @@ DATABASES["default"]["POOL_OPTIONS"] = {
     'POOL_SIZE': env.int("DB_POOL_SIZE", default=10),
     'MAX_OVERFLOW': env.int("DB_MAX_OVERFLOW", default=5),
     'RECYCLE': env.int("DB_RECYCLE", default=300),
-    'PRE_PING': True,
+    'PRE_PING': True,  # Validates connections before use to avoid stale/broken connections
 }
 # CACHES
 # ------------------------------------------------------------------------------
