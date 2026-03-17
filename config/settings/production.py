@@ -16,7 +16,7 @@ DATABASES["default"] = env.db("DATABASE_URL")  # noqa F405
 DATABASES["default"]["ATOMIC_REQUESTS"] = True  # noqa F405
 DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=0) or env.int("DJANGO_CONN_MAX_AGE", default=60)  # noqa F405
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = env.bool('DJANGO_CONN_HEALTH_CHECKS', True)
-DATABASES["default"]["ENGINE"] = 'dj_db_conn_pool.backends.postgresql'
+DATABASES["default"]["ENGINE"] = 'core.db.backends.postgresql'
 DATABASES["default"]["OPTIONS"] = {
     "connect_timeout": env.int("DB_CONNECT_TIMEOUT", default=10),
 }
