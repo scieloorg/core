@@ -44,6 +44,11 @@ class LocationAdmin(SnippetViewSet):
     )
     export_filename = "locations"
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            "country", "state", "city", "creator",
+        )
+
 
 class CityAdmin(SnippetViewSet):
     model = City
