@@ -14,19 +14,13 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["example.com"])
 # ------------------------------------------------------------------------------
 DATABASES["default"] = env.db("DATABASE_URL")  # noqa F405
 DATABASES["default"]["ATOMIC_REQUESTS"] = True  # noqa F405
-DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=0) or env.int("DJANGO_CONN_MAX_AGE", default=60)  # noqa F405
+# Reutilizar conexões por 60s por padrão para reduzir overhead de reconexão.
+# Em produção com gunicorn+gevent ou Celery, isto evita abrir/fechar conexão a cada request.
+DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=60)  # noqa F405
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = env.bool('DJANGO_CONN_HEALTH_CHECKS', True)
 DATABASES["default"]["ENGINE"] = 'django_prometheus.db.backends.postgresql'
-# Melhoria: Usando variáveis de ambiente para OPTIONS e POOL_OPTIONS com defaults
 DATABASES["default"]["OPTIONS"] = {
     "connect_timeout": env.int("DB_CONNECT_TIMEOUT", default=10),
-    # Adicione outras opções de conexão aqui se necessário
-}
-DATABASES["default"]["POOL_OPTIONS"] = {
-    'POOL_SIZE': env.int("DB_POOL_SIZE", default=10),
-    'MAX_OVERFLOW': env.int("DB_MAX_OVERFLOW", default=20),
-    'RECYCLE': env.int("DB_RECYCLE", default=300),
-    # Adicione outras opções do pool aqui se necessário
 }
 # CACHES
 # ------------------------------------------------------------------------------
@@ -81,6 +75,11 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = env.bool('DJANGO_SESSION_EXPIRE_AT_BROWSER_CLO
 # Sobrescreva com DJANGO_SESSION_SAVE_EVERY_REQUEST=False para desativar.
 # Ex: export DJANGO_SESSION_SAVE_EVERY_REQUEST=False
 SESSION_SAVE_EVERY_REQUEST = env.bool('DJANGO_SESSION_SAVE_EVERY_REQUEST', True)
+
+# Sessões armazenadas no Redis em vez do PostgreSQL.
+# Reduz escritas no banco de dados a cada request quando SESSION_SAVE_EVERY_REQUEST=True.
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
 
 # STATIC
 # ------------------------
