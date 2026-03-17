@@ -66,6 +66,9 @@ class GenericThematicAreaAdmin(SnippetViewSet):
     )
     export_filename = "generic_thematic_areas"
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("creator")
+
 
 class GenericThematicAreaFileAdmin(SnippetViewSet):
     model = GenericThematicAreaFile
@@ -86,6 +89,9 @@ class GenericThematicAreaFileAdmin(SnippetViewSet):
     )
     list_filter = ("is_valid",)
     search_fields = ("attachment__title",)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("creator")
 
 
 class GenericThematicAreaAdminGroup(SnippetViewSetGroup):
@@ -159,6 +165,9 @@ class ThematicAreaAdmin(SnippetViewSet):
     )
     export_filename = "thematic_areas"
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("creator")
+
 
 class ThematicAreaFileAdmin(SnippetViewSet):
     model = ThematicAreaFile
@@ -179,6 +188,9 @@ class ThematicAreaFileAdmin(SnippetViewSet):
     )
     list_filter = ("is_valid",)
     search_fields = ("attachment__title",)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("creator")
 
 
 class ThematicAreaAdminGroup(SnippetViewSetGroup):
