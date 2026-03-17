@@ -23,13 +23,6 @@ def task_provide_pid_for_xml_zip(
     zip_filename=None,
 ):
     return _provide_pid_for_xml_zip(username, user_id, zip_filename)
-def task_provide_pid_for_xml_zip(
-    self,
-    username=None,
-    user_id=None,
-    zip_filename=None,
-):
-    return _provide_pid_for_xml_zip(username, user_id, zip_filename)
 
 
 @profile_function

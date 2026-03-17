@@ -3,17 +3,12 @@ import logging
 import sys
 from datetime import datetime
 
-from django.contrib.auth import get_user_model
-
 from config import celery_app
 from .models import UnexpectedEvent, Hello
 
 
-User = get_user_model()
-
-
 @celery_app.task(bind=True, name="cleanup_unexpected_events")
-def delete_unexpected_events(self, exception_type, start_date=None, end_date=None, user_id=None, username=None):
+def delete_unexpected_events(self, exception_type, start_date=None, end_date=None):
     """
     Delete UnexpectedEvent records based on exception type and optional date range.
     """
