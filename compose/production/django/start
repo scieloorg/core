@@ -26,4 +26,16 @@ if compress_enabled; then
   # NOTE this command will fail if django-compressor is disabled
   python /app/manage.py compress
 fi
-/usr/local/bin/gunicorn config.wsgi --bind 0.0.0.0:5000 --chdir=/app --timeout 1000 --workers 3 --worker-connections=1000 --worker-class=gevent
+
+GUNICORN_WORKERS=${GUNICORN_WORKERS:-3}
+GUNICORN_WORKER_CONNECTIONS=${GUNICORN_WORKER_CONNECTIONS:-1000}
+GUNICORN_WORKER_CLASS=${GUNICORN_WORKER_CLASS:-gevent}
+GUNICORN_TIMEOUT=${GUNICORN_TIMEOUT:-1000}
+
+/usr/local/bin/gunicorn config.wsgi \
+    --bind 0.0.0.0:5000 \
+    --chdir=/app \
+    --timeout "$GUNICORN_TIMEOUT" \
+    --workers "$GUNICORN_WORKERS" \
+    --worker-connections="$GUNICORN_WORKER_CONNECTIONS" \
+    --worker-class="$GUNICORN_WORKER_CLASS"

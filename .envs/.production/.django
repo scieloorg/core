@@ -52,21 +52,17 @@ FETCH_DATA_TIMEOUT=10
 # Exemplo: 10 segundos
 DB_CONNECT_TIMEOUT=10
 
-# --- Opções de Pool de Conexões ---
-# (Aplicável se você estiver usando uma biblioteca de pool de conexões integrada ao Django,
-# como django-db-connection-pool, que reconheça POOL_OPTIONS.)
+# --- Gunicorn ---
+# Number of gunicorn worker processes
+# GUNICORN_WORKERS=3
 
-# Tamanho mínimo do pool de conexões
-# Exemplo: 10 conexões
-DB_POOL_SIZE=10
+# Max simultaneous connections per worker (gevent greenlets)
+# GUNICORN_WORKER_CONNECTIONS=1000
 
-# Número máximo de conexões extras que o pool pode criar em caso de pico
-# Exemplo: 20 conexões de "overflow"
-DB_MAX_OVERFLOW=20
-
-# Tempo máximo (em segundos) que uma conexão pode viver antes de ser reciclada
-# Ajuda a evitar conexões "stale" ou "bad". Exemplo: 300 segundos (5 minutos)
-DB_RECYCLE=300
+# Django CONN_MAX_AGE: seconds to keep DB connections alive (0 = close after each request).
+# Use 0 (default) with gevent to prevent connection exhaustion
+# (each greenlet holds its own connection when CONN_MAX_AGE > 0).
+# CONN_MAX_AGE=0
 
 
 # ---- profiling 

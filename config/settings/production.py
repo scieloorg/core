@@ -14,19 +14,16 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["example.com"])
 # ------------------------------------------------------------------------------
 DATABASES["default"] = env.db("DATABASE_URL")  # noqa F405
 DATABASES["default"]["ATOMIC_REQUESTS"] = True  # noqa F405
-DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=0) or env.int("DJANGO_CONN_MAX_AGE", default=60)  # noqa F405
+# CONN_MAX_AGE=0 closes DB connections after each request, which is recommended
+# when using gevent workers to prevent connection exhaustion — each greenlet
+# holds its own persistent connection when CONN_MAX_AGE > 0.
+# Set CONN_MAX_AGE env var to a positive integer (e.g. 60) only if using a
+# connection pooler like PgBouncer in front of PostgreSQL.
+DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=0)  # noqa F405
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = env.bool('DJANGO_CONN_HEALTH_CHECKS', True)
 DATABASES["default"]["ENGINE"] = 'django_prometheus.db.backends.postgresql'
-# Melhoria: Usando variáveis de ambiente para OPTIONS e POOL_OPTIONS com defaults
 DATABASES["default"]["OPTIONS"] = {
     "connect_timeout": env.int("DB_CONNECT_TIMEOUT", default=10),
-    # Adicione outras opções de conexão aqui se necessário
-}
-DATABASES["default"]["POOL_OPTIONS"] = {
-    'POOL_SIZE': env.int("DB_POOL_SIZE", default=10),
-    'MAX_OVERFLOW': env.int("DB_MAX_OVERFLOW", default=20),
-    'RECYCLE': env.int("DB_RECYCLE", default=300),
-    # Adicione outras opções do pool aqui se necessário
 }
 # CACHES
 # ------------------------------------------------------------------------------
