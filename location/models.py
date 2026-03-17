@@ -202,10 +202,16 @@ class State(CommonControlField):
         acronym = remove_extra_spaces(acronym)
         try:
             obj = cls.get(name=name, acronym=acronym)
-            obj.updated_by = user
-            obj.name = name or obj.name
-            obj.acronym = acronym or obj.acronym
-            obj.save()
+            changed = False
+            if name and name != obj.name:
+                obj.name = name
+                changed = True
+            if acronym and acronym != obj.acronym:
+                obj.acronym = acronym
+                changed = True
+            if changed:
+                obj.updated_by = user
+                obj.save()
         except cls.DoesNotExist:
             obj = cls.create(user, name, acronym)
         return obj
@@ -292,11 +298,19 @@ class CountryName(TextWithLang, Orderable):
         text = remove_extra_spaces(text)
         try:
             obj = cls.get(country, language)
-            obj.updated_by = user
-            obj.country = country or obj.country
-            obj.language = language or obj.language
-            obj.text = text or obj.text
-            obj.save()
+            changed = False
+            if country and country != obj.country:
+                obj.country = country
+                changed = True
+            if language and language != obj.language:
+                obj.language = language
+                changed = True
+            if text and text != obj.text:
+                obj.text = text
+                changed = True
+            if changed:
+                obj.updated_by = user
+                obj.save()
             return obj
         except cls.DoesNotExist:
             return cls.create(user, country, language, text)
@@ -319,9 +333,11 @@ class CountryName(TextWithLang, Orderable):
     def get_country(cls, name):
         name = remove_extra_spaces(name)
         if name:
-            for item in CountryName.objects.filter(text=name).iterator():
-                if item.country:
-                    return item.country
+            item = CountryName.objects.filter(
+                text=name, country__isnull=False
+            ).select_related("country").first()
+            if item:
+                return item.country
         raise cls.DoesNotExist(f"CountryName {name} does not exist")
 
 
@@ -441,15 +457,26 @@ class Country(CommonControlField, ClusterableModel):
 
         try:
             obj = cls.get(name, acronym, acron3)
-            obj.updated_by = user
+            changed = False
+            if name and name != obj.name:
+                obj.name = name
+                changed = True
+            if acronym and acronym != obj.acronym:
+                obj.acronym = acronym
+                changed = True
+            if acron3 and acron3 != obj.acron3:
+                obj.acron3 = acron3
+                changed = True
+            if changed:
+                obj.updated_by = user
+                obj.save()
         except cls.DoesNotExist:
             obj = cls()
             obj.creator = user
-
-        obj.name = name or obj.name
-        obj.acronym = acronym or obj.acronym
-        obj.acron3 = acron3 or obj.acron3
-        obj.save()
+            obj.name = name
+            obj.acronym = acronym
+            obj.acron3 = acron3
+            obj.save()
 
         country_names = country_names or {}
 
