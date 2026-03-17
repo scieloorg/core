@@ -23,6 +23,9 @@ def migrate_old_researcher_to_new_researcher(username=None, user_id=None):
     ).select_related(
         "person_name",
         "affiliation__institution__institution_identification",
+        "affiliation__institution__location",
+    ).prefetch_related(
+        "researcheraka_set__researcher_identifier",
     )
     for old_researcher in old_researchers:
         orcid = (

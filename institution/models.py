@@ -201,10 +201,16 @@ class Institution(CommonControlField, ClusterableModel):
                 level_3=level_3,
                 location=location,
             )
-            institution.updated_by = user
-            institution.institution_type = institution_type or institution.institution_type
-            institution.url = url or institution.url
-            institution.save()
+            changed = False
+            if institution_type and institution_type != institution.institution_type:
+                institution.institution_type = institution_type
+                changed = True
+            if url and url != institution.url:
+                institution.url = url
+                changed = True
+            if changed:
+                institution.updated_by = user
+                institution.save()
             return institution
         except cls.DoesNotExist:
             return cls._create(
@@ -968,10 +974,16 @@ class InstitutionIdentification(CommonControlField):
 
         try:
             obj = cls._get(name=name, acronym=acronym)
-            obj.updated_by = user
-            obj.is_official = is_official or obj.is_official
-            obj.official = official or obj.official
-            obj.save()
+            changed = False
+            if is_official is not None and is_official != obj.is_official:
+                obj.is_official = is_official
+                changed = True
+            if official and official != obj.official:
+                obj.official = official
+                changed = True
+            if changed:
+                obj.updated_by = user
+                obj.save()
             return obj
         except cls.DoesNotExist:
             return cls._create(

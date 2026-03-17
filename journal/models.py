@@ -287,26 +287,20 @@ class OfficialJournal(CommonControlField, ClusterableModel):
     def add_old_title(self, user, title):
         if not title:
             return
-        old_title = None
-        for item in OfficialJournal.objects.filter(title=title).iterator():
-            old_title = item
-            break
+        old_title = OfficialJournal.objects.filter(title=title).first()
         if not old_title:
             old_title = OfficialJournal.objects.create(title=title, creator=user)
         self.old_title.add(old_title)
-        self.save()
+        # M2M .add() grava diretamente na tabela intermediária; não precisa de self.save()
 
     def add_new_title(self, user, title):
         if not title:
             return
-        new_title = None
-        for item in OfficialJournal.objects.filter(title=title).iterator():
-            new_title = item
-            break
+        new_title = OfficialJournal.objects.filter(title=title).first()
         if not new_title:
             new_title = OfficialJournal.objects.create(title=title, creator=user)
         self.new_title = new_title
-        self.save()
+        # Não faz save() aqui; chamador é responsável por salvar
 
     @property
     def parallel_titles(self):
@@ -1026,10 +1020,10 @@ class Journal(CommonControlField, ClusterableModel):
 
     @property
     def collection_acrons(self):
-        acrons = []
-        for item in self.scielojournal_set.all():
-            acrons.append(item.collection.acron3)
-        return "|".join(acrons)
+        return "|".join(
+            self.scielojournal_set.select_related("collection")
+            .values_list("collection__acron3", flat=True)
+        )
 
     @classmethod
     def get_ids(cls, collection_acron_list=None, journal_acron_list=None):
@@ -1042,7 +1036,7 @@ class Journal(CommonControlField, ClusterableModel):
             params["collection__is_active"] = is_active
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
-        for item in self.scielojournal_set.filter(**params):
+        for item in self.scielojournal_set.select_related("collection").filter(**params):
             yield item.collection
 
     def get_legacy_keys(self, collection_acron_list=None, is_active=None):
@@ -1052,7 +1046,7 @@ class Journal(CommonControlField, ClusterableModel):
         if is_active:
             params["collection__is_active"] = bool(is_active)
         data = {}
-        for item in self.scielojournal_set.filter(**params):
+        for item in self.scielojournal_set.select_related("collection").filter(**params):
             data[item.collection.acron3] = item.legacy_keys
         if not data:
             UnexpectedEvent.create(
@@ -2930,39 +2924,25 @@ class JournalHistory(CommonControlField, Orderable):
             "suspended-by-committee": "by-committee",
             "suspended-by-editor": "by-editor",
         }
-        try:
-            obj = cls.objects.get(
-                scielo_journal=scielo_journal,
-                year=initial_year,
-                month=initial_month,
-                day=initial_day,
-            )
-        except cls.DoesNotExist:
-            obj = cls()
-            obj.scielo_journal = scielo_journal
-            obj.year = initial_year
-            obj.month = initial_month
-            obj.day = initial_day
-        obj.event_type = "ADMITTED"
-        obj.save()
+        obj, _ = cls.objects.update_or_create(
+            scielo_journal=scielo_journal,
+            year=initial_year,
+            month=initial_month,
+            day=initial_day,
+            defaults={"event_type": "ADMITTED"},
+        )
 
         if final_year and event_type:
-            try:
-                obj = cls.objects.get(
-                    scielo_journal=scielo_journal,
-                    year=final_year,
-                    month=final_month,
-                    day=final_day,
-                )
-            except cls.DoesNotExist:
-                obj = cls()
-                obj.scielo_journal = scielo_journal
-                obj.year = final_year
-                obj.month = final_month
-                obj.day = final_day
-            obj.event_type = "INTERRUPTED"
-            obj.interruption_reason = reasons.get(interruption_reason)
-            obj.save()
+            obj, _ = cls.objects.update_or_create(
+                scielo_journal=scielo_journal,
+                year=final_year,
+                month=final_month,
+                day=final_day,
+                defaults={
+                    "event_type": "INTERRUPTED",
+                    "interruption_reason": reasons.get(interruption_reason),
+                },
+            )
 
 
 class TitleInDatabase(Orderable, CommonControlField):

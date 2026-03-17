@@ -91,12 +91,14 @@ def fetch_data(url, headers=None, json=False, timeout=FETCH_DATA_TIMEOUT, verify
 
 def _get_user(request, username=None, user_id=None):
     try:
-        return User.objects.get(pk=request.user_id)
+        if request.user.is_authenticated:
+            return request.user
     except AttributeError:
-        if user_id:
-            return User.objects.get(pk=user_id)
-        if username:
-            return User.objects.get(username=username)
+        pass
+    if user_id:
+        return User.objects.get(pk=user_id)
+    if username:
+        return User.objects.get(username=username)
 
 
 def formated_date_api_params(query_params):

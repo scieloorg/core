@@ -11,6 +11,8 @@ User = get_user_model()
 def task_load_collections(self, user_id=None, username=None):
     if user_id:
         user = User.objects.get(pk=user_id)
-    if username:
+    elif username:
         user = User.objects.get(username=username)
+    else:
+        raise ValueError("user_id or username is required")
     Collection.load(user)

@@ -136,10 +136,14 @@ class XMLVersion(CommonControlField):
             obj.pid_provider_xml = pid_provider_xml
             obj.finger_print = xml_with_pre.finger_print
             obj.creator = user
+            # Salvar primeiro sem arquivo para obter o PK
             obj.save()
+            # save_file já faz self.file.save() que persiste o campo file,
+            # mas precisamos persistir o registro completo com o path do arquivo
             obj.save_file(
                 f"{pid_provider_xml.v3}.xml", xml_with_pre.tostring(pretty_print=True)
             )
+            # Único save final após salvar o arquivo
             obj.save()
             return obj
         except IntegrityError:
@@ -569,7 +573,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     @profile_classmethod
     def public_items(cls, from_date):
         now = datetime.utcnow().isoformat()[:10]
-        return cls.objects.filter(
+        return cls.objects.select_related("current_version").filter(
             (Q(available_since__isnull=True) | Q(available_since__lte=now))
             & (Q(created__gte=from_date) | Q(updated__gte=from_date)),
             current_version__pid_provider_xml__v3__isnull=False,
@@ -848,11 +852,16 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         registered._add_journal(xml_adapter)
         registered._add_issue(xml_adapter)
 
-        registered.save()
+        # Primeiro save: necessário para obter PK (se novo) antes de criar XMLVersion / OtherPid
+        if registered.pk is None:
+            registered.save()
 
         if registered_changed:
             registered._add_other_pid(registered_changed, user)
         registered._add_current_version(xml_adapter.xml_with_pre, user)
+
+        # Save final consolidado: persiste current_version e other_pid_count
+        registered.save()
         q = Q()
         if COLLECTION_PREFIX == "scielojournal":
             if xml_adapter.journal_issn_print:
@@ -1023,7 +1032,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     def best_matches(cls, results, xml_adapter):
         data = []
         matched = []
-        for item in results.iterator():
+        for item in results.select_related("current_version").iterator():
             response = item.match(xml_adapter)
             score = response["score"]
 
@@ -1115,7 +1124,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 pass
 
         self.current_version = XMLVersion.get_or_create(user, self, xml_with_pre)
-        self.save()
+        # Não faz save() aqui; chamador é responsável por consolidar o save
 
     @profile_method
     def check_registered_pids_changed(self, xml_with_pre):
@@ -1164,7 +1173,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
             OtherPid.get_or_create(**change_args)
         self.other_pid_count = self.other_pid.count()
-        self.save()
+        # Não é necessário save() aqui; será consolidado no _save() pai
 
     @classmethod
     @profile_classmethod

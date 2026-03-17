@@ -8,6 +8,7 @@ from bigbang.utils.scheduler import schedule_task
 from collection.models import Collection
 from config import celery_app
 from core.models import Gender, Language, License
+from core.utils.utils import _get_user
 from editorialboard.models import RoleModel
 from institution.models import Institution, InstitutionType
 from journal.models import (
@@ -26,13 +27,6 @@ from vocabulary.models import Vocabulary
 User = get_user_model()
 
 
-def _get_user(user_id, username):
-    if user_id:
-        return User.objects.get(pk=user_id)
-    if username:
-        return User.objects.get(username=username)
-
-
 @celery_app.task(bind=True)
 def task_start(
     self,
@@ -40,7 +34,7 @@ def task_start(
     username=None,
 ):
     try:
-        user = _get_user(user_id, username)
+        user = _get_user(request=None, user_id=user_id, username=username)
         Language.load(user)
         Collection.load(user)
         Vocabulary.load(user)
@@ -73,7 +67,7 @@ def task_start(
 @celery_app.task(bind=True)
 def task_create_tasks(self, user_id=None, username=None, tasks_data=None):
     if not tasks_data:
-        user = _get_user(user_id, username)
+        user = _get_user(request=None, user_id=user_id, username=username)
         return schedule_tasks(user.username)
     for task_data in tasks_data:
         # {

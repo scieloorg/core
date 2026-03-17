@@ -71,15 +71,16 @@ def import_file_ebm(request):
     file_path = file_upload.attachment.file.path
 
     try:
+        user = request.user
         with open(file_path, "r") as csvfile:
             data = csv.DictReader(csvfile, delimiter=";")
             for line, row in enumerate(data):
                 given_names = row.get("Nome do membro")
                 last_name = row.get("Sobrenome")
                 journal = Journal.objects.get(title__icontains=row.get("Periódico"))
-                gender = Gender.create_or_update(user=request.user, code=row.get("Gender"), gender="F")
+                gender = Gender.create_or_update(user=user, code=row.get("Gender"), gender="F")
                 location = Location.create_or_update(
-                    user=request.user,
+                    user=user,
                     city_name=row.get("institution_city_name"),
                     state_text=row.get("institution_state_text"),
                     state_acronym=row.get("institution_state_acronym"),
@@ -89,7 +90,7 @@ def import_file_ebm(request):
                     country_name=row.get("institution_country_name"),
                 )
                 researcher = Researcher.create_or_update(
-                    user=request.user,
+                    user=user,
                     given_names=given_names,
                     last_name=last_name,
                     suffix=row.get("Suffix"),
@@ -104,7 +105,7 @@ def import_file_ebm(request):
                     aff_name=row.get("Instituição"),
                 )
                 EditorialBoardMember.create_or_update(
-                    user=request.user,
+                    user=user,
                     researcher=researcher,
                     journal=journal,
                     declared_role=row["Cargo / instância do membro"],

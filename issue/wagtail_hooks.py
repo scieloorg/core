@@ -89,6 +89,8 @@ class IssueAdminSnippetViewSet(SnippetViewSet):
         # Base queryset com otimizações
         qs = Issue.objects.select_related(
             "journal",
+            "creator",
+            "updated_by",
         )
         
         user = request.user

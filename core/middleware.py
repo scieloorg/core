@@ -15,9 +15,10 @@ class UserCollectionMiddleware:
 
         if request.user.is_authenticated:
             set_current_user(request.user)
-            set_current_collections(request.user.collection.all())
+            collections = request.user.collection.all()
+            set_current_collections(collections)
 
-            request.user_collection = request.user.collection.all()
+            request.user_collection = collections
         else:
             set_current_user(None)
             set_current_collections(None)

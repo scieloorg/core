@@ -374,11 +374,21 @@ CELERY_TASK_SERIALIZER = "json"
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-result_serializer
 CELERY_RESULT_SERIALIZER = "json"
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#task-time-limit
-# TODO: set to whatever value is adequate in your circumstances
-CELERY_TASK_TIME_LIMIT = 5 * 60
+# Hard time limit: o worker é terminado (SIGKILL) após este tempo.
+# Deve ser MAIOR que o soft time limit.
+CELERY_TASK_TIME_LIMIT = env.int('CELERY_TASK_TIME_LIMIT', default=36000)
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#task-soft-time-limit
-# TODO: set to whatever value is adequate in your circumstances
-CELERY_TASK_SOFT_TIME_LIMIT = 36000
+# Soft time limit: levanta SoftTimeLimitExceeded, permitindo cleanup.
+# Deve ser MENOR que o hard time limit.
+CELERY_TASK_SOFT_TIME_LIMIT = env.int('CELERY_TASK_SOFT_TIME_LIMIT', default=3600)
+
+# Recicla worker após N tarefas para liberar memória e conexões de banco de dados.
+# Cada worker filho é substituído após processar este número de tarefas.
+CELERY_WORKER_MAX_TASKS_PER_CHILD = env.int('CELERY_WORKER_MAX_TASKS_PER_CHILD', default=100)
+
+# Limita a concorrência do Celery worker.
+# Controla quantas tarefas cada worker processa simultaneamente.
+CELERY_WORKER_CONCURRENCY = env.int('CELERY_WORKER_CONCURRENCY', default=4)
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#beat-scheduler
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html
@@ -404,8 +414,11 @@ TASK_TIMEOUT = env.int('TASK_TIMEOUT', default=5 * 60)
 RUN_ASYNC = env.bool('RUN_ASYNC', default=0)
 # Celery Results
 # ------------------------------------------------------------------------------
-# https: // django-celery-results.readthedocs.io/en/latest/getting_started.html
-CELERY_RESULT_BACKEND = "django-db"
+# https://django-celery-results.readthedocs.io/en/latest/getting_started.html
+# NOTA: Não usar "django-db" como result backend em produção.
+# O result backend já está configurado como Redis (CELERY_BROKER_URL) acima.
+# Manter "django-db" aqui causaria escritas extras no PostgreSQL a cada tarefa concluída.
+# CELERY_RESULT_BACKEND = "django-db"  # REMOVIDO: já usa Redis acima
 CELERY_CACHE_BACKEND = "django-cache"
 CELERY_RESULT_EXTENDED = True
 
