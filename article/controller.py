@@ -345,7 +345,7 @@ def bulk_export_articles_to_articlemeta(
             )
             return False
 
-        for article in queryset.iterator():
+        for article in queryset.select_related("journal", "journal__official", "pp_xml").iterator():
             try:
                 if force_update:
                     article.check_availability(user)
