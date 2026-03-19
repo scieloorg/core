@@ -22,7 +22,7 @@ if os.getenv("READTHEDOCS", default=False) == "True":
 else:
     sys.path.insert(0, os.path.abspath("/app"))
 os.environ["DATABASE_URL"] = "sqlite:///readthedocs.db"
-os.environ["CELERY_BROKER_URL"] = os.getenv("REDIS_URL", "redis://redis:6379")
+os.environ["CELERY_BROKER_URL"] = os.getenv("CELERY_BROKER_URL", "amqp://guest:guest@rabbitmq:5672//")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
 django.setup()
 
