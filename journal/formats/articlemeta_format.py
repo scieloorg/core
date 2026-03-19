@@ -115,9 +115,10 @@ class ArticlemetaJournalFormatter:
             add_items("v230", [pt.text for pt in parallel_titles if pt.text], self.result)
         
         add_items("v240", [other_title.title for other_title in self.obj.other_titles.all()], self.result)
-        add_items("v610", [old_title.title for old_title in self.official.old_title.all()], self.result)
-        if title := getattr(self.official.new_title, 'title', None):
-            add_to_result("v710", title, self.result)
+        if self.official:
+            add_items("v610", [old_title.title for old_title in self.official.old_title.all()], self.result)
+            if title := getattr(self.official.new_title, 'title', None):
+                add_to_result("v710", title, self.result)
 
     def _format_collection_info(self):
         if self.scielo_journal and self.scielo_journal.collection:
@@ -245,7 +246,7 @@ class ArticlemetaJournalFormatter:
         """Informações de ISSN"""
         if self.official:
             issn_print = self.official.issn_print
-            issn_electronic = self.obj.official.issn_electronic
+            issn_electronic = self.official.issn_electronic
             add_to_result("v935", issn_electronic, self.result)
             self._format_issn_list(issn_print, issn_electronic)
             self._format_issn_with_type(issn_print, issn_electronic)

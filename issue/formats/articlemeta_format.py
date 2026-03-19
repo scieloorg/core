@@ -147,6 +147,8 @@ class ArticlemetaIssueFormatter:
 
     def _format_collection_info(self):
         """Informações de coleção"""
+        if not self.scielo_journal:
+            return
         collection = self.scielo_journal.collection
         if collection:
             add_to_result("v992", collection.acron3, self.result["issue"])
@@ -313,7 +315,7 @@ class ArticlemetaIssueFormatter:
 
     def _format_issn_info(self):
         """Informações de edição"""
-        if self.scielo_journal:
+        if self.scielo_journal and self.scielo_journal.journal and self.scielo_journal.journal.official:
             issn_print = self.scielo_journal.journal.official.issn_print
             issn_electronic = self.scielo_journal.journal.official.issn_electronic
             issn_scielo = self.scielo_journal.issn_scielo
