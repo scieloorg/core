@@ -66,6 +66,8 @@ services:
     image: rabbitmq:3
     ports:
       - "5672:5672"
+    env_file:
+      - ./.envs/.production/.django
 
   celeryworker:
     <<: *django
