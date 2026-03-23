@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from django.db.models import Q
 from django.test import TestCase
 
 from collection.models import Collection
@@ -66,6 +67,38 @@ class TestGetScieloJournalsData(TestCase):
         self.assertEqual(len(data), 1)
         self.assertTrue(data[0]["scielo_url"].startswith("https://www.scielo.br/"))
         self.assertNotIn("https://https://", data[0]["scielo_url"])
+
+    def test_get_scielo_journals_data_with_title_filter(self):
+        """Filters should be applied to the queryset"""
+        other_journal = Journal.objects.create(
+            creator=self.user,
+            title="Other Journal",
+        )
+        SciELOJournal.objects.create(
+            issn_scielo="1111-1111",
+            collection=self.collection,
+            journal=other_journal,
+            journal_acron="other",
+        )
+        filters = Q(journal__title__icontains="Peru")
+        data = get_scielo_journals_data(filters)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["title"], "Test Journal Peru")
+
+    def test_get_scielo_journals_data_without_filters_returns_all(self):
+        """Without filters, all journals should be returned"""
+        other_journal = Journal.objects.create(
+            creator=self.user,
+            title="Other Journal",
+        )
+        SciELOJournal.objects.create(
+            issn_scielo="1111-1111",
+            collection=self.collection,
+            journal=other_journal,
+            journal_acron="other",
+        )
+        data = get_scielo_journals_data()
+        self.assertEqual(len(data), 2)
 
 
 class TestGenerateCsvResponse(TestCase):

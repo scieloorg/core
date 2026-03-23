@@ -85,14 +85,19 @@ def _default_context(context):
 
 
 class JournalDownloadMixin:
+    def get_export_filters(self, request):
+        return None
+
     @re_path(r"^download-csv/$", name="download_csv")
     def download_csv(self, request):
-        journals_data = get_scielo_journals_data()
+        filters = self.get_export_filters(request)
+        journals_data = get_scielo_journals_data(filters)
         return generate_csv_response(journals_data)
 
     @re_path(r"^download-xls/$", name="download_xls")
     def download_xls(self, request):
-        journals_data = get_scielo_journals_data()
+        filters = self.get_export_filters(request)
+        journals_data = get_scielo_journals_data(filters)
         return generate_xls_response(journals_data)
 
 
@@ -239,6 +244,14 @@ class HomePage(Page):
 
 
 class ListPageJournal(JournalDownloadMixin, RoutablePageMixin, Page):
+    def get_export_filters(self, request):
+        search_term = request.GET.get("search_term", "")
+        starts_with_letter = request.GET.get("start_with_letter", "")
+        active_or_discontinued = list(request.GET.get("tab", ""))
+        return default_journal_filter(
+            search_term, starts_with_letter, active_or_discontinued
+        )
+
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
         search_term = request.GET.get("search_term", "")
@@ -255,6 +268,21 @@ class ListPageJournal(JournalDownloadMixin, RoutablePageMixin, Page):
 
 
 class ListPageJournalByPublisher(JournalDownloadMixin, RoutablePageMixin, Page):
+    def get_export_filters(self, request):
+        search_term = request.GET.get("search_term", "")
+        starts_with_letter = request.GET.get("start_with_letter", "")
+        active_or_discontinued = list(request.GET.get("tab", ""))
+        filters = Q(status__in=SCIELO_STATUS_CHOICES)
+        if search_term:
+            filters &= Q(journal__title__icontains=search_term) | Q(
+                journal__owner_history__institution__institution__institution_identification__name__icontains=search_term
+            )
+        if starts_with_letter:
+            filters &= Q(journal__title__istartswith=starts_with_letter)
+        if active_or_discontinued:
+            filters &= Q(status__in=active_or_discontinued)
+        return filters
+
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
         search_term = request.GET.get("search_term", "")
@@ -301,6 +329,14 @@ class ListPageJournalByPublisher(JournalDownloadMixin, RoutablePageMixin, Page):
 
 
 class ListPageJournalByCategory(JournalDownloadMixin, RoutablePageMixin, Page):
+    def get_export_filters(self, request):
+        search_term = request.GET.get("search_term", "")
+        starts_with_letter = request.GET.get("start_with_letter", "")
+        active_or_discontinued = list(request.GET.get("tab", ""))
+        return default_journal_filter(
+            search_term, starts_with_letter, active_or_discontinued
+        )
+
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
 

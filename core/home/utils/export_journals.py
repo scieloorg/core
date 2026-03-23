@@ -12,9 +12,12 @@ logger = logging.getLogger(__name__)
 HEADERS = ["journals", "scielo_url", "publisher"]
 
 
-def get_scielo_journals_data():
+def get_scielo_journals_data(filters=None):
     try:
-        scielo_journals = SciELOJournal.objects.values(
+        qs = SciELOJournal.objects.all()
+        if filters is not None:
+            qs = qs.filter(filters)
+        scielo_journals = qs.values(
             "journal__title",
             "collection__domain",
             "journal__owner_history__institution__institution__institution_identification__name",

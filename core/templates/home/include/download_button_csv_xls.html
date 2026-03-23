@@ -5,10 +5,10 @@
         </button>
         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btnGroupDropDownload" >
             <li>
-                <a class="dropdown-item" href="{% routablepageurl page 'download_xls' %}">XLS</a>
+                <a class="dropdown-item" href="{% routablepageurl page 'download_xls' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">XLS</a>
             </li>
             <li>
-                <a class="dropdown-item" href="{% routablepageurl page 'download_csv' %}">CSV</a>
+                <a class="dropdown-item" href="{% routablepageurl page 'download_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">CSV</a>
             </li>
         </ul>
 </th>
