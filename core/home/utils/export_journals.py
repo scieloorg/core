@@ -61,7 +61,7 @@ def generate_csv_response(journals_data):
         logger.info(f"Generated CSV file with: {len(journals_data)} journals")
     except Exception as e:
         logger.error(f"Error generating CSV file: {e}")
-        response = HttpResponse("Error generating file", status=500)
+        response = HttpResponse("Error generating CSV file", status=500)
     return response
 
 
@@ -83,5 +83,5 @@ def generate_xls_response(journals_data):
         logger.info(f"Generated XLS file with: {len(journals_data)} journals")
     except Exception as e:
         logger.error(f"Error generating XLS file: {e}")
-        response = HttpResponse("Error generating file", status=500)
+        response = HttpResponse("Error generating XLS file", status=500)
     return response
