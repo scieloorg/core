@@ -18,6 +18,11 @@ from wagtail.models import Locale, Orderable, Page
 from wagtailcaptcha.models import WagtailCaptchaEmailForm
 
 from collection.models import Collection
+from core.home.utils.export_journals import (
+    generate_csv_response,
+    generate_xls_response,
+    get_scielo_journals_data,
+)
 from core.home.utils.get_social_networks import get_social_networks
 from journal.choices import STUDY_AREA
 from journal.models import OwnerHistory, SciELOJournal
@@ -221,7 +226,7 @@ class HomePage(Page):
         return context
 
 
-class ListPageJournal(Page):
+class ListPageJournal(RoutablePageMixin, Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
         search_term = request.GET.get("search_term", "")
@@ -236,8 +241,18 @@ class ListPageJournal(Page):
         _default_context(context)
         return context
 
+    @re_path(r"^download-csv/$", name="download_csv")
+    def download_csv(self, request):
+        journals_data = get_scielo_journals_data()
+        return generate_csv_response(journals_data)
 
-class ListPageJournalByPublisher(Page):
+    @re_path(r"^download-xls/$", name="download_xls")
+    def download_xls(self, request):
+        journals_data = get_scielo_journals_data()
+        return generate_xls_response(journals_data)
+
+
+class ListPageJournalByPublisher(RoutablePageMixin, Page):
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
         search_term = request.GET.get("search_term", "")
@@ -282,6 +297,16 @@ class ListPageJournalByPublisher(Page):
         context["parent_page"] = get_page_about()
         return context
 
+    @re_path(r"^download-csv/$", name="download_csv")
+    def download_csv(self, request):
+        journals_data = get_scielo_journals_data()
+        return generate_csv_response(journals_data)
+
+    @re_path(r"^download-xls/$", name="download_xls")
+    def download_xls(self, request):
+        journals_data = get_scielo_journals_data()
+        return generate_xls_response(journals_data)
+
 
 class ListPageJournalByCategory(RoutablePageMixin, Page):
     def get_context(self, request, *args, **kwargs):
@@ -300,6 +325,16 @@ class ListPageJournalByCategory(RoutablePageMixin, Page):
         _default_context(context)
         context["categories"] = slugs_to_category_code
         return context
+
+    @re_path(r"^download-csv/$", name="download_csv")
+    def download_csv(self, request):
+        journals_data = get_scielo_journals_data()
+        return generate_csv_response(journals_data)
+
+    @re_path(r"^download-xls/$", name="download_xls")
+    def download_xls(self, request):
+        journals_data = get_scielo_journals_data()
+        return generate_xls_response(journals_data)
 
     @re_path(r"^(?P<category>[\w-]+)/$", name="list_journal_by_category")
     def journals_by_category(self, request, category=None):
