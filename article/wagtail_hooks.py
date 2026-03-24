@@ -221,6 +221,18 @@ class ArticlePeerReviewStatsSnippetViewSet(SnippetViewSet):
     ordering = ["-updated"]
     list_per_page = 25
 
+    def get_queryset(self):
+        """QuerySet otimizado com select_related e prefetch_related"""
+        return super().get_queryset().select_related(
+            'journal',
+            'issue',
+            'journal__official',
+        ).prefetch_related(
+            'doi',
+            'titles',
+            'languages',
+        )
+
 
 class ArticleSnippetViewSetGroup(SnippetViewSetGroup):
     menu_label = _("Articles")

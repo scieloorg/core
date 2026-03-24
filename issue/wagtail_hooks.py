@@ -85,7 +85,7 @@ class IssueAdminSnippetViewSet(SnippetViewSet):
         "year",
     )
 
-    def get_queryset(self, request):
+    def get_queryset(self):
         # Base queryset com otimizações
         qs = Issue.objects.select_related(
             "journal",
@@ -93,7 +93,7 @@ class IssueAdminSnippetViewSet(SnippetViewSet):
             "updated_by",
         )
         
-        user = request.user
+        user = self.request.user
         
         # Verificação de autenticação
         if not user.is_authenticated:
