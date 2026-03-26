@@ -169,6 +169,18 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         sps_pkg_name = xml_with_pre.sps_pkg_name
         logging.info(f"Article {pid_v3} {sps_pkg_name}")
 
+        journal = get_journal(xmltree=xmltree, errors=errors)
+        if not journal:
+            raise ValueError(f"Not found journal for article: {pid_v3} {sps_pkg_name}")
+        issue = get_issue(
+            xmltree=xmltree,
+            journal=journal,
+            item=pid_v3,
+            errors=errors,
+        )
+        if not issue:
+            raise ValueError(f"Not found issue for article: {pid_v3} {sps_pkg_name}")
+
         # CRIAÇÃO/OBTENÇÃO DO OBJETO PRINCIPAL
         article = Article.create_or_update(
             user=user,
@@ -201,19 +213,9 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         )
 
         # FOREIGN KEYS SIMPLES
-        article.journal = get_journal(xmltree=xmltree, errors=errors)
-        if not article.journal:
-            article.save()
-            raise ValueError(f"Not found journal for article: {pid_v3}")
-        article.issue = get_issue(
-            xmltree=xmltree,
-            journal=article.journal,
-            item=pid_v3,
-            errors=errors,
-        )
-        if not article.issue:
-            article.save()
-            raise ValueError(f"Not found issue for article: {pid_v3}")
+        article.journal = journal
+        article.issue = issue
+        article.save()
 
         # Salvar uma vez após definir todos os campos simples
         logging.info(
