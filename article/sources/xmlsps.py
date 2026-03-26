@@ -21,7 +21,6 @@ from packtools.sps.models.journal_meta import ISSN, Title
 from packtools.sps.models.kwd_group import ArticleKeywords
 from packtools.sps.models.v2.article_toc_sections import ArticleTocSections
 from packtools.sps.models.v2.related_articles import RelatedArticles
-from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from article import choices
 from article.models import (
@@ -42,7 +41,7 @@ from issue.models import Issue, TableOfContents, AMIssue
 from issue.articlemeta.loader import load_issue_sections
 from journal.models import Journal
 from location.models import Location
-from pid_provider.choices import PPXML_STATUS_DONE, PPXML_STATUS_INVALID
+from pid_provider.choices import PPXML_STATUS_UNMATCHED_JOURNAL_OR_ISSUE, PPXML_STATUS_INVALID
 from pid_provider.models import PidProviderXML
 # Researcher no longer used - replaced by ContribPerson
 # from researcher.models import Affiliation, Researcher
@@ -70,7 +69,7 @@ def add_error(errors, function_name, error, **kwargs):
     errors.append(error_dict)
 
 
-def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
+def load_article(user, pp_xml):
     """
     Carrega um artigo a partir de XML.
 
@@ -80,10 +79,7 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
 
     Args:
         user: Usuário responsável pela operação (obrigatório)
-        xml: String contendo o XML do artigo (opcional)
-        file_path: Caminho para o arquivo XML (opcional)
-        v3: PID v3 do artigo (opcional)
-        pp_xml: Objeto PidProviderXML relacionado (opcional)
+        pp_xml: Objeto PidProviderXML relacionado (obrigatório)
 
     Returns:
         Article: Instância do artigo processado com todos os relacionamentos
@@ -98,76 +94,65 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         - O processamento continua mesmo com falhas parciais
         - O campo article.valid indica se o processamento foi completo
     """
-    logging.info(f"load article {pp_xml} {v3} {file_path}")
-    errors = []
-    article = None  # Inicializar no início
+    logging.info(f"load article {pp_xml}")
+    detail = {"pp_xml": str(pp_xml)}
 
     # Validações iniciais
     if not user:
         raise ValueError("User is required")
 
-    if not any([pp_xml, v3, file_path, xml]):
+    if not pp_xml:
         raise ValueError(
-            "load_article() requires params: pp_xml or v3 or file_path or xml"
+            "load_article() requires params: pp_xml"
         )
 
-    if not pp_xml and v3:
-        try:
-            pp_xml = PidProviderXML.get_by_pid_v3(pid_v3=v3)
-        except PidProviderXML.DoesNotExist:
-            pp_xml = None
-
     try:
-        if pp_xml:
-            xml_with_pre = pp_xml.xml_with_pre
-        elif file_path:
-            for xml_with_pre in XMLWithPre.create(file_path):
-                xmltree = xml_with_pre.xmltree
-                break
-        elif xml:
-            xml_with_pre = XMLWithPre("", etree.fromstring(xml))
+        xml_with_pre = pp_xml.xml_with_pre
     except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        UnexpectedEvent.create(
-            item=str(pp_xml or v3 or file_path or "xml"),
-            action="article.sources.xmlsps.load_article",
-            exception=e,
-            exc_traceback=exc_traceback,
-            detail=dict(
-                function="article.sources.xmlsps.load_article",
-                xml=f"{xml}",
-                v3=v3,
-                file_path=file_path,
-                pp_xml=str(pp_xml),
-            ),
-        )
-        item = str(pp_xml or v3 or file_path or "xml")
-        if pp_xml:
-            pp_xml.proc_status = PPXML_STATUS_INVALID
-            pp_xml.save()
-            updated = (
-                Article.objects.filter(pid_v3=pp_xml.v3)
-                .exclude(
-                    pp_xml=pp_xml,
-                    data_status=choices.DATA_STATUS_INVALID,
-                )
-                .update(
-                    pp_xml=pp_xml,
-                    data_status=choices.DATA_STATUS_INVALID,
-                )
+        updated = (
+            Article.objects.filter(pp_xml=pp_xml)
+            .exclude(
+                data_status=choices.DATA_STATUS_INVALID,
             )
-        raise ValueError(f"Unable to get XML to load article from {item}: {e}")
+            .update(
+                data_status=choices.DATA_STATUS_INVALID,
+            )
+        )
+        errors = [
+            {
+                "function": "load_article",
+                "error_type": e.__class__.__name__,
+                "error_message": str(e),
+                "timestamp": datetime.now().isoformat(),
+            }
+        ]
+        pp_xml.add_event(name="load_article", proc_status=PPXML_STATUS_INVALID, detail=detail, errors=errors, exceptions=e)
+        raise ValueError(f"Unable to get XML to load article from {pp_xml}: {e}")
 
-    pid_v3 = v3 or xml_with_pre.v3
 
     try:
-        # Sequência organizada para atribuição de campos do Article
-        # Do mais simples (campos diretos) para o mais complexo (FKs e M2M)
+        errors = []
+        article = None
         event = None
+
         xmltree = xml_with_pre.xmltree
 
+        pid_v3 = xml_with_pre.v3
         sps_pkg_name = xml_with_pre.sps_pkg_name
-        logging.info(f"Article {pid_v3} {sps_pkg_name}")
+
+        logging.info(f"Pid Provider XML: {pid_v3} {sps_pkg_name}")
+        
+        journal = get_journal(xmltree=xmltree, errors=errors)
+        if not journal:
+            raise ValueError(f"Not found journal for pid provider xml: {pid_v3} {sps_pkg_name}")
+        issue = get_issue(
+            xmltree=xmltree,
+            journal=journal,
+            item=pid_v3,
+            errors=errors,
+        )
+        if not issue:
+            raise ValueError(f"Not found issue for pid provider xml: {pid_v3} {sps_pkg_name}")
 
         # CRIAÇÃO/OBTENÇÃO DO OBJETO PRINCIPAL
         article = Article.create_or_update(
@@ -201,19 +186,9 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         )
 
         # FOREIGN KEYS SIMPLES
-        article.journal = get_journal(xmltree=xmltree, errors=errors)
-        if not article.journal:
-            article.save()
-            raise ValueError(f"Not found journal for article: {pid_v3}")
-        article.issue = get_issue(
-            xmltree=xmltree,
-            journal=article.journal,
-            item=pid_v3,
-            errors=errors,
-        )
-        if not article.issue:
-            article.save()
-            raise ValueError(f"Not found issue for article: {pid_v3}")
+        article.journal = journal
+        article.issue = issue
+        article.save()
 
         # Salvar uma vez após definir todos os campos simples
         logging.info(
@@ -286,19 +261,9 @@ def load_article(user, xml=None, file_path=None, v3=None, pp_xml=None):
         if event:
             event.finish(errors=errors, exceptions=traceback.format_exc())
             raise
-        UnexpectedEvent.create(
-            item=str(pp_xml or v3 or file_path or "xml"),
-            action="article.sources.xmlsps.load_article",
-            exception=e,
-            exc_traceback=exc_traceback,
-            detail=dict(
-                function="article.sources.xmlsps.load_article",
-                xml=f"{xml}",
-                v3=v3,
-                file_path=file_path,
-                pp_xml=str(pp_xml),
-            ),
-        )
+
+        pp_xml.add_event(name="load_article", proc_status=PPXML_STATUS_UNMATCHED_JOURNAL_OR_ISSUE, detail=detail, errors=errors, exceptions=e)
+    
         raise
 
 
