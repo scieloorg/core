@@ -488,7 +488,11 @@ def task_export_article_to_articlemeta(
         if not pid_v3:
             raise ValueError("task_export_article_to_articlemeta requires pid_v3")
 
-        article = Article.objects.get(pid_v3=pid_v3)
+        article = Article.objects.get(
+            pid_v3=pid_v3,
+            valid=True,
+            is_classic_public=True,
+        )
 
         user = _get_user(self.request, username=username, user_id=user_id)
 
@@ -498,7 +502,8 @@ def task_export_article_to_articlemeta(
             collection_acron_list=collection_acron_list,
             force_update=force_update,
         )
-
+    except Article.DoesNotExist as exception:
+        return False
     except Exception as exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
@@ -964,6 +969,9 @@ def task_process_article_pipeline(
         article.check_availability(user, force_update=export_to_articlemeta or force_update)
         
         if export_to_articlemeta:
+            if not article.is_classic_public or not article.valid:
+                logging.warning(f"Article {article.pid_v3} is not valid or not public. Skipping export to ArticleMeta.")
+                return
             task_export_article_to_articlemeta.delay(
                 pid_v3=article.pid_v3,
                 collection_acron_list=collection_acron_list,
