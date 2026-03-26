@@ -15,7 +15,7 @@ class SciELOJournalArticleMetaCreateUpdateError(Exception):
         super().__init__(f"Failed to save SciELO Journal from article meta: {message}")
 
 
-def _get_collection_journals(offset=None, limit=None, collection=None, verify=True):
+def _get_collection_journals(offset=None, limit=None, collection=None, verify=False):
     limit = limit or 10
     offset = f"&offset={offset}" if offset else ""
     if not collection:
@@ -30,7 +30,7 @@ def _get_collection_journals(offset=None, limit=None, collection=None, verify=Tr
     return data
 
 
-def _fetch_and_store_journal(collection, issn, obj_collection, user, verify=True):
+def _fetch_and_store_journal(collection, issn, obj_collection, user, verify=False):
     url_journal = f"https://articlemeta.scielo.org/api/v1/journal/?collection={collection}&issn={issn}"
     data_journal = fetch_data(url_journal, json=True, timeout=30, verify=verify)
     AMJournal.create_or_update(
@@ -41,7 +41,7 @@ def _fetch_and_store_journal(collection, issn, obj_collection, user, verify=True
     )
 
 
-def process_journal_article_meta(collection, limit, user, journal_issn_list=None, verify=True):
+def process_journal_article_meta(collection, limit, user, journal_issn_list=None, verify=False):
     obj_collection = Collection.objects.get(acron3=collection)
     if journal_issn_list:
         for issn in journal_issn_list:

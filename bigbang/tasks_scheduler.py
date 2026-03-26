@@ -271,7 +271,7 @@ def schedule_load_journal_from_article_meta(username, enabled=False):
     """
     Agenda a tarefa de carga de dados de journals obtidos do AM e Core.
     
-    Configura verify=True para verificação SSL nas requisições HTTP.
+    Configura verify=False para verificação SSL nas requisições HTTP.
     """
     schedule_task(
         task="journal.tasks.load_journal_from_article_meta",
@@ -279,7 +279,7 @@ def schedule_load_journal_from_article_meta(username, enabled=False):
         kwargs=dict(
             load_data=False,
             collection_acron="scl",
-            verify=True,
+            verify=False,
         ),
         description=_("Carga de dados de journals obtidos do AM e Core"),
         priority=1,
@@ -295,7 +295,7 @@ def schedule_collect_journals_from_am(username, enabled=False):
     """
     Agenda a tarefa de coleta de journals da fonte AM.
     
-    Configura verify=True para verificação SSL nas requisições HTTP.
+    Configura verify=False para verificação SSL nas requisições HTTP.
     """
     schedule_task(
         task="journal.tasks.load_journal_from_article_meta",
@@ -303,7 +303,7 @@ def schedule_collect_journals_from_am(username, enabled=False):
         kwargs=dict(
             load_data=True,
             collection_acron="scl",
-            verify=True,
+            verify=False,
         ),
         description=_("Coleta de journals da fonte AM"),
         priority=1,

@@ -49,7 +49,7 @@ def load_journal_from_article_meta(
     collection_acron=None,
     load_data=None,
     journal_issn_list=None,
-    verify=True,
+    verify=False,
 ):
     try:
         if journal_issn_list and not collection_acron:
@@ -95,7 +95,7 @@ def load_journal_from_article_meta_for_one_collection(
     limit=None,
     load_data=None,
     journal_issn_list=None,
-    verify=True,
+    verify=False,
 ):
     user = _get_user(self.request, username=username, user_id=user_id)
     try:
