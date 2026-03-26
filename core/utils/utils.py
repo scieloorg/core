@@ -42,7 +42,7 @@ class NonRetryableError(Exception):
     wait=wait_exponential(multiplier=1, min=1, max=5),
     stop=stop_after_attempt(5),
 )
-def fetch_data(url, headers=None, json=False, timeout=FETCH_DATA_TIMEOUT, verify=True):
+def fetch_data(url, headers=None, json=False, timeout=FETCH_DATA_TIMEOUT, verify=False):
     """
     Get the resource with HTTP
     Retry: Wait 2^x * 1 second between each retry starting with 4 seconds,

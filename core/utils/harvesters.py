@@ -19,6 +19,7 @@ class AMHarvester:
         until_date: Optional[str] = None,
         limit: Optional[int] = None,
         timeout: int = 30,
+        verify: bool = False,
     ):
         """
         Inicializa o harvester do ArticleMeta.
@@ -37,6 +38,7 @@ class AMHarvester:
         self.until_date = until_date or datetime.utcnow().isoformat()[:10]
         self.limit = limit or 1000
         self.timeout = timeout
+        self.verify = verify
 
     def harvest_documents(self) -> Generator[Dict[str, Any], None, None]:
         """
@@ -73,7 +75,7 @@ class AMHarvester:
                 logging.info(f"Fetching AM documents from: {url}")
 
                 # Faz requisição
-                response = fetch_data(url, json=True, timeout=self.timeout, verify=False)
+                response = fetch_data(url, json=True, timeout=self.timeout, verify=self.verify)
 
                 # Processa objetos retornados
                 objects = response.get("objects", [])
@@ -147,6 +149,7 @@ class OPACHarvester:
         until_date: Optional[str] = None,
         limit: int = 100,
         timeout: int = 5,
+        verify: bool = False,
     ):
         """
         Inicializa o harvester do OPAC.
@@ -165,6 +168,7 @@ class OPACHarvester:
         self.until_date = until_date or datetime.utcnow().isoformat()[:10]
         self.limit = limit or 100
         self.timeout = timeout or 5
+        self.verify = verify
 
     def harvest_documents(self) -> Generator[Dict[str, Any], None, None]:
         """
@@ -199,7 +203,7 @@ class OPACHarvester:
 
                 # Faz requisição
                 # verify=False é necessário para evitar erros de SSL em ambientes onde o certificado do OPAC não é reconhecido
-                response = fetch_data(url, json=True, timeout=self.timeout, verify=False)
+                response = fetch_data(url, json=True, timeout=self.timeout, verify=self.verify)
 
                 # Define total de páginas na primeira iteração
                 if total_pages is None:
