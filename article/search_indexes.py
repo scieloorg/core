@@ -447,13 +447,18 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
             return set([title.plain_text for title in obj.titles.all()])
 
     def prepare_creator(self, obj):
-        """The list of authors is the contrib_persons on the models."""
-        if obj.contrib_persons.exists():
-            return set([
-                person.names
-                for person in obj.contrib_persons.all()
-                if person.names
-            ])
+        if not obj.contrib_persons.exists():
+            return None
+        result = set()
+        for person in obj.contrib_persons.all():
+            if person.last_name:
+                suffix = f" {person.suffix}" if person.suffix else ""
+                given = f", {person.given_names}" if person.given_names else ""
+                result.add(f"{person.last_name}{suffix}{given}")
+            elif person.names:
+                # fallback: nome completo sem inversão
+                result.add(person.names)
+        return result or None
 
     def prepare_collab(self, obj):
         """This is the instituional author."""
@@ -519,8 +524,9 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         return idents
 
     def prepare_license(self, obj):
-        if obj.license and obj.license.license_type:
-            return [obj.license.license_type]
+        if obj.license and obj.license.url:
+            return [obj.license.url]
+        return None
 
     def prepare_sources(self, obj):
         # property no article.
@@ -534,5 +540,6 @@ class ArticleOAIIndex(indexes.SearchIndex, indexes.Indexable):
         return Article
 
     def index_queryset(self, using=None):
-        return self.get_model().objects.filter(is_classic_public=True)
+        # return self.get_model().objects.filter(is_classic_public=True)
+        return self.get_model().objects.all()
 
