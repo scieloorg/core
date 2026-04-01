@@ -10,20 +10,23 @@
             <element name="none">
             {% for title in object.titles.all %}
                 <field name="value">{{ title.plain_text }}</field>
-            {% endfor%}
+            {% endfor %}
             </element>
         </element>
-        <element name="creator">
-            <element name="none">
+
+        <!-- C1: creator via contrib_persons com afiliação -->
+        <element name="contributor">
+            <element name="author">
             {% for person in object.contrib_persons.all %}
-                {% if person.orcid %}
-                    <field name="value" orcid="{{person.orcid}}">{{person.names}}</field>
-                {% else %}
-                    <field name="value">{{person.names}}</field>
+                {% if person.last_name %}
+                    <field name="value" {% if person.orcid %}orcid="{{ person.orcid }}"{% endif %}>{{ person.last_name }}{% if person.suffix %} {{ person.suffix }}{% endif %}{% if person.given_names %}, {{ person.given_names }}{% endif %}</field>
+                {% elif person.names %}
+                    <field name="value" {% if person.orcid %}orcid="{{ person.orcid }}"{% endif %}>{{ person.names }}</field>
                 {% endif %}
             {% endfor %}
             </element>
         </element>
+
         <element name="subject">
             <element name="none">
             {% for kwd in object.keywords.all %}
@@ -31,74 +34,110 @@
             {% endfor %}
             </element>
         </element>
+
+        <!-- C2: abstract via plain_text em vez de __str__ -->
         <element name="description">
-            <element name="none">
+            <element name="abstract">
             {% for abs in object.abstracts.all %}
-                <field name="value">{{ abs }}</field>
+                <element>
+                    <field name="value">{{ abs.plain_text }}</field>
+                </element>
             {% endfor %}
-            <field name="value"/>
             </element>
         </element>
-      <element name="date">
-         <element name="none">
-            <field name="value">{{ object.updated|date:"c" }}</field>
-         </element>
-      </element>
-      <element name="type">
-         <element name="none">
-            <field name="value">{{ object.article_type }}</field>
-         </element>
-      </element>
-      <element name="identifier">
-         <element name="none">
 
-            {% for doi in object.doi.all %}
-                <field name="value">{{ doi.value }}</field>
-            {% endfor %}
 
+        <!-- C3: data de publicação em vez de updated -->
+        <element name="date">
+            <element name="issued">
+                <element>
+                    <field name="value">{{ object.pub_date }}</field>
+                </element>
+            </element>
+        </element>
+
+        <element name="type">
+            <element name="none">
+                <field name="value">{{ object.article_type }}</field>
+            </element>
+        </element>
+
+        <!-- C4: identificadores com sub-elementos por tipo -->
+        <element name="identifier">
+            <element name="none">
                 <field name="value">{{ object.pid_v2 }}</field>
                 <field name="value">{{ object.pid_v3 }}</field>
-
+            </element>
+            {% for doi in object.doi.all %}
+            <element name="doi">
+                <element>
+                    <field name="value">{{ doi.value }}</field>
+                </element>
+            </element>
+            {% endfor %}
+            <element name="uri">
             {% for collection in object.collections %}
                 {% for lang in object.languages.all %}
-                    <field name="value">http://{{collection.domain}}/scielo.php?script=sci_arttext&amp;pid={{object.pid_v2}}&amp;tlng={{lang.code2}}</field>
+                <element>
+                    <field name="value">https://{{ collection.domain }}/scielo.php?script=sci_arttext&amp;pid={{ object.pid_v2 }}&amp;tlng={{ lang.code2 }}</field>
+                </element>
                 {% endfor %}
             {% endfor %}
-                    
-         </element>
-      </element>
-      <element name="language">
-         <element name="none">
-            {% for lang in object.languages.all %}
-                <field name="value">{{ lang.code2 }}</field>
-            {% endfor %}
-         </element>
-      </element>
-      <element name="rights">
-         <element name="none">
-            {% for lic in object.license.all %}
-                <field name="value">{{ lic }}</field>
-            {% endfor %}
-         </element>
-      </element>
-      <element name="source">
-         <element name="none">
-            <field name="value">{{ object.source }}</field>
-         </element>
-      </element>
-    
-      <element name="publisher">
-         <element name="none">
+            </element>
+        </element>
+
+        <element name="language">
+            <element name="iso">
+                {% for lang in object.languages.all %}
+                <element>
+                    <field name="value">{{ lang.code2 }}</field>
+                </element>
+                {% endfor %}
+            </element>
+        </element>
+
+        <!-- C5: rights via ForeignKey, não .all() -->
+        <element name="rights">
+            <element name="none">
+            {% if object.license and object.license.url %}
+                <field name="value">{{ object.license.url }}</field>
+            {% endif %}
+            </element>
+        </element>
+
+        <!-- C6: source via journal -->
+        <element name="source">
+            <element name="none">
+            {% if object.journal %}
+                <field name="value">{{ object.journal.title }}{% if object.pub_date_year %}, {{ object.pub_date_year }}{% endif %}</field>
+            {% endif %}
+            </element>
+        </element>
+
+        <element name="publisher">
+            <element name="none">
             {% for publisher_name in object.publisher_names %}
-            <field name="value">{{ publisher_name }}</field>
+                <field name="value">{{ publisher_name }}</field>
             {% endfor %}
-         </element>
-      </element>
-      <element name="format">
-         <element name="none">
-            <field name="value">text/html</field>
-         </element>
-      </element>
+            </element>
+        </element>
+
+        <element name="format">
+            <element name="none">
+                <field name="value">text/html</field>
+            </element>
+        </element>
+
+        <element name="relation">
+            <element name="ispartof">
+                <element>
+                {% if object.journal %}
+                    <field name="value">{{ object.journal.title }}</field>
+                {% endif %}
+                </element>
+            </element>
+        </element>
+
     </element>
     <element name="bundles"/>
     <element name="others">
@@ -111,4 +150,3 @@
         <field name="name"/>
     </element>
 </metadata>
-
