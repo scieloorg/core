@@ -399,7 +399,7 @@ class RawOrganizationMixin(models.Model):
                 institution=institution,
                 user=user,
             )
-        
+
     @classmethod
     def create(cls, raw_text, initial_date=None, final_date=None, user=None, institution=None):
         history = cls()
@@ -446,7 +446,7 @@ class RawOrganizationMixin(models.Model):
 class OrganizationNameMixin(models.Model):
     """
     Mixin that provides organization name and acronym fields.
-    
+
     Fields:
         name: The organization's full name
         acronym: The organization's acronym
@@ -483,7 +483,7 @@ class OrganizationNameMixin(models.Model):
 class VisualIdentityMixin(models.Model):
     """
     Mixin that provides visual identity fields for organizations.
-    
+
     Fields:
         logo: The organization's logo image
         url: The organization's website URL
@@ -645,10 +645,18 @@ class License(CommonControlField):
             return cls.get(license_type=license_type, version=version)
         except cls.DoesNotExist:
             return cls.create(user, license_type, version)
-        
+
     @property
     def url(self):
-        return f"https://creativecommons.org/licenses/{self.license_type}/{self.version or '4.0'}/"
+        """Reconstrói a URL CC a partir do license_type no formato 'CC {CODE} {VERSION}'"""
+        if not self.license_type:
+            return None
+        parts = self.license_type.split()
+        if len(parts) == 3 and parts[0].upper() == "CC":
+            code = parts[1].lower()  # "BY" → "by", "BY-NC" → "by-nc"
+            version = parts[2]  # "4.0"
+            return f"https://creativecommons.org/licenses/{code}/{version}/"
+        return None
 
     @property
     def data(self):
@@ -743,7 +751,7 @@ class LicenseStatement(CommonControlField):
     def parse_url(url):
         """
         Parse Creative Commons license URL.
-        
+
         Exemplos de URLs:
         - https://creativecommons.org/licenses/by/4.0/
         - https://creativecommons.org/licenses/by-nc/3.0/br/
@@ -754,32 +762,32 @@ class LicenseStatement(CommonControlField):
 
         url = url.lower().rstrip("/")
         url_parts = [p for p in url.split("/") if p]
-        
+
         if not url_parts:
             return {}
 
         license_types = dict(choices.LICENSE_TYPES)
-        
+
         for i, part in enumerate(url_parts):
             if part not in license_types:
                 continue
-                
+
             license_type = part
             remaining = url_parts[i + 1:]
             license_version = None
             license_language = None
-            
+
             if remaining:
                 version_candidate = remaining[0]
                 if all(c.isdigit() or c == "." for c in version_candidate):
                     license_version = version_candidate
                     remaining = remaining[1:]
-            
+
             if remaining:
                 lang_candidate = remaining[0]
                 if lang_candidate.isalpha() and 2 <= len(lang_candidate) <= 3:
                     license_language = lang_candidate
-            
+
             return {
                 "license_type": license_type,
                 "license_version": license_version,
@@ -853,7 +861,7 @@ class BaseHistory(models.Model):
         if self.initial_date:
             return self.initial_date.isoformat()
         return None
-    
+
     @property
     def final_date_isoformat(self):
         if self.final_date:
@@ -1305,7 +1313,7 @@ class BaseLegacyRecord(CommonControlField):
         obj.creator = user
         obj.save()
         return obj
-    
+
     @classmethod
     def create_or_update(cls, pid, collection, data=None, user=None, url=None, status=None, processing_date=None, force_update=None, new_record=None):
         try:
