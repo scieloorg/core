@@ -9,6 +9,7 @@ services:
     platform: linux/x86_64
     depends_on:
       - postgres
+      - rabbitmq
       - redis
       - solr
     links:
@@ -61,10 +62,18 @@ services:
     ports:
       - "6379:6379"
 
+  rabbitmq:
+    image: rabbitmq:3
+    ports:
+      - "5672:5672"
+    env_file:
+      - ./.envs/.production/.django
+
   celeryworker:
     <<: *django
     image: core_production_celeryworker
     depends_on:
+      - rabbitmq
       - redis
       - postgres
     command: /start-celeryworker
@@ -73,6 +82,7 @@ services:
     <<: *django
     image: core_production_celerybeat
     depends_on:
+      - rabbitmq
       - redis
       - postgres
     command: /start-celerybeat
@@ -87,9 +97,9 @@ services:
     restart: always
     ports:
      - 9808:9808
-    command: ["--broker-url=redis://redis:6379/0"]
+    command: ["--broker-url=amqp://guest:guest@rabbitmq:5672//"]
     depends_on:
-     - redis
+     - rabbitmq
 
   victoriametrics:
     image: victoriametrics/victoria-metrics

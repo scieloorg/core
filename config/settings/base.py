@@ -366,7 +366,7 @@ if USE_TZ:
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-broker_url
 CELERY_BROKER_URL = env("CELERY_BROKER_URL")
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-result_backend
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://redis:6379/0")
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-accept_content
 CELERY_ACCEPT_CONTENT = ["json"]
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-task_serializer
@@ -415,10 +415,8 @@ RUN_ASYNC = env.bool('RUN_ASYNC', default=0)
 # Celery Results
 # ------------------------------------------------------------------------------
 # https://django-celery-results.readthedocs.io/en/latest/getting_started.html
-# NOTA: Não usar "django-db" como result backend em produção.
-# O result backend já está configurado como Redis (CELERY_BROKER_URL) acima.
-# Manter "django-db" aqui causaria escritas extras no PostgreSQL a cada tarefa concluída.
-# CELERY_RESULT_BACKEND = "django-db"  # REMOVIDO: já usa Redis acima
+# O result backend usa Redis (via CELERY_RESULT_BACKEND) para armazenar resultados.
+# O broker de mensageria usa RabbitMQ (via CELERY_BROKER_URL).
 CELERY_CACHE_BACKEND = "django-cache"
 CELERY_RESULT_EXTENDED = True
 

@@ -10,7 +10,7 @@ export IP=$(/sbin/ip -o -4 addr list $ethernet | awk '{print $4}' | cut -d/ -f1)
 #export IP=$(ifconfig $ethernet | grep inet | grep -v inet6 | awk '{print $2}')
 
 export DATABASE_URL=postgres://GVRFlLmcCNfGLhsFvSnCioYOPJPYpyfj:BQ4hSUL4rdj5WZLdR8ilDLRQMvCtzo0caMaXDO0olGsmycQjlcZlTVK9DepZR8kk@$IP:5439/scielo_core
-export CELERY_BROKER_URL=redis://$IP:6399/0
+export CELERY_BROKER_URL=amqp://guest:guest@$IP:5672//
 export USE_DOCKER=no
 export IPYTHONDIR=/app/.ipython
 export REDIS_URL=redis://$IP:6399/0
