@@ -196,6 +196,15 @@ if env.bool("USE_SENTRY", default=False):
                 "formatter": "simple",
                 "encoding": "utf-8",
             },
+            # Override Django's default AdminEmailHandler (registered in
+            # django.utils.log.DEFAULT_LOGGING) so that ERROR-level log
+            # records from the "django" logger (e.g. django.request 500s)
+            # are not emailed to ADMINS. The application should not report
+            # errors via email; errors are reported via Sentry instead.
+            "mail_admins": {
+                "level": "ERROR",
+                "class": "logging.NullHandler",
+            },
         },
         "root": {"level": "INFO", "handlers": ["console"]},
         "loggers": {

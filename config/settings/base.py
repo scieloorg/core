@@ -346,11 +346,29 @@ LOGGING = {
             "formatter": "simple",
             "encoding": "utf-8",
         },
+        # Override Django's default AdminEmailHandler (registered in
+        # django.utils.log.DEFAULT_LOGGING) so that ERROR-level log records
+        # from the "django" logger (e.g. django.request 500s) are not emailed
+        # to ADMINS. The application should not report errors via email.
+        "mail_admins": {
+            "level": "ERROR",
+            "class": "logging.NullHandler",
+        },
     },
     "loggers": {
         "profiling": {  # <-- Logger usado pelo decorador
             "handlers": ["console"],
             "level": "DEBUG",
+            "propagate": False,
+        },
+        # Override Django's default "django" logger (defined in
+        # django.utils.log.DEFAULT_LOGGING) so that the AdminEmailHandler
+        # attached to it is removed. Without this explicit override the
+        # handler is preserved (disable_existing_loggers=False) and any
+        # ERROR logged by django.request would be emailed to ADMINS.
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
             "propagate": False,
         },
     },
