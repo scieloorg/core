@@ -23,14 +23,33 @@
                     </li>
 
                     {% if page %}
-                        {% for translation in page.get_translations.live %}
-                            {% get_language_info for translation.locale.language_code as lang %}
-                            <li>
-                            <a href="{% pageurl translation %}" rel="alternate" hreflang="{{ language_code }}">
-                                {{ lang.name_local }}
-                            </a>
-                            </li>
-                        {% endfor %}
+                        {% get_current_language as LANGUAGE_CODE %}
+                        {% get_language_info for LANGUAGE_CODE as current_lang %}
+                        <li class="dropdown">
+                            <button id="languageDropdown"
+                                    type="button"
+                                    class="btn btn-link dropdown-toggle d-flex align-items-center gap-1"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                    aria-haspopup="true"
+                                    aria-label="{% trans 'Choose language' %}">
+                                <span class="material-icons-outlined">language</span>
+                                <span>{{ current_lang.name_local|capfirst }}</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
+                                {% for translation in page.get_translations.live %}
+                                    {% get_language_info for translation.locale.language_code as lang %}
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="{% pageurl translation %}"
+                                           rel="alternate"
+                                           hreflang="{{ translation.locale.language_code }}">
+                                            {{ lang.name_local|capfirst }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
                     {% endif %}
                 </ul>
             </div>
