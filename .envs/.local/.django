@@ -20,3 +20,15 @@ FETCH_DATA_TIMEOUT=2
 
 DJANGO_PROFILING_ENABLED=True
 RUN_ASYNC=False
+
+# OpenSearch logging
+# ------------------------------------------------------------------------------
+# Set ``USE_OPENSEARCH_LOGGING=yes`` to ship logs to the local ``opensearch``
+# service defined in ``local.yml``. The OpenSearch Dashboards UI is exposed
+# at http://localhost:5609. Index name is composed automatically as
+# ``core-logs-dev-YYYY.MM.DD``. Leave empty / unset to keep console-only
+# logging (default behavior).
+USE_OPENSEARCH_LOGGING=no
+# OPENSEARCH_LOGGING_HOSTS=http://opensearch:9200
+# OPENSEARCH_LOGGING_ENVIRONMENT=dev
+# OPENSEARCH_LOGGING_LEVEL=INFO

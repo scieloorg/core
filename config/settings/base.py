@@ -326,10 +326,29 @@ logs_path.mkdir(parents=True, exist_ok=True)
 # :class:`config.logging_handlers.OpenSearchLogHandler`. Otherwise the
 # application logs only to the console (which is collected by the platform's
 # stdout/stderr pipeline). The application never emails errors.
+#
+# The ``OPENSEARCH_LOGGING_ENVIRONMENT`` setting (e.g. ``"prod"``, ``"hml"``,
+# ``"dev"``) is used both to compose the index name (e.g.
+# ``core-logs-prod-2026.04.28``) and as a top-level field on every document,
+# so logs from different environments are kept in separate indexes *and*
+# remain semantically tagged inside the document. ``production.py`` and
+# ``local.py`` override this default with the appropriate value for each
+# environment.
 USE_OPENSEARCH_LOGGING = env.bool("USE_OPENSEARCH_LOGGING", default=False)
 OPENSEARCH_LOGGING_HOSTS = env.list("OPENSEARCH_LOGGING_HOSTS", default=[])
+OPENSEARCH_LOGGING_ENVIRONMENT = env.str(
+    "OPENSEARCH_LOGGING_ENVIRONMENT", default="dev"
+)
+# Base index name (without environment / date suffixes).
+OPENSEARCH_LOGGING_INDEX_BASE = env.str(
+    "OPENSEARCH_LOGGING_INDEX_BASE", default="core-logs"
+)
+# Final index prefix is composed from the base + environment, e.g.
+# ``core-logs-prod`` or ``core-logs-dev``. When ``OPENSEARCH_LOGGING_INDEX``
+# is set explicitly via env, it overrides the composed value (escape hatch).
 OPENSEARCH_LOGGING_INDEX = env.str(
-    "OPENSEARCH_LOGGING_INDEX", default="scielo-core-logs"
+    "OPENSEARCH_LOGGING_INDEX",
+    default=f"{OPENSEARCH_LOGGING_INDEX_BASE}-{OPENSEARCH_LOGGING_ENVIRONMENT}",
 )
 OPENSEARCH_LOGGING_INDEX_DATE_FORMAT = env.str(
     "OPENSEARCH_LOGGING_INDEX_DATE_FORMAT", default="%Y.%m.%d"
@@ -341,9 +360,6 @@ OPENSEARCH_LOGGING_VERIFY_CERTS = env.bool(
     "OPENSEARCH_LOGGING_VERIFY_CERTS", default=True
 )
 OPENSEARCH_LOGGING_LEVEL = env.str("OPENSEARCH_LOGGING_LEVEL", default="INFO")
-OPENSEARCH_LOGGING_ENVIRONMENT = env.str(
-    "OPENSEARCH_LOGGING_ENVIRONMENT", default="development"
-)
 
 _opensearch_handler_enabled = bool(USE_OPENSEARCH_LOGGING and OPENSEARCH_LOGGING_HOSTS)
 _opensearch_http_auth = (
@@ -406,6 +422,11 @@ LOGGING = {
             "http_auth": _opensearch_http_auth,
             "use_ssl": OPENSEARCH_LOGGING_USE_SSL,
             "verify_certs": OPENSEARCH_LOGGING_VERIFY_CERTS,
+            # Global fields merged into every document. Per-call fields can
+            # be added from application code via ``logger.info(msg,
+            # extra={"user_id": ..., "request_id": ...})`` — they are
+            # promoted to top-level fields on the OpenSearch document by
+            # :class:`config.logging_handlers.OpenSearchLogHandler`.
             "extra_fields": {
                 "service": "scielo-core",
                 "environment": OPENSEARCH_LOGGING_ENVIRONMENT,

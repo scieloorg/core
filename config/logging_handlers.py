@@ -9,6 +9,59 @@ disrupts the application.
 
 Activation is controlled by the project's ``LOGGING`` configuration; when
 OpenSearch is not enabled, loggers fall back to the console handler.
+
+Usage from application code
+---------------------------
+
+The handler is wired in ``config/settings/*.py`` and attached to the root
+and ``django`` loggers automatically when enabled, so application code
+just uses the standard :mod:`logging` API. Both plain messages and
+structured fields are supported:
+
+.. code-block:: python
+
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    # Plain message — indexed with the default fields (@timestamp, level,
+    # logger, message, module, func_name, line_no, host, service,
+    # environment, ...).
+    logger.info("user logged in")
+
+    # Message with positional arguments (Python's standard interpolation).
+    logger.warning("slow query took %.2fs on table=%s", 1.23, "article")
+
+    # Structured/contextual fields via ``extra={...}``. Any keys passed in
+    # ``extra`` that are not standard ``LogRecord`` attributes are added
+    # as top-level fields on the OpenSearch document, which makes them
+    # filterable in dashboards (e.g. by ``user_id`` or ``request_id``).
+    logger.info(
+        "imported article",
+        extra={
+            "user_id": user.id,
+            "article_pid": article.pid,
+            "request_id": request_id,
+            "duration_ms": duration_ms,
+        },
+    )
+
+    # Exceptions are captured automatically with a full traceback when
+    # ``exc_info=True`` (or when using ``logger.exception(...)`` inside
+    # an ``except`` block).
+    try:
+        do_something()
+    except Exception:
+        logger.exception(
+            "import failed",
+            extra={"article_pid": pid, "stage": "xml_parse"},
+        )
+
+The ``service`` and ``environment`` fields (configured globally via
+``OPENSEARCH_LOGGING_ENVIRONMENT`` in settings) are merged into every
+document, so each environment writes to a clearly identified, separate
+index (e.g. ``core-logs-prod-YYYY.MM.DD`` vs ``core-logs-dev-YYYY.MM.DD``)
+and also carries the ``environment`` field inside the document itself.
 """
 from __future__ import annotations
 
@@ -164,6 +217,20 @@ class OpenSearchLogHandler(logging.Handler):
         document = self._build_document(record)
         client.index(index=self._index_name(), body=document)
 
+    # The standard attributes set by ``logging.LogRecord.__init__``. Any
+    # attribute on the record that is *not* in this set has been supplied
+    # by the caller via ``extra={...}`` and is therefore promoted to a
+    # top-level field on the OpenSearch document.
+    _RESERVED_RECORD_ATTRS = frozenset(
+        {
+            "name", "msg", "args", "levelname", "levelno", "pathname",
+            "filename", "module", "exc_info", "exc_text", "stack_info",
+            "lineno", "funcName", "created", "msecs", "relativeCreated",
+            "thread", "threadName", "processName", "process", "message",
+            "asctime", "taskName",
+        }
+    )
+
     def _build_document(self, record: logging.LogRecord) -> dict:
         try:
             message = record.getMessage()
@@ -195,6 +262,12 @@ class OpenSearchLogHandler(logging.Handler):
                     exc_info=record.exc_info,
                 )
             )
+        # Promote any caller-supplied ``extra={...}`` keys to top-level
+        # fields so they become filterable/searchable in OpenSearch.
+        for key, value in record.__dict__.items():
+            if key in self._RESERVED_RECORD_ATTRS or key.startswith("_"):
+                continue
+            document.setdefault(key, value)
         if self._extra_fields:
             for key, value in self._extra_fields.items():
                 document.setdefault(key, value)

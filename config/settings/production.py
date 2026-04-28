@@ -162,6 +162,25 @@ COMPRESS_FILTERS = {
 # See https://docs.djangoproject.com/en/dev/topics/logging for
 # more details on how to customize your logging configuration.
 
+# Re-evaluate OpenSearch environment / index defaults for production. The
+# environment is "prod" by default here (overridable via env var), and the
+# index name is recomposed from the base + environment so that production
+# logs land in a clearly-separated index such as
+# ``core-logs-prod-2026.04.28``.
+OPENSEARCH_LOGGING_ENVIRONMENT = env.str(
+    "OPENSEARCH_LOGGING_ENVIRONMENT", default="prod"
+)
+OPENSEARCH_LOGGING_INDEX = env.str(
+    "OPENSEARCH_LOGGING_INDEX",
+    default=f"{OPENSEARCH_LOGGING_INDEX_BASE}-{OPENSEARCH_LOGGING_ENVIRONMENT}",  # noqa: F405
+)
+# Patch the LOGGING dict inherited from base.py so the non-Sentry
+# production path also uses the production-specific index/environment.
+LOGGING["handlers"]["opensearch"]["index"] = OPENSEARCH_LOGGING_INDEX  # noqa: F405
+LOGGING["handlers"]["opensearch"]["extra_fields"]["environment"] = (  # noqa: F405
+    OPENSEARCH_LOGGING_ENVIRONMENT
+)
+
 if env.bool("USE_SENTRY", default=False):
     import sentry_sdk
     from sentry_sdk.integrations.celery import CeleryIntegration
@@ -169,10 +188,19 @@ if env.bool("USE_SENTRY", default=False):
     from sentry_sdk.integrations.logging import LoggingIntegration
     from sentry_sdk.integrations.redis import RedisIntegration
 
-    # OpenSearch handler list reused below. ``_default_log_handlers`` and
-    # ``_opensearch_handler_enabled`` are inherited from base.py via
-    # ``from .base import *``.
-    _prod_default_handlers = list(_default_log_handlers)  # noqa: F405
+    # Recompute private helpers locally — names starting with ``_`` are not
+    # exported by ``from .base import *``.
+    _opensearch_handler_enabled = bool(
+        USE_OPENSEARCH_LOGGING and OPENSEARCH_LOGGING_HOSTS  # noqa: F405
+    )
+    _opensearch_http_auth = (
+        [OPENSEARCH_LOGGING_USER, OPENSEARCH_LOGGING_PASSWORD]  # noqa: F405
+        if OPENSEARCH_LOGGING_USER  # noqa: F405
+        else None
+    )
+    _prod_default_handlers = ["console"] + (
+        ["opensearch"] if _opensearch_handler_enabled else []
+    )
 
     LOGGING = {
         "version": 1,
