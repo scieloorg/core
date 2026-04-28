@@ -318,6 +318,46 @@ MANAGERS = ADMINS
 # more details on how to customize your logging configuration.
 logs_path = ROOT_DIR / "logs"
 logs_path.mkdir(parents=True, exist_ok=True)
+
+# OpenSearch logging
+# ------------------------------------------------------------------------------
+# When ``USE_OPENSEARCH_LOGGING=True`` and at least one host is configured,
+# log records are shipped asynchronously to the OpenSearch cluster by
+# :class:`config.logging_handlers.OpenSearchLogHandler`. Otherwise the
+# application logs only to the console (which is collected by the platform's
+# stdout/stderr pipeline). The application never emails errors.
+USE_OPENSEARCH_LOGGING = env.bool("USE_OPENSEARCH_LOGGING", default=False)
+OPENSEARCH_LOGGING_HOSTS = env.list("OPENSEARCH_LOGGING_HOSTS", default=[])
+OPENSEARCH_LOGGING_INDEX = env.str(
+    "OPENSEARCH_LOGGING_INDEX", default="scielo-core-logs"
+)
+OPENSEARCH_LOGGING_INDEX_DATE_FORMAT = env.str(
+    "OPENSEARCH_LOGGING_INDEX_DATE_FORMAT", default="%Y.%m.%d"
+)
+OPENSEARCH_LOGGING_USER = env.str("OPENSEARCH_LOGGING_USER", default="")
+OPENSEARCH_LOGGING_PASSWORD = env.str("OPENSEARCH_LOGGING_PASSWORD", default="")
+OPENSEARCH_LOGGING_USE_SSL = env.bool("OPENSEARCH_LOGGING_USE_SSL", default=True)
+OPENSEARCH_LOGGING_VERIFY_CERTS = env.bool(
+    "OPENSEARCH_LOGGING_VERIFY_CERTS", default=True
+)
+OPENSEARCH_LOGGING_LEVEL = env.str("OPENSEARCH_LOGGING_LEVEL", default="INFO")
+OPENSEARCH_LOGGING_ENVIRONMENT = env.str(
+    "OPENSEARCH_LOGGING_ENVIRONMENT", default="development"
+)
+
+_opensearch_handler_enabled = bool(USE_OPENSEARCH_LOGGING and OPENSEARCH_LOGGING_HOSTS)
+_opensearch_http_auth = (
+    [OPENSEARCH_LOGGING_USER, OPENSEARCH_LOGGING_PASSWORD]
+    if OPENSEARCH_LOGGING_USER
+    else None
+)
+# Default handler list used by the root and "django" loggers. The console
+# handler is always present so logs remain available locally; the
+# ``opensearch`` handler is appended only when enabled.
+_default_log_handlers = ["console"] + (
+    ["opensearch"] if _opensearch_handler_enabled else []
+)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -354,6 +394,23 @@ LOGGING = {
             "level": "ERROR",
             "class": "logging.NullHandler",
         },
+        # OpenSearch handler. When ``USE_OPENSEARCH_LOGGING`` is False or no
+        # hosts are configured the handler is initialised with an empty host
+        # list and becomes a no-op (and is not attached to any logger).
+        "opensearch": {
+            "level": OPENSEARCH_LOGGING_LEVEL,
+            "class": "config.logging_handlers.OpenSearchLogHandler",
+            "hosts": OPENSEARCH_LOGGING_HOSTS if _opensearch_handler_enabled else [],
+            "index": OPENSEARCH_LOGGING_INDEX,
+            "index_date_format": OPENSEARCH_LOGGING_INDEX_DATE_FORMAT,
+            "http_auth": _opensearch_http_auth,
+            "use_ssl": OPENSEARCH_LOGGING_USE_SSL,
+            "verify_certs": OPENSEARCH_LOGGING_VERIFY_CERTS,
+            "extra_fields": {
+                "service": "scielo-core",
+                "environment": OPENSEARCH_LOGGING_ENVIRONMENT,
+            },
+        },
     },
     "loggers": {
         "profiling": {  # <-- Logger usado pelo decorador
@@ -367,12 +424,12 @@ LOGGING = {
         # handler is preserved (disable_existing_loggers=False) and any
         # ERROR logged by django.request would be emailed to ADMINS.
         "django": {
-            "handlers": ["console"],
+            "handlers": _default_log_handlers,
             "level": "INFO",
             "propagate": False,
         },
     },
-    "root": {"level": "INFO", "handlers": ["console"]},
+    "root": {"level": "INFO", "handlers": _default_log_handlers},
 }
 PROMETHEUS_LATENCY_BUCKETS = (.1, .2, .5, .6, .8, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.5, 9.0, 12.0, 15.0, 20.0, 30.0, float("inf"))
 PROMETHEUS_EXPORT_MIGRATIONS = env.bool("PROMETHEUS_EXPORT_MIGRATIONS", True)
