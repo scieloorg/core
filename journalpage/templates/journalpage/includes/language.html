@@ -12,7 +12,7 @@
               <span class="d-lg-none">{{request.LANGUAGE_CODE|upper}}</span>
               <span class="d-none d-lg-block">
                 {% get_language_info for LANGUAGE_CODE as lang %}
-                {{ lang.name_local }}
+                {{ lang.name_local|capfirst }}
             </span>
           </button>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btnGroupDrop1">
@@ -20,7 +20,7 @@
             {% get_language_info for page.locale.language_code as lang %}
             <li>
               <a class="dropdown-item {% if page.locale.language_code == request.LANGUAGE_CODE %}active{% endif %}" href="{% routablepageurl page 'bibliographic' acron_collection acron_journal %}" lang="{{ lang.code }}">
-                {{ lang.name_local }}
+                {{ lang.name_local|capfirst }}
               </a>
             </li>
 
@@ -29,7 +29,7 @@
                 {% get_language_info for translation.locale.language_code as lang %}
                 <li>
                   <a class="dropdown-item {% if translation.locale.language_code == request.LANGUAGE_CODE %}active{% endif %}" href="{% routablepageurl translation 'bibliographic' acron_collection acron_journal %}" lang="{{ lang.code }}">
-                      {{ lang.name_local }}
+                      {{ lang.name_local|capfirst }}
                   </a>
                 </li>
             {% endfor %}
