@@ -6,7 +6,27 @@ from collection.models import Collection
 from core.users.models import User
 from journal.models import Journal, SciELOJournal
 
+from core.home.models import AboutScieloOrgPage, HomePage
 from core.home.views import _get_scielo_journals_data
+
+
+class TestSubpageAdminDefaultOrdering(TestCase):
+    """Regression tests for issue:
+    "Edição de páginas causa reordenamento dos itens".
+
+    Wagtail's default ``admin_default_ordering`` of
+    ``-latest_revision_created_at`` would cause a recently edited subpage
+    to jump to the top of the children listing in the admin, breaking
+    the predefined order. The fix sets ``admin_default_ordering = "ord"``
+    on the relevant page models so that children are always listed in
+    their tree (manual) order, matching the public-facing site.
+    """
+
+    def test_about_scielo_org_page_uses_tree_ordering_in_admin(self):
+        self.assertEqual(AboutScieloOrgPage.admin_default_ordering, "ord")
+
+    def test_home_page_uses_tree_ordering_in_admin(self):
+        self.assertEqual(HomePage.admin_default_ordering, "ord")
 
 
 class TestGetScieloJournalsData(TestCase):
