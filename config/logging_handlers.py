@@ -67,6 +67,7 @@ from __future__ import annotations
 
 import atexit
 import logging
+import os
 import queue
 import socket
 import threading
@@ -133,6 +134,8 @@ class OpenSearchLogHandler(logging.Handler):
         self._verify_certs = verify_certs
         self._extra_fields = dict(extra_fields or {})
         self._hostname = socket.gethostname()
+        self._queue_size = queue_size
+        self._pid = os.getpid()
 
         self._queue: "queue.Queue[Optional[logging.LogRecord]]" = queue.Queue(
             maxsize=queue_size
@@ -185,10 +188,27 @@ class OpenSearchLogHandler(logging.Handler):
     # ------------------------------------------------------------------
     # logging.Handler API
     # ------------------------------------------------------------------
+    def _ensure_runtime(self) -> None:
+        """Reinitialize runtime objects when used after a process fork."""
+        current_pid = os.getpid()
+        worker_alive = self._worker is not None and self._worker.is_alive()
+
+        if current_pid == self._pid and worker_alive:
+            return
+
+        self._pid = current_pid
+        self._client = None
+        self._stop_event = threading.Event()
+        self._queue = queue.Queue(maxsize=self._queue_size)
+        self._worker = None
+        if self._hosts:
+            self._start_worker()
+
     def emit(self, record: logging.LogRecord) -> None:  # noqa: D401
         if not self._hosts:
             return
         try:
+            self._ensure_runtime()
             self._queue.put_nowait(record)
         except queue.Full:
             # Drop the record rather than block the application thread.
