@@ -439,6 +439,23 @@ LOGGING = {
             "level": "DEBUG",
             "propagate": False,
         },
+        # Celery runtime/task lifecycle logs. ``celery.app.trace`` is where
+        # task execution failures are reported (e.g. "Task ... raised ...").
+        "celery": {
+            "handlers": _default_log_handlers,
+            "level": "INFO",
+            "propagate": False,
+        },
+        "celery.app.trace": {
+            "handlers": _default_log_handlers,
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "celery.worker": {
+            "handlers": _default_log_handlers,
+            "level": "INFO",
+            "propagate": False,
+        },
         # Override Django's default "django" logger (defined in
         # django.utils.log.DEFAULT_LOGGING) so that the AdminEmailHandler
         # attached to it is removed. Without this explicit override the
@@ -447,6 +464,16 @@ LOGGING = {
         "django": {
             "handlers": _default_log_handlers,
             "level": "INFO",
+            "propagate": False,
+        },
+        "opensearch": {
+            "handlers": ["console"],   # ou [] se preferir silêncio total
+            "level": "INFO",
+            "propagate": False,
+        },
+        "opensearchpy": {
+            "handlers": ["console"],
+            "level": "WARNING",
             "propagate": False,
         },
     },
@@ -495,6 +522,9 @@ CELERY_WORKER_SEND_TASK_EVENTS = True
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std-setting-task_send_sent_event
 CELERY_SEND_TASK_SENT_EVENT = True
 CELERYD_SEND_EVENTS = True
+# Keep Django logging handlers (console/opensearch) intact in Celery workers.
+# Celery's default is to hijack the root logger, which can drop custom handlers.
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 CE_BUCKETS=1,2.5,5,10,30,60,300,600,900,1800
 
 # Tempo em segundos para cancelar uma tarefa se ela não começar.
