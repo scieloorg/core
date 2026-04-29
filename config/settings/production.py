@@ -267,6 +267,23 @@ if env.bool("USE_SENTRY", default=False):
                 "handlers": _prod_default_handlers,
                 "propagate": False,
             },
+            # Celery runtime/task lifecycle logs. ``celery.app.trace`` emits
+            # execution failures from task bodies.
+            "celery": {
+                "level": "INFO",
+                "handlers": _prod_default_handlers,
+                "propagate": False,
+            },
+            "celery.app.trace": {
+                "level": "ERROR",
+                "handlers": _prod_default_handlers,
+                "propagate": False,
+            },
+            "celery.worker": {
+                "level": "INFO",
+                "handlers": _prod_default_handlers,
+                "propagate": False,
+            },
             # Errors logged by the SDK itself
             "sentry_sdk": {
                 "level": "ERROR",

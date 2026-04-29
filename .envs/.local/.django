@@ -28,7 +28,7 @@ RUN_ASYNC=False
 # at http://localhost:5609. Index name is composed automatically as
 # ``core-logs-dev-YYYY.MM.DD``. Leave empty / unset to keep console-only
 # logging (default behavior).
-USE_OPENSEARCH_LOGGING=no
+USE_OPENSEARCH_LOGGING=yes
 # OPENSEARCH_LOGGING_HOSTS=http://opensearch:9200
 # OPENSEARCH_LOGGING_ENVIRONMENT=dev
 # OPENSEARCH_LOGGING_LEVEL=INFO
