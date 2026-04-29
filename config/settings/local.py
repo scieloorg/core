@@ -67,5 +67,58 @@ INSTALLED_APPS += ["django_extensions", "silk"]  # noqa F405
 
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#task-eager-propagates
 CELERY_TASK_EAGER_PROPAGATES = True
+
+# OpenSearch logging (development)
+# ------------------------------------------------------------------------------
+# Re-evaluate OpenSearch environment / index defaults for the development
+# environment. ``OPENSEARCH_LOGGING_ENVIRONMENT`` defaults to ``"dev"`` here
+# (overridable via env var), and the index name is recomposed so dev logs
+# land in a clearly-separated index such as ``core-logs-dev-2026.04.28``.
+#
+# To exercise the OpenSearch sink locally, set ``USE_OPENSEARCH_LOGGING=yes``
+# in ``.envs/.local/.django`` — the ``opensearch`` service in ``local.yml``
+# will be used as the default host (http://opensearch:9200, no SSL). Leaving
+# the flag unset keeps the existing behavior (console-only logging).
+OPENSEARCH_LOGGING_ENVIRONMENT = env.str(
+    "OPENSEARCH_LOGGING_ENVIRONMENT", default="dev"
+)
+OPENSEARCH_LOGGING_INDEX = env.str(  # noqa: F405
+    "OPENSEARCH_LOGGING_INDEX",
+    default=f"{OPENSEARCH_LOGGING_INDEX_BASE}-{OPENSEARCH_LOGGING_ENVIRONMENT}",  # noqa: F405
+)
+# Reasonable defaults for the local docker-compose ``opensearch`` service:
+# unauthenticated, plain HTTP, single node.
+if not OPENSEARCH_LOGGING_HOSTS:  # noqa: F405
+    OPENSEARCH_LOGGING_HOSTS = env.list(
+        "OPENSEARCH_LOGGING_HOSTS", default=["http://opensearch:9200"]
+    )
+OPENSEARCH_LOGGING_USE_SSL = env.bool("OPENSEARCH_LOGGING_USE_SSL", default=False)
+OPENSEARCH_LOGGING_VERIFY_CERTS = env.bool(
+    "OPENSEARCH_LOGGING_VERIFY_CERTS", default=False
+)
+
+# Patch the LOGGING dict inherited from base.py so it picks up the
+# development-specific OpenSearch settings without rebuilding the whole
+# dict. Whether the ``opensearch`` handler is actually attached to the
+# loggers is still controlled by ``USE_OPENSEARCH_LOGGING`` (computed in
+# base.py): unset/false ⇒ console only; true + a host ⇒ console + opensearch.
+_opensearch_handler_enabled = bool(USE_OPENSEARCH_LOGGING and OPENSEARCH_LOGGING_HOSTS)  # noqa: F405
+LOGGING["handlers"]["opensearch"].update(  # noqa: F405
+    {
+        "hosts": OPENSEARCH_LOGGING_HOSTS if _opensearch_handler_enabled else [],
+        "index": OPENSEARCH_LOGGING_INDEX,
+        "use_ssl": OPENSEARCH_LOGGING_USE_SSL,
+        "verify_certs": OPENSEARCH_LOGGING_VERIFY_CERTS,
+    }
+)
+LOGGING["handlers"]["opensearch"]["extra_fields"]["environment"] = (  # noqa: F405
+    OPENSEARCH_LOGGING_ENVIRONMENT
+)
+_default_log_handlers = ["console"] + (
+    ["opensearch"] if _opensearch_handler_enabled else []
+)
+LOGGING["root"]["handlers"] = _default_log_handlers  # noqa: F405
+LOGGING["loggers"]["django"]["handlers"] = _default_log_handlers  # noqa: F405
+
 # Your stuff...
 # ------------------------------------------------------------------------------

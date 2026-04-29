@@ -318,6 +318,62 @@ MANAGERS = ADMINS
 # more details on how to customize your logging configuration.
 logs_path = ROOT_DIR / "logs"
 logs_path.mkdir(parents=True, exist_ok=True)
+
+# OpenSearch logging
+# ------------------------------------------------------------------------------
+# When ``USE_OPENSEARCH_LOGGING=True`` and at least one host is configured,
+# log records are shipped asynchronously to the OpenSearch cluster by
+# :class:`config.logging_handlers.OpenSearchLogHandler`. Otherwise the
+# application logs only to the console (which is collected by the platform's
+# stdout/stderr pipeline). The application never emails errors.
+#
+# The ``OPENSEARCH_LOGGING_ENVIRONMENT`` setting (e.g. ``"prod"``, ``"hml"``,
+# ``"dev"``) is used both to compose the index name (e.g.
+# ``core-logs-prod-2026.04.28``) and as a top-level field on every document,
+# so logs from different environments are kept in separate indexes *and*
+# remain semantically tagged inside the document. ``production.py`` and
+# ``local.py`` override this default with the appropriate value for each
+# environment.
+USE_OPENSEARCH_LOGGING = env.bool("USE_OPENSEARCH_LOGGING", default=False)
+OPENSEARCH_LOGGING_HOSTS = env.list("OPENSEARCH_LOGGING_HOSTS", default=[])
+OPENSEARCH_LOGGING_ENVIRONMENT = env.str(
+    "OPENSEARCH_LOGGING_ENVIRONMENT", default="dev"
+)
+# Base index name (without environment / date suffixes).
+OPENSEARCH_LOGGING_INDEX_BASE = env.str(
+    "OPENSEARCH_LOGGING_INDEX_BASE", default="core-logs"
+)
+# Final index prefix is composed from the base + environment, e.g.
+# ``core-logs-prod`` or ``core-logs-dev``. When ``OPENSEARCH_LOGGING_INDEX``
+# is set explicitly via env, it overrides the composed value (escape hatch).
+OPENSEARCH_LOGGING_INDEX = env.str(
+    "OPENSEARCH_LOGGING_INDEX",
+    default=f"{OPENSEARCH_LOGGING_INDEX_BASE}-{OPENSEARCH_LOGGING_ENVIRONMENT}",
+)
+OPENSEARCH_LOGGING_INDEX_DATE_FORMAT = env.str(
+    "OPENSEARCH_LOGGING_INDEX_DATE_FORMAT", default="%Y.%m.%d"
+)
+OPENSEARCH_LOGGING_USER = env.str("OPENSEARCH_LOGGING_USER", default="")
+OPENSEARCH_LOGGING_PASSWORD = env.str("OPENSEARCH_LOGGING_PASSWORD", default="")
+OPENSEARCH_LOGGING_USE_SSL = env.bool("OPENSEARCH_LOGGING_USE_SSL", default=True)
+OPENSEARCH_LOGGING_VERIFY_CERTS = env.bool(
+    "OPENSEARCH_LOGGING_VERIFY_CERTS", default=True
+)
+OPENSEARCH_LOGGING_LEVEL = env.str("OPENSEARCH_LOGGING_LEVEL", default="INFO")
+
+_opensearch_handler_enabled = bool(USE_OPENSEARCH_LOGGING and OPENSEARCH_LOGGING_HOSTS)
+_opensearch_http_auth = (
+    [OPENSEARCH_LOGGING_USER, OPENSEARCH_LOGGING_PASSWORD]
+    if OPENSEARCH_LOGGING_USER
+    else None
+)
+# Default handler list used by the root and "django" loggers. The console
+# handler is always present so logs remain available locally; the
+# ``opensearch`` handler is appended only when enabled.
+_default_log_handlers = ["console"] + (
+    ["opensearch"] if _opensearch_handler_enabled else []
+)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -346,6 +402,36 @@ LOGGING = {
             "formatter": "simple",
             "encoding": "utf-8",
         },
+        # Override Django's default AdminEmailHandler (registered in
+        # django.utils.log.DEFAULT_LOGGING) so that ERROR-level log records
+        # from the "django" logger (e.g. django.request 500s) are not emailed
+        # to ADMINS. The application should not report errors via email.
+        "mail_admins": {
+            "level": "ERROR",
+            "class": "logging.NullHandler",
+        },
+        # OpenSearch handler. When ``USE_OPENSEARCH_LOGGING`` is False or no
+        # hosts are configured the handler is initialised with an empty host
+        # list and becomes a no-op (and is not attached to any logger).
+        "opensearch": {
+            "level": OPENSEARCH_LOGGING_LEVEL,
+            "class": "config.logging_handlers.OpenSearchLogHandler",
+            "hosts": OPENSEARCH_LOGGING_HOSTS if _opensearch_handler_enabled else [],
+            "index": OPENSEARCH_LOGGING_INDEX,
+            "index_date_format": OPENSEARCH_LOGGING_INDEX_DATE_FORMAT,
+            "http_auth": _opensearch_http_auth,
+            "use_ssl": OPENSEARCH_LOGGING_USE_SSL,
+            "verify_certs": OPENSEARCH_LOGGING_VERIFY_CERTS,
+            # Global fields merged into every document. Per-call fields can
+            # be added from application code via ``logger.info(msg,
+            # extra={"user_id": ..., "request_id": ...})`` — they are
+            # promoted to top-level fields on the OpenSearch document by
+            # :class:`config.logging_handlers.OpenSearchLogHandler`.
+            "extra_fields": {
+                "service": "scielo-core",
+                "environment": OPENSEARCH_LOGGING_ENVIRONMENT,
+            },
+        },
     },
     "loggers": {
         "profiling": {  # <-- Logger usado pelo decorador
@@ -353,8 +439,45 @@ LOGGING = {
             "level": "DEBUG",
             "propagate": False,
         },
+        # Celery runtime/task lifecycle logs. ``celery.app.trace`` is where
+        # task execution failures are reported (e.g. "Task ... raised ...").
+        "celery": {
+            "handlers": _default_log_handlers,
+            "level": "INFO",
+            "propagate": False,
+        },
+        "celery.app.trace": {
+            "handlers": _default_log_handlers,
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "celery.worker": {
+            "handlers": _default_log_handlers,
+            "level": "INFO",
+            "propagate": False,
+        },
+        # Override Django's default "django" logger (defined in
+        # django.utils.log.DEFAULT_LOGGING) so that the AdminEmailHandler
+        # attached to it is removed. Without this explicit override the
+        # handler is preserved (disable_existing_loggers=False) and any
+        # ERROR logged by django.request would be emailed to ADMINS.
+        "django": {
+            "handlers": _default_log_handlers,
+            "level": "INFO",
+            "propagate": False,
+        },
+        "opensearch": {
+            "handlers": ["console"],   # ou [] se preferir silêncio total
+            "level": "INFO",
+            "propagate": False,
+        },
+        "opensearchpy": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
     },
-    "root": {"level": "INFO", "handlers": ["console"]},
+    "root": {"level": "INFO", "handlers": _default_log_handlers},
 }
 PROMETHEUS_LATENCY_BUCKETS = (.1, .2, .5, .6, .8, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.5, 9.0, 12.0, 15.0, 20.0, 30.0, float("inf"))
 PROMETHEUS_EXPORT_MIGRATIONS = env.bool("PROMETHEUS_EXPORT_MIGRATIONS", True)
@@ -399,6 +522,9 @@ CELERY_WORKER_SEND_TASK_EVENTS = True
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std-setting-task_send_sent_event
 CELERY_SEND_TASK_SENT_EVENT = True
 CELERYD_SEND_EVENTS = True
+# Keep Django logging handlers (console/opensearch) intact in Celery workers.
+# Celery's default is to hijack the root logger, which can drop custom handlers.
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 CE_BUCKETS=1,2.5,5,10,30,60,300,600,900,1800
 
 # Tempo em segundos para cancelar uma tarefa se ela não começar.

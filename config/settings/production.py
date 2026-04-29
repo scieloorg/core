@@ -162,12 +162,46 @@ COMPRESS_FILTERS = {
 # See https://docs.djangoproject.com/en/dev/topics/logging for
 # more details on how to customize your logging configuration.
 
+# Re-evaluate OpenSearch environment / index defaults for production. The
+# environment is "prod" by default here (overridable via env var), and the
+# index name is recomposed from the base + environment so that production
+# logs land in a clearly-separated index such as
+# ``core-logs-prod-2026.04.28``.
+OPENSEARCH_LOGGING_ENVIRONMENT = env.str(
+    "OPENSEARCH_LOGGING_ENVIRONMENT", default="prod"
+)
+OPENSEARCH_LOGGING_INDEX = env.str(
+    "OPENSEARCH_LOGGING_INDEX",
+    default=f"{OPENSEARCH_LOGGING_INDEX_BASE}-{OPENSEARCH_LOGGING_ENVIRONMENT}",  # noqa: F405
+)
+# Patch the LOGGING dict inherited from base.py so the non-Sentry
+# production path also uses the production-specific index/environment.
+LOGGING["handlers"]["opensearch"]["index"] = OPENSEARCH_LOGGING_INDEX  # noqa: F405
+LOGGING["handlers"]["opensearch"]["extra_fields"]["environment"] = (  # noqa: F405
+    OPENSEARCH_LOGGING_ENVIRONMENT
+)
+
 if env.bool("USE_SENTRY", default=False):
     import sentry_sdk
     from sentry_sdk.integrations.celery import CeleryIntegration
     from sentry_sdk.integrations.django import DjangoIntegration
     from sentry_sdk.integrations.logging import LoggingIntegration
     from sentry_sdk.integrations.redis import RedisIntegration
+
+    # Recompute private helpers locally — names starting with ``_`` are not
+    # exported by ``from .base import *``.
+    _opensearch_handler_enabled = bool(
+        USE_OPENSEARCH_LOGGING and OPENSEARCH_LOGGING_HOSTS  # noqa: F405
+    )
+    _opensearch_http_auth = (
+        [OPENSEARCH_LOGGING_USER, OPENSEARCH_LOGGING_PASSWORD]  # noqa: F405
+        if OPENSEARCH_LOGGING_USER  # noqa: F405
+        else None
+    )
+    _prod_default_handlers = ["console"] + (
+        ["opensearch"] if _opensearch_handler_enabled else []
+    )
+
     LOGGING = {
         "version": 1,
         "disable_existing_loggers": True,
@@ -196,24 +230,74 @@ if env.bool("USE_SENTRY", default=False):
                 "formatter": "simple",
                 "encoding": "utf-8",
             },
+            # Override Django's default AdminEmailHandler (registered in
+            # django.utils.log.DEFAULT_LOGGING) so that ERROR-level log
+            # records from the "django" logger (e.g. django.request 500s)
+            # are not emailed to ADMINS. The application should not report
+            # errors via email; errors are reported via Sentry instead.
+            "mail_admins": {
+                "level": "ERROR",
+                "class": "logging.NullHandler",
+            },
+            # OpenSearch handler. Inactive (no-op) unless
+            # ``USE_OPENSEARCH_LOGGING=True`` and at least one host is set.
+            "opensearch": {
+                "level": OPENSEARCH_LOGGING_LEVEL,  # noqa: F405
+                "class": "config.logging_handlers.OpenSearchLogHandler",
+                "hosts": (
+                    OPENSEARCH_LOGGING_HOSTS  # noqa: F405
+                    if _opensearch_handler_enabled  # noqa: F405
+                    else []
+                ),
+                "index": OPENSEARCH_LOGGING_INDEX,  # noqa: F405
+                "index_date_format": OPENSEARCH_LOGGING_INDEX_DATE_FORMAT,  # noqa: F405
+                "http_auth": _opensearch_http_auth,  # noqa: F405
+                "use_ssl": OPENSEARCH_LOGGING_USE_SSL,  # noqa: F405
+                "verify_certs": OPENSEARCH_LOGGING_VERIFY_CERTS,  # noqa: F405
+                "extra_fields": {
+                    "service": "scielo-core",
+                    "environment": OPENSEARCH_LOGGING_ENVIRONMENT,  # noqa: F405
+                },
+            },
         },
-        "root": {"level": "INFO", "handlers": ["console"]},
+        "root": {"level": "INFO", "handlers": _prod_default_handlers},
         "loggers": {
             "django.db.backends": {
                 "level": "ERROR",
-                "handlers": ["console"],
+                "handlers": _prod_default_handlers,
+                "propagate": False,
+            },
+            # Celery runtime/task lifecycle logs. ``celery.app.trace`` emits
+            # execution failures from task bodies.
+            "celery": {
+                "level": "INFO",
+                "handlers": _prod_default_handlers,
+                "propagate": False,
+            },
+            "celery.app.trace": {
+                "level": "ERROR",
+                "handlers": _prod_default_handlers,
+                "propagate": False,
+            },
+            "celery.worker": {
+                "level": "INFO",
+                "handlers": _prod_default_handlers,
                 "propagate": False,
             },
             # Errors logged by the SDK itself
-            "sentry_sdk": {"level": "ERROR", "handlers": ["console"], "propagate": False},
+            "sentry_sdk": {
+                "level": "ERROR",
+                "handlers": _prod_default_handlers,
+                "propagate": False,
+            },
             "django.security.DisallowedHost": {
                 "level": "ERROR",
-                "handlers": ["console"],
+                "handlers": _prod_default_handlers,
                 "propagate": False,
             },
             # Celery Signals
             "config.celery_signals": {
-                "handlers": ["console"],
+                "handlers": _prod_default_handlers,
                 "level": "DEBUG", # ESSENCIAL: para ver a mensagem de depuração
                 "propagate": False, # Não envie para o logger pai (root), para ter controle total
             },

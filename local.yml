@@ -83,6 +83,45 @@ services:
     ports:
       - "6399:6379"
 
+  # OpenSearch — sink opcional para os logs estruturados da aplicação.
+  # Habilite em ``.envs/.local/.django`` com ``USE_OPENSEARCH_LOGGING=yes``
+  # para que o handler ``OpenSearchLogHandler`` envie os logs para cá.
+  # Configurado como single-node, com a camada de segurança desabilitada
+  # para uso somente em desenvolvimento (NÃO usar em produção).
+  opensearch:
+    image: opensearchproject/opensearch:2.15.0
+    container_name: scielo_core_local_opensearch
+    environment:
+      - cluster.name=scielo-core-local
+      - node.name=opensearch
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      - "DISABLE_SECURITY_PLUGIN=true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    ports:
+      - "9209:9200"
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.15.0
+    container_name: scielo_core_local_opensearch_dashboards
+    depends_on:
+      - opensearch
+    environment:
+      - 'OPENSEARCH_HOSTS=["http://opensearch:9200"]'
+      - "DISABLE_SECURITY_DASHBOARDS_PLUGIN=true"
+    ports:
+      - "5609:5601"
+
 
   celeryworker:
     <<: *django
@@ -116,3 +155,4 @@ services:
 
 volumes:
   tmp_csv_data:
+  opensearch_data:
