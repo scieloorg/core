@@ -29,7 +29,7 @@
                     <div class="language">
                         <div class="scielo__language">
                             <div class="dropdown">
-                                <button type="button" class="btn btn-sm btn-secondary scielo__btn-with-icon--left dropdown-toggle mb-0 float-end mt-1" data-bs-toggle="dropdown" aria-expanded="false">
+                                <button type="button" class="btn btn-sm btn-secondary scielo__btn-with-icon--left dropdown-toggle mb-0 float-end mt-1" style="border: 1px solid #ced4da !important; border-radius: 0.25rem;" data-bs-toggle="dropdown" aria-expanded="false">
                                     <span class="material-icons-outlined">language</span>
                                     {% get_language_info for page.locale.language_code as current_lang %}
                                     <span class="d-lg-none">{{ page.locale.language_code }}</span>
