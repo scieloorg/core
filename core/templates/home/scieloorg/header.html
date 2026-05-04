@@ -21,18 +21,34 @@
                         <span class="material-icons-outlined">info</span> {% trans 'About SciELO' %}
                         </a>
                     </li>
-
-                    {% if page %}
-                        {% for translation in page.get_translations.live %}
-                            {% get_language_info for translation.locale.language_code as lang %}
-                            <li>
-                            <a href="{% pageurl translation %}" rel="alternate" hreflang="{{ language_code }}">
-                                {{ lang.name_local }}
-                            </a>
-                            </li>
-                        {% endfor %}
-                    {% endif %}
                 </ul>
+            </div>
+
+            <div class="col-auto d-flex justify-content-end align-items-center">
+                {% if page %}
+                    <div class="language">
+                        <div class="scielo__language">
+                            <div class="dropdown">
+                                <button type="button" class="btn btn-sm btn-secondary scielo__btn-with-icon--left dropdown-toggle mb-0 float-end mt-1" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="material-icons-outlined">language</span>
+                                    {% get_language_info for page.locale.language_code as current_lang %}
+                                    <span class="d-lg-none">{{ page.locale.language_code }}</span>
+                                    <span class="d-none d-lg-block">{{current_lang.name_translated}}</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    {% for translation in page.get_translations.live %}
+                                        {% get_language_info for translation.locale.language_code as lang %}
+                                        <li>
+                                            <a class="dropdown-item" href="{% pageurl translation %}" lang="{{ lang.code }}" rel="alternate" hreflang="{{ translation.locale.language_code }}">
+                                               {% trans lang.name_translated %}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
