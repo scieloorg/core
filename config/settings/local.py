@@ -22,6 +22,18 @@ CACHES = {
         "LOCATION": "redis://redis:6379",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "CONNECTION_POOL_CLASS": "redis.BlockingConnectionPool",
+            "CONNECTION_POOL_KWARGS": {
+                "max_connections": env.int("REDIS_CACHE_MAX_CONNECTIONS", default=20),
+                "timeout": env.int("REDIS_CACHE_POOL_TIMEOUT", default=2),
+                "health_check_interval": env.int(
+                    "REDIS_HEALTH_CHECK_INTERVAL", default=30
+                ),
+            },
+            "SOCKET_CONNECT_TIMEOUT": env.int(
+                "REDIS_SOCKET_CONNECT_TIMEOUT", default=2
+            ),
+            "SOCKET_TIMEOUT": env.int("REDIS_SOCKET_TIMEOUT", default=2),
         }
     }
 }
