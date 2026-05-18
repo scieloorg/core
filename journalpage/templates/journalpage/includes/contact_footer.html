@@ -28,7 +28,7 @@
           <span>
             {% trans 'Acompanhe os números deste periódico no seu leitor de RSS' %}
           </span>
-            {% for sn in journal.social_networks %}
+            {% for sn in journal.social_networks.all %}
                 <a href="{{sn.account}}" data-toggle="tooltip" title="{{sn.network|title}}">
                     <span
                         {% if network == 'twitter' %}
