@@ -173,7 +173,8 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
     def role_names(self):
         return [
             role.role_name
-            for role in self.role_editorial_board.filter(role__role__isnull=False)
+            for role in self.role_editorial_board.all()
+            if role.role_id is not None
         ]
 
     @staticmethod
@@ -283,7 +284,7 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
             )
         for member in editorial_board_members:
             member_role = member.role_editorial_board.filter(
-                role__role__std_role__isnull=False
+                role__std_role__isnull=False
             ).order_by("-initial_year").first()
             researcher = member.researcher
             editorial_board_by_latest_role[member_role.role_name].append(researcher.data)
