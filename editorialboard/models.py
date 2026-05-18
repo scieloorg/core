@@ -26,10 +26,14 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
         Journal, related_name="editorial_board_member_journal", null=True
     )
     researcher = models.ForeignKey(
-        NewResearcher, null=True, blank=True, related_name="+", on_delete=models.SET_NULL
+        NewResearcher,
+        null=True,
+        blank=True,
+        related_name="+",
+        on_delete=models.SET_NULL,
     )
     image = models.ForeignKey(
-        "wagtailimages.Image", 
+        "wagtailimages.Image",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -37,7 +41,7 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
         help_text=_("Upload a profile photo of the editorial board member."),
     )
     area = models.TextField(null=True, blank=True)
-    
+
     # Manual input fields for creating/updating researcher data
     manual_given_names = models.CharField(
         _("Given names"),
@@ -116,7 +120,7 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
         null=True,
         help_text=_("Enter email address"),
     )
-    
+
     class Meta:
         unique_together = [("journal", "researcher")]
         indexes = [
@@ -165,8 +169,14 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
         if self.researcher:
             return f"{self.researcher.fullname} {', '.join(self.role_names)}"
         elif self.manual_given_names or self.manual_last_name:
-            name = f"{self.manual_given_names or ''} {self.manual_last_name or ''}".strip()
-            return f"{name} {', '.join(self.role_names)}" if name else "Editorial Board Member"
+            name = (
+                f"{self.manual_given_names or ''} {self.manual_last_name or ''}".strip()
+            )
+            return (
+                f"{name} {', '.join(self.role_names)}"
+                if name
+                else "Editorial Board Member"
+            )
         return "Editorial Board Member"
 
     @property
@@ -179,8 +189,10 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
 
     @staticmethod
     def autocomplete_custom_queryset_filter(search_term):
-        return EditorialBoardMember.objects.filter(researcher__fullname__icontains=search_term).prefetch_related("researcher")
-    
+        return EditorialBoardMember.objects.filter(
+            researcher__fullname__icontains=search_term
+        ).prefetch_related("researcher")
+
     def autocomplete_label(self):
         return str(self)
 
@@ -195,8 +207,10 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
             researcher=researcher,
         )
         if researcher and journal:
-                return cls.objects.get(**params)
-        raise ValueError("EditorialBoardMember._get requires journal and researcher and role")
+            return cls.objects.get(**params)
+        raise ValueError(
+            "EditorialBoardMember._get requires journal and researcher and role"
+        )
 
     @classmethod
     def _create(
@@ -215,21 +229,25 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
                 return obj
             except IntegrityError:
                 return cls._get(journal, researcher)
-        raise ValueError("EditorialBoardMember._create requires journal and researcher and role")
+        raise ValueError(
+            "EditorialBoardMember._create requires journal and researcher and role"
+        )
 
     @classmethod
     def _create_or_update(
         cls,
         user,
         journal,
-        researcher, 
+        researcher,
     ):
         if researcher and journal:
             try:
                 return cls._get(journal, researcher)
             except cls.DoesNotExist:
                 return cls._create(user, journal, researcher)
-        raise ValueError("EditorialBoardMember._create requires journal and researcher and journal")
+        raise ValueError(
+            "EditorialBoardMember._create requires journal and researcher and journal"
+        )
 
     @classmethod
     def create_or_update(
@@ -242,7 +260,7 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
         editorial_board_initial_year=None,
         editorial_board_final_year=None,
     ):
-        
+
         role = None
         if std_role or declared_role:
             role = RoleModel.create_or_update(
@@ -276,18 +294,21 @@ class EditorialBoardMember(CommonControlField, ClusterableModel, Orderable):
     @classmethod
     def get_editorial_board_with_role(cls, journal):
         editorial_board_by_latest_role = {}
-        editorial_board_members = cls.objects.filter(journal=journal) \
-            .prefetch_related(
-                "role_editorial_board",
-                "researcher__orcid",
-                "researcher__affiliation__location"
-            )
+        editorial_board_members = cls.objects.filter(journal=journal).prefetch_related(
+            "role_editorial_board",
+            "researcher__orcid",
+            "researcher__affiliation__location",
+        )
         for member in editorial_board_members:
-            member_role = member.role_editorial_board.filter(
-                role__std_role__isnull=False
-            ).order_by("-initial_year").first()
+            member_role = (
+                member.role_editorial_board.filter(role__std_role__isnull=False)
+                .order_by("-initial_year")
+                .first()
+            )
             researcher = member.researcher
-            editorial_board_by_latest_role[member_role.role_name].append(researcher.data)
+            editorial_board_by_latest_role[member_role.role_name].append(
+                researcher.data
+            )
         return editorial_board_by_latest_role
 
 
@@ -324,7 +345,7 @@ class RoleEditorialBoard(CommonControlField, Orderable):
         role,
         initial_year,
         final_year,
-        ):
+    ):
         params = dict(
             editorial_board=editorial_board_member,
             role=role,
@@ -333,8 +354,10 @@ class RoleEditorialBoard(CommonControlField, Orderable):
         )
         if editorial_board_member and role:
             return cls.objects.get(**params)
-        raise ValueError("RoleEditorialBoard.get requires editorial_board_member and role")
-    
+        raise ValueError(
+            "RoleEditorialBoard.get requires editorial_board_member and role"
+        )
+
     @classmethod
     def create(
         cls,
@@ -342,7 +365,7 @@ class RoleEditorialBoard(CommonControlField, Orderable):
         role,
         initial_year,
         final_year,
-        ):
+    ):
         obj = cls()
         obj.editorial_board = editorial_board_member
         obj.role = role
@@ -358,7 +381,7 @@ class RoleEditorialBoard(CommonControlField, Orderable):
         role,
         initial_year,
         final_year,
-        ):
+    ):
         try:
             return cls.get(editorial_board_member, role, initial_year, final_year)
         except cls.DoesNotExist:
@@ -470,7 +493,7 @@ class RoleModel(CommonControlField):
                 obj.std_role = std_role
                 obj.save()
                 return obj
-            except IntegrityError as e:
+            except IntegrityError:
                 return cls.objects.get(declared_role=declared_role, std_role=std_role)
 
         raise ValueError("RoleModel.create requires declared_role or std_role")
