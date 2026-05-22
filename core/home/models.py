@@ -19,7 +19,6 @@ from wagtailcaptcha.models import WagtailCaptchaEmailForm
 
 from collection.models import Collection
 from core.home.utils.get_social_networks import get_social_networks
-from journal.choices import STUDY_AREA
 from journal.models import OwnerHistory, SciELOJournal
 
 SCIELO_STATUS_CHOICES = ["C", "D", "S"]
@@ -109,6 +108,7 @@ class HomePageSponsor(Orderable):
     Modelo para armazenar patrocinadores (logos) do footer da HomePage.
     Permite adicionar múltiplos patrocinadores com ordem personalizada.
     """
+
     page = ParentalKey(
         "HomePage",
         on_delete=models.CASCADE,
@@ -171,7 +171,11 @@ class HomePage(Page):
     ]
 
     content_panels = Page.content_panels + [
-        InlinePanel("sponsors", label=_("Footer Sponsors"), heading=_("Patrocinadores do Footer")),
+        InlinePanel(
+            "sponsors",
+            label=_("Footer Sponsors"),
+            heading=_("Patrocinadores do Footer"),
+        ),
     ]
 
     def get_context(self, request, *args, **kwargs):
@@ -335,14 +339,14 @@ class BibliographicReferenceBlock(blocks.StructBlock):
     reference = blocks.RichTextBlock(
         required=True,
         label=_("Referência Bibliográfica"),
-        help_text=_("Digite a referência bibliográfica completa")
+        help_text=_("Digite a referência bibliográfica completa"),
     )
     icon = ImageBlock(
         required=False,
         label=_("Ícone"),
-        help_text=_("Selecione um ícone para exibir ao lado da referência")
+        help_text=_("Selecione um ícone para exibir ao lado da referência"),
     )
-    
+
     class Meta:
         icon = "doc-full"
         label = _("Referência Bibliográfica")
@@ -350,7 +354,7 @@ class BibliographicReferenceBlock(blocks.StructBlock):
 
 
 class AboutScieloOrgPage(Page):
-    subpage_types = ["home.AboutScieloOrgPage"]
+    subpage_types = ["home.AboutScieloOrgPage", "home.FreePage"]
 
     body = RichTextField(_("Body"), blank=True)
     external_link = models.URLField(
@@ -445,7 +449,9 @@ class FormPage(WagtailCaptchaEmailForm):
                     return JsonResponse(
                         {
                             "alert": "error",
-                            "message": _("Erro ao tentar enviar o <strong>formulário!</strong> Verifique os campos obrigatórios. Errors: %s")
+                            "message": _(
+                                "Erro ao tentar enviar o <strong>formulário!</strong> Verifique os campos obrigatórios. Errors: %s"
+                            )
                             % form.errors,
                         }
                     )
@@ -484,3 +490,38 @@ class FormPage(WagtailCaptchaEmailForm):
             "Email",
         ),
     ]
+
+
+class FreePage(Page):
+    embed = models.TextField(
+        _("Embed"),
+        null=True,
+        blank=True,
+        help_text=_(
+            "Embed content for the page, such as an iframe or other embed code."
+        ),
+    )
+    use_only_embed = models.BooleanField(
+        default=False,
+        verbose_name=_("Set only embed"),
+        help_text=_(
+            "If checked, the page will only display the embed content without the body text."
+        ),
+    )
+
+    content_panels = Page.content_panels + [
+        FieldPanel("embed", classname="full"),
+        FieldPanel("use_only_embed", classname="full"),
+    ]
+
+    @classmethod
+    def can_create_at(cls, parent):
+        from core.utils.thread_context import get_current_user
+        if not super().can_create_at(parent):
+            return False
+        user = get_current_user()
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return True
+        return user.groups.filter(name=settings.FREE_PAGE_TEAM).exists()
