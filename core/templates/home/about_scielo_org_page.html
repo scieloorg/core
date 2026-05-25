@@ -182,7 +182,16 @@
                     <p>{% trans "Nenhum resultado encontrado." %}</p>
                 {% endif %}
             {% else %}
-                {% if page.external_link %}
+                {% if page.content_type.model == 'freepage' %}
+                    {% if page.use_only_embed and page.embed %}
+                        {{ page.embed|safe }}
+                    {% else %}
+                        <h1>{{ page.title }}</h1>
+                        {% if page.embed %}
+                            <div class="mt-4">{{ page.embed|safe }}</div>
+                        {% endif %}
+                    {% endif %}
+                {% elif page.external_link %}
                     <script>
                   window.open("{{ page.external_link }}", "_blank");
                   window.location.href = "{{ page.external_link }}";

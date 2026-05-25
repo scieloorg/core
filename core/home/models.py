@@ -388,8 +388,15 @@ class AboutScieloOrgPage(Page):
         FieldPanel("updated"),
     ]
 
-    @staticmethod
-    def search_pages(request, context):
+    @classmethod
+    def get_searchable_page_models(cls):
+        """Tipos pesquisáveis: a própria página + subpage_types configurados."""
+        models = {cls}
+        models.update(cls.allowed_subpage_models())
+        return tuple(models)
+
+    @classmethod
+    def search_pages(cls, request, context):
         q = request.GET.get("q", "").strip()
         search_results = []
         if q:
@@ -398,8 +405,10 @@ class AboutScieloOrgPage(Page):
             except Locale.DoesNotExist:
                 locale = Locale.get_default()
             search_results = (
-                AboutScieloOrgPage.objects.live()
+                Page.objects.live()
+                .public()
                 .filter(locale=locale)
+                .type(*cls.get_searchable_page_models())
                 .filter(title__icontains=q)
             )
         context["q"] = q
@@ -493,6 +502,8 @@ class FormPage(WagtailCaptchaEmailForm):
 
 
 class FreePage(Page):
+    template = "home/about_scielo_org_page.html"
+
     embed = models.TextField(
         _("Embed"),
         null=True,
@@ -513,6 +524,12 @@ class FreePage(Page):
         FieldPanel("embed", classname="full"),
         FieldPanel("use_only_embed", classname="full"),
     ]
+
+    def get_context(self, request, *args, **kwargs):
+        context = super().get_context(request, *args, **kwargs)
+        _default_context(context)
+        AboutScieloOrgPage.search_pages(request, context)
+        return context
 
     @classmethod
     def can_create_at(cls, parent):
