@@ -7,8 +7,7 @@ from functools import cached_property
 
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
-from django.db.models import Q, Count, Min
-from django.db.utils import DataError
+from django.db.models import Count, Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django_prometheus.models import ExportModelOperationsMixin
@@ -16,38 +15,36 @@ from legendarium.formatter import descriptive_format
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from packtools.sps.formats import crossref, pmc, pubmed
+from packtools.sps.libs.requester import NonRetryableError
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre, generate_finger_print
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
-from packtools.sps.libs.requester import NonRetryableError
 
 from article import choices
 from article.utils.url_builder import ArticleURLBuilder
 from collection.models import Collection
 from core.forms import CoreAdminModelForm
-from core.models import CommonControlField  # Ajuste o import conforme sua estrutura
 from core.models import (
     BaseExporter,
     BaseLegacyRecord,
+    CharFieldLangMixin,
+    CommonControlField,
     FlexibleDate,
     Language,
     License,
     LicenseStatement,
     TextLanguageMixin,
-    CharFieldLangMixin,
 )
 from core.utils.utils import NonRetryableError, fetch_data
 from doi.models import DOI
 from doi_manager.models import CrossRefConfiguration
-from institution.models import Publisher, Sponsor
+from institution.models import Sponsor
 from issue.models import Issue, TableOfContents
-from journal.models import Journal, SciELOJournal
-from pid_provider.choices import PPXML_STATUS_DONE
+from journal.models import Journal
+from organization.models import NormAffiliation
 from pid_provider.models import PidProviderXML
 from pid_provider.provider import PidProvider
-from location.models import Location
-from organization.models import Organization, NormAffiliation
 from researcher.models import AffiliationMixin, CollabMixin, ResearchNameMixin
 from tracker.models import BaseEvent, EventSaveError, UnexpectedEvent
 from vocabulary.models import Keyword
@@ -55,15 +52,21 @@ from vocabulary.models import Keyword
 
 class RequestXMLException(Exception):
     """Exceção personalizada para erros na requisição de XML"""
+
     pass
+
 
 class XMLException(Exception):
     """Exceção personalizada para erros na requisição de XML"""
+
     pass
+
 
 class UnableToRegisterPIDError(Exception):
     """Exceção personalizada para erros ao registrar PID"""
+
     pass
+
 
 class AMArticle(BaseLegacyRecord):
     """
@@ -196,7 +199,7 @@ class Article(
         max_length=255,
         null=True,
         blank=True,
-        help_text=_("Armazena valores inválidos recebidos do XML")
+        help_text=_("Armazena valores inválidos recebidos do XML"),
     )
 
     peer_review_stats = models.JSONField(
@@ -210,21 +213,21 @@ class Article(
         max_length=10,
         null=True,
         blank=True,
-        help_text=_("Preprint publication date in ISO format (YYYY-MM-DD)")
+        help_text=_("Preprint publication date in ISO format (YYYY-MM-DD)"),
     )
     received_dateiso = models.CharField(
         _("Received Date (ISO)"),
         max_length=10,
         null=True,
         blank=True,
-        help_text=_("Date the article was received, in ISO format (YYYY-MM-DD)")
+        help_text=_("Date the article was received, in ISO format (YYYY-MM-DD)"),
     )
     accepted_dateiso = models.CharField(
         _("Accepted Date (ISO)"),
         max_length=10,
         null=True,
         blank=True,
-        help_text=_("Date the article was accepted, in ISO format (YYYY-MM-DD)")
+        help_text=_("Date the article was accepted, in ISO format (YYYY-MM-DD)"),
     )
     days_preprint_to_received = models.IntegerField(null=True, blank=True)
     days_received_to_accepted = models.IntegerField(null=True, blank=True)
@@ -852,7 +855,11 @@ class Article(
             params["fmt__in"] = ["html", "pdf"]
         if collection_acron_list:
             params["collection__acron3__in"] = collection_acron_list
-        for item in self.article_availability.filter(lang__isnull=False, **params).select_related('collection', 'lang').distinct():
+        for item in (
+            self.article_availability.filter(lang__isnull=False, **params)
+            .select_related("collection", "lang")
+            .distinct()
+        ):
             acron3 = item.collection.acron3
             code2 = item.lang.code2
             fmt = item.fmt
@@ -865,7 +872,9 @@ class Article(
     def add_event(self, user, name):
         return ArticleEvent.create(user, self, name)
 
-    def add_related_article(self, user, href, ext_link_type, related_type, related_article=None):
+    def add_related_article(
+        self, user, href, ext_link_type, related_type, related_article=None
+    ):
         return RelatedArticle.create_or_update(
             user,
             self,
@@ -935,7 +944,7 @@ class Article(
             .filter(count__gt=1)
             .values_list("sps_pkg_name", flat=True)
         )
-    
+
     @classmethod
     def find_duplicated_pid_v2(cls, journal=None, journal_id=None):
         # Busca em ambos os campos de ISSN
@@ -956,7 +965,14 @@ class Article(
         )
 
     @classmethod
-    def deduplicate_items(cls, user, journal=None, journal_id=None, mark_as_duplicated=False, deduplicate=False):
+    def deduplicate_items(
+        cls,
+        user,
+        journal=None,
+        journal_id=None,
+        mark_as_duplicated=False,
+        deduplicate=False,
+    ):
         """
         Corrige todos os artigos marcados como DATA_STATUS_DUPLICATED com base nos ISSNs fornecidos.
 
@@ -964,9 +980,7 @@ class Article(
             issns: Lista de ISSNs para verificar duplicatas.
             user: Usuário que está executando a operação.
         """
-        article_duplicated_pid_v2 = cls.find_duplicated_pid_v2(
-            journal, journal_id
-        )
+        article_duplicated_pid_v2 = cls.find_duplicated_pid_v2(journal, journal_id)
         if article_duplicated_pid_v2.exists():
             if mark_as_duplicated:
                 cls.objects.filter(pid_v2__in=article_duplicated_pid_v2).exclude(
@@ -983,9 +997,9 @@ class Article(
         )
         if article_duplicated_pkg_names.exists():
             if mark_as_duplicated:
-                cls.objects.filter(sps_pkg_name__in=article_duplicated_pkg_names).exclude(
-                    data_status=choices.DATA_STATUS_DUPLICATED
-                ).update(
+                cls.objects.filter(
+                    sps_pkg_name__in=article_duplicated_pkg_names
+                ).exclude(data_status=choices.DATA_STATUS_DUPLICATED).update(
                     data_status=choices.DATA_STATUS_DUPLICATED,
                 )
             if deduplicate:
@@ -1072,7 +1086,6 @@ class DataAvailabilityStatement(CharFieldLangMixin, CommonControlField):
             return obj
         except cls.DoesNotExist:
             return cls.create(user, article, language, text)
-
 
     @classmethod
     def get(
@@ -1475,7 +1488,6 @@ def article_directory_path(instance, filename):
 
 
 class ArticleFormat(CommonControlField):
-
     article = ParentalKey(
         Article,
         null=True,
@@ -1582,7 +1594,7 @@ class ArticleFormat(CommonControlField):
         if finger_print != self.finger_print:
             try:
                 self.file.delete()
-            except Exception as e:
+            except Exception:
                 pass
             self.file.save(filename, ContentFile(content))
             self.finger_print = finger_print
@@ -1801,7 +1813,15 @@ class ArticleSource(CommonControlField):
         raise ValueError("ArticleSource.get requires url")
 
     @classmethod
-    def create(cls, user, url=None, source_date=None, am_article=None, force_update=None, auto_solve_pid_conflict=False):
+    def create(
+        cls,
+        user,
+        url=None,
+        source_date=None,
+        am_article=None,
+        force_update=None,
+        auto_solve_pid_conflict=False,
+    ):
         if not url:
             raise ValueError("ArticleSource.create requires url")
 
@@ -1812,14 +1832,22 @@ class ArticleSource(CommonControlField):
             obj.source_date = source_date
             obj.am_article = am_article
             obj.status = cls.StatusChoices.PENDING
-            obj.add_pid_provider(user, force_update, auto_solve_pid_conflict=auto_solve_pid_conflict)
+            obj.add_pid_provider(
+                user, force_update, auto_solve_pid_conflict=auto_solve_pid_conflict
+            )
             return obj
         except IntegrityError:
             return cls.get(url=url)
 
     @classmethod
     def create_or_update(
-        cls, user, url=None, source_date=None, am_article=None, force_update=None, auto_solve_pid_conflict=False
+        cls,
+        user,
+        url=None,
+        source_date=None,
+        am_article=None,
+        force_update=None,
+        auto_solve_pid_conflict=False,
     ):
         try:
             logging.info(
@@ -1834,7 +1862,9 @@ class ArticleSource(CommonControlField):
                 obj.updated_by = user
                 obj.source_date = source_date
                 obj.am_article = am_article
-                obj.add_pid_provider(user, force_update, auto_solve_pid_conflict=auto_solve_pid_conflict)
+                obj.add_pid_provider(
+                    user, force_update, auto_solve_pid_conflict=auto_solve_pid_conflict
+                )
             return obj
         except cls.DoesNotExist:
             return cls.create(
@@ -1843,7 +1873,7 @@ class ArticleSource(CommonControlField):
                 source_date=source_date,
                 am_article=am_article,
                 force_update=force_update,
-                auto_solve_pid_conflict=auto_solve_pid_conflict
+                auto_solve_pid_conflict=auto_solve_pid_conflict,
             )
 
     @cached_property
@@ -1856,12 +1886,12 @@ class ArticleSource(CommonControlField):
         if self.file and self.file.path and os.path.isfile(self.file.path):
             try:
                 return XMLWithPre.from_file(self.file.path)
-            except Exception as e:
+            except Exception:
                 pass
         if self.url:
             try:
                 return list(XMLWithPre.create(uri=self.url))[0]
-            except Exception as e:
+            except Exception:
                 pass
 
     @cached_property
@@ -1879,16 +1909,15 @@ class ArticleSource(CommonControlField):
         try:
             xml_with_pre = list(XMLWithPre.create(uri=self.url))[0]
             self.save_file(
-                f"{xml_with_pre.sps_pkg_name}.xml", xml_with_pre.tostring(pretty_print=True)
+                f"{xml_with_pre.sps_pkg_name}.xml",
+                xml_with_pre.tostring(pretty_print=True),
             )
         except NonRetryableError as e:
             raise RequestXMLException(
                 f"Non-retryable error while requesting XML: {e}"
             ) from e
         except Exception as e:
-            raise XMLException(
-                f"Error while requesting XML: {e}"
-            ) from e
+            raise XMLException(f"Error while requesting XML: {e}") from e
 
     def save_file(self, filename, content):
         try:
@@ -1989,11 +2018,15 @@ class ArticleSource(CommonControlField):
     @property
     def is_completed(self):
         if not self.pid_provider_xml:
-            logging.info(f"Not completed: ArticleSource {self.url} has no pid_provider_xml")
+            logging.info(
+                f"Not completed: ArticleSource {self.url} has no pid_provider_xml"
+            )
             return False
         try:
             if not self.pid_provider_xml.xml_with_pre:
-                logging.info(f"Not completed: ArticleSource {self.url} has pid_provider_xml but no xml_with_pre")
+                logging.info(
+                    f"Not completed: ArticleSource {self.url} has pid_provider_xml but no xml_with_pre"
+                )
                 return False
         except Exception:
             pass
@@ -2004,7 +2037,9 @@ class ArticleSource(CommonControlField):
             logging.info(f"Not completed: ArticleSource {self.url} has no file")
             return False
         if not self.file.path or not os.path.isfile(self.file.path):
-            logging.info(f"Not completed: ArticleSource {self.url} has file path invalid or file does not exist")
+            logging.info(
+                f"Not completed: ArticleSource {self.url} has file path invalid or file does not exist"
+            )
             return False
         if self.status != ArticleSource.StatusChoices.COMPLETED:
             self.status = ArticleSource.StatusChoices.COMPLETED
@@ -2033,9 +2068,7 @@ class ArticleSource(CommonControlField):
 
             # --- Etapa 1: request_xml ---
             has_valid_file = (
-                self.file
-                and self.file.name
-                and os.path.isfile(self.file.path)
+                self.file and self.file.name and os.path.isfile(self.file.path)
             )
 
             if force_update or not has_valid_file:
@@ -2053,16 +2086,11 @@ class ArticleSource(CommonControlField):
 
             if force_update or not has_pid_provider:
                 logging.info(f"Requesting PID for {self.url}")
-                self.request_pid(
-                    user, detail, force_update, auto_solve_pid_conflict
-                )
-                logging.info(
-                    f"PID requested successfully for {self.pid_provider_xml}"
-                )
+                self.request_pid(user, detail, force_update, auto_solve_pid_conflict)
+                logging.info(f"PID requested successfully for {self.pid_provider_xml}")
             else:
                 logging.info(
-                    f"Skipping request_pid: pid_provider_xml already set "
-                    f"for {self.url}"
+                    f"Skipping request_pid: pid_provider_xml already set for {self.url}"
                 )
                 detail.append("request_pid skipped (pid_provider_xml already set)")
 
@@ -2319,24 +2347,25 @@ def check_url(url, timeout=None):
     try:
         fetch_data(url, timeout=timeout or 30)
         return True
-    except Exception as e:
+    except Exception:
         raise
 
 
 class ArticleAffiliation(AffiliationMixin, CommonControlField):
     """
     Represents an affiliation associated with an article.
-    
+
     Inherits from AffiliationMixin (which provides raw organization fields and
     organization FK) and CommonControlField (for audit fields).
     """
+
     article = ParentalKey(
         Article,
         on_delete=models.CASCADE,
         related_name="affiliations",
         verbose_name=_("Article"),
     )
-    
+
     # Raw level fields for organization division
     raw_level_1 = models.CharField(
         _("Raw Level 1"),
@@ -2359,7 +2388,7 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
         blank=True,
         help_text=_("Raw third level of organization division"),
     )
-    
+
     # Normalized affiliation reference
     normalized = models.ForeignKey(
         NormAffiliation,
@@ -2428,28 +2457,28 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
     def get(cls, article, organization=None, **kwargs):
         """
         Get an article affiliation by article and organization or other parameters.
-        
+
         Args:
             article: Article instance
             organization: Organization instance (optional)
-            **kwargs: Additional filter parameters including raw_level_1, raw_level_2, 
+            **kwargs: Additional filter parameters including raw_level_1, raw_level_2,
                      raw_level_3, normalized, and any raw organization fields
-            
+
         Returns:
             ArticleAffiliation instance
-            
+
         Raises:
             ValueError: If article is not provided
             cls.DoesNotExist: If no matching instance found
         """
         if not article:
             raise ValueError("ArticleAffiliation.get requires article parameter")
-        
+
         params = {"article": article}
         if organization:
             params["organization"] = organization
         params.update(kwargs)
-        
+
         try:
             return cls.objects.get(**params)
         except cls.MultipleObjectsReturned:
@@ -2459,41 +2488,41 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
     def create(cls, user, article, organization=None, **kwargs):
         """
         Create a new article affiliation.
-        
+
         Args:
             user: User creating the instance
             article: Article instance
             organization: Organization instance (optional)
             **kwargs: Additional field values including raw fields and level fields
-            
+
         Returns:
             New ArticleAffiliation instance
         """
         if not article:
             raise ValueError("ArticleAffiliation.create requires article parameter")
-        
+
         obj = cls()
         obj.article = article
         if organization:
             obj.organization = organization
-        
+
         # Set raw organization fields if provided (using parent class constant)
         for field in cls.RAW_ORGANIZATION_FIELDS:
             if field in kwargs:
                 setattr(obj, field, kwargs[field])
-        
+
         # Set raw level fields if provided
-        for field in ['raw_level_1', 'raw_level_2', 'raw_level_3']:
+        for field in ["raw_level_1", "raw_level_2", "raw_level_3"]:
             if field in kwargs:
                 setattr(obj, field, kwargs[field])
-        
+
         # Set normalized field if provided
-        if 'normalized' in kwargs:
-            obj.normalized = kwargs['normalized']
-        
+        if "normalized" in kwargs:
+            obj.normalized = kwargs["normalized"]
+
         if user:
             obj.creator = user
-        
+
         obj.save()
         return obj
 
@@ -2501,70 +2530,82 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
     def create_or_update(cls, user, article, organization=None, **kwargs):
         """
         Create a new article affiliation or update an existing one.
-        
+
         Lookup strategy (in priority order):
         1. If organization is provided, lookup by article + organization
         2. Otherwise, lookup by article + raw_text if provided
         3. Otherwise, lookup by article + raw_institution_name if provided
-        
+
         Args:
             user: User creating/updating the instance
             article: Article instance
             organization: Organization instance (optional, used for lookup)
             **kwargs: Additional field values including level fields
-            
+
         Returns:
             ArticleAffiliation instance (created or updated)
         """
         if not article:
-            raise ValueError("ArticleAffiliation.create_or_update requires article parameter")
-        
+            raise ValueError(
+                "ArticleAffiliation.create_or_update requires article parameter"
+            )
+
         try:
             # Build lookup parameters
             lookup_params = {"article": article}
             if organization:
                 lookup_params["organization"] = organization
-            elif 'raw_text' in kwargs and kwargs['raw_text']:
-                lookup_params["raw_text"] = kwargs['raw_text']
-            elif 'raw_institution_name' in kwargs and kwargs['raw_institution_name']:
-                lookup_params["raw_institution_name"] = kwargs['raw_institution_name']
-            
+            elif "raw_text" in kwargs and kwargs["raw_text"]:
+                lookup_params["raw_text"] = kwargs["raw_text"]
+            elif "raw_institution_name" in kwargs and kwargs["raw_institution_name"]:
+                lookup_params["raw_institution_name"] = kwargs["raw_institution_name"]
+
             obj = cls.get(**lookup_params)
-            
+
             # Update fields
             if organization:
                 obj.organization = organization
-            
+
             # Update raw organization fields (using parent class constant)
             for field in cls.RAW_ORGANIZATION_FIELDS:
                 if field in kwargs:
                     setattr(obj, field, kwargs[field])
-            
+
             # Update raw level fields
-            for field in ['raw_level_1', 'raw_level_2', 'raw_level_3']:
+            for field in ["raw_level_1", "raw_level_2", "raw_level_3"]:
                 if field in kwargs:
                     setattr(obj, field, kwargs[field])
-            
+
             # Update normalized field
-            if 'normalized' in kwargs:
-                obj.normalized = kwargs['normalized']
-            
+            if "normalized" in kwargs:
+                obj.normalized = kwargs["normalized"]
+
             if user:
                 obj.updated_by = user
-            
+
             obj.save()
             return obj
-            
-        except cls.DoesNotExist:
-            return cls.create(user=user, article=article, organization=organization, **kwargs)
 
-    def set_normalized(self, user, organization=None, location=None, level_1=None, level_2=None, level_3=None):
+        except cls.DoesNotExist:
+            return cls.create(
+                user=user, article=article, organization=organization, **kwargs
+            )
+
+    def set_normalized(
+        self,
+        user,
+        organization=None,
+        location=None,
+        level_1=None,
+        level_2=None,
+        level_3=None,
+    ):
         """
         Set the normalized affiliation for this article affiliation.
-        
+
         This method creates or retrieves a NormAffiliation instance and links it to
         this ArticleAffiliation.
-        
+
         Args:
             user: User performing the operation
             organization: Organization instance (optional)
@@ -2572,7 +2613,7 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
             level_1: First level of division (optional)
             level_2: Second level of division (optional)
             level_3: Third level of division (optional)
-            
+
         Returns:
             The updated ArticleAffiliation instance
         """
@@ -2592,23 +2633,29 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
     def update_normalized(self, user, **kwargs):
         """
         Update the normalized affiliation linked to this article affiliation.
-        
+
         If no normalized affiliation exists, creates one. If updating would violate
         the unique_together constraint, reuses an existing matching NormAffiliation.
-        
+
         Args:
             user: User performing the operation
-            **kwargs: Fields to update in NormAffiliation (organization, location, 
+            **kwargs: Fields to update in NormAffiliation (organization, location,
                      level_1, level_2, level_3)
-            
+
         Returns:
             The updated ArticleAffiliation instance
         """
         if self.normalized:
             # Check if we're updating any unique_together fields
-            unique_fields = ('organization', 'location', 'level_1', 'level_2', 'level_3')
+            unique_fields = (
+                "organization",
+                "location",
+                "level_1",
+                "level_2",
+                "level_3",
+            )
             updating_unique = any(field in kwargs for field in unique_fields)
-            
+
             if updating_unique:
                 # Build the target combination of unique_together values
                 target_values = {}
@@ -2617,17 +2664,20 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
                         target_values[field] = kwargs[field]
                     else:
                         target_values[field] = getattr(self.normalized, field, None)
-                
+
                 # Check if another NormAffiliation with this combination already exists
-                from django.db.models import Q
-                existing = NormAffiliation.objects.filter(
-                    organization=target_values['organization'],
-                    location=target_values['location'],
-                    level_1=target_values['level_1'],
-                    level_2=target_values['level_2'],
-                    level_3=target_values['level_3'],
-                ).exclude(pk=self.normalized.pk).first()
-                
+                existing = (
+                    NormAffiliation.objects.filter(
+                        organization=target_values["organization"],
+                        location=target_values["location"],
+                        level_1=target_values["level_1"],
+                        level_2=target_values["level_2"],
+                        level_3=target_values["level_3"],
+                    )
+                    .exclude(pk=self.normalized.pk)
+                    .first()
+                )
+
                 if existing:
                     # Reuse the existing NormAffiliation instead of updating
                     self.normalized = existing
@@ -2648,7 +2698,7 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
         else:
             # Create new normalized affiliation
             self.normalized = NormAffiliation.create(user=user, **kwargs)
-        
+
         self.updated_by = user
         self.save()
         return self
@@ -2656,10 +2706,10 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
     def clear_normalized(self, user):
         """
         Remove the link to the normalized affiliation.
-        
+
         Args:
             user: User performing the operation
-            
+
         Returns:
             The updated ArticleAffiliation instance
         """
@@ -2671,22 +2721,23 @@ class ArticleAffiliation(AffiliationMixin, CommonControlField):
 
 class ContribCollab(CollabMixin, CommonControlField):
     """
-    Represents a collaboration (research group or consortium) associated with 
+    Represents a collaboration (research group or consortium) associated with
     an article contributor's affiliation.
-    
+
     This model is used to track when contributors work as part of a larger
     collaboration, such as research groups, consortiums, or multi-institutional
-    initiatives. It links a collaboration name to a specific article and 
+    initiatives. It links a collaboration name to a specific article and
     optionally to an affiliation.
-    
+
     Use cases:
         - Research consortiums (e.g., "COVID-19 Research Network")
         - Multi-institutional research groups
         - Collaborative initiatives credited in publications
-    
+
     Inherits from CollabMixin (which provides the collab field) and
     CommonControlField (for audit fields).
     """
+
     article = ParentalKey(
         Article,
         on_delete=models.CASCADE,
@@ -2729,16 +2780,16 @@ class ContribCollab(CollabMixin, CommonControlField):
     def get(cls, article, collab, affiliation=None, **kwargs):
         """
         Get a contrib collab by article, collab, and affiliation or other parameters.
-        
+
         Args:
             article: Article instance (required)
             collab: Collaboration name (required)
             affiliation: ArticleAffiliation instance (optional)
             **kwargs: Additional filter parameters
-            
+
         Returns:
             ContribCollab instance
-            
+
         Raises:
             ValueError: If article or collab is not provided
             cls.DoesNotExist: If no matching instance found
@@ -2747,12 +2798,12 @@ class ContribCollab(CollabMixin, CommonControlField):
             raise ValueError("ContribCollab.get requires article parameter")
         if not collab:
             raise ValueError("ContribCollab.get requires collab parameter")
-        
+
         params = {"article": article, "collab": collab}
         if affiliation:
             params["affiliation"] = affiliation
         params.update(kwargs)
-        
+
         try:
             return cls.objects.get(**params)
         except cls.MultipleObjectsReturned:
@@ -2762,17 +2813,17 @@ class ContribCollab(CollabMixin, CommonControlField):
     def create(cls, user, article, collab, affiliation=None, **kwargs):
         """
         Create a new contrib collab.
-        
+
         Args:
             user: User creating the instance
             article: Article instance (required)
             collab: Collaboration name (required)
             affiliation: ArticleAffiliation instance (optional)
             **kwargs: Additional field values
-            
+
         Returns:
             New ContribCollab instance
-            
+
         Raises:
             ValueError: If article or collab is not provided
         """
@@ -2780,21 +2831,21 @@ class ContribCollab(CollabMixin, CommonControlField):
             raise ValueError("ContribCollab.create requires article parameter")
         if not collab:
             raise ValueError("ContribCollab.create requires collab parameter")
-        
+
         obj = cls()
         obj.article = article
         obj.collab = collab
         if affiliation:
             obj.affiliation = affiliation
-        
+
         # Set any additional fields from kwargs
         for key, value in kwargs.items():
             if hasattr(obj, key):
                 setattr(obj, key, value)
-        
+
         if user:
             obj.creator = user
-        
+
         obj.save()
         return obj
 
@@ -2802,73 +2853,84 @@ class ContribCollab(CollabMixin, CommonControlField):
     def create_or_update(cls, user, article, collab, affiliation=None, **kwargs):
         """
         Create a new contrib collab or update an existing one.
-        
+
         Lookup strategy: Uses article + collab + affiliation (if provided) to find existing record.
         If a record exists with these identifiers, it will be updated. Otherwise, a new one is created.
-        
+
         Args:
             user: User creating/updating the instance
             article: Article instance (required)
             collab: Collaboration name (required)
             affiliation: ArticleAffiliation instance (optional, used for lookup)
             **kwargs: Additional field values
-            
+
         Returns:
             ContribCollab instance (created or updated)
-            
+
         Raises:
             ValueError: If article or collab is not provided
         """
         if not article:
-            raise ValueError("ContribCollab.create_or_update requires article parameter")
+            raise ValueError(
+                "ContribCollab.create_or_update requires article parameter"
+            )
         if not collab:
             raise ValueError("ContribCollab.create_or_update requires collab parameter")
-        
+
         try:
             # Build lookup parameters
             lookup_params = {"article": article, "collab": collab}
             if affiliation:
                 lookup_params["affiliation"] = affiliation
-            
-            obj = cls.get(article=article, collab=collab, affiliation=affiliation, **kwargs)
-            
+
+            obj = cls.get(
+                article=article, collab=collab, affiliation=affiliation, **kwargs
+            )
+
             # Update fields
             if affiliation is not None:
                 obj.affiliation = affiliation
-            
+
             # Update any additional fields from kwargs
             for key, value in kwargs.items():
                 if hasattr(obj, key):
                     setattr(obj, key, value)
-            
+
             if user:
                 obj.updated_by = user
-            
+
             obj.save()
             return obj
-            
+
         except cls.DoesNotExist:
-            return cls.create(user=user, article=article, collab=collab, affiliation=affiliation, **kwargs)
+            return cls.create(
+                user=user,
+                article=article,
+                collab=collab,
+                affiliation=affiliation,
+                **kwargs,
+            )
 
 
 class ContribPerson(ResearchNameMixin, CommonControlField):
     """
     Represents a person contributor associated with an article.
-    
+
     This model tracks individual contributors to an article, including their
     personal information (name, ORCID, email) and affiliation details.
-    
+
     Inherits from ResearchNameMixin (which provides name-related fields like
     given_names, last_name, suffix, fullname, declared_name) and CommonControlField
     (for audit fields).
     """
+
     article = ParentalKey(
         Article,
         on_delete=models.CASCADE,
         related_name="contrib_persons",
         verbose_name=_("Article"),
     )
-    
+
     affiliation = models.ForeignKey(
         ArticleAffiliation,
         on_delete=models.SET_NULL,
@@ -2877,7 +2939,7 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         related_name="contrib_persons",
         verbose_name=_("Affiliation"),
     )
-    
+
     orcid = models.CharField(
         _("ORCID"),
         max_length=19,  # ORCID format: 0000-0002-1825-0097 (19 chars: 16 digits + 3 hyphens)
@@ -2885,14 +2947,14 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         blank=True,
         help_text=_("ORCID identifier (e.g., 0000-0002-1825-0097)"),
     )
-    
+
     email = models.EmailField(
         _("Email"),
         max_length=254,
         null=True,
         blank=True,
     )
-    
+
     panels = [
         AutocompletePanel("article"),
         FieldPanel("declared_name"),
@@ -2904,16 +2966,16 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         FieldPanel("email"),
         AutocompletePanel("affiliation"),
     ]
-    
+
     base_form_class = CoreAdminModelForm
-    
+
     class Meta:
         indexes = [
             models.Index(fields=["article"]),
             models.Index(fields=["affiliation"]),
             models.Index(fields=["orcid"]),
         ]
-    
+
     def __str__(self):
         parts = [str(self.article)]
         if self.names:
@@ -2921,65 +2983,80 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         if self.affiliation:
             parts.append(str(self.affiliation))
         return " - ".join(parts)
-    
+
     def get_formatted_fullname(self, use_comma_separator=True, suffix_position="end"):
         """
         Get formatted full name from name components.
-        
+
         Args:
             use_comma_separator: If True, adds comma separator after last_name and other parts (default: True)
             suffix_position: Position of suffix - "end" for "last_name, suffix, given_names" (default)
                            or "after_given" for "last_name, given_names, suffix"
-        
+
         Returns:
             Formatted name string or None if no name components available
-            
+
         Raises:
             ValueError: If suffix_position is not "end" or "after_given"
         """
         if suffix_position not in ("end", "after_given"):
-            raise ValueError(f"suffix_position must be 'end' or 'after_given', got '{suffix_position}'")
-        
+            raise ValueError(
+                f"suffix_position must be 'end' or 'after_given', got '{suffix_position}'"
+            )
+
         if not any([self.last_name, self.given_names, self.suffix]):
             return None
-        
+
         parts = []
-        
+
         if self.last_name:
             parts.append(self.last_name)
-        
+
         if suffix_position == "end" and self.suffix:
             parts.append(self.suffix)
-        
+
         if self.given_names:
             parts.append(self.given_names)
-        
+
         if suffix_position == "after_given" and self.suffix:
             parts.append(self.suffix)
-        
+
         sep = ", " if use_comma_separator else " "
         return sep.join(parts)
-    
+
     @property
     def names(self):
         """
         Get the best available name representation.
-        
+
         Returns fullname if available, otherwise declared_name if available,
         otherwise returns formatted name from components without comma separators
         (e.g., "Silva Jr Paulo" instead of "Silva, Jr, Paulo").
-        
+
         Returns:
             Name string or None if no name information available
         """
-        return self.fullname or self.declared_name or self.get_formatted_fullname(use_comma_separator=False, suffix_position="end")
-    
+        return (
+            self.fullname
+            or self.declared_name
+            or self.get_formatted_fullname(
+                use_comma_separator=False, suffix_position="end"
+            )
+        )
+
     @classmethod
-    def get(cls, article, declared_name=None, orcid=None, given_names=None, 
-            last_name=None, suffix=None):
+    def get(
+        cls,
+        article,
+        declared_name=None,
+        orcid=None,
+        given_names=None,
+        last_name=None,
+        suffix=None,
+    ):
         """
         Get a contrib person by article and identifying parameters.
-        
+
         Args:
             article: Article instance (required)
             declared_name: Declared name of the person (optional)
@@ -2987,17 +3064,17 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             given_names: Given names (optional)
             last_name: Last name (optional)
             suffix: Name suffix (optional)
-            
+
         Returns:
             ContribPerson instance
-            
+
         Raises:
             ValueError: If article is not provided
             cls.DoesNotExist: If no matching instance found
         """
         if not article:
             raise ValueError("ContribPerson.get requires article parameter")
-        
+
         try:
             return cls.objects.get(
                 article=article,
@@ -3005,7 +3082,7 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
                 orcid=orcid,
                 given_names=given_names,
                 last_name=last_name,
-                suffix=suffix
+                suffix=suffix,
             )
         except cls.MultipleObjectsReturned:
             return cls.objects.filter(
@@ -3014,16 +3091,25 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
                 orcid=orcid,
                 given_names=given_names,
                 last_name=last_name,
-                suffix=suffix
+                suffix=suffix,
             ).first()
-    
+
     @classmethod
-    def create(cls, user, article, declared_name=None, given_names=None, 
-               last_name=None, suffix=None, orcid=None, email=None, 
-               affiliation=None):
+    def create(
+        cls,
+        user,
+        article,
+        declared_name=None,
+        given_names=None,
+        last_name=None,
+        suffix=None,
+        orcid=None,
+        email=None,
+        affiliation=None,
+    ):
         """
         Create a new contrib person.
-        
+
         Args:
             user: User creating the instance
             article: Article instance (required)
@@ -3034,16 +3120,16 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             orcid: ORCID identifier (optional)
             email: Email address (optional)
             affiliation: ArticleAffiliation instance (optional)
-            
+
         Returns:
             New ContribPerson instance
-            
+
         Raises:
             ValueError: If article is not provided
         """
         if not article:
             raise ValueError("ContribPerson.create requires article parameter")
-        
+
         obj = cls()
         obj.article = article
         if declared_name is not None:
@@ -3060,28 +3146,39 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             obj.email = email
         if affiliation is not None:
             obj.affiliation = affiliation
-        
+
         if user:
             obj.creator = user
-        
+
         try:
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(article, declared_name, orcid, given_names, last_name, suffix)
-    
+            return cls.get(
+                article, declared_name, orcid, given_names, last_name, suffix
+            )
+
     @classmethod
-    def create_or_update(cls, user, article, declared_name=None, given_names=None,
-                        last_name=None, suffix=None, orcid=None, email=None,
-                        affiliation=None):
+    def create_or_update(
+        cls,
+        user,
+        article,
+        declared_name=None,
+        given_names=None,
+        last_name=None,
+        suffix=None,
+        orcid=None,
+        email=None,
+        affiliation=None,
+    ):
         """
         Create a new contrib person or update an existing one.
-        
-        Lookup strategy: Uses article + declared_name + orcid + given_names + 
-        last_name + suffix (when provided) to find existing record. If a record 
-        exists with these identifiers, it will be updated. Otherwise, a new one 
+
+        Lookup strategy: Uses article + declared_name + orcid + given_names +
+        last_name + suffix (when provided) to find existing record. If a record
+        exists with these identifiers, it will be updated. Otherwise, a new one
         is created.
-        
+
         Args:
             user: User creating/updating the instance
             article: Article instance (required)
@@ -3092,19 +3189,21 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             orcid: ORCID identifier (optional)
             email: Email address (optional)
             affiliation: ArticleAffiliation instance (optional)
-            
+
         Returns:
             ContribPerson instance (created or updated)
-            
+
         Raises:
             ValueError: If article is not provided
         """
         if not article:
-            raise ValueError("ContribPerson.create_or_update requires article parameter")
-        
+            raise ValueError(
+                "ContribPerson.create_or_update requires article parameter"
+            )
+
         try:
             obj = cls.get(article, declared_name, orcid, given_names, last_name, suffix)
-            
+
             # Update fields (including those used in lookup for consistency)
             if declared_name is not None:
                 obj.declared_name = declared_name
@@ -3120,13 +3219,13 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
                 obj.email = email
             if affiliation is not None:
                 obj.affiliation = affiliation
-            
+
             if user:
                 obj.updated_by = user
-            
+
             obj.save()
             return obj
-            
+
         except cls.DoesNotExist:
             return cls.create(
                 user=user,
@@ -3137,17 +3236,17 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
                 suffix=suffix,
                 orcid=orcid,
                 email=email,
-                affiliation=affiliation
+                affiliation=affiliation,
             )
-    
+
     def add_orcid(self, user, orcid):
         """
         Add or update the ORCID identifier for this contributor.
-        
+
         Args:
             user: User performing the operation
             orcid: ORCID identifier string
-            
+
         Returns:
             The updated ContribPerson instance
         """
@@ -3155,18 +3254,27 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         self.updated_by = user
         self.save()
         return self
-    
-    def add_raw_affiliation(self, user, raw_text=None, raw_institution_name=None, 
-                           raw_country_name=None, raw_country_code=None, 
-                           raw_state_name=None, raw_state_acron=None, 
-                           raw_city_name=None, raw_level_1=None, 
-                           raw_level_2=None, raw_level_3=None):
+
+    def add_raw_affiliation(
+        self,
+        user,
+        raw_text=None,
+        raw_institution_name=None,
+        raw_country_name=None,
+        raw_country_code=None,
+        raw_state_name=None,
+        raw_state_acron=None,
+        raw_city_name=None,
+        raw_level_1=None,
+        raw_level_2=None,
+        raw_level_3=None,
+    ):
         """
         Add or update raw affiliation data for this contributor.
-        
+
         Creates or updates an ArticleAffiliation with raw affiliation information
         and links it to this ContribPerson.
-        
+
         Args:
             user: User performing the operation
             raw_text: Raw affiliation text (optional)
@@ -3179,7 +3287,7 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             raw_level_1: Raw first level division (optional)
             raw_level_2: Raw second level division (optional)
             raw_level_3: Raw third level division (optional)
-            
+
         Returns:
             The updated ContribPerson instance
         """
@@ -3205,29 +3313,34 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             aff_kwargs["raw_level_2"] = raw_level_2
         if raw_level_3:
             aff_kwargs["raw_level_3"] = raw_level_3
-        
+
         # Create or update the affiliation
         affiliation = ArticleAffiliation.create_or_update(
-            user=user,
-            article=self.article,
-            **aff_kwargs
+            user=user, article=self.article, **aff_kwargs
         )
-        
+
         # Link it to this contrib person
         self.affiliation = affiliation
         self.updated_by = user
         self.save()
         return self
-    
-    def add_normalized_affiliation(self, user, organization=None, location=None,
-                                   level_1=None, level_2=None, level_3=None):
+
+    def add_normalized_affiliation(
+        self,
+        user,
+        organization=None,
+        location=None,
+        level_1=None,
+        level_2=None,
+        level_3=None,
+    ):
         """
         Add normalized affiliation data to this contributor's affiliation.
-        
+
         This method completes the affiliation.normalized field by creating or
         updating a NormAffiliation and linking it to the ArticleAffiliation.
         If this ContribPerson doesn't have an affiliation yet, one will be created.
-        
+
         Args:
             user: User performing the operation
             organization: Organization instance (optional)
@@ -3235,19 +3348,18 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             level_1: First level of organization division (optional)
             level_2: Second level of organization division (optional)
             level_3: Third level of organization division (optional)
-            
+
         Returns:
             The updated ContribPerson instance
         """
         # If no affiliation exists, create one first
         if not self.affiliation:
             self.affiliation = ArticleAffiliation.create(
-                user=user,
-                article=self.article
+                user=user, article=self.article
             )
             # Save to persist the relationship before using it
             self.save()
-        
+
         # Add normalized affiliation to the ArticleAffiliation
         self.affiliation.add_normalized_affiliation(
             user=user,
@@ -3255,9 +3367,9 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             location=location,
             level_1=level_1,
             level_2=level_2,
-            level_3=level_3
+            level_3=level_3,
         )
-        
+
         self.updated_by = user
         self.save()
         return self
@@ -3378,11 +3490,12 @@ class RelatedArticle(CommonControlField):
         verbose_name=_("Related Article"),
         help_text=_("The related article instance, if available in the system."),
     )
+
     class Meta:
-        unique_together = [('article', 'href', 'related_type')]
+        unique_together = [("article", "href", "related_type")]
         indexes = [
-            models.Index(fields=['article', 'href', 'related_type']),
-            models.Index(fields=['href']),
+            models.Index(fields=["article", "href", "related_type"]),
+            models.Index(fields=["href"]),
         ]
         verbose_name = _("Related Article")
         verbose_name_plural = _("Related Articles")
@@ -3402,10 +3515,12 @@ class RelatedArticle(CommonControlField):
     @property
     def data(self):
         return {
-            'href': self.href,
-            'ext_link_type': self.ext_link_type,
-            'related_type': self.related_type,
-            'related_article_id': self.related_article.id if self.related_article else None,
+            "href": self.href,
+            "ext_link_type": self.ext_link_type,
+            "related_type": self.related_type,
+            "related_article_id": self.related_article.id
+            if self.related_article
+            else None,
         }
 
     @classmethod
@@ -3418,7 +3533,9 @@ class RelatedArticle(CommonControlField):
         )
 
     @classmethod
-    def create(cls, user, article, href, ext_link_type, related_type, related_article=None):
+    def create(
+        cls, user, article, href, ext_link_type, related_type, related_article=None
+    ):
         """Cria um novo relacionamento entre artigos."""
         if not user:
             raise ValueError("User is required")
@@ -3445,11 +3562,15 @@ class RelatedArticle(CommonControlField):
             return cls.get(article, related_type, href)
 
     @classmethod
-    def create_or_update(cls, user, article, href, ext_link_type, related_type, related_article=None):
+    def create_or_update(
+        cls, user, article, href, ext_link_type, related_type, related_article=None
+    ):
         """Obtém ou cria um relacionamento entre artigos."""
         try:
             if not related_article and ext_link_type == "doi":
-                related_article = Article.objects.filter(doi__value__iexact=href).first()
+                related_article = Article.objects.filter(
+                    doi__value__iexact=href
+                ).first()
 
             obj = cls.get(article, related_type, href)
             if obj.related_article != related_article:
@@ -3458,7 +3579,9 @@ class RelatedArticle(CommonControlField):
                 obj.save()
             return obj
         except cls.DoesNotExist:
-            return cls.create(user, article, href, ext_link_type, related_type, related_article)
+            return cls.create(
+                user, article, href, ext_link_type, related_type, related_article
+            )
 
 
 class ArticlePeerReviewStats(Article):
@@ -3518,11 +3641,11 @@ class ArticlePeerReviewStats(Article):
     def get_queryset(self, request):
         """QuerySet otimizado com select_related e prefetch_related"""
         return self.objects.select_related(
-            'journal',
-            'issue',
-            'journal__official',
+            "journal",
+            "issue",
+            "journal__official",
         ).prefetch_related(
-            'doi',
-            'titles',
-            'languages',
+            "doi",
+            "titles",
+            "languages",
         )
