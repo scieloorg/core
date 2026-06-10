@@ -5,7 +5,6 @@ from datetime import datetime
 from itertools import product
 
 from django.utils.translation import gettext_lazy as _
-from lxml import etree
 from packtools.sps.models.article_abstract import ArticleAbstract
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_contribs import ArticleContribs, XMLContribs
@@ -33,19 +32,20 @@ from article.models import (
     DocumentAbstract,
     DocumentTitle,
 )
-from core.models import Language, LicenseStatement, License
+from core.models import Language, License, LicenseStatement
 from core.utils.extracts_normalized_email import extracts_normalized_email
 from doi.models import DOI
 from institution.models import Sponsor
-from issue.models import Issue, TableOfContents, AMIssue
 from issue.articlemeta.loader import load_issue_sections
+from issue.models import AMIssue, Issue, TableOfContents
 from journal.models import Journal
-from location.models import Location
-from pid_provider.choices import PPXML_STATUS_UNMATCHED_JOURNAL_OR_ISSUE, PPXML_STATUS_INVALID
-from pid_provider.models import PidProviderXML
+from pid_provider.choices import (
+    PPXML_STATUS_INVALID,
+    PPXML_STATUS_UNMATCHED_JOURNAL_OR_ISSUE,
+)
+
 # Researcher no longer used - replaced by ContribPerson
 # from researcher.models import Affiliation, Researcher
-from tracker.models import UnexpectedEvent
 from vocabulary.models import Keyword
 
 
@@ -102,9 +102,7 @@ def load_article(user, pp_xml):
         raise ValueError("User is required")
 
     if not pp_xml:
-        raise ValueError(
-            "load_article() requires params: pp_xml"
-        )
+        raise ValueError("load_article() requires params: pp_xml")
 
     try:
         xml_with_pre = pp_xml.xml_with_pre
@@ -126,9 +124,14 @@ def load_article(user, pp_xml):
                 "timestamp": datetime.now().isoformat(),
             }
         ]
-        pp_xml.add_event(name="load_article", proc_status=PPXML_STATUS_INVALID, detail=detail, errors=errors, exceptions=e)
+        pp_xml.add_event(
+            name="load_article",
+            proc_status=PPXML_STATUS_INVALID,
+            detail=detail,
+            errors=errors,
+            exceptions=e,
+        )
         raise ValueError(f"Unable to get XML to load article from {pp_xml}: {e}")
-
 
     try:
         errors = []
@@ -141,10 +144,12 @@ def load_article(user, pp_xml):
         sps_pkg_name = xml_with_pre.sps_pkg_name
 
         logging.info(f"Pid Provider XML: {pid_v3} {sps_pkg_name}")
-        
+
         journal = get_journal(xmltree=xmltree, errors=errors)
         if not journal:
-            raise ValueError(f"Not found journal for pid provider xml: {pid_v3} {sps_pkg_name}")
+            raise ValueError(
+                f"Not found journal for pid provider xml: {pid_v3} {sps_pkg_name}"
+            )
         issue = get_issue(
             xmltree=xmltree,
             journal=journal,
@@ -152,7 +157,9 @@ def load_article(user, pp_xml):
             errors=errors,
         )
         if not issue:
-            raise ValueError(f"Not found issue for pid provider xml: {pid_v3} {sps_pkg_name}")
+            raise ValueError(
+                f"Not found issue for pid provider xml: {pid_v3} {sps_pkg_name}"
+            )
 
         # CRIAÇÃO/OBTENÇÃO DO OBJETO PRINCIPAL
         article = Article.create_or_update(
@@ -181,9 +188,7 @@ def load_article(user, pp_xml):
         article.article_type = get_or_create_article_type(
             xmltree=xmltree, user=user, errors=errors
         )
-        add_peer_review_dates(
-            xmltree=xmltree, article=article, errors=errors
-        )
+        add_peer_review_dates(xmltree=xmltree, article=article, errors=errors)
 
         # FOREIGN KEYS SIMPLES
         article.journal = journal
@@ -207,7 +212,9 @@ def load_article(user, pp_xml):
             article.languages.add(main_lang)
 
         article.sections.set(
-            get_or_create_toc_sections(xmltree=xmltree, user=user, errors=errors, issue=article.issue)
+            get_or_create_toc_sections(
+                xmltree=xmltree, user=user, errors=errors, issue=article.issue
+            )
         )
         article.titles.set(
             create_or_update_titles(
@@ -262,8 +269,14 @@ def load_article(user, pp_xml):
             event.finish(errors=errors, exceptions=traceback.format_exc())
             raise
 
-        pp_xml.add_event(name="load_article", proc_status=PPXML_STATUS_UNMATCHED_JOURNAL_OR_ISSUE, detail=detail, errors=errors, exceptions=e)
-    
+        pp_xml.add_event(
+            name="load_article",
+            proc_status=PPXML_STATUS_UNMATCHED_JOURNAL_OR_ISSUE,
+            detail=detail,
+            errors=errors,
+            exceptions=e,
+        )
+
         raise
 
 
@@ -291,18 +304,38 @@ def add_peer_review_dates(xmltree, article, errors):
         article.accepted_dateiso = peer_review_stats.get("accepted_date")
 
         # Extrair intervalos em dias
-        article.days_preprint_to_received = peer_review_stats.get("days_from_preprint_to_received")
-        article.days_received_to_accepted = peer_review_stats.get("days_from_received_to_accepted")
-        article.days_accepted_to_published = peer_review_stats.get("days_from_accepted_to_published")
-        article.days_preprint_to_published = peer_review_stats.get("days_from_preprint_to_published")
-        article.days_receive_to_published = peer_review_stats.get("days_from_received_to_published")
+        article.days_preprint_to_received = peer_review_stats.get(
+            "days_from_preprint_to_received"
+        )
+        article.days_received_to_accepted = peer_review_stats.get(
+            "days_from_received_to_accepted"
+        )
+        article.days_accepted_to_published = peer_review_stats.get(
+            "days_from_accepted_to_published"
+        )
+        article.days_preprint_to_published = peer_review_stats.get(
+            "days_from_preprint_to_published"
+        )
+        article.days_receive_to_published = peer_review_stats.get(
+            "days_from_received_to_published"
+        )
 
         # Extrair flags de estimativa
-        article.days_preprint_to_received_estimated = peer_review_stats.get("estimated_days_from_preprint_to_received")
-        article.days_received_to_accepted_estimated = peer_review_stats.get("estimated_days_from_received_to_accepted")
-        article.days_accepted_to_published_estimated = peer_review_stats.get("estimated_days_from_accepted_to_published")
-        article.days_preprint_to_published_estimated = peer_review_stats.get("estimated_days_from_preprint_to_published")
-        article.days_receive_to_published_estimated = peer_review_stats.get("estimated_days_from_received_to_published")
+        article.days_preprint_to_received_estimated = peer_review_stats.get(
+            "estimated_days_from_preprint_to_received"
+        )
+        article.days_received_to_accepted_estimated = peer_review_stats.get(
+            "estimated_days_from_received_to_accepted"
+        )
+        article.days_accepted_to_published_estimated = peer_review_stats.get(
+            "estimated_days_from_accepted_to_published"
+        )
+        article.days_preprint_to_published_estimated = peer_review_stats.get(
+            "estimated_days_from_preprint_to_published"
+        )
+        article.days_receive_to_published_estimated = peer_review_stats.get(
+            "estimated_days_from_received_to_published"
+        )
 
     except Exception as e:
         add_error(errors, "add_peer_review_dates", e)
@@ -356,9 +389,7 @@ def add_data_availability_status(xmltree, errors, article, user):
 
         for item in items:
             DataAvailabilityStatement.create_or_update(
-                user=user,
-                article=article,
-                **item
+                user=user, article=article, **item
             )
     except Exception as e:
         add_error(errors, "add_data_availability_status", e)
@@ -510,9 +541,13 @@ def get_or_create_toc_sections(xmltree, user, errors, issue):
             if not section_title:
                 continue
             try:
-                issue_sections = TableOfContents.get_items_by_title(issue=issue, title=section_title)
+                issue_sections = TableOfContents.get_items_by_title(
+                    issue=issue, title=section_title
+                )
                 if not issue_sections.exists():
-                    raise TableOfContents.DoesNotExist(f"Unable to find TOC section {section_title} for issue {issue}")
+                    raise TableOfContents.DoesNotExist(
+                        f"Unable to find TOC section {section_title} for issue {issue}"
+                    )
                 for obj in issue_sections:
                     data.append(obj)
             except Exception as e:
@@ -687,9 +722,9 @@ def create_or_update_contrib_persons(xmltree, article, user, item, errors):
                     )
                     data.append(obj)
                 else:
-                    # When an author has multiple affiliations in XML, we create one 
-                    # ContribPerson record per affiliation. This is intentional as per 
-                    # SciELO's data model where each author-affiliation combination 
+                    # When an author has multiple affiliations in XML, we create one
+                    # ContribPerson record per affiliation. This is intentional as per
+                    # SciELO's data model where each author-affiliation combination
                     # should be tracked separately.
                     for aff in affs:
                         raw_email = author.get("email") or aff.get("email")
@@ -1042,7 +1077,7 @@ def add_related_articles(xmltree, article, user, errors):
                     user=user,
                     href=href,
                     ext_link_type=ext_link_type,
-                    related_type=related_type
+                    related_type=related_type,
                 )
 
             except Exception as e:
@@ -1050,7 +1085,7 @@ def add_related_articles(xmltree, article, user, errors):
                     errors,
                     "add_related_articles.process_item",
                     e,
-                    related_article_data=related_article_data
+                    related_article_data=related_article_data,
                 )
 
     except Exception as e:
