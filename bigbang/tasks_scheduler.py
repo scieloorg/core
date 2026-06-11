@@ -25,7 +25,6 @@ def delete_outdated_tasks(task_list=None):
     task_list = task_list or [
         # Tarefas de Article com namespace completo
         "article.tasks.load_article_from_pp_xml",
-        "article.tasks.load_articles",
         "article.tasks.task_mark_articles_as_deleted_without_pp_xml",
         "article.tasks.task_remove_duplicate_articles",
         "article.tasks.task_convert_xml_to_other_formats_for_articles",
@@ -35,7 +34,6 @@ def delete_outdated_tasks(task_list=None):
         "article.tasks.task_select_articles_to_load_from_api",
         "article.tasks.task_select_articles_to_load_from_collection_endpoint",
         "article.tasks.task_select_articles_to_load_from_article_source",
-        "article.tasks.task_load_articles",
         "article.tasks.task_load_journal_articles",
         "article.tasks.task_load_article_from_xml_url",
         "article.tasks.task_create_article_source",

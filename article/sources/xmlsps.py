@@ -107,15 +107,6 @@ def load_article(user, pp_xml):
     try:
         xml_with_pre = pp_xml.xml_with_pre
     except Exception as e:
-        updated = (
-            Article.objects.filter(pp_xml=pp_xml)
-            .exclude(
-                data_status=choices.DATA_STATUS_INVALID,
-            )
-            .update(
-                data_status=choices.DATA_STATUS_INVALID,
-            )
-        )
         errors = [
             {
                 "function": "load_article",
@@ -679,11 +670,6 @@ def create_or_update_contrib_persons(xmltree, article, user, item, errors):
     Returns:
         list: Lista de objetos ContribPerson criados
     """
-    article_lang = None
-    try:
-        article_lang = ArticleAndSubArticles(xmltree=xmltree).main_lang
-    except Exception as e:
-        add_error(errors, "create_or_update_contrib_persons.get_main_lang", e)
 
     data = []
     try:
