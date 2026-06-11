@@ -369,7 +369,7 @@ def bulk_export_articles_to_articlemeta(
                         "article_id": article.id,
                         "article_pid": getattr(article, "pid", None),
                         "journal_acron": getattr(article, "journal_acron", None),
-                        "pub_year": getattr(article, "pub_year", None),
+                        "pub_date_year": getattr(article, "pub_date_year", None),
                         "force_update": force_update,
                     },
                 )
@@ -524,9 +524,9 @@ class ArticleIteratorBuilder:
         if journal_id_list:
             filters["journal__in"] = journal_id_list
         if self.from_pub_year:
-            filters["pub_year__gte"] = self.from_pub_year
+            filters["pub_date_year__gte"] = self.from_pub_year
         if self.until_pub_year:
-            filters["pub_year__lte"] = self.until_pub_year
+            filters["pub_date_year__lte"] = self.until_pub_year
         if self.from_date:
             filters["updated__gte"] = self.from_date
         if self.until_date:
@@ -554,9 +554,7 @@ class ArticleIteratorBuilder:
 
         count = 0
         for collection_acron in self.collection_acron_list or list(Collection.get_acronyms()):
-            logging.info(collection_acron)
             harvester = self._build_harvester(collection_acron)
-            logging.info(harvester)
             for document in harvester.harvest_documents():
                 count += 1
                 yield {
@@ -565,7 +563,7 @@ class ArticleIteratorBuilder:
                     "pid": document["pid_v2"],
                     "source_date": document.get("processing_date") or document.get("origin_date"),
                 }
-        
+
         self._iter_from_harvest_count = count
         logging.info(f"Harvest iterator yielded {count} documents")
 
@@ -596,6 +594,7 @@ class ArticleIteratorBuilder:
             timeout=self.timeout,
         )
         if collection_acron == "scl":
-            return OPACHarvester(self.opac_url or "www.scielo.br", collection_acron, **kwargs)
+            domain = self.opac_url or Collection.get(collection_acron).base_url
+            return OPACHarvester(domain, collection_acron, **kwargs)
         return AMHarvester("article", collection_acron, **kwargs)
 
