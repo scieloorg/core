@@ -1,7 +1,5 @@
-import csv
 import json
 import os
-import logging
 from datetime import datetime
 
 from django.contrib.auth import get_user_model
@@ -12,8 +10,6 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
 from wagtail.fields import RichTextField
 from wagtail.models import ClusterableModel
-from wagtail.search import index
-from wagtail.snippets.models import register_snippet
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from core import choices
@@ -282,6 +278,7 @@ class RawOrganizationMixin(models.Model):
     Mixin for storing raw, unstructured organization data.
     Intended to replace references to institution.models.Institution.
     """
+
     raw_text = models.TextField(
         _("Raw Text"),
         null=True,
@@ -401,7 +398,9 @@ class RawOrganizationMixin(models.Model):
             )
 
     @classmethod
-    def create(cls, raw_text, initial_date=None, final_date=None, user=None, institution=None):
+    def create(
+        cls, raw_text, initial_date=None, final_date=None, user=None, institution=None
+    ):
         history = cls()
         history.raw_text = raw_text
         history.creator = user
@@ -422,7 +421,7 @@ class RawOrganizationMixin(models.Model):
             return self.raw_institution_name
         if self.raw_text:
             return self.raw_text
-        if hasattr(self, 'institution') and self.institution:
+        if hasattr(self, "institution") and self.institution:
             # Fallback para o campo institution (deprecated)
             try:
                 return self.institution.institution_name
@@ -451,8 +450,11 @@ class OrganizationNameMixin(models.Model):
         name: The organization's full name
         acronym: The organization's acronym
     """
+
     name = models.CharField(_("Name"), max_length=255)
-    acronym = models.CharField(_("Institution Acronym"), max_length=20, null=True, blank=True)
+    acronym = models.CharField(
+        _("Institution Acronym"), max_length=20, null=True, blank=True
+    )
 
     autocomplete_search_field = "name"
 
@@ -488,6 +490,7 @@ class VisualIdentityMixin(models.Model):
         logo: The organization's logo image
         url: The organization's website URL
     """
+
     url = models.URLField(_("URL"), blank=True, null=True)
     logo = models.ImageField(_("Logo"), blank=True, null=True)
 
@@ -736,7 +739,9 @@ class LicenseStatement(CommonControlField):
     @classmethod
     def create_or_update(cls, user, license, language=None, url=None, license_p=None):
         if not license:
-            raise ValueError("LicenseStatement.create_or_update requires license parameter")
+            raise ValueError(
+                "LicenseStatement.create_or_update requires license parameter"
+            )
         try:
             obj = cls.get(license=license, language=language)
             obj.updated_by = user
@@ -773,7 +778,7 @@ class LicenseStatement(CommonControlField):
                 continue
 
             license_type = part
-            remaining = url_parts[i + 1:]
+            remaining = url_parts[i + 1 :]
             license_version = None
             license_language = None
 
@@ -872,7 +877,9 @@ class BaseHistory(models.Model):
 class BaseDateRange(models.Model):
     # Used to replace BaseHistory, which will be DEPRECATED
     # Uso de datas em formato YYYY-MM-DD, YYYY-MM ou YYYY adotado por SciELO
-    initial_date = models.CharField(_("Initial Date"), max_length=10, null=True, blank=True)
+    initial_date = models.CharField(
+        _("Initial Date"), max_length=10, null=True, blank=True
+    )
     final_date = models.CharField(_("Final Date"), max_length=10, null=True, blank=True)
 
     panels = [
@@ -1152,7 +1159,7 @@ class BaseExporter(CommonControlField, ClusterableModel):
         for k, v in self.detail.items():
             try:
                 json.dumps(v)
-            except Exception as e:
+            except Exception:
                 self.detail[k] = str(v)
         self.updated = datetime.utcnow()
         self.updated_by = user
@@ -1219,6 +1226,7 @@ class BaseLegacyRecord(CommonControlField):
     from:
         https://articlemeta.scielo.org/api/v1/journal/?collection={collection}&issn={issn}"
     """
+
     STATUS_CHOICES = [
         ("pending", _("Pending")),
         ("todo", _("To Do")),
@@ -1246,7 +1254,7 @@ class BaseLegacyRecord(CommonControlField):
         max_length=10,
         null=True,
         blank=True,
-        help_text=_("Date in YYYY-MM-DD format")
+        help_text=_("Date in YYYY-MM-DD format"),
     )
     status = models.CharField(
         _("Status"),
@@ -1287,12 +1295,28 @@ class BaseLegacyRecord(CommonControlField):
         try:
             return cls.objects.get(pid=pid, collection=collection)
         except cls.MultipleObjectsReturned:
-            return cls.objects.filter(pid=pid, collection=collection).order_by("-updated").first()
+            return (
+                cls.objects.filter(pid=pid, collection=collection)
+                .order_by("-updated")
+                .first()
+            )
 
     @classmethod
-    def create(cls, pid, collection, data=None, user=None, url=None, processing_date=None, status=None, new_record=None):
+    def create(
+        cls,
+        pid,
+        collection,
+        data=None,
+        user=None,
+        url=None,
+        processing_date=None,
+        status=None,
+        new_record=None,
+    ):
         if not pid or not collection or not user:
-            raise ValueError(f"{cls.__name__} create requires pid {pid}, collection {collection}, user {user}")
+            raise ValueError(
+                f"{cls.__name__} create requires pid {pid}, collection {collection}, user {user}"
+            )
         obj = cls()
         obj.pid = pid
         obj.collection = collection
@@ -1311,14 +1335,38 @@ class BaseLegacyRecord(CommonControlField):
         return obj
 
     @classmethod
-    def create_or_update(cls, pid, collection, data=None, user=None, url=None, status=None, processing_date=None, force_update=None, new_record=None):
+    def create_or_update(
+        cls,
+        pid,
+        collection,
+        data=None,
+        user=None,
+        url=None,
+        status=None,
+        processing_date=None,
+        force_update=None,
+        new_record=None,
+    ):
         try:
             obj = cls.get(pid=pid, collection=collection)
             obj.updated_by = user
         except cls.DoesNotExist:
-            return cls.create(pid, collection, data, user, url=url, processing_date=processing_date, status=status, new_record=new_record)
+            return cls.create(
+                pid,
+                collection,
+                data,
+                user,
+                url=url,
+                processing_date=processing_date,
+                status=status,
+                new_record=new_record,
+            )
         except cls.MultipleObjectsReturned:
-            obj = cls.objects.filter(pid=pid, collection=collection).order_by("-updated").first()
+            obj = (
+                cls.objects.filter(pid=pid, collection=collection)
+                .order_by("-updated")
+                .first()
+            )
             obj.updated_by = user
 
         if processing_date and processing_date == obj.processing_date:
