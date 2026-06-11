@@ -1832,6 +1832,7 @@ class ArticleSource(CommonControlField):
             obj.source_date = source_date
             obj.am_article = am_article
             obj.status = cls.StatusChoices.PENDING
+            obj.save()
             obj.add_pid_provider(
                 user, force_update, auto_solve_pid_conflict=auto_solve_pid_conflict
             )
