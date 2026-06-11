@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 
 from article import controller
-from article.models import Article, ArticleFormat, ArticleSource, AMArticle
+from article.models import AMArticle, Article, ArticleFormat, ArticleSource
 from article.sources.preprint import harvest_preprints
 from article.sources.xmlsps import load_article
 from collection.models import Collection
@@ -14,7 +14,6 @@ from core.models import License
 from core.utils.extracts_normalized_email import extracts_normalized_email
 from core.utils.utils import _get_user
 from journal.models import Journal
-from pid_provider.models import PidProviderXML
 from researcher.models import ResearcherIdentifier
 from tracker.models import UnexpectedEvent
 
@@ -50,7 +49,7 @@ def load_funding_data(user, file_path):
     controller.read_file(user, file_path)
 
 
-@celery_app.task(bind=True, name=_('load_preprints'))
+@celery_app.task(bind=True, name=_("load_preprints"))
 def load_preprint(self, user_id, oai_pmh_preprint_uri):
     """
     Coleta e carrega preprints de um endpoint OAI-PMH específico.
@@ -249,17 +248,19 @@ def transfer_license_statements_fk_to_article_license(
         instance.license = first.license
         if not instance.license and first.data:
             data = first.data
-            instance.license = License.create_or_update(user, license_type=data.get("license_type"), version=data.get("license_version"))
-            
+            instance.license = License.create_or_update(
+                user,
+                license_type=data.get("license_type"),
+                version=data.get("license_version"),
+            )
+
         if not instance.license:
             continue
         instance.updated_by = user
         articles_to_update.append(instance)
 
     if articles_to_update:
-        Article.objects.bulk_update(
-            articles_to_update, ["license", "updated_by"]
-        )
+        Article.objects.bulk_update(articles_to_update, ["license", "updated_by"])
         logging.info("The license of model Articles have been updated")
 
 
@@ -267,7 +268,7 @@ def get_researcher_identifier_unnormalized():
     """
     Retorna identificadores de e-mail que não seguem formato padrão RFC 5322.
 
-    Filtra objetos ResearcherIdentifier que possuem source_name="EMAIL" 
+    Filtra objetos ResearcherIdentifier que possuem source_name="EMAIL"
     mas cujo campo identifier não corresponde ao padrão de e-mail válido.
 
     Returns:
@@ -407,12 +408,12 @@ def task_export_articles_to_articlemeta(
             days_to_go_back=days_to_go_back,
             force_update=force_update,
         )
-        
+
         return result
-        
+
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        
+
         UnexpectedEvent.create(
             exception=e,
             exc_traceback=exc_traceback,
@@ -429,10 +430,10 @@ def task_export_articles_to_articlemeta(
                 "force_update": force_update,
                 "user_id": user_id,
                 "username": username,
-                "task_id": self.request.id if hasattr(self.request, 'id') else None,
+                "task_id": self.request.id if hasattr(self.request, "id") else None,
             },
         )
-        
+
         # Re-raise para que o Celery possa tratar a exceção adequadamente
         raise
 
@@ -502,7 +503,7 @@ def task_export_article_to_articlemeta(
             collection_acron_list=collection_acron_list,
             force_update=force_update,
         )
-    except Article.DoesNotExist as exception:
+    except Article.DoesNotExist:
         return False
     except Exception as exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -837,6 +838,7 @@ def task_dispatch_articles(
         )
         raise
 
+
 @celery_app.task(bind=True)
 def task_process_article_pipeline(
     self,
@@ -900,7 +902,7 @@ def task_process_article_pipeline(
         # Fluxo completo a partir de URL
         task_process_article_pipeline.delay(
             xml_url="http://example.com/article.xml",
-            collection_acron="scl", 
+            collection_acron="scl",
             pid="S1234-56782024000100001",
             export_to_articlemeta=True
         )
@@ -924,7 +926,9 @@ def task_process_article_pipeline(
 
         if xml_url:
             if not collection_acron:
-                raise ValueError("collection_acron is required when xml_url is provided")
+                raise ValueError(
+                    "collection_acron is required when xml_url is provided"
+                )
             if not pid:
                 raise ValueError("pid is required when xml_url is provided")
             if not xml_url.startswith(("http://", "https://")):
@@ -965,11 +969,15 @@ def task_process_article_pipeline(
         article = load_article(user, pp_xml=pp_xml)
         pp_xml.collections.set(article.collections)
 
-        article.check_availability(user, force_update=export_to_articlemeta or force_update)
+        article.check_availability(
+            user, force_update=export_to_articlemeta or force_update
+        )
 
         if export_to_articlemeta:
             if not article.is_classic_public or not article.valid:
-                logging.warning(f"Article {article.pid_v3} is not valid or not public. Skipping export to ArticleMeta.")
+                logging.warning(
+                    f"Article {article.pid_v3} is not valid or not public. Skipping export to ArticleMeta."
+                )
                 return
             task_export_article_to_articlemeta.delay(
                 pid_v3=article.pid_v3,
