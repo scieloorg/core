@@ -854,7 +854,6 @@ def task_process_article_pipeline(
     collection_acron_list=None,
     force_update=None,
     auto_solve_pid_conflict=None,
-    version=None,
     user_id=None,
     username=None,
 ):
@@ -863,7 +862,7 @@ def task_process_article_pipeline(
 
     Implementa um pipeline flexível que pode iniciar em diferentes estágios:
     - Fluxo A: XML URL → ArticleSource → PidProviderXML → Article
-    - Fluxo B: ArticleSource existente → PidProviderXML → Article  
+    - Fluxo B: ArticleSource existente → PidProviderXML → Article
     - Fluxo C: PidProviderXML → Article (entrada direta)
 
     Args:
@@ -920,12 +919,17 @@ def task_process_article_pipeline(
     """
     try:
         user = _get_user(self.request, username=username, user_id=user_id)
-        
+        article_source = None
+        pp_xml = None
+
         if xml_url:
             if not collection_acron:
                 raise ValueError("collection_acron is required when xml_url is provided")
             if not pid:
                 raise ValueError("pid is required when xml_url is provided")
+            if not xml_url.startswith(("http://", "https://")):
+                xml_url = f"https://{xml_url}"
+
             am_article = AMArticle.create_or_update(
                 pid, Collection.get(collection_acron), None, user
             )
@@ -942,8 +946,7 @@ def task_process_article_pipeline(
                 am_article=am_article,
                 auto_solve_pid_conflict=auto_solve_pid_conflict,
             )
-            pp_xml_id = article_source.pid_provider_xml.id
-        
+
         if article_source_id:
             article_source = ArticleSource.objects.get(id=article_source_id)
             article_source.add_pid_provider(
@@ -951,23 +954,19 @@ def task_process_article_pipeline(
                 force_update=force_update,
                 auto_solve_pid_conflict=auto_solve_pid_conflict,
             )
-            pp_xml_id = article_source.pid_provider_xml.id
 
-        if not pp_xml_id:
+        pp_xml = article_source.pid_provider_xml
+        if not pp_xml:
             raise ValueError(
                 "No valid entry point provided. Please provide either xml_url, "
                 "article_source_id, pp_xml_id or pid_v3."
             )
 
-        pp_xml = PidProviderXML.objects.select_related(
-            "current_version"
-        ).get(id=pp_xml_id)
-
         article = load_article(user, pp_xml=pp_xml)
         pp_xml.collections.set(article.collections)
 
         article.check_availability(user, force_update=export_to_articlemeta or force_update)
-        
+
         if export_to_articlemeta:
             if not article.is_classic_public or not article.valid:
                 logging.warning(f"Article {article.pid_v3} is not valid or not public. Skipping export to ArticleMeta.")
