@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Any, Dict, Generator, Optional
 from urllib.parse import urlencode
 
+from article.utils.url_builder import ArticleURLBuilder
 from core.utils.utils import fetch_data
 
 
@@ -162,7 +163,9 @@ class OPACHarvester:
             limit: Número de documentos por página
             timeout: Timeout em segundos para requisições
         """
-        self.domain = domain
+        if not domain.startswith(("http://", "https://")):
+            domain = f"https://{domain}"
+        self.domain = domain.rstrip("/")
         self.collection_acron = collection_acron
         self.from_date = from_date or "2000-01-01"
         self.until_date = until_date or datetime.utcnow().isoformat()[:10]
@@ -222,9 +225,10 @@ class OPACHarvester:
                         logging.warning(f"Invalid document data: {item}")
                         continue
 
-                    # Constrói URL do XML
                     journal_acron = item["journal_acronym"]
-                    xml_url = f"{self.domain}/j/{journal_acron}/a/{pid_v3}/?format=xml"
+                    xml_url = ArticleURLBuilder(
+                        self.domain, journal_acron, pid_v3=pid_v3
+                    ).get_xml_url()
 
                     # Extrai data de origem
                     origin_date = self._parse_gmt_date(
