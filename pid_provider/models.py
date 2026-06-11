@@ -1,25 +1,21 @@
 import io
-import json
 import logging
 import os
 import sys
-import traceback
 import zipfile
 from datetime import datetime
-from functools import lru_cache, cached_property
+from functools import cached_property
 from zlib import crc32
 
 from django.core.files.base import ContentFile
 from django.db import IntegrityError, models
-from django.db.models import Q, Count, Min
+from django.db.models import Count, Q
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
-from wagtail.fields import RichTextField
-from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from collection.models import Collection
@@ -34,9 +30,9 @@ from core.utils.profiling_tools import (  # ajuste o import conforme sua estrutu
 from core.utils.similarity import how_similar
 from pid_provider import choices, exceptions
 from pid_provider.query_params import (
+    QueryBuilderPidProviderXML,
     get_score,
     zero_to_none,
-    QueryBuilderPidProviderXML,
 )
 from tracker.models import BaseEvent, UnexpectedEvent
 
@@ -110,7 +106,9 @@ class XMLVersion(CommonControlField):
     pid_provider_xml = models.ForeignKey(
         "PidProviderXML", null=True, blank=True, on_delete=models.SET_NULL
     )
-    file = models.FileField(upload_to=xml_directory_path, null=True, blank=True, max_length=300)
+    file = models.FileField(
+        upload_to=xml_directory_path, null=True, blank=True, max_length=300
+    )
     finger_print = models.CharField(max_length=64, null=True, blank=True)
 
     class Meta:
@@ -179,7 +177,7 @@ class XMLVersion(CommonControlField):
             return self.xml_with_pre.tostring(pretty_print=True)
         except XMLVersionXmlWithPreError as e:
             return str(e)
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             return None
 
     @classmethod
@@ -206,7 +204,7 @@ class XMLVersion(CommonControlField):
             latest = cls.get(pid_provider_xml, xml_with_pre.finger_print)
             try:
                 file_exist = os.path.isfile(latest.file.path)
-            except (AttributeError, TypeError, ValueError) as e:
+            except (AttributeError, TypeError, ValueError):
                 file_exist = False
             if file_exist:
                 return latest
@@ -527,14 +525,14 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
     def __str__(self):
         return f"{self.pkg_name} {self.v3}"
-    
+
     @property
     def article_pid_suffix_source(self):
         try:
             return self.xml_with_pre.get_article_pid_suffix_source()
         except AttributeError:
             return self.elocation_id or self.fpage or self.xml_with_pre.order
-    
+
     def get_article_pid_suffix(self):
         data = self.article_pid_suffix_source
         if not data:
@@ -577,11 +575,15 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     @profile_classmethod
     def public_items(cls, from_date):
         now = datetime.utcnow().isoformat()[:10]
-        return cls.objects.select_related("current_version").filter(
-            (Q(available_since__isnull=True) | Q(available_since__lte=now))
-            & (Q(created__gte=from_date) | Q(updated__gte=from_date)),
-            current_version__pid_provider_xml__v3__isnull=False,
-        ).iterator()
+        return (
+            cls.objects.select_related("current_version")
+            .filter(
+                (Q(available_since__isnull=True) | Q(available_since__lte=now))
+                & (Q(created__gte=from_date) | Q(updated__gte=from_date)),
+                current_version__pid_provider_xml__v3__isnull=False,
+            )
+            .iterator()
+        )
 
     @property
     def created_updated(self):
@@ -695,9 +697,6 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             Parâmetros insuficientes para identificar documento
         """
         try:
-            input_data = None
-            xml_adapter_data = None
-
             response = {}
             response["input_data"] = xml_with_pre.data
             response["input_data"].update({"origin": origin})
@@ -710,9 +709,12 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             try:
                 records = cls.get_records(xml_adapter)
                 registered = cls.get_record(xml_adapter, records=records)
-            except cls.DoesNotExist as exc:
+            except cls.DoesNotExist:
                 registered = None
-            except (cls.MultipleObjectsReturned, exceptions.UnmatchedPidProviderXMLError) as exc:
+            except (
+                cls.MultipleObjectsReturned,
+                exceptions.UnmatchedPidProviderXMLError,
+            ) as exc:
                 response["records"] = [item.data for item in records]
                 raise exceptions.QueryDocumentMultipleObjectsReturnedError(exc)
             except (
@@ -972,8 +974,8 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         if not xml_adapter.v3:
             raise ValueError("get_record_by_pid_v3: XML has not pid v3")
         xml_pid_v3 = xml_adapter.v3
-        results = (
-            cls.objects.filter(Q(v3=xml_pid_v3) | Q(other_pid__pid_in_xml=xml_pid_v3))
+        results = cls.objects.filter(
+            Q(v3=xml_pid_v3) | Q(other_pid__pid_in_xml=xml_pid_v3)
         )
         if not results.exists():
             raise cls.DoesNotExist
@@ -983,7 +985,10 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 item=xml_adapter.sps_pkg_name,
                 action="PidProviderXML.get_record_by_pid_v3",
                 exception=PidProviderXMLPidV3ConflictError,
-                detail={"xml_adapter": xml_adapter.data, "results": [i.data for i in results]},
+                detail={
+                    "xml_adapter": xml_adapter.data,
+                    "results": [i.data for i in results],
+                },
             )
             raise PidProviderXMLPidV3ConflictError(
                 _("No matching record found for the provided XML data.")
@@ -992,8 +997,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
     @profile_method
     def match(self, xml_adapter):
-        """
-        """
+        """ """
         labels = []
         score = self.title_similarity(xml_adapter) * 100
         if score > 50:
@@ -1007,7 +1011,9 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         if score_item := get_score(self.z_links, xml_adapter.z_links, 10, 100):
             labels.append("z_links")
             score += score_item
-        if score_item := get_score(self.z_partial_body, xml_adapter.z_partial_body, 10, 100):
+        if score_item := get_score(
+            self.z_partial_body, xml_adapter.z_partial_body, 10, 100
+        ):
             labels.append("z_partial_body")
             score += score_item
         return {"score": score, "labels": labels}
@@ -1064,7 +1070,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 "xml_adapter_data": xml_adapter.data,
                 "data": data,
                 "matched": matched,
-            } 
+            }
             UnexpectedEvent.create(
                 item=xml_adapter.sps_pkg_name,
                 action="PidProviderXML.best_matches",
@@ -1102,7 +1108,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             self.available_since = available_since or (
                 xml_adapter.xml_with_pre.article_publication_date
             )
-        except Exception as e:
+        except Exception:
             # packtools error
             self.available_since = origin_date
         self.origin_date = origin_date
@@ -1124,7 +1130,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         if delete:
             try:
                 self.current_version.delete()
-            except Exception as e:
+            except Exception:
                 pass
 
         self.current_version = XMLVersion.get_or_create(user, self, xml_with_pre)
@@ -1169,7 +1175,6 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         if not registered_changed:
             return
         for change_args in registered_changed:
-
             change_args["pid_in_xml"] = change_args.pop("registered")
 
             change_args["user"] = user
@@ -1240,12 +1245,15 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             try:
                 records = cls.get_records(xml_adapter)
                 registered = cls.get_record(xml_adapter, records=records)
-            except cls.DoesNotExist as exc:
+            except cls.DoesNotExist:
                 response.update(
                     {"filename": xml_with_pre.filename, "registered": False}
                 )
                 return response
-            except (cls.MultipleObjectsReturned, exceptions.UnmatchedPidProviderXMLError) as exc:
+            except (
+                cls.MultipleObjectsReturned,
+                exceptions.UnmatchedPidProviderXMLError,
+            ) as exc:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 response["records"] = [item.data for item in records]
                 UnexpectedEvent.create(
@@ -1281,7 +1289,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             response.update({"error_msg": str(e), "error_type": str(type(e))})
             return response
         return {}
-    
+
     @classmethod
     def get_by_pid_v3(cls, pid_v3, partial_pid_v2=None, pid_v2=None):
         params = {}
@@ -1293,7 +1301,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             params["v2__contains"] = partial_pid_v2
         try:
             return cls.objects.get(**params)
-        except cls.MultipleObjectsReturned as e:
+        except cls.MultipleObjectsReturned:
             return cls.objects.filter(**params).order_by("-updated").first()
 
     @classmethod
@@ -1336,10 +1344,8 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         for item in cls.objects.filter(
             Q(issn_print__in=issns) | Q(issn_electronic__in=issns),
         ).iterator():
-            try:
-                invalid = bool(item.xml_with_pre)
-            except Exception as e:
-                invalid = True
+            item.proc_status = choices.PPXML_STATUS_INVALID
+            item.save()
 
     @classmethod
     @profile_classmethod
@@ -1451,11 +1457,13 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             self.save()
             return True
         return False
-    
+
     def add_event(self, name, proc_status, detail=None, errors=None, exceptions=None):
         self.proc_status = proc_status
         self.save()
-        return XMLEvent.register(self, name, detail=detail, errors=errors, exceptions=exceptions)
+        return XMLEvent.register(
+            self, name, detail=detail, errors=errors, exceptions=exceptions
+        )
 
 
 class FixPidV2(CommonControlField):
@@ -1602,26 +1610,26 @@ class FixPidV2(CommonControlField):
 def xml_url_zipfile_path(instance, filename):
     """
     Generate the upload path for XMLURL zipfile.
-    
+
     Args:
         instance: XMLURL instance
         filename: Name of the file
-        
+
     Returns:
         Path string for file upload
     """
     # Use URL hash to create a unique subdirectory
-    url_hash = abs(hash(instance.url)) % (10 ** 8)
+    url_hash = abs(hash(instance.url)) % (10**8)
     return f"pid_provider/xmlurl/{url_hash}/{filename}"
 
 
 class XMLURL(CommonControlField):
     """
     Model to store URLs that experienced failures and should be retried in the future.
-    
+
     This model tracks URLs that failed during processing, along with their status
     and associated article PID, enabling retry mechanisms to reprocess them later.
-    
+
     Fields:
         url: URLField - The URL that needs to be retried
         status: CharField - To control the request status (e.g., "pending", "failed", "retrying")
@@ -1630,17 +1638,15 @@ class XMLURL(CommonControlField):
         exceptions: CharField - Exception traceback information (truncated to 255 chars if needed)
     """
 
-    url = models.URLField(
-        _("URL"), max_length=500, null=False, blank=False
-    )
-    status = models.CharField(
-        _("Status"), max_length=50, null=True, blank=True
-    )
-    pid = models.CharField(
-        _("Article PID"), max_length=23, null=True, blank=True
-    )
+    url = models.URLField(_("URL"), max_length=500, null=False, blank=False)
+    status = models.CharField(_("Status"), max_length=50, null=True, blank=True)
+    pid = models.CharField(_("Article PID"), max_length=23, null=True, blank=True)
     zipfile = models.FileField(
-        _("ZIP File"), upload_to=xml_url_zipfile_path, null=True, blank=True, max_length=300,
+        _("ZIP File"),
+        upload_to=xml_url_zipfile_path,
+        null=True,
+        blank=True,
+        max_length=300,
     )
     exceptions = models.CharField(
         _("Exceptions"), max_length=255, null=True, blank=True
@@ -1729,30 +1735,32 @@ class XMLURL(CommonControlField):
     def save_file(self, xml_content, filename=None):
         """
         Create a zip file from XML content and save it to the zipfile field.
-        
+
         Args:
             xml_content: str or bytes - The XML content to compress
             filename: str - Optional filename for the XML inside the zip (defaults to 'content.xml')
-            
+
         Returns:
             bool - True if file was saved successfully, False otherwise
         """
         try:
             # Convert string to bytes if needed
             if isinstance(xml_content, str):
-                xml_content = xml_content.encode('utf-8')
-            
+                xml_content = xml_content.encode("utf-8")
+
             # Create in-memory zip file
             zip_buffer = io.BytesIO()
-            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
                 # Use provided filename or default
-                xml_filename = filename or 'content.xml'
+                xml_filename = filename or "content.xml"
                 zip_file.writestr(xml_filename, xml_content)
-            
+
             # Save the zip file to the model
             zip_filename = f"{self.pid or 'unknown'}_{self.pk or 'new'}.zip"
-            self.zipfile.save(zip_filename, ContentFile(zip_buffer.getvalue()), save=True)
-            
+            self.zipfile.save(
+                zip_filename, ContentFile(zip_buffer.getvalue()), save=True
+            )
+
             return True
         except Exception as e:
             logging.error(f"Error saving zip file for XMLURL {self.url}: {e}")
@@ -1779,9 +1787,8 @@ class XMLEvent(BaseEvent, CommonControlField):
         create (classmethod): Creates and saves a new XMLEvent instance.
         finish: Marks the event as completed and optionally updates details, errors, or exceptions.
     """
-    ppxml = ParentalKey(
-        PidProviderXML, on_delete=models.CASCADE, related_name="events"
-    )
+
+    ppxml = ParentalKey(PidProviderXML, on_delete=models.CASCADE, related_name="events")
 
     @classmethod
     def register(cls, ppxml, name, detail=None, errors=None, exceptions=None):
@@ -1789,5 +1796,7 @@ class XMLEvent(BaseEvent, CommonControlField):
         obj.ppxml = ppxml
         obj.name = name
         completed = bool(not errors and not exceptions)
-        obj.finish(completed=completed, detail=detail, errors=errors, exceptions=exceptions)
+        obj.finish(
+            completed=completed, detail=detail, errors=errors, exceptions=exceptions
+        )
         return obj

@@ -131,8 +131,6 @@ def task_fix_pid_provider_xmls_status(
         )
     """
     try:
-        user = _get_user(self.request, username=username, user_id=user_id)
-
         # Validação: ao menos uma operação deve ser especificada
         operations = {
             "invalid": mark_as_invalid,
