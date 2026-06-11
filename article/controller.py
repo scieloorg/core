@@ -6,86 +6,22 @@ import traceback
 
 from packtools.sps.formats.am import am
 
-from article.models import Article, ArticleExporter, ArticleFunding, ArticleSource
 from article import choices
+from article.models import Article, ArticleExporter, ArticleFunding, ArticleSource
 from collection.models import Collection
 from core.mongodb import write_item
 from core.utils.harvesters import AMHarvester, OPACHarvester
 from institution.models import Sponsor
 from journal.models import Journal
 from pid_provider.choices import (
-    PPXML_STATUS_TODO,
     PPXML_STATUS_INVALID,
+    PPXML_STATUS_TODO,
 )
 from pid_provider.models import PidProviderXML
 from tracker.models import UnexpectedEvent
 
 
 class ArticleIsNotAvailableError(Exception): ...
-
-
-# def get_pp_xml_ids(
-#     collection_acron_list=None,
-#     journal_acron_list=None,
-#     from_pub_year=None,
-#     until_pub_year=None,
-#     from_updated_date=None,
-#     until_updated_date=None,
-#     proc_status_list=None,
-# ):
-#     return select_pp_xml(
-#         collection_acron_list,
-#         journal_acron_list,
-#         from_pub_year,
-#         until_pub_year,
-#         from_updated_date,
-#         until_updated_date,
-#         proc_status_list=proc_status_list,
-#     ).values_list("id", flat=True)
-
-
-# def select_pp_xml(
-#     collection_acron_list=None,
-#     journal_acron_list=None,
-#     from_pub_year=None,
-#     until_pub_year=None,
-#     from_updated_date=None,
-#     until_updated_date=None,
-#     proc_status_list=None,
-#     params=None,
-# ):
-#     params = params or {}
-
-#     q = Q()
-#     if journal_acron_list or collection_acron_list:
-#         issns = Journal.get_issn_list(collection_acron_list, journal_acron_list)
-#         issn_print_list = issns["issn_print_list"]
-#         issn_electronic_list = issns["issn_electronic_list"]
-
-#         if issn_print_list or issn_electronic_list:
-#             q = Q(issn_print__in=issn_print_list) | Q(
-#                 issn_electronic__in=issn_electronic_list
-#             )
-#         elif issn_print_list:
-#             q = Q(issn_print__in=issn_print_list)
-#         elif issn_electronic_list:
-#             q = Q(issn_electronic__in=issn_electronic_list)
-
-#     if from_updated_date:
-#         params["updated__gte"] = from_updated_date
-#     if until_updated_date:
-#         params["updated__lte"] = until_updated_date
-
-#     if from_pub_year:
-#         params["pub_year__gte"] = from_pub_year
-#     if until_pub_year:
-#         params["pub_year__lte"] = until_pub_year
-
-#     if proc_status_list:
-#         params["proc_status__in"] = proc_status_list
-
-#     logging.info(params)
-#     return PidProviderXML.objects.filter(q, **params)
 
 
 def load_financial_data(row, user):
@@ -143,9 +79,9 @@ def export_article_to_articlemeta(
         logging.info(
             f"export_article_to_articlemeta: {article}, collections: {collection_acron_list}, force_update: {force_update}"
         )
-        legacy_keys_items = list(article.get_legacy_keys(
-            collection_acron_list, is_active=True
-        ))
+        legacy_keys_items = list(
+            article.get_legacy_keys(collection_acron_list, is_active=True)
+        )
         logging.info(f"Legacy keys to process: {legacy_keys_items}")
         if not legacy_keys_items:
             UnexpectedEvent.create(
@@ -172,7 +108,7 @@ def export_article_to_articlemeta(
             external_data["pid_v3"] = article.pid_v3
 
         text_langs = article.get_text_langs()
-        
+
         article_data = {}
         for legacy_keys in legacy_keys_items:
             try:
@@ -326,7 +262,7 @@ def bulk_export_articles_to_articlemeta(
             until_pub_year=until_pub_year,
             from_updated_date=from_date,
             until_updated_date=until_date,
-            params=params
+            params=params,
         )
         if not queryset.exists():
             UnexpectedEvent.create(
@@ -345,7 +281,9 @@ def bulk_export_articles_to_articlemeta(
             )
             return False
 
-        for article in queryset.select_related("journal", "journal__official", "pp_xml").iterator():
+        for article in queryset.select_related(
+            "journal", "journal__official", "pp_xml"
+        ).iterator():
             try:
                 if force_update:
                     article.check_availability(user)
@@ -374,9 +312,9 @@ def bulk_export_articles_to_articlemeta(
                     },
                 )
                 continue
-        
+
         return True
-        
+
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
@@ -473,10 +411,12 @@ class ArticleIteratorBuilder:
         yield from self._iter_from_pid_provider()
         yield from self._iter_from_article()
 
-        logging.info(f"Iterators summary: harvest={self._iter_from_harvest_count}, "
-                     f"article_source={self._iter_from_article_source_count}, "
-                     f"pid_provider={self._iter_from_pid_provider_count}, "
-                     f"article={self._iter_from_article_count}")
+        logging.info(
+            f"Iterators summary: harvest={self._iter_from_harvest_count}, "
+            f"article_source={self._iter_from_article_source_count}, "
+            f"pid_provider={self._iter_from_pid_provider_count}, "
+            f"article={self._iter_from_article_count}"
+        )
 
     # ------------------------------------------------------------------
     # Iteradores de seleção
@@ -484,10 +424,9 @@ class ArticleIteratorBuilder:
 
     def _iter_from_pid_provider(self):
         """Itera PidProviderXML filtrados por periódico, data e status."""
-        journal_issn_groups = (
-            Journal.get_journal_issns(self.collection_acron_list, self.journal_acron_list)
-            or [None]
-        )
+        journal_issn_groups = Journal.get_journal_issns(
+            self.collection_acron_list, self.journal_acron_list
+        ) or [None]
         for journal_issns in journal_issn_groups:
             issn_list = [i for i in journal_issns if i] if journal_issns else None
             if journal_issns and not issn_list:
@@ -498,12 +437,15 @@ class ArticleIteratorBuilder:
                 until_pub_year=self.until_pub_year,
                 from_updated_date=self.from_date,
                 until_updated_date=self.until_date,
-                proc_status_list=self.proc_status_list or [PPXML_STATUS_TODO, PPXML_STATUS_INVALID],
+                proc_status_list=self.proc_status_list
+                or [PPXML_STATUS_TODO, PPXML_STATUS_INVALID],
             )
             self._iter_from_pid_provider_count += qs.count()
             for item in qs.iterator():
                 yield {"pp_xml_id": item.id}
-        logging.info(f"_iter_from_pid_provider: yielded {self._iter_from_pid_provider_count} items")
+        logging.info(
+            f"_iter_from_pid_provider: yielded {self._iter_from_pid_provider_count} items"
+        )
 
     def _iter_from_article(self):
         """
@@ -511,7 +453,8 @@ class ArticleIteratorBuilder:
         Yields None para artigos sem pp_xml recuperável (sinaliza skip).
         """
         filters = {
-            "data_status__in": self.data_status_list or [
+            "data_status__in": self.data_status_list
+            or [
                 choices.DATA_STATUS_PENDING,
                 choices.DATA_STATUS_UNDEF,
                 choices.DATA_STATUS_INVALID,
@@ -544,7 +487,9 @@ class ArticleIteratorBuilder:
                     yield None
                     continue
             yield {"pp_xml_id": article.pp_xml.id}
-        logging.info(f"_iter_from_article: yielded {self._iter_from_article_count} articles")
+        logging.info(
+            f"_iter_from_article: yielded {self._iter_from_article_count} articles"
+        )
 
     def _iter_from_harvest(self):
         """Itera documentos coletados via OPAC ou ArticleMeta."""
@@ -553,7 +498,9 @@ class ArticleIteratorBuilder:
             Collection.load(self.user)
 
         count = 0
-        for collection_acron in self.collection_acron_list or list(Collection.get_acronyms()):
+        for collection_acron in self.collection_acron_list or list(
+            Collection.get_acronyms()
+        ):
             harvester = self._build_harvester(collection_acron)
             for document in harvester.harvest_documents():
                 count += 1
@@ -561,7 +508,8 @@ class ArticleIteratorBuilder:
                     "xml_url": document["url"],
                     "collection_acron": collection_acron,
                     "pid": document["pid_v2"],
-                    "source_date": document.get("processing_date") or document.get("origin_date"),
+                    "source_date": document.get("processing_date")
+                    or document.get("origin_date"),
                 }
 
         self._iter_from_harvest_count = count
@@ -597,4 +545,3 @@ class ArticleIteratorBuilder:
             domain = self.opac_url or Collection.get(collection_acron).base_url
             return OPACHarvester(domain, collection_acron, **kwargs)
         return AMHarvester("article", collection_acron, **kwargs)
-
