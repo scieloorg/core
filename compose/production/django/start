@@ -26,4 +26,21 @@ if compress_enabled; then
   # NOTE this command will fail if django-compressor is disabled
   python /app/manage.py compress
 fi
-/usr/local/bin/gunicorn config.wsgi --bind 0.0.0.0:5000 --chdir=/app --timeout 1000 --workers 3 --worker-connections=1000 --worker-class=gevent
+
+GUNICORN_NOFILE="${GUNICORN_NOFILE:-65536}"
+
+if ! ulimit -n "${GUNICORN_NOFILE}"; then
+  echo "WARNING: could not set open files limit to ${GUNICORN_NOFILE}" >&2
+fi
+
+echo "Open files limit: $(ulimit -n)"
+
+exec /usr/local/bin/gunicorn config.wsgi \
+  --bind 0.0.0.0:5000 \
+  --chdir=/app \
+  --timeout "${GUNICORN_TIMEOUT:-1000}" \
+  --workers "${WEB_CONCURRENCY:-3}" \
+  --worker-connections "${GUNICORN_WORKER_CONNECTIONS:-100}" \
+  --worker-class "${GUNICORN_WORKER_CLASS:-gevent}" \
+  --max-requests "${GUNICORN_MAX_REQUESTS:-1000}" \
+  --max-requests-jitter "${GUNICORN_MAX_REQUESTS_JITTER:-100}"
