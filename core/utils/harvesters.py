@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import Any, Dict, Generator, Optional
 from urllib.parse import urlencode
 
+from article.utils.url_builder import ArticleURLBuilder
+
 from core.utils.utils import fetch_data
 
 
@@ -224,7 +226,9 @@ class OPACHarvester:
 
                     # Constrói URL do XML
                     journal_acron = item["journal_acronym"]
-                    xml_url = f"{self.domain}/j/{journal_acron}/a/{pid_v3}/?format=xml"
+                    xml_url = ArticleURLBuilder(
+                        self.domain, journal_acron, pid_v3=pid_v3
+                    ).get_xml_url()
 
                     # Extrai data de origem
                     origin_date = self._parse_gmt_date(
@@ -288,4 +292,3 @@ class OPACHarvester:
         except (ValueError, TypeError) as e:
             logging.warning(f"Failed to parse GMT date '{date_str}': {e}")
             return None
-
