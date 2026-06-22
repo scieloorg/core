@@ -596,6 +596,7 @@ class ArticleIteratorBuilder:
             timeout=self.timeout,
         )
         if collection_acron == "scl":
-            return OPACHarvester(self.opac_url or "www.scielo.br", collection_acron, **kwargs)
+            domain = self.opac_url or Collection.get(collection_acron).base_url
+            return OPACHarvester(domain, collection_acron, **kwargs)
         return AMHarvester("article", collection_acron, **kwargs)
 
