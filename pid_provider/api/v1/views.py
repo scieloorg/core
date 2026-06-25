@@ -1,28 +1,31 @@
-import os
 import logging
+import os
 import sys
-from io import BytesIO
-from zipfile import ZipFile
-
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from config.settings.base import TASK_EXPIRES, TASK_TIMEOUT, RUN_ASYNC
 
+from article.models import Article
+from article.sources.xmlsps import load_article
 from celery.exceptions import TimeoutError
+from config.settings.base import RUN_ASYNC, TASK_EXPIRES, TASK_TIMEOUT
+from core.utils.profiling_tools import (
+    profile_endpoint,
+    profile_method,
+)  # ajuste o import conforme sua estrutura
+from django.utils import timezone
+from pid_provider.models import PidProviderXML
+from pid_provider.provider import PidProvider
+from pid_provider.tasks import (
+    task_delete_provide_pid_tmp_zip,
+    task_provide_pid_for_xml_zip,
+)
+from rest_framework import serializers
 from rest_framework import status as rest_framework_status
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.parsers import FileUploadParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-
-from core.utils.profiling_tools import profile_endpoint, profile_method  # ajuste o import conforme sua estrutura
-from pid_provider.provider import PidProvider
-from pid_provider.tasks import (
-    task_delete_provide_pid_tmp_zip,
-    task_provide_pid_for_xml_zip,
-)
 from tracker.models import UnexpectedEvent
-
 
 STATUS_MAPPING = {
     "created": rest_framework_status.HTTP_201_CREATED,
@@ -34,6 +37,15 @@ TASK_HIGH_PRIORITY = 0
 TASK_LOW_PRIORITY = 9
 # queue=queue          # Fila específica
 # TASK_QUEUE = "pid_provider"
+
+
+class PublishedArticleRegistrationSerializer(serializers.Serializer):
+    pid_v3 = serializers.CharField(
+        required=True, allow_blank=False, max_length=23, min_length=23
+    )
+    sps_pkg_name = serializers.CharField(
+        required=True, allow_blank=False, max_length=100
+    )
 
 
 class PidProviderViewSet(
@@ -294,3 +306,105 @@ class FixPidV2ViewSet(
                 {"error_type": str(type(e)), "error_message": str(e)},
                 status=rest_framework_status.HTTP_400_BAD_REQUEST,
             )
+
+
+class PublishedArticleRegistrationViewSet(GenericViewSet):
+    http_method_names = [
+        "post",
+    ]
+    permission_classes = [IsAuthenticated]
+    serializer_class = PublishedArticleRegistrationSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return self.build_response(serializer.errors)
+
+        identifiers = serializer.validated_data
+        pp_xml = self.get_pid_provider_xml(identifiers)
+        if pp_xml is None:
+            return self.build_response(
+                data={
+                    "error": "PidProviderXML not found",
+                    "pid_v3": identifiers["pid_v3"],
+                    "sps_pkg_name": identifiers["sps_pkg_name"],
+                },
+                status=rest_framework_status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            result = self.register_published_article_from_pid_provider_xml(
+                request.user, pp_xml
+            )
+        except Exception as e:
+            logging.error(
+                f"Erro ao registrar artigo. Identificadores: {identifiers}. Exceção: {type(e).__name__}: {e}",
+                exc_info=True,
+            )
+            return self.build_response(
+                {
+                    "error_type": str(type(e)),
+                    "error_message": str(e),
+                },
+            )
+
+        timestamp = timezone.now().isoformat()
+        logging.info(
+            f"Published article registration operation={result['operation']} "
+            f"pid_v3={identifiers['pid_v3']} "
+            f"sps_pkg_name={identifiers['sps_pkg_name']} "
+            f"article_id={result['article_id']} "
+            f"user={request.user.username} timestamp={timestamp}"
+        )
+        return self.build_response(
+            data=self.build_response_data(result, timestamp),
+            status=self.get_response_status(result),
+        )
+
+    def get_pid_provider_xml(self, identifiers):
+        try:
+            return PidProviderXML.objects.select_related("current_version").get(
+                v3=identifiers["pid_v3"],
+                pkg_name=identifiers["sps_pkg_name"],
+            )
+        except PidProviderXML.DoesNotExist:
+            return None
+
+    def build_response(self, data, status=rest_framework_status.HTTP_400_BAD_REQUEST):
+        return Response(data, status=status)
+
+    def get_response_status(self, result):
+        if result["operation"] == "created":
+            return rest_framework_status.HTTP_201_CREATED
+        return rest_framework_status.HTTP_200_OK
+
+    def build_response_data(self, result, timestamp):
+        return {key: value for key, value in result.items() if key != "article"} | {
+            "timestamp": timestamp,
+        }
+
+    def register_published_article_from_pid_provider_xml(self, user, pp_xml):
+        pid_v3 = pp_xml.v3
+        sps_pkg_name = pp_xml.pkg_name
+        operation = (
+            "updated"
+            if Article.get_by_pid_v3_or_by_sps_pkg_name(
+                pid_v3=pid_v3,
+                sps_pkg_name=sps_pkg_name,
+            ).exists()
+            else "created"
+        )
+        article = load_article(user, pp_xml=pp_xml)
+        pp_xml.collections.set(article.collections)
+
+        article.check_availability(user)
+
+        return {
+            "article": article,
+            "article_id": article.id,
+            "pid_v3": article.pid_v3,
+            "sps_pkg_name": article.sps_pkg_name,
+            "operation": operation,
+            "data_status": article.data_status,
+            "is_public": article.is_public,
+        }
