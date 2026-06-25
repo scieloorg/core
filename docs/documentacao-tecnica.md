@@ -343,6 +343,74 @@ consolidadas em [`config/urls.py`](../config/urls.py).
   `organization`, `pid_provider`, `researcher`, `vocabulary`,
   `xml_validation`, `doi`.
 
+### Registro de publicação de artigo
+
+O endpoint `POST /api/v2/pid/published_article/` registra que um artigo já
+identificado pelo PID Provider foi publicado ou atualizado no site público. A
+operação usa `pid_v3` e `sps_pkg_name` para localizar o `PidProviderXML`,
+carrega os metadados do XML SPS versionado, cria ou atualiza o `Article` e
+marca o registro como público.
+
+Autenticação:
+
+```bash
+curl -X POST http://localhost:8000/api/v2/auth/token/ \
+  -d 'username=scms-upload&password=secret'
+```
+
+Resposta:
+
+```json
+{
+  "refresh": "eyJhbGciOi...",
+  "access": "eyJhbGciOi..."
+}
+```
+
+Requisição:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/published_article/ \
+  -H 'Authorization: Bearer eyJhbGciOi...' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "pid_v3": "67CrZnsyZLpV7dyR7dgp6Vt",
+    "sps_pkg_name": "2236-8906-hoehnea-49-e1082020"
+  }'
+```
+
+Resposta para criação (`201 Created`) ou atualização (`200 OK`):
+
+```json
+{
+  "article_id": 123,
+  "pid_v3": "67CrZnsyZLpV7dyR7dgp6Vt",
+  "sps_pkg_name": "2236-8906-hoehnea-49-e1082020",
+  "operation": "created",
+  "data_status": "PUBLIC",
+  "is_public": true,
+  "timestamp": "2026-06-23T15:00:00+00:00"
+}
+```
+
+Cenários de erro:
+
+- `400 Bad Request`: `pid_v3` ou `sps_pkg_name` ausente, vazio ou inválido.
+- `400 Bad Request`: o `PidProviderXML` existe, mas o XML não pôde ser
+  convertido em `Article` por inconsistência de metadados.
+- `401 Unauthorized`: token JWT ausente, expirado ou inválido.
+- `404 Not Found`: nenhum `PidProviderXML` foi encontrado para o par
+  `pid_v3` e `sps_pkg_name`.
+
+Pré-requisitos para exposição OAI-PMH:
+
+- O `PidProviderXML` precisa existir no Core e possuir XML SPS versionado.
+- O XML precisa conter metadados suficientes para localizar periódico e
+  fascículo e criar o `Article`.
+- Após sucesso no endpoint, o `Article` fica com status público e os flags de
+  publicação usados pelo índice OAI; assim, a exposição passa a depender apenas
+  do fluxo normal de indexação do Core/Solr.
+
 ---
 
 ## Tarefas assíncronas (Celery)
