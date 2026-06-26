@@ -11,6 +11,15 @@ from journal.api.v1.serializers import JournalSerializer
 from vocabulary.api.v1.serializers import KeywordSerializer
 
 
+class PublishArticleSerializer(serializers.Serializer):
+    pid_v3 = serializers.CharField(
+        required=True, allow_blank=False, max_length=23, min_length=23
+    )
+    sps_pkg_name = serializers.CharField(
+        required=True, allow_blank=False, max_length=100
+    )
+
+
 class FundingsSerializer(serializers.ModelSerializer):
     funding_source = SponsorSerializer(many=False, read_only=True)
 
