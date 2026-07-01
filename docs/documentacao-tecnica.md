@@ -345,7 +345,7 @@ consolidadas em [`config/urls.py`](../config/urls.py).
 
 ### Registro de publicação de artigo
 
-O endpoint `POST /api/v2/pid/published_article/` registra que um artigo já
+O endpoint `POST /api/v1/publish_article/` registra que um artigo já
 identificado pelo PID Provider foi publicado ou atualizado no site público. A
 operação usa `pid_v3` e `sps_pkg_name` para localizar o `PidProviderXML`,
 carrega os metadados do XML SPS versionado, cria ou atualiza o `Article` e
@@ -370,7 +370,7 @@ Resposta:
 Requisição:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/published_article/ \
+curl -X POST http://localhost:8000/api/v1/publish_article/ \
   -H 'Authorization: Bearer eyJhbGciOi...' \
   -H 'Content-Type: application/json' \
   -d '{
