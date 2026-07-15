@@ -1,5 +1,4 @@
 import sys
-import traceback
 
 # from django.utils.translation import gettext_lazy as _
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre, get_xml_with_pre
@@ -9,29 +8,6 @@ from core.utils.profiling_tools import (  # ajuste o import conforme sua estrutu
 )
 from pid_provider.models import PidProviderXML, XMLURL
 from tracker.models import UnexpectedEvent
-
-
-def _truncate_traceback(tb_str, max_length=255):
-    """
-    Truncate traceback string to fit in max_length.
-    If longer than max_length, keep start and end portions.
-    
-    Args:
-        tb_str: Traceback string (can be None)
-        max_length: Maximum length (default 255)
-        
-    Returns:
-        Truncated traceback string or None
-    """
-    if tb_str is None:
-        return None
-        
-    if len(tb_str) <= max_length:
-        return tb_str
-    
-    # Keep beginning and end with "..." in the middle
-    keep_chars = (max_length - 5) // 2  # Reserve 5 chars for " ... "
-    return tb_str[:keep_chars] + " ... " + tb_str[-keep_chars:]
 
 
 class BasePidProvider:
@@ -179,6 +155,7 @@ class BasePidProvider:
         registered_in_core=None,
         detail=None,
         auto_solve_pid_conflict=None,
+        document_item=None,
     ):
         """
         Fornece / Valida PID de um XML disponível por um URI
@@ -197,8 +174,8 @@ class BasePidProvider:
         try:
             xml_with_pre = list(XMLWithPre.create(uri=xml_uri))[0]
         except Exception as e:
-            return self._handle_xml_fetch_failure(e, xml_uri, name, user, origin_date, force_update, is_published)
-        
+            return XMLURL.record(user, xml_uri, "xml_fetch_failed", document_item, exception=e)
+
         # b) Try to create PidProviderXML record
         try:
             response = self.provide_pid_for_xml_with_pre(
@@ -212,73 +189,22 @@ class BasePidProvider:
                 registered_in_core=registered_in_core,
                 auto_solve_pid_conflict=auto_solve_pid_conflict,
             )
-            
-            # Handle response based on success or failure
-            if response.get("error_type") or response.get("error_message"):
-                self._handle_pid_provider_failure(response, xml_with_pre, xml_uri, name, user, origin_date, force_update, is_published)
+
+            resp = dict(response)  # make a copy to avoid mutating original
+            try:
+                resp.pop("xml_with_pre", None)  # Remove xml_with_pre from response for logging
+            except AttributeError:
+                pass  # If xml_with_pre is not present or cannot be removed, ignore and log rest of response
+
+            if response.get("error_type") or response.get("error_msg") or response.get("error_message"):
+                XMLURL.record(user, xml_uri, "pid_provider_xml_failed", document_item, response=resp, xml_with_pre=xml_with_pre, name=name)
             else:
-                self._register_success(xml_with_pre, xml_uri, name, user, response)
-            
+                XMLURL.record(user, xml_uri, "success", document_item, response=resp, xml_with_pre=xml_with_pre, name=name)
             return response
-            
         except Exception as e:
-            return self._handle_unexpected_error(e, xml_uri, name, user, origin_date, force_update, is_published)
+            return self._handle_unexpected_error(e, xml_uri, name, user, origin_date, force_update, is_published, document_item)
 
-    def _handle_xml_fetch_failure(self, exception, xml_uri, name, user, origin_date, force_update, is_published):
-        """Handle exception type a) - Failure to obtain XML"""
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        
-        # Get traceback and truncate if needed
-        tb_str = traceback.format_exc()
-        truncated_tb = _truncate_traceback(tb_str)
-        
-        # Store exception in XMLURL instead of UnexpectedEvent
-        XMLURL.create_or_update(
-            user=user,
-            url=xml_uri,
-            status="xml_fetch_failed",
-            pid=None,
-            exceptions=truncated_tb,
-        )
-        
-        return dict(
-            error_msg=str(exception),
-            error_type=str(exc_type),
-            exc_value=str(exc_value),
-            exc_traceback=str(exc_traceback),
-        )
-
-    def _handle_pid_provider_failure(self, response, xml_with_pre, xml_uri, name, user, origin_date, force_update, is_published):
-        """Handle exception type b) - XML obtained but PidProviderXML creation failed"""
-        # Format error information from response (not from an exception context)
-        error_msg = response.get("error_message", "Unknown error")
-        error_type = response.get("error_type", "Unknown")
-        error_info = f"{error_type}: {error_msg}"
-        truncated_error = _truncate_traceback(error_info)
-        
-        # Create or update XMLURL with exception info and save zipfile
-        xmlurl_obj = XMLURL.create_or_update(
-            user=user,
-            url=xml_uri,
-            status="pid_provider_xml_failed",
-            pid=response.get("id") or response.get("v3"),
-            exceptions=truncated_error,
-        )
-        # Use XMLWithPre.tostring() method
-        xmlurl_obj.save_file(xml_with_pre.tostring(), filename=name or 'content.xml')
-
-    def _register_success(self, xml_with_pre, xml_uri, name, user, response):
-        """Register successful XML processing in XMLURL"""
-        xmlurl_obj = XMLURL.create_or_update(
-            user=user,
-            url=xml_uri,
-            status="success",
-            pid=response.get("v3"),
-        )
-        # Use XMLWithPre.tostring() method
-        xmlurl_obj.save_file(xml_with_pre.tostring(), filename=name or 'content.xml')
-
-    def _handle_unexpected_error(self, exception, xml_uri, name, user, origin_date, force_update, is_published):
+    def _handle_unexpected_error(self, exception, xml_uri, name, user, origin_date, force_update, is_published, document_item):
         """Handle exception type c) - Unexpected error during processing"""
         exc_type, exc_value, exc_traceback = sys.exc_info()
         
@@ -295,6 +221,7 @@ class BasePidProvider:
                     origin_date=origin_date,
                     force_update=force_update,
                     is_published=is_published,
+                    document_item=document_item,
                 ),
             },
         )
