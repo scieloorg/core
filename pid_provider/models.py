@@ -1,28 +1,27 @@
 import io
-import json
 import logging
 import os
 import sys
 import traceback
 import zipfile
 from datetime import datetime
-from functools import lru_cache, cached_property
+from functools import cached_property
 from zlib import crc32
 
 from django.core.files.base import ContentFile
+from django.core.exceptions import FieldError
 from django.db import IntegrityError, models
-from django.db.models import Q, Count, Min
+from django.db.models import Prefetch, Q, Count
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
-from wagtail.fields import RichTextField
-from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from collection.models import Collection
+from core.widgets import ReadOnlyPrettyJSONWidget
 from core.forms import CoreAdminModelForm
 from core.models import CommonControlField
 from core.utils.profiling_tools import (  # ajuste o import conforme sua estrutura
@@ -31,14 +30,15 @@ from core.utils.profiling_tools import (  # ajuste o import conforme sua estrutu
     profile_property,
     profile_staticmethod,
 )
-from core.utils.similarity import how_similar
 from pid_provider import choices, exceptions
 from pid_provider.query_params import (
-    get_score,
     zero_to_none,
+    compare,
     QueryBuilderPidProviderXML,
 )
 from tracker.models import BaseEvent, UnexpectedEvent
+
+PARTIAL_BODY_MAX = 300
 
 try:
     from django_prometheus.models import ExportModelOperationsMixin
@@ -136,14 +136,10 @@ class XMLVersion(CommonControlField):
             obj.pid_provider_xml = pid_provider_xml
             obj.finger_print = xml_with_pre.finger_print
             obj.creator = user
-            # Salvar primeiro sem arquivo para obter o PK
             obj.save()
-            # save_file já faz self.file.save() que persiste o campo file,
-            # mas precisamos persistir o registro completo com o path do arquivo
             obj.save_file(
                 f"{pid_provider_xml.v3}.xml", xml_with_pre.tostring(pretty_print=True)
             )
-            # Único save final após salvar o arquivo
             obj.save()
             return obj
         except IntegrityError:
@@ -348,6 +344,24 @@ class OtherPid(CommonControlField):
         return self.updated or self.created
 
 
+class PidProviderXMLManager(models.Manager):
+    """
+    Manager customizado: aplica select_related("current_version") em toda
+    consulta de PidProviderXML.objects, evitando repetir esse select_related
+    manualmente em cada classmethod (get_xml_with_pre, get_record_by_pid_v3,
+    select_records, public_items, mark_items_as_invalid, get_by_pid_v3, etc).
+
+    Nota: prefetch_related("collections") NÃO entra aqui de propósito —
+    prefetch_related sempre dispara uma query extra, mesmo quando
+    "collections" não é usado (ex.: em _is_registered_pid, que só faz
+    .exists()). Por isso ele é aplicado pontualmente em get_queryset(),
+    que é o método de listagem que de fato usa collection_list.
+    """
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("current_version")
+
+
 class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     """
     Tem responsabilidade de garantir a atribuição do PID da versão 3,
@@ -414,6 +428,13 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     registered_in_core = models.BooleanField(default=False)
     collections = models.ManyToManyField(Collection, blank=True)
 
+    # dados legíveis para facilitar a análise
+    readable_data = models.JSONField(
+        _("Readable data"), null=True, blank=True
+    )
+
+    objects = PidProviderXMLManager()
+
     base_form_class = CoreAdminModelForm
 
     panel_a = [
@@ -436,11 +457,13 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         InlinePanel("other_pid", label=_("Other PID")),
     ]
     panel_c = [
-        FieldPanel("z_surnames"),
-        FieldPanel("z_collab"),
-        FieldPanel("z_links"),
-        FieldPanel("z_partial_body"),
+        FieldPanel("z_surnames", read_only=True),
+        FieldPanel("z_collab", read_only=True),
+        FieldPanel("z_links", read_only=True),
+        FieldPanel("z_partial_body", read_only=True),
+        FieldPanel("readable_data", widget=ReadOnlyPrettyJSONWidget(), read_only=True),
     ]
+
     panels_event = [
         InlinePanel("events", label=_("Events")),
     ]
@@ -527,19 +550,6 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
     def __str__(self):
         return f"{self.pkg_name} {self.v3}"
-    
-    @property
-    def article_pid_suffix_source(self):
-        try:
-            return self.xml_with_pre.get_article_pid_suffix_source()
-        except AttributeError:
-            return self.elocation_id or self.fpage or self.xml_with_pre.order
-    
-    def get_article_pid_suffix(self):
-        data = self.article_pid_suffix_source
-        if not data:
-            data = self.pkg_name.split("-")[-1]
-        return string_to_5_digits(data)
 
     @property
     def collection_list(self):
@@ -571,13 +581,22 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             params["pub_year__lte"] = until_pub_year
         if proc_status_list:
             params["proc_status__in"] = proc_status_list
-        return cls.objects.filter(q, **params)
+        # select_related("current_version") já vem do manager;
+        # prefetch_related("collections") é aplicado aqui pois este método
+        # é usado em listagens que iteram collection_list.
+        return cls.objects.prefetch_related("collections").filter(q, **params)
+
+    @classmethod
+    def delete_queryset(cls, qs):
+        OtherPid.objects.filter(pid_provider_xml__in=qs).delete()
+        qs.delete()
 
     @classmethod
     @profile_classmethod
     def public_items(cls, from_date):
         now = datetime.utcnow().isoformat()[:10]
-        return cls.objects.select_related("current_version").filter(
+        # select_related("current_version") já vem do manager
+        return cls.objects.filter(
             (Q(available_since__isnull=True) | Q(available_since__lte=now))
             & (Q(created__gte=from_date) | Q(updated__gte=from_date)),
             current_version__pid_provider_xml__v3__isnull=False,
@@ -607,8 +626,8 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     @profile_classmethod
     def get_xml_with_pre(cls, v3):
         try:
-            # Usar select_related para evitar query extra ao acessar current_version
-            return cls.objects.select_related("current_version").get(v3=v3).xml_with_pre
+            # select_related("current_version") já vem do manager
+            return cls.objects.get(v3=v3).xml_with_pre
         except cls.DoesNotExist:
             return None
         except Exception:
@@ -634,6 +653,20 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         if self.number:
             return False
         return True
+
+    @property
+    def data_to_compare(self):
+        readable = self.readable_data or {}
+        titles = readable.get("article_titles")
+        body_fragment = readable.get("body_fragment")
+        return {
+            "article_titles": titles or self.xml_with_pre.article_titles_texts,
+            "z_surnames": self.z_surnames,
+            "z_collab": self.z_collab,
+            "z_links": self.z_links,
+            "z_partial_body": self.z_partial_body,
+            "body_fragment": body_fragment or self.xml_with_pre.get_body_fragment(PARTIAL_BODY_MAX),
+        }
 
     @classmethod
     @profile_classmethod
@@ -695,80 +728,116 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             Parâmetros insuficientes para identificar documento
         """
         try:
+            # outputs
+            response = {}
+            registered = None
+            event_status = None
+            error_type = None
+            select_record_response = None
+
+            # inputs
+            pkg_name = filename
             input_data = None
             xml_adapter_data = None
 
-            response = {}
-            response["input_data"] = xml_with_pre.data
-            response["input_data"].update({"origin": origin})
+            input_data = {}
+            input_data.update(xml_with_pre.data)
+            input_data.update(xml_with_pre.get_article_data())
+            input_data["origin"] = origin
+            response["input_data"] = input_data
 
             # adaptador do xml with pre
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
-            response["xml_adapter_data"] = xml_adapter.data
+            xml_adapter_data = xml_adapter.data
+            response["xml_adapter_data"] = xml_adapter_data
 
             # consulta se documento já está registrado
             try:
-                records = cls.get_records(xml_adapter)
-                registered = cls.get_record(xml_adapter, records=records)
+                records = cls.select_records(xml_adapter)
+                select_record_response = cls.select_record(xml_adapter, records)
+                try:
+                    registered = select_record_response.pop("registered")
+                except KeyError:
+                    unmatched_items = select_record_response.get("unmatched_items")
+                    if unmatched_items:
+                        raise exceptions.UnmatchedPidProviderXMLError
+                    raise cls.DoesNotExist
+                event_status = "updated"
+                if select_record_response.get("matched_items"):
+                    response["select_record_response"] = select_record_response
             except cls.DoesNotExist as exc:
                 registered = None
+                event_status = "created"
             except (cls.MultipleObjectsReturned, exceptions.UnmatchedPidProviderXMLError) as exc:
-                response["records"] = [item.data for item in records]
+                event_status = "unmatched"
+                response["select_record_response"] = select_record_response
                 raise exceptions.QueryDocumentMultipleObjectsReturnedError(exc)
             except (
-                exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError
+                exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError,
+                exceptions.RequiredISSNErrorToGetPidProviderXMLError,
+                exceptions.NotEnoughParametersToGetPidProviderXMLError,
             ) as exc:
-                raise exc
-            except exceptions.RequiredISSNErrorToGetPidProviderXMLError as exc:
-                raise exc
-            except exceptions.NotEnoughParametersToGetPidProviderXMLError as exc:
+                event_status = "bad_request"
                 raise exc
 
             # valida os PIDs do XML
             # - não podem ter conflito com outros registros
             # - identifica mudança
-            response["xml_changed"] = cls.complete_missing_xml_pids(
-                xml_adapter, registered, auto_solve_pid_conflict
-            )
+            try:
+                response["xml_changed"] = cls.complete_missing_xml_pids(
+                    xml_adapter, registered, auto_solve_pid_conflict
+                )
+            except PidProviderXMLPidV3ConflictError as exc:
+                event_status = "conflict"
+                raise exc
 
             # analisa se continua o registro
-            updated_data = cls.is_updated(
-                xml_with_pre,
-                registered,
-                force_update,
-                origin_date,
-                registered_in_core,
-            )
-            if updated_data:
-                response["skip_update"] = True
-                response.update(updated_data)
-                return response
-
-            # cria ou atualiza registro
-            registered = cls._save(
-                registered,
-                xml_adapter,
-                user,
-                origin_date,
-                available_since,
-                registered_in_core,
-            )
-
-            # data to return
-            response.update(registered.data)
-            return response
-
-        except Exception as e:
+            try:
+                PidProviderXML.is_updated(
+                    xml_with_pre,
+                    registered,
+                    force_update,
+                    origin_date,
+                    registered_in_core,
+                )
+                registered = cls._save(
+                    registered,
+                    xml_adapter,
+                    user,
+                    origin_date,
+                    available_since,
+                    registered_in_core,
+                )
+                # data to return
+                response.update(registered.data)
+            except exceptions.ForbiddenPidProviderXMLRegistrationError:
+                event_status = "forbidden"
+                raise
+            except exceptions.SkipSavePidProviderXML:
+                event_status = "skipped"
+                response["skipped"] = True
+                response.update(registered.data)
+                # do not raise
+        except Exception as exc:
+            event_status = event_status or "error"
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                item=xml_with_pre.sps_pkg_name,
-                action="PidProviderXML.register",
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail=response,
-            )
-            response.update({"error_msg": str(e), "error_type": str(type(e))})
-            return response
+            error_type = str(type(exc))
+            response.update({
+                "error_msg": str(exc),
+                "error_type": error_type,
+                "traceback": traceback.format_exc()
+            })
+        finally:            
+            response["event_status"] = event_status
+            if error_type or (select_record_response or {}).get("matched_items"):
+                PidProviderXMLRegistration.record(
+                    user=user,
+                    pid_provider_xml=registered,
+                    pkg_name=pkg_name,
+                    event_status=event_status,
+                    detail=response,
+                )
+        return response
 
     @classmethod
     @profile_classmethod
@@ -814,15 +883,19 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         if xml_pid and xml_pid != registered_pid:
             # Verifica se o XML PID já está em uso por outro documento.
             try:
-                # garantir que xml_adapter.v3 não tenha conflito
+                # verificar se xml_adapter.v3 pertence a outro xml
                 cls.get_record_by_pid_v3(xml_adapter)
+                # pertence a xml_adapter
                 return xml_pid
             except cls.DoesNotExist:
+                # não pertence a nenhum xml
                 return xml_pid
             except PidProviderXMLPidV3ConflictError:
+                # pertence a um xml diferente de xml_adapter
                 if not auto_solve_pid_conflict:
+                    # rejeita o uso deste pid
                     raise
-
+                # ignora 
         # XML PID não fornecido, ou igual ao registrado
         # ou em conflito sem exceção
         # retorna o PID registrado ou gera um novo.
@@ -840,7 +913,6 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         registered_in_core=None,
     ):
         if registered:
-            # obtém os dados de substituição para registrar em other_pid
             registered_changed = registered.check_registered_pids_changed(
                 xml_adapter.xml_with_pre
             )
@@ -849,51 +921,44 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             registered = cls()
             registered.creator = user
             registered_changed = None
-
+ 
         registered.proc_status = choices.PPXML_STATUS_TODO
         registered._add_dates(xml_adapter, origin_date, available_since)
         registered._add_data(xml_adapter, registered_in_core)
         registered._add_journal(xml_adapter)
         registered._add_issue(xml_adapter)
-
-        # Primeiro save: necessário para obter PK (se novo) antes de criar XMLVersion / OtherPid
-        if registered.pk is None:
-            registered.save()
-
+ 
+        registered.save()
+ 
         if registered_changed:
             registered._add_other_pid(registered_changed, user)
         registered._add_current_version(xml_adapter.xml_with_pre, user)
-
-        # Save final consolidado: persiste current_version e other_pid_count
-        registered.save()
-        q = Q()
-        if COLLECTION_PREFIX == "scielojournal":
-            if xml_adapter.journal_issn_print:
-                q |= Q(
-                    scielojournal__journal__official__issn_print=xml_adapter.journal_issn_print
-                )
-            if xml_adapter.journal_issn_electronic:
-                q |= Q(
-                    scielojournal__journal__official__issn_electronic=xml_adapter.journal_issn_electronic
-                )
-        else:
-            if xml_adapter.journal_issn_print:
-                q |= Q(
-                    journalproc__journal__official_journal__issn_print=xml_adapter.journal_issn_print
-                )
-            if xml_adapter.journal_issn_electronic:
-                q |= Q(
-                    journalproc__journal__official_journal__issn_electronic=xml_adapter.journal_issn_electronic
-                )
-
-        for collection in Collection.objects.filter(q):
-            registered.collections.add(collection)
+ 
+        registered.add_collections(xml_adapter)
         return registered
 
-    @classmethod
-    @profile_classmethod
+    def add_collections(self, xml_adapter):
+        q = Q()
+        issn_print = xml_adapter.journal_issn_print
+        issn_electronic = xml_adapter.journal_issn_electronic
+
+        try:
+            Collection.objects.filter(scielojournal__isnull=True).exists()
+            issn_path = "scielojournal__journal__official"
+        except FieldError:
+            issn_path = "journalproc__journal__official_journal"
+
+        if issn_print:
+            q |= Q(**{f"{issn_path}__issn_print": issn_print})
+        if issn_electronic:
+            q |= Q(**{f"{issn_path}__issn_electronic": issn_electronic})
+
+        for collection in Collection.objects.filter(q):
+            self.collections.add(collection)
+
+    @staticmethod
     def is_updated(
-        cls, xml_with_pre, registered, force_update, origin_date, registered_in_core
+        xml_with_pre, registered, force_update, origin_date, registered_in_core
     ):
         """
         XML é versão AOP, mas
@@ -919,7 +984,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         if registered.is_equal_to(xml_with_pre):
             # XML fornecido é igual ao registrado, não precisa continuar
             logging.info(f"Skip update: equal")
-            return registered.data
+            raise exceptions.SkipSavePidProviderXML
 
         if xml_with_pre.is_aop and registered and not registered.is_aop:
             logging.info(f"Skip update: forbidden")
@@ -935,9 +1000,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             and registered.origin_date
             and registered.origin_date > origin_date
         ):
-            # retorna item registrado que está mais atualizado
-            logging.info(f"Skip update: is already up-to-date")
-            return registered.data
+            raise exceptions.SkipSavePidProviderXML
 
     @profile_method
     def is_equal_to(self, xml_with_pre):
@@ -947,23 +1010,78 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
     @classmethod
     @profile_classmethod
-    def get_records(cls, xml_adapter):
-        qbuilder = QueryBuilderPidProviderXML(xml_adapter)
-        q_ids = qbuilder.identifier_queries
-        q_journal = qbuilder.issn_query
-        q_issue = Q(**qbuilder.issue_params)
-        return cls.objects.filter(q_ids | (q_journal & q_issue)).distinct()
+    def select_records(cls, xml_adapter):
+        """
+        Gera pares (label, lista_de_candidatos) para cada estratégia de
+        correspondência, do mais específico ao mais genérico.
 
-    @classmethod
-    @profile_classmethod
-    def get_record(cls, xml_adapter, records):
-        results = records
-        if not results.exists():
-            raise cls.DoesNotExist
-        matched = cls.best_matches(results, xml_adapter)
-        if not matched:
-            raise cls.DoesNotExist
-        return cls.objects.get(id=sorted(matched)[-1][-1])
+        Cada branch é materializada (list(...)) uma única vez aqui, para
+        que o consumidor (select_record) nunca precise avaliar a queryset
+        mais de uma vez (evita repetir .exists() + .count() + iteração,
+        que geram queries separadas no banco). Por ser um generator, uma
+        branch só é construída e avaliada quando o consumidor de fato
+        solicita o próximo item — se a primeira branch já resolver, as
+        demais nunca chegam a rodar no banco.
+        """
+        qbuilder = QueryBuilderPidProviderXML(xml_adapter)
+        qbuilder.validate_input_data()
+
+        # select_related("current_version") já vem do manager
+        objects = cls.objects.all()
+
+        # 1) correspondência direta por identificadores
+        yield "ids", list(objects.filter(qbuilder.identifier_queries))
+
+        selected_journal = objects.filter(qbuilder.issn_query)
+
+        # 2) journal + issue + dados do artigo
+        yield (
+            "journal-issue-article",
+            list(
+                selected_journal.filter(
+                    Q(**qbuilder.issue_params) & qbuilder.article_data_query
+                )
+            ),
+        )
+
+        # 3) journal + dados do artigo
+        yield "journal-article", list(selected_journal.filter(qbuilder.article_data_query))
+
+    @staticmethod
+    def select_record(xml_adapter, selection_results):
+        """
+        Consome os pares (label, lista_de_candidatos) produzidos por
+        select_records. As listas já vêm materializadas, então aqui só
+        checamos truthiness (nunca .exists()/.count() sobre queryset).
+        """
+        unmatched_items = {}
+        xml_adapter_data_to_compare = xml_adapter.get_data_to_compare()
+        for label, results in selection_results:
+            if not results:
+                continue
+
+            result = PidProviderXML.get_best_match(results, xml_adapter_data_to_compare)
+
+            matched = result.get("matched")
+            unmatched = result.get("unmatched")
+            registered = result.get("registered")
+            if registered:
+                response = {
+                    "total_results": len(results),
+                    "registered": registered,
+                }
+                if matched:
+                    response["matched_items"] = {label: matched}
+                if unmatched:
+                    response["unmatched_items"] = {label: unmatched}
+                return response
+
+            if unmatched:
+                unmatched_items[label] = unmatched
+
+        if unmatched_items:
+            return {"unmatched_items": unmatched_items}
+        return {}
 
     @classmethod
     @profile_classmethod
@@ -972,106 +1090,84 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         if not xml_adapter.v3:
             raise ValueError("get_record_by_pid_v3: XML has not pid v3")
         xml_pid_v3 = xml_adapter.v3
-        results = (
-            cls.objects.filter(Q(v3=xml_pid_v3) | Q(other_pid__pid_in_xml=xml_pid_v3))
+        # select_related("current_version") já vem do manager
+        results = cls.objects.filter(
+            Q(v3=xml_pid_v3) | Q(other_pid__pid_in_xml=xml_pid_v3)
         )
         if not results.exists():
+            # pid v3 é inédito
             raise cls.DoesNotExist
-        matched = cls.best_matches(results, xml_adapter)
-        if not matched:
-            UnexpectedEvent.create(
-                item=xml_adapter.sps_pkg_name,
-                action="PidProviderXML.get_record_by_pid_v3",
-                exception=PidProviderXMLPidV3ConflictError,
-                detail={"xml_adapter": xml_adapter.data, "results": [i.data for i in results]},
-            )
-            raise PidProviderXMLPidV3ConflictError(
-                _("No matching record found for the provided XML data.")
-            )
-        return cls.objects.get(id=sorted(matched)[-1][-1])
-
-    @profile_method
-    def match(self, xml_adapter):
-        """
-        """
-        labels = []
-        score = self.title_similarity(xml_adapter) * 100
-        if score > 50:
-            labels.append("title")
-        if score_item := get_score(self.z_surnames, xml_adapter.z_surnames, 10, 100):
-            labels.append("z_surnames")
-            score += score_item
-        if score_item := get_score(self.z_collab, xml_adapter.z_collab, 10, 100):
-            labels.append("z_collab")
-            score += score_item
-        if score_item := get_score(self.z_links, xml_adapter.z_links, 10, 100):
-            labels.append("z_links")
-            score += score_item
-        if score_item := get_score(self.z_partial_body, xml_adapter.z_partial_body, 10, 100):
-            labels.append("z_partial_body")
-            score += score_item
-        return {"score": score, "labels": labels}
-
-    def title_similarity(self, xml_adapter):
-        try:
-            registered = self.xml_with_pre.article_titles_texts
-        except Exception:
-            registered = []
-        xml_adapter_titles = xml_adapter.xml_with_pre.article_titles_texts
-        if xml_adapter_titles == registered:
-            return 1
-        if not xml_adapter_titles:
-            return 0
+        
+        xml_adapter_data_to_compare = xml_adapter.get_data_to_compare()
+        result = PidProviderXML.get_best_match(results, xml_adapter_data_to_compare)
+        registered = result.get("registered")
         if not registered:
-            return 0
-        words1 = set()
-        for item in xml_adapter_titles:
-            words1.update(item.split())
-        words2 = set()
-        for item in registered:
-            words2.update(item.split())
-        return how_similar(" ".join(sorted(words1)), " ".join(sorted(words2)))
-
-    @classmethod
-    def best_matches(cls, results, xml_adapter):
-        data = []
-        matched = []
-        for item in results.select_related("current_version").iterator():
-            response = item.match(xml_adapter)
-            score = response["score"]
-
-            if xml_adapter.v2:
-                if item.v2 == xml_adapter.v2:
-                    score += 100
-            elif xml_adapter.order and item.v2 and item.v2.endswith(xml_adapter.order):
-                score += 100
-            if item.v3 == xml_adapter.v3:
-                score += 100
-            if item.pkg_name == xml_adapter.pkg_name:
-                score += 100
-            if item.main_doi == xml_adapter.main_doi:
-                score += 100
-
-            _data = response
-            _data.update(item.data)
-            data.append(_data)
-
-            if score > 50:
-                matched.append((score, item.updated.isoformat(), item.id))
-
-        if results.count() > 1 or not matched:
-            detail = {
-                "xml_adapter_data": xml_adapter.data,
-                "data": data,
-                "matched": matched,
-            } 
-            UnexpectedEvent.create(
-                item=xml_adapter.sps_pkg_name,
-                action="PidProviderXML.best_matches",
-                exception=cls.MultipleObjectsReturned,
-                detail=detail,
+            xml_data = xml_adapter.xml_with_pre.get_article_data(PARTIAL_BODY_MAX)
+            items = [item.data for item in results]
+            raise PidProviderXMLPidV3ConflictError(
+                _(f"{xml_pid_v3} belongs to {items}, not to {xml_data}")
             )
-        return matched
+        return registered
+
+    @staticmethod
+    def get_best_match(results, xml_adapter_data):
+        """
+        Compara uma lista de candidatos (PidProviderXML) com os dados do XML
+        recebido e classifica os candidatos por similaridade.
+
+        Parameters
+        ----------
+        results : list[PidProviderXML]
+            Lista JÁ MATERIALIZADA (não queryset) de candidatos a comparar.
+        xml_adapter_data : dict
+            Dados de comparação do XML de entrada, ou seja, o retorno de
+            ``xml_adapter.get_data_to_compare()``.
+
+        Returns
+        -------
+        dict
+            Todas as chaves abaixo são OPCIONAIS — só aparecem quando há
+            conteúdo para elas. Use ``.get(...)`` ou ``"chave" in result``
+            ao consumir o retorno, nunca acesso direto.
+
+            - ``"unmatched"``: presente apenas se houver ao menos 1
+            candidato com ``percentual_score`` <= 0.6. Lista de
+            ``item.data`` desses candidatos.
+            - ``"registered"``: presente apenas se houver ao menos 1
+            candidato aprovado (score > 0.6). Contém o OBJETO
+            ``PidProviderXML`` (não o dict ``.data``) do candidato com
+            maior score — em caso de empate, o critério de desempate é
+            ``updated`` mais recente e, em seguida, maior ``id``.
+            - ``"matched"``: presente apenas se houver 2 OU MAIS candidatos
+            aprovados. Contém ``item.data`` dos candidatos aprovados
+            EXCLUINDO o que já está em ``"registered"`` (ou seja, é a
+            lista de aprovados a partir do 2º colocado), na mesma ordem
+            de score decrescente.
+        """
+        detail = {}
+        found = []
+        items = {}
+        for item in results:
+            item_data = item.data_to_compare
+            response = compare(item_data, xml_adapter_data)
+            items[item.id] = item
+            found.append((response["percentual_score"], item.updated.isoformat(), item.id))
+
+        found = sorted(found, reverse=True)
+        matched = []
+        unmatched = []
+        for percentual_score, updated, item_id in found:
+            if percentual_score > 0.6:
+                matched.append(items[item_id].data)
+            else:
+                unmatched.append(items[item_id].data)
+        if matched:
+            detail["registered"] = items[found[0][-1]]
+            if len(matched) > 1:
+                detail["matched"] = matched[1:]
+        if unmatched:
+            detail["unmatched"] = unmatched
+        return detail
 
     @profile_method
     def _add_data(self, xml_adapter, registered_in_core):
@@ -1095,12 +1191,18 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         self.z_links = xml_adapter.z_links
         self.z_partial_body = xml_adapter.z_partial_body
 
+        self.readable_data = xml_adapter.xml_with_pre.get_article_data()
+
     @profile_method
     def _add_dates(self, xml_adapter, origin_date, available_since):
         # evita que artigos WIP fique disponíveis antes de estarem públicos
         try:
+            # Usa get_complete_publication_date para evitar logs de erro do
+            # packtools quando a data de publicação no XML é incompleta
+            # (ex.: <pub-date> apenas com <year> e <season>, sem mes/dia).
+            # Mesmo padrão adotado em proc/models.py e package/models.py.
             self.available_since = available_since or (
-                xml_adapter.xml_with_pre.article_publication_date
+                xml_adapter.xml_with_pre.get_complete_publication_date()
             )
         except Exception as e:
             # packtools error
@@ -1128,7 +1230,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 pass
 
         self.current_version = XMLVersion.get_or_create(user, self, xml_with_pre)
-        # Não faz save() aqui; chamador é responsável por consolidar o save
+        self.save()
 
     @profile_method
     def check_registered_pids_changed(self, xml_with_pre):
@@ -1164,20 +1266,15 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
     @profile_method
     def _add_other_pid(self, registered_changed, user):
-        # registrados passam a ser other pid
-        # os pids do XML passam a ser os vigentes
         if not registered_changed:
             return
         for change_args in registered_changed:
-
             change_args["pid_in_xml"] = change_args.pop("registered")
-
             change_args["user"] = user
             change_args["pid_provider_xml"] = self
-
             OtherPid.get_or_create(**change_args)
         self.other_pid_count = self.other_pid.count()
-        # Não é necessário save() aqui; será consolidado no _save() pai
+        self.save(update_fields=["other_pid_count"])
 
     @classmethod
     @profile_classmethod
@@ -1229,41 +1326,39 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
         """
         try:
+            select_record_response = None
             response = {}
             response["input_data"] = xml_with_pre.data
-            xml_adapter_data = None
-            xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
-            xml_adapter_data = xml_adapter.data
 
-            response["xml_adapter_data"] = xml_adapter_data
+            xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
+            response["xml_adapter_data"] = xml_adapter.data
 
             try:
-                records = cls.get_records(xml_adapter)
-                registered = cls.get_record(xml_adapter, records=records)
+                records = cls.select_records(xml_adapter)
+                select_record_response = cls.select_record(xml_adapter, records)
+                try:
+                    registered = select_record_response.pop("registered")
+                except KeyError:
+                    unmatched_items = select_record_response.get("unmatched_items")
+                    if unmatched_items:
+                        raise exceptions.UnmatchedPidProviderXMLError
+                    raise cls.DoesNotExist
+                matched_items = select_record_response.get("matched_items")
+                if matched_items:
+                    response["select_record_response"] = select_record_response
             except cls.DoesNotExist as exc:
                 response.update(
                     {"filename": xml_with_pre.filename, "registered": False}
                 )
                 return response
             except (cls.MultipleObjectsReturned, exceptions.UnmatchedPidProviderXMLError) as exc:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                response["records"] = [item.data for item in records]
-                UnexpectedEvent.create(
-                    item=xml_with_pre.sps_pkg_name,
-                    action="PidProviderXML.is_registered",
-                    exception=exc,
-                    exc_traceback=exc_traceback,
-                    detail=response,
-                )
-                response.update({"error_msg": str(exc), "error_type": str(type(exc))})
-                return response
+                response["select_record_response"] = select_record_response
+                raise
             except (
-                exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError
+                exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError,
+                exceptions.RequiredISSNErrorToGetPidProviderXMLError,
+                exceptions.NotEnoughParametersToGetPidProviderXMLError,
             ) as exc:
-                raise exc
-            except exceptions.RequiredISSNErrorToGetPidProviderXMLError as exc:
-                raise exc
-            except exceptions.NotEnoughParametersToGetPidProviderXMLError as exc:
                 raise exc
             response["registered"] = True
             response.update(registered.data)
@@ -1271,16 +1366,12 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             return response
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            UnexpectedEvent.create(
-                item=xml_with_pre.sps_pkg_name,
-                action="PidProviderXML.is_registered",
-                exception=e,
-                exc_traceback=exc_traceback,
-                detail=response,
-            )
-            response.update({"error_msg": str(e), "error_type": str(type(e))})
+            response.update({
+                "error_msg": str(e),
+                "error_type": str(type(e)),
+                "traceback": traceback.format_exc()
+            })
             return response
-        return {}
     
     @classmethod
     def get_by_pid_v3(cls, pid_v3, partial_pid_v2=None, pid_v2=None):
@@ -1291,6 +1382,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             params["v2"] = pid_v2
         if partial_pid_v2:
             params["v2__contains"] = partial_pid_v2
+        # select_related("current_version") já vem do manager
         try:
             return cls.objects.get(**params)
         except cls.MultipleObjectsReturned as e:
@@ -1333,13 +1425,22 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     @classmethod
     @profile_classmethod
     def mark_items_as_invalid(cls, issns):
-        for item in cls.objects.filter(
+        # select_related("current_version") já vem do manager
+        # (necessário aqui pois o loop acessa item.xml_with_pre, que usa
+        # self.current_version)
+        items = cls.objects.filter(
             Q(issn_print__in=issns) | Q(issn_electronic__in=issns),
-        ).iterator():
+        )
+        items_to_update = []
+        for item in items.iterator():
             try:
-                invalid = bool(item.xml_with_pre)
+                valid = bool(item.xml_with_pre)
             except Exception as e:
-                invalid = True
+                valid = False
+            if not valid:
+                item.proc_status = choices.PPXML_STATUS_INVALID
+                items_to_update.append(item)
+        cls.objects.bulk_update(items_to_update, ["proc_status"], batch_size=100)
 
     @classmethod
     @profile_classmethod
@@ -1403,7 +1504,19 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             int: Número de items atualizados.
         """
         try:
-            items = cls.objects.filter(pkg_name=pkg_name)
+            # select_related("current_version") já vem do manager.
+            # prefetch_related com Prefetch + to_attr é necessário aqui
+            # porque o loop chama item.other_pid.filter(pid_type="pid_v3"),
+            # e um .filter() sobre manager relacionado ignora o cache do
+            # prefetch_related simples (só .all() usa o cache) — por isso
+            # a filtragem precisa estar dentro do próprio Prefetch.
+            items = cls.objects.prefetch_related(
+                Prefetch(
+                    "other_pid",
+                    queryset=OtherPid.objects.filter(pid_type="pid_v3"),
+                    to_attr="pid_v3_others",
+                )
+            ).filter(pkg_name=pkg_name)
             if items.count() <= 1:
                 return 0
 
@@ -1419,12 +1532,16 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             most_recent_item.save()
 
             for item in items.exclude(id=most_recent_item.id):
-                for other_pid in item.other_pid.filter(pid_type="pid_v3"):
+                for other_pid in item.pid_v3_others:
                     OtherPid.get_or_create(
                         user=user,
                         pid_type=other_pid.pid_type,
                         pid_in_xml=other_pid.pid_in_xml,
-                        version=other_pid.current_version,
+                        # Nota: OtherPid não tem campo current_version, e
+                        # sim `version` — corrigido aqui (era
+                        # other_pid.current_version, que não existe no
+                        # modelo e lançaria AttributeError).
+                        version=other_pid.version,
                         pid_provider_xml=most_recent_item,
                     )
                 OtherPid.get_or_create(
@@ -1451,11 +1568,6 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             self.save()
             return True
         return False
-    
-    def add_event(self, name, proc_status, detail=None, errors=None, exceptions=None):
-        self.proc_status = proc_status
-        self.save()
-        return XMLEvent.register(self, name, detail=detail, errors=errors, exceptions=exceptions)
 
 
 class FixPidV2(CommonControlField):
@@ -1618,23 +1730,25 @@ def xml_url_zipfile_path(instance, filename):
 class XMLURL(CommonControlField):
     """
     Model to store URLs that experienced failures and should be retried in the future.
-    
+
     This model tracks URLs that failed during processing, along with their status
     and associated article PID, enabling retry mechanisms to reprocess them later.
-    
+
     Fields:
         url: URLField - The URL that needs to be retried
         status: CharField - To control the request status (e.g., "pending", "failed", "retrying")
         pid: CharField - Article PID associated with this URL
         zipfile: FileField - Compressed XML content retrieved from the URL
-        exceptions: CharField - Exception traceback information (truncated to 255 chars if needed)
+        detail: JSONField
+        is_public: BooleanField - Whether the document is public (derived from item status)
     """
 
     url = models.URLField(
         _("URL"), max_length=500, null=False, blank=False
     )
     status = models.CharField(
-        _("Status"), max_length=50, null=True, blank=True
+        _("Status"), max_length=50, null=True, blank=True,
+        choices=choices.XMLURL_STATUS,
     )
     pid = models.CharField(
         _("Article PID"), max_length=23, null=True, blank=True
@@ -1642,8 +1756,12 @@ class XMLURL(CommonControlField):
     zipfile = models.FileField(
         _("ZIP File"), upload_to=xml_url_zipfile_path, null=True, blank=True, max_length=300,
     )
-    exceptions = models.CharField(
-        _("Exceptions"), max_length=255, null=True, blank=True
+    exceptions = models.CharField(_("Exceptions"), max_length=255, null=True, blank=True)
+    detail = models.JSONField(
+        _("Detail"), null=True, blank=True
+    )
+    is_public = models.BooleanField(
+        _("Is Public"), null=True, blank=True, default=None
     )
 
     base_form_class = CoreAdminModelForm
@@ -1653,7 +1771,9 @@ class XMLURL(CommonControlField):
         FieldPanel("status"),
         FieldPanel("pid"),
         FieldPanel("zipfile"),
+        FieldPanel("detail", widget=ReadOnlyPrettyJSONWidget()),
         FieldPanel("exceptions"),
+        FieldPanel("is_public"),
     ]
 
     class Meta:
@@ -1665,6 +1785,7 @@ class XMLURL(CommonControlField):
             models.Index(fields=["url"]),
             models.Index(fields=["status"]),
             models.Index(fields=["pid"]),
+            models.Index(fields=["is_public"], name="pid_provide_is_public_idx"),
         ]
 
     def __str__(self):
@@ -1683,14 +1804,16 @@ class XMLURL(CommonControlField):
         url=None,
         status=None,
         pid=None,
-        exceptions=None,
+        detail=None,
+        is_public=None,
     ):
         try:
             obj = cls()
             obj.url = url
             obj.status = status
             obj.pid = pid
-            obj.exceptions = exceptions
+            obj.detail = detail
+            obj.is_public = is_public
             obj.creator = user
             obj.save()
             return obj
@@ -1704,7 +1827,8 @@ class XMLURL(CommonControlField):
         url=None,
         status=None,
         pid=None,
-        exceptions=None,
+        detail=None,
+        is_public=None,
     ):
         try:
             obj = cls.get(url=url)
@@ -1713,8 +1837,10 @@ class XMLURL(CommonControlField):
                 obj.status = status
             if pid is not None:
                 obj.pid = pid
-            if exceptions is not None:
-                obj.exceptions = exceptions
+            if detail is not None:
+                obj.detail = detail
+            if is_public is not None:
+                obj.is_public = is_public
             obj.save()
             return obj
         except cls.DoesNotExist:
@@ -1723,17 +1849,18 @@ class XMLURL(CommonControlField):
                 url,
                 status,
                 pid,
-                exceptions,
+                detail,
+                is_public=is_public,
             )
 
     def save_file(self, xml_content, filename=None):
         """
         Create a zip file from XML content and save it to the zipfile field.
-        
+
         Args:
             xml_content: str or bytes - The XML content to compress
             filename: str - Optional filename for the XML inside the zip (defaults to 'content.xml')
-            
+
         Returns:
             bool - True if file was saved successfully, False otherwise
         """
@@ -1741,22 +1868,46 @@ class XMLURL(CommonControlField):
             # Convert string to bytes if needed
             if isinstance(xml_content, str):
                 xml_content = xml_content.encode('utf-8')
-            
+
             # Create in-memory zip file
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
                 # Use provided filename or default
                 xml_filename = filename or 'content.xml'
                 zip_file.writestr(xml_filename, xml_content)
-            
+
             # Save the zip file to the model
             zip_filename = f"{self.pid or 'unknown'}_{self.pk or 'new'}.zip"
             self.zipfile.save(zip_filename, ContentFile(zip_buffer.getvalue()), save=True)
-            
+
             return True
         except Exception as e:
             logging.error(f"Error saving zip file for XMLURL {self.url}: {e}")
             return False
+        
+    @classmethod
+    def record(cls, user, url, status, document_item, *, exception=None, response=None, xml_with_pre=None, name=None):
+        detail = {"document_item": document_item}
+        if exception is not None:
+            detail["exceptions"] = traceback.format_exc()
+        if response is not None:
+            detail["response"] = response
+
+        pid = response.get("v3") if response else None
+
+        is_public = None
+        if document_item:
+            doc_status = document_item.get("status")
+            if doc_status is not None:
+                is_public = doc_status != "false"
+
+        xmlurl_obj = cls.create_or_update(user=user, url=url, status=status, pid=pid, detail=detail, is_public=is_public)
+
+        if xml_with_pre is not None:
+            filename = name or pid or "content.xml"
+            xmlurl_obj.save_file(xml_with_pre.tostring(), filename=filename)
+
+        return xmlurl_obj
 
 
 class XMLEvent(BaseEvent, CommonControlField):
@@ -1791,3 +1942,105 @@ class XMLEvent(BaseEvent, CommonControlField):
         completed = bool(not errors and not exceptions)
         obj.finish(completed=completed, detail=detail, errors=errors, exceptions=exceptions)
         return obj
+
+
+# -----------------------------------------------------------------------------
+# [models.py] MODELO NOVO — PidProviderXMLRegistration
+# Auditoria por documento. Grava SEMPRE (created/updated/skipped/forbidden/
+# conflict/unmatched/error). FK nullable (unmatched/error podem não ter PPX).
+# -----------------------------------------------------------------------------
+class PidProviderXMLRegistration(CommonControlField):
+    LIGHTWEIGHT_STATUSES = {"created", "updated", "skip_update"}
+
+    EVENT_CREATED = "created"
+    EVENT_UPDATED = "updated"
+    EVENT_SKIPPED = "skipped"
+    EVENT_FORBIDDEN = "forbidden"
+    EVENT_CONFLICT = "conflict"
+    EVENT_UNMATCHED = "unmatched"
+    EVENT_ERROR = "error"
+    EVENT_BAD_REQUEST = "bad_request"
+
+    EVENT_STATUS_CHOICES = (
+        (EVENT_CREATED, "created"),
+        (EVENT_UPDATED, "updated"),
+        (EVENT_SKIPPED, "skipped"),
+        (EVENT_FORBIDDEN, "forbidden"),
+        (EVENT_CONFLICT, "conflict"),
+        (EVENT_UNMATCHED, "unmatched"),
+        (EVENT_BAD_REQUEST, "bad_request"),
+        (EVENT_ERROR, "error"),
+    )
+
+    pid_provider_xml = models.ForeignKey(
+        PidProviderXML,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="registration_events",
+    )
+    pkg_name = models.CharField(
+        _("Package name"), max_length=100, null=True, blank=True
+    )
+    event_status = models.CharField( 
+        _("Event status"),
+        max_length=15,
+        null=True,
+        blank=True,
+        choices=EVENT_STATUS_CHOICES,
+    )
+    detail = models.JSONField(_("Detail"), null=True, blank=True)
+
+    base_form_class = CoreAdminModelForm
+
+    panels = [
+        FieldPanel("event_status", read_only=True),
+        FieldPanel("pkg_name", read_only=True),
+        AutocompletePanel("pid_provider_xml", read_only=True),
+        FieldPanel("detail", widget=ReadOnlyPrettyJSONWidget(), read_only=True),
+    ]
+
+    class Meta:
+        ordering = ["-created"]
+        verbose_name = _("PidProviderXML Registration")
+        verbose_name_plural = _("PidProviderXML Registrations")
+        indexes = [
+            models.Index(fields=["pkg_name"]),
+            models.Index(fields=["event_status"]),
+            models.Index(fields=["-created"]),
+            models.Index(fields=["pid_provider_xml"]),
+        ]
+
+    def __str__(self):
+        return f"{self.pkg_name} {self.event_status} {self.created}"
+
+    @staticmethod
+    def _serialize_detail(detail):
+        """
+        O detail do detail contém o objeto PidProviderXML em
+        detail['registered']. Para gravar em JSON, troca pelo v3/id.
+        """
+        if not detail:
+            return None
+        data = dict(detail)
+        registered = data.get("registered")
+        if registered is not None and hasattr(registered, "v3"):
+            data["registered"] = {"id": registered.id, "v3": registered.v3}
+        return data
+
+    @classmethod
+    def record(cls, user, event_status, pid_provider_xml=None, pkg_name=None,
+            detail=None):
+        try:
+            obj = cls()
+            obj.creator = user
+            obj.pid_provider_xml = pid_provider_xml
+            obj.pkg_name = pkg_name or (pid_provider_xml and pid_provider_xml.pkg_name)
+            obj.event_status = event_status
+            if event_status not in cls.LIGHTWEIGHT_STATUSES:
+                obj.detail = cls._serialize_detail(detail)
+            obj.save()
+            return obj
+        except Exception as e:
+            logging.exception(f"Unable to record PidProviderXMLRegistration: {e}")
+            return None
