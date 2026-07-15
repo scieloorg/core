@@ -3,8 +3,53 @@ from functools import cached_property
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
-from core.utils.profiling_tools import profile_function
+from core.utils.similarity import how_similar
 from pid_provider import exceptions
+
+
+def compare(registered_items, input_data):
+    """
+    """
+    total_score = 0
+    items = []
+    for label, registered_item in registered_items.items():
+        result = compare_items(label, registered_item, input_data.get(label))
+        items.append(result)
+        total_score += result["score"]
+    return {
+        "items": items,
+        "total_score": total_score,
+        "percentual_score": total_score / len(items)
+    }
+
+
+def compare_lists(registered, xml_adapter_titles):
+    if xml_adapter_titles == registered:
+        return 1
+    if not xml_adapter_titles:
+        return 0
+    if not registered:
+        return 0
+    words1 = set()
+    for item in xml_adapter_titles:
+        words1.update(item.split())
+    words2 = set()
+    for item in registered:
+        words2.update(item.split())
+    return how_similar(" ".join(sorted(words1)), " ".join(sorted(words2)))
+
+
+def compare_items(label, registered, input_data):
+    if isinstance(registered, list):
+        score = compare_lists(registered, input_data)
+    elif (input_data or None) == (registered or None):
+        score = 1
+    else:
+        score = how_similar(input_data, registered)
+    response = {"label": label, "score": score}
+    if score != 1:
+        response["registered"] = registered
+    return response
 
 
 def get_score(registered, xml_data, min_value, max_value):
@@ -35,7 +80,7 @@ class QueryBuilderPidProviderXML:
     
     def __init__(self, xml_adapter):
         """
-        Inicializa o construtor de queries.
+        Inicializa o construtor de queries obtendo os dicionários de dados do adaptador.
         
         Parameters
         ----------
@@ -43,269 +88,165 @@ class QueryBuilderPidProviderXML:
             Adaptador com dados do XML para busca
         """
         self.xml_adapter = xml_adapter
-    
-    # ========== Cached Properties para Atributos do XML Adapter ==========
-    
-    @cached_property
-    def v3(self):
-        """PID v3 do documento."""
-        return self.xml_adapter.v3
-    
-    @cached_property
-    def v2(self):
-        """PID v2 do documento."""
-        return self.xml_adapter.v2
-    
-    @cached_property
-    def aop_pid(self):
-        """PID AOP (Ahead of Print) do documento."""
-        return self.xml_adapter.aop_pid
-    
-    @cached_property
-    def pkg_name(self):
-        """Nome do pacote do documento, parâmtro usado ao instanciar XMLAdapter"""
-        return self.xml_adapter.pkg_name
+        # Centraliza o acesso aos dados brutos e normalizados (hashes de 64 chars)
+        self.adapter_data = xml_adapter.data
+        self.compare_data = xml_adapter.get_data_to_compare()
+        self.xml_with_pre_data = xml_adapter.xml_with_pre.get_article_data(300)
 
-    @cached_property
-    def sps_pkg_name(self):
-        """Nome do pacote do documento (deprecated)."""
-        return self.xml_adapter.sps_pkg_name
+    @property
+    def pkg_name_list(self):
+        # --- Resolução Consolidada de Package Names ---
+        pkg_names = set()
+        # 1. Nome enviado originalmente via parâmetro no construtor
+        if self.xml_adapter.pkg_name:
+            pkg_names.add(self.xml_adapter.pkg_name)
+        # 2. Nome oficial atual gerado pelo motor de cálculo do XML
+        if self.xml_adapter.sps_pkg_name:
+            pkg_names.add(self.xml_adapter.sps_pkg_name)
+        # 3. Consolida todas as listas de nomes depreciados/alternativos
+        pkg_names.update(self.xml_adapter.xml_with_pre.deprecated_sps_pkg_name_list)
+        return set(item for item in pkg_names if item)
+    
+    def validate_input_data(self):
+        if not self.adapter_data.get("pub_year"):
+            raise exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError()
+        issn_electronic = self.adapter_data.get("issn_electronic")
+        issn_print = self.adapter_data.get("issn_print")
+        if not issn_electronic and not issn_print:
+            raise exceptions.RequiredISSNErrorToGetPidProviderXMLError()
+        items = list(self.article_location_params.values())
+        if any(items):
+            return
+        article_titles = (self.xml_with_pre_data.get("article_titles") or [])
+        article_titles = [x for x in article_titles if x]
+        items = [
+            article_titles,
+            self.xml_with_pre_data.get("surnames"),
+            self.xml_with_pre_data.get("collab"),
+            self.xml_with_pre_data.get("links"),
+            self.xml_with_pre_data.get("partial_body"),
+        ]
+        if any(items):
+            return
+        raise exceptions.NotEnoughParametersToGetPidProviderXMLError()
 
-    @cached_property
-    def deprecated_sps_pkg_name(self):
-        """Nome do pacote do documento (deprecated)."""
-        return self.xml_adapter.sps_pkg_name
-
-    @cached_property
-    def main_doi(self):
-        """DOI principal do documento."""
-        return self.xml_adapter.main_doi
-    
-    @cached_property
-    def journal_issn_electronic(self):
-        """ISSN eletrônico do periódico."""
-        return self.xml_adapter.journal_issn_electronic
-    
-    @cached_property
-    def journal_issn_print(self):
-        """ISSN impresso do periódico."""
-        return self.xml_adapter.journal_issn_print
-    
-    @cached_property
-    def elocation_id(self):
-        """Identificador de localização eletrônica."""
-        return self.xml_adapter.elocation_id
-    
-    @cached_property
-    def fpage(self):
-        """Primeira página do artigo."""
-        return self.xml_adapter.fpage
-    
-    @cached_property
-    def fpage_seq(self):
-        """Sequência da primeira página."""
-        return self.xml_adapter.fpage_seq
-    
-    @cached_property
-    def lpage(self):
-        """Última página do artigo."""
-        return self.xml_adapter.lpage
-    
-    @cached_property
-    def pub_year(self):
-        """Ano de publicação."""
-        return self.xml_adapter.pub_year
-    
-    @cached_property
-    def volume(self):
-        """Volume da publicação."""
-        return self.xml_adapter.volume
-    
-    @cached_property
-    def number(self):
-        """Número/fascículo da publicação."""
-        return self.xml_adapter.number
-    
-    @cached_property
-    def suppl(self):
-        """Suplemento da publicação."""
-        return self.xml_adapter.suppl
-    
-    @cached_property
-    def z_surnames(self):
-        """Sobrenomes dos autores concatenados."""
-        return self.xml_adapter.z_surnames
-    
-    @cached_property
-    def z_collab(self):
-        """Colaborações do artigo."""
-        return self.xml_adapter.z_collab
-    
-    @cached_property
-    def z_links(self):
-        """Links relacionados ao artigo."""
-        return self.xml_adapter.z_links
-    
-    @cached_property
-    def z_partial_body(self):
-        """Conteúdo parcial do corpo do artigo."""
-        return self.xml_adapter.z_partial_body
-
-    @cached_property
-    def order(self):
-        """Conteúdo parcial do corpo do artigo."""
-        return self.xml_adapter.order
-    
     # ========== Queries Construídas ==========
     
-    @cached_property
+    @property
     def identifier_queries(self):
         """
         Constrói queries para busca por identificadores (v3, v2, aop_pid, pkg_name, DOI).
-        
-        Busca em múltiplos campos incluindo other_pid para garantir
-        compatibilidade com diferentes formatos de PIDs.
-        
-        Returns
-        -------
-        Q
-            Query object combinando buscas por v3, v2, aop_pid, pkg_name e main_doi
         """
         q = Q()
+        other_pids = set()
         
+        # PIDs diretos do xml_adapter (não envelopados no data dict)
+        v3 = self.xml_adapter.v3
+        v2 = self.xml_adapter.v2
+        aop_pid = self.xml_adapter.aop_pid
+    
         # PID v3 - máxima prioridade
-        if self.v3:
-            q |= Q(v3=self.v3)
+        if v3:
+            q |= Q(v3=v3)
         
         # PID v2
-        if self.v2:
-            q |= Q(v2=self.v2)
+        if v2:
+            q |= Q(v2=v2)
         
         # AOP PID
-        if self.aop_pid:
-            q |= Q(v2=self.aop_pid) | Q(aop_pid=self.aop_pid)
+        if aop_pid:
+            q |= Q(v2=aop_pid) | Q(aop_pid=aop_pid)
             
-        # Package name
-        pkg_names = set()
-        if self.pkg_name:
-            pkg_names.add(self.pkg_name)
-        if self.sps_pkg_name:
-            pkg_names.add(self.sps_pkg_name)
-        if self.deprecated_sps_pkg_name:
-            pkg_names.add(self.deprecated_sps_pkg_name)
+        # Package names históricos e atuais
+        pkg_names = self.pkg_name_list
         if pkg_names:
             q |= Q(pkg_name__in=pkg_names)
 
-        # # DOI principal
-        # if self.main_doi:
-        #     q |= Q(main_doi=self.main_doi)
-
+        main_doi = self.adapter_data.get("main_doi")
+        if main_doi:
+            q |= Q(main_doi=main_doi)
+            
         return q
     
-    @cached_property
+    @property
     def issn_query(self):
         """
         Constrói query base para busca por ISSN (eletrônico ou impresso).
-        
-        Returns
-        -------
-        Q
-            Query object combinando ISSN eletrônico e impresso com operador OR
-        
-        Raises
-        ------
-        RequiredISSNErrorToGetPidProviderXMLError
-            Se nenhum ISSN (eletrônico ou impresso) estiver disponível
         """
         q = Q()
+        issn_electronic = self.adapter_data.get("issn_electronic")
+        issn_print = self.adapter_data.get("issn_print")
         
-        if not self.journal_issn_electronic and not self.journal_issn_print:
+        if not issn_electronic and not issn_print:
             raise exceptions.RequiredISSNErrorToGetPidProviderXMLError(
                 _("Required Print or Electronic ISSN to identify XML {}").format(
-                    self.pkg_name,
+                    self.xml_adapter.pkg_name,
                 )
             )
         
-        if self.journal_issn_electronic:
-            q |= Q(issn_electronic=self.journal_issn_electronic)
+        if issn_electronic:
+            q |= Q(issn_electronic=issn_electronic)
         
-        if self.journal_issn_print:
-            q |= Q(issn_print=self.journal_issn_print)
+        if issn_print:
+            q |= Q(issn_print=issn_print)
         
         return q
            
-    @cached_property
+    @property
     def issue_params(self):
         """
         Constrói dicionário com metadados do fascículo e paginação do artigo.
-        
-        Retorna todos os campos sem verificar presença, permitindo
-        que o ORM do Django filtre automaticamente valores None.
-        
-        Returns
-        -------
-        dict
-            Dicionário com elocation_id, fpage, fpage_seq, lpage, 
-            pub_year, volume, number e suppl
+        """
+        return {
+            "pub_year": self.adapter_data.get("pub_year"),
+            "volume": self.adapter_data.get("volume"),
+            "number": self.adapter_data.get("number"),
+            "suppl": self.adapter_data.get("suppl"),
+        }
+
+    @property
+    def article_location_params(self):
+        """
+        Constrói dicionário com metadados de localização do artigo.
         """
         data = {
-            "elocation_id": self.elocation_id,
-            "fpage": self.fpage,
-            "fpage_seq": self.fpage_seq,
-            "lpage": self.lpage,
-            "pub_year": self.pub_year,
-            "volume": self.volume,
-            "number": self.number,
-            "suppl": self.suppl,
+            "elocation_id": self.adapter_data.get("elocation_id"),
+            "fpage": self.adapter_data.get("fpage"),
+            "fpage_seq": self.adapter_data.get("fpage_seq"),
+            "lpage": self.adapter_data.get("lpage"),
         }
-        if self.order:
-            data["v2__endswith"] = self.order
-        elif not self.elocation_id and not self.fpage and self.main_doi:
-            data["main_doi__iexact"] = self.main_doi
+        order = self.xml_adapter.order
+        if order:
+            data["v2__endswith"] = order
         return data
     
-    @cached_property
+    @property
     def article_data_query(self):
         """
-        Constrói query para busca por dados textuais do artigo.
-        
-        Combina buscas por sobrenomes de autores, colaborações,
-        links e conteúdo parcial do corpo do artigo.
-        
-        Returns
-        -------
-        Q or None
-            Query object combinando z_surnames, z_collab, z_links e z_partial_body,
-            ou None se nenhum dado textual estiver disponível
+        Constrói query para busca por dados textuais codificados (hashes sha256).
         """
-        # Verifica se há algum dado textual disponível
-        if not any([
-            self.z_surnames,
-            self.z_collab,
-            self.z_links,
-            self.z_partial_body,
-        ]):
-            return Q(
-                z_surnames=self.z_surnames,
-                z_collab=self.z_collab,
-                z_links=self.z_links,
-                z_partial_body=self.z_partial_body,
-            )
+        z_surnames = self.adapter_data.get("z_surnames")
+        z_collab = self.adapter_data.get("z_collab")
+        z_links = self.adapter_data.get("z_links")
+        z_partial_body = self.adapter_data.get("z_partial_body")
+
+        # Se houver qualquer dado textual disponível, constrói query com OR (|)
+        if z_surnames or z_partial_body or z_collab or z_links:
+            q = Q()
+            if z_surnames:
+                q |= Q(z_surnames=z_surnames)
+            if z_collab:
+                q |= Q(z_collab=z_collab)
+            if z_links:
+                q |= Q(z_links=z_links)
+            if z_partial_body:
+                q |= Q(z_partial_body=z_partial_body)
+            return q
         
-        q = Q()
-        
-        # Adiciona query para sobrenomes se disponível
-        if self.z_surnames:
-            q |= Q(z_surnames=self.z_surnames)
-        
-        # Adiciona queries para outros campos textuais
-        if self.z_collab:
-            q |= Q(z_collab=self.z_collab)
-        
-        if self.z_links:
-            q |= Q(z_links=self.z_links)
-        
-        if self.z_partial_body:
-            q |= Q(z_partial_body=self.z_partial_body)
-        
-        return q
+        # Caso contrário, retorna os campos (geralmente None neste ponto) com AND
+        return Q(
+            z_surnames=z_surnames,
+            z_collab=z_collab,
+            z_links=z_links,
+            z_partial_body=z_partial_body,
+        ) & Q(**self.article_location_params)
