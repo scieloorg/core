@@ -1,4 +1,5 @@
 import sys
+import traceback
 
 # from django.utils.translation import gettext_lazy as _
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre, get_xml_with_pre
@@ -7,6 +8,7 @@ from core.utils.profiling_tools import (  # ajuste o import conforme sua estrutu
     profile_method,
 )
 from pid_provider.models import PidProviderXML, XMLURL
+from pid_provider import choices
 from tracker.models import UnexpectedEvent
 
 
@@ -170,14 +172,25 @@ class BasePidProvider:
         -------
             dict
         """
-        # a) Try to obtain XML from URI
         try:
-            xml_with_pre = list(XMLWithPre.create(uri=xml_uri))[0]
-        except Exception as e:
-            return XMLURL.record(user, xml_uri, "xml_fetch_failed", document_item, exception=e)
+            xml_with_pre = None
+            response = None
+            exception = None
+            params = {
+                "name": name,
+                "origin_date": origin_date,
+                "force_update": force_update,
+                "is_published": is_published,
+                "registered_in_core": registered_in_core,
+                "auto_solve_pid_conflict": auto_solve_pid_conflict,
+                "detail": detail,
+                "document_item": document_item,
+            }
 
-        # b) Try to create PidProviderXML record
-        try:
+            # a) Try to obtain XML from URI
+            xml_with_pre = list(XMLWithPre.create(uri=xml_uri))[0]
+
+            # b) Try to create PidProviderXML record
             response = self.provide_pid_for_xml_with_pre(
                 xml_with_pre,
                 name,
@@ -189,49 +202,31 @@ class BasePidProvider:
                 registered_in_core=registered_in_core,
                 auto_solve_pid_conflict=auto_solve_pid_conflict,
             )
-
-            resp = dict(response)  # make a copy to avoid mutating original
-            try:
-                resp.pop("xml_with_pre", None)  # Remove xml_with_pre from response for logging
-            except AttributeError:
-                pass  # If xml_with_pre is not present or cannot be removed, ignore and log rest of response
-
-            if response.get("error_type") or response.get("error_msg") or response.get("error_message"):
-                XMLURL.record(user, xml_uri, "pid_provider_xml_failed", document_item, response=resp, xml_with_pre=xml_with_pre, name=name)
-            else:
-                XMLURL.record(user, xml_uri, "success", document_item, response=resp, xml_with_pre=xml_with_pre, name=name)
-            return response
-        except Exception as e:
-            return self._handle_unexpected_error(e, xml_uri, name, user, origin_date, force_update, is_published, document_item)
-
-    def _handle_unexpected_error(self, exception, xml_uri, name, user, origin_date, force_update, is_published, document_item):
-        """Handle exception type c) - Unexpected error during processing"""
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        
-        UnexpectedEvent.create(
-            exception=exception,
-            exc_traceback=exc_traceback,
-            detail={
-                "operation": "PidProvider.provide_pid_for_xml_uri",
-                "exception_type": "unexpected_error",
-                "input": dict(
-                    xml_uri=xml_uri,
-                    user=user.username,
-                    name=name,
-                    origin_date=origin_date,
-                    force_update=force_update,
-                    is_published=is_published,
-                    document_item=document_item,
-                ),
-            },
-        )
-        
-        return dict(
-            error_msg=str(exception),
-            error_type=str(exc_type),
-            exc_value=str(exc_value),
-            exc_traceback=str(exc_traceback),
-        )
+            xml_url_obj = XMLURL.record(
+                user=user,
+                url=xml_uri,
+                document_item=document_item,
+                exception=exception,
+                response=response,
+                xml_with_pre=xml_with_pre,
+                params=params,
+                is_public=is_published,
+            )
+            return xml_url_obj.data
+        except Exception as exc:
+            exception = exc
+            xml_url_obj = XMLURL.record(
+                user=user,
+                url=xml_uri,
+                document_item=document_item,
+                exception=exception,
+                traceback_msg=traceback.format_exc(),
+                response=response,
+                xml_with_pre=xml_with_pre,
+                params=params,
+                is_public=is_published,
+            )
+            return xml_url_obj.data
 
     @classmethod
     @profile_method
@@ -272,6 +267,11 @@ class BasePidProvider:
         try:
             for xml_with_pre in XMLWithPre.create(uri=xml_uri):
                 return cls.is_registered_xml_with_pre(xml_with_pre, xml_uri)
+            # XMLWithPre.create não retornou nenhum item para esta URI
+            return {
+                "error_msg": f"Unable to obtain any XML from {xml_uri}",
+                "error_type": "EmptyXMLWithPreError",
+            }
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
@@ -322,7 +322,7 @@ class BasePidProvider:
                     ),
                 },
             )
-            return {
+            yield {
                 "error_msg": f"Unable to check whether {zip_xml_file_path} is registered {e}",
                 "error_type": str(type(e)),
             }
