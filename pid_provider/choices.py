@@ -3,10 +3,12 @@ from django.utils.translation import gettext_lazy as _
 ENDPOINTS = (("fix-pid-v2", "fix-pid-v2"),)
 
 XMLURL_STATUS_SUCCESS = "success"
+XMLURL_STATUS_UNEXPECTED_FAILURE = "unexpected_failure"
 XMLURL_STATUS_XML_FETCH_FAILED = "xml_fetch_failed"
 XMLURL_STATUS_PID_PROVIDER_XML_FAILED = "pid_provider_xml_failed"
 XMLURL_STATUS = (
     (XMLURL_STATUS_SUCCESS, _("Success")),
+    (XMLURL_STATUS_UNEXPECTED_FAILURE, _("Unexpected failure")),
     (XMLURL_STATUS_XML_FETCH_FAILED, _("XML fetch failed")),
     (XMLURL_STATUS_PID_PROVIDER_XML_FAILED, _("PID provider XML failed")),
 )
