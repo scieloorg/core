@@ -1756,7 +1756,6 @@ class XMLURL(CommonControlField):
     zipfile = models.FileField(
         _("ZIP File"), upload_to=xml_url_zipfile_path, null=True, blank=True, max_length=300,
     )
-    exceptions = models.CharField(_("Exceptions"), max_length=255, null=True, blank=True)
     detail = models.JSONField(
         _("Detail"), null=True, blank=True
     )
@@ -1772,7 +1771,6 @@ class XMLURL(CommonControlField):
         FieldPanel("pid"),
         FieldPanel("zipfile"),
         FieldPanel("detail", widget=ReadOnlyPrettyJSONWidget()),
-        FieldPanel("exceptions"),
         FieldPanel("is_public"),
     ]
 
@@ -1886,28 +1884,81 @@ class XMLURL(CommonControlField):
             return False
         
     @classmethod
-    def record(cls, user, url, status, document_item, *, exception=None, response=None, xml_with_pre=None, name=None):
-        detail = {"document_item": document_item}
+    def record(
+        cls,
+        user,
+        url,
+        document_item,
+        exception=None,
+        traceback_msg=None,
+        response=None,
+        xml_with_pre=None,
+        is_public=None,
+        params=None,
+    ):
+        detail = {
+            "params": params,
+            "document_item": document_item,
+        }
         if exception is not None:
-            detail["exceptions"] = traceback.format_exc()
+            detail["exception"] = {
+                "error_message": str(exception),
+                "error_type": str(type(exception)),
+            }
+        if traceback_msg is not None:
+            detail["traceback"] = traceback_msg
         if response is not None:
             detail["response"] = response
+        status = XMLURL.get_status(xml_with_pre, response)
+        pid = (response or {}).get("v3")
 
-        pid = response.get("v3") if response else None
+        if is_public is None and document_item:
+            try:
+                is_public = document_item["status"]
+            except KeyError:
+                # não é possível saber se está publicado ou não, mantém None
+                pass
 
-        is_public = None
-        if document_item:
-            doc_status = document_item.get("status")
-            if doc_status is not None:
-                is_public = doc_status != "false"
-
-        xmlurl_obj = cls.create_or_update(user=user, url=url, status=status, pid=pid, detail=detail, is_public=is_public)
-
-        if xml_with_pre is not None:
-            filename = name or pid or "content.xml"
-            xmlurl_obj.save_file(xml_with_pre.tostring(), filename=filename)
-
+        xmlurl_obj = cls.create_or_update(
+            user=user,
+            url=url,
+            status=status,
+            pid=pid,
+            detail=detail,
+            is_public=is_public,
+        )
+        if xml_with_pre:
+            xmlurl_obj.save_file(xml_with_pre.tostring(), filename=xml_with_pre.sps_pkg_name+".xml")
         return xmlurl_obj
+    
+    @property
+    def data(self):
+        detail = self.detail
+        if detail.get("response"):
+            return detail.get("response")
+        
+        data = {}
+        data.update(detail.get("exception") or {})
+        try:
+            data["traceback"] = detail["traceback"]
+        except KeyError:
+            pass
+        return data
+        
+    @staticmethod
+    def get_status(xml_with_pre, response):
+        if not xml_with_pre:
+            return choices.XMLURL_STATUS_XML_FETCH_FAILED
+        if not response:
+            return choices.XMLURL_STATUS_UNEXPECTED_FAILURE
+        if (
+            response.get("error") or 
+            response.get("error_type") or 
+            response.get("error_msg") or
+            response.get("error_message")
+        ):
+            return choices.XMLURL_STATUS_PID_PROVIDER_XML_FAILED
+        return choices.XMLURL_STATUS_SUCCESS
 
 
 class XMLEvent(BaseEvent, CommonControlField):
