@@ -227,8 +227,12 @@ class PidProviderXMLRegistrationViewSet(CommonControlFieldViewSet):
     # paginação (tabela cresce em volume)
     list_per_page = 50
 
-    def get_queryset(self):
-        return super().get_queryset().select_related("pid_provider_xml")
+    def get_queryset(self, request):
+        # super = CommonControlFieldViewSet
+        queryset = super().get_queryset(request)
+        if queryset is None:
+            queryset = self.model._default_manager.all()
+        return queryset.select_related("pid_provider_xml")
 
 
 # Grupo de ViewSets
