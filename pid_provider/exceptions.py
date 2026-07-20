@@ -1,3 +1,6 @@
+class SkipSavePidProviderXML(Exception): ...
+
+
 class APIPidProviderPostError(Exception): ...
 
 
