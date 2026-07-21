@@ -36,7 +36,7 @@ from pid_provider.query_params import (
     compare,
     QueryBuilderPidProviderXML,
 )
-from tracker.models import UnexpectedEvent
+from tracker.models import BaseEvent, UnexpectedEvent
 
 PARTIAL_BODY_MAX = 300
 
@@ -1564,6 +1564,11 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             return True
         return False
 
+    def add_event(self, name, proc_status, detail=None, errors=None, exceptions=None):
+        self.proc_status = proc_status
+        self.save()
+        return XMLEvent.register(self, name, detail=detail, errors=errors, exceptions=exceptions)
+
 
 class FixPidV2(CommonControlField):
     """
@@ -1904,6 +1909,39 @@ class XMLURL(CommonControlField):
 
         return xmlurl_obj
 
+
+class XMLEvent(BaseEvent, CommonControlField):
+    """
+    Model to log events related to XML processing in the PID Provider system.
+
+    This model captures various events that occur during the processing of XML data,
+    such as registration attempts, validation errors, and other significant actions,
+    along with relevant details for debugging and monitoring purposes.
+
+    Attributes:
+        name (CharField): Name of the event.
+        detail (JSONField): Detailed information about the event.
+        created (DateTimeField): Timestamp when the event was created.
+        completed (BooleanField): Indicates if the event has been completed.
+        ppxml (ParentalKey): Reference to the related PidProviderXML instance.
+
+    Methods:
+        data (property): Returns a dictionary with the event's name, detail, and creation timestamp.
+        create (classmethod): Creates and saves a new XMLEvent instance.
+        finish: Marks the event as completed and optionally updates details, errors, or exceptions.
+    """
+    ppxml = ParentalKey(
+        PidProviderXML, on_delete=models.CASCADE, related_name="events"
+    )
+
+    @classmethod
+    def register(cls, ppxml, name, detail=None, errors=None, exceptions=None):
+        obj = cls()
+        obj.ppxml = ppxml
+        obj.name = name
+        completed = bool(not errors and not exceptions)
+        obj.finish(completed=completed, detail=detail, errors=errors, exceptions=exceptions)
+        return obj
 
 # -----------------------------------------------------------------------------
 # [models.py] MODELO NOVO — PidProviderXMLRegistration
