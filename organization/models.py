@@ -101,7 +101,6 @@ class BaseOrganization(OrganizationNameMixin, VisualIdentityMixin, models.Model)
             if hasattr(obj, "creator") and user:
                 obj.creator = user
             obj.save()
-            print(obj)
             return obj
         except IntegrityError:
             return cls.get(name=name, acronym=acronym, location=location)
