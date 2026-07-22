@@ -726,6 +726,8 @@ def task_dispatch_articles(
     opac_url=None,
     # --- ativa article_source ---
     article_source_status_list=None,
+    verify=None,
+    stop=None,
 ):
     """
     Tarefa orquestradora que dispara processamento em lote de artigos.
@@ -801,6 +803,7 @@ def task_dispatch_articles(
             timeout=timeout,
             opac_url=opac_url,
             force_update=force_update,
+            stop=stop
         ):
             if item_kwargs is None:
                 skipped += 1
