@@ -857,6 +857,7 @@ def task_process_article_pipeline(
     version=None,
     user_id=None,
     username=None,
+    is_public=None,
 ):
     """
     Pipeline principal de processamento de artigos com múltiplos pontos de entrada.
@@ -941,6 +942,7 @@ def task_process_article_pipeline(
                 force_update=force_update,
                 am_article=am_article,
                 auto_solve_pid_conflict=auto_solve_pid_conflict,
+                is_public=is_public,
             )
             pp_xml_id = article_source.pid_provider_xml.id
         
