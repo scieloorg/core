@@ -154,7 +154,8 @@ class OPACHarvester:
         limit: int = 100,
         timeout: int = 5,
         verify: bool = False,
-        journal: Optional[str] = None, 
+        journal: Optional[str] = None,
+        stop: Optional[str] = None,
     ):
         """
         Inicializa o harvester do OPAC.
@@ -175,6 +176,7 @@ class OPACHarvester:
         self.timeout = timeout or 5
         self.verify = verify
         self.journal = journal
+        self.stop = stop
 
     def harvest_documents(self) -> Generator[Dict[str, Any], None, None]:
         """
@@ -273,6 +275,8 @@ class OPACHarvester:
 
                 # Verifica se deve continuar
                 page += 1
+                if self.stop and page > self.stop:
+                    break
                 if total_pages and page > total_pages:
                     logging.info(f"Completed all {total_pages} pages")
                     break
