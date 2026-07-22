@@ -12,7 +12,7 @@ from collection.models import Collection
 from core.mongodb import write_item
 from core.utils.harvesters import AMHarvester, OPACHarvester
 from institution.models import Sponsor
-from journal.models import Journal
+from journal.models import Journal, SciELOJournal
 from pid_provider.choices import (
     PPXML_STATUS_TODO,
     PPXML_STATUS_INVALID,
@@ -553,10 +553,22 @@ class ArticleIteratorBuilder:
             Collection.load(self.user)
 
         count = 0
-        for collection_acron in self.collection_acron_list or list(Collection.get_acronyms()):
-            logging.info(collection_acron)
-            harvester = self._build_harvester(collection_acron)
-            logging.info(harvester)
+        params = {}
+        if self.collection_acron_list:
+            params["collection__acron3__in"] = self.collection_acron_list
+        if self.journal_acron_list:
+            params["journal_acron__in"] = self.journal_acron_list
+
+        collection_and_journal_items = SciELOJournal.objects.select_related(
+            "collection"
+        ).filter(
+            **params
+        ).values_list(
+            "collection__acron3", "journal_acron", "issn_scielo"
+        ).distinct()
+
+        for collection_acron, journal_acron, issn_scielo in collection_and_journal_items:
+            harvester = self._build_harvester(collection_acron, journal_acron, issn_scielo)
             for document in harvester.harvest_documents():
                 count += 1
                 yield {
@@ -588,7 +600,7 @@ class ArticleIteratorBuilder:
     # Helpers privados
     # ------------------------------------------------------------------
 
-    def _build_harvester(self, collection_acron):
+    def _build_harvester(self, collection_acron, journal_acron=None, journal_id=None):
         """Instancia o harvester adequado para a coleção."""
         kwargs = dict(
             from_date=self.from_date,
@@ -597,6 +609,10 @@ class ArticleIteratorBuilder:
             timeout=self.timeout,
         )
         if collection_acron == "scl":
+            if journal_acron:
+                kwargs["journal"] = journal_acron
             return OPACHarvester(self.opac_url or "www.scielo.br", collection_acron, **kwargs)
+        if journal_id:
+            kwargs["journal"] = journal_id
         return AMHarvester("article", collection_acron, **kwargs)
 
