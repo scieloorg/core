@@ -564,6 +564,7 @@ class ArticleIteratorBuilder:
                     "collection_acron": collection_acron,
                     "pid": document["pid_v2"],
                     "source_date": document.get("processing_date") or document.get("origin_date"),
+                    "is_public": document.get("is_public")
                 }
         
         self._iter_from_harvest_count = count
