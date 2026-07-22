@@ -1694,6 +1694,7 @@ class ArticleSource(CommonControlField):
         REPROCESS = "reprocess", _("Reprocess")
         URL_ERROR = "url_error", _("URL Error")
         XML_ERROR = "xml_error", _("XML Error")
+        NOT_PUBLIC = "not_public", _("Not public")
 
     url = models.URLField(
         verbose_name=_("Article URL"),
@@ -1801,7 +1802,7 @@ class ArticleSource(CommonControlField):
         raise ValueError("ArticleSource.get requires url")
 
     @classmethod
-    def create(cls, user, url=None, source_date=None, am_article=None, force_update=None, auto_solve_pid_conflict=False):
+    def create(cls, user, url=None, source_date=None, am_article=None, force_update=None, auto_solve_pid_conflict=False, is_public=None):
         if not url:
             raise ValueError("ArticleSource.create requires url")
 
@@ -1811,7 +1812,10 @@ class ArticleSource(CommonControlField):
             obj.url = url
             obj.source_date = source_date
             obj.am_article = am_article
-            obj.status = cls.StatusChoices.PENDING
+            if is_public is False:
+                obj.status = cls.StatusChoices.NOT_PUBLIC
+            else:
+                obj.status = cls.StatusChoices.PENDING
             obj.add_pid_provider(user, force_update, auto_solve_pid_conflict=auto_solve_pid_conflict)
             return obj
         except IntegrityError:
@@ -1819,13 +1823,20 @@ class ArticleSource(CommonControlField):
 
     @classmethod
     def create_or_update(
-        cls, user, url=None, source_date=None, am_article=None, force_update=None, auto_solve_pid_conflict=False
+        cls, user, url=None, source_date=None, am_article=None, force_update=None, auto_solve_pid_conflict=False, is_public=None
     ):
         try:
             logging.info(
                 f"ArticleSource.create_or_update {url} {source_date} {am_article} {force_update}"
             )
+            changed = False
             obj = cls.get(url=url)
+            if is_public is False:
+                obj.status = cls.StatusChoices.NOT_PUBLIC
+                changed = True
+            elif is_public is True and obj.status == cls.StatusChoices.NOT_PUBLIC:
+                obj.status = cls.StatusChoices.PENDING
+                changed = True
             if (
                 force_update
                 or (source_date and source_date != obj.source_date)
@@ -1835,6 +1846,9 @@ class ArticleSource(CommonControlField):
                 obj.source_date = source_date
                 obj.am_article = am_article
                 obj.add_pid_provider(user, force_update, auto_solve_pid_conflict=auto_solve_pid_conflict)
+                changed = True
+            if changed:
+                obj.save()
             return obj
         except cls.DoesNotExist:
             return cls.create(
@@ -1843,7 +1857,8 @@ class ArticleSource(CommonControlField):
                 source_date=source_date,
                 am_article=am_article,
                 force_update=force_update,
-                auto_solve_pid_conflict=auto_solve_pid_conflict
+                auto_solve_pid_conflict=auto_solve_pid_conflict,
+                is_public=is_public,
             )
 
     @cached_property
@@ -2008,7 +2023,6 @@ class ArticleSource(CommonControlField):
             return False
         if self.status != ArticleSource.StatusChoices.COMPLETED:
             self.status = ArticleSource.StatusChoices.COMPLETED
-            self.save()
         logging.info(f"Completed: ArticleSource {self.url} is completed")
         return True
 
@@ -2029,6 +2043,11 @@ class ArticleSource(CommonControlField):
         """
         try:
             detail = []
+
+            if self.status == ArticleSource.StatusChoices.NOT_PUBLIC:
+                if not force_update:
+                    return
+
             self.status = ArticleSource.StatusChoices.PENDING
 
             # --- Etapa 1: request_xml ---
@@ -3249,7 +3268,7 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             self.save()
         
         # Add normalized affiliation to the ArticleAffiliation
-        self.affiliation.add_normalized_affiliation(
+        self.affiliation.set_normalized(
             user=user,
             organization=organization,
             location=location,
