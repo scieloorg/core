@@ -246,6 +246,8 @@ class OPACHarvester:
                         "publication_year": publication_year,
                         "url": xml_url,
                         "source_type": "opac",
+                        # True ou False. Nome ideal seria is_public, mas ficou como status
+                        "is_public": item.get("status"),
                         "metadata": {
                             "aop_pid": item.get("aop_pid"),
                             "default_language": item.get("default_language"),
