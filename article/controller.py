@@ -446,6 +446,7 @@ class ArticleIteratorBuilder:
         timeout=None,
         opac_url=None,
         force_update=None,
+        stop=None,
     ):
         self.user = user
         self.collection_acron_list = collection_acron_list
@@ -461,6 +462,7 @@ class ArticleIteratorBuilder:
         self.timeout = timeout
         self.opac_url = opac_url
         self.force_update = force_update
+        self.stop = stop
 
         self._iter_from_harvest_count = 0
         self._iter_from_article_source_count = 0
@@ -611,7 +613,9 @@ class ArticleIteratorBuilder:
         if collection_acron == "scl":
             if journal_acron:
                 kwargs["journal"] = journal_acron
-            return OPACHarvester(self.opac_url or "www.scielo.br", collection_acron, **kwargs)
+            if self.stop:
+                kwargs["stop"] = self.stop
+            return OPACHarvester(self.opac_url or "https://www.scielo.br", collection_acron, **kwargs)
         if journal_id:
             kwargs["journal"] = journal_id
         return AMHarvester("article", collection_acron, **kwargs)
