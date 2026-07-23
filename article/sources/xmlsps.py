@@ -110,31 +110,14 @@ def load_article(user, pp_xml):
     if not pp_xml:
         raise ValueError("load_article() requires params: pp_xml")
 
-    try:
-        xml_with_pre = pp_xml.xml_with_pre
-    except Exception as e:
+    xml_with_pre = pp_xml.xml_with_pre
+    if not xml_with_pre:
         Article.objects.filter(pp_xml=pp_xml).exclude(
             data_status=choices.DATA_STATUS_INVALID,
         ).update(
             data_status=choices.DATA_STATUS_INVALID,
         )
-        errors = [
-            {
-                "function": "load_article",
-                "error_type": e.__class__.__name__,
-                "error_message": str(e),
-                "timestamp": datetime.now().isoformat(),
-            }
-        ]
-        detail["messages"] = messages
-        pp_xml.add_event(
-            name="load_article",
-            proc_status=PPXML_STATUS_INVALID,
-            detail=detail,
-            errors=errors,
-            exceptions=e,
-        )
-        raise ValueError(f"Unable to get XML to load article from {pp_xml}: {e}")
+        raise ValueError(f"Unable to get XML to load article from {pp_xml}")
 
     try:
         errors = []
@@ -164,11 +147,20 @@ def load_article(user, pp_xml):
             )
 
         # CRIAÇÃO/OBTENÇÃO DO OBJETO PRINCIPAL
-        article = Article.create_or_update(
-            user=user,
-            pid_v3=pid_v3,
-            sps_pkg_name=sps_pkg_name,
-        )
+        try:
+            article = Article.objects.get(
+                pp_xml=pp_xml,
+            )
+        except Article.MultipleObjectsReturned:
+            article = Article.objects.filter(
+                pp_xml=pp_xml,
+            ).order_by("-updated").first()
+        except Article.DoesNotExist:
+            article = Article.create_or_update(
+                user=user,
+                pid_v3=pid_v3,
+                sps_pkg_name=sps_pkg_name,
+            )
         messages.append(f"...Article {pid_v3} {sps_pkg_name}")
 
         article.events.all().delete()
