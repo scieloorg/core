@@ -1,11 +1,8 @@
-import logging
-import sys
 import traceback
 from datetime import datetime
 from itertools import product
 
 from django.utils.translation import gettext_lazy as _
-from lxml import etree
 from packtools.sps.models.article_abstract import ArticleAbstract
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_contribs import ArticleContribs, XMLContribs
@@ -40,16 +37,9 @@ from institution.models import Sponsor
 from issue.models import Issue, TableOfContents, AMIssue
 from issue.articlemeta.loader import load_issue_sections
 from journal.models import Journal
-from location.models import Location
-from pid_provider.choices import (
-    PPXML_STATUS_UNMATCHED_JOURNAL_OR_ISSUE,
-    PPXML_STATUS_INVALID,
-)
-from pid_provider.models import PidProviderXML
 
 # Researcher no longer used - replaced by ContribPerson
 # from researcher.models import Affiliation, Researcher
-from tracker.models import UnexpectedEvent
 from vocabulary.models import Keyword
 
 
@@ -100,8 +90,9 @@ def load_article(user, pp_xml):
         - O processamento continua mesmo com falhas parciais
         - O campo article.valid indica se o processamento foi completo
     """
+    article = None
     messages = [f"load article {pp_xml}"]
-    detail = {"pp_xml": str(pp_xml)}
+    errors = []
 
     # Validações iniciais
     if not user:
@@ -120,10 +111,6 @@ def load_article(user, pp_xml):
         raise ValueError(f"Unable to get XML to load article from {pp_xml}")
 
     try:
-        errors = []
-        article = None
-        event = None
-
         xmltree = xml_with_pre.xmltree
         pid_v3 = xml_with_pre.v3
         sps_pkg_name = xml_with_pre.sps_pkg_name
@@ -163,14 +150,9 @@ def load_article(user, pp_xml):
             )
         messages.append(f"...Article {pid_v3} {sps_pkg_name}")
 
-        article.events.all().delete()
-        # add_event() ainda não repassa `detail` para ArticleEvent.create();
-        # o detail com as mensagens só é persistido em event.finish() abaixo
-        event = article.add_event(user, _("load article"))
-
         # Configurar todos os campos antes de salvar (Sugestão 9)
         article.valid = False
-        article.data_status = choices.DATA_STATUS_PENDING
+        # article.data_status = choices.DATA_STATUS_PENDING
         article.pp_xml = pp_xml
         article.sps_pkg_name = sps_pkg_name
 
@@ -245,35 +227,31 @@ def load_article(user, pp_xml):
         article.create_legacy_keys(user)
         if not article.pid_v2:
             raise ValueError(f"Article has no PID v2: {article.pid_v3}")
-        if not errors:
-            article.mark_as_completed()
 
-        messages.append(
-            f"The article {pid_v3} has been processed with {len(errors)} errors"
-        )
-
-        event.finish(errors=errors, detail={"messages": messages})
-        return article
+        return finish(article, errors, messages)
     except Exception as e:
         add_error(errors, "load_article", e)
-
-        if event:
-            event.finish(
-                errors=errors,
-                exceptions=traceback.format_exc(),
-                detail={"messages": messages},
-            )
-            raise
-
-        detail["messages"] = messages
-        pp_xml.add_event(
-            name="load_article",
-            proc_status=PPXML_STATUS_UNMATCHED_JOURNAL_OR_ISSUE,
-            detail=detail,
-            errors=errors,
-            exceptions=e,
-        )
+        finish(article, errors, messages)
         raise
+
+
+def finish(article, errors, messages):
+    if not article:
+        return
+
+    detail = {}
+    if errors:
+        detail["errors"] = errors
+    if messages:
+        detail["messages"] = messages
+
+    # atualmente o nome do campo é errors, mas reusá-lo para outros detalhes
+    article.errors = detail
+    if errors:
+        article.save()
+    else:
+        article.mark_as_completed()
+    return article
 
 
 def add_peer_review_dates(xmltree, article, errors):
