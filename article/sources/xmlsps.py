@@ -94,11 +94,13 @@ def load_article(user, pp_xml):
                    ou se o usuário não for informado
 
     Note:
-        - Erros durante o processamento são coletados em article.errors
+        - Erros durante o processamento são coletados em `errors`
+        - Mensagens de progresso são coletadas em `messages` e passadas
+          como `detail` para `event.finish(...)`, que as persiste no evento
         - O processamento continua mesmo com falhas parciais
         - O campo article.valid indica se o processamento foi completo
     """
-    logging.info(f"load article {pp_xml}")
+    messages = [f"load article {pp_xml}"]
     detail = {"pp_xml": str(pp_xml)}
 
     # Validações iniciais
@@ -111,14 +113,10 @@ def load_article(user, pp_xml):
     try:
         xml_with_pre = pp_xml.xml_with_pre
     except Exception as e:
-        updated = (
-            Article.objects.filter(pp_xml=pp_xml)
-            .exclude(
-                data_status=choices.DATA_STATUS_INVALID,
-            )
-            .update(
-                data_status=choices.DATA_STATUS_INVALID,
-            )
+        Article.objects.filter(pp_xml=pp_xml).exclude(
+            data_status=choices.DATA_STATUS_INVALID,
+        ).update(
+            data_status=choices.DATA_STATUS_INVALID,
         )
         errors = [
             {
@@ -128,6 +126,7 @@ def load_article(user, pp_xml):
                 "timestamp": datetime.now().isoformat(),
             }
         ]
+        detail["messages"] = messages
         pp_xml.add_event(
             name="load_article",
             proc_status=PPXML_STATUS_INVALID,
@@ -143,11 +142,10 @@ def load_article(user, pp_xml):
         event = None
 
         xmltree = xml_with_pre.xmltree
-
         pid_v3 = xml_with_pre.v3
         sps_pkg_name = xml_with_pre.sps_pkg_name
 
-        logging.info(f"Pid Provider XML: {pid_v3} {sps_pkg_name}")
+        messages.append(f"Pid Provider XML: {pid_v3} {sps_pkg_name}")
 
         journal = get_journal(xmltree=xmltree, errors=errors)
         if not journal:
@@ -171,9 +169,11 @@ def load_article(user, pp_xml):
             pid_v3=pid_v3,
             sps_pkg_name=sps_pkg_name,
         )
-        logging.info(f"...Article {pid_v3} {sps_pkg_name}")
+        messages.append(f"...Article {pid_v3} {sps_pkg_name}")
 
         article.events.all().delete()
+        # add_event() ainda não repassa `detail` para ArticleEvent.create();
+        # o detail com as mensagens só é persistido em event.finish() abaixo
         event = article.add_event(user, _("load article"))
 
         # Configurar todos os campos antes de salvar (Sugestão 9)
@@ -199,8 +199,7 @@ def load_article(user, pp_xml):
         article.issue = issue
         article.save()
 
-        # Salvar uma vez após definir todos os campos simples
-        logging.info(
+        messages.append(
             f"Saving article {article.pid_v3} {sps_pkg_name} {xml_with_pre.main_doi}"
         )
 
@@ -235,8 +234,6 @@ def load_article(user, pp_xml):
                 xmltree=xmltree, user=user, item=pid_v3, errors=errors
             )
         )
-        # Create contrib_persons (replaces researchers)
-        # Clear existing contrib_persons to avoid duplication on reload
         article.contrib_persons.all().delete()
         create_or_update_contrib_persons(
             xmltree=xmltree, article=article, user=user, item=pid_v3, errors=errors
@@ -251,7 +248,6 @@ def load_article(user, pp_xml):
         )
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user, errors=errors))
 
-        # Adicionar artigos relacionados
         add_related_articles(xmltree=xmltree, article=article, user=user, errors=errors)
 
         article.create_legacy_keys(user)
@@ -260,19 +256,24 @@ def load_article(user, pp_xml):
         if not errors:
             article.mark_as_completed()
 
-        event.finish(completed=not errors, errors=errors)
-        logging.info(
+        messages.append(
             f"The article {pid_v3} has been processed with {len(errors)} errors"
         )
+
+        event.finish(errors=errors, detail={"messages": messages})
         return article
     except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
         add_error(errors, "load_article", e)
 
         if event:
-            event.finish(errors=errors, exceptions=traceback.format_exc())
+            event.finish(
+                errors=errors,
+                exceptions=traceback.format_exc(),
+                detail={"messages": messages},
+            )
             raise
 
+        detail["messages"] = messages
         pp_xml.add_event(
             name="load_article",
             proc_status=PPXML_STATUS_UNMATCHED_JOURNAL_OR_ISSUE,
@@ -280,7 +281,6 @@ def load_article(user, pp_xml):
             errors=errors,
             exceptions=e,
         )
-
         raise
 
 
