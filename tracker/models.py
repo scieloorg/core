@@ -4,18 +4,8 @@ import traceback
 import uuid
 from datetime import datetime
 
-from django.core.files.base import ContentFile
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from modelcluster.fields import ParentalKey
-from modelcluster.models import ClusterableModel
-from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
-from wagtail.models import Orderable
-from wagtailautocomplete.edit_handlers import AutocompletePanel
-
-from core.forms import CoreAdminModelForm
-from core.models import CommonControlField
-from tracker import choices
 
 
 class ProcEventCreateError(Exception): ...
@@ -25,9 +15,6 @@ class UnexpectedEventCreateError(Exception): ...
 
 
 class EventCreateError(Exception): ...
-
-
-class EventReportCreateError(Exception): ...
 
 
 class EventReportSaveFileError(Exception): ...
@@ -97,8 +84,9 @@ class BaseEvent(models.Model):
 class UnexpectedEvent(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField(verbose_name=_("Creation date"), auto_now_add=True)
-    exception_type = models.TextField(_("Exception Type"), null=True, blank=True)
-    exception_msg = models.TextField(_("Exception Msg"), null=True, blank=True)
+    updated = models.DateTimeField(verbose_name=_("Last update date"), auto_now=True)
+    exception_type = models.CharField(_("Exception Type"), max_length=100, null=True, blank=True)
+    exception_msg = models.CharField(_("Exception Msg"), max_length=400, null=True, blank=True)
     traceback = models.JSONField(null=True, blank=True)
     detail = models.JSONField(null=True, blank=True)
     item = models.CharField(
@@ -120,7 +108,7 @@ class UnexpectedEvent(models.Model):
             models.Index(fields=["item"]),
             models.Index(fields=["action"]),
         ]
-        ordering = ["-created"]
+        ordering = ["-updated", "-created"]
 
     def __str__(self):
         if self.item or self.action:
@@ -148,29 +136,68 @@ class UnexpectedEvent(models.Model):
         action=None,
         detail=None,
     ):
+        """
+        Cria um novo UnexpectedEvent ou atualiza um já existente
+        (mesmo item + action, incluindo o par None/None), usando o
+        mais recente em caso de múltiplos registros.
+        """
         try:
             if exception:
                 logging.exception(exception)
 
-            obj = cls()
-            obj.item = item
-            obj.action = action
-            obj.exception_msg = str(exception)
-            obj.exception_type = str(type(exception))
-            try:
-                json.dumps(detail)
-                obj.detail = detail
-            except Exception as e:
-                obj.detail = str(detail)
+            obj = cls._get(item, action)
 
-            if exc_traceback:
-                obj.traceback = traceback.format_tb(exc_traceback)
+            if obj is not None:
+                obj._update(exception, exc_traceback, item, action, detail)
+            else:
+                obj = cls._create(exception, exc_traceback, item, action, detail)
+
             obj.save()
             return obj
         except Exception as exc:
             raise UnexpectedEventCreateError(
                 f"Unable to create unexpected event ({exception} {exc_traceback}). EXCEPTION {exc}"
             )
+
+    # ------------------------------------------------------------------
+    # Métodos auxiliares
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def _get(cls, item, action):
+        """
+        Busca um registro existente com o mesmo item e action
+        (incluindo o par None, None). Se houver múltiplos, retorna
+        o mais recente considerando updated e, em seguida, created.
+        """
+        qs = cls.objects.filter(item=item, action=action).order_by(
+            "-updated", "-created"
+        )
+        return qs.first()
+
+    def _update(self, exception, exc_traceback, item, action, detail):
+        """
+        Preenche/atualiza os campos do objeto (usado tanto na criação
+        quanto na atualização).
+        """
+        self.item = item
+        self.action = action
+        self.exception_msg = str(exception)
+        self.exception_type = str(type(exception))
+        try:
+            json.dumps(detail)
+            self.detail = detail
+        except Exception:
+            self.detail = str(detail)
+
+        if exc_traceback:
+            self.traceback = traceback.format_tb(exc_traceback)
+
+    @classmethod
+    def _create(cls, exception, exc_traceback, item, action, detail):
+        obj = cls()
+        obj._update(exception, exc_traceback, item, action, detail)
+        return obj
 
 
 def tracker_file_directory_path(instance, filename):
