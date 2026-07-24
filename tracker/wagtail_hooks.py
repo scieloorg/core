@@ -1,4 +1,3 @@
-from django.http import HttpResponseRedirect
 from django.utils.translation import gettext_lazy as _
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
@@ -23,6 +22,7 @@ class UnexpectedEventModelAdmin(SnippetViewSet):
         "exception_type",
         "exception_msg",
         "created",
+        "updated"
     )
     list_filter = ("action", "exception_type", )
     search_fields = (
