@@ -412,6 +412,12 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     z_surnames = models.CharField(_("surnames"), max_length=64, null=True, blank=True)
     z_collab = models.CharField(_("collab"), max_length=64, null=True, blank=True)
     z_links = models.CharField(_("links"), max_length=64, null=True, blank=True)
+
+    # NOTA: a partir de então body_fragment_fingerprint (hash 300 chars), não mais 
+    # z_partial_body (hash do primeiro parágrafo que apresentou muita ambiguidade).
+    # Registros antigos mantêm o valor legado;
+    # a query de match (article_data_query) compara com ambos os
+    # candidatos para cobrir os dois formatos sem exigir backfill.
     z_partial_body = models.CharField(
         _("partial_body"), max_length=64, null=True, blank=True
     )
@@ -615,6 +621,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             "record_status": "updated" if self.updated else "created",
             "registered_in_core": self.registered_in_core,
         }
+        _data.update(self.get_readable_data())
         return _data
 
     @classmethod
@@ -649,9 +656,16 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             return False
         return True
 
+    def get_readable_data(self):
+        if self.readable_data:
+            return self.readable_data
+        if self.xml_with_pre:
+            return self.xml_with_pre.get_article_data()
+        return {}
+
     @property
     def data_to_compare(self):
-        readable = self.readable_data or {}
+        readable = self.get_readable_data()
         titles = readable.get("article_titles")
         body_fragment = readable.get("body_fragment")
         return {
@@ -1034,13 +1048,15 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             "journal-issue-article",
             list(
                 selected_journal.filter(
-                    Q(**qbuilder.issue_params) & qbuilder.article_data_query
+                    qbuilder.get_article_data_query(issue=True)
                 )
             ),
         )
 
         # 3) journal + dados do artigo
-        yield "journal-article", list(selected_journal.filter(qbuilder.article_data_query))
+        yield "journal-article", list(
+            selected_journal.filter(qbuilder.get_article_data_query(issue=False))
+        )
 
     @staticmethod
     def select_record(xml_adapter, selection_results):
@@ -1184,7 +1200,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         self.z_surnames = xml_adapter.z_surnames
         self.z_collab = xml_adapter.z_collab
         self.z_links = xml_adapter.z_links
-        self.z_partial_body = xml_adapter.z_partial_body
+        self.z_partial_body = xml_adapter.xml_with_pre.body_fragment_fingerprint
 
         self.readable_data = xml_adapter.xml_with_pre.get_article_data()
 
@@ -1942,6 +1958,7 @@ class XMLEvent(BaseEvent, CommonControlField):
         completed = bool(not errors and not exceptions)
         obj.finish(completed=completed, detail=detail, errors=errors, exceptions=exceptions)
         return obj
+
 
 # -----------------------------------------------------------------------------
 # [models.py] MODELO NOVO — PidProviderXMLRegistration
