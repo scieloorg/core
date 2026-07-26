@@ -45,7 +45,7 @@ def compare_items(label, registered, input_data):
     elif (input_data or None) == (registered or None):
         score = 1
     else:
-        score = how_similar(input_data, registered)
+        score = how_similar(input_data or "", registered or "")
     response = {"label": label, "score": score}
     if score != 1:
         response["registered"] = registered
@@ -230,23 +230,29 @@ class QueryBuilderPidProviderXML:
         z_links = self.adapter_data.get("z_links")
         z_partial_body = self.adapter_data.get("z_partial_body")
 
-        # Se houver qualquer dado textual disponível, constrói query com OR (|)
-        if z_surnames or z_partial_body or z_collab or z_links:
-            q = Q()
-            if z_surnames:
-                q |= Q(z_surnames=z_surnames)
-            if z_collab:
-                q |= Q(z_collab=z_collab)
-            if z_links:
-                q |= Q(z_links=z_links)
-            if z_partial_body:
-                q |= Q(z_partial_body=z_partial_body)
-            return q
-        
         # Caso contrário, retorna os campos (geralmente None neste ponto) com AND
         return Q(
             z_surnames=z_surnames,
             z_collab=z_collab,
             z_links=z_links,
             z_partial_body=z_partial_body,
-        ) & Q(**self.article_location_params)
+        )
+
+    def get_article_data_query(self, issue):
+        if issue:
+            return (
+                self.article_data_query & 
+                Q(**self.issue_params) & 
+                Q(**self.article_location_params)
+            )
+        return (
+            self.article_data_query & 
+            Q(
+                volume__isnull=True,
+                number__isnull=True,
+                suppl__isnull=True,
+                elocation_id__isnull=True,
+                fpage__isnull=True,
+                lpage__isnull=True,
+            )
+        )
