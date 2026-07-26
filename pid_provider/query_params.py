@@ -89,6 +89,14 @@ class QueryBuilderPidProviderXML:
         """
         self.xml_adapter = xml_adapter
         # Centraliza o acesso aos dados brutos e normalizados (hashes de 64 chars)
+        # z_body_fragment: fingerprint sha256 do corpo INTEIRO do artigo
+        # (XMLWithPre.body_fragment_fingerprint), acessado direto do
+        # xml_with_pre — não requer nenhuma mudança no packtools nem no
+        # PidProviderXMLAdapter. É mais robusto que z_partial_body (que
+        # é só o primeiro parágrafo não vazio e pode colidir entre
+        # artigos diferentes, ex.: rótulos de seção genéricos como
+        # "ARTIGO DE REVISÃO").
+        self.z_body_fragment = xml_adapter.xml_with_pre.body_fragment_fingerprint
         self.adapter_data = xml_adapter.data
         self.compare_data = xml_adapter.get_data_to_compare()
         self.xml_with_pre_data = xml_adapter.xml_with_pre.get_article_data(300)
@@ -219,7 +227,39 @@ class QueryBuilderPidProviderXML:
         if order:
             data["v2__endswith"] = order
         return data
-    
+
+    @property
+    def partial_body_query(self):
+        """
+        Constrói a query para o campo z_partial_body, que hoje armazena
+        dois formatos possíveis de hash, dependendo de quando o registro
+        foi salvo:
+
+        - legado: hash de z_partial_body (primeiro parágrafo não vazio
+          do corpo, via xml_adapter.z_partial_body);
+        - atual: fingerprint do corpo INTEIRO do artigo
+          (xml_with_pre.body_fragment_fingerprint), gravado no mesmo
+          campo z_partial_body a partir desta correção (sem necessidade
+          de migração/backfill).
+
+        Usa IN com os hashes disponíveis do XML de entrada para casar
+        com candidatos em qualquer um dos dois formatos.
+
+        Quando o XML de entrada não tem NENHUM dos dois hashes
+        calculados (ambos None), não é seguro usar
+        `z_partial_body__in=(None, None)`: em SQL, `IN` é uma cadeia de
+        igualdades e `NULL = NULL` é UNKNOWN (nunca True), então essa
+        forma jamais encontraria candidatos com z_partial_body nulo.
+        Nesse caso, usamos `z_partial_body__isnull=True` explicitamente,
+        preservando o comportamento equivalente ao antigo
+        `Q(z_partial_body=None)` (que o Django traduz para IS NULL).
+        """
+        z_partial_body = self.adapter_data.get("z_partial_body")
+        candidates = set(v for v in (z_partial_body, self.z_body_fragment) if v)
+        if candidates:
+            return Q(z_partial_body__in=candidates)
+        return Q(z_partial_body__isnull=True)
+
     @property
     def article_data_query(self):
         """
@@ -228,15 +268,12 @@ class QueryBuilderPidProviderXML:
         z_surnames = self.adapter_data.get("z_surnames")
         z_collab = self.adapter_data.get("z_collab")
         z_links = self.adapter_data.get("z_links")
-        z_partial_body = self.adapter_data.get("z_partial_body")
 
-        # Caso contrário, retorna os campos (geralmente None neste ponto) com AND
         return Q(
             z_surnames=z_surnames,
             z_collab=z_collab,
             z_links=z_links,
-            z_partial_body=z_partial_body,
-        )
+        ) & self.partial_body_query
 
     def get_article_data_query(self, issue):
         if issue:
