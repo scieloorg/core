@@ -170,6 +170,11 @@ class UnexpectedEvent(models.Model):
         (incluindo o par None, None). Se houver múltiplos, retorna
         o mais recente considerando updated e, em seguida, created.
         """
+        if not item or not action:
+            # evita que UnexpectedEvent sejam sobrescritos por não terem item ou action
+            # antes de serem avaliados
+            return
+
         qs = cls.objects.filter(item=item, action=action).order_by(
             "-updated", "-created"
         )
