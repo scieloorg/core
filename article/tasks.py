@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 
 from article import controller
+from article.controller import ArticleIteratorBuilder
 from article.models import Article, ArticleFormat, ArticleSource, AMArticle
 from article.sources.preprint import harvest_preprints
 from article.sources.xmlsps import load_article
@@ -128,7 +129,6 @@ def task_convert_xml_to_other_formats_for_articles(
         user = _get_user(self.request, username, user_id)
 
         for item in Article.objects.filter(sps_pkg_name__isnull=False).iterator():
-            logging.info(item.pid_v3)
             try:
                 convert_xml_to_other_formats.apply_async(
                     kwargs={
@@ -204,7 +204,6 @@ def convert_xml_to_other_formats(
         done = True
     except ArticleFormat.DoesNotExist:
         done = False
-    logging.info(f"Done {done}")
 
     if not done or force_update:
         ArticleFormat.generate_formats(user, article=article)
@@ -250,7 +249,7 @@ def transfer_license_statements_fk_to_article_license(
         if not instance.license and first.data:
             data = first.data
             instance.license = License.create_or_update(user, license_type=data.get("license_type"), version=data.get("license_version"))
-            
+
         if not instance.license:
             continue
         instance.updated_by = user
@@ -260,7 +259,6 @@ def transfer_license_statements_fk_to_article_license(
         Article.objects.bulk_update(
             articles_to_update, ["license", "updated_by"]
         )
-        logging.info("The license of model Articles have been updated")
 
 
 def get_researcher_identifier_unnormalized():
@@ -303,7 +301,6 @@ def normalize_stored_email(
         - Identifica e-mails com formato inválido usando regex
         - Aplica normalização através de extracts_normalized_email
         - Executa bulk_update para otimizar performance em lotes
-        - Registra logs de processamento
 
     Examples:
         # Executar normalização de e-mails
@@ -372,7 +369,6 @@ def task_export_articles_to_articlemeta(
     Side Effects:
         - Exporta múltiplos artigos para ArticleMeta
         - Atualiza status de exportação dos artigos
-        - Registra logs de processamento
         - Registra UnexpectedEvent em caso de erro
 
     Examples:
@@ -407,17 +403,18 @@ def task_export_articles_to_articlemeta(
             days_to_go_back=days_to_go_back,
             force_update=force_update,
         )
-        
+
         return result
-        
+
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        
+
         UnexpectedEvent.create(
+            action="task_export_articles_to_articlemeta",
+            item="",
             exception=e,
             exc_traceback=exc_traceback,
             detail={
-                "task": "task_export_articles_to_articlemeta",
                 "collection_acron_list": collection_acron_list,
                 "journal_acron_list": journal_acron_list,
                 "year_of_publication": year_of_publication,
@@ -432,7 +429,7 @@ def task_export_articles_to_articlemeta(
                 "task_id": self.request.id if hasattr(self.request, 'id') else None,
             },
         )
-        
+
         # Re-raise para que o Celery possa tratar a exceção adequadamente
         raise
 
@@ -466,7 +463,6 @@ def task_export_article_to_articlemeta(
     Side Effects:
         - Exporta artigo específico para ArticleMeta
         - Atualiza status de exportação do artigo
-        - Registra logs de processamento
         - Registra UnexpectedEvent em caso de erro
 
     Raises:
@@ -485,7 +481,6 @@ def task_export_article_to_articlemeta(
         - Requer que o artigo exista na base local antes da exportação
     """
     try:
-        item = pid_v3
         if not pid_v3:
             raise ValueError("task_export_article_to_articlemeta requires pid_v3")
 
@@ -494,7 +489,6 @@ def task_export_article_to_articlemeta(
             valid=True,
             is_classic_public=True,
         )
-        item = str(article)
 
         user = _get_user(self.request, username=username, user_id=user_id)
 
@@ -509,12 +503,10 @@ def task_export_article_to_articlemeta(
     except Exception as exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
-            action="article.tasks.task_export_article_to_articlemeta",
-            item=item,
             exception=exception,
             exc_traceback=exc_traceback,
             detail={
-                "collection_acron_list": collection_acron_list,
+                "task": "article.tasks.task_export_article_to_articlemeta",
                 "pid_v3": pid_v3,
                 "force_update": force_update,
             },
@@ -706,6 +698,81 @@ def task_check_article_availability(
 
 
 @celery_app.task(bind=True)
+def task_harvest_articles(
+    self,
+    username=None,
+    user_id=None,
+    collection_acron_list=None,
+    journal_acron_list=None,
+    from_date=None,
+    until_date=None,
+    force_update=None,
+    export_to_articlemeta=False,
+    auto_solve_pid_conflict=None,
+    limit=None,
+    timeout=None,
+    opac_url=None,
+    stop=None,
+):
+    try:
+        items = (collection_acron_list or []) + (journal_acron_list or [])
+        item = "-".join(items)
+        user = _get_user(self.request, username=username, user_id=user_id)
+
+        params = {
+            "collection_acron_list": collection_acron_list,
+            "journal_acron_list": journal_acron_list,
+            "from_date": from_date,
+            "until_date": until_date,
+            "force_update": force_update,
+            "export_to_articlemeta": export_to_articlemeta,
+            "auto_solve_pid_conflict": auto_solve_pid_conflict,
+            "limit": limit,
+            "timeout": timeout,
+            "opac_url": opac_url,
+            "stop": stop,
+        }
+
+        common_kwargs = {
+            "user_id": user.id,
+            "username": user.username,
+            "force_update": force_update,
+            "export_to_articlemeta": export_to_articlemeta,
+            "auto_solve_pid_conflict": auto_solve_pid_conflict,
+        }
+
+        builder = ArticleIteratorBuilder(
+            user=user,
+            collection_acron_list=collection_acron_list,
+            journal_acron_list=journal_acron_list,
+            from_date=from_date,
+            until_date=until_date,
+            force_update=force_update,
+            limit=limit,
+            timeout=timeout,
+            opac_url=opac_url,
+            stop=stop,
+        )
+        item_iterator = builder.from_harvest()
+
+        for item_kwargs in item_iterator:
+            if item_kwargs is None:
+                continue
+            task_process_article_pipeline.delay(**item_kwargs, **common_kwargs)
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            action="task_harvest_articles",
+            item=item,
+            exception=e,
+            exc_traceback=exc_traceback,
+            detail=params,
+        )
+        raise
+
+
+@celery_app.task(bind=True)
 def task_dispatch_articles(
     self,
     username=None,
@@ -724,64 +791,24 @@ def task_dispatch_articles(
     proc_status_list=None,
     # --- ativa article ---
     data_status_list=None,
-    # --- ativa harvest (qualquer um) ---
-    limit=None,
-    timeout=None,
-    opac_url=None,
     # --- ativa article_source ---
     article_source_status_list=None,
-    verify=None,
-    stop=None,
 ):
-    """
-    Tarefa orquestradora que dispara processamento em lote de artigos.
 
-    Utiliza ArticleIteratorBuilder para selecionar artigos baseado em
-    múltiplos critérios e dispara task_process_article_pipeline para
-    cada item encontrado, permitindo processamento paralelo.
-
-    Args:
-        self: Instância da tarefa Celery
-        username (str, optional): Nome do usuário executando a tarefa
-        user_id (int, optional): ID do usuário executando a tarefa
-        collection_acron_list (list, optional): Filtro por acrônimos de coleções
-        journal_acron_list (list, optional): Filtro por acrônimos de periódicos
-        from_pub_year (int, optional): Ano inicial de publicação
-        until_pub_year (int, optional): Ano final de publicação
-        from_date (str, optional): Data inicial (formato ISO)
-        until_date (str, optional): Data final (formato ISO)
-        force_update (bool, optional): Força reprocessamento
-        export_to_articlemeta (bool): Exporta para ArticleMeta após processamento
-        auto_solve_pid_conflict (bool, optional): Resolve conflitos de PID automaticamente
-        proc_status_list (list, optional): Status do pid_provider para filtro
-        data_status_list (list, optional): Status do article para filtro
-        limit (int, optional): Limite máximo de artigos a processar
-        timeout (int, optional): Timeout para operações HTTP
-        opac_url (str, optional): URL base do OPAC para harvest
-        article_source_status_list (list, optional): Status do article_source para filtro
-
-    Returns:
-        dict: Resumo com contadores de dispatched/skipped
-
-    Examples:
-        # Processamento padrão por coleção
-        task_dispatch_articles.delay(collection_acron_list=["scl"])
-
-        # Múltiplas fontes simultaneamente
-        task_dispatch_articles.delay(
-            proc_status_list=["todo"],
-            data_status_list=["invalid"],
-            article_source_status_list=["error"],
-            limit=500
-        )
-
-    Notes:
-        - Ver ArticleIteratorBuilder para detalhes sobre iteradores ativados
-        - Cada artigo encontrado gera uma subtarefa independente
-    """
     try:
+        items = (collection_acron_list or []) + (journal_acron_list or [])
+        item = "-".join(items)
         user = _get_user(self.request, username=username, user_id=user_id)
 
+        params = {
+            "collection_acron_list": collection_acron_list,
+            "journal_acron_list": journal_acron_list,
+            "from_date": from_date,
+            "until_date": until_date,
+            "force_update": force_update,
+            "export_to_articlemeta": export_to_articlemeta,
+            "auto_solve_pid_conflict": auto_solve_pid_conflict,
+        }
         common_kwargs = {
             "user_id": user.id,
             "username": user.username,
@@ -790,9 +817,7 @@ def task_dispatch_articles(
             "auto_solve_pid_conflict": auto_solve_pid_conflict,
         }
 
-        dispatched = skipped = 0
-
-        for item_kwargs in controller.ArticleIteratorBuilder(
+        builder = ArticleIteratorBuilder(
             user=user,
             collection_acron_list=collection_acron_list,
             journal_acron_list=journal_acron_list,
@@ -800,49 +825,36 @@ def task_dispatch_articles(
             until_pub_year=until_pub_year,
             from_date=from_date,
             until_date=until_date,
-            proc_status_list=proc_status_list,
-            data_status_list=data_status_list,
-            article_source_status_list=article_source_status_list,
-            limit=limit,
-            timeout=timeout,
-            opac_url=opac_url,
             force_update=force_update,
-            stop=stop
-        ):
-            if item_kwargs is None:
-                skipped += 1
-                continue
-            logging.info(f"Dispatching article with kwargs: {item_kwargs}")
-            task_process_article_pipeline.delay(**item_kwargs, **common_kwargs)
-            dispatched += 1
+        )
 
-        return {
-            "status": "success",
-            "dispatched": dispatched,
-            "skipped": skipped,
-        }
+        item_iterators = (
+            builder.from_article_source(
+                article_source_status_list=article_source_status_list
+            ),
+            builder.from_pid_provider(proc_status_list=proc_status_list),
+            builder.from_article(data_status_list=data_status_list)
+        )
+
+        for item_iterator in item_iterators:
+            if not item_iterator:
+                continue
+            for item_kwargs in item_iterator:
+                if item_kwargs is None:
+                    continue
+                task_process_article_pipeline.delay(**item_kwargs, **common_kwargs)
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
+            action="task_dispatch_articles",
+            item=item,
             exception=e,
             exc_traceback=exc_traceback,
-            detail={
-                "task": "task_dispatch_articles",
-                "collection_acron_list": collection_acron_list,
-                "journal_acron_list": journal_acron_list,
-                "from_pub_year": from_pub_year,
-                "until_pub_year": until_pub_year,
-                "from_date": from_date,
-                "until_date": until_date,
-                "proc_status_list": proc_status_list,
-                "data_status_list": data_status_list,
-                "article_source_status_list": article_source_status_list,
-                "force_update": force_update,
-                "export_to_articlemeta": export_to_articlemeta,
-            },
+            detail=params,
         )
         raise
+
 
 @celery_app.task(bind=True)
 def task_process_article_pipeline(
@@ -865,104 +877,35 @@ def task_process_article_pipeline(
     user_id=None,
     username=None,
     is_public=None,
+    document=None,
 ):
-    """
-    Pipeline principal de processamento de artigos com múltiplos pontos de entrada.
-
-    Implementa um pipeline flexível que pode iniciar em diferentes estágios:
-    - Fluxo A: XML URL → ArticleSource → PidProviderXML → Article
-    - Fluxo B: ArticleSource existente → PidProviderXML → Article  
-    - Fluxo C: PidProviderXML → Article (entrada direta)
-
-    Args:
-        self: Instância da tarefa Celery
-        xml_url (str, optional): URL do XML para fluxo A (requer collection_acron e pid)
-        collection_acron (str, optional): Acrônimo da coleção (obrigatório com xml_url)
-        pid (str, optional): PID do artigo (obrigatório com xml_url)
-        source_date (datetime, optional): Data da fonte para fluxo A
-        article_source_id (int, optional): ID do ArticleSource para fluxo B
-        pp_xml_id (int, optional): ID do PidProviderXML para fluxo C
-        export_to_articlemeta (bool): Se True, exporta para ArticleMeta após processamento
-        collection_acron_list (list, optional): Lista de coleções para exportação
-        force_update (bool, optional): Força reprocessamento mesmo se existir
-        auto_solve_pid_conflict (bool, optional): Resolve conflitos de PID automaticamente
-        version (str, optional): Versão específica a processar
-        user_id (int, optional): ID do usuário executando a tarefa
-        username (str, optional): Nome do usuário executando a tarefa
-
-    Returns:
-        None
-
-    Side Effects:
-        - Cria/atualiza ArticleSource (fluxo A)
-        - Cria/atualiza PidProviderXML
-        - Cria/atualiza Article
-        - Verifica disponibilidade do artigo
-        - Exporta para ArticleMeta se solicitado
-        - Registra UnexpectedEvent em caso de erro
-
-    Raises:
-        ValueError: Se nenhum ponto de entrada válido for fornecido
-                   Se xml_url fornecido sem collection_acron ou pid
-
-    Examples:
-        # Fluxo completo a partir de URL
-        task_process_article_pipeline.delay(
-            xml_url="http://example.com/article.xml",
-            collection_acron="scl", 
-            pid="S1234-56782024000100001",
-            export_to_articlemeta=True
-        )
-
-        # A partir de ArticleSource existente
-        task_process_article_pipeline.delay(
-            article_source_id=123,
-            force_update=True
-        )
-
-        # Entrada direta via PidProviderXML
-        task_process_article_pipeline.delay(
-            pp_xml_id=456,
-            export_to_articlemeta=True
-        )
-    """
     try:
-        unexpected_event_item = None
+        unexpected_event_item = xml_url
         user = _get_user(self.request, username=username, user_id=user_id)
-        if xml_url:
-            unexpected_event_item = xml_url
+
+        article_source = None
+        if article_source_id:
+            article_source = ArticleSource.objects.get(id=article_source_id)
+        elif xml_url:
             if not collection_acron:
                 raise ValueError("collection_acron is required when xml_url is provided")
             if not pid:
                 raise ValueError("pid is required when xml_url is provided")
-            am_article = AMArticle.create_or_update(
-                pid, Collection.get(collection_acron), None, user
-            )
-            if not am_article:
-                raise ValueError(
-                    f"Failed to create or update AMArticle with pid: {pid} and collection: {collection_acron}"
-                )
-
             article_source = ArticleSource.create_or_update(
                 user=user,
                 url=xml_url,
                 source_date=source_date,
+                collection=Collection.get(collection_acron),
+                pid=pid,
                 force_update=force_update,
-                am_article=am_article,
                 auto_solve_pid_conflict=auto_solve_pid_conflict,
                 is_public=is_public,
+                detail=document,
             )
-            pp_xml_id = article_source.pid_provider_xml.id
-        
-        if article_source_id:
-            article_source = ArticleSource.objects.get(id=article_source_id)
+
+        if article_source:
             unexpected_event_item = str(article_source)
-            article_source.add_pid_provider(
-                user=user,
-                force_update=force_update,
-                auto_solve_pid_conflict=auto_solve_pid_conflict,
-            )
-            pp_xml_id = article_source.pid_provider_xml.id
+            pp_xml_id = article_source.get_pid_provider_xml_id()
 
         if not pp_xml_id:
             raise ValueError(
@@ -981,10 +924,9 @@ def task_process_article_pipeline(
         pp_xml.collections.set(article.collections)
 
         article.check_availability(user, force_update=export_to_articlemeta or force_update)
-        
+
         if export_to_articlemeta:
             if not article.is_classic_public or not article.valid:
-                logging.warning(f"Article {article.pid_v3} is not valid or not public. Skipping export to ArticleMeta.")
                 return
             task_export_article_to_articlemeta.delay(
                 pid_v3=article.pid_v3,
@@ -1006,10 +948,6 @@ def task_process_article_pipeline(
                 "pp_xml_id": pp_xml_id,
                 "pid": pid,
                 "collection_acron": collection_acron,
-                "source_date": source_date,
-                "collection_acron_list": collection_acron_list,
-                "auto_solve_pid_conflict": auto_solve_pid_conflict,
-                "version": version,
                 "export_to_articlemeta": export_to_articlemeta,
                 "force_update": force_update,
             },
