@@ -42,8 +42,16 @@ def delete_outdated_tasks(task_list=None):
         "article.tasks.task_create_pid_provider_xml",
         "article.tasks.task_fix_journal_articles_status",
         "article.tasks.task_select_articles_to_export_to_articlemeta",
+        # task_dispatch_articles foi substituída por 2 tasks especializadas:
+        # task_harvest_articles e task_dispatch_articles
+        # (esta última consolida article_source/pid_provider/article em um
+        # único fluxo sequencial).
+        "article.tasks.task_dispatch_articles",
+        "article.tasks.task_dispatch_articles_from_pid_provider",
+        "article.tasks.task_dispatch_articles_from_article",
+        "article.tasks.task_dispatch_articles_from_article_source",
         "issue.tasks.load_issue_from_article_meta",
-        
+
         # Tarefas de Article sem namespace (legacy)
         "article_complete_data",
         "convert_xml_to_other_formats",
@@ -70,6 +78,7 @@ def delete_outdated_tasks(task_list=None):
         "task_create_pid_provider_xml",
         "task_fix_journal_articles_status",
         "task_select_articles_to_export_to_articlemeta",
+        "task_dispatch_articles",
     ]
     delete_tasks(task_list)
 
@@ -87,15 +96,16 @@ def schedule_tasks(username):
     delete_outdated_tasks()
 
     # Tarefas de Article mantidas
+    schedule_task_harvest_articles(username, enabled)
     schedule_task_dispatch_articles(username, enabled)
     schedule_task_export_articles_to_articlemeta(username, enabled)
     schedule_task_fix_article_status(username, enabled)
-    
+
     # Tarefas de issue
     schedule_export_issue_to_articlemeta(username, enabled)
     schedule_export_issues_to_articlemeta(username, enabled)
     schedule_load_issue_from_articlemeta(username, enabled)
-    
+
     # Tarefas de journal
     schedule_export_journal_to_articlemeta(username, enabled)
     schedule_export_journals_to_articlemeta(username, enabled)
@@ -103,7 +113,7 @@ def schedule_tasks(username):
     schedule_fetch_and_process_journal_logos_in_collection(username, enabled)
     schedule_load_journal_from_article_meta(username, enabled)
     schedule_collect_journals_from_am(username, enabled)
-    
+
     # Tarefas de pid_provider
     schedule_fix_pid_provider_xmls_status(username, enabled)
 
@@ -115,11 +125,42 @@ def schedule_tasks(username):
 # TAREFAS DE ARTICLE MANTIDAS
 # ==============================================================================
 
+def schedule_task_harvest_articles(username, enabled=False):
+    """
+    Agenda o pipeline completo a partir da coleta (harvest) até a
+    publicação no ArticleMeta.
+    """
+    schedule_task(
+        task="article.tasks.task_harvest_articles",
+        name="article.tasks.task_harvest_articles",
+        kwargs=dict(
+            username=username,
+            user_id=None,
+            collection_acron_list=None,
+            from_date=None,
+            until_date=None,
+            force_update=False,
+            export_to_articlemeta=False,
+            auto_solve_pid_conflict=False,
+            limit=None,
+            timeout=None,
+            opac_url=None,
+        ),
+        description=_("Dispatch articles: harvest -> ... -> ArticleMeta"),
+        priority=TASK_PRIORITY,
+        enabled=enabled,
+        run_once=False,
+        day_of_week="*",
+        hour="2",
+        minute="1",
+    )
+
+
 def schedule_task_dispatch_articles(username, enabled=False):
     """
-    Agenda a tarefa orquestradora de despacho de artigos para o pipeline.
-    Substitui as antigas tarefas de seleção (complete_data, load_from_api,
-    load_from_article_source, load_articles).
+    Agenda o fluxo sequencial pelas 3 etapas internas (article_source ->
+    pid_provider -> article), pegando pendentes em cada uma, até a
+    publicação no ArticleMeta.
     """
     schedule_task(
         task="article.tasks.task_dispatch_articles",
@@ -136,20 +177,20 @@ def schedule_task_dispatch_articles(username, enabled=False):
             force_update=False,
             export_to_articlemeta=False,
             auto_solve_pid_conflict=False,
+            article_source_status_list=None,
             proc_status_list=None,
             data_status_list=None,
-            limit=None,
-            timeout=None,
-            opac_url=None,
-            article_source_status_list=None,
         ),
-        description=_("Dispatch articles to processing pipeline"),
+        description=_(
+            "Dispatch pending articles: article_source -> pid_provider -> "
+            "article -> ArticleMeta"
+        ),
         priority=TASK_PRIORITY,
         enabled=enabled,
         run_once=False,
         day_of_week="*",
         hour="2",
-        minute="1",
+        minute="16",
     )
 
 
@@ -183,13 +224,10 @@ def schedule_task_export_articles_to_articlemeta(username, enabled=False):
     )
 
 
-
-
-
 def schedule_task_fix_article_status(username, enabled=False):
     """
     Agenda a tarefa de corrigir status dos registros de artigos.
-    
+
     Permite marcar artigos como inválidos, públicos ou duplicados,
     além de deduplicar registros conforme necessário.
     """
@@ -241,7 +279,7 @@ def schedule_bigbang_start(username, enabled=False):
 def schedule_bigbang_delete_outdated_tasks(username, enabled=False):
     """
     Agenda a tarefa de limpeza de tarefas obsoletas do Article
-    
+
     Remove tarefas antigas e não utilizadas do módulo Article,
     mantendo o scheduler limpo e organizado.
     """
@@ -270,7 +308,7 @@ def schedule_bigbang_delete_outdated_tasks(username, enabled=False):
 def schedule_load_journal_from_article_meta(username, enabled=False):
     """
     Agenda a tarefa de carga de dados de journals obtidos do AM e Core.
-    
+
     Configura verify=False para verificação SSL nas requisições HTTP.
     """
     schedule_task(
@@ -294,7 +332,7 @@ def schedule_load_journal_from_article_meta(username, enabled=False):
 def schedule_collect_journals_from_am(username, enabled=False):
     """
     Agenda a tarefa de coleta de journals da fonte AM.
-    
+
     Configura verify=False para verificação SSL nas requisições HTTP.
     """
     schedule_task(
@@ -503,7 +541,7 @@ def schedule_export_issue_to_articlemeta(username, enabled=False):
 def schedule_fix_pid_provider_xmls_status(username, enabled=False):
     """
     Agenda a tarefa de corrigir status dos XMLs do PID Provider.
-    
+
     Permite marcar XMLs como inválidos, públicos ou duplicados,
     além de deduplicar registros conforme necessário.
     """
