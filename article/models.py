@@ -1742,7 +1742,8 @@ class ArticleSource(CommonControlField):
         FieldPanel("file", read_only=True),
         FieldPanel("source_date", read_only=True),
         FieldPanel("status"),
-        FieldPanel("am_article", read_only=True),
+        FieldPanel("collection", read_only=True),
+        FieldPanel("pid", read_only=True),
         FieldPanel("pid_provider_xml", read_only=True),
         FieldPanel("detail", read_only=True),
     ]
@@ -2111,8 +2112,8 @@ class ArticleAvailability(CommonControlField):
         # url já tem unique=True (cria índice automaticamente)
 
     @classmethod
-    def get(cls, article, url):
-        return cls.objects.get(article=article, url=url)
+    def get(cls, url):
+        return cls.objects.get(url=url)
 
     @classmethod
     def create(
@@ -2138,7 +2139,7 @@ class ArticleAvailability(CommonControlField):
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(article, url)
+            return cls.get(url)
 
     @classmethod
     def create_or_update(
@@ -2154,7 +2155,7 @@ class ArticleAvailability(CommonControlField):
         try:
             if lang:
                 lang = Language.objects.filter(code2=lang).first()
-            obj = cls.get(article=article, url=url)
+            obj = cls.get(url=url)
             obj.fmt = fmt
             obj.lang = lang
             obj.collection = collection
