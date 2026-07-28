@@ -1,28 +1,26 @@
-import os
 import logging
+import os
 import sys
-from io import BytesIO
-from zipfile import ZipFile
-
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from config.settings.base import TASK_EXPIRES, TASK_TIMEOUT, RUN_ASYNC
 
 from celery.exceptions import TimeoutError
+from config.settings.base import RUN_ASYNC, TASK_EXPIRES, TASK_TIMEOUT
+from core.utils.profiling_tools import (
+    profile_endpoint,
+    profile_method,
+)  # ajuste o import conforme sua estrutura
+from pid_provider.provider import PidProvider
+from pid_provider.tasks import (
+    task_delete_provide_pid_tmp_zip,
+    task_provide_pid_for_xml_zip,
+)
 from rest_framework import status as rest_framework_status
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.parsers import FileUploadParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-
-from core.utils.profiling_tools import profile_endpoint, profile_method  # ajuste o import conforme sua estrutura
-from pid_provider.provider import PidProvider
-from pid_provider.tasks import (
-    task_delete_provide_pid_tmp_zip,
-    task_provide_pid_for_xml_zip,
-)
 from tracker.models import UnexpectedEvent
-
 
 STATUS_MAPPING = {
     "created": rest_framework_status.HTTP_201_CREATED,
