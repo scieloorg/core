@@ -726,6 +726,8 @@ def task_dispatch_articles(
     opac_url=None,
     # --- ativa article_source ---
     article_source_status_list=None,
+    verify=None,
+    stop=None,
 ):
     """
     Tarefa orquestradora que dispara processamento em lote de artigos.
@@ -801,6 +803,7 @@ def task_dispatch_articles(
             timeout=timeout,
             opac_url=opac_url,
             force_update=force_update,
+            stop=stop
         ):
             if item_kwargs is None:
                 skipped += 1
@@ -857,6 +860,7 @@ def task_process_article_pipeline(
     version=None,
     user_id=None,
     username=None,
+    is_public=None,
 ):
     """
     Pipeline principal de processamento de artigos com múltiplos pontos de entrada.
@@ -941,6 +945,7 @@ def task_process_article_pipeline(
                 force_update=force_update,
                 am_article=am_article,
                 auto_solve_pid_conflict=auto_solve_pid_conflict,
+                is_public=is_public,
             )
             pp_xml_id = article_source.pid_provider_xml.id
         

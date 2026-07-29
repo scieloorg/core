@@ -20,6 +20,7 @@ class AMHarvester:
         limit: Optional[int] = None,
         timeout: int = 30,
         verify: bool = False,
+        journal: Optional[str] = None,
     ):
         """
         Inicializa o harvester do ArticleMeta.
@@ -39,6 +40,7 @@ class AMHarvester:
         self.limit = limit or 1000
         self.timeout = timeout
         self.verify = verify
+        self.journal = journal
 
     def harvest_documents(self) -> Generator[Dict[str, Any], None, None]:
         """
@@ -68,6 +70,8 @@ class AMHarvester:
                     "from": self.from_date,
                     "until": self.until_date,
                 }
+                if self.journal:
+                    params["issn"] = self.journal
 
                 # Constrói URL
                 url = f"{self.base_url}?{urlencode(params)}"
@@ -150,6 +154,8 @@ class OPACHarvester:
         limit: int = 100,
         timeout: int = 5,
         verify: bool = False,
+        journal: Optional[str] = None,
+        stop: Optional[str] = None,
     ):
         """
         Inicializa o harvester do OPAC.
@@ -169,6 +175,8 @@ class OPACHarvester:
         self.limit = limit or 100
         self.timeout = timeout or 5
         self.verify = verify
+        self.journal = journal
+        self.stop = stop
 
     def harvest_documents(self) -> Generator[Dict[str, Any], None, None]:
         """
@@ -190,15 +198,19 @@ class OPACHarvester:
         page = 1
         total_pages = None
 
+        # Constrói URL
+        main_url = (
+            f"{self.domain}/api/v1/counter_dict?"
+            f"end_date={self.until_date}&begin_date={self.from_date}"
+            f"&limit={self.limit}"
+        )
+        if self.journal:
+            main_url += f"&journal={self.journal}"
+
         while True:
             try:
                 # Constrói URL
-                url = (
-                    f"{self.domain}/api/v1/counter_dict?"
-                    f"end_date={self.until_date}&begin_date={self.from_date}"
-                    f"&limit={self.limit}&page={page}"
-                )
-
+                url = f"{main_url}&page={page}"
                 logging.info(f"Fetching OPAC documents from: {url}")
 
                 # Faz requisição
@@ -246,6 +258,8 @@ class OPACHarvester:
                         "publication_year": publication_year,
                         "url": xml_url,
                         "source_type": "opac",
+                        # True ou False. Nome ideal seria is_public, mas ficou como status
+                        "is_public": item.get("status"),
                         "metadata": {
                             "aop_pid": item.get("aop_pid"),
                             "default_language": item.get("default_language"),
@@ -261,6 +275,8 @@ class OPACHarvester:
 
                 # Verifica se deve continuar
                 page += 1
+                if self.stop and page > self.stop:
+                    break
                 if total_pages and page > total_pages:
                     logging.info(f"Completed all {total_pages} pages")
                     break
