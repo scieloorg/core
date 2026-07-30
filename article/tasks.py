@@ -485,6 +485,7 @@ def task_export_article_to_articlemeta(
         - Requer que o artigo exista na base local antes da exportação
     """
     try:
+        item = pid_v3
         if not pid_v3:
             raise ValueError("task_export_article_to_articlemeta requires pid_v3")
 
@@ -493,6 +494,7 @@ def task_export_article_to_articlemeta(
             valid=True,
             is_classic_public=True,
         )
+        item = str(article)
 
         user = _get_user(self.request, username=username, user_id=user_id)
 
@@ -507,10 +509,12 @@ def task_export_article_to_articlemeta(
     except Exception as exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
+            action="article.tasks.task_export_article_to_articlemeta",
+            item=item,
             exception=exception,
             exc_traceback=exc_traceback,
             detail={
-                "task": "article.tasks.task_export_article_to_articlemeta",
+                "collection_acron_list": collection_acron_list,
                 "pid_v3": pid_v3,
                 "force_update": force_update,
             },
@@ -923,9 +927,10 @@ def task_process_article_pipeline(
         )
     """
     try:
+        unexpected_event_item = None
         user = _get_user(self.request, username=username, user_id=user_id)
-        
         if xml_url:
+            unexpected_event_item = xml_url
             if not collection_acron:
                 raise ValueError("collection_acron is required when xml_url is provided")
             if not pid:
@@ -951,6 +956,7 @@ def task_process_article_pipeline(
         
         if article_source_id:
             article_source = ArticleSource.objects.get(id=article_source_id)
+            unexpected_event_item = str(article_source)
             article_source.add_pid_provider(
                 user=user,
                 force_update=force_update,
@@ -967,8 +973,11 @@ def task_process_article_pipeline(
         pp_xml = PidProviderXML.objects.select_related(
             "current_version"
         ).get(id=pp_xml_id)
+        unexpected_event_item = str(pp_xml)
 
         article = load_article(user, pp_xml=pp_xml)
+        unexpected_event_item = str(article)
+
         pp_xml.collections.set(article.collections)
 
         article.check_availability(user, force_update=export_to_articlemeta or force_update)
@@ -987,15 +996,20 @@ def task_process_article_pipeline(
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
+            action="article.tasks.task_process_article_pipeline",
+            item=unexpected_event_item,
             exception=e,
             exc_traceback=exc_traceback,
             detail={
-                "task": "article.tasks.task_process_article_pipeline",
                 "xml_url": xml_url,
                 "article_source_id": article_source_id,
                 "pp_xml_id": pp_xml_id,
                 "pid": pid,
                 "collection_acron": collection_acron,
+                "source_date": source_date,
+                "collection_acron_list": collection_acron_list,
+                "auto_solve_pid_conflict": auto_solve_pid_conflict,
+                "version": version,
                 "export_to_articlemeta": export_to_articlemeta,
                 "force_update": force_update,
             },

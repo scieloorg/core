@@ -772,12 +772,10 @@ class Article(
             if not force_update and self.is_available():
                 return True
 
-            event = None
             urls = []
             for item in self.article_availability.all():
                 urls.append(item.url)
 
-            event = self.add_event(user, _("register urls"))
             for item in self.urls_data:
                 if item["url"] in urls:
                     urls.remove(item["url"])
@@ -794,17 +792,15 @@ class Article(
             return self.mark_as_available()
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            if event:
-                event.finish(completed=False, exceptions=traceback.format_exc())
-            else:
-                UnexpectedEvent.create(
-                    item=str(self),
-                    exception=e,
-                    exc_traceback=exc_traceback,
-                    detail=dict(
-                        function="article.models.Article.check_availability",
-                    ),
-                )
+            UnexpectedEvent.create(
+                action="article.models.Article.check_availability",
+                item=str(self),
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "traceback": traceback.format_exc()
+                },
+            )
 
     def mark_as_available(self):
         save = False
