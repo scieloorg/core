@@ -766,7 +766,7 @@ class Article(
                 return False
 
             if not force_update and self.is_available():
-                return True
+                return self.mark_as_available()
 
             urls = []
             for item in self.article_availability.all():
@@ -1867,6 +1867,12 @@ class ArticleSource(CommonControlField):
             changed = True
         if is_public is False and self.status != ArticleSource.StatusChoices.NOT_PUBLIC:
             self.status = ArticleSource.StatusChoices.NOT_PUBLIC
+            changed = True
+        elif (
+            is_public is True
+            and self.status == ArticleSource.StatusChoices.NOT_PUBLIC
+        ):
+            self.status = ArticleSource.StatusChoices.PENDING
             changed = True
         return changed
 
