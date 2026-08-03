@@ -394,9 +394,9 @@ class ArticleIteratorBuilder:
         if self.until_date:
             filters["updated__lte"] = self.until_date
         if self.from_pub_year:
-            filters["pub_date_year__gte"] = self.from_pub_year
+            filters["pub_year__gte"] = self.from_pub_year
         if self.until_pub_year:
-            filters["pub_date_year__lte"] = self.until_pub_year
+            filters["pub_year__lte"] = self.until_pub_year
 
         params = {}
         if self.collection_acron_list:
@@ -450,9 +450,9 @@ class ArticleIteratorBuilder:
                 self.journal_acron_list
             )
         if self.from_pub_year:
-            filters["pub_year__gte"] = self.from_pub_year
+            filters["pub_date_year__gte"] = self.from_pub_year
         if self.until_pub_year:
-            filters["pub_year__lte"] = self.until_pub_year
+            filters["pub_date_year__lte"] = self.until_pub_year
         if self.from_date:
             filters["updated__gte"] = self.from_date
         if self.until_date:
@@ -492,9 +492,7 @@ class ArticleIteratorBuilder:
                 Q(pid_provider_xml__proc_status__in=pid_provider_choices.PPXML_STATUS_TO_CREATE_OR_UPDATE_ARTICLE_SOURCE) |
                 Q(pid_provider_xml__isnull=True) | Q(file__isnull=True)
             )
-        yield from ArticleSource.objects.select_related(
-            "pid_provider"
-        ).filter(
+        yield from ArticleSource.objects.filter(
             qs,
             **params,
         ).values(article_source_id=F("id")).iterator()

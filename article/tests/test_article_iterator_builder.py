@@ -221,8 +221,8 @@ class TestFromPidProvider(unittest.TestCase):
             list(builder.from_pid_provider())
 
             _, kwargs = MockPPX.objects.filter.call_args
-            self.assertEqual(kwargs["pub_date_year__gte"], 2020)
-            self.assertEqual(kwargs["pub_date_year__lte"], 2022)
+            self.assertEqual(kwargs["pub_year__gte"], 2020)
+            self.assertEqual(kwargs["pub_year__lte"], 2022)
             self.assertEqual(kwargs["updated__gte"], "2020-01-01")
             self.assertEqual(kwargs["updated__lte"], "2022-12-31")
 
@@ -439,8 +439,8 @@ class TestFromArticle(unittest.TestCase):
             list(builder.from_article())
 
             _, kwargs = MockArticle.objects.filter.call_args
-            self.assertEqual(kwargs["pub_year__gte"], 2019)
-            self.assertEqual(kwargs["pub_year__lte"], 2021)
+            self.assertEqual(kwargs["pub_date_year__gte"], 2019)
+            self.assertEqual(kwargs["pub_date_year__lte"], 2021)
             self.assertEqual(kwargs["updated__gte"], "2019-01-01")
             self.assertEqual(kwargs["updated__lte"], "2021-12-31")
 
@@ -470,9 +470,7 @@ class TestFromArticleSource(unittest.TestCase):
              patch(f"{MODULE_PATH}.pid_provider_choices") as MockChoices:
             MockChoices.PPXML_STATUS_TO_CREATE_OR_UPDATE_ARTICLE_SOURCE = "to_create"
             (
-                MockArticleSource.objects.select_related.return_value
-                .filter.return_value
-                .values.return_value
+                MockArticleSource.objects.filter.return_value.values.return_value
             ) = FakeValuesQuerySet(items)
 
             result = list(
@@ -486,14 +484,12 @@ class TestFromArticleSource(unittest.TestCase):
 
         with patch(f"{MODULE_PATH}.ArticleSource") as MockArticleSource:
             (
-                MockArticleSource.objects.select_related.return_value
-                .filter.return_value
-                .values.return_value
+                MockArticleSource.objects.filter.return_value.values.return_value
             ) = FakeValuesQuerySet([])
 
             list(builder.from_article_source())
 
-            (q_arg,), _ = MockArticleSource.objects.select_related.return_value.filter.call_args
+            (q_arg,), _ = MockArticleSource.objects.filter.call_args
             self.assertFalse(q_arg)
 
 
