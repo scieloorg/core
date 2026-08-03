@@ -4,9 +4,9 @@ Testes para QueryBuilderPidProviderXML e as funções de comparação
 
 Atualizado para cobrir a correção do falso-match na branch journal-article:
 - QueryBuilderPidProviderXML agora também lê
-  `xml_adapter.xml_with_pre.body_fragment_fingerprint` (fingerprint do
-  corpo INTEIRO do artigo) diretamente do xml_with_pre — sem depender de
-  mudança no PidProviderXMLAdapter/packtools.
+  `xml_adapter.xml_with_pre.body_fragment_fingerprint` (fingerprint parcial do body do artigo)
+   e também `xml_adapter.xml_with_pre.body_fingerprint` (fingerprint corpo INTEIRO do artigo) 
+   diretamente do xml_with_pre.
 - `article_data_query` não usa mais z_partial_body isolado: delega ao
   novo `partial_body_query`, que monta `z_partial_body__in=[...]` com os
   hashes disponíveis (legado + novo fingerprint) ou, quando nenhum dos
@@ -48,6 +48,7 @@ def make_xml_adapter(
     collab=None,
     links=None,
     partial_body=None,
+    body_fingerprint=None,
     body_fragment_fingerprint=None,
 ):
     """
@@ -68,6 +69,7 @@ def make_xml_adapter(
     adapter.sps_pkg_name = sps_pkg_name
     adapter.order = order
     adapter.xml_with_pre.deprecated_sps_pkg_name_list = deprecated_sps_pkg_name_list or []
+    adapter.xml_with_pre.body_fingerprint = body_fingerprint
     adapter.xml_with_pre.body_fragment_fingerprint = body_fragment_fingerprint
     adapter.xml_with_pre.get_article_data.return_value = {
         "article_titles": article_titles or [],
@@ -286,23 +288,23 @@ class PartialBodyQueryTests(SimpleTestCase):
     def test_uses_in_with_only_body_fragment_fingerprint(self):
         adapter = make_xml_adapter(
             data={},
-            body_fragment_fingerprint="hash-corpo-inteiro",
+            body_fragment_fingerprint="hash-fragmento-do-corpo",
         )
         qbuilder = QueryBuilderPidProviderXML(adapter)
         self.assertEqual(
             qbuilder.partial_body_query,
-            Q(z_partial_body__in=["hash-corpo-inteiro"]),
+            Q(z_partial_body__in=["hash-fragmento-do-corpo"]),
         )
 
     def test_uses_in_with_both_hashes_when_both_present_and_different(self):
         adapter = make_xml_adapter(
             data={"z_partial_body": "hash-legado"},
-            body_fragment_fingerprint="hash-corpo-inteiro",
+            body_fragment_fingerprint="hash-fragmento-do-corpo",
         )
         qbuilder = QueryBuilderPidProviderXML(adapter)
         self.assertEqual(
             qbuilder.partial_body_query,
-            Q(z_partial_body__in=["hash-legado", "hash-corpo-inteiro"]),
+            Q(z_partial_body__in={"hash-legado", "hash-fragmento-do-corpo"}),
         )
 
     def test_deduplicates_when_both_hashes_are_equal(self):
@@ -330,6 +332,55 @@ class PartialBodyQueryTests(SimpleTestCase):
             qbuilder.partial_body_query, Q(z_partial_body__in=(None, None))
         )
 
+    def test_combines_textual_fields_with_all_three_body_hashes(self):
+        """
+        article_data_query propaga corretamente o candidato adicional
+        body_fingerprint (corpo inteiro) através de partial_body_query,
+        junto com z_partial_body legado e body_fragment_fingerprint.
+        """
+        adapter = make_xml_adapter(
+            data={
+                "z_surnames": "Silva",
+                "z_collab": None,
+                "z_links": None,
+                "z_partial_body": "hash-legado",
+            },
+            body_fragment_fingerprint="hash-fragmento-do-corpo",
+            body_fingerprint="hash-corpo-inteiro",
+        )
+        qbuilder = QueryBuilderPidProviderXML(adapter)
+        expected = Q(z_surnames="Silva", z_collab=None, z_links=None) & Q(
+            z_partial_body__in={
+                "hash-legado",
+                "hash-fragmento-do-corpo",
+                "hash-corpo-inteiro",
+            }
+        )
+        self.assertEqual(qbuilder.article_data_query, expected)
+
+    def test_two_articles_with_same_legacy_hash_but_different_body_fingerprint_differ(self):
+        """
+        Regressão direta do incidente original: dois artigos com o mesmo
+        rótulo genérico em z_partial_body legado (ex. "ARTIGO DE REVISÃO")
+        mas com body_fingerprint (corpo inteiro) diferentes devem produzir
+        queries distintas — o falso-positivo de match não deve mais ocorrer.
+        """
+        adapter_a = make_xml_adapter(
+            data={"z_partial_body": "rotulo-generico-artigo-revisao"},
+            body_fragment_fingerprint=None,
+            body_fingerprint="hash-corpo-artigo-a",
+        )
+        adapter_b = make_xml_adapter(
+            data={"z_partial_body": "rotulo-generico-artigo-revisao"},
+            body_fragment_fingerprint=None,
+            body_fingerprint="hash-corpo-artigo-b",
+        )
+        qbuilder_a = QueryBuilderPidProviderXML(adapter_a)
+        qbuilder_b = QueryBuilderPidProviderXML(adapter_b)
+        self.assertNotEqual(
+            qbuilder_a.article_data_query, qbuilder_b.article_data_query
+        )
+
 
 class ArticleDataQueryTests(SimpleTestCase):
     """
@@ -346,11 +397,11 @@ class ArticleDataQueryTests(SimpleTestCase):
                 "z_links": None,
                 "z_partial_body": "hash-legado",
             },
-            body_fragment_fingerprint="hash-corpo-inteiro",
+            body_fragment_fingerprint="hash-fragmento-do-corpo",
         )
         qbuilder = QueryBuilderPidProviderXML(adapter)
         expected = Q(z_surnames="Silva", z_collab=None, z_links=None) & Q(
-            z_partial_body__in=["hash-legado", "hash-corpo-inteiro"]
+            z_partial_body__in={"hash-legado", "hash-fragmento-do-corpo"}
         )
         self.assertEqual(qbuilder.article_data_query, expected)
 
