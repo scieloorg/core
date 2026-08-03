@@ -4,18 +4,77 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+BATCH_SIZE = 1000
+
+
+def backfill_article_source(apps, schema_editor):
+    ArticleSource = apps.get_model("article", "ArticleSource")
+    database = schema_editor.connection.alias
+
+    queryset = (
+        ArticleSource.objects.using(database)
+        .select_related("am_article", "pid_provider_xml")
+        .prefetch_related("pid_provider_xml__collections")
+        .order_by("pk")
+    )
+
+    batch = []
+
+    for article_source in queryset.iterator(chunk_size=BATCH_SIZE):
+        am_article = article_source.am_article
+        pid_provider_xml = article_source.pid_provider_xml
+        changed = False
+
+        if am_article:
+            if am_article.collection_id:
+                article_source.collection_id = am_article.collection_id
+                changed = True
+            if am_article.pid:
+                article_source.pid = am_article.pid
+                changed = True
+
+        if pid_provider_xml:
+            if not article_source.pid and pid_provider_xml.v2:
+                article_source.pid = pid_provider_xml.v2
+                changed = True
+
+            if not article_source.collection_id:
+                collection_ids = [
+                    collection.pk
+                    for collection in pid_provider_xml.collections.all()
+                ]
+                if len(collection_ids) == 1:
+                    article_source.collection_id = collection_ids[0]
+                    changed = True
+
+        if changed:
+            batch.append(article_source)
+
+        if len(batch) >= BATCH_SIZE:
+            ArticleSource.objects.using(database).bulk_update(
+                batch,
+                ["collection", "pid"],
+                batch_size=BATCH_SIZE,
+            )
+            batch.clear()
+
+    if batch:
+        ArticleSource.objects.using(database).bulk_update(
+            batch,
+            ["collection", "pid"],
+            batch_size=BATCH_SIZE,
+        )
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
         ("article", "0049_alter_articlesource_status"),
         ("collection", "0007_collection_platform_status"),
+        ("pid_provider", "0012_pidproviderxml_collections"),
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name="articlesource",
-            name="am_article",
-        ),
         migrations.AddField(
             model_name="articlesource",
             name="collection",
@@ -32,5 +91,13 @@ class Migration(migrations.Migration):
             model_name="articlesource",
             name="pid",
             field=models.CharField(blank=True, max_length=24, null=True),
+        ),
+        migrations.RunPython(
+            backfill_article_source,
+            migrations.RunPython.noop,
+        ),
+        migrations.RemoveField(
+            model_name="articlesource",
+            name="am_article",
         ),
     ]
