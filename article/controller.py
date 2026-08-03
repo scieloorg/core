@@ -236,7 +236,13 @@ def bulk_export_articles_to_articlemeta(
         version: Version identifier for export
 
     Returns:
-        bool: True if the export was successful, False otherwise
+        bool: True when the batch processing finishes. Errors exporting
+        individual articles are logged and do not interrupt the batch.
+
+    Raises:
+        ValueError: If no articles match the provided filters.
+        Exception: If an unexpected error occurs outside the processing of an
+            individual article. The error is logged and re-raised.
     """
     try:
         params = {}

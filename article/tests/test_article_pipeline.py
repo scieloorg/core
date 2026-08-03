@@ -2,9 +2,12 @@ import logging
 import unittest
 from unittest.mock import MagicMock, patch, call
 
+from article.models import Article
+
 # Ajuste este caminho se as tasks estiverem em outro módulo.
 MODULE_PATH = "article.tasks"
 from article.tasks import (  # noqa: E402
+    task_export_article_to_articlemeta,
     task_harvest_articles,
     task_dispatch_articles,
     task_process_article_pipeline,
@@ -104,33 +107,18 @@ class TestTaskHarvestArticles(unittest.TestCase):
         self.assertEqual(kwargs["opac_url"], "www.custom.br")
         self.assertEqual(kwargs["stop"], 5)
 
-    def test_BUG_get_user_failure_masks_original_exception_with_unboundlocalerror(self):
-        """
-        BUG: `params` só é atribuído DEPOIS da chamada a `_get_user(...)`.
-        Se `_get_user` falhar (usuário inválido/inexistente), o bloco
-        `except` tenta usar `detail=params` no `UnexpectedEvent.create(...)`,
-        mas `params` nunca foi definido -> UnboundLocalError. Isso mascara
-        a exceção original (RuntimeError aqui) e o log de erro nem chega a
-        ser criado.
-
-        Fix sugerido: mover a criação de `params` para ANTES de
-        `user = _get_user(...)`, ou inicializar `params = {}` logo no
-        início do `try`.
-        """
+    def test_get_user_failure_creates_event_and_reraises_original_exception(self):
         with patch(f"{MODULE_PATH}._get_user") as mock_get_user, \
              patch(f"{MODULE_PATH}.UnexpectedEvent") as MockEvent:
             mock_get_user.side_effect = RuntimeError("boom")
 
-            # Comportamento atual (buggy): não é RuntimeError que propaga,
-            # e sim UnboundLocalError.
-            with self.assertRaises(UnboundLocalError):
+            with self.assertRaisesRegex(RuntimeError, "boom"):
                 task_harvest_articles(
                     collection_acron_list=["scl", "mex"],
                     journal_acron_list=["abc"],
                 )
 
-        # O log de erro nem chega a ser criado.
-        MockEvent.create.assert_not_called()
+        MockEvent.create.assert_called_once()
 
     def test_exception_after_params_assigned_creates_unexpected_event_and_reraises(self):
         """
@@ -240,21 +228,15 @@ class TestTaskDispatchArticles(unittest.TestCase):
         for absent_key in ("limit", "timeout", "opac_url", "stop"):
             self.assertNotIn(absent_key, kwargs)
 
-    def test_BUG_get_user_failure_masks_original_exception_with_unboundlocalerror(self):
-        """
-        Mesmo bug de task_harvest_articles: `params` só é atribuído depois
-        de `_get_user(...)`. Se `_get_user` falhar, o `except` tenta usar
-        `detail=params` (indefinido) -> UnboundLocalError mascara a
-        exceção original e o log de erro nem é criado.
-        """
+    def test_get_user_failure_creates_event_and_reraises_original_exception(self):
         with patch(f"{MODULE_PATH}._get_user") as mock_get_user, \
              patch(f"{MODULE_PATH}.UnexpectedEvent") as MockEvent:
             mock_get_user.side_effect = RuntimeError("boom")
 
-            with self.assertRaises(UnboundLocalError):
+            with self.assertRaisesRegex(RuntimeError, "boom"):
                 task_dispatch_articles(collection_acron_list=["scl"])
 
-        MockEvent.create.assert_not_called()
+        MockEvent.create.assert_called_once()
 
     def test_exception_after_params_assigned_creates_unexpected_event_and_reraises(self):
         with patch(f"{MODULE_PATH}._get_user") as mock_get_user, \
@@ -455,59 +437,74 @@ class TestTaskProcessArticlePipeline(unittest.TestCase):
         _, kwargs = article.check_availability.call_args
         self.assertFalse(kwargs["force_update"])
 
-    # -------------------------------------------------------------
-    # BUG: exceções são logadas mas NUNCA relançadas nesta task
-    # -------------------------------------------------------------
-    def test_BUG_generic_exception_is_logged_but_not_reraised(self):
-        """
-        BUG: ao contrário de task_harvest_articles e task_dispatch_articles
-        (que fazem `raise` no final do except), task_process_article_pipeline
-        NÃO relança a exceção depois de chamar UnexpectedEvent.create. Isso
-        faz a task Celery terminar como SUCCESS mesmo quando falhou —
-        sem retry automático e sem aparecer como falha em monitoramento.
-
-        Fix sugerido: adicionar `raise` ao final do bloco `except`, igual
-        às outras duas tasks.
-        """
+    def test_generic_exception_is_logged_and_reraised(self):
         with patch(f"{MODULE_PATH}._get_user") as mock_get_user, \
              patch(f"{MODULE_PATH}.UnexpectedEvent") as MockEvent:
             mock_get_user.side_effect = RuntimeError("boom")
 
-            # Não levanta exceção — comportamento atual (buggy).
-            result = task_process_article_pipeline(xml_url="http://x")
+            with self.assertRaisesRegex(RuntimeError, "boom"):
+                task_process_article_pipeline(xml_url="http://x")
 
         MockEvent.create.assert_called_once()
-        self.assertIsNone(result)
 
-    def test_BUG_missing_collection_acron_validation_error_is_swallowed(self):
-        """
-        Mesma causa-raiz do bug acima: o ValueError de validação
-        ("collection_acron is required...") é logado via UnexpectedEvent
-        mas não propaga — quem chamou a task não sabe que ela falhou.
-        """
+    def test_missing_collection_acron_validation_error_is_logged_and_reraised(self):
         with patch(f"{MODULE_PATH}._get_user") as mock_get_user, \
              patch(f"{MODULE_PATH}.UnexpectedEvent") as MockEvent:
             mock_get_user.return_value = make_user()
 
-            result = task_process_article_pipeline(xml_url="http://x", pid="S1")
-            # sem collection_acron -> ValueError interno, mas não propaga
+            with self.assertRaisesRegex(ValueError, "collection_acron is required"):
+                task_process_article_pipeline(xml_url="http://x", pid="S1")
 
-        self.assertIsNone(result)
         MockEvent.create.assert_called_once()
         _, kwargs = MockEvent.create.call_args
         self.assertIn("collection_acron is required", str(kwargs["exception"]))
 
-    def test_BUG_no_entry_point_validation_error_is_swallowed(self):
+    def test_no_entry_point_validation_error_is_logged_and_reraised(self):
         with patch(f"{MODULE_PATH}._get_user") as mock_get_user, \
              patch(f"{MODULE_PATH}.UnexpectedEvent") as MockEvent:
             mock_get_user.return_value = make_user()
 
-            result = task_process_article_pipeline()
+            with self.assertRaisesRegex(ValueError, "No valid entry point"):
+                task_process_article_pipeline()
 
-        self.assertIsNone(result)
         MockEvent.create.assert_called_once()
         _, kwargs = MockEvent.create.call_args
         self.assertIn("No valid entry point", str(kwargs["exception"]))
+
+
+class TestTaskExportArticleToArticleMeta(unittest.TestCase):
+    def test_export_failure_creates_event_with_action_and_article_item(self):
+        article = MagicMock(spec=Article)
+        article.__str__.return_value = "S123456789"
+
+        with patch(f"{MODULE_PATH}.Article.objects.get", return_value=article), \
+             patch(f"{MODULE_PATH}._get_user", return_value=make_user()), \
+             patch(
+                 f"{MODULE_PATH}.controller.export_article_to_articlemeta",
+                 side_effect=RuntimeError("boom"),
+             ), \
+             patch(f"{MODULE_PATH}.UnexpectedEvent") as MockEvent:
+            task_export_article_to_articlemeta(
+                pid_v3="S123456789",
+                collection_acron_list=["scl"],
+                force_update=True,
+            )
+
+        MockEvent.create.assert_called_once()
+        _, kwargs = MockEvent.create.call_args
+        self.assertEqual(
+            kwargs["action"],
+            "article.tasks.task_export_article_to_articlemeta",
+        )
+        self.assertEqual(kwargs["item"], "S123456789")
+        self.assertEqual(
+            kwargs["detail"],
+            {
+                "collection_acron_list": ["scl"],
+                "pid_v3": "S123456789",
+                "force_update": True,
+            },
+        )
 
 
 if __name__ == "__main__":

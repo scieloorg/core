@@ -480,6 +480,8 @@ def task_export_article_to_articlemeta(
         - Utiliza controller.export_article_to_articlemeta internamente
         - Requer que o artigo exista na base local antes da exportação
     """
+    item = pid_v3 or ""
+
     try:
         if not pid_v3:
             raise ValueError("task_export_article_to_articlemeta requires pid_v3")
@@ -489,6 +491,7 @@ def task_export_article_to_articlemeta(
             valid=True,
             is_classic_public=True,
         )
+        item = str(article)
 
         user = _get_user(self.request, username=username, user_id=user_id)
 
@@ -500,13 +503,16 @@ def task_export_article_to_articlemeta(
         )
     except Article.DoesNotExist as exception:
         return False
+
     except Exception as exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         UnexpectedEvent.create(
+            action="article.tasks.task_export_article_to_articlemeta",
+            item=item,
             exception=exception,
             exc_traceback=exc_traceback,
             detail={
-                "task": "article.tasks.task_export_article_to_articlemeta",
+                "collection_acron_list": collection_acron_list,
                 "pid_v3": pid_v3,
                 "force_update": force_update,
             },
@@ -714,24 +720,25 @@ def task_harvest_articles(
     opac_url=None,
     stop=None,
 ):
+    item = ""
+    params = {
+        "collection_acron_list": collection_acron_list,
+        "journal_acron_list": journal_acron_list,
+        "from_date": from_date,
+        "until_date": until_date,
+        "force_update": force_update,
+        "export_to_articlemeta": export_to_articlemeta,
+        "auto_solve_pid_conflict": auto_solve_pid_conflict,
+        "limit": limit,
+        "timeout": timeout,
+        "opac_url": opac_url,
+        "stop": stop,
+    }
+
     try:
         items = (collection_acron_list or []) + (journal_acron_list or [])
         item = "-".join(items)
         user = _get_user(self.request, username=username, user_id=user_id)
-
-        params = {
-            "collection_acron_list": collection_acron_list,
-            "journal_acron_list": journal_acron_list,
-            "from_date": from_date,
-            "until_date": until_date,
-            "force_update": force_update,
-            "export_to_articlemeta": export_to_articlemeta,
-            "auto_solve_pid_conflict": auto_solve_pid_conflict,
-            "limit": limit,
-            "timeout": timeout,
-            "opac_url": opac_url,
-            "stop": stop,
-        }
 
         common_kwargs = {
             "user_id": user.id,
@@ -794,21 +801,27 @@ def task_dispatch_articles(
     # --- ativa article_source ---
     article_source_status_list=None,
 ):
+    item = ""
+    params = {
+        "collection_acron_list": collection_acron_list,
+        "journal_acron_list": journal_acron_list,
+        "from_pub_year": from_pub_year,
+        "until_pub_year": until_pub_year,
+        "from_date": from_date,
+        "until_date": until_date,
+        "force_update": force_update,
+        "export_to_articlemeta": export_to_articlemeta,
+        "auto_solve_pid_conflict": auto_solve_pid_conflict,
+        "proc_status_list": proc_status_list,
+        "data_status_list": data_status_list,
+        "article_source_status_list": article_source_status_list,
+    }
 
     try:
         items = (collection_acron_list or []) + (journal_acron_list or [])
         item = "-".join(items)
         user = _get_user(self.request, username=username, user_id=user_id)
 
-        params = {
-            "collection_acron_list": collection_acron_list,
-            "journal_acron_list": journal_acron_list,
-            "from_date": from_date,
-            "until_date": until_date,
-            "force_update": force_update,
-            "export_to_articlemeta": export_to_articlemeta,
-            "auto_solve_pid_conflict": auto_solve_pid_conflict,
-        }
         common_kwargs = {
             "user_id": user.id,
             "username": user.username,
@@ -952,3 +965,4 @@ def task_process_article_pipeline(
                 "force_update": force_update,
             },
         )
+        raise
