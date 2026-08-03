@@ -89,13 +89,16 @@ class QueryBuilderPidProviderXML:
         """
         self.xml_adapter = xml_adapter
         # Centraliza o acesso aos dados brutos e normalizados (hashes de 64 chars)
-        # z_body_fragment: fingerprint sha256 do corpo INTEIRO do artigo
+        # z_body: fingerprint sha256 do corpo INTEIRO do artigo
+        # (XMLWithPre.body_fingerprint), acessado direto do xml_with_pre.
+        # z_body_fragment: fingerprint sha256 de um fragmento do artigo
         # (XMLWithPre.body_fragment_fingerprint), acessado direto do
         # xml_with_pre — não requer nenhuma mudança no packtools nem no
         # PidProviderXMLAdapter. É mais robusto que z_partial_body (que
         # é só o primeiro parágrafo não vazio e pode colidir entre
         # artigos diferentes, ex.: rótulos de seção genéricos como
         # "ARTIGO DE REVISÃO").
+        self.z_body = xml_adapter.xml_with_pre.body_fingerprint
         self.z_body_fragment = xml_adapter.xml_with_pre.body_fragment_fingerprint
         self.adapter_data = xml_adapter.data
         self.compare_data = xml_adapter.get_data_to_compare()
@@ -146,7 +149,6 @@ class QueryBuilderPidProviderXML:
         Constrói queries para busca por identificadores (v3, v2, aop_pid, pkg_name, DOI).
         """
         q = Q()
-        other_pids = set()
         
         # PIDs diretos do xml_adapter (não envelopados no data dict)
         v3 = self.xml_adapter.v3
@@ -237,7 +239,7 @@ class QueryBuilderPidProviderXML:
 
         - legado: hash de z_partial_body (primeiro parágrafo não vazio
           do corpo, via xml_adapter.z_partial_body);
-        - atual: fingerprint do corpo INTEIRO do artigo
+        - atual: fingerprint do parcial do artigo
           (xml_with_pre.body_fragment_fingerprint), gravado no mesmo
           campo z_partial_body a partir desta correção (sem necessidade
           de migração/backfill).
@@ -255,7 +257,7 @@ class QueryBuilderPidProviderXML:
         `Q(z_partial_body=None)` (que o Django traduz para IS NULL).
         """
         z_partial_body = self.adapter_data.get("z_partial_body")
-        candidates = set(v for v in (z_partial_body, self.z_body_fragment) if v)
+        candidates = set(v for v in (z_partial_body, self.z_body_fragment, self.z_body) if v)
         if candidates:
             return Q(z_partial_body__in=candidates)
         return Q(z_partial_body__isnull=True)
