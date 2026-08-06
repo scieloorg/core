@@ -167,7 +167,7 @@ class XMLVersionViewSet(CommonControlFieldViewSet):
         "updated",
     ]
     search_fields = (
-        "file__path",
+        "file",
         "pid_provider_xml__v3",
         "pid_provider_xml__v2",
         "pid_provider_xml__aop_pid",
