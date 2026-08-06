@@ -2,13 +2,21 @@ from datetime import datetime
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.utils.timezone import make_aware
 from freezegun import freeze_time
 
 from article import choices
-from article.models import Article, ArticleAffiliation, ContribCollab, ContribPerson
+from article.models import (
+    AMArticle,
+    Article,
+    ArticleAffiliation,
+    ArticleSource,
+    ContribCollab,
+    ContribPerson,
+)
 from article.tests.test_mixins import ArticleTestMixin
+from collection.models import Collection
 from organization.models import NormAffiliation
 from organization.tests.test_mixins import OrganizationTestMixin
 
@@ -740,3 +748,112 @@ class ContribPersonTest(ArticleTestMixin, OrganizationTestMixin, TestCase):
         self.assertEqual(person.last_name, "Smith")
         self.assertEqual(person.suffix, "Jr.")
         self.assertEqual(person.declared_name, "Dr. John R. Smith Jr.")
+
+
+class ArticleSourceUpdateTest(SimpleTestCase):
+    def test_public_article_source_returns_from_not_public_to_pending(self):
+        article_source = ArticleSource(
+            source_date="2026-08-03",
+            pid="S123456789",
+            status=ArticleSource.StatusChoices.NOT_PUBLIC,
+        )
+
+        changed = article_source.update(
+            source_date="2026-08-03",
+            collection=None,
+            pid="S123456789",
+            is_public=True,
+        )
+
+        self.assertTrue(changed)
+        self.assertEqual(
+            article_source.status,
+            ArticleSource.StatusChoices.PENDING,
+        )
+
+
+class AMArticleGetTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="legacy_user")
+        self.collection = Collection.objects.create(
+            acron3="scl",
+            creator=self.user,
+        )
+        self.article1 = Article.objects.create(
+            pid_v3="article-v3-1",
+            creator=self.user,
+        )
+        self.article2 = Article.objects.create(
+            pid_v3="article-v3-2",
+            creator=self.user,
+        )
+        self.am_article1 = AMArticle.objects.create(
+            pid="S0000000000000000000001",
+            collection=self.collection,
+            new_record=self.article1,
+            status="done",
+            creator=self.user,
+        )
+        self.am_article2 = AMArticle.objects.create(
+            pid="S0000000000000000000002",
+            collection=self.collection,
+            new_record=self.article2,
+            status="done",
+            creator=self.user,
+        )
+
+    def test_get_preserves_generated_legacy_records_without_url_or_data(self):
+        found = AMArticle.get(
+            pid=self.am_article1.pid,
+            collection=self.collection,
+        )
+
+        self.assertEqual(found, self.am_article1)
+        self.assertEqual(AMArticle.objects.count(), 2)
+        self.assertTrue(
+            AMArticle.objects.filter(pk=self.am_article2.pk).exists()
+        )
+
+
+class ArticleCheckAvailabilityTest(SimpleTestCase):
+    def test_existing_availability_restores_public_status(self):
+        article = Article(
+            valid=True,
+            data_status=choices.DATA_STATUS_COMPLETED,
+            is_classic_public=True,
+            is_new_public=True,
+            is_public=True,
+        )
+
+        with patch.object(
+            article,
+            "is_pp_xml_valid",
+            return_value=True,
+        ), patch.object(
+            article,
+            "is_available",
+            return_value=True,
+        ), patch.object(
+            article,
+            "classic_available",
+        ) as mock_classic_available, patch.object(
+            article,
+            "new_available",
+        ) as mock_new_available, patch.object(
+            article,
+            "save",
+        ) as mock_save:
+            mock_classic_available.return_value.exists.return_value = True
+            mock_new_available.return_value.exists.return_value = True
+
+            result = article.check_availability(
+                user=None,
+                force_update=False,
+            )
+
+        self.assertTrue(result)
+        self.assertEqual(
+            article.data_status,
+            choices.DATA_STATUS_PUBLIC,
+        )
+        mock_save.assert_called_once()

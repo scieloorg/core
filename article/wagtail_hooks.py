@@ -135,17 +135,20 @@ class ArticleSourceSnippetViewSet(SnippetViewSet):
     menu_order = 200
 
     list_display = [
-        "am_article",
+        "url",
         "pid_provider_xml",
+        "pid",
+        "collection",
         "status",
         "source_date",
         "updated",
     ]
     list_filter = [
         "status",
-        "am_article__collection",
+        "collection",
+
     ]
-    search_fields = ["url", "pid_provider_xml__v3", "am_article__collection__acron3"]
+    search_fields = ["url", "pid_provider_xml__v3", "pid"]
     ordering = ["-updated"]
     list_per_page = 25
 
