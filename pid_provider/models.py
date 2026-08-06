@@ -1964,7 +1964,7 @@ class XMLEvent(BaseEvent, CommonControlField):
 # conflict/unmatched/error). FK nullable (unmatched/error podem não ter PPX).
 # -----------------------------------------------------------------------------
 class PidProviderXMLRegistration(CommonControlField):
-    LIGHTWEIGHT_STATUSES = {"created", "updated", "skip_update"}
+    LIGHTWEIGHT_STATUSES = {"created", "updated", "skipped"}
 
     EVENT_CREATED = "created"
     EVENT_UPDATED = "updated"
