@@ -20,13 +20,13 @@ MUDANÇAS DE CONTRATO EM RELAÇÃO À VERSÃO ANTERIOR DESTE ARQUIVO
 2. `_save` agora retorna o objeto PidProviderXML salvo diretamente
    (não mais uma tupla `(objeto, status)`).
 
-3. **register() NÃO grava auditoria sempre.** No `finally`, a chamada a
+3. **register() NÃO grava auditoria sempre por padrão.** No `finally`, a chamada a
    `PidProviderXMLRegistration.record` só acontece se:
        error_type (uma exceção foi capturada) OR
-       select_record_response.get("matched_items") (havia ambiguidade)
+       select_record_response.get("matched_items") (havia ambiguidade) OR
+       PidProviderSetting.record_all_registration_events (configuração no Wagtail Admin ativada)
    Ou seja: um "created"/"updated"/"skipped" limpo, sem matches concorrentes
-   e sem erro, NÃO gera registro de auditoria. Isso é uma mudança de
-   comportamento relevante e é testado explicitamente abaixo.
+   e sem erro, NÃO gera registro de auditoria por padrão.
 
 4. `is_updated` deixou de retornar um dict "já atualizado" — agora ela
    LEVANTA exceções para sinalizar o que aconteceu:
@@ -66,7 +66,7 @@ Ajuste os caminhos de import (PATCH_BASE) conforme a estrutura do seu projeto.
 
 from unittest.mock import patch, MagicMock
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from pid_provider import exceptions
 from pid_provider.models import (
@@ -509,3 +509,25 @@ class RecordInvocationInvariantTest(RegisterTestBase):
             PidProviderXML.register(self.xml, "file.xml", self.user)
 
         self.assertEqual(self.m_record.call_count, 1)
+
+
+# ---------------------------------------------------------------------------
+# Testes da setting PidProviderSetting no Wagtail Admin
+# ---------------------------------------------------------------------------
+class RecordAllEventsSettingTest(RegisterTestBase):
+    @patch(f"{PATCH_BASE}.PidProviderSetting.load")
+    def test_record_called_on_clean_success_when_setting_enabled(self, m_setting_load):
+        m_setting_load.return_value.record_all_registration_events = True
+        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+             patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
+             patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd, \
+             patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
+
+            m_select.side_effect = PidProviderXML.DoesNotExist
+            m_cmp.return_value = {}
+            m_upd.return_value = None
+            m_save.return_value = MagicMock(data={"v3": "ABC"})
+
+            PidProviderXML.register(self.xml, "file.xml", self.user)
+
+        self.assert_recorded_status("created")
