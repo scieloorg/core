@@ -8,6 +8,7 @@ from datetime import datetime
 from functools import cached_property
 from zlib import crc32
 
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.exceptions import FieldError
 from django.db import IntegrityError, models
@@ -18,6 +19,7 @@ from modelcluster.models import ClusterableModel
 from packtools.sps.pid_provider import v3_gen, xml_sps_adapter
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
+from wagtail.contrib.settings.models import BaseGenericSetting, register_setting
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from collection.models import Collection
@@ -733,6 +735,13 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             ISSN obrigatório ausente
         NotEnoughParametersToGetPidProviderXMLError
             Parâmetros insuficientes para identificar documento
+
+        Notes
+        -----
+        Gravação em `PidProviderXMLRegistration`: por padrão, só ocorre se houver
+        erro (`error_type`) ou ambiguidade (`matched_items`), prevenindo inchaço
+        da tabela em fluxos limpos. Esse comportamento pode ser alterado no
+        Wagtail Admin em Configurações > Pid Provider Setting (`record_all_registration_events`).
         """
         try:
             # outputs
@@ -834,9 +843,10 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 "error_type": error_type,
                 "traceback": traceback.format_exc()
             })
-        finally:            
+        finally:
             response["event_status"] = event_status
-            if error_type or (select_record_response or {}).get("matched_items"):
+            record_all = PidProviderSetting.load().record_all_registration_events
+            if record_all or error_type or (select_record_response or {}).get("matched_items"):
                 PidProviderXMLRegistration.record(
                     user=user,
                     pid_provider_xml=registered,
@@ -1958,10 +1968,30 @@ class XMLEvent(BaseEvent, CommonControlField):
         return obj
 
 
+@register_setting
+class PidProviderSetting(BaseGenericSetting):
+    record_all_registration_events = models.BooleanField(
+        default=False,
+        verbose_name=_("Gravar todos os eventos de auditoria"),
+        help_text=_(
+            "Quando ativo, grava auditoria em PidProviderXMLRegistration mesmo para fluxos limpos (created, updated, skipped)."
+        ),
+    )
+
+    panels = [
+        FieldPanel("record_all_registration_events"),
+    ]
+
+    class Meta:
+        verbose_name = _("Configurações do PID Provider")
+
+
 # -----------------------------------------------------------------------------
 # [models.py] MODELO NOVO — PidProviderXMLRegistration
-# Auditoria por documento. Grava SEMPRE (created/updated/skipped/forbidden/
-# conflict/unmatched/error). FK nullable (unmatched/error podem não ter PPX).
+# Auditoria por documento. Por padrão, grava apenas em exceções, erros, conflitos
+# ou ambiguidades (matched_items). Caso a opção no Wagtail Admin esteja ativa,
+# grava em todos os eventos.
+# FK nullable (unmatched/error podem não ter PPX).
 # -----------------------------------------------------------------------------
 class PidProviderXMLRegistration(CommonControlField):
     LIGHTWEIGHT_STATUSES = {"created", "updated", "skipped"}
