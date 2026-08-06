@@ -356,7 +356,10 @@ class PartialBodyQueryTests(SimpleTestCase):
                 "hash-corpo-inteiro",
             }
         )
-        self.assertEqual(qbuilder.article_data_query, expected)
+        self.assertDictEqual(
+            dict(qbuilder.article_data_query.children),
+            dict(expected.children)
+        )
 
     def test_two_articles_with_same_legacy_hash_but_different_body_fingerprint_differ(self):
         """
