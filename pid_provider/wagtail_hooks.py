@@ -1,12 +1,10 @@
-from django.http import HttpResponseRedirect
 from django.utils.translation import gettext_lazy as _
-from wagtail import hooks
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSetGroup
 
 from config.menu import get_menu_order
 from core.views import CommonControlFieldViewSet
-from pid_provider.models import XMLVersion, FixPidV2, OtherPid, PidProviderConfig, PidProviderXML
+from pid_provider.models import XMLURL, XMLVersion, FixPidV2, OtherPid, PidProviderConfig, PidProviderXML, PidProviderXMLRegistration
 
 
 class PidProviderXMLViewSet(CommonControlFieldViewSet):
@@ -169,7 +167,7 @@ class XMLVersionViewSet(CommonControlFieldViewSet):
         "updated",
     ]
     search_fields = (
-        "file__path",
+        "file",
         "pid_provider_xml__v3",
         "pid_provider_xml__v2",
         "pid_provider_xml__aop_pid",
@@ -177,6 +175,64 @@ class XMLVersionViewSet(CommonControlFieldViewSet):
         "pub_year",
         "available_since",
     )
+
+class XMLURLViewSet(CommonControlFieldViewSet):
+    model = XMLURL
+    menu_label = _("XML URLs")
+    menu_icon = "folder"
+    menu_order = 300
+    add_to_settings_menu = False
+    list_per_page = 10
+
+    # Configuração de listagem
+    list_display = [
+        "url",
+        "status",
+        "pid",
+    ]
+    list_filter = {
+        "status": ["exact"],
+        "is_public": ["exact"],
+    }
+    search_fields = (
+        "url",
+        "status",
+        "pid",
+    )
+
+
+class PidProviderXMLRegistrationViewSet(CommonControlFieldViewSet):
+    model = PidProviderXMLRegistration
+    icon = "doc-empty-inverse"
+    menu_label = _("PID Registration Events")
+    menu_name = "pid_provider_xml_registration"
+
+    # ordenação na listagem
+    ordering = ["-created"]
+
+    # colunas da listagem
+    list_display = (
+        "pkg_name",
+        "event_status",
+        "pid_provider_xml",
+        "created",
+    )
+
+    # filtros laterais
+    list_filter = ("event_status", "created")
+
+    # busca
+    search_fields = ("pkg_name", "pid_provider_xml__v2", "pid_provider_xml__v3")
+
+    # paginação (tabela cresce em volume)
+    list_per_page = 50
+
+    def get_queryset(self, request):
+        # super = CommonControlFieldViewSet
+        queryset = super().get_queryset(request)
+        if queryset is None:
+            queryset = self.model._default_manager.all()
+        return queryset.select_related("pid_provider_xml")
 
 
 # Grupo de ViewSets
@@ -190,6 +246,8 @@ class PidProviderViewSetGroup(SnippetViewSetGroup):
         FixPidV2ViewSet,
         PidProviderConfigViewSet,
         XMLVersionViewSet,
+        XMLURLViewSet,
+        PidProviderXMLRegistrationViewSet,
     )
 
 
