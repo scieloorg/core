@@ -3460,15 +3460,3 @@ class ArticlePeerReviewStats(Article):
             ObjectList(panels_statistics, heading=_("Complete Statistics")),
         ]
     )
-
-    def get_queryset(self, request):
-        """QuerySet otimizado com select_related e prefetch_related"""
-        return self.objects.select_related(
-            'journal',
-            'issue',
-            'journal__official',
-        ).prefetch_related(
-            'doi',
-            'titles',
-            'languages',
-        )
