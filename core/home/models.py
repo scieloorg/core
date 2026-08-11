@@ -18,6 +18,11 @@ from wagtail.models import Locale, Orderable, Page
 from wagtailcaptcha.models import WagtailCaptchaEmailForm
 
 from collection.models import Collection
+from core.home.utils.export_journals import (
+    generate_csv_response,
+    generate_xls_response,
+    get_scielo_journals_data,
+)
 from core.home.utils.get_social_networks import get_social_networks
 from journal.models import OwnerHistory, SciELOJournal
 
@@ -76,6 +81,23 @@ def _default_context(context):
     context["social_networks"] = get_social_networks("scl")
     context["old_scielo_url"] = settings.SCIELO_OLD_URL
     context["page_about"] = get_page_about()
+
+
+class JournalDownloadMixin:
+    def get_export_filters(self, request):
+        return None
+
+    @re_path(r"^download-csv/$", name="download_csv")
+    def download_csv(self, request):
+        filters = self.get_export_filters(request)
+        journals_data = get_scielo_journals_data(filters)
+        return generate_csv_response(journals_data)
+
+    @re_path(r"^download-xls/$", name="download_xls")
+    def download_xls(self, request):
+        filters = self.get_export_filters(request)
+        journals_data = get_scielo_journals_data(filters)
+        return generate_xls_response(journals_data)
 
 
 def get_page_about():
@@ -225,7 +247,15 @@ class HomePage(Page):
         return context
 
 
-class ListPageJournal(Page):
+class ListPageJournal(JournalDownloadMixin, RoutablePageMixin, Page):
+    def get_export_filters(self, request):
+        search_term = request.GET.get("search_term", "")
+        starts_with_letter = request.GET.get("start_with_letter", "")
+        active_or_discontinued = list(request.GET.get("tab", ""))
+        return default_journal_filter(
+            search_term, starts_with_letter, active_or_discontinued
+        )
+
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
         search_term = request.GET.get("search_term", "")
@@ -241,7 +271,22 @@ class ListPageJournal(Page):
         return context
 
 
-class ListPageJournalByPublisher(Page):
+class ListPageJournalByPublisher(JournalDownloadMixin, RoutablePageMixin, Page):
+    def get_export_filters(self, request):
+        search_term = request.GET.get("search_term", "")
+        starts_with_letter = request.GET.get("start_with_letter", "")
+        active_or_discontinued = list(request.GET.get("tab", ""))
+        filters = Q(status__in=SCIELO_STATUS_CHOICES)
+        if search_term:
+            filters &= Q(journal__title__icontains=search_term) | Q(
+                journal__owner_history__institution__institution__institution_identification__name__icontains=search_term
+            )
+        if starts_with_letter:
+            filters &= Q(journal__title__istartswith=starts_with_letter)
+        if active_or_discontinued:
+            filters &= Q(status__in=active_or_discontinued)
+        return filters
+
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
         search_term = request.GET.get("search_term", "")
@@ -287,7 +332,15 @@ class ListPageJournalByPublisher(Page):
         return context
 
 
-class ListPageJournalByCategory(RoutablePageMixin, Page):
+class ListPageJournalByCategory(JournalDownloadMixin, RoutablePageMixin, Page):
+    def get_export_filters(self, request):
+        search_term = request.GET.get("search_term", "")
+        starts_with_letter = request.GET.get("start_with_letter", "")
+        active_or_discontinued = list(request.GET.get("tab", ""))
+        return default_journal_filter(
+            search_term, starts_with_letter, active_or_discontinued
+        )
+
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
 

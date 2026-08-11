@@ -1,12 +1,17 @@
 from unittest.mock import patch
 
+from django.db.models import Q
 from django.test import TestCase
 
 from collection.models import Collection
 from core.users.models import User
 from journal.models import Journal, SciELOJournal
 
-from core.home.views import _get_scielo_journals_data
+from core.home.utils.export_journals import (
+    generate_csv_response,
+    generate_xls_response,
+    get_scielo_journals_data,
+)
 
 
 class TestGetScieloJournalsData(TestCase):
@@ -30,7 +35,7 @@ class TestGetScieloJournalsData(TestCase):
 
     def test_scielo_url_does_not_have_double_http_prefix(self):
         """URL must not contain 'http://http://' when domain already has http://"""
-        data = _get_scielo_journals_data()
+        data = get_scielo_journals_data()
         self.assertTrue(len(data) > 0)
         for item in data:
             self.assertNotIn("http://http://", item["scielo_url"])
@@ -38,7 +43,7 @@ class TestGetScieloJournalsData(TestCase):
 
     def test_scielo_url_is_well_formed(self):
         """URL must be a valid scielo.php URL with the correct domain"""
-        data = _get_scielo_journals_data()
+        data = get_scielo_journals_data()
         self.assertEqual(len(data), 1)
         expected_url = (
             "http://www.scielo.org.pe/scielo.php?script=sci_serial"
@@ -50,7 +55,7 @@ class TestGetScieloJournalsData(TestCase):
         """Trailing slash in domain must not produce double slash in URL"""
         self.collection.domain = "http://www.scielo.org.pe/"
         self.collection.save()
-        data = _get_scielo_journals_data()
+        data = get_scielo_journals_data()
         self.assertEqual(len(data), 1)
         self.assertNotIn("//scielo.php", data[0]["scielo_url"])
 
@@ -58,7 +63,82 @@ class TestGetScieloJournalsData(TestCase):
         """URL must be correct when domain uses https://"""
         self.collection.domain = "https://www.scielo.br"
         self.collection.save()
-        data = _get_scielo_journals_data()
+        data = get_scielo_journals_data()
         self.assertEqual(len(data), 1)
         self.assertTrue(data[0]["scielo_url"].startswith("https://www.scielo.br/"))
         self.assertNotIn("https://https://", data[0]["scielo_url"])
+
+    def test_get_scielo_journals_data_with_title_filter(self):
+        """Filters should be applied to the queryset"""
+        other_journal = Journal.objects.create(
+            creator=self.user,
+            title="Other Journal",
+        )
+        SciELOJournal.objects.create(
+            issn_scielo="1111-1111",
+            collection=self.collection,
+            journal=other_journal,
+            journal_acron="other",
+        )
+        filters = Q(journal__title__icontains="Peru")
+        data = get_scielo_journals_data(filters)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["title"], "Test Journal Peru")
+
+    def test_get_scielo_journals_data_without_filters_returns_all(self):
+        """Without filters, all journals should be returned"""
+        other_journal = Journal.objects.create(
+            creator=self.user,
+            title="Other Journal",
+        )
+        SciELOJournal.objects.create(
+            issn_scielo="1111-1111",
+            collection=self.collection,
+            journal=other_journal,
+            journal_acron="other",
+        )
+        data = get_scielo_journals_data()
+        self.assertEqual(len(data), 2)
+
+
+class TestGenerateCsvResponse(TestCase):
+    def test_csv_response_content_type(self):
+        response = generate_csv_response([])
+        self.assertEqual(response["Content-Type"], "text/csv")
+
+    def test_csv_response_has_attachment_header(self):
+        response = generate_csv_response([])
+        self.assertIn("attachment", response["Content-Disposition"])
+        self.assertIn(".csv", response["Content-Disposition"])
+
+    def test_csv_response_contains_headers(self):
+        response = generate_csv_response([])
+        content = response.content.decode("utf-8")
+        self.assertIn("journals", content)
+        self.assertIn("scielo_url", content)
+        self.assertIn("publisher", content)
+
+    def test_csv_response_contains_data(self):
+        data = [
+            {
+                "title": "Test Journal",
+                "scielo_url": "http://example.com/journal",
+                "owner": "Test Publisher",
+            }
+        ]
+        response = generate_csv_response(data)
+        content = response.content.decode("utf-8")
+        self.assertIn("Test Journal", content)
+        self.assertIn("http://example.com/journal", content)
+        self.assertIn("Test Publisher", content)
+
+
+class TestGenerateXlsResponse(TestCase):
+    def test_xls_response_content_type(self):
+        response = generate_xls_response([])
+        self.assertEqual(response["Content-Type"], "application/vnd.ms-excel")
+
+    def test_xls_response_has_attachment_header(self):
+        response = generate_xls_response([])
+        self.assertIn("attachment", response["Content-Disposition"])
+        self.assertIn(".xls", response["Content-Disposition"])
