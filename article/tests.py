@@ -1171,3 +1171,199 @@ class ContribPersonTest(TestCase):
         self.assertEqual(person.declared_name, "Dr. John R. Smith Jr.")
 
 
+class ArticleEditorTest(TestCase):
+    """Tests for ArticleEditor model."""
+
+    def setUp(self):
+        """Set up test data."""
+        from article.models import ArticleEditor
+
+        self.user = User.objects.create_user(username="testuser", password="testpass")
+        self.article = Article.objects.create(creator=self.user)
+        self.ArticleEditor = ArticleEditor
+
+    def test_create_editor_with_all_fields(self):
+        """Test creating an editor with all fields."""
+        editor = self.ArticleEditor.create(
+            user=self.user,
+            article=self.article,
+            name="Dr. Maria Silva",
+            orcid="0000-0002-1825-0097",
+            role="editor",
+            institution="Universidade de São Paulo",
+        )
+
+        self.assertIsNotNone(editor.id)
+        self.assertEqual(editor.article, self.article)
+        self.assertEqual(editor.name, "Dr. Maria Silva")
+        self.assertEqual(editor.orcid, "0000-0002-1825-0097")
+        self.assertEqual(editor.role, "editor")
+        self.assertEqual(editor.institution, "Universidade de São Paulo")
+        self.assertEqual(editor.creator, self.user)
+
+    def test_create_editor_with_name_only(self):
+        """Test creating an editor with name only (semi-structured data)."""
+        editor = self.ArticleEditor.create(
+            user=self.user,
+            article=self.article,
+            name="Prof. João Santos",
+        )
+
+        self.assertIsNotNone(editor.id)
+        self.assertEqual(editor.name, "Prof. João Santos")
+        self.assertIsNone(editor.orcid)
+        self.assertIsNone(editor.role)
+        self.assertIsNone(editor.institution)
+
+    def test_create_editor_with_orcid_and_name(self):
+        """Test creating an editor with orcid and name."""
+        editor = self.ArticleEditor.create(
+            user=self.user,
+            article=self.article,
+            name="Ana Costa",
+            orcid="0000-0001-2345-6789",
+        )
+
+        self.assertIsNotNone(editor.id)
+        self.assertEqual(editor.name, "Ana Costa")
+        self.assertEqual(editor.orcid, "0000-0001-2345-6789")
+
+    def test_create_editor_requires_article(self):
+        """Test that article is required."""
+        with self.assertRaises(ValueError):
+            self.ArticleEditor.create(
+                user=self.user,
+                article=None,
+                name="Test Editor",
+            )
+
+    def test_get_editor(self):
+        """Test getting an editor."""
+        editor = self.ArticleEditor.create(
+            user=self.user,
+            article=self.article,
+            name="Test Editor",
+            orcid="0000-0002-1825-0097",
+            role="editor",
+        )
+
+        retrieved = self.ArticleEditor.get(
+            article=self.article,
+            name="Test Editor",
+            orcid="0000-0002-1825-0097",
+            role="editor",
+        )
+
+        self.assertEqual(retrieved.id, editor.id)
+
+    def test_get_editor_requires_article(self):
+        """Test that get requires article."""
+        with self.assertRaises(ValueError):
+            self.ArticleEditor.get(
+                article=None,
+                name="Test Editor",
+            )
+
+    def test_create_or_update_creates(self):
+        """Test create_or_update creates new editor."""
+        editor = self.ArticleEditor.create_or_update(
+            user=self.user,
+            article=self.article,
+            name="New Editor",
+            orcid="0000-0002-1825-0097",
+            role="academic-editor",
+        )
+
+        self.assertIsNotNone(editor.id)
+        self.assertEqual(self.ArticleEditor.objects.count(), 1)
+
+    def test_create_or_update_updates(self):
+        """Test create_or_update updates existing editor."""
+        editor = self.ArticleEditor.create(
+            user=self.user,
+            article=self.article,
+            name="Editor Name",
+            orcid="0000-0002-1825-0097",
+            role="editor",
+        )
+        initial_id = editor.id
+
+        updated = self.ArticleEditor.create_or_update(
+            user=self.user,
+            article=self.article,
+            name="Editor Name",
+            orcid="0000-0002-1825-0097",
+            role="editor",
+            institution="New University",
+        )
+
+        self.assertEqual(updated.id, initial_id)
+        self.assertEqual(updated.institution, "New University")
+        self.assertEqual(self.ArticleEditor.objects.count(), 1)
+
+    def test_create_or_update_requires_article(self):
+        """Test that create_or_update requires article."""
+        with self.assertRaises(ValueError):
+            self.ArticleEditor.create_or_update(
+                user=self.user,
+                article=None,
+                name="Test Editor",
+            )
+
+    def test_str_with_name_and_role(self):
+        """Test string representation with name and role."""
+        editor = self.ArticleEditor.create(
+            user=self.user,
+            article=self.article,
+            name="Dr. Maria Silva",
+            role="editor",
+        )
+
+        self.assertIn(str(self.article), str(editor))
+        self.assertIn("Dr. Maria Silva", str(editor))
+        self.assertIn("editor", str(editor))
+
+    def test_str_with_name_only(self):
+        """Test string representation with name only."""
+        editor = self.ArticleEditor.create(
+            user=self.user,
+            article=self.article,
+            name="Dr. Maria Silva",
+        )
+
+        self.assertIn(str(self.article), str(editor))
+        self.assertIn("Dr. Maria Silva", str(editor))
+
+    def test_parental_key_cascade(self):
+        """Test that deleting article cascades to editors."""
+        editor = self.ArticleEditor.create(
+            user=self.user,
+            article=self.article,
+            name="Test Editor",
+        )
+
+        editor_id = editor.id
+        self.article.delete()
+
+        self.assertFalse(
+            self.ArticleEditor.objects.filter(id=editor_id).exists()
+        )
+
+    def test_multiple_editors_per_article(self):
+        """Test multiple editors can be associated with one article."""
+        editor1 = self.ArticleEditor.create(
+            user=self.user,
+            article=self.article,
+            name="Editor One",
+            role="editor",
+        )
+        editor2 = self.ArticleEditor.create(
+            user=self.user,
+            article=self.article,
+            name="Editor Two",
+            role="section-editor",
+        )
+
+        self.assertEqual(self.ArticleEditor.objects.filter(article=self.article).count(), 2)
+
+
