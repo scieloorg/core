@@ -12,7 +12,7 @@
 # WEB SERVER & WSGI
 # ==============================================================================
 
-gunicorn==21.2.0  # https://github.com/benoitc/gunicorn
+gunicorn==23.0.0  # https://github.com/benoitc/gunicorn
 gevent==24.2.1  # http://www.gevent.org/
 
 # ==============================================================================
@@ -32,7 +32,7 @@ django-anymail  # https://github.com/anymail/django-anymail
 # ==============================================================================
 
 # Sentry
-sentry-sdk[django]==2.5.1  # https://github.com/getsentry/sentry-python
+sentry-sdk==2.8.0  # https://github.com/getsentry/sentry-python
 
 # Elastic APM
 elastic-apm==6.21.4.post8347027212  # https://pypi.org/project/elastic-apm/
@@ -42,3 +42,6 @@ elastic-apm==6.21.4.post8347027212  # https://pypi.org/project/elastic-apm/
 # ==============================================================================
 
 setuptools>=68.2.2  # not directly required, pinned by Snyk to avoid a vulnerability
+sqlparse>=0.5.0 # not directly required, pinned by Snyk to avoid a vulnerability
+urllib3>=2.5.0 # not directly required, pinned by Snyk to avoid a vulnerability
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
