@@ -170,6 +170,12 @@ class HomePage(Page):
         "home.ListPageJournalByCategory",
     ]
 
+    # Show child pages in their tree (manual) order in the Wagtail admin
+    # listing, instead of by latest revision date. This keeps the order
+    # stable when an editor edits a subpage and matches what is shown on
+    # the public-facing site (which uses `get_children`, ordered by path).
+    admin_default_ordering = "ord"
+
     content_panels = Page.content_panels + [
         InlinePanel(
             "sponsors",
@@ -355,6 +361,13 @@ class BibliographicReferenceBlock(blocks.StructBlock):
 
 class AboutScieloOrgPage(Page):
     subpage_types = ["home.AboutScieloOrgPage", "home.FreePage"]
+
+    # Preserve the manual (tree) order of subpages in the Wagtail admin
+    # listing. Without this, Wagtail's default ``-latest_revision_created_at``
+    # ordering causes the most recently edited subpage to jump to the top
+    # of the list, breaking the predefined order (see issue: "Edição de
+    # páginas causa reordenamento dos itens").
+    admin_default_ordering = "ord"
 
     body = RichTextField(_("Body"), blank=True)
     external_link = models.URLField(
