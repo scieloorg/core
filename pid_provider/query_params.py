@@ -23,11 +23,22 @@ def fix_get_data_to_compare(xml_adapter):
         }
     """
     data = xml_adapter.get_data_to_compare()
+    # independentemente da release do packtools,
+    # o valor para z_partial_body na comparação é body_fragment_fingerprint
     data["z_partial_body"] = xml_adapter.xml_with_pre.body_fragment_fingerprint
     return data
 
 
 def fix_get_article_data(xml_with_pre, max_length=None):
+    """
+    Wrapper de compatibilidade em torno de xml_with_pre.get_article_data().
+
+    Remove a chave legada "partial_body" do dict retornado (substituída
+    por "body_fragment" nas versões atuais do packtools), evitando que
+    código que consome esse dict dependa de uma chave que pode não
+    refletir mais o valor realmente usado nas comparações de corpo do
+    artigo.
+    """
     data = xml_with_pre.get_article_data(max_length)
     try:
         data.pop("partial_body")
@@ -38,6 +49,25 @@ def fix_get_article_data(xml_with_pre, max_length=None):
 
 def compare(registered_items, input_data):
     """
+    Compara, item a item, os valores registrados (registered_items) com
+    os valores do XML de entrada (input_data).
+
+    Para cada label em registered_items, obtém o valor correspondente em
+    input_data via `.get(label)` — um label ausente em input_data é
+    tratado como None (não é pulado). Delega a comparação individual a
+    compare_items() e agrega os scores.
+
+    Returns
+    -------
+    dict
+        {
+            "items": lista de resultados de compare_items() (um por label),
+            "total_score": soma dos scores individuais,
+            "percentual_score": total_score / len(items),
+        }
+
+    Levanta ZeroDivisionError se registered_items estiver vazio (items
+    fica vazio e a divisão por zero não é tratada explicitamente).
     """
     total_score = 0
     items = []
@@ -53,6 +83,15 @@ def compare(registered_items, input_data):
 
 
 def compare_lists(registered, xml_adapter_titles):
+    """
+    Compara duas listas de textos (ex.: títulos de artigo) por
+    similaridade de conjunto de palavras.
+
+    Retorna 1 se as listas forem idênticas, 0 se qualquer uma das duas
+    estiver vazia/None, ou o resultado de how_similar() entre as
+    palavras únicas de cada lista (ordenadas e unidas em uma única
+    string), caso contrário.
+    """
     if xml_adapter_titles == registered:
         return 1
     if not xml_adapter_titles:
@@ -69,6 +108,20 @@ def compare_lists(registered, xml_adapter_titles):
 
 
 def compare_items(label, registered, input_data):
+    """
+    Compara um único item entre o valor registrado e o valor de entrada.
+
+    - Se `registered` for uma lista (ex.: títulos), delega a
+      compare_lists().
+    - Caso os dois valores, normalizados (falsy vira None), sejam
+      iguais, o score é 1.
+    - Caso contrário, o score vem de how_similar() entre os dois valores
+      (None é tratado como string vazia).
+
+    Retorna um dict {"label": label, "score": score}, incluindo também
+    "registered" quando o score não é 1 — útil para inspecionar
+    divergências.
+    """
     if isinstance(registered, list):
         score = compare_lists(registered, input_data)
     elif (input_data or None) == (registered or None):
@@ -82,6 +135,11 @@ def compare_items(label, registered, input_data):
 
 
 def get_score(registered, xml_data, min_value, max_value):
+    """
+    Score binário simples: max_value se registered == xml_data e ambos
+    truthy; min_value se ambos forem iguais mas falsy (ex.: None ==
+    None); 0 caso contrário.
+    """
     if registered == xml_data:
         if registered:
             return max_value
@@ -90,6 +148,13 @@ def get_score(registered, xml_data, min_value, max_value):
 
 
 def zero_to_none(data):
+    """
+    Normaliza um campo numérico textual: retorna None se `data` for
+    falsy; retorna `data` sem alteração se não for composto só de
+    dígitos; e converte para None quando o valor numérico for zero
+    (nos demais casos, mantém `data` como string, sem converter para
+    int).
+    """
     if not data:
         return
     if not data.isdigit():
@@ -109,24 +174,31 @@ class QueryBuilderPidProviderXML:
     
     def __init__(self, xml_adapter):
         """
-        Inicializa o construtor de queries obtendo os dicionários de dados do adaptador.
-        
+        Inicializa o construtor de queries obtendo os dados do adaptador.
+
         Parameters
         ----------
         xml_adapter : PidProviderXMLAdapter
             Adaptador com dados do XML para busca
+
+        Define
+        ------
+        z_body_fragment : fingerprint sha256 de um fragmento estável do
+            corpo do artigo (XMLWithPre.body_fragment_fingerprint),
+            acessado direto do xml_with_pre — não requer nenhuma
+            mudança no packtools nem no PidProviderXMLAdapter. É mais
+            robusto que z_partial_body (que é só o primeiro parágrafo
+            não vazio e pode colidir entre artigos diferentes, ex.:
+            rótulos de seção genéricos como "ARTIGO DE REVISÃO").
+        z_partial_body : hash legado do corpo do artigo
+            (xml_with_pre.z_partial_body), mantido apenas para casar
+            com registros antigos.
+        adapter_data : dict bruto de xml_adapter.data.
+        xml_with_pre_data : dict normalizado retornado por
+            fix_get_article_data(xml_adapter.xml_with_pre, 300) — já
+            sem a chave legada "partial_body".
         """
         self.xml_adapter = xml_adapter
-        # Centraliza o acesso aos dados brutos e normalizados (hashes de 64 chars)
-        # z_body: fingerprint sha256 do corpo INTEIRO do artigo
-        # (XMLWithPre.body_fingerprint), acessado direto do xml_with_pre.
-        # z_body_fragment: fingerprint sha256 de um fragmento do artigo
-        # (XMLWithPre.body_fragment_fingerprint), acessado direto do
-        # xml_with_pre — não requer nenhuma mudança no packtools nem no
-        # PidProviderXMLAdapter. É mais robusto que z_partial_body (que
-        # é só o primeiro parágrafo não vazio e pode colidir entre
-        # artigos diferentes, ex.: rótulos de seção genéricos como
-        # "ARTIGO DE REVISÃO").
         self.z_body_fragment = xml_adapter.xml_with_pre.body_fragment_fingerprint
         self.z_partial_body = xml_adapter.xml_with_pre.z_partial_body
         self.adapter_data = xml_adapter.data
@@ -134,19 +206,38 @@ class QueryBuilderPidProviderXML:
 
     @property
     def pkg_name_list(self):
-        # --- Resolução Consolidada de Package Names ---
+        """
+        Consolida, em um único set, todos os nomes de pacote possíveis
+        para o artigo: o nome enviado via parâmetro no construtor, o
+        nome oficial atual calculado pelo packtools (sps_pkg_name) e
+        todos os nomes depreciados/alternativos já usados no passado.
+        Valores falsy são descartados.
+        """
         pkg_names = set()
-        # 1. Nome enviado originalmente via parâmetro no construtor
         if self.xml_adapter.pkg_name:
             pkg_names.add(self.xml_adapter.pkg_name)
-        # 2. Nome oficial atual gerado pelo motor de cálculo do XML
         if self.xml_adapter.sps_pkg_name:
             pkg_names.add(self.xml_adapter.sps_pkg_name)
-        # 3. Consolida todas as listas de nomes depreciados/alternativos
         pkg_names.update(self.xml_adapter.xml_with_pre.deprecated_sps_pkg_name_list)
         return set(item for item in pkg_names if item)
     
     def validate_input_data(self):
+        """
+        Garante que o XML de entrada tem parâmetros suficientes para
+        localizar um registro existente.
+
+        Levanta:
+        - RequiredPublicationYearErrorToGetPidProviderXMLError se não
+          houver ano de publicação;
+        - RequiredISSNErrorToGetPidProviderXMLError se não houver ISSN
+          eletrônico nem impresso;
+        - NotEnoughParametersToGetPidProviderXMLError se, além do
+          ano/ISSN, não houver nenhum dado de localização do artigo
+          (elocation_id/fpage/lpage/etc.) nem nenhum dado textual
+          (títulos, sobrenomes, colaboradores, links ou fragmento do
+          corpo) que permita diferenciar o artigo de outros do mesmo
+          fascículo.
+        """
         if not self.adapter_data.get("pub_year"):
             raise exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError()
         issn_electronic = self.adapter_data.get("issn_electronic")
@@ -178,24 +269,19 @@ class QueryBuilderPidProviderXML:
         """
         q = Q()
         
-        # PIDs diretos do xml_adapter (não envelopados no data dict)
         v3 = self.xml_adapter.v3
         v2 = self.xml_adapter.v2
         aop_pid = self.xml_adapter.aop_pid
     
-        # PID v3 - máxima prioridade
         if v3:
             q |= Q(v3=v3)
         
-        # PID v2
         if v2:
             q |= Q(v2=v2)
         
-        # AOP PID
         if aop_pid:
             q |= Q(v2=aop_pid) | Q(aop_pid=aop_pid)
             
-        # Package names históricos e atuais
         pkg_names = self.pkg_name_list
         if pkg_names:
             q |= Q(pkg_name__in=pkg_names)
@@ -265,9 +351,10 @@ class QueryBuilderPidProviderXML:
         dois formatos possíveis de hash, dependendo de quando o registro
         foi salvo:
 
-        - legado: hash de z_partial_body (primeiro parágrafo não vazio
-          do corpo, via xml_adapter.z_partial_body);
-        - atual: fingerprint do parcial do artigo
+        - legado: self.z_partial_body
+          (xml_adapter.xml_with_pre.z_partial_body) — hash do primeiro
+          parágrafo não vazio do corpo;
+        - atual: self.z_body_fragment
           (xml_with_pre.body_fragment_fingerprint), gravado no mesmo
           campo z_partial_body a partir desta correção (sem necessidade
           de migração/backfill).
@@ -292,7 +379,9 @@ class QueryBuilderPidProviderXML:
     @property
     def article_data_query(self):
         """
-        Constrói query para busca por dados textuais codificados (hashes sha256).
+        Constrói query para busca por dados textuais codificados (hashes
+        sha256 de sobrenomes, colaboradores e links), combinada com
+        partial_body_query (hash/fingerprint do corpo do artigo).
         """
         z_surnames = self.adapter_data.get("z_surnames")
         z_collab = self.adapter_data.get("z_collab")
@@ -305,6 +394,13 @@ class QueryBuilderPidProviderXML:
         ) & self.partial_body_query
 
     def get_article_data_query(self, issue):
+        """
+        Combina article_data_query com os parâmetros de fascículo e
+        localização do artigo (quando `issue` é truthy), ou exige que
+        todos os campos de localização estejam nulos (quando `issue` é
+        falsy) — caso de artigos sem paginação/localização definida
+        (ex.: ahead-of-print).
+        """
         if issue:
             return (
                 self.article_data_query & 
