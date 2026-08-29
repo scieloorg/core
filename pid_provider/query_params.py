@@ -7,6 +7,35 @@ from core.utils.similarity import how_similar
 from pid_provider import exceptions
 
 
+def fix_get_data_to_compare(xml_adapter):
+    """
+    packtools 4.16.11
+        {
+            ...
+            "z_partial_body": self.z_partial_body,
+            ...
+        }
+    packtools > 4.17.0
+        {
+            ...
+            "body_fragment_fingerprint": self.xml_with_pre.body_fragment_fingerprint,
+            ...
+        }
+    """
+    data = xml_adapter.get_data_to_compare()
+    data["z_partial_body"] = xml_adapter.xml_with_pre.body_fragment_fingerprint
+    return data
+
+
+def fix_get_article_data(xml_with_pre, max_length=None):
+    data = xml_with_pre.get_article_data(max_length)
+    try:
+        data.pop("partial_body")
+    except KeyError:
+        pass
+    return data
+
+
 def compare(registered_items, input_data):
     """
     """
@@ -98,11 +127,10 @@ class QueryBuilderPidProviderXML:
         # é só o primeiro parágrafo não vazio e pode colidir entre
         # artigos diferentes, ex.: rótulos de seção genéricos como
         # "ARTIGO DE REVISÃO").
-        self.z_body = xml_adapter.xml_with_pre.body_fingerprint
         self.z_body_fragment = xml_adapter.xml_with_pre.body_fragment_fingerprint
+        self.z_partial_body = xml_adapter.xml_with_pre.z_partial_body
         self.adapter_data = xml_adapter.data
-        self.compare_data = xml_adapter.get_data_to_compare()
-        self.xml_with_pre_data = xml_adapter.xml_with_pre.get_article_data(300)
+        self.xml_with_pre_data = fix_get_article_data(xml_adapter.xml_with_pre, 300)
 
     @property
     def pkg_name_list(self):
@@ -135,7 +163,7 @@ class QueryBuilderPidProviderXML:
             self.xml_with_pre_data.get("surnames"),
             self.xml_with_pre_data.get("collab"),
             self.xml_with_pre_data.get("links"),
-            self.xml_with_pre_data.get("partial_body"),
+            self.xml_with_pre_data.get("body_fragment"),
         ]
         if any(items):
             return
@@ -256,8 +284,7 @@ class QueryBuilderPidProviderXML:
         preservando o comportamento equivalente ao antigo
         `Q(z_partial_body=None)` (que o Django traduz para IS NULL).
         """
-        z_partial_body = self.adapter_data.get("z_partial_body")
-        candidates = set(v for v in (z_partial_body, self.z_body_fragment, self.z_body) if v)
+        candidates = set(v for v in (self.z_partial_body, self.z_body_fragment) if v)
         if candidates:
             return Q(z_partial_body__in=candidates)
         return Q(z_partial_body__isnull=True)
