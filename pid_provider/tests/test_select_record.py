@@ -1,5 +1,5 @@
 from django.test import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, ANY
 from pid_provider.models import PidProviderXML
 
 
@@ -213,4 +213,4 @@ class PidProviderXMLSelectRecordTests(TestCase):
 
         PidProviderXML.select_record(xml_adapter, [("journal", candidates)])
 
-        mock_get_best_match.assert_called_once_with(candidates, {"title": "Foo"})
+        mock_get_best_match.assert_called_once_with(candidates, {"title": "Foo", "z_partial_body": ANY})
