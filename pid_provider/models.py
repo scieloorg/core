@@ -37,6 +37,8 @@ from pid_provider.query_params import (
     zero_to_none,
     compare,
     QueryBuilderPidProviderXML,
+    fix_get_article_data,
+    fix_get_data_to_compare,
 )
 from tracker.models import BaseEvent, UnexpectedEvent
 
@@ -660,7 +662,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         if self.readable_data:
             return self.readable_data
         if self.xml_with_pre:
-            return self.xml_with_pre.get_article_data()
+            return fix_get_article_data(self.xml_with_pre)
         return {}
 
     @property
@@ -673,7 +675,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             "z_surnames": self.z_surnames,
             "z_collab": self.z_collab,
             "z_links": self.z_links,
-            "z_partial_body": self.z_partial_body,
+            "z_partial_body": self.body_fragment_fingerprint,
             "body_fragment": body_fragment or self.xml_with_pre.get_body_fragment(PARTIAL_BODY_MAX),
         }
 
@@ -758,7 +760,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
             input_data = {}
             input_data.update(xml_with_pre.data)
-            input_data.update(xml_with_pre.get_article_data())
+            input_data.update(fix_get_article_data(xml_with_pre))
             input_data["origin"] = origin
             response["input_data"] = input_data
 
@@ -1074,7 +1076,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         checamos truthiness (nunca .exists()/.count() sobre queryset).
         """
         unmatched_items = {}
-        xml_adapter_data_to_compare = xml_adapter.get_data_to_compare()
+        xml_adapter_data_to_compare = fix_get_data_to_compare(xml_adapter)
         for label, results in selection_results:
             if not results:
                 continue
@@ -1117,11 +1119,11 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             # pid v3 é inédito
             raise cls.DoesNotExist
         
-        xml_adapter_data_to_compare = xml_adapter.get_data_to_compare()
+        xml_adapter_data_to_compare = fix_get_data_to_compare(xml_adapter)
         result = PidProviderXML.get_best_match(results, xml_adapter_data_to_compare)
         registered = result.get("registered")
         if not registered:
-            xml_data = xml_adapter.xml_with_pre.get_article_data(PARTIAL_BODY_MAX)
+            xml_data = fix_get_article_data(xml_adapter.xml_with_pre, PARTIAL_BODY_MAX)
             items = [item.data for item in results]
             raise PidProviderXMLPidV3ConflictError(
                 _(f"{xml_pid_v3} belongs to {items}, not to {xml_data}")
@@ -1210,7 +1212,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         self.z_links = xml_adapter.z_links
         self.z_partial_body = xml_adapter.xml_with_pre.body_fragment_fingerprint
 
-        self.readable_data = xml_adapter.xml_with_pre.get_article_data()
+        self.readable_data = fix_get_article_data(xml_adapter.xml_with_pre)
 
     @profile_method
     def _add_dates(self, xml_adapter, origin_date, available_since):
