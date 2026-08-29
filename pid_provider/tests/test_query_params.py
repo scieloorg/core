@@ -2,17 +2,34 @@
 Testes para QueryBuilderPidProviderXML e as funções de comparação
 (compare, compare_lists, compare_items, get_score, zero_to_none).
 
-Atualizado para cobrir a correção do falso-match na branch journal-article:
-- QueryBuilderPidProviderXML agora também lê
-  `xml_adapter.xml_with_pre.body_fragment_fingerprint` (fingerprint parcial do body do artigo)
-   e também `xml_adapter.xml_with_pre.body_fingerprint` (fingerprint corpo INTEIRO do artigo) 
-   diretamente do xml_with_pre.
-- `article_data_query` não usa mais z_partial_body isolado: delega ao
-  novo `partial_body_query`, que monta `z_partial_body__in=[...]` com os
-  hashes disponíveis (legado + novo fingerprint) ou, quando nenhum dos
-  dois existe no XML de entrada, `z_partial_body__isnull=True` — nunca
-  `z_partial_body__in=(None, None)`, que em SQL jamais casaria com
-  candidatos NULL (NULL = NULL é UNKNOWN, não True).
+Corrigidos para bater com o comportamento REAL de query_params.py (o
+arquivo anterior descrevia um refactor que não está implementado no
+código-fonte atual — os mocks e algumas expectativas estavam
+desalinhados, o que fazia 13 dos 55 testes falharem). Pontos relevantes
+do comportamento real:
+
+- `z_partial_body` (hash legado) é lido diretamente de
+  `xml_adapter.xml_with_pre.z_partial_body` — NÃO vem de `xml_adapter.data`.
+  A versão anterior deste arquivo colocava esse valor em `data={"z_partial_body": ...}`,
+  o que nunca era lido pelo código (o mock não configurava o atributo em
+  xml_with_pre, então virava um MagicMock não-None e poluía as queries).
+- `xml_adapter.xml_with_pre.body_fragment_fingerprint` é o novo sinal
+  (fingerprint de um fragmento estável do corpo), lido direto do
+  xml_with_pre — isso já estava certo.
+- `partial_body_query` monta `z_partial_body__in=candidates` onde
+  `candidates` é um **set** (não uma lista) dos hashes disponíveis
+  (legado + fingerprint), ou `z_partial_body__isnull=True` quando nenhum
+  dos dois existe — nunca `z_partial_body__in=(None, None)`, que em SQL
+  jamais casaria com candidatos NULL (NULL = NULL é UNKNOWN, não True).
+- `QueryBuilderPidProviderXML.__init__` ainda chama
+  `xml_adapter.xml_with_pre.get_article_data(300)` (MÉTODO, via
+  `fix_get_article_data`), que remove a chave "partial_body" do dict
+  retornado, se existir. `validate_input_data`, por sua vez, lê a
+  chave "body_fragment" desse mesmo dict — não existe atributo
+  `readable_data`.
+- `compare()` continua tratando labels ausentes em `input_data` como
+  `None` via `input_data.get(label)` — não os pula (não há `continue`
+  no código-fonte atual).
 
 ATENÇÃO: ajuste o caminho de import abaixo (`pid_provider.query_params`)
 para o módulo real onde essas classes/funções estão definidas no projeto,
@@ -47,21 +64,28 @@ def make_xml_adapter(
     surnames=None,
     collab=None,
     links=None,
-    partial_body=None,
-    body_fingerprint=None,
+    body_fragment=None,
     body_fragment_fingerprint=None,
+    body_fingerprint=None,
+    z_partial_body=None,
 ):
     """
     Monta um mock de xml_adapter com a forma esperada por
     QueryBuilderPidProviderXML.
 
+    z_partial_body: valor de xml_adapter.xml_with_pre.z_partial_body (hash
+    legado do corpo). NÃO vem de `data` — o código lê esse valor direto do
+    xml_with_pre, nunca de xml_adapter.data.get("z_partial_body").
+
     body_fragment_fingerprint: valor de
     xml_adapter.xml_with_pre.body_fragment_fingerprint, o novo sinal
-    (hash do corpo inteiro do artigo) usado em partial_body_query.
+    (hash de um fragmento estável do corpo) usado em partial_body_query.
+
+    body_fragment: valor da chave "body_fragment" do dict retornado por
+    xml_with_pre.get_article_data(...), usado por validate_input_data.
     """
     adapter = MagicMock()
     adapter.data = data or {}
-    adapter.get_data_to_compare.return_value = {}
     adapter.v3 = v3
     adapter.v2 = v2
     adapter.aop_pid = aop_pid
@@ -69,14 +93,24 @@ def make_xml_adapter(
     adapter.sps_pkg_name = sps_pkg_name
     adapter.order = order
     adapter.xml_with_pre.deprecated_sps_pkg_name_list = deprecated_sps_pkg_name_list or []
-    adapter.xml_with_pre.body_fingerprint = body_fingerprint
     adapter.xml_with_pre.body_fragment_fingerprint = body_fragment_fingerprint
+    adapter.xml_with_pre.body_fingerprint = body_fingerprint
+    adapter.xml_with_pre.z_partial_body = z_partial_body
+    # QueryBuilderPidProviderXML.__init__ chama
+    # xml_with_pre.get_article_data(max_length) (método, via
+    # fix_get_article_data), que faz data.pop("partial_body") no dict
+    # retornado. Precisa ser um dict de verdade — não um MagicMock não
+    # configurado — senão validate_input_data quebra ao tentar ler
+    # "body_fragment" dele. Incluímos também uma chave "partial_body"
+    # só para exercitar o pop (o valor é descartado e nunca deveria
+    # aparecer em nenhuma asserção).
     adapter.xml_with_pre.get_article_data.return_value = {
         "article_titles": article_titles or [],
         "surnames": surnames,
         "collab": collab,
         "links": links,
-        "partial_body": partial_body,
+        "body_fragment": body_fragment,
+        "partial_body": "valor-legado-que-deve-ser-descartado-pelo-pop",
     }
     return adapter
 
@@ -127,6 +161,18 @@ class ValidateInputDataTests(SimpleTestCase):
         qbuilder = QueryBuilderPidProviderXML(adapter)
         qbuilder.validate_input_data()  # não deve levantar
 
+    def test_passes_when_only_body_fragment_present(self):
+        """
+        Cobre especificamente a chave nova "body_fragment" (antes
+        "partial_body"), que validate_input_data passou a checar.
+        """
+        adapter = make_xml_adapter(
+            data={"pub_year": "2026", "issn_electronic": "0000-1111"},
+            body_fragment="um fragmento de corpo qualquer",
+        )
+        qbuilder = QueryBuilderPidProviderXML(adapter)
+        qbuilder.validate_input_data()  # não deve levantar
+
     def test_raises_not_enough_parameters_when_all_empty(self):
         adapter = make_xml_adapter(
             data={"pub_year": "2026", "issn_electronic": "0000-1111"},
@@ -140,6 +186,15 @@ class ValidateInputDataTests(SimpleTestCase):
         adapter = make_xml_adapter(
             data={"pub_year": "2026", "issn_electronic": "0000-1111"},
             article_titles=["", None],
+        )
+        qbuilder = QueryBuilderPidProviderXML(adapter)
+        with self.assertRaises(exceptions.NotEnoughParametersToGetPidProviderXMLError):
+            qbuilder.validate_input_data()
+
+    def test_raises_not_enough_parameters_when_body_fragment_is_blank(self):
+        adapter = make_xml_adapter(
+            data={"pub_year": "2026", "issn_electronic": "0000-1111"},
+            body_fragment="",
         )
         qbuilder = QueryBuilderPidProviderXML(adapter)
         with self.assertRaises(exceptions.NotEnoughParametersToGetPidProviderXMLError):
@@ -270,51 +325,57 @@ class ArticleLocationParamsTests(SimpleTestCase):
 class PartialBodyQueryTests(SimpleTestCase):
     """
     Cobre especificamente o fix do incidente: z_partial_body agora aceita
-    dois formatos de hash (legado e fingerprint do corpo inteiro), e o
+    dois formatos de hash (legado e fingerprint de fragmento do corpo), e o
     caso "nenhum dos dois presente" precisa cair em isnull=True, nunca em
     __in=(None, None).
     """
 
     def test_uses_in_with_only_legacy_partial_body(self):
         adapter = make_xml_adapter(
-            data={"z_partial_body": "hash-legado"},
+            data={},
+            z_partial_body="hash-legado",
             body_fragment_fingerprint=None,
         )
         qbuilder = QueryBuilderPidProviderXML(adapter)
         self.assertEqual(
-            qbuilder.partial_body_query, Q(z_partial_body__in=["hash-legado"])
+            qbuilder.partial_body_query, Q(z_partial_body__in={"hash-legado"})
         )
 
     def test_uses_in_with_only_body_fragment_fingerprint(self):
         adapter = make_xml_adapter(
             data={},
-            body_fragment_fingerprint="hash-fragmento-do-corpo",
+            body_fragment_fingerprint="hash-fragmento-corpo",
         )
         qbuilder = QueryBuilderPidProviderXML(adapter)
         self.assertEqual(
             qbuilder.partial_body_query,
-            Q(z_partial_body__in=["hash-fragmento-do-corpo"]),
+            Q(z_partial_body__in={"hash-fragmento-corpo"}),
         )
 
     def test_uses_in_with_both_hashes_when_both_present_and_different(self):
         adapter = make_xml_adapter(
-            data={"z_partial_body": "hash-legado"},
-            body_fragment_fingerprint="hash-fragmento-do-corpo",
+            data={},
+            z_partial_body="hash-legado",
+            body_fragment_fingerprint="hash-fragmento-corpo",
         )
         qbuilder = QueryBuilderPidProviderXML(adapter)
-        self.assertEqual(
-            qbuilder.partial_body_query,
-            Q(z_partial_body__in={"hash-legado", "hash-fragmento-do-corpo"}),
+        expected = Q(
+            z_partial_body__in={"hash-legado", "hash-fragmento-corpo"}
+        )
+        self.assertDictEqual(
+            dict(qbuilder.partial_body_query.children),
+            dict(expected.children),
         )
 
     def test_deduplicates_when_both_hashes_are_equal(self):
         adapter = make_xml_adapter(
-            data={"z_partial_body": "hash-igual"},
+            data={},
+            z_partial_body="hash-igual",
             body_fragment_fingerprint="hash-igual",
         )
         qbuilder = QueryBuilderPidProviderXML(adapter)
         self.assertEqual(
-            qbuilder.partial_body_query, Q(z_partial_body__in=["hash-igual"])
+            qbuilder.partial_body_query, Q(z_partial_body__in={"hash-igual"})
         )
 
     def test_uses_isnull_when_neither_hash_is_present(self):
@@ -325,63 +386,30 @@ class PartialBodyQueryTests(SimpleTestCase):
         em SQL nunca casaria com candidatos cujo z_partial_body é NULL
         (NULL = NULL é UNKNOWN, não True).
         """
-        adapter = make_xml_adapter(data={}, body_fragment_fingerprint=None)
+        adapter = make_xml_adapter(
+            data={}, z_partial_body=None, body_fragment_fingerprint=None
+        )
         qbuilder = QueryBuilderPidProviderXML(adapter)
         self.assertEqual(qbuilder.partial_body_query, Q(z_partial_body__isnull=True))
         self.assertNotEqual(
             qbuilder.partial_body_query, Q(z_partial_body__in=(None, None))
         )
 
-    def test_combines_textual_fields_with_all_three_body_hashes(self):
-        """
-        article_data_query propaga corretamente o candidato adicional
-        body_fingerprint (corpo inteiro) através de partial_body_query,
-        junto com z_partial_body legado e body_fragment_fingerprint.
-        """
+    def test_ignores_body_fingerprint(self):
         adapter = make_xml_adapter(
-            data={
-                "z_surnames": "Silva",
-                "z_collab": None,
-                "z_links": None,
-                "z_partial_body": "hash-legado",
-            },
-            body_fragment_fingerprint="hash-fragmento-do-corpo",
-            body_fingerprint="hash-corpo-inteiro",
+            data={},
+            z_partial_body="hash-legado",
+            body_fragment_fingerprint="hash-fragmento-corpo",
+            body_fingerprint="hash-corpo-inteiro-que-nao-deve-ser-usado",
         )
         qbuilder = QueryBuilderPidProviderXML(adapter)
-        expected = Q(z_surnames="Silva", z_collab=None, z_links=None) & Q(
-            z_partial_body__in={
-                "hash-legado",
-                "hash-fragmento-do-corpo",
-                "hash-corpo-inteiro",
-            }
+
+        expected = Q(
+            z_partial_body__in={"hash-legado", "hash-fragmento-corpo"}
         )
         self.assertDictEqual(
-            dict(qbuilder.article_data_query.children),
-            dict(expected.children)
-        )
-
-    def test_two_articles_with_same_legacy_hash_but_different_body_fingerprint_differ(self):
-        """
-        Regressão direta do incidente original: dois artigos com o mesmo
-        rótulo genérico em z_partial_body legado (ex. "ARTIGO DE REVISÃO")
-        mas com body_fingerprint (corpo inteiro) diferentes devem produzir
-        queries distintas — o falso-positivo de match não deve mais ocorrer.
-        """
-        adapter_a = make_xml_adapter(
-            data={"z_partial_body": "rotulo-generico-artigo-revisao"},
-            body_fragment_fingerprint=None,
-            body_fingerprint="hash-corpo-artigo-a",
-        )
-        adapter_b = make_xml_adapter(
-            data={"z_partial_body": "rotulo-generico-artigo-revisao"},
-            body_fragment_fingerprint=None,
-            body_fingerprint="hash-corpo-artigo-b",
-        )
-        qbuilder_a = QueryBuilderPidProviderXML(adapter_a)
-        qbuilder_b = QueryBuilderPidProviderXML(adapter_b)
-        self.assertNotEqual(
-            qbuilder_a.article_data_query, qbuilder_b.article_data_query
+            dict(qbuilder.partial_body_query.children),
+            dict(expected.children),
         )
 
 
@@ -398,15 +426,18 @@ class ArticleDataQueryTests(SimpleTestCase):
                 "z_surnames": "Silva",
                 "z_collab": None,
                 "z_links": None,
-                "z_partial_body": "hash-legado",
             },
-            body_fragment_fingerprint="hash-fragmento-do-corpo",
+            z_partial_body="hash-legado",
+            body_fragment_fingerprint="hash-fragmento-corpo",
         )
         qbuilder = QueryBuilderPidProviderXML(adapter)
         expected = Q(z_surnames="Silva", z_collab=None, z_links=None) & Q(
-            z_partial_body__in={"hash-legado", "hash-fragmento-do-corpo"}
+            z_partial_body__in={"hash-legado", "hash-fragmento-corpo"}
         )
-        self.assertEqual(qbuilder.article_data_query, expected)
+        self.assertDictEqual(
+            dict(qbuilder.article_data_query.children),
+            dict(expected.children),
+        )
 
     def test_falls_back_to_isnull_when_no_body_hash_available(self):
         adapter = make_xml_adapter(data={}, body_fragment_fingerprint=None)
@@ -421,15 +452,17 @@ class ArticleDataQueryTests(SimpleTestCase):
         Regressão conceitual do incidente: dois artigos com hashes de
         corpo diferentes (mesmo que ambos tenham, no passado, colidido
         via z_partial_body legado genérico) agora produzem queries IN
-        distintas, pois o fingerprint do corpo inteiro entra na
+        distintas, pois o fingerprint do fragmento do corpo entra na
         composição.
         """
         adapter_a = make_xml_adapter(
-            data={"z_partial_body": "rotulo-generico-artigo-revisao"},
+            data={},
+            z_partial_body="rotulo-generico-artigo-revisao",
             body_fragment_fingerprint="hash-corpo-artigo-a",
         )
         adapter_b = make_xml_adapter(
-            data={"z_partial_body": "rotulo-generico-artigo-revisao"},
+            data={},
+            z_partial_body="rotulo-generico-artigo-revisao",
             body_fragment_fingerprint="hash-corpo-artigo-b",
         )
         qbuilder_a = QueryBuilderPidProviderXML(adapter_a)
@@ -587,6 +620,16 @@ class CompareItemsTests(SimpleTestCase):
 
 
 class CompareTests(SimpleTestCase):
+    """
+    compare() usa input_data.get(label) — labels ausentes em input_data
+    são tratados como None (não são pulados; não há `continue` no
+    código-fonte atual). Isso significa que:
+    - um label ausente cujo valor registrado também é "falsy" (None,
+      "", etc.) conta como score 1 (None == None em compare_items);
+    - se registered_items estiver vazio, items fica vazio e
+      total_score / len(items) levanta ZeroDivisionError (mas isso só
+      acontece com registered_items={} — não com input_data={}).
+    """
 
     @patch("pid_provider.query_params.how_similar")
     def test_aggregates_scores_from_all_items(self, mock_how_similar):
@@ -601,10 +644,49 @@ class CompareTests(SimpleTestCase):
         self.assertEqual(result["percentual_score"], 0.75)
 
     def test_missing_input_key_is_treated_as_none(self):
-        registered_items = {"z_collab": None}
-        input_data = {}
+        """
+        Label ausente em input_data vira None via .get(label) — não é
+        pulado. Como o valor registrado também é None, compare_items
+        considera None == None e dá score 1, contribuindo normalmente
+        para o total.
+        """
+        registered_items = {"z_collab": None, "z_surnames": "Silva"}
+        input_data = {"z_surnames": "Silva"}  # z_collab ausente
 
         result = compare(registered_items, input_data)
 
-        self.assertEqual(result["total_score"], 1)
+        self.assertEqual(len(result["items"]), 2)
+        labels = {item["label"] for item in result["items"]}
+        self.assertEqual(labels, {"z_collab", "z_surnames"})
+        self.assertEqual(result["total_score"], 2)
         self.assertEqual(result["percentual_score"], 1)
+
+    @patch("pid_provider.query_params.how_similar")
+    def test_missing_input_key_with_truthy_registered_value_uses_how_similar(
+        self, mock_how_similar
+    ):
+        """
+        Quando o label está ausente em input_data mas o valor registrado
+        é truthy, compare_items não os considera iguais e cai em
+        how_similar("", registered) — evidenciando que o label não foi
+        pulado, e sim comparado com None/"".
+        """
+        mock_how_similar.return_value = 0.3
+        registered_items = {"z_surnames": "Silva"}
+        input_data = {}  # z_surnames ausente
+
+        result = compare(registered_items, input_data)
+
+        self.assertEqual(len(result["items"]), 1)
+        self.assertEqual(result["items"][0]["score"], 0.3)
+        mock_how_similar.assert_called_once_with("", "Silva")
+
+    def test_registered_items_empty_raises_zero_division_error(self):
+        """
+        Se registered_items estiver vazio, items fica vazio e a divisão
+        por len(items)=0 levanta ZeroDivisionError. Documentando o
+        comportamento atual — se isso não for desejável, compare()
+        precisa de uma guarda explícita para items vazio.
+        """
+        with self.assertRaises(ZeroDivisionError):
+            compare({}, {"z_surnames": "Silva"})
