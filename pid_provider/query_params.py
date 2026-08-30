@@ -200,7 +200,7 @@ class QueryBuilderPidProviderXML:
         """
         self.xml_adapter = xml_adapter
         self.z_body_fragment = xml_adapter.xml_with_pre.body_fragment_fingerprint
-        self.z_partial_body = xml_adapter.xml_with_pre.z_partial_body
+        self.z_partial_body = xml_adapter.z_partial_body
         self.adapter_data = xml_adapter.data
         self.xml_with_pre_data = fix_get_article_data(xml_adapter.xml_with_pre, 300)
 
