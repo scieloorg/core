@@ -617,11 +617,10 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             "v2": self.v2,
             "aop_pid": self.aop_pid,
             "pkg_name": self.pkg_name,
-            "finger_print": self.current_version and self.current_version.finger_print,
             "registered_in_core": self.registered_in_core,
             "ppx_id": self.id
         }
-        _data.update(self.get_readable_data())
+        _data["registered_data"] = self.get_readable_data()
         _data.update(self.record_status)
         return _data
 
