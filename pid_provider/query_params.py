@@ -25,11 +25,11 @@ def fix_get_data_to_compare(xml_adapter):
     data = xml_adapter.get_data_to_compare()
     # independentemente da release do packtools,
     # o valor para z_partial_body na comparação é body_fragment_fingerprint
-    data["z_partial_body"] = xml_adapter.xml_with_pre.body_fragment_fingerprint
+    data["body_fragment_fingerprint"] = xml_adapter.xml_with_pre.body_fragment_fingerprint
     return data
 
 
-def fix_get_article_data(xml_with_pre, max_length=None):
+def fix_get_article_data(xml_with_pre, max_length=300):
     """
     Wrapper de compatibilidade em torno de xml_with_pre.get_article_data().
 
@@ -39,11 +39,14 @@ def fix_get_article_data(xml_with_pre, max_length=None):
     refletir mais o valor realmente usado nas comparações de corpo do
     artigo.
     """
-    data = xml_with_pre.get_article_data(max_length)
     try:
-        data.pop("partial_body")
-    except KeyError:
-        pass
+        data = xml_with_pre.readable_data
+    except AttributeError:
+        data = xml_with_pre.get_article_data(max_length)
+        try:
+            data.pop("partial_body")
+        except KeyError:
+            pass
     return data
 
 
@@ -131,6 +134,7 @@ def compare_items(label, registered, input_data):
     response = {"label": label, "score": score}
     if score != 1:
         response["registered"] = registered
+        response["input_data"] = input_data
     return response
 
 
