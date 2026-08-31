@@ -45,7 +45,7 @@ class PidProviderXMLBestMatchesTests(TestCase):
 
         # "unmatched" sempre é exposto
         self.assertEqual(len(result["unmatched"]), 1)
-        self.assertEqual(result["unmatched"][0]["id"], 102)
+        self.assertEqual(result["unmatched"][0]["data"]["id"], 102)
 
     @patch("pid_provider.models.compare")
     def test_get_best_match_no_candidates_approved(self, mock_compare):
@@ -64,7 +64,7 @@ class PidProviderXMLBestMatchesTests(TestCase):
         self.assertNotIn("registered", result)
         self.assertNotIn("matched", result)
         self.assertEqual(len(result["unmatched"]), 1)
-        self.assertEqual(result["unmatched"][0]["id"], 201)
+        self.assertEqual(result["unmatched"][0]["data"]["id"], 201)
 
     @patch("pid_provider.models.compare")
     def test_get_best_match_two_matches_excludes_registered_from_matched(self, mock_compare):
@@ -94,7 +94,7 @@ class PidProviderXMLBestMatchesTests(TestCase):
         # "matched" agora é matched[1:] -> exclui o item que virou "registered"
         self.assertIn("matched", result)
         self.assertEqual(len(result["matched"]), 1)
-        self.assertEqual(result["matched"][0]["id"], 301)
+        self.assertEqual(result["matched"][0]["data"]["id"], 301)
 
         self.assertNotIn("unmatched", result)
 
@@ -133,7 +133,7 @@ class PidProviderXMLBestMatchesTests(TestCase):
 
         # "matched" deve conter apenas item_2 (0.85) e item_3 (0.75), nessa ordem
         self.assertEqual(len(result["matched"]), 2)
-        self.assertEqual(result["matched"][0]["id"], 402)
-        self.assertEqual(result["matched"][1]["id"], 403)
+        self.assertEqual(result["matched"][0]["data"]["id"], 402)
+        self.assertEqual(result["matched"][1]["data"]["id"], 403)
 
         self.assertNotIn("unmatched", result)
