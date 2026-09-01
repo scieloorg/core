@@ -19,9 +19,19 @@ class PidProviderXMLSelectRecordTests(TestCase):
         """Simula a lista de candidatos já materializada para um label."""
         return [MagicMock(name=f"candidate_{i}") for i in range(count)]
 
-    def _make_xml_adapter(self, data_to_compare=None):
+    def _make_xml_adapter(self, data_to_compare=None, body_fragment_fingerprint=None):
+        """
+        select_record não usa xml_adapter.get_data_to_compare() diretamente:
+        chama fix_get_data_to_compare(xml_adapter), que pega o retorno de
+        get_data_to_compare() e ACRESCENTA a chave
+        "body_fragment_fingerprint" (lida de
+        xml_adapter.xml_with_pre.body_fragment_fingerprint). Por isso esse
+        atributo precisa ser configurado explicitamente aqui -- senão vira
+        um MagicMock não configurado, tornando o dict final imprevisível.
+        """
         xml_adapter = MagicMock()
         xml_adapter.get_data_to_compare.return_value = data_to_compare or {}
+        xml_adapter.xml_with_pre.body_fragment_fingerprint = body_fragment_fingerprint
         return xml_adapter
 
     @patch("pid_provider.models.PidProviderXML.get_best_match")
@@ -204,13 +214,24 @@ class PidProviderXMLSelectRecordTests(TestCase):
 
     @patch("pid_provider.models.PidProviderXML.get_best_match")
     def test_select_record_passes_candidates_and_comparison_data_to_get_best_match(self, mock_get_best_match):
-        """get_best_match deve ser chamado com a lista de candidatos do label e os dados já processados do xml_adapter."""
+        """
+        get_best_match deve ser chamado com a lista de candidatos do label
+        e os dados já processados via fix_get_data_to_compare -- que é
+        get_data_to_compare() ACRESCIDO de "body_fragment_fingerprint"
+        (não o retorno cru de get_data_to_compare()).
+        """
 
         candidates = self._make_results(1)
-        xml_adapter = self._make_xml_adapter(data_to_compare={"title": "Foo"})
+        xml_adapter = self._make_xml_adapter(
+            data_to_compare={"title": "Foo"},
+            body_fragment_fingerprint="fingerprint-fake",
+        )
 
         mock_get_best_match.return_value = {"unmatched": ["ITEM_DATA"]}
 
         PidProviderXML.select_record(xml_adapter, [("journal", candidates)])
 
-        mock_get_best_match.assert_called_once_with(candidates, {"title": "Foo"})
+        mock_get_best_match.assert_called_once_with(
+            candidates,
+            {"title": "Foo", "body_fragment_fingerprint": "fingerprint-fake"},
+        )

@@ -24,7 +24,7 @@ MUDANÇAS DE CONTRATO EM RELAÇÃO À VERSÃO ANTERIOR DESTE ARQUIVO
    `PidProviderXMLRegistration.record` só acontece se:
        error_type (uma exceção foi capturada) OR
        select_record_response.get("matched_items") (havia ambiguidade) OR
-       PidProviderSetting.record_all_registration_events (configuração no Wagtail Admin ativada)
+       PidProviderSetting.record_all_registration_events (configuração ativa)
    Ou seja: um "created"/"updated"/"skipped" limpo, sem matches concorrentes
    e sem erro, NÃO gera registro de auditoria por padrão.
 
@@ -61,12 +61,22 @@ MUDANÇAS DE CONTRATO EM RELAÇÃO À VERSÃO ANTERIOR DESTE ARQUIVO
 6. Os caminhos "conflict" e "unmatched" continuam setando `event_status`
    explicitamente antes de re-levantar a exceção.
 
+7. **`register()` agora faz `input_data.update(xml_with_pre.readable_data)`**
+   em vez de `input_data.update(xml_with_pre.get_article_data())`, alinhado
+   à migração do packtools (readable_data substitui get_article_data como
+   fonte de dados legíveis, sem a chave partial_body). Por isso,
+   `make_xml_with_pre()` precisa configurar `readable_data` como um dict de
+   verdade — um MagicMock não configurado quebra dict.update() com
+   TypeError, silenciosamente capturado pelo except Exception externo de
+   register() e mascarado como event_status="error" em qualquer teste que
+   dependa do fluxo normal de sucesso.
+
 Ajuste os caminhos de import (PATCH_BASE) conforme a estrutura do seu projeto.
 """
 
 from unittest.mock import patch, MagicMock
 
-from django.test import TestCase, override_settings
+from django.test import TestCase
 
 from pid_provider import exceptions
 from pid_provider.models import (
@@ -81,15 +91,24 @@ PATCH_BASE = "pid_provider.models"
 def make_xml_with_pre(**overrides):
     """
     XMLWithPre falso, com os atributos que register/build_readable_data tocam.
+
+    IMPORTANTE: register() faz input_data.update(xml_with_pre.readable_data),
+    então readable_data precisa ser um dict de verdade — um MagicMock não
+    configurado quebra dict.update() com TypeError, silenciosamente
+    capturado pelo except Exception externo de register() e mascarado como
+    event_status="error" em qualquer teste que dependa do fluxo normal.
     """
     m = MagicMock(name="xml_with_pre")
     m.data = {"pid_v3": overrides.get("v3"), "sps_pkg_name": "pkg-fake"}
     m.sps_pkg_name = overrides.get("sps_pkg_name", "pkg-fake")
-    m.authors = {"person": [{"surname": "SILVA"}]}
-    m.collab = None
-    m.links = []
-    m.article_titles_texts = ["Some title"]
-    m.partial_body = "corpo parcial"
+    m.readable_data = {
+        "surnames": ["SILVA"],
+        "collab": None,
+        "links": [],
+        "article_titles": ["Some title"],
+        "body_fragment": "corpo parcial",
+    }
+    m.body_fragment_fingerprint = "fingerprint-fake"
     return m
 
 
@@ -127,6 +146,12 @@ class RegisterTestBase(TestCase):
         self.p_record = patch(f"{PATCH_BASE}.PidProviderXMLRegistration.record")
         self.m_record = self.p_record.start()
         self.addCleanup(self.p_record.stop)
+
+        # Mantém os testes independentes da configuração persistida.
+        self.p_setting = patch(f"{PATCH_BASE}.PidProviderSetting.load")
+        self.m_setting_load = self.p_setting.start()
+        self.m_setting_load.return_value.record_all_registration_events = False
+        self.addCleanup(self.p_setting.stop)
 
     # -- helpers de asserção --------------------------------------------
     def assert_recorded_status(self, expected_status):
@@ -512,22 +537,159 @@ class RecordInvocationInvariantTest(RegisterTestBase):
 
 
 # ---------------------------------------------------------------------------
-# Testes da setting PidProviderSetting no Wagtail Admin
+# Configuração opcional: fluxos limpos também podem gerar auditoria
 # ---------------------------------------------------------------------------
 class RecordAllEventsSettingTest(RegisterTestBase):
-    @patch(f"{PATCH_BASE}.PidProviderSetting.load")
-    def test_record_called_on_clean_success_when_setting_enabled(self, m_setting_load):
-        m_setting_load.return_value.record_all_registration_events = True
+    def test_record_called_on_clean_success_when_setting_enabled(self):
+        self.m_setting_load.return_value.record_all_registration_events = True
+
         with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
              patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd, \
              patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
 
-            m_select.side_effect = PidProviderXML.DoesNotExist
+            m_select.return_value = {}
             m_cmp.return_value = {}
             m_upd.return_value = None
-            m_save.return_value = MagicMock(data={"v3": "ABC"})
+            saved = MagicMock(name="saved_ppx")
+            saved.data = {"v3": "ABC"}
+            m_save.return_value = saved
 
-            PidProviderXML.register(self.xml, "file.xml", self.user)
+            response = PidProviderXML.register(self.xml, "file.xml", self.user)
 
+        self.assertEqual(response.get("event_status"), "created")
         self.assert_recorded_status("created")
+
+
+class RegisterResponseSchemaTest(RegisterTestBase):
+    """
+    Teste de contrato: não valida os VALORES do response, só as CHAVES
+    presentes em cada nível. Serve como sentinela contra mudanças
+    silenciosas de schema (ex.: trocar get_article_data() por
+    readable_data alterou as chaves aninhadas em response["input_data"]
+    sem que nenhum teste anterior percebesse, pois testavam apenas
+    event_status/v3/etc., não a forma do dict completo).
+
+    Se este teste quebrar, NÃO conserte só o teste: confirme que a
+    mudança de schema foi intencional e que os consumidores de
+    register() (endpoints da API, logs de auditoria) foram atualizados
+    de acordo.
+    """
+
+    def _register_clean_created(self):
+        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+             patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
+             patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd, \
+             patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
+
+            m_select.return_value = {}
+            m_cmp.return_value = {}
+            m_upd.return_value = None
+            saved = MagicMock(name="saved_ppx")
+            saved.data = {
+                "v3": "ABC",
+                "record_status": "created",
+                "created": "2026-01-01T00:00:00",
+            }
+            m_save.return_value = saved
+
+            return PidProviderXML.register(self.xml, "file.xml", self.user)
+
+    def test_top_level_keys_on_clean_success(self):
+        response = self._register_clean_created()
+        # chaves esperadas no nível superior de um fluxo "created" limpo
+        expected_keys = {
+            "input_data",
+            "xml_adapter_data",
+            "xml_changed",
+            "v3",
+            "record_status",
+            "created",
+            "event_status",
+        }
+        self.assertEqual(set(response.keys()), expected_keys)
+
+    def test_input_data_keys_reflect_readable_data_not_get_article_data(self):
+        """
+        Sentinela específico para a migração get_article_data() ->
+        readable_data: garante que response["input_data"] contém as
+        chaves de readable_data (article_titles, surnames, collab,
+        links, body_fragment) e NÃO contém "partial_body", que só
+        existia no formato antigo (get_article_data()).
+        """
+        response = self._register_clean_created()
+        input_data = response["input_data"]
+
+        # chaves vindas de xml_with_pre.data + xml_with_pre.readable_data
+        # + "origin", conforme montado em register()
+        self.assertIn("article_titles", input_data)
+        self.assertIn("surnames", input_data)
+        self.assertIn("collab", input_data)
+        self.assertIn("links", input_data)
+        self.assertIn("body_fragment", input_data)
+        self.assertIn("origin", input_data)
+
+        # a chave antiga não deve mais aparecer
+        self.assertNotIn("partial_body", input_data)
+
+    def test_error_path_keys(self):
+        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select:
+            m_select.side_effect = ValueError("falha inesperada")
+            response = PidProviderXML.register(self.xml, "file.xml", self.user)
+
+        expected_keys = {
+            "input_data",
+            "xml_adapter_data",
+            "error_msg",
+            "error_type",
+            "traceback",
+            "event_status",
+        }
+        self.assertEqual(set(response.keys()), expected_keys)
+
+    def test_conflict_path_keys(self):
+        existing = MagicMock(name="existing_ppx")
+        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+             patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp:
+
+            m_select.return_value = {"registered": existing}
+            m_cmp.side_effect = PidProviderXMLPidV3ConflictError("conflict!")
+
+            response = PidProviderXML.register(self.xml, "file.xml", self.user)
+
+        expected_keys = {
+            "input_data",
+            "xml_adapter_data",
+            "error_msg",
+            "error_type",
+            "traceback",
+            "event_status",
+        }
+        self.assertEqual(set(response.keys()), expected_keys)
+
+    def test_skipped_path_keys(self):
+        existing = MagicMock(name="existing_ppx")
+        existing.data = {"v3": "ABC", "record_status": "updated"}
+        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+             patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
+             patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd, \
+             patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
+
+            m_select.return_value = {"registered": existing}
+            m_cmp.return_value = {}
+            m_upd.side_effect = exceptions.SkipSavePidProviderXML
+
+            response = PidProviderXML.register(self.xml, "file.xml", self.user)
+
+            m_save.assert_not_called()
+
+        expected_keys = {
+            "input_data",
+            "xml_adapter_data",
+            "v3",
+            "record_status",
+            "skipped",
+            "event_status",
+            "xml_changed",
+        }
+        self.assertEqual(set(response.keys()), expected_keys)
