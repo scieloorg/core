@@ -39,6 +39,7 @@ from pid_provider.query_params import (
     QueryBuilderPidProviderXML,
     fix_get_article_data,
     fix_get_data_to_compare,
+    fix_xml_with_pre_data,
 )
 from tracker.models import BaseEvent, UnexpectedEvent
 
@@ -787,7 +788,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             xml_adapter_data = None
 
             input_data = {}
-            input_data.update(xml_with_pre.data)
+            input_data.update(fix_xml_with_pre_data(xml_with_pre))
             input_data.update(fix_get_article_data(xml_with_pre))
             input_data["origin"] = origin
             response["input_data"] = input_data
@@ -1387,7 +1388,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         try:
             select_record_response = None
             response = {}
-            response["input_data"] = xml_with_pre.data
+            response["input_data"] = fix_xml_with_pre_data(xml_with_pre)
 
             xml_adapter = xml_sps_adapter.PidProviderXMLAdapter(xml_with_pre)
             response["xml_adapter_data"] = xml_adapter.data
