@@ -7,6 +7,15 @@ from core.utils.similarity import how_similar
 from pid_provider import exceptions
 
 
+def fix_xml_with_pre_data(xml_with_pre):
+    data = xml_with_pre.data
+    try:
+        data["pkg_names"] = xml_with_pre.pkg_name_variations
+    except AttributeError:
+        pass
+    return data
+
+
 def fix_get_data_to_compare(xml_adapter):
     """
     packtools 4.16.11
@@ -217,6 +226,10 @@ class QueryBuilderPidProviderXML:
         todos os nomes depreciados/alternativos já usados no passado.
         Valores falsy são descartados.
         """
+        try:
+            return self.xml_adapter.xml_with_pre.pkg_name_variations
+        except AttributeError:
+            pass
         pkg_names = set()
         if self.xml_adapter.pkg_name:
             pkg_names.add(self.xml_adapter.pkg_name)
