@@ -2235,6 +2235,37 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
             "journal_acron": self.journal_acron,
         }
 
+    @property
+    def scielo_url(self):
+        domain = ""
+        if self.collection and self.collection.domain:
+            domain = self.collection.domain
+        if not domain:
+            return ""
+        return (
+            f"{domain.rstrip('/')}/scielo.php?script=sci_serial"
+            f"&pid={self.issn_scielo or ''}&lng=en"
+        )
+
+    @property
+    def owner_name(self):
+        if not self.journal:
+            return ""
+        for name in self.journal.owner_names:
+            if name:
+                return name
+        return ""
+
+    def as_export_dict(self):
+        title = ""
+        if self.journal and self.journal.title:
+            title = self.journal.title
+        return {
+            "title": title,
+            "scielo_url": self.scielo_url,
+            "owner": self.owner_name,
+        }
+
 
 class JournalParallelTitle(TextWithLang):
     official_journal = ParentalKey(
