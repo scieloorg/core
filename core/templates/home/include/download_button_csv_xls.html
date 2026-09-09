@@ -4,10 +4,10 @@
         </button>
         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btnGroupDropDownload" >
             <li>
-                <a class="dropdown-item" href="{% url 'download_xls_journals_page_scielo_org' %}">XLS</a>
+                <a class="dropdown-item" href="{% url 'download_xls_journals_page_scielo_org' %}{% if current_category_slug %}?category={{ current_category_slug }}{% endif %}{% if request.GET.urlencode %}{% if current_category_slug %}&{% else %}?{% endif %}{{ request.GET.urlencode }}{% endif %}">XLS</a>
             </li>
             <li>
-                <a class="dropdown-item" href="{% url 'download_csv_journals_page_scielo_org' %}">CSV</a>
+                <a class="dropdown-item" href="{% url 'download_csv_journals_page_scielo_org' %}{% if current_category_slug %}?category={{ current_category_slug }}{% endif %}{% if request.GET.urlencode %}{% if current_category_slug %}&{% else %}?{% endif %}{{ request.GET.urlencode }}{% endif %}">CSV</a>
             </li>
         </ul>
 </th>
