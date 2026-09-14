@@ -180,7 +180,7 @@ class TestGetScieloJournalsData(TestCase):
         self.assertNotIn("Other Journal", content)
         date = timezone.now().strftime("%Y-%m-%d")
         self.assertIn(
-            f'filename="health-sciences_{date}.csv"',
+            f'filename="health_sciences_journals_{date}.csv"',
             response["Content-Disposition"],
         )
 
@@ -199,6 +199,6 @@ class TestGetScieloJournalsData(TestCase):
         )
         date = timezone.now().strftime("%Y-%m-%d")
         self.assertIn(
-            f'filename="health-sciences_{date}.xls"',
+            f'filename="health_sciences_journals_{date}.xls"',
             response["Content-Disposition"],
         )
