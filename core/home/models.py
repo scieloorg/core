@@ -303,6 +303,7 @@ class ListPageJournalByCategory(RoutablePageMixin, Page):
         context["journals"] = journals
         _default_context(context)
         context["categories"] = slugs_to_category_code
+        context["current_category_slug"] = None
         return context
 
     @re_path(r"^(?P<category>[\w-]+)/$", name="list_journal_by_category")
@@ -326,6 +327,7 @@ class ListPageJournalByCategory(RoutablePageMixin, Page):
         context["journals"] = journals
         activate(current_lang)
         context["current_category"] = gettext(category_code)
+        context["current_category_slug"] = category
         return render(request, "home/list_page_journal_by_category.html", context)
 
 

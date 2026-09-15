@@ -3,12 +3,14 @@ import logging
 
 import feedparser
 import xlwt
+from django.db.models import Prefetch, Q
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.utils.translation import get_language
 from django.views.decorators.http import require_GET
+from journal.models import OwnerHistory, SciELOJournal
 
-from journal.models import SciELOJournal
+from core.home.models import default_journal_filter, slugs_to_category_code
 
 logger = logging.getLogger(__name__)
 
@@ -56,43 +58,60 @@ def youtube_feed_json(request):
     return JsonResponse({"posts": posts})
 
 
-def _get_scielo_journals_data():
-    try:
-        scielo_journals = SciELOJournal.objects.values(
-            "journal__title",
-            "collection__domain",
-            "journal__owner_history__institution__institution__institution_identification__name",
-            "issn_scielo",
-        )
+def _get_scielo_journals_data(request=None):
+    search_term = ""
+    starts_with_letter = ""
+    active_or_discontinued = ""
+    category = None
+    if request is not None:
+        search_term = request.GET.get("search_term", "")
+        starts_with_letter = request.GET.get("start_with_letter", "")
+        active_or_discontinued = list(request.GET.get("tab", ""))
+        category = request.GET.get("category")
 
-        formatted_data = []
-        for journal in scielo_journals:
-            title = journal.get("journal__title", "")
-            issn_scielo = journal.get("issn_scielo", "")
-            domain = journal.get("collection__domain", "")
-            owner = journal.get(
-                "journal__owner_history__institution__institution__institution_identification__name",
-                "",
+    filters = default_journal_filter(
+        search_term, starts_with_letter, active_or_discontinued
+    )
+    if category:
+        category_code = slugs_to_category_code.get(category)
+        if category_code:
+            filters &= Q(journal__subject__code=category_code)
+
+    scielo_journals = (
+        SciELOJournal.objects.filter(filters)
+        .select_related("journal", "collection")
+        .prefetch_related(
+            Prefetch(
+                "journal__owner_history",
+                queryset=OwnerHistory.objects.select_related(
+                    "organization",
+                    "institution__institution__institution_identification",
+                ).order_by("sort_order"),
             )
-            scielo_url = (
-                f"{domain.rstrip('/')}/scielo.php?script=sci_serial&pid={issn_scielo}&lng=en"
-            )
-            formatted_data.append(
-                {
-                    "title": title,
-                    "scielo_url": scielo_url,
-                    "owner": owner,
-                }
-            )
-        return formatted_data
-    except Exception as e:
-        logger.error(f"Error fetching scielo journals data: {e}")
-        return []
+        )
+        .order_by("journal__title")
+        .distinct()
+    )
+
+    return [scielo_journal.as_export_dict() for scielo_journal in scielo_journals]
+
+
+def _journals_download_filename(request, extension):
+    date = timezone.now().strftime("%Y-%m-%d")
+    category = request.GET.get("category") if request is not None else None
+    if category and slugs_to_category_code.get(category):
+        prefix = f"{category.replace('-', '_')}_journals"
+    else:
+        prefix = "all_journals"
+    return f"{prefix}_{date}.{extension}"
+
+
+def _cell_value(value):
+    return "" if value is None else str(value)
 
 
 def download_xls_journals_page_scielo_org(request):
-    date = timezone.now().strftime("%Y-%m-%d")
-    filename = f"journals_{date}.xls"
+    filename = _journals_download_filename(request, "xls")
 
     response = HttpResponse(content_type="application/vnd.ms-excel")
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
@@ -104,11 +123,11 @@ def download_xls_journals_page_scielo_org(request):
         for col, header in enumerate(headers):
             ws.write(0, col, header)
 
-        journals_data = _get_scielo_journals_data()
+        journals_data = _get_scielo_journals_data(request)
         for row, journal in enumerate(journals_data, start=1):
-            ws.write(row, 0, journal.get("title"))
-            ws.write(row, 1, journal.get("scielo_url"))
-            ws.write(row, 2, journal.get("owner"))
+            ws.write(row, 0, _cell_value(journal.get("title")))
+            ws.write(row, 1, _cell_value(journal.get("scielo_url")))
+            ws.write(row, 2, _cell_value(journal.get("owner")))
         wb.save(response)
         logger.info(f"Generated XLS file with: {len(journals_data)} journals")
     except Exception as e:
@@ -118,18 +137,21 @@ def download_xls_journals_page_scielo_org(request):
 
 
 def download_csv_journals_page_scielo_org(request):
-    date = timezone.now().strftime("%Y-%m-%d")
-    filename = f"journals_{date}.csv"
+    filename = _journals_download_filename(request, "csv")
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     try:
         writer = csv.writer(response)
         headers = ["journals", "scielo_url", "publisher"]
         writer.writerow(headers)
-        journals_data = _get_scielo_journals_data()
+        journals_data = _get_scielo_journals_data(request)
         for journal in journals_data:
             writer.writerow(
-                [journal.get("title"), journal.get("scielo_url"), journal.get("owner")]
+                [
+                    _cell_value(journal.get("title")),
+                    _cell_value(journal.get("scielo_url")),
+                    _cell_value(journal.get("owner")),
+                ]
             )
         logger.info(f"Generated CSV file with: {len(journals_data)} journals")
     except Exception as e:
