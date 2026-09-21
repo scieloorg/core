@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from unittest.mock import MagicMock, patch
 from pid_provider.models import PidProviderXML
 
@@ -12,7 +12,7 @@ class PidProviderXMLBestMatchesTests(TestCase):
 
     @patch("pid_provider.models.compare")
     def test_get_best_match_single_match_does_not_expose_matched_key(self, mock_compare):
-        """Com apenas 1 item aprovado (>0.6), 'registered' deve existir mas 'matched' NÃO deve ser exposto."""
+        """Com apenas 1 item aprovado (score > settings.PID_PROVIDER_MIN_RATE), 'registered' deve existir mas 'matched' NÃO deve ser exposto."""
 
         item_bom = MagicMock(spec=PidProviderXML)
         item_bom.id = 101
@@ -49,7 +49,7 @@ class PidProviderXMLBestMatchesTests(TestCase):
 
     @patch("pid_provider.models.compare")
     def test_get_best_match_no_candidates_approved(self, mock_compare):
-        """Quando nenhum candidato atinge score > 0.6, nem 'registered' nem 'matched' devem existir."""
+        """Quando nenhum candidato atinge score > settings.PID_PROVIDER_MIN_RATE, nem 'registered' nem 'matched' devem existir."""
 
         item_fraco = MagicMock(spec=PidProviderXML)
         item_fraco.id = 201
@@ -137,3 +137,34 @@ class PidProviderXMLBestMatchesTests(TestCase):
         self.assertEqual(result["matched"][1]["data"]["id"], 403)
 
         self.assertNotIn("unmatched", result)
+
+    @patch("pid_provider.models.compare")
+    def test_get_best_match_uses_pid_provider_min_rate_setting_as_threshold(self, mock_compare):
+        """
+        MUDANÇA DE CONTRATO: o corte de aprovação não é mais um valor
+        hardcoded (0.6, ou 0.49 quando len(xml_adapter_data) <= 4) --
+        agora é sempre settings.PID_PROVIDER_MIN_RATE, lido a cada
+        chamada. O mesmo score (0.70) fica de fora com um threshold mais
+        alto e aprovado com um threshold mais baixo.
+        """
+        item = MagicMock(spec=PidProviderXML)
+        item.id = 501
+        item.updated.isoformat.return_value = "2026-06-27T12:00:00"
+        item.data_to_compare = {"title": "Titulo Original"}
+        item.data = {"id": 501, "title": "Titulo Original"}
+
+        mock_compare.return_value = {"percentual_score": 0.70}
+
+        with override_settings(PID_PROVIDER_MIN_RATE=0.9):
+            result_high_threshold = PidProviderXML.get_best_match(
+                [item], self.xml_adapter_data_mock
+            )
+        self.assertNotIn("registered", result_high_threshold)
+        self.assertEqual(len(result_high_threshold["unmatched"]), 1)
+
+        with override_settings(PID_PROVIDER_MIN_RATE=0.5):
+            result_low_threshold = PidProviderXML.get_best_match(
+                [item], self.xml_adapter_data_mock
+            )
+        self.assertEqual(result_low_threshold["registered"], item)
+        self.assertNotIn("unmatched", result_low_threshold)
