@@ -1,6 +1,7 @@
 from django.test import TestCase, override_settings
 from unittest.mock import MagicMock, patch
 from pid_provider.models import PidProviderXML
+from pid_provider.query_params import get_best_match
 
 
 class PidProviderXMLBestMatchesTests(TestCase):
@@ -10,7 +11,7 @@ class PidProviderXMLBestMatchesTests(TestCase):
         # e é passado direto para compare() -- não precisa simular atributos internos.
         self.xml_adapter_data_mock = {"title": "Titulo Original", "z_surnames": "Silva; Santos"}
 
-    @patch("pid_provider.models.compare")
+    @patch("pid_provider.query_params.compare")
     def test_get_best_match_single_match_does_not_expose_matched_key(self, mock_compare):
         """Com apenas 1 item aprovado (score > settings.PID_PROVIDER_MIN_RATE), 'registered' deve existir mas 'matched' NÃO deve ser exposto."""
 
@@ -35,7 +36,7 @@ class PidProviderXMLBestMatchesTests(TestCase):
 
         # Enviados fora de ordem propositalmente
         candidates = [item_ruim, item_bom]
-        result = PidProviderXML.get_best_match(candidates, self.xml_adapter_data_mock)
+        result = get_best_match(candidates, self.xml_adapter_data_mock)
 
         # Apenas 1 item passou do corte -> "matched" não deve aparecer
         self.assertNotIn("matched", result)
@@ -47,7 +48,7 @@ class PidProviderXMLBestMatchesTests(TestCase):
         self.assertEqual(len(result["unmatched"]), 1)
         self.assertEqual(result["unmatched"][0]["data"]["id"], 102)
 
-    @patch("pid_provider.models.compare")
+    @patch("pid_provider.query_params.compare")
     def test_get_best_match_no_candidates_approved(self, mock_compare):
         """Quando nenhum candidato atinge score > settings.PID_PROVIDER_MIN_RATE, nem 'registered' nem 'matched' devem existir."""
 
@@ -59,16 +60,16 @@ class PidProviderXMLBestMatchesTests(TestCase):
 
         mock_compare.return_value = {"percentual_score": 0.48}
 
-        result = PidProviderXML.get_best_match([item_fraco], self.xml_adapter_data_mock)
+        result = get_best_match([item_fraco], self.xml_adapter_data_mock)
 
         self.assertNotIn("registered", result)
         self.assertNotIn("matched", result)
         self.assertEqual(len(result["unmatched"]), 1)
         self.assertEqual(result["unmatched"][0]["data"]["id"], 201)
 
-    @patch("pid_provider.models.compare")
-    def test_get_best_match_two_matches_excludes_registered_from_matched(self, mock_compare):
-        """Com 2 itens aprovados, 'registered' recebe o de maior score e 'matched' deve conter só o restante (matched[1:])."""
+    @patch("pid_provider.query_params.compare")
+    def test_get_best_match_two_matches_with_tied_score_go_to_multiple_matched(self, mock_compare):
+        """Com 2 itens aprovados EMPATADOS no score, 'registered' recebe o desempatado por 'updated' e o outro vai para 'multiple_matched' (não 'matched')."""
 
         item_antigo = MagicMock(spec=PidProviderXML)
         item_antigo.id = 301
@@ -85,20 +86,23 @@ class PidProviderXMLBestMatchesTests(TestCase):
         # Mesmo score alto para os dois -> desempate por 'updated'
         mock_compare.return_value = {"percentual_score": 0.90}
 
-        result = PidProviderXML.get_best_match([item_antigo, item_recente], self.xml_adapter_data_mock)
+        result = get_best_match([item_antigo, item_recente], self.xml_adapter_data_mock)
 
         # reverse=True em (score, updated.isoformat(), id);
         # "2026-06-27..." > "2026-01-01..." lexicograficamente, então item_recente vem primeiro (registered).
         self.assertEqual(result["registered"], item_recente)
 
-        # "matched" agora é matched[1:] -> exclui o item que virou "registered"
-        self.assertIn("matched", result)
-        self.assertEqual(len(result["matched"]), 1)
-        self.assertEqual(result["matched"][0]["data"]["id"], 301)
+        # Empatado em score com "registered" -> vai para "multiple_matched" (que
+        # agora inclui também o próprio "registered", na posição 0), "matched" fica vazio
+        self.assertEqual(result.get("matched"), [])
+        self.assertIn("multiple_matched", result)
+        self.assertEqual(len(result["multiple_matched"]), 2)
+        self.assertEqual(result["multiple_matched"][0]["data"]["id"], 302)
+        self.assertEqual(result["multiple_matched"][1]["data"]["id"], 301)
 
         self.assertNotIn("unmatched", result)
 
-    @patch("pid_provider.models.compare")
+    @patch("pid_provider.query_params.compare")
     def test_get_best_match_three_matches_only_secondary_items_in_matched(self, mock_compare):
         """Com 3+ itens aprovados, 'registered' fica com o 1º colocado e 'matched' com os demais, na mesma ordem de score."""
 
@@ -126,7 +130,7 @@ class PidProviderXMLBestMatchesTests(TestCase):
 
         mock_compare.side_effect = side_effect_compare
 
-        result = PidProviderXML.get_best_match([item_3, item_1, item_2], self.xml_adapter_data_mock)
+        result = get_best_match([item_3, item_1, item_2], self.xml_adapter_data_mock)
 
         # item_1 (0.95) é o de maior score -> vira "registered" e some da lista "matched"
         self.assertEqual(result["registered"], item_1)
@@ -138,7 +142,7 @@ class PidProviderXMLBestMatchesTests(TestCase):
 
         self.assertNotIn("unmatched", result)
 
-    @patch("pid_provider.models.compare")
+    @patch("pid_provider.query_params.compare")
     def test_get_best_match_uses_pid_provider_min_rate_setting_as_threshold(self, mock_compare):
         """
         MUDANÇA DE CONTRATO: o corte de aprovação não é mais um valor
@@ -156,14 +160,14 @@ class PidProviderXMLBestMatchesTests(TestCase):
         mock_compare.return_value = {"percentual_score": 0.70}
 
         with override_settings(PID_PROVIDER_MIN_RATE=0.9):
-            result_high_threshold = PidProviderXML.get_best_match(
+            result_high_threshold = get_best_match(
                 [item], self.xml_adapter_data_mock
             )
         self.assertNotIn("registered", result_high_threshold)
         self.assertEqual(len(result_high_threshold["unmatched"]), 1)
 
         with override_settings(PID_PROVIDER_MIN_RATE=0.5):
-            result_low_threshold = PidProviderXML.get_best_match(
+            result_low_threshold = get_best_match(
                 [item], self.xml_adapter_data_mock
             )
         self.assertEqual(result_low_threshold["registered"], item)
