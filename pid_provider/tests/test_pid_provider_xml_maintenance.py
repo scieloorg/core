@@ -16,6 +16,7 @@ from django.utils import timezone
 from collection.models import Collection
 from journal.models import Journal, OfficialJournal
 from pid_provider import choices, exceptions
+from pid_provider import models as pid_provider_models
 from pid_provider.models import OtherPid, PidProviderXML, XMLVersion
 
 User = get_user_model()
@@ -76,7 +77,7 @@ class GetRecordByPidV3Tests(TestCase):
         xml_adapter.xml_with_pre.body_fragment_fingerprint = None
 
         with patch.object(
-            PidProviderXML, "get_best_match", return_value={"registered": ppx}
+            pid_provider_models, "get_best_match", return_value={"registered": ppx}
         ):
             result = PidProviderXML.get_record_by_pid_v3(xml_adapter)
 
@@ -88,7 +89,7 @@ class GetRecordByPidV3Tests(TestCase):
         xml_adapter.get_data_to_compare.return_value = {}
         xml_adapter.xml_with_pre.body_fragment_fingerprint = None
 
-        with patch.object(PidProviderXML, "get_best_match", return_value={}):
+        with patch.object(pid_provider_models, "get_best_match", return_value={}):
             with self.assertRaises(Exception) as ctx:
                 PidProviderXML.get_record_by_pid_v3(xml_adapter)
         from pid_provider.models import PidProviderXMLPidV3ConflictError
@@ -306,9 +307,9 @@ class IsRegisteredTests(TestCase):
         internamente -- o `pop("registered")` dá KeyError e cai direto no
         `except cls.DoesNotExist`, que retorna um response limpo
         (registered=False), SEM error_msg/error_type. Antes, esse mesmo
-        caso levantava a exceção internamente, era recapturado pelo
-        `except (MultipleObjectsReturned, UnmatchedPidProviderXMLError)`
-        e relançado, virando um response de erro.
+        caso levantava a exceção internamente, era recapturada pelos
+        excepts de `cls.MultipleObjectsReturned`/`UnmatchedPidProviderXMLError`
+        e relançada, virando um response de erro.
         """
         xml_with_pre = MagicMock()
         xml_with_pre.data = {}
@@ -318,7 +319,7 @@ class IsRegisteredTests(TestCase):
             MockAdapter.return_value.data = {}
             with patch.object(PidProviderXML, "select_records", return_value=iter([])), \
                  patch.object(
-                     PidProviderXML, "select_record",
+                     pid_provider_models, "select_record",
                      return_value={"unmatched_items": [{"id": 1}]},
                  ):
                 response = PidProviderXML.is_registered(xml_with_pre)
@@ -327,6 +328,37 @@ class IsRegisteredTests(TestCase):
         self.assertEqual(response["filename"], "file.xml")
         self.assertNotIn("error_msg", response)
         self.assertNotIn("error_type", response)
+
+    def test_multiple_matched_items_raises_error_response(self):
+        """
+        Quando select_record() retorna "multiple_matched_items" (candidatos
+        empatados no score máximo aprovado com "registered"), is_registered()
+        levanta cls.MultipleObjectsReturned internamente antes de aceitar
+        "registered" -- convertida em QueryDocumentMultipleObjectsReturnedError,
+        virando um response de erro (não mais um "registered": True silencioso
+        baseado num desempate arbitrário).
+        """
+        xml_with_pre = MagicMock()
+        xml_with_pre.data = {}
+
+        registered = MagicMock()
+        registered.data = {"v3": "V3-TIED"}
+
+        with patch("packtools.sps.pid_provider.xml_sps_adapter.PidProviderXMLAdapter") as MockAdapter:
+            MockAdapter.return_value.data = {}
+            with patch.object(PidProviderXML, "select_records", return_value=iter([])), \
+                 patch.object(
+                     pid_provider_models, "select_record",
+                     return_value={
+                         "registered": registered,
+                         "multiple_matched_items": {"journal": [{"id": 2}]},
+                     },
+                 ):
+                response = PidProviderXML.is_registered(xml_with_pre)
+
+        self.assertIn("error_msg", response)
+        self.assertIn("error_type", response)
+        self.assertNotIn("registered", response)
 
     def test_returns_registered_true_with_is_equal_flag(self):
         xml_with_pre = MagicMock()
@@ -341,7 +373,7 @@ class IsRegisteredTests(TestCase):
             MockAdapter.return_value.data = {}
             with patch.object(PidProviderXML, "select_records", return_value=iter([])), \
                  patch.object(
-                     PidProviderXML, "select_record",
+                     pid_provider_models, "select_record",
                      return_value={"registered": registered},
                  ):
                 response = PidProviderXML.is_registered(xml_with_pre)
@@ -362,7 +394,7 @@ class IsRegisteredTests(TestCase):
             MockAdapter.return_value.data = {}
             with patch.object(PidProviderXML, "select_records", return_value=iter([])), \
                  patch.object(
-                     PidProviderXML, "select_record",
+                     pid_provider_models, "select_record",
                      return_value={"registered": registered},
                  ):
                 response = PidProviderXML.is_registered(xml_with_pre)
