@@ -19,19 +19,29 @@ class PidProviderXMLSelectRecordTests(TestCase):
         """Simula a lista de candidatos já materializada para um label."""
         return [MagicMock(name=f"candidate_{i}") for i in range(count)]
 
-    def _make_xml_adapter(self, data_to_compare=None, body_fragment_fingerprint=None):
+    def _make_xml_adapter(
+        self,
+        data_to_compare=None,
+        body_fragment_fingerprint=None,
+        surnames=None,
+        pid_v2=None,
+    ):
         """
         select_record não usa xml_adapter.get_data_to_compare() diretamente:
         chama fix_get_data_to_compare(xml_adapter), que pega o retorno de
-        get_data_to_compare() e ACRESCENTA a chave
-        "body_fragment_fingerprint" (lida de
-        xml_adapter.xml_with_pre.body_fragment_fingerprint). Por isso esse
-        atributo precisa ser configurado explicitamente aqui -- senão vira
-        um MagicMock não configurado, tornando o dict final imprevisível.
+        get_data_to_compare() e ACRESCENTA as chaves
+        "body_fragment_fingerprint", "surnames" e "pid_v2" (lidas de
+        xml_adapter.xml_with_pre.body_fragment_fingerprint,
+        xml_adapter.xml_with_pre.surnames e xml_adapter.xml_with_pre.v2).
+        Por isso esses atributos precisam ser configurados explicitamente
+        aqui -- senão viram MagicMocks não configurados, tornando o dict
+        final imprevisível.
         """
         xml_adapter = MagicMock()
         xml_adapter.get_data_to_compare.return_value = data_to_compare or {}
         xml_adapter.xml_with_pre.body_fragment_fingerprint = body_fragment_fingerprint
+        xml_adapter.xml_with_pre.surnames = surnames
+        xml_adapter.xml_with_pre.v2 = pid_v2
         return xml_adapter
 
     @patch("pid_provider.models.PidProviderXML.get_best_match")
@@ -217,14 +227,16 @@ class PidProviderXMLSelectRecordTests(TestCase):
         """
         get_best_match deve ser chamado com a lista de candidatos do label
         e os dados já processados via fix_get_data_to_compare -- que é
-        get_data_to_compare() ACRESCIDO de "body_fragment_fingerprint"
-        (não o retorno cru de get_data_to_compare()).
+        get_data_to_compare() ACRESCIDO de "body_fragment_fingerprint",
+        "surnames" e "pid_v2" (não o retorno cru de get_data_to_compare()).
         """
 
         candidates = self._make_results(1)
         xml_adapter = self._make_xml_adapter(
             data_to_compare={"title": "Foo"},
             body_fragment_fingerprint="fingerprint-fake",
+            surnames="Silva Souza",
+            pid_v2="V2-1",
         )
 
         mock_get_best_match.return_value = {"unmatched": ["ITEM_DATA"]}
@@ -233,5 +245,10 @@ class PidProviderXMLSelectRecordTests(TestCase):
 
         mock_get_best_match.assert_called_once_with(
             candidates,
-            {"title": "Foo", "body_fragment_fingerprint": "fingerprint-fake"},
+            {
+                "title": "Foo",
+                "body_fragment_fingerprint": "fingerprint-fake",
+                "surnames": "Silva Souza",
+                "pid_v2": "V2-1",
+            },
         )
