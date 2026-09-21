@@ -299,6 +299,35 @@ class IsRegisteredTests(TestCase):
         self.assertFalse(response["registered"])
         self.assertEqual(response["filename"], "file.xml")
 
+    def test_unmatched_items_without_registered_returns_not_registered_not_error(self):
+        """
+        MUDANÇA DE CONTRATO: select_record() retornando "unmatched_items"
+        sem "registered" não levanta mais UnmatchedPidProviderXMLError
+        internamente -- o `pop("registered")` dá KeyError e cai direto no
+        `except cls.DoesNotExist`, que retorna um response limpo
+        (registered=False), SEM error_msg/error_type. Antes, esse mesmo
+        caso levantava a exceção internamente, era recapturado pelo
+        `except (MultipleObjectsReturned, UnmatchedPidProviderXMLError)`
+        e relançado, virando um response de erro.
+        """
+        xml_with_pre = MagicMock()
+        xml_with_pre.data = {}
+        xml_with_pre.filename = "file.xml"
+
+        with patch("packtools.sps.pid_provider.xml_sps_adapter.PidProviderXMLAdapter") as MockAdapter:
+            MockAdapter.return_value.data = {}
+            with patch.object(PidProviderXML, "select_records", return_value=iter([])), \
+                 patch.object(
+                     PidProviderXML, "select_record",
+                     return_value={"unmatched_items": [{"id": 1}]},
+                 ):
+                response = PidProviderXML.is_registered(xml_with_pre)
+
+        self.assertFalse(response["registered"])
+        self.assertEqual(response["filename"], "file.xml")
+        self.assertNotIn("error_msg", response)
+        self.assertNotIn("error_type", response)
+
     def test_returns_registered_true_with_is_equal_flag(self):
         xml_with_pre = MagicMock()
         xml_with_pre.data = {}
@@ -454,7 +483,15 @@ class FixPidV2MethodTests(TestCase):
         ppx.current_version = version
         ppx.save()
 
+        # `fix_pid_v2` retorna `item.data`, que chama `get_readable_data()`.
+        # Como `readable_data` não está armazenado neste ppx, esse método
+        # cai no branch que lê `xml_with_pre` e agora PERSISTE o resultado
+        # (self.readable_data = ...; self.save()). Um MagicMock não
+        # configurado em `.readable_data` seria salvo como valor cru no
+        # JSONField e quebraria o save() -- por isso precisa ser um dict de
+        # verdade aqui, não um MagicMock não configurado.
         fake_xml_with_pre = MagicMock()
+        fake_xml_with_pre.readable_data = {"article_titles": ["Título Fake"]}
         with patch.object(
             XMLVersion, "xml_with_pre", new_callable=lambda: property(lambda self: fake_xml_with_pre)
         ), patch.object(PidProviderXML, "_add_current_version") as mock_add_version:
