@@ -308,6 +308,12 @@ class PkgNameListTests(SimpleTestCase):
 
 
 class IdentifierQueriesTests(SimpleTestCase):
+    """
+    identifier_queries cobre apenas identificadores diretos (v3, v2,
+    aop_pid, main_doi). pkg_name foi extraído para pkg_name_queries
+    (ver PkgNameQueriesTests) para ser executado como etapa própria em
+    select_records, depois de identifier_queries.
+    """
 
     def test_empty_when_nothing_set(self):
         adapter = make_xml_adapter(data={})
@@ -325,14 +331,29 @@ class IdentifierQueriesTests(SimpleTestCase):
         expected = Q(v2="V2-1") | (Q(v2="AOP-1") | Q(aop_pid="AOP-1"))
         self.assertEqual(qbuilder.identifier_queries, expected)
 
-    def test_includes_pkg_names_and_main_doi(self):
+    def test_includes_main_doi(self):
         adapter = make_xml_adapter(
             data={"main_doi": "10.1234/xyz"},
             pkg_name="pkg-a",
         )
         qbuilder = QueryBuilderPidProviderXML(adapter)
-        expected = Q(pkg_name__in={"pkg-a"}) | Q(main_doi="10.1234/xyz")
+        # pkg_name NÃO entra em identifier_queries (ver pkg_name_queries)
+        expected = Q(main_doi="10.1234/xyz")
         self.assertEqual(qbuilder.identifier_queries, expected)
+
+
+class PkgNameQueriesTests(SimpleTestCase):
+
+    def test_empty_when_no_pkg_names(self):
+        adapter = make_xml_adapter(data={}, pkg_name=None, sps_pkg_name=None)
+        qbuilder = QueryBuilderPidProviderXML(adapter)
+        self.assertEqual(qbuilder.pkg_name_queries, Q())
+
+    def test_includes_pkg_names(self):
+        adapter = make_xml_adapter(data={}, pkg_name="pkg-a")
+        qbuilder = QueryBuilderPidProviderXML(adapter)
+        expected = Q(pkg_name__in={"pkg-a"})
+        self.assertEqual(qbuilder.pkg_name_queries, expected)
 
 
 class IssnQueryTests(SimpleTestCase):
@@ -555,7 +576,7 @@ class ArticleDataQueryTests(SimpleTestCase):
 class GetArticleDataQueryTests(SimpleTestCase):
     """Método usado em select_records (models.py)."""
 
-    def test_issue_true_combines_article_data_issue_and_location_params(self):
+    def test_issue_true_flexible_false_combines_article_data_issue_and_location_params(self):
         adapter = make_xml_adapter(
             data={
                 "z_surnames": "Silva",
@@ -570,7 +591,7 @@ class GetArticleDataQueryTests(SimpleTestCase):
             body_fragment_fingerprint=None,
         )
         qbuilder = QueryBuilderPidProviderXML(adapter)
-        result = qbuilder.get_article_data_query(issue=True)
+        result = qbuilder.get_article_data_query(issue=True, flexible=False)
         expected = (
             qbuilder.article_data_query
             & Q(**qbuilder.issue_params)
@@ -578,20 +599,61 @@ class GetArticleDataQueryTests(SimpleTestCase):
         )
         self.assertEqual(result, expected)
 
-    def test_issue_false_requires_issue_and_location_fields_null(self):
+    def test_issue_true_flexible_true_drops_article_data_query(self):
+        """
+        `flexible=True` dispensa a exigência dos hashes textuais
+        (article_data_query) -- só fascículo e localização precisam
+        bater, mesmo que o conteúdo do artigo (corrigido/errata) tenha
+        mudado.
+        """
+        adapter = make_xml_adapter(
+            data={
+                "z_surnames": "Silva",
+                "pub_year": "2026",
+                "volume": "10",
+                "number": "2",
+                "suppl": None,
+                "elocation_id": "e1",
+                "fpage": "10",
+                "lpage": "20",
+            },
+            body_fragment_fingerprint=None,
+        )
+        qbuilder = QueryBuilderPidProviderXML(adapter)
+        result = qbuilder.get_article_data_query(issue=True, flexible=True)
+        expected = Q(**qbuilder.issue_params) & Q(**qbuilder.article_location_params)
+        self.assertEqual(result, expected)
+
+    def test_issue_false_flexible_false_requires_issue_and_location_fields_null(self):
         adapter = make_xml_adapter(
             data={"z_surnames": "Silva"}, body_fragment_fingerprint=None
         )
         qbuilder = QueryBuilderPidProviderXML(adapter)
-        result = qbuilder.get_article_data_query(issue=False)
-        expected = qbuilder.article_data_query & Q(
+        result = qbuilder.get_article_data_query(issue=False, flexible=False)
+        expected = Q(
             volume__isnull=True,
             number__isnull=True,
             suppl__isnull=True,
             elocation_id__isnull=True,
             fpage__isnull=True,
             lpage__isnull=True,
+        ) & qbuilder.article_data_query
+        self.assertEqual(result, expected)
+
+    def test_issue_false_flexible_true_drops_article_data_query(self):
+        adapter = make_xml_adapter(
+            data={"z_surnames": "Silva"}, body_fragment_fingerprint=None
         )
+        qbuilder = QueryBuilderPidProviderXML(adapter)
+        result = qbuilder.get_article_data_query(issue=False, flexible=True)
+        expected = Q(
+            volume__isnull=True,
+            number__isnull=True,
+            suppl__isnull=True,
+            elocation_id__isnull=True,
+            fpage__isnull=True,
+            lpage__isnull=True,
+        ) & Q(**qbuilder.article_location_params)
         self.assertEqual(result, expected)
 
     def test_issue_true_and_false_produce_different_queries(self):
@@ -601,8 +663,19 @@ class GetArticleDataQueryTests(SimpleTestCase):
         )
         qbuilder = QueryBuilderPidProviderXML(adapter)
         self.assertNotEqual(
-            qbuilder.get_article_data_query(issue=True),
-            qbuilder.get_article_data_query(issue=False),
+            qbuilder.get_article_data_query(issue=True, flexible=False),
+            qbuilder.get_article_data_query(issue=False, flexible=False),
+        )
+
+    def test_flexible_true_and_false_produce_different_queries(self):
+        adapter = make_xml_adapter(
+            data={"z_surnames": "Silva", "pub_year": "2026"},
+            body_fragment_fingerprint=None,
+        )
+        qbuilder = QueryBuilderPidProviderXML(adapter)
+        self.assertNotEqual(
+            qbuilder.get_article_data_query(issue=True, flexible=False),
+            qbuilder.get_article_data_query(issue=True, flexible=True),
         )
 
 
