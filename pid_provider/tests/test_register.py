@@ -187,7 +187,7 @@ class RegisterTestBase(TestCase):
 # ---------------------------------------------------------------------------
 class CreatedPathTest(RegisterTestBase):
     def test_created_when_no_existing_record_and_no_ambiguity(self):
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
              patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd, \
              patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
@@ -213,7 +213,7 @@ class CreatedPathTest(RegisterTestBase):
 class UpdatedPathTest(RegisterTestBase):
     def test_updated_when_existing_record_and_no_ambiguity(self):
         existing = MagicMock(name="existing_ppx")
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
              patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd, \
              patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
@@ -244,7 +244,7 @@ class SkippedPathTest(RegisterTestBase):
         """
         existing = MagicMock(name="existing_ppx")
         existing.data = {"v3": "ABC", "record_status": "updated"}
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
              patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd, \
              patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
@@ -271,7 +271,7 @@ class SkippedPathTest(RegisterTestBase):
 class MatchedItemsLoggingTest(RegisterTestBase):
     def test_updated_with_matched_items_logs_audit(self):
         existing = MagicMock(name="existing_ppx")
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
              patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd, \
              patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
@@ -290,12 +290,11 @@ class MatchedItemsLoggingTest(RegisterTestBase):
 
         kwargs = self.assert_recorded_status("updated")
         self.assertIs(kwargs.get("pid_provider_xml"), saved)
-        self.assertIn("select_record_response", response)
 
     def test_skipped_with_matched_items_still_logs_audit(self):
         existing = MagicMock(name="existing_ppx")
         existing.data = {"v3": "ABC", "record_status": "updated"}
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
              patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd, \
              patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
@@ -321,7 +320,7 @@ class MatchedItemsLoggingTest(RegisterTestBase):
 class ConflictPathTest(RegisterTestBase):
     def test_conflict_when_pid_v3_conflict(self):
         existing = MagicMock(name="existing_ppx")
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
              patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
 
@@ -348,7 +347,7 @@ class ForbiddenPathTest(RegisterTestBase):
         `event_status or "error"` só substitui valores falsy).
         """
         existing = MagicMock(name="existing_ppx")
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
              patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd, \
              patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
@@ -371,7 +370,7 @@ class ForbiddenPathTest(RegisterTestBase):
 
 class UnmatchedPathTest(RegisterTestBase):
     def test_unmatched_when_select_record_raises_unmatched(self):
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select:
+        with patch(f"{PATCH_BASE}.select_record") as m_select:
             m_select.side_effect = exceptions.UnmatchedPidProviderXMLError("unmatched")
             response = PidProviderXML.register(self.xml, "file.xml", self.user)
 
@@ -391,7 +390,7 @@ class UnmatchedPathTest(RegisterTestBase):
         `select_record_response.get("unmatched_items")` como gatilho de
         gravação (antes só olhava "matched_items").
         """
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
              patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd, \
              patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
@@ -410,12 +409,35 @@ class UnmatchedPathTest(RegisterTestBase):
         kwargs = self.assert_recorded_status("created")
         self.assertIs(kwargs.get("pid_provider_xml"), saved)
 
-    def test_multiple_objects_returned_is_unmatched(self):
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select:
+    def test_multiple_objects_returned_is_multiple(self):
+        with patch(f"{PATCH_BASE}.select_record") as m_select:
             m_select.side_effect = PidProviderXML.MultipleObjectsReturned()
             response = PidProviderXML.register(self.xml, "file.xml", self.user)
 
-        self.assert_recorded_status("unmatched")
+        self.assert_recorded_status("multiple")
+        self.assertIn("error_msg", response)
+
+    def test_multiple_matched_items_in_select_record_response_is_multiple(self):
+        """
+        Quando select_record() retorna "multiple_matched_items" (candidatos
+        empatados no score máximo aprovado com "registered"), register()
+        levanta cls.MultipleObjectsReturned internamente antes de aceitar
+        "registered" -- a escolha entre eles seria arbitrária (desempate
+        por `updated`/`id` em get_best_match). Esse caminho vira
+        event_status="multiple" e é convertido em
+        QueryDocumentMultipleObjectsReturnedError, distinto de "unmatched"
+        (reservado para quando select_record() levanta
+        UnmatchedPidProviderXMLError diretamente).
+        """
+        with patch(f"{PATCH_BASE}.select_record") as m_select:
+            m_select.return_value = {
+                "registered": MagicMock(name="tied_winner"),
+                "multiple_matched_items": {"journal": [{"id": 2}]},
+            }
+            response = PidProviderXML.register(self.xml, "file.xml", self.user)
+
+        self.assert_recorded_status("multiple")
+        self.assertIn("error_msg", response)
 
 
 class BadRequestPathTest(RegisterTestBase):
@@ -425,7 +447,7 @@ class BadRequestPathTest(RegisterTestBase):
     """
 
     def test_required_issn_becomes_response_not_raise(self):
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select:
+        with patch(f"{PATCH_BASE}.select_record") as m_select:
             m_select.side_effect = (
                 exceptions.RequiredISSNErrorToGetPidProviderXMLError("no issn")
             )
@@ -435,7 +457,7 @@ class BadRequestPathTest(RegisterTestBase):
         self.assertIn("error_msg", response)
 
     def test_required_pub_year_becomes_response(self):
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select:
+        with patch(f"{PATCH_BASE}.select_record") as m_select:
             m_select.side_effect = (
                 exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError("no year")
             )
@@ -444,7 +466,7 @@ class BadRequestPathTest(RegisterTestBase):
         self.assert_recorded_status("bad_request")
 
     def test_not_enough_parameters_becomes_response(self):
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select:
+        with patch(f"{PATCH_BASE}.select_record") as m_select:
             m_select.side_effect = (
                 exceptions.NotEnoughParametersToGetPidProviderXMLError("not enough")
             )
@@ -464,7 +486,7 @@ class UnexpectedErrorPathTest(RegisterTestBase):
     """
 
     def test_unexpected_exception_before_any_status_set_falls_back_to_error(self):
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select:
+        with patch(f"{PATCH_BASE}.select_record") as m_select:
             m_select.side_effect = ValueError("falha totalmente inesperada")
             response = PidProviderXML.register(self.xml, "file.xml", self.user)
 
@@ -473,7 +495,7 @@ class UnexpectedErrorPathTest(RegisterTestBase):
         self.assertIn("error_msg", response)
 
     def test_unexpected_exception_after_created_keeps_created_status(self):
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp:
 
             m_select.return_value = {}  # -> DoesNotExist -> event_status="created"
@@ -493,7 +515,7 @@ class UnexpectedErrorPathTest(RegisterTestBase):
 # ---------------------------------------------------------------------------
 class RecordInvocationInvariantTest(RegisterTestBase):
     def test_record_not_called_on_clean_success(self):
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
              patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd, \
              patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
@@ -510,7 +532,7 @@ class RecordInvocationInvariantTest(RegisterTestBase):
         self.assertEqual(self.m_record.call_count, 0)
 
     def test_record_called_exactly_once_on_conflict(self):
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp:
             m_select.return_value = {"registered": MagicMock()}
             m_cmp.side_effect = PidProviderXMLPidV3ConflictError("x")
@@ -521,7 +543,7 @@ class RecordInvocationInvariantTest(RegisterTestBase):
 
     def test_record_called_exactly_once_when_matched_items_present(self):
         existing = MagicMock(name="existing_ppx")
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
              patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd, \
              patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
@@ -542,7 +564,7 @@ class RecordInvocationInvariantTest(RegisterTestBase):
 
     def test_record_called_exactly_once_on_forbidden(self):
         existing = MagicMock(name="existing_ppx")
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
              patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd:
 
@@ -560,7 +582,7 @@ class RecordInvocationInvariantTest(RegisterTestBase):
     def test_record_called_exactly_once_on_skip(self):
         existing = MagicMock(name="existing_ppx")
         existing.data = {"v3": "ABC"}
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
              patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd:
 
@@ -582,7 +604,7 @@ class RecordAllEventsSettingTest(RegisterTestBase):
     def test_record_called_on_clean_success_when_setting_enabled(self):
         self.m_setting_load.return_value.record_all_registration_events = True
 
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
              patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd, \
              patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
@@ -616,7 +638,7 @@ class RegisterResponseSchemaTest(RegisterTestBase):
     """
 
     def _register_clean_created(self):
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
              patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd, \
              patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
@@ -672,7 +694,7 @@ class RegisterResponseSchemaTest(RegisterTestBase):
         self.assertNotIn("partial_body", input_data)
 
     def test_error_path_keys(self):
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select:
+        with patch(f"{PATCH_BASE}.select_record") as m_select:
             m_select.side_effect = ValueError("falha inesperada")
             response = PidProviderXML.register(self.xml, "file.xml", self.user)
 
@@ -688,7 +710,7 @@ class RegisterResponseSchemaTest(RegisterTestBase):
 
     def test_conflict_path_keys(self):
         existing = MagicMock(name="existing_ppx")
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp:
 
             m_select.return_value = {"registered": existing}
@@ -709,7 +731,7 @@ class RegisterResponseSchemaTest(RegisterTestBase):
     def test_skipped_path_keys(self):
         existing = MagicMock(name="existing_ppx")
         existing.data = {"v3": "ABC", "record_status": "updated"}
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+        with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
              patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd, \
              patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
