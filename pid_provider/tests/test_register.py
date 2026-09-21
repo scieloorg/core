@@ -61,6 +61,22 @@ MUDANÇAS DE CONTRATO EM RELAÇÃO À VERSÃO ANTERIOR DESTE ARQUIVO
 6. Os caminhos "conflict" e "unmatched" continuam setando `event_status`
    explicitamente antes de re-levantar a exceção.
 
+7.5. **O `raise exceptions.UnmatchedPidProviderXMLError` interno foi removido.**
+   Antes, quando `select_record_response` não tinha "registered" mas tinha
+   "unmatched_items", o `except KeyError` do `pop("registered")` levantava
+   `UnmatchedPidProviderXMLError` explicitamente (capturada junto com
+   `MultipleObjectsReturned`, virando `event_status="unmatched"`). Agora
+   esse `except KeyError` sempre levanta `cls.DoesNotExist` diretamente,
+   então esse caminho vira um "created" normal (`registered=None`). Em
+   compensação, o `finally` passou a checar também
+   `select_record_response.get("unmatched_items")` (antes só
+   "matched_items") como gatilho para gravar auditoria — então o evento
+   ainda é registrado, só que com `event_status="created"`, não mais
+   "unmatched". `UnmatchedPidProviderXMLError` ainda existe e ainda é
+   capturada nesse except-clause, mas agora só chega lá se ALGO MAIS a
+   levantar diretamente (ex.: mockando `select_record` para levantá-la),
+   não mais internamente por `register()`.
+
 7. **`register()` agora faz `input_data.update(xml_with_pre.readable_data)`**
    em vez de `input_data.update(xml_with_pre.get_article_data())`, alinhado
    à migração do packtools (readable_data substitui get_article_data como
@@ -362,14 +378,37 @@ class UnmatchedPathTest(RegisterTestBase):
         self.assert_recorded_status("unmatched")
         self.assertIn("error_msg", response)
 
-    def test_unmatched_when_unmatched_items_without_registered(self):
-        # select_record retorna dict com unmatched_items e sem "registered"
-        # -> register() levanta UnmatchedPidProviderXMLError internamente
-        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select:
+    def test_unmatched_items_without_registered_now_falls_through_to_created(self):
+        """
+        MUDANÇA DE CONTRATO: select_record() retornando "unmatched_items"
+        sem "registered" NÃO levanta mais UnmatchedPidProviderXMLError
+        internamente (esse raise foi removido de register()). O
+        `pop("registered")` simplesmente dá KeyError, register() trata
+        como cls.DoesNotExist e segue o fluxo normal de "created"
+        (registered=None). A auditoria AINDA é gravada nesse caso -- não
+        por event_status="unmatched" (que não existe mais aqui), mas
+        porque o `finally` de register() passou a checar também
+        `select_record_response.get("unmatched_items")` como gatilho de
+        gravação (antes só olhava "matched_items").
+        """
+        with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select, \
+             patch(f"{PATCH_BASE}.PidProviderXML.complete_missing_xml_pids") as m_cmp, \
+             patch(f"{PATCH_BASE}.PidProviderXML.is_updated") as m_upd, \
+             patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
+
             m_select.return_value = {"unmatched_items": [{"id": 1}]}
+            m_cmp.return_value = {}
+            m_upd.return_value = None
+            saved = MagicMock(name="saved_ppx")
+            saved.data = {"v3": "ABC", "record_status": "created"}
+            m_save.return_value = saved
+
             response = PidProviderXML.register(self.xml, "file.xml", self.user)
 
-        self.assert_recorded_status("unmatched")
+        self.assertEqual(response.get("event_status"), "created")
+        self.assertNotIn("error_msg", response)
+        kwargs = self.assert_recorded_status("created")
+        self.assertIs(kwargs.get("pid_provider_xml"), saved)
 
     def test_multiple_objects_returned_is_unmatched(self):
         with patch(f"{PATCH_BASE}.PidProviderXML.select_record") as m_select:
