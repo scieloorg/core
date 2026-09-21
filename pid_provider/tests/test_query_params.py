@@ -16,8 +16,14 @@ Atualizado para cobrir a correção do falso-match na branch journal-article:
 - QueryBuilderPidProviderXML agora lê xml_adapter.xml_with_pre.readable_data
   (não mais get_article_data(300)), que expõe "body_fragment" no lugar de
   "partial_body".
-- compare() trata labels ausentes em input_data como None via .get(label)
-  (não os pula) — comportamento coberto em CompareTests.
+- compare() trata labels ausentes em input_data como None via .get(label);
+  quando o valor registrado e o de entrada são AMBOS falsy/None, o label
+  é ignorado no cálculo de total_score/percentual_score (não conta no
+  divisor) — comportamento coberto em CompareTests.
+- fix_get_data_to_compare() agora também inclui "surnames" e "pid_v2"
+  (lidos de xml_adapter.xml_with_pre) no dict de comparação, além de
+  "body_fragment_fingerprint" — comportamento coberto em
+  FixGetDataToCompareTests.
 
 ATENÇÃO: ajuste o caminho de import abaixo (`pid_provider.query_params`)
 para o módulo real onde essas classes/funções estão definidas no projeto,
@@ -36,6 +42,7 @@ from pid_provider.query_params import (
     compare,
     compare_items,
     compare_lists,
+    fix_get_data_to_compare,
     fix_xml_with_pre_data,
     get_score,
     zero_to_none,
@@ -125,6 +132,57 @@ class FixXMLWithPreDataTests(SimpleTestCase):
         result = fix_xml_with_pre_data(xml_with_pre)
 
         self.assertEqual(result, {"pkg_names": ["legacy"]})
+
+
+class FixGetDataToCompareTests(SimpleTestCase):
+    """
+    fix_get_data_to_compare() parte de xml_adapter.get_data_to_compare()
+    e adiciona/sobrescreve, direto de xml_adapter.xml_with_pre:
+    "body_fragment_fingerprint", "surnames" e "pid_v2" (este último lido
+    de xml_with_pre.v2, usado como critério extra de desambiguidade
+    quando não há dados textuais suficientes para comparar).
+    """
+
+    def test_adds_body_fragment_fingerprint_surnames_and_pid_v2(self):
+        adapter = MagicMock()
+        adapter.get_data_to_compare.return_value = {"z_surnames": "Silva"}
+        adapter.xml_with_pre.body_fragment_fingerprint = "fp-corpo"
+        adapter.xml_with_pre.surnames = "Silva Souza"
+        adapter.xml_with_pre.v2 = "V2-1"
+
+        result = fix_get_data_to_compare(adapter)
+
+        self.assertEqual(
+            result,
+            {
+                "z_surnames": "Silva",
+                "body_fragment_fingerprint": "fp-corpo",
+                "surnames": "Silva Souza",
+                "pid_v2": "V2-1",
+            },
+        )
+
+    def test_overwrites_preexisting_keys_from_get_data_to_compare(self):
+        """
+        Se get_data_to_compare() já retornar "surnames"/"pid_v2"/
+        "body_fragment_fingerprint", os valores lidos de xml_with_pre
+        prevalecem (são atribuídos por último).
+        """
+        adapter = MagicMock()
+        adapter.get_data_to_compare.return_value = {
+            "surnames": "valor-antigo",
+            "pid_v2": "valor-antigo",
+            "body_fragment_fingerprint": "valor-antigo",
+        }
+        adapter.xml_with_pre.body_fragment_fingerprint = "fp-novo"
+        adapter.xml_with_pre.surnames = "Silva"
+        adapter.xml_with_pre.v2 = "V2-novo"
+
+        result = fix_get_data_to_compare(adapter)
+
+        self.assertEqual(result["surnames"], "Silva")
+        self.assertEqual(result["pid_v2"], "V2-novo")
+        self.assertEqual(result["body_fragment_fingerprint"], "fp-novo")
 
 
 class ValidateInputDataTests(SimpleTestCase):
@@ -670,8 +728,14 @@ class CompareTests(SimpleTestCase):
     """
     compare() usa input_data.get(label) para cada label de
     registered_items -- um label ausente em input_data é tratado como
-    None (não é pulado): sempre gera uma entrada em "items", e conta no
-    cálculo de total_score/percentual_score via compare_items(None, ...).
+    None via .get(label).
+
+    Quando registered_item e o valor de entrada são AMBOS falsy/None, o
+    label é descartado do cálculo de total_score/percentual_score (entra
+    em "items" marcado com "ignored": True e score 1.0, mas não é somado
+    a total_score nem conta no divisor). Isso evita que campos vazios em
+    ambos os lados infle artificialmente o score de candidatos com pouca
+    informação real para comparar.
     """
 
     @patch("pid_provider.query_params.how_similar")
@@ -686,12 +750,13 @@ class CompareTests(SimpleTestCase):
         self.assertEqual(result["total_score"], 1.5)  # 1 (match) + 0.5 (mocked)
         self.assertEqual(result["percentual_score"], 0.75)
 
-    def test_missing_input_key_is_treated_as_none_not_skipped(self):
+    def test_missing_input_key_with_falsy_registered_value_is_ignored(self):
         """
-        Um label ausente em input_data vira None via .get(label) -- se o
-        valor registrado também é falsy (None), compare_items considera
-        os dois "iguais" (score 1), então o label ausente ENTRA em items
-        e contribui com score 1, não é descartado.
+        Um label ausente em input_data vira None via .get(label). Se o
+        valor registrado também é falsy (None), o par é considerado sem
+        informação em ambos os lados: entra em "items" com
+        "ignored": True e score 1.0, mas NÃO é somado a total_score nem
+        conta no divisor de percentual_score.
         """
         registered_items = {"z_collab": None, "z_surnames": "Silva"}
         input_data = {"z_surnames": "Silva"}  # z_collab ausente -> None
@@ -701,14 +766,20 @@ class CompareTests(SimpleTestCase):
         self.assertEqual(len(result["items"]), 2)
         labels = {item["label"] for item in result["items"]}
         self.assertEqual(labels, {"z_collab", "z_surnames"})
-        self.assertEqual(result["total_score"], 2)
-        self.assertEqual(result["percentual_score"], 1)
+        ignored_item = next(
+            item for item in result["items"] if item["label"] == "z_collab"
+        )
+        self.assertTrue(ignored_item.get("ignored"))
+        self.assertEqual(ignored_item["score"], 1.0)
+        # z_collab (ignorado) não entra na soma; só z_surnames (score 1) conta
+        self.assertEqual(result["total_score"], 1.0)
+        self.assertEqual(result["percentual_score"], 1.0)
 
     def test_missing_input_key_with_truthy_registered_value_lowers_score(self):
         """
         Se o label ausente em input_data tem um valor registrado truthy,
         o None resultante de .get(label) NÃO é igual ao registrado --
-        cai no ramo how_similar (não é match automático).
+        cai no ramo how_similar (não é match automático nem ignorado).
         """
         registered_items = {"z_surnames": "Silva"}
         input_data = {}  # z_surnames ausente -> None
@@ -717,13 +788,34 @@ class CompareTests(SimpleTestCase):
 
         self.assertEqual(len(result["items"]), 1)
         self.assertEqual(result["items"][0]["label"], "z_surnames")
+        self.assertNotIn("ignored", result["items"][0])
         self.assertLess(result["items"][0]["score"], 1)
 
-    def test_empty_registered_items_raises_zero_division_error(self):
+    def test_empty_registered_items_returns_zero_percentual_score(self):
         """
-        Único caso em que items fica vazio: registered_items já vem
-        vazio -- não há nada para iterar, então
-        total_score / len(items) levanta ZeroDivisionError.
+        Quando registered_items vem vazio, não há nada para iterar:
+        items fica vazio e total_items permanece 0. Diferente da versão
+        anterior, percentual_score agora usa um guard explícito
+        (total_items > 0) e retorna 0.0 em vez de levantar
+        ZeroDivisionError.
         """
-        with self.assertRaises(ZeroDivisionError):
-            compare({}, {"z_surnames": "Silva"})
+        result = compare({}, {"z_surnames": "Silva"})
+        self.assertEqual(result, {"items": [], "total_score": 0.0, "percentual_score": 0.0})
+
+    def test_all_fields_falsy_on_both_sides_returns_zero_percentual_score(self):
+        """
+        Quando TODOS os campos são falsy/None em ambos os lados, todos
+        são ignorados: items não fica vazio (cada label gera uma entrada
+        "ignored"), mas total_items permanece 0, então percentual_score
+        é 0.0 (não 1.0) -- não há confusão entre "sem dados para
+        comparar" (0.0) e "comparou e tudo bateu" (1.0).
+        """
+        registered_items = {"z_collab": None, "z_links": ""}
+        input_data = {"z_collab": None}
+
+        result = compare(registered_items, input_data)
+
+        self.assertEqual(len(result["items"]), 2)
+        self.assertTrue(all(item.get("ignored") for item in result["items"]))
+        self.assertEqual(result["total_score"], 0.0)
+        self.assertEqual(result["percentual_score"], 0.0)
