@@ -36,7 +36,10 @@ def fix_get_data_to_compare(xml_adapter):
     data = xml_adapter.get_data_to_compare()
     # independentemente da release do packtools,
     # o valor para z_partial_body na comparação é body_fragment_fingerprint
-    data["body_fragment_fingerprint"] = xml_adapter.xml_with_pre.body_fragment_fingerprint
+    xml_with_pre = xml_adapter.xml_with_pre
+    data["body_fragment_fingerprint"] = xml_with_pre.body_fragment_fingerprint
+    data["surnames"] = xml_with_pre.surnames
+    data["pid_v2"] = xml_with_pre.v2
     return data
 
 
@@ -63,36 +66,36 @@ def fix_get_article_data(xml_with_pre, max_length=300):
 
 def compare(registered_items, input_data):
     """
-    Compara, item a item, os valores registrados (registered_items) com
-    os valores do XML de entrada (input_data).
+    Compara os metadados do registro gravado (registered_items) com os dados
+    do XML de entrada (input_data).
 
-    Para cada label em registered_items, obtém o valor correspondente em
-    input_data via `.get(label)` — um label ausente em input_data é
-    tratado como None (não é pulado). Delega a comparação individual a
-    compare_items() e agrega os scores.
-
-    Returns
-    -------
-    dict
-        {
-            "items": lista de resultados de compare_items() (um por label),
-            "total_score": soma dos scores individuais,
-            "percentual_score": total_score / len(items),
-        }
-
-    Levanta ZeroDivisionError se registered_items estiver vazio (items
-    fica vazio e a divisão por zero não é tratada explicitamente).
+    O loop é ditado exclusivamente pelas chaves presentes em registered_items.
+    Campos em que ambos os lados são falsy/None são descartados do divisor.
     """
-    total_score = 0
+    total_score = 0.0
+    total_items = 0
     items = []
+
     for label, registered_item in registered_items.items():
-        result = compare_items(label, registered_item, input_data.get(label))
+        input_data_item = input_data.get(label)
+
+        # Se o banco e a entrada forem nulos/falsy para este campo, não conta na média
+        if not registered_item and not input_data_item:
+            items.append({"label": label, "score": 1.0, "ignored": True})
+            continue
+
+        result = compare_items(label, registered_item, input_data_item)
         items.append(result)
+
         total_score += result["score"]
+        total_items += 1
+
+    percentual_score = (total_score / total_items) if total_items > 0 else 0.0
+
     return {
         "items": items,
         "total_score": total_score,
-        "percentual_score": total_score / len(items)
+        "percentual_score": percentual_score,
     }
 
 
