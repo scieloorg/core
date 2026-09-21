@@ -679,15 +679,29 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
     def get_readable_data(self):
         readable_data = self.readable_data or {}
+        changed = False
         if readable_data:
             try:
                 readable_data.pop("partial_body")
+                changed = True
             except KeyError:
                 pass
+        else:
+            xml_with_pre = self.xml_with_pre
+            if xml_with_pre:
+                readable_data = fix_get_article_data(xml_with_pre)
+                changed = True
+
+        if not changed:
             return readable_data
-        if self.xml_with_pre:
-            return fix_get_article_data(self.xml_with_pre)
-        return {}
+
+        try:
+            self.readable_data = readable_data
+            self.save()
+        except Exception as e:
+            # ignora erro de atualização
+            pass
+        return readable_data
 
     @property
     def data_to_compare(self):
@@ -696,10 +710,16 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         if readable:
             titles = readable.get("article_titles")
             body_fragment = readable.get("body_fragment")
+            surnames = readable.get("surnames")
             if titles:
                 data["article_titles"] = titles
             if body_fragment:
                 data["body_fragment"] = body_fragment
+            if surnames:
+                data["surnames"] = surnames
+        else:
+            # usar pid_v2 para garantir disambiguidade
+            data["pid_v2"] = self.v2
         data.update({
             "z_surnames": self.z_surnames,
             "z_collab": self.z_collab,
@@ -805,9 +825,6 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 try:
                     registered = select_record_response.pop("registered")
                 except KeyError:
-                    unmatched_items = select_record_response.get("unmatched_items")
-                    if unmatched_items:
-                        raise exceptions.UnmatchedPidProviderXMLError
                     raise cls.DoesNotExist
                 event_status = "updated"
                 if select_record_response.get("matched_items"):
@@ -877,7 +894,12 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         finally:
             response["event_status"] = event_status
             record_all = PidProviderSetting.load().record_all_registration_events
-            if record_all or error_type or (select_record_response or {}).get("matched_items"):
+            if (
+                record_all or 
+                error_type or 
+                (select_record_response or {}).get("matched_items") or
+                (select_record_response or {}).get("unmatched_items")
+            ):
                 PidProviderXMLRegistration.record(
                     user=user,
                     pid_provider_xml=registered,
@@ -1202,9 +1224,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         found = []
         items = {}
         responses = {}
-        min_rate = 0.6
-        if len(xml_adapter_data) <= 4:
-            min_rate = 0.49
+        min_rate = settings.PID_PROVIDER_MIN_RATE
         for item in results:
             item_data = item.data_to_compare
             response = compare(item_data, xml_adapter_data)
@@ -1399,9 +1419,6 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 try:
                     registered = select_record_response.pop("registered")
                 except KeyError:
-                    unmatched_items = select_record_response.get("unmatched_items")
-                    if unmatched_items:
-                        raise exceptions.UnmatchedPidProviderXMLError
                     raise cls.DoesNotExist
                 matched_items = select_record_response.get("matched_items")
                 if matched_items:
