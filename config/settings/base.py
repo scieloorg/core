@@ -728,3 +728,6 @@ PROFILING_LOG_ALL = env.bool('DJANGO_PROFILING_LOG_ALL', default=True)
 
 # LINK TO OLD SCIELO
 SCIELO_OLD_URL = env.str("SCIELO_OLD_URL", default="http://old.scielo.org/")
+
+# Score mínimo (percentual_score) para considerar um candidato de PidProviderXML como aprovado
+PID_PROVIDER_MIN_RATE = env.float("PID_PROVIDER_MIN_RATE", default=0.65)

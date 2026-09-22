@@ -1,5 +1,4 @@
-from functools import cached_property
-
+from django.conf import settings
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
@@ -36,7 +35,10 @@ def fix_get_data_to_compare(xml_adapter):
     data = xml_adapter.get_data_to_compare()
     # independentemente da release do packtools,
     # o valor para z_partial_body na comparação é body_fragment_fingerprint
-    data["body_fragment_fingerprint"] = xml_adapter.xml_with_pre.body_fragment_fingerprint
+    xml_with_pre = xml_adapter.xml_with_pre
+    data["body_fragment_fingerprint"] = xml_with_pre.body_fragment_fingerprint
+    data["surnames"] = xml_with_pre.surnames
+    data["pid_v2"] = xml_with_pre.v2
     return data
 
 
@@ -63,36 +65,36 @@ def fix_get_article_data(xml_with_pre, max_length=300):
 
 def compare(registered_items, input_data):
     """
-    Compara, item a item, os valores registrados (registered_items) com
-    os valores do XML de entrada (input_data).
+    Compara os metadados do registro gravado (registered_items) com os dados
+    do XML de entrada (input_data).
 
-    Para cada label em registered_items, obtém o valor correspondente em
-    input_data via `.get(label)` — um label ausente em input_data é
-    tratado como None (não é pulado). Delega a comparação individual a
-    compare_items() e agrega os scores.
-
-    Returns
-    -------
-    dict
-        {
-            "items": lista de resultados de compare_items() (um por label),
-            "total_score": soma dos scores individuais,
-            "percentual_score": total_score / len(items),
-        }
-
-    Levanta ZeroDivisionError se registered_items estiver vazio (items
-    fica vazio e a divisão por zero não é tratada explicitamente).
+    O loop é ditado exclusivamente pelas chaves presentes em registered_items.
+    Campos em que ambos os lados são falsy/None são descartados do divisor.
     """
-    total_score = 0
+    total_score = 0.0
+    total_items = 0
     items = []
+
     for label, registered_item in registered_items.items():
-        result = compare_items(label, registered_item, input_data.get(label))
+        input_data_item = input_data.get(label)
+
+        # Se o banco e a entrada forem nulos/falsy para este campo, não conta na média
+        if registered_item is None and input_data_item is None:
+            items.append({"label": label, "score": 1.0, "ignored": True})
+            continue
+
+        result = compare_items(label, registered_item, input_data_item)
         items.append(result)
+
         total_score += result["score"]
+        total_items += 1
+
+    percentual_score = (total_score / total_items) if total_items > 0 else 0.0
+
     return {
         "items": items,
         "total_score": total_score,
-        "percentual_score": total_score / len(items)
+        "percentual_score": percentual_score,
     }
 
 
@@ -138,8 +140,10 @@ def compare_items(label, registered, input_data):
     """
     if isinstance(registered, list):
         score = compare_lists(registered, input_data)
-    elif (input_data or None) == (registered or None):
+    elif input_data == registered:
         score = 1
+    elif label.startswith("z_") or 'finger' in label:
+        score = 0
     else:
         score = how_similar(input_data or "", registered or "")
     response = {"label": label, "score": score}
@@ -287,33 +291,64 @@ class QueryBuilderPidProviderXML:
     @property
     def identifier_queries(self):
         """
-        Constrói queries para busca por identificadores (v3, v2, aop_pid, pkg_name, DOI).
+        Constrói query para busca por identificadores diretos (v3, v2,
+        aop_pid, DOI principal).
+
+        Separada de pkg_name_queries (ver docstring de pkg_name_queries
+        para o porquê) para que cada uma seja executada como uma etapa
+        própria em select_records, do critério mais específico
+        (identificadores) para o mais genérico (nome de pacote).
+
+        Quando nenhum dos identificadores está presente, retorna Q()
+        (query vazia). Q() não deve ser usada diretamente em
+        queryset.filter(): em Django, filter(Q()) não restringe nada e
+        retornaria TODOS os registros, o que aqui significaria "nenhum
+        critério" e não "qualquer registro serve". Por isso o consumidor
+        (PidProviderXML.select_records) trata explicitamente o caso
+        `identifier_queries == Q()` como "sem candidatos" antes de
+        filtrar.
         """
         q = Q()
-        
+
         v3 = self.xml_adapter.v3
         v2 = self.xml_adapter.v2
         aop_pid = self.xml_adapter.aop_pid
-    
+
         if v3:
             q |= Q(v3=v3)
-        
+
         if v2:
             q |= Q(v2=v2)
-        
+
         if aop_pid:
             q |= Q(v2=aop_pid) | Q(aop_pid=aop_pid)
-            
-        pkg_names = self.pkg_name_list
-        if pkg_names:
-            q |= Q(pkg_name__in=pkg_names)
 
         main_doi = self.adapter_data.get("main_doi")
         if main_doi:
             q |= Q(main_doi=main_doi)
-            
+
         return q
-    
+
+    @property
+    def pkg_name_queries(self):
+        """
+        Constrói query para busca por nome(s) de pacote (pkg_name_list).
+
+        Extraída de identifier_queries para ser executada como etapa
+        própria em select_records, logo em seguida à busca por
+        identificadores diretos (v3/v2/aop_pid/DOI) — pkg_name é menos
+        específico que esses (pode colidir entre revisões/depósitos do
+        mesmo artigo), por isso roda depois, não junto.
+
+        Mesma observação de identifier_queries sobre Q(): quando não há
+        nenhum pkg_name disponível, retorna Q() e o consumidor deve
+        tratar esse caso como "sem candidatos", não filtrar com ele.
+        """
+        pkg_names = self.pkg_name_list
+        if pkg_names:
+            return Q(pkg_name__in=pkg_names)
+        return Q()
+
     @property
     def issn_query(self):
         """
@@ -415,28 +450,177 @@ class QueryBuilderPidProviderXML:
             z_links=z_links,
         ) & self.partial_body_query
 
-    def get_article_data_query(self, issue):
+    def get_article_data_query(self, issue, flexible):
         """
-        Combina article_data_query com os parâmetros de fascículo e
-        localização do artigo (quando `issue` é truthy), ou exige que
-        todos os campos de localização estejam nulos (quando `issue` é
-        falsy) — caso de artigos sem paginação/localização definida
-        (ex.: ahead-of-print).
+        Constrói uma variante da query de candidatos por dados do
+        artigo, combinando dois eixos independentes: `issue` (o
+        candidato TEM ou NÃO TEM fascículo/localização) e `flexible`
+        (a busca EXIGE ou NÃO os hashes textuais do artigo). As 4
+        combinações resultantes são usadas por select_records como
+        alternativas (OR) — da mais estrita à mais permissiva — para
+        achar candidatos mesmo quando o conteúdo textual do artigo foi
+        corrigido (errata) mas fascículo/localização permanecem iguais.
+
+        Parameters
+        ----------
+        issue : bool
+            Truthy: exige que o candidato case com `issue_params`
+            (pub_year/volume/number/suppl) E `article_location_params`
+            (elocation_id/fpage/fpage_seq/lpage/v2__endswith) — caso
+            normal, com fascículo e paginação definidos.
+            Falsy: exige o oposto — todos os campos de
+            volume/number/suppl/elocation_id/fpage/lpage NULOS no
+            candidato — caso de artigos sem paginação/localização
+            definida (ex.: ahead-of-print).
+        flexible : bool
+            False (estrito): exige TAMBÉM que `article_data_query`
+            (hashes de sobrenomes/colaboradores/links + fingerprint do
+            corpo) do candidato case com os do XML de entrada. É a
+            busca original, sem afrouxamento.
+            True: DISPENSA essa exigência de conteúdo textual — casa só
+            por fascículo/localização (quando `issue`) ou só pela
+            ausência delas combinada com `article_location_params`
+            (quando não `issue`). Serve para achar o mesmo artigo
+            depois que seu conteúdo textual mudou.
         """
         if issue:
-            return (
-                self.article_data_query & 
+            q = (
                 Q(**self.issue_params) & 
                 Q(**self.article_location_params)
             )
-        return (
-            self.article_data_query & 
-            Q(
-                volume__isnull=True,
-                number__isnull=True,
-                suppl__isnull=True,
-                elocation_id__isnull=True,
-                fpage__isnull=True,
-                lpage__isnull=True,
-            )
+            if flexible:
+                return q
+            return self.article_data_query & q
+        # not issue
+        q = Q(
+            volume__isnull=True,
+            number__isnull=True,
+            suppl__isnull=True,
+            elocation_id__isnull=True,
+            fpage__isnull=True,
+            lpage__isnull=True,
         )
+        if flexible:
+            return q & Q(**self.article_location_params)
+        return q & self.article_data_query
+
+def get_best_match(results, xml_adapter_data):
+    """
+    Compara uma lista de candidatos (PidProviderXML) com os dados do XML
+    recebido e classifica os candidatos por similaridade.
+
+    Parameters
+    ----------
+    results : list[PidProviderXML]
+        Lista JÁ MATERIALIZADA (não queryset) de candidatos a comparar.
+    xml_adapter_data : dict
+        Dados de comparação do XML de entrada, ou seja, o retorno de
+        ``xml_adapter.get_data_to_compare()``.
+
+    Returns
+    -------
+    dict
+        Todas as chaves abaixo são OPCIONAIS — só aparecem quando há
+        conteúdo para elas. Use ``.get(...)`` ou ``"chave" in result``
+        ao consumir o retorno, nunca acesso direto.
+
+        - ``"unmatched"``: presente apenas se houver ao menos 1
+        candidato com ``percentual_score`` <= min_rate. Lista de
+        ``item.data`` desses candidatos.
+        - ``"registered"``: presente apenas se houver ao menos 1
+        candidato aprovado (score > min_rate). Contém o OBJETO
+        ``PidProviderXML`` (não o dict ``.data``) do candidato com
+        maior score — em caso de empate, o critério de desempate é
+        ``updated`` mais recente e, em seguida, maior ``id``.
+        - ``"matched"``: presente apenas se houver 2 OU MAIS candidatos
+        aprovados, EXCLUINDO os empatados em 1º lugar com "registered"
+        (ver "multiple_matched"). Contém ``item.data`` dos candidatos
+        aprovados com score estritamente menor que o máximo, na mesma
+        ordem de score decrescente.
+        - ``"multiple_matched"``: presente apenas se houver 2 OU MAIS
+        candidatos aprovados. Contém ``item.data`` dos candidatos
+        empatados em score com "registered" (score == score máximo),
+        excluindo o próprio "registered".
+    """
+    detail = {}
+    found = []
+    items = {}
+    responses = {}
+    min_rate = settings.PID_PROVIDER_MIN_RATE
+    for item in results:
+        item_data = item.data_to_compare
+        response = compare(item_data, xml_adapter_data)
+        items[item.id] = item
+        responses[item.id] = response
+        found.append((response["percentual_score"], item.updated.isoformat(), item.id))
+    found = sorted(found, reverse=True)
+
+    matched = []
+    unmatched = []
+    for percentual_score, updated, item_id in found:
+        data = {"data": items[item_id].data, "response": responses[item_id]}
+        if percentual_score > min_rate:
+            matched.append(data)
+        else:
+            unmatched.append(data)
+    if matched:
+        registered_id = found[0][-1]
+        detail["registered"] = items[registered_id]
+        max_percentual_score = responses[registered_id]["percentual_score"]
+        if len(matched) > 1:
+            detail["matched"] = []
+            detail["multiple_matched"] = []
+            for matched_item in matched[1:]:
+                if matched_item["response"]["percentual_score"] == max_percentual_score:
+                    detail["multiple_matched"].append(matched_item)
+                else:
+                    detail["matched"].append(matched_item)
+            if detail["multiple_matched"]:
+                detail["multiple_matched"].insert(0, matched[0])
+    if unmatched:
+        detail["unmatched"] = unmatched
+    return detail
+
+
+def select_record(xml_adapter, selection_results):
+    """
+    Decide qual candidato de `selection_results` corresponde ao artigo do XML.
+
+    `selection_results` é retornado por `select_records()`.
+
+    Itera sobre listas já materializadas. Se encontrar um candidato
+    `registered`, retorna o resultado com seus respectivos matches/unmatches.
+    Empates em `multiple_matched_items` indicam ambiguidade e são tratados pelo
+    consumidor como erro. Se nenhum for registrado, retorna os `unmatched_items`.
+    """
+    unmatched_items = {}
+    xml_adapter_data_to_compare = fix_get_data_to_compare(xml_adapter)
+    for label, results in selection_results:
+        if not results:
+            continue
+
+        result = get_best_match(results, xml_adapter_data_to_compare)
+
+        matched = result.get("matched")
+        multiple_matched = result.get("multiple_matched")
+        unmatched = result.get("unmatched")
+        registered = result.get("registered")
+        if registered:
+            response = {
+                "total_results": len(results),
+                "registered": registered,
+            }
+            if matched:
+                response["matched_items"] = {label: matched}
+            if multiple_matched:
+                response["multiple_matched_items"] = {label: multiple_matched}
+            if unmatched:
+                response["unmatched_items"] = {label: unmatched}
+            return response
+
+        if unmatched:
+            unmatched_items[label] = unmatched
+
+    if unmatched_items:
+        return {"unmatched_items": unmatched_items}
+    return {}

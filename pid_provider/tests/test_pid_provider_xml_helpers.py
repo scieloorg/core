@@ -10,7 +10,7 @@ já têm cobertura própria em outros arquivos deste diretório.
 """
 from datetime import timedelta
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase
@@ -313,12 +313,75 @@ class GetReadableDataTests(TestCase):
         self.assertNotIn("partial_body", result)
         self.assertEqual(result["article_titles"], ["T"])
 
+    def test_persists_readable_data_after_popping_partial_body(self):
+        """
+        MUDANÇA DE CONTRATO: quando "partial_body" é removido de
+        readable_data, get_readable_data() agora persiste essa mudança
+        (self.readable_data = readable_data; self.save()) em vez de só
+        retornar o dict em memória -- evita reprocessar/reconstruir o
+        mesmo dado a cada chamada futura.
+        """
+        ppx = PidProviderXML.objects.create(
+            creator=self.user,
+            v3="A",
+            readable_data={"article_titles": ["T"], "partial_body": "legacy"},
+        )
+        ppx.get_readable_data()
+        ppx.refresh_from_db()
+        self.assertNotIn("partial_body", ppx.readable_data)
+        self.assertEqual(ppx.readable_data["article_titles"], ["T"])
+
     def test_returns_empty_dict_when_no_readable_data_and_no_current_version(self):
         ppx = PidProviderXML.objects.create(creator=self.user, v3="A", readable_data=None)
         self.assertEqual(ppx.get_readable_data(), {})
         # xml_with_pre falhou (sem current_version) -> marca como inválido
         ppx.refresh_from_db()
         self.assertEqual(ppx.proc_status, "NVALID")
+
+    def test_computes_and_persists_from_xml_with_pre_when_no_stored_data(self):
+        """
+        MUDANÇA DE CONTRATO: quando não há readable_data armazenado mas
+        self.xml_with_pre está disponível, get_readable_data() agora
+        calcula via fix_get_article_data(xml_with_pre) E PERSISTE o
+        resultado (self.readable_data = ...; self.save()), em vez de só
+        devolver o dict calculado sem gravar -- assim o cálculo caro só
+        acontece uma vez por registro.
+        """
+        ppx = PidProviderXML.objects.create(creator=self.user, v3="A", readable_data=None)
+        fake_xml_with_pre = SimpleNamespace(
+            get_article_data=lambda max_length: {
+                "article_titles": ["Computed Title"],
+                "partial_body": "legacy",
+            }
+        )
+        with patch.object(
+            PidProviderXML, "xml_with_pre", new_callable=PropertyMock
+        ) as mock_xml_with_pre:
+            mock_xml_with_pre.return_value = fake_xml_with_pre
+            result = ppx.get_readable_data()
+
+        self.assertEqual(result["article_titles"], ["Computed Title"])
+        self.assertNotIn("partial_body", result)
+
+        ppx.refresh_from_db()
+        self.assertEqual(ppx.readable_data["article_titles"], ["Computed Title"])
+
+    def test_save_error_is_swallowed_and_computed_data_still_returned(self):
+        """
+        Se a persistência falhar (ex.: erro de banco), get_readable_data()
+        não deve propagar a exceção -- ela é silenciosamente ignorada, e
+        o dict calculado/atualizado em memória ainda é retornado.
+        """
+        ppx = PidProviderXML.objects.create(
+            creator=self.user,
+            v3="A",
+            readable_data={"article_titles": ["T"], "partial_body": "legacy"},
+        )
+        with patch.object(PidProviderXML, "save", side_effect=Exception("boom")):
+            result = ppx.get_readable_data()
+
+        self.assertNotIn("partial_body", result)
+        self.assertEqual(result["article_titles"], ["T"])
 
 
 class DataToCompareTests(TestCase):
@@ -338,12 +401,44 @@ class DataToCompareTests(TestCase):
         self.assertEqual(data["body_fragment"], "frag")
         self.assertEqual(data["z_surnames"], "Silva")
         self.assertEqual(data["body_fragment_fingerprint"], "hash-1")
+        # readable não tem "surnames" -> chave não deve aparecer
+        self.assertNotIn("surnames", data)
+        # readable é truthy -> não cai no fallback de "pid_v2"
+        self.assertNotIn("pid_v2", data)
+
+    def test_includes_surnames_from_readable_data_when_present(self):
+        """
+        NOVO: readable_data pode conter "surnames" (usado por
+        fix_get_data_to_compare/compare() para reforçar a desambiguidade
+        de candidatos). Quando presente e truthy, entra em data_to_compare.
+        """
+        ppx = PidProviderXML.objects.create(
+            creator=self.user,
+            v3="A",
+            readable_data={"article_titles": ["T1"], "surnames": "Silva Souza"},
+        )
+        data = ppx.data_to_compare
+        self.assertEqual(data["surnames"], "Silva Souza")
 
     def test_omits_titles_and_body_fragment_when_absent(self):
         ppx = PidProviderXML.objects.create(creator=self.user, v3="A", readable_data=None)
         data = ppx.data_to_compare
         self.assertNotIn("article_titles", data)
         self.assertNotIn("body_fragment", data)
+        self.assertNotIn("surnames", data)
+
+    def test_falls_back_to_pid_v2_when_readable_data_is_empty(self):
+        """
+        NOVO: quando get_readable_data() não retorna nada de útil
+        (nem títulos, nem body_fragment, nem sobrenomes), data_to_compare
+        usa self.v2 (pid_v2) como critério extra de desambiguidade, em
+        vez de deixar o candidato sem nenhum dado textual para comparar.
+        """
+        ppx = PidProviderXML.objects.create(
+            creator=self.user, v3="A", v2="V2-FALLBACK", readable_data=None
+        )
+        data = ppx.data_to_compare
+        self.assertEqual(data["pid_v2"], "V2-FALLBACK")
 
 
 class DataPropertyTests(TestCase):

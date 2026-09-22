@@ -167,14 +167,12 @@ class XMLVersionViewSet(CommonControlFieldViewSet):
         "updated",
     ]
     search_fields = (
-        "file",
+        "file__path",
         "pid_provider_xml__v3",
         "pid_provider_xml__v2",
         "pid_provider_xml__aop_pid",
-        "pid_provider_xml__pkg_name",
-        "pub_year",
-        "available_since",
     )
+
 
 class XMLURLViewSet(CommonControlFieldViewSet):
     model = XMLURL
