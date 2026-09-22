@@ -1092,44 +1092,11 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     @profile_classmethod
     def select_records(cls, xml_adapter):
         """
-        Gera pares (label, lista_de_candidatos) para cada estratégia de
-        correspondência, do mais específico ao mais genérico.
-
-        Cada branch é materializada (list(...)) uma única vez aqui, para
-        que o consumidor (select_record) nunca precise avaliar a queryset
-        mais de uma vez (evita repetir .exists() + .count() + iteração,
-        que geram queries separadas no banco). Por ser um generator, uma
-        branch só é construída e avaliada quando o consumidor de fato
-        solicita o próximo item — se a primeira branch já resolver, as
-        demais nunca chegam a rodar no banco.
-
-        identifier_queries pode retornar Q() (query vazia) quando não há
-        nenhum identificador disponível no XML de entrada. filter(Q())
-        não restringe nada e retornaria TODOS os registros de
-        PidProviderXML — não é esse o comportamento desejado para
-        "nenhum critério" — então essa branch usa list() apenas quando a
-        Q não está vazia, e produz [] diretamente caso contrário (sem
-        consulta ao banco).
-
-        Dentro do periódico (issn_query), a busca por dados do artigo é
-        feita em duas branches, da mais estrita à mais permissiva, na
-        mesma lógica "para na primeira que resolver" do restante deste
-        generator:
-
-        - "journal-issue-article-strict": exige os hashes textuais
-          (article_data_query) E fascículo/localização (com ou sem
-          issue). Só avança para a próxima branch se não achar nenhum
-          candidato aqui.
-        - "journal-issue-article-flexible": dispensa os hashes
-          textuais, casando só por fascículo/localização (com ou sem
-          issue). Cobre o caso de artigo com conteúdo corrigido
-          (errata) que mudou os hashes mas manteve fascículo/paginação
-          — só roda quando o estrito não resolveu.
-
-        Cada branch combina via OR as variantes com/sem issue; não
-        precisa de .distinct() porque get_article_data_query só filtra
-        por campos do próprio PidProviderXML (sem join), então OR nunca
-        duplica linha.
+        Gera pares (label, lista_de_candidatos), da estratégia mais
+        rápida (chaves, artificiais) para a mais custosa (dados do
+        artigo, o critério essencial de identidade — quem de fato
+        decide é select_record). Generator: uma branch só é montada e
+        avaliada se a anterior não resolver.
         """
         qbuilder = QueryBuilderPidProviderXML(xml_adapter)
         qbuilder.validate_input_data()
@@ -1137,7 +1104,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
         # select_related("current_version") já vem do manager
         objects = cls.objects.all()
 
-        # 1) correspondência direta por identificadores (v3, v2, aop_pid, DOI)
+        # 1) busca por v3, v2, aop_pid, DOI
         identifier_queries = qbuilder.identifier_queries
         yield "ids", (
             list(objects.filter(identifier_queries))
@@ -1147,7 +1114,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
 
         selected_journal = objects.filter(qbuilder.issn_query)
 
-        # 2) journal + issue + dados do artigo, estrito (exige hashes textuais)
+        # 2) busca exata com journal + issue + dados do artigo
         yield (
             "journal-issue-article-strict",
             list(
@@ -1158,7 +1125,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             ),
         )
 
-        # 3) journal + issue + dados do artigo, flexível (dispensa hashes textuais)
+        # 3) busca flexível com journal + issue + dados do artigo
         yield (
             "journal-issue-article-flexible",
             list(
