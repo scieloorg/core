@@ -718,7 +718,9 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             if surnames:
                 data["surnames"] = surnames
         else:
-            # usar pid_v2 para garantir disambiguidade
+            # caso xml esteja ilegível
+            # usar pid_v2 para reduzir a disambiguidade, pois sem
+            # article_titles, body_fragment, surnames pode ser insuficiente
             data["pid_v2"] = self.v2
         data.update({
             "z_surnames": self.z_surnames,
