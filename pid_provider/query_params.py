@@ -584,17 +584,14 @@ def get_best_match(results, xml_adapter_data):
 
 def select_record(xml_adapter, selection_results):
     """
-    Consome os pares (label, lista_de_candidatos) produzidos por
-    PidProviderXML.select_records. As listas já vêm materializadas,
-    então aqui só checamos truthiness (nunca .exists()/.count() sobre
-    queryset).
+    Decide qual candidato de `selection_results` corresponde ao artigo do XML.
 
-    `multiple_matched_items` (quando presente) contém candidatos empatados
-    em score com "registered" (ver get_best_match) -- ou seja, escolher
-    "registered" entre eles foi arbitrário (desempate por `updated`/`id`).
-    O consumidor (PidProviderXML.register/.is_registered) trata essa chave
-    como ambiguidade e levanta UnmatchedPidProviderXMLError antes de
-    aceitar "registered".
+    `selection_results` é retornado por `select_records()`.
+
+    Itera sobre listas já materializadas. Se encontrar um candidato
+    `registered`, retorna o resultado com seus respectivos matches/unmatches.
+    Empates em `multiple_matched_items` indicam ambiguidade e são tratados pelo
+    consumidor como erro. Se nenhum for registrado, retorna os `unmatched_items`.
     """
     unmatched_items = {}
     xml_adapter_data_to_compare = fix_get_data_to_compare(xml_adapter)
