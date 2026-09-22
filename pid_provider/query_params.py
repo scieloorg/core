@@ -79,7 +79,7 @@ def compare(registered_items, input_data):
         input_data_item = input_data.get(label)
 
         # Se o banco e a entrada forem nulos/falsy para este campo, não conta na média
-        if not registered_item and not input_data_item:
+        if registered_item is None and input_data_item is None:
             items.append({"label": label, "score": 1.0, "ignored": True})
             continue
 
@@ -140,8 +140,10 @@ def compare_items(label, registered, input_data):
     """
     if isinstance(registered, list):
         score = compare_lists(registered, input_data)
-    elif (input_data or None) == (registered or None):
+    elif input_data == registered:
         score = 1
+    elif label.startswith("z_") or 'finger' in label:
+        score = 0
     else:
         score = how_similar(input_data or "", registered or "")
     response = {"label": label, "score": score}
