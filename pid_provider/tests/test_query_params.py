@@ -736,17 +736,31 @@ class CompareItemsTests(SimpleTestCase):
         result = compare_items("z_surnames", "Silva", "Silva")
         self.assertEqual(result, {"label": "z_surnames", "score": 1})
 
-    def test_none_and_falsy_are_treated_as_equal(self):
+    def test_z_prefixed_field_none_vs_empty_is_not_normalized_to_equal(self):
+        """
+        compare_items não normaliza falsy como equivalente (None != "");
+        esse tipo de ignore só existe em compare(), e mesmo lá é uma
+        checagem estrita de `is None`, não de falsy em geral. Aqui, sem
+        bater a igualdade e com label "z_"-prefixado (hash), cai direto
+        no ramo de score 0 -- campos hash não usam comparação fuzzy
+        (how_similar), pois um hash é igual ou não é.
+        """
         result = compare_items("z_collab", None, "")
-        self.assertEqual(result, {"label": "z_collab", "score": 1})
+        self.assertEqual(
+            result,
+            {"label": "z_collab", "score": 0, "registered": None, "input_data": ""},
+        )
 
     @patch("pid_provider.query_params.how_similar")
-    def test_different_scalars_uses_how_similar_and_includes_registered(
+    def test_different_scalars_for_hash_label_scores_zero_without_how_similar(
         self, mock_how_similar
     ):
         """
-        Quando score != 1, o response inclui "registered" E "input_data"
-        (não apenas "registered") -- ambos úteis para inspecionar a
+        Para um label "z_"-prefixado (hash), scalars diferentes NÃO
+        passam por how_similar() -- um hash é igual ou não é, não faz
+        sentido comparação fuzzy. O score vira 0 direto e how_similar
+        nunca chega a ser chamado. Quando score != 1, o response ainda
+        inclui "registered" E "input_data" -- úteis para inspecionar a
         divergência.
         """
         mock_how_similar.return_value = 0.4
@@ -755,15 +769,15 @@ class CompareItemsTests(SimpleTestCase):
             result,
             {
                 "label": "z_surnames",
-                "score": 0.4,
+                "score": 0,
                 "registered": "Silva",
                 "input_data": "Souza",
             },
         )
-        mock_how_similar.assert_called_once_with("Souza", "Silva")
+        mock_how_similar.assert_not_called()
 
     @patch("pid_provider.query_params.how_similar")
-    def test_none_input_data_falls_back_to_empty_string_for_how_similar(
+    def test_none_input_data_for_hash_label_scores_zero_without_how_similar(
         self, mock_how_similar
     ):
         mock_how_similar.return_value = 0.2
@@ -772,15 +786,15 @@ class CompareItemsTests(SimpleTestCase):
             result,
             {
                 "label": "z_links",
-                "score": 0.2,
+                "score": 0,
                 "registered": "algum-link",
                 "input_data": None,
             },
         )
-        mock_how_similar.assert_called_once_with("", "algum-link")
+        mock_how_similar.assert_not_called()
 
     @patch("pid_provider.query_params.how_similar")
-    def test_none_registered_falls_back_to_empty_string_for_how_similar(
+    def test_none_registered_for_hash_label_scores_zero_without_how_similar(
         self, mock_how_similar
     ):
         mock_how_similar.return_value = 0.3
@@ -789,12 +803,12 @@ class CompareItemsTests(SimpleTestCase):
             result,
             {
                 "label": "z_links",
-                "score": 0.3,
+                "score": 0,
                 "registered": None,
                 "input_data": "algum-link",
             },
         )
-        mock_how_similar.assert_called_once_with("algum-link", "")
+        mock_how_similar.assert_not_called()
 
 
 class CompareTests(SimpleTestCase):
@@ -803,16 +817,25 @@ class CompareTests(SimpleTestCase):
     registered_items -- um label ausente em input_data é tratado como
     None via .get(label).
 
-    Quando registered_item e o valor de entrada são AMBOS falsy/None, o
-    label é descartado do cálculo de total_score/percentual_score (entra
-    em "items" marcado com "ignored": True e score 1.0, mas não é somado
-    a total_score nem conta no divisor). Isso evita que campos vazios em
-    ambos os lados infle artificialmente o score de candidatos com pouca
-    informação real para comparar.
+    Quando registered_item e o valor de entrada são AMBOS None (checagem
+    estrita de `is None`, não falsy em geral -- um "" registrado não
+    entra nesse ramo), o label é descartado do cálculo de
+    total_score/percentual_score (entra em "items" marcado com
+    "ignored": True e score 1.0, mas não é somado a total_score nem
+    conta no divisor). Isso evita que campos vazios em ambos os lados
+    infle artificialmente o score de candidatos com pouca informação
+    real para comparar.
     """
 
     @patch("pid_provider.query_params.how_similar")
     def test_aggregates_scores_from_all_items(self, mock_how_similar):
+        """
+        title bate exato (score 1, sem chamar how_similar). z_surnames
+        diverge, mas por ser label "z_"-prefixado (hash) também não
+        chama how_similar -- vai direto para score 0. A soma reflete
+        isso: 1 (match) + 0 (hash mismatch), não o valor mockado de
+        how_similar.
+        """
         mock_how_similar.return_value = 0.5
         registered_items = {"title": "Título A", "z_surnames": "Silva"}
         input_data = {"title": "Título A", "z_surnames": "Souza"}
@@ -820,8 +843,9 @@ class CompareTests(SimpleTestCase):
         result = compare(registered_items, input_data)
 
         self.assertEqual(len(result["items"]), 2)
-        self.assertEqual(result["total_score"], 1.5)  # 1 (match) + 0.5 (mocked)
-        self.assertEqual(result["percentual_score"], 0.75)
+        self.assertEqual(result["total_score"], 1.0)  # 1 (match) + 0 (hash mismatch)
+        self.assertEqual(result["percentual_score"], 0.5)
+        mock_how_similar.assert_not_called()
 
     def test_missing_input_key_with_falsy_registered_value_is_ignored(self):
         """
@@ -852,7 +876,8 @@ class CompareTests(SimpleTestCase):
         """
         Se o label ausente em input_data tem um valor registrado truthy,
         o None resultante de .get(label) NÃO é igual ao registrado --
-        cai no ramo how_similar (não é match automático nem ignorado).
+        não é match automático nem ignorado (aqui, por ser label
+        "z_"-prefixado, o score vem do ramo hash, não de how_similar).
         """
         registered_items = {"z_surnames": "Silva"}
         input_data = {}  # z_surnames ausente -> None
@@ -877,11 +902,17 @@ class CompareTests(SimpleTestCase):
 
     def test_all_fields_falsy_on_both_sides_returns_zero_percentual_score(self):
         """
-        Quando TODOS os campos são falsy/None em ambos os lados, todos
-        são ignorados: items não fica vazio (cada label gera uma entrada
-        "ignored"), mas total_items permanece 0, então percentual_score
-        é 0.0 (não 1.0) -- não há confusão entre "sem dados para
-        comparar" (0.0) e "comparou e tudo bateu" (1.0).
+        z_collab é None nos dois lados -> ignorado (checagem estrita de
+        `is None`). z_links é "" no registrado e ausente (None via
+        .get) na entrada -- falsy, mas "" não é `is None`, então NÃO
+        entra no ramo de ignore: vai para compare_items, que, por ser
+        label "z_"-prefixado (hash), marca a divergência com score 0
+        em vez de ignorar. Mesmo assim, total_score e percentual_score
+        terminam em 0.0 nos dois campos -- só por caminhos diferentes:
+        um por ser ignorado (não soma nem conta no divisor), outro por
+        comparar e não bater (soma 0 e conta no divisor). Não há
+        confusão entre "sem dados para comparar" (0.0) e "comparou e
+        tudo bateu" (1.0).
         """
         registered_items = {"z_collab": None, "z_links": ""}
         input_data = {"z_collab": None}
@@ -889,6 +920,14 @@ class CompareTests(SimpleTestCase):
         result = compare(registered_items, input_data)
 
         self.assertEqual(len(result["items"]), 2)
-        self.assertTrue(all(item.get("ignored") for item in result["items"]))
+        ignored_item = next(
+            item for item in result["items"] if item["label"] == "z_collab"
+        )
+        compared_item = next(
+            item for item in result["items"] if item["label"] == "z_links"
+        )
+        self.assertTrue(ignored_item.get("ignored"))
+        self.assertNotIn("ignored", compared_item)
+        self.assertEqual(compared_item["score"], 0)
         self.assertEqual(result["total_score"], 0.0)
         self.assertEqual(result["percentual_score"], 0.0)
