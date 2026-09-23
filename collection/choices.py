@@ -19,3 +19,8 @@ PLATFORM_STATUS = [
     ("new", _("New")),
     ("migrating", _("Migrating")),
 ]
+NETWORK_CLASSIFICATION = [
+    ("scielonetwork", _("SciELO Network")),
+    ("thematic", _("Thematic")),
+    ("independent", _("Independent")),
+]
