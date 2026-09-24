@@ -1,6 +1,8 @@
 import logging
 from functools import cached_property
 
+from django import forms
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -22,6 +24,24 @@ from core.utils.utils import fetch_data
 from organization.models import HELP_TEXT_ORGANIZATION, Organization
 
 from . import choices
+
+
+class ChoiceArrayField(ArrayField):
+    """
+    ArrayField cujo formulário apresenta as opções do base_field
+    como múltipla escolha (checkboxes), em vez de texto separado por vírgula.
+    """
+
+    def formfield(self, **kwargs):
+        defaults = {
+            "form_class": forms.TypedMultipleChoiceField,
+            "choices": self.base_field.choices,
+            "coerce": self.base_field.to_python,
+            "widget": forms.CheckboxSelectMultiple,
+        }
+        defaults.update(kwargs)
+        # Ignora ArrayField.formfield (SimpleArrayField)
+        return super(ArrayField, self).formfield(**defaults)
 
 
 class CollectionName(TextWithLang):
@@ -90,10 +110,12 @@ class Collection(CommonControlField, ClusterableModel):
     platform_status = models.CharField(
         _("Platform Status"), choices=choices.PLATFORM_STATUS, max_length=20, null=True, blank=True,
     )
-    network_classification = models.CharField(
-        _("Network classification"),
-        choices=choices.NETWORK_CLASSIFICATION,
-        max_length=20,
+    network_classification = ChoiceArrayField(
+        models.CharField(
+            max_length=20,
+            choices=choices.NETWORK_CLASSIFICATION,
+        ),
+        verbose_name=_("Network classification"),
         null=True,
         blank=True,
     )
@@ -118,7 +140,7 @@ class Collection(CommonControlField, ClusterableModel):
         FieldPanel("collection_type"),
         FieldPanel("is_active"),
         FieldPanel("platform_status"),
-        FieldPanel("network_classification"),
+        FieldPanel("network_classification", widget=forms.CheckboxSelectMultiple),
         FieldPanel("foundation_date"),
     ]
 
@@ -297,12 +319,9 @@ class Collection(CommonControlField, ClusterableModel):
         obj.has_analytics = has_analytics
         obj.collection_type = collection_type
         obj.is_active = is_active
-        # articlemeta retorna uma lista; armazena somente o primeiro valor
-        if isinstance(network_classification, list):
-            network_classification = (
-                network_classification[0] if network_classification else None
-            )
-        obj.network_classification = network_classification
+        if isinstance(network_classification, str):
+            network_classification = [network_classification]
+        obj.network_classification = network_classification or None
         obj.save()
         for language in names or {}:
             lang = Language.get_or_create(code2=language, creator=user)
