@@ -284,6 +284,17 @@ class Collection(CommonControlField, ClusterableModel):
         return cls.objects.get(acron3=acron3)
 
     @classmethod
+    def get_national_journal_collections(cls):
+        """
+        Retorna as coleções do tipo journals cuja classificação de rede
+        é exclusivamente scielonetwork
+        """
+        return cls.objects.filter(
+            collection_type="journals",
+            network_classification=["scielonetwork"],
+        )
+
+    @classmethod
     def create_or_update(
         cls,
         user,
