@@ -1,6 +1,8 @@
 import logging
 from functools import cached_property
 
+from django import forms
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -22,6 +24,24 @@ from core.utils.utils import fetch_data
 from organization.models import HELP_TEXT_ORGANIZATION, Organization
 
 from . import choices
+
+
+class ChoiceArrayField(ArrayField):
+    """
+    ArrayField cujo formulário apresenta as opções do base_field
+    como múltipla escolha (checkboxes), em vez de texto separado por vírgula.
+    """
+
+    def formfield(self, **kwargs):
+        defaults = {
+            "form_class": forms.TypedMultipleChoiceField,
+            "choices": self.base_field.choices,
+            "coerce": self.base_field.to_python,
+            "widget": forms.CheckboxSelectMultiple,
+        }
+        defaults.update(kwargs)
+        # Ignora ArrayField.formfield (SimpleArrayField)
+        return super(ArrayField, self).formfield(**defaults)
 
 
 class CollectionName(TextWithLang):
@@ -90,6 +110,15 @@ class Collection(CommonControlField, ClusterableModel):
     platform_status = models.CharField(
         _("Platform Status"), choices=choices.PLATFORM_STATUS, max_length=20, null=True, blank=True,
     )
+    network_classification = ChoiceArrayField(
+        models.CharField(
+            max_length=20,
+            choices=choices.NETWORK_CLASSIFICATION,
+        ),
+        verbose_name=_("Network classification"),
+        null=True,
+        blank=True,
+    )
     autocomplete_search_field = "main_name"
 
     def autocomplete_label(self):
@@ -111,6 +140,7 @@ class Collection(CommonControlField, ClusterableModel):
         FieldPanel("collection_type"),
         FieldPanel("is_active"),
         FieldPanel("platform_status"),
+        FieldPanel("network_classification", widget=forms.CheckboxSelectMultiple),
         FieldPanel("foundation_date"),
     ]
 
@@ -207,6 +237,7 @@ class Collection(CommonControlField, ClusterableModel):
             "collection__collection_type": self.collection_type,
             "collection__is_active": self.is_active,
             "collection__foundation_date": self.foundation_date,
+            "collection__network_classification": self.network_classification,
         }
 
         if self.name:
@@ -245,11 +276,23 @@ class Collection(CommonControlField, ClusterableModel):
                 has_analytics=collection_data.get("has_analytics"),
                 collection_type=collection_data.get("type"),
                 is_active=collection_data.get("is_active"),
+                network_classification=collection_data.get("network_classification"),
             )
 
     @classmethod
     def get(cls, acron3):
         return cls.objects.get(acron3=acron3)
+
+    @classmethod
+    def get_national_journal_collections(cls):
+        """
+        Retorna as coleções do tipo journals cuja classificação de rede
+        é exclusivamente scielonetwork
+        """
+        return cls.objects.filter(
+            collection_type="journals",
+            network_classification=["scielonetwork"],
+        )
 
     @classmethod
     def create_or_update(
@@ -265,6 +308,7 @@ class Collection(CommonControlField, ClusterableModel):
         has_analytics,
         collection_type,
         is_active,
+        network_classification=None,
     ):
         try:
             obj = cls.objects.get(acron3=acron3)
@@ -286,8 +330,11 @@ class Collection(CommonControlField, ClusterableModel):
         obj.has_analytics = has_analytics
         obj.collection_type = collection_type
         obj.is_active = is_active
+        if isinstance(network_classification, str):
+            network_classification = [network_classification]
+        obj.network_classification = network_classification or None
         obj.save()
-        for language in names:
+        for language in names or {}:
             lang = Language.get_or_create(code2=language, creator=user)
             CollectionName.get_or_create(obj, lang, names.get(language), user)
         obj.save()
