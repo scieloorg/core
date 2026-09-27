@@ -44,6 +44,34 @@ class MultipleChoiceArrayField(ArrayField):
         return super(ArrayField, self).formfield(**defaults)
 
 
+class ChoiceArrayField(ArrayField):
+    """
+    ArrayField cujo formulário apresenta as opções do base_field
+    como múltipla escolha (checkboxes), em vez de texto separado por vírgula.
+    """
+
+    def formfield(self, **kwargs):
+        defaults = {
+            "form_class": forms.TypedMultipleChoiceField,
+            "choices": self.base_field.choices,
+            "coerce": self.base_field.to_python,
+            "widget": forms.CheckboxSelectMultiple,
+        }
+        defaults.update(kwargs)
+        # Ignora ArrayField.formfield (SimpleArrayField)
+        return super(ArrayField, self).formfield(**defaults)
+
+
+def normalize_network_classification(network_classification):
+    """
+    Retorna network_classification como lista ou None
+    Ex.: "scielonetwork" -> ["scielonetwork"]
+    """
+    if isinstance(network_classification, str):
+        network_classification = [network_classification]
+    return list(network_classification or []) or None
+
+
 class CollectionName(TextWithLang):
     collection = ParentalKey(
         "Collection",
@@ -368,6 +396,18 @@ class Collection(CommonControlField, ClusterableModel):
         return self.main_name or (
             self.collection_name.first().text if self.collection_name.exists() else ""
         )
+
+    @classmethod
+    def get_national_journal_collections(cls):
+        """
+        Retorna as coleções cuja classificação de rede
+        é exclusivamente scielonetwork
+        """
+        return cls.objects.filter(network_classification=["scielonetwork"])
+
+    @property
+    def is_national_journal_collection(self):
+        return self.network_classification == ["scielonetwork"]
 
     @classmethod
     def get_acronyms(cls, collection_acron_list):
