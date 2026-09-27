@@ -123,14 +123,32 @@ def compare_lists(registered, xml_adapter_titles):
     return how_similar(" ".join(sorted(words1)), " ".join(sorted(words2)))
 
 
+def compare_pid_v2(registered_pids_v2, input_pid_v2):
+    """
+    Compara o pid v2 de entrada com os pids v2 registrados do documento
+    (um mesmo documento pode ter pid v2 diferente em cada coleção, ex.:
+    S0103-65642009000300003 em scl e S1678-51772009000300003 em psi).
+
+    Retorna 1 se o pid v2 de entrada é um dos registrados; caso contrário, 0.
+    """
+    if input_pid_v2 in registered_pids_v2:
+        return 1
+    return 0
+
+
 def compare_items(label, registered, input_data):
     """
     Compara um único item entre o valor registrado e o valor de entrada.
 
-    - Se `registered` for uma lista (ex.: títulos), delega a
-      compare_lists().
-    - Caso os dois valores, normalizados (falsy vira None), sejam
-      iguais, o score é 1.
+    Regras, na ordem em que são avaliadas:
+    - Se os dois valores forem iguais (sem normalização: None != ""),
+      o score é 1.
+    - Se `label` começar com "z_" ou contiver "finger" (hashes /
+      fingerprints), o score é 0, pois só a igualdade exata importa.
+    - Se `registered` for uma lista:
+      - "pid_v2" (pids v2 do documento em cada coleção): delega a
+        compare_pid_v2();
+      - demais (ex.: títulos): delega a compare_lists().
     - Caso contrário, o score vem de how_similar() entre os dois valores
       (None é tratado como string vazia).
 
@@ -138,12 +156,15 @@ def compare_items(label, registered, input_data):
     "registered" quando o score não é 1 — útil para inspecionar
     divergências.
     """
-    if isinstance(registered, list):
-        score = compare_lists(registered, input_data)
-    elif input_data == registered:
+    if input_data == registered:
         score = 1
     elif label.startswith("z_") or 'finger' in label:
         score = 0
+    elif isinstance(registered, list):
+        if label == "pid_v2":
+            score = compare_pid_v2(registered, input_data)
+        else:
+            score = compare_lists(registered, input_data)
     else:
         score = how_similar(input_data or "", registered or "")
     response = {"label": label, "score": score}
@@ -318,7 +339,9 @@ class QueryBuilderPidProviderXML:
             q |= Q(v3=v3)
 
         if v2:
-            q |= Q(v2=v2)
+            # o pid v2 do XML pode ser o pid v2 do documento em outra coleção
+            # (periódico com PIDs diferentes em coleções diferentes)
+            q |= Q(v2=v2) | Q(collection_pids_v2__pid_v2=v2)
 
         if aop_pid:
             q |= Q(v2=aop_pid) | Q(aop_pid=aop_pid)
@@ -396,9 +419,6 @@ class QueryBuilderPidProviderXML:
             "fpage_seq": self.adapter_data.get("fpage_seq"),
             "lpage": self.adapter_data.get("lpage"),
         }
-        order = self.xml_adapter.order
-        if order:
-            data["v2__endswith"] = order
         return data
 
     @property
@@ -598,9 +618,7 @@ def select_record(xml_adapter, selection_results):
     for label, results in selection_results:
         if not results:
             continue
-
         result = get_best_match(results, xml_adapter_data_to_compare)
-
         matched = result.get("matched")
         multiple_matched = result.get("multiple_matched")
         unmatched = result.get("unmatched")
