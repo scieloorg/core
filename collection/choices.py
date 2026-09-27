@@ -20,6 +20,10 @@ PLATFORM_STATUS = [
     ("migrating", _("Migrating")),
     ("migrated", _("Migrated")),
 ]
+<<<<<<< HEAD
+=======
+
+>>>>>>> d05b9940 (Permite classificar coleções quanto à rede e registrar migração concluída)
 NETWORK_CLASSIFICATION = [
     ("scielonetwork", _("SciELO Network")),
     ("thematic", _("Thematic")),
