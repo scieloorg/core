@@ -2061,6 +2061,7 @@ class ArticleSource(CommonControlField):
             force_update=force_update,
             is_published=True,
             auto_solve_pid_conflict=auto_solve_pid_conflict,
+            collection_acron=self.collection and self.collection.acron3,
         )
 
         # Obtém a primeira resposta (assumindo apenas uma)
