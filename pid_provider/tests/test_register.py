@@ -664,6 +664,7 @@ class RegisterResponseSchemaTest(RegisterTestBase):
             "xml_adapter_data",
             "xml_changed",
             "v3",
+            "v2",
             "record_status",
             "created",
             "event_status",
