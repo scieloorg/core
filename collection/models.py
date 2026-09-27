@@ -44,24 +44,6 @@ class MultipleChoiceArrayField(ArrayField):
         return super(ArrayField, self).formfield(**defaults)
 
 
-class ChoiceArrayField(ArrayField):
-    """
-    ArrayField cujo formulário apresenta as opções do base_field
-    como múltipla escolha (checkboxes), em vez de texto separado por vírgula.
-    """
-
-    def formfield(self, **kwargs):
-        defaults = {
-            "form_class": forms.TypedMultipleChoiceField,
-            "choices": self.base_field.choices,
-            "coerce": self.base_field.to_python,
-            "widget": forms.CheckboxSelectMultiple,
-        }
-        defaults.update(kwargs)
-        # Ignora ArrayField.formfield (SimpleArrayField)
-        return super(ArrayField, self).formfield(**defaults)
-
-
 def normalize_network_classification(network_classification):
     """
     Retorna network_classification como lista ou None
