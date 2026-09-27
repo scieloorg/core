@@ -41,6 +41,7 @@ from pid_provider.query_params import (
     QueryBuilderPidProviderXML,
     compare,
     compare_items,
+    compare_pid_v2,
     compare_lists,
     fix_get_data_to_compare,
     fix_xml_with_pre_data,
@@ -328,7 +329,9 @@ class IdentifierQueriesTests(SimpleTestCase):
     def test_v2_and_aop_pid_combine_with_or(self):
         adapter = make_xml_adapter(data={}, v2="V2-1", aop_pid="AOP-1")
         qbuilder = QueryBuilderPidProviderXML(adapter)
-        expected = Q(v2="V2-1") | (Q(v2="AOP-1") | Q(aop_pid="AOP-1"))
+        expected = (Q(v2="V2-1") | Q(collection_pids_v2__pid_v2="V2-1")) | (
+            Q(v2="AOP-1") | Q(aop_pid="AOP-1")
+        )
         self.assertEqual(qbuilder.identifier_queries, expected)
 
     def test_includes_main_doi(self):
@@ -428,7 +431,7 @@ class ArticleLocationParamsTests(SimpleTestCase):
         adapter = make_xml_adapter(data={}, order="00003")
         qbuilder = QueryBuilderPidProviderXML(adapter)
         params = qbuilder.article_location_params
-        self.assertEqual(params["v2__endswith"], "00003")
+        self.assertNotIn("v2__endswith", params)
 
 
 class PartialBodyQueryTests(SimpleTestCase):
@@ -931,3 +934,39 @@ class CompareTests(SimpleTestCase):
         self.assertEqual(compared_item["score"], 0)
         self.assertEqual(result["total_score"], 0.0)
         self.assertEqual(result["percentual_score"], 0.0)
+
+
+class ComparePidV2Tests(SimpleTestCase):
+    """
+    Um mesmo documento pode ter pid v2 diferente em cada coleção
+    (ex.: S0103-65642009000300003 em scl e S1678-51772009000300003 em psi)
+    """
+
+    REGISTERED = ["S0103-65642009000300003", "S1678-51772009000300003"]
+
+    def test_one_when_input_is_any_registered_pid_v2(self):
+        self.assertEqual(compare_pid_v2(self.REGISTERED, "S0103-65642009000300003"), 1)
+        self.assertEqual(compare_pid_v2(self.REGISTERED, "S1678-51772009000300003"), 1)
+
+    def test_zero_when_any_side_is_empty(self):
+        self.assertEqual(compare_pid_v2([], "S0103-65642009000300003"), 0)
+        self.assertEqual(compare_pid_v2(self.REGISTERED, None), 0)
+
+    def test_zero_when_input_is_not_registered(self):
+        # pid v2 é identificador: sem similaridade parcial
+        self.assertEqual(
+            compare_pid_v2(self.REGISTERED, "S0103-65642009000300004"), 0
+        )
+
+    def test_compare_items_uses_compare_pid_v2_for_pid_v2_list(self):
+        result = compare_items("pid_v2", self.REGISTERED, "S1678-51772009000300003")
+        self.assertEqual(result, {"label": "pid_v2", "score": 1})
+
+    @patch("pid_provider.query_params.compare_lists")
+    def test_compare_items_does_not_use_compare_lists_for_pid_v2(self, mock_compare_lists):
+        compare_items("pid_v2", self.REGISTERED, "S1678-51772009000300003")
+        mock_compare_lists.assert_not_called()
+
+    def test_compare_items_keeps_string_comparison_for_single_pid_v2(self):
+        result = compare_items("pid_v2", "S0103-65642009000300003", "S0103-65642009000300003")
+        self.assertEqual(result["score"], 1)
