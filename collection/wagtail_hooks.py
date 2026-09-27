@@ -26,6 +26,7 @@ class CollectionAdmin(SnippetViewSet):
         "main_name",
         "acron3",
         "platform_status",
+        "network_classification",
         "status",
         "collection_type",
         "is_active",
@@ -33,6 +34,7 @@ class CollectionAdmin(SnippetViewSet):
     )
     list_filter = (
         "platform_status",
+        "network_classification",
         "status",
         "collection_type",
         "is_active",
@@ -51,6 +53,8 @@ class CollectionAdmin(SnippetViewSet):
         "code",
         "domain",
         "main_name",
+        "platform_status",
+        "network_classification",
         "status",
         "has_analytics",
         "collection_type",
