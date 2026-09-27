@@ -51,6 +51,7 @@ class BasePidProvider:
         registered_in_core=None,
         caller=None,
         auto_solve_pid_conflict=None,
+        collection_acron=None,
     ):
         """
         Fornece e valida PIDs para documento XML, retornando dados completos de registro.
@@ -77,6 +78,10 @@ class BasePidProvider:
             Identificador do sistema chamador
         auto_solve_pid_conflict : bool, optional
             Resolve conflitos de PID automaticamente
+        collection_acron : str, optional
+            Acrônimo da coleção de origem do XML (custom-meta); necessário
+            para registrar o pid v2 e a versão do XML por coleção
+            (CollectionPidV2) quando o periódico está em mais de uma coleção
 
         Returns
         -------
@@ -92,6 +97,10 @@ class BasePidProvider:
               apply_xml_changes (se caller="core" e xml_changed=True)
         """
         self.caller = caller
+
+        # identifica a coleção de origem do XML (custom-meta)
+        if collection_acron and collection_acron != xml_with_pre.collection:
+            xml_with_pre.collection = collection_acron
 
         registered = PidProviderXML.register(
             xml_with_pre,
@@ -122,6 +131,7 @@ class BasePidProvider:
         registered_in_core=None,
         caller=None,
         auto_solve_pid_conflict=True,
+        collection_acron=None,
     ):
         """
         Fornece / Valida PID para o XML em um arquivo compactado
@@ -143,6 +153,7 @@ class BasePidProvider:
                     registered_in_core=registered_in_core,
                     caller=caller,
                     auto_solve_pid_conflict=auto_solve_pid_conflict,
+                    collection_acron=collection_acron,
                 )
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -179,6 +190,7 @@ class BasePidProvider:
         registered_in_core=None,
         detail=None,
         auto_solve_pid_conflict=None,
+        collection_acron=None,
     ):
         """
         Fornece / Valida PID de um XML disponível por um URI
@@ -211,6 +223,7 @@ class BasePidProvider:
                 origin=xml_uri,
                 registered_in_core=registered_in_core,
                 auto_solve_pid_conflict=auto_solve_pid_conflict,
+                collection_acron=collection_acron,
             )
             
             # Handle response based on success or failure
