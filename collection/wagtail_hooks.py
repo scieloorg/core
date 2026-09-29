@@ -56,6 +56,7 @@ class CollectionAdmin(SnippetViewSet):
         "collection_type",
         "is_active",
         "foundation_date",
+        "network_classification",
         "creator",
         "updated",
         "created",
