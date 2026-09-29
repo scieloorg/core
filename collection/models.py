@@ -23,10 +23,10 @@ from core.models import (
 from core.utils.utils import fetch_data
 from organization.models import HELP_TEXT_ORGANIZATION, Organization
 
-from . import choices
+from collection import choices
 
 
-class ChoiceArrayField(ArrayField):
+class MultipleChoiceArrayField(ArrayField):
     """
     ArrayField cujo formulário apresenta as opções do base_field
     como múltipla escolha (checkboxes), em vez de texto separado por vírgula.
@@ -110,7 +110,7 @@ class Collection(CommonControlField, ClusterableModel):
     platform_status = models.CharField(
         _("Platform Status"), choices=choices.PLATFORM_STATUS, max_length=20, null=True, blank=True,
     )
-    network_classification = ChoiceArrayField(
+    network_classification = MultipleChoiceArrayField(
         models.CharField(
             max_length=20,
             choices=choices.NETWORK_CLASSIFICATION,
