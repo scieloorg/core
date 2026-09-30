@@ -62,4 +62,15 @@ class Migration(migrations.Migration):
             model_name="articlecounttype",
             name="updated_by",
         ),
+        migrations.AlterField(
+            model_name="articlecounttype",
+            name="code",
+            field=models.CharField(
+                blank=True,
+                max_length=20,
+                null=True,
+                unique=True,
+                verbose_name="Code",
+            ),
+        ),
     ]
