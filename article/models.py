@@ -1416,7 +1416,7 @@ class ArticleCountType(models.Model):
         TYPE_INLINE_FORMULA,
     )
 
-    code = models.CharField(_("Code"), blank=True, null=True, max_length=20)
+    code = models.CharField(_("Code"), blank=True, null=True, max_length=20, unique=True)
 
     class Meta:
         indexes = [
