@@ -966,3 +966,30 @@ def task_process_article_pipeline(
             },
         )
         raise
+
+
+@celery_app.task(bind=True)
+def task_create_article_visual_counts(self, user_id=None, username=None, article_id=None):
+    """
+    Preenche os totais visuais dos artigos já carregados que têm XML.
+    """
+    user = _get_user(self.request, username=username, user_id=user_id)
+    articles = Article.objects.filter(pp_xml__isnull=False)
+    if article_id:
+        articles = articles.filter(pk=article_id)
+    for article in articles.iterator():
+        logging.info(
+            f"Starting visual counts for article id={article.pk} ({article})"
+        )
+        try:
+            article.create_or_update_article_visual_counts(user)
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                action="article.tasks.task_create_article_visual_counts",
+                item=str(article),
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail={"article_id": article.id},
+            )
+

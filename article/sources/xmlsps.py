@@ -1,4 +1,4 @@
-import traceback
+from collections import Counter
 from datetime import datetime
 from itertools import product
 
@@ -12,17 +12,24 @@ from packtools.sps.models.article_ids import ArticleIds
 from packtools.sps.models.article_license import ArticleLicense
 from packtools.sps.models.article_titles import ArticleTitles
 from packtools.sps.models.dates import ArticleDates
+from packtools.sps.models.fig import ArticleFigs
+from packtools.sps.models.formula import ArticleFormulas
 from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
 from packtools.sps.models.funding_group import FundingGroup
+from packtools.sps.models.graphic import Graphic, InlineGraphic, XmlGraphic
 from packtools.sps.models.journal_meta import ISSN, Title
 from packtools.sps.models.kwd_group import ArticleKeywords
+from packtools.sps.models.tablewrap import ArticleTableWrappers
 from packtools.sps.models.v2.article_toc_sections import ArticleTocSections
 from packtools.sps.models.v2.related_articles import RelatedArticles
+from packtools.sps.models.visual_resource_base import XmlVisualResource
 
 from article import choices
 from article.models import (
     Article,
     ArticleAffiliation,
+    ArticleCount,
+    ArticleCountType,
     ArticleFunding,
     ContribCollab,
     ContribPerson,
@@ -223,6 +230,10 @@ def load_article(user, pp_xml):
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user, errors=errors))
 
         add_related_articles(xmltree=xmltree, article=article, user=user, errors=errors)
+
+        create_or_update_article_counts(
+            xmltree=xmltree, article=article, user=user, errors=errors
+        )
 
         article.create_legacy_keys(user)
         if not article.pid_v2:
@@ -1064,3 +1075,108 @@ def add_related_articles(xmltree, article, user, errors):
 
     except Exception as e:
         add_error(errors, "add_related_articles", e)
+
+
+class GraphicWithNode(Graphic):
+    @property
+    def data(self):
+        data = super().data
+        data["node"] = self.node
+        return data
+
+
+class InlineGraphicWithNode(InlineGraphic):
+    @property
+    def data(self):
+        data = super().data
+        data["node"] = self.node
+        return data
+
+
+class XmlGraphicWithNode(XmlGraphic):
+    def __init__(self, xmltree):
+        resource_types = [
+            ("graphic", GraphicWithNode),
+            ("inline-graphic", InlineGraphicWithNode),
+        ]
+        XmlVisualResource.__init__(self, xmltree, resource_types=resource_types)
+
+
+def count_items_by_parent_lang(items, count_type, counter):
+    for item in items:
+        counter[(count_type, item.get("parent_lang") or None)] += 1
+
+def count_graphics_and_inline_graphics(xmltree, counter):
+    """
+    Conta graphics e inline-graphics por idioma do artigo,
+    ignorando graphics que são descendentes de fig/table-wrap.
+    """
+    for item in XmlGraphicWithNode(xmltree).data:
+        tag = item.get("tag")
+        lang = item.get("parent_lang") or None
+        if tag == ArticleCountType.TYPE_INLINE_GRAPHIC:
+            counter[(ArticleCountType.TYPE_INLINE_GRAPHIC, lang)] += 1
+        elif tag == ArticleCountType.TYPE_GRAPHIC:
+            node = item.get("node")
+            if node is not None and any(
+                ancestor.tag in ("fig", "table-wrap") for ancestor in node.iterancestors()
+            ):
+                continue
+            counter[(ArticleCountType.TYPE_GRAPHIC, lang)] += 1
+
+def count_visual_and_formula_items(xmltree):
+    """
+    Conta fig, table-wrap, fórmulas e graphics por idioma do article/sub-article.
+    """
+    counter = Counter()
+    count_items_by_parent_lang(
+        items=ArticleFigs(xmltree).get_all_figs,
+        count_type=ArticleCountType.TYPE_FIG,
+        counter=counter,
+    )
+    count_items_by_parent_lang(
+        items=ArticleTableWrappers(xmltree).get_all_table_wrappers,
+        count_type=ArticleCountType.TYPE_TABLE_WRAP,
+        counter=counter,
+    )
+    formulas = ArticleFormulas(xmltree)
+    count_items_by_parent_lang(
+        items=formulas.disp_formula_items,
+        count_type=ArticleCountType.TYPE_DISP_FORMULA,
+        counter=counter,
+    )
+    count_items_by_parent_lang(
+        items=formulas.inline_formula_items,
+        count_type=ArticleCountType.TYPE_INLINE_FORMULA,
+        counter=counter,
+    )
+    count_graphics_and_inline_graphics(xmltree, counter)
+
+    return counter
+
+
+def create_or_update_article_counts(xmltree, article, user, errors):
+    """
+    Substitui os totais visuais/fórmulas do artigo a partir do xmltree.
+    """
+    counter = count_visual_and_formula_items(xmltree)
+    kept_ids = []
+    for (count_type_code, lang), count in counter.items():
+        language = get_or_create_language(lang, user, errors) if lang else None
+        if lang and not language:
+            add_error(
+                errors,
+                "create_or_update_article_counts",
+                ValueError(f"Missing language for {count_type_code}"),
+                count_type=count_type_code,
+                lang=lang,
+            )
+        count_type, _ = ArticleCountType.objects.get_or_create(code=count_type_code)
+        article_count, _ = ArticleCount.objects.update_or_create(
+            article=article,
+            count_type=count_type,
+            language=language,
+            defaults={"count": count},
+        )
+        kept_ids.append(article_count.pk)
+    article.counts.exclude(pk__in=kept_ids).delete()

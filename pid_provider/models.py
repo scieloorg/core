@@ -156,6 +156,20 @@ class XMLVersion(CommonControlField):
         except Exception as e:
             logging.exception(e)
         self.file.save(filename, ContentFile(content))
+        self._update_linked_article_visual_counts()
+
+    def _update_linked_article_visual_counts(self):
+        from article.models import Article
+
+        if not self.pid_provider_xml_id or not self.file:
+            return
+        articles = Article.objects.filter(pp_xml_id=self.pid_provider_xml_id)
+        if not articles:
+            return
+        xmltree = self.xml_with_pre.xmltree
+        user = self.updated_by or self.creator
+        for article in articles:
+            article.create_or_update_article_visual_counts(user, xmltree=xmltree)
 
     def is_equal_to(self, xml_with_pre):
         return os.path.isfile(self.file.path) and (

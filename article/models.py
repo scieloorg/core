@@ -378,6 +378,28 @@ class Article(
         except AttributeError:
             return PidProvider.get_xmltree(self.pid_v3)
 
+    def create_or_update_article_visual_counts(self, user, xmltree=None, errors=None):
+        """
+        Calcula/Recalcula fig, table-wrap, fórmulas e graphics a partir do XML do artigo.
+        """
+        # Evita importação circular.
+        from article.sources.xmlsps import create_or_update_article_counts
+
+        if errors is None:
+            errors = []
+        if xmltree is None:
+            pp_xml = self.pp_xml
+            if not pp_xml:
+                raise ValueError(f"Article {self.pk} has no associated XML")
+            xml_with_pre = pp_xml.xml_with_pre
+            if not xml_with_pre:
+                raise ValueError(
+                    f"Unable to get XML to count visual elements from {pp_xml}"
+                )
+            xmltree = xml_with_pre.xmltree
+        create_or_update_article_counts(xmltree, self, user, errors)
+        return errors
+
     @cached_property
     def collections(self):
         """
@@ -1378,8 +1400,23 @@ class ArticleHistory(CommonControlField):
         )
 
 
-class ArticleCountType(CommonControlField):
-    code = models.CharField(_("Code"), blank=True, null=True, max_length=20)
+class ArticleCountType(models.Model):
+    TYPE_FIG = "fig"
+    TYPE_DISP_FORMULA = "disp-formula"
+    TYPE_TABLE_WRAP = "table-wrap"
+    TYPE_GRAPHIC = "graphic"
+    TYPE_INLINE_GRAPHIC = "inline-graphic"
+    TYPE_INLINE_FORMULA = "inline-formula"
+    VISUAL_TYPES = (
+        TYPE_FIG,
+        TYPE_DISP_FORMULA,
+        TYPE_TABLE_WRAP,
+        TYPE_GRAPHIC,
+        TYPE_INLINE_GRAPHIC,
+        TYPE_INLINE_FORMULA,
+    )
+
+    code = models.CharField(_("Code"), blank=True, null=True, max_length=20, unique=True)
 
     class Meta:
         indexes = [
@@ -1396,24 +1433,14 @@ class ArticleCountType(CommonControlField):
     def __str__(self):
         return "%s" % self.code
 
-    @property
-    def data(self):
-        return dict(article_count_type__code=self.code)
-
-    @classmethod
-    def get_or_create(cls, code, user):
-        try:
-            return cls.objects.get(code=code)
-        except cls.DoesNotExist:
-            article_count_type = cls()
-            article_count_type.code = code
-            article_count_type.creator = user
-            article_count_type.save()
-
-            return article_count_type
-
-
-class ArticleCount(CommonControlField):
+class ArticleCount(models.Model):
+    article = models.ForeignKey(
+        Article,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="counts",
+    )
     count_type = models.ForeignKey(
         ArticleCountType, null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -1426,10 +1453,21 @@ class ArticleCount(CommonControlField):
         blank=True,
     )
 
-    panels = [AutocompletePanel("count_type"), AutocompletePanel("language")]
+    panels = [
+        FieldPanel("article", read_only=True),
+        FieldPanel("count_type", read_only=True),
+        FieldPanel("count", read_only=True),
+        FieldPanel("language", read_only=True),
+    ]
 
     class Meta:
+        unique_together = [("article", "count_type", "language")]
         indexes = [
+            models.Index(
+                fields=[
+                    "article",
+                ]
+            ),
             models.Index(
                 fields=[
                     "count_type",
@@ -1443,10 +1481,10 @@ class ArticleCount(CommonControlField):
         ]
 
     def __unicode__(self):
-        return "%s | %s | %s" % (self.count_type, self.count, self.language)
+        return f"{self.article} | {self.count_type} | {self.count} | {self.language}"
 
     def __str__(self):
-        return "%s | %s | %s" % (self.count_type, self.count, self.language)
+        return f"{self.article} | {self.count_type} | {self.count} | {self.language}"
 
     @property
     def data(self):
