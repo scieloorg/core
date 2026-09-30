@@ -42,8 +42,8 @@ def visual_element_totals_view(request):
             "form": form,
             "yearly_rows": yearly_rows,
             "selected_filters": selected_filters,
-            "header_title": _("Visual elements totals"),
-            "page_title": _("Visual elements totals"),
+            "header_title": _("Figure, Table and Equation Counts"),
+            "page_title": _("Figure, Table and Equation Counts"),
             "header_icon": "table",
         },
     )

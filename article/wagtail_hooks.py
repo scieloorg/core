@@ -231,7 +231,7 @@ class ArticlePeerReviewStatsSnippetViewSet(SnippetViewSet):
 class VisualElementTotalsViewSet(ViewSet):
     name = "visual_element_totals"
     icon = "table"
-    menu_label = _("Visual elements totals")
+    menu_label = _("Figure, Table and Equation Counts")
     add_to_admin_menu = False
 
     @cached_property
