@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("collection", "0008_alter_collection_platform_status_and_more"),
+        ("collection", "0008_collection_network_classification_and_more"),
         ("pid_provider", "0019_alter_pidproviderxmlregistration_event_status"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]

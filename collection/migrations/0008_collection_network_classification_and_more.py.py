@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="collection",
             name="network_classification",
-            field=collection.models.ChoiceArrayField(
+            field=collection.models.MultipleChoiceArrayField(
                 base_field=models.CharField(
                     choices=[
                         ("scielonetwork", "SciELO Network"),
