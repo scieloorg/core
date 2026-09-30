@@ -48,6 +48,7 @@
         }
         .visual-totals-journal {
             position: relative;
+            flex: 0 0 28rem;
             width: 28rem;
             max-width: 100%;
         }
@@ -56,16 +57,30 @@
         .visual-totals-journal-search {
             background-color: var(--w-color-surface-page);
             color: FieldText;
-            color-scheme: dark;
         }
         .visual-totals-journal .dropdown-toggle {
+            display: block;
             width: 100%;
+            min-width: 100%;
+            overflow: hidden;
             text-align: left;
+            text-overflow: ellipsis;
+            white-space: nowrap;
             cursor: pointer;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23aaa' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 0.45rem center;
-            background-size: 0.7rem;
+            appearance: none;
+            background-image: none;
+        }
+        .visual-totals-journal .dropdown-toggle::after {
+            content: "";
+            position: absolute;
+            right: 0.7rem;
+            top: 50%;
+            width: 0.45rem;
+            height: 0.45rem;
+            border-right: 2px solid currentColor;
+            border-bottom: 2px solid currentColor;
+            transform: translateY(-70%) rotate(45deg);
+            pointer-events: none;
         }
         .visual-totals-journal .dropdown-menu {
             display: none;
@@ -150,17 +165,17 @@
                 {{ field.label_tag }}
                 {% if field.name == "journal" %}
                     <div class="dropdown visual-totals-journal">
-                        <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">{% if field.value %}{% for journal in field.field.queryset %}{% if field.value|stringformat:"s" == journal.pk|stringformat:"s" %}{{ journal }}{% endif %}{% endfor %}{% else %}---------{% endif %}</button>
+                        <button class="dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">{% if field.value %}{% for journal in field.field.queryset %}{% if field.value|stringformat:"s" == journal.pk|stringformat:"s" %}{{ journal }}{% endif %}{% endfor %}{% endif %}</button>
                         <div class="dropdown-menu">
                             <input type="search" class="visual-totals-journal-search" placeholder="{% trans 'Search' %}" aria-label="{% trans 'Search journal' %}">
-                            <button type="button" class="dropdown-item{% if not field.value %} active{% endif %}" data-value="">---------</button>
+                            <button type="button" class="dropdown-item{% if not field.value %} active{% endif %}" data-value=""></button>
                             {% for journal in field.field.queryset %}
-                                <button type="button" class="dropdown-item{% if field.value|stringformat:"s" == journal.pk|stringformat:"s" %} active{% endif %}" data-value="{{ journal.pk }}">{{ journal }}</button>
+                                <button type="button" class="dropdown-item{% if field.value|stringformat:"s" == journal.pk|stringformat:"s" %} active{% endif %}" data-value="{{ journal.pk }}" data-collections="{% for item in journal.scielojournal_set.all %}{{ item.collection_id }} {% endfor %}">{{ journal }}</button>
                             {% endfor %}
                         </div>
                     </div>
                     <select class="visual-totals-journal-value" name="{{ field.html_name }}" id="{{ field.id_for_label }}" tabindex="-1" aria-hidden="true">
-                        <option value="">---------</option>
+                        <option value=""></option>
                         {% for journal in field.field.queryset %}
                             <option value="{{ journal.pk }}"{% if field.value|stringformat:"s" == journal.pk|stringformat:"s" %} selected{% endif %}>{{ journal }}</option>
                         {% endfor %}
@@ -225,6 +240,7 @@
             clear.addEventListener("click", function () {
                 control.value = "";
                 clear.hidden = true;
+                control.dispatchEvent(new Event("change"));
                 if (control._resetJournalSearch) {
                     control._resetJournalSearch();
                 }
@@ -238,25 +254,43 @@
         });
 
         var journalSelect = document.querySelector(".visual-totals-filters select[name='journal']");
+        var collectionSelect = document.querySelector(".visual-totals-filters select[name='collection']");
         var journalDropdown = document.querySelector(".visual-totals-journal");
         if (journalSelect && journalDropdown) {
             var journalToggle = journalDropdown.querySelector(".dropdown-toggle");
             var journalMenu = journalDropdown.querySelector(".dropdown-menu");
             var journalSearch = journalDropdown.querySelector("input");
             var journalItems = journalMenu.querySelectorAll(".dropdown-item");
+            function journalInCollection(item, collectionId) {
+                if (!item.dataset.value || !collectionId) {
+                    return true;
+                }
+                return (item.dataset.collections || "").trim().split(/\s+/).indexOf(collectionId) !== -1;
+            }
             function showJournalItems(term) {
+                var collectionId = collectionSelect ? collectionSelect.value : "";
+                var selectedVisible = !journalSelect.value;
                 journalItems.forEach(function (item) {
-                    var matches = !term || !item.dataset.value || item.textContent.toLowerCase().indexOf(term) !== -1;
-                    item.classList.toggle("d-none", !matches);
+                    var matchesTerm = !term || !item.dataset.value || item.textContent.toLowerCase().indexOf(term) !== -1;
+                    var visible = matchesTerm && journalInCollection(item, collectionId);
+                    item.classList.toggle("d-none", !visible);
+                    if (visible && item.dataset.value === journalSelect.value) {
+                        selectedVisible = true;
+                    }
                 });
+                if (!selectedVisible) {
+                    journalSelect._resetJournalSearch();
+                }
             }
             journalSelect._resetJournalSearch = function () {
+                journalSelect.value = "";
                 journalSearch.value = "";
-                showJournalItems("");
-                journalToggle.textContent = "---------";
+                journalToggle.textContent = "";
                 journalItems.forEach(function (item) {
                     item.classList.toggle("active", !item.dataset.value);
                 });
+                showJournalItems("");
+                journalSelect.dispatchEvent(new Event("change"));
             };
             journalSearch.addEventListener("keydown", function (event) {
                 if (event.key === "Enter") {
@@ -278,6 +312,12 @@
                     journalSelect.dispatchEvent(new Event("change"));
                 });
             });
+            if (collectionSelect) {
+                collectionSelect.addEventListener("change", function () {
+                    showJournalItems(journalSearch.value.trim().toLowerCase());
+                });
+            }
+            showJournalItems("");
         }
     </script>
 {% endblock %}
