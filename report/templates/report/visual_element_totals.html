@@ -33,6 +33,7 @@
             color: inherit;
         }
         .visual-totals-filters select,
+        .visual-totals-filters input[type="text"],
         .visual-totals-journal .dropdown-toggle {
             box-sizing: border-box;
             width: 28rem;
@@ -216,20 +217,23 @@
     </table>
     <script>
         document.querySelectorAll(".visual-totals-filter-row").forEach(function (row) {
-            var select = row.querySelector("select");
+            var control = row.querySelector("select, input[type='text']");
             var clear = row.querySelector(".visual-totals-clear");
-            if (!select || !clear) {
+            if (!control || !clear) {
                 return;
             }
             clear.addEventListener("click", function () {
-                select.value = "";
+                control.value = "";
                 clear.hidden = true;
-                if (select._resetJournalSearch) {
-                    select._resetJournalSearch();
+                if (control._resetJournalSearch) {
+                    control._resetJournalSearch();
                 }
             });
-            select.addEventListener("change", function () {
-                clear.hidden = !select.value;
+            control.addEventListener("input", function () {
+                clear.hidden = !control.value;
+            });
+            control.addEventListener("change", function () {
+                clear.hidden = !control.value;
             });
         });
 

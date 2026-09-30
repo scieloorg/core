@@ -22,3 +22,8 @@ class VisualElementTotalsFilterForm(forms.Form):
         required=False,
         label=_("Journal"),
     )
+    pid = forms.CharField(
+        required=False,
+        label=_("PID v2 or v3"),
+        max_length=23,
+    )

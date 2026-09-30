@@ -20,6 +20,7 @@ def _filters_from_form(form):
         "collection": form.cleaned_data.get("collection"),
         "thematic_area": form.cleaned_data.get("thematic_area"),
         "journal": form.cleaned_data.get("journal"),
+        "pid": form.cleaned_data.get("pid"),
     }
 
 
@@ -31,7 +32,7 @@ def visual_element_totals_view(request):
     if filters is not None:
         article_ids = filtered_article_ids(**filters)
         yearly_rows = yearly_totals(article_ids)
-        for name in ("collection", "thematic_area", "journal"):
+        for name in ("collection", "thematic_area", "journal", "pid"):
             value = filters.get(name)
             if value:
                 selected_filters.append((form.fields[name].label, value))

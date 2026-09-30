@@ -42,7 +42,7 @@ def _spreadsheet_annotations():
     return annotations
 
 
-def filtered_article_ids(collection=None, thematic_area=None, journal=None):
+def filtered_article_ids(collection=None, thematic_area=None, journal=None, pid=None):
     qs = Article.objects.filter(journal__isnull=False)
     if collection:
         qs = qs.filter(
@@ -64,6 +64,9 @@ def filtered_article_ids(collection=None, thematic_area=None, journal=None):
         )
     if journal:
         qs = qs.filter(journal=journal)
+    if pid:
+        pid = pid.strip()
+        qs = qs.filter(Q(pid_v2=pid) | Q(pid_v3=pid))
     return qs.values_list("id", flat=True)
 
 

@@ -74,19 +74,19 @@ class VisualElementTotalsQueryTest(TestCase):
             pub_date_year="2024",
             creator=self.user,
         )
-        ArticleCount.create(
+        ArticleCount.objects.create(
             article=self.article,
             count_type=self.fig_type,
             language=self.lang_en,
             count=3,
         )
-        ArticleCount.create(
+        ArticleCount.objects.create(
             article=self.article,
             count_type=self.fig_type,
             language=self.lang_pt,
             count=2,
         )
-        ArticleCount.create(
+        ArticleCount.objects.create(
             article=self.article,
             count_type=self.table_type,
             language=self.lang_en,
@@ -97,7 +97,7 @@ class VisualElementTotalsQueryTest(TestCase):
             journal=self.journal,
             creator=self.user,
         )
-        ArticleCount.create(
+        ArticleCount.objects.create(
             article=self.article_without_year,
             count_type=self.fig_type,
             language=self.lang_en,
@@ -161,6 +161,16 @@ class VisualElementTotalsQueryTest(TestCase):
             )
         header = buffer.getvalue().splitlines()[0]
         self.assertEqual(header, ";".join(SPREADSHEET_COLUMNS))
+
+    def test_pid_matches_v2_or_v3(self):
+        self.article.pid_v2 = "S0100-000020240001"
+        self.article.save(update_fields=["pid_v2"])
+
+        by_v3 = list(filtered_article_ids(pid="report-v3"))
+        by_v2 = list(filtered_article_ids(pid="S0100-000020240001"))
+
+        self.assertEqual(by_v3, [self.article.id])
+        self.assertEqual(by_v2, [self.article.id])
 
     def test_filtered_collection_is_used_in_spreadsheet_column(self):
         article_ids = list(filtered_article_ids(collection=self.collection_arg))
