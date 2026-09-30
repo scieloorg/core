@@ -9,7 +9,6 @@ from collection.models import Collection
 from core.models import Language
 from journal.models import Journal, SciELOJournal, ThematicAreaJournal
 from report.visual_element_totals import (
-    SPREADSHEET_COLUMNS,
     filtered_article_ids,
     spreadsheet_rows,
     yearly_totals,
@@ -60,8 +59,10 @@ class VisualElementTotalsQueryTest(TestCase):
             thematic_area=self.area_bio,
             creator=self.user,
         )
-        self.lang_en = Language.get_or_create(code2="en", creator=self.user)
+        self.lang_fr = Language.get_or_create(code2="fr", creator=self.user)
         self.lang_pt = Language.get_or_create(code2="pt", creator=self.user)
+        self.lang_en = Language.get_or_create(code2="en", creator=self.user)
+        self.lang_es = Language.get_or_create(code2="es", creator=self.user)
         self.fig_type, _ = ArticleCountType.objects.get_or_create(
             code=ArticleCountType.TYPE_FIG
         )
@@ -74,18 +75,19 @@ class VisualElementTotalsQueryTest(TestCase):
             pub_date_year="2024",
             creator=self.user,
         )
-        ArticleCount.objects.create(
-            article=self.article,
-            count_type=self.fig_type,
-            language=self.lang_en,
-            count=3,
-        )
-        ArticleCount.objects.create(
-            article=self.article,
-            count_type=self.fig_type,
-            language=self.lang_pt,
-            count=2,
-        )
+        for language, count in (
+            (self.lang_fr, 1),
+            (self.lang_pt, 2),
+            (self.lang_en, 3),
+            (self.lang_es, 4),
+            (None, 5),
+        ):
+            ArticleCount.objects.create(
+                article=self.article,
+                count_type=self.fig_type,
+                language=language,
+                count=count,
+            )
         ArticleCount.objects.create(
             article=self.article,
             count_type=self.table_type,
@@ -115,7 +117,7 @@ class VisualElementTotalsQueryTest(TestCase):
         self.assertEqual(len(article_ids), 2)
         rows = list(yearly_totals(article_ids))
         row_2024 = next(row for row in rows if row["article__pub_date_year"] == "2024")
-        self.assertEqual(row_2024["fig"], 5)
+        self.assertEqual(row_2024["fig"], 15)
         self.assertEqual(row_2024["table_wrap"], 1)
 
     def test_thematic_area_filter_counts_article_once(self):
@@ -123,27 +125,46 @@ class VisualElementTotalsQueryTest(TestCase):
         self.assertIn(self.article.id, article_ids)
         rows = list(yearly_totals(article_ids))
         row_2024 = next(row for row in rows if row["article__pub_date_year"] == "2024")
-        self.assertEqual(row_2024["fig"], 5)
+        self.assertEqual(row_2024["fig"], 15)
 
     def test_spreadsheet_columns_and_concatenated_thematic_areas(self):
         article_ids = list(filtered_article_ids())
-        rows = spreadsheet_rows(article_ids)
-        self.assertEqual(SPREADSHEET_COLUMNS[:4], ("collection", "thematic_area", "journal", "year"))
-        self.assertIn("fig-en", SPREADSHEET_COLUMNS)
-        self.assertIn("fig-es", SPREADSHEET_COLUMNS)
-        self.assertIn("fig-pt", SPREADSHEET_COLUMNS)
-        self.assertIn("fig_total", SPREADSHEET_COLUMNS)
-        self.assertIn("table-wrap_total", SPREADSHEET_COLUMNS)
+        columns, rows = spreadsheet_rows(article_ids)
+        self.assertEqual(columns[:4], ("collection", "thematic_area", "journal", "year"))
+        fig_columns = [
+            column
+            for column in columns
+            if column.startswith("fig-") or column == "fig_total"
+        ]
+        self.assertEqual(
+            fig_columns,
+            [
+                "fig-en",
+                "fig-es",
+                "fig-fr",
+                "fig-pt",
+                "fig-nd",
+                "fig_total",
+            ],
+        )
+        self.assertIn("table-wrap-en", columns)
+        self.assertIn("table-wrap-nd", columns)
+        self.assertNotIn("table-wrap-pt", columns)
+        self.assertIn("table-wrap_total", columns)
+        self.assertNotIn("graphic-en", columns)
         self.assertEqual(len(rows), 2)
         row = next(item for item in rows if item["year"] == "2024")
         self.assertEqual(row["collection"], "arg; scl")
         self.assertEqual(row["journal"], "Revista Teste")
         self.assertEqual(row["year"], "2024")
-        self.assertEqual(row["fig-en"], 3)
-        self.assertEqual(row["fig-es"], 0)
+        self.assertEqual(row["fig-fr"], 1)
         self.assertEqual(row["fig-pt"], 2)
-        self.assertEqual(row["fig_total"], 5)
+        self.assertEqual(row["fig-en"], 3)
+        self.assertEqual(row["fig-es"], 4)
+        self.assertEqual(row["fig-nd"], 5)
+        self.assertEqual(row["fig_total"], 15)
         self.assertEqual(row["table-wrap-en"], 1)
+        self.assertEqual(row["table-wrap-nd"], 0)
         self.assertEqual(row["table-wrap_total"], 1)
         self.assertEqual(row["graphic_total"], 0)
         self.assertIn("Health", row["thematic_area"])
@@ -151,16 +172,16 @@ class VisualElementTotalsQueryTest(TestCase):
 
         buffer = StringIO()
         writer = csv.writer(buffer, delimiter=";")
-        writer.writerow(SPREADSHEET_COLUMNS)
+        writer.writerow(columns)
         for row in rows:
             writer.writerow(
                 [
                     "" if row.get(column) is None else row.get(column)
-                    for column in SPREADSHEET_COLUMNS
+                    for column in columns
                 ]
             )
         header = buffer.getvalue().splitlines()[0]
-        self.assertEqual(header, ";".join(SPREADSHEET_COLUMNS))
+        self.assertEqual(header, ";".join(columns))
 
     def test_pid_matches_v2_or_v3(self):
         self.article.pid_v2 = "S0100-000020240001"
@@ -172,7 +193,37 @@ class VisualElementTotalsQueryTest(TestCase):
         self.assertEqual(by_v3, [self.article.id])
         self.assertEqual(by_v2, [self.article.id])
 
+    def test_missing_language_uses_nd_column(self):
+        ArticleCount.objects.create(
+            article=self.article,
+            count_type=self.fig_type,
+            language=None,
+            count=4,
+        )
+        lang_nd = Language.get_or_create(code2="nd", creator=self.user)
+        ArticleCount.objects.create(
+            article=self.article,
+            count_type=self.table_type,
+            language=lang_nd,
+            count=6,
+        )
+        columns, rows = spreadsheet_rows(list(filtered_article_ids()))
+        row = next(item for item in rows if item["year"] == "2024")
+        self.assertIn("fig-nd", columns)
+        self.assertEqual(row["fig-nd"], 9)
+        self.assertEqual(row["fig_total"], 19)
+        self.assertEqual(row["table-wrap-nd"], 6)
+        self.assertEqual(row["table-wrap_total"], 7)
+        fig_columns = [
+            column
+            for column in columns
+            if column.startswith("fig-") or column == "fig_total"
+        ]
+        self.assertEqual(fig_columns[-2], "fig-nd")
+        self.assertEqual(fig_columns[-1], "fig_total")
+
     def test_filtered_collection_is_used_in_spreadsheet_column(self):
         article_ids = list(filtered_article_ids(collection=self.collection_arg))
-        rows = spreadsheet_rows(article_ids, collection=self.collection_arg)
+        columns, rows = spreadsheet_rows(article_ids, collection=self.collection_arg)
         self.assertEqual(rows[0]["collection"], "arg")
+        self.assertTrue(columns)
