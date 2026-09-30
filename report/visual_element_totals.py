@@ -4,19 +4,8 @@ from django.db.models.functions import Coalesce
 from journal.models import SciELOJournal, ThematicAreaJournal
 
 THEMATIC_AREA_SEPARATOR = "; "
-SPREADSHEET_LANGS = ("en", "es", "pt")
-
-
-def _spreadsheet_columns():
-    columns = ["collection", "thematic_area", "journal", "year"]
-    for code in ArticleCountType.VISUAL_TYPES:
-        for lang in SPREADSHEET_LANGS:
-            columns.append(f"{code}-{lang}")
-        columns.append(f"{code}_total")
-    return tuple(columns)
-
-
-SPREADSHEET_COLUMNS = _spreadsheet_columns()
+UNDEFINED_LANG = "nd"
+SPREADSHEET_BASE_COLUMNS = ("collection", "thematic_area", "journal", "year")
 
 
 def _count_alias(code, lang=None):
@@ -28,15 +17,44 @@ def _count_alias(code, lang=None):
 
 def _sum_count(code, lang=None):
     condition = Q(count_type__code=code)
-    if lang is not None:
+    if lang == UNDEFINED_LANG:
+        condition &= Q(language__isnull=True) | Q(language__code2=UNDEFINED_LANG)
+    elif lang is not None:
         condition &= Q(language__code2=lang)
     return Coalesce(Sum("count", filter=condition), 0)
 
 
-def _spreadsheet_annotations():
+def _languages_by_type(article_ids):
+    rows = (
+        ArticleCount.objects.filter(
+            article_id__in=article_ids,
+            count_type__code__in=ArticleCountType.VISUAL_TYPES,
+        )
+        .values_list("count_type__code", "language__code2")
+        .distinct()
+    )
+    langs_by_code = {}
+    for code, lang in rows:
+        langs_by_code.setdefault(code, {UNDEFINED_LANG}).add(lang or UNDEFINED_LANG)
+    return {
+        code: sorted(langs, key=lambda lang: (lang == UNDEFINED_LANG, lang))
+        for code, langs in langs_by_code.items()
+    }
+
+
+def spreadsheet_columns(langs_by_code):
+    columns = list(SPREADSHEET_BASE_COLUMNS)
+    for code in ArticleCountType.VISUAL_TYPES:
+        for lang in langs_by_code.get(code, []):
+            columns.append(f"{code}-{lang}")
+        columns.append(f"{code}_total")
+    return tuple(columns)
+
+
+def _spreadsheet_annotations(langs_by_code):
     annotations = {}
     for code in ArticleCountType.VISUAL_TYPES:
-        for lang in SPREADSHEET_LANGS:
+        for lang in langs_by_code.get(code, []):
             annotations[_count_alias(code, lang)] = _sum_count(code, lang)
         annotations[_count_alias(code)] = _sum_count(code)
     return annotations
@@ -115,6 +133,8 @@ def _thematic_areas_by_journal(journal_ids):
 
 
 def spreadsheet_rows(article_ids, collection=None):
+    langs_by_code = _languages_by_type(article_ids)
+    columns = spreadsheet_columns(langs_by_code)
     aggregated = list(
         ArticleCount.objects.filter(
             article_id__in=article_ids,
@@ -125,7 +145,7 @@ def spreadsheet_rows(article_ids, collection=None):
             "article__journal__title",
             "article__pub_date_year",
         )
-        .annotate(**_spreadsheet_annotations())
+        .annotate(**_spreadsheet_annotations(langs_by_code))
     )
 
     journal_ids = {row["article__journal_id"] for row in aggregated}
@@ -150,12 +170,12 @@ def spreadsheet_rows(article_ids, collection=None):
             "year": row["article__pub_date_year"],
         }
         for code in ArticleCountType.VISUAL_TYPES:
-            for lang in SPREADSHEET_LANGS:
+            for lang in langs_by_code.get(code, []):
                 item[f"{code}-{lang}"] = row[_count_alias(code, lang)]
             item[f"{code}_total"] = row[_count_alias(code)]
         rows.append(item)
 
-    return sorted(
+    rows = sorted(
         rows,
         key=lambda row: (
             row["collection"] or "",
@@ -163,3 +183,4 @@ def spreadsheet_rows(article_ids, collection=None):
             row["year"] or "",
         ),
     )
+    return columns, rows

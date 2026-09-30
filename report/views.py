@@ -6,7 +6,6 @@ from django.utils.translation import gettext_lazy as _
 
 from report.forms import VisualElementTotalsFilterForm
 from report.visual_element_totals import (
-    SPREADSHEET_COLUMNS,
     filtered_article_ids,
     spreadsheet_rows,
     yearly_totals,
@@ -57,19 +56,19 @@ def visual_element_totals_csv_view(request):
         return visual_element_totals_view(request)
 
     article_ids = filtered_article_ids(**filters)
-    rows = spreadsheet_rows(article_ids, collection=filters["collection"])
+    columns, rows = spreadsheet_rows(article_ids, collection=filters["collection"])
 
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = (
         'attachment; filename="visual_element_totals.csv"'
     )
     writer = csv.writer(response, delimiter=";")
-    writer.writerow(SPREADSHEET_COLUMNS)
+    writer.writerow(columns)
     for row in rows:
         writer.writerow(
             [
                 "" if row.get(column) is None else row.get(column)
-                for column in SPREADSHEET_COLUMNS
+                for column in columns
             ]
         )
     return response
