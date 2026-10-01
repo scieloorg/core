@@ -2,7 +2,9 @@ import logging
 from functools import cached_property
 
 from django import forms
+from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
+from django.core.cache import cache
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -48,6 +50,11 @@ class MultipleChoiceArrayField(ArrayField):
 ARTICLEMETA_COLLECTIONS_URL = (
     "https://articlemeta.scielo.org/api/v1/collection/identifiers/"
 )
+
+ENSURE_NETWORK_CLASSIFICATION_CACHE_KEY = "collection.ensure_network_classification"
+# intervalo mínimo (segundos) entre consultas ao articlemeta feitas por
+# Collection.ensure_network_classification
+ENSURE_NETWORK_CLASSIFICATION_INTERVAL = 600
 
 
 def normalize_network_classification(network_classification):
@@ -296,16 +303,50 @@ class Collection(CommonControlField, ClusterableModel):
             )
 
     @classmethod
+    def get_collections_without_network_classification(cls):
+        return cls.objects.filter(
+            models.Q(network_classification__isnull=True)
+            | models.Q(network_classification=[])
+        )
+
+    @classmethod
+    def ensure_network_classification(cls, user):
+        """
+        Garante network_classification das coleções antes de seu uso para
+        identificar a coleção principal (ex.: PidProviderXML.register de
+        artigos publicados em mais de uma coleção).
+
+        Consulta o articlemeta somente se há coleções sem esse dado e, no
+        máximo, uma vez a cada ENSURE_NETWORK_CLASSIFICATION_INTERVAL
+        segundos, evitando uma consulta por registro quando o articlemeta
+        está indisponível ou não tem a coleção.
+        Falhas são registradas no log e não interrompem quem chama.
+        """
+        if not getattr(settings, "COLLECTION_ENSURE_NETWORK_CLASSIFICATION", True):
+            return None
+        try:
+            if not cls.get_collections_without_network_classification().exists():
+                return None
+            # cache.add é atômico: somente um processo consulta o articlemeta
+            if not cache.add(
+                ENSURE_NETWORK_CLASSIFICATION_CACHE_KEY,
+                True,
+                ENSURE_NETWORK_CLASSIFICATION_INTERVAL,
+            ):
+                return None
+            return cls.complete_network_classification(user)
+        except Exception as e:
+            logging.exception(f"Collection.ensure_network_classification: {e}")
+            return None
+
+    @classmethod
     def complete_network_classification(cls, user, collections_data=None, verify=False):
         """
         Preenche em lote network_classification das coleções que estão
         sem esse dado, a partir dos dados do articlemeta.
         Coleções já preenchidas não são alteradas.
         """
-        queryset = cls.objects.filter(
-            models.Q(network_classification__isnull=True)
-            | models.Q(network_classification=[])
-        )
+        queryset = cls.get_collections_without_network_classification()
         result = {"updated": [], "not_found": []}
         if not queryset.exists():
             return result
