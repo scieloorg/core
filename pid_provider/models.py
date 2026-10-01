@@ -1005,6 +1005,10 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             error_type = None
             select_record_response = None
 
+            # garante network_classification das coleções antes de
+            # identificar a coleção principal (ver add_collections)
+            Collection.ensure_network_classification(user)
+
             # inputs
             pkg_name = filename
             input_data = None
