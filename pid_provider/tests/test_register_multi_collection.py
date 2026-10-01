@@ -18,12 +18,14 @@ ArticleProc) e não têm pid v3 (como os XML gerados a partir do site clássico)
 """
 
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import TestCase, override_settings
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
-from collection.models import Collection
+from collection.models import ENSURE_NETWORK_CLASSIFICATION_CACHE_KEY, Collection
 from journal.models import Journal, OfficialJournal, SciELOJournal
 from pid_provider.models import (
     CollectionPidV2,
@@ -423,6 +425,49 @@ class RegisterWithoutMainCollectionTest(
                 self.assertEqual(response["v2"], xml_with_pre.v2)
         self.assert_pids_v2_by_collection(registered, main=None)
         self.assert_no_pid_v2_change(registered)
+
+
+@override_settings(COLLECTION_ENSURE_NETWORK_CLASSIFICATION=True)
+class RegisterCompletesNetworkClassificationTest(
+    RegisterSameArticleInDifferentCollectionsTestBase
+):
+    """
+    coleções sem network_classification: o registro completa o dado
+    (articlemeta) antes de identificar a coleção principal
+    """
+
+    def setUp(self):
+        super().setUp()
+        Collection.objects.update(network_classification=None)
+        cache.delete(ENSURE_NETWORK_CLASSIFICATION_CACHE_KEY)
+        self.addCleanup(cache.delete, ENSURE_NETWORK_CLASSIFICATION_CACHE_KEY)
+        patcher = patch(
+            "collection.models.fetch_data",
+            return_value=[
+                {"acron": "scl", "network_classification": ["scielonetwork"]},
+                {"acron": "psi", "network_classification": ["thematic"]},
+            ],
+        )
+        self.mock_fetch_data = patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_main_collection_is_identified(self):
+        first = self.register(psi_xml(), "psi")
+        second = self.register(scl_xml(), "scl")
+
+        # consulta o articlemeta somente uma vez
+        self.mock_fetch_data.assert_called_once()
+        self.assertTrue(
+            Collection.objects.get(acron3="scl").is_national_journal_collection
+        )
+        self.assertFalse(
+            Collection.objects.get(acron3="psi").is_national_journal_collection
+        )
+
+        registered = self.assert_same_article_registered_once(first, second)
+        self.assertEqual(registered.v2, SCL_V2)
+        self.assert_pids_v2_by_collection(registered)
+        self.assert_current_version_is_from(registered, self.scl)
 
 
 class RegisterWithoutCollectionInXMLTest(
