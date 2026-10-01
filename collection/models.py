@@ -4,6 +4,7 @@ from functools import cached_property
 from django import forms
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -44,6 +45,11 @@ class MultipleChoiceArrayField(ArrayField):
         return super(ArrayField, self).formfield(**defaults)
 
 
+ARTICLEMETA_COLLECTIONS_URL = (
+    "https://articlemeta.scielo.org/api/v1/collection/identifiers/"
+)
+
+
 def normalize_network_classification(network_classification):
     """
     Retorna network_classification como lista ou None
@@ -51,7 +57,7 @@ def normalize_network_classification(network_classification):
     """
     if isinstance(network_classification, str):
         network_classification = [network_classification]
-    return list(network_classification or []) or None
+    return [item for item in network_classification or [] if item] or None
 
 
 class CollectionName(TextWithLang):
@@ -267,7 +273,7 @@ class Collection(CommonControlField, ClusterableModel):
     def load(cls, user, collections_data=None, verify=False):
         if not collections_data:
             collections_data = fetch_data(
-                "https://articlemeta.scielo.org/api/v1/collection/identifiers/",
+                ARTICLEMETA_COLLECTIONS_URL,
                 json=True,
                 verify=verify,
             )
@@ -288,6 +294,54 @@ class Collection(CommonControlField, ClusterableModel):
                 is_active=collection_data.get("is_active"),
                 network_classification=collection_data.get("network_classification"),
             )
+
+    @classmethod
+    def complete_network_classification(cls, user, collections_data=None, verify=False):
+        """
+        Preenche em lote network_classification das coleções que estão
+        sem esse dado, a partir dos dados do articlemeta.
+        Coleções já preenchidas não são alteradas.
+        """
+        queryset = cls.objects.filter(
+            models.Q(network_classification__isnull=True)
+            | models.Q(network_classification=[])
+        )
+        result = {"updated": [], "not_found": []}
+        if not queryset.exists():
+            return result
+
+        if not collections_data:
+            collections_data = fetch_data(
+                ARTICLEMETA_COLLECTIONS_URL,
+                json=True,
+                verify=verify,
+            )
+        network_classification_by_acron = {
+            item.get("acron"): normalize_network_classification(
+                item.get("network_classification")
+            )
+            for item in collections_data
+        }
+
+        now = timezone.now()
+        items = []
+        for obj in queryset:
+            network_classification = network_classification_by_acron.get(obj.acron3)
+            if not network_classification:
+                result["not_found"].append(obj.acron3)
+                continue
+            obj.network_classification = network_classification
+            obj.updated_by = user
+            # bulk_update não aplica auto_now
+            obj.updated = now
+            items.append(obj)
+            result["updated"].append(obj.acron3)
+
+        cls.objects.bulk_update(
+            items, ["network_classification", "updated_by", "updated"]
+        )
+        logging.info(f"Collection.complete_network_classification: {result}")
+        return result
 
     @classmethod
     def get(cls, acron3):
@@ -340,9 +394,9 @@ class Collection(CommonControlField, ClusterableModel):
         obj.has_analytics = has_analytics
         obj.collection_type = collection_type
         obj.is_active = is_active
-        if isinstance(network_classification, str):
-            network_classification = [network_classification]
-        obj.network_classification = network_classification or None
+        obj.network_classification = normalize_network_classification(
+            network_classification
+        )
         obj.save()
         for language in names or {}:
             lang = Language.get_or_create(code2=language, creator=user)
