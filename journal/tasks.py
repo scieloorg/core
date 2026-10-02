@@ -314,7 +314,7 @@ def load_license_of_use_in_journal(
 
     journals = AMJournal.objects.filter(**params)
     for journal in journals:
-        if scielo_issn := journal.scielo_issn:
+        if scielo_issn := journal.pid:
             if journal.data:
                 license_data = extract_value(
                     rename_dictionary_keys(journal.data, correspondencia_journal).get(
