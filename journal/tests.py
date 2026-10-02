@@ -1,7 +1,9 @@
 import json
 from unittest.mock import MagicMock, Mock, patch
 
-from django.test import TestCase
+from django.db import connection
+from django.test import TestCase, TransactionTestCase, tag
+from django_test_migrations.constants import MIGRATION_TEST_MARKER
 from django_test_migrations.migrator import Migrator
 
 from collection.models import Collection
@@ -31,45 +33,61 @@ from thematic_areas.models import ThematicArea
 from vocabulary.models import Vocabulary
 
 
-class MigrationTestCase(TestCase):
-    def test_migration_adding_journal_urls(self):
-        migrator = Migrator(database="default")
-        old_state = migrator.apply_initial_migration(
-            ("journal", "0024_alter_officialjournal_issn_electronic_and_more")
-        )
+@tag(MIGRATION_TEST_MARKER)
+class MigrationTestCase(TransactionTestCase):
+    """
+    Testa journal.0025_journalurl, que transfere Journal.journal_url
+    para JournalURL.
+
+    Usa Migrator diretamente porque MigratorTestCase (django-test-migrations
+    1.3.0) é incompatível com Django 5.2 (_pre_setup passou a ser
+    classmethod). Migrator recria o banco no estado de migrate_from, por isso
+    TransactionTestCase; ao final, reset() restaura todas as migrações.
+    """
+
+    migrate_from = ("journal", "0024_alter_officialjournal_issn_electronic_and_more")
+    migrate_to = ("journal", "0025_journalurl")
+
+    def setUp(self):
+        super().setUp()
+        self.migrator = Migrator(database="default")
+        self.journal_id = None
+        # cleanups rodam em ordem inversa: reset() e depois _delete_journal()
+        self.addCleanup(self._delete_journal)
+        self.addCleanup(self.migrator.reset)
+
+    def _fixture_teardown(self):
+        # Não faz o flush padrão do TransactionTestCase: reset() já deixa o
+        # banco migrado e com os dados das data migrations (ex.: coleção raiz
+        # do Wagtail). O flush apagaria esses dados e quebraria as execuções
+        # seguintes que reaproveitam o banco (--keepdb / --reuse-db).
+        pass
+
+    def _delete_journal(self):
+        if self.journal_id:
+            Journal.objects.filter(pk=self.journal_id).delete()
+
+    def test_migration_adding_and_deleting_journal_urls(self):
+        old_state = self.migrator.apply_initial_migration(self.migrate_from)
         Journal = old_state.apps.get_model("journal", "Journal")
-        JournalURL = old_state.apps.get_model("journal", "JournalURL")
+        journal_id = Journal.objects.create(journal_url="https://www.teste.com.br").pk
+        self.journal_id = journal_id
 
-        journal = Journal.objects.create(journal_url="https://www.teste.com.br")
-
-        new_state = migrator.apply_tested_migration(("journal", "0025_journalurl"))
+        new_state = self.migrator.apply_tested_migration(self.migrate_to)
         JournalURL = new_state.apps.get_model("journal", "JournalURL")
 
-        journal_url = JournalURL.objects.filter(journal=journal).first()
+        journal_url = JournalURL.objects.filter(journal_id=journal_id).first()
         self.assertIsNotNone(journal_url)
         self.assertEqual(journal_url.url, "https://www.teste.com.br")
 
-    def test_reverse_migration_deleting_journal_urls(self):
-        migrator = Migrator(database="default")
-        new_state = migrator.apply_initial_migration(("journal", "0025_journalurl"))
-        JournalURL = new_state.apps.get_model("journal", "JournalURL")
-        Journal = new_state.apps.get_model("journal", "Journal")
+        # reverte a migração: JournalURL deixa de existir
+        old_state = self.migrator.apply_tested_migration(self.migrate_from)
 
-        journal = Journal.objects.create(name="Test Journal")
-        JournalURL.objects.create(journal=journal, url="http://example.com")
-
-        journal_url = JournalURL.objects.filter(journal=journal).first()
-        self.assertIsNotNone(journal_url)
-
-        old_state = migrator.apply_tested_migration(
-            ("journal", "0024_alter_officialjournal_issn_electronic_and_more")
+        with self.assertRaises(LookupError):
+            old_state.apps.get_model("journal", "JournalURL")
+        self.assertNotIn(
+            JournalURL._meta.db_table, connection.introspection.table_names()
         )
-        JournalURL = old_state.apps.get_model("journal", "JournalURL")
-
-        journal_url = JournalURL.objects.filter(journal=journal).first()
-        self.assertIsNone(journal_url)
-
-        migrator.reset()
 
 
 class TestLoadLicenseOfUseInJournal(TestCase):
@@ -81,7 +99,7 @@ class TestLoadLicenseOfUseInJournal(TestCase):
         self.journal = Journal.objects.create(creator=self.user, title="Test Journal")
         self.am_journal = AMJournal.objects.create(
             collection=self.collection,
-            scielo_issn="1516-635X",
+            pid="1516-635X",
             data=[
                 {
                     "v541": [{"_": "BY"}],
@@ -117,7 +135,7 @@ class TestLoadLicenseOfUseInJournal(TestCase):
     ):
         self.am_journal_2 = AMJournal.objects.create(
             collection=self.collection,
-            scielo_issn=None,
+            pid=None,
             data=[
                 {
                     "v541": [{"_": "BY"}],
@@ -201,7 +219,7 @@ class TestAPIJournalArticleMeta(TestCase):
         self.user = User.objects.create(username="teste", password="teste")
         self.am_journal_scl = AMJournal.objects.create(
             collection=Collection.objects.get(acron3="scl"),
-            scielo_issn="0034-8910",
+            pid="0034-8910",
             data=self.data_json_journal_scl,
             creator=self.user,
         )
@@ -304,7 +322,7 @@ class RawOrganizationMixinTestCase(TestCase):
         """Set up test fixtures"""
         self.user = User.objects.create_user(username="testuser")
         self.collection = Collection.objects.create(
-            name="Test Collection",
+            main_name="Test Collection",
             acron3="TST",
         )
         self.journal = Journal.objects.create(
@@ -364,14 +382,14 @@ class RawOrganizationMixinTestCase(TestCase):
             user=self.user,
             original_data="Test Copyright Holder",
             raw_institution_name="Test Copyright Holder Corp",
-            raw_text="Full copyright text",
         )
 
         self.assertIsNotNone(copyright_history)
         self.assertEqual(
             copyright_history.raw_institution_name, "Test Copyright Holder Corp"
         )
-        self.assertEqual(copyright_history.raw_text, "Full copyright text")
+        # raw_text recebe original_data
+        self.assertEqual(copyright_history.raw_text, "Test Copyright Holder")
 
     def test_backward_compatibility_without_raw_fields(self):
         """Test that existing code without raw fields still works"""
