@@ -1,10 +1,8 @@
+import importlib
 import json
 from unittest.mock import MagicMock, Mock, patch
 
-from django.db import connection
-from django.test import TestCase, TransactionTestCase, tag
-from django_test_migrations.constants import MIGRATION_TEST_MARKER
-from django_test_migrations.migrator import Migrator
+from django.test import SimpleTestCase, TestCase
 
 from collection.models import Collection
 from core.models import Gender, Language, License
@@ -33,61 +31,54 @@ from thematic_areas.models import ThematicArea
 from vocabulary.models import Vocabulary
 
 
-@tag(MIGRATION_TEST_MARKER)
-class MigrationTestCase(TransactionTestCase):
+class MigrationTestCase(SimpleTestCase):
     """
     Testa journal.0025_journalurl, que transfere Journal.journal_url
     para JournalURL.
 
-    Usa Migrator diretamente porque MigratorTestCase (django-test-migrations
-    1.3.0) é incompatível com Django 5.2 (_pre_setup passou a ser
-    classmethod). Migrator recria o banco no estado de migrate_from, por isso
-    TransactionTestCase; ao final, reset() restaura todas as migrações.
+    Chama diretamente as funções do RunPython com `apps` mockado, sem aplicar
+    migrações nem consultar o banco (SimpleTestCase falha se houver consulta).
     """
 
-    migrate_from = ("journal", "0024_alter_officialjournal_issn_electronic_and_more")
-    migrate_to = ("journal", "0025_journalurl")
-
     def setUp(self):
-        super().setUp()
-        self.migrator = Migrator(database="default")
-        self.journal_id = None
-        # cleanups rodam em ordem inversa: reset() e depois _delete_journal()
-        self.addCleanup(self._delete_journal)
-        self.addCleanup(self.migrator.reset)
-
-    def _fixture_teardown(self):
-        # Não faz o flush padrão do TransactionTestCase: reset() já deixa o
-        # banco migrado e com os dados das data migrations (ex.: coleção raiz
-        # do Wagtail). O flush apagaria esses dados e quebraria as execuções
-        # seguintes que reaproveitam o banco (--keepdb / --reuse-db).
-        pass
-
-    def _delete_journal(self):
-        if self.journal_id:
-            Journal.objects.filter(pk=self.journal_id).delete()
+        self.migration = importlib.import_module("journal.migrations.0025_journalurl")
+        self.Journal = MagicMock()
+        self.JournalURL = MagicMock()
+        models = {"Journal": self.Journal, "JournalURL": self.JournalURL}
+        self.apps = Mock()
+        self.apps.get_model.side_effect = lambda app_label, model_name: models[
+            model_name
+        ]
 
     def test_migration_adding_and_deleting_journal_urls(self):
-        old_state = self.migrator.apply_initial_migration(self.migrate_from)
-        Journal = old_state.apps.get_model("journal", "Journal")
-        journal_id = Journal.objects.create(journal_url="https://www.teste.com.br").pk
-        self.journal_id = journal_id
-
-        new_state = self.migrator.apply_tested_migration(self.migrate_to)
-        JournalURL = new_state.apps.get_model("journal", "JournalURL")
-
-        journal_url = JournalURL.objects.filter(journal_id=journal_id).first()
-        self.assertIsNotNone(journal_url)
-        self.assertEqual(journal_url.url, "https://www.teste.com.br")
-
-        # reverte a migração: JournalURL deixa de existir
-        old_state = self.migrator.apply_tested_migration(self.migrate_from)
-
-        with self.assertRaises(LookupError):
-            old_state.apps.get_model("journal", "JournalURL")
-        self.assertNotIn(
-            JournalURL._meta.db_table, connection.introspection.table_names()
+        run_python = self.migration.Migration.operations[-1]
+        self.assertEqual(
+            run_python.code,
+            self.migration.transfer_journal_url_to_journal_urls_inline_panel,
         )
+        self.assertEqual(
+            run_python.reverse_code,
+            self.migration.reverse_transfer_journal_url_to_journal_urls_inline_panel,
+        )
+
+        journal = Mock(journal_url="https://www.teste.com.br")
+        self.Journal.objects.filter.return_value = [journal]
+
+        run_python.code(self.apps, schema_editor=None)
+
+        self.Journal.objects.filter.assert_called_once_with(journal_url__isnull=False)
+        self.JournalURL.assert_called_once_with(
+            journal=journal, url="https://www.teste.com.br"
+        )
+        self.JournalURL.objects.bulk_create.assert_called_once_with(
+            [self.JournalURL.return_value]
+        )
+
+        # reverte a migração: os JournalURL criados são apagados
+        run_python.reverse_code(self.apps, schema_editor=None)
+
+        self.JournalURL.objects.all.assert_called_once_with()
+        self.JournalURL.objects.all.return_value.delete.assert_called_once_with()
 
 
 class TestLoadLicenseOfUseInJournal(TestCase):
