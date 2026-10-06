@@ -1158,9 +1158,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             raise ValueError("get_record_by_pid_v3: XML has not pid v3")
         xml_pid_v3 = xml_adapter.v3
         # select_related("current_version") já vem do manager
-        results = cls.objects.filter(
-            Q(v3=xml_pid_v3) | Q(other_pid__pid_in_xml=xml_pid_v3)
-        )
+        results = cls.objects.filter(v3=xml_pid_v3)
         if not results.exists():
             # pid v3 é inédito
             raise cls.DoesNotExist
