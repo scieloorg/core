@@ -1,6 +1,7 @@
 import csv
 import os
 import sys
+from datetime import date
 
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.translation import gettext_lazy as _
@@ -11,7 +12,8 @@ from core.libs import chkcsv
 from .models import EditorialBoardMember, EditorialBoardMemberFile
 from journal.models import Journal
 from location.models import Location
-from researcher.models import Researcher    
+from organization.models import Organization
+from researcher.models import NewResearcher, ResearcherOrcid
 from tracker.models import UnexpectedEvent
 from core.models import Gender
 
@@ -89,29 +91,39 @@ def import_file_ebm(request):
                     country_acronym=row.get("institution_country_acronym"),
                     country_name=row.get("institution_country_name"),
                 )
-                researcher = Researcher.create_or_update(
+                affiliation = None
+                if row.get("Instituição"):
+                    affiliation = Organization.create_or_update(
+                        user=user,
+                        name=row.get("Instituição"),
+                        location=location,
+                    )
+                orcid = None
+                if row.get("ORCID iD"):
+                    orcid = ResearcherOrcid.get_or_create(
+                        user=user, orcid=row.get("ORCID iD")
+                    )
+                researcher = NewResearcher.get_or_create(
                     user=user,
                     given_names=given_names,
                     last_name=last_name,
                     suffix=row.get("Suffix"),
-                    declared_name=row.get("declared_person_name"),
-                    lattes=row.get("CV Lattes"),
-                    orcid=row.get("ORCID iD"),
-                    email=row.get("Email"),
+                    affiliation=affiliation,
+                    orcid=orcid,
                     gender=gender,
-                    location=location,
-                    aff_div1=row.get("institution_div1"),
-                    aff_div2=row.get("institution_div2"),
-                    aff_name=row.get("Instituição"),
                 )
+                researcher.add_lattes_id(row.get("CV Lattes"), user)
+                researcher.add_email(row.get("Email"), user)
+
+                year = date(int(row["Data"]), 1, 1)
                 EditorialBoardMember.create_or_update(
                     user=user,
                     researcher=researcher,
                     journal=journal,
                     declared_role=row["Cargo / instância do membro"],
                     std_role=None,
-                    editorial_board_initial_year=row["Data"],
-                    editorial_board_final_year=row["Data"],
+                    editorial_board_initial_year=year,
+                    editorial_board_final_year=year,
                 )
 
     except Exception as ex:
