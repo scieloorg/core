@@ -5406,3 +5406,84 @@ msgstr ""
 
 #~ msgid "Home"
 #~ msgstr "Home"
+
+#: report
+msgctxt "filters"
+msgid "Clear"
+msgstr "Clear"
+
+#: report
+msgid "Reports"
+msgstr "Reports"
+
+#: report
+msgid "Data availability report"
+msgstr "Data availability report"
+
+#: report
+msgid "Data availability"
+msgstr "Data availability"
+
+#: report
+msgid "Articles by data availability status, per year. The online publication year filter applies to the year the article was published on the website, which may differ from the issue year shown in the bibliographic strip."
+msgstr "Articles by data availability status, per year. The online publication year filter applies to the year the article was published on the website, which may differ from the issue year shown in the bibliographic strip."
+
+#: report
+msgid "Articles by data availability status per year, with totals and percentages. Filters: collection, journal and online publication year."
+msgstr "Articles by data availability status per year, with totals and percentages. Filters: collection, journal and online publication year."
+
+#: report
+msgid "Filter"
+msgstr "Filter"
+
+#: report
+msgid "Download CSV"
+msgstr "Download CSV"
+
+#: report
+msgid "Total"
+msgstr "Total"
+
+#: report
+msgid "No year"
+msgstr "No year"
+
+#: report
+msgid "No articles found for the selected filters."
+msgstr "No articles found for the selected filters."
+
+#: report
+msgid "Status legend"
+msgstr "Status legend"
+
+#: report
+msgid "Public reports about the content managed by SciELO Content Manager."
+msgstr "Public reports about the content managed by SciELO Content Manager."
+
+#: report
+msgid "No reports available."
+msgstr "No reports available."
+
+#: report
+msgid "Online publication from"
+msgstr "Online publication from"
+
+#: report
+msgid "Online publication to"
+msgstr "Online publication to"
+
+#: report
+msgid "Group by"
+msgstr "Group by"
+
+#: report
+msgid "Issue year (bibliographic strip)"
+msgstr "Issue year (bibliographic strip)"
+
+#: report
+msgid "Online publication year"
+msgstr "Online publication year"
+
+#: report/templates/report/visual_element_totals.html
+msgid "Clear"
+msgstr "Clear"
