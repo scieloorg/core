@@ -195,7 +195,7 @@ def _register_journal_data(user, collection_acron3, journal_issn_list=None):
                 detail={
                     "function": "journal.sources.article_meta._register_journal_data",
                     "collection": collection_acron3,
-                    "issn": journal_am.scielo_issn,  # Mudança aqui: scielo_issn -> pid
+                    "issn": journal_am.pid,
                     "data_journal": journal_am.data,
                 },
             )
@@ -233,7 +233,7 @@ def _register_journal_data(user, collection_acron3, journal_issn_list=None):
                 detail={
                     "function": "journal.sources.article_meta._register_journal_data",
                     "collection": collection_acron3,
-                    "issn": journal_am.scielo_issn,  # Mudança aqui: scielo_issn -> pid
+                    "issn": journal_am.pid,
                     "data_journal": journal_am.data,
                 },
             )

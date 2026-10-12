@@ -163,6 +163,20 @@ class XMLVersion(CommonControlField):
         except Exception as e:
             logging.exception(e)
         self.file.save(filename, ContentFile(content))
+        self._update_linked_article_visual_counts()
+
+    def _update_linked_article_visual_counts(self):
+        from article.models import Article
+
+        if not self.pid_provider_xml_id or not self.file:
+            return
+        articles = Article.objects.filter(pp_xml_id=self.pid_provider_xml_id)
+        if not articles:
+            return
+        xmltree = self.xml_with_pre.xmltree
+        user = self.updated_by or self.creator
+        for article in articles:
+            article.create_or_update_article_visual_counts(user, xmltree=xmltree)
 
     def is_equal_to(self, xml_with_pre):
         return os.path.isfile(self.file.path) and (
@@ -1371,9 +1385,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
             raise ValueError("get_record_by_pid_v3: XML has not pid v3")
         xml_pid_v3 = xml_adapter.v3
         # select_related("current_version") já vem do manager
-        results = cls.objects.filter(
-            Q(v3=xml_pid_v3) | Q(other_pid__pid_in_xml=xml_pid_v3)
-        )
+        results = cls.objects.filter(v3=xml_pid_v3)
         if not results.exists():
             # pid v3 é inédito
             raise cls.DoesNotExist

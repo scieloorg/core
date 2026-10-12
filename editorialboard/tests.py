@@ -1,8 +1,12 @@
+import json
+from datetime import date
 from unittest.mock import patch
 
 from django.test import TestCase, RequestFactory
+from django.utils import translation
 from django.contrib.auth import get_user_model
 from django.contrib.messages.storage.fallback import FallbackStorage
+from wagtail.admin.panels import get_edit_handler
 from wagtail.documents.models import Document
 
 # Create your tests here.
@@ -14,12 +18,36 @@ from editorialboard.models import (
     EditorialBoardMemberFile,
 )
 from editorialboard.views import import_file_ebm
-from researcher.models import NewResearcher, ResearcherIds
+from researcher.models import NewResearcher, ResearcherIds, ResearcherOrcid
 from organization.models import Organization
 from journal.models import Journal
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 User = get_user_model()
+
+
+def get_editorialboard_form(instance, **fields):
+    """
+    Formulário com dados (bound), como o admin o recebe.
+
+    EditorialboardForm é o base_form_class; a classe usada pelo admin
+    (com model e campos definidos) é gerada a partir dos panels.
+    """
+    data = {
+        # management form do InlinePanel role_editorial_board
+        "role_editorial_board-TOTAL_FORMS": "0",
+        "role_editorial_board-INITIAL_FORMS": "0",
+        "role_editorial_board-MIN_NUM_FORMS": "0",
+        "role_editorial_board-MAX_NUM_FORMS": "1000",
+    }
+    data.update(fields)
+    form_class = get_edit_handler(EditorialBoardMember).get_form_class()
+    return form_class(data=data, instance=instance)
+
+
+def autocomplete_value(obj):
+    # formato esperado pelo widget de AutocompletePanel
+    return json.dumps({"pk": obj.pk})
 
 
 class EditorialBoardMemberTest(TestCase):
@@ -39,57 +67,28 @@ class EditorialBoardMemberTest(TestCase):
         self.organization = Organization.create_or_update(
             user=self.user,
             name="Name of institution",
-            acronym="Acronym of institution",
+            acronym="NOI",
             url="www.teste.com.br",
             location=self.location,
             institution_type_mec="outros",
             is_official=True,
         )
-        self.researcher_identifier_orcid = ResearcherIds.get_or_create(
+        self.orcid = ResearcherOrcid.get_or_create(
             user=self.user,
-            identifier="0000-0002-9147-0547",
-            source_name="ORCID",
-        )
-        self.researcher_identifier_lattes = ResearcherIds.get_or_create(
-            user=self.user,
-            identifier="qwertpoiuytkdiekd",
-            source_name="LATTES",
-        )
-        self.researcher_identifier_email = ResearcherIds.get_or_create(
-            user=self.user,
-            identifier="user@dom.org",
-            source_name="EMAIL",
+            orcid="0000-0002-9147-0547",
         )
         self.researcher = NewResearcher.get_or_create(
             self.user,
             given_names="Anna",
             last_name="Taomeaome",
             suffix="Jr.",
-            researcher_identifier=self.researcher_identifier_orcid,
+            orcid=self.orcid,
             affiliation=self.organization,
             gender=self.gender,
             gender_identification_status="DECLARED",
         )
-        self.researcher = NewResearcher.get_or_create(
-            self.user,
-            given_names="Anna",
-            last_name="Taomeaome",
-            suffix="Jr.",
-            researcher_identifier=self.researcher_identifier_email,
-            affiliation=self.organization,
-            gender=self.gender,
-            gender_identification_status="DECLARED",
-        )
-        self.researcher = NewResearcher.get_or_create(
-            self.user,
-            given_names="Anna",
-            last_name="Taomeaome",
-            suffix="Jr.",
-            researcher_identifier=self.researcher_identifier_lattes,
-            affiliation=self.organization,
-            gender=self.gender,
-            gender_identification_status="DECLARED",
-        )
+        self.researcher.add_lattes_id("1234567890123456", self.user)
+        self.researcher.add_email("user@dom.org", self.user)
 
     def test_create_or_update_location(self):
         self.assertEqual("Brasil", self.location.country.name)
@@ -127,13 +126,13 @@ class EditorialBoardMemberTest(TestCase):
         self.assertEqual("Anna Taomeaome Jr.", editorial_board_member.researcher.fullname)
 
         self.assertEqual(
-            "qwertpoiuytkdiekd",
+            "1234567890123456",
             editorial_board_member.researcher.researcher_ids.filter(source_name="LATTES").first().identifier,
         )
 
         self.assertEqual(
             "0000-0002-9147-0547",
-            editorial_board_member.researcher.researcher_ids.filter(source_name="ORCID").first().identifier,
+            editorial_board_member.researcher.orcid.orcid,
         )
         self.assertEqual(
             "user@dom.org",
@@ -160,7 +159,7 @@ class ImportFileEBMTest(TestCase):
         self.user = User.objects.create(username="user")
         self.journal = Journal.objects.create(title="Revista XXXX")
         self.csv_content = """Nome do membro;Sobrenome;Periódico;Suffix;declared_person_name;CV Lattes;ORCID iD;Email;Gender;institution_city_name;institution_state_text;institution_state_acronym;institution_state_name;institution_country_text;institution_country_acronym;institution_country_name;institution_div1;institution_div2;Instituição;Cargo / instância do membro;Data
-John;Doe;Revista XXXX;Jr;John Doe;lattes;0000-0000-0000-0000;john@doe.com;M;City;State;ST;State Name;Country;CN;Country Name;Div1;Div2;Institution;Editor;2020"""
+John;Doe;Revista XXXX;Jr;John Doe;lattes;0000-0000-0000-0001;john@doe.com;M;City;State;ST;State Name;Country;CN;Country Name;Div1;Div2;Institution;Editor;2020"""
         self.factory = RequestFactory()
    
     def create_editorial_file(self, csv_content):
@@ -194,13 +193,21 @@ John;Doe;Revista XXXX;Jr;John Doe;lattes;0000-0000-0000-0000;john@doe.com;M;City
         response = import_file_ebm(request)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Location.objects.all().count(), 1)
-        self.assertEqual(Researcher.objects.all().count(), 1)
+        self.assertEqual(NewResearcher.objects.all().count(), 1)
         self.assertEqual(EditorialBoardMember.objects.all().count(), 1)
-        self.assertEqual(EditorialBoardMember.objects.first().researcher.person_name.fullname, "John Doe Jr")
-        self.assertEqual(EditorialBoardMember.objects.first().journal.title, "Revista XXXX")
-        self.assertEqual(EditorialBoardMember.objects.first().role_editorial_board.first().role.declared_role, "Editor")
-        self.assertEqual(EditorialBoardMember.objects.first().role_editorial_board.first().initial_year, "2020")
-        self.assertEqual(EditorialBoardMember.objects.first().role_editorial_board.first().final_year, "2020")
+
+        member = EditorialBoardMember.objects.first()
+        member_researcher = member.researcher
+
+        self.assertEqual(member_researcher.fullname, "John Doe Jr")
+        self.assertEqual(member_researcher.affiliation.name, "Institution")
+        self.assertEqual(member_researcher.orcid.orcid, "0000-0000-0000-0001")
+        self.assertEqual(member.journal.title, "Revista XXXX")
+
+        member_role_editorial_board = member.role_editorial_board.first()
+        self.assertEqual(member_role_editorial_board.role.declared_role, "Editor")
+        self.assertEqual(member_role_editorial_board.initial_year, date(2020, 1, 1))
+        self.assertEqual(member_role_editorial_board.final_year, date(2020, 1, 1))
 
 
 class EditorialBoardMemberFormTest(TestCase):
@@ -225,8 +232,6 @@ class EditorialBoardMemberFormTest(TestCase):
     
     def test_manual_input_creates_researcher(self):
         """Test that manual input creates a new researcher"""
-        from editorialboard.forms import EditorialboardForm
-        
         # Create form data with manual fields
         form_data = {
             'manual_given_names': 'João',
@@ -236,7 +241,7 @@ class EditorialBoardMemberFormTest(TestCase):
             'manual_institution_acronym': 'USP',
             'manual_institution_city': 'São Paulo',
             'manual_institution_state': 'São Paulo',
-            'manual_institution_country': self.country,  # Use Country object
+            'manual_institution_country': autocomplete_value(self.country),
             'manual_orcid': '0000-0001-2345-6789',
             'manual_lattes': '1234567890123456',  # Valid 16-digit Lattes ID
             'manual_email': 'joao.silva@usp.br',
@@ -244,11 +249,10 @@ class EditorialBoardMemberFormTest(TestCase):
         
         # Create editorial board member
         ebm = EditorialBoardMember(journal=self.journal)
-        for key, value in form_data.items():
-            setattr(ebm, key, value)
         
         # Create the form
-        form = EditorialboardForm(instance=ebm)
+        form = get_editorialboard_form(ebm, **form_data)
+        self.assertTrue(form.is_valid(), form.errors)
         
         # Manually call save_all to test the logic
         saved_instance = form.save_all(self.user)
@@ -259,57 +263,52 @@ class EditorialBoardMemberFormTest(TestCase):
         self.assertEqual(saved_instance.researcher.last_name, 'Silva')
         self.assertEqual(saved_instance.researcher.suffix, 'Jr.')
         
-        # Verify affiliation was created (if location exists)
-        if saved_instance.researcher.affiliation:
-            self.assertEqual(saved_instance.researcher.affiliation.name, 'Universidade de São Paulo')
-        
+        # Verify affiliation was created
+        self.assertIsNotNone(saved_instance.researcher.affiliation)
+        self.assertEqual(saved_instance.researcher.affiliation.name, 'Universidade de São Paulo')
+
         # Verify ORCID was created and linked
-        if saved_instance.researcher.orcid:
-            self.assertEqual(saved_instance.researcher.orcid.orcid, '0000-0001-2345-6789')
-        
+        self.assertIsNotNone(saved_instance.researcher.orcid)
+        self.assertEqual(saved_instance.researcher.orcid.orcid, '0000-0001-2345-6789')
+
         # Verify Lattes ID was created and linked
         lattes_ids = ResearcherIds.objects.filter(
-            researcher=saved_instance.researcher, 
+            researcher=saved_instance.researcher,
             source_name='LATTES'
         )
-        if lattes_ids.exists():
-            self.assertEqual(lattes_ids.first().identifier, '1234567890')
-        
+        self.assertEqual(
+            list(lattes_ids.values_list('identifier', flat=True)), ['1234567890123456']
+        )
+
         # Verify Email was created and linked
         email_ids = ResearcherIds.objects.filter(
-            researcher=saved_instance.researcher, 
+            researcher=saved_instance.researcher,
             source_name='EMAIL'
         )
-        if email_ids.exists():
-            self.assertEqual(email_ids.first().identifier, 'joao.silva@usp.br')
+        self.assertEqual(
+            list(email_ids.values_list('identifier', flat=True)), ['joao.silva@usp.br']
+        )
     
     def test_manual_input_without_researcher_requires_names(self):
         """Test that form validation requires names when no researcher selected"""
-        from editorialboard.forms import EditorialboardForm
-        from django.core.exceptions import ValidationError
-        
         # Create form data without required fields
         form_data = {
             'manual_institution_name': 'Universidade de São Paulo',
         }
         
         ebm = EditorialBoardMember(journal=self.journal)
-        for key, value in form_data.items():
-            setattr(ebm, key, value)
+        form = get_editorialboard_form(ebm, **form_data)
         
-        form = EditorialboardForm(instance=ebm)
-        
-        # Test that clean raises ValidationError with expected message
-        with self.assertRaises(ValidationError) as context:
-            form.clean()
-        
-        # Verify the error message content
-        self.assertIn('given names and last name', str(context.exception))
+        # LANGUAGE_CODE é pt-br; verifica a mensagem original
+        with translation.override("en"):
+            # Test that clean adds the expected validation error
+            self.assertFalse(form.is_valid())
+            
+            # Verify the error message content
+            self.assertIn('given names and last name', str(form.non_field_errors()))
     
     def test_existing_researcher_selection_skips_manual_input(self):
         """Test that selecting existing researcher skips manual input processing"""
-        from editorialboard.forms import EditorialboardForm
-        
         # Create an existing researcher
         organization = Organization.create_or_update(
             user=self.user,
@@ -327,14 +326,14 @@ class EditorialBoardMemberFormTest(TestCase):
         )
         
         # Create form data with both researcher and manual fields
-        ebm = EditorialBoardMember(
-            journal=self.journal,
-            researcher=existing_researcher,
+        ebm = EditorialBoardMember(journal=self.journal)
+        form = get_editorialboard_form(
+            ebm,
+            researcher=autocomplete_value(existing_researcher),
             manual_given_names='João',
             manual_last_name='Silva',
         )
-        
-        form = EditorialboardForm(instance=ebm)
+        self.assertTrue(form.is_valid(), form.errors)
         saved_instance = form.save_all(self.user)
         
         # Verify that existing researcher is used (not manual input)
@@ -343,13 +342,13 @@ class EditorialBoardMemberFormTest(TestCase):
     
     def test_invalid_orcid_format_raises_error(self):
         """Test that invalid ORCID format raises ValidationError"""
-        from editorialboard.forms import EditorialboardForm
         from researcher.utils import clean_orcid
         from django.core.exceptions import ValidationError
         
         # Test invalid ORCID formats
+        # (clean_orcid valida somente o formato; o dígito verificador é
+        # validado por ResearcherOrcid.validate_orcid)
         invalid_orcids = [
-            '1234-5678-9012-3456',  # Invalid checksum position
             '0000-0001-2345-678',   # Too short
             '0000-0001-2345-67890', # Too long
             'invalid-orcid',        # Invalid format

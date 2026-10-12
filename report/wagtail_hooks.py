@@ -1,9 +1,13 @@
+from django.urls import path
+from django.utils.translation import gettext_lazy as _
+from wagtail import hooks
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet
-from django.utils.translation import gettext_lazy as _
+
+from config.menu import get_menu_order
+from report.views import visual_element_totals_csv_view, visual_element_totals_view
 
 from .models import ReportCSV
-from config.menu import get_menu_order
 
 @register_snippet
 class ReportCSVAdmin(SnippetViewSet):
@@ -38,3 +42,19 @@ class ReportCSVAdmin(SnippetViewSet):
 
     link_download.short_descriptions = 'Download'
     link_download.allow_tags = True
+
+
+@hooks.register("register_admin_urls")
+def register_visual_element_totals_urls():
+    return [
+        path(
+            "report/visual-element-totals/",
+            visual_element_totals_view,
+            name="visual_element_totals",
+        ),
+        path(
+            "report/visual-element-totals/csv/",
+            visual_element_totals_csv_view,
+            name="visual_element_totals_csv",
+        ),
+    ]

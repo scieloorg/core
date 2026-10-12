@@ -1,4 +1,7 @@
+from django.urls import reverse
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+from wagtail.admin.viewsets.base import ViewSet
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
 
@@ -225,6 +228,17 @@ class ArticlePeerReviewStatsSnippetViewSet(SnippetViewSet):
     list_per_page = 25
 
 
+class VisualElementTotalsViewSet(ViewSet):
+    name = "visual_element_totals"
+    icon = "table"
+    menu_label = _("Figure, Table and Equation Counts")
+    add_to_admin_menu = False
+
+    @cached_property
+    def menu_url(self):
+        return reverse("visual_element_totals")
+
+
 class ArticleSnippetViewSetGroup(SnippetViewSetGroup):
     menu_label = _("Articles")
     menu_icon = "folder-open-inverse"
@@ -238,6 +252,7 @@ class ArticleSnippetViewSetGroup(SnippetViewSetGroup):
         ArticleSourceSnippetViewSet,
         AMArticleSnippetViewSet,
         ArticlePeerReviewStatsSnippetViewSet,
+        VisualElementTotalsViewSet,
     )
 
 

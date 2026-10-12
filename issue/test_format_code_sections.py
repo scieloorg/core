@@ -121,7 +121,7 @@ class TestFormatCodeSections(SimpleTestCase):
         formatter = _make_formatter([])
         formatter._format_code_sections()
 
-        formatter.obj.table_of_contents.select_related.assert_called_once_with("journal_toc__language")
+        formatter.obj.table_of_contents.select_related.assert_called_once_with("journal_toc", "journal_toc__language")
         formatter.obj.table_of_contents.select_related.return_value.all.assert_called_once()
         # Confirm the old attribute (code_sections) was never called as a manager
         formatter.obj.code_sections.all.assert_not_called()
