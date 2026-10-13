@@ -202,6 +202,11 @@ def erratum_xml(pid_v2, journal_acron, collection):
     return make_xml_with_pre(pid_v2, journal_acron, collection, content)
 
 
+# não consulta o articlemeta, independente das settings usadas (ex.: settings.local
+# com articlemeta acessível completaria network_classification das coleções
+# e os testes sem coleção principal passariam a ter scl como principal);
+# subclasses podem habilitar com override_settings
+@override_settings(COLLECTION_ENSURE_NETWORK_CLASSIFICATION=False)
 class RegisterSameArticleInDifferentCollectionsTestBase(TestCase):
     def setUp(self):
         self.media_directory = TemporaryDirectory()
