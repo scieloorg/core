@@ -749,6 +749,7 @@ class RegisterResponseSchemaTest(RegisterTestBase):
             "input_data",
             "xml_adapter_data",
             "v3",
+            "v2",
             "record_status",
             "skipped",
             "event_status",
