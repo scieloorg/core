@@ -1102,6 +1102,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 )
                 # data to return
                 response.update(registered.data)
+                # garante que o valor de v2 seja o da entrada, da coleção processada, e não o da coleção principal (que pode ser diferente)
                 response["v2"] = xml_with_pre.v2
             except exceptions.ForbiddenPidProviderXMLRegistrationError:
                 event_status = "forbidden"
@@ -1110,6 +1111,8 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 event_status = "skipped"
                 response["skipped"] = True
                 response.update(registered.data)
+                # garante que o valor de v2 seja o da entrada, da coleção processada, e não o da coleção principal (que pode ser diferente)
+                response["v2"] = xml_with_pre.v2
                 # do not raise
         except Exception as exc:
             event_status = event_status or "error"
@@ -1481,6 +1484,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 {
                     "pid_type": "pid_v3",
                     "pid_in_xml": xml_with_pre.v3,
+                    "version": self.current_version,
                     "registered": self.v3,
                 }
             )
@@ -1490,6 +1494,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                     {
                         "pid_type": "pid_v2",
                         "pid_in_xml": xml_with_pre.v2,
+                        "version": self.current_version,
                         "registered": self.v2,
                     }
                 )
@@ -1500,6 +1505,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 {
                     "pid_type": "aop_pid",
                     "pid_in_xml": xml_with_pre.aop_pid,
+                    "version": self.current_version,
                     "registered": self.aop_pid,
                 }
             )
