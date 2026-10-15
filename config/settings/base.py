@@ -727,6 +727,9 @@ PROFILING_LOG_ALL = env.bool('DJANGO_PROFILING_LOG_ALL', default=True)
 
 
 # LINK TO OLD SCIELO
+# Habilita/desabilita a exibição do link para o site antigo no cabeçalho
+SCIELO_OLD_URL_ENABLED = env.bool("SCIELO_OLD_URL_ENABLED", default=False)
+# Deve começar com http:// ou https://; o texto do link é a URL sem o protocolo
 SCIELO_OLD_URL = env.str("SCIELO_OLD_URL", default="http://old.scielo.org/")
 
 # Score mínimo (percentual_score) para considerar um candidato de PidProviderXML como aprovado

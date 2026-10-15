@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from django.conf import settings
 from django.db import models
 from django.db.models import Prefetch, Q
@@ -74,8 +76,27 @@ def default_journal_filter(search_term, starts_with_letter, active_or_discontinu
 
 def _default_context(context):
     context["social_networks"] = get_social_networks("scl")
-    context["old_scielo_url"] = settings.SCIELO_OLD_URL
+    context["old_scielo_link"] = get_old_scielo_link()
     context["page_about"] = get_page_about()
+
+
+def get_old_scielo_link():
+    """
+    Retorna o link para o site antigo como {"url": ..., "label": ...},
+    ou None se o link estiver desabilitado (SCIELO_OLD_URL_ENABLED=False).
+    SCIELO_OLD_URL deve começar com http:// ou https://; caso contrário,
+    usa o valor padrão. O label é a URL sem o protocolo.
+    """
+    if not getattr(settings, "SCIELO_OLD_URL_ENABLED", True):
+        return None
+
+    default_url = "http://old.scielo.org/"
+    url = (getattr(settings, "SCIELO_OLD_URL", None) or "").strip()
+    if urlparse(url).scheme not in ("http", "https"):
+        url = default_url
+
+    label = url.split("://", 1)[1].rstrip("/")
+    return {"url": url, "label": label}
 
 
 def get_page_about():
