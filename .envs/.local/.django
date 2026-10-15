@@ -34,4 +34,4 @@ USE_OPENSEARCH_LOGGING=no
 # OPENSEARCH_LOGGING_LEVEL=INFO
 
 # Link para o site antigo (old.scielo.org) no cabeçalho
-SCIELO_OLD_URL_ENABLED=True
+SCIELO_OLD_URL_ENABLED=False
