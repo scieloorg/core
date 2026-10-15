@@ -121,7 +121,9 @@ class IsUpdatedTests(SimpleTestCase):
 class CheckRegisteredPidsChangedTests(SimpleTestCase):
     def test_reports_only_fields_that_differ(self):
         ppx = PidProviderXML(v3="V3-OLD", v2="V2-SAME", aop_pid=None)
-        xml_with_pre = SimpleNamespace(v3="V3-NEW", v2="V2-SAME", aop_pid="AOP-NEW")
+        xml_with_pre = SimpleNamespace(
+            v3="V3-NEW", v2="V2-SAME", aop_pid="AOP-NEW", collection=None
+        )
 
         changed = ppx.check_registered_pids_changed(xml_with_pre)
 
@@ -134,7 +136,7 @@ class CheckRegisteredPidsChangedTests(SimpleTestCase):
 
     def test_returns_empty_list_when_nothing_changed(self):
         ppx = PidProviderXML(v3="V3", v2="V2", aop_pid="AOP")
-        xml_with_pre = SimpleNamespace(v3="V3", v2="V2", aop_pid="AOP")
+        xml_with_pre = SimpleNamespace(v3="V3", v2="V2", aop_pid="AOP", collection=None)
 
         self.assertEqual(ppx.check_registered_pids_changed(xml_with_pre), [])
 
@@ -438,7 +440,8 @@ class DataToCompareTests(TestCase):
             creator=self.user, v3="A", v2="V2-FALLBACK", readable_data=None
         )
         data = ppx.data_to_compare
-        self.assertEqual(data["pid_v2"], "V2-FALLBACK")
+        # lista: o documento pode ter pid v2 diferente em cada coleção
+        self.assertEqual(data["pid_v2"], ["V2-FALLBACK"])
 
 
 class DataPropertyTests(TestCase):

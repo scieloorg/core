@@ -731,3 +731,9 @@ SCIELO_OLD_URL = env.str("SCIELO_OLD_URL", default="http://old.scielo.org/")
 
 # Score mínimo (percentual_score) para considerar um candidato de PidProviderXML como aprovado
 PID_PROVIDER_MIN_RATE = env.float("PID_PROVIDER_MIN_RATE", default=0.65)
+
+# Completa automaticamente (articlemeta) network_classification das coleções
+# antes de PidProviderXML.register (ver Collection.ensure_network_classification)
+COLLECTION_ENSURE_NETWORK_CLASSIFICATION = env.bool(
+    "COLLECTION_ENSURE_NETWORK_CLASSIFICATION", default=True
+)
