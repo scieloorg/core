@@ -27,6 +27,7 @@ from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
 from collection.models import ENSURE_NETWORK_CLASSIFICATION_CACHE_KEY, Collection
 from journal.models import Journal, OfficialJournal, SciELOJournal
+from pid_provider import exceptions
 from pid_provider.models import (
     CollectionPidV2,
     OtherPid,
@@ -491,6 +492,25 @@ class RegisterWithoutCollectionInXMLTest(
         )
         self.assertFalse(CollectionPidV2.objects.exists())
         self.assertIsNone(registered.current_version)
+        self.assertFalse(XMLVersion.objects.exists())
+
+    def test_unidentified_collection_is_not_registered(self):
+        SciELOJournal.objects.all().delete()
+
+        response = PidProviderXML.register(
+            make_xml_with_pre(SCL_V2, "pusp"),
+            "scl",
+            self.user,
+            origin_date="2026-01-01",
+        )
+
+        self.assertEqual(response["event_status"], "error")
+        self.assertEqual(
+            response["error_type"],
+            str(exceptions.RequiredCollectionErrorToGetPidProviderXMLError),
+        )
+        self.assertFalse(PidProviderXML.objects.exists())
+        self.assertFalse(CollectionPidV2.objects.exists())
         self.assertFalse(XMLVersion.objects.exists())
 
 
