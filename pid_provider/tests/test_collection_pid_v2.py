@@ -301,7 +301,9 @@ class PidProviderXMLCollectionsTest(MultiCollectionJournalTestBase):
         version = self.create_version(registered, "psi")
 
         with patch.object(XMLVersion, "get_or_create", return_value=version):
-            registered.add_collections(self.user, xml_adapter)
+            registered.add_collections(
+                self.user, xml_adapter, get_xml_collections(xml_adapter.xml_with_pre)
+            )
 
         registered.refresh_from_db()
         self.assertEqual(
@@ -321,7 +323,9 @@ class PidProviderXMLCollectionsTest(MultiCollectionJournalTestBase):
         version = self.create_version(registered, "scl")
 
         with patch.object(XMLVersion, "get_or_create", return_value=version):
-            registered.add_collections(self.user, xml_adapter)
+            registered.add_collections(
+                self.user, xml_adapter, get_xml_collections(xml_adapter.xml_with_pre)
+            )
 
         registered.refresh_from_db()
         self.assertEqual(registered.current_version, version)
@@ -332,7 +336,9 @@ class PidProviderXMLCollectionsTest(MultiCollectionJournalTestBase):
         xml_adapter = MagicMock(xml_with_pre=make_xml_with_pre(SCL_V2, "pusp"))
 
         with patch.object(XMLVersion, "get_or_create") as get_or_create:
-            registered.add_collections(self.user, xml_adapter)
+            registered.add_collections(
+                self.user, xml_adapter, get_xml_collections(xml_adapter.xml_with_pre)
+            )
 
         get_or_create.assert_not_called()
         registered.refresh_from_db()
@@ -359,6 +365,23 @@ class PidProviderXMLCollectionsTest(MultiCollectionJournalTestBase):
                 self.assertEqual(
                     any(item["pid_type"] == "pid_v2" for item in changed), expected
                 )
+
+    def test_check_registered_pids_changed_registers_pid_v2_and_version_of_the_collection(self):
+        registered = self.create_pid_provider_xml(SCL_V2)
+        registered.current_version = self.create_version(registered, "scl")
+        registered.save()
+        psi_version = self.create_version(registered, "psi")
+        self.create_collection_pid_v2(registered, self.psi, PSI_V2, psi_version)
+        xml_with_pre = make_xml_with_pre(
+            "S1678-51772009000300099", collection="psi"
+        )
+
+        changed = registered.check_registered_pids_changed(xml_with_pre)
+
+        pid_v2_changes = [item for item in changed if item["pid_type"] == "pid_v2"]
+        self.assertEqual(len(pid_v2_changes), 1)
+        self.assertEqual(pid_v2_changes[0]["registered"], PSI_V2)
+        self.assertEqual(pid_v2_changes[0]["version"], psi_version)
 
 
 class DataToCompareTest(MultiCollectionJournalTestBase):
