@@ -32,3 +32,6 @@ USE_OPENSEARCH_LOGGING=no
 # OPENSEARCH_LOGGING_HOSTS=http://opensearch:9200
 # OPENSEARCH_LOGGING_ENVIRONMENT=dev
 # OPENSEARCH_LOGGING_LEVEL=INFO
+
+# Link para o site antigo (old.scielo.org) no cabeçalho
+SCIELO_OLD_URL_ENABLED=True
