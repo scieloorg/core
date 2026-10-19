@@ -71,6 +71,8 @@ urlpatterns += i18n_patterns(
     path("api/v2/", api_router.urls),
     path("users/", include("core.users.urls", namespace="users")),
     path("i18n/", include("django.conf.urls.i18n")),
+    # Public reports
+    path("report/", include("report.urls")),
     path("", include("allauth.urls")),
     path("", include(wagtail_urls)),
 )

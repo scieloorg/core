@@ -1,0 +1,68 @@
+{% load i18n %}<!DOCTYPE html>
+{% get_current_language as LANGUAGE_CODE %}
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{% translate "Reports" %}{% endblock %}</title>
+  <style>
+    :root {
+      --bg: #ffffff; --fg: #1f2328; --muted: #59636e; --border: #d1d9e0;
+      --head: #f6f8fa; --accent: #0b5cad; --total: #eef3f9;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1117; --fg: #e6edf3; --muted: #9198a1; --border: #3d444d;
+        --head: #161b22; --accent: #4493f8; --total: #1b2533;
+      }
+    }
+    body { margin: 0; padding: 24px 16px; background: var(--bg); color: var(--fg);
+      font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 1400px; margin: 0 auto; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    h2 { font-size: 16px; margin: 24px 0 8px; }
+    p.desc { color: var(--muted); margin: 0 0 20px; }
+    form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
+      padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--head); }
+    label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+    select { font: inherit; padding: 6px 8px; border: 1px solid var(--border);
+      border-radius: 6px; background: var(--bg); color: var(--fg); min-width: 120px; max-width: 360px; }
+    form[aria-busy="true"] select { opacity: .6; }
+    button, a.btn { font: inherit; padding: 7px 14px; border-radius: 6px; border: 1px solid var(--accent);
+      background: var(--accent); color: #fff; cursor: pointer; text-decoration: none; }
+    a.btn.secondary { background: transparent; color: var(--accent); }
+    .table-wrap { overflow-x: auto; margin-top: 20px; border: 1px solid var(--border); border-radius: 8px; }
+    table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+    th, td { padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+    th { background: var(--head); font-weight: 600; }
+    th[title] { cursor: help; }
+    th.year, td.year { text-align: left; position: sticky; left: 0; background: var(--bg); }
+    thead th.year { background: var(--head); }
+    td.pct { color: var(--muted); }
+    tr.total td { background: var(--total); font-weight: 600; }
+    .empty { padding: 24px; color: var(--muted); text-align: center; }
+    dl.legend { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; }
+    dl.legend dt { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+    dl.legend dd { margin: 0; color: var(--muted); }
+    nav.crumbs { font-size: 13px; margin-bottom: 12px; }
+    nav.crumbs a { color: var(--accent); text-decoration: none; }
+    nav.crumbs a:hover { text-decoration: underline; }
+    ul.reports { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+    ul.reports a { display: block; height: 100%; box-sizing: border-box; padding: 16px;
+      border: 1px solid var(--border); border-radius: 8px; color: inherit; text-decoration: none; }
+    ul.reports a:hover { border-color: var(--accent); background: var(--head); }
+    ul.reports strong { display: block; color: var(--accent); font-size: 16px; margin-bottom: 4px; }
+    ul.reports span { color: var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  {% block breadcrumb %}
+  <nav class="crumbs"><a href="{% url 'report_index' %}">{% translate "Reports" %}</a></nav>
+  {% endblock %}
+  {% block content %}{% endblock %}
+</main>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

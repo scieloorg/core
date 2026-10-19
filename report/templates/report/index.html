@@ -1,0 +1,23 @@
+{% extends "report/public_base.html" %}
+{% load i18n %}
+
+{% block breadcrumb %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Reports" %}</h1>
+  <p class="desc">{% translate "Public reports about the content managed by SciELO Content Manager." %}</p>
+  {% if reports %}
+  <ul class="reports">
+    {% for report in reports %}
+    <li>
+      <a href="{% url report.url_name %}">
+        <strong>{{ report.title }}</strong>
+        <span>{{ report.description }}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+    <div class="table-wrap"><div class="empty">{% translate "No reports available." %}</div></div>
+  {% endif %}
+{% endblock %}

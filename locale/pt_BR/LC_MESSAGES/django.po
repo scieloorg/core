@@ -6068,3 +6068,84 @@ msgstr "Esquema de Publicação SciELO"
 
 #~ msgid "Message type"
 #~ msgstr "Tipo de mensagem"
+
+#: report
+msgctxt "filters"
+msgid "Clear"
+msgstr "Limpar"
+
+#: report
+msgid "Reports"
+msgstr "Relatórios"
+
+#: report
+msgid "Data availability report"
+msgstr "Relatório de disponibilidade de dados"
+
+#: report
+msgid "Data availability"
+msgstr "Disponibilidade de dados"
+
+#: report
+msgid "Articles by data availability status, per year. The online publication year filter applies to the year the article was published on the website, which may differ from the issue year shown in the bibliographic strip."
+msgstr "Artigos por status de disponibilidade de dados, por ano. O filtro de ano de publicação online se aplica ao ano em que o artigo foi publicado no site, que pode ser diferente do ano do fascículo indicado na legenda bibliográfica."
+
+#: report
+msgid "Articles by data availability status per year, with totals and percentages. Filters: collection, journal and online publication year."
+msgstr "Artigos por status de disponibilidade de dados por ano, com totais e porcentagens. Filtros: coleção, periódico e ano de publicação online."
+
+#: report
+msgid "Filter"
+msgstr "Filtrar"
+
+#: report
+msgid "Download CSV"
+msgstr "Baixar CSV"
+
+#: report
+msgid "Total"
+msgstr "Total"
+
+#: report
+msgid "No year"
+msgstr "Sem ano"
+
+#: report
+msgid "No articles found for the selected filters."
+msgstr "Nenhum artigo encontrado para os filtros selecionados."
+
+#: report
+msgid "Status legend"
+msgstr "Legenda dos status"
+
+#: report
+msgid "Public reports about the content managed by SciELO Content Manager."
+msgstr "Relatórios públicos sobre o conteúdo gerenciado pelo SciELO Content Manager."
+
+#: report
+msgid "No reports available."
+msgstr "Nenhum relatório disponível."
+
+#: report
+msgid "Online publication from"
+msgstr "Publicação online de"
+
+#: report
+msgid "Online publication to"
+msgstr "Publicação online até"
+
+#: report
+msgid "Group by"
+msgstr "Agrupar por"
+
+#: report
+msgid "Issue year (bibliographic strip)"
+msgstr "Ano do fascículo (legenda bibliográfica)"
+
+#: report
+msgid "Online publication year"
+msgstr "Ano de publicação online"
+
+#: report/templates/report/visual_element_totals.html
+msgid "Clear"
+msgstr "Limpar"
