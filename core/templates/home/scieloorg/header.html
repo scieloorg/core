@@ -6,13 +6,15 @@
     <div class="container">
         <div class="row p-4">
             <div class="col d-flex align-items-center">
+                {% if old_scielo_link %}
                 <ul class="list-unstyled d-flex align-items-center gap-2 mb-0">
                     <li>
-                        <a href="{{old_scielo_url}}" target="_blank">
-                            old.scielo.org
+                        <a href="{{ old_scielo_link.url }}" target="_blank">
+                            {{ old_scielo_link.label }}
                         </a>
                     </li>
                 </ul>
+                {% endif %}
             </div>
             <div class="col d-flex justify-content-end align-items-center">
                 <ul class="list-unstyled d-flex align-items-center gap-2 mb-0">
