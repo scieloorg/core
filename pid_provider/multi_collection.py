@@ -35,8 +35,8 @@ def normalize_acron(acron):
 def get_xml_collections(xml_with_pre):
     """
     Retorna os dados do periódico em cada coleção em que está presente,
-    identificado pelos ISSNs e pelo PID do periódico contido no pid v2,
-    com a coleção principal primeiro
+    identificado pelos ISSNs, pelo PID do periódico contido no pid v2 ou
+    pelo acrônimo, com a coleção principal primeiro
 
     Returns
     -------
@@ -44,8 +44,8 @@ def get_xml_collections(xml_with_pre):
         [{"collection": Collection, "journal_acron": str, "journal_pid": str,
           "is_main": bool}]
 
-    Se o XML informa a coleção de origem (custom-meta), retorna somente
-    os dados do periódico nesta coleção
+    Não filtra pela coleção de origem do XML (custom-meta): retorna todas
+    as coleções do periódico (ver PidProviderXML.add_collections)
     """
 
     issn_print = xml_with_pre.journal_issn_print
