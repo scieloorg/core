@@ -11,8 +11,6 @@ class OtherPidGetOrCreateTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="otherpid-user", password="x")
         self.ppx = PidProviderXML.objects.create(creator=self.user, v3="ABC")
-        # version é obrigatório (truthy) para get_or_create -- um FK vazio
-        # (None) faz a validação falhar e levantar ValueError.
         self.version = XMLVersion.objects.create(creator=self.user, pid_provider_xml=self.ppx)
 
     def test_raises_value_error_when_any_required_argument_is_missing(self):
@@ -25,15 +23,17 @@ class OtherPidGetOrCreateTests(TestCase):
                 pid_provider_xml=self.ppx,
             )
 
-    def test_raises_value_error_when_version_is_missing(self):
-        with self.assertRaises(ValueError):
-            OtherPid.get_or_create(
-                pid_type="pid_v3",
-                pid_in_xml="OLD-V3",
-                version=None,
-                user=self.user,
-                pid_provider_xml=self.ppx,
-            )
+    def test_creates_when_version_is_missing(self):
+        # sem a coleção principal, PidProviderXML.current_version é vazio
+        obj = OtherPid.get_or_create(
+            pid_type="pid_v3",
+            pid_in_xml="OLD-V3",
+            version=None,
+            user=self.user,
+            pid_provider_xml=self.ppx,
+        )
+        self.assertIsNone(obj.version)
+        self.assertEqual(obj.pid_in_xml, "OLD-V3")
 
     def test_creates_new_when_none_exists(self):
         obj = OtherPid.get_or_create(
