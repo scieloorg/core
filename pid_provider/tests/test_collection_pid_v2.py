@@ -22,6 +22,7 @@ from journal.models import Journal, OfficialJournal, SciELOJournal
 from pid_provider.models import CollectionPidV2, PidProviderXML, XMLVersion
 from pid_provider.multi_collection import (
     get_journal_pid_from_v2,
+    get_xml_collection_acron,
     get_xml_collections,
     normalize_acron,
 )
@@ -131,6 +132,75 @@ class NormalizeAcronTest(SimpleTestCase):
     def test_normalize_acron(self):
         self.assertEqual(normalize_acron(" PUSP "), "pusp")
         self.assertIsNone(normalize_acron(None))
+
+
+class GetXMLCollectionAcronTest(SimpleTestCase):
+    def xml_collections(self, *items):
+        return [
+            {
+                "collection": SimpleNamespace(acron3=acron3),
+                "journal_acron": journal_acron,
+                "journal_pid": journal_pid,
+                "is_main": is_main,
+            }
+            for acron3, journal_acron, journal_pid, is_main in items
+        ]
+
+    def test_by_journal_pid_of_pid_v2(self):
+        xml_collections = self.xml_collections(
+            ("scl", "pusp", ISSN_PRINT, True),
+            ("psi", "psicousp", ISSN_ELECTRONIC, False),
+        )
+        for v2, expected in ((SCL_V2, "scl"), (PSI_V2, "psi")):
+            with self.subTest(v2=v2):
+                self.assertEqual(
+                    get_xml_collection_acron(
+                        make_xml_with_pre(v2, "pusp"), xml_collections
+                    ),
+                    expected,
+                )
+
+    def test_by_journal_acron_when_journal_pid_is_the_same(self):
+        xml_collections = self.xml_collections(
+            ("scl", "pusp", ISSN_PRINT, True),
+            ("psi", "psicousp", ISSN_PRINT, False),
+        )
+        self.assertEqual(
+            get_xml_collection_acron(
+                make_xml_with_pre(SCL_V2, " PSICOUSP "), xml_collections
+            ),
+            "psi",
+        )
+
+    def test_by_journal_acron_when_journal_pid_is_unknown(self):
+        xml_collections = self.xml_collections(
+            ("scl", "pusp", ISSN_PRINT, True),
+            ("psi", "psicousp", ISSN_ELECTRONIC, False),
+        )
+        self.assertEqual(
+            get_xml_collection_acron(
+                make_xml_with_pre("S0000-00002009000300003", "psicousp"),
+                xml_collections,
+            ),
+            "psi",
+        )
+
+    def test_single_collection(self):
+        xml_collections = self.xml_collections(("psi", "psicousp", ISSN_ELECTRONIC, False))
+        self.assertEqual(
+            get_xml_collection_acron(make_xml_with_pre(None, None), xml_collections),
+            "psi",
+        )
+
+    def test_none_when_ambiguous(self):
+        xml_collections = self.xml_collections(
+            ("scl", "pusp", ISSN_PRINT, True),
+            ("psi", "pusp", ISSN_PRINT, False),
+        )
+        self.assertIsNone(
+            get_xml_collection_acron(make_xml_with_pre(SCL_V2, "pusp"), xml_collections)
+        )
+        self.assertIsNone(get_xml_collection_acron(make_xml_with_pre(SCL_V2, "pusp"), []))
 
 
 class GetXMLCollectionsTest(MultiCollectionJournalTestBase):
