@@ -34,6 +34,7 @@ from core.utils.profiling_tools import (  # ajuste o import conforme sua estrutu
 from pid_provider import choices, exceptions
 from pid_provider.multi_collection import (
     get_journal_pid_from_v2,
+    get_xml_collection_acron,
     get_xml_collections,
     normalize_acron,
 )
@@ -1133,6 +1134,21 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 raise exceptions.RequiredCollectionErrorToGetPidProviderXMLError(
                     "Unable to identify collection from XML. Please provide collection_acron or ensure XML has valid collection information."
                 )
+            if not xml_with_pre.collection:
+                # o XML não informa a coleção de origem (custom-meta):
+                # identifica-a entre as coleções do periódico, senão o pid v2
+                # e a versão do XML da coleção não seriam registrados
+                # (ver add_collections)
+                collection_acron = get_xml_collection_acron(
+                    xml_with_pre, xml_collections
+                )
+                if not collection_acron:
+                    raise exceptions.RequiredCollectionErrorToGetPidProviderXMLError(
+                        "Unable to identify the XML collection among the journal collections "
+                        f"{[item['collection'].acron3 for item in xml_collections]}. "
+                        "Please provide collection_acron or ensure XML has valid collection information."
+                    )
+                xml_with_pre.collection = collection_acron
             # a coleção de origem informada no XML (custom-meta) deve ser uma
             # das coleções do periódico, senão o pid v2 e a versão do XML da
             # coleção não seriam registrados (ver add_collections)
