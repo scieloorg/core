@@ -482,17 +482,63 @@ class RegisterWithoutCollectionInXMLTest(
 ):
     """XML não informa a coleção de origem"""
 
-    def test_no_version_is_registered(self):
-        response = self.register(make_xml_with_pre(SCL_V2, "pusp"), "scl")
+    def test_collection_is_identified_by_journal_pid_of_pid_v2(self):
+        response = self.register(make_xml_with_pre(PSI_V2, "pusp"), "psi")
 
         registered = PidProviderXML.objects.get()
-        self.assertEqual(response["v2"], SCL_V2)
+        self.assertEqual(response["v2"], PSI_V2)
         self.assertEqual(
             set(registered.collections.values_list("acron3", flat=True)),
             {"scl", "psi"},
         )
-        self.assertFalse(CollectionPidV2.objects.exists())
+        self.assertEqual(registered.collection_pids_v2_data, [PSI_DATA])
+        # a versão registrada informa a coleção identificada
+        self.assertEqual(
+            registered.get_current_version(self.psi).xml_with_pre.collection, "psi"
+        )
         self.assertIsNone(registered.current_version)
+
+    def test_main_collection_xml_is_the_current_version(self):
+        self.register(make_xml_with_pre(SCL_V2, "pusp"), "scl")
+
+        registered = PidProviderXML.objects.get()
+        self.assertEqual(registered.v2, SCL_V2)
+        self.assertEqual(registered.collection_pids_v2_data, [SCL_DATA])
+        self.assert_current_version_is_from(registered, self.scl)
+
+    def test_collection_is_identified_by_journal_acron(self):
+        # PID do periódico desconhecido: identifica pelo acrônimo
+        SciELOJournal.objects.filter(collection=self.psi).update(
+            issn_scielo=ISSN_PRINT
+        )
+        self.register(make_xml_with_pre(SCL_V2, "psicousp"), "psi")
+
+        registered = PidProviderXML.objects.get()
+        self.assertEqual(
+            registered.get_current_version(self.psi).xml_with_pre.collection, "psi"
+        )
+        self.assertIsNone(registered.get_current_version(self.scl))
+
+    def test_ambiguous_collection_is_not_registered(self):
+        # mesmo PID e acrônimo do periódico nas coleções
+        SciELOJournal.objects.filter(collection=self.psi).update(
+            issn_scielo=ISSN_PRINT, journal_acron="pusp"
+        )
+
+        response = PidProviderXML.register(
+            make_xml_with_pre(SCL_V2, "pusp"),
+            "scl",
+            self.user,
+            origin_date="2026-01-01",
+        )
+
+        self.assertEqual(response["event_status"], "error")
+        self.assertEqual(
+            response["error_type"],
+            str(exceptions.RequiredCollectionErrorToGetPidProviderXMLError),
+        )
+        self.assertFalse(PidProviderXML.objects.exists())
+        self.assertFalse(CollectionPidV2.objects.exists())
         self.assertFalse(XMLVersion.objects.exists())
 
     def test_unidentified_collection_is_not_registered(self):
