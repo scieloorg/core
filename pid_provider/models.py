@@ -10,7 +10,7 @@ from zlib import crc32
 
 from django.core.files.base import ContentFile
 from django.core.exceptions import FieldError
-from django.db import IntegrityError, models
+from django.db import IntegrityError, models, transaction
 from django.db.models import Prefetch, Q, Count
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -35,6 +35,7 @@ from pid_provider import choices, exceptions
 from pid_provider.multi_collection import (
     get_journal_pid_from_v2,
     get_xml_collections,
+    normalize_acron,
 )
 from pid_provider.query_params import (
     zero_to_none,
@@ -343,7 +344,9 @@ class OtherPid(CommonControlField):
     @classmethod
     @profile_classmethod
     def get_or_create(cls, pid_type, pid_in_xml, version, user, pid_provider_xml):
-        if pid_in_xml and pid_type and version and user and pid_provider_xml:
+        # version é opcional: na falta da coleção principal,
+        # PidProviderXML.current_version fica vazio (ver CollectionPidV2)
+        if pid_in_xml and pid_type and user and pid_provider_xml:
             try:
                 obj = cls.objects.get(
                     pid_provider_xml=pid_provider_xml,
@@ -362,7 +365,7 @@ class OtherPid(CommonControlField):
 
             return obj
         raise ValueError(
-            f"OtherPid.get_or_create requires pid_in_xml ({pid_in_xml}) and pid_type ({pid_type}) and version ({version}) and user ({user}) and pid_provider_xml ({pid_provider_xml})"
+            f"OtherPid.get_or_create requires pid_in_xml ({pid_in_xml}) and pid_type ({pid_type}) and user ({user}) and pid_provider_xml ({pid_provider_xml})"
         )
 
     @property
@@ -404,11 +407,16 @@ class CollectionPidV2(CommonControlField):
     current_version = models.ForeignKey(
         XMLVersion, on_delete=models.SET_NULL, null=True, blank=True
     )
+    # nome do pacote SPS obtido de current_version
+    sps_pkg_name = models.CharField(
+        _("SPS package name"), max_length=100, null=True, blank=True
+    )
 
     panels = [
         FieldPanel("collection", read_only=True),
         FieldPanel("journal_acron", read_only=True),
         FieldPanel("pid_v2", read_only=True),
+        FieldPanel("sps_pkg_name", read_only=True),
         AutocompletePanel("current_version", read_only=True),
     ]
 
@@ -416,14 +424,72 @@ class CollectionPidV2(CommonControlField):
         unique_together = [("pid_provider_xml", "collection")]
         indexes = [
             models.Index(fields=["pid_v2"]),
+            models.Index(fields=["sps_pkg_name"], name="pid_provide_sps_pkg_8e5c4f_idx"),
         ]
 
     def __str__(self):
         return f"{self.collection} {self.journal_acron} {self.pid_v2}"
 
+    def set_sps_pkg_name(self, raise_error=True):
+        """
+        Obtém sps_pkg_name de current_version.xml_with_pre, que é a versão
+        do XML de pid_provider_xml na coleção
+        """
+        try:
+            self.sps_pkg_name = (
+                self.current_version
+                and self.current_version.xml_with_pre.sps_pkg_name
+            ) or None
+        except Exception as e:
+            if raise_error:
+                raise
+            logging.exception(e)
+            self.sps_pkg_name = None
+
+    @classmethod
+    def get_ids_to_complete_sps_pkg_name(cls, force_update=False):
+        """
+        Ids dos registros cujo sps_pkg_name deve ser obtido de current_version
+        """
+        items = cls.objects.filter(current_version__isnull=False)
+        if not force_update:
+            items = items.filter(sps_pkg_name__isnull=True)
+        return items.order_by("id").values_list("id", flat=True)
+
+    @classmethod
+    def complete_sps_pkg_name(cls, user, ids):
+        """
+        Preenche sps_pkg_name dos registros (ids) a partir de
+        current_version.xml_with_pre.sps_pkg_name
+
+        A leitura do XML é lenta, por isso é feita por lotes de ids
+        (ver task_complete_collection_pid_v2_sps_pkg_name)
+        """
+        items = cls.objects.filter(id__in=ids, current_version__isnull=False)
+        result = {"updated": 0, "failed": 0}
+        for item in items.select_related("current_version").iterator():
+            try:
+                item.set_sps_pkg_name()
+                item.updated_by = user
+                item.save()
+                result["updated"] += 1
+            except Exception as e:
+                result["failed"] += 1
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "operation": "CollectionPidV2.complete_sps_pkg_name",
+                        "collection_pid_v2_id": item.id,
+                        "pid_v2": item.pid_v2,
+                    },
+                )
+        return result
+
     @staticmethod
     def is_equal_to(pid_provider_xml, xml_with_pre):
-        if not pid_provider_xml:
+        if not pid_provider_xml or not pid_provider_xml.pk:
             return False
         for item in pid_provider_xml.collection_pids_v2.filter(collection__acron3=xml_with_pre.collection):
             version = item.current_version
@@ -439,6 +505,35 @@ class CollectionPidV2(CommonControlField):
     @classmethod
     def get(cls, pid_provider_xml, collection):
         return cls.objects.get(pid_provider_xml=pid_provider_xml, collection=collection)
+
+    @classmethod
+    def get_or_create(
+        cls, user, pid_provider_xml_id, collection, pid_v2=None, journal_acron=None
+    ):
+        """
+        Obtém ou cria o registro do documento na coleção
+
+        Não altera o registro existente; current_version é completado no
+        registro do XML da coleção (ver PidProviderXML.add_collections)
+        """
+        if not (user and pid_provider_xml_id and collection):
+            raise ValueError(
+                f"CollectionPidV2.get_or_create requires user ({user}) and pid_provider_xml_id ({pid_provider_xml_id}) and collection ({collection})"
+            )
+        params = dict(pid_provider_xml_id=pid_provider_xml_id, collection=collection)
+        try:
+            return cls.objects.get(**params)
+        except cls.DoesNotExist:
+            try:
+                with transaction.atomic():
+                    return cls.objects.create(
+                        creator=user,
+                        pid_v2=pid_v2,
+                        journal_acron=journal_acron,
+                        **params,
+                    )
+            except IntegrityError:
+                return cls.objects.get(**params)
 
     @classmethod
     def create(
@@ -458,6 +553,7 @@ class CollectionPidV2(CommonControlField):
             obj.pid_provider_xml = pid_provider_xml
             obj.collection = collection
             obj.current_version = current_version
+            obj.set_sps_pkg_name(raise_error=False)
             obj.save()
             return obj
         except IntegrityError:
@@ -476,7 +572,7 @@ class CollectionPidV2(CommonControlField):
     ):
         if not (user and pid_provider_xml and collection and pid_v2 and journal_acron and current_version):
             raise ValueError(
-                f"CollectionPidV2.create_or_update requires user ({user}) and pid_provider_xml ({pid_provider_xml}) and collection ({collection}) and pid_v2 ({pid_v2})"
+                f"CollectionPidV2.create_or_update requires user ({user}) and pid_provider_xml ({pid_provider_xml}) and collection ({collection}) and pid_v2 ({pid_v2}) and journal_acron ({journal_acron}) and current_version ({current_version})"
             )
         try:
             obj = cls.get(pid_provider_xml, collection)
@@ -484,6 +580,7 @@ class CollectionPidV2(CommonControlField):
             obj.journal_acron = journal_acron
             obj.updated_by = user
             obj.current_version = current_version
+            obj.set_sps_pkg_name(raise_error=False)
             obj.save()
             return obj
         except cls.DoesNotExist:
@@ -507,6 +604,8 @@ class CollectionPidV2(CommonControlField):
             return
         if not collection and not collection_acron:
             return pid_provider_xml.current_version
+        if not pid_provider_xml.pk:
+            return
 
         params = {"current_version__isnull": False}
         if collection:
@@ -1034,6 +1133,17 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 raise exceptions.RequiredCollectionErrorToGetPidProviderXMLError(
                     "Unable to identify collection from XML. Please provide collection_acron or ensure XML has valid collection information."
                 )
+            # a coleção de origem informada no XML (custom-meta) deve ser uma
+            # das coleções do periódico, senão o pid v2 e a versão do XML da
+            # coleção não seriam registrados (ver add_collections)
+            if xml_with_pre.collection and not any(
+                item["collection"].acron3 == xml_with_pre.collection
+                for item in xml_collections
+            ):
+                raise exceptions.XMLCollectionNotFoundErrorToGetPidProviderXMLError(
+                    f"Journal not found in the XML collection ({xml_with_pre.collection}). "
+                    f"Journal collections: {[item['collection'].acron3 for item in xml_collections]}"
+                )
             input_data.update(fix_get_article_data(xml_with_pre))
             input_data["origin"] = origin
             response["input_data"] = input_data
@@ -1096,15 +1206,18 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                     origin_date,
                     registered_in_core,
                 )
-                registered = cls._save(
-                    registered,
-                    xml_adapter,
-                    user,
-                    origin_date,
-                    available_since,
-                    registered_in_core,
-                    xml_collections,
-                )
+                # evita registro parcial (ex.: pid v2 da coleção principal
+                # gravado sem o CollectionPidV2) em caso de falha
+                with transaction.atomic():
+                    registered = cls._save(
+                        registered,
+                        xml_adapter,
+                        user,
+                        origin_date,
+                        available_since,
+                        registered_in_core,
+                        xml_collections,
+                    )
                 # data to return
                 response.update(registered.data)
                 # garante que o valor de v2 seja o da entrada, da coleção processada, e não o da coleção principal (que pode ser diferente)
@@ -1276,7 +1389,12 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 self,
                 collection,
                 xml_with_pre.v2,
-                journal_acron=xml_collection["journal_acron"],
+                # na falta do acrônimo do periódico na coleção, usa o do XML,
+                # que é o da coleção de origem do XML
+                journal_acron=(
+                    xml_collection["journal_acron"]
+                    or normalize_acron(xml_with_pre.journal_acron)
+                ),
                 current_version=current_version,
             )
 
@@ -1485,12 +1603,17 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
     @profile_method
     def check_registered_pids_changed(self, xml_with_pre, ignore_v2=False):
         registered_changed = []
+        # versão da coleção do XML ou, na falta dela, a da coleção principal
+        current_version = (
+            self.get_current_version(collection_acron=xml_with_pre.collection)
+            or self.current_version
+        )
         if self.v3 != xml_with_pre.v3:
             registered_changed.append(
                 {
                     "pid_type": "pid_v3",
                     "pid_in_xml": xml_with_pre.v3,
-                    "version": self.current_version,
+                    "version": current_version,
                     "registered": self.v3,
                 }
             )
@@ -1511,7 +1634,7 @@ class PidProviderXML(BasePidProviderXML, CommonControlField, ClusterableModel):
                 {
                     "pid_type": "aop_pid",
                     "pid_in_xml": xml_with_pre.aop_pid,
-                    "version": self.current_version,
+                    "version": current_version,
                     "registered": self.aop_pid,
                 }
             )
@@ -1879,7 +2002,10 @@ class FixPidV2(CommonControlField):
         ]
 
     def __str__(self):
-        return f"{self.pid_provider_xml.v3}"
+        if self.pid_provider_xml and self.pid_provider_xml.v3:
+            return f"{self.pid_provider_xml.v3}"
+
+        return self.correct_pid_v2 or self.incorrect_pid_v2 or "-"
 
     @staticmethod
     @profile_staticmethod
@@ -1888,7 +2014,7 @@ class FixPidV2(CommonControlField):
 
     @profile_method
     def autocomplete_label(self):
-        return f"{self.pid_provider_xml.v3}"
+        return str(self)
 
     @classmethod
     @profile_classmethod
