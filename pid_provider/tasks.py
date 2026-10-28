@@ -8,7 +8,7 @@ from core.utils.profiling_tools import (
 )  # ajuste o import conforme sua estrutura
 from core.utils.utils import _get_user
 from pid_provider.provider import PidProvider
-from pid_provider.models import PidProviderXML
+from pid_provider.models import CollectionPidV2, PidProviderXML
 from journal.models import Journal, SciELOJournal
 from tracker.models import UnexpectedEvent
 
@@ -300,3 +300,43 @@ def task_fix_journal_pid_provider_xmls_status(
             },
         )
         raise
+
+
+@celery_app.task(bind=True)
+def task_complete_collection_pid_v2_sps_pkg_name(
+    self,
+    username=None,
+    user_id=None,
+    force_update=False,
+    batch_size=100,
+):
+    """
+    Preenche CollectionPidV2.sps_pkg_name a partir de
+    current_version.xml_with_pre.sps_pkg_name
+
+    Divide os registros em lotes processados por subtarefas, para que cada
+    uma termine dentro do limite de tempo de tarefa do celery
+    """
+    user = _get_user(self.request, username=username, user_id=user_id)
+    ids = list(
+        CollectionPidV2.get_ids_to_complete_sps_pkg_name(force_update=force_update)
+    )
+    for start in range(0, len(ids), batch_size):
+        subtask_complete_collection_pid_v2_sps_pkg_name.apply_async(
+            kwargs=dict(
+                user_id=user.id,
+                ids=ids[start : start + batch_size],
+            )
+        )
+    return {"total": len(ids), "batch_size": batch_size}
+
+
+@celery_app.task(bind=True)
+def subtask_complete_collection_pid_v2_sps_pkg_name(
+    self,
+    username=None,
+    user_id=None,
+    ids=None,
+):
+    user = _get_user(self.request, username=username, user_id=user_id)
+    return CollectionPidV2.complete_sps_pkg_name(user, ids)
