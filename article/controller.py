@@ -511,54 +511,75 @@ class ArticleIteratorBuilder:
         if Collection.objects.count() == 0:
             Collection.load(self.user)
 
-        params = {}
-        if self.collection_acron_list:
-            params["collection__acron3__in"] = self.collection_acron_list
-        if self.journal_acron_list:
-            params["journal_acron__in"] = self.journal_acron_list
+        collection_acrons = self.collection_acron_list or Collection.objects.values_list("acron3", flat=True).distinct()
 
-        collection_and_journal_items = SciELOJournal.objects.select_related(
-            "collection"
-        ).filter(
-            **params
-        ).values_list(
-            "collection__acron3", "journal_acron", "issn_scielo"
-        ).distinct()
+        for collection_acron in collection_acrons:
+            for harvester in self._build_harvesters(collection_acron):
+                for document in harvester.harvest_documents():
+                    yield {
+                        "xml_url": document["url"],
+                        "collection_acron": collection_acron,
+                        "pid": document["pid_v2"],
+                        # OPAC: data e hora completas da atualização (updated), em
+                        # UTC, com microssegundos; serve de from_date (inclusivo) da
+                        # próxima coleta (ver OPACHarvester.__init__).
+                        # PidProviderXML.origin_date recebe só a data (request_pid)
+                        "source_date": (
+                            document.get("processing_date")
+                            or document.get("updated")
+                            or document.get("origin_date")
+                        ),
+                        "is_public": document.get("is_public"),
+                        "document": document,
+                    }
 
-        for collection_acron, journal_acron, issn_scielo in collection_and_journal_items:
-            harvester = self._build_harvester(collection_acron, journal_acron, issn_scielo)
-            for document in harvester.harvest_documents():
-                yield {
-                    "xml_url": document["url"],
-                    "collection_acron": collection_acron,
-                    "pid": document["pid_v2"],
-                    # OPAC: data e hora completas da atualização (updated), em
-                    # UTC, com microssegundos; serve de from_date (inclusivo) da
-                    # próxima coleta (ver OPACHarvester.__init__).
-                    # PidProviderXML.origin_date recebe só a data (request_pid)
-                    "source_date": (
-                        document.get("processing_date")
-                        or document.get("updated")
-                        or document.get("origin_date")
-                    ),
-                    "is_public": document.get("is_public"),
-                    "document": document,
-                }
+    def _build_harvesters(self, collection_acron):
+        """
+        Gera os harvesters adequados para a coleção.
 
-    def _build_harvester(self, collection_acron, journal_acron=None, journal_id=None):
-        """Instancia o harvester adequado para a coleção."""
-        kwargs = dict(
-            from_date=self.from_date,
-            until_date=self.until_date,
-            limit=self.limit,
-            timeout=self.timeout,
-        )
-        if collection_acron == "scl":
-            if journal_acron:
-                kwargs["journal"] = journal_acron
+        - OPAC (``scl`` ou ``opac_url`` informado): um harvester por
+          periódico de ``journal_acron_list`` (filtro por acrônimo) ou,
+          sem filtro de periódico, um único harvester para a coleção.
+        - ArticleMeta (demais coleções): um harvester por ISSN SciELO dos
+          periódicos de ``journal_acron_list`` na coleção ou, sem filtro de
+          periódico, um único harvester para a coleção.
+        """
+        kwargs = {
+            key: value
+            for key, value in dict(
+                from_date=self.from_date,
+                until_date=self.until_date,
+                limit=self.limit,
+                timeout=self.timeout,
+            ).items()
+            if value is not None
+        }
+
+        if collection_acron == "scl" or self.opac_url:
             if self.stop:
                 kwargs["stop"] = self.stop
-            return OPACHarvester(self.opac_url or "https://www.scielo.br", collection_acron, **kwargs)
-        if journal_id:
-            kwargs["journal"] = journal_id
-        return AMHarvester("article", collection_acron, **kwargs)
+            domain = self.opac_url or "https://www.scielo.br"
+            if self.journal_acron_list:
+                for journal_acron in self.journal_acron_list:
+                    yield OPACHarvester(
+                        domain, collection_acron, journal=journal_acron, **kwargs
+                    )
+            else:
+                yield OPACHarvester(domain, collection_acron, **kwargs)
+            return
+
+        if not self.journal_acron_list:
+            yield AMHarvester("article", collection_acron, **kwargs)
+            return
+
+        journal_pids = (
+            SciELOJournal.objects.filter(
+                collection__acron3=collection_acron,
+                journal_acron__in=self.journal_acron_list,
+            )
+            .exclude(issn_scielo__isnull=True)
+            .values_list("issn_scielo", flat=True)
+            .distinct()
+        )
+        for journal_pid in journal_pids:
+            yield AMHarvester("article", collection_acron, journal=journal_pid, **kwargs)
