@@ -532,7 +532,15 @@ class ArticleIteratorBuilder:
                     "xml_url": document["url"],
                     "collection_acron": collection_acron,
                     "pid": document["pid_v2"],
-                    "source_date": document.get("processing_date") or document.get("origin_date"),
+                    # OPAC: data e hora completas da atualização (updated), em
+                    # UTC, com microssegundos; serve de from_date (inclusivo) da
+                    # próxima coleta (ver OPACHarvester.__init__).
+                    # PidProviderXML.origin_date recebe só a data (request_pid)
+                    "source_date": (
+                        document.get("processing_date")
+                        or document.get("updated")
+                        or document.get("origin_date")
+                    ),
                     "is_public": document.get("is_public"),
                     "document": document,
                 }
