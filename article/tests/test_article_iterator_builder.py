@@ -688,3 +688,129 @@ class TestBuildHarvester(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+# =======================================================================
+# OPACHarvester (counter_dict v2)
+# =======================================================================
+class TestOPACHarvester(unittest.TestCase):
+    HARVESTER_PATH = "core.utils.harvesters"
+
+    def make_item(self, aid, **kwargs):
+        item = {
+            "aid": aid,
+            "journal_acronym": "abc",
+            "pid": "S1234-56782024000100001",
+            "pid_v1": "",
+            "pid_v2": "S1234-56782024000100001",
+            "pid_v3": aid,
+            "publication_date": "2024-01-31",
+            "default_language": "pt",
+            "is_public": True,
+            "created": "2024-01-10T08:00:00.000000",
+            "updated": "2024-01-31T10:30:15.654000",
+        }
+        item.update(kwargs)
+        return item
+
+    def harvest(self, responses, **kwargs):
+        from core.utils.harvesters import OPACHarvester
+
+        harvester = OPACHarvester("https://www.scielo.br", "scl", **kwargs)
+        with patch(
+            f"{self.HARVESTER_PATH}.fetch_data", side_effect=responses
+        ) as mock_fetch:
+            documents = list(harvester.harvest_documents())
+        return documents, [c.args[0] for c in mock_fetch.call_args_list]
+
+    def test_requests_counter_dict_v2(self):
+        _, urls = self.harvest(
+            [{"pages": 0, "documents": []}],
+            from_date="2024-01-31T10:30:00-03:00",
+            until_date="2024-02-01",
+            limit=10,
+            journal="abc",
+        )
+        self.assertEqual(
+            urls,
+            [
+                "https://www.scielo.br/api/v2/counter_dict?"
+                "begin_date=2024-01-31T10%3A30%3A00-03%3A00"
+                "&end_date=2024-02-01&limit=10&journal=abc&page=1"
+            ],
+        )
+
+    def test_default_until_date_has_time(self):
+        from core.utils.harvesters import OPACHarvester
+
+        harvester = OPACHarvester()
+        self.assertEqual(len(harvester.until_date), len("2024-01-31T10:30:15"))
+
+    def test_documents_list_with_full_updated_date(self):
+        documents, urls = self.harvest(
+            [
+                {"pages": 2, "documents": [self.make_item("aid1")]},
+                {
+                    "pages": 2,
+                    "documents": [
+                        self.make_item("aid2", updated=None),
+                        self.make_item("", journal_acronym="abc"),
+                    ],
+                },
+            ]
+        )
+        self.assertEqual(len(urls), 2)
+        self.assertEqual([d["pid_v3"] for d in documents], ["aid1", "aid2"])
+
+        doc = documents[0]
+        self.assertEqual(doc["url"], "https://www.scielo.br/j/abc/a/aid1/?format=xml")
+        self.assertEqual(doc["origin_date"], "2024-01-31")
+        self.assertEqual(doc["updated"], "2024-01-31T10:30:15.654000")
+        self.assertEqual(doc["metadata"]["created_at"], "2024-01-10T08:00:00.000000")
+        self.assertEqual(doc["metadata"]["updated_at"], "2024-01-31T10:30:15.654000")
+        self.assertTrue(doc["is_public"])
+
+        # sem updated, usa created
+        self.assertEqual(documents[1]["origin_date"], "2024-01-10")
+        self.assertEqual(documents[1]["updated"], "2024-01-10T08:00:00.000000")
+
+    def test_is_public(self):
+        documents, _ = self.harvest(
+            [{"pages": 1, "documents": [
+                self.make_item("aid1", is_public=False),
+                # v1: status
+                {k: v for k, v in self.make_item("aid2", status=True).items()
+                 if k != "is_public"},
+            ]}]
+        )
+        self.assertEqual([d["is_public"] for d in documents], [False, True])
+
+    def test_invalid_date_is_ignored(self):
+        documents, _ = self.harvest(
+            [{"pages": 1, "documents": [
+                self.make_item("aid1", created=None, updated="invalid")
+            ]}]
+        )
+        self.assertIsNone(documents[0]["origin_date"])
+        self.assertIsNone(documents[0]["updated"])
+
+    def test_from_harvest_source_date_is_full_updated_date(self):
+        builder = make_builder()
+        documents, _ = self.harvest(
+            [{"pages": 1, "documents": [self.make_item("aid1")]}]
+        )
+        with patch(f"{MODULE_PATH}.Collection") as MockCollection, \
+             patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
+            MockCollection.objects.count.return_value = 5
+            (
+                MockSciELOJournal.objects.select_related.return_value
+                .filter.return_value
+                .values_list.return_value
+                .distinct.return_value
+            ) = [("scl", "abc", "1234-5678")]
+
+            fake_harvester = MagicMock()
+            fake_harvester.harvest_documents.return_value = documents
+            with patch.object(builder, "_build_harvester", return_value=fake_harvester):
+                result = list(builder.from_harvest())
+
+        self.assertEqual(result[0]["source_date"], "2024-01-31T10:30:15.654000")
