@@ -138,8 +138,6 @@ class ArticleSourceSnippetViewSet(SnippetViewSet):
     menu_order = 200
 
     list_display = [
-        "url",
-        "pid_provider_xml",
         "pid",
         "collection",
         "status",
@@ -151,7 +149,7 @@ class ArticleSourceSnippetViewSet(SnippetViewSet):
         "collection",
 
     ]
-    search_fields = ["url", "pid_provider_xml__v3", "pid"]
+    search_fields = ["pid_provider_xml__v3", "pid"]
     ordering = ["-updated"]
     list_per_page = 25
 
