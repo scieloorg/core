@@ -150,7 +150,7 @@ class ArticleSourceSnippetViewSet(SnippetViewSet):
 
     ]
     search_fields = ["pid_provider_xml__v3", "pid"]
-    ordering = ["-updated"]
+    ordering = ["-source_date"]
     list_per_page = 25
 
 
