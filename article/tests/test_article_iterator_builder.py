@@ -500,15 +500,9 @@ class TestFromHarvest(unittest.TestCase):
     def test_loads_collection_when_empty(self):
         builder = make_builder()
 
-        with patch(f"{MODULE_PATH}.Collection") as MockCollection, \
-             patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
+        with patch(f"{MODULE_PATH}.Collection") as MockCollection:
             MockCollection.objects.count.return_value = 0
-            (
-                MockSciELOJournal.objects.filter.return_value
-                .order_by.return_value
-                .values_list.return_value
-                .distinct.return_value
-            ) = []
+            MockCollection.objects.values_list.return_value.distinct.return_value = []
 
             list(builder.from_harvest())
 
@@ -517,42 +511,45 @@ class TestFromHarvest(unittest.TestCase):
     def test_does_not_load_collection_when_not_empty(self):
         builder = make_builder()
 
-        with patch(f"{MODULE_PATH}.Collection") as MockCollection, \
-             patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
+        with patch(f"{MODULE_PATH}.Collection") as MockCollection:
             MockCollection.objects.count.return_value = 5
-            (
-                MockSciELOJournal.objects.filter.return_value
-                .order_by.return_value
-                .values_list.return_value
-                .distinct.return_value
-            ) = []
+            MockCollection.objects.values_list.return_value.distinct.return_value = []
 
             list(builder.from_harvest())
 
         MockCollection.load.assert_not_called()
 
-    def test_collection_and_journal_filters_passed_to_scielojournal_query(self):
-        builder = make_builder(collection_acron_list=["scl"], journal_acron_list=["abc"])
+    def test_uses_collection_acron_list_when_given(self):
+        builder = make_builder(collection_acron_list=["scl", "mex"])
 
-        with patch(f"{MODULE_PATH}.Collection") as MockCollection, \
-             patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
+        with patch(f"{MODULE_PATH}.Collection") as MockCollection:
             MockCollection.objects.count.return_value = 5
-            sj_mock = MockSciELOJournal.objects
-            (
-                sj_mock.filter.return_value
-                .order_by.return_value
-                .values_list.return_value
-                .distinct.return_value
-            ) = []
+            with patch.object(
+                builder, "_build_harvesters", return_value=[]
+            ) as mock_build:
+                list(builder.from_harvest())
 
-            list(builder.from_harvest())
+        MockCollection.objects.values_list.assert_not_called()
+        self.assertEqual(mock_build.call_args_list, [call("scl"), call("mex")])
 
-        sj_mock.filter.assert_called_once_with(
-            collection__acron3__in=["scl"], journal_acron__in=["abc"]
-        )
+    def test_uses_all_collections_when_collection_acron_list_absent(self):
+        builder = make_builder()
+
+        with patch(f"{MODULE_PATH}.Collection") as MockCollection:
+            MockCollection.objects.count.return_value = 5
+            MockCollection.objects.values_list.return_value.distinct.return_value = [
+                "scl", "mex"
+            ]
+            with patch.object(
+                builder, "_build_harvesters", return_value=[]
+            ) as mock_build:
+                list(builder.from_harvest())
+
+        MockCollection.objects.values_list.assert_called_once_with("acron3", flat=True)
+        self.assertEqual(mock_build.call_args_list, [call("scl"), call("mex")])
 
     def test_yields_expected_dict_from_documents(self):
-        builder = make_builder()
+        builder = make_builder(collection_acron_list=["scl"])
         doc = {
             "url": "http://x/y.xml",
             "pid_v2": "S123",
@@ -560,14 +557,13 @@ class TestFromHarvest(unittest.TestCase):
             "is_public": True,
         }
 
-        with patch(f"{MODULE_PATH}.Collection") as MockCollection, \
-             patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
+        with patch(f"{MODULE_PATH}.Collection") as MockCollection:
             MockCollection.objects.count.return_value = 5
 
             fake_harvester = MagicMock()
             fake_harvester.harvest_documents.return_value = [doc]
             with patch.object(
-                builder, "_iter_harvesters", return_value=[("scl", fake_harvester)]
+                builder, "_build_harvesters", return_value=[fake_harvester]
             ):
                 result = list(builder.from_harvest())
 
@@ -586,7 +582,7 @@ class TestFromHarvest(unittest.TestCase):
         }])
 
     def test_uses_origin_date_when_processing_date_absent(self):
-        builder = make_builder()
+        builder = make_builder(collection_acron_list=["scl"])
         doc = {
             "url": "http://x/y.xml",
             "pid_v2": "S123",
@@ -594,14 +590,13 @@ class TestFromHarvest(unittest.TestCase):
             "is_public": False,
         }
 
-        with patch(f"{MODULE_PATH}.Collection") as MockCollection, \
-             patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
+        with patch(f"{MODULE_PATH}.Collection") as MockCollection:
             MockCollection.objects.count.return_value = 5
 
             fake_harvester = MagicMock()
             fake_harvester.harvest_documents.return_value = [doc]
             with patch.object(
-                builder, "_iter_harvesters", return_value=[("scl", fake_harvester)]
+                builder, "_build_harvesters", return_value=[fake_harvester]
             ):
                 result = list(builder.from_harvest())
 
@@ -609,132 +604,113 @@ class TestFromHarvest(unittest.TestCase):
 
 
 # =======================================================================
-# _iter_harvesters
+# _build_harvesters
 # =======================================================================
-class TestIterHarvesters(unittest.TestCase):
-    def iter_harvesters(self, builder, collection_acrons, journal_values):
-        with patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
-            journals = MockSciELOJournal.objects.filter.return_value
-            (
-                journals.order_by.return_value
-                .values_list.return_value
-                .distinct.return_value
-            ) = collection_acrons
-            collection_journals = journals.filter.return_value
-            (
-                collection_journals.order_by.return_value
-                .values_list.return_value
-                .distinct.return_value
-            ) = journal_values
-            with patch.object(builder, "_build_harvester") as mock_build:
-                result = list(builder._iter_harvesters())
-        return result, mock_build, collection_journals
-
-    def test_opac_builds_one_harvester_per_collection(self):
-        builder = make_builder()
-
-        result, mock_build, collection_journals = self.iter_harvesters(
-            builder, ["scl"], ["abc", "def"]
-        )
-
-        mock_build.assert_called_once_with("scl", journal_acron=None)
-        collection_journals.order_by.assert_not_called()
-        self.assertEqual(result, [("scl", mock_build.return_value)])
-
-    def test_opac_with_journal_acron_list_builds_harvester_per_journal(self):
-        builder = make_builder(journal_acron_list=["abc", "def"])
-
-        result, mock_build, _ = self.iter_harvesters(
-            builder, ["scl"], ["abc", "def"]
-        )
-
-        self.assertEqual(
-            mock_build.call_args_list,
-            [call("scl", journal_acron="abc"), call("scl", journal_acron="def")],
-        )
-        self.assertEqual(len(result), 2)
-
-    def test_opac_url_applies_to_any_collection(self):
-        builder = make_builder(opac_url="https://www.scielo.org.mx")
-
-        _, mock_build, _ = self.iter_harvesters(
-            builder, ["mex"], ["1234-5678", "8765-4321"]
-        )
-
-        mock_build.assert_called_once_with("mex", journal_acron=None)
-
-    def test_articlemeta_builds_harvester_per_issn_scielo(self):
-        builder = make_builder()
-
-        result, mock_build, collection_journals = self.iter_harvesters(
-            builder, ["mex"], ["1234-5678", "8765-4321"]
-        )
-
-        self.assertEqual(
-            mock_build.call_args_list,
-            [call("mex", journal_id="1234-5678"), call("mex", journal_id="8765-4321")],
-        )
-        collection_journals.order_by.assert_called_once_with("issn_scielo")
-        self.assertEqual(len(result), 2)
-
-
-# =======================================================================
-# _build_harvester
-# =======================================================================
-class TestBuildHarvester(unittest.TestCase):
+class TestBuildHarvesters(unittest.TestCase):
     def test_scl_collection_uses_opac_harvester_with_default_url(self):
         builder = make_builder(
             opac_url=None, from_date="a", until_date="b", limit=10, timeout=30
         )
 
         with patch(f"{MODULE_PATH}.OPACHarvester") as MockOPACHarvester:
-            builder._build_harvester("scl")
+            result = list(builder._build_harvesters("scl"))
 
         MockOPACHarvester.assert_called_once_with(
             "https://www.scielo.br", "scl", from_date="a", until_date="b",
             limit=10, timeout=30,
         )
+        self.assertEqual(result, [MockOPACHarvester.return_value])
 
     def test_scl_collection_uses_provided_opac_url(self):
         builder = make_builder(opac_url="www.custom.br")
 
         with patch(f"{MODULE_PATH}.OPACHarvester") as MockOPACHarvester:
-            builder._build_harvester("scl")
+            list(builder._build_harvesters("scl"))
 
         args, _ = MockOPACHarvester.call_args
         self.assertEqual(args[0], "www.custom.br")
 
+    def test_opac_url_applies_to_any_collection(self):
+        builder = make_builder(opac_url="https://www.scielo.org.mx")
+
+        with patch(f"{MODULE_PATH}.OPACHarvester") as MockOPACHarvester, \
+             patch(f"{MODULE_PATH}.AMHarvester") as MockAMHarvester:
+            list(builder._build_harvesters("mex"))
+
+        MockOPACHarvester.assert_called_once_with("https://www.scielo.org.mx", "mex")
+        MockAMHarvester.assert_not_called()
+
+    def test_opac_with_journal_acron_list_builds_harvester_per_journal(self):
+        builder = make_builder(journal_acron_list=["abc", "def"])
+
+        with patch(f"{MODULE_PATH}.OPACHarvester") as MockOPACHarvester:
+            result = list(builder._build_harvesters("scl"))
+
+        self.assertEqual(
+            MockOPACHarvester.call_args_list,
+            [
+                call("https://www.scielo.br", "scl", journal="abc"),
+                call("https://www.scielo.br", "scl", journal="def"),
+            ],
+        )
+        self.assertEqual(len(result), 2)
+
+    def test_opac_passes_stop(self):
+        builder = make_builder(stop=100)
+
+        with patch(f"{MODULE_PATH}.OPACHarvester") as MockOPACHarvester:
+            list(builder._build_harvesters("scl"))
+
+        _, kwargs = MockOPACHarvester.call_args
+        self.assertEqual(kwargs["stop"], 100)
+
     def test_non_scl_collection_uses_am_harvester(self):
         builder = make_builder(from_date="a", until_date="b", limit=5, timeout=15)
 
-        with patch(f"{MODULE_PATH}.AMHarvester") as MockAMHarvester:
-            builder._build_harvester("mex")
+        with patch(f"{MODULE_PATH}.AMHarvester") as MockAMHarvester, \
+             patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
+            result = list(builder._build_harvesters("mex"))
 
         MockAMHarvester.assert_called_once_with(
             "article", "mex", from_date="a", until_date="b", limit=5, timeout=15
         )
+        MockSciELOJournal.objects.filter.assert_not_called()
+        self.assertEqual(result, [MockAMHarvester.return_value])
 
-    def test_non_scl_collection_with_journal_id_passes_journal_kwarg(self):
+    def test_non_scl_collection_without_journal_acron_list_has_no_journal_kwarg(self):
         builder = make_builder()
 
         with patch(f"{MODULE_PATH}.AMHarvester") as MockAMHarvester:
-            builder._build_harvester("mex", journal_id="1234-5678")
-
-        _, kwargs = MockAMHarvester.call_args
-        self.assertEqual(kwargs["journal"], "1234-5678")
-
-    def test_non_scl_collection_without_journal_id_has_no_journal_kwarg(self):
-        builder = make_builder()
-
-        with patch(f"{MODULE_PATH}.AMHarvester") as MockAMHarvester:
-            builder._build_harvester("mex")
+            list(builder._build_harvesters("mex"))
 
         _, kwargs = MockAMHarvester.call_args
         self.assertNotIn("journal", kwargs)
 
+    def test_articlemeta_builds_harvester_per_issn_scielo(self):
+        builder = make_builder(journal_acron_list=["abc", "def"])
 
-if __name__ == "__main__":
-    unittest.main()
+        with patch(f"{MODULE_PATH}.AMHarvester") as MockAMHarvester, \
+             patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
+            (
+                MockSciELOJournal.objects.filter.return_value
+                .exclude.return_value
+                .values_list.return_value
+                .distinct.return_value
+            ) = ["1234-5678", "8765-4321"]
+            result = list(builder._build_harvesters("mex"))
+
+        MockSciELOJournal.objects.filter.assert_called_once_with(
+            collection__acron3="mex", journal_acron__in=["abc", "def"]
+        )
+        self.assertEqual(
+            MockAMHarvester.call_args_list,
+            [
+                call("article", "mex", journal="1234-5678"),
+                call("article", "mex", journal="8765-4321"),
+            ],
+        )
+        self.assertEqual(len(result), 2)
+
 
 # =======================================================================
 # OPACHarvester (counter_dict v2)
@@ -841,19 +817,22 @@ class TestOPACHarvester(unittest.TestCase):
         self.assertIsNone(documents[0]["updated"])
 
     def test_from_harvest_source_date_is_full_updated_date(self):
-        builder = make_builder()
+        builder = make_builder(collection_acron_list=["scl"])
         documents, _ = self.harvest(
             [{"pages": 1, "documents": [self.make_item("aid1")]}]
         )
-        with patch(f"{MODULE_PATH}.Collection") as MockCollection, \
-             patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
+        with patch(f"{MODULE_PATH}.Collection") as MockCollection:
             MockCollection.objects.count.return_value = 5
 
             fake_harvester = MagicMock()
             fake_harvester.harvest_documents.return_value = documents
             with patch.object(
-                builder, "_iter_harvesters", return_value=[("scl", fake_harvester)]
+                builder, "_build_harvesters", return_value=[fake_harvester]
             ):
                 result = list(builder.from_harvest())
 
         self.assertEqual(result[0]["source_date"], "2024-01-31T10:30:15.654000")
+
+
+if __name__ == "__main__":
+    unittest.main()
