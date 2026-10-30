@@ -1742,7 +1742,9 @@ class ArticleSource(CommonControlField):
     )
     source_date = models.CharField(
         verbose_name=_("Source date"),
-        max_length=10,
+        # data (YYYY-MM-DD) ou data e hora completas (ISO 8601),
+        # ex.: updated do OPAC "2026-10-28T02:42:17"
+        max_length=32,
         null=True,
         blank=True,
         help_text=_("Date of data collection or original data date"),
@@ -2095,7 +2097,8 @@ class ArticleSource(CommonControlField):
             self.file.path,
             user,
             filename=self.sps_pkg_name,
-            origin_date=self.source_date,
+            # PidProviderXML.origin_date guarda somente a data (YYYY-MM-DD)
+            origin_date=self.source_date and self.source_date[:10],
             force_update=force_update,
             is_published=True,
             auto_solve_pid_conflict=auto_solve_pid_conflict,

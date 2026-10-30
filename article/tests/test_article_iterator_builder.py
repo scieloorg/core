@@ -1,6 +1,6 @@
 import logging
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from django.db.models import Q
 
@@ -500,15 +500,9 @@ class TestFromHarvest(unittest.TestCase):
     def test_loads_collection_when_empty(self):
         builder = make_builder()
 
-        with patch(f"{MODULE_PATH}.Collection") as MockCollection, \
-             patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
+        with patch(f"{MODULE_PATH}.Collection") as MockCollection:
             MockCollection.objects.count.return_value = 0
-            (
-                MockSciELOJournal.objects.select_related.return_value
-                .filter.return_value
-                .values_list.return_value
-                .distinct.return_value
-            ) = []
+            MockCollection.objects.values_list.return_value.distinct.return_value = []
 
             list(builder.from_harvest())
 
@@ -517,57 +511,45 @@ class TestFromHarvest(unittest.TestCase):
     def test_does_not_load_collection_when_not_empty(self):
         builder = make_builder()
 
-        with patch(f"{MODULE_PATH}.Collection") as MockCollection, \
-             patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
+        with patch(f"{MODULE_PATH}.Collection") as MockCollection:
             MockCollection.objects.count.return_value = 5
-            (
-                MockSciELOJournal.objects.select_related.return_value
-                .filter.return_value
-                .values_list.return_value
-                .distinct.return_value
-            ) = []
+            MockCollection.objects.values_list.return_value.distinct.return_value = []
 
             list(builder.from_harvest())
 
         MockCollection.load.assert_not_called()
 
-    def test_collection_and_journal_filters_passed_to_scielojournal_query(self):
-        builder = make_builder(collection_acron_list=["scl"], journal_acron_list=["abc"])
+    def test_uses_collection_acron_list_when_given(self):
+        builder = make_builder(collection_acron_list=["scl", "mex"])
 
-        with patch(f"{MODULE_PATH}.Collection") as MockCollection, \
-             patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
+        with patch(f"{MODULE_PATH}.Collection") as MockCollection:
             MockCollection.objects.count.return_value = 5
-            sj_mock = MockSciELOJournal.objects.select_related.return_value
-            sj_mock.filter.return_value.values_list.return_value.distinct.return_value = []
-
-            list(builder.from_harvest())
-
-        sj_mock.filter.assert_called_once_with(
-            collection__acron3__in=["scl"], journal_acron__in=["abc"]
-        )
-
-    def test_builds_harvester_per_item_with_positional_args(self):
-        builder = make_builder()
-
-        with patch(f"{MODULE_PATH}.Collection") as MockCollection, \
-             patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
-            MockCollection.objects.count.return_value = 5
-            (
-                MockSciELOJournal.objects.select_related.return_value
-                .filter.return_value
-                .values_list.return_value
-                .distinct.return_value
-            ) = [("scl", "abc", "1234-5678")]
-
-            fake_harvester = MagicMock()
-            fake_harvester.harvest_documents.return_value = []
-            with patch.object(builder, "_build_harvester", return_value=fake_harvester) as mock_build:
+            with patch.object(
+                builder, "_build_harvesters", return_value=[]
+            ) as mock_build:
                 list(builder.from_harvest())
 
-        mock_build.assert_called_once_with("scl", "abc", "1234-5678")
+        MockCollection.objects.values_list.assert_not_called()
+        self.assertEqual(mock_build.call_args_list, [call("scl"), call("mex")])
+
+    def test_uses_all_collections_when_collection_acron_list_absent(self):
+        builder = make_builder()
+
+        with patch(f"{MODULE_PATH}.Collection") as MockCollection:
+            MockCollection.objects.count.return_value = 5
+            MockCollection.objects.values_list.return_value.distinct.return_value = [
+                "scl", "mex"
+            ]
+            with patch.object(
+                builder, "_build_harvesters", return_value=[]
+            ) as mock_build:
+                list(builder.from_harvest())
+
+        MockCollection.objects.values_list.assert_called_once_with("acron3", flat=True)
+        self.assertEqual(mock_build.call_args_list, [call("scl"), call("mex")])
 
     def test_yields_expected_dict_from_documents(self):
-        builder = make_builder()
+        builder = make_builder(collection_acron_list=["scl"])
         doc = {
             "url": "http://x/y.xml",
             "pid_v2": "S123",
@@ -575,19 +557,14 @@ class TestFromHarvest(unittest.TestCase):
             "is_public": True,
         }
 
-        with patch(f"{MODULE_PATH}.Collection") as MockCollection, \
-             patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
+        with patch(f"{MODULE_PATH}.Collection") as MockCollection:
             MockCollection.objects.count.return_value = 5
-            (
-                MockSciELOJournal.objects.select_related.return_value
-                .filter.return_value
-                .values_list.return_value
-                .distinct.return_value
-            ) = [("scl", "abc", "1234-5678")]
 
             fake_harvester = MagicMock()
             fake_harvester.harvest_documents.return_value = [doc]
-            with patch.object(builder, "_build_harvester", return_value=fake_harvester):
+            with patch.object(
+                builder, "_build_harvesters", return_value=[fake_harvester]
+            ):
                 result = list(builder.from_harvest())
 
         self.assertEqual(result, [{
@@ -605,7 +582,7 @@ class TestFromHarvest(unittest.TestCase):
         }])
 
     def test_uses_origin_date_when_processing_date_absent(self):
-        builder = make_builder()
+        builder = make_builder(collection_acron_list=["scl"])
         doc = {
             "url": "http://x/y.xml",
             "pid_v2": "S123",
@@ -613,77 +590,248 @@ class TestFromHarvest(unittest.TestCase):
             "is_public": False,
         }
 
-        with patch(f"{MODULE_PATH}.Collection") as MockCollection, \
-             patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
+        with patch(f"{MODULE_PATH}.Collection") as MockCollection:
             MockCollection.objects.count.return_value = 5
-            (
-                MockSciELOJournal.objects.select_related.return_value
-                .filter.return_value
-                .values_list.return_value
-                .distinct.return_value
-            ) = [("scl", "abc", "1234-5678")]
 
             fake_harvester = MagicMock()
             fake_harvester.harvest_documents.return_value = [doc]
-            with patch.object(builder, "_build_harvester", return_value=fake_harvester):
+            with patch.object(
+                builder, "_build_harvesters", return_value=[fake_harvester]
+            ):
                 result = list(builder.from_harvest())
 
         self.assertEqual(result[0]["source_date"], "2023-05-05")
 
 
 # =======================================================================
-# _build_harvester
+# _build_harvesters
 # =======================================================================
-class TestBuildHarvester(unittest.TestCase):
+class TestBuildHarvesters(unittest.TestCase):
     def test_scl_collection_uses_opac_harvester_with_default_url(self):
         builder = make_builder(
             opac_url=None, from_date="a", until_date="b", limit=10, timeout=30
         )
 
         with patch(f"{MODULE_PATH}.OPACHarvester") as MockOPACHarvester:
-            builder._build_harvester("scl")
+            result = list(builder._build_harvesters("scl"))
 
         MockOPACHarvester.assert_called_once_with(
             "https://www.scielo.br", "scl", from_date="a", until_date="b",
             limit=10, timeout=30,
         )
+        self.assertEqual(result, [MockOPACHarvester.return_value])
 
     def test_scl_collection_uses_provided_opac_url(self):
         builder = make_builder(opac_url="www.custom.br")
 
         with patch(f"{MODULE_PATH}.OPACHarvester") as MockOPACHarvester:
-            builder._build_harvester("scl")
+            list(builder._build_harvesters("scl"))
 
         args, _ = MockOPACHarvester.call_args
         self.assertEqual(args[0], "www.custom.br")
 
+    def test_opac_url_applies_to_any_collection(self):
+        builder = make_builder(opac_url="https://www.scielo.org.mx")
+
+        with patch(f"{MODULE_PATH}.OPACHarvester") as MockOPACHarvester, \
+             patch(f"{MODULE_PATH}.AMHarvester") as MockAMHarvester:
+            list(builder._build_harvesters("mex"))
+
+        MockOPACHarvester.assert_called_once_with("https://www.scielo.org.mx", "mex")
+        MockAMHarvester.assert_not_called()
+
+    def test_opac_with_journal_acron_list_builds_harvester_per_journal(self):
+        builder = make_builder(journal_acron_list=["abc", "def"])
+
+        with patch(f"{MODULE_PATH}.OPACHarvester") as MockOPACHarvester:
+            result = list(builder._build_harvesters("scl"))
+
+        self.assertEqual(
+            MockOPACHarvester.call_args_list,
+            [
+                call("https://www.scielo.br", "scl", journal="abc"),
+                call("https://www.scielo.br", "scl", journal="def"),
+            ],
+        )
+        self.assertEqual(len(result), 2)
+
+    def test_opac_passes_stop(self):
+        builder = make_builder(stop=100)
+
+        with patch(f"{MODULE_PATH}.OPACHarvester") as MockOPACHarvester:
+            list(builder._build_harvesters("scl"))
+
+        _, kwargs = MockOPACHarvester.call_args
+        self.assertEqual(kwargs["stop"], 100)
+
     def test_non_scl_collection_uses_am_harvester(self):
         builder = make_builder(from_date="a", until_date="b", limit=5, timeout=15)
 
-        with patch(f"{MODULE_PATH}.AMHarvester") as MockAMHarvester:
-            builder._build_harvester("mex")
+        with patch(f"{MODULE_PATH}.AMHarvester") as MockAMHarvester, \
+             patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
+            result = list(builder._build_harvesters("mex"))
 
         MockAMHarvester.assert_called_once_with(
             "article", "mex", from_date="a", until_date="b", limit=5, timeout=15
         )
+        MockSciELOJournal.objects.filter.assert_not_called()
+        self.assertEqual(result, [MockAMHarvester.return_value])
 
-    def test_non_scl_collection_with_journal_id_passes_journal_kwarg(self):
+    def test_non_scl_collection_without_journal_acron_list_has_no_journal_kwarg(self):
         builder = make_builder()
 
         with patch(f"{MODULE_PATH}.AMHarvester") as MockAMHarvester:
-            builder._build_harvester("mex", journal_id="1234-5678")
-
-        _, kwargs = MockAMHarvester.call_args
-        self.assertEqual(kwargs["journal"], "1234-5678")
-
-    def test_non_scl_collection_without_journal_id_has_no_journal_kwarg(self):
-        builder = make_builder()
-
-        with patch(f"{MODULE_PATH}.AMHarvester") as MockAMHarvester:
-            builder._build_harvester("mex")
+            list(builder._build_harvesters("mex"))
 
         _, kwargs = MockAMHarvester.call_args
         self.assertNotIn("journal", kwargs)
+
+    def test_articlemeta_builds_harvester_per_issn_scielo(self):
+        builder = make_builder(journal_acron_list=["abc", "def"])
+
+        with patch(f"{MODULE_PATH}.AMHarvester") as MockAMHarvester, \
+             patch(f"{MODULE_PATH}.SciELOJournal") as MockSciELOJournal:
+            (
+                MockSciELOJournal.objects.filter.return_value
+                .exclude.return_value
+                .values_list.return_value
+                .distinct.return_value
+            ) = ["1234-5678", "8765-4321"]
+            result = list(builder._build_harvesters("mex"))
+
+        MockSciELOJournal.objects.filter.assert_called_once_with(
+            collection__acron3="mex", journal_acron__in=["abc", "def"]
+        )
+        self.assertEqual(
+            MockAMHarvester.call_args_list,
+            [
+                call("article", "mex", journal="1234-5678"),
+                call("article", "mex", journal="8765-4321"),
+            ],
+        )
+        self.assertEqual(len(result), 2)
+
+
+# =======================================================================
+# OPACHarvester (counter_dict v2)
+# =======================================================================
+class TestOPACHarvester(unittest.TestCase):
+    HARVESTER_PATH = "core.utils.harvesters"
+
+    def make_item(self, aid, **kwargs):
+        item = {
+            "aid": aid,
+            "journal_acronym": "abc",
+            "pid": "S1234-56782024000100001",
+            "pid_v1": "",
+            "pid_v2": "S1234-56782024000100001",
+            "pid_v3": aid,
+            "publication_date": "2024-01-31",
+            "default_language": "pt",
+            "is_public": True,
+            "created": "2024-01-10T08:00:00.000000",
+            "updated": "2024-01-31T10:30:15.654000",
+        }
+        item.update(kwargs)
+        return item
+
+    def harvest(self, responses, **kwargs):
+        from core.utils.harvesters import OPACHarvester
+
+        harvester = OPACHarvester("https://www.scielo.br", "scl", **kwargs)
+        with patch(
+            f"{self.HARVESTER_PATH}.fetch_data", side_effect=responses
+        ) as mock_fetch:
+            documents = list(harvester.harvest_documents())
+        return documents, [c.args[0] for c in mock_fetch.call_args_list]
+
+    def test_requests_counter_dict_v2(self):
+        _, urls = self.harvest(
+            [{"pages": 0, "documents": []}],
+            from_date="2024-01-31T10:30:00-03:00",
+            until_date="2024-02-01",
+            limit=10,
+            journal="abc",
+        )
+        self.assertEqual(
+            urls,
+            [
+                "https://www.scielo.br/api/v2/counter_dict?"
+                "begin_date=2024-01-31T10%3A30%3A00-03%3A00"
+                "&end_date=2024-02-01&limit=10&journal=abc&page=1"
+            ],
+        )
+
+    def test_default_until_date_has_time(self):
+        from core.utils.harvesters import OPACHarvester
+
+        harvester = OPACHarvester()
+        self.assertEqual(len(harvester.until_date), len("2024-01-31T10:30:15"))
+
+    def test_documents_list_with_full_updated_date(self):
+        documents, urls = self.harvest(
+            [
+                {"pages": 2, "documents": [self.make_item("aid1")]},
+                {
+                    "pages": 2,
+                    "documents": [
+                        self.make_item("aid2", updated=None),
+                        self.make_item("", journal_acronym="abc"),
+                    ],
+                },
+            ]
+        )
+        self.assertEqual(len(urls), 2)
+        self.assertEqual([d["pid_v3"] for d in documents], ["aid1", "aid2"])
+
+        doc = documents[0]
+        self.assertEqual(doc["url"], "https://www.scielo.br/j/abc/a/aid1/?format=xml")
+        self.assertEqual(doc["origin_date"], "2024-01-31")
+        self.assertEqual(doc["updated"], "2024-01-31T10:30:15.654000")
+        self.assertEqual(doc["metadata"]["created_at"], "2024-01-10T08:00:00.000000")
+        self.assertEqual(doc["metadata"]["updated_at"], "2024-01-31T10:30:15.654000")
+        self.assertTrue(doc["is_public"])
+
+        # sem updated, usa created
+        self.assertEqual(documents[1]["origin_date"], "2024-01-10")
+        self.assertEqual(documents[1]["updated"], "2024-01-10T08:00:00.000000")
+
+    def test_is_public(self):
+        documents, _ = self.harvest(
+            [{"pages": 1, "documents": [
+                self.make_item("aid1", is_public=False),
+                # v1: status
+                {k: v for k, v in self.make_item("aid2", status=True).items()
+                 if k != "is_public"},
+            ]}]
+        )
+        self.assertEqual([d["is_public"] for d in documents], [False, True])
+
+    def test_invalid_date_is_ignored(self):
+        documents, _ = self.harvest(
+            [{"pages": 1, "documents": [
+                self.make_item("aid1", created=None, updated="invalid")
+            ]}]
+        )
+        self.assertIsNone(documents[0]["origin_date"])
+        self.assertIsNone(documents[0]["updated"])
+
+    def test_from_harvest_source_date_is_full_updated_date(self):
+        builder = make_builder(collection_acron_list=["scl"])
+        documents, _ = self.harvest(
+            [{"pages": 1, "documents": [self.make_item("aid1")]}]
+        )
+        with patch(f"{MODULE_PATH}.Collection") as MockCollection:
+            MockCollection.objects.count.return_value = 5
+
+            fake_harvester = MagicMock()
+            fake_harvester.harvest_documents.return_value = documents
+            with patch.object(
+                builder, "_build_harvesters", return_value=[fake_harvester]
+            ):
+                result = list(builder.from_harvest())
+
+        self.assertEqual(result[0]["source_date"], "2024-01-31T10:30:15.654000")
 
 
 if __name__ == "__main__":

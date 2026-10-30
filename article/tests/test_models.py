@@ -1,5 +1,5 @@
 from datetime import datetime
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase
@@ -770,6 +770,22 @@ class ArticleSourceUpdateTest(SimpleTestCase):
             article_source.status,
             ArticleSource.StatusChoices.PENDING,
         )
+
+
+class ArticleSourceRequestPidTest(SimpleTestCase):
+    def test_origin_date_is_the_date_of_full_source_date(self):
+        article_source = ArticleSource(source_date="2026-10-28T02:42:17")
+        article_source.file = MagicMock(path="/tmp/x.xml")
+
+        with patch("article.models.PidProvider") as MockPidProvider, \
+             patch.object(ArticleSource, "sps_pkg_name", "pkg"):
+            provide = MockPidProvider.return_value.provide_pid_for_xml_zip
+            # sem v3: interrompe antes de associar o PidProviderXML
+            provide.return_value = [{}]
+            with self.assertRaises(Exception):
+                article_source.request_pid(None, False, False)
+
+        self.assertEqual(provide.call_args.kwargs["origin_date"], "2026-10-28")
 
 
 class AMArticleGetTest(TestCase):
