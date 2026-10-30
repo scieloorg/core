@@ -408,7 +408,7 @@ class BasePidProvider:
                     ),
                 },
             )
-            return {
+            yield {
                 "error_msg": f"Unable to check whether {zip_xml_file_path} is registered {e}",
                 "error_type": str(type(e)),
             }

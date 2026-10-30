@@ -223,13 +223,10 @@ class FixDuplicatedPkgNameTests(TestCase):
             ).exists()
         )
 
-    def test_swallows_error_when_older_item_has_no_current_version(self):
+    def test_creates_other_pid_when_older_item_has_no_current_version(self):
         """
-        Documenta o comportamento real: sem current_version, o OtherPid do
-        item mais antigo não pode ser criado (version obrigatório) --
-        fix_duplicated_pkg_name captura a exceção internamente (via
-        UnexpectedEvent.create) e não propaga, mas também não cria o
-        OtherPid nem levanta erro para o chamador.
+        Sem current_version (ex.: sem a coleção principal), o OtherPid do
+        item mais antigo é criado sem version.
         """
         PidProviderXML.objects.create(
             creator=self.user, v3="V3-OLDER-NOVERSION", pkg_name="pkg-fix-noversion"
@@ -239,13 +236,15 @@ class FixDuplicatedPkgNameTests(TestCase):
         )
         newer.save()
 
-        PidProviderXML.fix_duplicated_pkg_name("pkg-fix-noversion", self.user)  # não deve propagar
+        PidProviderXML.fix_duplicated_pkg_name("pkg-fix-noversion", self.user)
 
         newer.refresh_from_db()
         self.assertEqual(newer.proc_status, choices.PPXML_STATUS_DEDUPLICATED)
-        self.assertFalse(
+        self.assertTrue(
             OtherPid.objects.filter(
-                pid_provider_xml=newer, pid_in_xml="V3-OLDER-NOVERSION"
+                pid_provider_xml=newer,
+                pid_in_xml="V3-OLDER-NOVERSION",
+                version__isnull=True,
             ).exists()
         )
 

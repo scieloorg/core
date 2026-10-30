@@ -35,8 +35,8 @@ def normalize_acron(acron):
 def get_xml_collections(xml_with_pre):
     """
     Retorna os dados do periódico em cada coleção em que está presente,
-    identificado pelos ISSNs e pelo PID do periódico contido no pid v2,
-    com a coleção principal primeiro
+    identificado pelos ISSNs, pelo PID do periódico contido no pid v2 ou
+    pelo acrônimo, com a coleção principal primeiro
 
     Returns
     -------
@@ -44,8 +44,8 @@ def get_xml_collections(xml_with_pre):
         [{"collection": Collection, "journal_acron": str, "journal_pid": str,
           "is_main": bool}]
 
-    Se o XML informa a coleção de origem (custom-meta), retorna somente
-    os dados do periódico nesta coleção
+    Não filtra pela coleção de origem do XML (custom-meta): retorna todas
+    as coleções do periódico (ver PidProviderXML.add_collections)
     """
 
     issn_print = xml_with_pre.journal_issn_print
@@ -99,3 +99,41 @@ def get_xml_collections(xml_with_pre):
         items.insert(0, main_item)
 
     return items
+
+
+def get_xml_collection_acron(xml_with_pre, xml_collections):
+    """
+    Identifica a coleção de origem do XML que não a informa (custom-meta)
+    entre as coleções do periódico (ver get_xml_collections)
+
+    Restringe as coleções do periódico, nesta ordem:
+    - pelo PID do periódico contido no pid v2 (issn_scielo)
+    - pelo acrônimo do periódico
+
+    Returns
+    -------
+    str
+        acrônimo da coleção ou None, se não houver uma única coleção candidata
+        (ex.: periódico com o mesmo PID e acrônimo em mais de uma coleção)
+    """
+    journal_pid = get_journal_pid_from_v2(xml_with_pre.v2)
+    criteria = (
+        ("journal_pid", journal_pid and journal_pid.upper()),
+        ("journal_acron", normalize_acron(xml_with_pre.journal_acron)),
+    )
+    candidates = list(xml_collections)
+    for key, value in criteria:
+        if len(candidates) <= 1:
+            break
+        if not value:
+            continue
+        matched = [
+            item
+            for item in candidates
+            if normalize_acron(item[key]) == value.lower()
+        ]
+        if matched:
+            candidates = matched
+    if len(candidates) == 1:
+        return candidates[0]["collection"].acron3
+    return None
