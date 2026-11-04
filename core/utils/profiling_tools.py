@@ -23,6 +23,42 @@ profiling_logger.warning(f"PROFILING_LOG_SLOW_REQUESTS={PROFILING_LOG_SLOW_REQUE
 profiling_logger.warning(f"PROFILING_LOG_HIGH_MEMORY={PROFILING_LOG_HIGH_MEMORY}")
 
 
+def _get_memory_usage_mb(process=None):
+    """
+    Returns the current RSS in MB when psutil can read it.
+    Profiling must never break application requests, especially when the
+    container is already under file descriptor pressure.
+    """
+    try:
+        if process is None:
+            process = psutil.Process()
+        return process.memory_info().rss / 1024 / 1024
+    except (OSError, psutil.Error) as exc:
+        profiling_logger.debug("Skipping profiling memory sample: %s", exc)
+        return None
+
+
+def _get_memory_delta_mb(process, start_memory):
+    if start_memory is None:
+        return None
+
+    end_memory = _get_memory_usage_mb(process)
+    if end_memory is None:
+        return None
+
+    return end_memory - start_memory
+
+
+def _format_memory_delta(memory_used):
+    if memory_used is None:
+        return "unavailable"
+    return f"+{memory_used:.1f}MB"
+
+
+def _is_high_memory(memory_used):
+    return memory_used is not None and memory_used > PROFILING_LOG_HIGH_MEMORY
+
+
 def profile_endpoint(func):
     """
     Decorador minimalista para profiling
@@ -36,7 +72,7 @@ def profile_endpoint(func):
         # Dados iniciais
         process = psutil.Process()
         start_time = time.time()
-        start_memory = process.memory_info().rss / 1024 / 1024  # MB
+        start_memory = _get_memory_usage_mb(process)
         start_queries = len(connection.queries)
 
         try:
@@ -45,26 +81,25 @@ def profile_endpoint(func):
 
             # Coleta métricas finais
             end_time = time.time()
-            end_memory = process.memory_info().rss / 1024 / 1024
             end_queries = len(connection.queries)
 
             # Calcula diferenças
             duration = end_time - start_time
-            memory_used = end_memory - start_memory
+            memory_used = _get_memory_delta_mb(process, start_memory)
             queries_count = end_queries - start_queries
 
             msg = (
                 f"request detected | "
                 f"endpoint: {request.path} | "
                 f"duration: {duration:.2f}s | "
-                f"memory: +{memory_used:.1f}MB | "
+                f"memory: {_format_memory_delta(memory_used)} | "
                 f"queries: {queries_count} | "
                 f"user: {getattr(request.user, 'username', 'anonymous')}"
             )
 
             #  Log apenas se for relevante
-            if (duration > PROFILING_LOG_SLOW_REQUESTS) or (
-                memory_used > PROFILING_LOG_HIGH_MEMORY
+            if (duration > PROFILING_LOG_SLOW_REQUESTS) or _is_high_memory(
+                memory_used
             ):
                 profiling_logger.warning(f"Slow {msg}")
                 # Se muito lento, log das queries mais demoradas
@@ -87,7 +122,8 @@ def profile_endpoint(func):
                 response["X-Response-Time"] = f"{duration:.3f}"
                 if settings.DEBUG:
                     response["X-DB-Queries"] = str(queries_count)
-                    response["X-Memory-Used"] = f"{memory_used:.1f}"
+                    if memory_used is not None:
+                        response["X-Memory-Used"] = f"{memory_used:.1f}"
 
             return response
 
@@ -137,7 +173,7 @@ def profile_classmethod(func):
         # Profiling
         process = psutil.Process()
         start_time = time.time()
-        start_memory = process.memory_info().rss / 1024 / 1024
+        start_memory = _get_memory_usage_mb(process)
         start_queries = len(connection.queries)
 
         try:
@@ -145,7 +181,7 @@ def profile_classmethod(func):
 
             # Métricas
             duration = time.time() - start_time
-            memory_used = process.memory_info().rss / 1024 / 1024 - start_memory
+            memory_used = _get_memory_delta_mb(process, start_memory)
             queries_count = len(connection.queries) - start_queries
 
             # Log
@@ -153,13 +189,13 @@ def profile_classmethod(func):
                 f"classmethod | "
                 f"{method_info['class']}.{method_info['method']} | "
                 f"duration: {duration:.2f}s | "
-                f"memory: +{memory_used:.1f}MB | "
+                f"memory: {_format_memory_delta(memory_used)} | "
                 f"queries: {queries_count} | "
                 f"user: {method_info['user']} | "
                 f"file: {method_info['filename']}"
             )
-            if (duration > PROFILING_LOG_SLOW_REQUESTS) or (
-                memory_used > PROFILING_LOG_HIGH_MEMORY
+            if (duration > PROFILING_LOG_SLOW_REQUESTS) or _is_high_memory(
+                memory_used
             ):
                 profiling_logger.warning(f"Slow {msg}")
             elif PROFILING_LOG_ALL:
@@ -200,7 +236,7 @@ def profile_method(func):
         # Profiling
         process = psutil.Process()
         start_time = time.time()
-        start_memory = process.memory_info().rss / 1024 / 1024
+        start_memory = _get_memory_usage_mb(process)
         start_queries = len(connection.queries)
 
         try:
@@ -208,7 +244,7 @@ def profile_method(func):
 
             # Métricas
             duration = time.time() - start_time
-            memory_used = process.memory_info().rss / 1024 / 1024 - start_memory
+            memory_used = _get_memory_delta_mb(process, start_memory)
             queries_count = len(connection.queries) - start_queries
 
             # Log
@@ -217,12 +253,12 @@ def profile_method(func):
                 f"{method_info['class']}.{method_info['method']} | "
                 f"instance: {method_info['instance_id']} | "
                 f"duration: {duration:.2f}s | "
-                f"memory: +{memory_used:.1f}MB | "
+                f"memory: {_format_memory_delta(memory_used)} | "
                 f"queries: {queries_count}"
             )
 
-            if (duration > PROFILING_LOG_SLOW_REQUESTS) or (
-                memory_used > PROFILING_LOG_HIGH_MEMORY
+            if (duration > PROFILING_LOG_SLOW_REQUESTS) or _is_high_memory(
+                memory_used
             ):
                 profiling_logger.warning(f"Slow {msg}")
 
@@ -426,7 +462,7 @@ def profile_function(func):
 
         process = psutil.Process()
         start_time = time.time()
-        start_memory = process.memory_info().rss / 1024 / 1024
+        start_memory = _get_memory_usage_mb(process)
         start_queries = len(connection.queries)
 
         try:
@@ -434,7 +470,7 @@ def profile_function(func):
 
             # Métricas
             duration = time.time() - start_time
-            memory_used = process.memory_info().rss / 1024 / 1024 - start_memory
+            memory_used = _get_memory_delta_mb(process, start_memory)
             queries_count = len(connection.queries) - start_queries
 
             # Informações adicionais sobre o resultado
@@ -453,7 +489,7 @@ def profile_function(func):
                 f"{func_info['module']}.{func_info['function']} | "
                 f"args: {func_info['args_count']}, kwargs: {func_info['kwargs_count']} | "
                 f"duration: {duration:.2f}s | "
-                f"memory: +{memory_used:.1f}MB | "
+                f"memory: {_format_memory_delta(memory_used)} | "
                 f"queries: {queries_count}"
                 f"{result_info}"
             )
@@ -464,8 +500,8 @@ def profile_function(func):
                     " | args:", f" | first_arg: {func_info['first_arg']} | args:"
                 )
 
-            if (duration > PROFILING_LOG_SLOW_REQUESTS) or (
-                memory_used > PROFILING_LOG_HIGH_MEMORY
+            if (duration > PROFILING_LOG_SLOW_REQUESTS) or _is_high_memory(
+                memory_used
             ):
                 profiling_logger.warning(f"Slow {msg}")
 
@@ -521,26 +557,26 @@ def profile_staticmethod(func):
 
         process = psutil.Process()
         start_time = time.time()
-        start_memory = process.memory_info().rss / 1024 / 1024
+        start_memory = _get_memory_usage_mb(process)
         start_queries = len(connection.queries)
 
         try:
             result = func(*args, **kwargs)
 
             duration = time.time() - start_time
-            memory_used = process.memory_info().rss / 1024 / 1024 - start_memory
+            memory_used = _get_memory_delta_mb(process, start_memory)
             queries_count = len(connection.queries) - start_queries
 
             msg = (
                 f"staticmethod | "
                 f"{method_info['module']}.{method_info['function']} | "
                 f"duration: {duration:.2f}s | "
-                f"memory: +{memory_used:.1f}MB | "
+                f"memory: {_format_memory_delta(memory_used)} | "
                 f"queries: {queries_count}"
             )
 
-            if (duration > PROFILING_LOG_SLOW_REQUESTS) or (
-                memory_used > PROFILING_LOG_HIGH_MEMORY
+            if (duration > PROFILING_LOG_SLOW_REQUESTS) or _is_high_memory(
+                memory_used
             ):
                 profiling_logger.warning(f"Slow {msg}")
             elif PROFILING_LOG_ALL:
@@ -581,18 +617,18 @@ class LightweightProfilingMiddleware:
             return self.get_response(request)
 
         start_time = time.time()
-        start_memory = self.process.memory_info().rss / 1024 / 1024
+        start_memory = _get_memory_usage_mb(self.process)
 
         response = self.get_response(request)
 
         duration = time.time() - start_time
-        memory_delta = self.process.memory_info().rss / 1024 / 1024 - start_memory
+        memory_delta = _get_memory_delta_mb(self.process, start_memory)
 
         # Log apenas requisições problemáticas
         if duration > PROFILING_LOG_SLOW_REQUESTS:
             profiling_logger.warning(
                 f"Slow: {request.method} {request.path} - "
-                f"{duration:.2f}s - {memory_delta:+.1f}MB"
+                f"{duration:.2f}s - {_format_memory_delta(memory_delta)}"
             )
 
         return response

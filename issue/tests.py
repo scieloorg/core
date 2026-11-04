@@ -8,10 +8,10 @@ from core.models import Gender, Language, License
 from core.users.models import User
 from core.utils.rename_dictionary_keys import rename_issue_dictionary_keys
 from editorialboard.models import RoleModel
+from issue.articlemeta.correspondencia import correspondencia_issue
+from issue.articlemeta.issue_utils import extract_data_from_harvested_data
 from issue.formats.articlemeta_format import get_articlemeta_format_issue
 from issue.models import Issue
-from issue.articlemeta.correspondencia import correspondencia_issue
-from issue.articlemeta.issue_utils import get_or_create_issue
 from journal.models import (
     AMJournal,
     DigitalPreservationAgency,
@@ -40,6 +40,7 @@ def sort_any(obj):
     else:
         return obj
 
+
 class TestAPIIssueArticleMeta(TestCase):
     def setUp(self):
         self.user = User.objects.create(username="teste", password="teste")
@@ -48,17 +49,27 @@ class TestAPIIssueArticleMeta(TestCase):
             [self.issue_json["issue"]], correspondencia_issue
         )
         self.setUp_journal()
-        self.issue = get_or_create_issue(
-            issn_scielo=self.data_issue.get("scielo_issn"),
-            volume=self.data_issue.get("volume"),
-            number=self.data_issue.get("number"),
-            supplement_volume=self.data_issue.get("supplement_volume"),
-            supplement_number=self.data_issue.get("supplement_number"),
-            data_iso=self.data_issue.get("date_iso"),
-            sections_data=self.data_issue.get("sections_data"),
-            markup_done=self.data_issue.get("markup_done"),
-            issue_pid_suffix="1001",
+        issue_data = extract_data_from_harvested_data(
+            self.data_issue,
+            self.issue_json["issue"]["code"],
+        )
+        self.issue = Issue.get_or_create(
             user=self.user,
+            journal=Journal.objects.first(),
+            volume=issue_data.get("volume"),
+            number=issue_data.get("number"),
+            season=issue_data.get("season"),
+            year=issue_data.get("year"),
+            month=issue_data.get("month"),
+            supplement=issue_data.get("supplement"),
+            markup_done=issue_data.get("markup_done"),
+            issue_pid_suffix=issue_data.get("issue_pid_suffix"),
+            order=issue_data.get("order"),
+        )
+        self.issue.add_sections(
+            self.user,
+            issue_data.get("sections_data"),
+            self.collection_scl,
         )
         self.include_articlemeta_metadata(data_json=self.issue_json, issue=self.issue)
         self.article = Article.objects.create(
@@ -83,12 +94,12 @@ class TestAPIIssueArticleMeta(TestCase):
         )
         self.journal_scl = AMJournal.objects.create(
             collection=Collection.objects.get(acron3="scl"),
-            scielo_issn="0034-8910",
+            pid="0034-8910",
             data=json.loads(open("./journal/fixture/tests/data_journal_scl_0034-8910.json").read()),
             creator=self.user,
         )
         self.load_standards()
-    
+
     def load_standards(self):
         self.load_modules()
         _register_journal_data(self.user, self.collection_scl.acron3)

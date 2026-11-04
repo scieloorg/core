@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION=3.11-bullseye
+ARG PYTHON_VERSION=3.11-bookworm
 
 # define an alias for the specfic python version used in this file.
 FROM python:${PYTHON_VERSION} as python
@@ -44,8 +44,8 @@ ENV BUILD_ENV ${BUILD_ENVIRONMENT}
 
 WORKDIR ${APP_HOME}
 
-RUN addgroup --system django \
-    && adduser --system --ingroup django django
+RUN addgroup --system --gid 102 django \
+    && adduser --system --uid 101 --gid 102 django
 
 
 # Install required system dependencies

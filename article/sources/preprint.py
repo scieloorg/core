@@ -41,9 +41,7 @@ def harvest_preprints(URL, user):
             # Clear existing contrib_persons to avoid duplication on reharvest
             article.contrib_persons.all().delete()
             get_or_create_contrib_persons(
-                article=article,
-                user=user,
-                authors=article_info.get("authors")
+                article=article, user=user, authors=article_info.get("authors")
             )
             article.keywords.set(
                 get_or_create_keyword(keywords=article_info.get("subject"), user=user)
@@ -262,10 +260,10 @@ def set_dates(article, date):
 def get_or_create_contrib_persons(article, user, authors):
     """
     Create or update ContribPerson objects for preprint authors.
-    
-    Note: In preprint processing, only basic name fields (given_names, surname, 
-    declared_name) are currently extracted from the OAI-DC format. Affiliation 
-    data is not available in the preprint metadata structure, so affiliation 
+
+    Note: In preprint processing, only basic name fields (given_names, surname,
+    declared_name) are currently extracted from the OAI-DC format. Affiliation
+    data is not available in the preprint metadata structure, so affiliation
     is set to None.
     """
     data = []

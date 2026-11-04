@@ -1284,10 +1284,7 @@ class BaseLegacyRecord(CommonControlField):
     def get(cls, pid, collection):
         if not pid and not collection:
             raise ValueError("Param pid and collection_acron3 is required")
-        try:
-            cls.objects.filter(url__isnull=True, data__isnull=True).delete()
-        except Exception:
-            pass
+
         try:
             return cls.objects.get(pid=pid, collection=collection)
         except cls.MultipleObjectsReturned:

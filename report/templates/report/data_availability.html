@@ -1,0 +1,160 @@
+{% extends "report/public_base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Data availability report" %}{% endblock %}
+
+{% block content %}
+  <h1>{% translate "Data availability report" %}</h1>
+  <p class="desc">
+    {% translate "Articles by data availability status, per year. The online publication year filter applies to the year the article was published on the website, which may differ from the issue year shown in the bibliographic strip." %}
+  </p>
+
+  <form method="get" id="report-filters" data-options-url="{% url 'report_data_availability_options' %}">
+    <label>{{ form.collection.label }}
+      <select name="collection" id="filter-collection">
+        <option value="">{% translate "All" %}</option>
+        {% for item in form.fields.collection.queryset %}
+          <option value="{{ item.pk }}"{% if filters.collection and item.pk == filters.collection.pk %} selected{% endif %}>{{ item.acron3 }}{% if item.main_name %} – {{ item.main_name }}{% endif %}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>{{ form.journal.label }}
+      <select name="journal" id="filter-journal">
+        <option value="">{% translate "All" %}</option>
+        {% for item in journals %}
+          <option value="{{ item.pk }}"{% if filters.journal and item.pk == filters.journal.pk %} selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>{{ form.year_from.label }}
+      <select name="year_from" id="filter-year-from">
+        <option value="">–</option>
+        {% for year in years %}
+          <option value="{{ year }}"{% if year == filters.year_from %} selected{% endif %}>{{ year }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>{{ form.year_to.label }}
+      <select name="year_to" id="filter-year-to">
+        <option value="">–</option>
+        {% for year in years %}
+          <option value="{{ year }}"{% if year == filters.year_to %} selected{% endif %}>{{ year }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>{{ form.group_by.label }}
+      <select name="group_by">
+        {% for value, label in form.fields.group_by.choices %}
+          <option value="{{ value }}"{% if value == filters.group_by %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="submit">{% translate "Filter" %}</button>
+    <a class="btn secondary" href="?">{% translate "Clear" context "filters" %}</a>
+    <a class="btn secondary" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}format=csv">{% translate "Download CSV" %}</a>
+  </form>
+
+  {% if report.totals.total %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="year" rowspan="2">{% translate "Year" %}</th>
+          {% for status, label in report.columns %}
+            <th colspan="2" title="{{ label }}">{{ status }}</th>
+          {% endfor %}
+          <th rowspan="2">{% translate "Total" %}</th>
+        </tr>
+        <tr>
+          {% for status, label in report.columns %}
+            <th>n</th><th>%</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in report.rows %}
+        <tr>
+          <td class="year">{{ row.year|default:_("No year") }}</td>
+          {% for cell in row.cells %}
+            <td>{{ cell.count }}</td><td class="pct">{{ cell.percent|floatformat:2 }}</td>
+          {% endfor %}
+          <td>{{ row.total }}</td>
+        </tr>
+        {% endfor %}
+        <tr class="total">
+          <td class="year">{% translate "Total" %}</td>
+          {% for cell in report.totals.cells %}
+            <td>{{ cell.count }}</td><td class="pct">{{ cell.percent|floatformat:2 }}</td>
+          {% endfor %}
+          <td>{{ report.totals.total }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="table-wrap"><div class="empty">{% translate "No articles found for the selected filters." %}</div></div>
+  {% endif %}
+
+  <h2>{% translate "Status legend" %}</h2>
+  <dl class="legend">
+    {% for status, label in report.columns %}
+      <dt>{{ status }}</dt><dd>{{ label }}</dd>
+    {% endfor %}
+  </dl>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // filtros em cascata: coleção -> periódicos; coleção + periódico -> anos
+  (function () {
+    var form = document.getElementById("report-filters");
+    var collection = document.getElementById("filter-collection");
+    var journal = document.getElementById("filter-journal");
+    var yearFrom = document.getElementById("filter-year-from");
+    var yearTo = document.getElementById("filter-year-to");
+
+    function fillSelect(select, items) {
+      var selected = select.value;
+      var emptyLabel = select.options[0].text;
+      select.innerHTML = "";
+      select.add(new Option(emptyLabel, ""));
+      items.forEach(function (item) {
+        var value = String(item.value);
+        select.add(new Option(item.label, value, false, value === selected));
+      });
+      return select.value === selected;
+    }
+
+    function years(data) {
+      return data.years.map(function (year) { return { value: year, label: year }; });
+    }
+
+    function updateOptions(reloadJournals) {
+      var params = new URLSearchParams();
+      if (collection.value) params.set("collection", collection.value);
+      if (journal.value) params.set("journal", journal.value);
+      form.setAttribute("aria-busy", "true");
+      return fetch(form.dataset.optionsUrl + "?" + params.toString())
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+          if (reloadJournals) {
+            var kept = fillSelect(journal, data.journals.map(function (item) {
+              return { value: item.id, label: item.label };
+            }));
+            if (!kept) {
+              // periódico selecionado não pertence à coleção: recalcula anos
+              return updateOptions(false);
+            }
+          }
+          fillSelect(yearFrom, years(data));
+          fillSelect(yearTo, years(data));
+        })
+        .catch(function (error) { console.error(error); })
+        .finally(function () { form.removeAttribute("aria-busy"); });
+    }
+
+    collection.addEventListener("change", function () { updateOptions(true); });
+    journal.addEventListener("change", function () { updateOptions(false); });
+  })();
+</script>
+{% endblock %}

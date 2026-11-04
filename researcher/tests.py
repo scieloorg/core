@@ -31,7 +31,7 @@ class PersonNameJoinNameTest(SimpleTestCase):
         ]
 
         for text, expected in test_cases:
-            with self.subTest(text=text, excepted=expected):
+            with self.subTest(text=text, expected=expected):
                 result = PersonName.join_names(*text)
                 self.assertEqual(expected, result)
 
@@ -104,7 +104,7 @@ class ResearcherOrcidTest(TestCase):
                 user=self.user,
                 orcid="http://orcid.org/0000-0002-9147-057",
             )
-    
+
     def test_researcher_orcid_create_wrong_domain_orcid(self):
         with self.assertRaises(ValidationError):
             ResearcherOrcid.get_or_create(
@@ -119,10 +119,10 @@ class ResearcherOrcidTest(TestCase):
                 orcid="0000-0002-9147-057",
             )
 
+
 class NewResearcherTest(TestCase):
     def setUp(self):
         self.user = User.objects.create(username="teste", password="teste")
-        # ParentalKey
         self.researcher_id_orcid = ResearcherOrcid.get_or_create(
             user=self.user,
             orcid="0000-0002-1825-0097",
@@ -130,7 +130,7 @@ class NewResearcherTest(TestCase):
         self.researcher_id_orcid_2 = ResearcherOrcid.get_or_create(
             user=self.user,
             orcid="0000-0001-5109-3700",
-        )        
+        )
 
         self.location = Location.create_or_update(
             user=self.user,
@@ -145,7 +145,7 @@ class NewResearcherTest(TestCase):
         self.organization = Organization.create_or_update(
             user=self.user,
             name="Name of institution",
-            acronym="Acronym of institution",
+            acronym="INSTITUTIONACRON",
             url="www.teste.com.br",
             location=self.location,
             institution_type_mec="institution_type_mec",
@@ -154,7 +154,7 @@ class NewResearcherTest(TestCase):
         self.organization_2 = Organization.create_or_update(
             user=self.user,
             name="Name of institution 2",
-            acronym="Acronym of institution 2",
+            acronym="INSTACRON 2",
             url="www.teste2.com.br",
             location=self.location,
             institution_type_mec="institution_type_mec",
@@ -162,7 +162,9 @@ class NewResearcherTest(TestCase):
         )
 
     @staticmethod
-    def get_or_create_researcher(user, given_names, last_name, suffix, orcid=None, affiliation=None):
+    def get_or_create_researcher(
+        user, given_names, last_name, suffix, orcid=None, affiliation=None
+    ):
         return NewResearcher.get_or_create(
             user=user,
             given_names=given_names,
@@ -180,7 +182,6 @@ class NewResearcherTest(TestCase):
             identifier=identifier,
             source_name=source_name,
         )
-
 
     def test_new_researcher_create(self):
         researcher = self.get_or_create_researcher(
@@ -241,8 +242,8 @@ class NewResearcherTest(TestCase):
             ResearcherIds.get_or_create(
                 user=self.user,
                 researcher=researcher,
-                identifier="user.teste",
-                source_name="EMAIL",
+                identifier="invalid_lattes_format",
+                source_name="LATTES",
             )
 
     def test_new_researcher_create_two_times(self):
@@ -285,7 +286,6 @@ class NewResearcherTest(TestCase):
             researcher[0].researcher_ids.first().identifier, "user.teste@dom.org"
         )
         self.assertEqual(researcher[0].orcid.orcid, "0000-0002-1825-0097")
-        self.assertEqual(researcher[0].affiliation, self.organization)
         self.assertEqual(researcher[0].affiliation, self.organization)
         self.assertEqual(ResearcherIds.objects.all().count(), 1)
         self.assertEqual(researcher_id_email_1, researcher_id_email_2)
@@ -344,7 +344,7 @@ class NewResearcherTest(TestCase):
             researcher=researcher_2,
             identifier="user.teste2@dom.org",
             source_name="EMAIL",
-        )        
+        )
         researcher = NewResearcher.objects.all()
         self.assertEqual(researcher.count(), 2)
         self.assertEqual(researcher[0].given_names, "Anna")
@@ -362,7 +362,7 @@ class NewResearcherTest(TestCase):
         self.assertEqual(
             researcher[1].researcher_ids.first().identifier, "user.teste2@dom.org"
         )
-        self.assertEqual(researcher[0].orcid.orcid, researcher[1].orcid.orcid) 
+        self.assertEqual(researcher[0].orcid.orcid, researcher[1].orcid.orcid)
 
     def test_new_researcher_create_two_times_same_name_different_orcid(self):
         researcher_1 = self.get_or_create_researcher(
@@ -412,7 +412,7 @@ class NewResearcherTest(TestCase):
         )
         self.assertEqual(researcher[1].orcid.orcid, "0000-0001-5109-3700")
         self.assertNotEqual(researcher[0], researcher[1])
-        
+
     def test_new_researcher_create_without_orcid_same_affiliation(self):
         researcher_1 = self.get_or_create_researcher(
             user=self.user,
@@ -447,7 +447,6 @@ class NewResearcherTest(TestCase):
         self.assertEqual(researcher_1, researcher_2)
         self.assertEqual(researcher_1.affiliation, self.organization)
         self.assertEqual(researcher_1.affiliation, researcher_2.affiliation)
-        self.assertEqual(researcher_1, researcher_2)
 
 
 class MigrationResearcherTest(TestCase):
@@ -491,9 +490,7 @@ class MigrationResearcherTest(TestCase):
             affiliation=self.affiliation,
         )
 
-    def get_args(
-        self,
-    ):
+    def get_args(self):
         return dict(
             username=self.user.username,
             user_id=None,
@@ -591,55 +588,44 @@ class AffiliationMixinTest(TestCase):
     Tests for AffiliationMixin - testing through a concrete implementation.
     Since AffiliationMixin is abstract, we test it via the article.models.ArticleAffiliation class.
     """
-    
+
     def setUp(self):
         """Set up test data."""
         from article.models import Article, ArticleAffiliation
         from location.models import Country
-        
+
         self.user = User.objects.create(username="testuser", password="testpass")
-        
-        # Create a location for the organization
-        self.country = Country.objects.create(
-            name="Brazil",
-            acron2="BR",
-            acron3="BRA"
-        )
-        self.location = Location.objects.create(
+
+        self.country = Country.objects.create(name="Brazil", acronym="BR", acron3="BRA")
+        self.location = Location.create_or_update(
+            user=self.user,
             country=self.country,
             state_name="São Paulo",
             state_acronym="SP",
-            city_name="São Paulo"
+            city_name="São Paulo",
         )
-        
-        # Create an organization
+
         self.organization = Organization.objects.create(
             name="Universidade de São Paulo",
             acronym="USP",
             location=self.location,
-            creator=self.user
+            creator=self.user,
         )
-        
-        # Create an article for ArticleAffiliation tests
-        self.article = Article.objects.create(
-            creator=self.user
-        )
-        
+
+        self.article = Article.objects.create(creator=self.user)
         self.ArticleAffiliation = ArticleAffiliation
-    
+
     def test_affiliation_mixin_create_with_organization(self):
         """Test creating an affiliation with organization."""
         affiliation = self.ArticleAffiliation.create(
-            user=self.user,
-            article=self.article,
-            organization=self.organization
+            user=self.user, article=self.article, organization=self.organization
         )
-        
+
         self.assertIsNotNone(affiliation.id)
         self.assertEqual(affiliation.organization, self.organization)
         self.assertEqual(affiliation.article, self.article)
         self.assertEqual(affiliation.creator, self.user)
-    
+
     def test_affiliation_mixin_create_with_raw_data(self):
         """Test creating an affiliation with raw organization data."""
         affiliation = self.ArticleAffiliation.create(
@@ -650,9 +636,9 @@ class AffiliationMixinTest(TestCase):
             raw_country_name="United States",
             raw_country_code="USA",
             raw_state_name="California",
-            raw_city_name="San Francisco"
+            raw_city_name="San Francisco",
         )
-        
+
         self.assertIsNotNone(affiliation.id)
         self.assertEqual(affiliation.raw_text, "University of Example")
         self.assertEqual(affiliation.raw_institution_name, "University of Example")
@@ -660,66 +646,61 @@ class AffiliationMixinTest(TestCase):
         self.assertEqual(affiliation.raw_country_code, "USA")
         self.assertEqual(affiliation.raw_state_name, "California")
         self.assertEqual(affiliation.raw_city_name, "San Francisco")
-    
+
     def test_affiliation_mixin_get(self):
         """Test getting an affiliation."""
         affiliation = self.ArticleAffiliation.create(
-            user=self.user,
-            article=self.article,
-            organization=self.organization
+            user=self.user, article=self.article, organization=self.organization
         )
-        
+
         retrieved = self.ArticleAffiliation.get(
-            article=self.article,
-            organization=self.organization
+            article=self.article, organization=self.organization
         )
-        
+
         self.assertEqual(retrieved.id, affiliation.id)
         self.assertEqual(retrieved.organization, self.organization)
-    
+
     def test_affiliation_mixin_get_raises_value_error(self):
         """Test that get raises ValueError when article is not provided."""
         with self.assertRaises(ValueError):
             self.ArticleAffiliation.get(article=None)
-    
+
     def test_affiliation_mixin_create_or_update_creates(self):
         """Test create_or_update creates when affiliation doesn't exist."""
         affiliation = self.ArticleAffiliation.create_or_update(
             user=self.user,
             article=self.article,
             organization=self.organization,
-            raw_text="Test Organization"
+            raw_text="Test Organization",
         )
-        
+
         self.assertIsNotNone(affiliation.id)
         self.assertEqual(affiliation.organization, self.organization)
         self.assertEqual(affiliation.raw_text, "Test Organization")
         self.assertEqual(self.ArticleAffiliation.objects.count(), 1)
-    
+
     def test_affiliation_mixin_create_or_update_updates(self):
         """Test create_or_update updates when affiliation exists."""
-        # Create initial affiliation
         affiliation = self.ArticleAffiliation.create(
             user=self.user,
             article=self.article,
             organization=self.organization,
-            raw_text="Initial Text"
+            raw_text="Initial Text",
         )
         initial_id = affiliation.id
-        
-        # Update the affiliation
+
         updated = self.ArticleAffiliation.create_or_update(
             user=self.user,
             article=self.article,
             organization=self.organization,
-            raw_text="Updated Text"
+            raw_text="Updated Text",
         )
-        
+
         self.assertEqual(updated.id, initial_id)
         self.assertEqual(updated.raw_text, "Updated Text")
         self.assertEqual(updated.updated_by, self.user)
         self.assertEqual(self.ArticleAffiliation.objects.count(), 1)
-    
+
     def test_affiliation_mixin_create_with_both_organization_and_raw(self):
         """Test creating with both organization and raw data."""
         affiliation = self.ArticleAffiliation.create(
@@ -727,32 +708,30 @@ class AffiliationMixinTest(TestCase):
             article=self.article,
             organization=self.organization,
             raw_text="Raw Organization Name",
-            raw_institution_name="Raw Institution"
+            raw_institution_name="Raw Institution",
         )
-        
+
         self.assertIsNotNone(affiliation.id)
         self.assertEqual(affiliation.organization, self.organization)
         self.assertEqual(affiliation.raw_text, "Raw Organization Name")
         self.assertEqual(affiliation.raw_institution_name, "Raw Institution")
-    
+
     def test_article_affiliation_str(self):
         """Test string representation of ArticleAffiliation."""
         affiliation = self.ArticleAffiliation.create(
-            user=self.user,
-            article=self.article,
-            organization=self.organization
+            user=self.user, article=self.article, organization=self.organization
         )
-        
+
         expected = f"{self.article} - {self.organization}"
         self.assertEqual(str(affiliation), expected)
-    
+
     def test_article_affiliation_str_with_raw_data(self):
         """Test string representation with raw data."""
         affiliation = self.ArticleAffiliation.create(
             user=self.user,
             article=self.article,
-            raw_institution_name="Test Institution"
+            raw_institution_name="Test Institution",
         )
-        
+
         expected = f"{self.article} - Test Institution"
         self.assertEqual(str(affiliation), expected)

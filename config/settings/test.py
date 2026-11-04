@@ -28,3 +28,6 @@ EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
 # Your stuff...
 # ------------------------------------------------------------------------------
+# evita consultas ao articlemeta durante os testes
+# (os testes de Collection.ensure_network_classification a habilitam)
+COLLECTION_ENSURE_NETWORK_CLASSIFICATION = False

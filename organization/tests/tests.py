@@ -1,9 +1,9 @@
 from unittest.mock import patch
 from django.test import TestCase
 
-from .exceptions import OrganizationCreateOrUpdateError
-from .models import Organization, OrganizationInstitutionType
-from .tasks import (
+from organization.exceptions import OrganizationCreateOrUpdateError
+from organization.models import Organization, OrganizationInstitutionType
+from organization.tasks import (
     task_children_migrate_data,
     task_migrate_date_institution_to_organization_publisher,
 )
@@ -23,7 +23,7 @@ class OrganizationTest(TestCase):
         self.user = User.objects.create(username="teste", password="teste")
         self.institution_identification = InstitutionIdentification.objects.create(
             name="Name of institution",
-            acronym="Acronym of institution",
+            acronym="INSTITUTIONACRON",
             is_official=True,
         )
         self.location = Location.create_or_update(
@@ -70,7 +70,7 @@ class OrganizationTest(TestCase):
         )
 
         self.assertEqual(self.organization.name, "Name of institution")
-        self.assertEqual(self.organization.acronym, "Acronym of institution")
+        self.assertEqual(self.organization.acronym, "INSTITUTIONACRON")
         self.assertEqual(self.organization.url, "www.teste.com.br")
         self.assertEqual(self.organization.institution_type_mec, "institution_type_mec")
         self.assertEqual(
@@ -107,7 +107,7 @@ class OrganizationTest(TestCase):
         )
 
         self.assertEqual(self.organization.name, "Name of institution")
-        self.assertEqual(self.organization.acronym, "Acronym of institution")
+        self.assertEqual(self.organization.acronym, "INSTITUTIONACRON")
         self.assertEqual(self.organization.url, "www.teste.com.br")
         self.assertEqual(self.organization.institution_type_mec, "institution_type_mec")
         self.assertEqual(
@@ -151,7 +151,7 @@ class OrganizationTaskTest(TestCase):
         self.user = User.objects.create(username="teste", password="teste")
         self.institution_identification = InstitutionIdentification.objects.create(
             name="Name of institution",
-            acronym="Acronym of institution",
+            acronym="INSTITUTIONACRON",
             is_official=True,
         )
         self.location = Location.create_or_update(
@@ -213,7 +213,7 @@ class OrganizationTaskTest(TestCase):
                 model_institutition_id=self.publisher_history.id,
                 institution_data={
                     "institution__name": "Name of institution",
-                    "institution__acronym": "Acronym of institution",
+                    "institution__acronym": "INSTITUTIONACRON",
                     "institution__is_official": True,
                     "institution__level_1": "level_1",
                     "institution__level_2": "level_2",
@@ -233,7 +233,7 @@ class OrganizationTaskTest(TestCase):
         )
         self.assertEqual(
             called_kwargs["institution_data"].get("institution__acronym"),
-            "Acronym of institution",
+            "INSTITUTIONACRON",
         )
         self.assertEqual(
             called_kwargs["institution_data"].get("institution__type"),
@@ -259,7 +259,7 @@ class OrganizationTaskTest(TestCase):
         org_level = self.publisher_history.org_level.first()
 
         self.assertEqual(organization.name, "Name of institution")
-        self.assertEqual(organization.acronym, "Acronym of institution")
+        self.assertEqual(organization.acronym, "INSTITUTIONACRON")
         self.assertEqual(
             organization.institution_type_mec, "organização sem fins de lucros"
         )
@@ -279,7 +279,7 @@ class OrganizationTaskTest(TestCase):
             model_institutition_id=self.publisher_history.id,
             institution_data={
                 "institution__name": "Name of institution",
-                "institution__acronym": "Acronym of institution",
+                "institution__acronym": "INSTITUTIONACRON",
                 "institution__is_official": True,
                 "institution__level_1": "level_1",
                 "institution__level_2": "level_2",

@@ -1,13 +1,185 @@
-from functools import cached_property
-
+from django.conf import settings
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
-from core.utils.profiling_tools import profile_function
+from core.utils.similarity import how_similar
 from pid_provider import exceptions
 
 
+def fix_xml_with_pre_data(xml_with_pre):
+    data = xml_with_pre.data
+    try:
+        pkg_names = xml_with_pre.pkg_name_variations
+    except AttributeError:
+        return data
+
+    data["pkg_names"] = sorted(item for item in (pkg_names or []) if item)
+    return data
+
+
+def fix_get_data_to_compare(xml_adapter):
+    """
+    packtools 4.16.11
+        {
+            ...
+            "z_partial_body": self.z_partial_body,
+            ...
+        }
+    packtools > 4.17.0
+        {
+            ...
+            "body_fragment_fingerprint": self.xml_with_pre.body_fragment_fingerprint,
+            ...
+        }
+    """
+    data = xml_adapter.get_data_to_compare()
+    # independentemente da release do packtools,
+    # o valor para z_partial_body na comparação é body_fragment_fingerprint
+    xml_with_pre = xml_adapter.xml_with_pre
+    data["body_fragment_fingerprint"] = xml_with_pre.body_fragment_fingerprint
+    data["surnames"] = xml_with_pre.surnames
+    data["pid_v2"] = xml_with_pre.v2
+    return data
+
+
+def fix_get_article_data(xml_with_pre, max_length=300):
+    """
+    Wrapper de compatibilidade em torno de xml_with_pre.get_article_data().
+
+    Remove a chave legada "partial_body" do dict retornado (substituída
+    por "body_fragment" nas versões atuais do packtools), evitando que
+    código que consome esse dict dependa de uma chave que pode não
+    refletir mais o valor realmente usado nas comparações de corpo do
+    artigo.
+    """
+    try:
+        data = xml_with_pre.readable_data
+    except AttributeError:
+        data = xml_with_pre.get_article_data(max_length)
+        try:
+            data.pop("partial_body")
+        except KeyError:
+            pass
+    return data
+
+
+def compare(registered_items, input_data):
+    """
+    Compara os metadados do registro gravado (registered_items) com os dados
+    do XML de entrada (input_data).
+
+    O loop é ditado exclusivamente pelas chaves presentes em registered_items.
+    Campos em que ambos os lados são falsy/None são descartados do divisor.
+    """
+    total_score = 0.0
+    total_items = 0
+    items = []
+
+    for label, registered_item in registered_items.items():
+        input_data_item = input_data.get(label)
+
+        # Se o banco e a entrada forem nulos/falsy para este campo, não conta na média
+        if registered_item is None and input_data_item is None:
+            items.append({"label": label, "score": 1.0, "ignored": True})
+            continue
+
+        result = compare_items(label, registered_item, input_data_item)
+        items.append(result)
+
+        total_score += result["score"]
+        total_items += 1
+
+    percentual_score = (total_score / total_items) if total_items > 0 else 0.0
+
+    return {
+        "items": items,
+        "total_score": total_score,
+        "percentual_score": percentual_score,
+    }
+
+
+def compare_lists(registered, xml_adapter_titles):
+    """
+    Compara duas listas de textos (ex.: títulos de artigo) por
+    similaridade de conjunto de palavras.
+
+    Retorna 1 se as listas forem idênticas, 0 se qualquer uma das duas
+    estiver vazia/None, ou o resultado de how_similar() entre as
+    palavras únicas de cada lista (ordenadas e unidas em uma única
+    string), caso contrário.
+    """
+    if xml_adapter_titles == registered:
+        return 1
+    if not xml_adapter_titles:
+        return 0
+    if not registered:
+        return 0
+    words1 = set()
+    for item in xml_adapter_titles:
+        words1.update(item.split())
+    words2 = set()
+    for item in registered:
+        words2.update(item.split())
+    return how_similar(" ".join(sorted(words1)), " ".join(sorted(words2)))
+
+
+def compare_pid_v2(registered_pids_v2, input_pid_v2):
+    """
+    Compara o pid v2 de entrada com os pids v2 registrados do documento
+    (um mesmo documento pode ter pid v2 diferente em cada coleção, ex.:
+    S0103-65642009000300003 em scl e S1678-51772009000300003 em psi).
+
+    Retorna 1 se o pid v2 de entrada é um dos registrados; caso contrário, 0.
+    """
+    if input_pid_v2 in registered_pids_v2:
+        return 1
+    return 0
+
+
+def compare_items(label, registered, input_data):
+    """
+    Compara um único item entre o valor registrado e o valor de entrada.
+
+    Regras, na ordem em que são avaliadas:
+    - Se os dois valores forem iguais (sem normalização: None != ""),
+      o score é 1.
+    - Se `label` começar com "z_" ou contiver "finger" (hashes /
+      fingerprints), o score é 0, pois só a igualdade exata importa.
+    - Se `registered` for uma lista:
+      - "pid_v2" (pids v2 do documento em cada coleção): delega a
+        compare_pid_v2();
+      - demais (ex.: títulos): delega a compare_lists().
+    - Caso contrário, o score vem de how_similar() entre os dois valores
+      (None é tratado como string vazia).
+
+    Retorna um dict {"label": label, "score": score}, incluindo também
+    "registered" quando o score não é 1 — útil para inspecionar
+    divergências.
+    """
+    if input_data == registered:
+        score = 1
+    elif label.startswith("z_") or 'finger' in label:
+        score = 0
+    elif isinstance(registered, list):
+        if label == "pid_v2":
+            score = compare_pid_v2(registered, input_data)
+        else:
+            score = compare_lists(registered, input_data)
+    else:
+        score = how_similar(input_data or "", registered or "")
+    response = {"label": label, "score": score}
+    if score != 1:
+        response["registered"] = registered
+        response["input_data"] = input_data
+    return response
+
+
 def get_score(registered, xml_data, min_value, max_value):
+    """
+    Score binário simples: max_value se registered == xml_data e ambos
+    truthy; min_value se ambos forem iguais mas falsy (ex.: None ==
+    None); 0 caso contrário.
+    """
     if registered == xml_data:
         if registered:
             return max_value
@@ -16,6 +188,13 @@ def get_score(registered, xml_data, min_value, max_value):
 
 
 def zero_to_none(data):
+    """
+    Normaliza um campo numérico textual: retorna None se `data` for
+    falsy; retorna `data` sem alteração se não for composto só de
+    dígitos; e converte para None quando o valor numérico for zero
+    (nos demais casos, mantém `data` como string, sem converter para
+    int).
+    """
     if not data:
         return
     if not data.isdigit():
@@ -35,277 +214,431 @@ class QueryBuilderPidProviderXML:
     
     def __init__(self, xml_adapter):
         """
-        Inicializa o construtor de queries.
-        
+        Inicializa o construtor de queries obtendo os dados do adaptador.
+
         Parameters
         ----------
         xml_adapter : PidProviderXMLAdapter
             Adaptador com dados do XML para busca
+
+        Define
+        ------
+        z_body_fragment : fingerprint sha256 de um fragmento estável do
+            corpo do artigo (XMLWithPre.body_fragment_fingerprint),
+            acessado direto do xml_with_pre — não requer nenhuma
+            mudança no packtools nem no PidProviderXMLAdapter. É mais
+            robusto que z_partial_body (que é só o primeiro parágrafo
+            não vazio e pode colidir entre artigos diferentes, ex.:
+            rótulos de seção genéricos como "ARTIGO DE REVISÃO").
+        z_partial_body : hash legado do corpo do artigo
+            (xml_with_pre.z_partial_body), mantido apenas para casar
+            com registros antigos.
+        adapter_data : dict bruto de xml_adapter.data.
+        xml_with_pre_data : dict normalizado retornado por
+            fix_get_article_data(xml_adapter.xml_with_pre, 300) — já
+            sem a chave legada "partial_body".
         """
         self.xml_adapter = xml_adapter
-    
-    # ========== Cached Properties para Atributos do XML Adapter ==========
-    
-    @cached_property
-    def v3(self):
-        """PID v3 do documento."""
-        return self.xml_adapter.v3
-    
-    @cached_property
-    def v2(self):
-        """PID v2 do documento."""
-        return self.xml_adapter.v2
-    
-    @cached_property
-    def aop_pid(self):
-        """PID AOP (Ahead of Print) do documento."""
-        return self.xml_adapter.aop_pid
-    
-    @cached_property
-    def pkg_name(self):
-        """Nome do pacote do documento, parâmtro usado ao instanciar XMLAdapter"""
-        return self.xml_adapter.pkg_name
+        self.z_body_fragment = xml_adapter.xml_with_pre.body_fragment_fingerprint
+        self.z_partial_body = xml_adapter.z_partial_body
+        self.adapter_data = xml_adapter.data
+        self.xml_with_pre_data = fix_get_article_data(xml_adapter.xml_with_pre, 300)
 
-    @cached_property
-    def sps_pkg_name(self):
-        """Nome do pacote do documento (deprecated)."""
-        return self.xml_adapter.sps_pkg_name
+    @property
+    def pkg_name_list(self):
+        """
+        Consolida, em um único set, todos os nomes de pacote possíveis
+        para o artigo: o nome enviado via parâmetro no construtor, o
+        nome oficial atual calculado pelo packtools (sps_pkg_name) e
+        todos os nomes depreciados/alternativos já usados no passado.
+        Valores falsy são descartados.
+        """
+        try:
+            pkg_names = self.xml_adapter.xml_with_pre.pkg_name_variations
+        except AttributeError:
+            pass
+        else:
+            return {item for item in (pkg_names or []) if item}
 
-    @cached_property
-    def deprecated_sps_pkg_name(self):
-        """Nome do pacote do documento (deprecated)."""
-        return self.xml_adapter.sps_pkg_name
+        pkg_names = set()
+        if self.xml_adapter.pkg_name:
+            pkg_names.add(self.xml_adapter.pkg_name)
+        if self.xml_adapter.sps_pkg_name:
+            pkg_names.add(self.xml_adapter.sps_pkg_name)
+        pkg_names.update(self.xml_adapter.xml_with_pre.deprecated_sps_pkg_name_list)
+        return {item for item in pkg_names if item}
+    
+    def validate_input_data(self):
+        """
+        Garante que o XML de entrada tem parâmetros suficientes para
+        localizar um registro existente.
 
-    @cached_property
-    def main_doi(self):
-        """DOI principal do documento."""
-        return self.xml_adapter.main_doi
-    
-    @cached_property
-    def journal_issn_electronic(self):
-        """ISSN eletrônico do periódico."""
-        return self.xml_adapter.journal_issn_electronic
-    
-    @cached_property
-    def journal_issn_print(self):
-        """ISSN impresso do periódico."""
-        return self.xml_adapter.journal_issn_print
-    
-    @cached_property
-    def elocation_id(self):
-        """Identificador de localização eletrônica."""
-        return self.xml_adapter.elocation_id
-    
-    @cached_property
-    def fpage(self):
-        """Primeira página do artigo."""
-        return self.xml_adapter.fpage
-    
-    @cached_property
-    def fpage_seq(self):
-        """Sequência da primeira página."""
-        return self.xml_adapter.fpage_seq
-    
-    @cached_property
-    def lpage(self):
-        """Última página do artigo."""
-        return self.xml_adapter.lpage
-    
-    @cached_property
-    def pub_year(self):
-        """Ano de publicação."""
-        return self.xml_adapter.pub_year
-    
-    @cached_property
-    def volume(self):
-        """Volume da publicação."""
-        return self.xml_adapter.volume
-    
-    @cached_property
-    def number(self):
-        """Número/fascículo da publicação."""
-        return self.xml_adapter.number
-    
-    @cached_property
-    def suppl(self):
-        """Suplemento da publicação."""
-        return self.xml_adapter.suppl
-    
-    @cached_property
-    def z_surnames(self):
-        """Sobrenomes dos autores concatenados."""
-        return self.xml_adapter.z_surnames
-    
-    @cached_property
-    def z_collab(self):
-        """Colaborações do artigo."""
-        return self.xml_adapter.z_collab
-    
-    @cached_property
-    def z_links(self):
-        """Links relacionados ao artigo."""
-        return self.xml_adapter.z_links
-    
-    @cached_property
-    def z_partial_body(self):
-        """Conteúdo parcial do corpo do artigo."""
-        return self.xml_adapter.z_partial_body
+        Levanta:
+        - RequiredPublicationYearErrorToGetPidProviderXMLError se não
+          houver ano de publicação;
+        - RequiredISSNErrorToGetPidProviderXMLError se não houver ISSN
+          eletrônico nem impresso;
+        - NotEnoughParametersToGetPidProviderXMLError se, além do
+          ano/ISSN, não houver nenhum dado de localização do artigo
+          (elocation_id/fpage/lpage/etc.) nem nenhum dado textual
+          (títulos, sobrenomes, colaboradores, links ou fragmento do
+          corpo) que permita diferenciar o artigo de outros do mesmo
+          fascículo.
+        """
+        if not self.adapter_data.get("pub_year"):
+            raise exceptions.RequiredPublicationYearErrorToGetPidProviderXMLError()
+        issn_electronic = self.adapter_data.get("issn_electronic")
+        issn_print = self.adapter_data.get("issn_print")
+        if not issn_electronic and not issn_print:
+            raise exceptions.RequiredISSNErrorToGetPidProviderXMLError()
+        items = list(self.article_location_params.values())
+        if any(items):
+            return
+        article_titles = (self.xml_with_pre_data.get("article_titles") or [])
+        article_titles = [x for x in article_titles if x]
+        items = [
+            article_titles,
+            self.xml_with_pre_data.get("surnames"),
+            self.xml_with_pre_data.get("collab"),
+            self.xml_with_pre_data.get("links"),
+            self.xml_with_pre_data.get("body_fragment"),
+        ]
+        if any(items):
+            return
+        raise exceptions.NotEnoughParametersToGetPidProviderXMLError()
 
-    @cached_property
-    def order(self):
-        """Conteúdo parcial do corpo do artigo."""
-        return self.xml_adapter.order
-    
     # ========== Queries Construídas ==========
     
-    @cached_property
+    @property
     def identifier_queries(self):
         """
-        Constrói queries para busca por identificadores (v3, v2, aop_pid, pkg_name, DOI).
-        
-        Busca em múltiplos campos incluindo other_pid para garantir
-        compatibilidade com diferentes formatos de PIDs.
-        
-        Returns
-        -------
-        Q
-            Query object combinando buscas por v3, v2, aop_pid, pkg_name e main_doi
+        Constrói query para busca por identificadores diretos (v3, v2,
+        aop_pid, DOI principal).
+
+        Separada de pkg_name_queries (ver docstring de pkg_name_queries
+        para o porquê) para que cada uma seja executada como uma etapa
+        própria em select_records, do critério mais específico
+        (identificadores) para o mais genérico (nome de pacote).
+
+        Quando nenhum dos identificadores está presente, retorna Q()
+        (query vazia). Q() não deve ser usada diretamente em
+        queryset.filter(): em Django, filter(Q()) não restringe nada e
+        retornaria TODOS os registros, o que aqui significaria "nenhum
+        critério" e não "qualquer registro serve". Por isso o consumidor
+        (PidProviderXML.select_records) trata explicitamente o caso
+        `identifier_queries == Q()` como "sem candidatos" antes de
+        filtrar.
         """
         q = Q()
-        
-        # PID v3 - máxima prioridade
-        if self.v3:
-            q |= Q(v3=self.v3)
-        
-        # PID v2
-        if self.v2:
-            q |= Q(v2=self.v2)
-        
-        # AOP PID
-        if self.aop_pid:
-            q |= Q(v2=self.aop_pid) | Q(aop_pid=self.aop_pid)
-            
-        # Package name
-        pkg_names = set()
-        if self.pkg_name:
-            pkg_names.add(self.pkg_name)
-        if self.sps_pkg_name:
-            pkg_names.add(self.sps_pkg_name)
-        if self.deprecated_sps_pkg_name:
-            pkg_names.add(self.deprecated_sps_pkg_name)
-        if pkg_names:
-            q |= Q(pkg_name__in=pkg_names)
 
-        # # DOI principal
-        # if self.main_doi:
-        #     q |= Q(main_doi=self.main_doi)
+        v3 = self.xml_adapter.v3
+        v2 = self.xml_adapter.v2
+        aop_pid = self.xml_adapter.aop_pid
+
+        if v3:
+            q |= Q(v3=v3)
+
+        if v2:
+            # o pid v2 do XML pode ser o pid v2 do documento em outra coleção
+            # (periódico com PIDs diferentes em coleções diferentes)
+            q |= Q(v2=v2) | Q(collection_pids_v2__pid_v2=v2)
+
+        if aop_pid:
+            q |= Q(v2=aop_pid) | Q(aop_pid=aop_pid)
+
+        main_doi = self.adapter_data.get("main_doi")
+        if main_doi:
+            q |= Q(main_doi=main_doi)
 
         return q
-    
-    @cached_property
+
+    @property
+    def pkg_name_queries(self):
+        """
+        Constrói query para busca por nome(s) de pacote (pkg_name_list).
+
+        Extraída de identifier_queries para ser executada como etapa
+        própria em select_records, logo em seguida à busca por
+        identificadores diretos (v3/v2/aop_pid/DOI) — pkg_name é menos
+        específico que esses (pode colidir entre revisões/depósitos do
+        mesmo artigo), por isso roda depois, não junto.
+
+        Mesma observação de identifier_queries sobre Q(): quando não há
+        nenhum pkg_name disponível, retorna Q() e o consumidor deve
+        tratar esse caso como "sem candidatos", não filtrar com ele.
+        """
+        pkg_names = self.pkg_name_list
+        if pkg_names:
+            return Q(pkg_name__in=pkg_names)
+        return Q()
+
+    @property
     def issn_query(self):
         """
         Constrói query base para busca por ISSN (eletrônico ou impresso).
-        
-        Returns
-        -------
-        Q
-            Query object combinando ISSN eletrônico e impresso com operador OR
-        
-        Raises
-        ------
-        RequiredISSNErrorToGetPidProviderXMLError
-            Se nenhum ISSN (eletrônico ou impresso) estiver disponível
         """
         q = Q()
+        issn_electronic = self.adapter_data.get("issn_electronic")
+        issn_print = self.adapter_data.get("issn_print")
         
-        if not self.journal_issn_electronic and not self.journal_issn_print:
+        if not issn_electronic and not issn_print:
             raise exceptions.RequiredISSNErrorToGetPidProviderXMLError(
                 _("Required Print or Electronic ISSN to identify XML {}").format(
-                    self.pkg_name,
+                    self.xml_adapter.pkg_name,
                 )
             )
         
-        if self.journal_issn_electronic:
-            q |= Q(issn_electronic=self.journal_issn_electronic)
+        if issn_electronic:
+            q |= Q(issn_electronic=issn_electronic)
         
-        if self.journal_issn_print:
-            q |= Q(issn_print=self.journal_issn_print)
+        if issn_print:
+            q |= Q(issn_print=issn_print)
         
         return q
            
-    @cached_property
+    @property
     def issue_params(self):
         """
         Constrói dicionário com metadados do fascículo e paginação do artigo.
-        
-        Retorna todos os campos sem verificar presença, permitindo
-        que o ORM do Django filtre automaticamente valores None.
-        
-        Returns
-        -------
-        dict
-            Dicionário com elocation_id, fpage, fpage_seq, lpage, 
-            pub_year, volume, number e suppl
+        """
+        return {
+            "pub_year": self.adapter_data.get("pub_year"),
+            "volume": self.adapter_data.get("volume"),
+            "number": self.adapter_data.get("number"),
+            "suppl": self.adapter_data.get("suppl"),
+        }
+
+    @property
+    def article_location_params(self):
+        """
+        Constrói dicionário com metadados de localização do artigo.
         """
         data = {
-            "elocation_id": self.elocation_id,
-            "fpage": self.fpage,
-            "fpage_seq": self.fpage_seq,
-            "lpage": self.lpage,
-            "pub_year": self.pub_year,
-            "volume": self.volume,
-            "number": self.number,
-            "suppl": self.suppl,
+            "elocation_id": self.adapter_data.get("elocation_id"),
+            "fpage": self.adapter_data.get("fpage"),
+            "fpage_seq": self.adapter_data.get("fpage_seq"),
+            "lpage": self.adapter_data.get("lpage"),
         }
-        if self.order:
-            data["v2__endswith"] = self.order
-        elif not self.elocation_id and not self.fpage and self.main_doi:
-            data["main_doi__iexact"] = self.main_doi
         return data
-    
-    @cached_property
+
+    @property
+    def partial_body_query(self):
+        """
+        Constrói a query para o campo z_partial_body, que hoje armazena
+        dois formatos possíveis de hash, dependendo de quando o registro
+        foi salvo:
+
+        - legado: self.z_partial_body
+          (xml_adapter.xml_with_pre.z_partial_body) — hash do primeiro
+          parágrafo não vazio do corpo;
+        - atual: self.z_body_fragment
+          (xml_with_pre.body_fragment_fingerprint), gravado no mesmo
+          campo z_partial_body a partir desta correção (sem necessidade
+          de migração/backfill).
+
+        Usa IN com os hashes disponíveis do XML de entrada para casar
+        com candidatos em qualquer um dos dois formatos.
+
+        Quando o XML de entrada não tem NENHUM dos dois hashes
+        calculados (ambos None), não é seguro usar
+        `z_partial_body__in=(None, None)`: em SQL, `IN` é uma cadeia de
+        igualdades e `NULL = NULL` é UNKNOWN (nunca True), então essa
+        forma jamais encontraria candidatos com z_partial_body nulo.
+        Nesse caso, usamos `z_partial_body__isnull=True` explicitamente,
+        preservando o comportamento equivalente ao antigo
+        `Q(z_partial_body=None)` (que o Django traduz para IS NULL).
+        """
+        candidates = set(v for v in (self.z_partial_body, self.z_body_fragment) if v)
+        if candidates:
+            return Q(z_partial_body__in=candidates)
+        return Q(z_partial_body__isnull=True)
+
+    @property
     def article_data_query(self):
         """
-        Constrói query para busca por dados textuais do artigo.
-        
-        Combina buscas por sobrenomes de autores, colaborações,
-        links e conteúdo parcial do corpo do artigo.
-        
-        Returns
-        -------
-        Q or None
-            Query object combinando z_surnames, z_collab, z_links e z_partial_body,
-            ou None se nenhum dado textual estiver disponível
+        Constrói query para busca por dados textuais codificados (hashes
+        sha256 de sobrenomes, colaboradores e links), combinada com
+        partial_body_query (hash/fingerprint do corpo do artigo).
         """
-        # Verifica se há algum dado textual disponível
-        if not any([
-            self.z_surnames,
-            self.z_collab,
-            self.z_links,
-            self.z_partial_body,
-        ]):
-            return Q(
-                z_surnames=self.z_surnames,
-                z_collab=self.z_collab,
-                z_links=self.z_links,
-                z_partial_body=self.z_partial_body,
+        z_surnames = self.adapter_data.get("z_surnames")
+        z_collab = self.adapter_data.get("z_collab")
+        z_links = self.adapter_data.get("z_links")
+
+        return Q(
+            z_surnames=z_surnames,
+            z_collab=z_collab,
+            z_links=z_links,
+        ) & self.partial_body_query
+
+    def get_article_data_query(self, issue, flexible):
+        """
+        Constrói uma variante da query de candidatos por dados do
+        artigo, combinando dois eixos independentes: `issue` (o
+        candidato TEM ou NÃO TEM fascículo/localização) e `flexible`
+        (a busca EXIGE ou NÃO os hashes textuais do artigo). As 4
+        combinações resultantes são usadas por select_records como
+        alternativas (OR) — da mais estrita à mais permissiva — para
+        achar candidatos mesmo quando o conteúdo textual do artigo foi
+        corrigido (errata) mas fascículo/localização permanecem iguais.
+
+        Parameters
+        ----------
+        issue : bool
+            Truthy: exige que o candidato case com `issue_params`
+            (pub_year/volume/number/suppl) E `article_location_params`
+            (elocation_id/fpage/fpage_seq/lpage/v2__endswith) — caso
+            normal, com fascículo e paginação definidos.
+            Falsy: exige o oposto — todos os campos de
+            volume/number/suppl/elocation_id/fpage/lpage NULOS no
+            candidato — caso de artigos sem paginação/localização
+            definida (ex.: ahead-of-print).
+        flexible : bool
+            False (estrito): exige TAMBÉM que `article_data_query`
+            (hashes de sobrenomes/colaboradores/links + fingerprint do
+            corpo) do candidato case com os do XML de entrada. É a
+            busca original, sem afrouxamento.
+            True: DISPENSA essa exigência de conteúdo textual — casa só
+            por fascículo/localização (quando `issue`) ou só pela
+            ausência delas combinada com `article_location_params`
+            (quando não `issue`). Serve para achar o mesmo artigo
+            depois que seu conteúdo textual mudou.
+        """
+        if issue:
+            q = (
+                Q(**self.issue_params) & 
+                Q(**self.article_location_params)
             )
-        
-        q = Q()
-        
-        # Adiciona query para sobrenomes se disponível
-        if self.z_surnames:
-            q |= Q(z_surnames=self.z_surnames)
-        
-        # Adiciona queries para outros campos textuais
-        if self.z_collab:
-            q |= Q(z_collab=self.z_collab)
-        
-        if self.z_links:
-            q |= Q(z_links=self.z_links)
-        
-        if self.z_partial_body:
-            q |= Q(z_partial_body=self.z_partial_body)
-        
-        return q
+            if flexible:
+                return q
+            return self.article_data_query & q
+        # not issue
+        q = Q(
+            volume__isnull=True,
+            number__isnull=True,
+            suppl__isnull=True,
+            elocation_id__isnull=True,
+            fpage__isnull=True,
+            lpage__isnull=True,
+        )
+        if flexible:
+            return q & Q(**self.article_location_params)
+        return q & self.article_data_query
+
+def get_best_match(results, xml_adapter_data):
+    """
+    Compara uma lista de candidatos (PidProviderXML) com os dados do XML
+    recebido e classifica os candidatos por similaridade.
+
+    Parameters
+    ----------
+    results : list[PidProviderXML]
+        Lista JÁ MATERIALIZADA (não queryset) de candidatos a comparar.
+    xml_adapter_data : dict
+        Dados de comparação do XML de entrada, ou seja, o retorno de
+        ``xml_adapter.get_data_to_compare()``.
+
+    Returns
+    -------
+    dict
+        Todas as chaves abaixo são OPCIONAIS — só aparecem quando há
+        conteúdo para elas. Use ``.get(...)`` ou ``"chave" in result``
+        ao consumir o retorno, nunca acesso direto.
+
+        - ``"unmatched"``: presente apenas se houver ao menos 1
+        candidato com ``percentual_score`` <= min_rate. Lista de
+        ``item.data`` desses candidatos.
+        - ``"registered"``: presente apenas se houver ao menos 1
+        candidato aprovado (score > min_rate). Contém o OBJETO
+        ``PidProviderXML`` (não o dict ``.data``) do candidato com
+        maior score — em caso de empate, o critério de desempate é
+        ``updated`` mais recente e, em seguida, maior ``id``.
+        - ``"matched"``: presente apenas se houver 2 OU MAIS candidatos
+        aprovados, EXCLUINDO os empatados em 1º lugar com "registered"
+        (ver "multiple_matched"). Contém ``item.data`` dos candidatos
+        aprovados com score estritamente menor que o máximo, na mesma
+        ordem de score decrescente.
+        - ``"multiple_matched"``: presente apenas se houver 2 OU MAIS
+        candidatos aprovados. Contém ``item.data`` dos candidatos
+        empatados em score com "registered" (score == score máximo),
+        excluindo o próprio "registered".
+    """
+    detail = {}
+    found = []
+    items = {}
+    responses = {}
+    min_rate = settings.PID_PROVIDER_MIN_RATE
+    for item in results:
+        item_data = item.data_to_compare
+        response = compare(item_data, xml_adapter_data)
+        items[item.id] = item
+        responses[item.id] = response
+        found.append((response["percentual_score"], item.updated.isoformat(), item.id))
+    found = sorted(found, reverse=True)
+
+    matched = []
+    unmatched = []
+    for percentual_score, updated, item_id in found:
+        data = {"data": items[item_id].data, "response": responses[item_id]}
+        if percentual_score > min_rate:
+            matched.append(data)
+        else:
+            unmatched.append(data)
+    if matched:
+        registered_id = found[0][-1]
+        detail["registered"] = items[registered_id]
+        max_percentual_score = responses[registered_id]["percentual_score"]
+        if len(matched) > 1:
+            detail["matched"] = []
+            detail["multiple_matched"] = []
+            for matched_item in matched[1:]:
+                if matched_item["response"]["percentual_score"] == max_percentual_score:
+                    detail["multiple_matched"].append(matched_item)
+                else:
+                    detail["matched"].append(matched_item)
+            if detail["multiple_matched"]:
+                detail["multiple_matched"].insert(0, matched[0])
+    if unmatched:
+        detail["unmatched"] = unmatched
+    return detail
+
+
+def select_record(xml_adapter, selection_results):
+    """
+    Decide qual candidato de `selection_results` corresponde ao artigo do XML.
+
+    `selection_results` é retornado por `select_records()`.
+
+    Itera sobre listas já materializadas. Se encontrar um candidato
+    `registered`, retorna o resultado com seus respectivos matches/unmatches.
+    Empates em `multiple_matched_items` indicam ambiguidade e são tratados pelo
+    consumidor como erro. Se nenhum for registrado, retorna os `unmatched_items`.
+    """
+    unmatched_items = {}
+    xml_adapter_data_to_compare = fix_get_data_to_compare(xml_adapter)
+    for label, results in selection_results:
+        if not results:
+            continue
+        result = get_best_match(results, xml_adapter_data_to_compare)
+        matched = result.get("matched")
+        multiple_matched = result.get("multiple_matched")
+        unmatched = result.get("unmatched")
+        registered = result.get("registered")
+        if registered:
+            response = {
+                "total_results": len(results),
+                "registered": registered,
+            }
+            if matched:
+                response["matched_items"] = {label: matched}
+            if multiple_matched:
+                response["multiple_matched_items"] = {label: multiple_matched}
+            if unmatched:
+                response["unmatched_items"] = {label: unmatched}
+            return response
+
+        if unmatched:
+            unmatched_items[label] = unmatched
+
+    if unmatched_items:
+        return {"unmatched_items": unmatched_items}
+    return {}

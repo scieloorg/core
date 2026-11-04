@@ -114,6 +114,7 @@ class CollectionSerializer(serializers.ModelSerializer):
             "collection_type",
             "is_active",
             "foundation_date",
+            "network_classification",
             
             # Campos relacionados
             "collection_names",

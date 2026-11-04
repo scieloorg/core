@@ -541,7 +541,7 @@ TASK_QUEUE = env('TASK_QUEUE', default='high')
 # Tempo máximo em segundos que uma tarefa pode levar para ser concluída (timeout "suave").
 # `env.int()` garante que o valor lido seja um inteiro.
 TASK_TIMEOUT = env.int('TASK_TIMEOUT', default=5 * 60)
-RUN_ASYNC = env.bool('RUN_ASYNC', default=0)
+RUN_ASYNC = env.bool('RUN_ASYNC', default=1)
 # Celery Results
 # ------------------------------------------------------------------------------
 # https://django-celery-results.readthedocs.io/en/latest/getting_started.html
@@ -726,4 +726,16 @@ PROFILING_LOG_ALL = env.bool('DJANGO_PROFILING_LOG_ALL', default=True)
 
 
 # LINK TO OLD SCIELO
+# Habilita/desabilita a exibição do link para o site antigo no cabeçalho
+SCIELO_OLD_URL_ENABLED = env.bool("SCIELO_OLD_URL_ENABLED", default=False)
+# Deve começar com http:// ou https://; o texto do link é a URL sem o protocolo
 SCIELO_OLD_URL = env.str("SCIELO_OLD_URL", default="http://old.scielo.org/")
+
+# Score mínimo (percentual_score) para considerar um candidato de PidProviderXML como aprovado
+PID_PROVIDER_MIN_RATE = env.float("PID_PROVIDER_MIN_RATE", default=0.65)
+
+# Completa automaticamente (articlemeta) network_classification das coleções
+# antes de PidProviderXML.register (ver Collection.ensure_network_classification)
+COLLECTION_ENSURE_NETWORK_CLASSIFICATION = env.bool(
+    "COLLECTION_ENSURE_NETWORK_CLASSIFICATION", default=True
+)

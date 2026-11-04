@@ -950,21 +950,7 @@ class Journal(CommonControlField, ClusterableModel):
             params["scielojournal__collection__acron3__in"] = collection_acron_list
         if journal_acron_list:
             params["scielojournal__journal_acron__in"] = journal_acron_list
-        queryset = cls.objects.filter(**params).distinct()
-        if not queryset.exists():
-            UnexpectedEvent.create(
-                exception=ValueError("No journals found for the given filters"),
-                detail={
-                    "operation": "Journal.select_items",
-                    "collection_acron_list": collection_acron_list,
-                    "journal_acron_list": journal_acron_list,
-                    "from_date": from_date,
-                    "until_date": until_date,
-                    "days_to_go_back": days_to_go_back,
-                    "params": params,
-                },
-            )
-        return queryset
+        return cls.objects.filter(**params).distinct()
 
     @classmethod
     def get_journal_issns(
@@ -1027,8 +1013,9 @@ class Journal(CommonControlField, ClusterableModel):
 
     @classmethod
     def get_ids(cls, collection_acron_list=None, journal_acron_list=None):
-        qs = cls.select_items(collection_acron_list, journal_acron_list)
-        return qs.values_list("id", flat=True).distinct()
+        return cls.select_items(
+            collection_acron_list, journal_acron_list
+        ).values_list("id", flat=True).distinct()
 
     def select_collections(self, collection_acron_list=None, is_active=None):
         params = {}
@@ -2246,6 +2233,37 @@ class SciELOJournal(CommonControlField, ClusterableModel, SocialNetwork):
             "collection_acron": self.collection.acron3,
             "pid": self.issn_scielo,
             "journal_acron": self.journal_acron,
+        }
+
+    @property
+    def scielo_url(self):
+        domain = ""
+        if self.collection and self.collection.domain:
+            domain = self.collection.domain
+        if not domain:
+            return ""
+        return (
+            f"{domain.rstrip('/')}/scielo.php?script=sci_serial"
+            f"&pid={self.issn_scielo or ''}&lng=en"
+        )
+
+    @property
+    def owner_name(self):
+        if not self.journal:
+            return ""
+        for name in self.journal.owner_names:
+            if name:
+                return name
+        return ""
+
+    def as_export_dict(self):
+        title = ""
+        if self.journal and self.journal.title:
+            title = self.journal.title
+        return {
+            "title": title,
+            "scielo_url": self.scielo_url,
+            "owner": self.owner_name,
         }
 
 

@@ -1,11 +1,8 @@
-import logging
-import sys
-import traceback
+from collections import Counter
 from datetime import datetime
 from itertools import product
 
 from django.utils.translation import gettext_lazy as _
-from lxml import etree
 from packtools.sps.models.article_abstract import ArticleAbstract
 from packtools.sps.models.article_and_subarticles import ArticleAndSubArticles
 from packtools.sps.models.article_contribs import ArticleContribs, XMLContribs
@@ -15,17 +12,24 @@ from packtools.sps.models.article_ids import ArticleIds
 from packtools.sps.models.article_license import ArticleLicense
 from packtools.sps.models.article_titles import ArticleTitles
 from packtools.sps.models.dates import ArticleDates
+from packtools.sps.models.fig import ArticleFigs
+from packtools.sps.models.formula import ArticleFormulas
 from packtools.sps.models.front_articlemeta_issue import ArticleMetaIssue
 from packtools.sps.models.funding_group import FundingGroup
+from packtools.sps.models.graphic import Graphic, InlineGraphic, XmlGraphic
 from packtools.sps.models.journal_meta import ISSN, Title
 from packtools.sps.models.kwd_group import ArticleKeywords
+from packtools.sps.models.tablewrap import ArticleTableWrappers
 from packtools.sps.models.v2.article_toc_sections import ArticleTocSections
 from packtools.sps.models.v2.related_articles import RelatedArticles
+from packtools.sps.models.visual_resource_base import XmlVisualResource
 
 from article import choices
 from article.models import (
     Article,
     ArticleAffiliation,
+    ArticleCount,
+    ArticleCountType,
     ArticleFunding,
     ContribCollab,
     ContribPerson,
@@ -40,12 +44,9 @@ from institution.models import Sponsor
 from issue.models import Issue, TableOfContents, AMIssue
 from issue.articlemeta.loader import load_issue_sections
 from journal.models import Journal
-from location.models import Location
-from pid_provider.choices import PPXML_STATUS_UNMATCHED_JOURNAL_OR_ISSUE, PPXML_STATUS_INVALID
-from pid_provider.models import PidProviderXML
+
 # Researcher no longer used - replaced by ContribPerson
 # from researcher.models import Affiliation, Researcher
-from tracker.models import UnexpectedEvent
 from vocabulary.models import Keyword
 
 
@@ -90,61 +91,44 @@ def load_article(user, pp_xml):
                    ou se o usuário não for informado
 
     Note:
-        - Erros durante o processamento são coletados em article.errors
+        - Erros durante o processamento são coletados em `errors`
+        - Mensagens de progresso são coletadas em `messages` e passadas
+          como `detail` para `event.finish(...)`, que as persiste no evento
         - O processamento continua mesmo com falhas parciais
         - O campo article.valid indica se o processamento foi completo
     """
-    logging.info(f"load article {pp_xml}")
-    detail = {"pp_xml": str(pp_xml)}
+    article = None
+    messages = [f"load article {pp_xml}"]
+    errors = []
 
     # Validações iniciais
     if not user:
         raise ValueError("User is required")
 
     if not pp_xml:
-        raise ValueError(
-            "load_article() requires params: pp_xml"
+        raise ValueError("load_article() requires params: pp_xml")
+
+    xml_with_pre = pp_xml.xml_with_pre
+    if not xml_with_pre:
+        Article.objects.filter(pp_xml=pp_xml).exclude(
+            data_status=choices.DATA_STATUS_INVALID,
+        ).update(
+            data_status=choices.DATA_STATUS_INVALID,
         )
+        raise ValueError(f"Unable to get XML to load article from {pp_xml}")
 
     try:
-        xml_with_pre = pp_xml.xml_with_pre
-    except Exception as e:
-        (
-            Article.objects.filter(pp_xml=pp_xml)
-            .exclude(
-                data_status=choices.DATA_STATUS_INVALID,
-            )
-            .update(
-                data_status=choices.DATA_STATUS_INVALID,
-            )
-        )
-        errors = [
-            {
-                "function": "load_article",
-                "error_type": e.__class__.__name__,
-                "error_message": str(e),
-                "timestamp": datetime.now().isoformat(),
-            }
-        ]
-        pp_xml.add_event(name="load_article", proc_status=PPXML_STATUS_INVALID, detail=detail, errors=errors, exceptions=e)
-        raise ValueError(f"Unable to get XML to load article from {pp_xml}: {e}")
-
-
-    try:
-        errors = []
-        article = None
-        event = None
-
         xmltree = xml_with_pre.xmltree
-
         pid_v3 = xml_with_pre.v3
         sps_pkg_name = xml_with_pre.sps_pkg_name
 
-        logging.info(f"Pid Provider XML: {pid_v3} {sps_pkg_name}")
-        
+        messages.append(f"Pid Provider XML: {pid_v3} {sps_pkg_name}")
+
         journal = get_journal(xmltree=xmltree, errors=errors)
         if not journal:
-            raise ValueError(f"Not found journal for pid provider xml: {pid_v3} {sps_pkg_name}")
+            raise ValueError(
+                f"Not found journal for pid provider xml: {pid_v3} {sps_pkg_name}"
+            )
         issue = get_issue(
             xmltree=xmltree,
             journal=journal,
@@ -152,22 +136,30 @@ def load_article(user, pp_xml):
             errors=errors,
         )
         if not issue:
-            raise ValueError(f"Not found issue for pid provider xml: {pid_v3} {sps_pkg_name}")
+            raise ValueError(
+                f"Not found issue for pid provider xml: {pid_v3} {sps_pkg_name}"
+            )
 
         # CRIAÇÃO/OBTENÇÃO DO OBJETO PRINCIPAL
-        article = Article.create_or_update(
-            user=user,
-            pid_v3=pid_v3,
-            sps_pkg_name=sps_pkg_name,
-        )
-        logging.info(f"...Article {pid_v3} {sps_pkg_name}")
-
-        article.events.all().delete()
-        event = article.add_event(user, _("load article"))
+        try:
+            article = Article.objects.get(
+                pp_xml=pp_xml,
+            )
+        except Article.MultipleObjectsReturned:
+            article = Article.objects.filter(
+                pp_xml=pp_xml,
+            ).order_by("-updated").first()
+        except Article.DoesNotExist:
+            article = Article.create_or_update(
+                user=user,
+                pid_v3=pid_v3,
+                sps_pkg_name=sps_pkg_name,
+            )
+        messages.append(f"...Article {pid_v3} {sps_pkg_name}")
 
         # Configurar todos os campos antes de salvar (Sugestão 9)
         article.valid = False
-        article.data_status = choices.DATA_STATUS_PENDING
+        # article.data_status = choices.DATA_STATUS_PENDING
         article.pp_xml = pp_xml
         article.sps_pkg_name = sps_pkg_name
 
@@ -181,17 +173,14 @@ def load_article(user, pp_xml):
         article.article_type = get_or_create_article_type(
             xmltree=xmltree, user=user, errors=errors
         )
-        add_peer_review_dates(
-            xmltree=xmltree, article=article, errors=errors
-        )
+        add_peer_review_dates(xmltree=xmltree, article=article, errors=errors)
 
         # FOREIGN KEYS SIMPLES
         article.journal = journal
         article.issue = issue
         article.save()
 
-        # Salvar uma vez após definir todos os campos simples
-        logging.info(
+        messages.append(
             f"Saving article {article.pid_v3} {sps_pkg_name} {xml_with_pre.main_doi}"
         )
 
@@ -207,7 +196,9 @@ def load_article(user, pp_xml):
             article.languages.add(main_lang)
 
         article.sections.set(
-            get_or_create_toc_sections(xmltree=xmltree, user=user, errors=errors, issue=article.issue)
+            get_or_create_toc_sections(
+                xmltree=xmltree, user=user, errors=errors, issue=article.issue
+            )
         )
         article.titles.set(
             create_or_update_titles(
@@ -224,8 +215,6 @@ def load_article(user, pp_xml):
                 xmltree=xmltree, user=user, item=pid_v3, errors=errors
             )
         )
-        # Create contrib_persons (replaces researchers)
-        # Clear existing contrib_persons to avoid duplication on reload
         article.contrib_persons.all().delete()
         create_or_update_contrib_persons(
             xmltree=xmltree, article=article, user=user, item=pid_v3, errors=errors
@@ -240,31 +229,40 @@ def load_article(user, pp_xml):
         )
         article.doi.set(get_or_create_doi(xmltree=xmltree, user=user, errors=errors))
 
-        # Adicionar artigos relacionados
         add_related_articles(xmltree=xmltree, article=article, user=user, errors=errors)
+
+        create_or_update_article_counts(
+            xmltree=xmltree, article=article, user=user, errors=errors
+        )
 
         article.create_legacy_keys(user)
         if not article.pid_v2:
             raise ValueError(f"Article has no PID v2: {article.pid_v3}")
-        if not errors:
-            article.mark_as_completed()
 
-        event.finish(completed=not errors, errors=errors)
-        logging.info(
-            f"The article {pid_v3} has been processed with {len(errors)} errors"
-        )
-        return article
+        return finish(article, errors, messages)
     except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
         add_error(errors, "load_article", e)
-
-        if event:
-            event.finish(errors=errors, exceptions=traceback.format_exc())
-            raise
-
-        pp_xml.add_event(name="load_article", proc_status=PPXML_STATUS_UNMATCHED_JOURNAL_OR_ISSUE, detail=detail, errors=errors, exceptions=e)
-    
+        finish(article, errors, messages)
         raise
+
+
+def finish(article, errors, messages):
+    if not article:
+        return
+
+    detail = {}
+    if errors:
+        detail["errors"] = errors
+    if messages:
+        detail["messages"] = messages
+
+    # atualmente o nome do campo é errors, mas reusá-lo para outros detalhes
+    article.errors = detail
+    if errors:
+        article.save()
+    else:
+        article.mark_as_completed()
+    return article
 
 
 def add_peer_review_dates(xmltree, article, errors):
@@ -291,18 +289,38 @@ def add_peer_review_dates(xmltree, article, errors):
         article.accepted_dateiso = peer_review_stats.get("accepted_date")
 
         # Extrair intervalos em dias
-        article.days_preprint_to_received = peer_review_stats.get("days_from_preprint_to_received")
-        article.days_received_to_accepted = peer_review_stats.get("days_from_received_to_accepted")
-        article.days_accepted_to_published = peer_review_stats.get("days_from_accepted_to_published")
-        article.days_preprint_to_published = peer_review_stats.get("days_from_preprint_to_published")
-        article.days_receive_to_published = peer_review_stats.get("days_from_received_to_published")
+        article.days_preprint_to_received = peer_review_stats.get(
+            "days_from_preprint_to_received"
+        )
+        article.days_received_to_accepted = peer_review_stats.get(
+            "days_from_received_to_accepted"
+        )
+        article.days_accepted_to_published = peer_review_stats.get(
+            "days_from_accepted_to_published"
+        )
+        article.days_preprint_to_published = peer_review_stats.get(
+            "days_from_preprint_to_published"
+        )
+        article.days_receive_to_published = peer_review_stats.get(
+            "days_from_received_to_published"
+        )
 
         # Extrair flags de estimativa
-        article.days_preprint_to_received_estimated = peer_review_stats.get("estimated_days_from_preprint_to_received")
-        article.days_received_to_accepted_estimated = peer_review_stats.get("estimated_days_from_received_to_accepted")
-        article.days_accepted_to_published_estimated = peer_review_stats.get("estimated_days_from_accepted_to_published")
-        article.days_preprint_to_published_estimated = peer_review_stats.get("estimated_days_from_preprint_to_published")
-        article.days_receive_to_published_estimated = peer_review_stats.get("estimated_days_from_received_to_published")
+        article.days_preprint_to_received_estimated = peer_review_stats.get(
+            "estimated_days_from_preprint_to_received"
+        )
+        article.days_received_to_accepted_estimated = peer_review_stats.get(
+            "estimated_days_from_received_to_accepted"
+        )
+        article.days_accepted_to_published_estimated = peer_review_stats.get(
+            "estimated_days_from_accepted_to_published"
+        )
+        article.days_preprint_to_published_estimated = peer_review_stats.get(
+            "estimated_days_from_preprint_to_published"
+        )
+        article.days_receive_to_published_estimated = peer_review_stats.get(
+            "estimated_days_from_received_to_published"
+        )
 
     except Exception as e:
         add_error(errors, "add_peer_review_dates", e)
@@ -356,9 +374,7 @@ def add_data_availability_status(xmltree, errors, article, user):
 
         for item in items:
             DataAvailabilityStatement.create_or_update(
-                user=user,
-                article=article,
-                **item
+                user=user, article=article, **item
             )
     except Exception as e:
         add_error(errors, "add_data_availability_status", e)
@@ -510,9 +526,13 @@ def get_or_create_toc_sections(xmltree, user, errors, issue):
             if not section_title:
                 continue
             try:
-                issue_sections = TableOfContents.get_items_by_title(issue=issue, title=section_title)
+                issue_sections = TableOfContents.get_items_by_title(
+                    issue=issue, title=section_title
+                )
                 if not issue_sections.exists():
-                    raise TableOfContents.DoesNotExist(f"Unable to find TOC section {section_title} for issue {issue}")
+                    raise TableOfContents.DoesNotExist(
+                        f"Unable to find TOC section {section_title} for issue {issue}"
+                    )
                 for obj in issue_sections:
                     data.append(obj)
             except Exception as e:
@@ -687,9 +707,9 @@ def create_or_update_contrib_persons(xmltree, article, user, item, errors):
                     )
                     data.append(obj)
                 else:
-                    # When an author has multiple affiliations in XML, we create one 
-                    # ContribPerson record per affiliation. This is intentional as per 
-                    # SciELO's data model where each author-affiliation combination 
+                    # When an author has multiple affiliations in XML, we create one
+                    # ContribPerson record per affiliation. This is intentional as per
+                    # SciELO's data model where each author-affiliation combination
                     # should be tracked separately.
                     for aff in affs:
                         raw_email = author.get("email") or aff.get("email")
@@ -1042,7 +1062,7 @@ def add_related_articles(xmltree, article, user, errors):
                     user=user,
                     href=href,
                     ext_link_type=ext_link_type,
-                    related_type=related_type
+                    related_type=related_type,
                 )
 
             except Exception as e:
@@ -1050,8 +1070,113 @@ def add_related_articles(xmltree, article, user, errors):
                     errors,
                     "add_related_articles.process_item",
                     e,
-                    related_article_data=related_article_data
+                    related_article_data=related_article_data,
                 )
 
     except Exception as e:
         add_error(errors, "add_related_articles", e)
+
+
+class GraphicWithNode(Graphic):
+    @property
+    def data(self):
+        data = super().data
+        data["node"] = self.node
+        return data
+
+
+class InlineGraphicWithNode(InlineGraphic):
+    @property
+    def data(self):
+        data = super().data
+        data["node"] = self.node
+        return data
+
+
+class XmlGraphicWithNode(XmlGraphic):
+    def __init__(self, xmltree):
+        resource_types = [
+            ("graphic", GraphicWithNode),
+            ("inline-graphic", InlineGraphicWithNode),
+        ]
+        XmlVisualResource.__init__(self, xmltree, resource_types=resource_types)
+
+
+def count_items_by_parent_lang(items, count_type, counter):
+    for item in items:
+        counter[(count_type, item.get("parent_lang") or None)] += 1
+
+def count_graphics_and_inline_graphics(xmltree, counter):
+    """
+    Conta graphics e inline-graphics por idioma do artigo,
+    ignorando graphics que são descendentes de fig/table-wrap.
+    """
+    for item in XmlGraphicWithNode(xmltree).data:
+        tag = item.get("tag")
+        lang = item.get("parent_lang") or None
+        if tag == ArticleCountType.TYPE_INLINE_GRAPHIC:
+            counter[(ArticleCountType.TYPE_INLINE_GRAPHIC, lang)] += 1
+        elif tag == ArticleCountType.TYPE_GRAPHIC:
+            node = item.get("node")
+            if node is not None and any(
+                ancestor.tag in ("fig", "table-wrap") for ancestor in node.iterancestors()
+            ):
+                continue
+            counter[(ArticleCountType.TYPE_GRAPHIC, lang)] += 1
+
+def count_visual_and_formula_items(xmltree):
+    """
+    Conta fig, table-wrap, fórmulas e graphics por idioma do article/sub-article.
+    """
+    counter = Counter()
+    count_items_by_parent_lang(
+        items=ArticleFigs(xmltree).get_all_figs,
+        count_type=ArticleCountType.TYPE_FIG,
+        counter=counter,
+    )
+    count_items_by_parent_lang(
+        items=ArticleTableWrappers(xmltree).get_all_table_wrappers,
+        count_type=ArticleCountType.TYPE_TABLE_WRAP,
+        counter=counter,
+    )
+    formulas = ArticleFormulas(xmltree)
+    count_items_by_parent_lang(
+        items=formulas.disp_formula_items,
+        count_type=ArticleCountType.TYPE_DISP_FORMULA,
+        counter=counter,
+    )
+    count_items_by_parent_lang(
+        items=formulas.inline_formula_items,
+        count_type=ArticleCountType.TYPE_INLINE_FORMULA,
+        counter=counter,
+    )
+    count_graphics_and_inline_graphics(xmltree, counter)
+
+    return counter
+
+
+def create_or_update_article_counts(xmltree, article, user, errors):
+    """
+    Substitui os totais visuais/fórmulas do artigo a partir do xmltree.
+    """
+    counter = count_visual_and_formula_items(xmltree)
+    kept_ids = []
+    for (count_type_code, lang), count in counter.items():
+        language = get_or_create_language(lang, user, errors) if lang else None
+        if lang and not language:
+            add_error(
+                errors,
+                "create_or_update_article_counts",
+                ValueError(f"Missing language for {count_type_code}"),
+                count_type=count_type_code,
+                lang=lang,
+            )
+        count_type, _ = ArticleCountType.objects.get_or_create(code=count_type_code)
+        article_count, _ = ArticleCount.objects.update_or_create(
+            article=article,
+            count_type=count_type,
+            language=language,
+            defaults={"count": count},
+        )
+        kept_ids.append(article_count.pk)
+    article.counts.exclude(pk__in=kept_ids).delete()

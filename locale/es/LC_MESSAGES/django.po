@@ -6054,3 +6054,84 @@ msgstr "Esquema de Publicación de SciELO"
 
 #~ msgid "Message type"
 #~ msgstr "Tipo de mensaje"
+
+#: report
+msgctxt "filters"
+msgid "Clear"
+msgstr "Limpiar"
+
+#: report
+msgid "Reports"
+msgstr "Informes"
+
+#: report
+msgid "Data availability report"
+msgstr "Informe de disponibilidad de datos"
+
+#: report
+msgid "Data availability"
+msgstr "Disponibilidad de datos"
+
+#: report
+msgid "Articles by data availability status, per year. The online publication year filter applies to the year the article was published on the website, which may differ from the issue year shown in the bibliographic strip."
+msgstr "Artículos por estado de disponibilidad de datos, por año. El filtro de año de publicación en línea se aplica al año en que el artículo fue publicado en el sitio, que puede ser diferente del año del número indicado en la leyenda bibliográfica."
+
+#: report
+msgid "Articles by data availability status per year, with totals and percentages. Filters: collection, journal and online publication year."
+msgstr "Artículos por estado de disponibilidad de datos por año, con totales y porcentajes. Filtros: colección, revista y año de publicación en línea."
+
+#: report
+msgid "Filter"
+msgstr "Filtrar"
+
+#: report
+msgid "Download CSV"
+msgstr "Descargar CSV"
+
+#: report
+msgid "Total"
+msgstr "Total"
+
+#: report
+msgid "No year"
+msgstr "Sin año"
+
+#: report
+msgid "No articles found for the selected filters."
+msgstr "No se encontraron artículos para los filtros seleccionados."
+
+#: report
+msgid "Status legend"
+msgstr "Leyenda de los estados"
+
+#: report
+msgid "Public reports about the content managed by SciELO Content Manager."
+msgstr "Informes públicos sobre el contenido gestionado por SciELO Content Manager."
+
+#: report
+msgid "No reports available."
+msgstr "No hay informes disponibles."
+
+#: report
+msgid "Online publication from"
+msgstr "Publicación en línea desde"
+
+#: report
+msgid "Online publication to"
+msgstr "Publicación en línea hasta"
+
+#: report
+msgid "Group by"
+msgstr "Agrupar por"
+
+#: report
+msgid "Issue year (bibliographic strip)"
+msgstr "Año del número (leyenda bibliográfica)"
+
+#: report
+msgid "Online publication year"
+msgstr "Año de publicación en línea"
+
+#: report/templates/report/visual_element_totals.html
+msgid "Clear"
+msgstr "Limpiar"

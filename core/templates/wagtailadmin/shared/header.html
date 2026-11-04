@@ -6,7 +6,7 @@
         <div class="left">
             <div class="col">
                 <div>
-                    <span>{% blocktrans trimmed %}{{ result_count }} out of {{ all_count }}{% endblocktrans %}</span>
+                    <span>{{ result_count }} {% if result_count and all_count %} {% trans "out of" %} {% endif %}{{ all_count }}</span>
                 </div>
             </div>
         </div>
