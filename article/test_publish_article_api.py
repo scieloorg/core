@@ -78,7 +78,10 @@ class PublishArticleViewSetTest(APITestCase):
         response = self.post({"pid_v3": "invalid", "sps_pkg_name": self.sps_pkg_name})
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("pid_v3", response.data)
+        self.assertEqual(
+            response.data["pid_v3"],
+            ["Certifique-se de que este campo tenha 23 caracteres."],
+        )
 
     def test_returns_404_when_pid_provider_xml_does_not_exist(self):
         self.authenticate()
