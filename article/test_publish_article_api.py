@@ -90,6 +90,18 @@ class PublishArticleViewSetTest(APITestCase):
         self.assertEqual(response.data["pid_v3"], self.pid_v3)
         self.assertEqual(response.data["sps_pkg_name"], self.sps_pkg_name)
 
+    def test_http_404_is_not_rewritten_as_language_redirect(self):
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.post(
+            self.url,
+            {"pid_v3": self.pid_v3, "sps_pkg_name": self.sps_pkg_name},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data["error"], "PidProviderXML not found")
+
     @patch(
         "article.api.v1.views.PublishArticleViewSet.publish_article_from_pid_provider_xml"
     )

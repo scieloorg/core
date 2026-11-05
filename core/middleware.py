@@ -1,8 +1,21 @@
+from django.middleware.locale import LocaleMiddleware as DjangoLocaleMiddleware
+
 from core.utils.thread_context import (
     clear_current_collections,
     set_current_collections,
     set_current_user,
 )
+
+
+class LocaleMiddleware(DjangoLocaleMiddleware):
+    def process_response(self, request, response):
+        # O LocaleMiddleware do Django redireciona qualquer 404 sem prefixo de
+        # idioma para /<lang>/<path>, e o catch-all do Wagtail em i18n_patterns
+        # torna esse destino sempre válido. Um 404 vindo de uma view resolvida
+        # (ex.: API) é a resposta final e não deve virar redirect.
+        if response.status_code == 404 and request.resolver_match is not None:
+            return response
+        return super().process_response(request, response)
 
 
 class UserCollectionMiddleware:
