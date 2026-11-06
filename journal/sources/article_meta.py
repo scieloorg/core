@@ -98,9 +98,10 @@ def _register_journal_data(user, collection_acron3, journal_issn_list=None):
                 submission_online_url=journal_dict.get("url_of_submission_online"),
                 user=user,
             )
+            # coleção do AMJournal (a mesma usada na coleta e no AMIssue)
             am_to_core.create_or_update_scielo_journal(
                 journal=journal,
-                collection=journal_dict.get("collection"),
+                collection=journal_am.collection,
                 issn_scielo=journal_dict.get("issn_id"),
                 journal_acron=journal_dict.get("acronym"),
                 status=journal_dict.get("publication_status"),

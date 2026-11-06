@@ -6,6 +6,11 @@ from journal.models import SciELOJournal
 
 
 class AMIssueSerializer(serializers.ModelSerializer):
+    """
+    Chaves legadas (issue_pid) do Issue, uma por coleção.
+    O issue_pid pode divergir entre coleções (issn_scielo e ordem diferentes),
+    por isso é sempre exposto junto com a coleção.
+    """
     collection = serializers.CharField(source="collection.acron3")
 
     class Meta:
@@ -77,6 +82,8 @@ class BibliographicStripSerializer(serializers.ModelSerializer):
 
 class IssueSerializer(serializers.ModelSerializer):
     journal = serializers.SerializerMethodField()
+    # Decisão: legacy_issue traz sempre todas as chaves legadas (todas as
+    # coleções), mesmo quando ?collection= é informado
     legacy_issue = AMIssueSerializer(many=True, read_only=True)
     sections = TableOfContentsSerializer(source="table_of_contents", many=True, read_only=True)
     license = LicenseStatementSerializer(many=True, read_only=True)
@@ -97,6 +104,10 @@ class IssueSerializer(serializers.ModelSerializer):
             "season",
             "month",
             "order",
+            # Decisão: issue_pid_suffix é o campo do modelo (ordem calculada por
+            # volume/número/suplemento, usada para criar pids novos); não
+            # corresponde necessariamente ao pid do fascículo, que está em
+            # legacy_issue (por coleção)
             "issue_pid_suffix",
             "issue_folder",
             "legacy_issue",

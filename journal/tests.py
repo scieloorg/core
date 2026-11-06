@@ -494,3 +494,55 @@ class TestClassicWebsiteGetJournalXml(TestCase):
 
 
 
+
+
+class TestJournalLoadedFromArticleMetaInCollections(TestCase):
+    """
+    O mesmo periódico coletado do AM em coleções diferentes gera um único
+    Journal, um AMJournal e um SciELOJournal por coleção.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create(username="teste", password="teste")
+        self.scl = Collection.objects.create(acron3="scl", code="scl", is_active=True)
+        # code diferente de acron3: a coleção do SciELOJournal vem do AMJournal
+        self.spa = Collection.objects.create(acron3="spa", code="xyz", is_active=True)
+        data = json.loads(
+            open("./journal/fixture/tests/data_journal_scl_0034-8910.json").read()
+        )
+        for collection in (self.scl, self.spa):
+            AMJournal.create_or_update(
+                pid="0034-8910", collection=collection, data=data, user=self.user
+            )
+            AMJournal.create_or_update(
+                pid="0034-8910", collection=collection, data=data, user=self.user
+            )
+        Language.load(self.user)
+        Vocabulary.load(self.user)
+        Standard.load(self.user)
+        Subject.load(self.user)
+        WebOfKnowledge.load(self.user)
+        ThematicArea.load(self.user)
+        WebOfKnowledgeSubjectCategory.load(self.user)
+        IndexedAt.load(self.user)
+        RoleModel.load(self.user)
+
+    def test_one_journal_and_one_scielo_journal_per_collection(self):
+        _register_journal_data(self.user, "scl")
+        _register_journal_data(self.user, "spa")
+        _register_journal_data(self.user, "spa")
+
+        self.assertEqual(2, AMJournal.objects.count())
+        self.assertEqual(1, Journal.objects.count())
+        self.assertEqual(
+            {("scl", "0034-8910"), ("spa", "0034-8910")},
+            set(
+                SciELOJournal.objects.values_list(
+                    "collection__acron3", "issn_scielo"
+                )
+            ),
+        )
+        self.assertEqual(
+            {Journal.objects.get().pk},
+            set(SciELOJournal.objects.values_list("journal", flat=True)),
+        )

@@ -3468,3 +3468,11 @@ class AMJournal(BaseLegacyRecord):
         blank=True,
         null=True,
     )
+
+    class Meta:
+        # um registro por periódico (issn_scielo) e coleção
+        constraints = [
+            models.UniqueConstraint(
+                fields=["collection", "pid"], name="unique_amjournal_collection_pid"
+            ),
+        ]
