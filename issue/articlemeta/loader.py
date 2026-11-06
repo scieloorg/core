@@ -250,8 +250,10 @@ def create_issue_from_am_issue(user, am_issue):
             month=issue_data.get("month"),
             supplement=issue_data.get("supplement"),
             markup_done=issue_data.get("markup_done"),
-            issue_pid_suffix=issue_data.get("issue_pid_suffix"),
             order=issue_data.get("order"),
+            # Issue do legado: não gera issue_pid na criação, pois o pid já
+            # estabelecido (am_issue) é associado em seguida (add_am_issue)
+            migrated=True,
         )
         
         if issue:
