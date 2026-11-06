@@ -83,7 +83,6 @@ def extract_data_from_harvested_data(issue_data, pid):
         "month": data[4:6],
         "markup_done": markup_done,
         "order": pid[-4:],
-        "issue_pid_suffix": pid[-4:],
         "sections_data": list(fix_section_data(sections_data)),
         "bibliographic_strip_list": bibliographic_strip_list,
         "issue_titles": issue_titles,
