@@ -78,9 +78,11 @@ def create_or_update_scielo_journal(
 ):
     issn_scielo = extract_value(issn_scielo)
     code_status = extract_value(status)
+    if not isinstance(collection, Collection):
+        collection = get_collection(collection)
     scielo_journal = SciELOJournal.create_or_update(
         user=user,
-        collection=get_collection(collection),
+        collection=collection,
         issn_scielo=issn_scielo,
         journal_acron=extract_value(journal_acron),
         journal=journal,
