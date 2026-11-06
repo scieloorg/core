@@ -616,26 +616,52 @@ class Article(
         return bool(self.journal) and self.journal.is_indexed_at(db_acronym)
 
     def create_legacy_keys(self, user=None, force_update=False):
-        if not force_update:
-            if self.legacy_article.count() == self.journal.scielojournal_set.count():
-                return
+        """
+        Cria um AMArticle (pid v2) para cada coleção cujo XML foi registrado
+        no pid provider (pid_provider.models.CollectionPidV2).
 
+        Decisões:
+        - o pid v2 pode divergir entre coleções (issn_scielo e ordens do
+          fascículo e do artigo diferentes)
+        - no core, o pid v2 NÃO é gerado nem derivado: usa-se somente o que
+          foi enviado no XML de cada coleção (CollectionPidV2); a geração do
+          pid v2 de artigos novos é responsabilidade do scms-upload
+        - coleção sem CollectionPidV2 fica sem AMArticle até que o XML da
+          coleção seja registrado no pid provider
+        - AMArticle não migrado (sem data/url) com pid v2 diferente do XML da
+          coleção é removido (ex.: após correção do pid v2)
+        - antes de criar, verifica se já existe AMArticle (pid, coleção):
+          se já pertence a este artigo, nada é alterado; se existe sem
+          artigo associado (ex.: migrado), apenas é associado, sem alterar
+          data/url/status; se pertence a outro artigo, não é criado duplicado
+        """
         # garante que a issue tenha suas chaves legadas criadas
-        self.issue.create_legacy_keys(user, force_update)
+        if self.issue:
+            self.issue.create_legacy_keys(user, force_update)
 
-        for issue_key in self.issue.get_legacy_keys():
-            collection = issue_key["collection"]
-            issue_pid = issue_key["pid"]
-            if not self.pid_v2:
-                # este valor deve vir pela importação do AM ou
-                # pelo upload (migração ou alimentação direta)
-                # via solicitação de pid para o pid provider
-                continue
-            if self.pid_v2 and issue_pid in self.pid_v2:
-                am_article = AMArticle.create_or_update(
-                    self.pid_v2, collection, None, user, status="done"
+        if not self.pp_xml:
+            return
+
+        for item in self.pp_xml.collection_pids_v2.filter(
+            collection__isnull=False, pid_v2__isnull=False
+        ).select_related("collection"):
+            self.legacy_article.filter(
+                collection=item.collection, data__isnull=True, url__isnull=True
+            ).exclude(pid=item.pid_v2).delete()
+
+            am_article = (
+                AMArticle.objects.filter(pid=item.pid_v2, collection=item.collection)
+                .order_by("-updated")
+                .first()
+            )
+            if not am_article:
+                AMArticle.create(
+                    item.pid_v2, item.collection, user=user, status="done", new_record=self
                 )
-                self.legacy_article.add(am_article)
+            elif am_article.new_record_id is None:
+                am_article.new_record = self
+                am_article.updated_by = user
+                am_article.save()
 
     def get_legacy_keys(self, collection_acron_list=None, is_active=None):
         params = {}
