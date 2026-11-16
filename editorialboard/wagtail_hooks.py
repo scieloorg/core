@@ -7,7 +7,7 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 from config.menu import get_menu_order
 
-from .models import EditorialBoardMember, RoleModel
+from .models import EditorialBoardHTML, EditorialBoardMember, RoleModel
 
 
 class EditorialBoardMemberCreateView(CreateView):
@@ -49,6 +49,27 @@ class RoleModelAdmin(SnippetViewSet):
     search_fields = ("declared_role",)
 
 
+class EditorialBoardHTMLAdmin(SnippetViewSet):
+    model = EditorialBoardHTML
+    menu_label = _("Editorial Board HTML")
+    menu_icon = "code"
+    menu_order = 300
+    add_to_settings_menu = False
+    list_display = (
+        "scielo_journal",
+        "language",
+        "status",
+        "http_status",
+        "fetched_at",
+    )
+    list_filter = ("status", "language", "scielo_journal__collection")
+    search_fields = (
+        "id",
+        "scielo_journal__journal__title",
+        "scielo_journal__journal_acron",
+    )
+
+
 class EditorialBoardMemberGroupViewSet(SnippetViewSetGroup):
     menu_label = _("Editorial Board")
     menu_icon = "folder-open-inverse"
@@ -57,5 +78,6 @@ class EditorialBoardMemberGroupViewSet(SnippetViewSetGroup):
     items = (
         EditorialBoardMemberAdmin,
         RoleModelAdmin,
+        EditorialBoardHTMLAdmin,
     )
 register_snippet(EditorialBoardMemberGroupViewSet)
