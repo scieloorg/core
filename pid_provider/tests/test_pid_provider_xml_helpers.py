@@ -230,11 +230,15 @@ class CompleteMissingXmlPidsTests(SimpleTestCase):
     def test_fills_missing_v2_and_aop_pid_from_registered(self):
         pid = "a" * 23
         xml_adapter = self._adapter(v3=pid, v2=None, aop_pid=None)
+        xml_adapter.xml_with_pre.collection = "scl"
         registered = MagicMock(v3=pid, v2="REG-V2", aop_pid="REG-AOP")
+        # pid v2 da coleção do XML (ver get_pid_v2)
+        registered.get_pid_v2.return_value = "REG-V2"
         with patch.object(PidProviderXML, "get_valid_pid_v3", return_value=pid):
             xml_changed = PidProviderXML.complete_missing_xml_pids(
                 xml_adapter, registered=registered, auto_solve_pid_conflict=True
             )
+        registered.get_pid_v2.assert_called_once_with("scl")
         self.assertEqual(xml_changed, {"pid_v2": "REG-V2", "aop_pid": "REG-AOP"})
         self.assertEqual(xml_adapter.xml_with_pre.v2, "REG-V2")
         self.assertEqual(xml_adapter.xml_with_pre.aop_pid, "REG-AOP")
