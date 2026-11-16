@@ -1,7 +1,7 @@
 import lxml.html
-from lxml.etree import ParserError
 
-EXSLT_NS = {"re": "http://exslt.org/regular-expressions"}
+from editorialboard.sources.utils import first_match, parse_html, to_html
+
 # Página nova (/journal/.../about/#editors): a âncora e o que vem depois dela
 EDITORS_ANCHOR_XPATH = (
     r'//*[re:test(@id, "^editors$", "i") or re:test(@name, "^editors$", "i")]'
@@ -15,21 +15,13 @@ EDITORS_END_XPATHS = (
 )
 
 
-def first_match(node, xpaths):
-    """Primeiro nó encontrado pela primeira XPath de xpaths que casar."""
-    for xpath in xpaths:
-        found = node.xpath(f"({xpath})[1]", namespaces=EXSLT_NS)
-        if found:
-            return found[0]
-
-
 def _section_end(marker):
     """Primeiro limite depois da âncora: a seção seguinte, o h1 dela ou o rodapé."""
-    ends = []
-    for xpath in EDITORS_END_XPATHS:
-        found = marker.xpath(f"({xpath})[1]", namespaces=EXSLT_NS)
-        if found:
-            ends.append(found[0])
+    ends = [
+        node
+        for node in (first_match(marker, (xpath,)) for xpath in EDITORS_END_XPATHS)
+        if node is not None
+    ]
     headings = marker.xpath("following::h1")
     if marker.tag == "h1" and headings:
         ends.append(headings[0])
@@ -50,9 +42,8 @@ def extract_editors_anchor_section(raw_html):
     Lista, parágrafos e marcadores permanecem como estão no HTML.
     Retorna o trecho ou None se não houver âncora ou conteúdo.
     """
-    try:
-        document = lxml.html.document_fromstring(raw_html)
-    except ParserError:
+    document = parse_html(raw_html)
+    if document is None:
         return None
 
     marker = first_match(document, (EDITORS_ANCHOR_XPATH,))
@@ -76,11 +67,8 @@ def extract_editors_anchor_section(raw_html):
             break
         if not skipped_title and sibling.tag == "h1":
             skipped_title = True
-            sibling = nxt
-            continue
-        fragment.append(sibling)
+        else:
+            fragment.append(sibling)
         sibling = nxt
 
-    if not fragment.text_content().strip():
-        return None
-    return lxml.html.tostring(fragment, encoding="unicode")
+    return to_html(fragment)

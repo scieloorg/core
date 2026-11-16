@@ -1,12 +1,11 @@
 import logging
 
-import lxml.html
 from curl_cffi import requests as curl_requests
 from curl_cffi.requests.exceptions import ConnectionError, RequestException
-from lxml.etree import ParserError
 
 from core.utils.bunny_shield import get as bunny_get
 from editorialboard import choices
+from editorialboard.sources.utils import first_match, parse_html, to_html
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +18,6 @@ TIMEOUT = (10, 30)
 # Prefixo do arquivo {prefix}edboard.htm no site clássico
 _EDBOARD_FILE_PREFIX = {"es": "e", "pt": "p", "en": "i"}
 
-EXSLT_NS = {"re": "http://exslt.org/regular-expressions"}
 # Marcadores do cabeçalho (título, ISSN, logo), em ordem de prioridade
 HEADER_XPATHS = (
     r'//body//*[re:test(@class, "^titulo$", "i")]',
@@ -57,14 +55,6 @@ def request(session, address, schemes):
     return schemes[-1], bunny_get(session, f"{schemes[-1]}://{address}")
 
 
-def first_match(node, xpaths):
-    """Primeiro nó encontrado pela primeira XPath de xpaths que casar."""
-    for xpath in xpaths:
-        found = node.xpath(f"({xpath})[1]", namespaces=EXSLT_NS)
-        if found:
-            return found[0]
-
-
 def extract_edboard_section(raw_html):
     """
     Recorta da página edboard.htm só o trecho do corpo editorial, sem tratar
@@ -73,9 +63,8 @@ def extract_edboard_section(raw_html):
     quando o HTML malformado aninha a navegação dentro da tabela do corpo.
     Retorna o <body> recortado ou None se não sobrar conteúdo.
     """
-    try:
-        document = lxml.html.document_fromstring(raw_html)
-    except ParserError:
+    document = parse_html(raw_html)
+    if document is None:
         return None
 
     marker = first_match(document, HEADER_XPATHS)
@@ -99,9 +88,7 @@ def extract_edboard_section(raw_html):
         if parent is not None:
             parent.remove(element)
 
-    if body is None or not body.text_content().strip():
-        return None
-    return lxml.html.tostring(body, encoding="unicode")
+    return to_html(body)
 
 
 def fetch_edboard_html(base_url, journal_acron):
