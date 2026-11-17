@@ -718,19 +718,14 @@ class LoadArticleFromXMLTest(XMLToArticleTestCase):
             {"Universidade de São Paulo", "Universidade Federal do Rio de Janeiro"},
         )
 
-    @unittest.expectedFailure
     def test_collab_is_not_contrib_person(self):
-        # Divergência conhecida: o contrib <collab> também é gravado como
-        # ContribPerson sem nome.
         self.assertFalse(
             self.article.contrib_persons.filter(
                 given_names__isnull=True, last_name__isnull=True
             ).exists()
         )
 
-    @unittest.expectedFailure
     def test_contrib_persons(self):
-        # Depende das duas divergências acima.
         got = self.get_contrib_persons()
         self.assertEqual(set(got), EXPECTED_CONTRIB_PERSONS)
         self.assertEqual(len(got), len(EXPECTED_CONTRIB_PERSONS))

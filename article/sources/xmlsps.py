@@ -680,6 +680,10 @@ def create_or_update_contrib_persons(xmltree, article, user, item, errors):
         for author in authors:
             try:
                 contrib_name = author.get("contrib_name", None)
+                if contrib_name is None and author.get("collab"):
+                    # colaboração (grupo/consórcio), registrada como
+                    # ContribCollab em create_or_update_contrib_collabs
+                    continue
                 if contrib_name is not None:
                     given_names = contrib_name.get("given-names")
                     surname = contrib_name.get("surname")
