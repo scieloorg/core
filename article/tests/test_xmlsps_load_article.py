@@ -131,7 +131,7 @@ XML = """<?xml version="1.0" encoding="utf-8"?>
         <country country="BR">Brasil</country>
       </aff>
       <author-notes>
-        <corresp id="c1"><label>*</label>Correspondência: <email>joao.souza@usp.br</email></corresp>
+        <corresp id="c1"><label>*</label>Correspondência: <email>joao.souza@example.org</email></corresp>
       </author-notes>
       <pub-date publication-format="electronic" date-type="pub">
         <day>15</day>
@@ -371,7 +371,7 @@ EXPECTED_CONTRIB_PERSONS = {
 # (last_name, email)
 EXPECTED_CONTRIB_EMAILS = {
     ("Silva", None),
-    ("Souza", "joao.souza@usp.br"),  # xref corresp -> corresp[@id="c1"]/email
+    ("Souza", "joao.souza@example.org"),  # xref corresp -> corresp[@id="c1"]/email
     ("Lima", "ana.lima@example.org"),  # contrib/email
 }
 
