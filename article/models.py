@@ -2970,7 +2970,7 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
     
     @classmethod
     def get(cls, article, declared_name=None, orcid=None, given_names=None, 
-            last_name=None, suffix=None):
+            last_name=None, suffix=None, affiliation=None):
         """
         Get a contrib person by article and identifying parameters.
         
@@ -2981,6 +2981,9 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             given_names: Given names (optional)
             last_name: Last name (optional)
             suffix: Name suffix (optional)
+            affiliation: ArticleAffiliation instance (optional). When given,
+                it is part of the lookup, since the same person has one
+                record per affiliation.
             
         Returns:
             ContribPerson instance
@@ -2992,24 +2995,20 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         if not article:
             raise ValueError("ContribPerson.get requires article parameter")
         
+        params = dict(
+            article=article,
+            declared_name=declared_name,
+            orcid=orcid,
+            given_names=given_names,
+            last_name=last_name,
+            suffix=suffix,
+        )
+        if affiliation is not None:
+            params["affiliation"] = affiliation
         try:
-            return cls.objects.get(
-                article=article,
-                declared_name=declared_name,
-                orcid=orcid,
-                given_names=given_names,
-                last_name=last_name,
-                suffix=suffix
-            )
+            return cls.objects.get(**params)
         except cls.MultipleObjectsReturned:
-            return cls.objects.filter(
-                article=article,
-                declared_name=declared_name,
-                orcid=orcid,
-                given_names=given_names,
-                last_name=last_name,
-                suffix=suffix
-            ).first()
+            return cls.objects.filter(**params).first()
     
     @classmethod
     def create(cls, user, article, declared_name=None, given_names=None, 
@@ -3062,7 +3061,10 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             obj.save()
             return obj
         except IntegrityError:
-            return cls.get(article, declared_name, orcid, given_names, last_name, suffix)
+            return cls.get(
+                article, declared_name, orcid, given_names, last_name, suffix,
+                affiliation=affiliation,
+            )
     
     @classmethod
     def create_or_update(cls, user, article, declared_name=None, given_names=None,
@@ -3072,7 +3074,7 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
         Create a new contrib person or update an existing one.
         
         Lookup strategy: Uses article + declared_name + orcid + given_names + 
-        last_name + suffix (when provided) to find existing record. If a record 
+        last_name + suffix + affiliation (when provided) to find existing record. If a record 
         exists with these identifiers, it will be updated. Otherwise, a new one 
         is created.
         
@@ -3097,7 +3099,10 @@ class ContribPerson(ResearchNameMixin, CommonControlField):
             raise ValueError("ContribPerson.create_or_update requires article parameter")
         
         try:
-            obj = cls.get(article, declared_name, orcid, given_names, last_name, suffix)
+            obj = cls.get(
+                article, declared_name, orcid, given_names, last_name, suffix,
+                affiliation=affiliation,
+            )
             
             # Update fields (including those used in lookup for consistency)
             if declared_name is not None:

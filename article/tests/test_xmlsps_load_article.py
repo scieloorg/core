@@ -706,10 +706,8 @@ class LoadArticleFromXMLTest(XMLToArticleTestCase):
                 ("Maria", "Jr", "0000-0002-1825-0097"),
             )
 
-    @unittest.expectedFailure
     def test_contrib_person_with_multiple_affiliations(self):
-        # Divergência conhecida: autor com 2 afiliações fica com 1
-        # ContribPerson (a 2a afiliação sobrescreve a 1a).
+        # um ContribPerson por afiliação do autor
         got = {
             item[4]
             for item in self.get_contrib_persons()
