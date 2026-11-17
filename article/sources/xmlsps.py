@@ -120,7 +120,10 @@ def load_article(user, pp_xml):
     try:
         xmltree = xml_with_pre.xmltree
         pid_v3 = xml_with_pre.v3
-        sps_pkg_name = xml_with_pre.sps_pkg_name
+        # o XML é lido do arquivo "{v3}.xml" (XMLVersion), então
+        # xml_with_pre.sps_pkg_name tende a ser o nome do arquivo (pid v3);
+        # o nome do pacote registrado está em pp_xml.pkg_name
+        sps_pkg_name = pp_xml.pkg_name or xml_with_pre.sps_pkg_name
 
         messages.append(f"Pid Provider XML: {pid_v3} {sps_pkg_name}")
 

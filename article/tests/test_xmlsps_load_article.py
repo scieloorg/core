@@ -538,13 +538,10 @@ class LoadArticleFromXMLTest(XMLToArticleTestCase):
         self.assertEqual(self.article.pid_v3, EXPECTED_PID_V3)
         self.assertEqual(self.article.pid_v2, EXPECTED_PID_V2)
 
-    @unittest.expectedFailure
     def test_sps_pkg_name(self):
         # O formato do nome do pacote depende de uma regra de composição
         # (não é um dado nativo do XML), então não é verificado aqui; só se
         # exige que exista e que não seja outro identificador.
-        # Divergência conhecida: o XML é lido do arquivo gravado como
-        # "{pid_v3}.xml" e Article.sps_pkg_name recebe o pid v3.
         self.assertTrue(self.article.sps_pkg_name)
         self.assertNotIn(
             self.article.sps_pkg_name, (EXPECTED_PID_V3, EXPECTED_PID_V2)
