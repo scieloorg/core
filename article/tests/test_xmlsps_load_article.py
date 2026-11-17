@@ -615,10 +615,7 @@ class LoadArticleFromXMLTest(XMLToArticleTestCase):
     def test_main_language(self):
         self.assertIn("pt", {lang.code2 for lang in self.article.languages.all()})
 
-    @unittest.expectedFailure
     def test_languages(self):
-        # Divergência conhecida: só o idioma principal é gravado; o idioma da
-        # tradução (sub-article) não entra em Article.languages.
         self.assertEqual(
             {lang.code2 for lang in self.article.languages.all()},
             EXPECTED_LANGUAGES,
@@ -957,6 +954,25 @@ class LoadArticleXMLVariationsTest(XMLToArticleTestCase):
         self.assertEqual(article.article_type, "review-article")
         self.assertIn("es", {lang.code2 for lang in article.languages.all()})
         self.assertNotIn("pt", {lang.code2 for lang in article.languages.all()})
+
+    def test_languages_ignore_sub_article_that_is_not_translation(self):
+        xml = replace_once(
+            XML,
+            "  </sub-article>\n</article>",
+            "  </sub-article>\n"
+            '  <sub-article article-type="reviewer-report" id="r1" xml:lang="fr">\n'
+            "    <front-stub>\n"
+            "      <title-group><article-title>Avis</article-title></title-group>\n"
+            "    </front-stub>\n"
+            "    <body><p>Texte.</p></body>\n"
+            "  </sub-article>\n"
+            "</article>",
+        )
+        Language.get_or_create(code2="fr", creator=self.user)
+        article = self.load(xml)
+        self.assertEqual(
+            {lang.code2 for lang in article.languages.all()}, EXPECTED_LANGUAGES
+        )
 
     def test_fundings_from_several_award_groups(self):
         xml = replace_once(
