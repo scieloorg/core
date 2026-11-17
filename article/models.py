@@ -1290,11 +1290,13 @@ class DocumentAbstract(TextLanguageMixin, CommonControlField, Orderable):
         article,
         language,
         text,
+        rich_text=None,
     ):
         try:
             obj = cls()
             obj.creator = user
             obj.plain_text = text or obj.plain_text
+            obj.rich_text = rich_text or obj.rich_text
             obj.article = article or obj.article
             obj.language = language or obj.language
             obj.save()
@@ -1321,7 +1323,7 @@ class DocumentAbstract(TextLanguageMixin, CommonControlField, Orderable):
             obj.save()
             return obj
         except cls.DoesNotExist:
-            return cls.create(user, article, language, text)
+            return cls.create(user, article, language, text, rich_text)
 
 
 class ArticleEventType(CommonControlField):

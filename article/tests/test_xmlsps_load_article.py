@@ -654,10 +654,19 @@ class LoadArticleFromXMLTest(XMLToArticleTestCase):
         }
         self.assertEqual(got, EXPECTED_ABSTRACTS_PLAIN)
 
+    def test_abstracts_rich_text_is_filled_on_first_load(self):
+        got = {
+            item.language.code2: item.rich_text or ""
+            for item in self.article.abstracts.all()
+        }
+        for lang, rich_text in EXPECTED_ABSTRACTS_RICH:
+            with self.subTest(lang=lang):
+                self.assertIn(rich_text, got.get(lang, ""))
+
     @unittest.expectedFailure
     def test_abstracts_rich_text(self):
-        # Divergência conhecida: na primeira carga rich_text fica vazio
-        # (DocumentAbstract.create_or_update não o repassa ao criar).
+        # Divergência conhecida: o texto gravado começa com o <title> do
+        # resumo (ver test_abstracts_plain_text).
         got = {
             (item.language.code2, item.rich_text)
             for item in self.article.abstracts.all()
