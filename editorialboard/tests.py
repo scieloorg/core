@@ -593,6 +593,27 @@ class EditorialBoardHTMLCollectTest(TestCase):
             fetch_editorial_board_html(scielo_journal_id=self.scielo_journal.id)
         return session
 
+    def test_base_url_overrides_the_collection_domain(self):
+        session = self.collect_with_base_url("https://classic.example.org/")
+
+        self.assertTrue(
+            session.calls[0].startswith(
+                "https://classic.example.org/revistas/aaba/eedboard.htm"
+            )
+        )
+
+    def collect_with_base_url(self, base_url):
+        session = FakeSession({"e": b"<html>Comite</html>"})
+        with patch(
+            "editorialboard.sources.classic_website.curl_requests.Session",
+            return_value=session,
+        ):
+            fetch_editorial_board_html(
+                scielo_journal_id=self.scielo_journal.id,
+                base_url=base_url,
+            )
+        return session
+
     def test_collect_dispatches_one_task_per_journal(self):
         other = SciELOJournal.objects.create(
             collection=self.collection, journal=self.journal, journal_acron="bbbb"
@@ -909,3 +930,16 @@ class EditorialBoardHTMLQuerysetTest(TestCase):
         self.assertFalse(flags[self.items["mex"].id])
         self.assertFalse(flags[self.items["arg"].id])
         mocked_group.return_value.apply_async.assert_called_once()
+
+    def test_base_url_is_forwarded_to_each_journal(self):
+        with patch("editorialboard.tasks.group") as mocked_group:
+            collect_editorial_board_html(base_url="https://classic.example.org")
+
+        signatures = list(mocked_group.call_args.args[0])
+        self.assertTrue(signatures)
+        self.assertTrue(
+            all(
+                signature.kwargs["base_url"] == "https://classic.example.org"
+                for signature in signatures
+            )
+        )

@@ -56,6 +56,7 @@ def collect_editorial_board_html(
     exclude_collection_acron_list=None,
     only_missing=False,
     editors_anchor_collection_acron_list=None,
+    base_url=None,
 ):
     """
     Dispara uma task filha por SciELOJournal para coletar o HTML do corpo editorial.
@@ -67,6 +68,7 @@ def collect_editorial_board_html(
         editors_anchor_collection_acron_list: coleções cuja página tem a âncora
             #editors (ex. ["scl"]). As demais, como o México, seguem o
             recorte do site clássico.
+        base_url: host do site clássico. Vazio usa o domain da coleção.
     """
     logging.info("Iniciando coleta HTML do corpo editorial das colecoes do site classico")
     editors_anchor_collections = set(editors_anchor_collection_acron_list or [])
@@ -87,6 +89,7 @@ def collect_editorial_board_html(
             user_id=user_id,
             username=username,
             editors_anchor=collection_acron in editors_anchor_collections,
+            base_url=base_url,
         )
         for scielo_journal_id, collection_acron in scielo_journals
     ).apply_async()
@@ -98,7 +101,12 @@ def collect_editorial_board_html(
 
 @celery_app.task(bind=True)
 def fetch_editorial_board_html(
-    self, scielo_journal_id, user_id=None, username=None, editors_anchor=False
+    self,
+    scielo_journal_id,
+    user_id=None,
+    username=None,
+    editors_anchor=False,
+    base_url=None,
 ):
     scielo_journal = SciELOJournal.objects.select_related("collection").get(
         id=scielo_journal_id
@@ -106,7 +114,7 @@ def fetch_editorial_board_html(
     extract = extract_editors_anchor_section if editors_anchor else extract_edboard_section
     saved = []
     for result in fetch_edboard_html(
-        scielo_journal.collection.base_url, scielo_journal.journal_acron
+        base_url or scielo_journal.collection.base_url, scielo_journal.journal_acron
     ):
         raw_html = result["raw_html"]
         obj = EditorialBoardHTML.record(
