@@ -21,11 +21,10 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.core.cache import cache
 from django.test import TestCase, override_settings
 from packtools.sps.pid_provider.xml_sps_lib import XMLWithPre
 
-from collection.models import ENSURE_NETWORK_CLASSIFICATION_CACHE_KEY, Collection
+from collection.models import Collection
 from journal.models import Journal, OfficialJournal, SciELOJournal
 from pid_provider import exceptions
 from pid_provider.models import (
@@ -34,6 +33,7 @@ from pid_provider.models import (
     PidProviderXML,
     XMLVersion,
 )
+from pid_provider.provider import PidProvider
 from pid_provider.tasks import task_complete_collection_pid_v2_sps_pkg_name
 
 User = get_user_model()
@@ -204,11 +204,6 @@ def erratum_xml(pid_v2, journal_acron, collection):
     return make_xml_with_pre(pid_v2, journal_acron, collection, content)
 
 
-# não consulta o articlemeta, independente das settings usadas (ex.: settings.local
-# com articlemeta acessível completaria network_classification das coleções
-# e os testes sem coleção principal passariam a ter scl como principal);
-# subclasses podem habilitar com override_settings
-@override_settings(COLLECTION_ENSURE_NETWORK_CLASSIFICATION=False)
 class RegisterSameArticleInDifferentCollectionsTestBase(TestCase):
     def setUp(self):
         self.media_directory = TemporaryDirectory()
@@ -409,7 +404,10 @@ class RegisterThematicCollectionFirstTest(
 class RegisterWithoutMainCollectionTest(
     RegisterSameArticleInDifferentCollectionsTestBase
 ):
-    """nenhuma das coleções é classificada como scielonetwork"""
+    """
+    nenhuma das coleções é classificada como scielonetwork: documento em
+    mais de uma coleção, nenhuma delas nacional
+    """
 
     def setUp(self):
         super().setUp()
@@ -423,8 +421,9 @@ class RegisterWithoutMainCollectionTest(
         self.assertEqual(first["v2"], PSI_V2)
         self.assertEqual(second["v2"], SCL_V2)
         registered = PidProviderXML.objects.get()
-        # sem coleção principal, v2 é completado pelo primeiro XML e não é
-        # alterado pelo XML de outra coleção
+        # v2 é completado pelo primeiro XML, quando o documento estava em
+        # uma única coleção; depois, sem coleção nacional, o XML de outra
+        # coleção não o altera
         self.assertEqual(registered.v2, PSI_V2)
         for xml_with_pre in (psi_xml(), scl_xml()):
             with self.subTest(v2=xml_with_pre.v2):
@@ -435,55 +434,12 @@ class RegisterWithoutMainCollectionTest(
         self.assert_no_pid_v2_change(registered)
 
 
-@override_settings(COLLECTION_ENSURE_NETWORK_CLASSIFICATION=True)
-class RegisterCompletesNetworkClassificationTest(
-    RegisterSameArticleInDifferentCollectionsTestBase
-):
-    """
-    coleções sem network_classification: o registro completa o dado
-    (articlemeta) antes de identificar a coleção principal
-    """
-
-    def setUp(self):
-        super().setUp()
-        Collection.objects.update(network_classification=None)
-        cache.delete(ENSURE_NETWORK_CLASSIFICATION_CACHE_KEY)
-        self.addCleanup(cache.delete, ENSURE_NETWORK_CLASSIFICATION_CACHE_KEY)
-        patcher = patch(
-            "collection.models.fetch_data",
-            return_value=[
-                {"acron": "scl", "network_classification": ["scielonetwork"]},
-                {"acron": "psi", "network_classification": ["thematic"]},
-            ],
-        )
-        self.mock_fetch_data = patcher.start()
-        self.addCleanup(patcher.stop)
-
-    def test_main_collection_is_identified(self):
-        first = self.register(psi_xml(), "psi")
-        second = self.register(scl_xml(), "scl")
-
-        # consulta o articlemeta somente uma vez
-        self.mock_fetch_data.assert_called_once()
-        self.assertTrue(
-            Collection.objects.get(acron3="scl").is_national_journal_collection
-        )
-        self.assertFalse(
-            Collection.objects.get(acron3="psi").is_national_journal_collection
-        )
-
-        registered = self.assert_same_article_registered_once(first, second)
-        self.assertEqual(registered.v2, SCL_V2)
-        self.assert_pids_v2_by_collection(registered)
-        self.assert_current_version_is_from(registered, self.scl)
-
-
 class RegisterInSingleCollectionInstanceTest(
     RegisterSameArticleInDifferentCollectionsTestBase
 ):
     """
-    Periódico de uma única coleção, não classificada como scielonetwork:
-    é a coleção principal
+    Instância com uma única coleção, não classificada como scielonetwork:
+    seu XML completa v2 e current_version, vazios
     """
 
     def setUp(self):
@@ -498,102 +454,233 @@ class RegisterInSingleCollectionInstanceTest(
         self.assertEqual(registered.v2, SCL_V2)
         self.assert_current_version_is_from(registered, self.scl)
 
-    def test_xml_without_collection_is_of_the_only_collection(self):
-        self.register(make_xml_with_pre(SCL_V2, "pusp"), "scl")
-
-        registered = PidProviderXML.objects.get()
-        self.assertEqual(registered.v2, SCL_V2)
-        self.assert_current_version_is_from(registered, self.scl)
-        self.assertEqual(
-            CollectionPidV2.objects.get().pid_v2, SCL_V2
-        )
-
 
 class RegisterWithoutCollectionInXMLTest(
     RegisterSameArticleInDifferentCollectionsTestBase
 ):
-    """XML não informa a coleção de origem"""
+    """
+    XML não informa a coleção de origem: register exige a coleção
+    (completada antes, ver BasePidProvider)
+    """
+
+    def test_xml_without_collection_is_not_registered(self):
+        response = PidProviderXML.register(
+            make_xml_with_pre(SCL_V2, "pusp"),
+            "scl",
+            self.user,
+            origin_date="2026-01-01",
+        )
+
+        self.assertEqual(response["event_status"], "error")
+        self.assertEqual(
+            response["error_type"],
+            str(exceptions.RequiredCollectionErrorToGetPidProviderXMLError),
+        )
+        self.assertFalse(PidProviderXML.objects.exists())
+        self.assertFalse(CollectionPidV2.objects.exists())
+        self.assertFalse(XMLVersion.objects.exists())
+
+
+class RegisterXMLOfDocumentRegisteredBeforeCollectionPidV2Test(
+    RegisterSameArticleInDifferentCollectionsTestBase
+):
+    """
+    Documento registrado antes de CollectionPidV2, com XML sem a coleção de
+    origem, recebe o XML com a coleção (inserida por ArticleProc):
+    o registro é atualizado e completado com os dados por coleção
+    """
+
+    def setUp(self):
+        super().setUp()
+        # registrado antes de CollectionPidV2, com o XML sem a coleção
+        self.register(scl_xml(), "previous")
+        registered = PidProviderXML.objects.get()
+        CollectionPidV2.objects.all().delete()
+        registered.collections.clear()
+        XMLVersion.objects.all().delete()
+        previous_xml = make_xml_with_pre(SCL_V2, "pusp")
+        previous_xml.v3 = registered.v3
+        registered.current_version = XMLVersion.create(
+            self.user, registered, previous_xml
+        )
+        registered.save()
+        self.registered = registered
+        self.previous_version = registered.current_version
+
+    def test_is_registered_requires_registration(self):
+        response = PidProviderXML.is_registered(scl_xml())
+
+        self.assertIsNone(response.get("error_type"), response)
+        self.assertTrue(response["registered"])
+        self.assertFalse(response["is_equal"])
+        self.assertEqual(response["v2"], SCL_V2)
+
+    def test_main_collection_xml_completes_the_registration(self):
+        response = self.register(scl_xml(), "scl")
+
+        registered = PidProviderXML.objects.get()
+        self.assertEqual(response["v3"], self.registered.v3)
+        self.assertEqual(response["v2"], SCL_V2)
+        self.assertEqual(registered.v2, SCL_V2)
+        self.assertEqual(registered.collection_pids_v2_data, [SCL_DATA])
+        self.assert_current_version_is_from(registered, self.scl)
+        self.assertNotEqual(registered.current_version, self.previous_version)
+        self.assert_no_pid_v2_change(registered)
+        self.assertEqual(registered.get_reasons_to_update(scl_xml(), self.scl), [])
+
+    def test_same_xml_with_collection_is_skipped_afterwards(self):
+        # periódico em 2 coleções, artigo somente em scl: não se espera o
+        # XML de psi para considerar o registro completo
+        self.register(scl_xml(), "scl")
+        total = XMLVersion.objects.count()
+
+        response = self.register(scl_xml(), "scl")
+
+        self.assertEqual(response["event_status"], "skipped")
+        self.assertEqual(XMLVersion.objects.count(), total)
+        registered = PidProviderXML.objects.get()
+        self.assertEqual(registered.collection_pids_v2_data, [SCL_DATA])
+
+    def test_same_xml_of_both_collections_is_skipped(self):
+        self.register(scl_xml(), "scl")
+        self.register(psi_xml(), "psi")
+
+        responses = [self.register(scl_xml(), "scl"), self.register(psi_xml(), "psi")]
+
+        self.assertEqual(
+            [response["event_status"] for response in responses],
+            ["skipped", "skipped"],
+        )
+
+    def test_thematic_collection_xml_updates_current_version(self):
+        response = self.register(psi_xml(), "psi")
+
+        registered = PidProviderXML.objects.get()
+        self.assertEqual(response["v3"], self.registered.v3)
+        self.assertEqual(response["v2"], PSI_V2)
+        # psi é a única coleção do documento: v2 e current_version
+        # são os dela, até o registro do XML da nacional (ver
+        # test_both_collections_xml_complete_the_registration)
+        self.assertEqual(registered.v2, PSI_V2)
+        self.assert_current_version_is_from(registered, self.psi)
+        self.assertEqual(registered.collection_pids_v2_data, [PSI_DATA])
+        self.assert_no_pid_v2_change(registered)
+
+    def test_both_collections_xml_complete_the_registration(self):
+        self.register(psi_xml(), "psi")
+        self.register(scl_xml(), "scl")
+
+        registered = PidProviderXML.objects.get()
+        self.assert_pids_v2_by_collection(registered)
+        self.assert_current_version_is_from(registered, self.scl)
+        self.assertEqual(registered.v2, SCL_V2)
+        self.assert_no_pid_v2_change(registered)
+
+
+class ProvidePidForXMLWithoutCollectionTest(
+    RegisterSameArticleInDifferentCollectionsTestBase
+):
+    """
+    XML sem a coleção de origem (ex.: no Core, enviado por versão do Upload
+    anterior à inserção da coleção no XML) tem a coleção identificada antes
+    do registro pelo PID (contido no pid v2) e pelo acrônimo do periódico
+    (BasePidProvider, ver get_xml_collection_acron)
+    """
+
+    def provide(self, xml_with_pre, filename, collection_acron=None):
+        response = PidProvider().provide_pid_for_xml_with_pre(
+            xml_with_pre,
+            filename,
+            self.user,
+            origin_date="2026-01-01",
+            collection_acron=collection_acron,
+        )
+        self.assertIsNone(
+            response.get("error_type"),
+            f"{response.get('error_msg')} {response.get('traceback')}",
+        )
+        return response
+
+    def same_journal_pid_in_collections(self):
+        SciELOJournal.objects.filter(collection=self.psi).update(issn_scielo=ISSN_PRINT)
 
     def test_collection_is_identified_by_journal_pid_of_pid_v2(self):
-        response = self.register(make_xml_with_pre(PSI_V2, "pusp"), "psi")
+        response = self.provide(make_xml_with_pre(PSI_V2, "psicousp"), "psi")
 
         registered = PidProviderXML.objects.get()
         self.assertEqual(response["v2"], PSI_V2)
         self.assertEqual(
             set(registered.collections.values_list("acron3", flat=True)),
-            {"scl", "psi"},
+            {"psi"},
         )
         self.assertEqual(registered.collection_pids_v2_data, [PSI_DATA])
         # a versão registrada informa a coleção identificada
         self.assertEqual(
             registered.get_current_version(self.psi).xml_with_pre.collection, "psi"
         )
-        # current_version vazio é completado com a versão de outra coleção,
-        # até que o XML da coleção principal seja registrado
+        # current_version vazio é completado com a versão de outra coleção
         self.assert_current_version_is_from(registered, self.psi)
         self.assertEqual(registered.v2, PSI_V2)
 
     def test_main_collection_xml_is_the_current_version(self):
-        self.register(make_xml_with_pre(SCL_V2, "pusp"), "scl")
+        self.provide(make_xml_with_pre(SCL_V2, "pusp"), "scl")
 
         registered = PidProviderXML.objects.get()
         self.assertEqual(registered.v2, SCL_V2)
         self.assertEqual(registered.collection_pids_v2_data, [SCL_DATA])
         self.assert_current_version_is_from(registered, self.scl)
 
-    def test_collection_is_identified_by_journal_acron(self):
-        # PID do periódico desconhecido: identifica pelo acrônimo
-        SciELOJournal.objects.filter(collection=self.psi).update(
-            issn_scielo=ISSN_PRINT
-        )
-        self.register(make_xml_with_pre(SCL_V2, "psicousp"), "psi")
+    def test_same_journal_pid_identifies_the_main_collection(self):
+        self.same_journal_pid_in_collections()
+
+        self.provide(make_xml_with_pre(SCL_V2, "pusp"), "scl")
 
         registered = PidProviderXML.objects.get()
         self.assertEqual(
-            registered.get_current_version(self.psi).xml_with_pre.collection, "psi"
+            registered.get_current_version(self.scl).xml_with_pre.collection, "scl"
         )
-        self.assertIsNone(registered.get_current_version(self.scl))
+        self.assertIsNone(registered.get_current_version(self.psi))
+        self.assert_current_version_is_from(registered, self.scl)
 
-    def test_ambiguous_collection_is_not_registered(self):
-        # mesmo PID e acrônimo do periódico nas coleções
+    def test_more_than_one_identified_collection_is_an_error(self):
+        # mesmos PID e acrônimo do periódico nas coleções, mesmo sendo scl
+        # a principal: ambíguo
         SciELOJournal.objects.filter(collection=self.psi).update(
             issn_scielo=ISSN_PRINT, journal_acron="pusp"
         )
 
-        response = PidProviderXML.register(
-            make_xml_with_pre(SCL_V2, "pusp"),
-            "scl",
+        with self.assertRaises(
+            exceptions.MultipleCollectionsMatchedErrorToGetPidProviderXMLError
+        ):
+            self.provide(make_xml_with_pre(SCL_V2, "pusp"), "scl")
+        self.assertFalse(PidProviderXML.objects.exists())
+
+    def test_unidentified_collection_is_an_error(self):
+        # PID de psi e acrônimo de scl: nenhuma coleção identificada
+        response = PidProvider().provide_pid_for_xml_with_pre(
+            make_xml_with_pre(PSI_V2, "pusp"),
+            "psi",
             self.user,
             origin_date="2026-01-01",
         )
-
-        self.assertEqual(response["event_status"], "error")
         self.assertEqual(
             response["error_type"],
             str(exceptions.RequiredCollectionErrorToGetPidProviderXMLError),
         )
         self.assertFalse(PidProviderXML.objects.exists())
-        self.assertFalse(CollectionPidV2.objects.exists())
-        self.assertFalse(XMLVersion.objects.exists())
 
-    def test_unidentified_collection_is_not_registered(self):
-        SciELOJournal.objects.all().delete()
+    def test_collection_acron_prevails_over_identification(self):
+        self.provide(make_xml_with_pre(PSI_V2, "psicousp"), "psi", "scl")
 
-        response = PidProviderXML.register(
-            make_xml_with_pre(SCL_V2, "pusp"),
-            "scl",
-            self.user,
-            origin_date="2026-01-01",
-        )
-
-        self.assertEqual(response["event_status"], "error")
+        registered = PidProviderXML.objects.get()
         self.assertEqual(
-            response["error_type"],
-            str(exceptions.RequiredCollectionErrorToGetPidProviderXMLError),
+            list(
+                registered.collection_pids_v2.values_list(
+                    "collection__acron3", flat=True
+                )
+            ),
+            ["scl"],
         )
-        self.assertFalse(PidProviderXML.objects.exists())
-        self.assertFalse(CollectionPidV2.objects.exists())
-        self.assertFalse(XMLVersion.objects.exists())
 
 
 class XMLVersionByCollectionTest(RegisterSameArticleInDifferentCollectionsTestBase):
@@ -619,6 +706,13 @@ class XMLVersionByCollectionTest(RegisterSameArticleInDifferentCollectionsTestBa
     def test_each_collection_has_sps_pkg_name_of_its_current_version(self):
         self.register(scl_xml(), "scl")
         self.register(psi_xml(), "psi")
+
+        # xml_with_pre.sps_pkg_name prioriza o nome do arquivo de XMLVersion,
+        # que é o pid v3; por isso compara com o nome esperado de cada coleção
+        expected_names = {
+            "scl": "0103-6564-pusp-20-03-00003",
+            "psi": "0103-6564-psicousp-20-03-00003",
+        }
 
         for item in CollectionPidV2.objects.all():
             with self.subTest(collection=item.collection.acron3):
@@ -692,8 +786,7 @@ class XMLVersionByCollectionTest(RegisterSameArticleInDifferentCollectionsTestBa
     def test_main_collection_version_becomes_current_version(self):
         self.register(psi_xml(), "psi")
         registered = PidProviderXML.objects.get()
-        # current_version vazio é completado com a versão de outra coleção,
-        # até que o XML da coleção principal seja registrado
+        # current_version vazio é completado com a versão de outra coleção
         self.assert_current_version_is_from(registered, self.psi)
         self.assertEqual(registered.v2, PSI_V2)
 
@@ -758,13 +851,14 @@ class XMLVersionWithoutMainCollectionTest(
         super().setUp()
         Collection.objects.update(network_classification=None)
 
-    def test_current_version_is_not_registered(self):
+    def test_current_version_is_the_first_registered_collection_version(self):
         self.register(psi_xml(), "psi")
         self.register(scl_xml(), "scl")
 
         registered = PidProviderXML.objects.get()
-        # sem coleção principal, current_version é completado pelo primeiro
-        # XML e não é alterado pelo XML de outra coleção
+        # current_version é completado pelo primeiro XML, quando o documento
+        # estava em uma única coleção; depois, sem coleção nacional, o XML
+        # de outra coleção não o altera
         self.assert_current_version_is_from(registered, self.psi)
         self.assertEqual(PidProviderXML.get_xml_with_pre(registered.v3).v2, PSI_V2)
         self.assertEqual(
@@ -810,7 +904,8 @@ class XMLVersionOfJournalWithSameDataInCollectionsTest(
         self.register(scl_xml(), "scl")
 
         registered = PidProviderXML.objects.get()
-        self.assertEqual(registered.collections.count(), 2)
+        # somente a coleção do XML
+        self.assertEqual(registered.collections.count(), 1)
         self.assertEqual(registered.collection_pids_v2_data, [SCL_DATA])
 
         self.register(make_xml_with_pre(SCL_V2, "pusp", "psi"), "psi")
@@ -951,8 +1046,9 @@ class MigrationCollectionVersionsTest(
         self.assertEqual(response["event_status"], "skipped")
         self.assertEqual(XMLVersion.objects.count(), total)
 
-    def test_same_xml_is_registered_while_collection_data_is_incomplete(self):
-        # periódico em duas coleções, documento registrado só em scl
+    def test_same_xml_of_article_only_in_one_collection_is_skipped(self):
+        # periódico em duas coleções, documento somente em scl (periódico
+        # não aceito ou desindexado em psi)
         first = scl_xml()
         self.register(first, "scl")
         total = XMLVersion.objects.count()
@@ -961,12 +1057,11 @@ class MigrationCollectionVersionsTest(
         again.v3 = first.v3
         response = self.register(again, "scl")
 
-        self.assertEqual(response["event_status"], "updated")
-        # a versão do XML idêntico é reutilizada
+        self.assertEqual(response["event_status"], "skipped")
         self.assertEqual(XMLVersion.objects.count(), total)
 
-    def test_same_xml_completes_legacy_registration(self):
-        # ex.: legado da instância do Brasil, com os dados de psi em
+    def test_same_xml_completes_registration_before_collection_pid_v2(self):
+        # ex.: registro existente da instância do Brasil, com os dados de psi em
         # PidProviderXML.v2 / current_version
         first = scl_xml()
         self.register(first, "scl")
@@ -1093,17 +1188,17 @@ class RegisterCollectionPidV2GuaranteesTest(
         self.assertFalse(OtherPid.objects.exists())
         self.assertEqual(XMLVersion.objects.count(), 1)
 
-    def test_journal_not_found_in_the_xml_collection_is_an_error(self):
-        SciELOJournal.objects.filter(collection=self.scl).delete()
-
-        response = self.register_with_error(scl_xml(), "scl")
+    def test_xml_collection_not_found_is_an_error(self):
+        response = self.register_with_error(
+            make_xml_with_pre(SCL_V2, "pusp", "xyz"), "xyz"
+        )
 
         self.assertEqual(response["event_status"], "error")
         self.assertEqual(
             response["error_type"],
             str(exceptions.XMLCollectionNotFoundErrorToGetPidProviderXMLError),
         )
-        self.assertIn("scl", response["error_msg"])
+        self.assertIn("xyz", response["error_msg"])
         self.assert_psi_registered_unchanged()
 
     def test_journal_acron_of_the_xml_is_used_when_missing_in_collection(self):
