@@ -312,7 +312,7 @@ def task_complete_collection_pid_v2_sps_pkg_name(
 ):
     """
     Preenche CollectionPidV2.sps_pkg_name a partir de
-    current_version.xml_with_pre.sps_pkg_name
+    current_version.xml_with_pre.build_sps_pkg_name()
 
     Divide os registros em lotes processados por subtarefas, para que cada
     uma termine dentro do limite de tempo de tarefa do celery

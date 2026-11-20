@@ -163,25 +163,16 @@ class RegisterTestBase(TestCase):
         self.m_record = self.p_record.start()
         self.addCleanup(self.p_record.stop)
 
-        # register() exige que a coleção do XML seja identificável
-        # (RequiredCollectionErrorToGetPidProviderXMLError) e que seja uma
-        # das coleções do periódico
-        # (XMLCollectionNotFoundErrorToGetPidProviderXMLError); _save está
-        # mockado nos testes, então o conteúdo da lista não é consumido.
+        # register() exige a coleção do XML (xml_with_pre.collection,
+        # RequiredCollectionErrorToGetPidProviderXMLError) e que ela exista
+        # (XMLCollectionNotFoundErrorToGetPidProviderXMLError)
         self.xml.collection = "scl"
         collection = MagicMock(name="collection")
         collection.acron3 = "scl"
-        self.p_xml_collections = patch(f"{PATCH_BASE}.get_xml_collections")
-        self.m_xml_collections = self.p_xml_collections.start()
-        self.m_xml_collections.return_value = [
-            {
-                "is_main": True,
-                "collection": collection,
-                "journal_acron": "acron",
-                "journal_pid": "0000-0000",
-            }
-        ]
-        self.addCleanup(self.p_xml_collections.stop)
+        self.p_collection = patch(f"{PATCH_BASE}.Collection")
+        self.m_collection = self.p_collection.start()
+        self.m_collection.objects.filter.return_value.first.return_value = collection
+        self.addCleanup(self.p_collection.stop)
 
         # Mantém os testes independentes da configuração persistida.
         self.p_setting = patch(f"{PATCH_BASE}.PidProviderSetting.load")
@@ -502,7 +493,7 @@ class RequiredCollectionPathTest(RegisterTestBase):
     """
 
     def test_unidentified_collection_becomes_error_response(self):
-        self.m_xml_collections.return_value = []
+        self.xml.collection = None
         with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
             response = PidProviderXML.register(self.xml, "file.xml", self.user)
@@ -515,8 +506,8 @@ class RequiredCollectionPathTest(RegisterTestBase):
         )
         self.assert_recorded_status("error")
 
-    def test_journal_not_found_in_the_xml_collection_becomes_error_response(self):
-        self.xml.collection = "psi"
+    def test_xml_collection_not_found_becomes_error_response(self):
+        self.m_collection.objects.filter.return_value.first.return_value = None
         with patch(f"{PATCH_BASE}.select_record") as m_select, \
              patch(f"{PATCH_BASE}.PidProviderXML._save") as m_save:
             response = PidProviderXML.register(self.xml, "file.xml", self.user)
@@ -803,8 +794,8 @@ class RegisterResponseSchemaTest(RegisterTestBase):
         expected_keys = {
             "input_data",
             "xml_adapter_data",
-            "v3",
             "v2",
+            "v3",
             "record_status",
             "skipped",
             "event_status",

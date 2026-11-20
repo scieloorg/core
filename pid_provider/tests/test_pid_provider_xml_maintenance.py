@@ -14,7 +14,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from collection.models import Collection
-from journal.models import Journal, OfficialJournal
+from journal.models import Journal, OfficialJournal, SciELOJournal
 from pid_provider import choices, exceptions
 from pid_provider import models as pid_provider_models
 from pid_provider.models import OtherPid, PidProviderXML, XMLVersion
@@ -69,6 +69,39 @@ class GetRecordByPidV3Tests(TestCase):
         xml_adapter.xml_with_pre.body_fragment_fingerprint = None
         with self.assertRaises(PidProviderXML.DoesNotExist):
             PidProviderXML.get_record_by_pid_v3(xml_adapter)
+
+    def test_raises_does_not_exist_when_pid_matches_only_other_pid(self):
+        # v3 registrado apenas como other_pid não identifica o registro
+        ppx = PidProviderXML.objects.create(creator=self.user, v3="V3-CURRENT")
+        OtherPid.objects.create(
+            creator=self.user, pid_provider_xml=ppx, pid_type="pid_v3", pid_in_xml="V3-LEGACY"
+        )
+        xml_adapter = MagicMock(v3="V3-LEGACY")
+
+        with patch.object(pid_provider_models, "get_best_match") as mock_best_match:
+            with self.assertRaises(PidProviderXML.DoesNotExist):
+                PidProviderXML.get_record_by_pid_v3(xml_adapter)
+        mock_best_match.assert_not_called()
+
+    def test_ignores_other_pid_of_another_record_when_selecting_candidates(self):
+        # somente o registro cujo v3 canônico coincide é candidato
+        ppx = PidProviderXML.objects.create(creator=self.user, v3="V3-SHARED")
+        other = PidProviderXML.objects.create(creator=self.user, v3="V3-OTHER")
+        OtherPid.objects.create(
+            creator=self.user, pid_provider_xml=other, pid_type="pid_v3", pid_in_xml="V3-SHARED"
+        )
+        xml_adapter = MagicMock(v3="V3-SHARED")
+        xml_adapter.get_data_to_compare.return_value = {}
+        xml_adapter.xml_with_pre.body_fragment_fingerprint = None
+
+        with patch.object(
+            pid_provider_models, "get_best_match", return_value={"registered": ppx}
+        ) as mock_best_match:
+            result = PidProviderXML.get_record_by_pid_v3(xml_adapter)
+
+        self.assertEqual(result, ppx)
+        candidates = mock_best_match.call_args.args[0]
+        self.assertEqual(list(candidates), [ppx])
 
     def test_returns_registered_when_best_match_approves(self):
         ppx = PidProviderXML.objects.create(creator=self.user, v3="V3-MATCH")
@@ -374,6 +407,9 @@ class IsRegisteredTests(TestCase):
                  patch.object(
                      pid_provider_models, "select_record",
                      return_value={"registered": registered},
+                 ), \
+                 patch.object(
+                     PidProviderXML, "get_xml_collection", return_value=None
                  ):
                 response = PidProviderXML.is_registered(xml_with_pre)
 
@@ -395,6 +431,9 @@ class IsRegisteredTests(TestCase):
                  patch.object(
                      pid_provider_models, "select_record",
                      return_value={"registered": registered},
+                 ), \
+                 patch.object(
+                     PidProviderXML, "get_xml_collection", return_value=None
                  ):
                 response = PidProviderXML.is_registered(xml_with_pre)
 

@@ -4,7 +4,14 @@ from wagtail.snippets.views.snippets import SnippetViewSetGroup
 
 from config.menu import get_menu_order
 from core.views import CommonControlFieldViewSet
-from pid_provider.models import XMLVersion, FixPidV2, OtherPid, PidProviderConfig, PidProviderXML, PidProviderXMLRegistration
+from pid_provider.models import (
+    FixPidV2,
+    OtherPid,
+    PidProviderConfig,
+    PidProviderXML,
+    PidProviderXMLRegistration,
+    XMLVersion,
+)
 
 
 class PidProviderXMLViewSet(CommonControlFieldViewSet):
@@ -171,8 +178,10 @@ class XMLVersionViewSet(CommonControlFieldViewSet):
         "pid_provider_xml__v3",
         "pid_provider_xml__v2",
         "pid_provider_xml__aop_pid",
+        "pid_provider_xml__pkg_name",
+        "pub_year",
+        "available_since",
     )
-
 
 class PidProviderXMLRegistrationViewSet(CommonControlFieldViewSet):
     model = PidProviderXMLRegistration
