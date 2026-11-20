@@ -1,0 +1,39 @@
+{% load i18n %}
+{% load custom_tags %}
+
+<h4 id="editors">{% trans 'CORPO EDITORIAL' %}</h4>
+<!-- Usar: instituição (mais sigla se houver), cidade, estado e país, orcid, Lattes (opcional para estrangeiros) e e-mail (divulgação opcional).
+     Considerar os papéis descritos abaixo: -->
+
+{% if editorial_board %}
+  {% for role, role_display in role_editorial_board %}
+  <h4 id="item-3-{{ forloop.counter }}">{{ role_display }}</h4>
+  <ul type="disc">
+    {% with editorial_board|dict_key:role as members %}
+      {% for data in members %}
+        <li>
+          {{ data.fullname }}
+          {% if data.researcher_affiliation %}, {{ data.researcher_affiliation }}{% endif %}
+          <br>
+          {% if data.researcher_orcid %}
+            <a href="https://orcid.org/{{ data.researcher_orcid }}" target="_blank">{{ data.researcher_orcid }}</a>
+          {% endif %}
+          {% if data.researcher_orcid and data.researcher_lattes %} | {% endif %}
+          {% if data.researcher_lattes %}
+            <a href="http://lattes.cnpq.br/{{ data.researcher_lattes }}" target="_blank">lattes</a>
+          {% endif %}
+        </li>
+      {% endfor %}
+    {% endwith %}
+  </ul>
+  {% endfor %}
+{% elif edboard_html %}
+  {{ edboard_html|safe }}
+{% else %}
+  {% for role, role_display in role_editorial_board %}
+  <h4 id="item-3-{{ forloop.counter }}">{{ role_display }}</h4>
+  <ul type="disc"></ul>
+  {% endfor %}
+{% endif %}
+
+<hr>

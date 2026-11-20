@@ -6,6 +6,7 @@ from wagtail.models import Page
 
 from core.models import Language
 from editorialboard.choices import ROLE
+from editorialboard.models import EditorialBoardHTML
 from journal.models import Journal
 from journalpage.utils.utils import (
     get_editorial_board_with_role,
@@ -45,9 +46,17 @@ class JournalPage(RoutablePageMixin, Page):
         except AssertionError:
             return render_journal_page_with_latest_context(self, request, journal=journal, page=page, context=context)
 
-        acron_journal = journal.scielojournal_set.all()[0].journal_acron
-        acron_collection = journal.scielojournal_set.all()[0].collection.acron3        
+        scielo_journal = journal.scielojournal_set.all()[0]
+        acron_journal = scielo_journal.journal_acron
+        acron_collection = scielo_journal.collection.acron3
         editorial_board = get_editorial_board_with_role(journal=journal)
+        edboard_html = (
+            None
+            if editorial_board
+            else EditorialBoardHTML.get_extracted_html(
+                scielo_journal, request.LANGUAGE_CODE
+            )
+        )
 
         mission = journal.mission.get_object_in_preferred_language(language=language)
         brief_history = journal.history.get_object_in_preferred_language(language=language)
@@ -106,6 +115,7 @@ class JournalPage(RoutablePageMixin, Page):
             "fee_charging": fee_charging,
             "sponsors": sponsors,
             "editorial_board": editorial_board,
+            "edboard_html": edboard_html,
             "role_editorial_board": ROLE,
             # Current e available language 
             "language": str(self.locale),
