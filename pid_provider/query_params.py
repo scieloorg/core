@@ -1,3 +1,5 @@
+from functools import cached_property
+
 from django.conf import settings
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
@@ -239,10 +241,23 @@ class QueryBuilderPidProviderXML:
             sem a chave legada "partial_body".
         """
         self.xml_adapter = xml_adapter
-        self.z_body_fragment = xml_adapter.xml_with_pre.body_fragment_fingerprint
-        self.z_partial_body = xml_adapter.z_partial_body
         self.adapter_data = xml_adapter.data
-        self.xml_with_pre_data = fix_get_article_data(xml_adapter.xml_with_pre, 300)
+
+    # calculados sob demanda e uma única vez: dependem do corpo do artigo
+    # e nem sempre são usados (ex.: xml_with_pre_data somente na falta de
+    # dados de localização do artigo, em validate_input_data)
+
+    @cached_property
+    def z_body_fragment(self):
+        return self.xml_adapter.xml_with_pre.body_fragment_fingerprint
+
+    @cached_property
+    def z_partial_body(self):
+        return self.xml_adapter.z_partial_body
+
+    @cached_property
+    def xml_with_pre_data(self):
+        return fix_get_article_data(self.xml_adapter.xml_with_pre, 300)
 
     @property
     def pkg_name_list(self):
@@ -575,30 +590,34 @@ def get_best_match(results, xml_adapter_data):
         found.append((response["percentual_score"], item.updated.isoformat(), item.id))
     found = sorted(found, reverse=True)
 
+    def get_item_data(item_id):
+        # item.data consulta o banco: obtido somente para os itens
+        # incluídos no detalhe (não para o registrado, se único)
+        return {"data": items[item_id].data, "response": responses[item_id]}
+
     matched = []
     unmatched = []
     for percentual_score, updated, item_id in found:
-        data = {"data": items[item_id].data, "response": responses[item_id]}
         if percentual_score > min_rate:
-            matched.append(data)
+            matched.append(item_id)
         else:
-            unmatched.append(data)
+            unmatched.append(item_id)
     if matched:
-        registered_id = found[0][-1]
+        registered_id = matched[0]
         detail["registered"] = items[registered_id]
         max_percentual_score = responses[registered_id]["percentual_score"]
         if len(matched) > 1:
             detail["matched"] = []
             detail["multiple_matched"] = []
-            for matched_item in matched[1:]:
-                if matched_item["response"]["percentual_score"] == max_percentual_score:
-                    detail["multiple_matched"].append(matched_item)
+            for item_id in matched[1:]:
+                if responses[item_id]["percentual_score"] == max_percentual_score:
+                    detail["multiple_matched"].append(get_item_data(item_id))
                 else:
-                    detail["matched"].append(matched_item)
+                    detail["matched"].append(get_item_data(item_id))
             if detail["multiple_matched"]:
-                detail["multiple_matched"].insert(0, matched[0])
+                detail["multiple_matched"].insert(0, get_item_data(registered_id))
     if unmatched:
-        detail["unmatched"] = unmatched
+        detail["unmatched"] = [get_item_data(item_id) for item_id in unmatched]
     return detail
 
 
