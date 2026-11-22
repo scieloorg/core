@@ -7,7 +7,7 @@ from wagtail.models import Page
 from core.models import Language
 from editorialboard.choices import ROLE
 from editorialboard.models import EditorialBoardHTML
-from journal.models import Journal
+from journal.models import Journal, SciELOJournal
 from journalpage.utils.utils import (
     get_editorial_board_with_role,
     get_journal_by_acronyms,
@@ -46,9 +46,14 @@ class JournalPage(RoutablePageMixin, Page):
         except AssertionError:
             return render_journal_page_with_latest_context(self, request, journal=journal, page=page, context=context)
 
-        scielo_journal = journal.scielojournal_set.all()[0]
-        acron_journal = scielo_journal.journal_acron
-        acron_collection = scielo_journal.collection.acron3
+        try:
+            scielo_journal = journal.scielojournal_set.get(
+                collection__acron3=collection_acron3,
+                journal_acron=acron,
+            )
+        except SciELOJournal.DoesNotExist:
+            return HttpResponseNotFound("Journal not found")
+
         editorial_board = get_editorial_board_with_role(journal=journal)
         edboard_html = (
             None
@@ -121,7 +126,7 @@ class JournalPage(RoutablePageMixin, Page):
             "language": str(self.locale),
             "translations": context["available_translations"],
             "page": page,
-            "acron_collection": acron_collection,
-            "acron_journal": acron_journal,
+            "acron_collection": collection_acron3,
+            "acron_journal": acron,
         }
         return render(request, "journalpage/about.html", context)
