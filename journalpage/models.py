@@ -6,7 +6,8 @@ from wagtail.models import Page
 
 from core.models import Language
 from editorialboard.choices import ROLE
-from journal.models import Journal
+from editorialboard.models import EditorialBoardHTML
+from journal.models import Journal, SciELOJournal
 from journalpage.utils.utils import (
     get_editorial_board_with_role,
     get_journal_by_acronyms,
@@ -45,9 +46,22 @@ class JournalPage(RoutablePageMixin, Page):
         except AssertionError:
             return render_journal_page_with_latest_context(self, request, journal=journal, page=page, context=context)
 
-        acron_journal = journal.scielojournal_set.all()[0].journal_acron
-        acron_collection = journal.scielojournal_set.all()[0].collection.acron3        
+        try:
+            scielo_journal = journal.scielojournal_set.get(
+                collection__acron3=collection_acron3,
+                journal_acron=acron,
+            )
+        except SciELOJournal.DoesNotExist:
+            return HttpResponseNotFound("Journal not found")
+
         editorial_board = get_editorial_board_with_role(journal=journal)
+        edboard_html = (
+            None
+            if editorial_board
+            else EditorialBoardHTML.get_extracted_html(
+                scielo_journal, request.LANGUAGE_CODE
+            )
+        )
 
         mission = journal.mission.get_object_in_preferred_language(language=language)
         brief_history = journal.history.get_object_in_preferred_language(language=language)
@@ -106,12 +120,13 @@ class JournalPage(RoutablePageMixin, Page):
             "fee_charging": fee_charging,
             "sponsors": sponsors,
             "editorial_board": editorial_board,
+            "edboard_html": edboard_html,
             "role_editorial_board": ROLE,
             # Current e available language 
             "language": str(self.locale),
             "translations": context["available_translations"],
             "page": page,
-            "acron_collection": acron_collection,
-            "acron_journal": acron_journal,
+            "acron_collection": collection_acron3,
+            "acron_journal": acron,
         }
         return render(request, "journalpage/about.html", context)

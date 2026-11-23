@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import os
 
@@ -386,6 +387,125 @@ class RoleEditorialBoard(CommonControlField, Orderable):
             return cls.get(editorial_board_member, role, initial_year, final_year)
         except cls.DoesNotExist:
             return cls.create(editorial_board_member, role, initial_year, final_year)
+
+
+class EditorialBoardHTML(models.Model):
+    scielo_journal = models.ForeignKey(
+        "journal.SciELOJournal",
+        on_delete=models.CASCADE,
+        related_name="editorial_board_html",
+        verbose_name=_("SciELO Journal"),
+    )
+    language = models.CharField(
+        _("Language"),
+        max_length=5,
+        choices=choices.EDBOARD_LANGUAGES_HTML_CLASSIC_WEBSITE,
+        null=True,
+        blank=True,
+    )
+    source_url = models.URLField(_("Source URL"), max_length=500, null=True, blank=True)
+    raw_html = models.TextField(_("Raw HTML"), null=True, blank=True)
+    edboard_html = models.TextField(
+        _("Editorial board HTML"), null=True, blank=True
+    )
+    content_hash = models.CharField(
+        _("Content hash"), max_length=64, null=True, blank=True
+    )
+    status = models.CharField(
+        _("Status"),
+        max_length=20,
+        choices=choices.EDBOARD_FETCH_STATUS,
+        null=True,
+        blank=True,
+    )
+    http_status = models.PositiveSmallIntegerField(
+        _("HTTP status"), null=True, blank=True
+    )
+    detail = models.JSONField(_("Detail"), null=True, blank=True)
+    fetched_at = models.DateTimeField(_("Fetched at"), auto_now=True, null=True)
+
+    panels = [
+        FieldPanel("scielo_journal", read_only=True),
+        FieldPanel("language", read_only=True),
+        FieldPanel("source_url", read_only=True),
+        FieldPanel("status", read_only=True),
+        FieldPanel("http_status", read_only=True),
+        FieldPanel("fetched_at", read_only=True),
+        FieldPanel("detail", read_only=True),
+        FieldPanel("edboard_html", read_only=True),
+        FieldPanel("raw_html", read_only=True),
+    ]
+
+    class Meta:
+        verbose_name = _("Editorial board HTML")
+        verbose_name_plural = _("Editorial board HTML")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["scielo_journal", "language"],
+                name="unique_edboard_html_journal_language",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["status"]),
+            models.Index(fields=["language"]),
+        ]
+
+    def __str__(self):
+        return f"{self.scielo_journal} ({self.language or '-'}) {self.status or ''}".strip()
+
+    @classmethod
+    def record(cls, scielo_journal, language, source_url, http_status=None, raw_html=None, edboard_html=None):
+        """
+        Grava uma coleta. O HTML anterior permanece quando esta tentativa falha.
+        """
+        defaults = {
+            "source_url": source_url,
+            "http_status": http_status,
+            "detail": None,
+        }
+        if raw_html:
+            defaults.update(
+                status=choices.EDBOARD_FETCH_STATUS_OK,
+                raw_html=raw_html,
+                edboard_html=edboard_html,
+                content_hash=hashlib.sha256(raw_html.encode("utf-8")).hexdigest(),
+            )
+        else:
+            defaults["status"] = (
+                choices.EDBOARD_FETCH_STATUS_NOT_FOUND
+                if http_status in {404, 410}
+                else choices.EDBOARD_FETCH_STATUS_ERROR
+            )
+        obj, _created = cls.objects.update_or_create(
+            scielo_journal=scielo_journal,
+            language=language,
+            defaults=defaults,
+        )
+        return obj
+
+    @classmethod
+    def get_extracted_html(cls, scielo_journal, language_code):
+        """
+        HTML extraído da página clássica. O idioma da página vem primeiro;
+        se ele não tiver conteúdo, segue a ordem de
+        EDBOARD_LANGUAGES_HTML_CLASSIC_WEBSITE.
+        """
+        language = (language_code or "")[:2]
+        by_language = {
+            board.language: board.edboard_html
+            for board in cls.objects.filter(
+                scielo_journal=scielo_journal,
+                status=choices.EDBOARD_FETCH_STATUS_OK,
+                edboard_html__isnull=False,
+            ).exclude(edboard_html="")
+        }
+        languages = [
+            code for code, _label in choices.EDBOARD_LANGUAGES_HTML_CLASSIC_WEBSITE
+        ]
+        if language in languages:
+            start = languages.index(language)
+            languages = languages[start:] + languages[:start]
+        return next((by_language[code] for code in languages if code in by_language), None)
 
 
 class EditorialBoardMemberFile(models.Model):

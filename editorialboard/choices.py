@@ -16,3 +16,19 @@ ROLE = [
     (ASSOCIATE_EDITOR, _("Associate editor")),
     (TECHNICAL_TEAM, _("Technical team")),
 ]
+
+# Idiomas do edboard.htm no site clássico, na ordem de coleta
+EDBOARD_LANGUAGES_HTML_CLASSIC_WEBSITE = [
+    ("es", "Español"),
+    ("pt", "Português"),
+    ("en", "English"),
+]
+
+EDBOARD_FETCH_STATUS_OK = "ok"
+EDBOARD_FETCH_STATUS_NOT_FOUND = "not_found"
+EDBOARD_FETCH_STATUS_ERROR = "error"
+EDBOARD_FETCH_STATUS = [
+    (EDBOARD_FETCH_STATUS_OK, _("OK")),
+    (EDBOARD_FETCH_STATUS_NOT_FOUND, _("Not found")),
+    (EDBOARD_FETCH_STATUS_ERROR, _("Error")),
+]
