@@ -31,10 +31,10 @@ def _get_collection_journals(offset=None, limit=None, collection=None, verify=Fa
 
 
 def _fetch_and_store_journal(collection, issn, obj_collection, user, verify=False):
-    url_journal = f"https://articlemeta.scielo.org/api/v1/journal/?collection={collection}&issn={issn}"
-    data_journal = fetch_data(url_journal, json=True, timeout=30, verify=verify)
     if not issn:
         return
+    url_journal = f"https://articlemeta.scielo.org/api/v1/journal/?collection={collection}&issn={issn}"
+    data_journal = fetch_data(url_journal, json=True, timeout=30, verify=verify)
     AMJournal.create_or_update(
         pid=issn,
         collection=obj_collection,
