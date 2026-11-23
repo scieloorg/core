@@ -149,7 +149,7 @@ class FilteredJournalQuerysetMixin:
         "contact_location__country__name",
     )
 
-    def get_queryset(self, request):
+    def get_queryset(self):
         qs = (
             models.Journal.objects
             # ForeignKey relationships - use select_related for forward ForeignKey lookups
@@ -246,7 +246,7 @@ class FilteredJournalQuerysetMixin:
                 "scielojournal_set__collection",
             )
         )
-        user = request.user
+        user = self.request.user
         if not user.is_authenticated:
             return qs.none()
 
@@ -328,14 +328,14 @@ class JournalAdminOnlySnippetViewSet(FilteredJournalQuerysetMixin, SnippetViewSe
     exclude_from_explorer = False
     list_per_page = 20
 
-    def get_queryset(self, request):
+    def get_queryset(self):
         # Only allow superusers to access this viewset
-        user = request.user
+        user = self.request.user
         if not user.is_authenticated or not user.is_superuser:
             return models.Journal.objects.none()
 
         # For superusers, return all journals with optimizations
-        return super().get_queryset(request)
+        return super().get_queryset()
 
 
 class SciELOJournalCreateView(CreateView):
@@ -375,8 +375,8 @@ class SciELOJournalAdminViewSet(SnippetViewSet):
         "issn_scielo",
     )
 
-    def get_queryset(self, request):
-        user = request.user
+    def get_queryset(self):
+        user = self.request.user
         if user.is_superuser:
             return models.SciELOJournal.objects.select_related("journal", "collection")
 
@@ -506,11 +506,11 @@ class CrossmarkPolicyAdmin(SnippetViewSet):
         "journal__title",
     )
 
-    def get_queryset(self, request):
+    def get_queryset(self):
         qs = models.CrossmarkPolicy.objects.select_related(
             "journal",
         )
-        user = request.user
+        user = self.request.user
         if not user.is_authenticated:
             return qs.none()
 
