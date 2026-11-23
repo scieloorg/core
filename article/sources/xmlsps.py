@@ -120,7 +120,10 @@ def load_article(user, pp_xml):
     try:
         xmltree = xml_with_pre.xmltree
         pid_v3 = xml_with_pre.v3
-        sps_pkg_name = xml_with_pre.sps_pkg_name
+        # o XML é lido do arquivo "{v3}.xml" (XMLVersion), então
+        # xml_with_pre.sps_pkg_name tende a ser o nome do arquivo (pid v3);
+        # o nome do pacote registrado está em pp_xml.pkg_name
+        sps_pkg_name = pp_xml.pkg_name or xml_with_pre.sps_pkg_name
 
         messages.append(f"Pid Provider XML: {pid_v3} {sps_pkg_name}")
 
@@ -189,11 +192,9 @@ def load_article(user, pp_xml):
         )
 
         # MANY-TO-MANY (requerem que o objeto esteja salvo)
-        main_lang = get_or_create_main_language(
-            xmltree=xmltree, user=user, errors=errors
+        article.languages.set(
+            get_or_create_languages(xmltree=xmltree, user=user, errors=errors)
         )
-        if main_lang:
-            article.languages.add(main_lang)
 
         article.sections.set(
             get_or_create_toc_sections(
@@ -677,6 +678,10 @@ def create_or_update_contrib_persons(xmltree, article, user, item, errors):
         for author in authors:
             try:
                 contrib_name = author.get("contrib_name", None)
+                if contrib_name is None and author.get("collab"):
+                    # colaboração (grupo/consórcio), registrada como
+                    # ContribCollab em create_or_update_contrib_collabs
+                    continue
                 if contrib_name is not None:
                     given_names = contrib_name.get("given-names")
                     surname = contrib_name.get("surname")
@@ -979,9 +984,11 @@ def get_or_create_language(lang, user, errors):
         return None
 
 
-def get_or_create_main_language(xmltree, user, errors):
+def get_or_create_languages(xmltree, user, errors):
     """
-    Obtém o idioma principal do artigo.
+    Obtém os idiomas do documento: o do article e os dos sub-articles de
+    tradução. Idiomas presentes apenas em metadados (trans-title,
+    trans-abstract, kwd-group etc.) não são idiomas do documento.
 
     Args:
         xmltree: Árvore XML do artigo
@@ -989,15 +996,25 @@ def get_or_create_main_language(xmltree, user, errors):
         errors: Lista para coletar erros
 
     Returns:
-        Language: Objeto Language do idioma principal ou None se houver erro
+        list: Objetos Language, sem repetição, começando pelo idioma principal
     """
+    data = []
     try:
-        lang = ArticleAndSubArticles(xmltree=xmltree).main_lang
-        obj = get_or_create_language(lang, user, errors)
-        return obj
+        langs = []
+        for item in ArticleAndSubArticles(xmltree=xmltree).data:
+            if (
+                item.get("parent_name") == "article"
+                or item.get("article_type") == "translation"
+            ):
+                lang = item.get("lang")
+                if lang and lang not in langs:
+                    langs.append(lang)
+        for lang in langs:
+            if obj := get_or_create_language(lang, user, errors):
+                data.append(obj)
     except Exception as e:
-        add_error(errors, "get_or_create_main_language", e)
-        return None
+        add_error(errors, "get_or_create_languages", e)
+    return data
 
 
 def create_or_update_sponsor(funding_name, user, item, errors):
