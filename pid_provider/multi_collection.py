@@ -17,6 +17,10 @@ pid_provider.models.CollectionPidV2
 from django.apps import apps
 from django.db.models import Q
 
+from pid_provider.exceptions import (
+    MultipleCollectionsMatchedErrorToGetPidProviderXMLError,
+)
+
 
 def get_journal_pid_from_v2(pid_v2):
     """
@@ -28,112 +32,97 @@ def get_journal_pid_from_v2(pid_v2):
     return None
 
 
-def normalize_acron(acron):
-    return acron and acron.strip().lower()
-
-
-def get_xml_collections(xml_with_pre):
+def get_xml_categorized_collections(xml_with_pre):
     """
     Retorna os dados do periódico em cada coleção em que está presente,
-    identificado pelos ISSNs, pelo PID do periódico contido no pid v2 ou
-    pelo acrônimo, com a coleção principal primeiro
+    identificado pelo PID do periódico contido no pid v2 ou pelo acrônimo
 
     Returns
     -------
-    list of dict
-        [{"collection": Collection, "journal_acron": str, "journal_pid": str,
-          "is_main": bool}]
-
-    Não filtra pela coleção de origem do XML (custom-meta): retorna todas
-    as coleções do periódico (ver PidProviderXML.add_collections)
+    dict
+        items: [{"collection": Collection, "collection_acron": str,
+                 "journal_acron": str, "journal_pid": str}]
+            todas as coleções do periódico
+        matched_items: items cujos PID e acrônimo do periódico são os do XML
     """
+    result = {"items": [], "matched_items": []}
 
-    issn_print = xml_with_pre.journal_issn_print
-    issn_electronic = xml_with_pre.journal_issn_electronic
-    pid_v2 = xml_with_pre.v2
-    journal_acron = normalize_acron(xml_with_pre.journal_acron)
-    journal_pid = get_journal_pid_from_v2(pid_v2)
-    if not issn_print and not issn_electronic and not journal_pid:
-        return []
+    journal_pid = get_journal_pid_from_v2(xml_with_pre.v2)
+    journal_acron = xml_with_pre.journal_acron
+    if not journal_pid and not journal_acron:
+        # Q() vazio retornaria todos os periódicos
+        return result
     try:
         # Core
         model = apps.get_model("journal", "SciELOJournal")
-        issn_path = "journal__official"
         acron_field = "journal_acron"
         pid_field = "issn_scielo"
     except LookupError:
         # Upload
         model = apps.get_model("proc", "JournalProc")
-        issn_path = "journal__official_journal"
         acron_field = "acron"
         pid_field = "pid"
 
     q = Q()
-    if issn_print:
-        q |= Q(**{f"{issn_path}__issn_print": issn_print})
-    if issn_electronic:
-        q |= Q(**{f"{issn_path}__issn_electronic": issn_electronic})
     if journal_pid:
         q |= Q(**{pid_field: journal_pid})
     if journal_acron:
         q |= Q(**{acron_field: journal_acron})
 
-    items = []
-    main_item = None
     for item in model.objects.filter(q, collection__isnull=False).select_related(
         "collection"
     ):
         collection = item.collection
-        is_main = collection.is_national_journal_collection
+        j_acron = getattr(item, acron_field)
+        j_pid = getattr(item, pid_field)
         data = {
-            "is_main": is_main,
             "collection": collection,
-            "journal_acron": getattr(item, acron_field),
-            "journal_pid": getattr(item, pid_field),
+            "collection_acron": get_collection_acron(collection),
+            "journal_acron": j_acron,
+            "journal_pid": j_pid,
         }
-        if is_main:
-            main_item = data
-        else:
-            items.append(data)
-    if main_item:
-        items.insert(0, main_item)
+        result["items"].append(data)
+        # match: mesmos PID e acrônimo do periódico do XML (ambos exigidos)
+        if (
+            journal_pid
+            and journal_acron
+            and j_pid == journal_pid
+            and j_acron == journal_acron
+        ):
+            result["matched_items"].append(data)
+    return result
 
-    return items
 
-
-def get_xml_collection_acron(xml_with_pre, xml_collections):
+def get_xml_collection_acron(xml_with_pre):
     """
-    Identifica a coleção de origem do XML que não a informa (custom-meta)
-    entre as coleções do periódico (ver get_xml_collections)
+    Identifica a coleção de origem do XML que não a informa (custom-meta):
+    a coleção cujos PID (contido no pid v2) e acrônimo do periódico são os
+    do XML
 
-    Restringe as coleções do periódico, nesta ordem:
-    - pelo PID do periódico contido no pid v2 (issn_scielo)
-    - pelo acrônimo do periódico
-
-    Returns
-    -------
-    str
-        acrônimo da coleção ou None, se não houver uma única coleção candidata
-        (ex.: periódico com o mesmo PID e acrônimo em mais de uma coleção)
+    - nenhuma coleção com match: None (register levanta
+      RequiredCollectionErrorToGetPidProviderXMLError)
+    - uma coleção com match: esta
+    - mais de uma, sendo ou não a nacional: ambíguo, levanta
+      MultipleCollectionsMatchedErrorToGetPidProviderXMLError
     """
-    journal_pid = get_journal_pid_from_v2(xml_with_pre.v2)
-    criteria = (
-        ("journal_pid", journal_pid and journal_pid.upper()),
-        ("journal_acron", normalize_acron(xml_with_pre.journal_acron)),
-    )
-    candidates = list(xml_collections)
-    for key, value in criteria:
-        if len(candidates) <= 1:
-            break
-        if not value:
-            continue
-        matched = [
-            item
-            for item in candidates
-            if normalize_acron(item[key]) == value.lower()
-        ]
-        if matched:
-            candidates = matched
-    if len(candidates) == 1:
-        return candidates[0]["collection"].acron3
+    if xml_with_pre.collection:
+        return xml_with_pre.collection
+    matched_items = get_xml_categorized_collections(xml_with_pre)["matched_items"]
+    if len(matched_items) > 1:
+        raise MultipleCollectionsMatchedErrorToGetPidProviderXMLError(
+            f"Unable to identify the XML collection: journal "
+            f"{get_journal_pid_from_v2(xml_with_pre.v2)} "
+            f"{xml_with_pre.journal_acron} found in "
+            f"{[item['collection_acron'] for item in matched_items]}. "
+            "Please provide collection_acron"
+        )
+    if matched_items:
+        return matched_items[0]["collection_acron"]
     return None
+
+
+def get_collection_acron(collection):
+    """
+    Acrônimo da coleção: Collection.acron3 (Core) ou Collection.acron (Upload)
+    """
+    return getattr(collection, "acron3", None) or getattr(collection, "acron", None)
