@@ -405,7 +405,11 @@ def task_update_issues_from_amissue(
         
         try:
             # Limpar AMIssue órfãos (sem data e sem URL)
-            AMIssue.objects.filter(data__isnull=True, url__isnull=True).delete()
+            # AMIssue sem data e sem URL, mas com new_record, são pids gerados
+            # automaticamente pelo sistema e não devem ser removidos
+            AMIssue.objects.filter(
+                data__isnull=True, url__isnull=True, new_record__isnull=True
+            ).delete()
         except Exception:
             pass
 
@@ -584,4 +588,60 @@ def task_update_issues_from_amissue(
         )
         
         # Re-raise para que o Celery possa tratar a exceção adequadamente
+        raise
+
+@celery_app.task(bind=True, name="task_migrate_issue_legacy_keys")
+def task_migrate_issue_legacy_keys(
+    self,
+    user_id=None,
+    username=None,
+    collection_acron_list=None,
+    journal_pid_list=None,
+    publication_year=None,
+    link_am_issues=True,
+    fix_issue_pid_suffix=True,
+    force_update=False,
+):
+    """
+    Cria/associa AMIssue (issue_pid por coleção) para Issues que ainda não
+    possuem relacionamento com AMIssue.
+
+    Args:
+        user_id: ID do usuário
+        username: Nome do usuário
+        collection_acron_list: Lista de acrônimos de coleções
+        journal_pid_list: Lista de ISSN SciELO (journal pid)
+        publication_year: Ano de publicação
+        link_am_issues: Associa AMIssue migrados sem new_record antes de gerar pids
+        fix_issue_pid_suffix: Recalcula issue_pid_suffix por volume/número/suplemento
+        force_update: Processa todos os Issues, não só os que têm coleção sem AMIssue
+    """
+    try:
+        user = _get_user(request=self.request, user_id=user_id, username=username)
+        stats = controller.migrate_issue_legacy_keys(
+            user,
+            collection_acron_list=collection_acron_list,
+            journal_pid_list=journal_pid_list,
+            publication_year=publication_year,
+            link_am_issues=link_am_issues,
+            fix_issue_pid_suffix=fix_issue_pid_suffix,
+            force_update=force_update,
+        )
+        logger.info(f"task_migrate_issue_legacy_keys: {stats}")
+        return stats
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        UnexpectedEvent.create(
+            exception=e,
+            exc_traceback=exc_traceback,
+            action="issue.tasks.task_migrate_issue_legacy_keys",
+            detail={
+                "collection_acron_list": collection_acron_list,
+                "journal_pid_list": journal_pid_list,
+                "publication_year": publication_year,
+                "link_am_issues": link_am_issues,
+                "fix_issue_pid_suffix": fix_issue_pid_suffix,
+                "force_update": force_update,
+            },
+        )
         raise

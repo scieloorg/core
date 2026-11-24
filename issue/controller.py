@@ -3,8 +3,11 @@ import logging
 import sys
 import traceback
 
+from django.db.models import Count, F, Q
+
 from core.mongodb import write_item
-from issue.models import Issue, IssueExporter
+from issue.articlemeta.loader import create_issue_from_am_issue
+from issue.models import AMIssue, Issue, IssueExporter
 from tracker.models import UnexpectedEvent
 
 
@@ -218,3 +221,112 @@ def bulk_export_issues_to_articlemeta(
             },
         )
         raise
+
+def migrate_issue_legacy_keys(
+    user,
+    collection_acron_list=None,
+    journal_pid_list=None,
+    publication_year=None,
+    link_am_issues=True,
+    fix_issue_pid_suffix=True,
+    force_update=False,
+):
+    """
+    Garante o relacionamento entre Issue e AMIssue (issue_pid por coleção)
+    para os registros criados antes da existência do AMIssue.
+
+    Etapas:
+    1. AMIssue migrados (com data ou url) sem new_record são associados ao
+       Issue correspondente (identificado por journal, ano, volume, número e
+       suplemento), criando o Issue se necessário.
+    2. issue_pid_suffix é recalculado por volume/número/suplemento quando
+       ausente ou diferente da regra (ex.: Issues migrados, em que o valor
+       foi copiado do pid atribuído manualmente em uma das coleções).
+       Os pids já estabelecidos não são alterados: estão no AMIssue.
+    3. Issues sem AMIssue em alguma das coleções do periódico recebem um
+       issue_pid gerado automaticamente para cada coleção faltante.
+
+    A etapa 1 é executada antes da 3 para que os pids migrados prevaleçam
+    sobre os gerados, e a 2 antes da 3 para que os pids gerados usem a
+    ordem calculada pela regra.
+
+    Returns:
+        dict: estatísticas da execução
+    """
+    stats = {
+        "am_issues_linked": 0,
+        "am_issues_errors": 0,
+        "issue_pid_suffix_fixed": 0,
+        "issues_processed": 0,
+        "issues_errors": 0,
+    }
+
+    if link_am_issues:
+        am_issues = AMIssue.objects.filter(
+            Q(data__isnull=False) | Q(url__isnull=False),
+            new_record__isnull=True,
+        )
+        if collection_acron_list:
+            am_issues = am_issues.filter(collection__acron3__in=collection_acron_list)
+        if journal_pid_list:
+            q = Q()
+            for journal_pid in journal_pid_list:
+                q |= Q(pid__startswith=journal_pid)
+            am_issues = am_issues.filter(q)
+        if publication_year:
+            am_issues = am_issues.filter(pid__regex=rf"^.{{9}}{publication_year}")
+
+        for am_issue in am_issues.iterator():
+            if create_issue_from_am_issue(user, am_issue):
+                stats["am_issues_linked"] += 1
+            else:
+                stats["am_issues_errors"] += 1
+
+    params = {}
+    if collection_acron_list:
+        params["journal__scielojournal__collection__acron3__in"] = collection_acron_list
+    if journal_pid_list:
+        params["journal__scielojournal__issn_scielo__in"] = journal_pid_list
+    if publication_year:
+        params["year"] = publication_year
+    issue_ids = Issue.objects.filter(
+        journal__isnull=False, year__isnull=False, **params
+    ).values("id")
+
+    if fix_issue_pid_suffix:
+        for issue in (
+            Issue.objects.filter(id__in=issue_ids)
+            .only("id", "number", "supplement", "issue_pid_suffix")
+            .iterator()
+        ):
+            suffix = issue.generate_issue_pid_suffix()
+            if suffix != issue.issue_pid_suffix:
+                # update evita save(), que geraria pids antes da etapa 3
+                Issue.objects.filter(pk=issue.pk).update(issue_pid_suffix=suffix)
+                stats["issue_pid_suffix_fixed"] += 1
+
+    issues = Issue.objects.filter(id__in=issue_ids).select_related("journal")
+    if not force_update:
+        # apenas issues com menos coleções com AMIssue do que coleções do periódico
+        issues = issues.annotate(
+            n_keys=Count("legacy_issue__collection", distinct=True),
+            n_collections=Count("journal__scielojournal__collection", distinct=True),
+        ).filter(n_keys__lt=F("n_collections"))
+
+    for issue in issues.iterator():
+        try:
+            stats["issues_processed"] += 1
+            issue.create_legacy_keys(user=user, force_update=force_update)
+        except Exception as e:
+            stats["issues_errors"] += 1
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "function": "migrate_issue_legacy_keys",
+                    "issue_id": issue.id,
+                    "force_update": force_update,
+                },
+            )
+    return stats

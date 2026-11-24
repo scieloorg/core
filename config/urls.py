@@ -43,6 +43,11 @@ urlpatterns = [
     ),
     # API V1 endpoint to custom models
     path("api/v1/", include("config.api_router")),
+    # API V2 endpoint to custom models
+    # Decisão: a rota da API não tem prefixo de idioma, por isso fica fora de
+    # i18n_patterns (ex.: /api/v2/issue/ e não /pt-br/api/v2/issue/).
+    # Deve vir depois de api/v2/pid/ e api/v2/auth/, que são mais específicas.
+    path("api/v2/", include("config.api_router_v2")),
     path('filter_journals/', filter_journals, name='filter_journals'),
     path('import-csv/', import_csv, name='import_csv'), 
     path("download-csv-journals-page-scielo-org/", download_csv_journals_page_scielo_org, name="download_csv_journals_page_scielo_org"),

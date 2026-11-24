@@ -1,6 +1,9 @@
+import sys
+
 from django.utils.functional import cached_property
 
-from django.db import IntegrityError, models
+from django.db import IntegrityError, models, transaction
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -57,6 +60,12 @@ class AMIssue(BaseLegacyRecord):
                 ]
             ),
         ]
+        # um issue_pid por coleção
+        constraints = [
+            models.UniqueConstraint(
+                fields=["collection", "pid"], name="unique_amissue_collection_pid"
+            ),
+        ]
 
     panels = [
         AutocompletePanel("collection"),
@@ -102,6 +111,10 @@ class Issue(CommonControlField, ClusterableModel):
             "This number controls the order issues appear for a specific year on the website grid"
         ),
     )
+    # Decisão: ordem calculada por volume/número/suplemento, usada para criar
+    # pids novos (issue_pid e pid v2 de artigos novos no scms-upload); não
+    # corresponde necessariamente ao pid do fascículo, que fica no AMIssue de
+    # cada coleção (get_issue_pid)
     issue_pid_suffix = models.CharField(max_length=4, null=True, blank=True)
     issue_folder = models.CharField(
         _("Issue folder"),
@@ -214,19 +227,60 @@ class Issue(CommonControlField, ClusterableModel):
         return f"{issue_folder}"
 
     def create_legacy_keys(self, user=None, force_update=None):
-        if not force_update:
-            if self.legacy_issue.count() == self.journal.scielojournal_set.count():
-                return
+        """
+        Cria AMIssue (issue_pid) nas coleções do periódico em que o Issue
+        ainda não tem.
 
-        if not self.issue_pid_suffix:
-            self.issue_pid_suffix = self.generate_issue_pid_suffix()
-            self.save()
+        Decisões:
+        - AMIssue existente na coleção (migrado ou gerado) é mantido
+        - issue_pid novo = issn_scielo da coleção + ano + issue_pid_suffix;
+          se já usado por outro fascículo na coleção (pid manual do legado),
+          usa a próxima ordem livre
+        """
+        if not self.journal or not self.year or not self.issue_pid_suffix:
+            return
+        with_key = set(self.legacy_issue.values_list("collection", flat=True))
+        for sj in self.journal.scielojournal_set.filter(
+            collection__isnull=False, issn_scielo__isnull=False
+        ).exclude(collection__in=with_key).select_related("collection"):
+            try:
+                order = int(self.issue_pid_suffix)
+                pid = f"{sj.issn_scielo}{self.year}{order:04d}"
+                while AMIssue.objects.filter(collection=sj.collection, pid=pid).exists():
+                    order += 1
+                    pid = f"{sj.issn_scielo}{self.year}{order:04d}"
+                # savepoint: violação de unique (collection, pid) por criação
+                # paralela não invalida a transação externa (get_or_create)
+                with transaction.atomic():
+                    AMIssue.create(
+                        pid, sj.collection, user=user, status="done", new_record=self
+                    )
+            except Exception as e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                UnexpectedEvent.create(
+                    exception=e,
+                    exc_traceback=exc_traceback,
+                    detail={
+                        "operation": "Issue.create_legacy_keys",
+                        "issue": str(self),
+                        "collection": str(sj.collection),
+                    },
+                )
 
-        for sj in self.journal.scielojournal_set.all():
-            pid = f"{sj.issn_scielo}{self.year}{self.issue_pid_suffix}"
-            am_issue = AMIssue.create_or_update(
-                pid, sj.collection, None, user, status="done", new_record=self
-            )
+    def get_issue_pid(self, collection, create=True):
+        """
+        issue_pid do Issue na coleção (Collection ou acron3), via AMIssue,
+        priorizando o migrado (com url). Se ausente e create=True, cria.
+        """
+        if isinstance(collection, str):
+            items = self.legacy_issue.filter(collection__acron3=collection)
+        else:
+            items = self.legacy_issue.filter(collection=collection)
+        items = items.order_by(models.F("url").asc(nulls_last=True), "-updated")
+        if create and not items.exists():
+            self.create_legacy_keys(user=self.updated_by or self.creator)
+        item = items.first()
+        return item and item.pid
 
     def get_legacy_keys(self, collection_acron_list=None, is_active=None):
         params = {}
@@ -357,39 +411,46 @@ class Issue(CommonControlField, ClusterableModel):
     ):
         """
         Get an existing Issue based on journal and issue identification.
+
+        Decisão: volume, number e supplement ausentes (None ou "") filtram
+        por ausência, não são ignorados; senão v10 seria encontrado como
+        v10n1, e n1 como n1s1
         """
-        if not journal and not year:
+        if not journal or not year:
             raise ValueError("Journal and year are required")
-        
-        params = {'journal': journal}
-        if year is not None:
-            params['year'] = year
-        if number is not None:
-            params['number'] = number
-        if volume is not None:
-            params['volume'] = volume
-        if supplement is not None:
-            params['supplement'] = supplement
-        
+
+        params = {"journal": journal, "year": year}
+        filters = Q()
+        for name, value in (
+            ("volume", volume),
+            ("number", number),
+            ("supplement", supplement),
+        ):
+            if value:
+                params[name] = value
+            else:
+                filters &= Q(**{f"{name}__isnull": True}) | Q(**{name: ""})
+
         try:
-            issue = cls.objects.get(**params)
+            issue = cls.objects.get(filters, **params)
         except cls.MultipleObjectsReturned:
-            issue = cls.objects.filter(**params).order_by("-updated").first()
+            issue = cls.objects.filter(filters, **params).order_by("-updated").first()
         except cls.DoesNotExist:
             raise cls.DoesNotExist(f"Issue not found with parameters: {params}")
-        
-        save = False
+
+        computed = {}
         if not issue.issue_folder:
-            issue.issue_folder = issue.generate_issue_folder()
-            save = True
+            computed["issue_folder"] = issue.generate_issue_folder()
         if not issue.issue_pid_suffix:
-            issue.issue_pid_suffix = issue.generate_issue_pid_suffix()
-            save = True
+            computed["issue_pid_suffix"] = issue.generate_issue_pid_suffix()
         if not issue.order:
-            issue.order = issue.generate_order()
-            save = True
-        if save:
-            issue.save()
+            computed["order"] = issue.generate_order()
+        if computed:
+            # update evita save(), que geraria issue_pid antes de o pid
+            # estabelecido ser associado (add_am_issue)
+            cls.objects.filter(pk=issue.pk).update(**computed)
+            for name, value in computed.items():
+                setattr(issue, name, value)
         return issue
 
     @classmethod
@@ -404,12 +465,17 @@ class Issue(CommonControlField, ClusterableModel):
         month,
         supplement,
         markup_done=False,
-        issue_pid_suffix=None,
         order=None,
+        migrated=False,
         **kwargs
     ):
         """
         Create a new Issue instance.
+
+        Args:
+            migrated: True se o Issue vem do legado (articlemeta / title manager /
+                scielo manager); nesse caso não gera issue_pid na criação, pois
+                o pid já estabelecido é associado em seguida (add_am_issue)
         """
         if not user:
             raise ValueError("User is required")
@@ -424,6 +490,7 @@ class Issue(CommonControlField, ClusterableModel):
         issue.supplement = supplement
         issue.markup_done = markup_done
         issue.creator = user
+        issue._migrated = migrated
         
         # Set additional fields from kwargs
         for key, value in kwargs.items():
@@ -432,11 +499,11 @@ class Issue(CommonControlField, ClusterableModel):
         
         # Generate computed fields if not provided
         issue.order = order or issue.generate_order()
-        issue.issue_pid_suffix = issue_pid_suffix or issue.generate_issue_pid_suffix()
         issue.issue_folder = issue.generate_issue_folder()
         
         try:
-            issue.save()
+            with transaction.atomic():
+                issue.save()
             return issue
         except IntegrityError:
             # If creation fails due to integrity error, try to get existing
@@ -460,13 +527,51 @@ class Issue(CommonControlField, ClusterableModel):
         month,
         supplement,
         markup_done=False,
-        issue_pid_suffix=None,
         order=None,
+        migrated=False,
         **kwargs
     ):
         """
         Get an existing Issue or create a new one.
+
+        Decisão: o mesmo fascículo é coletado em paralelo em cada coleção do
+        periódico; o lock no Journal serializa get/create para que todas as
+        coleções compartilhem um único Issue (cada uma com o seu AMIssue)
         """
+        with transaction.atomic():
+            if journal:
+                Journal.objects.select_for_update().only("pk").get(pk=journal.pk)
+            return cls._get_or_create(
+                user=user,
+                journal=journal,
+                number=number,
+                volume=volume,
+                season=season,
+                year=year,
+                month=month,
+                supplement=supplement,
+                markup_done=markup_done,
+                order=order,
+                migrated=migrated,
+                **kwargs
+            )
+
+    @classmethod
+    def _get_or_create(
+        cls,
+        user,
+        journal,
+        number,
+        volume,
+        season,
+        year,
+        month,
+        supplement,
+        markup_done=False,
+        order=None,
+        migrated=False,
+        **kwargs
+    ):
         try:
             return cls.get(
                 journal=journal,
@@ -486,8 +591,8 @@ class Issue(CommonControlField, ClusterableModel):
                 month=month,
                 supplement=supplement,
                 markup_done=markup_done,
-                issue_pid_suffix=issue_pid_suffix,
                 order=order,
+                migrated=migrated,
                 **kwargs
             )
 
@@ -506,23 +611,35 @@ class Issue(CommonControlField, ClusterableModel):
             return False
             
         try:
+            # o pid estabelecido prevalece sobre o gerado na mesma coleção
+            self.legacy_issue.filter(
+                collection=am_issue.collection, data__isnull=True, url__isnull=True
+            ).exclude(pk=am_issue.pk).delete()
+
             # Verifica se já existe relacionamento
             if am_issue in self.legacy_issue.all():
                 return True
-                
+
+            # pid gerado para outro fascículo coincidiu com o pid legado deste
+            # (coletado depois): o outro perde o pid nesta coleção
+            previous = am_issue.new_record
+
             # Adiciona relacionamento
             self.legacy_issue.add(am_issue)
-            
+
             # Atualiza AMIssue com referência ao novo Issue
             am_issue.new_record = self
-            am_issue.status = "completed"
+            am_issue.status = "done"
             am_issue.updated_by = user
             am_issue.save()
-            
+
+            if previous and previous.pk != self.pk:
+                # gera novo issue_pid na coleção para o fascículo anterior
+                previous.create_legacy_keys(user=user)
+
             return True
             
         except Exception as e:
-            import sys
             exc_type, exc_value, exc_traceback = sys.exc_info()
             UnexpectedEvent.create(
                 exception=e,
@@ -639,8 +756,10 @@ class Issue(CommonControlField, ClusterableModel):
             
         super().save(*args, **kwargs)
         
-        if self.journal:  # Só cria se tiver journal associado
-            self.create_legacy_keys(user=self.creator, force_update=True)
+        # Decisão: Issue migrado não gera issue_pid; o pid estabelecido é
+        # associado em seguida (add_am_issue)
+        if not getattr(self, "_migrated", False):
+            self.create_legacy_keys(user=self.updated_by or self.creator)
 
     def generate_issue_pid_suffix(self):
         return str(self.generate_order()).zfill(4)
