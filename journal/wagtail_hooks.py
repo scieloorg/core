@@ -1,3 +1,4 @@
+import django_filters
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Prefetch
@@ -5,8 +6,8 @@ from django.http import HttpResponseRedirect
 from django.urls import path
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
+from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.panels import FieldPanel
-from wagtailautocomplete.edit_handlers import AutocompletePanel
 from wagtail.snippets import widgets as wagtailsnippets_widgets
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import (
@@ -15,17 +16,19 @@ from wagtail.snippets.views.snippets import (
     SnippetViewSet,
     SnippetViewSetGroup,
 )
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 
+from collection.models import Collection
 from config.menu import get_menu_order
 from journalpage.models import JournalPage
 
 from . import models
 from .button_helper import IndexedAtHelper
 from .proxys import (
+    JournalProxyAdminOnly,
     JournalProxyEditor,
     JournalProxyPanelInstructionsForAuthors,
     JournalProxyPanelPolicy,
-    JournalProxyAdminOnly,
 )
 from .views import import_file, validate
 
@@ -121,6 +124,25 @@ class JournalEditView(JournalFormValidMixin, EditView):
     pass
 
 
+class JournalFilterSet(WagtailFilterSet):
+    # SciELOJournal.journal has no related_name, so django-filter labels this
+    # reverse lookup "[invalid name]". Set the label explicitly.
+    scielojournal__collection = django_filters.ModelChoiceFilter(
+        queryset=Collection.objects.all(),
+        label=_("Collection"),
+    )
+
+    class Meta:
+        model = models.Journal
+        fields = [
+            "journal_use_license",
+            "publishing_model",
+            "subject",
+            "scielojournal__collection",
+            "official__country",
+        ]
+
+
 class FilteredJournalQuerysetMixin:
     """
     Mixin que filtra o queryset de journals baseado nas permissões
@@ -135,13 +157,7 @@ class FilteredJournalQuerysetMixin:
         "creator",
         "updated_by",
     )
-    list_filter = (
-        "journal_use_license",
-        "publishing_model",
-        "subject",
-        "main_collection",
-        "official__country",
-    )
+    filterset_class = JournalFilterSet
     search_fields = (
         "title",
         "official__issn_print",
