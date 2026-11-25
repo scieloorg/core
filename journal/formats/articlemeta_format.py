@@ -135,6 +135,12 @@ class ArticlemetaJournalFormatter:
 
     def _format_scielo_journal_info(self):
         """Informações do SciELO Journal"""
+        # PID do periódico na coleção deve estar atribuído;
+        # a exportação nunca cria PID
+        if not self.scielo_journal or not self.scielo_journal.issn_scielo:
+            raise ValueError(
+                f"Missing journal PID (issn_scielo) for {self.obj} in {self.collection}"
+            )
         if self.scielo_journal:
             issn_scielo = self.scielo_journal.issn_scielo
             journal_acron = self.scielo_journal.journal_acron

@@ -86,6 +86,7 @@ class ArticlemetaIssueFormatter:
             self._format_collection_info,
             self._format_article_info,
             self._format_issn_info,
+            self._format_code,
             self._format_code_sections,
         ]
 
@@ -347,15 +348,22 @@ class ArticlemetaIssueFormatter:
 
         self._format_issn_with_type(issn_print, issn_electronic)
         self._format_issn_code_title(issn_print, issn_electronic)
-        self._format_code(issn_scielo)
 
-    def _format_code(self, issn_scielo):
+    def _format_code(self):
         """Informações de código"""
-        if self.obj.year and self.obj.order:
-            code = f"{issn_scielo}{self.obj.year}{self.obj.issue_pid_suffix}"
-            self.result["code"] = code
-            self.result["issue"]["code"] = code
-            add_to_result("v880", code, self.result["issue"])
+        # PID do fascículo da coleção (AMIssue) deve estar atribuído;
+        # a exportação nunca cria PID
+        am_issue = self.scielo_journal and self.obj.legacy_issue.filter(
+            collection=self.scielo_journal.collection
+        ).first()
+        if not am_issue or not am_issue.pid:
+            raise ValueError(
+                f"Missing issue PID for {self.obj} in {self.collection_acron}"
+            )
+        code = am_issue.pid
+        self.result["code"] = code
+        self.result["issue"]["code"] = code
+        add_to_result("v880", code, self.result["issue"])
 
     def _format_issn_with_type(self, issn_print, issn_electronic):
         """Informações de ISSN com tipo"""
