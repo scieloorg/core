@@ -1,4 +1,7 @@
+import json
+
 from django.test import TestCase
+from django.urls import reverse
 
 from collection.models import Collection
 from core.users.models import User
@@ -61,4 +64,41 @@ class IssueLegacyPidCollisionTest(TestCase):
         )
         self.assertIsNone(
             AMIssue.objects.get(pid="1516-635X20240001").new_record
+        )
+
+
+class IssueCreateFormLegacyPidTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser(username="admin", password="admin")
+        self.client.force_login(self.user)
+        self.journal = Journal.objects.create(creator=self.user, title="Test Journal")
+        for acron3, issn_scielo in (("scl", "1516-635X"), ("spa", "0034-8910")):
+            SciELOJournal.objects.create(
+                issn_scielo=issn_scielo,
+                collection=Collection.objects.create(
+                    creator=self.user, acron3=acron3, is_active=True
+                ),
+                journal=self.journal,
+                journal_acron="abdc",
+            )
+
+    def test_create_issue_by_form_creates_am_issue_for_each_collection(self):
+        data = {
+            # AutocompletePanel envia o valor em JSON
+            "journal": json.dumps({"pk": self.journal.pk}),
+            "volume": "10",
+            "number": "1",
+            "year": "2024",
+        }
+        for prefix in ("issue_title", "bibliographic_strip", "table_of_contents"):
+            data[f"{prefix}-TOTAL_FORMS"] = "0"
+            data[f"{prefix}-INITIAL_FORMS"] = "0"
+
+        response = self.client.post(reverse("wagtailsnippets_issue_issue:add"), data)
+
+        self.assertEqual(response.status_code, 302)
+        issue = Issue.objects.get(journal=self.journal)
+        self.assertEqual(
+            dict(issue.legacy_issue.values_list("collection__acron3", "pid")),
+            {"scl": "1516-635X20240001", "spa": "0034-891020240001"},
         )
