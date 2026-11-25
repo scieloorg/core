@@ -160,3 +160,62 @@ def generate_report_csv_abstract(self, journal_id, year, columns, username):
                 "year": year,
             },
         )
+
+
+@celery_app.task(bind=True)
+def task_report_pid_v2_amissue(
+    self, collection_acron3, journal_acron_list=None, username=None, user_id=None
+):
+    """
+    Gera, para cada periódico da coleção, o CSV dos artigos sem AMArticle na
+    coleção, com as inconsistências entre o pid_v2 e o PID do fascículo
+    (AMIssue) (ver report.pid_v2_amissue)
+
+    O CSV fica em ReportCSV (título "pid_v2 x AMIssue <coleção>"); periódicos
+    sem artigos a relatar não geram CSV. Retorna o total de artigos por
+    periódico.
+    """
+    from django.core.files.base import ContentFile
+
+    from journal.models import SciELOJournal
+    from report import pid_v2_amissue
+
+    user = _get_user(self.request, username=username, user_id=user_id)
+    scielo_journals = SciELOJournal.objects.filter(
+        collection__acron3=collection_acron3, journal__isnull=False
+    ).select_related("collection", "journal")
+    if journal_acron_list:
+        scielo_journals = scielo_journals.filter(journal_acron__in=journal_acron_list)
+
+    totals = {}
+    for scielo_journal in scielo_journals:
+        try:
+            rows = list(pid_v2_amissue.get_rows(scielo_journal))
+            if not rows:
+                continue
+            with StringIO() as csv_data:
+                csv_writer = csv.DictWriter(csv_data, fieldnames=pid_v2_amissue.COLUMNS)
+                csv_writer.writeheader()
+                csv_writer.writerows(rows)
+                content = ContentFile(csv_data.getvalue().encode("utf-8"))
+            ReportCSV.create_or_update(
+                journal=scielo_journal.journal,
+                publication_year=None,
+                title=f"pid_v2 x AMIssue {collection_acron3}",
+                columns={"columns": pid_v2_amissue.COLUMNS},
+                csv_data=content,
+                user=user,
+            )
+            totals[scielo_journal.journal_acron] = len(rows)
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            UnexpectedEvent.create(
+                exception=e,
+                exc_traceback=exc_traceback,
+                detail={
+                    "task": "report.tasks.task_report_pid_v2_amissue",
+                    "collection_acron3": collection_acron3,
+                    "journal_acron": scielo_journal.journal_acron,
+                },
+            )
+    return totals
