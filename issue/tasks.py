@@ -405,7 +405,7 @@ def task_update_issues_from_amissue(
         
         try:
             # Limpar AMIssue órfãos (sem data e sem URL)
-            AMIssue.objects.filter(data__isnull=True, url__isnull=True).delete()
+            AMIssue.objects.filter(data__isnull=True, url__isnull=True, new_record__isnull=True).delete()
         except Exception:
             pass
 
