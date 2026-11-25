@@ -9,7 +9,6 @@ from wagtail.fields import RichTextField
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
-from core.forms import CoreAdminModelForm
 from core.models import (
     BaseExporter,
     BaseLegacyRecord,
@@ -20,6 +19,7 @@ from core.models import (
 )
 from core.utils.date_utils import get_date_range
 from journal.models import Journal, JournalTableOfContents
+from .forms import IssueAdminModelForm
 from location.models import City
 from .utils.extract_digits import _get_digits
 from tracker.models import UnexpectedEvent
@@ -122,10 +122,11 @@ class Issue(CommonControlField, ClusterableModel):
     def autocomplete_label(self):
         return str(self)
 
-    base_form_class = CoreAdminModelForm
+    base_form_class = IssueAdminModelForm
 
     panels_issue = [
         AutocompletePanel("journal"),
+        FieldPanel("collections"),
         FieldPanel("volume"),
         FieldPanel("number"),
         FieldPanel("supplement"),
@@ -219,7 +220,7 @@ class Issue(CommonControlField, ClusterableModel):
             return f"{self.journal.title} {issue_folder} [{self.journal.collection_acrons}]"
         return f"{issue_folder}"
 
-    def create_legacy_keys(self, user=None, force_update=None):
+    def create_legacy_keys(self, user=None, force_update=None, collections=None):
         if not force_update:
             if self.legacy_issue.count() == self.journal.scielojournal_set.count():
                 return
@@ -231,7 +232,11 @@ class Issue(CommonControlField, ClusterableModel):
         # PID do fascículo é independente por coleção: o existente
         # (migrado do AM ou gerado antes) nunca é recalculado
         collections_with_pid = self.legacy_issue.values_list("collection", flat=True)
-        for sj in self.journal.scielojournal_set.exclude(collection__in=collections_with_pid):
+        scielo_journals = self.journal.scielojournal_set.exclude(collection__in=collections_with_pid)
+        if collections is not None:
+            # somente as coleções confirmadas pelo usuário
+            scielo_journals = scielo_journals.filter(collection__in=collections)
+        for sj in scielo_journals:
             if not sj.issn_scielo or not self.year:
                 continue
             pid = self.generate_legacy_pid(sj)

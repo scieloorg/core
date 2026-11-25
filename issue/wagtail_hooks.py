@@ -49,9 +49,11 @@ class AMIssueAdminViewSet(SnippetViewSet):
 class IssueCreateView(CreateView):
     def form_valid(self, form):
         self.object = form.save_all(self.request.user)
-        # fascículo novo no core: gera o PID de cada coleção do periódico
+        # fascículo novo no core: gera o PID das coleções confirmadas
         if self.object.journal:
-            self.object.create_legacy_keys(self.request.user)
+            self.object.create_legacy_keys(
+                self.request.user, collections=form.cleaned_data.get("collections")
+            )
         return HttpResponseRedirect(self.get_success_url())
 
 
