@@ -57,6 +57,12 @@ class AMIssue(BaseLegacyRecord):
                 ]
             ),
         ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["collection", "pid"],
+                name="issue_amissue_unique_collection_pid",
+            ),
+        ]
 
     panels = [
         AutocompletePanel("collection"),

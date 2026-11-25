@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError, models
+from django.db import IntegrityError, models, transaction
 from django.db.models import Case, IntegerField, Value, When
 from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
@@ -1317,7 +1317,13 @@ class BaseLegacyRecord(CommonControlField):
             obj = cls.get(pid=pid, collection=collection)
             obj.updated_by = user
         except cls.DoesNotExist:
-            return cls.create(pid, collection, data, user, url=url, processing_date=processing_date, status=status, new_record=new_record)
+            try:
+                with transaction.atomic():
+                    return cls.create(pid, collection, data, user, url=url, processing_date=processing_date, status=status, new_record=new_record)
+            except IntegrityError:
+                # criado por outra tarefa em paralelo (collection, pid únicos)
+                obj = cls.get(pid=pid, collection=collection)
+                obj.updated_by = user
         except cls.MultipleObjectsReturned:
             obj = cls.objects.filter(pid=pid, collection=collection).order_by("-updated").first()
             obj.updated_by = user
