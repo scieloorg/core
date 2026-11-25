@@ -9,7 +9,6 @@ from wagtail.fields import RichTextField
 from wagtail.models import Orderable
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
-from core.forms import CoreAdminModelForm
 from core.models import (
     BaseExporter,
     BaseLegacyRecord,
@@ -20,6 +19,7 @@ from core.models import (
 )
 from core.utils.date_utils import get_date_range
 from journal.models import Journal, JournalTableOfContents
+from .forms import IssueAdminModelForm
 from location.models import City
 from .utils.extract_digits import _get_digits
 from tracker.models import UnexpectedEvent
@@ -55,6 +55,12 @@ class AMIssue(BaseLegacyRecord):
                 fields=[
                     "pid",
                 ]
+            ),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["collection", "pid"],
+                name="issue_amissue_unique_collection_pid",
             ),
         ]
 
@@ -116,10 +122,11 @@ class Issue(CommonControlField, ClusterableModel):
     def autocomplete_label(self):
         return str(self)
 
-    base_form_class = CoreAdminModelForm
+    base_form_class = IssueAdminModelForm
 
     panels_issue = [
         AutocompletePanel("journal"),
+        FieldPanel("collections"),
         FieldPanel("volume"),
         FieldPanel("number"),
         FieldPanel("supplement"),
@@ -213,7 +220,7 @@ class Issue(CommonControlField, ClusterableModel):
             return f"{self.journal.title} {issue_folder} [{self.journal.collection_acrons}]"
         return f"{issue_folder}"
 
-    def create_legacy_keys(self, user=None, force_update=None):
+    def create_legacy_keys(self, user=None, force_update=None, collections=None):
         if not force_update:
             if self.legacy_issue.count() == self.journal.scielojournal_set.count():
                 return
@@ -222,11 +229,38 @@ class Issue(CommonControlField, ClusterableModel):
             self.issue_pid_suffix = self.generate_issue_pid_suffix()
             self.save()
 
-        for sj in self.journal.scielojournal_set.all():
-            pid = f"{sj.issn_scielo}{self.year}{self.issue_pid_suffix}"
+        # PID do fascículo é independente por coleção: o existente
+        # (migrado do AM ou gerado antes) nunca é recalculado
+        collections_with_pid = self.legacy_issue.values_list("collection", flat=True)
+        scielo_journals = self.journal.scielojournal_set.exclude(collection__in=collections_with_pid)
+        if collections is not None:
+            # somente as coleções confirmadas pelo usuário
+            scielo_journals = scielo_journals.filter(collection__in=collections)
+        for sj in scielo_journals:
+            if not sj.issn_scielo or not self.year:
+                continue
+            pid = self.generate_legacy_pid(sj)
             am_issue = AMIssue.create_or_update(
                 pid, sj.collection, None, user, status="done", new_record=self
             )
+
+    def generate_legacy_pid(self, scielo_journal):
+        """
+        PID no formato do legado (ISSN + ano + sufixo de 4 dígitos),
+        evitando PID já usado por outro fascículo na coleção
+        """
+        prefix = f"{scielo_journal.issn_scielo}{self.year}"
+        used = set(
+            AMIssue.objects.filter(
+                collection=scielo_journal.collection, pid__startswith=prefix
+            )
+            .exclude(new_record=self)
+            .values_list("pid", flat=True)
+        )
+        suffix = int(self.issue_pid_suffix)
+        while f"{prefix}{suffix:04d}" in used:
+            suffix += 1
+        return f"{prefix}{suffix:04d}"
 
     def get_legacy_keys(self, collection_acron_list=None, is_active=None):
         params = {}
@@ -638,9 +672,6 @@ class Issue(CommonControlField, ClusterableModel):
             self.issue_folder = self.generate_issue_folder()
             
         super().save(*args, **kwargs)
-        
-        if self.journal:  # Só cria se tiver journal associado
-            self.create_legacy_keys(user=self.creator, force_update=True)
 
     def generate_issue_pid_suffix(self):
         return str(self.generate_order()).zfill(4)

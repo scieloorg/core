@@ -11,7 +11,7 @@ from editorialboard.models import RoleModel
 from issue.articlemeta.correspondencia import correspondencia_issue
 from issue.articlemeta.issue_utils import extract_data_from_harvested_data
 from issue.formats.articlemeta_format import get_articlemeta_format_issue
-from issue.models import Issue
+from issue.models import AMIssue, Issue
 from journal.models import (
     AMJournal,
     DigitalPreservationAgency,
@@ -65,6 +65,15 @@ class TestAPIIssueArticleMeta(TestCase):
             markup_done=issue_data.get("markup_done"),
             issue_pid_suffix=issue_data.get("issue_pid_suffix"),
             order=issue_data.get("order"),
+        )
+        # como na importação do AM: o PID do fascículo vem do AMIssue
+        self.issue.add_am_issue(
+            self.user,
+            AMIssue.objects.create(
+                pid=self.issue_json["issue"]["code"],
+                collection=self.collection_scl,
+                creator=self.user,
+            ),
         )
         self.issue.add_sections(
             self.user,
