@@ -7,9 +7,24 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView, RedirectView, UpdateView
 
+from wagtail.users.views.users import EditView as WagtailUserEditView
+
 from journal.models import Journal, SciELOJournal
 
 User = get_user_model()
+
+
+class CustomUserEditView(WagtailUserEditView):
+    def get_queryset(self):
+        return User.objects.prefetch_related(
+            Prefetch(
+                "journal",
+                queryset=Journal.objects.select_related("official"),
+            ),
+            "collection",
+            "groups",
+            "user_permissions",
+        )
 
 
 class UserDetailView(LoginRequiredMixin, DetailView):
